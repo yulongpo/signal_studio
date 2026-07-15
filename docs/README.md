@@ -1,21 +1,34 @@
-# Signal Studio 文档中心
+# Signal Studio 文档
 
-文档工程以需求基线为输入，输出可评审的产品、架构、设计、接口、测试、计划和发布材料。当前权威需求基线为 [SS-SRS-BL-1.0](01_requirements/10_baselines/BL1.0/README.md)，状态为正式生效；归档文件不得直接修改。
+## 正式需求基线
 
-## 文档导航
+[`baseline/BL1.0/`](baseline/BL1.0/) 是正式需求基线归档，只读。需求正文、交付清单、正式追踪矩阵和 SHA-256 校验文件均保持原内容。
 
-- [项目治理](00_project_governance/README.md)：基线、变更、决策、风险和模板。
-- [需求](01_requirements/README.md)：源文档、BL1.0 归档、变更请求和活动追踪矩阵。
-- [产品与 UI/UX](02_product_and_uiux/README.md)
-- [软件架构](03_architecture/README.md)
-- [详细设计](04_detailed_design/README.md)
-- [接口与格式](05_interfaces_and_formats/README.md)
-- [验证与确认](06_verification_and_validation/README.md)
-- [项目计划](07_project_planning/README.md)
-- [构建与发布](08_build_and_release/README.md)
-- [用户与维护文档](09_user_and_maintenance_docs/README.md)
-- [归档](99_archive/README.md)
+## 当前工作文档
 
-## 完成条件
+- [`DEVELOPMENT_PLAN.md`](DEVELOPMENT_PLAN.md)：当前任务、里程碑和下一项 Codex 任务
+- [`ARCHITECTURE.md`](ARCHITECTURE.md)：最小架构和待验证技术问题
+- [`UI_DESIGN.md`](UI_DESIGN.md)：当前 UI/UX 设计
+- [`TEST_PLAN.md`](TEST_PLAN.md)：测试策略和测试清单
+- [`DECISIONS.md`](DECISIONS.md)：关键技术决策
+- [`CHANGELOG.md`](CHANGELOG.md)：用户可见和重要内部变化
 
-新文档须标明状态、关联基线和关联需求；完成设计、评审、实现和验证后，按治理规则更新追踪矩阵并形成相应基线。
+## 资源
+
+- [`assets/architecture/`](assets/architecture/)
+- [`assets/prototypes/`](assets/prototypes/)
+- [`assets/screenshots/`](assets/screenshots/)
+
+## 历史归档
+
+[`archive/previous_document_structure/`](archive/previous_document_structure/) 保存简化前的文档结构和历史需求输入，仅用于追溯，不再作为当前开发入口。
+
+## 日常维护原则
+
+- 当前任务只更新必要文档。
+- 不维护重复信息，不提前创建大量空文档。
+- 复杂模块达到实际需要时再拆分到 `docs/design/`。
+- 轻微变更直接更新对应文档并记录 CHANGELOG。
+- 一般变更同步更新架构、UI、测试和 CHANGELOG。
+- 重大变更实际发生时创建 `docs/changes/CR-XXX.md`，并形成新的需求基线。
+- 正式基线不得直接修改。
