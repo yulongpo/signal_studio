@@ -20,7 +20,24 @@
 
 ## 4. 编译验证
 
-推荐在确认源码存在后使用 CMake 配置、构建和测试命令；当前仓库未发现可确认的源码构建入口，因此尚未执行编译验证。
+实际核查结果：CMake 4.3.1 可用，`D:\softwares\cmake\bin\cmake.exe` 可执行；未找到 `cl.exe`、`qmake.exe`、`CMakeLists.txt` 或 `CMakePresets.json`。
+
+实际执行命令：
+
+```text
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+```
+
+实际结果：失败。CMake 报告仓库根目录不包含 `CMakeLists.txt`，因此没有生成构建目录。
+
+实际测试命令：
+
+```text
+ctest --test-dir build --output-on-failure
+ctest --test-dir . --output-on-failure
+```
+
+结果分别为无法进入不存在的 `build` 目录，以及 `No tests were found!!!`。本轮没有编译成功或测试通过结论。
 
 ## 5. M1 测试清单
 
@@ -46,19 +63,56 @@ RAW IQ 导入、数据类型、IQ/QI、大小端、分块读取、文件边界�
 
 记录首帧时间、图谱帧率、内存 P95、缓存体积和命中率、文件读取吞吐、多通道资源占用及 UI 响应。100 GB 文件和目标参考环境待准备。
 
-## 11. 测试数据
+## 11. RAW IQ 测试数据约定
 
-待建立：小型格式覆盖样本、已知单音、噪声、脉冲、调制样本、超大 RAW 基准文件、缓存损坏样本和项目迁移样本。
+本轮只定义方案，不生成或提交大型二进制文件。仓库尚无明确 Python 工具体系，因此暂不创建生成脚本。
 
-## 12. 已知问题
+建议结构：
+
+```text
+tests/test_data/
+├─ README.md
+├─ manifests/
+└─ generated/
+```
+
+`generated/` 应加入 `.gitignore`；`manifests/` 保存参数和 SHA-256；小型固定样本可提交，大型性能样本只生成不提交。生成器应使用确定性参数和固定随机种子，优先使用 Python 标准库与 NumPy（若后续仓库确认可用）。
+
+至少定义以下样本：Int8 Little Endian IQ、Int8 QI、Int16 Little Endian IQ、Int16 Big Endian IQ、Float32 Little Endian IQ、带文件头偏移、空文件、只有文件头、缺少一个分量的文件尾、多余字节、最后一个样本、越过文件尾、超大样本索引、可验证递增 I/Q 序列和复正弦信号。
+
+每个 manifest 至少记录文件名、数据类型、IQ/QI、字节序、头偏移、样本数、采样率、中心频率、预期前若干样本、SHA-256 和生成参数。
+
+## 12. M1 RAW IQ 单元测试规划
+
+所有状态只能为“待实现”或“待执行”：
+
+| 编号 | 内容 | 关联需求 | 当前状态 |
+|---|---|---|---|
+| TEST-DATA-001 | 文件信息解析 | SS-BIZ-007 | 待实现 |
+| TEST-DATA-002 | Int8 IQ 读取 | SS-BIZ-007 | 待实现 |
+| TEST-DATA-003 | Int16 Little Endian 读取 | SS-BIZ-007 | 待实现 |
+| TEST-DATA-004 | Int16 Big Endian 读取 | SS-BIZ-007 | 待实现 |
+| TEST-DATA-005 | Float32 读取 | SS-BIZ-007 | 待实现 |
+| TEST-DATA-006 | IQ/QI 顺序 | SS-BIZ-007 | 待实现 |
+| TEST-DATA-007 | 指定样本区间读取 | SS-BIZ-007 | 待实现 |
+| TEST-DATA-008 | 文件尾边界 | SS-NFR-006 | 待实现 |
+| TEST-DATA-009 | 不完整样本 | SS-NFR-006 | 待实现 |
+| TEST-DATA-010 | 非法参数 | SS-NFR-012 | 待实现 |
+| TEST-DATA-011 | 超大索引和整数溢出 | SS-NFR-006 | 待实现 |
+| TEST-DATA-012 | 内存受控验证 | SS-NFR-006 | 待执行 |
+| TEST-DATA-013 | 重复随机访问一致性 | SS-BIZ-007 | 待实现 |
+
+每项测试执行时必须补充输入、操作、预期结果和证据；当前没有任何通过结论。
+
+## 13. 已知问题
 
 测试环境、数据集、源码构建入口和自动化测试入口尚未确认。
 
-## 13. 最近测试结果
+## 14. 最近测试结果
 
 已执行文档结构、链接、基线 SHA-256 和 RTM 一致性检查；尚未执行软件编译或运行测试。
 
-### TEST-DATA-001 超大 RAW IQ 分块读取
+### TEST-DATA-014 超大 RAW IQ 分块读取性能
 
 - 关联需求：SS-BIZ-007、SS-NFR-002、SS-NFR-006
 - 前置条件：准备 100 GB RAW IQ 文件和参考环境

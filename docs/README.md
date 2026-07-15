@@ -19,9 +19,9 @@
 - [`assets/prototypes/`](assets/prototypes/)
 - [`assets/screenshots/`](assets/screenshots/)
 
-## 历史归档
+## 历史文档
 
-[`archive/previous_document_structure/`](archive/previous_document_structure/) 保存简化前的文档结构和历史需求输入，仅用于追溯，不再作为当前开发入口。
+旧的复杂文档结构已由历史提交移除，不恢复 `docs/archive/`。需要追溯时使用 Git 历史；当前文档入口只保留本页列出的核心文档。
 
 ## 日常维护原则
 
