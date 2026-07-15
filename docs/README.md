@@ -12,6 +12,7 @@
 - [`TEST_PLAN.md`](TEST_PLAN.md)：测试策略和测试清单
 - [`DECISIONS.md`](DECISIONS.md)：关键技术决策
 - [`CHANGELOG.md`](CHANGELOG.md)：用户可见和重要内部变化
+- [`../prototype/m1-interactive/`](../prototype/m1-interactive/)：M1 离线 HTML5 交互原型（含运行说明和参考图分析）
 
 ## 资源
 

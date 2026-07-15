@@ -50,7 +50,19 @@
 
 ## 13. 原型索引
 
-资源目录为 [`assets/prototypes/`](assets/prototypes/)，当前暂无已确认原型，状态为待设计。
+资源目录为 [`assets/prototypes/`](assets/prototypes/)。
+
+已创建 Figma 原型文件：[Signal Studio — M1 Prototype](https://www.figma.com/design/uiYB8l0egZDdjiWbIMNEwO)。
+
+当前状态：
+
+- 已完成本地原型 token、Inter 文本样式和面板阴影样式；
+- 已创建 `00_Overview`、`01_Wideband_Workbench`、`02_RAW_IQ_Import` 三个页面；
+- `00_Overview` 预留 `03_Runtime_States` 状态区块，以适配 Starter 计划最多三个页面的限制；
+- 已创建 Overview 和 Wideband Workbench 页面容器；RAW IQ 导入页面内容及主界面组件仍待继续写入；
+- 目标产品字体仍为 Segoe UI；由于当前 Figma 环境不可用，原型画布暂使用已验证的 Inter 回退字体。
+
+原型使用深色高密度工程视觉：画布 `#0B1220`、面板 `#111A2B`、控件面 `#162238`、边框 `#2B3B52`、主色 `#28A9FF`、完成色 `#37D7A0`、警告色 `#F7B84B`、错误色 `#F36C6C`。状态同时使用文字和标记表达，不依赖颜色单独传达信息。
 
 ## 14. UI 验收清单
 
@@ -59,3 +71,13 @@
 - [ ] 任务、缓存、错误和恢复状态可理解。
 - [ ] 宽窄带创建和双向定位流程可追踪。
 - [ ] 关键 P0 需求均有 UI 验收证据。
+
+## 15. M1 HTML5 交互原型
+
+本轮交付位于 [`prototype/m1-interactive/`](../prototype/m1-interactive/)，用于 M1 UI/UX 评审和流程演示，不替代最终 Qt Widgets 实现。原型使用本地系统字体、CSS token 和真实 HTML 控件；时域、频谱和 STFT 使用 Canvas 绘制确定性模拟数据。
+
+已覆盖的六个界面部分：空状态主窗口、RAW IQ 四步导入向导、宽带时域/频谱/STFT 工作区、图谱交互与错误恢复、项目树与属性编辑、任务/日志/动态状态栏。导入流程包含字段级校验、数据预览、低分辨率优先、后台模拟任务、错误重试和恢复。
+
+交互入口包括面板折叠、节点选择与属性同步、属性编辑/应用/重置、任务暂停/继续/取消/重试、日志筛选/搜索/清空、图谱滚轮缩放、框选缩放、平移、游标和时频选区。窄带通道、调制识别、星座图、眼图和多通道比较仅保留 M2/M3 禁用入口。
+
+原型不读取真实 IQ 文件，不执行真实 FFT、STFT、缓存、GPU 渲染或模型推理；正式性能、数值和业务验收仍须在 Qt/C++ 实现阶段执行。视觉验收基准为 1600×900，并已检查 1366×768 与 1280×720。

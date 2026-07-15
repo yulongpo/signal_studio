@@ -1,0 +1,50 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --bg-deep: #080e19;
+  --panel: #111a2b;
+  --panel-2: #131f33;
+  --control: #162238;
+  --control-hover: #1b2d49;
+  --border: #2b3b52;
+  --border-soft: #1e2d43;
+  --primary: #28a9ff;
+  --primary-strong: #5bc3ff;
+  --success: #37d7a0;
+  --warning: #f7b84b;
+  --error: #f36c6c;
+  --text: #eaf2ff;
+  --muted: #8ea2bb;
+  --subtle: #667994;
+  --grid: rgba(142, 162, 187, .12);
+  --grid-strong: rgba(142, 162, 187, .23);
+  --shadow: 0 22px 60px rgba(0, 0, 0, .36);
+  --radius: 6px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --font: "Microsoft YaHei UI", "Segoe UI", "PingFang SC", sans-serif;
+  --mono: "Cascadia Mono", "Consolas", "SFMono-Regular", monospace;
+  --accent-glow: rgba(40, 169, 255, .16);
+}
+
+* { box-sizing: border-box; }
+
+html, body { min-width: 320px; min-height: 100%; margin: 0; }
+
+body {
+  background:
+    radial-gradient(circle at 68% -20%, rgba(40, 169, 255, .08), transparent 38%),
+    linear-gradient(135deg, var(--bg-deep), var(--bg) 45%, #0d1727);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  letter-spacing: .01em;
+}
+
+button, input, select { font: inherit; }
+button { color: inherit; }
+
+::selection { background: rgba(40, 169, 255, .34); color: #fff; }
