@@ -29,6 +29,7 @@ Python 与 PowerShell 依赖校验器逐项比较 BL1.0 的选定名称、版本
 
 GitHub Actions 工作流在 Windows 2022 和 Ubuntu 24.04 构建无界面平台及 C SDK 示例。两个 Windows Ninja 配置前均显式初始化或复用 x64-hosted x64 MSVC 环境。Qt Windows 作业安装并校验最低支持版本 Qt 6.10.3 `win64_msvc2022_64`，构建十个模块并运行十个性能冒烟用例；本机验证使用 Qt 6.11.1，不可变 BL1.0 port 版本仍保持原值。所有第三方 Action 固定完整提交哈希。
 
-`scripts/validate-ci-workflow.py` 强制 UTF-8 环境、初始化顺序、`Acquisition`/`CompatibleHost` 步骤顺序、Action 固定、Qt 版本/ABI 与官方可用性证据契约。`scripts/validate-vscode-workflow.py` 静态验证本机预设、任务链和明确 F5 目标，并可在构建后动态验证同一构建树及目标新鲜度。既有 `verification.portable_config` 同时扫描 CMake、安装包模板、本机 Qt 发现脚本、Visualization 与 Workbench 编译期守卫：全部必须使用 6.10.3，并拒绝把本机 6.11 身份重新写成最低版本。远程运行 `29919175820` 仍是前一实现提交的成功证据；本轮质量修复的新提交需重新运行远程 CI，不能沿用旧运行作当前提交结论。
+`scripts/validate-ci-workflow.py` 强制 UTF-8 环境、初始化顺序、`Acquisition`/`CompatibleHost` 步骤顺序、Action 固定、Qt 版本/ABI 与官方可用性证据契约。`scripts/validate-vscode-workflow.py` 静态验证本机预设、任务链和明确 F5 目标，并可在构建后动态验证同一构建树及目标新鲜度。既有 `verification.portable_config` 同时扫描 CMake、安装包模板、本机 Qt 发现脚本、Visualization 与 Workbench 编译期守卫：全部必须使用 6.10.3，并拒绝把本机 6.11 身份重新写成最低版本。质量修复精确提交已由远程运行 `29924612586` 验证，Windows UI、Windows 无界面和 Ubuntu 无界面作业全部成功；最终独立规格与代码质量复审均通过。
 
 CUDA 保持可选。缺失 Toolkit 时必须报告并保持 CPU 可构建；没有 `nvcc` 和真实后端时，不宣称 GPU 数值或性能通过。
+MS-00 最终验证已收口：本地 Debug 45/45、Release 45/45，合计 90/90；VS Code 任务树 45/45 与直接 F5 目标通过；GitHub Actions 运行 `29924612586` 的三个精确提交作业通过。MS-00 已关闭，后续测试活动从 MS-01 继续。

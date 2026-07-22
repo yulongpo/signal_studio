@@ -2,7 +2,7 @@
 
 日期：2026-07-22
 
-结论：五项质量审查修复的本地全量自检通过；新提交远程 CI 与独立复审待执行
+结论：通过。五项质量审查修复的本地全量验证、精确提交远程 CI 与最终独立复审均已完成。
 
 ## 构建/测试矩阵
 
@@ -45,8 +45,23 @@
 - Windows 定向回归：动态 MSVC 发现/已初始化环境复用通过；盘符根、UNC 根、扩展长度根、大小写去重和排除语义通过；传统 `cp1252` 启动条件下可打印中文缺失路径；最小清单生成、规范排序、POSIX 路径、LF 属性和内容检查通过。
 - Qt 可用性：官方 Qt 6.10.3 元数据地址返回 200，312,649 字节，SHA-256 为 `91e0a64cc859c28eb547192a9813cc2ffaac524a98250bc39a0b79fe8da6eae1`，包含 `qt.qt6.6103.win64_msvc2022_64`；相同地址模式的 6.11.0 与 6.11.1 返回 404。
 - Qt 最低版本：CMake、安装包、本机发现和 Visualization/Workbench 守卫统一为 6.10.3；静态扫描拒绝重新引入 6.11 最低依赖。依赖锁分别保留 BL1.0 6.11.1 选择、本机 6.11.1 证据和 6.10.3 支持下限。
-- 工作流：PyYAML 成功解析 `.github/workflows/ci.yml`；Ubuntu/Windows 先运行 `Acquisition`，两个 Windows Ninja 作业在 CMake 前初始化 x64-hosted x64 MSVC/Qt 后运行 `CompatibleHost`，Action 使用完整提交哈希。远程运行 `29919175820` 仅作为旧提交历史成功证据保留；本轮质量修复的新提交尚无远程运行结果。
+- 工作流：PyYAML 成功解析 `.github/workflows/ci.yml`；Ubuntu/Windows 先运行 `Acquisition`，两个 Windows Ninja 作业在 CMake 前初始化 x64-hosted x64 MSVC/Qt 后运行 `CompatibleHost`，Action 使用完整提交哈希。旧运行 `29919175820` 作为历史成功证据保留；质量修复精确提交由运行 `29924612586` 验证，三个作业全部成功。
 
 ## CUDA 限制
 
 主机存在 NVIDIA 驱动/GPU，但缺少 `nvcc` 和 CUDA Toolkit。CPU 回退配置有效；不报告 CUDA 编译或 GPU 测试通过。
+# 最终验证结论（2026-07-22）
+
+| 验证项 | 结果 |
+|---|---|
+| Debug 本地测试 | 45/45，通过，21.84 秒 |
+| Release 本地测试 | 45/45，通过，20.66 秒 |
+| 本地测试合计 | 90/90，通过 |
+| VS Code 任务树 | 45/45，通过 |
+| 直接 F5 目标 | 通过 |
+| GitHub Actions | 运行 `29924612586`，精确提交 `a1c252f873a01fb6ae3a7b0b9e1f60553341b171`，通过 |
+| Windows UI/模块/性能作业 | `88938429943`，通过 |
+| Windows 2022 无界面构建测试 | `88938430036`，通过 |
+| Ubuntu 24.04 无界面构建测试 | `88938430048`，通过 |
+
+最终独立复审证据见 `evidence/final-independent-reviews.md`。历史失败日志继续保留，仅用于追溯，不改变当前“MS-00 已通过并关闭”的有效结论。
