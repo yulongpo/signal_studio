@@ -23,3 +23,6 @@ Local validators:
   Qt official Updates.xml availability evidence = pass
   local dynamic MSVC discovery and initialized-environment reuse = pass
   remote run 29918020386 headless = pass; Qt old static assertion = fail; corrected rerun pending
+
+----- 后补元数据：不属于上述原始门禁输出 -----
+上述原始内容是第三轮远程成功运行产生前的历史快照，其中“corrected rerun pending”仅表示记录生成时的状态，不是当前状态。提交 d41c2748a465c4e843617e0a9444c8f8cc2f5015 后续已由 GitHub Actions 运行 29919175820 验证通过，三项作业均为 success；当前远程证据见 remote-ci-run-29919175820.md。

@@ -26,6 +26,6 @@ Python 与 PowerShell 依赖校验器逐项比较 BL1.0 的选定名称、版本
 
 GitHub Actions 工作流在 Windows 2022 和 Ubuntu 24.04 构建无界面平台及 C SDK 示例。两个 Windows Ninja 配置前均显式初始化或复用 x64-hosted x64 MSVC 环境。Qt Windows 作业安装并校验最低支持版本 Qt 6.10.3 `win64_msvc2022_64`，构建十个模块并运行十个性能冒烟用例；本机验证使用 Qt 6.11.1，不可变 BL1.0 port 版本仍保持原值。所有第三方 Action 固定完整提交哈希。
 
-`scripts/validate-ci-workflow.py` 强制 UTF-8 环境、初始化顺序、Action 固定、Qt 版本/ABI 与官方可用性证据契约。既有 `verification.portable_config` 同时扫描 CMake、安装包模板、本机 Qt 发现脚本、Visualization 与 Workbench 编译期守卫：全部必须使用 6.10.3，并拒绝把本机 6.11 身份重新写成最低版本。依赖锁的兼容性扩展字段还必须与不可变 BL1.0 的 6.11.1 选择分别一致。远程运行 `29918020386` 的两个无界面作业通过，Qt 作业因遗留 6.11 守卫失败；守卫修复后的远程结果待新提交重跑，不宣称通过。
+`scripts/validate-ci-workflow.py` 强制 UTF-8 环境、初始化顺序、Action 固定、Qt 版本/ABI 与官方可用性证据契约。既有 `verification.portable_config` 同时扫描 CMake、安装包模板、本机 Qt 发现脚本、Visualization 与 Workbench 编译期守卫：全部必须使用 6.10.3，并拒绝把本机 6.11 身份重新写成最低版本。依赖锁的兼容性扩展字段还必须与不可变 BL1.0 的 6.11.1 选择分别一致。远程运行 `29919175820` 已验证提交 `d41c2748a465c4e843617e0a9444c8f8cc2f5015`：Windows UI 模块/性能作业和 Windows、Ubuntu 两项无界面作业全部通过。早期失败运行继续作为旧提交历史证据保留。
 
 CUDA 保持可选。缺失 Toolkit 时必须报告并保持 CPU 可构建；没有 `nvcc` 和真实后端时，不宣称 GPU 数值或性能通过。

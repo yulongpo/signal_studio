@@ -2,7 +2,7 @@
 
 日期：2026-07-22
 
-结论：第二轮远程 CI 仅剩 Qt 最低版本守卫失败，已完成一致性修复和本地全量自检；独立规范复审与再次远程重跑待执行
+结论：Qt 最低版本一致性修复、本地全量自检及第三轮远程三项 CI 门禁通过；独立规范复审仍待再次核查
 
 ## 交付范围
 
@@ -17,7 +17,7 @@
 - 使 MSVC/Ninja/Qt 环境导入在单一 PowerShell 进程内幂等，并增加真实 Debug→Release 同会话构建/测试驱动。
 - 重构被忽略的 `CMakeUserPresets.json`：唯一隐藏基预设保存一份规范化完整环境，别名仅继承；输出确定、压缩且原子替换。跨 PowerShell 7/Windows PowerShell 5.1 的重复生成结果为相同 8,774 字节和 SHA-256。
 - 扩展到每个 UI 配置 41 个具名用例，包括十个独立模块性能保护和完整安装包覆盖。
-- 增加便携 Windows/Linux 无界面 CI 和 Qt Windows CI。第二轮远程运行 `29918020386` 中两个无界面作业通过，Qt 6.10.3 安装与 MSVC 初始化通过，仅 Visualization 遗留的 6.11 编译期断言失败。现将 Visualization/Workbench、CMake、包配置、本机发现、依赖锁扩展字段与测试统一为最低支持 6.10.3；本机验证和不可变 BL1.0 选择仍分别保留 6.11.1 证据，第三方 Action 均固定完整提交哈希。
+- 增加便携 Windows/Linux 无界面 CI 和 Qt Windows CI。第二轮远程运行 `29918020386` 暴露 Visualization 遗留的 6.11 编译期断言；统一最低支持版本为 6.10.3 后，第三轮运行 `29919175820` 已针对提交 `d41c2748a465c4e843617e0a9444c8f8cc2f5015` 通过 Windows UI 模块/性能作业及 Windows、Ubuntu 两项无界面作业。本机验证和不可变 BL1.0 选择仍分别保留 6.11.1 证据，第三方 Action 均固定完整提交哈希。
 - 在确认绝对目标位于仓库且不属于正式基线/外部清单/证据目录后，清理旧 `build/`、两个 Python `__pycache__`；本轮全新 Debug/Release 与本机预设配置验证完成并记录证据后，再次移除整个生成 `build/`，仅保留一份被忽略的干净用户预设。
 
 ## 环境与依赖状态
@@ -39,4 +39,4 @@ python scripts/validate-ci-workflow.py
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/platform/verify_common_environment.ps1 -RepositoryRoot . -RequireQt
 ```
 
-最低版本修复后同会话全新 Debug 41/41（CTest 19.79 秒），Release 41/41（CTest 17.42 秒）；总耗时分别为 33.684 秒和 26.395 秒，最终 PATH 为 52/52 唯一条目、长度 3139。两个配置均覆盖全组件安装包消费者和独立无 Qt 包消费者。远程失败与本地修复证据位于 `docs/milestones/MS-00/evidence/`。修正提交尚未远程重跑，未启动 MS-01 或后续功能工作。
+最低版本修复后同会话全新 Debug 41/41（CTest 19.79 秒），Release 41/41（CTest 17.42 秒）；总耗时分别为 33.684 秒和 26.395 秒，最终 PATH 为 52/52 唯一条目、长度 3139。两个配置均覆盖全组件安装包消费者和独立无 Qt 包消费者。旧运行失败、本地修复及第三轮远程成功证据均位于 `docs/milestones/MS-00/evidence/`。独立规范复审尚待再次核查，本记录不宣称代码质量评审通过；未启动 MS-01 或后续功能工作。

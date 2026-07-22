@@ -31,7 +31,7 @@
 
 GitHub `windows-2022` runner 虽安装 Visual Studio，但普通 Ninja 步骤不会自动获得 MSVC/SDK 环境。两个 Windows CI 作业都先运行仓库脚本：使用 `vswhere.exe` 定位带 `Microsoft.VisualStudio.Component.VC.Tools.x86.x64` 的最新 VS2022 安装，执行 `VsDevCmd.bat -arch=x64 -host_arch=x64`，并通过 `GITHUB_ENV` 传递非受保护环境变量。公共测试脚本检测该已初始化环境后直接复用，不再要求特定 BuildTools 安装目录。
 
-Qt 作业使用官方元数据已确认存在的 6.10.3 `win64_msvc2022_64`，再校验 `QT_VERSION`、`VSCMD_ARG_TGT_ARCH`、`VSCMD_ARG_HOST_ARCH`、`QMAKE_XSPEC=win32-msvc` 和 Qt 前缀末级目录。本机实际验证仍使用 6.11.1；项目源码、包配置、本机发现和两个 UI 模块的最低支持版本统一为 6.10.3。远程运行 `29918020386` 已通过两项无界面作业并进入 Qt 实际编译，仅因旧 6.11 静态断言失败；修正后的远程结果仍待推送后实际运行。
+Qt 作业使用官方元数据已确认存在的 6.10.3 `win64_msvc2022_64`，再校验 `QT_VERSION`、`VSCMD_ARG_TGT_ARCH`、`VSCMD_ARG_HOST_ARCH`、`QMAKE_XSPEC=win32-msvc` 和 Qt 前缀末级目录。本机实际验证仍使用 6.11.1；项目源码、包配置、本机发现和两个 UI 模块的最低支持版本统一为 6.10.3。远程运行 `29919175820` 已在提交 `d41c2748a465c4e843617e0a9444c8f8cc2f5015` 上通过两项无界面作业及 Qt Windows UI 模块/性能作业；旧运行 `29918020386` 的静态断言失败保留为历史证据。
 
 ## 实际配置结果
 
