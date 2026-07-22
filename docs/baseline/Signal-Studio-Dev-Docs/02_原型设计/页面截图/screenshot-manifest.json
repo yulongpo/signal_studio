@@ -1,0 +1,48 @@
+{
+  "schema": "signal.screenshots/1.0",
+  "generated": "2026-07-22",
+  "standard": [
+    {
+      "path": "02_原型设计/页面截图/标准截图/SS-P01-1600x900.png",
+      "width": 1600,
+      "height": 900,
+      "bytes": 92933,
+      "sha256": "d30d0593e339023d5b147cabf6957d0e709d2e0a6a4f6d32de170b061e70346c",
+      "renderer": "Playwright CLI / Microsoft Edge"
+    },
+    {
+      "path": "02_原型设计/页面截图/标准截图/SS-P02-1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 162276,
+      "sha256": "8ae4a308c58b9ef99fa768b7b6cd96f619b4158b41cd0293e650a3716bb78025",
+      "renderer": "Playwright CLI / Microsoft Edge"
+    },
+    {
+      "path": "02_原型设计/页面截图/标准截图/SS-P02-1600x900.png",
+      "width": 1600,
+      "height": 900,
+      "bytes": 218589,
+      "sha256": "b2fc6e486cb88fd6a37336cbbf867775ad8807f4dcdfd774e082fbf3e1d269a8",
+      "renderer": "Playwright CLI / Microsoft Edge"
+    },
+    {
+      "path": "02_原型设计/页面截图/标准截图/SS-P04-1600x900.png",
+      "width": 1600,
+      "height": 900,
+      "bytes": 113759,
+      "sha256": "0c52000ef24f4074cda39fec29d8e653938a5262eebd603fed151c93e75bd8b4",
+      "renderer": "Playwright CLI / Microsoft Edge"
+    },
+    {
+      "path": "02_原型设计/页面截图/标准截图/SS-P07-1600x900.png",
+      "width": 1600,
+      "height": 900,
+      "bytes": 93783,
+      "sha256": "af28fa680a363f269ddb807934c006734095bfcfe30ea5212bbca2e8baece94e",
+      "renderer": "Playwright CLI / Microsoft Edge"
+    }
+  ],
+  "audit_count": 11,
+  "browser_console": "Playwright/Edge isolated rerun: 0 errors, 0 warnings"
+}

@@ -1,0 +1,13 @@
+{
+  "cmake.useCMakePresets": "always",
+  "cmake.configureOnOpen": false,
+  "cmake.configurePreset": "local-windows-msvc-debug",
+  "cmake.buildPreset": "local-windows-msvc-debug",
+  "cmake.testPreset": "local-windows-msvc-debug",
+  "cmake.preferredGenerators": ["Ninja"],
+  "cmake.ctest.testExplorerIntegrationEnabled": true,
+  "C_Cpp.default.cppStandard": "c++20",
+  "files.exclude": {
+    "build": true
+  }
+}

@@ -1,0 +1,22 @@
+Command:
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-same-session.ps1 -Parallel 8 -SummaryOnly
+
+One-process ordered sequence:
+  1. windows-msvc-debug fresh configure
+  2. windows-msvc-debug clean build
+  3. windows-msvc-debug CTest: 41/41 pass in 19.79 sec
+  4. windows-msvc-release fresh configure
+  5. windows-msvc-release clean build
+  6. windows-msvc-release CTest: 41/41 pass in 17.42 sec
+
+Process result:
+  exit code = 0
+  Debug elapsed = 33.684 sec
+  Release elapsed = 26.395 sec
+  The input line is too long = not observed
+  repeated MSVC/Ninja/Qt import = idempotent
+  PATH entries = 52
+  unique PATH entries = 52
+  PATH length = 3139
+  MSVC marker = vs2022-msvc-x64-v2
+  result = pass

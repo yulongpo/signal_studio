@@ -1,0 +1,30 @@
+Commands:
+  python tests/platform/verify_manifests.py baseline
+  python tests/platform/verify_manifests.py external
+  python tests/platform/verify_manifests.py minimal
+  python tests/platform/verify_manifests.py public-headers
+  python tests/platform/verify_manifests.py dependency-lock
+  python tests/platform/verify_manifests.py portable-config
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/validate-dependency-lock.ps1
+  python scripts/validate-ci-workflow.py
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/platform/verify_common_environment.ps1 -RepositoryRoot . -RequireQt
+
+Results:
+  Verified 136 baseline files byte-for-byte
+  Verified 4 supplied external files byte-for-byte
+  Verified 4 deterministic minimal files
+  Verified 15 public headers: no prohibited Qt/Eigen/MKL/TBB/HDF5/ONNX/FFTW/stdlib-implementation types
+  Verified all 14 immutable BL1.0 package tuples, 8 installed/acquisition states, and 2 offline artifacts
+  Immutable fetch script expanded tar.gz URL/hash/filename = exact match
+  vcpkg lock schema = signal-studio.dependency-lock/1.2
+  vcpkg tar.gz = 5332790 bytes; SHA-256 550800632708a561c82412ee69e227c261d0ac8bc381eee09d123014528ae97a
+  Verified 5 committed preset/VS Code files contain no host-specific absolute paths
+  GitHub Actions immutable-action/MSVC/UTF-8/Qt 6.10.3 ABI and availability contract = pass
+  Qt 6.10.3 minimum across CMake/package/local discovery/UI guards = pass
+  Qt 6.11 minimum reintroduction scan = pass
+  PowerShell environment and generated-user-preset regression = pass
+  CMakeUserPresets = 8774 bytes; SHA-256 10d719d379073c79b1a96098d9268ffa3deef40ba22e49a8d2e42d35c3c17d0b
+  CUDA Toolkit installed state = not-detected
+  missing optional cache artifacts = vcpkg-82b6bc8, cuda-12.8.1
+  missing_material_blocks_ms00 = false
+  remote run 29918020386 headless = pass; Qt old static assertion = fail; corrected rerun pending

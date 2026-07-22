@@ -1,0 +1,32 @@
+Supported entry-point final smoke:
+
+Debug:
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-same-session.ps1 -Parallel 8 -SummaryOnly
+  100% tests passed, 0 tests failed out of 41
+  Total Test time (real) = 19.79 sec
+
+Release, same process after Debug:
+  100% tests passed, 0 tests failed out of 41
+  Total Test time (real) = 17.42 sec
+
+Both include:
+  10/10 module-specific performance smoke tests
+  C and C++ ABI consumers plus exception containment
+  structured Status invariant negative tests
+  exact dependency manifest and BL1.0 fetch-script validation
+  PowerShell environment and generated-user-preset idempotency
+  all-component package consumer
+  independent no-Qt package build/install/eight-module consumer
+
+Additional local contracts:
+  GitHub Actions YAML parsed = pass
+  Windows jobs import x64-hosted x64 MSVC before CMake = pass
+  Qt CI version/architecture = 6.10.3 win64_msvc2022_64
+  CMake/package/Visualization/Workbench minimum Qt = 6.10.3
+  static regression rejecting Qt 6.11 minimum reintroduction = pass
+  official Qt metadata/package evidence = pass
+  remote GitHub Actions run 29918020386 = headless jobs pass; Qt static assertion failed
+  minimum-version correction rerun = pending after push
+  CMakeUserPresets = 8774 bytes, SHA-256 10d719d379073c79b1a96098d9268ffa3deef40ba22e49a8d2e42d35c3c17d0b
+  obsolete build/ and Python caches removed before fresh validation = pass
+  generated build/ removed after evidence capture = pass

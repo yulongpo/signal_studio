@@ -1,0 +1,80 @@
+{
+  "schema": "signal-studio.external-test-data/1.0",
+  "external_base": {
+    "path": "../test_data",
+    "relative_to": "repository_root",
+    "resolved_at_verification": "D:/coding/signal_studio_prj/test_data"
+  },
+  "hash_algorithm": "SHA-256",
+  "verified_at_utc": "2026-07-22T07:02:00Z",
+  "files": [
+    {
+      "path": "../test_data/20241110-174401-662_bw_12800000_sampleTime_0.4_rollOff_0.3.wav",
+      "name": "20241110-174401-662_bw_12800000_sampleTime_0.4_rollOff_0.3.wav",
+      "format": "RIFF/WAVE PCM",
+      "size_bytes": 20480044,
+      "sha256": "6f27f8387556c7e4f7fbb3d2ffc346d49d74342aa92f8316c5a14c84202be3d2",
+      "metadata": {
+        "channels": 2,
+        "channel_semantics": ["I", "Q"],
+        "sample_format": "signed-int16",
+        "bits_per_sample": 16,
+        "byte_order": "little-endian",
+        "sample_rate_hz": 12800000,
+        "frame_count": 5120000,
+        "duration_seconds": 0.4,
+        "roll_off": 0.3,
+        "timestamp_from_filename": "2024-11-10T17:44:01.662"
+      }
+    },
+    {
+      "path": "../test_data/数据说明.txt",
+      "name": "数据说明.txt",
+      "format": "UTF-8 text",
+      "size_bytes": 432,
+      "sha256": "e225152dbf9a3a94bdfaa6271e8c69e878053e6364504880f92cc92d91000521",
+      "metadata": {
+        "purpose": "Supplied format and filename-metadata description",
+        "line_count": 2
+      }
+    },
+    {
+      "path": "../test_data/x310_capture_cf1245MHz_sr50MSps_20260521_144927.sc16",
+      "name": "x310_capture_cf1245MHz_sr50MSps_20260521_144927.sc16",
+      "format": "SC16 raw complex samples",
+      "size_bytes": 998774448,
+      "sha256": "c2863770fd785def400a0e69e1c45745ebb953d048aa3a3e19c7d54e31291f00",
+      "metadata": {
+        "component_format": "signed-int16",
+        "component_order": "IQ interleaved",
+        "byte_order": "little-endian",
+        "bytes_per_complex_sample": 4,
+        "complex_sample_count": 249693612,
+        "sample_rate_hz": 50000000,
+        "center_frequency_hz": 1245000000,
+        "duration_seconds": 4.99387224,
+        "capture_timestamp_from_filename": "2026-05-21T14:49:27",
+        "capture_device_from_filename": "X310"
+      }
+    },
+    {
+      "path": "../test_data/x310_capture_cf1425MHz_sr50MSps_20260521_144220.sc16",
+      "name": "x310_capture_cf1425MHz_sr50MSps_20260521_144220.sc16",
+      "format": "SC16 raw complex samples",
+      "size_bytes": 4004031888,
+      "sha256": "74d0ace877568a1c26505c773f249a02e411546254e67c63c4613bb508f2d605",
+      "metadata": {
+        "component_format": "signed-int16",
+        "component_order": "IQ interleaved",
+        "byte_order": "little-endian",
+        "bytes_per_complex_sample": 4,
+        "complex_sample_count": 1001007972,
+        "sample_rate_hz": 50000000,
+        "center_frequency_hz": 1425000000,
+        "duration_seconds": 20.02015944,
+        "capture_timestamp_from_filename": "2026-05-21T14:42:20",
+        "capture_device_from_filename": "X310"
+      }
+    }
+  ]
+}

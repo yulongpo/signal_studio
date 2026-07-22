@@ -1,0 +1,229 @@
+{
+  "schema": "signal.dependencies/1.0",
+  "generated": "2026-07-22",
+  "vcpkg_baseline": "82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+  "vcpkg_archive_sha256": "550800632708a561c82412ee69e227c261d0ac8bc381eee09d123014528ae97a",
+  "vcpkg_archive_bytes": 5332790,
+  "dependencies": [
+    {
+      "name": "qtbase",
+      "version": "6.11.1#1",
+      "spdx": "LGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Qt-Commercial",
+      "selected": true,
+      "official_url": "https://code.qt.io/cgit/qt/qtbase.git/",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "qttools",
+      "version": "6.11.1",
+      "spdx": "LGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Qt-Commercial",
+      "selected": true,
+      "official_url": "https://code.qt.io/cgit/qt/qttools.git/",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "qtgraphs",
+      "version": "6.11.1",
+      "spdx": "GPL-3.0-only OR LicenseRef-Qt-Commercial",
+      "selected": false,
+      "official_url": "https://code.qt.io/cgit/qt/qtgraphs.git/",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "候选/延后",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "intel-mkl",
+      "version": "2025.2.0#1",
+      "spdx": "LicenseRef-Intel-Simplified-Software-License",
+      "selected": true,
+      "official_url": "https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "eigen3",
+      "version": "5.0.1",
+      "spdx": "MPL-2.0",
+      "selected": true,
+      "official_url": "https://gitlab.com/libeigen/eigen",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "tbb",
+      "version": "2023.1.0",
+      "spdx": "Apache-2.0",
+      "selected": true,
+      "official_url": "https://github.com/uxlfoundation/oneTBB",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "hdf5",
+      "version": "2.1.1#1",
+      "spdx": "BSD-3-Clause",
+      "selected": true,
+      "official_url": "https://github.com/HDFGroup/hdf5",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "nlohmann-json",
+      "version": "3.12.0#2",
+      "spdx": "MIT",
+      "selected": true,
+      "official_url": "https://github.com/nlohmann/json",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "tomlplusplus",
+      "version": "3.4.0#1",
+      "spdx": "MIT",
+      "selected": true,
+      "official_url": "https://github.com/marzer/tomlplusplus",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "pybind11",
+      "version": "3.0.4",
+      "spdx": "BSD-3-Clause",
+      "selected": true,
+      "official_url": "https://github.com/pybind/pybind11",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "onnxruntime",
+      "version": "1.23.2#1",
+      "spdx": "MIT",
+      "selected": true,
+      "official_url": "https://github.com/microsoft/onnxruntime",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "spdlog",
+      "version": "1.17.0#1",
+      "spdx": "MIT",
+      "selected": true,
+      "official_url": "https://github.com/gabime/spdlog",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "fmt",
+      "version": "12.2.0#1",
+      "spdx": "MIT",
+      "selected": true,
+      "official_url": "https://github.com/fmtlib/fmt",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "gtest",
+      "version": "1.17.0#3",
+      "spdx": "BSD-3-Clause",
+      "selected": true,
+      "official_url": "https://github.com/google/googletest",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "benchmark",
+      "version": "1.9.5",
+      "spdx": "Apache-2.0",
+      "selected": true,
+      "official_url": "https://github.com/google/benchmark",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "选用",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "liquid-dsp",
+      "version": "1.8.0",
+      "spdx": "MIT",
+      "selected": false,
+      "official_url": "https://github.com/jgaeddert/liquid-dsp",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "候选/延后",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "fftw3",
+      "version": "3.3.11",
+      "spdx": "GPL-2.0-or-later",
+      "selected": false,
+      "official_url": "https://www.fftw.org/",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "候选/延后",
+      "notes": "FFTW 仅 GPL 配置，不进入默认闭源分发"
+    },
+    {
+      "name": "openblas",
+      "version": "0.3.33",
+      "spdx": "BSD-3-Clause",
+      "selected": false,
+      "official_url": "https://github.com/OpenMathLib/OpenBLAS",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "候选/延后",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "libtorch",
+      "version": "2.12.0",
+      "spdx": "BSD-3-Clause",
+      "selected": false,
+      "official_url": "https://pytorch.org/",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+      "verification": "baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58",
+      "decision": "候选/延后",
+      "notes": "通过适配器隔离"
+    },
+    {
+      "name": "CUDA Toolkit/cuFFT",
+      "version": "12.8.1",
+      "spdx": "LicenseRef-NVIDIA-CUDA-EULA",
+      "selected": false,
+      "official_url": "https://developer.download.nvidia.com/compute/cuda/12.8.1/network_installers/cuda_12.8.1_windows_network.exe",
+      "lock": "external toolchain",
+      "verification": "sha256:779bee8ff557255c1cf5f36e0230f081675b9bb41e44be38839920cd5209bdeb",
+      "decision": "可选 GPU 后端",
+      "notes": "需接受 NVIDIA EULA；不自动安装"
+    }
+  ]
+}

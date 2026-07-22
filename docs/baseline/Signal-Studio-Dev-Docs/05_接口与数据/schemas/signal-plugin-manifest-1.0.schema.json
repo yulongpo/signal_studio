@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://signal-platform.invalid/schema/plugin-manifest-1.0.json",
+  "title": "Signal Plugin Manifest",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "pluginAbi",
+    "capabilities",
+    "license",
+    "contentHashes"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+([.-][a-z0-9]+)+$"
+    },
+    "version": {
+      "type": "string"
+    },
+    "pluginAbi": {
+      "const": 1
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "license": {
+      "type": "string"
+    },
+    "contentHashes": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

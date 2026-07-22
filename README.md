@@ -1,27 +1,57 @@
 # Signal Studio
 
-Signal Studio 是一款运行于 Windows 平台的专业离线数字信号可视化与分析软件，面向大容量 IQ 采样文件的加载、浏览、测量、选区、信号提取、参数估计、调制识别、解调和结果导出。
+Signal Studio 是构建于可复用 C++20 平台之上的 Windows 离线数字信号分析软件。MS-00 负责建立十个公共模块经验证的构建、安装和契约基线；生产级信号处理与 Qt 应用由后续里程碑交付。
 
-## 当前阶段
+## 当前平台目标
 
-需求基线已生效，项目进入 M1 宽带浏览基础的架构、原型和实现准备阶段。当前需求基线为 `SS-SRS-BL-1.0`，归档位置为 [`docs/baseline/BL1.0/`](docs/baseline/BL1.0/)，对应 Git 标签为 `requirements-bl1.0`。
+工程导出以下稳定 CMake 目标：
 
-## 技术栈
+`SignalStudio::Core`、`SignalStudio::Data`、`SignalStudio::DSP`、`SignalStudio::Compute`、`SignalStudio::TaskRuntime`、`SignalStudio::Visualization`、`SignalStudio::Workbench`、`SignalStudio::PluginSDK`、`SignalStudio::ModelRuntime` 和 `SignalStudio::Dataset`。
 
-需求基线记录的目标技术栈为 Qt 6.11 + Qt Widgets、C++17+、Visual Studio 2022/MSVC x64、CMake，以及可选的 Python/PyTorch、ONNX Runtime 和 TensorRT。
+Qt 仅作为 Visualization 和 Workbench 的私有依赖。所有公共头文件均不暴露 Qt 或其他第三方类型。
 
-## 文档与开发方式
+## 构建与测试
 
-从 [`docs/README.md`](docs/README.md) 进入当前文档；日常开发以 [`docs/DEVELOPMENT_PLAN.md`](docs/DEVELOPMENT_PLAN.md) 为任务入口，用最小设计、实现、编译、测试和 Git 提交流程推进。架构、UI、测试和关键决策分别维护在 `docs/ARCHITECTURE.md`、`docs/UI_DESIGN.md`、`docs/TEST_PLAN.md` 和 `docs/DECISIONS.md`。
+Windows 本机开发基线为 MSVC 2022 x64、CMake、Ninja、Python 3，以及面向 MSVC 的 Qt 6.11.1。项目 UI 源码与安装包的最低支持版本为 Qt 6.10.3；GitHub Actions 使用同版本 `win64_msvc2022_64` 做真实最低版本门禁，不改变本机已安装实例和不可变 BL1.0 依赖选择。低于 6.10.3 时，CMake 与 UI 模块编译期守卫都会给出明确错误。仓库脚本优先复用已初始化的 MSVC 环境，否则依次通过 `VSINSTALLDIR`、`vswhere.exe` 和已知本机后备位置发现工具链：
 
-## 构建状态
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bootstrap.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/configure.ps1 -Preset windows-msvc-debug
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build.ps1 -Preset windows-msvc-debug
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test.ps1 -Preset windows-msvc-debug
+```
 
-当前仓库尚未确认源码目录和构建入口，编译状态为待确认；不得将文档规划视为软件功能已完成。
+Release 使用 `windows-msvc-release`。CPU 预设显式关闭 CUDA；CUDA 预设在工具包不可用时回退到 CPU，初始化过程不会自动安装 CUDA。
 
-## 需求基线规则
+若要在同一 PowerShell 进程中连续验证 Debug 和 Release，并检查 PATH 去重、环境幂等性与用户预设稳定性，执行：
 
-`docs/baseline/BL1.0/` 只读。轻微变更直接同步当前文档并记录 CHANGELOG；一般变更同步架构、UI、测试和 CHANGELOG；重大需求变化实际发生时创建变更记录并形成 BL1.1 或 BL2.0。不得直接修改 BL1.0 或伪造签署、测试和完成证据。
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-same-session.ps1
+```
 
-## Codex 开发说明
+无界面包不要求 Qt：
 
-仓库根目录 [`AGENTS.md`](AGENTS.md) 定义 Codex 的长期开发规则、文档权威顺序和每轮任务流程。
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/configure.ps1 -Preset windows-msvc-headless-release
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build.ps1 -Preset windows-msvc-headless-release
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test.ps1 -Preset windows-msvc-headless-release
+```
+
+脚本自动发现 MSVC、CMake、Ninja，并在 UI 预设中发现 Qt。生成的 `CMakeUserPresets.json` 保持忽略状态，通过一个隐藏工具链基预设只保存一份完整环境；Qt 隐藏基预设仅保存短标量根目录。PATH、`CMAKE_PREFIX_PATH`、Qt 根目录及 MSVC 路径列表均执行规范化和大小写不敏感去重。文件采用确定性内容和同目录原子替换，重复生成的字节内容必须稳定。已提交的预设与 VS Code 配置不含本机绝对路径。
+
+`dependencies/dependency-lock.json` 将已安装实例哈希与 BL1.0 获取契约分离；`dependencies/offline-cache-manifest.json` 记录经批准的可复现缓存。vcpkg 获取必须使用 BL1.0 脚本规定的固定提交 `.tar.gz` URL、大小和 SHA-256。
+
+## 已批准基线与原型参考
+
+不可变的 BL1.0 文档快照位于 [`docs/baseline/Signal-Studio-Dev-Docs`](docs/baseline/Signal-Studio-Dev-Docs)。原评审 Web 原型保存在快照内的 `02_原型设计/原型源文件/Signal Studio交互原型_基线归档.html`，仅用于视觉与交互参考；C++ 实现不链接、包装或依赖旧上游原型。
+
+外部多 GB 录制数据仍位于 `../test_data`。完整性与夹具命令见 [`test_data/README.md`](test_data/README.md)。
+
+## 项目文档
+
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- [`docs/DEVELOPMENT_PLAN.md`](docs/DEVELOPMENT_PLAN.md)
+- [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)
+- [`docs/DECISIONS.md`](docs/DECISIONS.md)
+- [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
+- [`docs/milestones/MS-00`](docs/milestones/MS-00)

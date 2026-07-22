@@ -1,0 +1,45 @@
+{
+  "deterministic": true,
+  "files": [
+    {
+      "metadata": {
+        "byte_order": "little-endian",
+        "complex_sample_count": 1024,
+        "component_order": "IQ interleaved",
+        "format": "SC16 raw complex samples",
+        "sample_rate_hz": 64000,
+        "tone_hz": 8000
+      },
+      "name": "complex_sine_sc16le.raw",
+      "sha256": "98a44a61f8a0c18e0a14d7264cdacf59d41962119c96a0083139f1301dd5b00f",
+      "size_bytes": 4096
+    },
+    {
+      "metadata": {
+        "channel_semantics": [
+          "I",
+          "Q"
+        ],
+        "channels": 2,
+        "format": "RIFF/WAVE PCM",
+        "frame_count": 1024,
+        "sample_rate_hz": 64000,
+        "tone_hz": 8000
+      },
+      "name": "stereo_iq_int16.wav",
+      "sha256": "1a966ff93b143ebb71a63dd68ae0da9ddf31889a09544a045e278009df1eaa18",
+      "size_bytes": 4140
+    },
+    {
+      "metadata": {
+        "expected_error": "byte count is not divisible by four",
+        "format": "intentionally malformed SC16"
+      },
+      "name": "truncated_sc16le.raw",
+      "sha256": "72ebb22464dae6d17c5229739c12791a4937c96cfe887426d3fb293b3f7a4adb",
+      "size_bytes": 7
+    }
+  ],
+  "generator": "../generate_minimal_data.py",
+  "schema": "signal-studio.minimal-test-data/1.0"
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="256" viewBox="0 0 720 256" role="img" aria-labelledby="title desc">
+  <title id="title">Signal Studio 品牌标识</title>
+  <desc id="desc">由频谱、波形和 S 形负空间组成的原创几何标识</desc>
+  <metadata>SPDX-License-Identifier: LicenseRef-Signal-Studio-Project; Created 2026-07-22; no third-party artwork.</metadata>
+  
+  <g transform="translate(26 32)">
+    <path d="M8 32 H176 V86 C137 56 102 51 72 65 C48 76 31 96 8 113 Z" fill="#0B1324"/>
+    <path d="M10 76 C40 76 49 115 75 115 C102 115 112 55 139 55 C166 55 168 92 190 92" fill="none" stroke="#20D3EE" stroke-width="13" stroke-linecap="round"/>
+    <path d="M14 151 C41 130 66 133 88 150 C111 169 133 175 166 148" fill="none" stroke="#0B1324" stroke-width="20" stroke-linecap="round"/>
+    <g fill="#20D3EE">
+      <rect x="12" y="188" width="12" height="20"/><rect x="34" y="178" width="12" height="30"/>
+      <rect x="56" y="164" width="12" height="44"/><rect x="78" y="181" width="12" height="27"/>
+      <rect x="100" y="190" width="12" height="18"/><rect x="122" y="176" width="12" height="32"/>
+      <rect x="144" y="159" width="12" height="49"/><rect x="166" y="174" width="12" height="34"/>
+    </g>
+  </g><g transform="translate(250 76)"><text x="0" y="46" fill="#0B1324" font-family="Arial, sans-serif" font-size="48" font-weight="700" letter-spacing="1">Signal Studio</text><text x="2" y="82" fill="#20D3EE" font-family="Arial, sans-serif" font-size="19" letter-spacing="4">SIGNAL ANALYSIS WORKBENCH</text></g>
+</svg>

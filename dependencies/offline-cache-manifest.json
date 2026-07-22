@@ -1,0 +1,8 @@
+{
+  "schema": "signal-studio.offline-cache/1.0",
+  "cache_root": ".cache/dependencies",
+  "artifacts": [
+    {"id":"vcpkg-82b6bc8","required_for":"materializing the approved dependency manager","relative_path":"vcpkg-82b6bc886d7b0f8342e34babc2e0b8943f79b0e1.tar.gz","url":"https://github.com/microsoft/vcpkg/archive/82b6bc886d7b0f8342e34babc2e0b8943f79b0e1.tar.gz","sha256":"550800632708a561c82412ee69e227c261d0ac8bc381eee09d123014528ae97a","bytes":5332790,"required_for_ms00_build":false},
+    {"id":"cuda-12.8.1","required_for":"optional CUDA backend only","relative_path":"cuda_12.8.1_windows_network.exe","url":"https://developer.download.nvidia.com/compute/cuda/12.8.1/network_installers/cuda_12.8.1_windows_network.exe","sha256":"779bee8ff557255c1cf5f36e0230f081675b9bb41e44be38839920cd5209bdeb","bytes":null,"required_for_ms00_build":false}
+  ]
+}

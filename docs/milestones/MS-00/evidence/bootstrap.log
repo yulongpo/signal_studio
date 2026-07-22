@@ -1,0 +1,23 @@
+Commands executed twice in one Windows PowerShell process:
+  scripts/bootstrap.ps1
+  scripts/bootstrap.ps1
+
+Both runs:
+  schema = signal-studio.dependency-lock/1.2
+  selected packages = 14 exact immutable BL1.0 tuples
+  vcpkg URL = https://github.com/microsoft/vcpkg/archive/82b6bc886d7b0f8342e34babc2e0b8943f79b0e1.tar.gz
+  vcpkg SHA-256 = 550800632708a561c82412ee69e227c261d0ac8bc381eee09d123014528ae97a
+  CUDA Toolkit = not detected
+  missing artifacts = vcpkg-82b6bc8, cuda-12.8.1
+  missing material blocks MS-00 = false
+  result = Bootstrap validation passed. No system state was changed.
+
+Same-process idempotency result:
+  runs = 2
+  PATH length = 3139
+  PATH entries = 52
+  unique PATH entries = 52
+  second run changed PATH = false
+  CMakeUserPresets bytes = 8774
+  second run changed CMakeUserPresets SHA-256 = false
+  result = pass

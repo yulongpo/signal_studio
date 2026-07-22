@@ -1,0 +1,12 @@
+# Deterministic binary fixtures.
+test_data/minimal/*.raw -text
+test_data/minimal/*.wav -text
+test_data/minimal/manifest.json text eol=lf
+
+# PowerShell remains native-Windows friendly.
+*.ps1 text eol=crlf
+
+# Preserve the approved baseline byte-for-byte across Windows checkouts and
+# suppress whitespace normalization/checks inside its immutable source files.
+# This rule must remain last so it overrides extension-level policies above.
+docs/baseline/Signal-Studio-Dev-Docs/** -text -diff

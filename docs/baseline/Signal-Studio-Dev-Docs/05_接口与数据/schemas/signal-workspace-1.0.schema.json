@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://signal-platform.invalid/schema/workspace-1.0.json",
+  "title": "Signal Platform Workspace",
+  "type": "object",
+  "required": [
+    "schema",
+    "workspaceId",
+    "resources",
+    "extensions"
+  ],
+  "properties": {
+    "schema": {
+      "const": "signal.workspace/1.0"
+    },
+    "workspaceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "resources": {
+      "type": "array"
+    },
+    "tasks": {
+      "type": "array"
+    },
+    "results": {
+      "type": "array"
+    },
+    "extensions": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

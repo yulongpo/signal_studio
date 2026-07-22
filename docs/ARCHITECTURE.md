@@ -1,206 +1,43 @@
-# Signal Studio 软件架构设计
+# Signal Studio 架构
 
-## 1. 文档状态
+## MS-00 平台边界
 
-- 状态：持续演进
-- 关联需求基线：SS-SRS-BL-1.0
-- 当前适用里程碑：M1
-- 最近更新时间：2026-07-15
+仓库是一个 C++20/C11 CMake 包，包含八个无界面库和两个可选 Qt UI 库。应用层在 MS-04 前不属于实现范围。经批准的依赖 DAG 同时由配置期断言和可执行契约测试机械校验。
 
-本文件记录当前已知约束、候选方案和实际决策边界。没有验证证据的方案保持“待验证”，不视为最终架构。
+| 公共目标 | 直接公共依赖 | 构建类别 |
+|---|---|---|
+| `SignalStudio::Core` | 无 | 无界面 |
+| `SignalStudio::Compute` | Core | 无界面 |
+| `SignalStudio::Data` | Core | 无界面 |
+| `SignalStudio::TaskRuntime` | Compute、Core | 无界面 |
+| `SignalStudio::DSP` | Data、Compute、Core | 无界面 |
+| `SignalStudio::ModelRuntime` | Data、Compute、TaskRuntime、Core | 无界面 |
+| `SignalStudio::Dataset` | Data、TaskRuntime、Core | 无界面 |
+| `SignalStudio::PluginSDK` | Data、TaskRuntime、Core | 无界面 |
+| `SignalStudio::Visualization` | Data、TaskRuntime、Core | 可选 UI |
+| `SignalStudio::Workbench` | Visualization、TaskRuntime、Core | 可选 UI |
 
-## 2. 架构目标
+`SIGNAL_STUDIO_BUILD_UI=OFF` 时不调用 `find_package(Qt6)`，也不创建两个 UI 目标。启用 UI 时 Qt Core/Widgets 仍保持 `PRIVATE`。公共头文件检查拒绝 Qt、Eigen、oneMKL、TBB、HDF5、ONNX Runtime、FFTW 以及标准库实现类型。
 
-大文件高性能访问；UI 与耗时计算解耦；多分辨率显示；宽窄带联动；可追溯 DSP 处理链；可取消任务；项目可恢复；模型隔离接入。
+## 公共契约
 
-## 3. 技术栈
+- Core 使用中性品牌名 `Signal Processing Platform`。
+- `ErrorCode::stable_text()` 生成经批准的 `SS-<DOMAIN>-E###`。单一不变量路径约束十个域、四个原因、原因/类别映射、严重级别、重试/恢复规则，以及最多八层且逐层校验的原因链。工厂拒绝无效值，序列化会再次校验且不能输出 `unknown` Status。
+- `CapabilityRegistry` 和版本化 `ModuleDescriptor` 建立发现与模块兼容契约。
+- `plugin_abi_v1.h` 是 C 兼容边界，包含定宽版本化 POD、64 位不透明句柄、显式调用/导出约定、宿主与插件函数表，以及唯一的 `signal_plugin_query_v1` 入口类型。`SIGNAL_PLUGIN_NOEXCEPT` 在 C++ 中展开为 `noexcept`、在 C 中为空，并覆盖全部回调、查询和校验器签名。C++ 异常边界适配器捕获所有实现异常，并将有返回值回调映射为 `SIGNAL_PLUGIN_RESULT_INTERNAL_FAILURE_V1`；编译期断言和故意抛异常的运行期测试共同约束该契约。C11 示例插件仍可作为 C 编译并导出符号。
 
-需求基线指定或允许的技术栈：C++17 或更高、Qt 6.11、Qt Widgets、MSVC 2022 x64、CMake、Windows 10/11；Python/PyTorch、ONNX Runtime 和 TensorRT 作为算法扩展。
+数据访问、DSP、调度、渲染、模型和数据集的功能 API 在各自里程碑实现，不在 MS-00 中提前宣称。
 
-实际核查结果：当前仓库没有 `src/`、`tests/`、`tools/`、`cmake/`、`third_party/`、`.github/`，没有 `CMakeLists.txt` 或 `CMakePresets.json`。因此尚不能确认主程序入口、Qt Application/MainWindow、测试框架、Qt 版本、MSVC 配置、第三方依赖、CI 或源码模块。
+## 安装包与本机预设
 
-## 4. 总体架构
+安装树分别导出 `SignalStudioHeadlessTargets.cmake` 和 `SignalStudioUiTargets.cmake`。`find_package(SignalStudio COMPONENTS Core DSP PluginSDK ...)` 始终只装载无界面导出且不发现 Qt；仅请求 `Visualization` 或 `Workbench` 时才定位 Qt。关闭 UI 构建的安装会如实拒绝 UI 组件请求。
 
-```text
-表现层（Qt Widgets / 图谱交互）
-        ↓
-应用层（工作区、通道、任务编排、项目命令）
-        ↓
-核心数据与服务层（数据源、坐标、缓存、任务、结果）
-        ↓
-DSP 层（读取、频谱、STFT、DDC、滤波、抽取、估计）
-        ↓
-推理层（ONNX Runtime / Python 进程外服务）
-        ↓
-持久化层（项目、缓存、结果和导出格式）
-```
+测试分别消费包含全部组件的 UI 安装，以及独立配置、构建、安装并消费的无 Qt 安装；两个消费者分别请求、链接、调用并校验十个和八个可用模块目标。
 
-## 5. 源代码模块现状与规划
+已提交的预设保持路径中立。初始化/配置发现会写入被忽略的 `CMakeUserPresets.json`：唯一的隐藏 MSVC/Ninja 工具链基预设保存规范化后的完整环境（UI 生成时包含单次 Qt `bin` 与 Qt `CMAKE_PREFIX_PATH`），隐藏 Qt 基预设仅增加短标量 `SIGNAL_STUDIO_QT_ROOT`，各本机别名通过继承复用，避免重复嵌入长环境。所有路径列表按 Windows 大小写不敏感规则规范化去重；Qt/Ninja 受控路径先剔除再单次加入，生成不读取旧用户预设。文件内容确定且通过同目录临时文件原子替换。回归测试在同一进程重复生成三次，并跨 PowerShell 7/Windows PowerShell 5.1 比较，要求字节完全一致、全部路径项唯一且 Qt 根目录仅出现一次。
 
-### 5.1 已存在模块
+MSVC、Ninja 和 Qt 的进程环境导入保持幂等。MSVC 导入优先复用已有 `VSCMD_VER` 与 `cl.exe` 的 x64 环境；否则先检查 `VSINSTALLDIR`，再通过 `vswhere.exe` 发现带 x64 C++ 工具的 Visual Studio 2022，最后才使用已知本机后备位置。GitHub Windows 2022 的两个 Ninja 作业在 CMake 前显式初始化 x64-hosted x64 环境。
 
-当前仓库未发现源码模块、主程序入口或测试目录。
+Qt 契约分为三层：项目 UI 源码与安装包的最低支持版本为 Qt 6.10.3，本机实际验证 kit 为 Qt 6.11.1，不可变 BL1.0 的 vcpkg 选择仍为 qtbase 6.11.1#1/qttools 6.11.1。最低版本来自 CI 对当前私有 Qt 使用的真实编译门禁，不把本机版本误写为源码下限。Visualization 与 Workbench 使用相同编译期守卫；CMake、包配置、本机发现脚本、依赖锁扩展字段和静态回归共同拒绝低于 6.10.3 或重新引入 6.11 最低依赖。
 
-### 5.2 M1 计划新增模块
-
-仅规划当前任务需要的最小边界，实际目录将在构建与测试基础确认后创建：
-
-- `src/core/data`：RAW IQ 格式、文件检查和同步读取核心。
-- `tests/unit`：读取核心的单元测试。
-- `tests/test_data/manifests`：测试数据参数和校验信息。
-
-### 5.3 后续模块
-
-`app`、`visualization`、`core/cache`、`core/task`、`dsp`、`inference`、`formats`、`export` 等只保留为后续规划，不提前创建目录或接口。
-
-## 6. 核心数据模型
-
-- `DataSource`：文件路径、格式、采样率、中心频率、IQ/QI、大小端和指纹。
-- `WidebandContext`：原始数据源、时间范围、视图和信号区域集合。
-- `SignalRegion`：时间/频率范围、来源、标注和关联通道。
-- `NarrowbandChannel`：区域映射、处理链、通道状态和结果引用。
-- `ProcessingNode`：处理类型、参数、输入输出和版本。
-- `AnalysisResult`：结果、坐标、处理参数、算法/模型/插件版本和证据。
-
-字段、生命周期和线程安全约束待设计。
-
-## 7. RAW IQ 文件访问与 M1 最小设计
-
-### 7.1 支持范围
-
-首批支持复数交织 IQ（`I0,Q0,I1,Q1,...`）和复数交织 QI（`Q0,I0,Q1,I1,...`）。本轮不覆盖多通道非交织复杂格式。
-
-首批数据类型为 Int8、Int16、Float32；每个复样本由两个分量组成。分量字节数分别为 1、2、4，复样本字节数分别为 2、4、8。Int8/Int16 按有符号整数解释，Float32 按 IEEE 754 单精度解释；幅度缩放由格式参数提供，是否默认归一化待验证。内部计算类型优先评估 `std::complex<float>`，尚未确定。
-
-字节序支持 Little Endian 和 Big Endian；Windows/x86 默认 Little Endian，但必须由格式参数显式表达。
-
-### 7.2 文件参数模型
-
-最小 `RawIqFormat` 需要表达：文件路径、数据类型、IQ/QI 顺序、字节序、文件头偏移、采样率、中心频率、起始时间、幅度缩放、是否复数、文件大小和有效样本数。
-
-### 7.3 样本索引与边界
-
-原始复样本索引、字节偏移、起始样本、请求数量和实际返回数量均使用 64 位无符号整数。文件尾不完整样本和越界请求必须显式返回状态，不得静默补零。
-
-$$
-O_{\mathrm{byte}} = O_{\mathrm{header}} + n_{\mathrm{start}} B_{\mathrm{sample}}
-$$
-
-其中 `O_byte` 是文件读取偏移，`O_header` 是头偏移，`n_start` 是起始复样本索引，`B_sample` 是每个复样本字节数。所有乘法和加法都必须进行 64 位溢出检查。
-
-### 7.4 同步核心接口草案
-
-```cpp
-struct RawIqFormat {
-    SampleDataType dataType;
-    IqOrder iqOrder;
-    ByteOrder byteOrder;
-    std::uint64_t headerOffsetBytes;
-    double sampleRateHz;
-    double centerFrequencyHz;
-    double amplitudeScale;
-};
-
-struct SampleRange {
-    std::uint64_t startSample;
-    std::uint64_t sampleCount;
-};
-
-struct ReadResult {
-    std::vector<std::complex<float>> samples;
-    std::uint64_t actualStartSample;
-    std::uint64_t actualSampleCount;
-    bool reachedEndOfFile;
-};
-
-class RawIqReader {
-public:
-    explicit RawIqReader(...);
-    FileInfo inspect() const;
-    ReadResult read(const SampleRange& range) const;
-};
-```
-
-这是可测试的同步核心接口草案，不是已实现 API。本轮不设计完整异步读取接口。错误返回形式、`std::expected`/兼容实现、异常或错误码、调用方缓冲区复用和取消支持均待验证。
-
-### 7.5 合法性检查与错误模型
-
-至少检查文件存在、可读、头偏移不超过文件大小、有效数据长度与复样本字节数的关系、文件尾不完整样本、采样率、起始索引、请求范围和整数溢出。错误类别规划为 `FileNotFound`、`PermissionDenied`、`InvalidFormat`、`InvalidHeaderOffset`、`IncompleteSample`、`RangeOutOfBounds`、`ReadFailure` 和 `ArithmeticOverflow`，具体表示方式待验证。
-
-### 7.6 内存与线程约束
-
-不得完整加载大文件。单次读取大小应受上限控制，内存随请求样本数线性增长而不随文件总大小无界增长。M1 首批采用同步核心读取，但大块读取不得在 UI 主线程执行；Reader 不得直接操作 QWidget，并发实例安全边界待验证。
-
-内存映射、`std::ifstream` 分块读取、Qt `QFile` 和混合方案均为候选，尚无性能证据，不得写成最终高性能架构。
-
-## 8. 时间和频率坐标
-
-原始样本索引为坐标基准，时间可按
-
-`t = t_0 + n / F_s`
-
-换算；绝对频率和基带频率需区分，重采样必须保留映射关系，滤波群时延必须在结果和坐标中明确补偿。误差目标以 `SS-ACC-001` 至 `SS-ACC-004` 为准。
-
-## 9. 多分辨率索引和缓存
-
-候选内容包括时域 min/max/RMS、频谱概要和 STFT 瓦片。缓存键至少需要包含数据源指纹、范围、分辨率、算法参数和版本；必须定义失效、容量管理、版本迁移和损坏恢复。方案待验证。
-
-## 10. 图谱渲染
-
-需要支持屏幕像素聚合、数据抽稀、渐进式显示和交互反馈。CPU、GPU、Qt RHI、OpenGL 或自定义渲染均为待验证候选；UI 线程只负责交互和提交，不执行大规模计算。
-
-## 11. 宽带分析
-
-以原始 IQ 或大时间范围为输入，提供时域、频谱、STFT 浏览、测量、游标、选区和信号区域管理。具体视图数据协议待设计。
-
-## 12. 窄带分析
-
-从信号区域创建通道，支持 DDC、滤波、抽取、重采样、精细图谱、参数估计以及后续识别和解调。M2 前不预先固定全部算法实现。
-
-## 13. 宽窄带联动
-
-宽带区域可创建一个或多个窄带通道；时间、中心频率、带宽和结果可双向定位或回写。联动状态模型和冲突处理待验证。
-
-## 14. DSP 处理链
-
-候选节点包括去直流、IQ 校正、DDC、滤波、抽取、重采样、参数估计、同步、识别和解调。每个结果必须记录输入范围、处理参数、算法版本和坐标映射。
-
-## 15. 任务调度和并发
-
-UI 主线程负责状态和交互；耗时读取、计算、缓存和导出在工作线程或独立进程执行。任务应具备优先级、取消、过期结果丢弃和资源预算；模型服务可独立进程运行。
-
-## 16. 项目保存与恢复
-
-项目需保存数据源、格式、区域、通道、处理链、参数、结果引用、布局和版本信息，并支持相对/绝对路径、指纹、迁移、自动保存和缺失依赖降级。格式待设计。
-
-## 17. 模型推理
-
-ONNX Runtime 和 Python/PyTorch 服务作为扩展候选。Python 服务应独立进程，通过 IPC 提供启动、健康检查、超时、重启、日志和 CPU 回退；未完成预研前不固定协议。
-
-## 18. 插件扩展
-
-插件范围可覆盖格式、DSP、估计、识别、解调、协议和导出。公共接口应版本化；不可信或 Python 插件优先进程隔离，ABI 和协议边界待验证。
-
-## 19. 错误处理与诊断
-
-输入非法、依赖缺失、任务失败、缓存损坏、模型/插件崩溃和项目恢复失败必须产生可操作的中文反馈，并保留日志和诊断证据；单个任务失败不得导致主程序退出。
-
-## 20. 性能设计
-
-需验证首帧时间、P95 UI 延迟、FPS、100 GB 文件内存上限、取消响应、缓存命中和稳定性，目标以 BL1.0 的 `SS-NFR-*` 条目为准。
-
-## 21. 核心接口
-
-当前只确定以下接口方向：数据块读取、坐标转换、视图数据请求、任务提交/取消、处理节点执行、结果回写、项目保存/恢复和推理健康检查。详细 API 待实现前设计。
-
-## 22. 待验证技术问题
-
-1. 超大 IQ 文件访问方式及内存预算。
-2. 图谱渲染后端和渐进式显示策略。
-3. STFT 瓦片缓存格式、压缩和失效规则。
-4. 任务取消和过期结果处理。
-5. Python IPC 与 CUDA 环境隔离。
-
-## 23. 关联需求
-
-大文件：`SS-BIZ-007`、`SS-NFR-002`、`SS-NFR-006`；交互与渲染：`SS-NFR-001`、`SS-NFR-003`、`SS-NFR-004`；任务：`SS-NFR-005`；项目：`SS-PRJ-001` 至 `SS-PRJ-007`；正确性：`SS-ACC-001` 至 `SS-ACC-007`；模型与插件：`SS-AI-*`、`SS-PLG-*`。
+远程运行 `29918020386` 已证明 Ubuntu/Windows 无界面作业通过，Qt 6.10.3 安装和 MSVC 初始化成功；Qt 作业只因两个 UI 模块遗留的 6.11 编译期守卫而在 Visualization 编译时失败。守卫现已统一为 6.10.3，修正后的远程通过状态仍须等待新提交实际运行。

@@ -1,0 +1,24 @@
+{
+  "architecture": "win64_msvc2022_64",
+  "checked_at_utc": "2026-07-22",
+  "ci_version": "6.10.3",
+  "local_validation_version": "6.11.1",
+  "metadata_bytes": 312649,
+  "metadata_http_status": 200,
+  "metadata_sha256": "91e0a64cc859c28eb547192a9813cc2ffaac524a98250bc39a0b79fe8da6eae1",
+  "metadata_url": "https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6103/qt6_6103/Updates.xml",
+  "minimum_source_compatibility_version": "6.10.3",
+  "package_name": "qt.qt6.6103.win64_msvc2022_64",
+  "package_name_match_line": 5994,
+  "schema": "signal-studio.qt-ci-availability/1.0",
+  "unavailable_ci_candidates": [
+    {
+      "metadata_http_status": 404,
+      "version": "6.11.0"
+    },
+    {
+      "metadata_http_status": 404,
+      "version": "6.11.1"
+    }
+  ]
+}

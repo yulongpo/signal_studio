@@ -1,83 +1,40 @@
-# Signal Studio Codex 开发规则
+# Signal Studio Codex development rules
 
-## 0. Codex 任务文档
+## Task workflow
 
-具体开发任务存放在 `tasks/` 目录。
+1. Read this file and the assigned task document completely.
+2. Inspect `git status` before changing files.
+3. Use the immutable approved baseline under `docs/baseline/Signal-Studio-Dev-Docs` as the primary authority.
+4. Implement only the assigned milestone and its validation/evidence.
+5. Update `docs/DEVELOPMENT_PLAN.md`, the relevant core documents, and `docs/CHANGELOG.md`.
+6. Build, test, audit the diff, and create the milestone commit.
 
-执行任务时：
+## Product and toolchain
 
-1. 先阅读 `AGENTS.md`；
-2. 再完整阅读指定任务文档；
-3. 严格遵守任务范围、禁止项、验证要求和阻断条件；
-4. 不擅自扩大任务范围；
-5. 完成后更新任务状态和项目核心文档；
-6. 输出任务文档要求的执行报告。
+Signal Studio is a Windows offline IQ-signal analysis product and reusable C++20 platform. The production stack is Qt 6.11 Widgets, CMake, Ninja, and MSVC 2022 x64. Optional CUDA support must degrade cleanly to CPU and must never be installed automatically.
 
-## 1. 项目定位
+## Authority and scope
 
-Signal Studio 是基于 C++、Qt、CMake 的 Windows 离线 IQ 信号可视化分析软件，支持宽带分析、窄带分析和宽窄带联动。
+Authority order:
 
-## 2. 技术栈
+1. `docs/baseline/Signal-Studio-Dev-Docs/` (immutable BL1.0 snapshot)
+2. `CODEX_FULL_DEVELOPMENT_TASK.md`
+3. the active milestone task
+4. `docs/DEVELOPMENT_PLAN.md`
+5. `docs/ARCHITECTURE.md`, `docs/UI_DESIGN.md`, `docs/TEST_PLAN.md`, `docs/DECISIONS.md`, `docs/CHANGELOG.md`
 
-- C++17 或更高
-- Qt 6.11、Qt Widgets
-- MSVC 2022 x64、CMake
-- Windows 10/11
-- Python/PyTorch、ONNX Runtime、TensorRT 作为算法扩展
+The former upstream content is not an implementation dependency. Its preserved recovery refs are `archive/pre-signal-studio-dev-20260722-145422` and `pre-signal-studio-dev-20260722-145422`.
 
-## 3. 文档权威顺序
+## Engineering rules
 
-1. `docs/baseline/BL1.0/`
-2. `docs/DEVELOPMENT_PLAN.md`
-3. `docs/ARCHITECTURE.md`
-4. `docs/UI_DESIGN.md`
-5. `docs/TEST_PLAN.md`
-6. `docs/DECISIONS.md`
-7. `docs/CHANGELOG.md`
+- Public modules must follow the approved dependency DAG and expose only public, third-party-free C++ contracts.
+- Qt is private to Visualization and Workbench.
+- UI work must not block the main thread; background work must not touch `QWidget` directly.
+- Large files are accessed in bounded chunks and are never committed.
+- Do not add placeholders, fake results, disabled failing tests, or unverified completion claims.
+- Every new behavior has a test or an explicit, honest reason why it is not currently testable.
+- Do not edit the approved baseline, external source documents, external test recordings, or `references_rep/`.
 
-正式基线只读，不得直接修改。
+## Completion gate
 
-## 4. 开发规则
-
-- 一次只完成一个可验证任务。
-- 修改前阅读相关需求和核心文档。
-- UI 主线程不得执行耗时计算；后台线程不得直接操作 QWidget。
-- 大文件不得完整载入内存；核心逻辑不得堆积在界面类。
-- 新功能应有对应测试或明确记录为什么暂不可测。
-- 不得伪造测试结果、签署材料、负责人或完成状态。
-- 用户可见变化更新 `docs/CHANGELOG.md`。
-- 每轮结束更新 `docs/DEVELOPMENT_PLAN.md`。
-- 先完成当前里程碑，不无控制扩展范围。
-
-## 5. 每轮任务流程
-
-1. 检查仓库状态。
-2. 阅读相关需求。
-3. 完成最小设计。
-4. 实现代码。
-5. 编译和测试。
-6. 更新文档。
-7. 输出变更摘要并提交 Git。
-
-## 6. 需求变更规则
-
-- 轻微变更（文案、默认值、内部实现、小型交互优化）：直接更新对应文档并记录 CHANGELOG。
-- 一般变更（非核心功能、接口调整、文件格式扩展）：同步更新 ARCHITECTURE、UI_DESIGN、TEST_PLAN 和 CHANGELOG。
-- 重大变更（改变 P0、实时采集、跨平台、宽窄带核心流程或正式性能指标）：实际发生时创建 `docs/changes/CR-XXX.md`，并形成 BL1.1 或 BL2.0。
-
-## 7. 完成条件
-
-功能完成、编译成功、相关测试通过、无明显回归、文档同步、Git 状态清晰。
-
-## 8. 参考项目
-
-`references_rep/` 保存 SigDigger 和 SDR++ 的本地参考源码。
-
-使用规则：
-
-1. 该目录只读，不属于 Signal Studio 产品源码；
-2. 可参考其模块划分、构建方式、数据访问、DSP 流程、线程模型和可视化实现；
-3. 不得直接修改参考项目；
-4. 不得直接复制大段代码；
-5. 采用参考实现前必须确认许可证、接口兼容性和技术适用性；
-6. Signal Studio 的最终设计必须记录在本项目的 ARCHITECTURE.md 或 DECISIONS.md 中。
+The milestone is complete only when its scoped implementation works, Debug and Release validations required by the task pass, install/consumer checks pass where required, evidence is recorded, the baseline remains intact, and the Git working tree is clean after the milestone commit.

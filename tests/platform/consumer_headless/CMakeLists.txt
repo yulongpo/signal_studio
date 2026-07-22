@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.28)
+project(SignalStudioHeadlessConsumer LANGUAGES C CXX)
+
+find_package(SignalStudio 1 CONFIG REQUIRED COMPONENTS Core Data DSP Compute TaskRuntime PluginSDK ModelRuntime Dataset)
+if(TARGET Qt6::Core OR TARGET Qt6::Widgets)
+  message(FATAL_ERROR "Headless package consumption unexpectedly discovered Qt")
+endif()
+foreach(_target IN ITEMS Core Data DSP Compute TaskRuntime PluginSDK ModelRuntime Dataset)
+  if(NOT TARGET SignalStudio::${_target})
+    message(FATAL_ERROR "Missing headless component SignalStudio::${_target}")
+  endif()
+endforeach()
+add_executable(signal_studio_consumer_smoke main.cpp)
+target_compile_features(signal_studio_consumer_smoke PRIVATE cxx_std_20)
+target_link_libraries(signal_studio_consumer_smoke PRIVATE SignalStudio::Core SignalStudio::Data SignalStudio::DSP
+  SignalStudio::Compute SignalStudio::TaskRuntime SignalStudio::PluginSDK SignalStudio::ModelRuntime SignalStudio::Dataset)

@@ -1,0 +1,38 @@
+Validated cleanup targets before deletion:
+  D:\coding\signal_studio_prj\signal_studio_dev\build
+  D:\coding\signal_studio_prj\signal_studio_dev\tests\platform\__pycache__
+  D:\coding\signal_studio_prj\signal_studio_dev\test_data\__pycache__
+  all targets inside repository = true
+  baseline target = false
+  MS-00 evidence target = false
+
+Cleanup result:
+  old build/ removed
+  tests/platform/__pycache__ removed
+  test_data/__pycache__ removed
+  immutable baseline preserved
+  external data manifests preserved
+  milestone evidence preserved
+  fresh windows-msvc-debug and windows-msvc-release trees regenerated for validation
+  local UI/headless user-preset configure trees generated and validated
+  complete build/ removed again after evidence capture
+  final build/ exists = false
+
+CMakeUserPresets regeneration:
+  Git ignored = true
+  one hidden full-environment base preset = true
+  per-alias long environment blocks = false
+  configure presets = 11
+  presets with any environment block = 2 (one full base; one Qt scalar only)
+  PATH entries = 52; unique = 52; length = 3139
+  repeated generation per runtime = 3
+  PowerShell 7 bytes = 8774
+  Windows PowerShell 5.1 bytes = 8774
+  cross-runtime SHA-256 = 10d719d379073c79b1a96098d9268ffa3deef40ba22e49a8d2e42d35c3c17d0b
+  repeated byte content stable = true
+  duplicate PATH/CMAKE_PREFIX_PATH/INCLUDE/LIB/LIBPATH entries = none
+  Qt root occurrences in CMAKE_PREFIX_PATH = 1
+  local-windows-msvc-debug compiler = MSVC 14.44 Hostx64/x64 cl.exe
+  local-windows-msvc-debug Qt root = D:/softwares/Qt/6.11.1/msvc2022_64
+  local-windows-msvc-headless-release SIGNAL_STUDIO_BUILD_UI = OFF
+  local UI/headless configure result = pass

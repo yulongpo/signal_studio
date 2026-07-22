@@ -1,0 +1,23 @@
+Command sequence:
+  scripts/configure.ps1 -Preset windows-msvc-release -Fresh
+  scripts/build.ps1 -Preset windows-msvc-release -Parallel 8 -CleanFirst
+  scripts/test.ps1 -Preset windows-msvc-release
+
+Configure/build result:
+  MSVC 19.44.35228; Ninja 1.12.1; Qt 6.11.1; CUDA toolkit OFF
+  Fresh configure passed; clean build passed.
+
+CTest result:
+  100% tests passed, 0 tests failed out of 41
+  Total Test time (real) = 17.42 sec
+
+Required named coverage:
+  module contracts = 10/10
+  structured Status invariant case = pass
+  C ABI C compile/link and C++ exception boundary = pass
+  module performance smoke = 10/10; threshold 5000 ms
+  PowerShell environment and generated-user-preset idempotency = pass
+  PATH entries = 52; unique = 52; length = 3139
+  CMakeUserPresets bytes = 8774; unique path entries = pass
+  all-component installed consumer = pass
+  independent no-Qt build/install/eight-module consumer = pass

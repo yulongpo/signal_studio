@@ -1,0 +1,113 @@
+{
+  "schema": "signal.platform.architecture/1.0",
+  "nodes": [
+    {
+      "name": "SignalCore",
+      "layer": "基础能力库",
+      "deps": [],
+      "public_namespace": "signal::core"
+    },
+    {
+      "name": "SignalCompute",
+      "layer": "计算后端",
+      "deps": [
+        "SignalCore"
+      ],
+      "public_namespace": "signal::compute"
+    },
+    {
+      "name": "SignalData",
+      "layer": "基础能力库",
+      "deps": [
+        "SignalCore"
+      ],
+      "public_namespace": "signal::data"
+    },
+    {
+      "name": "SignalTaskRuntime",
+      "layer": "领域服务",
+      "deps": [
+        "SignalCompute",
+        "SignalCore"
+      ],
+      "public_namespace": "signal::task"
+    },
+    {
+      "name": "SignalDSP",
+      "layer": "基础能力库",
+      "deps": [
+        "SignalData",
+        "SignalCompute",
+        "SignalCore"
+      ],
+      "public_namespace": "signal::dsp"
+    },
+    {
+      "name": "SignalVisualization",
+      "layer": "公共 UI",
+      "deps": [
+        "SignalData",
+        "SignalTaskRuntime",
+        "SignalCore"
+      ],
+      "public_namespace": "signal::visualization"
+    },
+    {
+      "name": "SignalModelRuntime",
+      "layer": "领域服务",
+      "deps": [
+        "SignalData",
+        "SignalCompute",
+        "SignalTaskRuntime",
+        "SignalCore"
+      ],
+      "public_namespace": "signal::model"
+    },
+    {
+      "name": "SignalDataset",
+      "layer": "领域服务",
+      "deps": [
+        "SignalData",
+        "SignalTaskRuntime",
+        "SignalCore"
+      ],
+      "public_namespace": "signal::dataset"
+    },
+    {
+      "name": "SignalPluginSDK",
+      "layer": "SDK",
+      "deps": [
+        "SignalData",
+        "SignalTaskRuntime",
+        "SignalCore"
+      ],
+      "public_namespace": "signal::plugin"
+    },
+    {
+      "name": "SignalWorkbench",
+      "layer": "公共 UI",
+      "deps": [
+        "SignalVisualization",
+        "SignalTaskRuntime",
+        "SignalCore"
+      ],
+      "public_namespace": "signal::workbench"
+    }
+  ],
+  "apps": [
+    "Signal Studio",
+    "Signal Generator",
+    "Dataset Builder",
+    "Dataset Manager",
+    "Model Trainer",
+    "Model Evaluator",
+    "Inference Studio",
+    "Headless CLI"
+  ],
+  "rules": [
+    "公共模块不得依赖应用",
+    "禁止循环依赖",
+    "应用不得直接调用具体 FFT/GPU/模型运行库",
+    "公共 API 不暴露第三方类型"
+  ]
+}

@@ -1,0 +1,69 @@
+name: ms00-portable-platform
+
+on:
+  push:
+  pull_request:
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: utf-8
+  SIGNAL_STUDIO_MINIMUM_QT_VERSION: "6.10.3"
+  SIGNAL_STUDIO_CI_QT_VERSION: "6.10.3"
+  SIGNAL_STUDIO_LOCAL_QT_VERSION: "6.11.1"
+
+jobs:
+  headless-build-test:
+    strategy:
+      matrix:
+        os: [windows-2022, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Initialize MSVC 2022 x64 environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./.github/scripts/initialize-msvc.ps1
+      - name: Configure headless platform and C SDK example
+        run: cmake -S . -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DSIGNAL_STUDIO_BUILD_UI=OFF -DSIGNAL_STUDIO_BUILD_TESTS=ON -DSIGNAL_STUDIO_BUILD_SDK_EXAMPLE=ON -DBUILD_TESTING=ON
+      - name: Compile platform, C ABI example, and consumers
+        run: cmake --build build/ci --parallel
+      - name: Run MS-00 contracts
+        run: ctest --test-dir build/ci --output-on-failure
+
+  windows-ui-module-performance:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Initialize MSVC 2022 x64 environment
+        shell: pwsh
+        run: ./.github/scripts/initialize-msvc.ps1
+      - uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730 # v4
+        with:
+          version: ${{ env.SIGNAL_STUDIO_CI_QT_VERSION }}
+          arch: win64_msvc2022_64
+          cache: true
+      - name: Verify Qt and compiler ABI
+        shell: pwsh
+        run: |
+          if ($env:VSCMD_ARG_TGT_ARCH -cne 'x64' -or $env:VSCMD_ARG_HOST_ARCH -cne 'x64') {
+            throw "Expected an x64-hosted x64 MSVC environment"
+          }
+          $qmake = Join-Path $env:QT_ROOT_DIR 'bin/qmake.exe'
+          if ((& $qmake -query QMAKE_XSPEC) -cne 'win32-msvc') {
+            throw "Qt kit is not built for the MSVC ABI"
+          }
+          if ((& $qmake -query QT_VERSION) -cne $env:SIGNAL_STUDIO_CI_QT_VERSION) {
+            throw "Qt kit version does not match the pinned CI compatibility version"
+          }
+          if ((Split-Path -Leaf (& $qmake -query QT_INSTALL_PREFIX)) -cne 'msvc2022_64') {
+            throw "Qt kit is not the MSVC 2022 x64 architecture"
+          }
+      - name: Configure all ten modules
+        shell: pwsh
+        run: cmake -S . -B build/ci-ui -G Ninja -DCMAKE_BUILD_TYPE=Release -DSIGNAL_STUDIO_BUILD_UI=ON -DSIGNAL_STUDIO_BUILD_TESTS=ON -DSIGNAL_STUDIO_BUILD_SDK_EXAMPLE=ON -DBUILD_TESTING=ON -DSIGNAL_STUDIO_QT_ROOT="$env:QT_ROOT_DIR"
+      - name: Compile all modules and performance probes
+        run: cmake --build build/ci-ui --parallel
+      - name: Run all ten module performance smoke cases
+        run: ctest --test-dir build/ci-ui --output-on-failure -L performance
+      - name: Consume all ten installed module packages
+        run: ctest --test-dir build/ci-ui --output-on-failure -R "^package.installed_component_consumer$"

@@ -1,0 +1,358 @@
+{
+  "schema": "signal.api/1.0",
+  "generated": "2026-07-22",
+  "apis": [
+    {
+      "id": "API-CORE-001",
+      "module": "SignalCore",
+      "namespace": "signal::core",
+      "signature": "VersionInfo version()",
+      "contract": "返回平台、API、ABI 与构建版本",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-CORE-002",
+      "module": "SignalCore",
+      "namespace": "signal::core",
+      "signature": "Result<T> / Error",
+      "contract": "统一成功/失败模型，错误不可丢失",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-CORE-003",
+      "module": "SignalCore",
+      "namespace": "signal::core",
+      "signature": "Quantity<Unit, Rep>",
+      "contract": "时间、频率、采样率的强类型量",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-CORE-004",
+      "module": "SignalCore",
+      "namespace": "signal::core",
+      "signature": "Hash256 hash_file(PathView)",
+      "contract": "文件完整性与缓存键",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-CORE-005",
+      "module": "SignalCore",
+      "namespace": "signal::core",
+      "signature": "ILogger::write(LogEvent)",
+      "contract": "结构化日志，不暴露 spdlog 类型",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-CORE-006",
+      "module": "SignalCore",
+      "namespace": "signal::core",
+      "signature": "IWorkspaceStore::load/save",
+      "contract": "公共 Workspace 原子持久化",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-CORE-007",
+      "module": "SignalCore",
+      "namespace": "signal::core",
+      "signature": "IArtifactStore::commit",
+      "contract": "不可变结果与导出制品提交",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-DATA-001",
+      "module": "SignalData",
+      "namespace": "signal::data",
+      "signature": "SignalDescriptor::validate()",
+      "contract": "验证实/复、dtype、字节序、单位与范围",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-DATA-002",
+      "module": "SignalData",
+      "namespace": "signal::data",
+      "signature": "SampleBlockView<T>",
+      "contract": "只读零拷贝分块视图",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-DATA-003",
+      "module": "SignalData",
+      "namespace": "signal::data",
+      "signature": "IDataSource::read(ReadRequest)",
+      "contract": "异步、可取消、帧对齐读取",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-DATA-004",
+      "module": "SignalData",
+      "namespace": "signal::data",
+      "signature": "IFormatAdapter::probe/open",
+      "contract": "RAW/WAV/HDF5/插件格式适配",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-DATA-005",
+      "module": "SignalData",
+      "namespace": "signal::data",
+      "signature": "IMultiResolutionStore::get/put",
+      "contract": "概览与瓦片缓存",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-COMPUTE-001",
+      "module": "SignalCompute",
+      "namespace": "signal::compute",
+      "signature": "IComputeBackend::capabilities()",
+      "contract": "CPU/SIMD/CUDA 能力探测",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-COMPUTE-002",
+      "module": "SignalCompute",
+      "namespace": "signal::compute",
+      "signature": "IBufferPool::acquire(BufferSpec)",
+      "contract": "受预算约束的主机/设备内存",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-COMPUTE-003",
+      "module": "SignalCompute",
+      "namespace": "signal::compute",
+      "signature": "IBackendSelector::select(Workload)",
+      "contract": "Auto 选择和可审计降级",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-DSP-001",
+      "module": "SignalDSP",
+      "namespace": "signal::dsp",
+      "signature": "IFftBackend::create_plan(FftSpec)",
+      "contract": "oneMKL/cuFFT/许可适配器计划",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-DSP-002",
+      "module": "SignalDSP",
+      "namespace": "signal::dsp",
+      "signature": "IPsdEstimator::process(SampleBlock)",
+      "contract": "窗、ENBW、单位和平均策略明确",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-DSP-003",
+      "module": "SignalDSP",
+      "namespace": "signal::dsp",
+      "signature": "IStftProcessor::process(StftRequest)",
+      "contract": "分块 STFT 与瓦片输出",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-DSP-004",
+      "module": "SignalDSP",
+      "namespace": "signal::dsp",
+      "signature": "IResampler::process(Ratio, SampleBlock)",
+      "contract": "抗混叠的成熟库适配",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-DSP-005",
+      "module": "SignalDSP",
+      "namespace": "signal::dsp",
+      "signature": "IFilter::process(SampleBlock, State)",
+      "contract": "保持跨块状态",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-TASK-001",
+      "module": "SignalTaskRuntime",
+      "namespace": "signal::task",
+      "signature": "TaskSpec / ResourceProfile",
+      "contract": "冻结的任务、资源和依赖描述",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-TASK-002",
+      "module": "SignalTaskRuntime",
+      "namespace": "signal::task",
+      "signature": "ITaskService::submit(TaskSpec)",
+      "contract": "提交并返回 TaskHandle",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-TASK-003",
+      "module": "SignalTaskRuntime",
+      "namespace": "signal::task",
+      "signature": "TaskHandle::pause/resume/cancel",
+      "contract": "幂等控制",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-TASK-004",
+      "module": "SignalTaskRuntime",
+      "namespace": "signal::task",
+      "signature": "ITaskObserver::on_event(TaskEvent)",
+      "contract": "进度、日志、指标的单一状态源",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-VIS-001",
+      "module": "SignalVisualization",
+      "namespace": "signal::visualization",
+      "signature": "IChartView::bind(IDataSeries)",
+      "contract": "图表与数据提供者解耦",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-VIS-002",
+      "module": "SignalVisualization",
+      "namespace": "signal::visualization",
+      "signature": "ViewportController::set_time/frequency",
+      "contract": "多图共享视口",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-VIS-003",
+      "module": "SignalVisualization",
+      "namespace": "signal::visualization",
+      "signature": "SpectrumView / SpectrogramView",
+      "contract": "统一频率轴与原子提交",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-VIS-004",
+      "module": "SignalVisualization",
+      "namespace": "signal::visualization",
+      "signature": "TimeWaveformView / TimeNavigator",
+      "contract": "当前视窗与实际读入范围",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-VIS-005",
+      "module": "SignalVisualization",
+      "namespace": "signal::visualization",
+      "signature": "ConstellationView / EyeDiagramView",
+      "contract": "可复用分析视图",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-VIS-006",
+      "module": "SignalVisualization",
+      "namespace": "signal::visualization",
+      "signature": "OverlayModel::selection/measurement",
+      "contract": "Selection 与测量覆盖层",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-WB-001",
+      "module": "SignalWorkbench",
+      "namespace": "signal::workbench",
+      "signature": "IServiceRegistry::resolve(ServiceId)",
+      "contract": "宿主服务发现",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-WB-002",
+      "module": "SignalWorkbench",
+      "namespace": "signal::workbench",
+      "signature": "IPanelFactory::create(PanelContext)",
+      "contract": "Dock/Inspector/Center 面板",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-WB-003",
+      "module": "SignalWorkbench",
+      "namespace": "signal::workbench",
+      "signature": "ICommandRegistry::register_command",
+      "contract": "菜单、快捷键与自动化命令",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-WB-004",
+      "module": "SignalWorkbench",
+      "namespace": "signal::workbench",
+      "signature": "IDiagnosticsProvider::snapshot",
+      "contract": "真实环境和后端诊断",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-PLG-001",
+      "module": "SignalPluginSDK",
+      "namespace": "signal::plugin",
+      "signature": "signal_plugin_query_v1(host, out)",
+      "contract": "版本化 C ABI 唯一入口",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-PLG-002",
+      "module": "SignalPluginSDK",
+      "namespace": "signal::plugin",
+      "signature": "IAlgorithmPlugin::describe/run",
+      "contract": "无 UI 依赖的算法插件",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-PLG-003",
+      "module": "SignalPluginSDK",
+      "namespace": "signal::plugin",
+      "signature": "IFormatPlugin / IExportPlugin",
+      "contract": "格式和导出扩展",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-MODEL-001",
+      "module": "SignalModelRuntime",
+      "namespace": "signal::model",
+      "signature": "IModelRegistry::install/resolve",
+      "contract": "模型包、版本、哈希和兼容",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-MODEL-002",
+      "module": "SignalModelRuntime",
+      "namespace": "signal::model",
+      "signature": "IInferenceSession::run(InferenceRequest)",
+      "contract": "ONNX 默认后端、设备可选",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-DSET-001",
+      "module": "SignalDataset",
+      "namespace": "signal::dataset",
+      "signature": "IDataset::query(SampleQuery)",
+      "contract": "版本化样本索引",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-DSET-002",
+      "module": "SignalDataset",
+      "namespace": "signal::dataset",
+      "signature": "IDatasetWriter::append/commit",
+      "contract": "分片原子提交",
+      "stability": "Stable-1.0"
+    },
+    {
+      "id": "API-PY-001",
+      "module": "Python SDK",
+      "namespace": "signal_platform",
+      "signature": "open_signal(path, descriptor)",
+      "contract": "NumPy 零拷贝视图",
+      "stability": "Preview-1.0"
+    },
+    {
+      "id": "API-PY-002",
+      "module": "Python SDK",
+      "namespace": "signal_platform",
+      "signature": "submit_task(spec) / TaskHandle",
+      "contract": "任务提交和状态",
+      "stability": "Preview-1.0"
+    },
+    {
+      "id": "API-PY-003",
+      "module": "Python SDK",
+      "namespace": "signal_platform",
+      "signature": "load_dataset(uri) / infer(model, batch)",
+      "contract": "数据集与推理复用",
+      "stability": "Preview-1.0"
+    }
+  ]
+}

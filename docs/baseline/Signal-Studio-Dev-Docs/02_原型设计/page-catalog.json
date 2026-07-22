@@ -1,0 +1,126 @@
+{
+  "schema": "signal.pages/1.0",
+  "generated": "2026-07-22",
+  "pages": [
+    {
+      "id": "UI-P01-001",
+      "code": "P01",
+      "name": "项目首页",
+      "owner": "Signal Studio 应用",
+      "reuse": "工作台容器可复用",
+      "targets": "全部桌面工具",
+      "components": "RecentProjectList, SystemStatusCard",
+      "abstract": "是"
+    },
+    {
+      "id": "UI-P02-001",
+      "code": "P02",
+      "name": "宽带浏览",
+      "owner": "Signal Studio 应用",
+      "reuse": "图表和视口可复用",
+      "targets": "Signal Generator, Inference Studio",
+      "components": "TimeNavigator, SpectrumView, SpectrogramView",
+      "abstract": "是"
+    },
+    {
+      "id": "UI-P03-001",
+      "code": "P03",
+      "name": "Inspector",
+      "owner": "SignalWorkbench",
+      "reuse": "公共工作台",
+      "targets": "全部分析工具",
+      "components": "InspectorHost, ProcessingChain",
+      "abstract": "是"
+    },
+    {
+      "id": "UI-P04-001",
+      "code": "P04",
+      "name": "任务中心",
+      "owner": "SignalWorkbench",
+      "reuse": "公共工作台",
+      "targets": "全部工具",
+      "components": "TaskCenterView",
+      "abstract": "是"
+    },
+    {
+      "id": "UI-P05-001",
+      "code": "P05",
+      "name": "结果中心",
+      "owner": "SignalWorkbench",
+      "reuse": "公共工作台",
+      "targets": "全部工具",
+      "components": "ResultCenterView",
+      "abstract": "是"
+    },
+    {
+      "id": "UI-P06-001",
+      "code": "P06",
+      "name": "插件与模型",
+      "owner": "SignalWorkbench",
+      "reuse": "公共工作台",
+      "targets": "全部插件宿主",
+      "components": "PluginManagerView, ModelRegistryView",
+      "abstract": "是"
+    },
+    {
+      "id": "UI-P07-001",
+      "code": "P07",
+      "name": "设置与诊断",
+      "owner": "SignalWorkbench",
+      "reuse": "公共工作台",
+      "targets": "全部桌面工具",
+      "components": "SettingsView, DiagnosticsView",
+      "abstract": "是"
+    },
+    {
+      "id": "UI-W01-001",
+      "code": "W01",
+      "name": "导入信号",
+      "owner": "SignalData + 应用编排",
+      "reuse": "导入框架可复用",
+      "targets": "Studio, Dataset Manager",
+      "components": "ImportWizardHost",
+      "abstract": "是"
+    },
+    {
+      "id": "UI-W02-001",
+      "code": "W02",
+      "name": "创建分析通道",
+      "owner": "Signal Studio 应用",
+      "reuse": "Selection 输入组件可复用",
+      "targets": "Inference Studio",
+      "components": "ChannelWizard",
+      "abstract": "部分"
+    },
+    {
+      "id": "UI-W03-001",
+      "code": "W03",
+      "name": "导出",
+      "owner": "SignalWorkbench",
+      "reuse": "公共工作台",
+      "targets": "全部工具",
+      "components": "ExportDialogHost",
+      "abstract": "是"
+    },
+    {
+      "id": "UI-W04-001",
+      "code": "W04",
+      "name": "恢复与资源重定位",
+      "owner": "SignalWorkbench",
+      "reuse": "公共工作台",
+      "targets": "全部项目型工具",
+      "components": "RecoveryDialog",
+      "abstract": "是"
+    },
+    {
+      "id": "UI-W05-001",
+      "code": "W05",
+      "name": "加载进度与部分读取",
+      "owner": "SignalTaskRuntime + SignalWorkbench",
+      "reuse": "公共任务界面",
+      "targets": "全部数据工具",
+      "components": "TaskProgressDialog",
+      "abstract": "是"
+    }
+  ]
+}

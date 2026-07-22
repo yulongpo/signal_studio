@@ -1,0 +1,702 @@
+{
+  "schema": "signal-studio.baseline-manifest/1.0",
+  "baseline_version": "BL1.0",
+  "document_set_version": "V1.0.0",
+  "origin": {
+    "relative_path": "../Signal_Studio_开发文档/Signal-Studio-Dev-Docs",
+    "resolved_path": "D:\\coding\\signal_studio_prj\\Signal_Studio_开发文档\\Signal-Studio-Dev-Docs"
+  },
+  "copied_at_utc": "2026-07-22T07:05:38.022Z",
+  "hash_algorithm": "SHA-256",
+  "file_count": 136,
+  "total_bytes": 5517356.0,
+  "verification": {
+    "method": "relative path, byte length, and SHA-256 comparison",
+    "source_file_count": 136,
+    "copied_file_count": 136,
+    "byte_for_byte_equal": true,
+    "verified_at_utc": "2026-07-22T07:05:38.022Z"
+  },
+  "files": [
+    {
+      "path": "00_交付说明/版本说明.md",
+      "size_bytes": 2062,
+      "sha256": "8b5f8bfb250748df7a418bd0fe1fab28ea9b18da9da31a51ff327f08d7778beb"
+    },
+    {
+      "path": "00_交付说明/交付物清单.md",
+      "size_bytes": 21426,
+      "sha256": "a52e62df833316e893b2f57edf6997469c28c739e7aa6cfbb5acb8aa3b059a75"
+    },
+    {
+      "path": "00_交付说明/已知问题清单.md",
+      "size_bytes": 2302,
+      "sha256": "2897228aca54555625692b8621bba9096ca9fe96e03d87df61207211c2adb7f5"
+    },
+    {
+      "path": "00_交付说明/原型评审结论.md",
+      "size_bytes": 1939,
+      "sha256": "c2ad495c818f805ad2a0e0157d3c8c0daed206e319e2dba3a3babcc331d4d14f"
+    },
+    {
+      "path": "00_交付说明/自动审核批准记录.md",
+      "size_bytes": 3312,
+      "sha256": "f53f7831bf0fc010ac181aed42aa8e85f6b51220dc02413b95f2f2d3bdb7a938"
+    },
+    {
+      "path": "01_需求/非功能需求说明.md",
+      "size_bytes": 12895,
+      "sha256": "61b31a161deec25260404b72f6b8c528785035b29563af903ab5cba9b07db7e7"
+    },
+    {
+      "path": "01_需求/功能清单.md",
+      "size_bytes": 2584,
+      "sha256": "88b53434e76bc0f34a66a1484d8b425c9fb2c6854172babed8d11c2ca75b16f1"
+    },
+    {
+      "path": "01_需求/软件需求规格说明书.md",
+      "size_bytes": 73054,
+      "sha256": "d05327b90f3abb2c4e2d58619d785fd372544c2fd24e98b963ae58e9ccf1ad40"
+    },
+    {
+      "path": "01_需求/需求追踪矩阵.xlsx",
+      "size_bytes": 71939,
+      "sha256": "843a6697e33f298ee20c664eeb783ae67ad62b22be1a0e47a56be512766e6da1"
+    },
+    {
+      "path": "01_需求/requirements.json",
+      "size_bytes": 241712,
+      "sha256": "c600a02427a391c010ab69736ecf3018ece8ffa6c835ccfe7a1d7b3cf21d355e"
+    },
+    {
+      "path": "02_原型设计/交互规格说明书.md",
+      "size_bytes": 2500,
+      "sha256": "5ece56353651d4c3c3e551fee7eed755198bab28035d392570272690e3153154"
+    },
+    {
+      "path": "02_原型设计/页面截图/标准截图/SS-P01-1600x900.png",
+      "size_bytes": 92933,
+      "sha256": "d30d0593e339023d5b147cabf6957d0e709d2e0a6a4f6d32de170b061e70346c"
+    },
+    {
+      "path": "02_原型设计/页面截图/标准截图/SS-P02-1280x720.png",
+      "size_bytes": 162276,
+      "sha256": "8ae4a308c58b9ef99fa768b7b6cd96f619b4158b41cd0293e650a3716bb78025"
+    },
+    {
+      "path": "02_原型设计/页面截图/标准截图/SS-P02-1600x900.png",
+      "size_bytes": 218589,
+      "sha256": "b2fc6e486cb88fd6a37336cbbf867775ad8807f4dcdfd774e082fbf3e1d269a8"
+    },
+    {
+      "path": "02_原型设计/页面截图/标准截图/SS-P04-1600x900.png",
+      "size_bytes": 113759,
+      "sha256": "0c52000ef24f4074cda39fec29d8e653938a5262eebd603fed151c93e75bd8b4"
+    },
+    {
+      "path": "02_原型设计/页面截图/标准截图/SS-P07-1600x900.png",
+      "size_bytes": 93783,
+      "sha256": "af28fa680a363f269ddb807934c006734095bfcfe30ea5212bbca2e8baece94e"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A01_P01_项目首页.png",
+      "size_bytes": 110314,
+      "sha256": "bccff80467b396f40606adeb8f9badb8e30377229a591753b3eea42e6cd2efed"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A02_P02_宽带浏览.png",
+      "size_bytes": 190736,
+      "sha256": "9bc6bea5b5ed451d28c078344b41794c71ad6ad8eeebd1229fb1571226594361"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A03_W01_导入向导.png",
+      "size_bytes": 122811,
+      "sha256": "6d309d7562a407c0f0fad5ea9f5299578db4f5f3f7143964e116616c81947bbf"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A04_加载进度_暂停取消.png",
+      "size_bytes": 113234,
+      "sha256": "284b8e9bcb5aecce06452c60285b07fca13678ed75e16e6364ea4ad5b8a5e0d7"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A05_P02_取消后只读前缀.png",
+      "size_bytes": 196950,
+      "sha256": "342fde27915f836d6fd05e74078b12d4b9c2d0bae65e0f49dac20191f38c94b8"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A06_P03_Inspector.png",
+      "size_bytes": 151938,
+      "sha256": "0a8b25a312fe5d8b88bee4c92182d47856893bc181d879078da451ac21630fb8"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A07_P04_任务中心.png",
+      "size_bytes": 159145,
+      "sha256": "f8f0bb2fe3ef6bfe3aa4f61b6b829ec9fa739e7b763e3f182ed80f1fd1bc2491"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A08_P05_结果中心.png",
+      "size_bytes": 134540,
+      "sha256": "6a7ff1b7be29ab7240a134e355cf53ae56191f0ef2fa3f7c17a69f788d921db9"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A09_P06_插件与模型.png",
+      "size_bytes": 135067,
+      "sha256": "4f5ec93d55adb25ef0fd46e71181f15a2dc2b6b78b1a516f48bd261eb77627eb"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A10_P07_设置与诊断.png",
+      "size_bytes": 115717,
+      "sha256": "5b7f260169b05848320c6bfc6e20c46170efd8826b2d69b3602e8f92141f3e61"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A11_P02_1280x720.png",
+      "size_bytes": 123376,
+      "sha256": "0f244d7b169b6a6513ca1466636a67d77e38d6aad9763d08343060c4087d51d9"
+    },
+    {
+      "path": "02_原型设计/页面截图/screenshot-manifest.json",
+      "size_bytes": 1699,
+      "sha256": "583c153f3330f964ad6428986c116a71d33c47f6bdc30dd82b52ee6c8f7c7b36"
+    },
+    {
+      "path": "02_原型设计/页面清单.xlsx",
+      "size_bytes": 13202,
+      "sha256": "cdaa0c34f59550d9ef0a9892fc1c85fc3c61c39c97b9a713fc70c8a64015f36b"
+    },
+    {
+      "path": "02_原型设计/原型设计说明书.md",
+      "size_bytes": 3673,
+      "sha256": "320f0221a6d65f649f8a446b63b83de64c03cf86748a1c11cad2e028e7365146"
+    },
+    {
+      "path": "02_原型设计/原型源文件/favicon.ico",
+      "size_bytes": 17735,
+      "sha256": "8f845dd80104aed5ee11f1afe872ae84054da54c602d26905786d98cfec6729a"
+    },
+    {
+      "path": "02_原型设计/原型源文件/Signal Studio交互原型_基线归档.html",
+      "size_bytes": 391687,
+      "sha256": "1ce30d926f03545c639d11b87b37eb54e99d4359bd9676ecffa8d196119ab3a8"
+    },
+    {
+      "path": "02_原型设计/原型源文件/source-manifest.json",
+      "size_bytes": 3204,
+      "sha256": "832c65856c067282e245ccf0c1d6e22dab41f260e541c55529601d70acbb56cc"
+    },
+    {
+      "path": "02_原型设计/状态与异常场景说明.md",
+      "size_bytes": 2560,
+      "sha256": "fe4970d7dea2eaebac251aa9b903d6e8dfb06fece92ebc290907266f48d8c7df"
+    },
+    {
+      "path": "02_原型设计/page-catalog.json",
+      "size_bytes": 3553,
+      "sha256": "8348d4a64bc196ca691bd3d8cd58bdd0c432410a7ebd3ce682675dd33d54cf58"
+    },
+    {
+      "path": "03_UI规范/时频图色阶规范.md",
+      "size_bytes": 1757,
+      "sha256": "48d5248f95c04a0ad83f6ec5482870c8b1783931d65ceb17eee727d4debdefce"
+    },
+    {
+      "path": "03_UI规范/图表显示规范.md",
+      "size_bytes": 2245,
+      "sha256": "bbdd198a0aa8264625114b0fcae0540d75ea30966106aa8c00d659cceb5874c0"
+    },
+    {
+      "path": "03_UI规范/asset-manifest.json",
+      "size_bytes": 1373,
+      "sha256": "888688bbc2cb4ca03b00deb9167a0c19898c6dabb85441f152f41688b2e1dddc"
+    },
+    {
+      "path": "03_UI规范/Images/SignalStudio_LogoConcept_AI.png",
+      "size_bytes": 940161,
+      "sha256": "490d8d0fc60c1f2024aaba09d7730c2c02e791052917d3241ee4ee6a0254ff1f"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_AppIcon_128.png",
+      "size_bytes": 1028,
+      "sha256": "a6282588acd8662e859070bad4bafbff96b3bcd2f1903084d366059af5d2986e"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_AppIcon_16.png",
+      "size_bytes": 192,
+      "sha256": "68f586325c197c1d7c100664fbfa47922eeb238a6987459c03d284ee731772ec"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_AppIcon_24.png",
+      "size_bytes": 248,
+      "sha256": "49f1cbf610fe8dd0c108588fa7067bac318812b911c1bd1372477a4de417340d"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_AppIcon_256.png",
+      "size_bytes": 2065,
+      "sha256": "8f5d27e87dfd5e901153861dd501c495cd00e55556e2e6e40dfb3dba816ee226"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_AppIcon_32.png",
+      "size_bytes": 308,
+      "sha256": "f6b4094012849d18f47c0ad598c88a5c970fee347bcd0f8ff0dad891ed03d2c8"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_AppIcon_48.png",
+      "size_bytes": 447,
+      "sha256": "04818f349aee4242e12731c68cdc17db5dc5e6eb88fe3989103472f6962837d3"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_AppIcon_512.png",
+      "size_bytes": 4625,
+      "sha256": "77ae77117f7200113d7341ad8d454ee632aab579087f5d86eb81b2d1c106ba96"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_AppIcon_64.png",
+      "size_bytes": 547,
+      "sha256": "7ef0bcef7621da82f6fcb8c3ce142a4eaa7c4ae2aefdfc666d4eace4a1d173dc"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_AppIcon.ico",
+      "size_bytes": 17735,
+      "sha256": "8f845dd80104aed5ee11f1afe872ae84054da54c602d26905786d98cfec6729a"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_AppIcon.svg",
+      "size_bytes": 1374,
+      "sha256": "82ef3ab6fdd665fdf7b9d9e4e786d73fa76e506a2dcec07917208ce793341c07"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_Logo_Dark.svg",
+      "size_bytes": 1373,
+      "sha256": "94080ce039bb1f8767ca382ff9c324b4bb0389d24b2e9d3f1396c10412b56fd6"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_Logo_Horizontal.svg",
+      "size_bytes": 1626,
+      "sha256": "154dec0cc22b27472bc2cac586ea94a171cba907a738c156172161477049f57e"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_Logo_Light.svg",
+      "size_bytes": 1373,
+      "sha256": "7a426ab940f6a487ca72579771427f720ec4f2d7b155407d9042b5fb092609ce"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_Logo_Monochrome.svg",
+      "size_bytes": 1319,
+      "sha256": "f4ce0cb33f63a06bc79cdd10f2fa07574497ad9c5e7cfd709233af61a9f019dd"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_Logo_Primary.svg",
+      "size_bytes": 1319,
+      "sha256": "4064e42e698f6af937f2a99f0c21c885e5d1c48af3402e6b085396e59279d336"
+    },
+    {
+      "path": "03_UI规范/Logo/SignalStudio_Mark.svg",
+      "size_bytes": 1319,
+      "sha256": "4064e42e698f6af937f2a99f0c21c885e5d1c48af3402e6b085396e59279d336"
+    },
+    {
+      "path": "03_UI规范/SVG图标/ss-gpu.svg",
+      "size_bytes": 552,
+      "sha256": "a5186d17af9bc83c4aa41b4ec6ecd55cc09d711384bed6f84be7919e7c818c99"
+    },
+    {
+      "path": "03_UI规范/SVG图标/ss-import.svg",
+      "size_bytes": 476,
+      "sha256": "c63a0216d958e53b28748873ea6ccedd779acce037237ba3f4f6f57adcc798e6"
+    },
+    {
+      "path": "03_UI规范/SVG图标/ss-model.svg",
+      "size_bytes": 545,
+      "sha256": "1a4b1d5c258544c8111cd9aedff658dd00119ecd40be543c9291ccb0812a3771"
+    },
+    {
+      "path": "03_UI规范/SVG图标/ss-result.svg",
+      "size_bytes": 466,
+      "sha256": "74b760fe9f99f8e1766aa39ad44e6df58891c969af7976fb1426170468160c9a"
+    },
+    {
+      "path": "03_UI规范/SVG图标/ss-select.svg",
+      "size_bytes": 475,
+      "sha256": "7f91ce4963243f32542d5a514d56f5be45de0b0864395819518480d955b23b13"
+    },
+    {
+      "path": "03_UI规范/SVG图标/ss-settings.svg",
+      "size_bytes": 540,
+      "sha256": "78744fef05602f96bdd85650d25275de9bac0b5dab8570254d5536fac0a86efa"
+    },
+    {
+      "path": "03_UI规范/SVG图标/ss-spectrum.svg",
+      "size_bytes": 487,
+      "sha256": "c2aef74f4545dca70977d75b61e218e8a3e715d323f6ae559d2326de3ec8f61f"
+    },
+    {
+      "path": "03_UI规范/SVG图标/ss-task.svg",
+      "size_bytes": 490,
+      "sha256": "8502d4e1a0d3e2f3df102742628abc9a4ca3bfd965f0c0cf77cc5678e8a4eb64"
+    },
+    {
+      "path": "03_UI规范/SVG图标/ss-warning.svg",
+      "size_bytes": 467,
+      "sha256": "4655bfd31579ef9f71b5a1a9d4761ddbcf46f615fc46a27f12bec14eea7a1ceb"
+    },
+    {
+      "path": "03_UI规范/SVG图标/ss-waterfall.svg",
+      "size_bytes": 464,
+      "sha256": "8e0cebdc6aa1edb91d4b499f88fb756d98fa3dda52a1fd99cb74c6ac6bf097ed"
+    },
+    {
+      "path": "03_UI规范/SVG图标/ss-waveform.svg",
+      "size_bytes": 452,
+      "sha256": "4446612e1663cb099bfbd099f8338a83c9cc6065f2939234c5d7f3e00fc9c8f6"
+    },
+    {
+      "path": "03_UI规范/SVG图标/ss-zoom.svg",
+      "size_bytes": 476,
+      "sha256": "06e77483c9fb9618d7d892cfc9350d57cec15d6eb6c29e7676d19775b894ae44"
+    },
+    {
+      "path": "03_UI规范/UI视觉规范.md",
+      "size_bytes": 2369,
+      "sha256": "f5032d94f5d9d5b88cd8ffc1a8e7b82770e5cf01da60e5aae5d97a1ee3fb090e"
+    },
+    {
+      "path": "04_技术设计/大文件与缓存设计.md",
+      "size_bytes": 2273,
+      "sha256": "b568feaab33cacbccae16f3b3ce366abe4a92926d7acecad8314df854817150d"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-001_采用 Monorepo 与统一 CMake 超级构建.md",
+      "size_bytes": 1981,
+      "sha256": "9754659fd2ba8b306a00bae2b7ccf23ddbbdf1ead4df948270ceee8693734a1c"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-002_公共库采用混合链接与隐藏实现.md",
+      "size_bytes": 1979,
+      "sha256": "9f0bfc0c05cef26a16c8735189aebb970274d3c644d11e32bbe9df3a1b9c63af"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-003_Qt 6 仅进入 Workbench 与 Visualization 私有实现.md",
+      "size_bytes": 1966,
+      "sha256": "488dd000cdffd37ce5fa2381eb9f703d8c6bef73d0c220e102b7193540f7908f"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-004_不可变数据版本与来源链.md",
+      "size_bytes": 1946,
+      "sha256": "1071f4069628c573e421dd806c0f692c798b795140c9b8ae66b909eb71f62067"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-005_vcpkg manifest 与固定 baseline.md",
+      "size_bytes": 1932,
+      "sha256": "9d7aaeafe0f1155bbd4b4d217af40d6a867cc4c0a7abad1d5af6edffe749650a"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-006_FFT 与矩阵后端适配.md",
+      "size_bytes": 1926,
+      "sha256": "bcd4f2db1550942e0df26a0fec04e65d251f3c1939e505cc06e0317f4ba8f476"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-007_统一任务运行时.md",
+      "size_bytes": 1909,
+      "sha256": "f4db896a3c8cf39978a18e2dfb02d949545020f88c14916fb16a858944042064"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-008_大文件分块与多分辨率瓦片.md",
+      "size_bytes": 1914,
+      "sha256": "0ebe5f7ef8f6d2eb3e0def561e87a93a9c668cc1b41a1bbcbfb39bccb7efc3ad"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-009_计算后端自动选择与显式降级.md",
+      "size_bytes": 1919,
+      "sha256": "5a13d9513953bd94e22eeb23aa128a5210ba74766e0d5434c6bcad1cf78c8b64"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-010_插件版本化 C ABI 与隔离.md",
+      "size_bytes": 1917,
+      "sha256": "e3319165fc89fd81200360fc8d41bbde4e11d55620808bf20c5c99e3ee5fb605"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-011_ONNX Runtime 为默认推理后端.md",
+      "size_bytes": 1918,
+      "sha256": "34f1a72d3bce43338a52726ddd1354cc46d252fefef81802f02b2f59bfa15f2e"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-012_数据集清单与可插拔分片格式.md",
+      "size_bytes": 1942,
+      "sha256": "ce8b93f822bf77381893fcc2884800b5d7daca6cc3b0e6207411c7dc327972fa"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-013_基础能力库拆分策略.md",
+      "size_bytes": 1908,
+      "sha256": "addf5bff38e22ce35e77ef7e4b383d26174e132fcdf2494d506547725e659b39"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-014_多应用工作台复用策略.md",
+      "size_bytes": 1935,
+      "sha256": "e81c59848c904fb4b2771fb5e4abe009c50a3ff0587c19a156100afb6350ce0d"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-015_公共数据契约与版本兼容.md",
+      "size_bytes": 1919,
+      "sha256": "2a1cf9177d715fd75b9bf9441c163afbcd62ccfc8de7f269f506cb9eb25a537c"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-016_公共可视化组件复用策略.md",
+      "size_bytes": 1928,
+      "sha256": "196f649736ea3db9c9ef82aff5113798658c9de14555f7a0bd2ee807f07881ea"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-017_任务运行时跨工具复用.md",
+      "size_bytes": 1910,
+      "sha256": "8778fba12835403509e6d333e7e26245a5614bc51a232e9852243e9ba8b34c73"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-018_模型与数据集能力边界.md",
+      "size_bytes": 1951,
+      "sha256": "00c1e3a146eadf94a4354ef2eab8eda78399fea9df398e2cd7d5a7dfc3c618b1"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-019_单仓库与多仓库策略.md",
+      "size_bytes": 1912,
+      "sha256": "45a20ddabb23043a875d4d76b149868cc2146a0b39dc3a794730e93ca4ad7d48"
+    },
+    {
+      "path": "04_技术设计/架构决策记录/ADR-020_SDK 二进制兼容与发布策略.md",
+      "size_bytes": 1938,
+      "sha256": "5cd570606c0bd218551e41ec53652c112fe37d65d9af613d02a28fc442f919b7"
+    },
+    {
+      "path": "04_技术设计/模块详细设计说明书.md",
+      "size_bytes": 9844,
+      "sha256": "a844c40bb3a024f0e35d561e4de5ff2956e53fb96bc3396dad76291afb4d8fbe"
+    },
+    {
+      "path": "04_技术设计/软件总体架构设计说明书.md",
+      "size_bytes": 3932,
+      "sha256": "b30c7f73bc5bcc4624180337eb0ea9560604035d185f687badef85e8ceb35f41"
+    },
+    {
+      "path": "04_技术设计/线程与任务调度设计.md",
+      "size_bytes": 2575,
+      "sha256": "ed892c7b22b93c584db90928dc3c5bfd2c2ce2821a8484500f385f354b511c0c"
+    },
+    {
+      "path": "04_技术设计/architecture.json",
+      "size_bytes": 2540,
+      "sha256": "7eb21f52ae9dd4c111d34f074b5d3976be22069ce88a8d16fe82fef3bb29b389"
+    },
+    {
+      "path": "04_技术设计/GPU加速设计.md",
+      "size_bytes": 2119,
+      "sha256": "645014e30ddb397f876c80d455b2e9d57e4452855ca3774a60ab091b85514127"
+    },
+    {
+      "path": "04_技术设计/library-catalog.json",
+      "size_bytes": 17193,
+      "sha256": "08129d4d1005270127ca17a83c874bf66d299ee25cf111b2975751c36ad1d48f"
+    },
+    {
+      "path": "05_接口与数据/错误码说明.md",
+      "size_bytes": 7015,
+      "sha256": "06c8d8e439f71ffaf0924d09cd0b69a9720b136d361b2813cdf336665ff8353c"
+    },
+    {
+      "path": "05_接口与数据/工程文件格式说明.md",
+      "size_bytes": 2171,
+      "sha256": "a50f4f896671c4dd232019be333db1913f970f06caa673db6a0623962b24ff6e"
+    },
+    {
+      "path": "05_接口与数据/算法插件接口说明.md",
+      "size_bytes": 2363,
+      "sha256": "eb53803459a7eb4f274f491efe427daabd57d57bbb74e0753c113da29e8442c0"
+    },
+    {
+      "path": "05_接口与数据/api-catalog.json",
+      "size_bytes": 11360,
+      "sha256": "87ef551c2108fc97f4babca137ec06e23beb162a6179ab453a0f1d841d4562fc"
+    },
+    {
+      "path": "05_接口与数据/C++接口说明.md",
+      "size_bytes": 8075,
+      "sha256": "f5d4558916c71578f5f62e5877a4be40b169ecaf9bc45de38af19016c9f58d2b"
+    },
+    {
+      "path": "05_接口与数据/Python接口说明.md",
+      "size_bytes": 2285,
+      "sha256": "5ae15d2e60525297ed7254f774d8061b5d764d3a985b78a77d0a2b25c2a0f175"
+    },
+    {
+      "path": "05_接口与数据/RAW-IQ数据格式说明.md",
+      "size_bytes": 2446,
+      "sha256": "34f2c2550421fe7637fc451bd8f987d60ecb0c512f5da64c764df9bf74d6ba37"
+    },
+    {
+      "path": "05_接口与数据/schemas/signal-plugin-manifest-1.0.schema.json",
+      "size_bytes": 790,
+      "sha256": "3050b5180db5c0d713784cb4f2c6badd759d8bdaa3921618d8c759a53c9f4648"
+    },
+    {
+      "path": "05_接口与数据/schemas/signal-workspace-1.0.schema.json",
+      "size_bytes": 692,
+      "sha256": "d4593a3ea83babc0e54353895ddbec98930d3dfdd8f3abd069b980c5feef2757"
+    },
+    {
+      "path": "06_测试与验收/测试计划.md",
+      "size_bytes": 2456,
+      "sha256": "1cb99ccc196b575cf12d9ad596eae30ca11196cba4bfbe239a98f625d4e998dc"
+    },
+    {
+      "path": "06_测试与验收/测试数据/generate_test_data.py",
+      "size_bytes": 2588,
+      "sha256": "aba89770ca8aefe6b7aab51dc60033d779e441038a32f1c77d2d772625fb1566"
+    },
+    {
+      "path": "06_测试与验收/测试数据/generated/D0_complex_sc16.bin",
+      "size_bytes": 800000,
+      "sha256": "f9fbc48ae1b2fc0404df3978c44f4e6674d9aafcfb116ddf52c29da4c05a20bc"
+    },
+    {
+      "path": "06_测试与验收/测试数据/generated/D0_corrupt_tail.sc16",
+      "size_bytes": 4097,
+      "sha256": "5bf06ac4e013f18d587b655bb7c0379bb05c32a061d7d9e08f64e69f16ff9eca"
+    },
+    {
+      "path": "06_测试与验收/测试数据/generated/D0_real_f32_10k.bin",
+      "size_bytes": 40000,
+      "sha256": "1c82d71a29c9d7f8b4597147b9e65255a7e9c23fa6ae0293ea2a45bca7d00c13"
+    },
+    {
+      "path": "06_测试与验收/测试数据/generated/manifest.json",
+      "size_bytes": 965,
+      "sha256": "8e52d537ea34a8fce4f372b7c6362a9c979866591bed4e8ec528ccdefea2f6af"
+    },
+    {
+      "path": "06_测试与验收/测试数据/LICENSE.txt",
+      "size_bytes": 132,
+      "sha256": "200e686a3f291a421d4d610d5b8a1677cb17f742d6400e7a4c88e3e94fc58b00"
+    },
+    {
+      "path": "06_测试与验收/功能测试用例.xlsx",
+      "size_bytes": 50353,
+      "sha256": "20dd95c54dca9b4febad2522ea08e732a06d1a7cdb8a0202547b990235b1ec2c"
+    },
+    {
+      "path": "06_测试与验收/算法正确性验证方案.md",
+      "size_bytes": 2043,
+      "sha256": "17e8f8234ece8298caf6f618692a46f7f31f634aa3f8bed1617e0ab5904188e5"
+    },
+    {
+      "path": "06_测试与验收/性能测试方案.md",
+      "size_bytes": 2376,
+      "sha256": "78b46705979c9b70e790b0b81f394ae404f4ef242de1baa923d868fe8b4a840b"
+    },
+    {
+      "path": "06_测试与验收/验收标准.md",
+      "size_bytes": 2247,
+      "sha256": "5a593d1a5128939b8595855b0d1a9c576124a42191d3f4de19ae7ce4c1033c3d"
+    },
+    {
+      "path": "06_测试与验收/test-catalog.json",
+      "size_bytes": 139263,
+      "sha256": "c5548dc78f9e128118b106b9af0673df1d0b30a7ba644d91f1dbd1b0f3a87679"
+    },
+    {
+      "path": "07_项目计划/版本发布计划.md",
+      "size_bytes": 1967,
+      "sha256": "96f98cdcf0e03b9309ac7a64effe4d18d355a4aa6ff16cf65cd9f12e64ac2c46"
+    },
+    {
+      "path": "07_项目计划/风险清单.xlsx",
+      "size_bytes": 13332,
+      "sha256": "b9cf86d5d57c4f14cd974954ec3f690d886e456c65d4974553eff2d2aec9f12e"
+    },
+    {
+      "path": "07_项目计划/工作分解结构WBS.xlsx",
+      "size_bytes": 17616,
+      "sha256": "f17e350f76d02ac055e85fed6be80e94716ce98f92614272a93b42ec735cfec9"
+    },
+    {
+      "path": "07_项目计划/开发里程碑.md",
+      "size_bytes": 2329,
+      "sha256": "eb4d0e0e43c0bb9d3c6c66e9d8a47a3f46f5a42469fe6244efa1e5daedf947c2"
+    },
+    {
+      "path": "08_参考资料/第三方库清单.md",
+      "size_bytes": 5132,
+      "sha256": "f81d3a668dc51ea1f7e39a9ab1cbee49dd678e636bc8144781cff94227e61aa1"
+    },
+    {
+      "path": "08_参考资料/竞品参考/竞品能力对照.md",
+      "size_bytes": 2126,
+      "sha256": "3212f2e5a8e584341598e0e297ec2811ef7f2c94a1af1c3fe54a33ee465d6ea8"
+    },
+    {
+      "path": "08_参考资料/依赖锁定/dependency-lock.json",
+      "size_bytes": 9422,
+      "sha256": "b6887b6588fb4ed2c35bed10ad91b7c8beea3d35cece60f96184c4ba7a1e0da2"
+    },
+    {
+      "path": "08_参考资料/依赖锁定/vcpkg-baseline.sha256",
+      "size_bytes": 81,
+      "sha256": "6a7253aacad182aa9593bcc915ce7be2e9ed40a93df7ec78cc6e7deebfb9759e"
+    },
+    {
+      "path": "08_参考资料/依赖锁定/vcpkg.json",
+      "size_bytes": 705,
+      "sha256": "50919dc7c5fcea414ad7ec77774606746ddedef25013044b04b06d1f13d34847"
+    },
+    {
+      "path": "执行报告.md",
+      "size_bytes": 4457,
+      "sha256": "41dff609b0acdd49f52844a6a708b5593a1ec1e66ed1827920f8e944b5c689b3"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "size_bytes": 1466,
+      "sha256": "ea2b24bb53ce739eef5eae08bad5890b95bebfc1afdf951083e87b34fef76b7b"
+    },
+    {
+      "path": "document-index.json",
+      "size_bytes": 29291,
+      "sha256": "2a081bdbad98e1dda83b8c86e150d1b6e13789691a4a6405edcba3f5c4ede8a5"
+    },
+    {
+      "path": "README.md",
+      "size_bytes": 2381,
+      "sha256": "f6a485b30103b7e3a17c164b4480d6a76644ecca3478c1013ef6d0e6aaea9710"
+    },
+    {
+      "path": "scripts/fetch_dependencies.ps1",
+      "size_bytes": 618,
+      "sha256": "a7c6e43499c9dab3b1a65894aa24358aab31dd8e959d46b7ce7415ec2915ca3d"
+    },
+    {
+      "path": "scripts/fetch_external_dependencies.ps1",
+      "size_bytes": 697,
+      "sha256": "c998ea31e5cc6b80857f5dfaed50ead9aea99071316bd79236b63aa45f54fd65"
+    },
+    {
+      "path": "scripts/generate_delivery.py",
+      "size_bytes": 126513,
+      "sha256": "1455519d83e3ec7c0c3684530aed1ba5b4f3c8c22eddadc2b42cfc53e341a776"
+    },
+    {
+      "path": "scripts/recalculate_excel.ps1",
+      "size_bytes": 800,
+      "sha256": "af24511d4da0518c885efe360e5b9a4ac64d2daca05d87872f446874010f1fe9"
+    },
+    {
+      "path": "scripts/validate_delivery.py",
+      "size_bytes": 26515,
+      "sha256": "48ded9c124f480d173151f313e274f2c8096b17642e4b2a5aac864c1bedc5e3b"
+    },
+    {
+      "path": "validation-report.md",
+      "size_bytes": 4420,
+      "sha256": "68fbcea56c4428bbced1fd0eaf39e9170329427dcdfafc67b97685f8e847bac9"
+    },
+    {
+      "path": "validation-results.json",
+      "size_bytes": 5746,
+      "sha256": "9b2d756c4d9570aa360eaddea59efa8e9401c5f6fc8ee276b247599ed93428b9"
+    }
+  ]
+}

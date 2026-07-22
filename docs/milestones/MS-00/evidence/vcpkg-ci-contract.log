@@ -1,0 +1,25 @@
+Immutable BL1.0 fetch script:
+  commit = 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1
+  URL = https://github.com/microsoft/vcpkg/archive/82b6bc886d7b0f8342e34babc2e0b8943f79b0e1.tar.gz
+  declared SHA-256 = 550800632708a561c82412ee69e227c261d0ac8bc381eee09d123014528ae97a
+
+Live streamed artifact facts:
+  tar.gz bytes = 5332790
+  tar.gz SHA-256 = 550800632708a561c82412ee69e227c261d0ac8bc381eee09d123014528ae97a
+  zip bytes = 11349427
+  zip SHA-256 = 6e63222e536d62a0f26fc6070bce694a3d9e0d42dc0a43d07802500992f08b
+  GitHub API resolved SHA = 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1
+  archive root = vcpkg-82b6bc886d7b0f8342e34babc2e0b8943f79b0e1/
+
+Local validators:
+  Python dependency lock = pass; 14 tuples, 8 tool states, 2 artifacts
+  PowerShell dependency lock = pass; schema signal-studio.dependency-lock/1.2
+  approved fetch-script URL/hash/filename parsing = pass
+  GitHub Actions YAML parsing = pass
+  headless Windows MSVC initialization before configure = pass
+  Qt Windows MSVC initialization before configure = pass
+  Qt 6.10.3 architecture contract win64_msvc2022_64 = pass
+  Qt compatibility contract = minimum/CI 6.10.3; local 6.11.1; immutable BL1.0 qtbase 6.11.1#1 and qttools 6.11.1
+  Qt official Updates.xml availability evidence = pass
+  local dynamic MSVC discovery and initialized-environment reuse = pass
+  remote run 29918020386 headless = pass; Qt old static assertion = fail; corrected rerun pending

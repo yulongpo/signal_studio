@@ -1,0 +1,34 @@
+{
+  "schema": "signal.testdata/1.0",
+  "license": "CC0-1.0",
+  "profile": "smoke",
+  "files": [
+    {
+      "path": "D0_real_f32_10k.bin",
+      "bytes": 40000,
+      "sha256": "1c82d71a29c9d7f8b4597147b9e65255a7e9c23fa6ae0293ea2a45bca7d00c13",
+      "signalKind": "real",
+      "sampleRateHz": 100000,
+      "expectedToneHz": 12500,
+      "dtype": "float32"
+    },
+    {
+      "path": "D0_complex_sc16.bin",
+      "bytes": 800000,
+      "sha256": "f9fbc48ae1b2fc0404df3978c44f4e6674d9aafcfb116ddf52c29da4c05a20bc",
+      "signalKind": "complex",
+      "sampleRateHz": 1000000,
+      "expectedToneHz": 125000,
+      "dtype": "int16"
+    },
+    {
+      "path": "D0_corrupt_tail.sc16",
+      "bytes": 4097,
+      "sha256": "5bf06ac4e013f18d587b655bb7c0379bb05c32a061d7d9e08f64e69f16ff9eca",
+      "signalKind": "complex",
+      "sampleRateHz": 1000000,
+      "expectedToneHz": 125000,
+      "dtype": "int16-corrupt-tail"
+    }
+  ]
+}

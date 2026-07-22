@@ -1,0 +1,57 @@
+MS-00 Qt minimum-version correction pre-amend audit
+Date: 2026-07-22
+
+Scope:
+  No MS-01+ source or document was added.
+  Immutable docs/baseline diff = empty.
+  External test-data manifest diff = empty.
+  Branch = codex/full-signal-studio-development
+  Commit action = amend existing MS-00 commit; no push.
+
+Fresh validation:
+  same-process Debug fresh configure + clean build + CTest = 41/41 in 19.79 sec
+  same-process Release fresh configure + clean build + CTest = 41/41 in 17.42 sec
+  Debug elapsed = 33.684 sec
+  Release elapsed = 26.395 sec
+  PATH after both configurations = 52 entries, 52 unique, length 3139
+  no-Qt nested build/install/eight-module consumer = pass in both configurations
+  local UI and headless generated-user-preset configure = pass
+  generated build/ removed after evidence capture = pass
+
+Dependency and CI contracts:
+  Python dependency validator = 14 exact immutable BL1.0 tuples pass
+  PowerShell dependency validator = schema 1.2 and installed-instance hashes pass
+  BL1.0 fetch-script tar.gz URL/hash/filename = exact match
+  live tar.gz = 5332790 bytes; SHA-256 550800632708a561c82412ee69e227c261d0ac8bc381eee09d123014528ae97a
+  live zip comparison = 11349427 bytes; SHA-256 6e63222e536d62a0f26fc6070bce694a3d9e0d42dc0a43d07802500992f08b
+  GitHub Actions immutable-action/MSVC/UTF-8/Qt 6.10.3 ABI and availability contract = pass
+  CMake/package/local-discovery/Visualization/Workbench Qt minimum 6.10.3 contract = pass
+  Qt 6.11 minimum reintroduction scan = pass
+  local dynamic MSVC discovery, initialized reuse, and x64 import = pass
+  remote run 29918020386 headless = pass; Qt old static assertion = fail; corrected rerun pending
+
+Generated preset and cleanup:
+  previous build/, install/test temporaries, and Python caches removed
+  CMakeUserPresets remains ignored
+  one full environment base; alias environment duplication absent
+  repeated pwsh and powershell.exe generation = byte-identical
+  CMakeUserPresets = 8774 bytes
+  SHA-256 = 10d719d379073c79b1a96098d9268ffa3deef40ba22e49a8d2e42d35c3c17d0b
+  PATH/CMAKE_PREFIX_PATH/INCLUDE/LIB/LIBPATH duplicates = none
+  temporary preset replacement files = none
+
+Manifest/boundary validation:
+  136 immutable baseline files = byte/SHA-256 pass
+  4 external supplied files = byte/SHA-256 pass
+  4 deterministic minimal files = pass
+  15 public headers = hygiene pass
+  5 committed preset/VS Code files = host-path scan pass
+  touched non-baseline Markdown prose = Chinese
+
+Git audit before staging:
+  git diff --check = pass
+  stale project lock schema 1.1/source ZIP claims = none
+  git diff --cached --check after final staging = pass
+  staged baseline paths = none
+  commit subject remains = chore(ms-00): establish verified Signal Studio development baseline
+  independent specification re-review and remote CI remain pending

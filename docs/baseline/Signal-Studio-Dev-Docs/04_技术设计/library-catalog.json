@@ -1,0 +1,406 @@
+{
+  "schema": "signal.libraries/1.0",
+  "generated": "2026-07-22",
+  "capabilities": [
+    {
+      "id": "LIB-CORE-001",
+      "library": "SignalCore",
+      "capability": "Result与错误",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部应用、Headless CLI"
+    },
+    {
+      "id": "LIB-CORE-002",
+      "library": "SignalCore",
+      "capability": "单位与版本",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部应用、Headless CLI"
+    },
+    {
+      "id": "LIB-CORE-003",
+      "library": "SignalCore",
+      "capability": "日志与配置",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部应用、Headless CLI"
+    },
+    {
+      "id": "LIB-CORE-004",
+      "library": "SignalCore",
+      "capability": "路径与校验",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部应用、Headless CLI"
+    },
+    {
+      "id": "LIB-CORE-005",
+      "library": "SignalCore",
+      "capability": "序列化与能力探测",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部应用、Headless CLI"
+    },
+    {
+      "id": "LIB-DATA-001",
+      "library": "SignalData",
+      "capability": "信号容器",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Dataset Builder、Dataset Manager、Model Trainer、Inference Studio"
+    },
+    {
+      "id": "LIB-DATA-002",
+      "library": "SignalData",
+      "capability": "描述符与范围",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Dataset Builder、Dataset Manager、Model Trainer、Inference Studio"
+    },
+    {
+      "id": "LIB-DATA-003",
+      "library": "SignalData",
+      "capability": "零拷贝切片",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Dataset Builder、Dataset Manager、Model Trainer、Inference Studio"
+    },
+    {
+      "id": "LIB-DATA-004",
+      "library": "SignalData",
+      "capability": "内存映射",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Dataset Builder、Dataset Manager、Model Trainer、Inference Studio"
+    },
+    {
+      "id": "LIB-DATA-005",
+      "library": "SignalData",
+      "capability": "格式适配与校验",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Dataset Builder、Dataset Manager、Model Trainer、Inference Studio"
+    },
+    {
+      "id": "LIB-DSP-001",
+      "library": "SignalDSP",
+      "capability": "FFT/PSD/STFT",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Dataset Builder、Model Trainer、Inference Studio"
+    },
+    {
+      "id": "LIB-DSP-002",
+      "library": "SignalDSP",
+      "capability": "滤波",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Dataset Builder、Model Trainer、Inference Studio"
+    },
+    {
+      "id": "LIB-DSP-003",
+      "library": "SignalDSP",
+      "capability": "重采样",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Dataset Builder、Model Trainer、Inference Studio"
+    },
+    {
+      "id": "LIB-DSP-004",
+      "library": "SignalDSP",
+      "capability": "频移与包络",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Dataset Builder、Model Trainer、Inference Studio"
+    },
+    {
+      "id": "LIB-DSP-005",
+      "library": "SignalDSP",
+      "capability": "统计与同步",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Dataset Builder、Model Trainer、Inference Studio"
+    },
+    {
+      "id": "LIB-CMP-001",
+      "library": "SignalCompute",
+      "capability": "设备探测",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部计算型应用"
+    },
+    {
+      "id": "LIB-CMP-002",
+      "library": "SignalCompute",
+      "capability": "后端选择",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部计算型应用"
+    },
+    {
+      "id": "LIB-CMP-003",
+      "library": "SignalCompute",
+      "capability": "计划缓存",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部计算型应用"
+    },
+    {
+      "id": "LIB-CMP-004",
+      "library": "SignalCompute",
+      "capability": "内存池",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部计算型应用"
+    },
+    {
+      "id": "LIB-CMP-005",
+      "library": "SignalCompute",
+      "capability": "一致性与降级",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部计算型应用"
+    },
+    {
+      "id": "LIB-TASK-001",
+      "library": "SignalTaskRuntime",
+      "capability": "队列与优先级",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部应用、自动化测试运行器"
+    },
+    {
+      "id": "LIB-TASK-002",
+      "library": "SignalTaskRuntime",
+      "capability": "DAG依赖",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部应用、自动化测试运行器"
+    },
+    {
+      "id": "LIB-TASK-003",
+      "library": "SignalTaskRuntime",
+      "capability": "暂停恢复取消",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部应用、自动化测试运行器"
+    },
+    {
+      "id": "LIB-TASK-004",
+      "library": "SignalTaskRuntime",
+      "capability": "进度日志指标",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部应用、自动化测试运行器"
+    },
+    {
+      "id": "LIB-TASK-005",
+      "library": "SignalTaskRuntime",
+      "capability": "恢复与历史",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部应用、自动化测试运行器"
+    },
+    {
+      "id": "LIB-VIS-001",
+      "library": "SignalVisualization",
+      "capability": "时域与导航",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Model Evaluator、Inference Studio"
+    },
+    {
+      "id": "LIB-VIS-002",
+      "library": "SignalVisualization",
+      "capability": "频谱与PSD",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Model Evaluator、Inference Studio"
+    },
+    {
+      "id": "LIB-VIS-003",
+      "library": "SignalVisualization",
+      "capability": "瀑布与时频",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Model Evaluator、Inference Studio"
+    },
+    {
+      "id": "LIB-VIS-004",
+      "library": "SignalVisualization",
+      "capability": "星座与眼图",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Model Evaluator、Inference Studio"
+    },
+    {
+      "id": "LIB-VIS-005",
+      "library": "SignalVisualization",
+      "capability": "视口覆盖层导出",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Signal Generator、Model Evaluator、Inference Studio"
+    },
+    {
+      "id": "LIB-WB-001",
+      "library": "SignalWorkbench",
+      "capability": "应用框架",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部桌面工具"
+    },
+    {
+      "id": "LIB-WB-002",
+      "library": "SignalWorkbench",
+      "capability": "Dock与Inspector",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部桌面工具"
+    },
+    {
+      "id": "LIB-WB-003",
+      "library": "SignalWorkbench",
+      "capability": "任务结果中心",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部桌面工具"
+    },
+    {
+      "id": "LIB-WB-004",
+      "library": "SignalWorkbench",
+      "capability": "命令与设置",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部桌面工具"
+    },
+    {
+      "id": "LIB-WB-005",
+      "library": "SignalWorkbench",
+      "capability": "诊断主题DPI",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部桌面工具"
+    },
+    {
+      "id": "LIB-PLG-001",
+      "library": "SignalPluginSDK",
+      "capability": "插件元数据",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部宿主、Headless CLI、自动化测试运行器"
+    },
+    {
+      "id": "LIB-PLG-002",
+      "library": "SignalPluginSDK",
+      "capability": "版本化ABI",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部宿主、Headless CLI、自动化测试运行器"
+    },
+    {
+      "id": "LIB-PLG-003",
+      "library": "SignalPluginSDK",
+      "capability": "服务句柄",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部宿主、Headless CLI、自动化测试运行器"
+    },
+    {
+      "id": "LIB-PLG-004",
+      "library": "SignalPluginSDK",
+      "capability": "权限隔离",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部宿主、Headless CLI、自动化测试运行器"
+    },
+    {
+      "id": "LIB-PLG-005",
+      "library": "SignalPluginSDK",
+      "capability": "模板与契约测试",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "全部宿主、Headless CLI、自动化测试运行器"
+    },
+    {
+      "id": "LIB-MODEL-001",
+      "library": "SignalModelRuntime",
+      "capability": "模型注册",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Model Trainer、Model Evaluator、Inference Studio"
+    },
+    {
+      "id": "LIB-MODEL-002",
+      "library": "SignalModelRuntime",
+      "capability": "前后处理",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Model Trainer、Model Evaluator、Inference Studio"
+    },
+    {
+      "id": "LIB-MODEL-003",
+      "library": "SignalModelRuntime",
+      "capability": "推理会话",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Model Trainer、Model Evaluator、Inference Studio"
+    },
+    {
+      "id": "LIB-MODEL-004",
+      "library": "SignalModelRuntime",
+      "capability": "设备与批处理",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Model Trainer、Model Evaluator、Inference Studio"
+    },
+    {
+      "id": "LIB-MODEL-005",
+      "library": "SignalModelRuntime",
+      "capability": "结果与性能",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Signal Studio、Model Trainer、Model Evaluator、Inference Studio"
+    },
+    {
+      "id": "LIB-DSET-001",
+      "library": "SignalDataset",
+      "capability": "清单索引",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Dataset Builder、Dataset Manager、Model Trainer、Model Evaluator"
+    },
+    {
+      "id": "LIB-DSET-002",
+      "library": "SignalDataset",
+      "capability": "标签元数据",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Dataset Builder、Dataset Manager、Model Trainer、Model Evaluator"
+    },
+    {
+      "id": "LIB-DSET-003",
+      "library": "SignalDataset",
+      "capability": "分片版本",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Dataset Builder、Dataset Manager、Model Trainer、Model Evaluator"
+    },
+    {
+      "id": "LIB-DSET-004",
+      "library": "SignalDataset",
+      "capability": "划分统计查询",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Dataset Builder、Dataset Manager、Model Trainer、Model Evaluator"
+    },
+    {
+      "id": "LIB-DSET-005",
+      "library": "SignalDataset",
+      "capability": "格式适配缓存",
+      "test_boundary": "模块内单元测试 + 公共契约测试 + 至少一个适配器集成测试",
+      "release": "signal-platform 1.x",
+      "targets": "Dataset Builder、Dataset Manager、Model Trainer、Model Evaluator"
+    }
+  ]
+}

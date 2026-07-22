@@ -1,0 +1,79 @@
+{
+  "schema": "signal.prototype-evidence/1.0",
+  "copied": "2026-07-22",
+  "files": [
+    {
+      "path": "02_原型设计/原型源文件/Signal Studio交互原型_基线归档.html",
+      "bytes": 391687,
+      "sha256": "1ce30d926f03545c639d11b87b37eb54e99d4359bd9676ecffa8d196119ab3a8",
+      "source": "references（只读复制）"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A01_P01_项目首页.png",
+      "bytes": 110314,
+      "sha256": "bccff80467b396f40606adeb8f9badb8e30377229a591753b3eea42e6cd2efed",
+      "source": "references（只读复制）"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A02_P02_宽带浏览.png",
+      "bytes": 190736,
+      "sha256": "9bc6bea5b5ed451d28c078344b41794c71ad6ad8eeebd1229fb1571226594361",
+      "source": "references（只读复制）"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A03_W01_导入向导.png",
+      "bytes": 122811,
+      "sha256": "6d309d7562a407c0f0fad5ea9f5299578db4f5f3f7143964e116616c81947bbf",
+      "source": "references（只读复制）"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A04_加载进度_暂停取消.png",
+      "bytes": 113234,
+      "sha256": "284b8e9bcb5aecce06452c60285b07fca13678ed75e16e6364ea4ad5b8a5e0d7",
+      "source": "references（只读复制）"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A05_P02_取消后只读前缀.png",
+      "bytes": 196950,
+      "sha256": "342fde27915f836d6fd05e74078b12d4b9c2d0bae65e0f49dac20191f38c94b8",
+      "source": "references（只读复制）"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A06_P03_Inspector.png",
+      "bytes": 151938,
+      "sha256": "0a8b25a312fe5d8b88bee4c92182d47856893bc181d879078da451ac21630fb8",
+      "source": "references（只读复制）"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A07_P04_任务中心.png",
+      "bytes": 159145,
+      "sha256": "f8f0bb2fe3ef6bfe3aa4f61b6b829ec9fa739e7b763e3f182ed80f1fd1bc2491",
+      "source": "references（只读复制）"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A08_P05_结果中心.png",
+      "bytes": 134540,
+      "sha256": "6a7ff1b7be29ab7240a134e355cf53ae56191f0ef2fa3f7c17a69f788d921db9",
+      "source": "references（只读复制）"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A09_P06_插件与模型.png",
+      "bytes": 135067,
+      "sha256": "4f5ec93d55adb25ef0fd46e71181f15a2dc2b6b78b1a516f48bd261eb77627eb",
+      "source": "references（只读复制）"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A10_P07_设置与诊断.png",
+      "bytes": 115717,
+      "sha256": "5b7f260169b05848320c6bfc6e20c46170efd8826b2d69b3602e8f92141f3e61",
+      "source": "references（只读复制）"
+    },
+    {
+      "path": "02_原型设计/页面截图/audit/A11_P02_1280x720.png",
+      "bytes": 123376,
+      "sha256": "0f244d7b169b6a6513ca1466636a67d77e38d6aad9763d08343060c4087d51d9",
+      "source": "references（只读复制）"
+    }
+  ],
+  "statement": "文件为只读证据副本；未修改原始材料。"
+}

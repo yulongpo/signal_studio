@@ -1,0 +1,221 @@
+{
+  "schema": "signal.validation/1.0",
+  "generated": "2026-07-22",
+  "checks": [
+    {
+      "category": "文件",
+      "item": "必需交付物",
+      "status": "PASS",
+      "detail": "44/44 存在；缺失=[]"
+    },
+    {
+      "category": "文件",
+      "item": "空目录",
+      "status": "PASS",
+      "detail": "空目录=[]"
+    },
+    {
+      "category": "文件",
+      "item": "Markdown 实质内容",
+      "status": "PASS",
+      "detail": "低于 800 字节=[]"
+    },
+    {
+      "category": "编号",
+      "item": "需求编号唯一",
+      "status": "PASS",
+      "detail": "重复=[]; 总数=198"
+    },
+    {
+      "category": "编号",
+      "item": "API/测试编号唯一",
+      "status": "PASS",
+      "detail": "API重复=[]; 测试重复=[]"
+    },
+    {
+      "category": "追踪",
+      "item": "无悬空引用",
+      "status": "PASS",
+      "detail": "悬空=[]"
+    },
+    {
+      "category": "追踪",
+      "item": "覆盖率",
+      "status": "PASS",
+      "detail": "{\"requirements\": 198, \"p0\": 158, \"p1\": 39, \"page_coverage\": 1.0, \"api_coverage\": 1.0, \"test_coverage\": 1.0, \"library_coverage\": 1.0, \"reuse_coverage\": 1.0, \"p0_p1_test_coverage\": 1.0}"
+    },
+    {
+      "category": "文档",
+      "item": "元数据",
+      "status": "PASS",
+      "detail": "缺失=[]"
+    },
+    {
+      "category": "批准",
+      "item": "全部 Markdown 已批准",
+      "status": "PASS",
+      "detail": "未批准=[]; 总数=57"
+    },
+    {
+      "category": "批准",
+      "item": "全部 Markdown 使用 BL1.0",
+      "status": "PASS",
+      "detail": "错误=[]"
+    },
+    {
+      "category": "写作",
+      "item": "内容类型有效",
+      "status": "PASS",
+      "detail": "异常=[]"
+    },
+    {
+      "category": "写作",
+      "item": "可适用 Writing Guidelines 规则",
+      "status": "PASS",
+      "detail": "异常=[]"
+    },
+    {
+      "category": "文档",
+      "item": "参考/未决/变更尾部",
+      "status": "PASS",
+      "detail": "缺失=[]"
+    },
+    {
+      "category": "链接",
+      "item": "相对链接",
+      "status": "PASS",
+      "detail": "无效=[]"
+    },
+    {
+      "category": "文档",
+      "item": "无绝对路径",
+      "status": "PASS",
+      "detail": "违规=[]"
+    },
+    {
+      "category": "文档",
+      "item": "无占位符",
+      "status": "PASS",
+      "detail": "违规=[]"
+    },
+    {
+      "category": "Mermaid",
+      "item": "结构语法",
+      "status": "PASS",
+      "detail": "异常=[]"
+    },
+    {
+      "category": "架构",
+      "item": "依赖节点完整",
+      "status": "PASS",
+      "detail": "缺失=[]"
+    },
+    {
+      "category": "架构",
+      "item": "无循环依赖",
+      "status": "PASS",
+      "detail": "循环=[]"
+    },
+    {
+      "category": "架构",
+      "item": "公共库无应用品牌",
+      "status": "PASS",
+      "detail": "违规=[]"
+    },
+    {
+      "category": "API",
+      "item": "公共签名无第三方类型",
+      "status": "PASS",
+      "detail": "泄漏=[]"
+    },
+    {
+      "category": "架构",
+      "item": "十模块齐全",
+      "status": "PASS",
+      "detail": "实际=['SignalCompute', 'SignalCore', 'SignalDSP', 'SignalData', 'SignalDataset', 'SignalModelRuntime', 'SignalPluginSDK', 'SignalTaskRuntime', 'SignalVisualization', 'SignalWorkbench']"
+    },
+    {
+      "category": "编号",
+      "item": "ADR-001 至 ADR-020",
+      "status": "PASS",
+      "detail": "实际=['001', '002', '003', '004', '005', '006', '007', '008', '009', '010', '011', '012', '013', '014', '015', '016', '017', '018', '019', '020']"
+    },
+    {
+      "category": "Excel",
+      "item": "可打开/样式/公式/下拉/零错误",
+      "status": "PASS",
+      "detail": "问题=[]"
+    },
+    {
+      "category": "SVG",
+      "item": "可解析/视口/许可证",
+      "status": "PASS",
+      "detail": "问题=[]"
+    },
+    {
+      "category": "PNG",
+      "item": "可打开",
+      "status": "PASS",
+      "detail": "数量=25; 问题=[]"
+    },
+    {
+      "category": "截图",
+      "item": "真实浏览器标准截图",
+      "status": "PASS",
+      "detail": "数量=5; 尺寸=[(1280, 720), (1600, 900)]"
+    },
+    {
+      "category": "HTML",
+      "item": "归档可运行结构",
+      "status": "PASS",
+      "detail": "字节=391687"
+    },
+    {
+      "category": "许可证",
+      "item": "依赖许可证/来源/锁定",
+      "status": "PASS",
+      "detail": "依赖=20; 默认选用=14; 缺项=[]"
+    },
+    {
+      "category": "许可证",
+      "item": "原创资产许可证",
+      "status": "PASS",
+      "detail": "license=LicenseRef-Signal-Studio-Project"
+    },
+    {
+      "category": "测试数据",
+      "item": "生成数据哈希",
+      "status": "PASS",
+      "detail": "文件=3; 问题=[]"
+    },
+    {
+      "category": "原始材料",
+      "item": "只读副本哈希",
+      "status": "PASS",
+      "detail": "副本=12; 变化=[]"
+    },
+    {
+      "category": "文档",
+      "item": "validation-report.md",
+      "status": "PASS",
+      "detail": "报告元数据和尾部结构"
+    },
+    {
+      "category": "文档",
+      "item": "执行报告.md",
+      "status": "PASS",
+      "detail": "报告元数据和尾部结构"
+    }
+  ],
+  "metrics": {
+    "requirements": 198,
+    "p0": 158,
+    "p1": 39,
+    "page_coverage": 1.0,
+    "api_coverage": 1.0,
+    "test_coverage": 1.0,
+    "library_coverage": 1.0,
+    "reuse_coverage": 1.0,
+    "p0_p1_test_coverage": 1.0
+  }
+}

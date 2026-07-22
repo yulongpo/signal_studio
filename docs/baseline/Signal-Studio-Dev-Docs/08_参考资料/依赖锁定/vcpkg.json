@@ -1,0 +1,33 @@
+{
+  "name": "signal-platform-dependencies",
+  "version-string": "1.0.0",
+  "builtin-baseline": "82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",
+  "dependencies": [
+    "qtbase",
+    "qttools",
+    "intel-mkl",
+    "eigen3",
+    "tbb",
+    "hdf5",
+    "nlohmann-json",
+    "tomlplusplus",
+    "pybind11",
+    "onnxruntime",
+    "spdlog",
+    "fmt",
+    "gtest",
+    "benchmark"
+  ],
+  "features": {
+    "gpu-cuda": {
+      "description": "CUDA/cuFFT is an externally locked toolchain; see dependency-lock.json",
+      "dependencies": []
+    },
+    "telecom": {
+      "description": "Optional liquid-dsp adapter",
+      "dependencies": [
+        "liquid-dsp"
+      ]
+    }
+  }
+}
