@@ -21,17 +21,19 @@
 
 `SIGNAL_STUDIO_QT_ROOT` 是显式覆盖。UI 预设会扫描主 Qt 安装根下兼容的版本化 `msvc2022_64` kit，设置进程环境，并单次前置所选 kit 的 `bin`。无界面预设不调用 Qt 发现。CMake 与 Ninja 同样自动解析。
 
-初始化/配置生成保持忽略的 `CMakeUserPresets.json`，VS Code CMake Tools 使用 `local-windows-msvc-debug`。生成器不读取旧用户预设；它从当前 MSVC 环境剔除受控 Ninja/Qt 路径后重新单次加入，唯一隐藏工具链基预设保存一份完整路径环境，Qt 基预设只保存短标量根目录，各别名不再重复长 PATH/`CMAKE_PREFIX_PATH`。PATH、`CMAKE_PREFIX_PATH`、INCLUDE、LIB、LIBPATH 都经过路径规范化与大小写不敏感去重。输出使用 UTF-8 无 BOM、LF、确定顺序、压缩 JSON 与同目录原子替换。PowerShell 7 和 Windows PowerShell 5.1 均重复生成三次，得到完全相同的 8,774 字节文件和 SHA-256 `10d719d379073c79b1a96098d9268ffa3deef40ba22e49a8d2e42d35c3c17d0b`，全部路径条目唯一；该文件保持 Git 忽略。
+初始化/配置生成保持忽略的 `CMakeUserPresets.json`，VS Code 的配置、构建、测试与 F5 统一使用 `local-windows-msvc-debug`。生成器不读取旧用户预设；它从当前 MSVC 环境剔除受控 Ninja/Qt 路径后重新单次加入，唯一隐藏工具链基预设保存一份完整路径环境，Qt 基预设只保存短标量根目录，各别名不再重复长 PATH/`CMAKE_PREFIX_PATH`。PATH、`CMAKE_PREFIX_PATH`、INCLUDE、LIB、LIBPATH 都经过路径规范化与大小写不敏感去重。盘符根、UNC 根和扩展长度根会保留终止分隔符，非根路径才去除尾部分隔符。输出使用 UTF-8 无 BOM、LF、确定顺序、压缩 JSON 与同目录原子替换；该文件保持 Git 忽略。
 
-`dependencies/dependency-lock.json` 保存实际可执行文件路径和 SHA-256，作为已安装实例的主机证据。获取契约与之分离：vcpkg/CUDA 携带 BL1.0 URL/SHA-256，没有 BL1.0 可分发物的工具则要求显式来源策略或通道管理状态并保持获取字段为空。所有状态均经校验，没有虚构哈希。
+F5 使用明确的 `signal_studio_platform_tests.exe --case core.version`，前置任务校验本机构建缓存、Ninja 生成器、UI 选项、目标存在性和输入新鲜度；目标构建后复制 Qt 运行库，已在未继承 Qt PATH 的普通 PowerShell 中直接启动通过。
+
+`dependencies/dependency-lock.json` 保存工具族和有界兼容版本，不保存开发机绝对路径；`dependencies/captured-host-evidence.json` 单独保存精确版本、路径和 SHA-256。默认 bootstrap 使用兼容宿主模式，CI 先验证获取契约，再在 Windows 工具链初始化后验证兼容宿主。只有显式精确复现模式读取主机快照。vcpkg/CUDA 携带 BL1.0 URL/SHA-256，没有 BL1.0 可分发物的工具则要求显式来源策略或通道管理状态并保持获取字段为空。
 
 同一 PowerShell 进程重复导入保持幂等：已有 `VSCMD_VER` 与 `cl.exe` 时直接复用；否则按 `VSINSTALLDIR`、`vswhere.exe` 最新 VS2022 C++ 安装、已知本机后备位置的顺序寻找 `VsDevCmd.bat`。后续调用复用标记，MSVC/Ninja/Qt PATH 插入按大小写不敏感规则规范化。Debug→Release 回归与两次初始化的最终 PATH 统计以本轮证据日志为准。
 
 ## GitHub Windows 工具链
 
-GitHub `windows-2022` runner 虽安装 Visual Studio，但普通 Ninja 步骤不会自动获得 MSVC/SDK 环境。两个 Windows CI 作业都先运行仓库脚本：使用 `vswhere.exe` 定位带 `Microsoft.VisualStudio.Component.VC.Tools.x86.x64` 的最新 VS2022 安装，执行 `VsDevCmd.bat -arch=x64 -host_arch=x64`，并通过 `GITHUB_ENV` 传递非受保护环境变量。公共测试脚本检测该已初始化环境后直接复用，不再要求特定 BuildTools 安装目录。
+GitHub `windows-2022` runner 虽安装 Visual Studio，但普通 Ninja 步骤不会自动获得 MSVC/SDK 环境。两个作业先执行不依赖主机路径的 `Acquisition`，两个 Windows 路径再运行仓库脚本：使用 `vswhere.exe` 定位带 `Microsoft.VisualStudio.Component.VC.Tools.x86.x64` 的最新 VS2022 安装，执行 `VsDevCmd.bat -arch=x64 -host_arch=x64`，随后执行 `CompatibleHost`。公共测试脚本检测该已初始化环境后直接复用，不再要求特定 BuildTools 安装目录。
 
-Qt 作业使用官方元数据已确认存在的 6.10.3 `win64_msvc2022_64`，再校验 `QT_VERSION`、`VSCMD_ARG_TGT_ARCH`、`VSCMD_ARG_HOST_ARCH`、`QMAKE_XSPEC=win32-msvc` 和 Qt 前缀末级目录。本机实际验证仍使用 6.11.1；项目源码、包配置、本机发现和两个 UI 模块的最低支持版本统一为 6.10.3。远程运行 `29919175820` 已在提交 `d41c2748a465c4e843617e0a9444c8f8cc2f5015` 上通过两项无界面作业及 Qt Windows UI 模块/性能作业；旧运行 `29918020386` 的静态断言失败保留为历史证据。
+Qt 作业使用官方元数据已确认存在的 6.10.3 `win64_msvc2022_64`，再校验 `QT_VERSION`、`VSCMD_ARG_TGT_ARCH`、`VSCMD_ARG_HOST_ARCH`、`QMAKE_XSPEC=win32-msvc` 和 Qt 前缀末级目录。本机实际验证仍使用 6.11.1；项目源码、包配置、本机发现和两个 UI 模块的最低支持版本统一为 6.10.3。远程运行 `29919175820` 是旧实现提交的成功历史证据；本轮质量修复提交需重新执行相同三项作业。
 
 ## 实际配置结果
 

@@ -1,8 +1,8 @@
 {
-  "schema": "signal-studio.dependency-lock/1.2",
-  "captured_utc": "2026-07-22T07:17:00Z",
+  "schema": "signal-studio.dependency-lock/1.3",
   "approved_source": "docs/baseline/Signal-Studio-Dev-Docs/08_\u53c2\u8003\u8d44\u6599/\u4f9d\u8d56\u9501\u5b9a/dependency-lock.json",
   "approved_fetch_script": "docs/baseline/Signal-Studio-Dev-Docs/scripts/fetch_dependencies.ps1",
+  "captured_host_evidence": "dependencies/captured-host-evidence.json",
   "qt_compatibility_contract": {
     "minimum_supported_version": "6.10.3",
     "ci_validation_version": "6.10.3",
@@ -11,47 +11,30 @@
     "bl1_0_qttools_selected_version": "6.11.1",
     "policy": "The immutable BL1.0 port versions remain dependency selections; Qt 6.10.3 is the declared source floor and CI validation version because current private Qt usage requires no newer API."
   },
-  "host_toolchain": [
-    {
-      "name": "Git",
-      "installed_instance": {"state":"detected","version":"2.53.0.windows.3","path":"D:/softwares/Git/cmd/git.exe","file_sha256":"c53279919fdea03474bb23b465b3a82287157491f1bd69a5eb82dd9831582333","hash_scope":"installed executable bytes"},
-      "acquisition_contract": {"state":"not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"BL1.0 provides no immutable Git installer artifact; the installed instance is evidence only."}
-    },
-    {
-      "name": "CMake",
-      "installed_instance": {"state":"detected","version":"4.3.1","path":"D:/softwares/cmake/bin/cmake.exe","file_sha256":"f05482595d42888f2befe209d8aa4848560c8a05356411043241a15e7d3f86a7","hash_scope":"installed executable bytes"},
-      "acquisition_contract": {"state":"not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"BL1.0 provides no immutable CMake installer artifact; the installed instance is evidence only."}
-    },
-    {
-      "name": "Ninja",
-      "installed_instance": {"state":"detected","version":"1.12.1","path":"D:/softwares/Qt/Tools/Ninja/ninja.exe","file_sha256":"68865c3276d449d746cea5065fdec2baf755d7813e161ab04205b0907b2629b8","hash_scope":"installed executable bytes"},
-      "acquisition_contract": {"state":"not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"BL1.0 provides no immutable Ninja artifact separate from the selected local Qt tool installation."}
-    },
-    {
-      "name": "Qt",
-      "installed_instance": {"state":"detected","version":"6.11.1","path":"D:/softwares/Qt/6.11.1/msvc2022_64/bin/qmake.exe","file_sha256":"b208f3aeaece4731772743d54c8cfec81c74e5ac8ab4a26d7e058e4628b15ef2","hash_scope":"installed qmake executable bytes"},
-      "acquisition_contract": {"state":"not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"BL1.0 locks Qt ports through vcpkg but provides no standalone Qt installer hash; the installed kit is evidence only."}
-    },
-    {
-      "name": "MSVC",
-      "installed_instance": {"state":"detected","version":"19.44.35228","path":"C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/HostX64/x64/cl.exe","file_sha256":"88c8344236a27a6e727e0a8edc49aaa2690bdc7a9464b9d18cc7abe70a9f1c0d","hash_scope":"installed compiler executable bytes"},
-      "acquisition_contract": {"state":"channel-managed-not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"Visual Studio workloads are channel-managed and BL1.0 provides neither an immutable workload URL nor installer hash."}
-    },
-    {
-      "name": "Windows SDK",
-      "installed_instance": {"state":"detected","version":"10.0.26100.0","path":"C:/Program Files (x86)/Windows Kits/10/bin/10.0.26100.0/x64/rc.exe","file_sha256":"43da1503c262c30894c851589bf0155f8365d77e63a5f7bc13982320e3a6b42d","hash_scope":"installed resource compiler executable bytes"},
-      "acquisition_contract": {"state":"channel-managed-not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"The Windows SDK is a Visual Studio workload component and BL1.0 provides no immutable standalone acquisition artifact."}
-    },
-    {
-      "name": "Python",
-      "installed_instance": {"state":"detected","version":"3.13.12","path":"D:/profiles/anaconda/python.exe","file_sha256":"f77193cf0405ab440c39324bdb2f8864596321c1df888adbbe357f3d760f4716","hash_scope":"installed interpreter executable bytes"},
-      "acquisition_contract": {"state":"not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"BL1.0 provides no immutable Python distribution artifact; the installed interpreter is evidence only."}
-    },
-    {
-      "name": "CUDA Toolkit",
-      "installed_instance": {"state":"not-detected","version":null,"path":null,"file_sha256":null,"hash_scope":null},
-      "acquisition_contract": {"state":"locked-by-bl1.0","version":"12.8.1","artifact_url":"https://developer.download.nvidia.com/compute/cuda/12.8.1/network_installers/cuda_12.8.1_windows_network.exe","artifact_sha256":"779bee8ff557255c1cf5f36e0230f081675b9bb41e44be38839920cd5209bdeb","policy":"Approved optional network installer; acquisition and EULA acceptance are manual."}
-    }
+  "host_compatibility_contract": {
+    "schema": "signal-studio.host-compatibility/1.0",
+    "platform": "windows",
+    "architecture": "x64",
+    "tools": [
+      {"name":"Git","tool_family":"git","minimum_version":"2.40.0","maximum_version_exclusive":"3.0.0","required_headless":true,"required_ui":true},
+      {"name":"CMake","tool_family":"cmake","minimum_version":"3.28.0","maximum_version_exclusive":"5.0.0","required_headless":true,"required_ui":true},
+      {"name":"Ninja","tool_family":"ninja","minimum_version":"1.11.0","maximum_version_exclusive":"2.0.0","required_headless":true,"required_ui":true},
+      {"name":"Qt","tool_family":"qt-msvc2022","minimum_version":"6.10.3","maximum_version_exclusive":"7.0.0","required_headless":false,"required_ui":true},
+      {"name":"MSVC","tool_family":"msvc","minimum_version":"19.38.0","maximum_version_exclusive":"20.0.0","required_headless":true,"required_ui":true},
+      {"name":"Windows SDK","tool_family":"windows-sdk","minimum_version":"10.0.19041.0","maximum_version_exclusive":"11.0.0.0","required_headless":true,"required_ui":true},
+      {"name":"Python","tool_family":"cpython","minimum_version":"3.11.0","maximum_version_exclusive":"3.14.0","required_headless":true,"required_ui":true}
+    ],
+    "policy": "Portable validation accepts compatible tool patches and paths while enforcing platform, architecture, tool family, and bounded versions."
+  },
+  "tool_acquisition_contracts": [
+    {"name":"Git","state":"not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"BL1.0 provides no immutable Git installer artifact."},
+    {"name":"CMake","state":"not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"BL1.0 provides no immutable CMake installer artifact."},
+    {"name":"Ninja","state":"not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"BL1.0 provides no immutable standalone Ninja artifact."},
+    {"name":"Qt","state":"not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"BL1.0 locks Qt ports but provides no standalone Qt installer hash."},
+    {"name":"MSVC","state":"channel-managed-not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"Visual Studio workloads are channel-managed and BL1.0 provides no immutable workload artifact."},
+    {"name":"Windows SDK","state":"channel-managed-not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"The Windows SDK is channel-managed and BL1.0 provides no immutable standalone artifact."},
+    {"name":"Python","state":"not-defined-by-bl1.0","artifact_url":null,"artifact_sha256":null,"policy":"BL1.0 provides no immutable Python distribution artifact."},
+    {"name":"CUDA Toolkit","state":"locked-by-bl1.0","version":"12.8.1","artifact_url":"https://developer.download.nvidia.com/compute/cuda/12.8.1/network_installers/cuda_12.8.1_windows_network.exe","artifact_sha256":"779bee8ff557255c1cf5f36e0230f081675b9bb41e44be38839920cd5209bdeb","policy":"Approved optional network installer; acquisition and EULA acceptance are manual."}
   ],
   "vcpkg": {
     "builtin_baseline": "82b6bc886d7b0f8342e34babc2e0b8943f79b0e1",

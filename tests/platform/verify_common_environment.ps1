@@ -29,7 +29,9 @@ if ($env:VSCMD_ARG_TGT_ARCH -cne 'x64' -or $env:VSCMD_ARG_HOST_ARCH -cne 'x64') 
 $entries = @($secondPath -split ';' | Where-Object { $_ })
 $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 foreach ($entry in $entries) {
-    if (-not $seen.Add($entry.TrimEnd('\', '/'))) { throw "Duplicate PATH entry detected: $entry" }
+    if (-not $seen.Add((Get-SignalStudioCanonicalPathEntry -PathEntry $entry))) {
+        throw "Duplicate PATH entry detected: $entry"
+    }
 }
 if ($secondPath.Length -gt 16384) { throw "PATH length regression: $($secondPath.Length)" }
 

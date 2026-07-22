@@ -22,6 +22,8 @@ enum class ModuleId : std::uint8_t {
   workbench = 10,
 };
 
+[[nodiscard]] bool is_known_module_id(ModuleId id) noexcept;
+
 struct ModuleDescriptor final {
   ModuleId id;
   std::string_view cmake_target;

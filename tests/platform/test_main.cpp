@@ -15,6 +15,7 @@
 #endif
 
 #include <algorithm>
+#include <array>
 #include <exception>
 #include <functional>
 #include <iostream>
@@ -178,20 +179,65 @@ void test_error_propagation() {
   using namespace signal::core;
   const auto root = Status::failure({ErrorDomain::dsp, ErrorReason::internal_failure}, "FFT failed", "backend error");
   require(root.details().category == ErrorCategory::adapter, "internal failure category mapping changed");
-  const auto propagated = root.with_context("PSD task");
+  auto propagated = root.with_context("PSD task");
   require(propagated.diagnostic() == "PSD task: backend error", "context not propagated");
   require(propagated.details().cause_chain.size() == 1, "cause chain not retained");
   require(propagated.code().stable_text() == "SS-DSP-E004", "propagation changed stable code");
+
+  propagated = root;
+  for (std::size_t attempt = 1; attempt <= 9; ++attempt) {
+    propagated = propagated.with_context("context-" + std::to_string(attempt));
+    const auto expected_depth = std::min(attempt, max_error_cause_depth);
+    require(propagated.details().cause_chain.size() == expected_depth, "propagation exceeded bounded cause depth");
+    require(validate_error(propagated.code(), propagated.details()).ok(), "bounded propagated status became invalid");
+  }
+  require(propagated.details().cause_chain.front().technical_details == "backend error",
+          "bounded propagation discarded the root cause");
+  require(propagated.details().cause_chain.back().technical_details.starts_with("context-8:"),
+          "bounded propagation did not retain the most recent prior context");
+  require(propagated.diagnostic().starts_with("context-9:"), "latest propagation context was not retained");
 }
 
 void test_capabilities() {
   using namespace signal::core;
   CapabilityRegistry registry;
+  require(is_known_capability_availability(CapabilityAvailability::unavailable) &&
+              is_known_capability_availability(CapabilityAvailability::available) &&
+              is_known_capability_availability(CapabilityAvailability::degraded) &&
+              !is_known_capability_availability(static_cast<CapabilityAvailability>(99)),
+          "capability availability known-value predicate is incomplete");
   require(registry.register_capability({"compute.cpu", CapabilityAvailability::available, "portable-cpu", "C++20"}).ok(),
           "registration failed");
   require(registry.is_available("compute.cpu") && !registry.is_available("compute.cuda"), "availability incorrect");
   require(!registry.register_capability({"compute.cpu", CapabilityAvailability::available, "duplicate", {}}),
           "duplicate accepted");
+  const auto before_invalid = registry.snapshot();
+  require(!registry.register_capability(
+              {"compute.invalid", static_cast<CapabilityAvailability>(99), "invalid-provider", {}}),
+          "invalid availability accepted");
+  require(registry.snapshot().size() == before_invalid.size() && !registry.find("compute.invalid"),
+          "registry changed after invalid availability rejection");
+}
+
+void test_module_validation() {
+  using namespace signal::core;
+  require(is_known_module_id(ModuleId::core) && is_known_module_id(ModuleId::workbench) &&
+              !is_known_module_id(static_cast<ModuleId>(0)) && !is_known_module_id(static_cast<ModuleId>(99)),
+          "module id known-value predicate is incomplete");
+
+  const ModuleDescriptor empty_capability_contract{
+      ModuleId::core, "SignalStudio::Core", "signal::core", {1, 0, 0}, {}, {}};
+  require(validate_module_descriptor(empty_capability_contract).ok(),
+          "an empty capability collection was rejected without a BL1.0 requirement");
+
+  auto invalid_descriptor = empty_capability_contract;
+  invalid_descriptor.id = static_cast<ModuleId>(99);
+  require(!validate_module_descriptor(invalid_descriptor), "invalid descriptor id accepted");
+
+  const std::array invalid_dependencies{static_cast<ModuleId>(99)};
+  invalid_descriptor = empty_capability_contract;
+  invalid_descriptor.dependencies = invalid_dependencies;
+  require(!validate_module_descriptor(invalid_descriptor), "invalid dependency id accepted");
 }
 
 void test_module(ModuleId id) {
@@ -243,7 +289,8 @@ int main(int argc, char** argv) {
       {"core.version", test_version}, {"core.errors.contract", test_error_contract},
       {"core.errors.invariants", test_error_invariants},
       {"core.errors.serialization", test_error_serialization}, {"core.errors.propagation", test_error_propagation},
-      {"core.capabilities", test_capabilities}, {"graph.compatibility", test_dependency_graph},
+      {"core.capabilities", test_capabilities}, {"core.module-descriptor-validation", test_module_validation},
+      {"graph.compatibility", test_dependency_graph},
       {"module.core", [] { test_module(ModuleId::core); }}, {"module.compute", [] { test_module(ModuleId::compute); }},
       {"module.data", [] { test_module(ModuleId::data); }}, {"module.task-runtime", [] { test_module(ModuleId::task_runtime); }},
       {"module.dsp", [] { test_module(ModuleId::dsp); }}, {"module.model-runtime", [] { test_module(ModuleId::model_runtime); }},

@@ -1,6 +1,7 @@
 {
   "cmake.useCMakePresets": "always",
   "cmake.configureOnOpen": false,
+  "cmake.buildBeforeRun": false,
   "cmake.configurePreset": "local-windows-msvc-debug",
   "cmake.buildPreset": "local-windows-msvc-debug",
   "cmake.testPreset": "local-windows-msvc-debug",

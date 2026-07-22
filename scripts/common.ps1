@@ -5,17 +5,26 @@ $script:RepositoryRoot = Split-Path -Parent $PSScriptRoot
 
 function Get-SignalStudioCanonicalPathEntry {
     param([Parameter(Mandatory = $true)][string]$PathEntry)
-    $trimmed = $PathEntry.Trim().Trim('"').TrimEnd('\', '/')
+    $trimmed = $PathEntry.Trim().Trim('"')
     if (-not $trimmed) { return '' }
     try {
         if ([IO.Path]::IsPathRooted($trimmed)) {
-            return [IO.Path]::GetFullPath($trimmed).TrimEnd('\', '/')
+            $fullPath = [IO.Path]::GetFullPath($trimmed)
+            $root = [IO.Path]::GetPathRoot($fullPath)
+            $fullWithoutTrailingSeparator = $fullPath.TrimEnd('\', '/')
+            $rootWithoutTrailingSeparator = if ($root) { $root.TrimEnd('\', '/') } else { '' }
+            if ($root -and $fullWithoutTrailingSeparator.Equals(
+                    $rootWithoutTrailingSeparator, [StringComparison]::OrdinalIgnoreCase)) {
+                if ($root.EndsWith('\') -or $root.EndsWith('/')) { return $root }
+                return $root + [IO.Path]::DirectorySeparatorChar
+            }
+            return $fullWithoutTrailingSeparator
         }
     }
     catch {
         # Preserve an unusual environment entry rather than silently dropping it.
     }
-    return $trimmed
+    return $trimmed.TrimEnd('\', '/')
 }
 
 function Get-SignalStudioNormalizedPath {
@@ -305,12 +314,21 @@ function Assert-SignalStudioPreset {
         'windows-msvc-cuda-debug', 'windows-msvc-cuda-release',
         'windows-msvc-headless-debug', 'windows-msvc-headless-release'
     )
-    if ($Preset -notin $allowed) {
+    $sourcePreset = Get-SignalStudioSourcePreset -Preset $Preset
+    if ($sourcePreset -notin $allowed) {
         throw "Unknown preset '$Preset'. Allowed values: $($allowed -join ', ')"
     }
 }
 
+function Get-SignalStudioSourcePreset {
+    param([Parameter(Mandatory = $true)][string]$Preset)
+    if ($Preset.StartsWith('local-', [StringComparison]::Ordinal)) {
+        return $Preset.Substring('local-'.Length)
+    }
+    return $Preset
+}
+
 function Test-SignalStudioUiPreset {
     param([Parameter(Mandatory = $true)][string]$Preset)
-    return -not $Preset.Contains('-headless-')
+    return -not (Get-SignalStudioSourcePreset -Preset $Preset).Contains('-headless-')
 }

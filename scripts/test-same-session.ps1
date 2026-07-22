@@ -38,7 +38,7 @@ foreach ($preset in @($debugPreset, $releasePreset)) {
 $pathEntries = @($env:Path -split ';' | Where-Object { $_ })
 $uniqueEntries = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 foreach ($entry in $pathEntries) {
-    if (-not $uniqueEntries.Add($entry.TrimEnd('\', '/'))) {
+    if (-not $uniqueEntries.Add((Get-SignalStudioCanonicalPathEntry -PathEntry $entry))) {
         throw "Duplicate PATH entry survived same-session validation: $entry"
     }
 }

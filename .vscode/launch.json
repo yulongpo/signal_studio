@@ -5,12 +5,12 @@
       "name": "Signal Studio MS-00 platform tests",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${command:cmake.launchTargetPath}",
-      "args": [],
+      "program": "${workspaceFolder}/build/local-windows-msvc-debug/bin/signal_studio_platform_tests.exe",
+      "args": ["--case", "core.version"],
       "cwd": "${workspaceFolder}",
       "environment": [],
       "console": "integratedTerminal",
-      "preLaunchTask": "Signal Studio: Build Debug"
+      "preLaunchTask": "Signal Studio: Validate Debug Tree"
     }
   ]
 }

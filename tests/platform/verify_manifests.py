@@ -143,7 +143,7 @@ def dependency_lock() -> None:
         raise RuntimeError("immutable BL1.0 fetch script archive path is missing")
     approved_relative_path = archive_match.group(1).replace("$commit", approved_commit)
 
-    if lock["schema"] != "signal-studio.dependency-lock/1.2":
+    if lock["schema"] != "signal-studio.dependency-lock/1.3":
         raise RuntimeError("dependency lock schema mismatch")
     qt_contract = lock.get("qt_compatibility_contract", {})
     expected_qt_contract = {
@@ -200,37 +200,86 @@ def dependency_lock() -> None:
         elif locked_package.get("package_archive_sha256") != approved_hash:
             raise RuntimeError(f"selected package {locked_package['name']} archive hash differs from immutable BL1.0")
 
+    compatibility = lock.get("host_compatibility_contract", {})
+    if (
+        compatibility.get("schema") != "signal-studio.host-compatibility/1.0"
+        or compatibility.get("platform") != "windows"
+        or compatibility.get("architecture") != "x64"
+        or not compatibility.get("policy")
+    ):
+        raise RuntimeError("portable host compatibility contract is incomplete")
+    compatibility_tools = compatibility.get("tools", [])
+    expected_families = {
+        "Git": "git",
+        "CMake": "cmake",
+        "Ninja": "ninja",
+        "Qt": "qt-msvc2022",
+        "MSVC": "msvc",
+        "Windows SDK": "windows-sdk",
+        "Python": "cpython",
+    }
+    if len(compatibility_tools) != len(expected_families) or {item.get("name") for item in compatibility_tools} != set(expected_families):
+        raise RuntimeError("portable host compatibility tool set differs from the MS-00 contract")
+    for requirement in compatibility_tools:
+        if (
+            requirement.get("tool_family") != expected_families[requirement["name"]]
+            or not requirement.get("minimum_version")
+            or not requirement.get("maximum_version_exclusive")
+            or "required_headless" not in requirement
+            or "required_ui" not in requirement
+        ):
+            raise RuntimeError(f"portable host compatibility entry is incomplete: {requirement.get('name')}")
+
     allowed_unlocked_states = {"not-defined-by-bl1.0", "channel-managed-not-defined-by-bl1.0"}
-    for tool in lock["host_toolchain"]:
-        installed = tool.get("installed_instance", {})
-        acquisition = tool.get("acquisition_contract", {})
-        if installed.get("state") == "detected":
-            for field in ("version", "path", "file_sha256", "hash_scope"):
-                if not installed.get(field):
-                    raise RuntimeError(f"detected tool {tool['name']} lacks installed-instance {field}")
-            if not re.fullmatch(r"[0-9a-f]{64}", installed["file_sha256"]):
-                raise RuntimeError(f"invalid installed-instance hash: {tool['name']}")
-        elif installed.get("state") == "not-detected":
-            if any(installed.get(field) is not None for field in ("version", "path", "file_sha256", "hash_scope")):
-                raise RuntimeError(f"unavailable tool {tool['name']} asserts installed-instance evidence")
-        else:
-            raise RuntimeError(f"invalid installed-instance state: {tool['name']}")
+    acquisition_contracts = lock.get("tool_acquisition_contracts", [])
+    if len(acquisition_contracts) != 8 or len({item.get("name") for item in acquisition_contracts}) != 8:
+        raise RuntimeError("expected eight unique tool acquisition contracts")
+    for acquisition in acquisition_contracts:
         if acquisition.get("state") == "locked-by-bl1.0":
-            if not acquisition.get("artifact_url") or not re.fullmatch(r"[0-9a-f]{64}", acquisition.get("artifact_sha256", "")):
-                raise RuntimeError(f"BL1.0 acquisition contract is incomplete: {tool['name']}")
+            if (
+                not acquisition.get("version")
+                or not acquisition.get("artifact_url")
+                or not re.fullmatch(r"[0-9a-f]{64}", acquisition.get("artifact_sha256", ""))
+                or not acquisition.get("policy")
+            ):
+                raise RuntimeError(f"BL1.0 acquisition contract is incomplete: {acquisition.get('name')}")
         elif acquisition.get("state") in allowed_unlocked_states:
             if acquisition.get("artifact_url") is not None or acquisition.get("artifact_sha256") is not None or not acquisition.get("policy"):
-                raise RuntimeError(f"unlocked acquisition state is not explicit: {tool['name']}")
+                raise RuntimeError(f"unlocked acquisition state is not explicit: {acquisition.get('name')}")
         else:
-            raise RuntimeError(f"invalid acquisition contract state: {tool['name']}")
+            raise RuntimeError(f"invalid acquisition contract state: {acquisition.get('name')}")
+
+    captured_path = REPOSITORY / lock.get("captured_host_evidence", "")
+    captured = json.loads(captured_path.read_text(encoding="utf-8"))
+    if (
+        captured.get("schema") != "signal-studio.captured-host-evidence/1.0"
+        or captured.get("platform") != "windows"
+        or captured.get("architecture") != "x64"
+    ):
+        raise RuntimeError("captured host evidence schema/platform is invalid")
+    captured_tools = captured.get("tools", [])
+    if len(captured_tools) != 8 or len({item.get("name") for item in captured_tools}) != 8:
+        raise RuntimeError("captured host evidence must contain eight unique tool entries")
+    for tool in captured_tools:
+        if tool.get("state") == "detected":
+            for field in ("tool_family", "architecture", "version", "path", "file_sha256", "hash_scope"):
+                if not tool.get(field):
+                    raise RuntimeError(f"captured tool {tool.get('name')} lacks {field}")
+            if not re.fullmatch(r"[0-9a-f]{64}", tool["file_sha256"]):
+                raise RuntimeError(f"captured tool hash is invalid: {tool.get('name')}")
+        elif tool.get("state") == "not-detected":
+            if any(tool.get(field) is not None for field in ("version", "path", "file_sha256", "hash_scope")):
+                raise RuntimeError(f"unavailable captured tool asserts transient evidence: {tool.get('name')}")
+        else:
+            raise RuntimeError(f"invalid captured tool state: {tool.get('name')}")
 
     cuda_approved = next(item for item in approved["dependencies"] if item["name"] == "CUDA Toolkit/cuFFT")
-    cuda = next(item for item in lock["host_toolchain"] if item["name"] == "CUDA Toolkit")
-    if cuda["installed_instance"]["state"] != "not-detected":
+    cuda = next(item for item in acquisition_contracts if item["name"] == "CUDA Toolkit")
+    captured_cuda = next(item for item in captured_tools if item["name"] == "CUDA Toolkit")
+    if captured_cuda["state"] != "not-detected":
         raise RuntimeError("CUDA must remain explicitly unavailable on the captured MS-00 host")
-    cuda_contract = cuda["acquisition_contract"]
     expected_cuda_hash = cuda_approved["verification"].removeprefix("sha256:")
-    if (cuda_contract.get("version"), cuda_contract.get("artifact_url"), cuda_contract.get("artifact_sha256")) != (
+    if (cuda.get("version"), cuda.get("artifact_url"), cuda.get("artifact_sha256")) != (
         cuda_approved["version"], cuda_approved["official_url"], expected_cuda_hash
     ):
         raise RuntimeError("CUDA acquisition tuple differs from immutable BL1.0")
@@ -247,10 +296,10 @@ def dependency_lock() -> None:
     ):
         raise RuntimeError("vcpkg offline artifact differs from the acquisition lock")
     if (cuda_cache["url"], cuda_cache["sha256"]) != (
-        cuda_contract["artifact_url"], cuda_contract["artifact_sha256"]
+        cuda["artifact_url"], cuda["artifact_sha256"]
     ):
         raise RuntimeError("CUDA offline artifact differs from the acquisition lock")
-    print("Verified all 14 immutable BL1.0 package tuples, 8 installed/acquisition states, and 2 offline artifacts")
+    print("Verified 14 immutable BL1.0 package tuples, 8 acquisition contracts, portable host bounds, captured-host evidence, and 2 offline artifacts")
 
 
 def portable_config() -> None:

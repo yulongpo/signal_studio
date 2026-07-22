@@ -17,6 +17,8 @@ enum class CapabilityAvailability : std::uint8_t {
   degraded = 2,
 };
 
+[[nodiscard]] bool is_known_capability_availability(CapabilityAvailability availability) noexcept;
+
 struct Capability final {
   std::string id;
   CapabilityAvailability availability{CapabilityAvailability::unavailable};

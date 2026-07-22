@@ -5,6 +5,22 @@
 
 namespace signal::core {
 
+bool is_known_module_id(ModuleId id) noexcept {
+  switch (id) {
+    case ModuleId::core:
+    case ModuleId::compute:
+    case ModuleId::data:
+    case ModuleId::task_runtime:
+    case ModuleId::dsp:
+    case ModuleId::visualization:
+    case ModuleId::model_runtime:
+    case ModuleId::dataset:
+    case ModuleId::plugin_sdk:
+    case ModuleId::workbench: return true;
+  }
+  return false;
+}
+
 std::string_view module_id_name(ModuleId id) noexcept {
   switch (id) {
     case ModuleId::core: return "Core";
@@ -22,6 +38,11 @@ std::string_view module_id_name(ModuleId id) noexcept {
 }
 
 Status validate_module_descriptor(const ModuleDescriptor& descriptor) {
+  if (!is_known_module_id(descriptor.id)) {
+    return Status::failure(
+        {ErrorDomain::core, ErrorReason::invalid_argument},
+        "Module id is outside the public contract");
+  }
   if (descriptor.cmake_target.empty() || descriptor.public_namespace.empty()) {
     return Status::failure(
         {ErrorDomain::core, ErrorReason::invalid_argument},
@@ -34,6 +55,11 @@ Status validate_module_descriptor(const ModuleDescriptor& descriptor) {
   }
   std::unordered_set<std::uint8_t> dependencies;
   for (const auto dependency : descriptor.dependencies) {
+    if (!is_known_module_id(dependency)) {
+      return Status::failure(
+          {ErrorDomain::core, ErrorReason::invalid_argument},
+          "Module dependency id is outside the public contract");
+    }
     if (dependency == descriptor.id || !dependencies.insert(static_cast<std::uint8_t>(dependency)).second) {
       return Status::failure(
           {ErrorDomain::core, ErrorReason::invalid_argument},

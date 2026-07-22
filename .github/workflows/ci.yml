@@ -19,10 +19,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Validate immutable acquisition and package locks
+        shell: pwsh
+        run: ./scripts/validate-dependency-lock.ps1 -Mode Acquisition -Headless
       - name: Initialize MSVC 2022 x64 environment
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./.github/scripts/initialize-msvc.ps1
+      - name: Validate compatible Windows headless host
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/validate-dependency-lock.ps1 -Mode CompatibleHost -Headless -HostEvidenceOutputPath build/ci-host-evidence.json
       - name: Configure headless platform and C SDK example
         run: cmake -S . -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DSIGNAL_STUDIO_BUILD_UI=OFF -DSIGNAL_STUDIO_BUILD_TESTS=ON -DSIGNAL_STUDIO_BUILD_SDK_EXAMPLE=ON -DBUILD_TESTING=ON
       - name: Compile platform, C ABI example, and consumers
@@ -34,6 +41,9 @@ jobs:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Validate immutable acquisition and package locks
+        shell: pwsh
+        run: ./scripts/validate-dependency-lock.ps1 -Mode Acquisition
       - name: Initialize MSVC 2022 x64 environment
         shell: pwsh
         run: ./.github/scripts/initialize-msvc.ps1
@@ -58,6 +68,11 @@ jobs:
           if ((Split-Path -Leaf (& $qmake -query QT_INSTALL_PREFIX)) -cne 'msvc2022_64') {
             throw "Qt kit is not the MSVC 2022 x64 architecture"
           }
+      - name: Validate compatible Windows UI host
+        shell: pwsh
+        run: |
+          $env:SIGNAL_STUDIO_QT_ROOT = $env:QT_ROOT_DIR
+          ./scripts/validate-dependency-lock.ps1 -Mode CompatibleHost -HostEvidenceOutputPath build/ci-ui-host-evidence.json
       - name: Configure all ten modules
         shell: pwsh
         run: cmake -S . -B build/ci-ui -G Ninja -DCMAKE_BUILD_TYPE=Release -DSIGNAL_STUDIO_BUILD_UI=ON -DSIGNAL_STUDIO_BUILD_TESTS=ON -DSIGNAL_STUDIO_BUILD_SDK_EXAMPLE=ON -DBUILD_TESTING=ON -DSIGNAL_STUDIO_QT_ROOT="$env:QT_ROOT_DIR"

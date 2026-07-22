@@ -21,6 +21,8 @@
 - 增加同进程 Debug→Release 回归驱动，以及幂等、去重的 MSVC/Ninja/Qt 环境导入。
 - 增加 GitHub Windows 2022 的 MSVC x64 开发环境显式初始化，以及本地工作流 YAML/ABI 契约校验。
 - 增加确定性、原子写入的本机 CMake 用户预设生成和重复生成字节稳定性回归。
+- 增加依赖获取、兼容宿主和精确主机快照三种验证模式及注入式负向回归。
+- 增加 VS Code 设置/任务/F5 同构建树校验、Windows 根路径语义回归和公共枚举已知值检查。
 
 ### 变更
 
@@ -34,6 +36,10 @@
 - 修复 Visualization/Workbench 遗留的 Qt 6.11 编译期断言；增加静态契约，防止把本机精确版本重新引入 CMake、包配置、本机发现或 UI 模块最低版本。
 - 将 `actions/checkout` 与 `install-qt-action` 固定为完整提交哈希，消除浮动标签并升级 checkout 运行时。
 - 记录远程运行 `29919175820` 对修正提交的成功验收：Windows UI 模块/性能作业及 Windows、Ubuntu 两项无界面作业全部通过；早期失败记录继续作为旧提交历史证据保留。
+- 将默认 bootstrap 从开发机精确路径/哈希比较改为有界宿主兼容检查；精确版本、路径和文件哈希移入独立快照并改为显式复现模式。
+- 统一 VS Code 配置、构建、测试和 F5 使用 `local-windows-msvc-debug`，并为明确平台测试目标复制运行库、拒绝陈旧或错误构建树。
+- 修复 `C:\`、UNC 根及扩展长度根被裁剪为非根路径的问题。
+- 修复未知 `ModuleId`、依赖模块 ID 和 `CapabilityAvailability` 可越过公共边界，以及 Status 第九次上下文传播抛异常的问题。
 
 ### 移除
 

@@ -1,0 +1,16 @@
+{
+  "schema": "signal-studio.captured-host-evidence/1.0",
+  "captured_utc": "2026-07-22T07:17:00Z",
+  "platform": "windows",
+  "architecture": "x64",
+  "tools": [
+    {"name":"Git","tool_family":"git","architecture":"x64","state":"detected","version":"2.53.0.windows.3","path":"D:/softwares/Git/cmd/git.exe","file_sha256":"c53279919fdea03474bb23b465b3a82287157491f1bd69a5eb82dd9831582333","hash_scope":"installed executable bytes"},
+    {"name":"CMake","tool_family":"cmake","architecture":"x64","state":"detected","version":"4.3.1","path":"D:/softwares/cmake/bin/cmake.exe","file_sha256":"f05482595d42888f2befe209d8aa4848560c8a05356411043241a15e7d3f86a7","hash_scope":"installed executable bytes"},
+    {"name":"Ninja","tool_family":"ninja","architecture":"x64","state":"detected","version":"1.12.1","path":"D:/softwares/Qt/Tools/Ninja/ninja.exe","file_sha256":"68865c3276d449d746cea5065fdec2baf755d7813e161ab04205b0907b2629b8","hash_scope":"installed executable bytes"},
+    {"name":"Qt","tool_family":"qt-msvc2022","architecture":"x64","state":"detected","version":"6.11.1","path":"D:/softwares/Qt/6.11.1/msvc2022_64/bin/qmake.exe","file_sha256":"b208f3aeaece4731772743d54c8cfec81c74e5ac8ab4a26d7e058e4628b15ef2","hash_scope":"installed qmake executable bytes"},
+    {"name":"MSVC","tool_family":"msvc","architecture":"x64","state":"detected","version":"19.44.35228","path":"C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/HostX64/x64/cl.exe","file_sha256":"88c8344236a27a6e727e0a8edc49aaa2690bdc7a9464b9d18cc7abe70a9f1c0d","hash_scope":"installed compiler executable bytes"},
+    {"name":"Windows SDK","tool_family":"windows-sdk","architecture":"x64","state":"detected","version":"10.0.26100.0","path":"C:/Program Files (x86)/Windows Kits/10/bin/10.0.26100.0/x64/rc.exe","file_sha256":"43da1503c262c30894c851589bf0155f8365d77e63a5f7bc13982320e3a6b42d","hash_scope":"installed resource compiler executable bytes"},
+    {"name":"Python","tool_family":"cpython","architecture":"x64","state":"detected","version":"3.13.12","path":"D:/profiles/anaconda/python.exe","file_sha256":"f77193cf0405ab440c39324bdb2f8864596321c1df888adbbe357f3d760f4716","hash_scope":"installed interpreter executable bytes"},
+    {"name":"CUDA Toolkit","tool_family":"cuda","architecture":"x64","state":"not-detected","version":null,"path":null,"file_sha256":null,"hash_scope":null}
+  ]
+}

@@ -6,6 +6,14 @@ if(SIGNAL_STUDIO_BUILD_UI)
   target_link_libraries(signal_studio_platform_tests PRIVATE SignalStudio::Visualization SignalStudio::Workbench)
 endif()
 signal_studio_enable_warnings(signal_studio_platform_tests)
+if(WIN32 AND SIGNAL_STUDIO_BUILD_UI)
+  add_custom_command(TARGET signal_studio_platform_tests POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+      $<TARGET_RUNTIME_DLLS:signal_studio_platform_tests>
+      $<TARGET_FILE_DIR:signal_studio_platform_tests>
+    COMMAND_EXPAND_LISTS
+    COMMENT "Copying platform-test runtime DLLs for direct launch")
+endif()
 
 set(_module_cases core compute data task-runtime dsp model-runtime dataset plugin-sdk)
 if(SIGNAL_STUDIO_BUILD_UI)
@@ -15,7 +23,8 @@ foreach(_module IN LISTS _module_cases)
   add_test(NAME "module.${_module}.contract" COMMAND signal_studio_platform_tests --case "module.${_module}")
   set_tests_properties("module.${_module}.contract" PROPERTIES LABELS "unit;contract;compatibility;${_module}")
 endforeach()
-foreach(_case IN ITEMS core.version core.errors.contract core.errors.invariants core.errors.serialization core.errors.propagation core.capabilities graph.compatibility)
+foreach(_case IN ITEMS core.version core.errors.contract core.errors.invariants core.errors.serialization core.errors.propagation
+    core.capabilities core.module-descriptor-validation graph.compatibility)
   string(REPLACE "." "_" _safe_case "${_case}")
   add_test(NAME "platform.${_case}" COMMAND signal_studio_platform_tests --case "${_case}")
   set_tests_properties("platform.${_case}" PROPERTIES LABELS "unit;contract;compatibility")
@@ -76,6 +85,10 @@ foreach(_manifest IN ITEMS baseline external minimal public-headers dependency-l
   set_tests_properties("verification.${_manifest_name}" PROPERTIES
     ENVIRONMENT "PYTHONUTF8=1;PYTHONIOENCODING=utf-8")
 endforeach()
+add_test(NAME verification.vscode_workflow_coherence COMMAND "${Python3_EXECUTABLE}"
+  "${CMAKE_SOURCE_DIR}/scripts/validate-vscode-workflow.py")
+set_tests_properties(verification.vscode_workflow_coherence PROPERTIES
+  ENVIRONMENT "PYTHONUTF8=1;PYTHONIOENCODING=utf-8" LABELS "verification;toolchain;vscode")
 set_tests_properties(verification.external PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 180)
 
 if(WIN32)
@@ -91,6 +104,14 @@ if(WIN32)
     set_property(TEST verification.powershell_environment_idempotency APPEND PROPERTY
       ENVIRONMENT "SIGNAL_STUDIO_QT_ROOT=${SIGNAL_STUDIO_QT_ROOT}")
   endif()
+  add_test(NAME verification.windows_path_semantics COMMAND powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+    "${CMAKE_CURRENT_SOURCE_DIR}/verify_windows_path_semantics.ps1" -RepositoryRoot "${CMAKE_SOURCE_DIR}")
+  set_tests_properties(verification.windows_path_semantics PROPERTIES
+    TIMEOUT 30 LABELS "verification;toolchain;paths")
+  add_test(NAME verification.dependency_validation_modes COMMAND powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+    "${CMAKE_CURRENT_SOURCE_DIR}/verify_dependency_validation_modes.ps1" -RepositoryRoot "${CMAKE_SOURCE_DIR}")
+  set_tests_properties(verification.dependency_validation_modes PROPERTIES
+    TIMEOUT 60 LABELS "verification;toolchain;dependencies")
 endif()
 
 if(SIGNAL_STUDIO_BUILD_UI)

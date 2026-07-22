@@ -1,12 +1,12 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('windows-msvc-debug', 'windows-msvc-release', 'windows-msvc-cpu-debug', 'windows-msvc-cpu-release', 'windows-msvc-headless-debug', 'windows-msvc-headless-release')]
-    [string]$Preset = 'windows-msvc-debug',
+    [ValidateNotNullOrEmpty()][string]$Preset = 'windows-msvc-debug',
     [string]$Regex = '',
     [switch]$VerboseOutput
 )
 
 . (Join-Path $PSScriptRoot 'common.ps1')
+Assert-SignalStudioPreset -Preset $Preset
 Import-SignalStudioMsvcEnvironment
 $ctest = Get-SignalStudioCTest
 if (Test-SignalStudioUiPreset -Preset $Preset) {

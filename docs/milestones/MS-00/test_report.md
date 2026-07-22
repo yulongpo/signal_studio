@@ -2,29 +2,33 @@
 
 日期：2026-07-22
 
-结论：本地最低版本修复自检通过；第三轮远程 CI 的三项作业全部通过；独立规范复审仍待再次核查
+结论：五项质量审查修复的本地全量自检通过；新提交远程 CI 与独立复审待执行
 
 ## 构建/测试矩阵
 
 | 配置 | 配置/构建 | CTest | 包覆盖 |
 |---|---|---:|---|
-| `windows-msvc-debug` | 全新配置 + clean build 通过 | 41/41，19.79 秒 | 全组件消费者 + 独立无 Qt 构建/安装/八模块消费者 |
-| `windows-msvc-release` | 全新配置 + clean build 通过 | 41/41，17.42 秒 | 全组件消费者 + 独立无 Qt 构建/安装/八模块消费者 |
-| 合计 | 通过 | 82/82 | 两个配置共四次包消费 |
+| `windows-msvc-debug` | 全新配置 + clean build 通过 | 45/45，21.84 秒 | 全组件消费者 + 独立无 Qt 构建/安装/八模块消费者 |
+| `windows-msvc-release` | 全新配置 + clean build 通过 | 45/45，20.66 秒 | 全组件消费者 + 独立无 Qt 构建/安装/八模块消费者 |
+| `local-windows-msvc-debug` | VS Code 同树配置/构建通过 | 45/45，23.14 秒 | 同树测试 + 明确 F5 目标直接启动 |
+| 主矩阵合计 | 通过 | 90/90 | 两个全新配置共四次包消费 |
 
-`scripts/test-same-session.ps1` 在同一 Windows PowerShell 进程依次执行全新 Debug 配置/clean build/测试和全新 Release 配置/clean build/测试，退出码为零，两棵构建树均为 41/41，未出现 `The input line is too long`。Debug 总耗时 33.684 秒，Release 总耗时 26.395 秒；最终 PATH 为 52/52 唯一条目，长度 3139，环境标记为 `vs2022-msvc-x64-v2`。
+`scripts/test-same-session.ps1` 在同一 Windows PowerShell 进程依次执行全新 Debug 配置/clean build/测试和全新 Release 配置/clean build/测试，退出码为零，两棵构建树均为 45/45，未出现 `The input line is too long`。Debug 总耗时 37.760 秒，Release 总耗时 31.397 秒；最终 PATH 为 52/52 唯一条目，长度 3139，环境标记为 `vs2022-msvc-x64-v2`。
 
 ## 具名覆盖
 
 | 分组 | 每配置用例数 | 结果 |
 |---|---:|---|
 | 十模块描述符/API/目标/能力契约 | 10 | 通过 |
-| Core 中性版本、结构化错误契约/不变量/序列化/传播、能力注册、精确 DAG | 7 | 通过 |
+| Core 中性版本、结构化错误契约/不变量/序列化/满容量传播、能力注册、模块描述符、精确 DAG | 8 | 通过 |
 | C ABI C 编译/链接、C++ `noexcept`/布局、抛异常适配器、导出查询符号/版本拒绝 | 4 | 通过 |
 | 250,000 次通用确定性基准冒烟 | 1 | 通过 |
 | 十模块各 100,000 次独立性能冒烟 | 10 | 通过，均低于五秒保护阈值 |
 | 基线、外部/最小数据、公共头文件、依赖锁、本机配置 | 6 | 通过 |
+| VS Code 本机预设/任务/F5 构建树一致性 | 1 | 通过 |
 | 同进程 PowerShell 环境与用户预设幂等性 | 1 | 通过 |
+| Windows 根路径语义 | 1 | 通过 |
+| 三种依赖验证模式及负向注入 | 1 | 通过 |
 | 全组件与独立无 Qt 安装消费者 | 2 | 通过 |
 
 性能阈值仅是非发布冒烟/回归保护，不是生产性能验收结论。
@@ -34,14 +38,14 @@
 - 基线：136 个文件按相对路径、字节数和 SHA-256 校验；源对应文件也一致。
 - 外部数据：四个用户提供文件合计 5,023,286,812 字节，完整 SHA-256 校验通过。
 - 公共头文件：15 个头文件完成 Qt、Eigen、oneMKL、TBB、HDF5、ONNX Runtime、FFTW 与标准库实现类型扫描。
-- 依赖契约：两个校验器比较全部 14 个选定 BL1.0 元组并解析已批准获取脚本。展开后的 vcpkg `.tar.gz` URL、5,332,790 字节、SHA-256 `550800632708a561c82412ee69e227c261d0ac8bc381eee09d123014528ae97a` 和缓存文件名完全一致。
+- 依赖契约：两个校验器比较全部 14 个选定 BL1.0 元组、8 项获取策略并解析已批准获取脚本。`Acquisition`、实际 `CompatibleHost` 和实际 `ExactCapturedHost` 均通过；注入测试接受兼容补丁/替代路径，并拒绝越界版本、错误工具族、x86 及精确模式路径变化。
 - 对照事实：同提交 `.zip` 为 11,349,427 字节，SHA-256 `6e63222e536d62a0f26fc6070bce694a3d9e0d42dc0a43d07802500992f08b`，按策略拒绝。
-- 本机配置：`CMakePresets.json` 与四个 VS Code JSON 不含本机绝对路径。被忽略的 `CMakeUserPresets.json` 仅有一个完整环境块；PowerShell 7 与 Windows PowerShell 5.1 均重复生成三次，稳定为 8,774 字节、SHA-256 `10d719d379073c79b1a96098d9268ffa3deef40ba22e49a8d2e42d35c3c17d0b`，路径项全部唯一。
+- 本机配置：`CMakePresets.json` 与三个 VS Code JSON 不含本机绝对路径。被忽略的 `CMakeUserPresets.json` 仅有一个完整环境块；同会话重复生成字节稳定，路径项全部唯一。VS Code 设置/任务/测试/F5 使用同一本机 Debug 预设，动态校验通过，明确平台测试目标直接启动通过。
 - 初始化：同一进程连续两次运行返回相同非阻断缺失材料列表，PATH 和用户预设哈希均不变。
-- Windows 定向回归：动态 MSVC 发现/已初始化环境复用通过；传统 `cp1252` 启动条件下可打印中文缺失路径；最小清单生成、规范排序、POSIX 路径、LF 属性和内容检查通过。
+- Windows 定向回归：动态 MSVC 发现/已初始化环境复用通过；盘符根、UNC 根、扩展长度根、大小写去重和排除语义通过；传统 `cp1252` 启动条件下可打印中文缺失路径；最小清单生成、规范排序、POSIX 路径、LF 属性和内容检查通过。
 - Qt 可用性：官方 Qt 6.10.3 元数据地址返回 200，312,649 字节，SHA-256 为 `91e0a64cc859c28eb547192a9813cc2ffaac524a98250bc39a0b79fe8da6eae1`，包含 `qt.qt6.6103.win64_msvc2022_64`；相同地址模式的 6.11.0 与 6.11.1 返回 404。
 - Qt 最低版本：CMake、安装包、本机发现和 Visualization/Workbench 守卫统一为 6.10.3；静态扫描拒绝重新引入 6.11 最低依赖。依赖锁分别保留 BL1.0 6.11.1 选择、本机 6.11.1 证据和 6.10.3 支持下限。
-- 工作流：PyYAML 成功解析 `.github/workflows/ci.yml`；两个 Windows Ninja 作业均在 CMake 前初始化 x64-hosted x64 MSVC，Qt 精确固定 6.10.3 `win64_msvc2022_64`，Action 使用完整提交哈希。远程运行 `29919175820` 针对提交 `d41c2748a465c4e843617e0a9444c8f8cc2f5015`，状态为 `completed`、结论为 `success`；Windows UI 模块/性能作业与 Windows、Ubuntu 两项无界面作业全部成功。运行 `29915975454` 和 `29918020386` 的失败结论继续作为旧提交历史保留。
+- 工作流：PyYAML 成功解析 `.github/workflows/ci.yml`；Ubuntu/Windows 先运行 `Acquisition`，两个 Windows Ninja 作业在 CMake 前初始化 x64-hosted x64 MSVC/Qt 后运行 `CompatibleHost`，Action 使用完整提交哈希。远程运行 `29919175820` 仅作为旧提交历史成功证据保留；本轮质量修复的新提交尚无远程运行结果。
 
 ## CUDA 限制
 

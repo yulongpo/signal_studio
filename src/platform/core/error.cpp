@@ -182,10 +182,13 @@ std::string_view Status::diagnostic() const noexcept { return details_.technical
 Status Status::with_context(std::string_view context) const {
   if (ok() || context.empty()) return *this;
   ErrorDetails propagated = details_;
+  if (propagated.cause_chain.size() == max_error_cause_depth) {
+    propagated.cause_chain.erase(propagated.cause_chain.begin() + 1);
+  }
   propagated.cause_chain.push_back(
       {code_, details_.category, details_.technical_details.empty() ? details_.user_message : details_.technical_details});
   propagated.technical_details = std::string{context} + (details_.technical_details.empty() ? "" : ": " + details_.technical_details);
-  return failure(code_, std::move(propagated));
+  return {code_, std::move(propagated)};
 }
 
 std::string Status::serialize_json() const {

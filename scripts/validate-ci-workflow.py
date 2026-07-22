@@ -127,6 +127,14 @@ def verify() -> None:
         if not isinstance(steps, list):
             raise RuntimeError(f"{job_name} steps must be a sequence")
         verify_immutable_actions(steps, job_name)
+        acquisition = named_step(steps, "Validate immutable acquisition and package locks")
+        expected_acquisition = (
+            "./scripts/validate-dependency-lock.ps1 -Mode Acquisition -Headless"
+            if conditional
+            else "./scripts/validate-dependency-lock.ps1 -Mode Acquisition"
+        )
+        if acquisition.get("shell") != "pwsh" or acquisition.get("run") != expected_acquisition:
+            raise RuntimeError(f"{job_name} must validate portable acquisition locks with pwsh")
         initializer = named_step(steps, "Initialize MSVC 2022 x64 environment")
         if initializer.get("shell") != "pwsh" or initializer.get("run") != INITIALIZER:
             raise RuntimeError(f"{job_name} must call the repository MSVC initializer with pwsh")
@@ -136,8 +144,28 @@ def verify() -> None:
             (index for index, step in enumerate(steps) if isinstance(step, dict) and str(step.get("name", "")).startswith("Configure")),
             None,
         )
-        if configure_index is None or steps.index(initializer) >= configure_index:
+        if (
+            configure_index is None
+            or steps.index(acquisition) >= steps.index(initializer)
+            or steps.index(initializer) >= configure_index
+        ):
             raise RuntimeError(f"{job_name} must initialize MSVC before CMake configure")
+
+    headless_steps = headless["steps"]
+    headless_compatible = named_step(headless_steps, "Validate compatible Windows headless host")
+    if (
+        headless_compatible.get("if") != "runner.os == 'Windows'"
+        or headless_compatible.get("shell") != "pwsh"
+        or headless_compatible.get("run")
+        != "./scripts/validate-dependency-lock.ps1 -Mode CompatibleHost -Headless -HostEvidenceOutputPath build/ci-host-evidence.json"
+    ):
+        raise RuntimeError("headless CI must validate the Windows compatibility contract after MSVC initialization")
+    if not (
+        headless_steps.index(named_step(headless_steps, "Initialize MSVC 2022 x64 environment"))
+        < headless_steps.index(headless_compatible)
+        < headless_steps.index(named_step(headless_steps, "Configure headless platform and C SDK example"))
+    ):
+        raise RuntimeError("headless host compatibility validation is ordered incorrectly")
 
     ui_steps = ui["steps"]
     qt_step = next(
@@ -153,10 +181,24 @@ def verify() -> None:
     qt_verifier = named_step(ui_steps, "Verify Qt and compiler ABI")
     if "QT_VERSION" not in str(qt_verifier.get("run", "")) or "SIGNAL_STUDIO_CI_QT_VERSION" not in str(qt_verifier.get("run", "")):
         raise RuntimeError("Qt ABI verification must also enforce the CI Qt version")
+    ui_compatible = named_step(ui_steps, "Validate compatible Windows UI host")
+    ui_compatible_run = str(ui_compatible.get("run", ""))
+    if (
+        ui_compatible.get("shell") != "pwsh"
+        or "$env:SIGNAL_STUDIO_QT_ROOT = $env:QT_ROOT_DIR" not in ui_compatible_run
+        or "validate-dependency-lock.ps1 -Mode CompatibleHost" not in ui_compatible_run
+    ):
+        raise RuntimeError("Qt-backed CI must validate the compatible UI host with the installed Qt root")
+    if not (
+        ui_steps.index(qt_verifier)
+        < ui_steps.index(ui_compatible)
+        < ui_steps.index(named_step(ui_steps, "Configure all ten modules"))
+    ):
+        raise RuntimeError("UI host compatibility validation is ordered incorrectly")
     verify_qt_availability_evidence()
     print(
-        "GitHub Actions YAML parsed; actions are immutable, Windows uses MSVC x64, "
-        f"and Qt {CI_QT_VERSION} {QT_ARCHITECTURE} has official availability evidence"
+        "GitHub Actions YAML parsed; acquisition locks are portable, compatible-host checks are ordered, "
+        f"actions are immutable, and Qt {CI_QT_VERSION} {QT_ARCHITECTURE} has official availability evidence"
     )
 
 

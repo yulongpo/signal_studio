@@ -5,14 +5,14 @@
       "label": "Signal Studio: Configure Debug",
       "type": "process",
       "command": "powershell.exe",
-      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/configure.ps1", "-Preset", "windows-msvc-debug"],
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/configure.ps1", "-Preset", "local-windows-msvc-debug"],
       "problemMatcher": ["$msCompile"]
     },
     {
       "label": "Signal Studio: Build Debug",
       "type": "process",
       "command": "powershell.exe",
-      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/build.ps1", "-Preset", "windows-msvc-debug"],
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/build.ps1", "-Preset", "local-windows-msvc-debug"],
       "dependsOn": "Signal Studio: Configure Debug",
       "group": { "kind": "build", "isDefault": true },
       "problemMatcher": ["$msCompile"]
@@ -21,16 +21,24 @@
       "label": "Signal Studio: Test Debug",
       "type": "process",
       "command": "powershell.exe",
-      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/test.ps1", "-Preset", "windows-msvc-debug"],
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/test.ps1", "-Preset", "local-windows-msvc-debug"],
       "dependsOn": "Signal Studio: Build Debug",
       "group": "test",
       "problemMatcher": []
     },
     {
+      "label": "Signal Studio: Configure Release",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/configure.ps1", "-Preset", "local-windows-msvc-release"],
+      "problemMatcher": ["$msCompile"]
+    },
+    {
       "label": "Signal Studio: Build Release",
       "type": "process",
       "command": "powershell.exe",
-      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/build.ps1", "-Preset", "windows-msvc-release"],
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/build.ps1", "-Preset", "local-windows-msvc-release"],
+      "dependsOn": "Signal Studio: Configure Release",
       "group": "build",
       "problemMatcher": ["$msCompile"]
     },
@@ -38,9 +46,17 @@
       "label": "Signal Studio: Test Release",
       "type": "process",
       "command": "powershell.exe",
-      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/test.ps1", "-Preset", "windows-msvc-release"],
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/test.ps1", "-Preset", "local-windows-msvc-release"],
       "dependsOn": "Signal Studio: Build Release",
       "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Signal Studio: Validate Debug Tree",
+      "type": "process",
+      "command": "python",
+      "args": ["${workspaceFolder}/scripts/validate-vscode-workflow.py", "--require-configured-target"],
+      "dependsOn": "Signal Studio: Build Debug",
       "problemMatcher": []
     }
   ]

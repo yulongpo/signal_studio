@@ -6,11 +6,25 @@
 
 namespace signal::core {
 
+bool is_known_capability_availability(CapabilityAvailability availability) noexcept {
+  switch (availability) {
+    case CapabilityAvailability::unavailable:
+    case CapabilityAvailability::available:
+    case CapabilityAvailability::degraded: return true;
+  }
+  return false;
+}
+
 Status CapabilityRegistry::register_capability(Capability capability) {
   if (capability.id.empty() || capability.provider.empty()) {
     return Status::failure(
         {ErrorDomain::core, ErrorReason::invalid_argument},
         "Capability id and provider are required");
+  }
+  if (!is_known_capability_availability(capability.availability)) {
+    return Status::failure(
+        {ErrorDomain::core, ErrorReason::invalid_argument},
+        "Capability availability is outside the public contract");
   }
   std::unique_lock lock{mutex_};
   const auto duplicate = std::ranges::find(capabilities_, capability.id, &Capability::id);

@@ -42,9 +42,9 @@ $report = [ordered]@{
 
 $report | ConvertTo-Json -Depth 4
 if ($Headless) {
-    $dependencyReport = & (Join-Path $PSScriptRoot 'validate-dependency-lock.ps1') -Headless
+    $dependencyReport = & (Join-Path $PSScriptRoot 'validate-dependency-lock.ps1') -Mode CompatibleHost -Headless
 } else {
-    $dependencyReport = & (Join-Path $PSScriptRoot 'validate-dependency-lock.ps1')
+    $dependencyReport = & (Join-Path $PSScriptRoot 'validate-dependency-lock.ps1') -Mode CompatibleHost
 }
 if ($LASTEXITCODE -ne 0) { throw 'Dependency lock validation failed.' }
 $dependencyReport

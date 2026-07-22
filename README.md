@@ -39,7 +39,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test.ps1 -Preset win
 
 脚本自动发现 MSVC、CMake、Ninja，并在 UI 预设中发现 Qt。生成的 `CMakeUserPresets.json` 保持忽略状态，通过一个隐藏工具链基预设只保存一份完整环境；Qt 隐藏基预设仅保存短标量根目录。PATH、`CMAKE_PREFIX_PATH`、Qt 根目录及 MSVC 路径列表均执行规范化和大小写不敏感去重。文件采用确定性内容和同目录原子替换，重复生成的字节内容必须稳定。已提交的预设与 VS Code 配置不含本机绝对路径。
 
-`dependencies/dependency-lock.json` 将已安装实例哈希与 BL1.0 获取契约分离；`dependencies/offline-cache-manifest.json` 记录经批准的可复现缓存。vcpkg 获取必须使用 BL1.0 脚本规定的固定提交 `.tar.gz` URL、大小和 SHA-256。
+VS Code 的配置、构建、测试和 F5 均使用 `local-windows-msvc-debug` 构建树。F5 前置任务会校验缓存源目录、生成器、UI 选项、目标存在性和输入新鲜度；测试目标构建后复制所需 Qt 运行库，因此不依赖 VS Code 进程继承本机 Qt PATH。
+
+`dependencies/dependency-lock.json` 将不可变获取/包元组、可接受宿主范围和精确主机快照分开。默认 bootstrap 使用 `CompatibleHost`，接受契约范围内的补丁版本和不同安装路径；`Acquisition` 仅验证 BL1.0 获取、离线缓存和 14 个包元组；只有显式 `ExactCapturedHost` 才与 `dependencies/captured-host-evidence.json` 的版本、路径和文件哈希逐项比较。`dependencies/offline-cache-manifest.json` 记录经批准的可复现缓存，vcpkg 获取仍必须使用 BL1.0 脚本规定的固定提交 `.tar.gz` URL、大小和 SHA-256。
 
 ## 已批准基线与原型参考
 

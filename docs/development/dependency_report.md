@@ -1,6 +1,6 @@
 # MS-00 依赖报告
 
-`dependencies/dependency-lock.json` 将不可变已批准输入与本机检测证据分离。两个校验器均加载只读 BL1.0 依赖来源，并比较每个选定元组：名称、包含 port version 的不可变版本、SPDX、官方来源 URL、vcpkg 锁引用和 baseline 验证值。
+`dependencies/dependency-lock.json` 保存不可变已批准输入、获取策略和可移植宿主范围；精确本机检测证据单独保存在 `dependencies/captured-host-evidence.json`。两个校验器均加载只读 BL1.0 依赖来源，并比较每个选定元组：名称、包含 port version 的不可变版本、SPDX、官方来源 URL、vcpkg 锁引用和 baseline 验证值。
 
 ## 锁定依赖状态
 
@@ -17,13 +17,21 @@ BL1.0 未定义每个 port 的源归档 SHA-256。每个空包哈希因此必须
 
 ## Qt 版本语义
 
-不可变 BL1.0 选择 qtbase 6.11.1#1 与 qttools 6.11.1，项目依赖锁逐项保留这些版本；本机检测证据也是 Qt 6.11.1。二者都不自动定义源码最低版本。当前 Visualization/Workbench 的私有 Qt 使用只依赖 Qt 6 通用版本宏；远程运行 `29919175820` 已使用 Qt 6.10.3 完成 Windows UI 模块/性能作业，因此项目将 6.10.3 作为经过实际远程门禁验证的最低支持版本。
+不可变 BL1.0 选择 qtbase 6.11.1#1 与 qttools 6.11.1，项目依赖锁逐项保留这些版本；本机检测证据也是 Qt 6.11.1。二者都不自动定义源码最低版本。Visualization/Workbench 的私有 Qt 使用只依赖 Qt 6 通用版本宏；历史远程运行 `29919175820` 已使用 Qt 6.10.3 完成 Windows UI 模块/性能作业，因此项目继续以 6.10.3 为最低支持版本。本轮依赖验证重构的新提交仍需重新运行远程门禁。
 
 `qt_compatibility_contract` 分别记录最低支持 6.10.3、CI 验证 6.10.3、本机验证 6.11.1 和 BL1.0 两个 port 选择。Python/PowerShell 依赖校验器会交叉检查这些字段，既不能篡改不可变 BL1.0 版本，也不能把本机 6.11.1 误当成源码最低版本。
 
+## 三层验证模式
+
+- `Acquisition`：不探测宿主，精确验证不可变 BL1.0 获取、14 个包元组、8 项来源策略和离线缓存元数据；适用于 Ubuntu 与 Windows CI 的便携前置检查。
+- `CompatibleHost`：在获取验证之后，要求 Windows x64、匹配工具族和半开版本区间；允许兼容补丁版本和不同安装路径。默认 bootstrap 及 Windows CI 使用此模式，并把当次结果写入生成目录作为证据。
+- `ExactCapturedHost`：显式复现审计模式；在兼容检查之外，与已提交快照逐项比较版本、路径、架构、工具族和已安装文件 SHA-256。它不再是其他开发机或 CI 的默认门禁。
+
+注入式模式测试已证明：兼容范围内的新补丁和替代路径可通过，越界版本、错误 Ninja 工具族及 x86 架构被拒绝，精确模式仍拒绝路径变化。实际本机的三种模式也均按各自预期通过。
+
 ## 已安装实例证据与获取契约
 
-Git、CMake、Ninja、Qt/qmake、MSVC/cl、Windows SDK/rc 和 Python 记录检测到的精确版本、可执行文件路径、已安装文件 SHA-256 与哈希范围。这些哈希标识本机已测文件，不是厂商安装包哈希。
+Git、CMake、Ninja、Qt/qmake、MSVC/cl、Windows SDK/rc 和 Python 的精确版本、可执行文件路径、已安装文件 SHA-256 与哈希范围保存在独立主机快照中。这些哈希标识本机已测文件，不是厂商安装包哈希，也不参与默认可移植兼容判断。
 
 BL1.0 仅为 vcpkg 归档和可选 CUDA 12.8.1 网络安装器提供获取 URL/SHA-256。Visual Studio/Windows SDK 使用显式 `channel-managed-not-defined-by-bl1.0`；Git、CMake、Ninja、独立 Qt 和 Python 使用 `not-defined-by-bl1.0`。这些状态要求获取 URL/哈希为空并提供策略说明。CUDA 在本机显式记录为未检测到。
 
