@@ -94,3 +94,12 @@
 - 修复下变频频移符号（原实为上变频移到 2fc）。
 - 记录无界面 118/118、UI(CUDA) 152/152 四配置全量 CTest 通过，合计 540/540；解析单音下变频包络稳定验证。
 - MS-05 已验收关闭，下一里程碑为 MS-06（PluginSDK/ModelRuntime/Dataset）；整体产品尚未完成。
+# 2026-07-23：MS-06 PluginSDK/ModelRuntime/Dataset
+
+- 新增 PluginSDK：PluginHost（ABI-v1 LoadLibrary 加载/query/load/activate/unload，异常边界隔离）、IAlgorithmPlugin + RmsAlgorithmPlugin、discover。
+- 新增 ModelRuntime：ModelRegistry（install/resolve/list）、IInferenceSession + NullInferenceSession（ONNX 未装时 unavailable，不伪造）。
+- 新增 Dataset：JsonFileDataset（append/query/commit/round-trip，JSON 清单，无第三方依赖）。
+- 修复 PluginHost 未调 api.load 获取插件句柄的 bug（activate 用 HMODULE 而非插件句柄）。
+- 记录无界面 126/126、UI(CUDA) 160/160 四配置全量 CTest 通过，合计 572/572。
+- ONNX Runtime/HDF5 未装为环境偏差，接口就绪不伪造。
+- MS-06 已验收关闭，下一里程碑为 MS-07（工程化/打包/文档）；整体产品尚未完成。

@@ -10,8 +10,8 @@
 | MS-03 | Visualization 与 Workbench | 已验收关闭 |
 | MS-04 | Signal Studio 基础应用 | 已验收关闭 |
 | MS-05 | 宽窄带联动分析 | 已验收关闭 |
-| MS-06 | PluginSDK、ModelRuntime、Dataset 功能 | 进行中 |
-| MS-07 | 工程化、打包、文档 | 未开始 |
+| MS-06 | PluginSDK、ModelRuntime、Dataset 功能 | 已验收关闭 |
+| MS-07 | 工程化、打包、文档 | 进行中 |
 | MS-08 | 复用证明应用 | 未开始 |
 | MS-09 | 最终发布验证与发布 | 未开始 |
 
@@ -27,4 +27,6 @@ MS-03 交付 SignalVisualization（`IDataSeries`/`ViewportController`/`IChartVie
 
 MS-04 交付 Signal Studio 桌面应用（薄壳）：Qt-free `Application` 核心（文件名 cf/sr 解析、WAV 自动解析、SC16 文件名提示导入、`requested_sample_range` 修复、有界窗口读取、PSD/STFT）+ GUI（`--self-test` 无头路径无 QApplication、QMainWindow/菜单/三控件/导入向导/状态栏、隐藏停止计算）+ Designer `main_window.ui`。应用仅链接公共库，依赖 DAG 不变。无界面 118/118、UI(CUDA) 150/150 四配置全量 CTest 通过，合计 536/536；外部 20MB WAV 与 1GB SC16 有界读取验证，self-test 通过。MS-04 已验收关闭。
 
-MS-05 交付宽窄带联动：窄带信道提取（数字下变频 `e^{-j*2*pi*fc*n/fs}` 频移 + 双路 FIR 低通 + 多相重采样 gcd 约简）、`WidebandNarrowbandController`（选区->信道 spec、反转/越界校验、联动状态）、`Application::extract_narrowband`。修复 MS-02 `PolyphaseResampler` 增益归一化（`sum(h)=L`，DC 增益=1）与下变频符号 bug。无界面 118/118、UI(CUDA) 152/152 四配置全量 CTest 通过，合计 540/540；解析单音下变频包络稳定验证。MS-05 已验收关闭，下一里程碑为 MS-06（PluginSDK/ModelRuntime/Dataset）；整体开发计划尚未达到产品最终验收条件。
+MS-05 交付宽窄带联动：窄带信道提取（数字下变频 `e^{-j*2*pi*fc*n/fs}` 频移 + 双路 FIR 低通 + 多相重采样 gcd 约简）、`WidebandNarrowbandController`（选区->信道 spec、反转/越界校验、联动状态）、`Application::extract_narrowband`。修复 MS-02 `PolyphaseResampler` 增益归一化（`sum(h)=L`，DC 增益=1）与下变频符号 bug。无界面 118/118、UI(CUDA) 152/152 四配置全量 CTest 通过，合计 540/540；解析单音下变频包络稳定验证。MS-05 已验收关闭。
+
+MS-06 交付 PluginSDK（`PluginHost` ABI-v1 加载/激活/卸载/异常隔离、`IAlgorithmPlugin`+`RmsAlgorithmPlugin`、`discover`）、ModelRuntime（`ModelRegistry`、`IInferenceSession`+`NullInferenceSession`，ONNX 未装为环境偏差不伪造）、Dataset（`JsonFileDataset` append/query/commit/round-trip）。修复 PluginHost 未调 `api.load` 获取插件句柄 bug。依赖 DAG 不变（PluginSDK 不依赖 DSP，RMS 内联）。无界面 126/126、UI(CUDA) 160/160 四配置全量 CTest 通过，合计 572/572。MS-06 已验收关闭，下一里程碑为 MS-07（工程化/打包/文档）；整体开发计划尚未达到产品最终验收条件。
