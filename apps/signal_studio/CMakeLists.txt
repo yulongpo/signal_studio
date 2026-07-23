@@ -1,6 +1,6 @@
 # Qt-free application core: composes Data/DSP/Compute/TaskRuntime/Core. Shared by the GUI
 # executable and the headless self-test so import/analyze logic is testable without QApplication.
-add_library(signal_studio_app_core STATIC application.cpp)
+add_library(signal_studio_app_core STATIC application.cpp wideband_narrowband.cpp)
 add_library(SignalStudio::AppCore ALIAS signal_studio_app_core)
 target_link_libraries(signal_studio_app_core PUBLIC
   SignalStudio::Data SignalStudio::DSP SignalStudio::Compute SignalStudio::TaskRuntime SignalStudio::Core)

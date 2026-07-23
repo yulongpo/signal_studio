@@ -131,3 +131,11 @@
 - RAW 导入修复：`import_raw` 经 `calculate_data_facts` 算 available_frames 并设 `requested_sample_range=(0,available_frames)`，使后续有界读取通过 `raw.cpp` 的 containment 校验（`open_raw` 不隐式设置该字段）。
 - 真实数据：外部 WAV/SC16 仅以有界窗口读取（8192 样本），不读全文件；数据缺失时 SKIP 不误报。
 - 下一里程碑：MS-05（宽窄带联动分析）。
+
+## DEV-019 MS-05 宽窄带联动与重采样器增益修复
+
+- 日期：2026-07-23
+- 状态：MS-05 已验收关闭
+- 决策：窄带信道提取经数字下变频（复频移 `e^{-j*2*pi*fc*n/fs}` + 双路实 FIR 低通 + 多相重采样）实现，复用 MS-02 DSP。`WidebandNarrowbandController` 从宽带选区派生信道 spec（center=中点、bandwidth=跨度、output_rate=2*bandwidth），校验反转/越界。
+- 缺陷修复：MS-05 暴露 MS-02 `PolyphaseResampler` 增益归一化 bug（下采样幅度被缩放 L/M）与下变频符号 bug（实为上变频）。修复重采样器为 `sum(h)=L`（DC 增益=1），下变频符号改正。MS-02 resample 回归全通过。
+- 下一里程碑：MS-06（PluginSDK/ModelRuntime/Dataset）。

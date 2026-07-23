@@ -203,4 +203,11 @@ core::Result<dsp::StftResult> Application::analyze_stft(const data::SignalSlice&
   return stft_->process(slice, sample_rate_hz, req);
 }
 
+core::Result<NarrowbandChannel> Application::extract_narrowband(const data::SignalSlice& wideband,
+                                                                 double sample_rate_hz,
+                                                                 const NarrowbandChannelSpec& spec,
+                                                                 std::uint64_t source_start_sample) {
+  return extract_narrowband_channel(wideband, sample_rate_hz, spec, source_start_sample);
+}
+
 }  // namespace signal::studio

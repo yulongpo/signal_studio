@@ -1,8 +1,10 @@
 #include "application.hpp"
+#include "wideband_narrowband.hpp"
 
 #include <cmath>
 #include <filesystem>
 #include <iostream>
+#include <numbers>
 #include <string>
 #include <string_view>
 
@@ -157,6 +159,64 @@ int case_external_sc16() {
   return g_failures == 0 ? 0 : 1;
 }
 
+int case_wideband_narrowband_link() {
+  using namespace signal::studio;
+  WidebandNarrowbandController ctrl(50.0e6, 1.245e9);
+  check(!ctrl.link().has_value(), "no link initially");
+  // Selection within [cf-25MHz, cf+25MHz].
+  check(ctrl.set_wideband_selection(1.240e9, 1.250e9).ok(), "valid selection");
+  check(ctrl.link().has_value(), "link set after selection");
+  const auto& link = *ctrl.link();
+  check(approx(link.channel.center_frequency_hz, 1.245e9, 1.0), "channel center = midpoint");
+  check(approx(link.channel.bandwidth_hz, 10.0e6, 1.0), "channel bandwidth = span");
+  check(approx(link.channel.output_sample_rate_hz, 20.0e6, 1.0), "output rate = 2x bandwidth");
+  // Inverted selection rejected.
+  check(!ctrl.set_wideband_selection(1.250e9, 1.240e9).ok(), "inverted selection rejected");
+  // Out-of-band selection rejected.
+  check(!ctrl.set_wideband_selection(1.0e9, 1.1e9).ok(), "out-of-band selection rejected");
+  return g_failures == 0 ? 0 : 1;
+}
+
+int case_narrowband_extraction() {
+  using namespace signal::studio;
+  // Synthesize a complex tone at 1 kHz within a 64 kHz capture, then extract a 200 Hz channel
+  // around 1 kHz and verify the baseband output is dominated by a low-frequency component.
+  constexpr std::uint64_t N = 4096;
+  const double fs = 64000.0;
+  const double tone = 1000.0;
+  std::vector<signal::data::ComplexSample> iq(N);
+  for (std::uint64_t n = 0; n < N; ++n) {
+    const double phase = 2.0 * std::numbers::pi * tone * static_cast<double>(n) / fs;
+    iq[n].real = std::cos(phase);
+    iq[n].imag = std::sin(phase);
+  }
+  auto buf = signal::data::SignalBuffer::from_complex(iq);
+  NarrowbandChannelSpec spec;
+  spec.center_frequency_hz = tone;
+  spec.bandwidth_hz = 200.0;
+  spec.output_sample_rate_hz = 400.0;  // 2x bandwidth
+  auto ch = extract_narrowband_channel(buf.view(), fs, spec);
+  check(ch.ok(), "narrowband extraction ok");
+  if (!ch.ok()) return 1;
+  check(!ch->samples.empty(), "channel has samples");
+  check(approx(ch->output_sample_rate_hz, 400.0, 1e-6), "channel output rate");
+  // After down-conversion the 1 kHz tone sits at baseband (~0 Hz). Verify the extracted samples
+  // have near-constant magnitude (a pure tone at baseband has constant envelope).
+  double mag_mean = 0.0, mag_var = 0.0;
+  for (const auto& s : ch->samples) {
+    mag_mean += std::sqrt(s.real * s.real + s.imag * s.imag);
+  }
+  mag_mean /= static_cast<double>(ch->samples.size());
+  for (const auto& s : ch->samples) {
+    const double m = std::sqrt(s.real * s.real + s.imag * s.imag);
+    mag_var += (m - mag_mean) * (m - mag_mean);
+  }
+  mag_var /= static_cast<double>(ch->samples.size());
+  check(mag_mean > 0.05, "channel magnitude non-trivial");
+  check(mag_var / (mag_mean * mag_mean + 1e-12) < 0.5, "channel envelope stable (baseband tone)");
+  return g_failures == 0 ? 0 : 1;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -172,6 +232,8 @@ int main(int argc, char** argv) {
   if (name == "analyze-psd") return case_analyze_psd();
   if (name == "external-wav") return case_external_wav();
   if (name == "external-sc16") return case_external_sc16();
+  if (name == "wideband-narrowband-link") return case_wideband_narrowband_link();
+  if (name == "narrowband-extraction") return case_narrowband_extraction();
   std::cerr << "unknown case: " << name << "\n";
   return 2;
 }

@@ -86,3 +86,11 @@
 - 修复 RAW 导入 requested_sample_range 缺失导致读取被拒。
 - 记录无界面 118/118、UI(CUDA) 150/150 四配置全量 CTest 通过，合计 536/536；外部 20MB WAV 与 1GB SC16 有界读取验证；self-test 通过。
 - MS-04 已验收关闭，下一里程碑为 MS-05（宽窄带联动分析）；整体产品尚未完成。
+# 2026-07-23：MS-05 宽窄带联动分析
+
+- 新增窄带信道提取（数字下变频：频移+双路 FIR 低通+多相重采样，gcd 约简 L/M）。
+- 新增 WidebandNarrowbandController（宽带选区->信道 spec，反转/越界校验，联动状态）。
+- 修复 PolyphaseResampler 增益归一化（原 h[i]=v*L 未归一化，下采样幅度被缩放 L/M；改为 sum(h)=L，DC 增益=1）。
+- 修复下变频频移符号（原实为上变频移到 2fc）。
+- 记录无界面 118/118、UI(CUDA) 152/152 四配置全量 CTest 通过，合计 540/540；解析单音下变频包络稳定验证。
+- MS-05 已验收关闭，下一里程碑为 MS-06（PluginSDK/ModelRuntime/Dataset）；整体产品尚未完成。

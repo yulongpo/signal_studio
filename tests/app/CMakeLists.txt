@@ -10,9 +10,11 @@ foreach(_case IN ITEMS
     import-sc16-no-sr-fails
     analyze-psd
     external-wav
-    external-sc16)
+    external-sc16
+    wideband-narrowband-link
+    narrowband-extraction)
   add_test(NAME "app.${_case}" COMMAND signal_studio_app_tests --case "${_case}")
-  set_tests_properties("app.${_case}" PROPERTIES TIMEOUT 60 LABELS "unit;contract;ms-04;app"
+  set_tests_properties("app.${_case}" PROPERTIES TIMEOUT 60 LABELS "unit;contract;ms-04;ms-05;app"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 endforeach()
 

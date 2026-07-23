@@ -54,14 +54,19 @@ PolyphaseResampler::process(const ResampleRatio& ratio, std::span<const double> 
   }
   std::vector<double> h(static_cast<std::size_t>(n_taps));
   const double mid = static_cast<double>(order) / 2.0;
-  double sum = 0.0;
   for (std::uint64_t i = 0; i < n_taps; ++i) {
     const double n = static_cast<double>(i) - mid;
-    const double v = 2.0 * fc * sinc(2.0 * fc * n) * (*window_result)[static_cast<std::size_t>(i)];
-    h[static_cast<std::size_t>(i)] = v * static_cast<double>(L);  // gain L
-    sum += v;
+    h[static_cast<std::size_t>(i)] = 2.0 * fc * sinc(2.0 * fc * n) * (*window_result)[static_cast<std::size_t>(i)];
   }
-  (void)sum;  // gain is set via L scaling; DC normalization handled by L factor on non-zero phase.
+  // Normalize so the full filter has DC gain L: each of the L polyphase branches then has DC
+  // gain 1, which preserves signal amplitude for both up- and down-sampling. Without this the
+  // down-sampling path attenuates by L/M (exposed by narrowband channel extraction).
+  double h_sum = 0.0;
+  for (double v : h) h_sum += v;
+  if (h_sum > 0.0) {
+    const double scale = static_cast<double>(L) / h_sum;
+    for (auto& v : h) v *= scale;
+  }
 
   // Polyphase decomposition: phase p uses h[p], h[p+L], h[p+2L], ...
   const std::uint64_t poly_taps = taps_per_phase;

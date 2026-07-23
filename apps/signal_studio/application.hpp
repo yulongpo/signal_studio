@@ -7,6 +7,7 @@
 #include "signal_studio/dsp/stft.hpp"
 #include "signal_studio/dsp/statistics.hpp"
 #include "signal_studio/task_runtime/task_runtime.hpp"
+#include "wideband_narrowband.hpp"
 
 #include <filesystem>
 #include <memory>
@@ -72,6 +73,12 @@ class Application final {
   [[nodiscard]] core::Result<dsp::StftResult>
   analyze_stft(const data::SignalSlice& slice, double sample_rate_hz, std::uint64_t nfft,
                std::uint64_t hop_samples);
+
+  /// Extract a narrowband channel from a wideband complex slice (digital down-conversion:
+  /// frequency shift, low-pass filter, resample). No FFT backend required.
+  [[nodiscard]] core::Result<NarrowbandChannel>
+  extract_narrowband(const data::SignalSlice& wideband, double sample_rate_hz,
+                     const NarrowbandChannelSpec& spec, std::uint64_t source_start_sample = 0);
 
  private:
   std::unique_ptr<task::TaskRuntime> runtime_;
