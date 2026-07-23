@@ -102,3 +102,12 @@
 - 环境变化：当前开发主机已安装 CUDA 12.4（`nvcc` 可用），与 MS-00 记录的“无 nvcc/CUDA Toolkit”不同。GPU 数值验证自 MS-02 起启用；MS-01 不报告 GPU 结果。
 - 构建修复：`scripts/common.ps1` 的 `Update-SignalStudioUserPresets` 现在捕获 `VCToolsRedistDir`/`UniversalCRTSdkDir`/`UCRTVersion`，使裸 `cmake --preset local-*` 在脚本进程外也能部署 VC143 运行库并查找 Debug UCRT。脚本流程（`configure.ps1`/`build.ps1`）通过 `Import-SignalStudioMsvcEnvironment` 提供完整 MSVC 环境，仍为 CI 与 VS Code 的正式入口。
 - 下一里程碑：MS-02（DSP 与 Compute 后端），采用自包含 CPU FFT/PSD/STFT/窗函数/滤波/重采样实现作为默认后端，cuFFT 作为可选 GPU 适配器；oneMKL/FFTW 因本机未安装而作为环境偏差如实记录，经适配器接口保留后续替换能力。
+
+## DEV-016 MS-02 DSP/Compute 后端与 oneMKL 环境偏差
+
+- 日期：2026-07-23
+- 状态：MS-02 已验收关闭
+- 决策：SignalCompute 经 `IComputeBackend`/`IBackendSelector` 实现 CPU/SIMD/CUDA 能力探测与自动选择/显式降级（ADR-009）。SignalDSP 经 `IFftBackend` 适配器隔离 FFT 后端（ADR-006）：cuFFT Z2Z 为 GPU 后端（CUDA 12.4 可用），oneMKL 为 CPU 默认后端。窗函数/统计/滤波（FIR 窗 sinc）/重采样（多相）为标准成熟 DSP 实现（非 FFT/矩阵，不违反 ADR-006 的自研 FFT 禁令）。
+- 环境偏差：本机未安装 oneMKL；vcpkg manifest 模式会源码编译 Qt（与系统 Qt 6.11.1 冲突），单独 `intel-mkl` 端口响应极慢未完成。故 CPU FFT 适配器接口就绪但实现返回 `unavailable`，CPU 构建不注册 FFT/PSD/STFT 用例。cuFFT GPU 后端经解析信号（单音 bin、Parseval、IFFT 往返、PSD 频率、STFT 时频）验证。
+- 影响：公共头无第三方类型；cuFFT/cudart PRIVATE 链接，依赖 DAG 不变；`SignalStudioConfig.cmake` 在 CUDA 构建时 `find_dependency(CUDAToolkit)`，安装包消费者可解析 CUDA 目标。oneMKL 装好后经 `SIGNAL_STUDIO_USE_MKL` 选项接入，无需改动公共 API。
+- 下一里程碑：MS-03（Visualization 与 Workbench），DSP 结果驱动 Qt 图表。

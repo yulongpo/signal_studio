@@ -62,3 +62,12 @@
 - 修复 `scripts/common.ps1` 的 `Update-SignalStudioUserPresets` 未捕获 `VCToolsRedistDir`/`UniversalCRTSdkDir`/`UCRTVersion`，导致裸 `cmake --preset local-*` 无法部署 VC143 运行库的问题。
 - 记录无界面 Debug/Release（101/101）与 UI Debug/Release（106/106）四个配置全量 CTest 通过，合计 414/414，需求映射 54/54。
 - MS-01 已验收关闭，下一里程碑为 MS-02（DSP 与 Compute 后端）；整体产品尚未完成。
+# 2026-07-23：MS-02 DSP 与 Compute 后端
+
+- 新增 SignalCompute：`IComputeBackend`（CPU+CUDA 探测）、`IBufferPool`（预算约束）、`IBackendSelector`（自动选择+显式降级）、`BackendProvenance`。
+- 新增 SignalDSP：窗函数（6 种+ENBW/相干增益）、时域统计、IQ 度量、FIR 滤波（4 种响应+跨块状态）、多相重采样、`IFftBackend` 适配器+cuFFT Z2Z GPU 后端、Welch PSD（V²/Hz、单/双边）、STFT（时间/频率轴）。
+- `Result<T>` 增加 `operator*`/`operator->`（`std::optional` 语义，向后兼容）。
+- CMake：DSP/Compute 新源、条件链接 `CUDA::cudart`/`CUDA::cufft`、`SIGNAL_STUDIO_HAVE_CUDA` 定义、`tests/compute`+`tests/dsp` 子目录；`SignalStudioConfig.cmake.in` 在 CUDA 构建时 `find_dependency(CUDAToolkit)`。
+- 记录无界面 Debug/Release（118/118）与 UI Debug/Release（CUDA，130/130）四配置全量 CTest 通过，合计 496/496。
+- 记录 oneMKL CPU FFT 后端为环境偏差（本机未安装，不伪造），cuFFT GPU 后端经解析信号验证。
+- MS-02 已验收关闭，下一里程碑为 MS-03（Visualization 与 Workbench）；整体产品尚未完成。

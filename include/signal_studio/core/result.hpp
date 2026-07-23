@@ -34,6 +34,18 @@ public:
   [[nodiscard]] T&& value() && {
     return std::get<T>(std::move(value_));
   }
+  [[nodiscard]] const T& operator*() const& {
+    return std::get<T>(value_);
+  }
+  [[nodiscard]] T& operator*() & {
+    return std::get<T>(value_);
+  }
+  [[nodiscard]] const T* operator->() const& {
+    return &std::get<T>(value_);
+  }
+  [[nodiscard]] T* operator->() & {
+    return &std::get<T>(value_);
+  }
   [[nodiscard]] const Status& error() const& {
     return std::get<Status>(value_);
   }

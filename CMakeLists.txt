@@ -114,8 +114,13 @@ signal_studio_add_module(SignalStudioCore Core src/platform/core/version.cpp src
   src/platform/core/capability.cpp src/platform/core/module_descriptor.cpp src/platform/core/module.cpp
   src/platform/core/services.cpp)
 target_include_directories(SignalStudioCore PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
-signal_studio_add_module(SignalStudioCompute Compute src/platform/compute/module.cpp)
+signal_studio_add_module(SignalStudioCompute Compute src/platform/compute/module.cpp
+  src/platform/compute/backend.cpp)
 target_link_libraries(SignalStudioCompute PUBLIC SignalStudio::Core)
+if(SIGNAL_STUDIO_CUDA_AVAILABLE)
+  target_link_libraries(SignalStudioCompute PRIVATE CUDA::cudart)
+  target_compile_definitions(SignalStudioCompute PRIVATE SIGNAL_STUDIO_HAVE_CUDA)
+endif()
 signal_studio_add_module(SignalStudioData Data src/platform/data/module.cpp src/platform/data/signal.cpp
   src/platform/data/raw.cpp src/platform/data/io.cpp src/platform/data/loading.cpp
   src/platform/data/preview.cpp src/platform/data/index.cpp)
@@ -123,8 +128,14 @@ target_link_libraries(SignalStudioData PUBLIC SignalStudio::Core)
 signal_studio_add_module(SignalStudioTaskRuntime TaskRuntime src/platform/task_runtime/module.cpp
   src/platform/task_runtime/task_runtime.cpp)
 target_link_libraries(SignalStudioTaskRuntime PUBLIC SignalStudio::Compute SignalStudio::Core)
-signal_studio_add_module(SignalStudioDSP DSP src/platform/dsp/module.cpp)
+signal_studio_add_module(SignalStudioDSP DSP src/platform/dsp/module.cpp src/platform/dsp/windows.cpp
+  src/platform/dsp/statistics.cpp src/platform/dsp/fft.cpp src/platform/dsp/spectrum.cpp
+  src/platform/dsp/stft.cpp src/platform/dsp/filter.cpp src/platform/dsp/resample.cpp)
 target_link_libraries(SignalStudioDSP PUBLIC SignalStudio::Data SignalStudio::Compute SignalStudio::Core)
+if(SIGNAL_STUDIO_CUDA_AVAILABLE)
+  target_link_libraries(SignalStudioDSP PRIVATE CUDA::cufft)
+  target_compile_definitions(SignalStudioDSP PRIVATE SIGNAL_STUDIO_HAVE_CUDA)
+endif()
 signal_studio_add_module(SignalStudioModelRuntime ModelRuntime src/platform/model_runtime/module.cpp)
 target_link_libraries(SignalStudioModelRuntime PUBLIC SignalStudio::Data SignalStudio::Compute SignalStudio::TaskRuntime SignalStudio::Core)
 signal_studio_add_module(SignalStudioDataset Dataset src/platform/dataset/module.cpp)
@@ -183,6 +194,8 @@ if(BUILD_TESTING AND SIGNAL_STUDIO_BUILD_TESTS)
   add_subdirectory(tests/core)
   add_subdirectory(tests/data)
   add_subdirectory(tests/task_runtime)
+  add_subdirectory(tests/compute)
+  add_subdirectory(tests/dsp)
 endif()
 
 message(STATUS "Signal Processing Platform ${PROJECT_VERSION}")
