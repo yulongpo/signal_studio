@@ -93,3 +93,12 @@
 - 状态：用户批准，自 MS-01 起生效
 - 决策：持续集成仅保留 Windows 2022 无界面构建/测试和 Windows 2022 Qt/UI 构建/测试，不再执行 Ubuntu 24.04 无界面构建测试。
 - 影响：工作流和静态校验器拒绝重新引入 Ubuntu 作业；后续里程碑不得把未执行的 Linux 构建写为验收通过，也不得据此新增 Linux 兼容声明。MS-00 既有 Ubuntu 运行及其文档保持原样，作为当时提交的历史证据。
+
+## DEV-015 MS-01 收口与本机 CUDA 可用性
+
+- 日期：2026-07-23
+- 状态：MS-01 已验收关闭
+- 决策：MS-01 在 MS-00 平台骨架上交付 SignalCore/SignalData/SignalTaskRuntime 生产契约（54 项批准需求）。验收以无界面 Debug/Release 与 UI Debug/Release 四个配置全量 CTest 通过（414/414）为据，不引入第三方依赖，依赖 DAG 不变。
+- 环境变化：当前开发主机已安装 CUDA 12.4（`nvcc` 可用），与 MS-00 记录的“无 nvcc/CUDA Toolkit”不同。GPU 数值验证自 MS-02 起启用；MS-01 不报告 GPU 结果。
+- 构建修复：`scripts/common.ps1` 的 `Update-SignalStudioUserPresets` 现在捕获 `VCToolsRedistDir`/`UniversalCRTSdkDir`/`UCRTVersion`，使裸 `cmake --preset local-*` 在脚本进程外也能部署 VC143 运行库并查找 Debug UCRT。脚本流程（`configure.ps1`/`build.ps1`）通过 `Import-SignalStudioMsvcEnvironment` 提供完整 MSVC 环境，仍为 CI 与 VS Code 的正式入口。
+- 下一里程碑：MS-02（DSP 与 Compute 后端），采用自包含 CPU FFT/PSD/STFT/窗函数/滤波/重采样实现作为默认后端，cuFFT 作为可选 GPU 适配器；oneMKL/FFTW 因本机未安装而作为环境偏差如实记录，经适配器接口保留后续替换能力。

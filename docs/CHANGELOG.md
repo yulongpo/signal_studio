@@ -52,3 +52,13 @@
 - 记录五项整改验证结果：可移植依赖校验模式、VS Code 任务树一致性、Windows 根路径语义、枚举合法性校验和有界 `Status` 传播。
 - 记录本地 Debug 45/45、Release 45/45、VS Code 任务树 45/45、直接 F5 目标以及精确提交 GitHub Actions 三作业成功。
 - MS-00 已验收关闭，下一里程碑为 MS-01；整体产品尚未完成。
+# 2026-07-23：MS-01 Core/Data/TaskRuntime 功能基础收口
+
+- 新增 SignalCore 统一 `Result<T>`/`Result<void>` 类型化结果与 `Status` 错误模型，构造期拒绝把成功态当作失败结果。
+- 新增 SignalData 实/复数容器与零拷贝切片、全部批准 RAW 标量与布局（int8~float64、交叠/平面、IQ/QI、大小端、字节偏移、缩放）、WAV 头解析与文件名参数提示、分块有界读取、有界预览（限定长度结果）、选区导出闭环、多分辨率索引缓存（键/LRU/锁定/损坏恢复/诊断）与标准描述符适配接口。
+- 新增 SignalTaskRuntime 有界资源池、优先级、DAG 依赖、暂停/恢复/取消、进度、超时、重试、幂等、视图过期、结构化失败、来源过滤、历史与制品崩溃恢复和观察者。
+- 新增 `tests/core`、`tests/data`、`tests/task_runtime` 单元与需求映射用例，平台消费者扩展调用 MS-01 公共 API。
+- 新增 `.clang-format`、`.clang-tidy` 与 MS-01 计划/实施/测试/完成证据文档。
+- 修复 `scripts/common.ps1` 的 `Update-SignalStudioUserPresets` 未捕获 `VCToolsRedistDir`/`UniversalCRTSdkDir`/`UCRTVersion`，导致裸 `cmake --preset local-*` 无法部署 VC143 运行库的问题。
+- 记录无界面 Debug/Release（101/101）与 UI Debug/Release（106/106）四个配置全量 CTest 通过，合计 414/414，需求映射 54/54。
+- MS-01 已验收关闭，下一里程碑为 MS-02（DSP 与 Compute 后端）；整体产品尚未完成。

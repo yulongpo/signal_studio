@@ -205,6 +205,14 @@ function Update-SignalStudioUserPresets {
     }
     $commonPrefixPath = if ($qtPrefixPath) { $qtPrefixPath } else { $basePrefixPath }
     if ($commonPrefixPath) { $commonEnvironment.CMAKE_PREFIX_PATH = $commonPrefixPath }
+    # VC143 runtime deployment (CMakeLists) and Debug UCRT lookup require the redist and
+    # Windows SDK coordinates that vcvarsall/vsdevcmd export. Capture them here so raw
+    # `cmake --preset local-*` invocations work even outside the script process, and so
+    # test-driven regeneration of this file preserves them.
+    foreach ($variable in @('VCToolsRedistDir', 'UniversalCRTSdkDir', 'UCRTVersion')) {
+        $value = [Environment]::GetEnvironmentVariable($variable, 'Process')
+        if ($value) { $commonEnvironment[$variable] = $value }
+    }
     $configurePresets.Add([ordered]@{
         name = 'local-msvc-toolchain-base'
         hidden = $true
