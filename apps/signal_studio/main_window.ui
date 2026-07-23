@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect><x>0</x><y>0</y><width>1280</width><height>720</height></rect>
+  </property>
+  <property name="windowTitle"><string>Signal Studio</string></property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="centralLayout">
+    <property name="spacing"><number>2</number></property>
+    <property name="contentsMargins"><rect><x>2</x><y>2</y><width>2</width><height>2</height></rect></property>
+    <item>
+     <widget class="QWidget" name="timeViewContainer" native="true">
+      <property name="minimumSize"><size><width>0</width><height>120</height></size></property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QWidget" name="spectrumViewContainer" native="true">
+      <property name="minimumSize"><size><width>0</width><height>160</height></size></property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QWidget" name="spectrogramViewContainer" native="true">
+      <property name="minimumSize"><size><width>0</width><height>220</height></size></property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <widget class="QMenu" name="menuFile">
+    <property name="title"><string>&amp;File</string></property>
+    <addaction name="actionOpenWAV"/>
+    <addaction name="actionOpenSC16"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title"><string>&amp;View</string></property>
+    <addaction name="actionShowSpectrum"/>
+    <addaction name="actionShowSpectrogram"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title"><string>&amp;Help</string></property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionOpenWAV"><property name="text"><string>Open &amp;WAV...</string></property></action>
+  <action name="actionOpenSC16"><property name="text"><string>Open &amp;SC16 (RAW IQ)...</string></property></action>
+  <action name="actionExit"><property name="text"><string>E&amp;xit</string></property></action>
+  <action name="actionShowSpectrum">
+   <property name="checkable"><bool>true</bool></property>
+   <property name="checked"><bool>true</bool></property>
+   <property name="text"><string>Show &amp;Spectrum</string></property>
+  </action>
+  <action name="actionShowSpectrogram">
+   <property name="checkable"><bool>true</bool></property>
+   <property name="checked"><bool>true</bool></property>
+   <property name="text"><string>Show &amp;Spectrogram</string></property>
+  </action>
+  <action name="actionAbout"><property name="text"><string>&amp;About</string></property></action>
+ </widget>
+ <resources/>
+ <connections>
+  <connection><sender>actionExit</sender><signal>triggered()</signal><receiver>MainWindow</receiver><slot>close()</slot></connection>
+ </connections>
+</ui>

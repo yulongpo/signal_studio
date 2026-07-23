@@ -8,8 +8,8 @@
 | MS-01 | Core、Data、TaskRuntime 功能基础 | 已验收关闭 |
 | MS-02 | DSP 与 Compute 后端 | 已验收关闭 |
 | MS-03 | Visualization 与 Workbench | 已验收关闭 |
-| MS-04 | Signal Studio 基础应用 | 进行中 |
-| MS-05 | 宽窄带联动分析 | 未开始 |
+| MS-04 | Signal Studio 基础应用 | 已验收关闭 |
+| MS-05 | 宽窄带联动分析 | 进行中 |
 | MS-06 | PluginSDK、ModelRuntime、Dataset 功能 | 未开始 |
 | MS-07 | 工程化、打包、文档 | 未开始 |
 | MS-08 | 复用证明应用 | 未开始 |
@@ -23,4 +23,6 @@ MS-01 在 MS-00 平台骨架上交付 SignalCore（统一 `Result`/`Status`）�
 
 MS-02 交付 SignalCompute（`IComputeBackend`/`IBufferPool`/`IBackendSelector`，CPU+CUDA 探测、预算约束、自动选择与显式降级）与 SignalDSP（窗函数、时域统计、IQ 度量、FIR 滤波、多相重采样、`IFftBackend` 适配器+cuFFT Z2Z GPU 后端、Welch PSD dB/Hz、STFT）。遵守 ADR-006/ADR-009，公共头无第三方类型，依赖 DAG 不变。无界面 Debug/Release（118/118）与 UI Debug/Release（CUDA，130/130）四配置全量 CTest 通过，合计 496/496。oneMKL CPU FFT 后端因本机未安装为已记录环境偏差（不伪造），cuFFT GPU 后端经解析信号验证。MS-02 已验收关闭。
 
-MS-03 交付 SignalVisualization（`IDataSeries`/`ViewportController`/`IChartView`+5 个真实 QPainter 控件：时域/功率谱/瀑布图/星座图/眼图/`OverlayModel`/`ColorScale`/`TimeNavigator`，隐藏停止计算、频率单位自适应+Hz 级精度）与 SignalWorkbench（`IServiceRegistry`/`PanelFactory`/`ICommandRegistry`/`ConfigurableDiagnosticsProvider`）。公共头无 QWidget（`native_widget()->void*`），Qt 私有链接，依赖 DAG 不变。无界面 118/118、UI(CUDA) 142/142 四配置全量 CTest 通过，合计 520/520。MS-03 已验收关闭，下一里程碑为 MS-04（Signal Studio 基础应用）；整体开发计划尚未达到产品最终验收条件。
+MS-03 交付 SignalVisualization（`IDataSeries`/`ViewportController`/`IChartView`+5 个真实 QPainter 控件：时域/功率谱/瀑布图/星座图/眼图/`OverlayModel`/`ColorScale`/`TimeNavigator`，隐藏停止计算、频率单位自适应+Hz 级精度）与 SignalWorkbench（`IServiceRegistry`/`PanelFactory`/`ICommandRegistry`/`ConfigurableDiagnosticsProvider`）。公共头无 QWidget（`native_widget()->void*`），Qt 私有链接，依赖 DAG 不变。无界面 118/118、UI(CUDA) 142/142 四配置全量 CTest 通过，合计 520/520。MS-03 已验收关闭。
+
+MS-04 交付 Signal Studio 桌面应用（薄壳）：Qt-free `Application` 核心（文件名 cf/sr 解析、WAV 自动解析、SC16 文件名提示导入、`requested_sample_range` 修复、有界窗口读取、PSD/STFT）+ GUI（`--self-test` 无头路径无 QApplication、QMainWindow/菜单/三控件/导入向导/状态栏、隐藏停止计算）+ Designer `main_window.ui`。应用仅链接公共库，依赖 DAG 不变。无界面 118/118、UI(CUDA) 150/150 四配置全量 CTest 通过，合计 536/536；外部 20MB WAV 与 1GB SC16 有界读取验证，self-test 通过。MS-04 已验收关闭，下一里程碑为 MS-05（宽窄带联动分析）；整体开发计划尚未达到产品最终验收条件。

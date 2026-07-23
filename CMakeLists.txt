@@ -192,6 +192,10 @@ if(SIGNAL_STUDIO_BUILD_SDK_EXAMPLE)
   signal_studio_enable_warnings(signal_studio_minimal_plugin)
 endif()
 
+if(SIGNAL_STUDIO_BUILD_UI)
+  add_subdirectory(apps/signal_studio)
+endif()
+
 if(BUILD_TESTING AND SIGNAL_STUDIO_BUILD_TESTS)
   add_subdirectory(tests/platform)
   add_subdirectory(tests/core)
@@ -202,6 +206,7 @@ if(BUILD_TESTING AND SIGNAL_STUDIO_BUILD_TESTS)
   if(SIGNAL_STUDIO_BUILD_UI)
     add_subdirectory(tests/visualization)
     add_subdirectory(tests/workbench)
+    add_subdirectory(tests/app)
   endif()
 endif()
 

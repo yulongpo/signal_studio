@@ -78,3 +78,11 @@
 - 公共头无 QWidget（native_widget()->void*），Qt 私有链接，依赖 DAG 不变。
 - 记录无界面 118/118、UI(CUDA) 142/142 四配置全量 CTest 通过，合计 520/520。
 - MS-03 已验收关闭，下一里程碑为 MS-04（Signal Studio 基础应用）；整体产品尚未完成。
+# 2026-07-23：MS-04 Signal Studio 基础应用
+
+- 新增 Signal Studio 桌面应用（薄壳）：Qt-free Application 核心（导入/有界读取/PSD/STFT）+ GUI（主窗口/菜单/三控件/导入向导/状态栏）+ Designer main_window.ui。
+- 文件名参数解析（cf/sr 单位）、WAV 自动解析、SC16 文件名提示导入、有界窗口读取、隐藏视图停止计算。
+- `--self-test` 无头路径不构造 QApplication；应用仅链接公共库，依赖 DAG 不变。
+- 修复 RAW 导入 requested_sample_range 缺失导致读取被拒。
+- 记录无界面 118/118、UI(CUDA) 150/150 四配置全量 CTest 通过，合计 536/536；外部 20MB WAV 与 1GB SC16 有界读取验证；self-test 通过。
+- MS-04 已验收关闭，下一里程碑为 MS-05（宽窄带联动分析）；整体产品尚未完成。

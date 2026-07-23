@@ -121,3 +121,13 @@
 - 诊断边界：Workbench 不依赖 Compute（DAG 不允许），`ConfigurableDiagnosticsProvider` 的 compute/cuda 字段由宿主注入。
 - 测试：offscreen Qt（`QT_QPA_PLATFORM=offscreen`+`QT_PLUGIN_PATH`），不产生窗口截图（任务约束）。
 - 下一里程碑：MS-04（Signal Studio 基础应用），组装控件为桌面应用。
+
+## DEV-018 MS-04 Signal Studio 应用薄壳与无头 self-test
+
+- 日期：2026-07-23
+- 状态：MS-04 已验收关闭
+- 决策：Signal Studio 应用为薄壳，仅链接十个公共模块，不直接调用 cuFFT/Qt 私有 API。Qt-free `Application` 核心（`signal_studio_app_core` 库）供 GUI 与 headless 测试共用，保证导入/读取/分析逻辑可在无 QApplication 下测试。
+- 无头 self-test：`signal_studio --self-test` 在 main.cpp 入口提前检测，不构造 QApplication，避免对 Qt 平台插件的依赖，供 CI 直接验证应用组合。
+- RAW 导入修复：`import_raw` 经 `calculate_data_facts` 算 available_frames 并设 `requested_sample_range=(0,available_frames)`，使后续有界读取通过 `raw.cpp` 的 containment 校验（`open_raw` 不隐式设置该字段）。
+- 真实数据：外部 WAV/SC16 仅以有界窗口读取（8192 样本），不读全文件；数据缺失时 SKIP 不误报。
+- 下一里程碑：MS-05（宽窄带联动分析）。
