@@ -20,12 +20,51 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 option(SIGNAL_STUDIO_BUILD_UI "Build Qt-backed Visualization and Workbench components" ON)
-option(SIGNAL_STUDIO_BUILD_TESTS "Build MS-00 verification tests" ${BUILD_TESTING})
+option(SIGNAL_STUDIO_BUILD_TESTS "Build Signal Studio verification tests" ${BUILD_TESTING})
 option(SIGNAL_STUDIO_BUILD_SDK_EXAMPLE "Build the C ABI SDK example" ${BUILD_TESTING})
 set(SIGNAL_STUDIO_QT_ROOT "$ENV{SIGNAL_STUDIO_QT_ROOT}" CACHE PATH "Qt installation prefix for UI builds")
 set(SIGNAL_STUDIO_MINIMUM_QT_VERSION "6.10.3")
 set(SIGNAL_STUDIO_CUDA_MODE "AUTO" CACHE STRING "CUDA request: AUTO, ON, or OFF")
 set_property(CACHE SIGNAL_STUDIO_CUDA_MODE PROPERTY STRINGS AUTO ON OFF)
+
+set(SIGNAL_STUDIO_MSVC_RUNTIME_FILES)
+if(MSVC AND WIN32)
+  if(NOT DEFINED ENV{VCToolsRedistDir})
+    message(FATAL_ERROR "缺少 VCToolsRedistDir，无法部署与当前 MSVC 工具集匹配的 VC 运行库")
+  endif()
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    file(TO_CMAKE_PATH "$ENV{VCToolsRedistDir}/debug_nonredist/x64/Microsoft.VC143.DebugCRT"
+      SIGNAL_STUDIO_MSVC_RUNTIME_DIR)
+  else()
+    file(TO_CMAKE_PATH "$ENV{VCToolsRedistDir}/x64/Microsoft.VC143.CRT" SIGNAL_STUDIO_MSVC_RUNTIME_DIR)
+  endif()
+  file(GLOB SIGNAL_STUDIO_MSVC_RUNTIME_FILES CONFIGURE_DEPENDS
+    "${SIGNAL_STUDIO_MSVC_RUNTIME_DIR}/*.dll")
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if(NOT DEFINED ENV{UniversalCRTSdkDir} OR NOT DEFINED ENV{UCRTVersion})
+      message(FATAL_ERROR "缺少 UniversalCRTSdkDir/UCRTVersion，无法部署 Debug UCRT")
+    endif()
+    file(TO_CMAKE_PATH "$ENV{UniversalCRTSdkDir}/bin/$ENV{UCRTVersion}/x64/ucrt/ucrtbased.dll"
+      _signal_studio_debug_ucrt)
+    if(NOT EXISTS "${_signal_studio_debug_ucrt}")
+      message(FATAL_ERROR "未找到与 Windows SDK 匹配的 Debug UCRT：${_signal_studio_debug_ucrt}")
+    endif()
+    list(APPEND SIGNAL_STUDIO_MSVC_RUNTIME_FILES "${_signal_studio_debug_ucrt}")
+  endif()
+  if(NOT SIGNAL_STUDIO_MSVC_RUNTIME_FILES)
+    message(FATAL_ERROR "未找到与构建类型匹配的 x64 VC143 运行库集：${SIGNAL_STUDIO_MSVC_RUNTIME_DIR}")
+  endif()
+endif()
+
+function(signal_studio_deploy_msvc_runtime target)
+  if(SIGNAL_STUDIO_MSVC_RUNTIME_FILES)
+    add_custom_command(TARGET ${target} POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        ${SIGNAL_STUDIO_MSVC_RUNTIME_FILES} "$<TARGET_FILE_DIR:${target}>"
+      COMMAND_EXPAND_LISTS
+      COMMENT "部署与 MSVC 工具集匹配的 VC143 运行库")
+  endif()
+endfunction()
 
 string(TOUPPER "${SIGNAL_STUDIO_CUDA_MODE}" _signal_studio_cuda_mode)
 if(NOT _signal_studio_cuda_mode MATCHES "^(AUTO|ON|OFF)$")
@@ -72,13 +111,17 @@ function(signal_studio_add_module target export_name)
 endfunction()
 
 signal_studio_add_module(SignalStudioCore Core src/platform/core/version.cpp src/platform/core/error.cpp
-  src/platform/core/capability.cpp src/platform/core/module_descriptor.cpp src/platform/core/module.cpp)
+  src/platform/core/capability.cpp src/platform/core/module_descriptor.cpp src/platform/core/module.cpp
+  src/platform/core/services.cpp)
 target_include_directories(SignalStudioCore PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 signal_studio_add_module(SignalStudioCompute Compute src/platform/compute/module.cpp)
 target_link_libraries(SignalStudioCompute PUBLIC SignalStudio::Core)
-signal_studio_add_module(SignalStudioData Data src/platform/data/module.cpp)
+signal_studio_add_module(SignalStudioData Data src/platform/data/module.cpp src/platform/data/signal.cpp
+  src/platform/data/raw.cpp src/platform/data/io.cpp src/platform/data/loading.cpp
+  src/platform/data/preview.cpp src/platform/data/index.cpp)
 target_link_libraries(SignalStudioData PUBLIC SignalStudio::Core)
-signal_studio_add_module(SignalStudioTaskRuntime TaskRuntime src/platform/task_runtime/module.cpp)
+signal_studio_add_module(SignalStudioTaskRuntime TaskRuntime src/platform/task_runtime/module.cpp
+  src/platform/task_runtime/task_runtime.cpp)
 target_link_libraries(SignalStudioTaskRuntime PUBLIC SignalStudio::Compute SignalStudio::Core)
 signal_studio_add_module(SignalStudioDSP DSP src/platform/dsp/module.cpp)
 target_link_libraries(SignalStudioDSP PUBLIC SignalStudio::Data SignalStudio::Compute SignalStudio::Core)
@@ -118,6 +161,9 @@ if(SIGNAL_STUDIO_BUILD_UI)
 endif()
 install(DIRECTORY include/signal_studio DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 install(FILES examples/plugin_sdk/minimal_plugin.c DESTINATION "${CMAKE_INSTALL_DATADIR}/SignalStudio/examples/plugin_sdk")
+if(SIGNAL_STUDIO_MSVC_RUNTIME_FILES)
+  install(FILES ${SIGNAL_STUDIO_MSVC_RUNTIME_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT Runtime)
+endif()
 
 configure_package_config_file(cmake/SignalStudioConfig.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/SignalStudioConfig.cmake"
   INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/SignalStudio")
@@ -134,6 +180,9 @@ endif()
 
 if(BUILD_TESTING AND SIGNAL_STUDIO_BUILD_TESTS)
   add_subdirectory(tests/platform)
+  add_subdirectory(tests/core)
+  add_subdirectory(tests/data)
+  add_subdirectory(tests/task_runtime)
 endif()
 
 message(STATUS "Signal Processing Platform ${PROJECT_VERSION}")

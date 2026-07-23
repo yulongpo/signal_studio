@@ -77,7 +77,7 @@
 - 日期：2026-07-22
 - 状态：已验证并关闭；精确提交远程 CI 与最终独立复审通过
 - 决策：依赖锁拆分为不可变获取/包元组、宿主兼容范围和独立精确主机快照。`Acquisition` 在各平台精确验证 BL1.0 获取、14 个包元组、8 项来源策略和离线缓存；`CompatibleHost` 额外验证 Windows x64、工具族及半开版本区间，允许兼容补丁和安装路径变化；`ExactCapturedHost` 仅供显式复现审计，比较快照中的版本、路径和已安装文件哈希。
-- CI 影响：Ubuntu 与 Windows 都运行 `Acquisition`；Windows 初始化 MSVC/Qt 后运行 `CompatibleHost`。默认 bootstrap 不再要求开发机精确路径，现有精确证据仍保留在 `dependencies/captured-host-evidence.json`。
+- 历史 CI 影响：MS-00 验收时 Ubuntu 与 Windows 都运行 `Acquisition`，Windows 初始化 MSVC/Qt 后运行 `CompatibleHost`。默认 bootstrap 不再要求开发机精确路径，现有精确证据仍保留在 `dependencies/captured-host-evidence.json`。MS-01 起的 CI 平台范围由 DEV-014 更新，依赖契约分层本身不变。
 
 ## DEV-013 工具链与公共契约稳健性
 
@@ -86,3 +86,10 @@
 - 决策：VS Code 设置、任务、测试与 F5 统一使用本机 Debug 预设及构建树，F5 采用明确平台测试目标并校验缓存、生成器、选项、目标和输入新鲜度；Windows 路径规范化保留盘符、UNC 与扩展长度根；所有外部可构造公共枚举先做已知值检查。
 - Status 边界：八层原因链已满时继续添加上下文不会抛异常；保留根因和最新上下文，并淘汰最旧中间上下文，使传播 API 在设计容量边界内保持可用。
 - 收口：依据最终独立复审、本地双配置测试、VS Code 工作流验证及精确提交远程 CI 结果，MS-00 判定为验收通过并关闭。历史失败证据继续保留用于审计，但不再代表当前状态；下一里程碑为 MS-01。
+
+## DEV-014 停止 Ubuntu 24.04 无界面构建门禁
+
+- 日期：2026-07-22
+- 状态：用户批准，自 MS-01 起生效
+- 决策：持续集成仅保留 Windows 2022 无界面构建/测试和 Windows 2022 Qt/UI 构建/测试，不再执行 Ubuntu 24.04 无界面构建测试。
+- 影响：工作流和静态校验器拒绝重新引入 Ubuntu 作业；后续里程碑不得把未执行的 Linux 构建写为验收通过，也不得据此新增 Linux 兼容声明。MS-00 既有 Ubuntu 运行及其文档保持原样，作为当时提交的历史证据。

@@ -165,6 +165,14 @@ function Update-SignalStudioUserPresets {
         [Parameter(Mandatory = $true)][string]$NinjaPath,
         [string]$QtRoot = ''
     )
+    if (-not $QtRoot) {
+        try {
+            $QtRoot = Get-SignalStudioQtRoot
+        }
+        catch {
+            $QtRoot = ''
+        }
+    }
     $resolvedNinja = (Resolve-Path -LiteralPath $NinjaPath).Path
     $ninjaDirectory = Split-Path -Parent $resolvedNinja
     $resolvedQtRoot = if ($QtRoot) { (Resolve-Path -LiteralPath $QtRoot).Path.TrimEnd('\', '/') } else { '' }
@@ -184,11 +192,12 @@ function Update-SignalStudioUserPresets {
     $configurePresets = New-Object System.Collections.Generic.List[object]
     $buildPresets = New-Object System.Collections.Generic.List[object]
     $testPresets = New-Object System.Collections.Generic.List[object]
-    $sourcePresets = @('windows-msvc-headless-debug', 'windows-msvc-headless-release')
-    if ($QtRoot) {
-        $sourcePresets += @('windows-msvc-debug', 'windows-msvc-release', 'windows-msvc-relwithdebinfo',
-            'windows-msvc-cpu-debug', 'windows-msvc-cpu-release', 'windows-msvc-cuda-debug', 'windows-msvc-cuda-release')
-    }
+    $sourcePresets = @(
+        'windows-msvc-headless-debug', 'windows-msvc-headless-release',
+        'windows-msvc-debug', 'windows-msvc-release', 'windows-msvc-relwithdebinfo',
+        'windows-msvc-cpu-debug', 'windows-msvc-cpu-release',
+        'windows-msvc-cuda-debug', 'windows-msvc-cuda-release'
+    )
     $commonEnvironment = [ordered]@{ PATH = $commonPath }
     foreach ($variable in @('INCLUDE', 'LIB', 'LIBPATH')) {
         $value = [Environment]::GetEnvironmentVariable($variable, 'Process')

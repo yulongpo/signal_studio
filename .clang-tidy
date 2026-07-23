@@ -1,0 +1,12 @@
+Checks: >
+  -*,
+  bugprone-*,
+  performance-*,
+  portability-*,
+  clang-analyzer-*,
+  modernize-use-nullptr,
+  readability-container-size-empty,
+  readability-redundant-string-init
+WarningsAsErrors: ''
+HeaderFilterRegex: '[/\\](include|src)[/\\]signal_studio[/\\].*'
+FormatStyle: file

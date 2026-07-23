@@ -1,4 +1,4 @@
-name: ms00-portable-platform
+name: signal-studio-windows-ci
 
 on:
   push:
@@ -13,28 +13,23 @@ env:
 
 jobs:
   headless-build-test:
-    strategy:
-      matrix:
-        os: [windows-2022, ubuntu-24.04]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Validate immutable acquisition and package locks
         shell: pwsh
         run: ./scripts/validate-dependency-lock.ps1 -Mode Acquisition -Headless
       - name: Initialize MSVC 2022 x64 environment
-        if: runner.os == 'Windows'
         shell: pwsh
         run: ./.github/scripts/initialize-msvc.ps1
       - name: Validate compatible Windows headless host
-        if: runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/validate-dependency-lock.ps1 -Mode CompatibleHost -Headless -HostEvidenceOutputPath build/ci-host-evidence.json
       - name: Configure headless platform and C SDK example
         run: cmake -S . -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DSIGNAL_STUDIO_BUILD_UI=OFF -DSIGNAL_STUDIO_BUILD_TESTS=ON -DSIGNAL_STUDIO_BUILD_SDK_EXAMPLE=ON -DBUILD_TESTING=ON
       - name: Compile platform, C ABI example, and consumers
         run: cmake --build build/ci --parallel
-      - name: Run MS-00 contracts
+      - name: Run headless contracts
         run: ctest --test-dir build/ci --output-on-failure
 
   windows-ui-module-performance:

@@ -54,6 +54,15 @@ $configureNames = @($presetDocument.configurePresets | ForEach-Object { $_.name 
 if (@($configureNames | Select-Object -Unique).Count -ne $configureNames.Count) {
     throw 'CMakeUserPresets.json contains duplicate configure preset names'
 }
+foreach ($requiredPreset in @(
+        'local-windows-msvc-headless-debug', 'local-windows-msvc-headless-release',
+        'local-windows-msvc-debug', 'local-windows-msvc-release',
+        'local-windows-msvc-cpu-debug', 'local-windows-msvc-cpu-release',
+        'local-windows-msvc-cuda-debug', 'local-windows-msvc-cuda-release')) {
+    if ($requiredPreset -notin $configureNames) {
+        throw "CMakeUserPresets.json is invocation-order dependent; missing $requiredPreset"
+    }
+}
 foreach ($preset in $presetDocument.configurePresets) {
     if (-not ($preset.PSObject.Properties.Name -contains 'environment')) { continue }
     foreach ($variable in @('PATH', 'CMAKE_PREFIX_PATH', 'INCLUDE', 'LIB', 'LIBPATH')) {

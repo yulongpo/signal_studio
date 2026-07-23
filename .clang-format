@@ -1,0 +1,16 @@
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++20
+IndentWidth: 2
+ContinuationIndentWidth: 4
+ColumnLimit: 120
+NamespaceIndentation: None
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
+DerivePointerAlignment: false
+PointerAlignment: Left
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+BreakBeforeBraces: Attach
+
