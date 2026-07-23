@@ -71,3 +71,10 @@
 - 记录无界面 Debug/Release（118/118）与 UI Debug/Release（CUDA，130/130）四配置全量 CTest 通过，合计 496/496。
 - 记录 oneMKL CPU FFT 后端为环境偏差（本机未安装，不伪造），cuFFT GPU 后端经解析信号验证。
 - MS-02 已验收关闭，下一里程碑为 MS-03（Visualization 与 Workbench）；整体产品尚未完成。
+# 2026-07-23：MS-03 Visualization 与 Workbench
+
+- 新增 SignalVisualization：IDataSeries（实/谱/谱图/复）、ViewportController（时间/频率共享视口，钳位/缩放/平移/订阅）、IChartView + 5 个真实 QPainter 控件（时域/功率谱/瀑布图/星座图/眼图）、OverlayModel（游标/选区/测量）、ColorScale 显示映射、TimeNavigator、频率单位自适应+Hz 级精度、隐藏停止计算。
+- 新增 SignalWorkbench：IServiceRegistry、PanelFactory、ICommandRegistry、ConfigurableDiagnosticsProvider。
+- 公共头无 QWidget（native_widget()->void*），Qt 私有链接，依赖 DAG 不变。
+- 记录无界面 118/118、UI(CUDA) 142/142 四配置全量 CTest 通过，合计 520/520。
+- MS-03 已验收关闭，下一里程碑为 MS-04（Signal Studio 基础应用）；整体产品尚未完成。

@@ -147,10 +147,13 @@ set(_signal_studio_headless_targets SignalStudioCore SignalStudioData SignalStud
   SignalStudioTaskRuntime SignalStudioPluginSDK SignalStudioModelRuntime SignalStudioDataset)
 set(_signal_studio_ui_targets)
 if(SIGNAL_STUDIO_BUILD_UI)
-  signal_studio_add_module(SignalStudioVisualization Visualization src/platform/visualization/module.cpp)
+  signal_studio_add_module(SignalStudioVisualization Visualization src/platform/visualization/module.cpp
+    src/platform/visualization/data_series.cpp src/platform/visualization/viewport.cpp
+    src/platform/visualization/overlay.cpp src/platform/visualization/views.cpp)
   target_link_libraries(SignalStudioVisualization PUBLIC SignalStudio::Data SignalStudio::TaskRuntime SignalStudio::Core
     PRIVATE Qt6::Core Qt6::Widgets)
-  signal_studio_add_module(SignalStudioWorkbench Workbench src/platform/workbench/module.cpp)
+  signal_studio_add_module(SignalStudioWorkbench Workbench src/platform/workbench/module.cpp
+    src/platform/workbench/workbench.cpp)
   target_link_libraries(SignalStudioWorkbench PUBLIC SignalStudio::Visualization SignalStudio::TaskRuntime SignalStudio::Core
     PRIVATE Qt6::Core Qt6::Widgets)
   set(_signal_studio_ui_targets SignalStudioVisualization SignalStudioWorkbench)
@@ -196,6 +199,10 @@ if(BUILD_TESTING AND SIGNAL_STUDIO_BUILD_TESTS)
   add_subdirectory(tests/task_runtime)
   add_subdirectory(tests/compute)
   add_subdirectory(tests/dsp)
+  if(SIGNAL_STUDIO_BUILD_UI)
+    add_subdirectory(tests/visualization)
+    add_subdirectory(tests/workbench)
+  endif()
 endif()
 
 message(STATUS "Signal Processing Platform ${PROJECT_VERSION}")

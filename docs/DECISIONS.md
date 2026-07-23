@@ -111,3 +111,13 @@
 - 环境偏差：本机未安装 oneMKL；vcpkg manifest 模式会源码编译 Qt（与系统 Qt 6.11.1 冲突），单独 `intel-mkl` 端口响应极慢未完成。故 CPU FFT 适配器接口就绪但实现返回 `unavailable`，CPU 构建不注册 FFT/PSD/STFT 用例。cuFFT GPU 后端经解析信号（单音 bin、Parseval、IFFT 往返、PSD 频率、STFT 时频）验证。
 - 影响：公共头无第三方类型；cuFFT/cudart PRIVATE 链接，依赖 DAG 不变；`SignalStudioConfig.cmake` 在 CUDA 构建时 `find_dependency(CUDAToolkit)`，安装包消费者可解析 CUDA 目标。oneMKL 装好后经 `SIGNAL_STUDIO_USE_MKL` 选项接入，无需改动公共 API。
 - 下一里程碑：MS-03（Visualization 与 Workbench），DSP 结果驱动 Qt 图表。
+
+## DEV-017 MS-03 Visualization/Workbench 与 Qt 私有边界
+
+- 日期：2026-07-23
+- 状态：MS-03 已验收关闭
+- 决策：Visualization/Workbench 公共 API 为 Qt-free 抽象接口（`IChartView`/`IDataSeries`/`ViewportController`/`OverlayModel`/`IServiceRegistry`/`IPanelFactory`/`ICommandRegistry`/`IDiagnosticsProvider`），Qt widget 实现私有于 .cpp（PIMPL），经 `native_widget()->void*` 暴露给宿主应用嵌入。Qt PRIVATE 链接，依赖 DAG 不变。
+- 隐藏停止计算：`IChartView::set_visible(false)` 使 `needs_data()` 返回 false，宿主据此停止该视图专属计算（任务文档 §7.3 要点 5）。
+- 诊断边界：Workbench 不依赖 Compute（DAG 不允许），`ConfigurableDiagnosticsProvider` 的 compute/cuda 字段由宿主注入。
+- 测试：offscreen Qt（`QT_QPA_PLATFORM=offscreen`+`QT_PLUGIN_PATH`），不产生窗口截图（任务约束）。
+- 下一里程碑：MS-04（Signal Studio 基础应用），组装控件为桌面应用。
