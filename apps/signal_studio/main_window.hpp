@@ -14,18 +14,18 @@ namespace signal::studio {
 
 class MainWindow final : public QMainWindow {
   Q_OBJECT
- public:
+public:
   explicit MainWindow(Application* app, QWidget* parent = nullptr);
   ~MainWindow() override;
 
- private slots:
+private slots:
   void openWav();
   void openSc16();
   void toggleSpectrumVisible(bool visible);
   void toggleSpectrogramVisible(bool visible);
   void about();
 
- private:
+private:
   void buildMenu();
   void buildCentral();
   void loadAndAnalyze(const std::filesystem::path& path, bool is_sc16);
@@ -42,4 +42,4 @@ class MainWindow final : public QMainWindow {
   std::optional<ImportResult> currentImport_;
 };
 
-}  // namespace signal::studio
+} // namespace signal::studio

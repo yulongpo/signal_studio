@@ -1,8 +1,8 @@
 #include "signal_studio/visualization/chart_view.hpp"
 #include "signal_studio/visualization/data_series.hpp"
 #include "signal_studio/visualization/overlay.hpp"
-#include "signal_studio/visualization/views.hpp"
 #include "signal_studio/visualization/viewport.hpp"
+#include "signal_studio/visualization/views.hpp"
 
 #include <QApplication>
 
@@ -24,7 +24,9 @@ void check(bool cond, std::string_view msg) {
     ++g_failures;
   }
 }
-bool approx(double a, double b, double tol) { return std::fabs(a - b) <= tol; }
+bool approx(double a, double b, double tol) {
+  return std::fabs(a - b) <= tol;
+}
 
 void ensure_app() {
   if (!g_app) {
@@ -143,7 +145,7 @@ int case_view_factory() {
   return g_failures == 0 ? 0 : 1;
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
   if (argc != 3 || std::string_view{argv[1]} != "--case") {
@@ -151,14 +153,22 @@ int main(int argc, char** argv) {
     return 2;
   }
   std::string_view name = argv[2];
-  if (name == "viewport-window-clamp") return case_viewport_window_clamp();
-  if (name == "viewport-zoom-pan") return case_viewport_zoom_pan();
-  if (name == "frequency-unit") return case_frequency_unit();
-  if (name == "format-frequency") return case_format_frequency();
-  if (name == "overlay-model") return case_overlay_model();
-  if (name == "data-series") return case_data_series();
-  if (name == "color-map") return case_color_map();
-  if (name == "view-factory") return case_view_factory();
+  if (name == "viewport-window-clamp")
+    return case_viewport_window_clamp();
+  if (name == "viewport-zoom-pan")
+    return case_viewport_zoom_pan();
+  if (name == "frequency-unit")
+    return case_frequency_unit();
+  if (name == "format-frequency")
+    return case_format_frequency();
+  if (name == "overlay-model")
+    return case_overlay_model();
+  if (name == "data-series")
+    return case_data_series();
+  if (name == "color-map")
+    return case_color_map();
+  if (name == "view-factory")
+    return case_view_factory();
   std::cerr << "unknown case: " << name << "\n";
   return 2;
 }

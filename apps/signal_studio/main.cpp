@@ -10,7 +10,7 @@ namespace signal::studio {
 // GUI entry point defined in gui.cpp; kept out of main.cpp so the headless self-test path has
 // no Qt linkage requirement and can run without a platform plugin.
 int runGui(int argc, char** argv);
-}  // namespace signal::studio
+} // namespace signal::studio
 
 namespace {
 
@@ -48,12 +48,13 @@ int runSelfTest() {
 
 bool has_self_test_flag(int argc, char** argv) {
   for (int i = 1; i < argc; ++i) {
-    if (std::string_view(argv[i]) == "--self-test") return true;
+    if (std::string_view(argv[i]) == "--self-test")
+      return true;
   }
   return false;
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
   if (has_self_test_flag(argc, argv)) {

@@ -30,7 +30,7 @@ struct AlgorithmPluginDescriptor final {
 
 /// Request to run an algorithm plugin on a sample block.
 struct AlgorithmRequest final {
-  std::string operation;             // e.g. "fft", "detect-tokens"
+  std::string operation; // e.g. "fft", "detect-tokens"
   data::SignalSlice input;
   std::map<std::string, double> parameters;
   friend bool operator==(const AlgorithmRequest&, const AlgorithmRequest&) = default;
@@ -47,7 +47,7 @@ struct AlgorithmResult final {
 /// Algorithm plugin interface (API-PLG-002). No UI dependency. Implementations may wrap the C ABI
 /// or be linked directly.
 class IAlgorithmPlugin {
- public:
+public:
   virtual ~IAlgorithmPlugin() = default;
   [[nodiscard]] virtual const AlgorithmPluginDescriptor& descriptor() const noexcept = 0;
   [[nodiscard]] virtual core::Result<AlgorithmResult> run(const AlgorithmRequest& request) = 0;
@@ -56,13 +56,13 @@ class IAlgorithmPlugin {
 /// A trivial built-in algorithm plugin used as a reference implementation and test fixture. It
 /// computes time-domain RMS of a real input for operation "rms".
 class RmsAlgorithmPlugin final : public IAlgorithmPlugin {
- public:
+public:
   RmsAlgorithmPlugin();
   [[nodiscard]] const AlgorithmPluginDescriptor& descriptor() const noexcept override;
   [[nodiscard]] core::Result<AlgorithmResult> run(const AlgorithmRequest& request) override;
 
- private:
+private:
   AlgorithmPluginDescriptor descriptor_;
 };
 
-}  // namespace signal::plugin
+} // namespace signal::plugin

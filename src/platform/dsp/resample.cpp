@@ -14,17 +14,18 @@ core::Status dsp_failure(core::ErrorReason reason, std::string message) {
 }
 
 double sinc(double x) noexcept {
-  if (std::fabs(x) < 1e-12) return 1.0;
+  if (std::fabs(x) < 1e-12)
+    return 1.0;
   return std::sin(3.14159265358979323846 * x) / (3.14159265358979323846 * x);
 }
-}  // namespace
+} // namespace
 
 bool ResampleRatio::valid() const noexcept {
   return num > 0 && den > 0;
 }
 
-core::Result<std::vector<double>>
-PolyphaseResampler::process(const ResampleRatio& ratio, std::span<const double> input) {
+core::Result<std::vector<double>> PolyphaseResampler::process(const ResampleRatio& ratio,
+                                                              std::span<const double> input) {
   if (!ratio.valid()) {
     return dsp_failure(core::ErrorReason::invalid_argument, "resample ratio must be positive");
   }
@@ -62,10 +63,12 @@ PolyphaseResampler::process(const ResampleRatio& ratio, std::span<const double> 
   // gain 1, which preserves signal amplitude for both up- and down-sampling. Without this the
   // down-sampling path attenuates by L/M (exposed by narrowband channel extraction).
   double h_sum = 0.0;
-  for (double v : h) h_sum += v;
+  for (double v : h)
+    h_sum += v;
   if (h_sum > 0.0) {
     const double scale = static_cast<double>(L) / h_sum;
-    for (auto& v : h) v *= scale;
+    for (auto& v : h)
+      v *= scale;
   }
 
   // Polyphase decomposition: phase p uses h[p], h[p+L], h[p+2L], ...
@@ -77,12 +80,13 @@ PolyphaseResampler::process(const ResampleRatio& ratio, std::span<const double> 
     const std::uint64_t t = k * M;
     const std::uint64_t base = t / L;
     if (base >= input.size()) {
-      break;  // no more input
+      break; // no more input
     }
     const std::uint32_t p = static_cast<std::uint32_t>(t % L);
     double acc = 0.0;
     for (std::uint64_t j = 0; j < poly_taps; ++j) {
-      if (j > base) break;  // x index would be negative -> zero contribution
+      if (j > base)
+        break; // x index would be negative -> zero contribution
       const std::uint64_t idx = base - j;
       const std::uint64_t coeff_idx = static_cast<std::uint64_t>(p) + j * L;
       acc += h[static_cast<std::size_t>(coeff_idx)] * input[static_cast<std::size_t>(idx)];
@@ -95,4 +99,4 @@ PolyphaseResampler::process(const ResampleRatio& ratio, std::span<const double> 
   return output;
 }
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

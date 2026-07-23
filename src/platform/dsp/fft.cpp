@@ -21,19 +21,19 @@ constexpr bool cuda_enabled_build =
 core::Status dsp_failure(core::ErrorReason reason, std::string message) {
   return core::Status::failure(core::ErrorCode{core::ErrorDomain::dsp, reason}, std::move(message));
 }
-}  // namespace
+} // namespace
 
 bool fft_backend_available(compute::ComputeDeviceType device) noexcept {
   if (device == compute::ComputeDeviceType::cuda) {
     return cuda_enabled_build;
   }
-  return false;  // oneMKL CPU backend not built in this configuration
+  return false; // oneMKL CPU backend not built in this configuration
 }
 
 #if SIGNAL_STUDIO_CUDA_ENABLED
 namespace {
 class CudaFftPlan final : public FftPlan {
- public:
+public:
   CudaFftPlan(std::uint64_t n, FftDirection direction, compute::BackendProvenance provenance)
       : size_(n), direction_(direction), provenance_(std::move(provenance)) {
     cufftPlan1d(&plan_, static_cast<int>(n), CUFFT_Z2Z, 1);
@@ -42,19 +42,27 @@ class CudaFftPlan final : public FftPlan {
     cudaMalloc(&d_out_, bytes);
   }
   ~CudaFftPlan() override {
-    if (plan_) cufftDestroy(plan_);
-    if (d_in_) cudaFree(d_in_);
-    if (d_out_) cudaFree(d_out_);
+    if (plan_)
+      cufftDestroy(plan_);
+    if (d_in_)
+      cudaFree(d_in_);
+    if (d_out_)
+      cudaFree(d_out_);
   }
   CudaFftPlan(const CudaFftPlan&) = delete;
   CudaFftPlan& operator=(const CudaFftPlan&) = delete;
 
-  std::uint64_t size() const noexcept override { return size_; }
-  FftDirection direction() const noexcept override { return direction_; }
-  compute::BackendProvenance provenance() const override { return provenance_; }
+  std::uint64_t size() const noexcept override {
+    return size_;
+  }
+  FftDirection direction() const noexcept override {
+    return direction_;
+  }
+  compute::BackendProvenance provenance() const override {
+    return provenance_;
+  }
 
-  core::Result<std::vector<data::ComplexSample>>
-  execute(std::span<const data::ComplexSample> input) const override {
+  core::Result<std::vector<data::ComplexSample>> execute(std::span<const data::ComplexSample> input) const override {
     if (input.size() != size_) {
       return dsp_failure(core::ErrorReason::invalid_argument, "fft input length does not match plan size");
     }
@@ -66,8 +74,7 @@ class CudaFftPlan final : public FftPlan {
       return dsp_failure(core::ErrorReason::internal_failure, "cudaMemcpy H2D failed");
     }
     const cufftResult res =
-        cufftExecZ2Z(plan_, static_cast<cufftDoubleComplex*>(d_in_),
-                     static_cast<cufftDoubleComplex*>(d_out_),
+        cufftExecZ2Z(plan_, static_cast<cufftDoubleComplex*>(d_in_), static_cast<cufftDoubleComplex*>(d_out_),
                      direction_ == FftDirection::forward ? CUFFT_FORWARD : CUFFT_INVERSE);
     if (res != CUFFT_SUCCESS) {
       return dsp_failure(core::ErrorReason::internal_failure, "cufftExecZ2Z failed");
@@ -82,7 +89,7 @@ class CudaFftPlan final : public FftPlan {
     return output;
   }
 
- private:
+private:
   std::uint64_t size_;
   FftDirection direction_;
   compute::BackendProvenance provenance_;
@@ -92,10 +99,14 @@ class CudaFftPlan final : public FftPlan {
 };
 
 class CudaFftBackend final : public IFftBackend {
- public:
+public:
   explicit CudaFftBackend(compute::BackendProvenance provenance) : provenance_(std::move(provenance)) {}
-  compute::ComputeDeviceType device_type() const noexcept override { return compute::ComputeDeviceType::cuda; }
-  compute::BackendProvenance provenance() const override { return provenance_; }
+  compute::ComputeDeviceType device_type() const noexcept override {
+    return compute::ComputeDeviceType::cuda;
+  }
+  compute::BackendProvenance provenance() const override {
+    return provenance_;
+  }
   core::Result<std::unique_ptr<FftPlan>> create_plan(const FftSpec& spec) override {
     if (spec.size == 0) {
       return dsp_failure(core::ErrorReason::invalid_argument, "fft size must be positive");
@@ -104,18 +115,19 @@ class CudaFftBackend final : public IFftBackend {
     return std::unique_ptr<FftPlan>(std::move(plan));
   }
 
- private:
+private:
   compute::BackendProvenance provenance_;
 };
-}  // namespace
-#endif  // SIGNAL_STUDIO_CUDA_ENABLED
+} // namespace
+#endif // SIGNAL_STUDIO_CUDA_ENABLED
 
 core::Result<std::unique_ptr<IFftBackend>> make_fft_backend(compute::ComputeDeviceType device) {
   if (device == compute::ComputeDeviceType::cuda) {
 #if SIGNAL_STUDIO_CUDA_ENABLED
     auto cuda_backend = compute::make_cuda_compute_backend();
     if (!cuda_backend.ok()) {
-      return dsp_failure(core::ErrorReason::unavailable, "CUDA compute backend unavailable: " + std::string(cuda_backend.error().message()));
+      return dsp_failure(core::ErrorReason::unavailable,
+                         "CUDA compute backend unavailable: " + std::string(cuda_backend.error().message()));
     }
     compute::BackendProvenance provenance = (*cuda_backend)->provenance();
     return std::unique_ptr<IFftBackend>(std::make_unique<CudaFftBackend>(std::move(provenance)));
@@ -126,8 +138,7 @@ core::Result<std::unique_ptr<IFftBackend>> make_fft_backend(compute::ComputeDevi
   }
   // CPU path: oneMKL is the BL1.0-sanctioned CPU FFT backend (ADR-006). It is not installed in
   // this environment, so the CPU FFT adapter is unavailable rather than faked.
-  return dsp_failure(core::ErrorReason::unavailable,
-                     "oneMKL CPU FFT backend is not installed in this environment");
+  return dsp_failure(core::ErrorReason::unavailable, "oneMKL CPU FFT backend is not installed in this environment");
 }
 
 core::Result<FftResult> fft(std::span<const data::ComplexSample> input, IFftBackend& backend) {
@@ -176,4 +187,4 @@ core::Result<FftResult> ifft(std::span<const data::ComplexSample> input, IFftBac
   return result;
 }
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

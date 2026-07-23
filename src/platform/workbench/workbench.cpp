@@ -13,7 +13,7 @@ core::Status wb_failure(core::ErrorReason reason, std::string message) {
 }
 
 class ServiceRegistry final : public IServiceRegistry {
- public:
+public:
   core::Status register_service(ServiceId id, std::shared_ptr<void> service) override {
     if (id.value.empty()) {
       return wb_failure(core::ErrorReason::invalid_argument, "service id must be non-empty");
@@ -26,12 +26,12 @@ class ServiceRegistry final : public IServiceRegistry {
     return it == services_.end() ? nullptr : it->second;
   }
 
- private:
+private:
   std::unordered_map<std::string, std::shared_ptr<void>> services_;
 };
 
 class CommandRegistry final : public ICommandRegistry {
- public:
+public:
   core::Status register_command(std::string command_id, CommandAction action) override {
     if (command_id.empty()) {
       return wb_failure(core::ErrorReason::invalid_argument, "command id must be non-empty");
@@ -52,15 +52,16 @@ class CommandRegistry final : public ICommandRegistry {
   std::vector<std::string> registered_command_ids() const override {
     std::vector<std::string> ids;
     ids.reserve(commands_.size());
-    for (const auto& [id, _] : commands_) ids.push_back(id);
+    for (const auto& [id, _] : commands_)
+      ids.push_back(id);
     std::sort(ids.begin(), ids.end());
     return ids;
   }
 
- private:
+private:
   std::unordered_map<std::string, CommandAction> commands_;
 };
-}  // namespace
+} // namespace
 
 core::Status PanelFactory::register_creator(std::string panel_id, PanelCreator creator) {
   if (panel_id.empty()) {
@@ -84,7 +85,8 @@ core::Result<std::unique_ptr<IPanel>> PanelFactory::create(const PanelContext& c
 std::vector<std::string> PanelFactory::registered_panel_ids() const {
   std::vector<std::string> ids;
   ids.reserve(creators_.size());
-  for (const auto& [id, _] : creators_) ids.push_back(id);
+  for (const auto& [id, _] : creators_)
+    ids.push_back(id);
   std::sort(ids.begin(), ids.end());
   return ids;
 }
@@ -120,4 +122,4 @@ std::unique_ptr<IDiagnosticsProvider> make_diagnostics_provider() {
   return std::make_unique<ConfigurableDiagnosticsProvider>();
 }
 
-}  // namespace signal::workbench
+} // namespace signal::workbench

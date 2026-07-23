@@ -103,3 +103,12 @@
 - 记录无界面 126/126、UI(CUDA) 160/160 四配置全量 CTest 通过，合计 572/572。
 - ONNX Runtime/HDF5 未装为环境偏差，接口就绪不伪造。
 - MS-06 已验收关闭，下一里程碑为 MS-07（工程化/打包/文档）；整体产品尚未完成。
+# 2026-07-23：MS-07 工程化、打包、文档
+
+- 质量门禁：clang-format --dry-run --Werror 合规（111 源文件已格式化），/W4 编译、DAG 校验、公共头扫描。
+- 打包：cmake/Packaging.cmake（CPack ZIP 便携包 + NSIS 若可用）、windeployqt POST_BUILD 部署 Qt 运行库/插件、VC143 运行库部署；SignalStudio-1.0.0-win64.zip（25MB，122 文件）生成并可启动。
+- 需求追踪：docs/development/开发需求追踪矩阵.csv 覆盖 198 项。
+- 文档：VSCode 构建与调试指南、第三方依赖版本锁定清单、发布检查清单、安装验证报告、ReleaseNotes_1.0.0、LICENSES。
+- 记录四配置全量 CTest 通过，合计 572/572；便携包 self-test 退出 0。
+- NSIS 未装为环境偏差（仅便携包）。
+- MS-07 已验收关闭，下一里程碑为 MS-08（复用证明应用）；整体产品尚未完成。

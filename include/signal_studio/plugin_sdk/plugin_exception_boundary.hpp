@@ -29,4 +29,4 @@ void invoke_void(Callable&& callable, Arguments&&... arguments) noexcept {
   }
 }
 
-}  // namespace signal::plugin::abi_v1
+} // namespace signal::plugin::abi_v1

@@ -8,31 +8,28 @@ namespace signal::core {
 
 bool is_known_capability_availability(CapabilityAvailability availability) noexcept {
   switch (availability) {
-    case CapabilityAvailability::unavailable:
-    case CapabilityAvailability::available:
-    case CapabilityAvailability::degraded: return true;
+  case CapabilityAvailability::unavailable:
+  case CapabilityAvailability::available:
+  case CapabilityAvailability::degraded:
+    return true;
   }
   return false;
 }
 
 Status CapabilityRegistry::register_capability(Capability capability) {
   if (capability.id.empty() || capability.provider.empty()) {
-    return Status::failure(
-        {ErrorDomain::core, ErrorReason::invalid_argument},
-        "Capability id and provider are required");
+    return Status::failure({ErrorDomain::core, ErrorReason::invalid_argument},
+                           "Capability id and provider are required");
   }
   if (!is_known_capability_availability(capability.availability)) {
-    return Status::failure(
-        {ErrorDomain::core, ErrorReason::invalid_argument},
-        "Capability availability is outside the public contract");
+    return Status::failure({ErrorDomain::core, ErrorReason::invalid_argument},
+                           "Capability availability is outside the public contract");
   }
   std::unique_lock lock{mutex_};
   const auto duplicate = std::ranges::find(capabilities_, capability.id, &Capability::id);
   if (duplicate != capabilities_.end()) {
-    return Status::failure(
-        {ErrorDomain::core, ErrorReason::invalid_argument},
-        "Capability id is already registered",
-        capability.id);
+    return Status::failure({ErrorDomain::core, ErrorReason::invalid_argument}, "Capability id is already registered",
+                           capability.id);
   }
   capabilities_.push_back(std::move(capability));
   std::ranges::sort(capabilities_, {}, &Capability::id);
@@ -58,4 +55,4 @@ std::vector<Capability> CapabilityRegistry::snapshot() const {
   return capabilities_;
 }
 
-}  // namespace signal::core
+} // namespace signal::core

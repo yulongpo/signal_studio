@@ -12,11 +12,11 @@ namespace {
 core::Status app_failure(core::ErrorReason reason, std::string message) {
   return core::Status::failure(core::ErrorCode{core::ErrorDomain::core, reason}, std::move(message));
 }
-}  // namespace
+} // namespace
 
-core::Result<NarrowbandChannel>
-extract_narrowband_channel(const data::SignalSlice& wideband, double sample_rate_hz,
-                           const NarrowbandChannelSpec& spec, std::uint64_t source_start_sample) {
+core::Result<NarrowbandChannel> extract_narrowband_channel(const data::SignalSlice& wideband, double sample_rate_hz,
+                                                           const NarrowbandChannelSpec& spec,
+                                                           std::uint64_t source_start_sample) {
   if (sample_rate_hz <= 0.0) {
     return app_failure(core::ErrorReason::invalid_argument, "sample rate must be positive");
   }
@@ -58,9 +58,11 @@ extract_narrowband_channel(const data::SignalSlice& wideband, double sample_rate
   std::vector<double> I_filt(I.size(), 0.0), Q_filt(Q.size(), 0.0);
   dsp::FilterState si, sq;
   auto st = filter->process(I, si, I_filt);
-  if (!st.ok()) return st;
+  if (!st.ok())
+    return st;
   st = filter->process(Q, sq, Q_filt);
-  if (!st.ok()) return st;
+  if (!st.ok())
+    return st;
 
   // 3. Resample both legs to the output rate. Reduce L/M to lowest terms so the polyphase
   // filter does not balloon to millions of taps (e.g. 64000->400 is 1:160, not 400000:64000000).
@@ -81,9 +83,11 @@ extract_narrowband_channel(const data::SignalSlice& wideband, double sample_rate
   dsp::ResampleRatio ratio{static_cast<std::uint32_t>(L_raw / g), static_cast<std::uint32_t>(M_raw / g)};
   dsp::PolyphaseResampler resampler;
   auto I_out = resampler.process(ratio, I_filt);
-  if (!I_out.ok()) return core::Status(I_out.error());
+  if (!I_out.ok())
+    return core::Status(I_out.error());
   auto Q_out = resampler.process(ratio, Q_filt);
-  if (!Q_out.ok()) return core::Status(Q_out.error());
+  if (!Q_out.ok())
+    return core::Status(Q_out.error());
 
   const std::size_t n_out = std::min(I_out->size(), Q_out->size());
   NarrowbandChannel channel;
@@ -97,8 +101,7 @@ extract_narrowband_channel(const data::SignalSlice& wideband, double sample_rate
   return channel;
 }
 
-WidebandNarrowbandController::WidebandNarrowbandController(double wideband_sample_rate_hz,
-                                                            double center_frequency_hz)
+WidebandNarrowbandController::WidebandNarrowbandController(double wideband_sample_rate_hz, double center_frequency_hz)
     : wideband_sample_rate_hz_(wideband_sample_rate_hz), center_frequency_hz_(center_frequency_hz) {}
 
 core::Status WidebandNarrowbandController::set_wideband_selection(double lo_hz, double hi_hz) {
@@ -134,4 +137,4 @@ WidebandNarrowbandController::derive_channel_spec(std::optional<double> override
   return spec;
 }
 
-}  // namespace signal::studio
+} // namespace signal::studio

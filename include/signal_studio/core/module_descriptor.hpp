@@ -37,4 +37,4 @@ struct ModuleDescriptor final {
 [[nodiscard]] Status validate_module_descriptor(const ModuleDescriptor& descriptor);
 [[nodiscard]] const ModuleDescriptor& module_descriptor() noexcept;
 
-}  // namespace signal::core
+} // namespace signal::core

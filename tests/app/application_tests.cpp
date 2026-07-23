@@ -20,11 +20,14 @@ void check(bool cond, std::string_view msg) {
     ++g_failures;
   }
 }
-bool approx(double a, double b, double tol) { return std::fabs(a - b) <= tol; }
+bool approx(double a, double b, double tol) {
+  return std::fabs(a - b) <= tol;
+}
 
 int case_filename_parse() {
   using namespace signal::studio;
-  const auto hint = parse_capture_filename(std::filesystem::path("x310_capture_cf1245MHz_sr50MSps_20260521_144927.sc16"));
+  const auto hint =
+      parse_capture_filename(std::filesystem::path("x310_capture_cf1245MHz_sr50MSps_20260521_144927.sc16"));
   check(hint.had_center_frequency, "cf parsed");
   check(approx(hint.center_frequency_hz, 1.245e9, 1.0), "cf value 1245 MHz");
   check(hint.had_sample_rate, "sr parsed");
@@ -44,7 +47,8 @@ int case_import_wav() {
   }
   auto imp = app.import_wav(path);
   check(imp.ok(), "wav import ok");
-  if (!imp.ok()) return 1;
+  if (!imp.ok())
+    return 1;
   check(imp->total_samples > 0, "wav total samples > 0");
   check(imp->descriptor.signal_kind == signal::data::SignalKind::complex, "wav is complex IQ");
   const std::uint64_t count = std::min<std::uint64_t>(imp->total_samples, 1024);
@@ -64,7 +68,8 @@ int case_import_sc16_override() {
   }
   auto imp = app.import_sc16(path, 64000.0, 0.0);
   check(imp.ok(), "sc16 import with override ok");
-  if (!imp.ok()) return 1;
+  if (!imp.ok())
+    return 1;
   check(approx(imp->descriptor.sample_rate_hz, 64000.0, 1e-6), "sc16 sr override");
   check(imp->descriptor.scalar_type == signal::data::ScalarType::int16, "sc16 int16");
   check(imp->descriptor.component_layout == signal::data::ComponentLayout::interleaved, "sc16 interleaved");
@@ -82,7 +87,7 @@ int case_import_sc16_no_sr_fails() {
     std::cerr << "SKIP: fixture missing\n";
     return 0;
   }
-  auto imp = app.import_sc16(path);  // no override, filename has no sr hint
+  auto imp = app.import_sc16(path); // no override, filename has no sr hint
   check(!imp.ok(), "sc16 import without sr fails");
   return g_failures == 0 ? 0 : 1;
 }
@@ -101,11 +106,13 @@ int case_analyze_psd() {
   }
   auto imp = app.import_wav(path);
   check(imp.ok(), "import for psd");
-  if (!imp.ok()) return 1;
+  if (!imp.ok())
+    return 1;
   const std::uint64_t count = std::min<std::uint64_t>(imp->total_samples, 4096);
   auto slice = app.read_samples(*imp->source, 0, count, 16 * 1024 * 1024);
   check(slice.ok(), "read for psd");
-  if (!slice.ok()) return 1;
+  if (!slice.ok())
+    return 1;
   auto psd = app.analyze_psd(*slice, imp->descriptor.sample_rate_hz, 1024, 512);
   check(psd.ok(), "psd ok");
   if (psd.ok()) {
@@ -120,12 +127,13 @@ int case_external_wav() {
   const auto path = g_external / "20241110-174401-662_bw_12800000_sampleTime_0.4_rollOff_0.3.wav";
   if (!std::filesystem::exists(path)) {
     std::cerr << "SKIP: external WAV not present at " << path << "\n";
-    return 0;  // environment deviation, not a failure
+    return 0; // environment deviation, not a failure
   }
   Application app;
   auto imp = app.import_wav(path);
   check(imp.ok(), "external wav import ok");
-  if (!imp.ok()) return 1;
+  if (!imp.ok())
+    return 1;
   check(approx(imp->descriptor.sample_rate_hz, 12.8e6, 1.0), "external wav sr 12.8 MSps");
   check(imp->total_samples > 1'000'000, "external wav large frame count");
   // Bounded window read: never load the whole 20 MB file.
@@ -149,7 +157,8 @@ int case_external_sc16() {
   Application app;
   auto imp = app.import_sc16(path);
   check(imp.ok(), "external sc16 import ok (filename hints)");
-  if (!imp.ok()) return 1;
+  if (!imp.ok())
+    return 1;
   check(approx(imp->descriptor.sample_rate_hz, 50.0e6, 1.0), "sc16 sr from filename");
   check(approx(*imp->descriptor.center_frequency_hz, 1.245e9, 1.0), "sc16 cf from filename");
   // Bounded window read on the 1 GB file: never load it wholly.
@@ -194,10 +203,11 @@ int case_narrowband_extraction() {
   NarrowbandChannelSpec spec;
   spec.center_frequency_hz = tone;
   spec.bandwidth_hz = 200.0;
-  spec.output_sample_rate_hz = 400.0;  // 2x bandwidth
+  spec.output_sample_rate_hz = 400.0; // 2x bandwidth
   auto ch = extract_narrowband_channel(buf.view(), fs, spec);
   check(ch.ok(), "narrowband extraction ok");
-  if (!ch.ok()) return 1;
+  if (!ch.ok())
+    return 1;
   check(!ch->samples.empty(), "channel has samples");
   check(approx(ch->output_sample_rate_hz, 400.0, 1e-6), "channel output rate");
   // After down-conversion the 1 kHz tone sits at baseband (~0 Hz). Verify the extracted samples
@@ -217,7 +227,7 @@ int case_narrowband_extraction() {
   return g_failures == 0 ? 0 : 1;
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
   if (argc != 3 || std::string_view{argv[1]} != "--case") {
@@ -225,15 +235,24 @@ int main(int argc, char** argv) {
     return 2;
   }
   std::string_view name = argv[2];
-  if (name == "filename-parse") return case_filename_parse();
-  if (name == "import-wav") return case_import_wav();
-  if (name == "import-sc16-override") return case_import_sc16_override();
-  if (name == "import-sc16-no-sr-fails") return case_import_sc16_no_sr_fails();
-  if (name == "analyze-psd") return case_analyze_psd();
-  if (name == "external-wav") return case_external_wav();
-  if (name == "external-sc16") return case_external_sc16();
-  if (name == "wideband-narrowband-link") return case_wideband_narrowband_link();
-  if (name == "narrowband-extraction") return case_narrowband_extraction();
+  if (name == "filename-parse")
+    return case_filename_parse();
+  if (name == "import-wav")
+    return case_import_wav();
+  if (name == "import-sc16-override")
+    return case_import_sc16_override();
+  if (name == "import-sc16-no-sr-fails")
+    return case_import_sc16_no_sr_fails();
+  if (name == "analyze-psd")
+    return case_analyze_psd();
+  if (name == "external-wav")
+    return case_external_wav();
+  if (name == "external-sc16")
+    return case_external_sc16();
+  if (name == "wideband-narrowband-link")
+    return case_wideband_narrowband_link();
+  if (name == "narrowband-extraction")
+    return case_narrowband_extraction();
   std::cerr << "unknown case: " << name << "\n";
   return 2;
 }

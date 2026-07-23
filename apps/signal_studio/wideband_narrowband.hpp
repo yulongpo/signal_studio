@@ -31,9 +31,10 @@ struct NarrowbandChannel final {
 /// Extract a narrowband channel from a complex IQ slice via digital down-conversion:
 /// frequency-shift to baseband, low-pass filter (cutoff = bandwidth/2), then resample to the
 /// output rate. The input must be complex; real input returns an error.
-[[nodiscard]] core::Result<NarrowbandChannel>
-extract_narrowband_channel(const data::SignalSlice& wideband, double sample_rate_hz,
-                           const NarrowbandChannelSpec& spec, std::uint64_t source_start_sample = 0);
+[[nodiscard]] core::Result<NarrowbandChannel> extract_narrowband_channel(const data::SignalSlice& wideband,
+                                                                         double sample_rate_hz,
+                                                                         const NarrowbandChannelSpec& spec,
+                                                                         std::uint64_t source_start_sample = 0);
 
 /// Linkage state between a wideband overview and a narrowband detail view. Qt-free; the GUI
 /// reads this to synchronize viewports and cursors.
@@ -50,23 +51,27 @@ struct WidebandNarrowbandLink final {
 /// narrowband channel spec (center = midpoint, bandwidth = span, output rate = bandwidth * 2)
 /// and exposes the linkage so both views stay synchronized.
 class WidebandNarrowbandController final {
- public:
+public:
   WidebandNarrowbandController() = default;
   explicit WidebandNarrowbandController(double wideband_sample_rate_hz, double center_frequency_hz);
 
   /// Set the wideband frequency selection. Rejects inverted ranges and spans that exceed Nyquist.
   [[nodiscard]] core::Status set_wideband_selection(double lo_hz, double hi_hz);
-  [[nodiscard]] std::optional<WidebandNarrowbandLink> link() const noexcept { return link_; }
-  [[nodiscard]] double wideband_sample_rate_hz() const noexcept { return wideband_sample_rate_hz_; }
+  [[nodiscard]] std::optional<WidebandNarrowbandLink> link() const noexcept {
+    return link_;
+  }
+  [[nodiscard]] double wideband_sample_rate_hz() const noexcept {
+    return wideband_sample_rate_hz_;
+  }
 
   /// Derive a channel spec from the current selection with optional overrides.
-  [[nodiscard]] core::Result<NarrowbandChannelSpec> derive_channel_spec(
-      std::optional<double> override_output_rate_hz = {}) const;
+  [[nodiscard]] core::Result<NarrowbandChannelSpec>
+  derive_channel_spec(std::optional<double> override_output_rate_hz = {}) const;
 
- private:
+private:
   double wideband_sample_rate_hz_{};
   double center_frequency_hz_{};
   std::optional<WidebandNarrowbandLink> link_;
 };
 
-}  // namespace signal::studio
+} // namespace signal::studio

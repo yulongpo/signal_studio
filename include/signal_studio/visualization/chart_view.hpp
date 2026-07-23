@@ -21,7 +21,7 @@ enum class ChartViewKind : std::uint8_t {
 /// Abstract chart view (API-VIS-001). Public API is Qt-free; the underlying QWidget is exposed
 /// via native_widget() for the host application to embed in its own Qt layout.
 class IChartView {
- public:
+public:
   using NeedsDataCallback = std::function<bool()>;
 
   virtual ~IChartView() = default;
@@ -42,4 +42,4 @@ class IChartView {
 
 [[nodiscard]] std::string_view to_string(ChartViewKind kind) noexcept;
 
-}  // namespace signal::visualization
+} // namespace signal::visualization

@@ -30,4 +30,4 @@ struct BuildInfo final {
 
 [[nodiscard]] const BuildInfo& build_info() noexcept;
 
-}  // namespace signal::core
+} // namespace signal::core

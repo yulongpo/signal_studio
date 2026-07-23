@@ -1,0 +1,199 @@
+需求编号,优先级,标题,所属应用或基础库,源码模块,里程碑,状态,验收结果
+FR-PRJ-001,P0,支持新建、打开、另存、关闭和最近项目,core,core,MS-01,已实现,通过
+FR-PRJ-002,P0,保存数据源、描述符、已读范围、选区、标记、通道、处理链、布局和结果引用,core,core,MS-01,已实现,通过
+FR-PRJ-003,P0,项目采用临时文件加原子替换,core,core,MS-01,已实现,通过
+FR-PRJ-004,P0,不修改源采样文件,core,core,MS-01,已实现,通过
+FR-PRJ-005,P0,以路径、大小、修改时间和抽样哈希识别源版本变化,core,core,MS-01,已实现,通过
+FR-PRJ-006,P1,支持相对路径、批量重定位和只读打开。,core,core,MS-01,已实现,通过
+FR-PRJ-007,P0,项目包含 `schemaVersion`,core,core,MS-01,已实现,通过
+FR-PRJ-008,P1,支持自动保存和异常退出恢复点。,core,core,MS-01,已实现,通过
+FR-PRJ-009,P0,当前数据源切换必须是原子上下文切换,core,core,MS-01,已实现,通过
+FR-PRJ-010,P0,全局页面、底部面板和状态栏必须显示一致的当前项目、数据源及版本,core,core,MS-01,已实现,通过
+FR-DAT-001,P0,同一版本完整支持实信号和复信号的导入、浏览、选区和导出闭环。,data,data,MS-01,已实现,通过
+FR-DAT-002,P0,RAW 支持 Int8、UInt8、Int16、UInt16、Int24 Packe,data,data,MS-01,已实现,通过
+FR-DAT-003,P0,复信号支持 IQ/QI 与交错布局,data,data,MS-01,已实现,通过
+FR-DAT-004,P0,多字节类型支持小端/大端并检查帧对齐,data,data,MS-01,已实现,通过
+FR-DAT-005,P0,导入向导采集文件/格式、实复类型、样本类型、布局/顺序、字节序、采样率、幅值解释、比,data,data,MS-01,已实现,通过
+FR-DAT-006,P0,实信号中心频率可选,data,data,MS-01,已实现,通过
+FR-DAT-007,P0,复信号支持基带/绝对频率切换,data,data,MS-01,已实现,通过
+FR-DAT-008,P0,WAV 支持单通道实信号和用户确认映射的双通道 I/Q。,data,data,MS-01,已实现,通过
+FR-DAT-009,P1,MAT、NPY/NPZ 和厂商格式通过适配器或插件生成标准描述符。,data,data,MS-01,已实现,通过
+FR-DAT-010,P0,提供限定长度预览、统计量和快速频谱,data,data,MS-01,已实现,通过
+FR-DAT-011,P0,检测 NaN、Inf、全零、削顶、直流偏置和异常幅值，以告警而非静默修正处理。,data,data,MS-01,已实现,通过
+FR-DAT-012,P1,支持版本化 JSON 侧车，并显示字段来源和用户确认状态。,data,data,MS-01,已实现,通过
+FR-DAT-013,P0,文件大小、可用帧数、总时长和初始化目标均由实际文件与确认后的描述符计算,data,data,MS-01,已实现,通过
+FR-DAT-014,P0,前台初始化目标不得超过实际剩余可读字节，采用 `min(configuredInit,data,data,MS-01,已实现,通过
+FR-DAT-015,P0,数据加载提供暂停、继续和取消,data,data,MS-01,已实现,通过
+FR-DAT-016,P0,取消后停止后续读取，发布从请求起点到最后完整样本帧的只读 `LoadedDataRa,data,data,MS-01,已实现,通过
+FR-DAT-017,P0,取消后不得索引或导航未读尾部,data,data,MS-01,已实现,通过
+FR-DAT-018,P0,解析失败不得发布未校验数据源,data,data,MS-01,已实现,通过
+FR-DAT-019,P0,同一导入尝试的进度弹窗、任务中心和日志使用同一任务状态源，不得重复创建任务或定时器。,data,data,MS-01,已实现,通过
+FR-IDX-001,P0,建立时域 min/max/RMS 金字塔及按视口访问的频谱概要/STFT 瓦片,data/index,data/index,MS-01,已实现,通过
+FR-IDX-002,P0,先发布时间框架和可操作视窗，再提供采样概览，最后后台补齐完整索引。,data/index,data/index,MS-01,已实现,通过
+FR-IDX-003,P0,缓存键包含源指纹、`DataSourceVersionId`、描述符、算法版本和影响,data/index,data/index,MS-01,已实现,通过
+FR-IDX-004,P0,缓存写入可恢复,data/index,data/index,MS-01,已实现,通过
+FR-IDX-005,P0,缓存目录、容量、LRU 和项目锁定可配置,data/index,data/index,MS-01,已实现,通过
+FR-IDX-006,P0,默认内存缓存不超过物理内存 25%，允许 10%–60%,data/index,data/index,MS-01,已实现,通过
+FR-IDX-007,P1,显示命中、层级、进度、覆盖率、磁盘占用和失效原因。,data/index,data/index,MS-01,已实现,通过
+FR-IDX-008,P0,磁盘不足或缓存损坏不破坏项目和源文件，可降级按需计算。,data/index,data/index,MS-01,已实现,通过
+FR-IDX-009,P0,明确区分采样概览、构建中、完整索引和降级,data/index,data/index,MS-01,已实现,通过
+FR-IDX-010,P0,视图缓存键包含时间/频率视口、像素尺寸和算法参数,data/index,data/index,MS-01,已实现,通过
+FR-IDX-011,P1,可预取相邻视窗,data/index,data/index,MS-01,已实现,通过
+FR-IDX-012,P0,部分读取数据源的索引上界等于 `LoadedDataRange.endSample`,data/index,data/index,MS-01,已实现,通过
+FR-VIS-001,P0,P02 同时提供时间导航、当前视窗时域、PSD 和 STFT,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-002,P0,实信号默认 `0…Fs/2` 单边谱，可选双边并标明镜像。,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-003,P0,复信号默认 `fftshift` 双边谱,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-004,P0,PSD 与 STFT 共享同一 `FrequencyViewport`,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-005,P0,时域支持实信号单曲线及复信号 I/Q、幅度、相位等模式,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-006,P0,PSD 仅统计当前时间视窗,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-007,P0,STFT 仅覆盖当前时间视窗,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-008,P0,支持滚轮缩放、拖动平移、框选、游标和精确输入,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-009,P0,渐进细化不改变坐标、游标或 Selection,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-010,P0,业务图层支持显示/隐藏、透明度、顺序和来源,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-011,P1,支持线性/对数幅度、自动/手动量程和配色预设,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-012,P0,图谱截图可选择轴、图例、色标、游标、Selection 和参数摘要。,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-013,P0,瀑布图纵轴标签背景必须透明，不得遮挡时频内容,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-014,P0,时域和 PSD 可独立隐藏,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-015,P0,三图支持上下重排和分隔条调高,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-016,P0,瀑布色阶、参考电平和动态范围只改变显示映射，不创建文件读取或时间视口请求。,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-017,P0,频率内部使用安全整数 Hz,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-VIS-018,P0,PSD 和 STFT 右键正向拖动裁剪频率范围，反向拖动恢复数据有效全频范围,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-NAV-001,P0,P02 始终提供时间视窗导航条,tbd,tbd,later,未开始,待验收
+FR-NAV-002,P0,当前视窗把手位置和宽度分别对应起点和跨度,tbd,tbd,later,未开始,待验收
+FR-NAV-003,P0,"时间边界内部使用 64 位样本索引半开区间 `[startSample,endSam",tbd,tbd,later,未开始,待验收
+FR-NAV-004,P0,时域、PSD 和 STFT 不得读取或显示视窗外样本。,tbd,tbd,later,未开始,待验收
+FR-NAV-005,P0,导航概览显示质量、覆盖率和索引进度，并同时使用文字/图标。,tbd,tbd,later,未开始,待验收
+FR-NAV-006,P0,支持把手平移、两端调整、滚轮、键盘、页步进、Home/End 和精确起点/跨度输入。,tbd,tbd,later,未开始,待验收
+FR-NAV-007,P0,浏览不创建或修改 Selection,tbd,tbd,later,未开始,待验收
+FR-NAV-008,P0,导航条是纯导航控件，不显示 Selection、标记、分析通道或缓存覆盖框，不提供标,tbd,tbd,later,未开始,待验收
+FR-NAV-009,P0,空文件禁止进入分析,tbd,tbd,later,未开始,待验收
+FR-NAV-010,P0,部分读取状态同时显示读取边界、已读字节/时长和“未读尾部不可导航”的文字提示。,tbd,tbd,later,未开始,待验收
+FR-NAV-011,P0,每次影响视图内容的变化生成唯一不可变 `ViewRequestId`。,tbd,tbd,later,未开始,待验收
+FR-NAV-012,P0,快速连续导航时过期请求不得提交,tbd,tbd,later,未开始,待验收
+FR-NAV-013,P1,可预取前后视窗，但新交互或资源压力可立即取消预取。,tbd,tbd,later,未开始,待验收
+FR-NAV-014,P0,按数据源版本保存最近视窗,tbd,tbd,later,未开始,待验收
+FR-NAV-015,P0,导航条支持键盘焦点、可见焦点、非颜色状态和 100%–200% DPI 的稳定命中。,tbd,tbd,later,未开始,待验收
+FR-SEL-001,P0,在主图谱而非时间导航条中创建时间、频率和时频 Selection，并分配稳定 ID。,tbd,tbd,later,未开始,待验收
+FR-SEL-002,P0,鼠标和精确输入均可创建/编辑,tbd,tbd,later,未开始,待验收
+FR-SEL-003,P0,支持多选区、可见、锁定、重命名、复制和依赖安全删除。,tbd,tbd,later,未开始,待验收
+FR-SEL-004,P0,游标提供时间、样本索引、频率、幅度/功率和双游标差值,tbd,tbd,later,未开始,待验收
+FR-SEL-005,P0,测量记录数据源版本、范围、视图参数、算法、单位和时间戳，可定位来源。,tbd,tbd,later,未开始,待验收
+FR-SEL-006,P0,从 Selection 创建通道前显示频移、带宽、输出率、输出类型和预计数据量。,tbd,tbd,later,未开始,待验收
+FR-SEL-007,P1,支持批量测量和通道模板,tbd,tbd,later,未开始,待验收
+FR-SEL-008,P0,上游数据或参数变化时依赖结果标记过期，不静默覆盖。,tbd,tbd,later,未开始,待验收
+FR-DSP-001,P0,每个通道保存输入 Selection、`DataSourceVersionId`、输,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-DSP-002,P0,节点声明支持的实/复类型、采样率关系、单位和输入输出契约。,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-DSP-003,P0,提供去直流、增益/标定和复信号 IQ 校正,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-DSP-004,P0,支持复数频移,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-DSP-005,P0,支持 FIR/IIR 低通、高通、带通、带阻和自定义系数。,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-DSP-006,P0,支持整数抽取/插值和有理重采样，并校验抗混叠。,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-DSP-007,P0,节点支持启用/旁路、重排、复制、删除和参数预设。,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-DSP-008,P0,分块处理保持滤波状态、重叠区和边界策略，避免块边界伪影。,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-DSP-009,P0,节点任务可取消,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-DSP-010,P1,提供节点级预览、频响/时延和处理前后对比。,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-DSP-011,P0,导出处理结果时包含源指纹、范围、节点序列、参数和版本。,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-DSP-012,P1,处理链模板可导入导出并进行依赖兼容检查。,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-INS-001,P0,每个 AnalysisChannel 可打开独立 Inspector，状态互不覆盖并,tbd,tbd,later,未开始,待验收
+FR-INS-002,P0,至少提供时域、频谱、STFT、星座和眼图容器,tbd,tbd,later,未开始,待验收
+FR-INS-003,P0,星座支持抽样上限、密度、参考网格和校正前后对比。,tbd,tbd,later,未开始,待验收
+FR-INS-004,P1,眼图声明符号率/同步来源，不使用无依据默认值。,tbd,tbd,later,未开始,待验收
+FR-INS-005,P1,幅度、相位、瞬时频率直方图和轨迹说明范围、单位和预处理。,tbd,tbd,later,未开始,待验收
+FR-INS-006,P0,所有结果绑定通道版本,tbd,tbd,later,未开始,待验收
+FR-INS-007,P1,Inspector 布局可保存模板，缺失插件时显式降级。,tbd,tbd,later,未开始,待验收
+FR-ALG-001,P0,提供带宽、峰值频率、功率、SNR/CNR、频偏和符号率估计接口，并包含质量指标。,tbd,tbd,later,未开始,待验收
+FR-ALG-002,P0,算法声明信号类型、最小长度、采样率和前置处理,tbd,tbd,later,未开始,待验收
+FR-ALG-003,P1,自相关、循环谱和高阶统计作为可取消扩展模块。,tbd,tbd,later,未开始,待验收
+FR-ALG-004,P1,调制识别支持传统算法及 ONNX/Python 适配器。,tbd,tbd,later,未开始,待验收
+FR-ALG-005,P1,模型包声明输入表示、实/复类型、采样率、窗口、归一化、标签集和版本。,tbd,tbd,later,未开始,待验收
+FR-ALG-006,P1,识别结果包含 Top-K、置信度、未知阈值、窗口结果和聚合策略。,tbd,tbd,later,未开始,待验收
+FR-ALG-007,P1,CPU 必选，GPU 可选并可回退,tbd,tbd,later,未开始,待验收
+FR-ALG-008,P1,Python 或不可信模型宜进程外运行,tbd,tbd,later,未开始,待验收
+FR-ALG-009,P1,解调器统一输出符号、比特、音频或协议事件并声明适用条件。,tbd,tbd,later,未开始,待验收
+FR-TSK-001,P0,预计超过 50 ms 的 IO、DSP、索引、导出和推理均作为任务执行。,task_runtime,task_runtime,MS-01,已实现,通过
+FR-TSK-002,P0,状态至少包括排队、运行、暂停、取消中、已取消、完成、失败、依赖失败和过期。,task_runtime,task_runtime,MS-01,已实现,通过
+FR-TSK-003,P0,优先级分交互、前台分析、后台预计算,task_runtime,task_runtime,MS-01,已实现,通过
+FR-TSK-004,P0,新视图请求使旧请求过期,task_runtime,task_runtime,MS-01,已实现,通过
+FR-TSK-005,P0,取消 P95 在 200 ms 内确认，2 s 内停止可中断计算。,task_runtime,task_runtime,MS-01,已实现,通过
+FR-TSK-006,P0,失败包含错误码、用户说明、技术详情、建议、重试和日志入口。,task_runtime,task_runtime,MS-01,已实现,通过
+FR-TSK-007,P1,CPU、IO、GPU 和运行时线程纳入统一资源预算。,task_runtime,task_runtime,MS-01,已实现,通过
+FR-TSK-008,P1,支持 DAG 依赖和取消/失败传播。,task_runtime,task_runtime,MS-01,已实现,通过
+FR-TSK-009,P0,同一用户动作和重试尝试具备幂等键,task_runtime,task_runtime,MS-01,已实现,通过
+FR-TSK-010,P0,任务必须保存 `ProjectId`、`DataSourceVersionId` 和,task_runtime,task_runtime,MS-01,已实现,通过
+FR-EXP-001,P0,统一管理测量、估计、识别、解调和导出结果，按项目、数据源、Selection、Cha,tbd,tbd,later,未开始,待验收
+FR-EXP-002,P0,CSV/JSON 包含单位、schema 和 provenance。,tbd,tbd,later,未开始,待验收
+FR-EXP-003,P0,图谱支持 PNG,tbd,tbd,later,未开始,待验收
+FR-EXP-004,P0,采样数据支持 RAW+JSON，重新导入后描述符和样本等价。,tbd,tbd,later,未开始,待验收
+FR-EXP-005,P1,实音频支持 WAV，明确位深、采样率和削顶/归一化策略。,tbd,tbd,later,未开始,待验收
+FR-EXP-006,P1,符号、比特、协议结果由插件声明格式。,tbd,tbd,later,未开始,待验收
+FR-EXP-007,P0,不静默覆盖,tbd,tbd,later,未开始,待验收
+FR-EXP-008,P1,支持模板和批量导出并生成逐项清单。,tbd,tbd,later,未开始,待验收
+FR-EXP-009,P0,结果“当前”只相对于其原 `DataSourceVersionId` 和参数版本,tbd,tbd,later,未开始,待验收
+FR-LOG-001,P0,用户/诊断日志至少支持 DEBUG、INFO、WARN、ERROR 过滤。,tbd,tbd,later,未开始,待验收
+FR-LOG-002,P0,结构化字段包含时间、线程、模块、任务 ID、对象 ID、数据源版本和错误码。,tbd,tbd,later,未开始,待验收
+FR-LOG-003,P0,默认不记录原始样本、完整敏感路径或密钥,tbd,tbd,later,未开始,待验收
+FR-LOG-004,P0,日志滚动并受大小/保留数量限制。,tbd,tbd,later,未开始,待验收
+FR-LOG-005,P1,诊断包可预览和脱敏，不包含源数据。,tbd,tbd,later,未开始,待验收
+FR-LOG-006,P1,记录耗时、命中、处理量和 `ViewRequestId`，可重建性能阶段。,tbd,tbd,later,未开始,待验收
+FR-PLG-001,P1,插件类型包括文件、DSP、算法、解调、视图和导出。,plugin/model/dataset,plugin/model/dataset,MS-06,已实现,通过
+FR-PLG-002,P1,manifest 包含身份、接口、架构、依赖、能力、输入输出、许可和哈希。,plugin/model/dataset,plugin/model/dataset,MS-06,已实现,通过
+FR-PLG-003,P1,插件通过稳定服务接口访问数据、任务和结果，不访问主窗口私有对象。,plugin/model/dataset,plugin/model/dataset,MS-06,已实现,通过
+FR-PLG-004,P1,R1 同版本 C++ 接口,plugin/model/dataset,plugin/model/dataset,MS-06,已实现,通过
+FR-PLG-005,P1,支持启用、禁用、隔离和安全模式。,plugin/model/dataset,plugin/model/dataset,MS-06,已实现,通过
+FR-PLG-006,P1,签名、来源、信任和外联权限可见。,plugin/model/dataset,plugin/model/dataset,MS-06,已实现,通过
+FR-PLG-007,P2,SDK 提供示例、契约测试和兼容检查。,plugin/model/dataset,plugin/model/dataset,MS-06,已实现,通过
+FR-SYS-001,P0,设置覆盖缓存、线程、GPU、导入、单位、配色、密度、自动保存和日志,tbd,tbd,later,未开始,待验收
+FR-SYS-002,P0,窗口和停靠布局持久化,tbd,tbd,later,未开始,待验收
+FR-SYS-003,P0,支持 100%–200% DPI,tbd,tbd,later,未开始,待验收
+FR-SYS-004,P0,中文界面并保留国际化机制。,tbd,tbd,later,未开始,待验收
+FR-SYS-005,P0,诊断页复制真实版本、构建、依赖、渲染后端、设备和当前视口,tbd,tbd,later,未开始,待验收
+FR-SYS-006,P0,启动检查 CPU、内存、磁盘和 GPU,tbd,tbd,later,未开始,待验收
+FR-SYS-007,P1,支持离线安装、升级和回滚说明，不删除用户项目。,tbd,tbd,later,未开始,待验收
+NFR-PERF-001,P0,普通 UI 命令可见反馈 P95 ≤ 50 ms。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-PERF-002,P0,图谱连续交互不低于 30 FPS，目标 60 FPS。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-PERF-003,P0,缓存命中高分辨率替换 P95 ≤ 500 ms。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-PERF-004,P0,100 GB 文件确认导入后 1 s 内显示正确读取计划、可操作导航框架和初始视窗,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-PERF-005,P0,有效缓存的 100 GB 项目 3 s 内恢复首屏。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-PERF-006,P0,标准浏览常驻内存 ≤ 4 GB，且不随文件大小线性增长。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-PERF-007,P1,多核线程可限，默认保留至少一个逻辑核给 UI/系统。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-PERF-008,P0,5 s 内提供可用采样概览并标明“采样概览”。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-PERF-009,P0,完整索引稳态吞吐不低于同盘单流顺序读取基线 60%。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-PERF-010,P0,视窗变化后三图首个一致结果：热缓存 P95 ≤ 150 ms,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-PERF-011,P0,隐藏视图后 500 ms 内无该视图专属绘制、观察器或重复计算活动,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-REL-001,P0,8 小时混合操作不崩溃、不丢项目状态。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-REL-002,P0,项目打开/关闭 100 次后线程、句柄和内存回落稳定。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-REL-003,P0,磁盘满、权限拒绝、缓存损坏不破坏源文件和已保存项目。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-REL-004,P0,关键结果具有校验和或完整性标记。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-NUM-001,P0,时间映射误差 ≤ 1 输入样本。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-NUM-002,P0,频率游标与 FFT bin 映射误差 ≤ 0.5 bin。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-NUM-003,P0,FFT/PSD 归一化文档化，与参考实现误差 ≤ 0.1 dB 或批准阈值。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-NUM-004,P0,无处理样本区间导出位精确。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-NUM-005,P0,视窗、Selection、LoadedDataRange 和导出边界往返无样本漂移。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-SEC-001,P0,默认无网络,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-SEC-002,P0,路径防穿越，导出只写用户选定位置。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-SEC-003,P0,外部进程、模型和插件最小权限，来源/哈希/信任可追踪。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-USA-001,P0,关键状态不只依赖颜色。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-USA-002,P0,核心操作支持键盘、合理焦点顺序和可见焦点。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-USA-003,P0,参数显示单位、范围、默认值和即时校验。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-USA-004,P0,时间导航可完全用键盘操作，高 DPI 不丢焦点。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-USA-005,P0,所有高频指针目标命中区至少 28×28 逻辑像素,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-USA-006,P0,Canvas 图谱提供可访问名称、语义角色和等价文本摘要,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-USA-007,P0,模态对话框锁定焦点，Escape 行为与取消语义一致，状态变化使用适度 live r,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-MNT-001,P0,核心业务逻辑可在无 GUI 环境测试。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-MNT-002,P0,公共接口、项目 schema 和模型 manifest 版本化。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-MNT-003,P0,关键路径具有追踪 ID、性能指标和可重复基准。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+FR-PLT-001,P0,十个公共模块可独立构建、安装、版本化和测试,tbd,tbd,later,未开始,待验收
+FR-CORE-101,P0,SignalCore 提供统一 Result/Error、单位、日志、配置、路径、校验、序列化和能力探测。,core,core,MS-01,已实现,通过
+FR-DATA-101,P0,SignalData 提供实数/复数容器、IQ 视图、零拷贝切片、内存映射、分块读取和格式适配。,data,data,MS-01,已实现,通过
+FR-DSP-101,P0,SignalDSP 通过 IFftBackend 等接口封装 oneMKL、cuFFT 和可替换适配器,dsp/compute,dsp/compute,MS-02,已实现,通过
+FR-COMPUTE-101,P0,SignalCompute 统一 CPU、SIMD、多线程、CUDA、内存池、设备探测、自动降级和结果一致性。,tbd,tbd,later,未开始,待验收
+FR-TASK-101,P0,SignalTaskRuntime 支持任务优先级、DAG、暂停、恢复、取消、进度、重试、超时、历史和崩溃恢复。,task_runtime,task_runtime,MS-01,已实现,通过
+FR-VIS-101,P0,SignalVisualization 提供时域、PSD、瀑布、时频、星座、眼图、联动视口、图层和导出组件。,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-WB-101,P0,SignalWorkbench 提供主框架、Dock、Inspector、Task/Result Center、命令、设置、诊断、主题和布局。,visualization/workbench,visualization/workbench,MS-03,已实现,通过
+FR-PLG-101,P1,SignalPluginSDK 提供与宿主 UI 解耦的算法、格式、导入导出、模型和可视化插件契约及示例。,plugin/model/dataset,plugin/model/dataset,MS-06,已实现,通过
+FR-MODEL-101,P1,SignalModelRuntime 以 ONNX Runtime 为默认推理后端,plugin/model/dataset,plugin/model/dataset,MS-06,已实现,通过
+FR-DSET-101,P1,SignalDataset 提供清单、索引、标签、分片、版本、划分、统计、查询、缓存及 HDF5/WebDataset 适配。,plugin/model/dataset,plugin/model/dataset,MS-06,已实现,通过
+NFR-API-101,P0,公共 API 不暴露 Qt、Eigen、oneMKL、cuFFT、ONNX Runtime 等第三方具体类型。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-ABI-101,P0,SDK 采用语义化版本；插件使用版本化 C ABI 入口和稳定 POD 句柄,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-DEP-101,P0,依赖以 vcpkg manifest 和固定 baseline 锁定；外部工具链使用版本、URL、SHA256 和离线缓存清单。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-TEST-101,P0,每个公共模块具有单元、契约、兼容、性能和包消费测试；SDK 示例必须在 CI 编译。,cross-cutting,cross-cutting,MS-07,进行中,待验收
+NFR-REUSE-101,P0,Beta 前至少以 Headless CLI 和第二个薄壳应用验证 Data、DSP、TaskRuntime 与 Visualization 复用。,cross-cutting,cross-cutting,MS-07,进行中,待验收

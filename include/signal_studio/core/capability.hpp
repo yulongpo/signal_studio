@@ -27,15 +27,15 @@ struct Capability final {
 };
 
 class CapabilityRegistry final {
- public:
+public:
   [[nodiscard]] Status register_capability(Capability capability);
   [[nodiscard]] std::optional<Capability> find(std::string_view id) const;
   [[nodiscard]] bool is_available(std::string_view id) const;
   [[nodiscard]] std::vector<Capability> snapshot() const;
 
- private:
+private:
   mutable std::shared_mutex mutex_;
   std::vector<Capability> capabilities_;
 };
 
-}  // namespace signal::core
+} // namespace signal::core

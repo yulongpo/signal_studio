@@ -78,7 +78,7 @@ int case_roundtrip() {
   return g_failures == 0 ? 0 : 1;
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
   if (argc != 3 || std::string_view{argv[1]} != "--case") {
@@ -86,8 +86,10 @@ int main(int argc, char** argv) {
     return 2;
   }
   std::string_view name = argv[2];
-  if (name == "append-query-commit") return case_append_query_commit();
-  if (name == "roundtrip") return case_roundtrip();
+  if (name == "append-query-commit")
+    return case_append_query_commit();
+  if (name == "roundtrip")
+    return case_roundtrip();
   std::cerr << "unknown case: " << name << "\n";
   return 2;
 }

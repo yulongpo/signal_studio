@@ -11,7 +11,8 @@ core::Status dsp_failure(core::ErrorReason reason, std::string message) {
 }
 
 double sinc(double x) noexcept {
-  if (std::fabs(x) < 1e-12) return 1.0;
+  if (std::fabs(x) < 1e-12)
+    return 1.0;
   return std::sin(std::numbers::pi * x) / (std::numbers::pi * x);
 }
 
@@ -36,17 +37,22 @@ core::Result<std::vector<double>> design_lowpass(std::uint64_t order, double fc,
     sum += v;
   }
   // Normalize for unity DC gain.
-  for (auto& v : h) v /= sum;
+  for (auto& v : h)
+    v /= sum;
   return h;
 }
-}  // namespace
+} // namespace
 
 std::string_view to_string(FilterType type) noexcept {
   switch (type) {
-    case FilterType::lowpass: return "lowpass";
-    case FilterType::highpass: return "highpass";
-    case FilterType::bandpass: return "bandpass";
-    case FilterType::bandstop: return "bandstop";
+  case FilterType::lowpass:
+    return "lowpass";
+  case FilterType::highpass:
+    return "highpass";
+  case FilterType::bandpass:
+    return "bandpass";
+  case FilterType::bandstop:
+    return "bandstop";
   }
   return "unknown";
 }
@@ -68,12 +74,14 @@ core::Result<FirFilter> FirFilter::design(const FilterSpec& spec) {
   const double fc_low = spec.cutoff_low_hz / spec.sample_rate_hz;
   if (spec.type == FilterType::lowpass) {
     auto h = design_lowpass(spec.order, fc_low, spec.window);
-    if (!h.ok()) return core::Status(h.error());
+    if (!h.ok())
+      return core::Status(h.error());
     return FirFilter(std::move(*h), spec.order);
   }
   if (spec.type == FilterType::highpass) {
     auto h = design_lowpass(spec.order, fc_low, spec.window);
-    if (!h.ok()) return core::Status(h.error());
+    if (!h.ok())
+      return core::Status(h.error());
     const std::uint64_t m = spec.order / 2;
     for (std::uint64_t i = 0; i < h->size(); ++i) {
       (*h)[i] = -(*h)[i];
@@ -86,9 +94,11 @@ core::Result<FirFilter> FirFilter::design(const FilterSpec& spec) {
   }
   const double fc_high = spec.cutoff_high_hz / spec.sample_rate_hz;
   auto lo = design_lowpass(spec.order, fc_low, spec.window);
-  if (!lo.ok()) return core::Status(lo.error());
+  if (!lo.ok())
+    return core::Status(lo.error());
   auto hi = design_lowpass(spec.order, fc_high, spec.window);
-  if (!hi.ok()) return core::Status(hi.error());
+  if (!hi.ok())
+    return core::Status(hi.error());
   if (spec.type == FilterType::bandpass) {
     // bp = lp(high) - lp(low)
     std::vector<double> h(lo->size());
@@ -115,8 +125,7 @@ const std::vector<double>& FirFilter::coefficients() const noexcept {
   return coefficients_;
 }
 
-core::Status FirFilter::process(std::span<const double> input, FilterState& state,
-                                std::span<double> output) const {
+core::Status FirFilter::process(std::span<const double> input, FilterState& state, std::span<double> output) const {
   if (output.size() != input.size()) {
     return dsp_failure(core::ErrorReason::invalid_argument, "output size must equal input size");
   }
@@ -146,4 +155,4 @@ void FirFilter::reset(FilterState& state) const {
   state.delays.assign(coefficients_.size() - 1, 0.0);
 }
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

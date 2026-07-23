@@ -45,7 +45,7 @@ int case_null_session_unavailable() {
   return g_failures == 0 ? 0 : 1;
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
   if (argc != 3 || std::string_view{argv[1]} != "--case") {
@@ -53,8 +53,10 @@ int main(int argc, char** argv) {
     return 2;
   }
   std::string_view name = argv[2];
-  if (name == "registry-install-resolve") return case_registry_install_resolve();
-  if (name == "null-session-unavailable") return case_null_session_unavailable();
+  if (name == "registry-install-resolve")
+    return case_registry_install_resolve();
+  if (name == "null-session-unavailable")
+    return case_null_session_unavailable();
   std::cerr << "unknown case: " << name << "\n";
   return 2;
 }

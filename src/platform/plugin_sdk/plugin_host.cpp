@@ -17,7 +17,7 @@ core::Status plugin_failure(core::ErrorReason reason, std::string message) {
 std::string narrow_string(const std::filesystem::path& p) {
   return p.generic_string();
 }
-}  // namespace
+} // namespace
 
 PluginHandle::~PluginHandle() {
   unload();
@@ -31,7 +31,8 @@ PluginHandle::PluginHandle(PluginHandle&& other) noexcept
 }
 
 PluginHandle& PluginHandle::operator=(PluginHandle&& other) noexcept {
-  if (this == &other) return *this;
+  if (this == &other)
+    return *this;
   unload();
   module_ = other.module_;
   api_ = other.api_;
@@ -53,14 +54,14 @@ core::Status PluginHandle::activate() const {
   const signal_plugin_handle_v1 handle = plugin_handle_;
   const auto result = signal::plugin::abi_v1::invoke_result([&] { return api_.activate(handle); });
   if (result != SIGNAL_PLUGIN_RESULT_OK_V1) {
-    return plugin_failure(core::ErrorReason::internal_failure,
-                          "plugin activate returned " + std::to_string(result));
+    return plugin_failure(core::ErrorReason::internal_failure, "plugin activate returned " + std::to_string(result));
   }
   return core::Status::success();
 }
 
 void PluginHandle::unload() noexcept {
-  if (module_ == nullptr) return;
+  if (module_ == nullptr)
+    return;
   if (api_.unload) {
     signal::plugin::abi_v1::invoke_void([&] { api_.unload(plugin_handle_); });
   }
@@ -77,11 +78,10 @@ core::Result<PluginHandle> PluginHost::load(const std::filesystem::path& library
   const std::wstring native = library_path.wstring();
   HMODULE module = LoadLibraryW(native.c_str());
   if (module == nullptr) {
-    return plugin_failure(core::ErrorReason::unavailable,
-                          "LoadLibraryW failed for " + narrow_string(library_path));
+    return plugin_failure(core::ErrorReason::unavailable, "LoadLibraryW failed for " + narrow_string(library_path));
   }
-  using query_fn_t = signal_plugin_result_v1(SIGNAL_PLUGIN_CALL*)(const signal_host_api_v1*,
-                                                                  signal_plugin_api_v1*) SIGNAL_PLUGIN_NOEXCEPT;
+  using query_fn_t = signal_plugin_result_v1(SIGNAL_PLUGIN_CALL*)(const signal_host_api_v1*, signal_plugin_api_v1*)
+      SIGNAL_PLUGIN_NOEXCEPT;
   auto query_fn = reinterpret_cast<query_fn_t>(GetProcAddress(module, "signal_plugin_query_v1"));
   if (query_fn == nullptr) {
     FreeLibrary(module);
@@ -112,8 +112,7 @@ core::Result<PluginHandle> PluginHost::load(const std::filesystem::path& library
   const auto lresult = signal::plugin::abi_v1::invoke_result([&] { return api.load(&plugin_handle); });
   if (lresult != SIGNAL_PLUGIN_RESULT_OK_V1 || plugin_handle == SIGNAL_PLUGIN_NULL_HANDLE) {
     FreeLibrary(module);
-    return plugin_failure(core::ErrorReason::internal_failure,
-                          "plugin load returned " + std::to_string(lresult));
+    return plugin_failure(core::ErrorReason::internal_failure, "plugin load returned " + std::to_string(lresult));
   }
   PluginInfo info;
   info.plugin_id = api.plugin_id ? api.plugin_id : "";
@@ -134,9 +133,12 @@ core::Result<std::vector<PluginHandle>> PluginHost::discover(const std::filesyst
     return plugin_failure(core::ErrorReason::unavailable, "not a directory: " + narrow_string(directory));
   }
   for (const auto& entry : std::filesystem::directory_iterator(directory, ec)) {
-    if (ec) break;
-    if (!entry.is_regular_file()) continue;
-    if (entry.path().extension() != ".dll") continue;
+    if (ec)
+      break;
+    if (!entry.is_regular_file())
+      continue;
+    if (entry.path().extension() != ".dll")
+      continue;
     auto handle = load(entry.path());
     if (handle.ok()) {
       loaded.push_back(std::move(*handle));
@@ -146,4 +148,4 @@ core::Result<std::vector<PluginHandle>> PluginHost::discover(const std::filesyst
   return loaded;
 }
 
-}  // namespace signal::plugin
+} // namespace signal::plugin

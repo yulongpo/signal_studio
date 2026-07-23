@@ -16,11 +16,11 @@ struct TimeDomainStats final {
   double mean{};
   double variance{};
   double rms{};
-  double peak{};            // max absolute sample
+  double peak{}; // max absolute sample
   std::uint64_t peak_index{};
   double min{};
   double max{};
-  double dc_offset{};       // == mean
+  double dc_offset{}; // == mean
   friend bool operator==(const TimeDomainStats&, const TimeDomainStats&) = default;
 };
 
@@ -43,4 +43,4 @@ struct ComplexStats final {
 
 [[nodiscard]] core::Result<ComplexStats> compute_complex_stats(const data::SignalSlice& slice);
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

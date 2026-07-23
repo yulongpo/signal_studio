@@ -41,7 +41,7 @@ struct BackendProvenance final {
 };
 
 class IComputeBackend {
- public:
+public:
   virtual ~IComputeBackend() = default;
   [[nodiscard]] virtual ComputeDeviceType device_type() const noexcept = 0;
   [[nodiscard]] virtual ComputeCapabilities capabilities() const = 0;
@@ -50,7 +50,7 @@ class IComputeBackend {
 
 /// CPU backend: always available; reports the host SIMD/runtime detected at configure time.
 class CpuComputeBackend final : public IComputeBackend {
- public:
+public:
   CpuComputeBackend() = default;
   [[nodiscard]] ComputeDeviceType device_type() const noexcept override;
   [[nodiscard]] ComputeCapabilities capabilities() const override;
@@ -75,7 +75,7 @@ struct BufferSpec final {
 /// Owning handle for a pooled buffer. Memory is host-accessible for CPU specs; CUDA specs are
 /// device-resident and only accessed through the pool that issued them.
 class BufferHandle final {
- public:
+public:
   BufferHandle() = default;
   BufferHandle(std::size_t bytes, ComputeDeviceType device);
   ~BufferHandle();
@@ -89,14 +89,14 @@ class BufferHandle final {
   [[nodiscard]] void* data() noexcept;
   [[nodiscard]] const void* data() const noexcept;
 
- private:
+private:
   std::size_t bytes_{};
   ComputeDeviceType device_{ComputeDeviceType::cpu};
   void* storage_{nullptr};
 };
 
 class IBufferPool {
- public:
+public:
   virtual ~IBufferPool() = default;
   [[nodiscard]] virtual core::Result<BufferHandle> acquire(const BufferSpec& spec) = 0;
   [[nodiscard]] virtual std::uint64_t acquired_bytes() const noexcept = 0;
@@ -106,13 +106,13 @@ class IBufferPool {
 /// Bounded host buffer pool. Tracks live bytes and rejects acquisitions exceeding the budget,
 /// giving callers a deterministic back-pressure signal instead of OOM.
 class BoundedBufferPool final : public IBufferPool {
- public:
+public:
   explicit BoundedBufferPool(std::uint64_t budget_bytes);
   [[nodiscard]] core::Result<BufferHandle> acquire(const BufferSpec& spec) override;
   [[nodiscard]] std::uint64_t acquired_bytes() const noexcept override;
   [[nodiscard]] std::uint64_t budget_bytes() const noexcept override;
 
- private:
+private:
   std::uint64_t budget_bytes_;
   std::uint64_t acquired_bytes_{};
 };
@@ -127,7 +127,7 @@ struct Workload final {
 };
 
 class IBackendSelector {
- public:
+public:
   virtual ~IBackendSelector() = default;
   /// Returns the selected device and the provenance of the backend that will execute. When the
   /// requested device is unavailable, selection falls back to CPU and records the degradation.
@@ -138,7 +138,7 @@ class IBackendSelector {
 /// Auto selector: prefers CUDA for GPU-friendly DSP workloads when a CUDA backend is registered,
 /// otherwise CPU. CPU fallback is always available (ADR-009 explicit degradation).
 class AutoBackendSelector final : public IBackendSelector {
- public:
+public:
   AutoBackendSelector();
   /// Registers a backend. The selector does not take ownership of CUDA device memory; it only
   /// probes capabilities. Passing nullptr clears the CUDA path.
@@ -147,7 +147,7 @@ class AutoBackendSelector final : public IBackendSelector {
   [[nodiscard]] core::Result<std::pair<ComputeDeviceType, BackendProvenance>>
   select(const Workload& workload) const override;
 
- private:
+private:
   std::unique_ptr<IComputeBackend> cpu_backend_;
   std::unique_ptr<IComputeBackend> cuda_backend_;
 };
@@ -155,4 +155,4 @@ class AutoBackendSelector final : public IBackendSelector {
 [[nodiscard]] std::string_view to_string(ComputeDeviceType device) noexcept;
 [[nodiscard]] std::string_view to_string(WorkloadClass work_class) noexcept;
 
-}  // namespace signal::compute
+} // namespace signal::compute

@@ -21,7 +21,8 @@ core::Status ViewportRange::set_window(double lo, double hi) {
   }
   lo_ = std::clamp(lo, minimum_, maximum_);
   hi_ = std::clamp(hi, minimum_, maximum_);
-  if (hi_ < lo_) std::swap(lo_, hi_);
+  if (hi_ < lo_)
+    std::swap(lo_, hi_);
   clamp_window();
   notify();
   return core::Status::success();
@@ -69,14 +70,18 @@ void ViewportRange::clamp_window() {
     lo_ -= hi_ - maximum_;
     hi_ = maximum_;
   }
-  if (lo_ < minimum_) lo_ = minimum_;
-  if (hi_ > maximum_) hi_ = maximum_;
-  if (hi_ < lo_) hi_ = lo_;
+  if (lo_ < minimum_)
+    lo_ = minimum_;
+  if (hi_ > maximum_)
+    hi_ = maximum_;
+  if (hi_ < lo_)
+    hi_ = lo_;
 }
 
 void ViewportRange::notify() {
   for (auto& [id, sub] : subscribers_) {
-    if (sub) sub();
+    if (sub)
+      sub();
   }
 }
 
@@ -106,18 +111,24 @@ std::string_view ViewportController::frequency_unit() const noexcept {
 }
 
 std::string_view frequency_unit_for(double hz) noexcept {
-  if (hz >= 1.0e9) return "GHz";
-  if (hz >= 1.0e6) return "MHz";
-  if (hz >= 1.0e3) return "kHz";
+  if (hz >= 1.0e9)
+    return "GHz";
+  if (hz >= 1.0e6)
+    return "MHz";
+  if (hz >= 1.0e3)
+    return "kHz";
   return "Hz";
 }
 
 std::string format_frequency(double hz) noexcept {
   const std::string_view unit = frequency_unit_for(hz);
   double scaled = hz;
-  if (unit == "GHz") scaled = hz / 1.0e9;
-  else if (unit == "MHz") scaled = hz / 1.0e6;
-  else if (unit == "kHz") scaled = hz / 1.0e3;
+  if (unit == "GHz")
+    scaled = hz / 1.0e9;
+  else if (unit == "MHz")
+    scaled = hz / 1.0e6;
+  else if (unit == "kHz")
+    scaled = hz / 1.0e3;
   std::ostringstream ss;
   // Preserve Hz-level precision: 6 significant digits covers kHz..GHz with sub-Hz resolution.
   ss.precision(6);
@@ -125,4 +136,4 @@ std::string format_frequency(double hz) noexcept {
   return ss.str();
 }
 
-}  // namespace signal::visualization
+} // namespace signal::visualization

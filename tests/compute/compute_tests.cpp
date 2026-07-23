@@ -17,8 +17,7 @@ void check(bool cond, std::string_view msg) {
   }
 }
 
-template <typename T>
-void check_eq(const T& a, const T& b, std::string_view msg) {
+template <typename T> void check_eq(const T& a, const T& b, std::string_view msg) {
   if (!(a == b)) {
     std::cerr << "FAIL: " << msg << " (mismatch)\n";
     ++g_failures;
@@ -93,7 +92,7 @@ int case_cuda_backend_probe() {
   auto backend = signal::compute::make_cuda_compute_backend();
   if (!backend.ok()) {
     std::cerr << "SKIP: cuda backend unavailable in this environment\n";
-    return 0;  // environment deviation, not a failure
+    return 0; // environment deviation, not a failure
   }
   auto caps = (*backend)->capabilities();
   check(caps.available, "cuda backend available");
@@ -126,7 +125,7 @@ int case_selector_cuda_preferred() {
   return g_failures == 0 ? 0 : 1;
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
   if (argc != 3 || std::string_view{argv[1]} != "--case") {
@@ -134,14 +133,22 @@ int main(int argc, char** argv) {
     return 2;
   }
   std::string_view name = argv[2];
-  if (name == "cpu-backend-capabilities") return case_cpu_backend_capabilities();
-  if (name == "buffer-pool-budget") return case_buffer_pool_budget();
-  if (name == "buffer-pool-zero-rejected") return case_buffer_pool_zero_rejected();
-  if (name == "selector-cpu-fallback") return case_selector_cpu_fallback();
-  if (name == "selector-gpu-required-missing") return case_selector_gpu_required_missing();
-  if (name == "provenance-recorded") return case_provenance_recorded();
-  if (name == "cuda-backend-probe") return case_cuda_backend_probe();
-  if (name == "selector-cuda-preferred") return case_selector_cuda_preferred();
+  if (name == "cpu-backend-capabilities")
+    return case_cpu_backend_capabilities();
+  if (name == "buffer-pool-budget")
+    return case_buffer_pool_budget();
+  if (name == "buffer-pool-zero-rejected")
+    return case_buffer_pool_zero_rejected();
+  if (name == "selector-cpu-fallback")
+    return case_selector_cpu_fallback();
+  if (name == "selector-gpu-required-missing")
+    return case_selector_gpu_required_missing();
+  if (name == "provenance-recorded")
+    return case_provenance_recorded();
+  if (name == "cuda-backend-probe")
+    return case_cuda_backend_probe();
+  if (name == "selector-cuda-preferred")
+    return case_selector_cuda_preferred();
   std::cerr << "unknown case: " << name << "\n";
   return 2;
 }

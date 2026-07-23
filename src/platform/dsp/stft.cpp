@@ -8,12 +8,12 @@ namespace {
 core::Status dsp_failure(core::ErrorReason reason, std::string message) {
   return core::Status::failure(core::ErrorCode{core::ErrorDomain::dsp, reason}, std::move(message));
 }
-}  // namespace
+} // namespace
 
 StftProcessor::StftProcessor(IFftBackend& backend) : backend_(backend) {}
 
-core::Result<StftResult>
-StftProcessor::process(const data::SignalSlice& slice, double sample_rate_hz, const StftRequest& request) {
+core::Result<StftResult> StftProcessor::process(const data::SignalSlice& slice, double sample_rate_hz,
+                                                const StftRequest& request) {
   if (sample_rate_hz <= 0.0) {
     return dsp_failure(core::ErrorReason::invalid_argument, "sample rate must be positive");
   }
@@ -79,17 +79,15 @@ StftProcessor::process(const data::SignalSlice& slice, double sample_rate_hz, co
     if (!fft_result.ok()) {
       return core::Status(fft_result.error());
     }
-    result.time_bins[static_cast<std::size_t>(f)] =
-        static_cast<double>(start + request.nfft / 2) / sample_rate_hz;
+    result.time_bins[static_cast<std::size_t>(f)] = static_cast<double>(start + request.nfft / 2) / sample_rate_hz;
     for (std::uint64_t k = 0; k < freq_count; ++k) {
       const auto& bin = fft_result->bins[static_cast<std::size_t>(k)];
       const double power = bin.real * bin.real + bin.imag * bin.imag;
-      result.matrix[static_cast<std::size_t>(f * freq_count + k)] =
-          request.output_magnitude ? std::sqrt(power) : power;
+      result.matrix[static_cast<std::size_t>(f * freq_count + k)] = request.output_magnitude ? std::sqrt(power) : power;
     }
   }
   result.provenance = backend_.provenance();
   return result;
 }
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

@@ -18,8 +18,7 @@
 
 namespace signal::studio {
 
-MainWindow::MainWindow(Application* app, QWidget* parent)
-    : QMainWindow(parent), app_(app) {
+MainWindow::MainWindow(Application* app, QWidget* parent) : QMainWindow(parent), app_(app) {
   setWindowTitle("Signal Studio");
   resize(1280, 720);
   buildCentral();
@@ -39,9 +38,12 @@ void MainWindow::buildCentral() {
   auto tw = visualization::make_time_waveform_view();
   auto sp = visualization::make_spectrum_view();
   auto sg = visualization::make_spectrogram_view();
-  if (tw.ok()) timeView_ = std::shared_ptr<visualization::IChartView>(std::move(*tw));
-  if (sp.ok()) spectrumView_ = std::shared_ptr<visualization::IChartView>(std::move(*sp));
-  if (sg.ok()) spectrogramView_ = std::shared_ptr<visualization::IChartView>(std::move(*sg));
+  if (tw.ok())
+    timeView_ = std::shared_ptr<visualization::IChartView>(std::move(*tw));
+  if (sp.ok())
+    spectrumView_ = std::shared_ptr<visualization::IChartView>(std::move(*sp));
+  if (sg.ok())
+    spectrogramView_ = std::shared_ptr<visualization::IChartView>(std::move(*sg));
 
   if (timeView_) {
     auto* w = static_cast<QWidget*>(timeView_->native_widget());
@@ -88,25 +90,30 @@ void MainWindow::buildMenu() {
 
 void MainWindow::openWav() {
   const QString path = QFileDialog::getOpenFileName(this, tr("Open WAV"), {}, tr("WAV files (*.wav)"));
-  if (path.isEmpty()) return;
+  if (path.isEmpty())
+    return;
   loadAndAnalyze(std::filesystem::path(path.toStdU16String()), false);
 }
 
 void MainWindow::openSc16() {
   const QString path = QFileDialog::getOpenFileName(this, tr("Open SC16"), {}, tr("SC16 files (*.sc16)"));
-  if (path.isEmpty()) return;
+  if (path.isEmpty())
+    return;
   ImportWizard wiz(this);
   const FilenameHint hint = parse_capture_filename(std::filesystem::path(path.toStdU16String()));
   wiz.applyFilenameHint(hint);
-  if (wiz.exec() != QDialog::Accepted) return;
+  if (wiz.exec() != QDialog::Accepted)
+    return;
   loadAndAnalyze(std::filesystem::path(path.toStdU16String()), true);
 }
 
 void MainWindow::toggleSpectrumVisible(bool visible) {
-  if (spectrumView_) spectrumView_->set_visible(visible);
+  if (spectrumView_)
+    spectrumView_->set_visible(visible);
 }
 void MainWindow::toggleSpectrogramVisible(bool visible) {
-  if (spectrogramView_) spectrogramView_->set_visible(visible);
+  if (spectrogramView_)
+    spectrogramView_->set_visible(visible);
 }
 
 void MainWindow::about() {
@@ -119,7 +126,8 @@ void MainWindow::about() {
 void MainWindow::loadAndAnalyze(const std::filesystem::path& path, bool is_sc16) {
   core::Result<ImportResult> import = is_sc16 ? app_->import_sc16(path) : app_->import_wav(path);
   if (!import.ok()) {
-    statusLabel_->setText(QString("Import failed: %1").arg(QString::fromStdString(std::string(import.error().message()))));
+    statusLabel_->setText(
+        QString("Import failed: %1").arg(QString::fromStdString(std::string(import.error().message()))));
     return;
   }
   currentImport_ = *import;
@@ -146,17 +154,18 @@ void MainWindow::bindAnalysis(const data::SignalSlice& slice, double sample_rate
     auto psd = app_->analyze_psd(slice, sample_rate_hz, 1024, 512);
     if (psd.ok() && spectrumView_) {
       auto db = dsp::to_db_hz(psd->power);
-      auto series = std::make_shared<visualization::SpectrumSeries>("psd", psd->frequencies_hz, std::move(db), sample_rate_hz);
+      auto series =
+          std::make_shared<visualization::SpectrumSeries>("psd", psd->frequencies_hz, std::move(db), sample_rate_hz);
       spectrumView_->bind(series);
     }
     auto stft = app_->analyze_stft(slice, sample_rate_hz, 512, 128);
     if (stft.ok() && spectrogramView_) {
       std::vector<double> mag(stft->matrix.begin(), stft->matrix.end());
-      auto series = std::make_shared<visualization::SpectrogramSeries>("stft", stft->time_bins, stft->freq_bins,
-                                                                       std::move(mag), stft->frame_count, stft->freq_count);
+      auto series = std::make_shared<visualization::SpectrogramSeries>(
+          "stft", stft->time_bins, stft->freq_bins, std::move(mag), stft->frame_count, stft->freq_count);
       spectrogramView_->bind(series);
     }
   }
 }
 
-}  // namespace signal::studio
+} // namespace signal::studio

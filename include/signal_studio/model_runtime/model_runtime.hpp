@@ -18,7 +18,7 @@ struct ModelInfo final {
   std::uint32_t version_major{};
   std::uint32_t version_minor{};
   std::uint32_t version_patch{};
-  std::string runtime;       // "onnxruntime" when available
+  std::string runtime; // "onnxruntime" when available
   std::string sha256_digest;
   std::vector<std::string> input_names;
   std::vector<std::string> output_names;
@@ -31,7 +31,7 @@ struct InferenceRequest final {
   InferenceDevice device{InferenceDevice::cpu};
   std::vector<std::string> input_names;
   std::vector<std::vector<std::uint64_t>> input_shapes;
-  std::vector<float> input_data;  // concatenated, row-major
+  std::vector<float> input_data; // concatenated, row-major
   friend bool operator==(const InferenceRequest&, const InferenceRequest&) = default;
 };
 
@@ -45,7 +45,7 @@ struct InferenceResult final {
 };
 
 class IInferenceSession {
- public:
+public:
   virtual ~IInferenceSession() = default;
   [[nodiscard]] virtual core::Result<InferenceResult> run(const InferenceRequest& request) = 0;
   [[nodiscard]] virtual bool available() const noexcept = 0;
@@ -54,7 +54,7 @@ class IInferenceSession {
 
 /// Registry of installed models (API-MODEL-001).
 class IModelRegistry {
- public:
+public:
   virtual ~IModelRegistry() = default;
   [[nodiscard]] virtual core::Status install(ModelInfo info) = 0;
   [[nodiscard]] virtual std::optional<ModelInfo> resolve(const std::string& model_id) const = 0;
@@ -62,12 +62,12 @@ class IModelRegistry {
 };
 
 class ModelRegistry final : public IModelRegistry {
- public:
+public:
   core::Status install(ModelInfo info) override;
   std::optional<ModelInfo> resolve(const std::string& model_id) const override;
   std::vector<ModelInfo> list() const override;
 
- private:
+private:
   std::vector<ModelInfo> models_;
 };
 
@@ -77,4 +77,4 @@ class ModelRegistry final : public IModelRegistry {
 /// for interface testing when ONNX is absent.
 [[nodiscard]] std::unique_ptr<IInferenceSession> make_inference_session();
 
-}  // namespace signal::model
+} // namespace signal::model

@@ -10,18 +10,24 @@ namespace signal::studio {
 
 namespace {
 double unit_scale_freq(std::string_view unit) {
-  if (unit == "GHz") return 1.0e9;
-  if (unit == "MHz") return 1.0e6;
-  if (unit == "kHz") return 1.0e3;
+  if (unit == "GHz")
+    return 1.0e9;
+  if (unit == "MHz")
+    return 1.0e6;
+  if (unit == "kHz")
+    return 1.0e3;
   return 1.0;
 }
 double unit_scale_rate(std::string_view unit) {
-  if (unit == "GSps") return 1.0e9;
-  if (unit == "MSps") return 1.0e6;
-  if (unit == "kSps") return 1.0e3;
+  if (unit == "GSps")
+    return 1.0e9;
+  if (unit == "MSps")
+    return 1.0e6;
+  if (unit == "kSps")
+    return 1.0e3;
   return 1.0;
 }
-}  // namespace
+} // namespace
 
 FilenameHint parse_capture_filename(const std::filesystem::path& path) {
   FilenameHint hint;
@@ -64,9 +70,8 @@ bool Application::fft_available() const noexcept {
 
 namespace {
 core::Result<ImportResult> finalize_import(std::shared_ptr<data::FileDataSource> source,
-                                            const std::filesystem::path& path,
-                                            const data::SignalDescriptor& descriptor,
-                                            std::string version_id) {
+                                           const std::filesystem::path& path, const data::SignalDescriptor& descriptor,
+                                           std::string version_id) {
   if (!source) {
     return core::Status::failure(core::ErrorCode{core::ErrorDomain::core, core::ErrorReason::internal_failure},
                                  "import produced a null data source");
@@ -86,7 +91,7 @@ core::Result<ImportResult> finalize_import(std::shared_ptr<data::FileDataSource>
   }
   return result;
 }
-}  // namespace
+} // namespace
 
 core::Result<ImportResult> Application::import_wav(const std::filesystem::path& path) {
   auto wd = data::read_wav_descriptor(path, true);
@@ -102,7 +107,7 @@ core::Result<ImportResult> Application::import_wav(const std::filesystem::path& 
 }
 
 core::Result<ImportResult> Application::import_raw(const std::filesystem::path& path,
-                                                    data::SignalDescriptor descriptor) {
+                                                   data::SignalDescriptor descriptor) {
   auto status = descriptor.validate();
   if (!status.ok()) {
     return status;
@@ -133,8 +138,8 @@ core::Result<ImportResult> Application::import_raw(const std::filesystem::path& 
 }
 
 core::Result<ImportResult> Application::import_sc16(const std::filesystem::path& path,
-                                                     std::optional<double> override_sample_rate_hz,
-                                                     std::optional<double> override_center_frequency_hz) {
+                                                    std::optional<double> override_sample_rate_hz,
+                                                    std::optional<double> override_center_frequency_hz) {
   const FilenameHint hint = parse_capture_filename(path);
   if (!override_sample_rate_hz && !hint.had_sample_rate) {
     return core::Status::failure(core::ErrorCode{core::ErrorDomain::data, core::ErrorReason::invalid_argument},
@@ -155,10 +160,9 @@ core::Result<ImportResult> Application::import_sc16(const std::filesystem::path&
   return import_raw(path, d);
 }
 
-core::Result<data::SignalSlice> Application::read_samples(const data::FileDataSource& source,
-                                                           std::uint64_t begin, std::uint64_t count,
-                                                           std::uint64_t maximum_read_bytes,
-                                                           std::function<bool()> cancel) {
+core::Result<data::SignalSlice> Application::read_samples(const data::FileDataSource& source, std::uint64_t begin,
+                                                          std::uint64_t count, std::uint64_t maximum_read_bytes,
+                                                          std::function<bool()> cancel) {
   auto range = data::SampleRange::from_count(begin, count);
   if (!range.ok()) {
     return core::Status(range.error());
@@ -175,7 +179,7 @@ core::Result<data::SignalSlice> Application::read_samples(const data::FileDataSo
 }
 
 core::Result<dsp::PsdResult> Application::analyze_psd(const data::SignalSlice& slice, double sample_rate_hz,
-                                                        std::uint64_t nfft, std::uint64_t overlap_samples) {
+                                                      std::uint64_t nfft, std::uint64_t overlap_samples) {
   if (!psd_) {
     return core::Status::failure(core::ErrorCode{core::ErrorDomain::dsp, core::ErrorReason::unavailable},
                                  "no FFT backend available (CUDA required for PSD in this environment)");
@@ -190,7 +194,7 @@ core::Result<dsp::PsdResult> Application::analyze_psd(const data::SignalSlice& s
 }
 
 core::Result<dsp::StftResult> Application::analyze_stft(const data::SignalSlice& slice, double sample_rate_hz,
-                                                         std::uint64_t nfft, std::uint64_t hop_samples) {
+                                                        std::uint64_t nfft, std::uint64_t hop_samples) {
   if (!stft_) {
     return core::Status::failure(core::ErrorCode{core::ErrorDomain::dsp, core::ErrorReason::unavailable},
                                  "no FFT backend available (CUDA required for STFT in this environment)");
@@ -204,10 +208,10 @@ core::Result<dsp::StftResult> Application::analyze_stft(const data::SignalSlice&
 }
 
 core::Result<NarrowbandChannel> Application::extract_narrowband(const data::SignalSlice& wideband,
-                                                                 double sample_rate_hz,
-                                                                 const NarrowbandChannelSpec& spec,
-                                                                 std::uint64_t source_start_sample) {
+                                                                double sample_rate_hz,
+                                                                const NarrowbandChannelSpec& spec,
+                                                                std::uint64_t source_start_sample) {
   return extract_narrowband_channel(wideband, sample_rate_hz, spec, source_start_sample);
 }
 
-}  // namespace signal::studio
+} // namespace signal::studio

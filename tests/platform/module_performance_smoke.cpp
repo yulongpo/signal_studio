@@ -39,7 +39,8 @@ constexpr std::array headless_cases{
 
 const ModuleCase* find_case(std::string_view name) noexcept {
   for (const auto& item : headless_cases) {
-    if (item.name == name) return &item;
+    if (item.name == name)
+      return &item;
   }
 #if SIGNAL_STUDIO_TEST_HAS_UI
   static constexpr std::array ui_cases{
@@ -47,17 +48,20 @@ const ModuleCase* find_case(std::string_view name) noexcept {
       ModuleCase{"workbench", signal::core::ModuleId::workbench, signal::workbench::module_descriptor},
   };
   for (const auto& item : ui_cases) {
-    if (item.name == name) return &item;
+    if (item.name == name)
+      return &item;
   }
 #endif
   return nullptr;
 }
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
-  if (argc != 3 || std::string_view{argv[1]} != "--module") return 2;
+  if (argc != 3 || std::string_view{argv[1]} != "--module")
+    return 2;
   const auto* module = find_case(argv[2]);
-  if (module == nullptr) return 3;
+  if (module == nullptr)
+    return 3;
 
   using Clock = std::chrono::steady_clock;
   constexpr std::uint32_t iterations = 100'000;
@@ -69,7 +73,8 @@ int main(int argc, char** argv) {
     const auto& descriptor = module->provider();
     checksum += static_cast<std::uint8_t>(descriptor.id) + descriptor.capabilities.size() +
                 descriptor.dependencies.size() + descriptor.api_version.major;
-    if ((index & 0x3ffU) == 0U) valid = valid && signal::core::validate_module_descriptor(descriptor).ok();
+    if ((index & 0x3ffU) == 0U)
+      valid = valid && signal::core::validate_module_descriptor(descriptor).ok();
   }
   const auto elapsed = Clock::now() - start;
   const auto elapsed_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();

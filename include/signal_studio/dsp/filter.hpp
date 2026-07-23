@@ -30,13 +30,13 @@ struct FilterState final {
 };
 
 class IFilter {
- public:
+public:
   virtual ~IFilter() = default;
   [[nodiscard]] virtual std::uint64_t taps() const noexcept = 0;
   [[nodiscard]] virtual const std::vector<double>& coefficients() const noexcept = 0;
   /// Convolve input through the filter using state. output.size() must equal input.size().
-  [[nodiscard]] virtual core::Status
-  process(std::span<const double> input, FilterState& state, std::span<double> output) const = 0;
+  [[nodiscard]] virtual core::Status process(std::span<const double> input, FilterState& state,
+                                             std::span<double> output) const = 0;
   virtual void reset(FilterState& state) const = 0;
 };
 
@@ -44,15 +44,15 @@ class IFilter {
 /// for all four response types via spectral inversion/summing so no per-type approximation is
 /// hand-rolled.
 class FirFilter final : public IFilter {
- public:
+public:
   [[nodiscard]] static core::Result<FirFilter> design(const FilterSpec& spec);
   [[nodiscard]] std::uint64_t taps() const noexcept override;
   [[nodiscard]] const std::vector<double>& coefficients() const noexcept override;
-  [[nodiscard]] core::Status
-  process(std::span<const double> input, FilterState& state, std::span<double> output) const override;
+  [[nodiscard]] core::Status process(std::span<const double> input, FilterState& state,
+                                     std::span<double> output) const override;
   void reset(FilterState& state) const override;
 
- private:
+private:
   FirFilter(std::vector<double> coefficients, std::uint64_t order);
   std::vector<double> coefficients_;
   std::uint64_t order_;
@@ -60,4 +60,4 @@ class FirFilter final : public IFilter {
 
 [[nodiscard]] std::string_view to_string(FilterType type) noexcept;
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

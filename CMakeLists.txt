@@ -221,3 +221,7 @@ if(SIGNAL_STUDIO_BUILD_UI)
   message(STATUS "Qt: ${Qt6_VERSION} (${Qt6_DIR})")
 endif()
 message(STATUS "CUDA mode: ${_signal_studio_cuda_mode}; toolkit available: ${SIGNAL_STUDIO_CUDA_AVAILABLE}")
+
+if(SIGNAL_STUDIO_BUILD_UI)
+  include(Packaging)
+endif()

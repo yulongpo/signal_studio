@@ -28,7 +28,8 @@ int case_algorithm_rms() {
   req.input = signal::data::SignalBuffer::from_real({3.0, 4.0}).view();
   auto r = plugin.run(req);
   check(r.ok(), "rms run ok");
-  if (!r.ok()) return 1;
+  if (!r.ok())
+    return 1;
   check(r->scalar_outputs.size() == 1, "rms one scalar output");
   // RMS of {3,4} = sqrt((9+16)/2) = sqrt(12.5) = 3.5355...
   check(std::fabs(r->scalar_outputs[0] - std::sqrt(12.5)) < 1e-9, "rms = sqrt(12.5)");
@@ -68,14 +69,15 @@ int case_host_load_minimal() {
   PluginHost host;
   auto handle = host.load(candidate);
   check(handle.ok(), "load minimal plugin");
-  if (!handle.ok()) return 1;
+  if (!handle.ok())
+    return 1;
   check(!handle->info().plugin_id.empty(), "plugin id populated");
   auto act = handle->activate();
   check(act.ok(), "activate plugin");
   return g_failures == 0 ? 0 : 1;
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
   if (argc != 3 || std::string_view{argv[1]} != "--case") {
@@ -83,10 +85,14 @@ int main(int argc, char** argv) {
     return 2;
   }
   std::string_view name = argv[2];
-  if (name == "algorithm-rms") return case_algorithm_rms();
-  if (name == "algorithm-bad-operation") return case_algorithm_bad_operation();
-  if (name == "registry-validate") return case_registry_validate();
-  if (name == "host-load-minimal") return case_host_load_minimal();
+  if (name == "algorithm-rms")
+    return case_algorithm_rms();
+  if (name == "algorithm-bad-operation")
+    return case_algorithm_bad_operation();
+  if (name == "registry-validate")
+    return case_registry_validate();
+  if (name == "host-load-minimal")
+    return case_host_load_minimal();
   std::cerr << "unknown case: " << name << "\n";
   return 2;
 }

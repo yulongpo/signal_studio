@@ -12,15 +12,16 @@ core::Status dsp_failure(core::ErrorReason reason, std::string message) {
 
 double window_sum_sq(const std::vector<double>& w) {
   double s = 0.0;
-  for (double v : w) s += v * v;
+  for (double v : w)
+    s += v * v;
   return s;
 }
-}  // namespace
+} // namespace
 
 WelchPsdEstimator::WelchPsdEstimator(IFftBackend& backend) : backend_(backend) {}
 
-core::Result<PsdResult>
-WelchPsdEstimator::process(const data::SignalSlice& slice, double sample_rate_hz, const PsdRequest& request) {
+core::Result<PsdResult> WelchPsdEstimator::process(const data::SignalSlice& slice, double sample_rate_hz,
+                                                   const PsdRequest& request) {
   if (sample_rate_hz <= 0.0) {
     return dsp_failure(core::ErrorReason::invalid_argument, "sample rate must be positive");
   }
@@ -37,7 +38,7 @@ WelchPsdEstimator::process(const data::SignalSlice& slice, double sample_rate_hz
   WindowSpec wspec;
   wspec.type = request.window;
   wspec.length = request.nfft;
-  wspec.symmetric = false;  // periodic (DFT-even) for spectral analysis
+  wspec.symmetric = false; // periodic (DFT-even) for spectral analysis
   auto window_result = generate_window(wspec);
   if (!window_result.ok()) {
     return core::Status(window_result.error());
@@ -84,9 +85,8 @@ WelchPsdEstimator::process(const data::SignalSlice& slice, double sample_rate_hz
 
   // Average and normalize.
   std::vector<double> power(static_cast<std::size_t>(request.nfft));
-  const double density_scale = (request.scaling == SpectrumScaling::density)
-                                   ? (1.0 / (sample_rate_hz * win_sum_sq))
-                                   : 1.0;
+  const double density_scale =
+      (request.scaling == SpectrumScaling::density) ? (1.0 / (sample_rate_hz * win_sum_sq)) : 1.0;
   for (std::uint64_t k = 0; k < request.nfft; ++k) {
     power[static_cast<std::size_t>(k)] =
         accumulated[static_cast<std::size_t>(k)] * density_scale / static_cast<double>(frame_count);
@@ -138,4 +138,4 @@ std::vector<double> to_db_hz(std::span<const double> power, double floor_db) {
   return out;
 }
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

@@ -35,27 +35,33 @@ struct Measurement final {
 /// Overlay model backing cursor/selection/measurement overlays shared across linked views
 /// (API-VIS-006). Qt-free; the views read this model when painting.
 class OverlayModel final {
- public:
+public:
   OverlayModel() = default;
 
   void add_cursor(Cursor cursor);
   void clear_cursors() noexcept;
-  [[nodiscard]] const std::vector<Cursor>& cursors() const noexcept { return cursors_; }
+  [[nodiscard]] const std::vector<Cursor>& cursors() const noexcept {
+    return cursors_;
+  }
 
   /// Set a frequency selection. Right-drag left-to-right selects; the controller interprets
   /// direction per the approved interaction spec.
   [[nodiscard]] core::Status set_frequency_selection(double lo_hz, double hi_hz);
   void clear_selection() noexcept;
-  [[nodiscard]] const std::optional<Selection>& selection() const noexcept { return selection_; }
+  [[nodiscard]] const std::optional<Selection>& selection() const noexcept {
+    return selection_;
+  }
 
   void set_measurement(Measurement measurement);
   void clear_measurement() noexcept;
-  [[nodiscard]] const std::optional<Measurement>& measurement() const noexcept { return measurement_; }
+  [[nodiscard]] const std::optional<Measurement>& measurement() const noexcept {
+    return measurement_;
+  }
 
- private:
+private:
   std::vector<Cursor> cursors_;
   std::optional<Selection> selection_;
   std::optional<Measurement> measurement_;
 };
 
-}  // namespace signal::visualization
+} // namespace signal::visualization

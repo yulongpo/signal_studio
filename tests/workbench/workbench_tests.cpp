@@ -7,7 +7,7 @@
 
 namespace {
 
-using namespace signal;  // brings core:: and workbench:: into scope
+using namespace signal; // brings core:: and workbench:: into scope
 
 int g_failures = 0;
 
@@ -33,10 +33,13 @@ int case_service_registry() {
 int case_command_registry() {
   auto reg = signal::workbench::make_command_registry();
   int counter = 0;
-  check(reg->register_command("file.open", [&] {
-    ++counter;
-    return core::Status::success();
-  }).ok(), "register command");
+  check(reg->register_command("file.open",
+                              [&] {
+                                ++counter;
+                                return core::Status::success();
+                              })
+            .ok(),
+        "register command");
   auto r = reg->invoke("file.open");
   check(r.ok(), "invoke command");
   check(counter == 1, "command action ran");
@@ -49,25 +52,35 @@ int case_command_registry() {
 
 namespace {
 class DummyPanel final : public signal::workbench::IPanel {
- public:
-  explicit DummyPanel(std::string id, signal::workbench::PanelRegion region)
-      : id_(std::move(id)), region_(region) {}
-  std::string_view id() const noexcept override { return id_; }
-  signal::workbench::PanelRegion region() const noexcept override { return region_; }
-  void* native_widget() noexcept override { return nullptr; }
+public:
+  explicit DummyPanel(std::string id, signal::workbench::PanelRegion region) : id_(std::move(id)), region_(region) {}
+  std::string_view id() const noexcept override {
+    return id_;
+  }
+  signal::workbench::PanelRegion region() const noexcept override {
+    return region_;
+  }
+  void* native_widget() noexcept override {
+    return nullptr;
+  }
 
- private:
+private:
   std::string id_;
   signal::workbench::PanelRegion region_;
 };
-}  // namespace
+} // namespace
 
 int case_panel_factory() {
   signal::workbench::PanelFactory factory;
-  check(factory.register_creator("inspector", [](const signal::workbench::PanelContext& ctx) {
-    return core::Result<std::unique_ptr<signal::workbench::IPanel>>(
-        std::unique_ptr<signal::workbench::IPanel>(std::make_unique<DummyPanel>(ctx.panel_id, ctx.region)));
-  }).ok(), "register creator");
+  check(factory
+            .register_creator("inspector",
+                              [](const signal::workbench::PanelContext& ctx) {
+                                return core::Result<std::unique_ptr<signal::workbench::IPanel>>(
+                                    std::unique_ptr<signal::workbench::IPanel>(
+                                        std::make_unique<DummyPanel>(ctx.panel_id, ctx.region)));
+                              })
+            .ok(),
+        "register creator");
   signal::workbench::PanelContext ctx{"inspector", signal::workbench::PanelRegion::right_dock};
   auto r = factory.create(ctx);
   check(r.ok(), "create panel");
@@ -94,7 +107,7 @@ int case_diagnostics() {
   return g_failures == 0 ? 0 : 1;
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
   if (argc != 3 || std::string_view{argv[1]} != "--case") {
@@ -102,10 +115,14 @@ int main(int argc, char** argv) {
     return 2;
   }
   std::string_view name = argv[2];
-  if (name == "service-registry") return case_service_registry();
-  if (name == "command-registry") return case_command_registry();
-  if (name == "panel-factory") return case_panel_factory();
-  if (name == "diagnostics") return case_diagnostics();
+  if (name == "service-registry")
+    return case_service_registry();
+  if (name == "command-registry")
+    return case_command_registry();
+  if (name == "panel-factory")
+    return case_panel_factory();
+  if (name == "diagnostics")
+    return case_diagnostics();
   std::cerr << "unknown case: " << name << "\n";
   return 2;
 }

@@ -15,7 +15,7 @@ struct StftRequest final {
   WindowType window{WindowType::hann};
   std::uint64_t nfft{};
   std::uint64_t hop_samples{};
-  bool output_magnitude{true};  // false -> linear power (|X|^2)
+  bool output_magnitude{true}; // false -> linear power (|X|^2)
   friend bool operator==(const StftRequest&, const StftRequest&) = default;
 };
 
@@ -37,20 +37,20 @@ struct StftResult final {
 };
 
 class IStftProcessor {
- public:
+public:
   virtual ~IStftProcessor() = default;
-  [[nodiscard]] virtual core::Result<StftResult>
-  process(const data::SignalSlice& slice, double sample_rate_hz, const StftRequest& request) = 0;
+  [[nodiscard]] virtual core::Result<StftResult> process(const data::SignalSlice& slice, double sample_rate_hz,
+                                                         const StftRequest& request) = 0;
 };
 
 class StftProcessor final : public IStftProcessor {
- public:
+public:
   explicit StftProcessor(IFftBackend& backend);
-  [[nodiscard]] core::Result<StftResult>
-  process(const data::SignalSlice& slice, double sample_rate_hz, const StftRequest& request) override;
+  [[nodiscard]] core::Result<StftResult> process(const data::SignalSlice& slice, double sample_rate_hz,
+                                                 const StftRequest& request) override;
 
- private:
+private:
   IFftBackend& backend_;
 };
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

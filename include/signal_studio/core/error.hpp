@@ -9,12 +9,25 @@
 namespace signal::core {
 
 enum class ErrorDomain : std::uint16_t {
-  none = 0, core = 1, data = 2, dsp = 3, compute = 4, task_runtime = 5,
-  visualization = 6, workbench = 7, plugin_sdk = 8, model_runtime = 9, dataset = 10,
+  none = 0,
+  core = 1,
+  data = 2,
+  dsp = 3,
+  compute = 4,
+  task_runtime = 5,
+  visualization = 6,
+  workbench = 7,
+  plugin_sdk = 8,
+  model_runtime = 9,
+  dataset = 10,
 };
 
 enum class ErrorReason : std::uint16_t {
-  none = 0, invalid_argument = 1, unavailable = 2, cancelled = 3, internal_failure = 4,
+  none = 0,
+  invalid_argument = 1,
+  unavailable = 2,
+  cancelled = 3,
+  internal_failure = 4,
 };
 
 enum class ErrorCategory : std::uint8_t { contract = 1, resource = 2, cancellation = 3, adapter = 4 };
@@ -55,7 +68,7 @@ struct ErrorDetails final {
 };
 
 class Status final {
- public:
+public:
   Status() noexcept = default;
   [[nodiscard]] static Status success() noexcept;
   [[nodiscard]] static Status failure(ErrorCode code, ErrorDetails details);
@@ -70,7 +83,7 @@ class Status final {
   [[nodiscard]] Status with_context(std::string_view context) const;
   [[nodiscard]] std::string serialize_json() const;
 
- private:
+private:
   Status(ErrorCode code, ErrorDetails details);
   ErrorCode code_{};
   ErrorDetails details_{};
@@ -85,4 +98,4 @@ class Status final {
 
 inline constexpr std::size_t max_error_cause_depth = 8;
 
-}  // namespace signal::core
+} // namespace signal::core

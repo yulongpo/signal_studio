@@ -32,11 +32,12 @@ core::Result<AlgorithmResult> RmsAlgorithmPlugin::run(const AlgorithmRequest& re
   }
   // PluginSDK cannot depend on DSP (approved DAG), so compute RMS inline.
   double sq_sum = 0.0;
-  for (double v : values) sq_sum += v * v;
+  for (double v : values)
+    sq_sum += v * v;
   AlgorithmResult result;
   result.scalar_outputs.push_back(std::sqrt(sq_sum / static_cast<double>(values.size())));
   result.notes = "rms";
   return result;
 }
 
-}  // namespace signal::plugin
+} // namespace signal::plugin

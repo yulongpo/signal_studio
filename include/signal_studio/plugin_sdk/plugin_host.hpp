@@ -22,7 +22,7 @@ struct PluginInfo final {
 
 /// RAII handle to a loaded plugin. Unloads on destruction. Move-only.
 class PluginHandle final {
- public:
+public:
   PluginHandle() = default;
   ~PluginHandle();
   PluginHandle(const PluginHandle&) = delete;
@@ -30,12 +30,16 @@ class PluginHandle final {
   PluginHandle(PluginHandle&&) noexcept;
   PluginHandle& operator=(PluginHandle&&) noexcept;
 
-  [[nodiscard]] bool valid() const noexcept { return module_ != nullptr; }
-  [[nodiscard]] const PluginInfo& info() const noexcept { return info_; }
+  [[nodiscard]] bool valid() const noexcept {
+    return module_ != nullptr;
+  }
+  [[nodiscard]] const PluginInfo& info() const noexcept {
+    return info_;
+  }
   [[nodiscard]] core::Status activate() const;
   void unload() noexcept;
 
- private:
+private:
   friend class PluginHost;
   PluginHandle(void* module, signal_plugin_api_v1 api, signal_plugin_handle_v1 plugin_handle, PluginInfo info)
       : module_(module), api_(api), plugin_handle_(plugin_handle), info_(std::move(info)) {}
@@ -49,7 +53,7 @@ class PluginHandle final {
 /// is invoked through a C exception boundary; a plugin that throws or crashes is rejected without
 /// taking down the host (API-PLG-001, error isolation).
 class PluginHost final {
- public:
+public:
   PluginHost() = default;
   /// Load a single plugin library. Returns failure if the library cannot be opened, the query
   /// symbol is missing, the ABI is incompatible, or validation rejects the descriptor.
@@ -58,4 +62,4 @@ class PluginHost final {
   [[nodiscard]] core::Result<std::vector<PluginHandle>> discover(const std::filesystem::path& directory);
 };
 
-}  // namespace signal::plugin
+} // namespace signal::plugin

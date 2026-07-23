@@ -21,4 +21,4 @@ int runGui(int argc, char** argv) {
   return app.exec();
 }
 
-}  // namespace signal::studio
+} // namespace signal::studio

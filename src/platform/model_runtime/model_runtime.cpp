@@ -13,15 +13,19 @@ core::Status model_failure(core::ErrorReason reason, std::string message) {
 /// Null inference backend: used when ONNX Runtime is not installed. It honestly reports
 /// unavailable and rejects every run() instead of fabricating model outputs.
 class NullInferenceSession final : public IInferenceSession {
- public:
+public:
   core::Result<InferenceResult> run(const InferenceRequest& /*request*/) override {
     return model_failure(core::ErrorReason::unavailable,
                          "ONNX Runtime is not installed in this environment; model inference is unavailable");
   }
-  bool available() const noexcept override { return false; }
-  std::string runtime_name() const noexcept override { return "null"; }
+  bool available() const noexcept override {
+    return false;
+  }
+  std::string runtime_name() const noexcept override {
+    return "null";
+  }
 };
-}  // namespace
+} // namespace
 
 core::Status ModelRegistry::install(ModelInfo info) {
   if (info.model_id.empty()) {
@@ -35,13 +39,15 @@ core::Status ModelRegistry::install(ModelInfo info) {
 }
 
 std::optional<ModelInfo> ModelRegistry::resolve(const std::string& model_id) const {
-  auto it = std::find_if(models_.begin(), models_.end(),
-                         [&](const ModelInfo& m) { return m.model_id == model_id; });
-  if (it == models_.end()) return std::nullopt;
+  auto it = std::find_if(models_.begin(), models_.end(), [&](const ModelInfo& m) { return m.model_id == model_id; });
+  if (it == models_.end())
+    return std::nullopt;
   return *it;
 }
 
-std::vector<ModelInfo> ModelRegistry::list() const { return models_; }
+std::vector<ModelInfo> ModelRegistry::list() const {
+  return models_;
+}
 
 std::unique_ptr<IInferenceSession> make_inference_session() {
   // ONNX Runtime (BL1.0 default) is not installed. Return the honest null backend; callers must
@@ -49,4 +55,4 @@ std::unique_ptr<IInferenceSession> make_inference_session() {
   return std::make_unique<NullInferenceSession>();
 }
 
-}  // namespace signal::model
+} // namespace signal::model

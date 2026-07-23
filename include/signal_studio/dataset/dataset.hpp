@@ -32,7 +32,7 @@ struct SampleQuery final {
 };
 
 class IDataset {
- public:
+public:
   virtual ~IDataset() = default;
   [[nodiscard]] virtual std::string id() const = 0;
   [[nodiscard]] virtual std::vector<SampleRecord> query(const SampleQuery& q) const = 0;
@@ -40,7 +40,7 @@ class IDataset {
 };
 
 class IDatasetWriter {
- public:
+public:
   virtual ~IDatasetWriter() = default;
   [[nodiscard]] virtual core::Status append(SampleRecord record) = 0;
   [[nodiscard]] virtual core::Status commit() = 0;
@@ -51,7 +51,7 @@ class IDatasetWriter {
 /// installed in this environment; the JSON adapter preserves the same public contract so callers
 /// can switch to HDF5 later without API changes.
 class JsonFileDataset final : public IDataset, public IDatasetWriter {
- public:
+public:
   JsonFileDataset() = default;
   explicit JsonFileDataset(std::filesystem::path manifest_path);
 
@@ -62,12 +62,16 @@ class JsonFileDataset final : public IDataset, public IDatasetWriter {
   [[nodiscard]] core::Status append(SampleRecord record) override;
   [[nodiscard]] core::Status commit() override;
 
-  [[nodiscard]] const std::filesystem::path& manifest_path() const noexcept { return manifest_path_; }
-  [[nodiscard]] const std::vector<SampleRecord>& records() const noexcept { return records_; }
+  [[nodiscard]] const std::filesystem::path& manifest_path() const noexcept {
+    return manifest_path_;
+  }
+  [[nodiscard]] const std::vector<SampleRecord>& records() const noexcept {
+    return records_;
+  }
 
- private:
+private:
   std::filesystem::path manifest_path_;
   std::vector<SampleRecord> records_;
 };
 
-}  // namespace signal::dataset
+} // namespace signal::dataset

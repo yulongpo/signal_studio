@@ -22,7 +22,7 @@ enum class WindowType : std::uint8_t {
 struct WindowSpec final {
   WindowType type{WindowType::hann};
   std::uint64_t length{};
-  bool symmetric{true};  // symmetric for design, periodic (DFT-even) for spectral analysis
+  bool symmetric{true}; // symmetric for design, periodic (DFT-even) for spectral analysis
   friend bool operator==(const WindowSpec&, const WindowSpec&) = default;
 };
 
@@ -37,4 +37,4 @@ struct WindowSpec final {
 /// Equivalent noise bandwidth (ENBW) in bins, for a periodic window of the given type.
 [[nodiscard]] double window_enbw_bins(WindowType type) noexcept;
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

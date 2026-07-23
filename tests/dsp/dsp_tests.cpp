@@ -26,7 +26,9 @@ void check(bool cond, std::string_view msg) {
   }
 }
 
-bool approx(double a, double b, double tol) { return std::fabs(a - b) <= tol; }
+bool approx(double a, double b, double tol) {
+  return std::fabs(a - b) <= tol;
+}
 
 std::vector<double> sine(int n, double freq, double fs, double amp = 1.0) {
   std::vector<double> x(static_cast<std::size_t>(n));
@@ -47,11 +49,12 @@ std::vector<signal::data::ComplexSample> to_complex(const std::vector<double>& r
 
 double rms(std::span<const double> v) {
   double s = 0.0;
-  for (double x : v) s += x * x;
+  for (double x : v)
+    s += x * x;
   return std::sqrt(s / static_cast<double>(v.size()));
 }
 
-}  // namespace
+} // namespace
 
 int case_windows_length_and_range() {
   signal::dsp::WindowSpec spec;
@@ -232,7 +235,7 @@ int case_fft_single_tone_bin() {
     return 0;
   }
   constexpr int N = 1024;
-  const double fs = 1024.0;  // fs == N so 100 Hz lands exactly on bin 100 (no scalloping loss)
+  const double fs = 1024.0; // fs == N so 100 Hz lands exactly on bin 100 (no scalloping loss)
   const double f = 100.0;
   auto x = sine(N, f, fs);
   auto cx = to_complex(x);
@@ -266,7 +269,8 @@ int case_fft_parseval() {
   auto r = signal::dsp::fft(cx, *backend.value());
   check(r.ok(), "fft succeeds");
   double time_energy = 0.0, freq_energy = 0.0;
-  for (int i = 0; i < N; ++i) time_energy += x[static_cast<std::size_t>(i)] * x[static_cast<std::size_t>(i)];
+  for (int i = 0; i < N; ++i)
+    time_energy += x[static_cast<std::size_t>(i)] * x[static_cast<std::size_t>(i)];
   for (int k = 0; k < N; ++k) {
     const auto& b = r->bins[static_cast<std::size_t>(k)];
     freq_energy += b.real * b.real + b.imag * b.imag;
@@ -291,7 +295,8 @@ int case_fft_ifft_roundtrip() {
   check(inv.ok(), "ifft succeeds");
   double max_err = 0.0;
   for (int i = 0; i < N; ++i) {
-    max_err = std::max(max_err, std::fabs(inv->bins[static_cast<std::size_t>(i)].real - x[static_cast<std::size_t>(i)]));
+    max_err =
+        std::max(max_err, std::fabs(inv->bins[static_cast<std::size_t>(i)].real - x[static_cast<std::size_t>(i)]));
   }
   check(max_err < 1e-7, "ifft(fft(x)) recovers x");
   return g_failures == 0 ? 0 : 1;
@@ -329,7 +334,8 @@ int case_psd_tone_frequency() {
   auto db = signal::dsp::to_db_hz(r->power);
   bool finite = true;
   for (double v : db) {
-    if (!std::isfinite(v)) finite = false;
+    if (!std::isfinite(v))
+      finite = false;
   }
   check(finite, "psd to_db_hz finite");
   check(r->provenance.device == signal::compute::ComputeDeviceType::cuda, "psd provenance cuda");
@@ -375,7 +381,8 @@ int case_stft_tone_timefreq() {
   // time_bins increasing.
   bool increasing = true;
   for (std::size_t i = 1; i < r->time_bins.size(); ++i) {
-    if (r->time_bins[i] <= r->time_bins[i - 1]) increasing = false;
+    if (r->time_bins[i] <= r->time_bins[i - 1])
+      increasing = false;
   }
   check(increasing, "stft time bins increasing");
   return g_failures == 0 ? 0 : 1;
@@ -387,22 +394,38 @@ int main(int argc, char** argv) {
     return 2;
   }
   std::string_view name = argv[2];
-  if (name == "windows-length-and-range") return case_windows_length_and_range();
-  if (name == "windows-enbw") return case_windows_enbw();
-  if (name == "windows-symmetry") return case_windows_symmetry();
-  if (name == "statistics-real") return case_statistics_real();
-  if (name == "statistics-complex") return case_statistics_complex();
-  if (name == "filter-impulse-response") return case_filter_impulse_response();
-  if (name == "filter-lowpass-attenuates") return case_filter_lowpass_attenuates();
-  if (name == "resample-identity") return case_resample_identity();
-  if (name == "resample-length-up") return case_resample_length_up();
-  if (name == "resample-length-down") return case_resample_length_down();
-  if (name == "resample-sine-amplitude") return case_resample_sine_amplitude();
-  if (name == "fft-single-tone-bin") return case_fft_single_tone_bin();
-  if (name == "fft-parseval") return case_fft_parseval();
-  if (name == "fft-ifft-roundtrip") return case_fft_ifft_roundtrip();
-  if (name == "psd-tone-frequency") return case_psd_tone_frequency();
-  if (name == "stft-tone-timefreq") return case_stft_tone_timefreq();
+  if (name == "windows-length-and-range")
+    return case_windows_length_and_range();
+  if (name == "windows-enbw")
+    return case_windows_enbw();
+  if (name == "windows-symmetry")
+    return case_windows_symmetry();
+  if (name == "statistics-real")
+    return case_statistics_real();
+  if (name == "statistics-complex")
+    return case_statistics_complex();
+  if (name == "filter-impulse-response")
+    return case_filter_impulse_response();
+  if (name == "filter-lowpass-attenuates")
+    return case_filter_lowpass_attenuates();
+  if (name == "resample-identity")
+    return case_resample_identity();
+  if (name == "resample-length-up")
+    return case_resample_length_up();
+  if (name == "resample-length-down")
+    return case_resample_length_down();
+  if (name == "resample-sine-amplitude")
+    return case_resample_sine_amplitude();
+  if (name == "fft-single-tone-bin")
+    return case_fft_single_tone_bin();
+  if (name == "fft-parseval")
+    return case_fft_parseval();
+  if (name == "fft-ifft-roundtrip")
+    return case_fft_ifft_roundtrip();
+  if (name == "psd-tone-frequency")
+    return case_psd_tone_frequency();
+  if (name == "stft-tone-timefreq")
+    return case_stft_tone_timefreq();
   std::cerr << "unknown case: " << name << "\n";
   return 2;
 }

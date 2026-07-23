@@ -45,12 +45,11 @@ enum {
 
 typedef void(SIGNAL_PLUGIN_CALL* signal_plugin_log_fn_v1)(void* context, int32_t severity, const char* stable_code,
                                                           const char* message) SIGNAL_PLUGIN_NOEXCEPT;
-typedef signal_plugin_result_v1(SIGNAL_PLUGIN_CALL* signal_plugin_load_fn_v1)(
-    signal_plugin_handle_v1* out_handle) SIGNAL_PLUGIN_NOEXCEPT;
-typedef signal_plugin_result_v1(SIGNAL_PLUGIN_CALL* signal_plugin_activate_fn_v1)(
-    signal_plugin_handle_v1 handle) SIGNAL_PLUGIN_NOEXCEPT;
-typedef void(SIGNAL_PLUGIN_CALL* signal_plugin_unload_fn_v1)(
-    signal_plugin_handle_v1 handle) SIGNAL_PLUGIN_NOEXCEPT;
+typedef signal_plugin_result_v1(SIGNAL_PLUGIN_CALL* signal_plugin_load_fn_v1)(signal_plugin_handle_v1* out_handle)
+    SIGNAL_PLUGIN_NOEXCEPT;
+typedef signal_plugin_result_v1(SIGNAL_PLUGIN_CALL* signal_plugin_activate_fn_v1)(signal_plugin_handle_v1 handle)
+    SIGNAL_PLUGIN_NOEXCEPT;
+typedef void(SIGNAL_PLUGIN_CALL* signal_plugin_unload_fn_v1)(signal_plugin_handle_v1 handle) SIGNAL_PLUGIN_NOEXCEPT;
 
 typedef struct signal_host_api_v1 {
   uint32_t struct_size;
@@ -72,17 +71,15 @@ typedef struct signal_plugin_api_v1 {
   signal_plugin_unload_fn_v1 unload;
 } signal_plugin_api_v1;
 
-typedef signal_plugin_result_v1(SIGNAL_PLUGIN_CALL* signal_plugin_query_v1_fn)(const signal_host_api_v1* host,
-                                                                               signal_plugin_api_v1* out_plugin)
-    SIGNAL_PLUGIN_NOEXCEPT;
-
-SIGNAL_PLUGIN_EXPORT signal_plugin_result_v1 SIGNAL_PLUGIN_CALL signal_plugin_query_v1(
+typedef signal_plugin_result_v1(SIGNAL_PLUGIN_CALL* signal_plugin_query_v1_fn)(
     const signal_host_api_v1* host, signal_plugin_api_v1* out_plugin) SIGNAL_PLUGIN_NOEXCEPT;
 
+SIGNAL_PLUGIN_EXPORT signal_plugin_result_v1 SIGNAL_PLUGIN_CALL
+signal_plugin_query_v1(const signal_host_api_v1* host, signal_plugin_api_v1* out_plugin) SIGNAL_PLUGIN_NOEXCEPT;
+
 /* Linkable SDK-side structural/version check. It never invokes plug-in callbacks. */
-signal_plugin_result_v1 SIGNAL_PLUGIN_CALL signal_plugin_validate_api_v1(const signal_host_api_v1* host,
-                                                                         const signal_plugin_api_v1* plugin)
-    SIGNAL_PLUGIN_NOEXCEPT;
+signal_plugin_result_v1 SIGNAL_PLUGIN_CALL signal_plugin_validate_api_v1(
+    const signal_host_api_v1* host, const signal_plugin_api_v1* plugin) SIGNAL_PLUGIN_NOEXCEPT;
 
 #ifdef __cplusplus
 }

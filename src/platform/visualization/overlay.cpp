@@ -14,9 +14,8 @@ void OverlayModel::clear_cursors() noexcept {
 
 core::Status OverlayModel::set_frequency_selection(double lo_hz, double hi_hz) {
   if (lo_hz > hi_hz) {
-    return core::Status::failure(
-        core::ErrorCode{core::ErrorDomain::visualization, core::ErrorReason::invalid_argument},
-        "frequency selection must not be inverted");
+    return core::Status::failure(core::ErrorCode{core::ErrorDomain::visualization, core::ErrorReason::invalid_argument},
+                                 "frequency selection must not be inverted");
   }
   Selection sel;
   sel.x_lo = lo_hz;
@@ -37,4 +36,4 @@ void OverlayModel::clear_measurement() noexcept {
   measurement_.reset();
 }
 
-}  // namespace signal::visualization
+} // namespace signal::visualization

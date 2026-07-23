@@ -30,7 +30,7 @@ struct PanelContext final {
 };
 
 class IPanel {
- public:
+public:
   virtual ~IPanel() = default;
   [[nodiscard]] virtual std::string_view id() const noexcept = 0;
   [[nodiscard]] virtual PanelRegion region() const noexcept = 0;
@@ -39,7 +39,7 @@ class IPanel {
 
 /// Service registry (API-WB-001). Stores arbitrary service objects by id for host discovery.
 class IServiceRegistry {
- public:
+public:
   virtual ~IServiceRegistry() = default;
   [[nodiscard]] virtual core::Status register_service(ServiceId id, std::shared_ptr<void> service) = 0;
   [[nodiscard]] virtual std::shared_ptr<void> resolve(const ServiceId& id) const noexcept = 0;
@@ -47,7 +47,7 @@ class IServiceRegistry {
 
 /// Panel factory (API-WB-002).
 class IPanelFactory {
- public:
+public:
   virtual ~IPanelFactory() = default;
   [[nodiscard]] virtual core::Result<std::unique_ptr<IPanel>> create(const PanelContext& context) = 0;
   [[nodiscard]] virtual std::vector<std::string> registered_panel_ids() const = 0;
@@ -57,7 +57,7 @@ class IPanelFactory {
 using CommandAction = std::function<core::Status()>;
 
 class ICommandRegistry {
- public:
+public:
   virtual ~ICommandRegistry() = default;
   [[nodiscard]] virtual core::Status register_command(std::string command_id, CommandAction action) = 0;
   [[nodiscard]] virtual core::Status invoke(std::string_view command_id) const = 0;
@@ -76,7 +76,7 @@ struct DiagnosticsSnapshot final {
 };
 
 class IDiagnosticsProvider {
- public:
+public:
   virtual ~IDiagnosticsProvider() = default;
   [[nodiscard]] virtual DiagnosticsSnapshot snapshot() const = 0;
 };
@@ -85,25 +85,25 @@ class IDiagnosticsProvider {
 using PanelCreator = std::function<core::Result<std::unique_ptr<IPanel>>(const PanelContext&)>;
 
 class PanelFactory final : public IPanelFactory {
- public:
+public:
   [[nodiscard]] core::Status register_creator(std::string panel_id, PanelCreator creator);
   [[nodiscard]] core::Result<std::unique_ptr<IPanel>> create(const PanelContext& context) override;
   [[nodiscard]] std::vector<std::string> registered_panel_ids() const override;
 
- private:
+private:
   std::unordered_map<std::string, PanelCreator> creators_;
 };
 
 /// Diagnostics provider that the host seeds with compute/backend facts it alone can see
 /// (Workbench cannot depend on Compute/Data per the approved DAG).
 class ConfigurableDiagnosticsProvider final : public IDiagnosticsProvider {
- public:
+public:
   void set_compute_info(std::string backend, std::string cuda_device);
   void set_active_panels(std::vector<std::string> panels);
   void add_note(std::string note);
   [[nodiscard]] DiagnosticsSnapshot snapshot() const override;
 
- private:
+private:
   std::string compute_backend_;
   std::string cuda_device_;
   std::vector<std::string> active_panels_;
@@ -114,4 +114,4 @@ class ConfigurableDiagnosticsProvider final : public IDiagnosticsProvider {
 [[nodiscard]] std::unique_ptr<ICommandRegistry> make_command_registry();
 [[nodiscard]] std::unique_ptr<IDiagnosticsProvider> make_diagnostics_provider();
 
-}  // namespace signal::workbench
+} // namespace signal::workbench

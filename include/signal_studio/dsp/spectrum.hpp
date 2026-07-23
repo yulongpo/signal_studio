@@ -45,25 +45,25 @@ struct PsdResult final {
 };
 
 class IPsdEstimator {
- public:
+public:
   virtual ~IPsdEstimator() = default;
-  [[nodiscard]] virtual core::Result<PsdResult>
-  process(const data::SignalSlice& slice, double sample_rate_hz, const PsdRequest& request) = 0;
+  [[nodiscard]] virtual core::Result<PsdResult> process(const data::SignalSlice& slice, double sample_rate_hz,
+                                                        const PsdRequest& request) = 0;
 };
 
 /// Welch estimator backed by an injected FFT backend (oneMKL/cuFFT adapter). The estimator itself
 /// is backend-agnostic; it records the backend provenance in every result for cache keying.
 class WelchPsdEstimator final : public IPsdEstimator {
- public:
+public:
   explicit WelchPsdEstimator(IFftBackend& backend);
-  [[nodiscard]] core::Result<PsdResult>
-  process(const data::SignalSlice& slice, double sample_rate_hz, const PsdRequest& request) override;
+  [[nodiscard]] core::Result<PsdResult> process(const data::SignalSlice& slice, double sample_rate_hz,
+                                                const PsdRequest& request) override;
 
- private:
+private:
   IFftBackend& backend_;
 };
 
 /// Convert a linear PSD (V^2/Hz) to dB/Hz. Zeros are clamped to a floor to avoid -inf.
 [[nodiscard]] std::vector<double> to_db_hz(std::span<const double> power, double floor_db = -300.0);
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

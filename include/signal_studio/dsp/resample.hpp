@@ -17,21 +17,21 @@ struct ResampleRatio final {
 };
 
 class IResampler {
- public:
+public:
   virtual ~IResampler() = default;
   /// Resample a real-valued block by the ratio. Anti-aliasing is applied for both up- and
   /// down-sampling. Returns the resampled block.
-  [[nodiscard]] virtual core::Result<std::vector<double>>
-  process(const ResampleRatio& ratio, std::span<const double> input) = 0;
+  [[nodiscard]] virtual core::Result<std::vector<double>> process(const ResampleRatio& ratio,
+                                                                  std::span<const double> input) = 0;
 };
 
 /// Polyphase FIR resampler. The anti-alias/anti-image lowpass is designed by the windowed-sinc
 /// method at cutoff min(fs_in, fs_out)/2 with gain L, then decomposed into L polyphase branches.
 class PolyphaseResampler final : public IResampler {
- public:
+public:
   PolyphaseResampler() = default;
-  [[nodiscard]] core::Result<std::vector<double>>
-  process(const ResampleRatio& ratio, std::span<const double> input) override;
+  [[nodiscard]] core::Result<std::vector<double>> process(const ResampleRatio& ratio,
+                                                          std::span<const double> input) override;
 };
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

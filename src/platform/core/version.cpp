@@ -36,4 +36,4 @@ const BuildInfo& build_info() noexcept {
   return info;
 }
 
-}  // namespace signal::core
+} // namespace signal::core

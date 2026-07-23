@@ -44,8 +44,7 @@ BackendProvenance CpuComputeBackend::provenance() const {
   return p;
 }
 
-BufferHandle::BufferHandle(std::size_t bytes, ComputeDeviceType device)
-    : bytes_(bytes), device_(device) {
+BufferHandle::BufferHandle(std::size_t bytes, ComputeDeviceType device) : bytes_(bytes), device_(device) {
   if (bytes_ == 0) {
     return;
   }
@@ -152,8 +151,7 @@ std::uint64_t BoundedBufferPool::budget_bytes() const noexcept {
   return budget_bytes_;
 }
 
-AutoBackendSelector::AutoBackendSelector()
-    : cpu_backend_(std::make_unique<CpuComputeBackend>()) {}
+AutoBackendSelector::AutoBackendSelector() : cpu_backend_(std::make_unique<CpuComputeBackend>()) {}
 
 void AutoBackendSelector::register_backend(std::unique_ptr<IComputeBackend> backend) {
   if (!backend || backend->device_type() != ComputeDeviceType::cuda) {
@@ -195,10 +193,11 @@ core::Result<std::unique_ptr<IComputeBackend>> make_cuda_compute_backend() {
   int runtime_version = 0;
   cudaRuntimeGetVersion(&runtime_version);
   class CudaBackend final : public IComputeBackend {
-   public:
-    explicit CudaBackend(cudaDeviceProp prop, int runtime_version)
-        : prop_(prop), runtime_version_(runtime_version) {}
-    ComputeDeviceType device_type() const noexcept override { return ComputeDeviceType::cuda; }
+  public:
+    explicit CudaBackend(cudaDeviceProp prop, int runtime_version) : prop_(prop), runtime_version_(runtime_version) {}
+    ComputeDeviceType device_type() const noexcept override {
+      return ComputeDeviceType::cuda;
+    }
     ComputeCapabilities capabilities() const override {
       ComputeCapabilities caps;
       caps.device = ComputeDeviceType::cuda;
@@ -219,7 +218,7 @@ core::Result<std::unique_ptr<IComputeBackend>> make_cuda_compute_backend() {
       return p;
     }
 
-   private:
+  private:
     cudaDeviceProp prop_{};
     int runtime_version_{};
   };
@@ -232,21 +231,28 @@ core::Result<std::unique_ptr<IComputeBackend>> make_cuda_compute_backend() {
 
 std::string_view to_string(ComputeDeviceType device) noexcept {
   switch (device) {
-    case ComputeDeviceType::cpu: return "cpu";
-    case ComputeDeviceType::cuda: return "cuda";
+  case ComputeDeviceType::cpu:
+    return "cpu";
+  case ComputeDeviceType::cuda:
+    return "cuda";
   }
   return "unknown";
 }
 
 std::string_view to_string(WorkloadClass work_class) noexcept {
   switch (work_class) {
-    case WorkloadClass::io_bound: return "io-bound";
-    case WorkloadClass::dsp_bound: return "dsp-bound";
-    case WorkloadClass::indexing: return "indexing";
-    case WorkloadClass::inference: return "inference";
-    case WorkloadClass::other: return "other";
+  case WorkloadClass::io_bound:
+    return "io-bound";
+  case WorkloadClass::dsp_bound:
+    return "dsp-bound";
+  case WorkloadClass::indexing:
+    return "indexing";
+  case WorkloadClass::inference:
+    return "inference";
+  case WorkloadClass::other:
+    return "other";
   }
   return "unknown";
 }
 
-}  // namespace signal::compute
+} // namespace signal::compute

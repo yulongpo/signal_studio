@@ -16,8 +16,10 @@ double sum_magnitude_peak(const T* values, std::uint64_t count, double& min_out,
   for (std::uint64_t i = 0; i < count; ++i) {
     const double v = values[i];
     sum += v;
-    if (i == 0 || v < min_out) min_out = v;
-    if (i == 0 || v > max_out) max_out = v;
+    if (i == 0 || v < min_out)
+      min_out = v;
+    if (i == 0 || v > max_out)
+      max_out = v;
     const double a = std::fabs(v);
     if (a > peak) {
       peak = a;
@@ -27,7 +29,7 @@ double sum_magnitude_peak(const T* values, std::uint64_t count, double& min_out,
   peak_index_out = peak_index;
   return sum;
 }
-}  // namespace
+} // namespace
 
 core::Result<TimeDomainStats> compute_real_stats(const data::SignalSlice& slice) {
   if (slice.kind() != data::SignalKind::real) {
@@ -118,4 +120,4 @@ core::Result<ComplexStats> compute_complex_stats(const data::SignalSlice& slice)
   return stats;
 }
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

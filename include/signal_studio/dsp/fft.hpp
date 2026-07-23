@@ -34,7 +34,7 @@ struct FftResult final {
 };
 
 class FftPlan {
- public:
+public:
   virtual ~FftPlan() = default;
   [[nodiscard]] virtual std::uint64_t size() const noexcept = 0;
   [[nodiscard]] virtual FftDirection direction() const noexcept = 0;
@@ -47,7 +47,7 @@ class FftPlan {
 /// Abstract FFT backend (API-DSP-001). Concrete adapters (oneMKL CPU, cuFFT GPU) implement this.
 /// Public API exposes no third-party types.
 class IFftBackend {
- public:
+public:
   virtual ~IFftBackend() = default;
   [[nodiscard]] virtual compute::ComputeDeviceType device_type() const noexcept = 0;
   [[nodiscard]] virtual compute::BackendProvenance provenance() const = 0;
@@ -57,19 +57,16 @@ class IFftBackend {
 /// Construct the best available FFT backend for the requested device. CUDA returns a cuFFT backend
 /// when CUDA is built in and a device is present; CPU returns oneMKL when built in, otherwise an
 /// unavailable status (recorded as an environment deviation, never faked).
-[[nodiscard]] core::Result<std::unique_ptr<IFftBackend>>
-make_fft_backend(compute::ComputeDeviceType device);
+[[nodiscard]] core::Result<std::unique_ptr<IFftBackend>> make_fft_backend(compute::ComputeDeviceType device);
 
 /// Convenience: forward FFT of a complex block using the provided backend.
-[[nodiscard]] core::Result<FftResult>
-fft(std::span<const data::ComplexSample> input, IFftBackend& backend);
+[[nodiscard]] core::Result<FftResult> fft(std::span<const data::ComplexSample> input, IFftBackend& backend);
 
 /// Convenience: inverse FFT. Output is scaled by 1/N (cuFFT inverse with CUFFT_INVERSE produces
 /// unscaled output; this function divides by N to recover the original signal).
-[[nodiscard]] core::Result<FftResult>
-ifft(std::span<const data::ComplexSample> input, IFftBackend& backend);
+[[nodiscard]] core::Result<FftResult> ifft(std::span<const data::ComplexSample> input, IFftBackend& backend);
 
 /// True when the current build includes a working FFT backend for the given device.
 [[nodiscard]] bool fft_backend_available(compute::ComputeDeviceType device) noexcept;
 
-}  // namespace signal::dsp
+} // namespace signal::dsp

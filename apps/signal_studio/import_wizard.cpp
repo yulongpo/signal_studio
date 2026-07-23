@@ -36,11 +36,17 @@ ImportWizard::ImportWizard(QWidget* parent) : QDialog(parent) {
 }
 
 void ImportWizard::applyFilenameHint(const FilenameHint& hint) {
-  if (hint.had_sample_rate) sampleRate_->setValue(hint.sample_rate_hz);
-  if (hint.had_center_frequency) centerFreq_->setValue(hint.center_frequency_hz);
+  if (hint.had_sample_rate)
+    sampleRate_->setValue(hint.sample_rate_hz);
+  if (hint.had_center_frequency)
+    centerFreq_->setValue(hint.center_frequency_hz);
 }
 
-double ImportWizard::sampleRateHz() const { return sampleRate_->value(); }
-double ImportWizard::centerFrequencyHz() const { return centerFreq_->value(); }
+double ImportWizard::sampleRateHz() const {
+  return sampleRate_->value();
+}
+double ImportWizard::centerFrequencyHz() const {
+  return centerFreq_->value();
+}
 
-}  // namespace signal::studio
+} // namespace signal::studio

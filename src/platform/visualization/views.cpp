@@ -17,11 +17,16 @@ namespace signal::visualization {
 
 std::string_view to_string(ChartViewKind kind) noexcept {
   switch (kind) {
-    case ChartViewKind::time_waveform: return "time-waveform";
-    case ChartViewKind::spectrum: return "spectrum";
-    case ChartViewKind::spectrogram: return "spectrogram";
-    case ChartViewKind::constellation: return "constellation";
-    case ChartViewKind::eye_diagram: return "eye-diagram";
+  case ChartViewKind::time_waveform:
+    return "time-waveform";
+  case ChartViewKind::spectrum:
+    return "spectrum";
+  case ChartViewKind::spectrogram:
+    return "spectrogram";
+  case ChartViewKind::constellation:
+    return "constellation";
+  case ChartViewKind::eye_diagram:
+    return "eye-diagram";
   }
   return "unknown";
 }
@@ -37,9 +42,9 @@ namespace {
 /// Base widget implementing the common IChartView contract. QWidget without Q_OBJECT: paint-only
 /// widgets need no signals/slots, so no MOC step is required.
 class BaseChartWidget : public QWidget, public IChartView {
- public:
+public:
   explicit BaseChartWidget(QWidget* parent = nullptr) : QWidget(parent) {
-    setMinimumSize(160, 90);  // accessible hit target scaling handled by host layout
+    setMinimumSize(160, 90); // accessible hit target scaling handled by host layout
     setAttribute(Qt::WA_OpaquePaintEvent, false);
   }
 
@@ -47,22 +52,33 @@ class BaseChartWidget : public QWidget, public IChartView {
     series_ = std::move(series);
     update();
   }
-  std::shared_ptr<const IDataSeries> bound_series() const noexcept override { return series_; }
+  std::shared_ptr<const IDataSeries> bound_series() const noexcept override {
+    return series_;
+  }
   void set_visible(bool visible) override {
     visible_ = visible;
-    if (!visible) hide();
-    else show();
+    if (!visible)
+      hide();
+    else
+      show();
     update();
   }
-  bool visible() const noexcept override { return visible_; }
-  void* native_widget() noexcept override { return static_cast<QWidget*>(this); }
-  void set_needs_data_callback(NeedsDataCallback callback) override { needs_cb_ = std::move(callback); }
+  bool visible() const noexcept override {
+    return visible_;
+  }
+  void* native_widget() noexcept override {
+    return static_cast<QWidget*>(this);
+  }
+  void set_needs_data_callback(NeedsDataCallback callback) override {
+    needs_cb_ = std::move(callback);
+  }
   bool needs_data() const noexcept override {
-    if (!visible_) return false;
+    if (!visible_)
+      return false;
     return needs_cb_ ? needs_cb_() : true;
   }
 
- protected:
+protected:
   void paintEvent(QPaintEvent*) override {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing, true);
@@ -82,87 +98,110 @@ class BaseChartWidget : public QWidget, public IChartView {
 };
 
 class TimeWaveformWidget final : public BaseChartWidget {
- public:
+public:
   using BaseChartWidget::BaseChartWidget;
-  ChartViewKind kind() const noexcept override { return ChartViewKind::time_waveform; }
+  ChartViewKind kind() const noexcept override {
+    return ChartViewKind::time_waveform;
+  }
 
- protected:
+protected:
   void paint_content(QPainter& p) override {
     auto rs = std::dynamic_pointer_cast<const RealSeries>(series_);
-    if (!rs) return;
+    if (!rs)
+      return;
     const auto samples = rs->samples();
-    if (samples.empty()) return;
+    if (samples.empty())
+      return;
     double mn = samples[0], mx = samples[0];
     for (double v : samples) {
       mn = std::min(mn, v);
       mx = std::max(mx, v);
     }
-    if (mx - mn < 1e-12) { mx = mn + 1.0; }
+    if (mx - mn < 1e-12) {
+      mx = mn + 1.0;
+    }
     const double x_step = static_cast<double>(width()) / static_cast<double>(samples.size());
     p.setPen(QPen(Qt::green, 1));
     QPainterPath path;
     for (std::size_t i = 0; i < samples.size(); ++i) {
       const double x = i * x_step;
       const double y = height() - (samples[i] - mn) / (mx - mn) * height();
-      if (i == 0) path.moveTo(x, y);
-      else path.lineTo(x, y);
+      if (i == 0)
+        path.moveTo(x, y);
+      else
+        path.lineTo(x, y);
     }
     p.drawPath(path);
   }
 };
 
 class SpectrumWidget final : public BaseChartWidget {
- public:
+public:
   using BaseChartWidget::BaseChartWidget;
-  ChartViewKind kind() const noexcept override { return ChartViewKind::spectrum; }
+  ChartViewKind kind() const noexcept override {
+    return ChartViewKind::spectrum;
+  }
 
- protected:
+protected:
   void paint_content(QPainter& p) override {
     auto ss = std::dynamic_pointer_cast<const SpectrumSeries>(series_);
-    if (!ss) return;
+    if (!ss)
+      return;
     const auto freq = ss->frequencies_hz();
     const auto power = ss->power_db();
-    if (freq.empty()) return;
+    if (freq.empty())
+      return;
     double fmn = freq.front(), fmx = freq.back();
     double pmn = power[0], pmx = power[0];
     for (double v : power) {
       pmn = std::min(pmn, v);
       pmx = std::max(pmx, v);
     }
-    if (pmx - pmn < 1e-12) pmx = pmn + 1.0;
+    if (pmx - pmn < 1e-12)
+      pmx = pmn + 1.0;
     const double xs = (fmx > fmn) ? static_cast<double>(width()) / (fmx - fmn) : 1.0;
     p.setPen(QPen(Qt::cyan, 1));
     QPainterPath path;
     for (std::size_t i = 0; i < freq.size(); ++i) {
       const double x = (freq[i] - fmn) * xs;
       const double y = height() - (power[i] - pmn) / (pmx - pmn) * height();
-      if (i == 0) path.moveTo(x, y);
-      else path.lineTo(x, y);
+      if (i == 0)
+        path.moveTo(x, y);
+      else
+        path.lineTo(x, y);
     }
     p.drawPath(path);
   }
 };
 
 class SpectrogramWidget final : public BaseChartWidget {
- public:
+public:
   using BaseChartWidget::BaseChartWidget;
-  ChartViewKind kind() const noexcept override { return ChartViewKind::spectrogram; }
-  void set_color_scale(ColorScale scale) { scale_ = scale; update(); }
+  ChartViewKind kind() const noexcept override {
+    return ChartViewKind::spectrogram;
+  }
+  void set_color_scale(ColorScale scale) {
+    scale_ = scale;
+    update();
+  }
 
- protected:
+protected:
   void paint_content(QPainter& p) override {
     auto sg = std::dynamic_pointer_cast<const SpectrogramSeries>(series_);
-    if (!sg) return;
+    if (!sg)
+      return;
     const std::uint64_t frames = sg->frame_count();
     const std::uint64_t freqs = sg->freq_count();
-    if (frames == 0 || freqs == 0) return;
+    if (frames == 0 || freqs == 0)
+      return;
     const auto mag = sg->magnitudes_db();
     double mn = mag[0], mx = mag[0];
     for (double v : mag) {
       mn = std::min(mn, v);
       mx = std::max(mx, v);
     }
-    if (mx - mn < 1e-12) mx = mn + 1.0;
+    if (mx - mn < 1e-12)
+      mx = mn + 1.0;
     const double cell_w = static_cast<double>(width()) / frames;
     const double cell_h = static_cast<double>(height()) / freqs;
     for (std::uint64_t f = 0; f < frames; ++f) {
@@ -178,28 +217,33 @@ class SpectrogramWidget final : public BaseChartWidget {
     }
   }
 
- private:
+private:
   ColorScale scale_{ColorScale::viridis};
 };
 
 class ConstellationWidget final : public BaseChartWidget {
- public:
+public:
   using BaseChartWidget::BaseChartWidget;
-  ChartViewKind kind() const noexcept override { return ChartViewKind::constellation; }
+  ChartViewKind kind() const noexcept override {
+    return ChartViewKind::constellation;
+  }
 
- protected:
+protected:
   void paint_content(QPainter& p) override {
     auto cs = std::dynamic_pointer_cast<const ComplexSeries>(series_);
-    if (!cs) return;
+    if (!cs)
+      return;
     const auto re = cs->real();
     const auto im = cs->imag();
-    if (re.empty()) return;
+    if (re.empty())
+      return;
     double mn = re[0], mx = re[0];
     for (std::size_t i = 0; i < re.size(); ++i) {
       mn = std::min({mn, re[i], im[i]});
       mx = std::max({mx, re[i], im[i]});
     }
-    if (mx - mn < 1e-12) mx = mn + 1.0;
+    if (mx - mn < 1e-12)
+      mx = mn + 1.0;
     p.setPen(Qt::NoPen);
     p.setBrush(QBrush(Qt::yellow));
     const double scale = static_cast<double>(height()) / (mx - mn);
@@ -212,20 +256,31 @@ class ConstellationWidget final : public BaseChartWidget {
 };
 
 class EyeDiagramWidget final : public BaseChartWidget {
- public:
+public:
   using BaseChartWidget::BaseChartWidget;
-  ChartViewKind kind() const noexcept override { return ChartViewKind::eye_diagram; }
-  void set_symbol_samples(std::uint64_t n) { symbol_samples_ = std::max<std::uint64_t>(n, 1); update(); }
+  ChartViewKind kind() const noexcept override {
+    return ChartViewKind::eye_diagram;
+  }
+  void set_symbol_samples(std::uint64_t n) {
+    symbol_samples_ = std::max<std::uint64_t>(n, 1);
+    update();
+  }
 
- protected:
+protected:
   void paint_content(QPainter& p) override {
     auto rs = std::dynamic_pointer_cast<const RealSeries>(series_);
-    if (!rs) return;
+    if (!rs)
+      return;
     const auto samples = rs->samples();
-    if (samples.empty() || symbol_samples_ == 0) return;
+    if (samples.empty() || symbol_samples_ == 0)
+      return;
     double mn = samples[0], mx = samples[0];
-    for (double v : samples) { mn = std::min(mn, v); mx = std::max(mx, v); }
-    if (mx - mn < 1e-12) mx = mn + 1.0;
+    for (double v : samples) {
+      mn = std::min(mn, v);
+      mx = std::max(mx, v);
+    }
+    if (mx - mn < 1e-12)
+      mx = mn + 1.0;
     const double x_step = static_cast<double>(width()) / symbol_samples_;
     p.setPen(QPen(QColor(0, 255, 128, 180), 1));
     std::size_t i = 0;
@@ -234,14 +289,16 @@ class EyeDiagramWidget final : public BaseChartWidget {
       for (std::uint64_t s = 0; s < symbol_samples_ && i < samples.size(); ++s, ++i) {
         const double x = s * x_step;
         const double y = height() - (samples[i] - mn) / (mx - mn) * height();
-        if (s == 0) path.moveTo(x, y);
-        else path.lineTo(x, y);
+        if (s == 0)
+          path.moveTo(x, y);
+        else
+          path.lineTo(x, y);
       }
       p.drawPath(path);
     }
   }
 
- private:
+private:
   std::uint64_t symbol_samples_{8};
 };
 
@@ -250,27 +307,32 @@ core::Result<std::unique_ptr<IChartView>> make_view_failed() {
                                "Qt application context is not available to create chart widgets");
 }
 
-}  // namespace
+} // namespace
 
 core::Result<std::unique_ptr<IChartView>> make_time_waveform_view() {
-  if (!QApplication::instance()) return make_view_failed();
+  if (!QApplication::instance())
+    return make_view_failed();
   return std::unique_ptr<IChartView>(std::make_unique<TimeWaveformWidget>());
 }
 core::Result<std::unique_ptr<IChartView>> make_spectrum_view() {
-  if (!QApplication::instance()) return make_view_failed();
+  if (!QApplication::instance())
+    return make_view_failed();
   return std::unique_ptr<IChartView>(std::make_unique<SpectrumWidget>());
 }
 core::Result<std::unique_ptr<IChartView>> make_spectrogram_view() {
-  if (!QApplication::instance()) return make_view_failed();
+  if (!QApplication::instance())
+    return make_view_failed();
   return std::unique_ptr<IChartView>(std::make_unique<SpectrogramWidget>());
 }
 core::Result<std::unique_ptr<IChartView>> make_constellation_view() {
-  if (!QApplication::instance()) return make_view_failed();
+  if (!QApplication::instance())
+    return make_view_failed();
   return std::unique_ptr<IChartView>(std::make_unique<ConstellationWidget>());
 }
 core::Result<std::unique_ptr<IChartView>> make_eye_diagram_view() {
-  if (!QApplication::instance()) return make_view_failed();
+  if (!QApplication::instance())
+    return make_view_failed();
   return std::unique_ptr<IChartView>(std::make_unique<EyeDiagramWidget>());
 }
 
-}  // namespace signal::visualization
+} // namespace signal::visualization
