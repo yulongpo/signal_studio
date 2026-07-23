@@ -198,6 +198,10 @@ if(SIGNAL_STUDIO_BUILD_UI)
   add_subdirectory(apps/signal_studio)
 endif()
 
+# Signal Review is a headless reuse-proof app: it links only public modules and builds in every
+# configuration (including no-Qt), proving the platform is reusable independent of the GUI app.
+add_subdirectory(apps/signal_review)
+
 if(BUILD_TESTING AND SIGNAL_STUDIO_BUILD_TESTS)
   add_subdirectory(tests/platform)
   add_subdirectory(tests/core)
@@ -208,6 +212,7 @@ if(BUILD_TESTING AND SIGNAL_STUDIO_BUILD_TESTS)
   add_subdirectory(tests/plugin_sdk)
   add_subdirectory(tests/model_runtime)
   add_subdirectory(tests/dataset)
+  add_subdirectory(tests/review)
   if(SIGNAL_STUDIO_BUILD_UI)
     add_subdirectory(tests/visualization)
     add_subdirectory(tests/workbench)

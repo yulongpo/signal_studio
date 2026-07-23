@@ -12,8 +12,8 @@
 | MS-05 | 宽窄带联动分析 | 已验收关闭 |
 | MS-06 | PluginSDK、ModelRuntime、Dataset 功能 | 已验收关闭 |
 | MS-07 | 工程化、打包、文档 | 已验收关闭 |
-| MS-08 | 复用证明应用 | 进行中 |
-| MS-09 | 最终发布验证与发布 | 未开始 |
+| MS-08 | 复用证明应用 | 已验收关闭 |
+| MS-09 | 最终发布验证与发布 | 进行中 |
 
 修正后的 MS-00 本地自检覆盖：BL1.0 无抛出 C ABI 与异常适配器、构造期结构化 Status 不变量及满容量传播、公共枚举已知值校验、独立无 Qt 构建与组件包、精确获取/兼容宿主/精确快照三层依赖契约、同进程工具链幂等、Windows 根路径语义、确定性本机用户预设、VS Code 同构建树 F5、C/C++ SDK 示例、API 类型隔离、十个模块性能保护，以及 Debug/Release 各 45 个用例。
 
@@ -31,4 +31,6 @@ MS-05 交付宽窄带联动：窄带信道提取（数字下变频 `e^{-j*2*pi*f
 
 MS-06 交付 PluginSDK（`PluginHost` ABI-v1 加载/激活/卸载/异常隔离、`IAlgorithmPlugin`+`RmsAlgorithmPlugin`、`discover`）、ModelRuntime（`ModelRegistry`、`IInferenceSession`+`NullInferenceSession`，ONNX 未装为环境偏差不伪造）、Dataset（`JsonFileDataset` append/query/commit/round-trip）。修复 PluginHost 未调 `api.load` 获取插件句柄 bug。依赖 DAG 不变（PluginSDK 不依赖 DSP，RMS 内联）。无界面 126/126、UI(CUDA) 160/160 四配置全量 CTest 通过，合计 572/572。MS-06 已验收关闭。
 
-MS-07 工程化收口：clang-format --dry-run --Werror 合规（111 源文件格式化）、`cmake/Packaging.cmake` CPack ZIP 便携包 + windeployqt Qt 部署 + VC143 运行库、`scripts/run_quality_gates.ps1`、需求追踪矩阵 198 项、VSCode 调试指南/依赖清单/发布检查清单/安装验证报告/ReleaseNotes/LICENSES。便携包 `SignalStudio-1.0.0-win64.zip`（25MB，122 文件，SHA256 `bcc7f1ba...`）生成并可启动（self-test 退出 0）。四配置全量 CTest 通过，合计 572/572。NSIS 未装为环境偏差（仅便携包）。MS-07 已验收关闭，下一里程碑为 MS-08（复用证明应用）；整体开发计划尚未达到产品最终验收条件。
+MS-07 工程化收口：clang-format --dry-run --Werror 合规（111 源文件格式化）、`cmake/Packaging.cmake` CPack ZIP 便携包 + windeployqt Qt 部署 + VC143 运行库、`scripts/run_quality_gates.ps1`、需求追踪矩阵 198 项、VSCode 调试指南/依赖清单/发布检查清单/安装验证报告/ReleaseNotes/LICENSES。便携包 `SignalStudio-1.0.0-win64.zip`（25MB，122 文件，SHA256 `bcc7f1ba...`）生成并可启动（self-test 退出 0）。四配置全量 CTest 通过，合计 572/572。NSIS 未装为环境偏差（仅便携包）。MS-07 已验收关闭。
+
+MS-08 交付 signal_review 无头 CLI 应用，仅链接 Data/DSP/Compute/Core 4 公共模块（无 Qt/无 app-core），证明十模块平台可独立复用于非 GUI 工具：WAV/SC16 文件名提示导入、有界窗口读取、实/复统计、JSON 审查报告。真实 1GB SC16 有界读取 8192 样本统计通过（totalSamples 249M）。四配置全量 CTest 通过，合计 588/588（无界面 130/130、UI 164/164）。MS-08 已验收关闭，下一里程碑为 MS-09（最终发布验证与发布）；整体开发计划尚未达到产品最终验收条件。
