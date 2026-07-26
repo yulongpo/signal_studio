@@ -67,3 +67,10 @@
 - 记录五项整改验证结果：可移植依赖校验模式、VS Code 任务树一致性、Windows 根路径语义、枚举合法性校验和有界 `Status` 传播。
 - 记录本地 Debug 45/45、Release 45/45、VS Code 任务树 45/45、直接 F5 目标以及精确提交 GitHub Actions 三作业成功。
 - MS-00 已验收关闭，下一里程碑为 MS-01；整体产品尚未完成。
+
+# 2026-07-26：MS-01 验收收口
+
+- 记录 Core、Data、TaskRuntime 共 54 项需求，以及 UI、无 Qt、强制 CPU 的 Debug/Release 六套全新矩阵全部通过。
+- 记录独立规格复审和最终代码质量复审通过；并发视图、制品提交、事件有序性、崩溃恢复、WAV 边界和 Debug nonredist 发布整改无剩余 Critical/Important。
+- 记录实现提交 `39f1d0f2ae9b2cc063543cbdbe69bc3ddd388fd2`、远程整合提交 `c89412e615168b067f3f29646e778b6de5c8b1b5`，以及 Windows GitHub Actions 运行 `30187026089` 两项作业成功。
+- MS-01 已验收关闭，下一里程碑为 MS-02；整体产品尚未完成。
