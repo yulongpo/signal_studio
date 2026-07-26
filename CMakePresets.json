@@ -10,6 +10,7 @@
       "installDir": "${sourceDir}/build/install/${presetName}",
       "cacheVariables": {
         "BUILD_TESTING": "ON",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "SIGNAL_STUDIO_BUILD_TESTS": "ON",
         "SIGNAL_STUDIO_BUILD_SDK_EXAMPLE": "ON"
       }

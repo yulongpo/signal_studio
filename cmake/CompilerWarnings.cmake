@@ -1,6 +1,7 @@
 function(signal_studio_enable_warnings target)
   if(MSVC)
-    target_compile_options(${target} PRIVATE /W4 /permissive- /EHsc /Zc:__cplusplus /utf-8)
+    target_compile_options(${target} PRIVATE /W4 /permissive- /EHsc /Zc:__cplusplus)
+    target_compile_options(${target} PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:/utf-8>")
   else()
     target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion)
   endif()

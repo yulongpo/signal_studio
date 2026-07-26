@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parse the GitHub Actions workflow and enforce the MS-00 Windows ABI contract."""
+"""解析 GitHub Actions 工作流并强制 Windows 2022 ABI 与 Qt 契约。"""
 
 from __future__ import annotations
 
@@ -93,9 +93,10 @@ def verify() -> None:
     if not isinstance(headless, dict) or not isinstance(ui, dict):
         raise RuntimeError("required MS-00 CI jobs are missing")
 
-    headless_matrix = headless.get("strategy", {}).get("matrix", {}).get("os", [])
-    if headless_matrix != ["windows-2022", "ubuntu-24.04"]:
-        raise RuntimeError("headless CI must cover windows-2022 and ubuntu-24.04")
+    if headless.get("runs-on") != "windows-2022" or "strategy" in headless:
+        raise RuntimeError("headless CI must run once on windows-2022 without an OS matrix")
+    if "ubuntu" in WORKFLOW.read_text(encoding="utf-8").lower():
+        raise RuntimeError("Ubuntu headless validation was retired by the approved development policy")
     if ui.get("runs-on") != "windows-2022":
         raise RuntimeError("Qt-backed CI must run on windows-2022")
     expected_environment = {
@@ -119,7 +120,7 @@ def verify() -> None:
     if "[version]'6.11.0'" in common_powershell:
         raise RuntimeError("local Qt discovery must not promote the installed Qt 6.11 version to a minimum")
 
-    for job_name, job, conditional in (
+    for job_name, job, headless_job in (
         ("headless-build-test", headless, True),
         ("windows-ui-module-performance", ui, False),
     ):
@@ -130,7 +131,7 @@ def verify() -> None:
         acquisition = named_step(steps, "Validate immutable acquisition and package locks")
         expected_acquisition = (
             "./scripts/validate-dependency-lock.ps1 -Mode Acquisition -Headless"
-            if conditional
+            if headless_job
             else "./scripts/validate-dependency-lock.ps1 -Mode Acquisition"
         )
         if acquisition.get("shell") != "pwsh" or acquisition.get("run") != expected_acquisition:
@@ -138,8 +139,8 @@ def verify() -> None:
         initializer = named_step(steps, "Initialize MSVC 2022 x64 environment")
         if initializer.get("shell") != "pwsh" or initializer.get("run") != INITIALIZER:
             raise RuntimeError(f"{job_name} must call the repository MSVC initializer with pwsh")
-        if conditional and initializer.get("if") != "runner.os == 'Windows'":
-            raise RuntimeError("matrix MSVC initialization must be Windows-only")
+        if "if" in initializer:
+            raise RuntimeError(f"{job_name} MSVC initialization must be unconditional on Windows 2022")
         configure_index = next(
             (index for index, step in enumerate(steps) if isinstance(step, dict) and str(step.get("name", "")).startswith("Configure")),
             None,
@@ -154,7 +155,7 @@ def verify() -> None:
     headless_steps = headless["steps"]
     headless_compatible = named_step(headless_steps, "Validate compatible Windows headless host")
     if (
-        headless_compatible.get("if") != "runner.os == 'Windows'"
+        "if" in headless_compatible
         or headless_compatible.get("shell") != "pwsh"
         or headless_compatible.get("run")
         != "./scripts/validate-dependency-lock.ps1 -Mode CompatibleHost -Headless -HostEvidenceOutputPath build/ci-host-evidence.json"
@@ -197,7 +198,7 @@ def verify() -> None:
         raise RuntimeError("UI host compatibility validation is ordered incorrectly")
     verify_qt_availability_evidence()
     print(
-        "GitHub Actions YAML parsed; acquisition locks are portable, compatible-host checks are ordered, "
+        "GitHub Actions YAML parsed; Windows-only acquisition and compatible-host checks are ordered, "
         f"actions are immutable, and Qt {CI_QT_VERSION} {QT_ARCHITECTURE} has official availability evidence"
     )
 
