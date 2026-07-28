@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SignalResultCenterPanel</class>
+ <widget class="QWidget" name="SignalResultCenterPanel">
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QTableWidget" name="resultTable">
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectRows</enum>
+     </property>
+     <column>
+      <property name="text">
+       <string>结果</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>有效性</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>数据源版本</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>定位</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

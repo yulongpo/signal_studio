@@ -162,3 +162,31 @@
 - 一致性决策：`ConsistencyMetrics` 必须带有“独立参考已验证”状态。由参考数组和实际数组计算的最大绝对误差/均方根误差可进入阈值验证；算法操作只返回固定零且没有独立参考时，执行可以成功，但 provenance 必须保留“一致性未验证”，不得伪报通过。
 - 缓存决策：逻辑录制缓存身份包含实际文件指纹、完整描述符摘要、逻辑长度和调用方版本。文件路径相同但内容、时间戳或描述符变化时不得命中旧缓存。
 - Qt 决策：Qt 性能测试目标必须把 Debug/Release 对应的 Windows 与 offscreen 平台插件部署到可执行文件旁的 `platforms` 目录。实际绘制 CTest 显式使用 offscreen；另一个自动化 CTest 清空 `QT_QPA_PLATFORM`、`QT_PLUGIN_PATH` 与 `QT_QPA_PLATFORM_PLUGIN_PATH`，要求 `QApplication` 由默认 Windows 平台成功初始化，防止调试器弹出“no Qt platform plugin could be initialized”。
+
+## DEV-025 MS-03 视口、帧与线程边界
+
+- 日期：2026-07-28
+- 状态：本地最终矩阵通过，待远程门禁
+- 决策：实际已读范围、当前时间/频率视口和请求代际由 `ViewportController` 统一管理；时域、PSD、STFT 必须以同一个 `ViewRequestId` 原子提交。视口变化生成新代际，旧帧不得覆盖新视图。Qt Canvas 只消费已经提交的不可变帧，不在 GUI 线程执行 Data/DSP/Compute 长任务；后台线程禁止触碰 `QWidget`。
+- 隐藏影响：隐藏图表必须断开专属观察、清除待准备并停止专属绘制；共享 FFT 或其他上游公共计算可按宿主调度继续，但不得伪装为隐藏视图仍在渲染。
+
+## DEV-026 MS-03 Qt 私有实现与内容注入
+
+- 日期：2026-07-28
+- 状态：本地最终矩阵通过，待远程门禁
+- 决策：Visualization/Workbench 公共头只使用标准 C++20 和既有项目类型，Qt Core/Widgets 保持私有链接依赖。Workbench 的 Inspector、任务、结果和状态通过 `WorkbenchContent` 由宿主注入；平台库默认显示真实空状态。演示录制、任务和结果只能由示例/测试显式构造，不得硬编码在生产库。
+- Designer 影响：六个 `.ui` 文件是 `qt_wrap_ui` 的生产编译输入；运行时装配图谱和业务命令，避免把 Designer 静态布局误当作完整功能。
+
+## DEV-027 MS-03 Qt 平台插件闭包
+
+- 日期：2026-07-28
+- 状态：本地最终矩阵通过，待远程门禁
+- 决策：所有可直接启动的 Qt 演示/测试目标以及 UI 安装树必须部署匹配配置的 Qt Core/Gui/Widgets DLL、Windows/offscreen 平台插件和 `qt.conf`。`qt.conf` 使用相对前缀和插件路径，使构建树、安装树不依赖开发者手工设置 `QT_PLUGIN_PATH`。
+- 验证影响：自动化清空 `QT_QPA_PLATFORM`、`QT_PLUGIN_PATH`、`QT_QPA_PLATFORM_PLUGIN_PATH` 后必须由默认 Windows 平台启动；该回归直接覆盖用户遇到的 Qt 平台插件初始化错误。
+
+## DEV-028 MS-03 验证与暂停边界
+
+- 日期：2026-07-28
+- 状态：用户批准并执行
+- 决策：本地验证包含 CPU、CUDA、无界面三类 Debug/Release；CUDA 继续使用本机 Toolkit 12.4.131，MS-03 不需要 cuDNN且不自动安装；不执行 Ubuntu 24.04。预览覆盖 1280×720、1600×900、1920×1080 和 200% DPI。`CMakeUserPresets.json` 必须连续生成字节一致且路径项无重复。
+- 里程碑影响：MS-03 的本地测试、提交和远程 Windows 门禁完成后暂停；未获得用户确认前不得进入 MS-04。

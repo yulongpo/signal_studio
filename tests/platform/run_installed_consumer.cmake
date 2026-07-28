@@ -110,4 +110,32 @@ execute_process(
 if(NOT _run_result EQUAL 0)
   message(FATAL_ERROR "Consumer run failed with ${_run_result}:\n${_run_output}\n${_run_error}")
 endif()
+
+set(_installed_demo "${_prefix}/bin/signal_visualization_workbench_demo${_exe_suffix}")
+if(SIGNAL_STUDIO_EXPECT_UI AND NOT EXISTS "${_installed_demo}")
+  message(FATAL_ERROR "UI install is missing the Visualization/Workbench demo: ${_installed_demo}")
+endif()
+if(SIGNAL_STUDIO_EXPECT_UI)
+  set(_demo_runtime_path "${_prefix}/bin;${SIGNAL_STUDIO_TOOLCHAIN_PATH}")
+  if(SIGNAL_STUDIO_BUILD_TYPE STREQUAL "Debug")
+    get_filename_component(_debug_ucrt_dir "${SIGNAL_STUDIO_DEBUG_UCRT}" DIRECTORY)
+    set(_demo_runtime_path
+      "${_prefix}/bin;${SIGNAL_STUDIO_MSVC_TEST_RUNTIME_DIR};${_debug_ucrt_dir};${SIGNAL_STUDIO_TOOLCHAIN_PATH}")
+  endif()
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E env
+      --unset=QT_QPA_PLATFORM
+      --unset=QT_PLUGIN_PATH
+      --unset=QT_QPA_PLATFORM_PLUGIN_PATH
+      "PATH=${_demo_runtime_path}"
+      "${_installed_demo}" --startup-smoke
+    RESULT_VARIABLE _demo_result
+    OUTPUT_VARIABLE _demo_output
+    ERROR_VARIABLE _demo_error
+  )
+  if(NOT _demo_result EQUAL 0)
+    message(FATAL_ERROR
+      "Installed Qt demo startup failed with ${_demo_result}:\n${_demo_output}\n${_demo_error}")
+  endif()
+endif()
 message(STATUS "Installed package consumer passed: ${_run_output}")

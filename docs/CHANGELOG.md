@@ -4,6 +4,11 @@
 
 ### 新增
 
+- 实现 MS-03 的纯 C++20 Visualization 公共视口、原子帧、图层、显示映射、Selection、测量、可见性、布局和截图契约。
+- 增加真实 Qt Widgets 时域、PSD、频谱、STFT/瀑布、星座、眼图、时间导航和多图联动交互。
+- 实现 Workbench 服务、命令、面板、主题、参数、诊断、布局、内容注入，以及主窗口、菜单、工具栏、Dock、Inspector、任务/结果中心、设置和状态栏。
+- 增加六个由生产构建使用的 Qt Designer `.ui` 文件、复用演示程序、自动截图脚本和四组尺寸/DPI 预览。
+- 增加 50 项 MS-03 需求测试、六项 Qt UI/平台回归及安装消费者的 MS-03 公共 API 与已安装演示启动覆盖。
 - 实现 MS-02 的 12 类 DSP 处理链节点、预览、状态延续、取消、下游失效、模板和处理 provenance。
 - 增加 oneMKL DFTI 计划缓存、VSL 复数卷积、LAPACKE 带状三角 IIR、解析信号，以及 libsamplerate 两通道有状态有理重采样生产适配器。
 - 增加可选 CUDA 12.4 cudart/cuFFT 端到端执行、运行时版本/设备记录、计划缓存、页锁定/设备内存及显式 CPU 降级。
@@ -42,6 +47,11 @@
 
 ### 变更
 
+- Visualization/Workbench 从模块骨架升级为可安装生产平台；Qt 继续保持私有，公共头不暴露 Qt 或第三方类型。
+- Workbench 生产内容改为宿主通过 `WorkbenchContent` 注入；默认显示真实空状态，演示录制、任务和结果只存在于示例/测试。
+- Qt 构建树和安装树统一部署匹配配置的 Core/Gui/Widgets DLL、Windows/offscreen 平台插件与 `qt.conf`，清空插件环境变量后仍可直接启动。
+- GitHub Windows Qt/UI 作业增加 MS-03 需求集合，Windows 无界面门禁保持无 Qt；不重新引入 Ubuntu 24.04。
+- 本机用户预设连续重建保持字节一致，PATH、`CMAKE_PREFIX_PATH`、INCLUDE、LIB 和 LIBPATH 均无重复项。
 - Compute 与 DSP 改为共享模块，使 oneMKL/CUDA 保持私有实现依赖，不向公共 C++ 消费者传播第三方链接契约。
 - CPU 数值后端固定为 oneMKL sequential/lp64 和 libsamplerate；缺少成熟依赖时明确不可用，不以自研 FFT、滤波、重采样或线性求解静默替代。
 - CUDA 策略适配本机已安装的 12.4.131，缺失或实机执行不兼容时记录 `requested=cuda`、`degraded=true` 后降级 CPU；不安装 cuDNN。
@@ -78,6 +88,7 @@
 
 ### 移除
 
+- 清理已被 CPU 专用预设替代的通用 Debug/Release 构建树、依赖模式临时目录和 MS-02 临时重建日志。
 - 按用户授权的净空策略移除旧上游原型和旧项目文档；其源状态仍可从开发前归档分支/标签恢复。
 - 清理 CMake 构建、安装、CTest 临时目录和 Python `__pycache__`；本轮全新验证的结果写入证据后也移除生成构建树。正式基线、外部数据清单与 MS-00 证据日志未删除。
 # 2026-07-22：MS-00 最终独立复审收口

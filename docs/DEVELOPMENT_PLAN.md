@@ -7,7 +7,7 @@
 | MS-00 | 净空仓库、不可变基线、依赖/工具链契约、十模块 CMake 平台 | 已验收关闭 |
 | MS-01 | Core、Data、TaskRuntime 功能基础 | 已验收关闭 |
 | MS-02 | DSP 与 Compute 后端 | 已验收关闭 |
-| MS-03 | Visualization 与 Workbench | 未开始 |
+| MS-03 | Visualization 与 Workbench | 本地验收通过，待远程门禁 |
 | MS-04 | Signal Studio 基础应用 | 未开始 |
 | MS-05 | 宽窄带联动分析 | 未开始 |
 | MS-06 | PluginSDK、ModelRuntime、Dataset 功能 | 未开始 |
@@ -22,3 +22,5 @@
 MS-01 已实现 54 项 Core、Data 与 TaskRuntime 需求；UI、无 Qt 和强制 CPU 的 Debug/Release 六套全新本地矩阵以及安装消费者均已通过。独立规格复审与最终代码质量复审通过且无剩余 Critical/Important。实现提交 `39f1d0f2ae9b2cc063543cbdbe69bc3ddd388fd2` 经远程整合提交 `c89412e615168b067f3f29646e778b6de5c8b1b5` 推送，Windows GitHub Actions 运行 `30187026089` 的无界面与 Qt/UI 两项作业均成功；生成构建树已清理，工作树在证据提交前保持干净。MS-01 已验收关闭，下一里程碑为 MS-02；整体开发计划尚未达到产品最终验收条件。
 
 MS-02 已完成 DSP 处理链、oneMKL DFTI/VSL/LAPACKE CPU 适配器、libsamplerate 重采样、可选 cuFFT 适配器、统一 Compute 探测/选择/降级、预算内存池、真实缓存/索引性能基准和外部录制集成验证。无界面 Debug/Release 全量各 133/133；CPU/CUDA、Debug/Release 的 MS-02 确定性矩阵各 34/34，公共头各 1/1；CUDA Release 独立 GPU 基准、CPU/CUDA 洁净 PATH 闭包及 CPU Debug、CPU Release、CUDA Release 的 UI/无 Qt 安装消费者各 2/2。纯顺序读取基线下，真实 X310 全文件 Release 索引/同盘顺序读取比为 0.727307；十进制 100 GB 仅使用逻辑重复映射，并覆盖重复拼接、EOF 和读取上限边界，没有创建物理大文件。独立整改复审无剩余 Critical/Important。实现提交 `f6041d719ec6be9b47eee21eb04addc2a0265704` 已推送，Windows GitHub Actions 运行 `30331185758` 的无界面与 Qt/UI 两项作业均成功；MS-02 已验收关闭，下一里程碑为 MS-03。
+
+MS-03 已在本地完成 Visualization/Workbench 的纯 C++20 公共契约、真实 Qt Widgets 图谱与工作台、六个生产 Qt Designer `.ui` 文件、四组尺寸/DPI 预览、默认 Windows 平台运行时闭包和安装消费。50/50 项批准需求通过；CPU Debug/Release 全量各 198/198，CUDA Debug/Release 针对性集合各 59/59，Windows 无界面 Debug/Release 全量各 133/133。公共头、基线、依赖锁、VS Code、Windows-only CI 静态校验、格式和静态分析均通过；本机用户预设连续生成哈希一致且路径重复项为 0。下一步仅创建 MS-03 实现提交、推送并核验远程 Windows 门禁；门禁成功后关闭 MS-03，并按用户指令暂停，获得确认前不进入 MS-04。

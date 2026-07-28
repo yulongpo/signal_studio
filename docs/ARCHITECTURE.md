@@ -85,3 +85,15 @@ Compute 与 DSP 是共享模块，第三方链接依赖保持 `PRIVATE`，其余
 处理链采用不可变快照执行。节点校验覆盖类型、Nyquist、IIR 稳定性、抗混叠元数据、重复 ID 和版本；旁路节点在不适用的输入契约校验前返回位一致样本。简单节点循环每 4,096 样本检查取消，第三方内核返回后和最终发布前再次检查，后台线程不接触 `QWidget`。FIR、IIR、重采样状态可跨块延续，模板序列化包含节点契约、系数、比率、模式和参数，旁路区间支持位精确导出。
 
 浏览性能产品路径以真实录制文件为输入，缓存身份由文件大小、修改时间、采样哈希、调用方版本和完整描述符摘要共同组成，避免同路径内容或描述符变化复用旧缓存。路径采用有界视窗读取、内存/磁盘瓦片缓存、采样概览、同一 generation 的时域/PSD/STFT 原子帧，以及 Data 模块的有界 `build_full_sc16_index()` 全文件索引；视窗变化会拒绝旧 generation。MS-02 的大文件证据按用户决定，把指定 4,004,031,888 字节 X310 SC16 录制文件逻辑重复映射为十进制 100 GB，不创建或扫描物理 100 GB 文件；自动化边界覆盖物理尾部拼接、逻辑最后一帧、精确 EOF 和读取上限，结果必须明确记录估计来源。Qt 专项测试只负责实际命令可见绘制、连续交互帧率和三图一致绘制，计算仍在后台产品路径完成；平台插件与测试目标同目录部署，清空三项 Qt 插件环境变量后由自动化启动冒烟验证默认 Windows 插件。
+
+## MS-03 Visualization 与 Workbench
+
+Visualization 公共层只公开标准 C++20、Data、TaskRuntime 和 Core 类型。`ViewportController` 把实际已读时间范围、当前时间视口、有效/当前频率范围、部分数据状态和 `ViewRequestId` 代际作为单一视口事实；`AtomicFrameCoordinator` 只允许同代际的时域、PSD、STFT 原子帧进入界面。图层、显示映射、Selection、测量、预取、隐藏计算边界、图表顺序/高度和截图均由 Qt 无关模型管理。
+
+Qt Visualization 私有层消费已经提交的 `VisualizationFrame`，绘制时域、PSD、频谱、STFT/瀑布、星座和眼图。PSD 与 STFT 共享精确整数 Hz 频率视口，滚轮、平移和右键框选统一更新视口并生成新代际；旧帧不能覆盖新视图。隐藏图表会断开观察、撤销待准备并停止专属绘制。Canvas 只在 GUI 线程操作，后台 Data/DSP/Compute 路径不得访问 `QWidget`。
+
+Workbench 公共层提供服务、命令、面板、诊断、主题、参数、布局和内容注入契约。Qt Workbench 私有层装配主窗口、菜单、工具栏、Dock、Inspector、任务/结果中心、设置、诊断和状态栏。平台库默认使用真实空状态，宿主通过 `WorkbenchContent` 注入内容；演示数据只存在于示例程序和测试，不进入生产实现。
+
+六个 Qt Designer `.ui` 文件是 `qt_wrap_ui` 的生产输入，不是脱离运行时的展示附件。Qt Core/Widgets 仍为两个 UI 目标的私有依赖，无界面构建和八组件安装消费不发现 Qt。构建树与安装树部署匹配配置的 Qt Core/Gui/Widgets DLL、`qwindows`/`qoffscreen` 插件及 `qt.conf`；默认 Windows 平台启动不依赖开发机 Qt 插件环境变量。
+
+MS-03 不新增第三方依赖。Qt 本机验证版本为 6.11.1，源码/包最低支持版本仍为 6.10.3；CUDA Toolkit 12.4.131 只沿用既有可选 Compute 后端，Visualization/Workbench 不依赖 cuDNN。

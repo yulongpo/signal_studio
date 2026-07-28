@@ -81,5 +81,7 @@ jobs:
         run: cmake --build build/ci-ui --parallel
       - name: Run all ten module performance smoke cases
         run: ctest --test-dir build/ci-ui --output-on-failure -L performance
+      - name: Run MS-03 visualization and workbench contracts
+        run: ctest --test-dir build/ci-ui --output-on-failure -L ms-03
       - name: Consume all ten installed module packages
         run: ctest --test-dir build/ci-ui --output-on-failure -R "^package.installed_component_consumer$"

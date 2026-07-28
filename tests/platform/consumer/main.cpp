@@ -14,6 +14,7 @@
 #include "signal_studio/workbench/module.hpp"
 
 #include "../consumer_ms02_smoke.hpp"
+#include "../consumer_ms03_smoke.hpp"
 
 #include <array>
 #include <functional>
@@ -53,7 +54,9 @@ int main() {
     return 3;
   if (!signal_studio_consumer::verify_ms02_public_api())
     return 4;
+  if (!signal_studio_consumer::verify_ms03_public_api())
+    return 5;
   std::cout << signal::core::build_info().product << ' ' << signal::core::build_info().version.to_string()
-            << ": consumed " << descriptors.size() << " installed targets and executed MS-02 APIs";
-  return descriptors.size() == 10 ? 0 : 5;
+            << ": consumed " << descriptors.size() << " installed targets and executed MS-02/MS-03 APIs";
+  return descriptors.size() == 10 ? 0 : 6;
 }

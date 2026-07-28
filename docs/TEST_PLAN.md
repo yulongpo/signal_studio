@@ -102,3 +102,46 @@ MS-02 有 30 项逐需求单元/契约测试：`FR-DSP-001`～`FR-DSP-012`、`NF
 当前主机 Release 证据：4,096 点 oneMKL FFT P95 为 30.4 微秒；最终规范全量运行中，剔除全字节 CPU 校验后的真实 X310 完整索引慢侧吞吐为 286,009,000 B/s，纯同盘顺序读取基线为 393,243,000 B/s，比值 0.727307，高于 0.60。最终 Debug 全量运行的持续浏览进程 `PeakWorkingSetSize`：8 GB 与 100 GB 逻辑空间均为 18,382,848 字节，增长 0 字节；该操作系统峰值计数覆盖 `build_frame()` 内部临时缓冲生命周期。以上结果只代表当前主机与当次普通后台负载，不外推为其他设备承诺。测试文件的 SHA-256 为 `74d0ace877568a1c26505c773f249a02e411546254e67c63c4613bb508f2d605`；十进制 100 GB 仅通过逻辑重复映射验证读取计划、重复/EOF 边界和浏览有界性，没有创建或扫描物理 100 GB 文件。按用户决策未执行 Ubuntu 24.04 测试。
 
 实现提交 `f6041d719ec6be9b47eee21eb04addc2a0265704` 的 Windows GitHub Actions 运行 `30331185758` 已完成：`headless-build-test` 与 `windows-ui-module-performance` 均为 success。远程作业验证锁定依赖安装、Windows MSVC 编译、无界面契约、Qt/UI 模块性能冒烟和安装包消费；外部 4 GB 录制与本机 CUDA 实机矩阵仍以本地证据为准。
+
+## MS-03 测试矩阵
+
+MS-03 的 50 项逐需求测试由 Visualization 18 项、时间导航 15 项、Selection/测量 8 项、可用性 7 项和两个平台聚合契约组成：
+
+| 范围 | 需求 | 每个 UI 配置用例数 |
+|---|---|---:|
+| 图表、视口、图层、截图与显示映射 | `FR-VIS-001`～`FR-VIS-018` | 18 |
+| 实际读取范围与时间/频率导航 | `FR-NAV-001`～`FR-NAV-015` | 15 |
+| Selection、游标、测量与依赖 | `FR-SEL-001`～`FR-SEL-008` | 8 |
+| 键盘、DPI、命中区与可访问性 | `NFR-USA-001`～`NFR-USA-007` | 7 |
+| Visualization/Workbench 聚合契约 | `FR-VIS-101`、`FR-WB-101` | 2 |
+| 合计 |  | 50 |
+
+每个 UI 构建另注册六项真实 Qt 回归：1280×720、1600×900、1920×1080、200% DPI、实际 PNG 截图和清空三项 Qt 插件环境变量后的默认 Windows 平台启动。测试实际创建 Qt Widgets、抓取 Canvas、发送键盘/鼠标/滚轮事件并检查可访问属性，不以静态截图或只检查模型字段替代 UI 行为。
+
+交互重点包括：
+
+- 时间导航范围等于实际已读范围，部分数据不扩张到预计总长度；
+- PSD 与 STFT 共用精确整数 Hz 视口，滚轮只改变频率横轴；
+- 右键正向框选裁剪、反向拖动恢复，平移保持带宽；
+- 时域/频谱显示模式切换不改变当前时间范围；
+- 旧 `ViewRequestId` 帧不能覆盖新视图；
+- 隐藏时域或 PSD 后断开专属观察、准备和绘制；
+- Selection 的创建、复制、删除、精确输入、游标测量、通道估算和依赖失效；
+- 高频命中区至少 28×28 逻辑像素，高 DPI 键盘操作不丢焦点；
+- Canvas 提供可访问名称、描述和等价文本摘要；
+- Workbench 命令、面板、布局和宿主内容注入不使用生产伪数据。
+
+本地最终矩阵：
+
+| 预设 | 范围 | 结果 |
+|---|---|---:|
+| `local-windows-msvc-cpu-debug` | 全量 | 198/198 |
+| `local-windows-msvc-cpu-release` | 全量 | 198/198 |
+| `local-windows-msvc-cuda-debug` | 56 项 MS-03 + 2 项模块契约 + 1 项安装消费 | 59/59 |
+| `local-windows-msvc-cuda-release` | 同上 | 59/59 |
+| `local-windows-msvc-headless-debug` | 无 Qt 全量 | 133/133 |
+| `local-windows-msvc-headless-release` | 无 Qt 全量 | 133/133 |
+
+安装消费者通过独立工程消费十个目标、调用 MS-03 公共 API，并在清空 Qt 插件环境变量后启动安装树演示程序。12 个变更 C/C++ 文件通过格式检查；四个生产实现的 `clang-tidy` 均退出码 0、0 errors，共 32 次 warning occurrence，不声称零告警。公共头、不可变基线、外部材料、依赖锁、VS Code、Windows-only CI 和用户预设确定性检查通过。
+
+按用户批准未执行 Ubuntu 24.04 构建测试。MS-03 不重复执行 MS-02 的物理/逻辑大文件性能验证，也不创建物理 100 GB 文件。

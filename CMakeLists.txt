@@ -164,6 +164,30 @@ if(SIGNAL_STUDIO_BUILD_UI)
     list(PREPEND CMAKE_PREFIX_PATH "${SIGNAL_STUDIO_QT_ROOT}")
   endif()
   find_package(Qt6 ${SIGNAL_STUDIO_MINIMUM_QT_VERSION} REQUIRED COMPONENTS Core Widgets)
+
+  function(signal_studio_deploy_qt_runtime target)
+    if(WIN32)
+      if(NOT TARGET Qt6::QOffscreenIntegrationPlugin OR NOT TARGET Qt6::QWindowsIntegrationPlugin)
+        message(FATAL_ERROR "${target} 需要 Qt offscreen/windows 平台插件导入目标")
+      endif()
+      add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+          $<TARGET_RUNTIME_DLLS:${target}> "$<TARGET_FILE_DIR:${target}>"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+          "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake/qt.conf"
+          "$<TARGET_FILE_DIR:${target}>/qt.conf"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+          "$<TARGET_FILE_DIR:${target}>/platforms"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+          "$<TARGET_FILE:Qt6::QOffscreenIntegrationPlugin>"
+          "$<TARGET_FILE_DIR:${target}>/platforms/"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+          "$<TARGET_FILE:Qt6::QWindowsIntegrationPlugin>"
+          "$<TARGET_FILE_DIR:${target}>/platforms/"
+        COMMAND_EXPAND_LISTS
+        COMMENT "部署 ${target} 的 Qt 运行时与 Windows/offscreen 平台插件")
+    endif()
+  endfunction()
 endif()
 
 execute_process(COMMAND git rev-parse --short=12 HEAD WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -272,13 +296,43 @@ set(_signal_studio_headless_targets SignalStudioCore SignalStudioData SignalStud
   SignalStudioTaskRuntime SignalStudioPluginSDK SignalStudioModelRuntime SignalStudioDataset)
 set(_signal_studio_ui_targets)
 if(SIGNAL_STUDIO_BUILD_UI)
-  signal_studio_add_module(SignalStudioVisualization Visualization src/platform/visualization/module.cpp)
+  signal_studio_add_module(SignalStudioVisualization Visualization
+    src/platform/visualization/module.cpp
+    src/platform/visualization/visualization.cpp
+    src/platform/visualization/qt_visualization.cpp)
   target_link_libraries(SignalStudioVisualization PUBLIC SignalStudio::Data SignalStudio::TaskRuntime SignalStudio::Core
     PRIVATE Qt6::Core Qt6::Widgets)
-  signal_studio_add_module(SignalStudioWorkbench Workbench src/platform/workbench/module.cpp)
+  signal_studio_add_module(SignalStudioWorkbench Workbench
+    src/platform/workbench/module.cpp
+    src/platform/workbench/workbench.cpp
+    src/platform/workbench/qt_workbench.cpp)
+  qt_wrap_ui(_signal_studio_workbench_ui_headers
+    src/platform/workbench/ui/SignalWorkbenchMainWindow.ui
+    src/platform/workbench/ui/SignalInspectorPanel.ui
+    src/platform/workbench/ui/SignalTaskCenterPanel.ui
+    src/platform/workbench/ui/SignalResultCenterPanel.ui
+    src/platform/workbench/ui/SignalSettingsPanel.ui
+    src/platform/workbench/ui/SignalDiagnosticsPanel.ui)
+  target_sources(SignalStudioWorkbench PRIVATE
+    ${_signal_studio_workbench_ui_headers}
+    src/platform/workbench/ui/SignalWorkbenchMainWindow.ui
+    src/platform/workbench/ui/SignalInspectorPanel.ui
+    src/platform/workbench/ui/SignalTaskCenterPanel.ui
+    src/platform/workbench/ui/SignalResultCenterPanel.ui
+    src/platform/workbench/ui/SignalSettingsPanel.ui
+    src/platform/workbench/ui/SignalDiagnosticsPanel.ui)
+  target_include_directories(SignalStudioWorkbench PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   target_link_libraries(SignalStudioWorkbench PUBLIC SignalStudio::Visualization SignalStudio::TaskRuntime SignalStudio::Core
     PRIVATE Qt6::Core Qt6::Widgets)
   set(_signal_studio_ui_targets SignalStudioVisualization SignalStudioWorkbench)
+
+  add_executable(signal_visualization_workbench_demo WIN32
+    examples/visualization_workbench_demo.cpp)
+  target_link_libraries(signal_visualization_workbench_demo
+    PRIVATE SignalStudio::Visualization SignalStudio::Workbench Qt6::Core Qt6::Widgets)
+  signal_studio_enable_warnings(signal_visualization_workbench_demo)
+  signal_studio_deploy_msvc_runtime(signal_visualization_workbench_demo)
+  signal_studio_deploy_qt_runtime(signal_visualization_workbench_demo)
 endif()
 
 signal_studio_verify_dependency_graph()
@@ -294,6 +348,21 @@ if(SIGNAL_STUDIO_BUILD_UI)
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
   install(EXPORT SignalStudioUiTargets FILE SignalStudioUiTargets.cmake NAMESPACE SignalStudio::
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/SignalStudio")
+  install(TARGETS signal_visualization_workbench_demo
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT Runtime)
+  install(FILES
+    "$<TARGET_FILE:Qt6::Core>"
+    "$<TARGET_FILE:Qt6::Gui>"
+    "$<TARGET_FILE:Qt6::Widgets>"
+    DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT Runtime)
+  if(WIN32)
+    install(FILES
+      "$<TARGET_FILE:Qt6::QWindowsIntegrationPlugin>"
+      "$<TARGET_FILE:Qt6::QOffscreenIntegrationPlugin>"
+      DESTINATION "${CMAKE_INSTALL_BINDIR}/platforms" COMPONENT Runtime)
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/qt.conf"
+      DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT Runtime)
+  endif()
 endif()
 install(DIRECTORY include/signal_studio DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 install(FILES examples/plugin_sdk/minimal_plugin.c DESTINATION "${CMAKE_INSTALL_DATADIR}/SignalStudio/examples/plugin_sdk")
@@ -352,6 +421,9 @@ if(BUILD_TESTING AND SIGNAL_STUDIO_BUILD_TESTS)
   add_subdirectory(tests/dsp)
   add_subdirectory(tests/integration/ms02)
   add_subdirectory(benchmarks)
+  if(SIGNAL_STUDIO_BUILD_UI)
+    add_subdirectory(tests/visualization)
+  endif()
 endif()
 
 message(STATUS "Signal Processing Platform ${PROJECT_VERSION}")

@@ -1,6 +1,6 @@
 # Signal Studio
 
-Signal Studio 是构建于可复用 C++20 平台之上的 Windows 离线数字信号分析软件。MS-00 负责建立十个公共模块经验证的构建、安装和契约基线；生产级信号处理与 Qt 应用由后续里程碑交付。
+Signal Studio 是构建于可复用 C++20 平台之上的 Windows 离线数字信号分析软件。MS-00～MS-02 已完成平台、Core/Data/TaskRuntime 和 DSP/Compute；MS-03 已完成本地 Visualization/Workbench 与真实 Qt Widgets 原型验收，正等待远程门禁收口。按用户边界，MS-03 关闭后先暂停，未确认前不进入 MS-04。
 
 ## 当前平台目标
 
@@ -21,7 +21,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build.ps1 -Preset wi
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test.ps1 -Preset windows-msvc-debug
 ```
 
-Release 使用 `windows-msvc-release`。CPU 预设显式关闭 CUDA；CUDA 预设在工具包不可用时回退到 CPU，初始化过程不会自动安装 CUDA。
+Release 使用 `windows-msvc-release`。CPU 预设显式关闭 CUDA；`cuda` 预设强制使用本机 CUDA Toolkit 12.4.131，缺失时明确配置失败，`AUTO` 模式才允许记录原因后降级 CPU。初始化过程不会自动安装 CUDA 或 cuDNN。
+
+## MS-03 Qt 原型
+
+构建 CPU Debug 后可直接启动：
+
+```powershell
+.\build\local-windows-msvc-cpu-debug\bin\signal_visualization_workbench_demo.exe
+```
+
+目标目录和安装树均包含 Qt Core/Gui/Widgets DLL、Windows/offscreen 平台插件及 `qt.conf`，无需手工配置
+`QT_PLUGIN_PATH`。真实运行截图、Designer 文件和自动截图说明见
+[`docs/development/ui-preview/MS-03_UI预览索引.md`](docs/development/ui-preview/MS-03_UI预览索引.md)。
 
 若要在同一 PowerShell 进程中连续验证 Debug 和 Release，并检查 PATH 去重、环境幂等性与用户预设稳定性，执行：
 
@@ -56,4 +68,9 @@ VS Code 的配置、构建、测试和 F5 均使用 `local-windows-msvc-debug` �
 - [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)
 - [`docs/DECISIONS.md`](docs/DECISIONS.md)
 - [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
+- [`docs/api/visualization.md`](docs/api/visualization.md)
+- [`docs/api/workbench.md`](docs/api/workbench.md)
 - [`docs/milestones/MS-00`](docs/milestones/MS-00)
+- [`docs/milestones/MS-01`](docs/milestones/MS-01)
+- [`docs/milestones/MS-02`](docs/milestones/MS-02)
+- [`docs/milestones/MS-03`](docs/milestones/MS-03)
