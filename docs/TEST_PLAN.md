@@ -100,3 +100,5 @@ MS-02 有 30 项逐需求单元/契约测试：`FR-DSP-001`～`FR-DSP-012`、`NF
 `local-windows-msvc-cpu-debug`、`local-windows-msvc-cpu-release` 与 `local-windows-msvc-cuda-release` 的 UI/无 Qt 安装消费者均为 2/2。嵌套的无 Qt 包消费者显式继承当前 MSVC、Windows SDK、`VCToolsRedistDir` 和 UCRT 环境，已在普通 CTest 子进程中验证不会因缺少 `LIB` 或运行库目录而误失败。CPU 与 CUDA Release 的洁净 PATH 闭包分别通过：CPU 闭包禁止 CUDA DLL；CUDA 闭包强制包含且只额外加入 `cudart64_12.dll`、`cufft64_11.dll`；两者都不含 SYCL、BLACS、ScaLAPACK、TBB/Intel 线程层或 OpenMP。
 
 当前主机 Release 证据：4,096 点 oneMKL FFT P95 为 30.4 微秒；最终规范全量运行中，剔除全字节 CPU 校验后的真实 X310 完整索引慢侧吞吐为 286,009,000 B/s，纯同盘顺序读取基线为 393,243,000 B/s，比值 0.727307，高于 0.60。最终 Debug 全量运行的持续浏览进程 `PeakWorkingSetSize`：8 GB 与 100 GB 逻辑空间均为 18,382,848 字节，增长 0 字节；该操作系统峰值计数覆盖 `build_frame()` 内部临时缓冲生命周期。以上结果只代表当前主机与当次普通后台负载，不外推为其他设备承诺。测试文件的 SHA-256 为 `74d0ace877568a1c26505c773f249a02e411546254e67c63c4613bb508f2d605`；十进制 100 GB 仅通过逻辑重复映射验证读取计划、重复/EOF 边界和浏览有界性，没有创建或扫描物理 100 GB 文件。按用户决策未执行 Ubuntu 24.04 测试。
+
+实现提交 `f6041d719ec6be9b47eee21eb04addc2a0265704` 的 Windows GitHub Actions 运行 `30331185758` 已完成：`headless-build-test` 与 `windows-ui-module-performance` 均为 success。远程作业验证锁定依赖安装、Windows MSVC 编译、无界面契约、Qt/UI 模块性能冒烟和安装包消费；外部 4 GB 录制与本机 CUDA 实机矩阵仍以本地证据为准。

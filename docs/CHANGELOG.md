@@ -93,3 +93,10 @@
 - 记录独立规格复审和最终代码质量复审通过；并发视图、制品提交、事件有序性、崩溃恢复、WAV 边界和 Debug nonredist 发布整改无剩余 Critical/Important。
 - 记录实现提交 `39f1d0f2ae9b2cc063543cbdbe69bc3ddd388fd2`、远程整合提交 `c89412e615168b067f3f29646e778b6de5c8b1b5`，以及 Windows GitHub Actions 运行 `30187026089` 两项作业成功。
 - MS-01 已验收关闭，下一里程碑为 MS-02；整体产品尚未完成。
+
+# 2026-07-28：MS-02 验收收口
+
+- 记录 DSP、Compute、CPU/CUDA、真实外部数据、逻辑 100 GB、Qt 默认 Windows 平台启动、安装消费者及洁净运行时闭包全部通过。
+- 记录最终无界面 Debug/Release 各 133/133、四套 CPU/CUDA 确定性矩阵各 34/34，以及整改后独立复审无剩余 Critical/Important。
+- 记录实现提交 `f6041d719ec6be9b47eee21eb04addc2a0265704` 与 Windows GitHub Actions 运行 `30331185758` 的两项作业成功。
+- MS-02 已验收关闭，下一里程碑为 MS-03；按用户边界，MS-03 完成后暂停，不进入 MS-04。
