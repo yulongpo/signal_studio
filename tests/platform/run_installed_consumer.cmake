@@ -20,12 +20,22 @@ endif()
 
 execute_process(
   COMMAND
+    "${CMAKE_COMMAND}" -E env
+    "PATH=${SIGNAL_STUDIO_TOOLCHAIN_PATH}"
+    "INCLUDE=${SIGNAL_STUDIO_TOOLCHAIN_INCLUDE}"
+    "LIB=${SIGNAL_STUDIO_TOOLCHAIN_LIB}"
+    "LIBPATH=${SIGNAL_STUDIO_TOOLCHAIN_LIBPATH}"
     "${CMAKE_COMMAND}"
     -S "${SIGNAL_STUDIO_CONSUMER_SOURCE}"
     -B "${_build}"
     -G "${SIGNAL_STUDIO_GENERATOR}"
     "-DCMAKE_BUILD_TYPE=${SIGNAL_STUDIO_BUILD_TYPE}"
     "-DCMAKE_MAKE_PROGRAM=${SIGNAL_STUDIO_MAKE_PROGRAM}"
+    "-DCMAKE_C_COMPILER=${SIGNAL_STUDIO_C_COMPILER}"
+    "-DCMAKE_CXX_COMPILER=${SIGNAL_STUDIO_CXX_COMPILER}"
+    "-DCMAKE_LINKER=${SIGNAL_STUDIO_LINKER}"
+    "-DCMAKE_RC_COMPILER=${SIGNAL_STUDIO_RC_COMPILER}"
+    "-DCMAKE_MT=${SIGNAL_STUDIO_MT}"
     "-DCMAKE_PREFIX_PATH=${_prefix};${SIGNAL_STUDIO_QT_ROOT}"
   RESULT_VARIABLE _configure_result
   OUTPUT_VARIABLE _configure_output
@@ -36,7 +46,12 @@ if(NOT _configure_result EQUAL 0)
 endif()
 
 execute_process(
-  COMMAND "${CMAKE_COMMAND}" --build "${_build}"
+  COMMAND "${CMAKE_COMMAND}" -E env
+    "PATH=${SIGNAL_STUDIO_TOOLCHAIN_PATH}"
+    "INCLUDE=${SIGNAL_STUDIO_TOOLCHAIN_INCLUDE}"
+    "LIB=${SIGNAL_STUDIO_TOOLCHAIN_LIB}"
+    "LIBPATH=${SIGNAL_STUDIO_TOOLCHAIN_LIBPATH}"
+    "${CMAKE_COMMAND}" --build "${_build}"
   RESULT_VARIABLE _build_result
   OUTPUT_VARIABLE _build_output
   ERROR_VARIABLE _build_error
@@ -59,6 +74,8 @@ if(CMAKE_HOST_WIN32)
       message(FATAL_ERROR "Debug consumer test environment is missing the matching non-redistributable runtime")
     endif()
     file(COPY ${_test_runtime_dlls} DESTINATION "${_build}")
+    file(GLOB _installed_runtime_dlls "${_prefix}/bin/*.dll")
+    file(COPY ${_installed_runtime_dlls} DESTINATION "${_build}")
   else()
     if(NOT _test_runtime_dlls)
       message(FATAL_ERROR "Release consumer test environment is missing the matching redistributable runtime")

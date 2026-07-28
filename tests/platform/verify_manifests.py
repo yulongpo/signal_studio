@@ -143,7 +143,7 @@ def dependency_lock() -> None:
         raise RuntimeError("immutable BL1.0 fetch script archive path is missing")
     approved_relative_path = archive_match.group(1).replace("$commit", approved_commit)
 
-    if lock["schema"] != "signal-studio.dependency-lock/1.3":
+    if lock["schema"] != "signal-studio.dependency-lock/1.4":
         raise RuntimeError("dependency lock schema mismatch")
     qt_contract = lock.get("qt_compatibility_contract", {})
     expected_qt_contract = {
@@ -176,9 +176,14 @@ def dependency_lock() -> None:
         raise RuntimeError("vcpkg URL/hash/size policy differs from immutable BL1.0")
 
     approved_selected = [item for item in approved["dependencies"] if item["selected"]]
-    if len(lock["selected_packages"]) != 14 or len(vcpkg["dependencies"]) != 14 or len(approved_selected) != 14:
+    extensions = lock.get("milestone_extensions", [])
+    if (
+        len(lock["selected_packages"]) != 14
+        or len(approved_selected) != 14
+        or len(vcpkg["dependencies"]) != 14 + len(extensions)
+    ):
         raise RuntimeError("BL1.0 selected package count mismatch")
-    if [item["name"] for item in lock["selected_packages"]] != vcpkg["dependencies"]:
+    if [item["name"] for item in lock["selected_packages"]] != vcpkg["dependencies"][:14]:
         raise RuntimeError("selected package order/names differ from vcpkg manifest")
     approved_versions = {item["name"]: item["version"] for item in approved_selected}
     if (
@@ -199,6 +204,37 @@ def dependency_lock() -> None:
                 raise RuntimeError(f"selected package {locked_package['name']} lacks the required BL1.0 hash policy")
         elif locked_package.get("package_archive_sha256") != approved_hash:
             raise RuntimeError(f"selected package {locked_package['name']} archive hash differs from immutable BL1.0")
+
+    expected_extension = {
+        "milestone": "MS-02",
+        "name": "libsamplerate",
+        "version": "0.2.2#1",
+        "spdx": "BSD-2-Clause",
+        "official_url": "https://github.com/libsndfile/libsamplerate",
+        "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1; source ref 0.2.2; port-version 1",
+        "verification": "vcpkg port source SHA512:37e0fd604907caf978659466289315befd66eec16c21a94e0b6106de18ffe803fbf2e7f3a8fb0430b33c0b784ecd6d4eaf3b9a862ed2670104647decbee913d6",
+        "package_archive_sha512": "37e0fd604907caf978659466289315befd66eec16c21a94e0b6106de18ffe803fbf2e7f3a8fb0430b33c0b784ecd6d4eaf3b9a862ed2670104647decbee913d6",
+    }
+
+    def validate_extension(extension: dict[str, object]) -> None:
+        for field, expected in expected_extension.items():
+            if extension.get(field) != expected:
+                raise RuntimeError(f"milestone dependency extension field mismatch: {field}")
+        if not extension.get("policy"):
+            raise RuntimeError("milestone dependency extension policy is missing")
+
+    if len(extensions) != 1 or vcpkg["dependencies"][14:] != [extensions[0].get("name")]:
+        raise RuntimeError("milestone dependency extension order/name mismatch")
+    validate_extension(extensions[0])
+    rejected_extension = dict(extensions[0])
+    rejected_extension["version"] = "0.2.2"
+    try:
+        validate_extension(rejected_extension)
+    except RuntimeError as exception:
+        if "version" not in str(exception):
+            raise
+    else:
+        raise RuntimeError("negative dependency extension lock test unexpectedly accepted a floating version")
 
     compatibility = lock.get("host_compatibility_contract", {})
     if (
@@ -299,7 +335,7 @@ def dependency_lock() -> None:
         cuda["artifact_url"], cuda["artifact_sha256"]
     ):
         raise RuntimeError("CUDA offline artifact differs from the acquisition lock")
-    print("Verified 14 immutable BL1.0 package tuples, 8 acquisition contracts, portable host bounds, captured-host evidence, and 2 offline artifacts")
+    print("Verified 14 immutable BL1.0 package tuples, 1 locked milestone extension, 8 acquisition contracts, portable host bounds, captured-host evidence, and 2 offline artifacts")
 
 
 def portable_config() -> None:

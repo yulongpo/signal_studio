@@ -11,6 +11,8 @@
 #include "signal_studio/task_runtime/module.hpp"
 #include "signal_studio/task_runtime/task_runtime.hpp"
 
+#include "../consumer_ms02_smoke.hpp"
+
 #include <array>
 #include <functional>
 #include <iostream>
@@ -51,7 +53,9 @@ int main() {
       std::move(task), [](signal::task::TaskContext&) { return signal::task::TaskExecutionResult::completed(); });
   if (!handle || handle.value().wait().value().state != signal::task::TaskState::completed)
     return 4;
+  if (!signal_studio_consumer::verify_ms02_public_api())
+    return 5;
   std::cout << signal::core::build_info().product << " headless consumer: " << descriptors.size()
-            << " installed targets";
-  return descriptors.size() == 8 ? 0 : 5;
+            << " installed targets and executed MS-02 APIs";
+  return descriptors.size() == 8 ? 0 : 6;
 }

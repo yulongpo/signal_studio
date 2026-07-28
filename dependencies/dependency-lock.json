@@ -1,5 +1,5 @@
 {
-  "schema": "signal-studio.dependency-lock/1.3",
+  "schema": "signal-studio.dependency-lock/1.4",
   "approved_source": "docs/baseline/Signal-Studio-Dev-Docs/08_\u53c2\u8003\u8d44\u6599/\u4f9d\u8d56\u9501\u5b9a/dependency-lock.json",
   "approved_fetch_script": "docs/baseline/Signal-Studio-Dev-Docs/scripts/fetch_dependencies.ps1",
   "captured_host_evidence": "dependencies/captured-host-evidence.json",
@@ -59,6 +59,19 @@
     {"name":"fmt","version":"12.2.0#1","spdx":"MIT","official_url":"https://github.com/fmtlib/fmt","lock":"vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1","verification":"baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58","package_archive_sha256":null,"package_archive_hash_state":"not-defined-by-bl1.0"},
     {"name":"gtest","version":"1.17.0#3","spdx":"BSD-3-Clause","official_url":"https://github.com/google/googletest","lock":"vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1","verification":"baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58","package_archive_sha256":null,"package_archive_hash_state":"not-defined-by-bl1.0"},
     {"name":"benchmark","version":"1.9.5","spdx":"Apache-2.0","official_url":"https://github.com/google/benchmark","lock":"vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1","verification":"baseline.json sha256:9f3b13f9a142969a043a921f544c637c54be46b06eabb9025b7e5c28b908af58","package_archive_sha256":null,"package_archive_hash_state":"not-defined-by-bl1.0"}
+  ],
+  "milestone_extensions": [
+    {
+      "milestone": "MS-02",
+      "name": "libsamplerate",
+      "version": "0.2.2#1",
+      "spdx": "BSD-2-Clause",
+      "official_url": "https://github.com/libsndfile/libsamplerate",
+      "lock": "vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1; source ref 0.2.2; port-version 1",
+      "verification": "vcpkg port source SHA512:37e0fd604907caf978659466289315befd66eec16c21a94e0b6106de18ffe803fbf2e7f3a8fb0430b33c0b784ecd6d4eaf3b9a862ed2670104647decbee913d6",
+      "package_archive_sha512": "37e0fd604907caf978659466289315befd66eec16c21a94e0b6106de18ffe803fbf2e7f3a8fb0430b33c0b784ecd6d4eaf3b9a862ed2670104647decbee913d6",
+      "policy": "MS-02 为满足 FR-DSP-101 增加的最小成熟重采样后端；不改变 BL1.0 的 14 个精确选择元组。"
+    }
   ],
   "package_hash_policy": "Every selected tuple is copied from and validated against immutable BL1.0. BL1.0 defines no per-port source archive hashes; null package hashes therefore require the explicit not-defined-by-bl1.0 state."
 }

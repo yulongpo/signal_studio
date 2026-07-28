@@ -13,6 +13,8 @@
 #include "signal_studio/visualization/module.hpp"
 #include "signal_studio/workbench/module.hpp"
 
+#include "../consumer_ms02_smoke.hpp"
+
 #include <array>
 #include <functional>
 #include <iostream>
@@ -49,7 +51,9 @@ int main() {
       std::move(task), [](signal::task::TaskContext&) { return signal::task::TaskExecutionResult::completed(); });
   if (!handle || handle.value().wait().value().state != signal::task::TaskState::completed)
     return 3;
+  if (!signal_studio_consumer::verify_ms02_public_api())
+    return 4;
   std::cout << signal::core::build_info().product << ' ' << signal::core::build_info().version.to_string()
-            << ": consumed " << descriptors.size() << " installed targets";
-  return descriptors.size() == 10 ? 0 : 4;
+            << ": consumed " << descriptors.size() << " installed targets and executed MS-02 APIs";
+  return descriptors.size() == 10 ? 0 : 5;
 }

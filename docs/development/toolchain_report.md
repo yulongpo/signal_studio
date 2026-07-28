@@ -33,13 +33,25 @@ F5 使用明确的 `signal_studio_platform_tests.exe --case core.version`，前�
 
 GitHub `windows-2022` runner 虽安装 Visual Studio，但普通 Ninja 步骤不会自动获得 MSVC/SDK 环境。两个作业先执行不依赖主机路径的 `Acquisition`，两个 Windows 路径再运行仓库脚本：使用 `vswhere.exe` 定位带 `Microsoft.VisualStudio.Component.VC.Tools.x86.x64` 的最新 VS2022 安装，执行 `VsDevCmd.bat -arch=x64 -host_arch=x64`，随后执行 `CompatibleHost`。公共测试脚本检测该已初始化环境后直接复用，不再要求特定 BuildTools 安装目录。
 
+2026-07-26 的最终复核中，`Acquisition` 与 `CompatibleHost` 继续通过；显式 `ExactCapturedHost` 检出 Windows SDK 10.0.26100.0 的 `rc.exe` 字节哈希相对 MS-00 快照发生变化。该模式是按字节复现审计，不是默认构建门禁；历史快照保持不变，漂移已在依赖报告中记录。
+
 Qt 作业使用官方元数据已确认存在的 6.10.3 `win64_msvc2022_64`，再校验 `QT_VERSION`、`VSCMD_ARG_TGT_ARCH`、`VSCMD_ARG_HOST_ARCH`、`QMAKE_XSPEC=win32-msvc` 和 Qt 前缀末级目录。本机实际验证仍使用 6.11.1；项目源码、包配置、本机发现和两个 UI 模块的最低支持版本统一为 6.10.3。远程运行 `29919175820` 是旧实现提交的成功历史证据；本轮质量修复提交需重新执行相同三项作业。
 
-## 实际配置结果
+## MS-00 历史配置结果
 
 - `windows-msvc-debug`：使用 MSVC/Ninja、Qt 6.11.1，`CUDA mode: AUTO; toolkit available: OFF`。
 - `windows-msvc-release`：使用同一工具链和 CPU 回退。
 - `windows-msvc-headless-debug/release`：不依赖 Qt；两个主配置中的嵌套独立无 Qt 配置、构建、安装、消费均通过。
-- `windows-msvc-cuda-release`：`CUDA mode: ON; toolkit available: OFF`，按预期警告并继续 CPU 支持。
+- `windows-msvc-cuda-release`：当时 `CUDA mode: ON; toolkit available: OFF`，旧策略曾警告并继续 CPU 支持；该历史行为已被 MS-02 的显式语义取代。
 
 `nvidia-smi` 的 CUDA 版本是驱动兼容级别，不证明 CUDA Toolkit 已安装。MS-00 不宣称 GPU 构建或测试通过。
+
+## MS-02 工具链更新
+
+2026-07-26 重新检测到 CUDA Toolkit 12.4.131 位于 `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.4`，`cudart`、cuFFT 头文件/导入库/DLL 均完整。RTX 5060 Laptop GPU、驱动 591.84、计算能力 12.0 可由 CUDA Runtime 查询。项目不调用 `nvcc`，而由 MSVC 编译宿主 C++ 后链接 cudart/cuFFT，因此不触发 Toolkit 12.4 对 `sm_120` 设备代码生成的不支持。
+
+oneMKL 2025.2.0#1、libsamplerate 0.2.2#1 和 Google Benchmark 1.9.5 由锁定 vcpkg baseline 安装到项目忽略目录。CMake 对 oneMKL 使用 dynamic/sequential/lp64；libsamplerate 作为 SignalDSP 私有重采样适配器；Google Benchmark 只用于性能测试。Debug/Release 均报告 oneMKL 适配器可用。Qt 继续使用 `D:\softwares\Qt\6.11.1\msvc2022_64`。
+
+CUDA 模式语义在 MS-02 冻结为：`OFF` 禁用 CUDA，`AUTO` 在 Toolkit 不可用时记录原因并显式降级 CPU，`ON` 在 CUDA 12.4.131、cudart 或 cuFFT 缺失时配置阶段硬失败。cuDNN 不在 DSP/Compute 依赖闭包内，因此没有安装。
+
+`CMakeUserPresets.json` 在多次 Debug/Release/CPU/CUDA 配置期间保持单一隐藏公共环境；PATH、INCLUDE、LIB、LIBPATH 和 `CMAKE_PREFIX_PATH` 未递归读取旧文件，也未出现重复条目。显式 CUDA Debug/Release 现有对应测试预设。项目根目录没有遗留 `CMakeFiles/`，所有生成内容位于 `build/` 或 `.deps/`。

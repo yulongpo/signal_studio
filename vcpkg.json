@@ -16,7 +16,8 @@
     "spdlog",
     "fmt",
     "gtest",
-    "benchmark"
+    "benchmark",
+    "libsamplerate"
   ],
   "features": {
     "gpu-cuda": {

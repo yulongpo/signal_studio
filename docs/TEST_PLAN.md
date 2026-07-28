@@ -69,3 +69,34 @@ MS-01 的 54 项具名需求测试由 Core 11 项、Data 32 项和 TaskRuntime 1
 Debug 和 Release 的 54 项精确需求集合分别为 54/54；UI 与无 Qt 安装树消费者在两种配置下均为 2/2。22 个变更 C/C++ 文件通过 `clang-format --dry-run --Werror`。8 个生产 `.cpp` 已执行 `clang-tidy`，均退出码 0 且为 0 errors；共记录 123 次 warning occurrence，其中包含共享头和系统实现的重复诊断。独立代码质量复审已审阅真实类别并完成七项 Important 整改，最终复审无剩余 Critical/Important，但不把工具执行成功表述为零告警。`git diff --check`、公共头隔离、依赖 DAG 和基线完整性检查通过。
 
 CUDA 保持可选且未自动安装；强制 CPU 预设证明缺少 GPU 后端不影响构建。按照 DEV-014，本里程碑未执行 Ubuntu 24.04 无界面构建，也不新增 Linux 兼容声明。实现树由提交 `39f1d0f2ae9b2cc063543cbdbe69bc3ddd388fd2` 固定，并通过远程整合提交 `c89412e615168b067f3f29646e778b6de5c8b1b5` 的 Windows GitHub Actions 运行 `30187026089` 验证：`headless-build-test` 与 `windows-ui-module-performance` 均成功。MS-01 测试活动已收口。
+
+## MS-02 测试矩阵
+
+MS-02 有 30 项逐需求单元/契约测试：`FR-DSP-001`～`FR-DSP-012`、`NFR-NUM-001`～`NFR-NUM-005`、`NFR-PERF-001`～`NFR-PERF-011`、`FR-DSP-101` 和 `FR-COMPUTE-101`。另有 3 项 Qt 实际 `paintEvent` 专项、1 项清空插件环境变量后的默认 Windows 平台启动回归、1 项 Data→DSP→Cache 外部数据集成测试和 1 项独立 Google Benchmark，共 36 个 `ms-02` 标签用例；其中 30 项逐需求测试保持唯一需求归属，Qt 专项是性能需求的附加实绘证据。公共头隔离验证是矩阵之外的门禁。
+
+数值测试使用 oneMKL、libsamplerate 和可选 cuFFT 生产适配器，覆盖 FFT 正逆变换、PSD/ENBW、STFT、频率轴、FIR、LAPACKE 带状三角 IIR、高阶 IIR 跨块 golden、重采样分块等价与抗混叠、NaN/Inf、零信号、动态范围和样本边界。CUDA 配置真实执行设备探测、上下文切换与恢复、cudaMalloc、H2D、cuFFT、同步、D2H、OOM 恢复和绑定设备的内存分配器；单 GPU 主机只把多设备切换基准记录为环境跳过，不虚构第二块设备。
+
+性能测试不得用空循环、睡眠或测试内自建的替代算法冒充生产路径：
+
+- UI 命令反馈与连续交互同时验证生产 Compute/DSP 路径和 Qt 实际绘制；
+- 热替换和首屏恢复使用真实内存/磁盘瓦片缓存；
+- 采样概览、三图冷结果和热恢复使用 `LogicalRecordingSource`、`BrowsePerformanceSession` 及真实 Spectrum/PSD/STFT；
+- `NFR-PERF-009` 对用户指定的 4,004,031,888 字节 X310 SC16 文件调用生产 `build_full_sc16_index()`，以 64 MiB 有界块覆盖 1,001,007,972 帧和 955 个索引 bin；Release 先预热，再做 3 轮成对交替的同盘单流顺序读取/完整索引比较。顺序读取只抽样每块首尾字节，不把逐字节校验和 CPU 开销混入基线；Debug 只做一次全文件结构验证；
+- `NFR-PERF-004` 覆盖物理文件尾重复拼接、逻辑最后一帧、精确 100,000,000,000 字节 EOF 及显式读取上限；`NFR-PERF-006` 在 8 GB 与 100 GB 逻辑空间各执行 48 个远距离三图视窗并逐轮采样峰值 Working Set；`NFR-PERF-010` 使用不同冷热视窗并验证旧代际拒绝；
+- Google Benchmark 算法矩阵各做 30 个独立样本并记录 P50、P95、最大值和 95% 置信区间；真实全文件索引在 Release 做 3 次、Debug 做 1 次结构运行；
+- 隐藏视图测试持续执行共享 FFT，同时拒绝视图专属活动提交。
+
+本地最终结果：
+
+| 预设/范围 | CUDA | 结果 |
+|---|---|---:|
+| `local-windows-msvc-headless-debug` 全量 | 关闭、无 Qt | 133/133 |
+| `local-windows-msvc-headless-release` 全量 | 关闭、无 Qt | 133/133 |
+| `local-windows-msvc-cpu-debug` MS-02 确定性集合（完整吞吐/独立基准由上述规范配置覆盖） | 关闭 | 34/34；公共头 1/1 |
+| `local-windows-msvc-cpu-release` 同上 | 关闭 | 34/34；公共头 1/1 |
+| `local-windows-msvc-cuda-debug` 同上 | 强制 CUDA 12.4 | 34/34；公共头 1/1 |
+| `local-windows-msvc-cuda-release` 同上 + CUDA 独立基准 | 强制 CUDA 12.4 | 34/34；公共头 1/1；基准 1/1 |
+
+`local-windows-msvc-cpu-debug`、`local-windows-msvc-cpu-release` 与 `local-windows-msvc-cuda-release` 的 UI/无 Qt 安装消费者均为 2/2。嵌套的无 Qt 包消费者显式继承当前 MSVC、Windows SDK、`VCToolsRedistDir` 和 UCRT 环境，已在普通 CTest 子进程中验证不会因缺少 `LIB` 或运行库目录而误失败。CPU 与 CUDA Release 的洁净 PATH 闭包分别通过：CPU 闭包禁止 CUDA DLL；CUDA 闭包强制包含且只额外加入 `cudart64_12.dll`、`cufft64_11.dll`；两者都不含 SYCL、BLACS、ScaLAPACK、TBB/Intel 线程层或 OpenMP。
+
+当前主机 Release 证据：4,096 点 oneMKL FFT P95 为 30.4 微秒；最终规范全量运行中，剔除全字节 CPU 校验后的真实 X310 完整索引慢侧吞吐为 286,009,000 B/s，纯同盘顺序读取基线为 393,243,000 B/s，比值 0.727307，高于 0.60。最终 Debug 全量运行的持续浏览进程 `PeakWorkingSetSize`：8 GB 与 100 GB 逻辑空间均为 18,382,848 字节，增长 0 字节；该操作系统峰值计数覆盖 `build_frame()` 内部临时缓冲生命周期。以上结果只代表当前主机与当次普通后台负载，不外推为其他设备承诺。测试文件的 SHA-256 为 `74d0ace877568a1c26505c773f249a02e411546254e67c63c4613bb508f2d605`；十进制 100 GB 仅通过逻辑重复映射验证读取计划、重复/EOF 边界和浏览有界性，没有创建或扫描物理 100 GB 文件。按用户决策未执行 Ubuntu 24.04 测试。

@@ -61,7 +61,7 @@ if (-not (Test-Path -LiteralPath $approvedFetchPath -PathType Leaf)) {
 $approvedFetch = Get-Content -Raw -Encoding UTF8 -LiteralPath $approvedFetchPath
 
 function Assert-SignalStudioAcquisitionContract {
-    if ($lock.schema -cne 'signal-studio.dependency-lock/1.3') {
+    if ($lock.schema -cne 'signal-studio.dependency-lock/1.4') {
         throw "Unsupported dependency lock schema: $($lock.schema)"
     }
     $fetchAssignments = @{}
@@ -123,7 +123,9 @@ function Assert-SignalStudioAcquisitionContract {
     }
 
     $approvedSelected = @($approved.dependencies | Where-Object { [bool]$_.selected })
-    if ($lock.selected_packages.Count -ne 14 -or $approvedSelected.Count -ne 14 -or $vcpkg.dependencies.Count -ne 14) {
+    $milestoneExtensions = @($lock.milestone_extensions)
+    if ($lock.selected_packages.Count -ne 14 -or $approvedSelected.Count -ne 14 -or
+        $vcpkg.dependencies.Count -ne (14 + $milestoneExtensions.Count)) {
         throw 'Expected 14 selected BL1.0 packages'
     }
     $approvedQtBase = $approvedSelected | Where-Object { $_.name -eq 'qtbase' }
@@ -155,6 +157,28 @@ function Assert-SignalStudioAcquisitionContract {
         } elseif ($lockedPackage.package_archive_sha256 -cne $approvedHash) {
             throw "Selected package $($lockedPackage.name) archive hash differs from immutable BL1.0"
         }
+    }
+    if ($milestoneExtensions.Count -ne 1) {
+        throw 'Expected exactly one explicitly locked milestone dependency extension'
+    }
+    $extension = $milestoneExtensions[0]
+    $expectedExtension = [ordered]@{
+        milestone = 'MS-02'
+        name = 'libsamplerate'
+        version = '0.2.2#1'
+        spdx = 'BSD-2-Clause'
+        official_url = 'https://github.com/libsndfile/libsamplerate'
+        lock = 'vcpkg baseline 82b6bc886d7b0f8342e34babc2e0b8943f79b0e1; source ref 0.2.2; port-version 1'
+        verification = 'vcpkg port source SHA512:37e0fd604907caf978659466289315befd66eec16c21a94e0b6106de18ffe803fbf2e7f3a8fb0430b33c0b784ecd6d4eaf3b9a862ed2670104647decbee913d6'
+        package_archive_sha512 = '37e0fd604907caf978659466289315befd66eec16c21a94e0b6106de18ffe803fbf2e7f3a8fb0430b33c0b784ecd6d4eaf3b9a862ed2670104647decbee913d6'
+    }
+    foreach ($field in $expectedExtension.Keys) {
+        if ($extension.$field -cne $expectedExtension[$field]) {
+            throw "Milestone dependency extension field differs: $field"
+        }
+    }
+    if (-not $extension.policy -or $vcpkg.dependencies[14] -cne $extension.name) {
+        throw 'Milestone dependency extension order/policy differs from its lock'
     }
 
     $acquisitionContracts = @($lock.tool_acquisition_contracts)
@@ -402,6 +426,7 @@ if ($Mode -ne 'Acquisition') {
     vcpkg_archive_url = $lock.vcpkg.archive_url
     vcpkg_archive_sha256 = $lock.vcpkg.archive_sha256
     verified_selected_package_tuples = $lock.selected_packages.Count
+    verified_milestone_dependency_extensions = @($lock.milestone_extensions).Count
     verified_tool_acquisition_contracts = $lock.tool_acquisition_contracts.Count
     compatible_tools = $compatibleTools
     current_host_evidence = $evidencePath

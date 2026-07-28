@@ -5,14 +5,26 @@ set(_consumer_build "${_root}/consumer")
 file(REMOVE_RECURSE "${_root}")
 
 execute_process(COMMAND "${CMAKE_COMMAND}" -E env --unset=SIGNAL_STUDIO_QT_ROOT --unset=Qt6_DIR
+  "PATH=${SIGNAL_STUDIO_TOOLCHAIN_PATH}" "INCLUDE=${SIGNAL_STUDIO_TOOLCHAIN_INCLUDE}"
+  "LIB=${SIGNAL_STUDIO_TOOLCHAIN_LIB}" "LIBPATH=${SIGNAL_STUDIO_TOOLCHAIN_LIBPATH}"
+  "VCToolsRedistDir=${SIGNAL_STUDIO_VCTOOLS_REDIST_DIR}"
+  "UniversalCRTSdkDir=${SIGNAL_STUDIO_UNIVERSAL_CRT_SDK_DIR}" "UCRTVersion=${SIGNAL_STUDIO_UCRT_VERSION}"
   "${CMAKE_COMMAND}" -S "${SIGNAL_STUDIO_SOURCE_DIR}" -B "${_build}" -G "${SIGNAL_STUDIO_GENERATOR}"
   "-DCMAKE_MAKE_PROGRAM=${SIGNAL_STUDIO_MAKE_PROGRAM}" "-DCMAKE_BUILD_TYPE=${SIGNAL_STUDIO_BUILD_TYPE}"
+  "-DCMAKE_C_COMPILER=${SIGNAL_STUDIO_C_COMPILER}" "-DCMAKE_CXX_COMPILER=${SIGNAL_STUDIO_CXX_COMPILER}"
+  "-DCMAKE_LINKER=${SIGNAL_STUDIO_LINKER}" "-DCMAKE_RC_COMPILER=${SIGNAL_STUDIO_RC_COMPILER}"
+  "-DCMAKE_MT=${SIGNAL_STUDIO_MT}"
   -DSIGNAL_STUDIO_BUILD_UI=OFF -DSIGNAL_STUDIO_BUILD_TESTS=OFF -DSIGNAL_STUDIO_BUILD_SDK_EXAMPLE=OFF -DBUILD_TESTING=OFF
   RESULT_VARIABLE _configure OUTPUT_VARIABLE _configure_out ERROR_VARIABLE _configure_err)
 if(NOT _configure EQUAL 0)
   message(FATAL_ERROR "No-Qt configure failed:\n${_configure_out}\n${_configure_err}")
 endif()
-execute_process(COMMAND "${CMAKE_COMMAND}" --build "${_build}" RESULT_VARIABLE _build_result OUTPUT_VARIABLE _build_out ERROR_VARIABLE _build_err)
+execute_process(COMMAND "${CMAKE_COMMAND}" -E env
+  "PATH=${SIGNAL_STUDIO_TOOLCHAIN_PATH}" "INCLUDE=${SIGNAL_STUDIO_TOOLCHAIN_INCLUDE}"
+  "LIB=${SIGNAL_STUDIO_TOOLCHAIN_LIB}" "LIBPATH=${SIGNAL_STUDIO_TOOLCHAIN_LIBPATH}"
+  "VCToolsRedistDir=${SIGNAL_STUDIO_VCTOOLS_REDIST_DIR}"
+  "UniversalCRTSdkDir=${SIGNAL_STUDIO_UNIVERSAL_CRT_SDK_DIR}" "UCRTVersion=${SIGNAL_STUDIO_UCRT_VERSION}"
+  "${CMAKE_COMMAND}" --build "${_build}" RESULT_VARIABLE _build_result OUTPUT_VARIABLE _build_out ERROR_VARIABLE _build_err)
 if(NOT _build_result EQUAL 0)
   message(FATAL_ERROR "No-Qt build failed:\n${_build_out}\n${_build_err}")
 endif()
@@ -21,13 +33,22 @@ if(NOT _install EQUAL 0)
   message(FATAL_ERROR "No-Qt install failed:\n${_install_out}\n${_install_err}")
 endif()
 execute_process(COMMAND "${CMAKE_COMMAND}" -E env --unset=SIGNAL_STUDIO_QT_ROOT --unset=Qt6_DIR
+  "PATH=${SIGNAL_STUDIO_TOOLCHAIN_PATH}" "INCLUDE=${SIGNAL_STUDIO_TOOLCHAIN_INCLUDE}"
+  "LIB=${SIGNAL_STUDIO_TOOLCHAIN_LIB}" "LIBPATH=${SIGNAL_STUDIO_TOOLCHAIN_LIBPATH}"
   "${CMAKE_COMMAND}" -S "${SIGNAL_STUDIO_CONSUMER_SOURCE}" -B "${_consumer_build}" -G "${SIGNAL_STUDIO_GENERATOR}"
-  "-DCMAKE_MAKE_PROGRAM=${SIGNAL_STUDIO_MAKE_PROGRAM}" "-DCMAKE_BUILD_TYPE=${SIGNAL_STUDIO_BUILD_TYPE}" "-DCMAKE_PREFIX_PATH=${_prefix}"
+  "-DCMAKE_MAKE_PROGRAM=${SIGNAL_STUDIO_MAKE_PROGRAM}" "-DCMAKE_BUILD_TYPE=${SIGNAL_STUDIO_BUILD_TYPE}"
+  "-DCMAKE_C_COMPILER=${SIGNAL_STUDIO_C_COMPILER}" "-DCMAKE_CXX_COMPILER=${SIGNAL_STUDIO_CXX_COMPILER}"
+  "-DCMAKE_LINKER=${SIGNAL_STUDIO_LINKER}" "-DCMAKE_RC_COMPILER=${SIGNAL_STUDIO_RC_COMPILER}"
+  "-DCMAKE_MT=${SIGNAL_STUDIO_MT}"
+  "-DCMAKE_PREFIX_PATH=${_prefix}"
   RESULT_VARIABLE _consumer_configure OUTPUT_VARIABLE _consumer_configure_out ERROR_VARIABLE _consumer_configure_err)
 if(NOT _consumer_configure EQUAL 0)
   message(FATAL_ERROR "No-Qt consumer configure failed:\n${_consumer_configure_out}\n${_consumer_configure_err}")
 endif()
-execute_process(COMMAND "${CMAKE_COMMAND}" --build "${_consumer_build}" RESULT_VARIABLE _consumer_build_result OUTPUT_VARIABLE _consumer_build_out ERROR_VARIABLE _consumer_build_err)
+execute_process(COMMAND "${CMAKE_COMMAND}" -E env
+  "PATH=${SIGNAL_STUDIO_TOOLCHAIN_PATH}" "INCLUDE=${SIGNAL_STUDIO_TOOLCHAIN_INCLUDE}"
+  "LIB=${SIGNAL_STUDIO_TOOLCHAIN_LIB}" "LIBPATH=${SIGNAL_STUDIO_TOOLCHAIN_LIBPATH}"
+  "${CMAKE_COMMAND}" --build "${_consumer_build}" RESULT_VARIABLE _consumer_build_result OUTPUT_VARIABLE _consumer_build_out ERROR_VARIABLE _consumer_build_err)
 if(NOT _consumer_build_result EQUAL 0)
   message(FATAL_ERROR "No-Qt consumer build failed:\n${_consumer_build_out}\n${_consumer_build_err}")
 endif()
@@ -45,6 +66,8 @@ if(CMAKE_HOST_WIN32)
       message(FATAL_ERROR "No-Qt Debug consumer test environment is missing the matching runtime")
     endif()
     file(COPY ${_test_runtime_dlls} DESTINATION "${_consumer_build}")
+    file(GLOB _installed_runtime_dlls "${_prefix}/bin/*.dll")
+    file(COPY ${_installed_runtime_dlls} DESTINATION "${_consumer_build}")
   else()
     if(NOT _test_runtime_dlls)
       message(FATAL_ERROR "No-Qt Release consumer test environment is missing the matching redistributable runtime")

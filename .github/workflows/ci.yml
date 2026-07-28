@@ -19,6 +19,9 @@ jobs:
       - name: Validate immutable acquisition and package locks
         shell: pwsh
         run: ./scripts/validate-dependency-lock.ps1 -Mode Acquisition -Headless
+      - name: Install pinned minimal oneMKL dependency
+        shell: pwsh
+        run: ./scripts/install-ms02-dependencies.ps1
       - name: Initialize MSVC 2022 x64 environment
         shell: pwsh
         run: ./.github/scripts/initialize-msvc.ps1
@@ -26,7 +29,7 @@ jobs:
         shell: pwsh
         run: ./scripts/validate-dependency-lock.ps1 -Mode CompatibleHost -Headless -HostEvidenceOutputPath build/ci-host-evidence.json
       - name: Configure headless platform and C SDK example
-        run: cmake -S . -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DSIGNAL_STUDIO_BUILD_UI=OFF -DSIGNAL_STUDIO_BUILD_TESTS=ON -DSIGNAL_STUDIO_BUILD_SDK_EXAMPLE=ON -DBUILD_TESTING=ON
+        run: cmake -S . -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DSIGNAL_STUDIO_BUILD_UI=OFF -DSIGNAL_STUDIO_BUILD_TESTS=ON -DSIGNAL_STUDIO_BUILD_SDK_EXAMPLE=ON -DSIGNAL_STUDIO_ONEMKL_MODE=ON -DBUILD_TESTING=ON
       - name: Compile platform, C ABI example, and consumers
         run: cmake --build build/ci --parallel
       - name: Run headless contracts
@@ -39,6 +42,9 @@ jobs:
       - name: Validate immutable acquisition and package locks
         shell: pwsh
         run: ./scripts/validate-dependency-lock.ps1 -Mode Acquisition
+      - name: Install pinned minimal oneMKL dependency
+        shell: pwsh
+        run: ./scripts/install-ms02-dependencies.ps1
       - name: Initialize MSVC 2022 x64 environment
         shell: pwsh
         run: ./.github/scripts/initialize-msvc.ps1
@@ -70,7 +76,7 @@ jobs:
           ./scripts/validate-dependency-lock.ps1 -Mode CompatibleHost -HostEvidenceOutputPath build/ci-ui-host-evidence.json
       - name: Configure all ten modules
         shell: pwsh
-        run: cmake -S . -B build/ci-ui -G Ninja -DCMAKE_BUILD_TYPE=Release -DSIGNAL_STUDIO_BUILD_UI=ON -DSIGNAL_STUDIO_BUILD_TESTS=ON -DSIGNAL_STUDIO_BUILD_SDK_EXAMPLE=ON -DBUILD_TESTING=ON -DSIGNAL_STUDIO_QT_ROOT="$env:QT_ROOT_DIR"
+        run: cmake -S . -B build/ci-ui -G Ninja -DCMAKE_BUILD_TYPE=Release -DSIGNAL_STUDIO_BUILD_UI=ON -DSIGNAL_STUDIO_BUILD_TESTS=ON -DSIGNAL_STUDIO_BUILD_SDK_EXAMPLE=ON -DSIGNAL_STUDIO_ONEMKL_MODE=ON -DBUILD_TESTING=ON -DSIGNAL_STUDIO_QT_ROOT="$env:QT_ROOT_DIR"
       - name: Compile all modules and performance probes
         run: cmake --build build/ci-ui --parallel
       - name: Run all ten module performance smoke cases

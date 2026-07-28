@@ -311,6 +311,147 @@ core::Result<std::vector<TimeSummaryBin>> TimeSummaryPyramid::viewport(const Sam
   return output;
 }
 
+core::Result<FullRawIndexResult> build_full_sc16_index(const std::filesystem::path& path,
+                                                       const SignalDescriptor& descriptor, std::uint64_t frames_per_bin,
+                                                       std::uint64_t maximum_chunk_bytes,
+                                                       std::function<bool()> cancellation_requested) {
+  const auto descriptor_status = descriptor.validate();
+  if (!descriptor_status) {
+    return descriptor_status;
+  }
+  if (descriptor.signal_kind != SignalKind::complex || descriptor.scalar_type != ScalarType::int16 ||
+      descriptor.component_layout != ComponentLayout::interleaved ||
+      (descriptor.component_order != ComponentOrder::iq && descriptor.component_order != ComponentOrder::qi) ||
+      descriptor.endianness != Endianness::little) {
+    return data_error(core::ErrorReason::invalid_argument,
+                      "完整 SC16 索引要求 little-endian interleaved IQ/QI int16 复信号描述符");
+  }
+  constexpr std::uint64_t frame_bytes = 4U;
+  if (frames_per_bin == 0U || maximum_chunk_bytes < frame_bytes) {
+    return data_error(core::ErrorReason::invalid_argument, "完整 SC16 索引要求非零 bin 和至少一帧的块上界");
+  }
+
+  std::error_code size_error;
+  const auto file_bytes = std::filesystem::file_size(path, size_error);
+  if (size_error || descriptor.byte_offset > file_bytes || (file_bytes - descriptor.byte_offset) % frame_bytes != 0U) {
+    return data_error(core::ErrorReason::invalid_argument, "SC16 文件大小、字节偏移或帧对齐无效", size_error.message());
+  }
+  const auto available_frames = (file_bytes - descriptor.byte_offset) / frame_bytes;
+  auto indexed_range = descriptor.requested_sample_range;
+  if (indexed_range.empty()) {
+    const auto full_range = SampleRange::from_count(0U, available_frames);
+    if (!full_range) {
+      return full_range.error();
+    }
+    indexed_range = full_range.value();
+  }
+  if (indexed_range.empty() || indexed_range.end() > available_frames) {
+    return data_error(core::ErrorReason::invalid_argument, "完整 SC16 索引范围超出可用帧");
+  }
+
+  const auto aligned_chunk_bytes = maximum_chunk_bytes - maximum_chunk_bytes % frame_bytes;
+  std::ifstream input(path, std::ios::binary);
+  if (!input) {
+    return data_error(core::ErrorReason::unavailable, "无法打开 SC16 录制以构建完整索引");
+  }
+  const auto start_offset = descriptor.byte_offset + indexed_range.begin() * frame_bytes;
+  if (start_offset > static_cast<std::uint64_t>(std::numeric_limits<std::streamoff>::max())) {
+    return data_error(core::ErrorReason::invalid_argument, "SC16 索引起始偏移超出流位置范围");
+  }
+  input.seekg(static_cast<std::streamoff>(start_offset));
+  if (!input) {
+    return data_error(core::ErrorReason::internal_failure, "无法定位 SC16 索引起始偏移");
+  }
+
+  FullRawIndexResult result;
+  result.bins.reserve(static_cast<std::size_t>((indexed_range.size() + frames_per_bin - 1U) / frames_per_bin));
+  std::vector<std::byte> block(
+      static_cast<std::size_t>(std::min<std::uint64_t>(aligned_chunk_bytes, indexed_range.size() * frame_bytes)));
+  std::uint64_t remaining_frames = indexed_range.size();
+  std::uint64_t bin_begin = indexed_range.begin();
+  std::uint64_t bin_count{};
+  double bin_minimum_square = std::numeric_limits<double>::infinity();
+  double bin_maximum_square{};
+  long double bin_square_sum{};
+  const bool iq_order = descriptor.component_order == ComponentOrder::iq;
+
+  const auto flush_bin = [&]() -> core::Status {
+    const auto range = SampleRange::from_count(bin_begin, bin_count);
+    if (!range) {
+      return range.error();
+    }
+    const auto minimum = std::sqrt(bin_minimum_square);
+    const auto maximum = std::sqrt(bin_maximum_square);
+    result.bins.push_back({range.value(), minimum, maximum,
+                           std::sqrt(static_cast<double>(bin_square_sum / static_cast<long double>(bin_count))),
+                           bin_count});
+    result.checksum ^= std::bit_cast<std::uint64_t>(minimum);
+    result.checksum ^= std::rotl(std::bit_cast<std::uint64_t>(maximum), 17);
+    result.checksum ^= std::rotl(std::bit_cast<std::uint64_t>(result.bins.back().rms), 31);
+    bin_begin += bin_count;
+    bin_count = 0U;
+    bin_minimum_square = std::numeric_limits<double>::infinity();
+    bin_maximum_square = 0.0;
+    bin_square_sum = 0.0L;
+    return core::Status::success();
+  };
+
+  while (remaining_frames > 0U) {
+    if (cancellation_requested && cancellation_requested()) {
+      return data_error(core::ErrorReason::cancelled, "完整 SC16 索引已取消");
+    }
+    const auto chunk_frames = std::min<std::uint64_t>(remaining_frames, block.size() / frame_bytes);
+    const auto chunk_bytes = chunk_frames * frame_bytes;
+    input.read(reinterpret_cast<char*>(block.data()), static_cast<std::streamsize>(chunk_bytes));
+    if (input.gcount() != static_cast<std::streamsize>(chunk_bytes)) {
+      return data_error(core::ErrorReason::internal_failure, "完整 SC16 索引读取未覆盖请求块");
+    }
+    for (std::uint64_t frame = 0U; frame < chunk_frames; ++frame) {
+      if ((frame & 0xffffU) == 0U && cancellation_requested && cancellation_requested()) {
+        return data_error(core::ErrorReason::cancelled, "完整 SC16 索引已取消");
+      }
+      const auto offset = static_cast<std::size_t>(frame * frame_bytes);
+      const auto decode = [&](std::size_t component_offset) {
+        const auto bits = static_cast<std::uint16_t>(
+            std::to_integer<std::uint8_t>(block[offset + component_offset]) |
+            (static_cast<std::uint16_t>(std::to_integer<std::uint8_t>(block[offset + component_offset + 1U])) << 8U));
+        return std::bit_cast<std::int16_t>(bits);
+      };
+      const auto first = decode(0U);
+      const auto second = decode(2U);
+      const auto real_raw = iq_order ? first : second;
+      const auto imag_raw = iq_order ? second : first;
+      const auto real = static_cast<double>(real_raw) * descriptor.scale_factor + descriptor.additive_offset;
+      const auto imag = static_cast<double>(imag_raw) * descriptor.scale_factor + descriptor.additive_offset;
+      const auto magnitude_square = real * real + imag * imag;
+      bin_minimum_square = std::min(bin_minimum_square, magnitude_square);
+      bin_maximum_square = std::max(bin_maximum_square, magnitude_square);
+      bin_square_sum += static_cast<long double>(magnitude_square);
+      ++bin_count;
+      if (bin_count == frames_per_bin) {
+        const auto flushed = flush_bin();
+        if (!flushed) {
+          return flushed;
+        }
+      }
+    }
+    result.bytes_read += chunk_bytes;
+    result.frames_indexed += chunk_frames;
+    remaining_frames -= chunk_frames;
+  }
+  if (bin_count != 0U) {
+    const auto flushed = flush_bin();
+    if (!flushed) {
+      return flushed;
+    }
+  }
+  if (result.frames_indexed != indexed_range.size() || result.bytes_read != indexed_range.size() * frame_bytes ||
+      result.bins.empty()) {
+    return data_error(core::ErrorReason::internal_failure, "完整 SC16 索引未覆盖全部请求帧");
+  }
+  return result;
+}
+
 ProgressiveIndexStatus::ProgressiveIndexStatus(std::uint64_t loaded_end_sample)
     : loaded_end_sample_(loaded_end_sample) {}
 

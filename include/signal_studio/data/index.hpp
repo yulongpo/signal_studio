@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <deque>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -39,6 +40,21 @@ private:
   SampleRange loaded_range_;
   std::vector<std::vector<TimeSummaryBin>> levels_;
 };
+
+struct FullRawIndexResult final {
+  std::vector<TimeSummaryBin> bins;
+  std::uint64_t frames_indexed{};
+  std::uint64_t bytes_read{};
+  std::uint64_t checksum{};
+};
+
+/// 以有界块扫描完整 little-endian interleaved SC16 录制并构建正式时域索引。
+/// 该入口不把文件整体载入内存，取消回调在块内安全点被轮询。
+[[nodiscard]] core::Result<FullRawIndexResult> build_full_sc16_index(const std::filesystem::path& path,
+                                                                     const SignalDescriptor& descriptor,
+                                                                     std::uint64_t frames_per_bin,
+                                                                     std::uint64_t maximum_chunk_bytes,
+                                                                     std::function<bool()> cancellation_requested = {});
 
 enum class ProgressiveIndexState : std::uint8_t {
   time_frame_ready,

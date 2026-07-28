@@ -73,3 +73,15 @@ Data 的耗时导入通过 TaskRuntime 驱动，但部分数据范围和任务�
 ### 安装与消费
 
 MS-01 公共 C++ 接口向 MSVC 消费者传递 `/utf-8`，保证中文公共诊断文本不会因消费者源文件代码页而误解析。DebugCRT 与 `ucrtbased.dll` 属于不可再分发调试材料，只复制到本机构建/消费者测试目录，不进入正式安装树；Release 安装树部署匹配的可再分发 VC143 运行库。安装消费者在独立工程中分别验证 UI 全组件包和无 Qt 包，并检查 Debug 安装前缀无调试运行库泄漏、Release 安装前缀运行库完整。UI 消费测试显式把 Qt 6.11.1 `bin` 加入运行环境，包的最低支持版本仍为 Qt 6.10.3。
+
+## MS-02 DSP 与 Compute
+
+Compute 公共层只暴露标准 C++20 类型、能力描述、选择/降级 provenance、内存分配器、预算租约和第三方无关的计算操作契约。生产发现由具体 `IComputeBackend` 实例提供：CPU 标量、SIMD、多线程能力来自宿主查询，CUDA 能力来自 `cudaGetDeviceCount`、设备属性和运行时版本。选择与降级都检查 Working Set 容量。DSP 把 FFT、滤波和重采样实现注册为 Compute 操作；`ComputeRuntime` 统一完成选择、真实执行和失败降级，不再以缓冲区复制冒充算法执行。只有由独立参考结果计算出的最大绝对误差和均方根误差才能标记一致性已验证；操作没有独立参考时会如实记录“未验证”。默认工作线程至少保留一个逻辑核；强制 CUDA 不静默降级，自动模式的失败会明确记录请求后端、实际后端和原因。
+
+DSP 公共层只依赖 Data、Compute 和 Core，不公开 oneMKL、libsamplerate、CUDA 或其他第三方类型。CPU 私有层使用 oneMKL DFTI 及可复用计划缓存实现 FFT，使用 VSL 实现 FIR 卷积，使用 LAPACKE 带状三角求解实现稳定直接型 IIR；复数 IQ 重采样由 libsamplerate 的两通道有状态适配器实现，流结束由显式契约冲刷成熟内核延迟。解析信号通过 DFTI 构造。CUDA 私有层使用 cudart 与 cuFFT 完成分配、H2D、计划、执行、同步和 D2H，版本由 `cudaRuntimeGetVersion`/`cufftGetVersion` 获取。
+
+Compute 与 DSP 是共享模块，第三方链接依赖保持 `PRIVATE`，其余平台模块保持既有 DAG。Windows 运行时闭包只安装 oneMKL sequential/核心/CPU 与 VML 分派 DLL、`samplerate.dll`、CUDA 配置下的 `cudart64_12.dll`、`cufft64_11.dll` 及匹配 VC143 运行库；拒绝 Google Benchmark、SYCL、集群、ScaLAPACK、BLACS、TBB 线程层和 OpenMP 运行时。
+
+处理链采用不可变快照执行。节点校验覆盖类型、Nyquist、IIR 稳定性、抗混叠元数据、重复 ID 和版本；旁路节点在不适用的输入契约校验前返回位一致样本。简单节点循环每 4,096 样本检查取消，第三方内核返回后和最终发布前再次检查，后台线程不接触 `QWidget`。FIR、IIR、重采样状态可跨块延续，模板序列化包含节点契约、系数、比率、模式和参数，旁路区间支持位精确导出。
+
+浏览性能产品路径以真实录制文件为输入，缓存身份由文件大小、修改时间、采样哈希、调用方版本和完整描述符摘要共同组成，避免同路径内容或描述符变化复用旧缓存。路径采用有界视窗读取、内存/磁盘瓦片缓存、采样概览、同一 generation 的时域/PSD/STFT 原子帧，以及 Data 模块的有界 `build_full_sc16_index()` 全文件索引；视窗变化会拒绝旧 generation。MS-02 的大文件证据按用户决定，把指定 4,004,031,888 字节 X310 SC16 录制文件逻辑重复映射为十进制 100 GB，不创建或扫描物理 100 GB 文件；自动化边界覆盖物理尾部拼接、逻辑最后一帧、精确 EOF 和读取上限，结果必须明确记录估计来源。Qt 专项测试只负责实际命令可见绘制、连续交互帧率和三图一致绘制，计算仍在后台产品路径完成；平台插件与测试目标同目录部署，清空三项 Qt 插件环境变量后由自动化启动冒烟验证默认 Windows 插件。

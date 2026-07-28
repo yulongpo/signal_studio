@@ -90,6 +90,8 @@
     { "name": "windows-msvc-release", "configurePreset": "windows-msvc-release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "windows-msvc-cpu-debug", "configurePreset": "windows-msvc-cpu-debug", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "windows-msvc-cpu-release", "configurePreset": "windows-msvc-cpu-release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
+    { "name": "windows-msvc-cuda-debug", "configurePreset": "windows-msvc-cuda-debug", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
+    { "name": "windows-msvc-cuda-release", "configurePreset": "windows-msvc-cuda-release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "windows-msvc-headless-debug", "configurePreset": "windows-msvc-headless-debug", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "windows-msvc-headless-release", "configurePreset": "windows-msvc-headless-release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } }
   ]

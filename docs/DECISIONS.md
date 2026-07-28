@@ -17,8 +17,8 @@
 ## DEV-003 可选 CUDA 策略
 
 - 日期：2026-07-22
-- 状态：符合已批准基线
-- 决策：检测 CUDA Toolkit 并在构建信息中公开结果。缺失时，CUDA 预设发出警告并构建 CPU 基线。由于 NVIDIA EULA 需要授权决定，不自动安装 CUDA。
+- 状态：MS-00 历史决策；显式模式语义由 DEV-022 取代
+- 决策：检测 CUDA Toolkit 并在构建信息中公开结果。由于 NVIDIA EULA 需要授权决定，不自动安装 CUDA。MS-00 曾允许显式 CUDA 预设在缺失时警告并继续 CPU；MS-02 起不再采用该行为。
 
 ## DEV-004 平台基线采用静态模块包
 
@@ -136,3 +136,29 @@
 - 状态：独立质量复审已接受
 - 决策：WAV 导出只接受可精确表示为 `uint32_t` 的正整数采样率，并在转换前校验 byteRate、blockAlign、数据块和 `36 + data` RIFF 上限。所有转换在已证明范围内执行。
 - 发布影响：DebugCRT 与 Debug UCRT 仅部署到本地测试目标/消费者测试目录；正式 Debug 安装前缀必须不含这些 nonredist DLL。Release 安装包继续包含并验证与工具集匹配的 VC143 可再分发运行库。
+
+## DEV-021 MS-02 CPU 数值内核与模块边界
+
+- 日期：2026-07-26
+- 状态：本地最终矩阵通过，待里程碑提交与远程门禁
+- 决策：批准的 CPU FFT、FIR 卷积和线性求解分别由 oneMKL DFTI、VSL 和 LAPACKE 提供，复数 IQ 重采样由 libsamplerate 0.2.2 的两通道有状态适配器提供。oneMKL 或 libsamplerate 缺失时对应后端明确不可用，不提供自研成熟数值核兜底。Compute 与 DSP 使用共享模块承载私有第三方依赖，公共头仍为纯标准 C++20/项目类型。
+
+## DEV-022 本机 CUDA 12.4 适配与降级
+
+- 日期：2026-07-26
+- 状态：用户环境覆盖决策已实现
+- 决策：开发与实机验证适配本机 CUDA Toolkit 12.4.131、RTX 5060 Laptop GPU 和驱动 591.84。实现仅用 cudart/cuFFT 的宿主 C++ API，不编译 `.cu`，避免 Toolkit 12.4 对计算能力 12.0 的代码生成限制。`OFF` 禁用 CUDA，`AUTO` 在发现、内存、执行或一致性失败时记录原因并诚实降级 oneMKL，`ON` 在 Toolkit/cudart/cuFFT 缺失时配置硬失败。版本必须运行时查询。cuDNN 与 MS-02 无关，不检测为必需项且不自动安装任何 NVIDIA 组件。
+
+## DEV-023 MS-02 性能与运行时闭包证据
+
+- 日期：2026-07-26
+- 状态：本地最终矩阵通过
+- 决策：性能验收必须调用真实后端、缓存、索引、磁盘、Qt 绘制和 Data→DSP 路径，不接受空循环、睡眠、选择器耗时或仅构造计划代替产品行为。Google Benchmark 的算法矩阵记录 30 个独立样本及 P50、P95、最大值和 95% 置信区间；4,004,031,888 字节真实 X310 全文件索引在 Release 做 3 次独立运行，Debug 做 1 次结构运行，避免把 30 次全文件扫描当作必要条件。`NFR-PERF-009` 必须调用产品 `build_full_sc16_index()` 并在 Release 与同盘单流顺序读取做成对交替比较；顺序读取只保留每块首尾抽样，不允许用全字节 CPU 校验人为降低基线。相同 X310 文件通过有界逻辑重复映射模拟 100,000,000,000 字节读取计划，不创建物理 100 GB 文件；证据不得表述为真实物理 100 GB 吞吐测试。安装闭包使用显式 DLL 白名单，CPU 闭包禁止 CUDA DLL，CUDA 闭包强制包含 cudart/cuFFT，并在去除开发机 CUDA/vcpkg PATH 后运行 `FR-DSP-101`。
+
+## DEV-024 MS-02 一致性、缓存身份与 Qt 直接启动边界
+
+- 日期：2026-07-26
+- 状态：本地最终矩阵通过
+- 一致性决策：`ConsistencyMetrics` 必须带有“独立参考已验证”状态。由参考数组和实际数组计算的最大绝对误差/均方根误差可进入阈值验证；算法操作只返回固定零且没有独立参考时，执行可以成功，但 provenance 必须保留“一致性未验证”，不得伪报通过。
+- 缓存决策：逻辑录制缓存身份包含实际文件指纹、完整描述符摘要、逻辑长度和调用方版本。文件路径相同但内容、时间戳或描述符变化时不得命中旧缓存。
+- Qt 决策：Qt 性能测试目标必须把 Debug/Release 对应的 Windows 与 offscreen 平台插件部署到可执行文件旁的 `platforms` 目录。实际绘制 CTest 显式使用 offscreen；另一个自动化 CTest 清空 `QT_QPA_PLATFORM`、`QT_PLUGIN_PATH` 与 `QT_QPA_PLATFORM_PLUGIN_PATH`，要求 `QApplication` 由默认 Windows 平台成功初始化，防止调试器弹出“no Qt platform plugin could be initialized”。

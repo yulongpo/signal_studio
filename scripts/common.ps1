@@ -203,6 +203,17 @@ function Update-SignalStudioUserPresets {
         $value = [Environment]::GetEnvironmentVariable($variable, 'Process')
         if ($value) { $commonEnvironment[$variable] = Get-SignalStudioNormalizedPath -PathValue $value }
     }
+    foreach ($variable in @(
+            'VCToolsInstallDir',
+            'VCToolsRedistDir',
+            'UniversalCRTSdkDir',
+            'UCRTVersion',
+            'WindowsSdkDir',
+            'WindowsSDKVersion',
+            'VSLANG')) {
+        $value = [Environment]::GetEnvironmentVariable($variable, 'Process')
+        if ($value) { $commonEnvironment[$variable] = $value }
+    }
     $commonPrefixPath = if ($qtPrefixPath) { $qtPrefixPath } else { $basePrefixPath }
     if ($commonPrefixPath) { $commonEnvironment.CMAKE_PREFIX_PATH = $commonPrefixPath }
     $configurePresets.Add([ordered]@{
@@ -234,7 +245,7 @@ function Update-SignalStudioUserPresets {
             inherits = @($sourcePreset, $toolchainPreset)
         })
         $buildPresets.Add([ordered]@{ name = $localName; configurePreset = $localName; jobs = 0 })
-        if (-not $sourcePreset.Contains('cuda') -and -not $sourcePreset.Contains('relwithdebinfo')) {
+        if (-not $sourcePreset.Contains('relwithdebinfo')) {
             $testPresets.Add([ordered]@{
                 name = $localName
                 configurePreset = $localName

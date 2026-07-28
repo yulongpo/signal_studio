@@ -47,6 +47,7 @@ function Assert-ValidationRejected {
 try {
     $acquisition = Invoke-ValidationSuccess -Arguments @{ Mode = 'Acquisition'; Headless = $true }
     if ($acquisition.mode -cne 'Acquisition' -or $acquisition.verified_selected_package_tuples -ne 14 -or
+        $acquisition.verified_milestone_dependency_extensions -ne 1 -or
         $acquisition.current_host_evidence) {
         throw 'Acquisition mode did not remain independent from host inventory'
     }

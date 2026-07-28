@@ -5,6 +5,7 @@
 /install/
 
 # Project-local dependency/tool caches
+/.deps/
 /.tools/
 /.cache/
 /vcpkg_installed/
