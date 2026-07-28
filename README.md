@@ -1,6 +1,6 @@
 # Signal Studio
 
-Signal Studio 是构建于可复用 C++20 平台之上的 Windows 离线数字信号分析软件。MS-00～MS-02 已完成平台、Core/Data/TaskRuntime 和 DSP/Compute；MS-03 已完成本地 Visualization/Workbench 与真实 Qt Widgets 原型验收，正等待远程门禁收口。按用户边界，MS-03 关闭后先暂停，未确认前不进入 MS-04。
+Signal Studio 是构建于可复用 C++20 平台之上的 Windows 离线数字信号分析软件。MS-00～MS-03 已完成平台、Core/Data/TaskRuntime、DSP/Compute、Visualization/Workbench 与真实 Qt Widgets 原型验收。当前按用户边界暂停，未确认前不进入 MS-04。
 
 ## 当前平台目标
 

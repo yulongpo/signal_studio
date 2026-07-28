@@ -111,3 +111,10 @@
 - 记录最终无界面 Debug/Release 各 133/133、四套 CPU/CUDA 确定性矩阵各 34/34，以及整改后独立复审无剩余 Critical/Important。
 - 记录实现提交 `f6041d719ec6be9b47eee21eb04addc2a0265704` 与 Windows GitHub Actions 运行 `30331185758` 的两项作业成功。
 - MS-02 已验收关闭，下一里程碑为 MS-03；按用户边界，MS-03 完成后暂停，不进入 MS-04。
+
+# 2026-07-28：MS-03 验收收口
+
+- 记录 Visualization、Workbench、真实 Qt Widgets 原型、六个 Designer 文件、50 项需求和四组尺寸/DPI 预览全部通过。
+- 记录 Qt 构建/安装运行时与默认 Windows 平台插件故障修复、安装消费、本机预设确定性和六套本地构建测试矩阵。
+- 记录实现提交 `a4d3a763eece76c966a3763b5831cccc98baee84` 与 Windows GitHub Actions 运行 `30350430444` 两项作业成功。
+- MS-03 已验收关闭；按用户边界暂停，获得确认前不进入 MS-04。
