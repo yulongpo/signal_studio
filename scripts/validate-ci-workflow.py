@@ -196,10 +196,24 @@ def verify() -> None:
         < ui_steps.index(named_step(ui_steps, "Configure all ten modules"))
     ):
         raise RuntimeError("UI host compatibility validation is ordered incorrectly")
+    ms03_contracts = named_step(ui_steps, "Run MS-03 visualization and workbench contracts")
+    ms04_contracts = named_step(ui_steps, "Run MS-04 application contracts")
+    installed_consumer = named_step(ui_steps, "Consume all ten installed module packages")
+    if ms03_contracts.get("run") != "ctest --test-dir build/ci-ui --output-on-failure -L ms-03":
+        raise RuntimeError("Qt-backed CI must retain the complete MS-03 regression label")
+    if ms04_contracts.get("run") != "ctest --test-dir build/ci-ui --output-on-failure -L ms-04":
+        raise RuntimeError("Qt-backed CI must execute the complete MS-04 application label")
+    if not (
+        ui_steps.index(ms03_contracts)
+        < ui_steps.index(ms04_contracts)
+        < ui_steps.index(installed_consumer)
+    ):
+        raise RuntimeError("MS-03, MS-04, and installed-consumer CI gates are ordered incorrectly")
     verify_qt_availability_evidence()
     print(
-        "GitHub Actions YAML parsed; Windows-only acquisition and compatible-host checks are ordered, "
-        f"actions are immutable, and Qt {CI_QT_VERSION} {QT_ARCHITECTURE} has official availability evidence"
+        "GitHub Actions YAML parsed; Windows-only acquisition, MS-03/MS-04 gates, and compatible-host checks "
+        f"are ordered, actions are immutable, and Qt {CI_QT_VERSION} {QT_ARCHITECTURE} has official "
+        "availability evidence"
     )
 
 

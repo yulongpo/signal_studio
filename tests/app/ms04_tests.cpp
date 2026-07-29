@@ -378,9 +378,19 @@ void test_headless_self_test() {
 
 void test_cancel_retry() {
   TemporaryDirectory temporary;
-  const auto source = std::filesystem::path{SIGNAL_STUDIO_MS04_EXTERNAL_DATA_DIR} /
-                      "x310_capture_cf1425MHz_sr50MSps_20260521_144220.sc16";
-  require(std::filesystem::exists(source), "Cancel/retry recording missing");
+  auto source = std::filesystem::path{SIGNAL_STUDIO_MS04_EXTERNAL_DATA_DIR} /
+                "x310_capture_cf1425MHz_sr50MSps_20260521_144220.sc16";
+  constexpr std::uint64_t first_read_bytes = 128U * 1024U * 1024U;
+  std::uint64_t first_chunk_bytes = 64U * 1024U;
+  if (!std::filesystem::exists(source)) {
+    source = temporary.path() / "x310_capture_cf1425MHz_sr50MSps_20260521_144220.sc16";
+    constexpr std::uint64_t ci_fixture_bytes = 256U * 1024U * 1024U;
+    std::ofstream fixture{source, std::ios::binary | std::ios::trunc};
+    require(fixture && fixture.seekp(static_cast<std::streamoff>(ci_fixture_bytes - 1U)) && fixture.put('\0'),
+            "Cancel/retry CI fixture creation failed");
+    fixture.close();
+    first_chunk_bytes = 4U * 1024U;
+  }
   signal::studio::ApplicationController controller{temporary.path() / "state"};
   require(controller.create_project(temporary.path() / "cancel.signal-workspace", "cancel"),
           "Cancel/retry project creation failed");
@@ -388,7 +398,7 @@ void test_cancel_retry() {
       signal::studio::make_confirmed_descriptor(source, signal::studio::parse_filename_hints(source), true);
   require(description, "Cancel/retry descriptor failed");
   auto first = controller.start_import(
-      {source, description.value(), signal::data::SourceFormat::raw, 128U * 1024U * 1024U, 64U * 1024U});
+      {source, description.value(), signal::data::SourceFormat::raw, first_read_bytes, first_chunk_bytes});
   require(first, "Cancelable import submission failed");
   bool made_progress{};
   for (std::size_t attempt = 0; attempt < 200U; ++attempt) {
