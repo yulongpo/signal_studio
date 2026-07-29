@@ -778,6 +778,19 @@ void test_requirement(const std::string& id) {
                                     return table->rowCount() == 1 && table->item(0, 0)->text() == "注入结果";
                                   }),
           "Workbench 主框架、Dock、中心、命令、设置、诊断、主题或布局不完整");
+    auto* task_page_action = root->findChild<QAction*>("page.task-center");
+    auto* settings_page_action = root->findChild<QAction*>("page.settings");
+    auto* task_page = root->findChild<QWidget*>("TaskCenterPage");
+    auto* settings_page = root->findChild<QWidget*>("SettingsDiagnosticsPage");
+    check(task_page_action != nullptr && settings_page_action != nullptr && task_page != nullptr &&
+              settings_page != nullptr,
+          "批准原型的 P04 或 P07 原生 Qt 页面缺失");
+    task_page_action->trigger();
+    QApplication::processEvents();
+    check(task_page->isVisible(), "P04 任务中心页面无法通过工作台命令显示");
+    settings_page_action->trigger();
+    QApplication::processEvents();
+    check(settings_page->isVisible(), "P07 设置与诊断页面无法通过工作台命令显示");
     const auto layout = workbench->save_layout();
     const auto serialized = require(signal::workbench::serialize_layout(layout), "布局序列化失败");
     const auto restored = require(signal::workbench::parse_layout(serialized), "布局解析失败");
@@ -798,6 +811,11 @@ void test_layout(int width, int height) {
   check(root->size().width() == width && root->size().height() == height, "窗口未保持指定逻辑尺寸");
   const auto docks = root->findChildren<QDockWidget*>();
   check(docks.size() >= 5, "布局缺少 Workbench Dock");
+  auto* navigator_dock = root->findChild<QDockWidget*>("navigator");
+  auto* workspace_widget = root->findChild<QWidget*>("SignalVisualizationWorkspace");
+  check(navigator_dock != nullptr && navigator_dock->isVisible() && workspace_widget != nullptr &&
+            workspace_widget->isVisible() && navigator_dock->width() >= 188,
+        "批准原型的左侧导航或 P02 中央工作区缺失");
   const auto splitters = root->findChildren<QSplitter*>();
   check(!splitters.empty() && std::ranges::all_of(splitters.front()->sizes(), [](int size) { return size >= 0; }),
         "图表分隔布局无效");
@@ -805,10 +823,42 @@ void test_layout(int width, int height) {
   check(std::ranges::all_of(
             buttons, [](const QAbstractButton* button) { return button->width() >= 28 && button->height() >= 28; }),
         "指定布局下出现小于 28×28 的高频目标");
+  std::string out_of_bounds_button;
+  for (const auto* button : buttons) {
+    if (!button->isVisible()) {
+      continue;
+    }
+    if (button->objectName().startsWith("qt_")) {
+      continue;
+    }
+    const auto top_left = button->mapTo(root, QPoint(0, 0));
+    if (!root->rect().adjusted(-2, -2, 2, 2).contains(QRect(top_left, button->size()))) {
+      out_of_bounds_button = button->objectName().toStdString() + "@" + std::to_string(top_left.x()) + "," +
+                             std::to_string(top_left.y()) + " " + std::to_string(button->width()) + "x" +
+                             std::to_string(button->height());
+      break;
+    }
+  }
+  check(out_of_bounds_button.empty(), "指定布局下出现超出窗口边界的可见交互控件: " + out_of_bounds_button);
   const auto image = root->grab().toImage();
   const auto logical_width = static_cast<int>(std::lround(image.width() / image.devicePixelRatio()));
   const auto logical_height = static_cast<int>(std::lround(image.height() / image.devicePixelRatio()));
   check(!image.isNull() && logical_width == width && logical_height == height, "布局未形成指定尺寸的真实 Qt 绘制");
+  const auto scale_text = qEnvironmentVariable("QT_SCALE_FACTOR");
+  if (!scale_text.isEmpty()) {
+    bool scale_ok{};
+    const auto expected_scale = scale_text.toDouble(&scale_ok);
+    check(scale_ok && std::abs(image.devicePixelRatio() - expected_scale) < 0.01,
+          "截图 device pixel ratio 与请求缩放因子不一致");
+  }
+  QEvent dpr_change(QEvent::DevicePixelRatioChange);
+  QApplication::sendEvent(root, &dpr_change);
+  QApplication::processEvents();
+  const auto after_dpr_change = root->grab().toImage();
+  check(!after_dpr_change.isNull() &&
+            static_cast<int>(std::lround(after_dpr_change.width() / after_dpr_change.devicePixelRatio())) == width &&
+            static_cast<int>(std::lround(after_dpr_change.height() / after_dpr_change.devicePixelRatio())) == height,
+        "DPI 变化事件后逻辑布局或截图尺寸漂移");
   root->hide();
 }
 

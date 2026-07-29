@@ -116,7 +116,7 @@ MS-03 的 50 项逐需求测试由 Visualization 18 项、时间导航 15 项、
 | Visualization/Workbench 聚合契约 | `FR-VIS-101`、`FR-WB-101` | 2 |
 | 合计 |  | 50 |
 
-每个 UI 构建另注册六项真实 Qt 回归：1280×720、1600×900、1920×1080、200% DPI、实际 PNG 截图和清空三项 Qt 插件环境变量后的默认 Windows 平台启动。测试实际创建 Qt Widgets、抓取 Canvas、发送键盘/鼠标/滚轮事件并检查可访问属性，不以静态截图或只检查模型字段替代 UI 行为。
+每个 UI 构建另注册十三项真实 Qt 回归：1280×720、1600×900、1920×1080、3840×2160，100%、125%、150%、175%、200% DPI，P02/P04/P07 实际 PNG 截图，以及清空三项 Qt 插件环境变量后的默认 Windows 平台启动。P04/P07 页面动作属于 `FR-WB-101` 聚合契约。测试实际创建 Qt Widgets、抓取 Canvas、发送键盘/鼠标/滚轮事件、模拟 DPR 变化并检查可访问属性，不以静态截图或只检查模型字段替代 UI 行为。
 
 交互重点包括：
 
@@ -137,11 +137,13 @@ MS-03 的 50 项逐需求测试由 Visualization 18 项、时间导航 15 项、
 |---|---|---:|
 | `local-windows-msvc-cpu-debug` | 全量 | 198/198 |
 | `local-windows-msvc-cpu-release` | 全量 | 198/198 |
-| `local-windows-msvc-cuda-debug` | 56 项 MS-03 + 2 项模块契约 + 1 项安装消费 | 59/59 |
-| `local-windows-msvc-cuda-release` | 同上 | 59/59 |
+| `local-windows-msvc-cuda-debug` | 63 项 MS-03 + 安装消费 | 63/63；1/1 |
+| `local-windows-msvc-cuda-release` | 同上 | 63/63；1/1 |
 | `local-windows-msvc-headless-debug` | 无 Qt 全量 | 133/133 |
 | `local-windows-msvc-headless-release` | 无 Qt 全量 | 133/133 |
 
 安装消费者通过独立工程消费十个目标、调用 MS-03 公共 API，并在清空 Qt 插件环境变量后启动安装树演示程序。12 个变更 C/C++ 文件通过格式检查；四个生产实现的 `clang-tidy` 均退出码 0、0 errors，共 32 次 warning occurrence，不声称零告警。公共头、不可变基线、外部材料、依赖锁、VS Code、Windows-only CI 和用户预设确定性检查通过。
 
 按用户批准未执行 Ubuntu 24.04 构建测试。MS-03 不重复执行 MS-02 的物理/逻辑大文件性能验证，也不创建物理 100 GB 文件。
+
+2026-07-29 增量门禁在 CPU/CUDA Debug/Release 四套预设上均完成配置、编译、63/63 项 MS-03 CTest 和 1/1 安装消费者。截图脚本的 JSON 清单必须证明物理尺寸等于逻辑尺寸乘实际 DPR；对比脚本必须保留 P02 修复前/后以及 P04/P07 基线/修复后证据。

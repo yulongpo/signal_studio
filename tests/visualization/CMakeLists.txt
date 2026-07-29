@@ -30,7 +30,7 @@ foreach(_case IN ITEMS
     ENVIRONMENT "${_signal_studio_ms03_test_environment}")
 endforeach()
 
-foreach(_size IN ITEMS 1280x720 1600x900 1920x1080)
+foreach(_size IN ITEMS 1280x720 1600x900 1920x1080 3840x2160)
   string(REPLACE "x" ";" _dimensions "${_size}")
   list(GET _dimensions 0 _width)
   list(GET _dimensions 1 _height)
@@ -41,12 +41,22 @@ foreach(_size IN ITEMS 1280x720 1600x900 1920x1080)
     ENVIRONMENT "${_signal_studio_ms03_test_environment}")
 endforeach()
 
-add_test(NAME ms03.ui.200-percent-dpi COMMAND signal_studio_ms03_tests
-  --case UI-LAYOUT --width 1280 --height 720)
-set_tests_properties(ms03.ui.200-percent-dpi PROPERTIES
-  TIMEOUT 30 LABELS "qt;ui;dpi;accessibility;ms-03"
-  ENVIRONMENT
-    "${_signal_studio_ms03_test_environment};QT_SCALE_FACTOR=2")
+foreach(_dpi_case IN ITEMS
+    "100-percent|1"
+    "125-percent|1.25"
+    "150-percent|1.5"
+    "175-percent|1.75"
+    "200-percent|2")
+  string(REPLACE "|" ";" _dpi_parts "${_dpi_case}")
+  list(GET _dpi_parts 0 _dpi_name)
+  list(GET _dpi_parts 1 _dpi_scale)
+  add_test(NAME "ms03.ui.${_dpi_name}-dpi" COMMAND signal_studio_ms03_tests
+    --case UI-LAYOUT --width 1920 --height 1080)
+  set_tests_properties("ms03.ui.${_dpi_name}-dpi" PROPERTIES
+    TIMEOUT 30 LABELS "qt;ui;dpi;accessibility;ms-03"
+    ENVIRONMENT
+      "${_signal_studio_ms03_test_environment};QT_SCALE_FACTOR=${_dpi_scale};QT_SCALE_FACTOR_ROUNDING_POLICY=PassThrough")
+endforeach()
 
 add_test(NAME ms03.ui.screenshot
   COMMAND signal_visualization_workbench_demo
@@ -65,3 +75,13 @@ add_test(NAME ms03.ui.default-windows-platform
     "$<TARGET_FILE:signal_visualization_workbench_demo>" --startup-smoke)
 set_tests_properties(ms03.ui.default-windows-platform PROPERTIES
   TIMEOUT 30 LABELS "qt;ui;default-platform-plugin;ms-03")
+
+foreach(_page IN ITEMS p04 p07)
+  add_test(NAME "ms03.ui.screenshot.${_page}"
+    COMMAND signal_visualization_workbench_demo
+      --screenshot "${CMAKE_CURRENT_BINARY_DIR}/ms03-${_page}-1600x900.png"
+      --width 1600 --height 900 --page "${_page}")
+  set_tests_properties("ms03.ui.screenshot.${_page}" PROPERTIES
+    TIMEOUT 30 LABELS "qt;ui;screenshot;prototype-page;ms-03"
+    ENVIRONMENT "${_signal_studio_ms03_test_environment}")
+endforeach()

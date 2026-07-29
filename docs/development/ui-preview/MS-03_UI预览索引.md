@@ -2,67 +2,63 @@
 
 ## 1. 预览范围
 
-本目录保存 MS-03 的真实 Qt 6 Widgets 运行截图。截图来自
-`signal_visualization_workbench_demo.exe`，不是 HTML 原型、设计稿或静态界面替代品。演示程序显式注入演示帧、检查器条目、任务和结果；生产
-`SignalStudioWorkbench` 默认不伪造数据，未绑定内容时显示真实空状态。
+本目录保存 MS-03 原型对齐后的真实 Qt 6 Widgets 运行截图。截图来自 `signal_visualization_workbench_demo.exe`，不是 HTML、QWebEngine 或静态界面替代品。演示程序显式注入演示帧、任务和结果；生产 Workbench 默认不伪造数据。
 
-| 逻辑窗口 | 截图 | 物理像素 | 用途 |
-|---|---|---:|---|
-| 1280×720 | [MS-03_工作台_1280x720.png](MS-03_工作台_1280x720.png) | 1920×1080 | 最小批准布局、Dock 和三图检查 |
-| 1600×900 | [MS-03_工作台_1600x900.png](MS-03_工作台_1600x900.png) | 2400×1350 | 常用桌面布局检查 |
-| 1920×1080 | [MS-03_工作台_1920x1080.png](MS-03_工作台_1920x1080.png) | 2880×1620 | 全高清逻辑布局检查 |
-| 1920×1065，缩放因子 2 | [MS-03_工作台_200百分比DPI.png](MS-03_工作台_200百分比DPI.png) | 3840×2130 | 200% DPI、控件命中区和文字裁剪检查 |
+| 页面 | 逻辑窗口 | 请求缩放 | 物理像素 | 截图 |
+|---|---:|---:|---:|---|
+| P02 | 1280×720 | 100% | 1280×720 | [最小布局](MS-03_P02_1280x720_100百分比.png) |
+| P02 | 1600×900 | 100% | 1600×900 | [标准对比尺寸](MS-03_P02_1600x900_100百分比.png) |
+| P02 | 1920×1080 | 100% | 1920×1080 | [1080P](MS-03_P02_1920x1080_100百分比.png) |
+| P02 | 3840×2160 | 100% | 3840×2160 | [4K](MS-03_P02_3840x2160_100百分比.png) |
+| P02 | 1920×1080 | 125% | 2400×1350 | [125% DPI](MS-03_P02_1920x1080_125百分比.png) |
+| P02 | 1920×1080 | 150% | 2880×1620 | [150% DPI](MS-03_P02_1920x1080_150百分比.png) |
+| P02 | 1920×1080 | 175% | 3360×1890 | [175% DPI](MS-03_P02_1920x1080_175百分比.png) |
+| P02 | 1920×1080 | 200% | 3840×2160 | [200% DPI](MS-03_P02_1920x1080_200百分比.png) |
+| P04 | 1600×900 | 100% | 1600×900 | [任务中心](MS-03_P04_1600x900_100百分比.png) |
+| P07 | 1600×900 | 100% | 1600×900 | [设置与诊断](MS-03_P07_1600x900_100百分比.png) |
+| P02 | 1600×900 | Windows 当前 150% | 2400×1350 | [Windows 当前 DPI](MS-03_P02_1600x900_Windows当前DPI.png) |
 
-前三张截图在本机 Windows 150% 显示缩放下生成，因此物理像素为逻辑尺寸的 1.5 倍。高 DPI 截图通过
-`QT_SCALE_FACTOR=2` 独立生成；表中的逻辑尺寸和物理尺寸均由实际图像核验，不把物理像素误写为布局尺寸。
+确定性矩阵使用 Qt offscreen 平台明确控制逻辑尺寸与缩放因子；Windows 当前 DPI 截图单独使用默认 Windows 平台，证明本机 150% 缩放下的真实运行结果。完整机器可读数据见 [截图清单](MS-03_截图清单.json)。
 
-截图 SHA-256：
+## 2. 视觉对比
+
+对比图位于 `docs/milestones/MS-03/evidence/ui-alignment/comparison`：
+
+- P02：HTML 基线、修复前 Qt、修复后 Qt 三联图；
+- P04：HTML 基线与修复后 Qt 并排图；
+- P07：HTML 基线与修复后 Qt 并排图。
+
+差异分级、关闭情况和剩余 P2 平台渲染差异见 `docs/milestones/MS-03/MS-03_UI差异报告.md`。
+
+## 3. Qt Designer 与运行时
+
+六个生产 `.ui` 文件继续由 `qt_wrap_ui` 编译。应用外壳和动态页面通过 C++ 布局管理器装配，未使用大量绝对坐标。图谱 Canvas、视口联动和业务命令与 Designer 静态布局保持解耦。
+
+构建和安装树部署匹配配置的 Qt Core/Gui/Widgets DLL、Windows/offscreen 平台插件和 `qt.conf`。清空 Qt 插件环境变量后仍可由默认 Windows 平台启动。
+
+## 4. 自动截图与对比
+
+```powershell
+pwsh -NoProfile -File .\scripts\capture-ms03-ui.ps1
+
+pwsh -NoProfile -File .\scripts\compare-ms03-ui.ps1 `
+  -Baseline .\docs\baseline\Signal-Studio-Dev-Docs\02_原型设计\页面截图\标准截图\SS-P02-1600x900.png `
+  -Before .\docs\milestones\MS-03\evidence\ui-alignment\before\MS-03_工作台_1600x900.png `
+  -After .\docs\development\ui-preview\MS-03_P02_1600x900_100百分比.png `
+  -Output .\docs\milestones\MS-03\evidence\ui-alignment\comparison\MS-03_P02_基线_修复前_修复后.png
+```
+
+截图脚本检查进程退出码、文件存在性、物理像素和 DPR，并输出 JSON 清单。功能结论来自具名 CTest、安装消费者和默认 Windows 平台启动回归，不只依赖截图。
+
+## 5. 最终截图摘要
 
 | 文件 | SHA-256 |
 |---|---|
-| `MS-03_工作台_1280x720.png` | `038e4d7b9577c505416deed8da4b41a20ad71f311cd200b672fe68c525c7adbc` |
-| `MS-03_工作台_1600x900.png` | `ce09a5f7929d918a77fafdff750831d42f3508a89c30637e1d80e482cdafac3f` |
-| `MS-03_工作台_1920x1080.png` | `85b7fc32db88ed1a526b802770b2d2882c93bfcd506767d6181592dfd6253ecf` |
-| `MS-03_工作台_200百分比DPI.png` | `6c6c256960af2a69a85dd83266259dd657b6b2e991df92e86259247fc3720e7b` |
-
-## 2. Qt Designer 源文件
-
-以下 `.ui` 文件均为生产构建输入，由 CMake 的 `qt_wrap_ui` 调用 `uic` 生成头文件：
-
-- `src/platform/workbench/ui/SignalWorkbenchMainWindow.ui`
-- `src/platform/workbench/ui/SignalInspectorPanel.ui`
-- `src/platform/workbench/ui/SignalTaskCenterPanel.ui`
-- `src/platform/workbench/ui/SignalResultCenterPanel.ui`
-- `src/platform/workbench/ui/SignalSettingsPanel.ui`
-- `src/platform/workbench/ui/SignalDiagnosticsPanel.ui`
-
-可在 PowerShell 中打开主窗口：
-
-```powershell
-& 'D:\softwares\Qt\6.11.1\msvc2022_64\bin\designer.exe' `
-  '.\src\platform\workbench\ui\SignalWorkbenchMainWindow.ui'
-```
-
-各文件只使用布局管理器组织控件，不以大量绝对坐标构造页面。图谱 Canvas、视口联动和业务命令由 C++ 运行时装配，保持 Designer 布局与业务状态解耦。
-
-## 3. 编译与启动
-
-```powershell
-.\scripts\configure.ps1 -Preset windows-msvc-cpu-debug
-.\scripts\build.ps1 -Preset windows-msvc-cpu-debug
-.\build\local-windows-msvc-cpu-debug\bin\signal_visualization_workbench_demo.exe
-```
-
-构建目标会把 `Qt6Core[d].dll`、`Qt6Gui[d].dll`、`Qt6Widgets[d].dll`、Windows/offscreen 平台插件和
-`qt.conf` 部署到可执行文件旁。即使清空 `QT_QPA_PLATFORM`、`QT_PLUGIN_PATH` 与
-`QT_QPA_PLATFORM_PLUGIN_PATH`，程序仍可通过默认 Windows 平台启动，不依赖开发者手工设置插件路径。
-
-## 4. 自动截图
-
-```powershell
-.\scripts\capture-ms03-ui.ps1 `
-  -BuildDirectory .\build\local-windows-msvc-cpu-debug `
-  -OutputDirectory .\docs\development\ui-preview
-```
-
-脚本依次生成 1280×720、1600×900、1920×1080 和 200% DPI 四组截图，并对进程退出码、输出文件存在性和非空文件进行检查。截图仅用于可视验收；功能结论来自具名 CTest、安装消费者和默认 Windows 平台启动回归。
+| `MS-03_P02_1280x720_100百分比.png` | `b93bd7808939dbba38587be9bb61375603809c41e72c12642c0165c8192a6e09` |
+| `MS-03_P02_1600x900_100百分比.png` | `da4d2648816202cede3bb38d24a8e9e2a8debdc2bda2b850f5ac0deabd8497d6` |
+| `MS-03_P02_1920x1080_100百分比.png` | `e360c5d1781e782261ddfc3f6603a2fd1246e26d2650ba313a2f3f932003e7f8` |
+| `MS-03_P02_3840x2160_100百分比.png` | `dcebc1cb3e265f79a8809a973ebb9774dd03851252d307198b40d74f483cc583` |
+| `MS-03_P02_1920x1080_150百分比.png` | `6ac9a7effeb4f9f24734ee2226e7550ac9a6d0f81b5ee9ec13d0c6c829c377c7` |
+| `MS-03_P02_1920x1080_200百分比.png` | `71ab58100d0c0ab348652d10b6ee15e79fbf05b8eba019702d748a33abbd1046` |
+| `MS-03_P04_1600x900_100百分比.png` | `33326809bd880a3d9bf3532c701ec714e7dfc3938e7ff417c1eebbf281844f1c` |
+| `MS-03_P07_1600x900_100百分比.png` | `10cc4ab0b91f645f4c6ac731a5c2e790d4f3e816600d0f423582439995976457` |

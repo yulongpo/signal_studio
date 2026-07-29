@@ -167,10 +167,21 @@ struct ResultCenterEntry final {
   friend bool operator==(const ResultCenterEntry&, const ResultCenterEntry&) = default;
 };
 
+struct NavigationEntry final {
+  std::string label;
+  std::string badge;
+  std::uint32_t depth{};
+  bool current{};
+  friend bool operator==(const NavigationEntry&, const NavigationEntry&) = default;
+};
+
 /// 工作台只呈现宿主注入的真实状态；默认值明确表示当前没有外部快照。
 struct WorkbenchContent final {
   std::string status_text{"● 就绪"};
   std::string resource_text{"资源快照未提供"};
+  std::string project_name;
+  std::string source_summary;
+  std::vector<NavigationEntry> navigation;
   std::vector<InspectorEntry> inspector;
   std::vector<TaskCenterEntry> tasks;
   std::vector<ResultCenterEntry> results;

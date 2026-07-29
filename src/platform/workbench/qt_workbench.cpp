@@ -8,25 +8,38 @@
 #include "ui_SignalWorkbenchMainWindow.h"
 
 #include <QtCore/QByteArray>
+#include <QtCore/QEvent>
 #include <QtCore/QTimer>
 #include <QtGui/QAction>
+#include <QtGui/QColor>
+#include <QtGui/QGuiApplication>
 #include <QtGui/QKeySequence>
 #include <QtWidgets/QAbstractButton>
+#include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QFileDialog>
+#include <QtWidgets/QFormLayout>
+#include <QtWidgets/QFrame>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
+#include <QtWidgets/QLineEdit>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
+#include <QtWidgets/QProgressBar>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QSizePolicy>
+#include <QtWidgets/QStackedWidget>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QStyle>
+#include <QtWidgets/QTabBar>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QToolButton>
 #include <QtWidgets/QTreeWidget>
+#include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
 #include <algorithm>
@@ -62,6 +75,7 @@ namespace {
 
 void ensure_default_panels(PanelRegistry& registry) {
   const std::vector<PanelDescriptor> defaults{
+      {"navigator", "项目与数据源", PanelArea::left, false, false, "显示项目、数据源、Selection 与全局页面入口"},
       {"inspector", "属性检查器", PanelArea::right, true, true, "显示当前对象、视口和参数的单位与范围"},
       {"task-center", "任务中心", PanelArea::bottom, true, true, "显示任务状态、进度、实际后端和控制命令"},
       {"result-center", "结果中心", PanelArea::bottom, true, true, "按数据源版本显示可定位的结果"},
@@ -75,13 +89,32 @@ void ensure_default_panels(PanelRegistry& registry) {
   }
 }
 
+class DpiAwareMainWindow final : public QMainWindow {
+protected:
+  bool event(QEvent* event) override {
+    const auto type = event->type();
+    const auto result = QMainWindow::event(event);
+    if (type == QEvent::DevicePixelRatioChange || type == QEvent::ScreenChangeInternal) {
+      QTimer::singleShot(0, this, [this] {
+        for (auto* widget : findChildren<QWidget*>()) {
+          widget->updateGeometry();
+          widget->update();
+        }
+        updateGeometry();
+        update();
+      });
+    }
+    return result;
+  }
+};
+
 class QtWorkbenchWindow final : public IWorkbenchWindow {
 public:
   QtWorkbenchWindow(WorkbenchConfiguration configuration,
                     std::unique_ptr<visualization::IAnalysisWorkspace> center_workspace,
                     std::shared_ptr<CommandRegistry> commands, std::shared_ptr<PanelRegistry> panels,
                     std::shared_ptr<IDiagnosticsProvider> diagnostics)
-      : window_(std::make_unique<QMainWindow>()), workspace_(std::move(center_workspace)),
+      : window_(std::make_unique<DpiAwareMainWindow>()), workspace_(std::move(center_workspace)),
         commands_(std::move(commands)), panels_(std::move(panels)), diagnostics_(std::move(diagnostics)),
         configuration_(std::move(configuration)) {
     main_ui_.setupUi(window_.get());
@@ -210,13 +243,35 @@ private:
     window_->setDockOptions(QMainWindow::AnimatedDocks | QMainWindow::AllowNestedDocks | QMainWindow::AllowTabbedDocks);
     window_->setStyleSheet(QString(R"(
       QMainWindow, QWidget { background:%1; color:%2; font-family:"%3"; font-size:12px; }
-      QMenuBar, QMenu, QToolBar, QStatusBar { background:%4; color:%2; }
+      QMenuBar {
+        background:%1; color:%2; border-bottom:1px solid #203A55;
+        min-height:29px; max-height:29px;
+      }
+      QMenuBar::item { background:transparent; color:%2; padding:4px 10px; }
+      QMenuBar::item#SignalStudioBrand { color:#06111F; background:%5; font-weight:700; }
+      QWidget#ApplicationMenuStrip {
+        background:%1; border-bottom:1px solid #203A55;
+        min-height:29px; max-height:29px;
+      }
+      QLabel#SignalStudioBrand {
+        color:#06111F; background:%5; font-weight:700; padding:0 8px;
+      }
+      QLabel#ApplicationContext { color:#8FA8C2; padding:0 8px; }
+      QToolButton#ApplicationMenuButton {
+        background:transparent; color:%2; border:0; min-height:28px;
+        padding:0 9px;
+      }
+      QToolButton#ApplicationMenuButton:hover,
+      QToolButton#ApplicationMenuButton:pressed { background:#16334E; }
+      QMenu, QToolBar, QStatusBar { background:%4; color:%2; }
       QMenuBar::item:selected, QMenu::item:selected { background:#16334E; }
-      QToolBar { border-bottom:1px solid #203A55; spacing:4px; padding:3px; }
+      QToolBar { border-bottom:1px solid #203A55; spacing:2px; padding:2px 6px; }
       QToolButton, QPushButton {
         background:#10243A; color:%2; border:1px solid #2B4867; border-radius:2px;
         min-width:28px; min-height:28px; padding:0 7px;
       }
+      QToolBar QToolButton { border-color:transparent; padding:0 5px; }
+      QToolBar QToolButton:hover { background:#16334E; border-color:#2B4867; }
       QToolButton:focus, QPushButton:focus, QTreeWidget:focus, QTableWidget:focus {
         border:2px solid %5;
       }
@@ -232,20 +287,129 @@ private:
         background:#13263D; border:1px solid #2B4867; border-radius:2px;
         min-width:28px; min-height:28px; padding:0;
       }
+      QTabBar#WorkspaceTabs { background:%1; border-bottom:1px solid #203A55; }
+      QTabBar#WorkspaceTabs::tab {
+        background:%1; color:#8FA8C2; min-width:64px; min-height:27px;
+        padding:0 10px; border-right:1px solid #203A55;
+      }
+      QTabBar#WorkspaceTabs::tab:selected {
+        color:%2; background:#10243A; border-top:2px solid %5;
+      }
       QTreeWidget, QTableWidget, QPlainTextEdit {
         background:#0A1727; alternate-background-color:#0E1B2D;
         border:1px solid #203A55; gridline-color:#203A55;
       }
+      QTreeWidget::item:selected, QTableWidget::item:selected {
+        background:#12324A; color:%2;
+      }
       QHeaderView::section { background:#13263D; color:%2; border:0; padding:5px; }
       QLabel#SectionHeading { color:%5; font-weight:600; }
+      QLabel#PageEyebrow { color:%5; font-family:"Cascadia Mono"; font-size:10px; font-weight:600; }
+      QLabel#PageTitle { color:%2; font-size:20px; font-weight:700; }
+      QFrame#PagePanel { background:#0A1727; border:1px solid #29435E; }
+      QLineEdit { background:#0A1727; border:1px solid #2B4867; min-height:28px; padding:0 7px; }
+      QProgressBar { background:#142840; border:0; min-height:5px; max-height:5px; text-align:right; }
+      QProgressBar::chunk { background:#20BDEB; }
     )")
                                .arg(QString::fromStdString(configuration_.theme.canvas),
                                     QString::fromStdString(configuration_.theme.primary_text),
                                     QString::fromStdString(configuration_.theme.ui_font),
                                     QString::fromStdString(configuration_.theme.panel),
                                     QString::fromStdString(configuration_.theme.accent)));
+    auto* central_host = new QWidget(window_.get());
+    auto* shell_layout = new QHBoxLayout(central_host);
+    shell_layout->setContentsMargins(0, 0, 0, 0);
+    shell_layout->setSpacing(0);
+    auto* page_column = new QWidget(central_host);
+    auto* central_layout = new QVBoxLayout(page_column);
+    central_layout->setContentsMargins(0, 0, 0, 0);
+    central_layout->setSpacing(0);
+    page_tabs_ = new QTabBar(central_host);
+    page_tabs_->setObjectName("WorkspaceTabs");
+    page_tabs_->setDocumentMode(true);
+    page_tabs_->setExpanding(false);
+    page_tabs_->setElideMode(Qt::ElideRight);
+    central_layout->addWidget(page_tabs_);
+    central_stack_ = new QStackedWidget(central_host);
+    central_layout->addWidget(central_stack_, 1);
+
+    auto* home = new QWidget(central_stack_);
+    auto* home_layout = new QVBoxLayout(home);
+    home_layout->setContentsMargins(20, 18, 20, 18);
+    auto* home_eyebrow = new QLabel("P01 / PROJECT", home);
+    home_eyebrow->setObjectName("PageEyebrow");
+    auto* home_title = new QLabel("项目首页", home);
+    home_title->setObjectName("PageTitle");
+    auto* home_summary = new QLabel(QString("当前项目  %1\n当前数据源  %2")
+                                        .arg(QString::fromStdString(configuration_.content.project_name.empty()
+                                                                        ? configuration_.window_title
+                                                                        : configuration_.content.project_name),
+                                             QString::fromStdString(configuration_.content.source_summary)),
+                                    home);
+    home_summary->setStyleSheet("color:#8FA8C2; line-height:1.5;");
+    home_layout->addWidget(home_eyebrow);
+    home_layout->addWidget(home_title);
+    home_layout->addWidget(home_summary);
+    home_layout->addStretch();
+    central_stack_->addWidget(home);
+    page_tabs_->addTab("P01  首页");
+
     auto* central = static_cast<QWidget*>(workspace_->native_handle());
-    window_->setCentralWidget(central);
+    central_stack_->addWidget(central);
+    page_tabs_->addTab("P02  宽带");
+    central_stack_->addWidget(createTaskPage(central_stack_));
+    page_tabs_->addTab("P04  任务");
+    page_tabs_->setTabVisible(2, false);
+    central_stack_->addWidget(createSettingsPage(central_stack_));
+    page_tabs_->addTab("P07  设置");
+    page_tabs_->setTabVisible(3, false);
+    page_tabs_->setCurrentIndex(1);
+    central_stack_->setCurrentIndex(1);
+    QObject::connect(page_tabs_, &QTabBar::currentChanged, central_stack_, &QStackedWidget::setCurrentIndex);
+
+    auto* bottom_bar = new QFrame(page_column);
+    bottom_bar->setObjectName("WorkspaceBottomBar");
+    bottom_bar->setStyleSheet("QFrame#WorkspaceBottomBar{background:#0A1727;border-top:1px solid #203A55;}"
+                              "QToolButton{border:0;background:#0A1727;color:#8FA8C2;}"
+                              "QToolButton:hover{background:#12324A;color:#E5F1FF;}");
+    auto* bottom_layout = new QHBoxLayout(bottom_bar);
+    bottom_layout->setContentsMargins(4, 0, 4, 0);
+    bottom_layout->setSpacing(2);
+    const auto add_bottom_action = [this, bottom_bar, bottom_layout](const QString& text, int page) {
+      auto* button = new QToolButton(bottom_bar);
+      button->setText(text);
+      QObject::connect(button, &QToolButton::clicked, window_.get(), [this, page] { showPage(page); });
+      bottom_layout->addWidget(button);
+    };
+    add_bottom_action("任务  3", 2);
+    add_bottom_action("结果  5", 1);
+    add_bottom_action("日志  5", 1);
+    add_bottom_action("标记  2", 1);
+    bottom_layout->addStretch();
+    auto* open_full_page = new QToolButton(bottom_bar);
+    open_full_page->setText("打开完整页面");
+    QObject::connect(open_full_page, &QToolButton::clicked, window_.get(), [this] { showPage(2); });
+    bottom_layout->addWidget(open_full_page);
+    central_layout->addWidget(bottom_bar);
+    shell_layout->addWidget(page_column, 1);
+
+    auto* inspector_edge = new QToolButton(central_host);
+    inspector_edge->setObjectName("InspectorEdgeButton");
+    inspector_edge->setText("属\n性");
+    inspector_edge->setToolTip("显示属性检查器");
+    inspector_edge->setFixedWidth(27);
+    inspector_edge->setStyleSheet("QToolButton{border:0;border-left:1px solid #203A55;background:#08111F;"
+                                  "color:#8FA8C2;padding:0;}"
+                                  "QToolButton:hover{background:#12324A;color:#E5F1FF;}");
+    QObject::connect(inspector_edge, &QToolButton::clicked, window_.get(), [this] {
+      const auto inspector = docks_.find("inspector");
+      if (inspector != docks_.end()) {
+        inspector->second->show();
+        inspector->second->raise();
+      }
+    });
+    shell_layout->addWidget(inspector_edge);
+    window_->setCentralWidget(central_host);
     window_->statusBar()->setSizeGripEnabled(true);
     status_label_ = new QLabel(QString::fromStdString(configuration_.content.status_text), window_.get());
     status_label_->setAccessibleName("工作台状态通知");
@@ -255,16 +419,228 @@ private:
     window_->statusBar()->addPermanentWidget(backend);
   }
 
+  [[nodiscard]] QWidget* createTaskPage(QWidget* parent) {
+    auto* page = new QWidget(parent);
+    page->setObjectName("TaskCenterPage");
+    auto* layout = new QVBoxLayout(page);
+    layout->setContentsMargins(12, 10, 12, 12);
+    layout->setSpacing(10);
+    auto* eyebrow = new QLabel("P04 / OPERATIONS", page);
+    eyebrow->setObjectName("PageEyebrow");
+    auto* title = new QLabel("任务中心", page);
+    title->setObjectName("PageTitle");
+    auto* description = new QLabel("交互请求优先；旧 ViewRequest 过期后不得提交。", page);
+    description->setStyleSheet("color:#8FA8C2;");
+    layout->addWidget(eyebrow);
+    layout->addWidget(title);
+    layout->addWidget(description);
+
+    auto* filter_panel = new QFrame(page);
+    filter_panel->setObjectName("PagePanel");
+    auto* filters = new QHBoxLayout(filter_panel);
+    filters->setContentsMargins(8, 5, 8, 5);
+    filters->setSpacing(0);
+    for (const auto* text : {"全部", "运行中", "已暂停", "等待中", "已取消", "失败", "已完成"}) {
+      auto* button = new QToolButton(filter_panel);
+      button->setText(text);
+      button->setCheckable(true);
+      button->setChecked(QString(text) == "全部");
+      button->setAutoExclusive(true);
+      filters->addWidget(button);
+    }
+    auto* search = new QLineEdit(filter_panel);
+    search->setPlaceholderText("搜索任务 / RequestId");
+    search->setMaximumWidth(240);
+    filters->addSpacing(8);
+    filters->addWidget(search);
+    filters->addStretch();
+    auto* priority = new QLabel("● 交互请求优先", filter_panel);
+    priority->setStyleSheet("color:#20D3EE;");
+    filters->addWidget(priority);
+    layout->addWidget(filter_panel);
+
+    auto* table = new QTableWidget(page);
+    table->setObjectName("TaskCenterPageTable");
+    table->setColumnCount(7);
+    table->setHorizontalHeaderLabels({"任务", "对象", "优先级", "状态", "进度", "耗时", "操作"});
+    table->setRowCount(static_cast<int>(configuration_.content.tasks.size()));
+    table->setShowGrid(false);
+    table->setAlternatingRowColors(true);
+    table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    table->verticalHeader()->setVisible(false);
+    for (std::size_t index = 0; index < configuration_.content.tasks.size(); ++index) {
+      const auto& entry = configuration_.content.tasks[index];
+      const auto row = static_cast<int>(index);
+      table->setItem(row, 0, new QTableWidgetItem(QString::fromStdString(entry.task)));
+      table->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(entry.source)));
+      table->setItem(row, 2, new QTableWidgetItem(index < 2 ? "交互" : "分析"));
+      table->setItem(row, 3, new QTableWidgetItem(QString::fromStdString(entry.state_text)));
+      auto* progress_cell = new QWidget(table);
+      auto* progress_layout = new QHBoxLayout(progress_cell);
+      progress_layout->setContentsMargins(0, 0, 0, 0);
+      progress_layout->setSpacing(6);
+      auto* progress = new QProgressBar(progress_cell);
+      auto progress_text = QString::fromStdString(entry.progress_text);
+      progress_text.remove('%');
+      bool progress_ok{};
+      progress->setValue(progress_text.toInt(&progress_ok));
+      if (!progress_ok) {
+        progress->setValue(0);
+      }
+      progress->setTextVisible(false);
+      auto* progress_label = new QLabel(QString::fromStdString(entry.progress_text), progress_cell);
+      progress_label->setStyleSheet("color:#8FA8C2; font-family:'Cascadia Mono'; font-size:10px;");
+      progress_layout->addWidget(progress, 1);
+      progress_layout->addWidget(progress_label);
+      table->setCellWidget(row, 4, progress_cell);
+      table->setItem(row, 5, new QTableWidgetItem(index == 0 ? "0.18 s" : "—"));
+      table->setItem(row, 6, new QTableWidgetItem("暂停  取消  详情"));
+      table->setRowHeight(row, 52);
+    }
+    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    layout->addWidget(table, 1);
+
+    auto* detail = new QFrame(page);
+    detail->setObjectName("PagePanel");
+    auto* detail_layout = new QVBoxLayout(detail);
+    detail_layout->setContentsMargins(8, 7, 8, 7);
+    auto* detail_title = new QLabel("任务详情 · 当前 ViewRequest", detail);
+    detail_title->setStyleSheet("font-weight:600;");
+    auto* detail_text =
+        new QLabel("执行阶段  STFT 瓦片\n取消规则  新视窗请求到达时立即过期\n资源  CPU · 有界缓存", detail);
+    detail_text->setStyleSheet("color:#8FA8C2;");
+    detail_layout->addWidget(detail_title);
+    detail_layout->addWidget(detail_text);
+    layout->addWidget(detail);
+    return page;
+  }
+
+  [[nodiscard]] QWidget* createSettingsPage(QWidget* parent) {
+    auto* page = new QWidget(parent);
+    page->setObjectName("SettingsDiagnosticsPage");
+    auto* root = new QVBoxLayout(page);
+    root->setContentsMargins(12, 8, 12, 12);
+    root->setSpacing(8);
+    auto* eyebrow = new QLabel("P07 / SYSTEM", page);
+    eyebrow->setObjectName("PageEyebrow");
+    auto* title = new QLabel("设置与诊断", page);
+    title->setObjectName("PageTitle");
+    auto* description = new QLabel("即时生效项与需要重启的设置明确区分。", page);
+    description->setStyleSheet("color:#8FA8C2;");
+    root->addWidget(eyebrow);
+    root->addWidget(title);
+    root->addWidget(description);
+
+    auto* body = new QHBoxLayout;
+    body->setSpacing(10);
+    auto* section_list = new QTreeWidget(page);
+    section_list->setObjectName("SettingsSectionList");
+    section_list->setHeaderHidden(true);
+    section_list->setMaximumWidth(180);
+    for (const auto* section : {"性能与缓存", "渲染与图谱", "默认导入", "项目与自动保存", "日志与隐私", "版本与诊断"}) {
+      section_list->addTopLevelItem(new QTreeWidgetItem({section}));
+    }
+    section_list->setCurrentItem(section_list->topLevelItem(0));
+    body->addWidget(section_list);
+
+    auto* form_panel = new QFrame(page);
+    form_panel->setObjectName("PagePanel");
+    form_panel->setMinimumWidth(580);
+    form_panel->setMaximumWidth(760);
+    form_panel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    auto* form = new QFormLayout(form_panel);
+    form->setContentsMargins(12, 10, 12, 10);
+    form->setSpacing(8);
+    auto* heading = new QLabel("性能与缓存", form_panel);
+    heading->setObjectName("SectionHeading");
+    form->addRow(heading);
+    auto* cache = new QProgressBar(form_panel);
+    cache->setRange(0, 100);
+    cache->setValue(25);
+    cache->setFormat("25%");
+    form->addRow("内存缓存上限", cache);
+    const auto add_read_only_field = [form_panel, form](const char* label, const char* value) {
+      auto* field = new QLineEdit(QString::fromUtf8(value), form_panel);
+      field->setReadOnly(true);
+      form->addRow(QString::fromUtf8(label), field);
+    };
+    add_read_only_field("CPU 工作线程", "4");
+    add_read_only_field("I/O 并发", "2");
+    add_read_only_field("缓存目录", "D:\\SignalStudioCache");
+    add_read_only_field("缓存配额", "250 GB");
+    body->addWidget(form_panel, 3);
+
+    auto* environment = new QFrame(page);
+    environment->setObjectName("PagePanel");
+    environment->setMinimumWidth(250);
+    environment->setMaximumWidth(280);
+    auto* environment_layout = new QVBoxLayout(environment);
+    environment_layout->setContentsMargins(10, 10, 10, 10);
+    auto* environment_title = new QLabel("当前环境  运行时", environment);
+    environment_title->setStyleSheet("font-weight:600;");
+    auto* dpr_text = new QLabel(environment);
+    dpr_text->setObjectName("DpiEnvironmentSummary");
+    dpr_text->setText(QString("Qt  %1\n平台  %2\n逻辑 DPI  自动\n缩放  %3×\n后端  CPU / CUDA 可选")
+                          .arg(qVersion(), QGuiApplication::platformName())
+                          .arg(window_->devicePixelRatioF(), 0, 'f', 2));
+    dpr_text->setStyleSheet("color:#8FA8C2; line-height:1.5;");
+    environment_layout->addWidget(environment_title);
+    environment_layout->addWidget(dpr_text);
+    environment_layout->addStretch();
+    body->addWidget(environment, 1);
+    root->addLayout(body, 1);
+    return page;
+  }
+
+  void showPage(int index) {
+    if (index < 0 || index >= central_stack_->count()) {
+      return;
+    }
+    page_tabs_->setTabVisible(index, true);
+    page_tabs_->setCurrentIndex(index);
+  }
+
   void buildCommands() {
-    auto* file_menu = window_->menuBar()->addMenu("文件");
-    auto* view_menu = window_->menuBar()->addMenu("视图");
-    auto* analysis_menu = window_->menuBar()->addMenu("分析");
-    auto* tools_menu = window_->menuBar()->addMenu("工具");
-    auto* help_menu = window_->menuBar()->addMenu("帮助");
+    auto* menu_strip = new QWidget(window_.get());
+    menu_strip->setObjectName("ApplicationMenuStrip");
+    auto* menu_layout = new QHBoxLayout(menu_strip);
+    menu_layout->setContentsMargins(8, 0, 8, 0);
+    menu_layout->setSpacing(0);
+    auto* brand = new QLabel("SS  Signal Studio", menu_strip);
+    brand->setObjectName("SignalStudioBrand");
+    menu_layout->addWidget(brand);
+    auto* context = new QLabel("宽带浏览", menu_strip);
+    context->setObjectName("ApplicationContext");
+    menu_layout->addWidget(context);
+    auto make_menu = [this, menu_strip, menu_layout](const char* label) {
+      auto* menu = new QMenu(QString::fromUtf8(label), window_.get());
+      auto* button = new QToolButton(menu_strip);
+      button->setObjectName("ApplicationMenuButton");
+      button->setText(QString::fromUtf8(label));
+      button->setMenu(menu);
+      button->setPopupMode(QToolButton::InstantPopup);
+      button->setAutoRaise(true);
+      menu_layout->addWidget(button);
+      return menu;
+    };
+    auto* file_menu = make_menu("文件");
+    view_menu_ = make_menu("视图");
+    auto* analysis_menu = make_menu("分析");
+    auto* tools_menu = make_menu("工具");
+    auto* help_menu = make_menu("帮助");
+    menu_layout->addStretch();
+    auto* offline = new QLabel("● 离线   Project schema 1.1   ⚙   ?", menu_strip);
+    offline->setStyleSheet("color:#46E6B0; padding:0 4px;");
+    menu_layout->addWidget(offline);
+    window_->setMenuWidget(menu_strip);
     auto* toolbar = main_ui_.mainToolBar;
     toolbar->setObjectName("WorkbenchCommandToolbar");
     toolbar->setMovable(false);
     toolbar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    toolbar->setIconSize(QSize(15, 15));
+    toolbar->setMinimumHeight(37);
+    toolbar->setMaximumHeight(37);
     const auto icon_for = [this](std::string_view id) {
       if (id == "view.fit-all") {
         return window_->style()->standardIcon(QStyle::SP_DesktopIcon);
@@ -293,14 +669,39 @@ private:
       });
       toolbar->addAction(action);
       if (command.id.starts_with("view.")) {
-        view_menu->addAction(action);
+        view_menu_->addAction(action);
       } else {
         tools_menu->addAction(action);
       }
     }
+    auto* task_toolbar_action = new QAction("任务", window_.get());
+    task_toolbar_action->setObjectName("toolbar.task-center");
+    task_toolbar_action->setToolTip("打开任务中心页面");
+    QObject::connect(task_toolbar_action, &QAction::triggered, window_.get(), [this] { showPage(2); });
+    toolbar->addAction(task_toolbar_action);
+    auto* toolbar_spacer = new QWidget(toolbar);
+    toolbar_spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    toolbar->addWidget(toolbar_spacer);
+    auto* source = new QLabel(QString::fromStdString(configuration_.content.source_summary), toolbar);
+    source->setStyleSheet("color:#E5F1FF; font-family:'Cascadia Mono'; font-size:10px;");
+    toolbar->addWidget(source);
+    auto* current = new QLabel("  ● 当前", toolbar);
+    current->setStyleSheet("color:#46E6B0; padding:0 8px;");
+    toolbar->addWidget(current);
     file_menu->addAction("关闭", QKeySequence::Close, window_.get(), &QWidget::close);
     analysis_menu->addAction("从 Selection 创建通道");
     help_menu->addAction("键盘与可访问性");
+
+    auto add_page_action = [this](const char* id, const char* label, int index) {
+      auto* action = view_menu_->addAction(label);
+      action->setObjectName(id);
+      QObject::connect(action, &QAction::triggered, window_.get(), [this, index] { showPage(index); });
+      return action;
+    };
+    add_page_action("page.home", "项目首页", 0);
+    add_page_action("page.wideband", "宽带浏览", 1);
+    add_page_action("page.task-center", "任务中心页面", 2);
+    add_page_action("page.settings", "设置与诊断页面", 3);
   }
 
   void buildPanels() {
@@ -324,6 +725,10 @@ private:
       title_layout->setContentsMargins(7, 2, 3, 2);
       title_layout->setSpacing(3);
       auto* title_label = new QLabel(QString::fromStdString(descriptor.title), title_bar);
+      if (descriptor.id == "navigator") {
+        title_label->setText("NAVIGATOR   项目与数据源");
+        title_label->setStyleSheet("color:#E5F1FF; font-weight:600;");
+      }
       title_layout->addWidget(title_label);
       title_layout->addStretch();
       if (descriptor.movable) {
@@ -349,13 +754,12 @@ private:
       auto* action = dock->toggleViewAction();
       action->setText(QString::fromStdString(descriptor.title));
       action->setShortcutContext(Qt::ApplicationShortcut);
-      window_->menuBar()->actions().at(1)->menu()->addAction(action);
+      view_menu_->addAction(action);
     }
     const auto task = docks_.find("task-center");
     const auto result = docks_.find("result-center");
     if (task != docks_.end() && result != docks_.end()) {
       window_->tabifyDockWidget(task->second, result->second);
-      task->second->raise();
       window_->resizeDocks({task->second}, {140}, Qt::Vertical);
     }
     const auto inspector = docks_.find("inspector");
@@ -367,11 +771,81 @@ private:
     if (inspector != docks_.end() && settings != docks_.end() && diagnostics != docks_.end()) {
       window_->tabifyDockWidget(inspector->second, settings->second);
       window_->tabifyDockWidget(inspector->second, diagnostics->second);
-      inspector->second->raise();
+    }
+    const auto navigator = docks_.find("navigator");
+    if (navigator != docks_.end()) {
+      navigator->second->setMinimumWidth(188);
+      window_->resizeDocks({navigator->second}, {230}, Qt::Horizontal);
+    }
+    for (const auto& [id, dock] : docks_) {
+      if (id != "navigator") {
+        dock->hide();
+      }
     }
   }
 
   [[nodiscard]] QWidget* createPanelContent(const std::string& id) {
+    if (id == "navigator") {
+      auto* content = new QWidget;
+      content->setObjectName("ProjectNavigator");
+      auto* layout = new QVBoxLayout(content);
+      layout->setContentsMargins(7, 7, 7, 7);
+      layout->setSpacing(5);
+      auto* workspace_title = new QLabel("⌂  Signal Studio 工作区", content);
+      workspace_title->setStyleSheet("color:#9CCBFF; font-weight:600; padding:6px 2px;");
+      layout->addWidget(workspace_title);
+      auto* current_label = new QLabel("当前项目", content);
+      current_label->setStyleSheet("color:#8FA8C2; font-size:10px;");
+      layout->addWidget(current_label);
+      auto* tree = new QTreeWidget(content);
+      tree->setObjectName("ProjectNavigatorTree");
+      tree->setAccessibleName("项目与数据源导航");
+      tree->setHeaderHidden(true);
+      tree->setRootIsDecorated(false);
+      tree->setIndentation(13);
+      tree->setFrameShape(QFrame::NoFrame);
+      tree->setStyleSheet("QTreeWidget{border:0;background:#08111F;}"
+                          "QTreeWidget::item{min-height:24px;border:0;}"
+                          "QTreeWidget::item:selected{background:#12324A;color:#E5F1FF;}");
+      for (const auto& entry : configuration_.content.navigation) {
+        auto* item = new QTreeWidgetItem(
+            {QString("%1%2%3").arg(QString(static_cast<int>(entry.depth * 2), QLatin1Char(' ')),
+                                   entry.current ? "● " : "  ", QString::fromStdString(entry.label)),
+             QString::fromStdString(entry.badge)});
+        if (entry.current) {
+          item->setForeground(0, QColor("#E5F1FF"));
+          item->setBackground(0, QColor("#12324A"));
+        }
+        tree->addTopLevelItem(item);
+      }
+      tree->setColumnCount(2);
+      tree->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+      tree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+      layout->addWidget(tree, 1);
+
+      auto* global_label = new QLabel("全局", content);
+      global_label->setStyleSheet("color:#8FA8C2; font-size:10px;");
+      layout->addWidget(global_label);
+      const auto add_navigation = [this, layout, content](const QString& label, int page_index) {
+        auto* button = new QToolButton(content);
+        button->setText(label);
+        button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+        button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        button->setStyleSheet("QToolButton{text-align:left;border-color:transparent;padding-left:7px;}"
+                              "QToolButton:hover{background:#12324A;border-color:#2B4867;}");
+        QObject::connect(button, &QToolButton::clicked, window_.get(), [this, page_index] { showPage(page_index); });
+        layout->addWidget(button);
+      };
+      add_navigation("☷  任务中心", 2);
+      add_navigation("⬡  插件与模型", 1);
+      add_navigation("⚙  设置与诊断", 3);
+      auto* project =
+          new QLabel(QString("PROJECT\n%1").arg(QString::fromStdString(configuration_.content.project_name)), content);
+      project->setStyleSheet("color:#8FA8C2; font-family:'Cascadia Mono'; font-size:10px;"
+                             "border-top:1px solid #203A55; padding-top:6px;");
+      layout->addWidget(project);
+      return content;
+    }
     if (id == "inspector") {
       auto* content = new QWidget;
       Ui::SignalInspectorPanel ui;
@@ -472,6 +946,9 @@ private:
   WorkbenchConfiguration configuration_;
   std::optional<WorkbenchLayout> saved_layout_;
   std::map<std::string, QDockWidget*, std::less<>> docks_;
+  QMenu* view_menu_{};
+  QTabBar* page_tabs_{};
+  QStackedWidget* central_stack_{};
   QLabel* status_label_{};
 };
 

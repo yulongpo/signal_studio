@@ -14,6 +14,7 @@
 #include <QtGui/QPaintEvent>
 #include <QtGui/QPainter>
 #include <QtGui/QPainterPath>
+#include <QtGui/QResizeEvent>
 #include <QtGui/QWheelEvent>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
@@ -1046,9 +1047,9 @@ public:
 
     auto* controls = new QFrame(this);
     controls->setObjectName("ControlStrip");
-    auto* control_stack = new QVBoxLayout(controls);
-    control_stack->setContentsMargins(6, 3, 6, 3);
-    control_stack->setSpacing(3);
+    auto* control_stack = new QHBoxLayout(controls);
+    control_stack->setContentsMargins(4, 2, 4, 2);
+    control_stack->setSpacing(6);
     auto* interaction_layout = new QHBoxLayout;
     interaction_layout->setContentsMargins(0, 0, 0, 0);
     interaction_layout->setSpacing(4);
@@ -1124,18 +1125,18 @@ public:
     display_button->setMenu(display_menu);
     interaction_layout->addWidget(display_button);
 
-    auto* exact_button = new QToolButton(controls);
-    exact_button->setText("精确输入");
-    exact_button->setAccessibleName("精确时间视窗与 Selection 输入");
-    exact_button->setPopupMode(QToolButton::InstantPopup);
-    exact_button->setFocusPolicy(Qt::StrongFocus);
-    auto* exact_menu = new QMenu(exact_button);
+    exact_button_ = new QToolButton(controls);
+    exact_button_->setText("精确输入");
+    exact_button_->setAccessibleName("精确时间视窗与 Selection 输入");
+    exact_button_->setPopupMode(QToolButton::InstantPopup);
+    exact_button_->setFocusPolicy(Qt::StrongFocus);
+    auto* exact_menu = new QMenu(exact_button_);
     auto* exact_time = exact_menu->addAction("精确时间视窗…");
     auto* exact_selection = exact_menu->addAction("精确创建 Selection…");
     QObject::connect(exact_time, &QAction::triggered, this, [this] { editExactTime(); });
     QObject::connect(exact_selection, &QAction::triggered, this, [this] { editExactSelection(); });
-    exact_button->setMenu(exact_menu);
-    interaction_layout->addWidget(exact_button);
+    exact_button_->setMenu(exact_menu);
+    interaction_layout->addWidget(exact_button_);
     interaction_layout->addStretch();
 
     auto* frequency_label = new QLabel("中心", controls);
@@ -1175,9 +1176,9 @@ public:
     dynamic_range_->setMinimumWidth(104);
     dynamic_range_->setMaximumWidth(120);
     parameter_layout->addWidget(dynamic_range_);
-    auto* screenshot = new QPushButton("截图", controls);
-    screenshot->setAccessibleName("图谱截图选项");
-    parameter_layout->addWidget(screenshot);
+    screenshot_button_ = new QPushButton("截图", controls);
+    screenshot_button_->setAccessibleName("图谱截图选项");
+    parameter_layout->addWidget(screenshot_button_);
     root->addWidget(controls);
 
     navigator_ = new TimeNavigatorWidget(this);
@@ -1216,10 +1217,10 @@ public:
       splitter_->addWidget(canvas);
       extra_canvases_.push_back(canvas);
     }
-    splitter_->setStretchFactor(0, 2);
-    splitter_->setStretchFactor(1, 2);
-    splitter_->setStretchFactor(2, 4);
-    QList<int> initial_sizes{150, 170, 290};
+    splitter_->setStretchFactor(0, 3);
+    splitter_->setStretchFactor(1, 4);
+    splitter_->setStretchFactor(2, 5);
+    QList<int> initial_sizes{150, 200, 250};
     for (qsizetype index = 0; index < static_cast<qsizetype>(extra_canvases_.size()); ++index) {
       splitter_->setStretchFactor(static_cast<int>(index + 3), 2);
       initial_sizes.push_back(180);
@@ -1296,7 +1297,7 @@ public:
                      [display_change](double) { display_change(); });
     QObject::connect(frequency_input_, &QLineEdit::editingFinished, this, [this] { applyExactFrequency(); });
     QObject::connect(span_input_, &QLineEdit::editingFinished, this, [this] { applyExactFrequency(); });
-    QObject::connect(screenshot, &QPushButton::clicked, this, [this] {
+    QObject::connect(screenshot_button_, &QPushButton::clicked, this, [this] {
       const auto path = QFileDialog::getSaveFileName(this, "保存图谱截图", {}, "PNG 图像 (*.png)");
       if (path.isEmpty()) {
         setStatus("图谱截图已取消");
@@ -1312,6 +1313,15 @@ public:
     spectrogram_->setVisible(configuration_.show_spectrogram);
   }
 
+protected:
+  void resizeEvent(QResizeEvent* event) override {
+    const auto compact = event->size().width() < 1120;
+    exact_button_->setVisible(!compact);
+    screenshot_button_->setVisible(!compact);
+    QWidget::resizeEvent(event);
+  }
+
+public:
   void setFrame(const VisualizationFrame& frame) {
     for (auto* canvas : allCanvases()) {
       canvas->setFrame(frame);
@@ -1619,6 +1629,8 @@ private:
   std::optional<OverlayModel> overlay_;
   QCheckBox* waveform_toggle_{};
   QCheckBox* psd_toggle_{};
+  QToolButton* exact_button_{};
+  QPushButton* screenshot_button_{};
   QLineEdit* frequency_input_{};
   QLineEdit* span_input_{};
   QComboBox* color_map_{};

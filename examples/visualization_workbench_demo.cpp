@@ -6,6 +6,7 @@
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtCore/QTimer>
+#include <QtGui/QAction>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QPixmap>
 #include <QtWidgets/QApplication>
@@ -118,7 +119,7 @@ public:
 
 int main(int argc, char* argv[]) {
   QApplication application(argc, argv);
-  QCoreApplication::setApplicationName("Signal Platform Visualization Demo");
+  QCoreApplication::setApplicationName("Signal Studio");
   QCoreApplication::setApplicationVersion("1.0");
 
   QCommandLineParser parser;
@@ -129,10 +130,12 @@ int main(int argc, char* argv[]) {
   const QCommandLineOption width_option("width", "窗口宽度", "pixels", "1280");
   const QCommandLineOption height_option("height", "窗口高度", "pixels", "720");
   const QCommandLineOption startup_smoke("startup-smoke", "仅验证平台插件和窗口构造");
+  const QCommandLineOption page_option("page", "截图页面：p02、p04 或 p07", "page", "p02");
   parser.addOption(screenshot_option);
   parser.addOption(width_option);
   parser.addOption(height_option);
   parser.addOption(startup_smoke);
+  parser.addOption(page_option);
   parser.process(application);
 
   signal::visualization::ViewportController controller("ms03-demo");
@@ -167,18 +170,29 @@ int main(int argc, char* argv[]) {
   auto commands = std::make_shared<signal::workbench::CommandRegistry>();
   auto panels = std::make_shared<signal::workbench::PanelRegistry>();
   auto diagnostics = std::make_shared<DemoDiagnostics>();
-  signal::workbench::WorkbenchConfiguration configuration{.application_name = "Signal Platform",
-                                                          .window_title = "可视化工作台"};
+  signal::workbench::WorkbenchConfiguration configuration{.application_name = "Signal Studio",
+                                                          .window_title = "宽带浏览"};
   configuration.content.status_text = "● 就绪 · CPU · 缓存 0%";
   configuration.content.resource_text = "线程 4 · 内存 1.6 GB";
+  configuration.content.project_name = "wideband-burst_studio";
+  configuration.content.source_summary = "x310_capture_cf1245MHz_sr50MSps · 953 MB";
+  configuration.content.navigation = {{"x310_capture_cf1245MHz…", "953 MB", 0, true},
+                                      {"概览与导航", "", 1, false},
+                                      {"选区与标记", "2", 1, false},
+                                      {"S-07 目标突发", "", 2, false},
+                                      {"CH-01 目标载波", "", 1, false},
+                                      {"结果", "18", 1, false}};
   configuration.content.inspector = {{"数据源版本", "x310-demo@v1"},
                                      {"时间范围", "[60,000,000, 85,000,000)"},
                                      {"频率范围", "1.220 GHz — 1.270 GHz"},
                                      {"单位", "dB/Hz"},
                                      {"窗函数", "Hann"},
                                      {"RBW", "4.88 kHz"}};
-  configuration.content.tasks = {{"视图细化", "● 运行中", "64%", "CPU", "VR-000184"},
-                                 {"频谱概要", "✓ 完成", "100%", "CPU", "x310-demo@v1"}};
+  configuration.content.tasks = {{"计算当前视窗三图", "● 运行中", "72%", "CPU", "wideband_demo.iq"},
+                                 {"构建全文件三峰索引", "● 运行中", "37%", "CPU", "wideband_demo.iq"},
+                                 {"CH-01 调制识别", "● 等待中", "0%", "CPU", "CH-01"},
+                                 {"导出测量报告", "● 失败", "64%", "CPU", "ResultSet-12"},
+                                 {"计算载波频偏", "✓ 已完成", "100%", "CPU", "CH-01"}};
   configuration.content.results = {{"SEL-1 目标突发", "● 当前", "x310-demo@v1", "可定位"},
                                    {"批量测量 02", "! 已过期", "x310-demo@v0", "查看来源"}};
   auto window = signal::workbench::make_workbench_window(std::move(configuration), std::move(workspace), commands,
@@ -199,6 +213,17 @@ int main(int argc, char* argv[]) {
   native_window->resize(width, height);
   window->show();
 
+  const auto requested_page = parser.value(page_option).toLower();
+  const auto page_action_name = requested_page == "p04"   ? "page.task-center"
+                                : requested_page == "p07" ? "page.settings"
+                                                          : "page.wideband";
+  if (auto* page_action = native_window->findChild<QAction*>(page_action_name)) {
+    page_action->trigger();
+  } else {
+    std::cerr << "无法定位截图页面\n";
+    return 8;
+  }
+
   if (parser.isSet(startup_smoke)) {
     std::cout << "platform=" << QGuiApplication::platformName().toStdString()
               << " panels=" << window->visible_panels().size() << '\n';
@@ -206,10 +231,10 @@ int main(int argc, char* argv[]) {
   } else if (parser.isSet(screenshot_option)) {
     const auto path = QFileInfo(parser.value(screenshot_option)).absoluteFilePath();
     QDir().mkpath(QFileInfo(path).absolutePath());
-    QTimer::singleShot(250, native_window, [native_window, path, &application] {
+    QTimer::singleShot(500, native_window, [native_window, path, &application] {
       const auto screenshot = native_window->grab();
       if (!screenshot.save(path, "PNG")) {
-        application.exit(8);
+        application.exit(9);
         return;
       }
       application.quit();
