@@ -2,15 +2,24 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Signal Studio MS-00 platform tests",
+      "name": "Signal Studio（CPU Debug）",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/local-windows-msvc-debug/bin/signal_studio_platform_tests.exe",
-      "args": ["--case", "core.version"],
+      "program": "${workspaceFolder}/build/local-windows-msvc-cpu-debug/bin/SignalStudio.exe",
+      "args": [],
       "cwd": "${workspaceFolder}",
-      "environment": [],
+      "environment": [
+        {
+          "name": "QT_PLUGIN_PATH",
+          "value": "${workspaceFolder}/build/local-windows-msvc-cpu-debug/bin"
+        },
+        {
+          "name": "QT_QPA_PLATFORM_PLUGIN_PATH",
+          "value": "${workspaceFolder}/build/local-windows-msvc-cpu-debug/bin/platforms"
+        }
+      ],
       "console": "integratedTerminal",
-      "preLaunchTask": "Signal Studio: Validate Debug Tree"
+      "preLaunchTask": "Signal Studio: Build CPU Debug"
     }
   ]
 }

@@ -5,7 +5,9 @@
 批准的 UI 规范、图表约定、色阶约定、资源、截图和评审原型位于不可变目录
 `docs/baseline/Signal-Studio-Dev-Docs/02_原型设计` 与 `03_UI规范`。保留的 HTML 原型只用于历史设计参考，不是运行时依赖，也不会被包装为最终 Qt 软件。
 
-MS-03 交付可复用的 `SignalVisualization` 与 `SignalWorkbench`；MS-04 才开始品牌化 Signal Studio 产品页面和真实导入业务编排。当前 Qt 界面是可运行的平台原型，具备真实交互、布局、状态和安装运行时，但演示数据由示例程序显式注入。
+MS-03 交付可复用的 `SignalVisualization` 与 `SignalWorkbench`；MS-04 在其上交付
+品牌化 Signal Studio 基础产品、真实工程/导入/分析/结果业务闭环。平台演示程序仍只
+使用显式注入的演示数据，最终 `SignalStudio.exe` 则只显示当前工程和实际录制状态。
 
 ## 2. 视觉与布局
 
@@ -62,6 +64,14 @@ Selection、游标和测量通过覆盖层模型管理，包含稳定 ID、来�
 - `SignalSettingsPanel.ui`
 - `SignalDiagnosticsPanel.ui`
 
+MS-04 最终应用另增加五个生产 `.ui` 文件：
+
+- `SignalStudioProjectHome.ui`
+- `SignalImportWizard.ui`
+- `SignalLoadProgressDialog.ui`
+- `SignalInspectorPage.ui`
+- `SignalResultCenterPage.ui`
+
 构建和安装部署匹配配置的 Qt Core/Gui/Widgets DLL、Windows/offscreen 平台插件和 `qt.conf`。清空 Qt 插件环境变量后，程序仍由默认 Windows 平台启动，防止调试器再次出现无法初始化 Qt 平台插件的错误。
 
 ## 6. 可访问性与线程边界
@@ -75,3 +85,22 @@ Canvas 提供可访问名称、语义描述和等价文本摘要；关键测量�
 P02、P04、P07 以 `02_原型设计/页面截图/标准截图` 的 HTML 实际渲染归档为视觉基准。工作台应用外壳固定包含应用菜单条、紧凑命令栏、约 230 逻辑像素左侧导航、中心页签、右侧折叠属性入口和底部状态条。P02 的时域、PSD、STFT 初始比例为 3:4:5；P04/P07 作为完整中心页面，不再以展开 Dock 替代。
 
 所有尺寸、间距和命中区均按逻辑像素表达。窗口处理 `DevicePixelRatioChange` 和屏幕切换事件，更新布局几何与重绘；`QMouseEvent::position()` 保持逻辑坐标，Canvas、QImage 和窗口截图由 Qt 的 DPR 机制生成物理像素。跨显示器切换不得改变逻辑窗口尺寸。1280×720 下可隐藏重复的低优先工具入口，但主要分析区、页签和全局导航必须保留。
+
+## 8. MS-04 产品页面
+
+P01 项目首页显示真实工程、数据源、最近工程和运行环境。W01 导入向导在同一响应式
+双列布局中呈现文件/格式与采样/范围约定，文件名提示只有经用户明确确认才会采用；
+有界预览由后台任务执行。W05 显示源文件事实、信号格式、采样率、进度和暂停/继续/
+取消语义。
+
+P02 继续使用 MS-03 的生产图谱，绑定当前导入的真实时域、PSD、STFT 和同代际视口。
+P03 保存独立 AnalysisChannel 的 Inspector 状态；星座图使用独立 I/Q 坐标、零轴和
+单位参考圆，眼图缺少符号率/同步来源时明确不适用。P05 以分类、结果列表、来源详情三栏只显示 ArtifactStore 中的真实结果，
+支持当前/过期筛选、来源定位和无覆盖导出。产品工作台默认显示 Navigator、
+Inspector 与任务中心；用户关闭 Inspector 后显示边缘恢复入口。
+
+自动截图覆盖 P01、W01、W05、P02、P03、P05。W01/W05 截图把主窗口、遮罩和顶层
+工作流窗口按 Qt 的 DPR 合成为完整页面，避免只截取对话框后与批准全窗口基线做失真
+比较。最终证据通过 Windows 平台探测本机原生 DPR，并把隐藏窗口归一化到目标 DPR，
+保留 qwindows 的真实中文字体渲染且不受桌面工作区裁剪。证据覆盖 1280×720、
+1920×1080、3840×2160、150% 和 200% DPI，并为六个有标准截图的页面保存并排对比图。

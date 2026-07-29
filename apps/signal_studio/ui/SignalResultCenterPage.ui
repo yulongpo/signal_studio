@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SignalResultCenterPage</class>
+ <widget class="QWidget" name="SignalResultCenterPage">
+  <layout class="QVBoxLayout" name="resultPageLayout">
+   <property name="leftMargin"><number>14</number></property>
+   <property name="topMargin"><number>12</number></property>
+   <property name="rightMargin"><number>14</number></property>
+   <property name="bottomMargin"><number>12</number></property>
+   <property name="spacing"><number>8</number></property>
+   <item>
+    <layout class="QHBoxLayout" name="resultHeaderLayout">
+     <item>
+      <layout class="QVBoxLayout" name="resultHeadingLayout">
+       <item><widget class="QLabel" name="resultCodeLabel"><property name="text"><string>P05 / GOVERNANCE</string></property></widget></item>
+       <item><widget class="QLabel" name="resultTitleLabel"><property name="text"><string>结果中心</string></property></widget></item>
+       <item><widget class="QLabel" name="resultDescriptionLabel"><property name="text"><string>真实测量结果按来源版本分类，可定位、校验并无覆盖导出。</string></property></widget></item>
+      </layout>
+     </item>
+     <item><spacer name="resultHeaderSpacer"><property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property><property name="sizeHint"><size><width>40</width><height>20</height></size></property></spacer></item>
+     <item><widget class="QLineEdit" name="resultSearchEdit"><property name="minimumSize"><size><width>260</width><height>0</height></size></property><property name="placeholderText"><string>搜索结果 ID、类型或来源版本</string></property></widget></item>
+     <item><widget class="QComboBox" name="resultStateCombo"><item><property name="text"><string>全部状态</string></property></item><item><property name="text"><string>仅当前</string></property></item><item><property name="text"><string>仅已过期</string></property></item></widget></item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="resultBodyLayout">
+     <property name="spacing"><number>8</number></property>
+     <item>
+      <widget class="QTreeWidget" name="resultCategories">
+       <property name="minimumSize"><size><width>168</width><height>0</height></size></property>
+       <property name="maximumSize"><size><width>210</width><height>16777215</height></size></property>
+       <property name="headerHidden"><bool>true</bool></property>
+       <property name="rootIsDecorated"><bool>false</bool></property>
+       <property name="alternatingRowColors"><bool>true</bool></property>
+       <column><property name="text"><string>结果视图</string></property></column>
+      </widget>
+     </item>
+     <item>
+      <widget class="QTableWidget" name="resultsTable">
+       <property name="alternatingRowColors"><bool>true</bool></property>
+       <property name="selectionBehavior"><enum>QAbstractItemView::SelectionBehavior::SelectRows</enum></property>
+       <property name="selectionMode"><enum>QAbstractItemView::SelectionMode::SingleSelection</enum></property>
+       <property name="editTriggers"><set>QAbstractItemView::EditTrigger::NoEditTriggers</set></property>
+       <property name="showGrid"><bool>false</bool></property>
+       <column><property name="text"><string>结果</string></property></column>
+       <column><property name="text"><string>类型</string></property></column>
+       <column><property name="text"><string>有效性</string></property></column>
+       <column><property name="text"><string>来源版本</string></property></column>
+       <column><property name="text"><string>格式</string></property></column>
+      </widget>
+     </item>
+     <item>
+      <widget class="QFrame" name="resultDetailPanel">
+       <property name="minimumSize"><size><width>235</width><height>0</height></size></property>
+       <property name="maximumSize"><size><width>300</width><height>16777215</height></size></property>
+       <property name="frameShape"><enum>QFrame::Shape::StyledPanel</enum></property>
+       <layout class="QVBoxLayout" name="resultDetailLayout">
+        <property name="leftMargin"><number>10</number></property>
+        <property name="topMargin"><number>10</number></property>
+        <property name="rightMargin"><number>10</number></property>
+        <property name="bottomMargin"><number>10</number></property>
+        <property name="spacing"><number>8</number></property>
+        <item><widget class="QLabel" name="resultDetailHeading"><property name="text"><string>结果详情</string></property></widget></item>
+        <item><widget class="QLabel" name="resultDetailTitleLabel"><property name="text"><string>未选择结果</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+        <item>
+         <layout class="QFormLayout" name="resultDetailForm">
+          <property name="labelAlignment"><set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set></property>
+          <item row="0" column="0"><widget class="QLabel" name="resultTypeLabel"><property name="text"><string>类型</string></property></widget></item>
+          <item row="0" column="1"><widget class="QLabel" name="resultDetailTypeValue"><property name="text"><string>—</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+          <item row="1" column="0"><widget class="QLabel" name="resultValidityLabel"><property name="text"><string>有效性</string></property></widget></item>
+          <item row="1" column="1"><widget class="QLabel" name="resultDetailValidityValue"><property name="text"><string>—</string></property></widget></item>
+          <item row="2" column="0"><widget class="QLabel" name="resultSourceLabel"><property name="text"><string>来源版本</string></property></widget></item>
+          <item row="2" column="1"><widget class="QLabel" name="resultDetailSourceValue"><property name="text"><string>—</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+          <item row="3" column="0"><widget class="QLabel" name="resultFormatLabel"><property name="text"><string>格式</string></property></widget></item>
+          <item row="3" column="1"><widget class="QLabel" name="resultDetailFormatValue"><property name="text"><string>—</string></property></widget></item>
+         </layout>
+        </item>
+        <item><spacer name="resultDetailSpacer"><property name="orientation"><enum>Qt::Orientation::Vertical</enum></property><property name="sizeHint"><size><width>20</width><height>40</height></size></property></spacer></item>
+        <item><widget class="QPushButton" name="locateResultButton"><property name="text"><string>定位来源</string></property></widget></item>
+        <item><widget class="QPushButton" name="exportResultButton"><property name="text"><string>导出结果包…</string></property></widget></item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="resultFooterLayout">
+     <item><widget class="QLabel" name="resultSummaryLabel"><property name="text"><string>0 个结果</string></property></widget></item>
+     <item><spacer name="resultFooterSpacer"><property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property><property name="sizeHint"><size><width>40</width><height>20</height></size></property></spacer></item>
+     <item><widget class="QLabel" name="resultTraceabilityLabel"><property name="text"><string>结果必须可追溯到数据源版本</string></property></widget></item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

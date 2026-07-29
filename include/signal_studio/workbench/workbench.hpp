@@ -197,6 +197,13 @@ struct WorkbenchConfiguration final {
   WorkbenchContent content;
 };
 
+struct WorkbenchPage final {
+  std::string id;
+  std::string title;
+  void* native_widget{};
+  bool visible_in_tabs{true};
+};
+
 class IWorkbenchWindow {
 public:
   virtual ~IWorkbenchWindow() noexcept = default;
@@ -206,6 +213,11 @@ public:
   [[nodiscard]] virtual WorkbenchLayout save_layout() const = 0;
   [[nodiscard]] virtual std::vector<std::string> visible_panels() const = 0;
   [[nodiscard]] virtual std::string accessibility_summary() const = 0;
+  /// 安装或替换宿主应用页面。native_widget 的所有权转交给工作台。
+  [[nodiscard]] virtual core::Status install_page(WorkbenchPage page) = 0;
+  [[nodiscard]] virtual core::Status show_page(std::string_view page_id) = 0;
+  /// 用宿主的单一真实状态源刷新导航、Dock、工具栏和状态栏。
+  [[nodiscard]] virtual core::Status update_content(WorkbenchContent content) = 0;
 };
 
 /// 创建可复用 Qt Widgets 工作台；Qt 只存在于私有实现和不透明原生句柄中。

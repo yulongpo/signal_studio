@@ -147,3 +147,48 @@ MS-03 的 50 项逐需求测试由 Visualization 18 项、时间导航 15 项、
 按用户批准未执行 Ubuntu 24.04 构建测试。MS-03 不重复执行 MS-02 的物理/逻辑大文件性能验证，也不创建物理 100 GB 文件。
 
 2026-07-29 增量门禁在 CPU/CUDA Debug/Release 四套预设上均完成配置、编译、63/63 项 MS-03 CTest 和 1/1 安装消费者。截图脚本的 JSON 清单必须证明物理尺寸等于逻辑尺寸乘实际 DPR；对比脚本必须保留 P02 修复前/后以及 P04/P07 基线/修复后证据。
+
+## MS-04 测试矩阵
+
+MS-04 直接覆盖 20 项批准需求：`FR-INS-001`～`FR-INS-007`、
+`FR-EXP-001`～`FR-EXP-009`、`NFR-REL-001`～`NFR-REL-004`。应用层另注册工程导入
+分析闭环、取消重试、错误恢复、Qt 前自检、三份外部录制、五档尺寸/DPI、默认 Windows
+平台启动和六页截图，共 38 项 `ms-04` 标签用例。
+
+结果测试覆盖 CSV/JSON schema、单位和 provenance，PNG、RAW+JSON、WAV、插件格式，
+目录级原子提交、禁止覆盖、批量清单、按工程/源/Selection/Channel 查询、当前/过期
+判断和 SHA-256 篡改检测。Inspector 测试覆盖独立通道状态、五类基础容器、星座参数、
+眼图适用条件、直方图/瞬时频率单位和预处理、版本过期及缺失插件显式降级。
+
+外部数据只做有界读取并复核源文件：
+
+- 20,480,044 字节 WAV；
+- 998,774,448 字节 X310 SC16；
+- 4,004,031,888 字节 X310 SC16。
+
+按用户决定不创建物理 100 GB 文件；需要该边界时只对指定 X310 文件执行逻辑重复映射
+和有界访问。批准资料未提供 D4，测试报告必须写明“基线未提供”，不能制造或记为通过。
+
+本地候选矩阵：
+
+| 预设 | 范围 | 结果 |
+|---|---|---:|
+| `local-windows-msvc-cpu-debug` | 全量 | 243/243 |
+| `local-windows-msvc-cpu-release` | 全量 | 243/243 |
+| `local-windows-msvc-cuda-debug` | MS-04 + Compute | 50/50 |
+| `local-windows-msvc-cuda-release` | MS-04 + Compute | 50/50 |
+| CPU Debug/Release | 安装消费者与已安装主程序 | 各 1/1 |
+
+`NFR-REL-002` 循环新建、打开、导入、分析、提交和关闭 100 次并检查资源回落；
+`NFR-REL-003` 注入权限拒绝、等价满盘提交失败和损坏暂存/缓存，之后复核源文件与已
+保存工程；`NFR-REL-004` 校验并篡改结果载荷。`NFR-REL-001` 的普通 CTest 只作为
+短冒烟，最终验收必须另执行连续 8 小时真实混合操作进程，并记录起止时间、循环数、
+错误流、Working Set、峰值和句柄数后才能收口。
+
+CTest 截图与布局断言使用 Qt offscreen，另清空三项 Qt 插件环境变量走默认 Windows
+平台。里程碑视觉证据使用 qwindows 隐藏窗口：先探测本机原生 DPR，再把相对
+`QT_SCALE_FACTOR` 归一化为 1.0、1.5 或 2.0 目标 DPR，并校验 PNG 物理尺寸等于逻辑
+尺寸乘目标 DPR。安装消费者在独立前缀运行 `SignalStudio.exe --self-test` 和
+`--startup-smoke`，同时验证 Qt/VC143 运行时闭包。按用户决定不执行 Ubuntu 24.04
+无界面构建，不新增 Linux 兼容声明。GitHub Actions 的 Windows Qt/UI 作业在 MS-03
+回归之后显式执行全部 `ms-04` 标签用例，再执行十组件安装消费。

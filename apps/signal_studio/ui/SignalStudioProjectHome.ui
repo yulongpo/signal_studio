@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SignalStudioProjectHome</class>
+ <widget class="QWidget" name="SignalStudioProjectHome">
+  <property name="minimumSize"><size><width>720</width><height>480</height></size></property>
+  <layout class="QVBoxLayout" name="homeLayout">
+   <property name="leftMargin"><number>18</number></property>
+   <property name="topMargin"><number>18</number></property>
+   <property name="rightMargin"><number>18</number></property>
+   <property name="bottomMargin"><number>18</number></property>
+   <property name="spacing"><number>14</number></property>
+   <item>
+    <widget class="QFrame" name="heroPanel">
+     <property name="frameShape"><enum>QFrame::Shape::StyledPanel</enum></property>
+     <layout class="QHBoxLayout" name="heroLayout">
+      <property name="leftMargin"><number>20</number></property>
+      <property name="topMargin"><number>18</number></property>
+      <property name="rightMargin"><number>20</number></property>
+      <property name="bottomMargin"><number>18</number></property>
+      <item>
+       <layout class="QVBoxLayout" name="heroTextLayout">
+        <item><widget class="QLabel" name="pageCodeLabel"><property name="text"><string>P01 / PROJECT HOME</string></property></widget></item>
+        <item><widget class="QLabel" name="heroTitleLabel"><property name="text"><string>开始一次信号分析</string></property></widget></item>
+        <item><widget class="QLabel" name="heroDescriptionLabel"><property name="text"><string>从实信号或复信号数据建立可追溯项目。原始采样始终以只读方式访问。</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+       </layout>
+      </item>
+      <item><spacer name="heroSpacer"><property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property><property name="sizeHint"><size><width>40</width><height>20</height></size></property></spacer></item>
+      <item><widget class="QPushButton" name="importSignalButton"><property name="text"><string>导入信号数据</string></property><property name="minimumHeight"><number>34</number></property></widget></item>
+      <item><widget class="QPushButton" name="openProjectButton"><property name="text"><string>打开项目</string></property><property name="minimumHeight"><number>34</number></property></widget></item>
+      <item><widget class="QPushButton" name="newProjectButton"><property name="text"><string>新建项目</string></property><property name="minimumHeight"><number>34</number></property></widget></item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="contentLayout">
+     <property name="spacing"><number>14</number></property>
+     <item>
+      <widget class="QFrame" name="recentPanel">
+       <property name="frameShape"><enum>QFrame::Shape::StyledPanel</enum></property>
+       <layout class="QVBoxLayout" name="recentLayout">
+        <item><widget class="QLabel" name="recentTitleLabel"><property name="text"><string>最近项目  ·  本机工作区</string></property></widget></item>
+        <item>
+         <widget class="QTableWidget" name="recentProjectsTable">
+          <property name="alternatingRowColors"><bool>true</bool></property>
+          <property name="selectionBehavior"><enum>QAbstractItemView::SelectionBehavior::SelectRows</enum></property>
+          <property name="editTriggers"><set>QAbstractItemView::EditTrigger::NoEditTriggers</set></property>
+          <property name="showGrid"><bool>false</bool></property>
+          <column><property name="text"><string>项目</string></property></column>
+          <column><property name="text"><string>位置</string></property></column>
+          <column><property name="text"><string>状态</string></property></column>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="principlesLayout">
+          <item><widget class="QLabel" name="readOnlyLabel"><property name="text"><string>◈ 源数据只读</string></property></widget></item>
+          <item><widget class="QLabel" name="boundedLabel"><property name="text"><string>ϟ 渐进浏览</string></property></widget></item>
+          <item><widget class="QLabel" name="traceableLabel"><property name="text"><string>▣ 结果可追溯</string></property></widget></item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QFrame" name="systemPanel">
+       <property name="minimumWidth"><number>280</number></property>
+       <property name="maximumWidth"><number>380</number></property>
+       <property name="frameShape"><enum>QFrame::Shape::StyledPanel</enum></property>
+       <layout class="QVBoxLayout" name="systemLayout">
+        <item><widget class="QLabel" name="systemTitleLabel"><property name="text"><string>系统状态  ·  离线运行</string></property></widget></item>
+        <item><widget class="QLabel" name="dataBackendLabel"><property name="text"><string>● 就绪   数据访问后端</string></property></widget></item>
+        <item><widget class="QLabel" name="dspBackendLabel"><property name="text"><string>● 可用   DSP 核心</string></property></widget></item>
+        <item><widget class="QLabel" name="computeBackendLabel"><property name="text"><string>● CPU   CUDA 12.4 可选回退</string></property></widget></item>
+        <item><widget class="QLabel" name="cacheLabel"><property name="text"><string>● 健康   项目缓存目录</string></property></widget></item>
+        <item><spacer name="systemSpacer"><property name="orientation"><enum>Qt::Orientation::Vertical</enum></property><property name="sizeHint"><size><width>20</width><height>40</height></size></property></spacer></item>
+        <item><widget class="QPushButton" name="diagnosticsButton"><property name="text"><string>查看设置与诊断</string></property></widget></item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -222,7 +222,7 @@ endfunction()
 
 signal_studio_add_module(SignalStudioCore Core src/platform/core/version.cpp src/platform/core/error.cpp
   src/platform/core/capability.cpp src/platform/core/module_descriptor.cpp src/platform/core/module.cpp
-  src/platform/core/services.cpp)
+  src/platform/core/services.cpp src/platform/core/artifact.cpp)
 target_include_directories(SignalStudioCore PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 signal_studio_add_shared_module(SignalStudioCompute Compute src/platform/compute/module.cpp
   src/platform/compute/compute.cpp src/platform/compute/cuda_memory.cpp)
@@ -305,6 +305,7 @@ if(SIGNAL_STUDIO_BUILD_UI)
   signal_studio_add_module(SignalStudioWorkbench Workbench
     src/platform/workbench/module.cpp
     src/platform/workbench/workbench.cpp
+    src/platform/workbench/inspector.cpp
     src/platform/workbench/qt_workbench.cpp)
   qt_wrap_ui(_signal_studio_workbench_ui_headers
     src/platform/workbench/ui/SignalWorkbenchMainWindow.ui
@@ -325,6 +326,40 @@ if(SIGNAL_STUDIO_BUILD_UI)
   target_link_libraries(SignalStudioWorkbench PUBLIC SignalStudio::Visualization SignalStudio::TaskRuntime SignalStudio::Core
     PRIVATE Qt6::Core Qt6::Widgets)
   set(_signal_studio_ui_targets SignalStudioVisualization SignalStudioWorkbench)
+
+  add_library(SignalStudioApplicationCore STATIC
+    apps/signal_studio/application.cpp)
+  target_compile_features(SignalStudioApplicationCore PUBLIC cxx_std_20)
+  target_include_directories(SignalStudioApplicationCore
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/apps/signal_studio")
+  target_link_libraries(SignalStudioApplicationCore
+    PUBLIC SignalStudio::Core SignalStudio::Data SignalStudio::DSP SignalStudio::Compute
+      SignalStudio::TaskRuntime SignalStudio::Visualization SignalStudio::Workbench)
+  signal_studio_enable_warnings(SignalStudioApplicationCore)
+
+  qt_wrap_ui(_signal_studio_application_ui_headers
+    apps/signal_studio/ui/SignalStudioProjectHome.ui
+    apps/signal_studio/ui/SignalImportWizard.ui
+    apps/signal_studio/ui/SignalLoadProgressDialog.ui
+    apps/signal_studio/ui/SignalInspectorPage.ui
+    apps/signal_studio/ui/SignalResultCenterPage.ui)
+  add_executable(signal_studio WIN32
+    apps/signal_studio/main.cpp
+    apps/signal_studio/qt_application.cpp
+    ${_signal_studio_application_ui_headers}
+    apps/signal_studio/ui/SignalStudioProjectHome.ui
+    apps/signal_studio/ui/SignalImportWizard.ui
+    apps/signal_studio/ui/SignalLoadProgressDialog.ui
+    apps/signal_studio/ui/SignalInspectorPage.ui
+    apps/signal_studio/ui/SignalResultCenterPage.ui)
+  set_target_properties(signal_studio PROPERTIES OUTPUT_NAME "SignalStudio")
+  target_include_directories(signal_studio PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/apps/signal_studio"
+    "${CMAKE_CURRENT_BINARY_DIR}")
+  target_link_libraries(signal_studio PRIVATE SignalStudioApplicationCore Qt6::Core Qt6::Widgets)
+  signal_studio_enable_warnings(signal_studio)
+  signal_studio_deploy_msvc_runtime(signal_studio)
+  signal_studio_deploy_qt_runtime(signal_studio)
 
   add_executable(signal_visualization_workbench_demo WIN32
     examples/visualization_workbench_demo.cpp)
@@ -348,7 +383,7 @@ if(SIGNAL_STUDIO_BUILD_UI)
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
   install(EXPORT SignalStudioUiTargets FILE SignalStudioUiTargets.cmake NAMESPACE SignalStudio::
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/SignalStudio")
-  install(TARGETS signal_visualization_workbench_demo
+  install(TARGETS signal_studio signal_visualization_workbench_demo
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT Runtime)
   install(FILES
     "$<TARGET_FILE:Qt6::Core>"
@@ -423,6 +458,7 @@ if(BUILD_TESTING AND SIGNAL_STUDIO_BUILD_TESTS)
   add_subdirectory(benchmarks)
   if(SIGNAL_STUDIO_BUILD_UI)
     add_subdirectory(tests/visualization)
+    add_subdirectory(tests/app)
   endif()
 endif()
 

@@ -8,7 +8,7 @@
 | MS-01 | Core、Data、TaskRuntime 功能基础 | 已验收关闭 |
 | MS-02 | DSP 与 Compute 后端 | 已验收关闭 |
 | MS-03 | Visualization 与 Workbench | 已验收关闭 |
-| MS-04 | Signal Studio 基础应用 | 未开始 |
+| MS-04 | Signal Studio 基础应用 | 验收中 |
 | MS-05 | 宽窄带联动分析 | 未开始 |
 | MS-06 | PluginSDK、ModelRuntime、Dataset 功能 | 未开始 |
 | MS-07 | 工程化、打包、文档 | 未开始 |
@@ -26,3 +26,10 @@ MS-02 已完成 DSP 处理链、oneMKL DFTI/VSL/LAPACKE CPU 适配器、libsampl
 MS-03 已完成 Visualization/Workbench 的纯 C++20 公共契约、真实 Qt Widgets 图谱与工作台、六个生产 Qt Designer `.ui` 文件、四组尺寸/DPI 预览、默认 Windows 平台运行时闭包和安装消费。50/50 项批准需求通过；CPU Debug/Release 全量各 198/198，CUDA Debug/Release 针对性集合各 59/59，Windows 无界面 Debug/Release 全量各 133/133。公共头、基线、依赖锁、VS Code、Windows-only CI 静态校验、格式和静态分析均通过；本机用户预设连续生成哈希一致且路径重复项为 0。实现提交 `a4d3a763eece76c966a3763b5831cccc98baee84` 已推送，Windows GitHub Actions 运行 `30350430444` 的无界面与 Qt/UI 两项作业均为 success。MS-03 已验收关闭；按用户指令，当前暂停并等待确认，未确认前不进入 MS-04。
 
 2026-07-29 对 MS-03 追加批准 HTML 标准截图对齐和高 DPI 整改。P02 恢复应用菜单、左侧导航、折叠 Inspector、底部状态区和批准三图比例；P04/P07 增加完整原生中心页面。预览矩阵扩展到 1280×720、1080P、4K、100%、125%、150%、175%、200% 及 Windows 当前 DPI。CPU/CUDA Debug/Release 均重新编译并通过 63/63 项 MS-03 CTest 和 1/1 安装消费者。明显 P0/P1 差异已关闭，仍停留在 MS-03，未进入 MS-04。
+
+MS-04 已完成工程、RAW/IQ/WAV 有界导入、暂停/继续/取消、基础 PSD/STFT、P01/P02/
+P03/P05、不可变结果包、Inspector、Qt 前自检、安装树主程序和 VS Code F5 的候选实现。
+20/20 项直接需求及应用/UI 回归在 CPU Debug/Release 各 243/243 全量通过，
+CUDA 12.4 Debug/Release 的 MS-04 + Compute 集合各 50/50 通过；CPU 两配置安装消费者
+各 1/1 通过。8 小时混合操作最终证据使用隔离运行时持续执行，完成并审计后才把本里程碑
+状态改为已验收关闭。按用户指令，MS-04 完成后停止，未经确认不进入 MS-05。

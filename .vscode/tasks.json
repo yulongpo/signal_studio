@@ -2,6 +2,23 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Signal Studio: Build CPU Debug",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/build.ps1", "-Preset", "local-windows-msvc-cpu-debug", "-Target", "signal_studio"],
+      "problemMatcher": ["$msCompile"],
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "Signal Studio: Test MS-04",
+      "type": "process",
+      "command": "ctest",
+      "args": ["--preset", "local-windows-msvc-cpu-debug", "-L", "ms-04", "--output-on-failure"],
+      "dependsOn": "Signal Studio: Build CPU Debug",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
       "label": "Signal Studio: Configure Debug",
       "type": "process",
       "command": "powershell.exe",
@@ -14,7 +31,7 @@
       "command": "powershell.exe",
       "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/build.ps1", "-Preset", "local-windows-msvc-debug"],
       "dependsOn": "Signal Studio: Configure Debug",
-      "group": { "kind": "build", "isDefault": true },
+      "group": "build",
       "problemMatcher": ["$msCompile"]
     },
     {

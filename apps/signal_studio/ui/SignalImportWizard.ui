@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SignalImportWizard</class>
+ <widget class="QDialog" name="SignalImportWizard">
+  <property name="windowTitle"><string>导入 RAW / IQ 信号</string></property>
+  <property name="minimumSize"><size><width>940</width><height>590</height></size></property>
+  <layout class="QVBoxLayout" name="dialogLayout">
+   <property name="leftMargin"><number>16</number></property>
+   <property name="topMargin"><number>14</number></property>
+   <property name="rightMargin"><number>16</number></property>
+   <property name="bottomMargin"><number>14</number></property>
+   <property name="spacing"><number>10</number></property>
+   <item><widget class="QLabel" name="wizardCodeLabel"><property name="text"><string>W01 / SIGNAL DESCRIPTOR</string></property></widget></item>
+   <item><widget class="QLabel" name="wizardTitleLabel"><property name="text"><string>导入离线信号数据</string></property></widget></item>
+   <item><widget class="QLabel" name="wizardDescriptionLabel"><property name="text"><string>选择信号文件并明确解释参数。文件名只提供待确认提示；只有明确确认后的参数会用于解释样本。</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+   <item>
+    <widget class="QFrame" name="stepStrip">
+     <layout class="QHBoxLayout" name="stepLayout">
+      <property name="leftMargin"><number>0</number></property>
+      <property name="topMargin"><number>0</number></property>
+      <property name="rightMargin"><number>0</number></property>
+      <property name="bottomMargin"><number>0</number></property>
+      <property name="spacing"><number>4</number></property>
+      <item><widget class="QPushButton" name="sourceStepButton"><property name="text"><string>1  文件与格式</string></property><property name="enabled"><bool>true</bool></property></widget></item>
+      <item><widget class="QPushButton" name="layoutStepButton"><property name="text"><string>2  采样布局</string></property></widget></item>
+      <item><widget class="QPushButton" name="numericStepButton"><property name="text"><string>3  参数校验</string></property></widget></item>
+      <item><widget class="QPushButton" name="reviewStepButton"><property name="text"><string>4  确认导入</string></property></widget></item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="contentFrame">
+     <layout class="QHBoxLayout" name="contentLayout">
+      <property name="leftMargin"><number>10</number></property>
+      <property name="topMargin"><number>10</number></property>
+      <property name="rightMargin"><number>10</number></property>
+      <property name="bottomMargin"><number>10</number></property>
+      <property name="spacing"><number>14</number></property>
+      <item>
+       <widget class="QGroupBox" name="sourceGroup">
+        <property name="title"><string>文件与数据格式</string></property>
+        <layout class="QVBoxLayout" name="sourceLayout">
+         <item><widget class="QLabel" name="sourceHelpLabel"><property name="text"><string>支持 RAW/IQ、SC16 和 PCM WAV；源文件始终只读。</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+         <item><layout class="QHBoxLayout" name="pathLayout"><item><widget class="QLineEdit" name="sourcePathEdit"><property name="placeholderText"><string>选择本地录制文件</string></property></widget></item><item><widget class="QPushButton" name="browseSourceButton"><property name="text"><string>浏览…</string></property></widget></item></layout></item>
+         <item><widget class="QLabel" name="sourceFactsLabel"><property name="text"><string>尚未选择文件</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+         <item>
+          <layout class="QFormLayout" name="formatLayout">
+           <property name="fieldGrowthPolicy"><enum>QFormLayout::FieldGrowthPolicy::AllNonFixedFieldsGrow</enum></property>
+           <item row="0" column="0"><widget class="QLabel" name="formatLabel"><property name="text"><string>源格式</string></property></widget></item>
+           <item row="0" column="1"><widget class="QComboBox" name="formatCombo"><item><property name="text"><string>RAW / IQ</string></property></item><item><property name="text"><string>PCM WAV</string></property></item></widget></item>
+           <item row="1" column="0"><widget class="QLabel" name="scalarLabel"><property name="text"><string>标量类型</string></property></widget></item>
+           <item row="1" column="1"><widget class="QComboBox" name="scalarCombo"><item><property name="text"><string>Int16</string></property></item><item><property name="text"><string>Float32</string></property></item><item><property name="text"><string>Int8</string></property></item></widget></item>
+           <item row="2" column="0"><widget class="QLabel" name="kindLabel"><property name="text"><string>信号类型</string></property></widget></item>
+           <item row="2" column="1"><widget class="QComboBox" name="kindCombo"><item><property name="text"><string>复数 I/Q 交错</string></property></item><item><property name="text"><string>实数</string></property></item></widget></item>
+           <item row="3" column="0"><widget class="QLabel" name="byteOrderLabel"><property name="text"><string>字节序</string></property></widget></item>
+           <item row="3" column="1"><widget class="QComboBox" name="byteOrderCombo"><item><property name="text"><string>小端</string></property></item><item><property name="text"><string>大端</string></property></item></widget></item>
+          </layout>
+         </item>
+         <item><widget class="QLabel" name="filenameHintsLabel"><property name="text"><string>未从文件名检测到可用提示</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+         <item><widget class="QCheckBox" name="confirmHintsCheck"><property name="text"><string>我已核对并确认采用文件名中的格式、采样率和中心频率提示</string></property><property name="tristate"><bool>false</bool></property></widget></item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="numericGroup">
+        <property name="title"><string>采样与范围约定</string></property>
+        <layout class="QVBoxLayout" name="numericOuterLayout">
+         <item>
+          <layout class="QFormLayout" name="numericLayout">
+           <property name="fieldGrowthPolicy"><enum>QFormLayout::FieldGrowthPolicy::AllNonFixedFieldsGrow</enum></property>
+           <item row="0" column="0"><widget class="QLabel" name="sampleRateLabel"><property name="text"><string>采样率 (Hz)</string></property></widget></item>
+           <item row="0" column="1"><widget class="QDoubleSpinBox" name="sampleRateSpin"><property name="decimals"><number>3</number></property><property name="maximum"><double>1000000000000.000000000000000</double></property><property name="value"><double>1000000.000000000000000</double></property></widget></item>
+           <item row="1" column="0"><widget class="QLabel" name="centerFrequencyLabel"><property name="text"><string>中心频率 (Hz)</string></property></widget></item>
+           <item row="1" column="1"><widget class="QDoubleSpinBox" name="centerFrequencySpin"><property name="decimals"><number>3</number></property><property name="maximum"><double>1000000000000.000000000000000</double></property></widget></item>
+           <item row="2" column="0"><widget class="QLabel" name="initialBytesLabel"><property name="text"><string>初始读取上限 (MiB)</string></property></widget></item>
+           <item row="2" column="1"><widget class="QSpinBox" name="initialBytesSpin"><property name="minimum"><number>1</number></property><property name="maximum"><number>256</number></property><property name="value"><number>8</number></property></widget></item>
+          </layout>
+         </item>
+         <item><widget class="QLabel" name="previewHeadingLabel"><property name="text"><string>有界预览与校验</string></property></widget></item>
+         <item><widget class="QLabel" name="previewStatusLabel"><property name="text"><string>确认格式后将由任务运行时读取有限样本</string></property><property name="wordWrap"><bool>true</bool></property><property name="minimumHeight"><number>56</number></property></widget></item>
+         <item><widget class="QPlainTextEdit" name="reviewText"><property name="readOnly"><bool>true</bool></property><property name="maximumHeight"><number>90</number></property><property name="plainText"><string>确认后将创建有界异步导入任务。不会修改或复制原始录制；取消后只保留已校验的完整样本前缀。</string></property></widget></item>
+         <item><spacer name="numericSpacer"><property name="orientation"><enum>Qt::Orientation::Vertical</enum></property><property name="sizeHint"><size><width>20</width><height>20</height></size></property></spacer></item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item><widget class="QLabel" name="validationLabel"><property name="text"><string/></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+   <item><widget class="QDialogButtonBox" name="buttonBox"><property name="standardButtons"><set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set></property></widget></item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

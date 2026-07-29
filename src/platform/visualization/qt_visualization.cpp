@@ -745,10 +745,14 @@ private:
   void drawHeader(QPainter& painter) const {
     painter.fillRect(QRectF(0.0, 0.0, width(), 26.0), QColor(panel_color));
     painter.setPen(QColor(accent_cyan));
-    painter.drawText(QRectF(9.0, 0.0, 24.0, 26.0), Qt::AlignCenter,
-                     kind_ == ChartKind::time_waveform ? "01"
-                     : kind_ == ChartKind::psd         ? "02"
-                                                       : "03");
+    const auto chart_number = kind_ == ChartKind::time_waveform   ? "01"
+                              : kind_ == ChartKind::psd           ? "02"
+                              : kind_ == ChartKind::spectrum      ? "02"
+                              : kind_ == ChartKind::spectrogram   ? "03"
+                              : kind_ == ChartKind::waterfall     ? "03"
+                              : kind_ == ChartKind::constellation ? "04"
+                                                                  : "05";
+    painter.drawText(QRectF(9.0, 0.0, 24.0, 26.0), Qt::AlignCenter, chart_number);
     painter.setPen(QColor(primary_text));
     painter.drawText(QRectF(34.0, 0.0, width() - 250.0, 26.0), Qt::AlignLeft | Qt::AlignVCenter, title_);
     painter.setPen(QColor(muted_text));
@@ -874,6 +878,12 @@ private:
       return;
     }
     const auto& frame = *frame_;
+    const auto reference_radius_x = area.width() * 0.42;
+    const auto reference_radius_y = area.height() * 0.42;
+    painter.setPen(QPen(QColor(muted_text), 1.0, Qt::DashLine));
+    painter.drawLine(QPointF(area.center().x(), area.top()), QPointF(area.center().x(), area.bottom()));
+    painter.drawLine(QPointF(area.left(), area.center().y()), QPointF(area.right(), area.center().y()));
+    painter.drawEllipse(area.center(), reference_radius_x, reference_radius_y);
     painter.setPen(QPen(QColor(accent_cyan), 2.0));
     const auto count = std::min(frame.constellation_i.size(), frame.constellation_q.size());
     for (std::size_t index = 0; index < count; ++index) {
@@ -896,6 +906,22 @@ private:
       painter.drawText(QRectF(area.left(), area.bottom() + 3.0, area.width(), 18.0), Qt::AlignCenter,
                        "当前时间视窗 · 64 位样本索引半开区间");
       painter.drawText(QRectF(3.0, area.top(), 44.0, area.height()), Qt::AlignTop | Qt::AlignRight, "幅度");
+      return;
+    }
+    if (kind_ == ChartKind::constellation) {
+      painter.drawText(QRectF(3.0, area.top(), 44.0, 18.0), Qt::AlignRight, "Q +1");
+      painter.drawText(QRectF(3.0, area.bottom() - 18.0, 44.0, 18.0), Qt::AlignRight | Qt::AlignBottom, "Q -1");
+      painter.drawText(QRectF(area.left(), area.bottom() + 3.0, area.width() / 2.0, 18.0), Qt::AlignLeft, "I -1");
+      painter.drawText(QRectF(area.center().x(), area.bottom() + 3.0, area.width() / 2.0, 18.0), Qt::AlignRight,
+                       "I +1");
+      return;
+    }
+    if (kind_ == ChartKind::eye_diagram) {
+      painter.drawText(QRectF(3.0, area.top(), 44.0, 18.0), Qt::AlignRight, "+1");
+      painter.drawText(QRectF(3.0, area.bottom() - 18.0, 44.0, 18.0), Qt::AlignRight | Qt::AlignBottom, "-1");
+      painter.drawText(QRectF(area.left(), area.bottom() + 3.0, area.width() / 2.0, 18.0), Qt::AlignLeft, "0 UI");
+      painter.drawText(QRectF(area.center().x(), area.bottom() + 3.0, area.width() / 2.0, 18.0), Qt::AlignRight,
+                       "2 UI");
       return;
     }
     if (kind_ == ChartKind::psd || kind_ == ChartKind::spectrum) {

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SignalInspectorPage</class>
+ <widget class="QWidget" name="SignalInspectorPage">
+  <layout class="QVBoxLayout" name="inspectorPageLayout">
+   <property name="leftMargin"><number>10</number></property><property name="topMargin"><number>10</number></property><property name="rightMargin"><number>10</number></property><property name="bottomMargin"><number>10</number></property>
+   <item><layout class="QHBoxLayout" name="inspectorHeaderLayout"><item><widget class="QLabel" name="inspectorCodeLabel"><property name="text"><string>P03 / ANALYSIS CHANNEL</string></property></widget></item><item><spacer name="inspectorHeaderSpacer"><property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property><property name="sizeHint"><size><width>40</width><height>20</height></size></property></spacer></item><item><widget class="QLabel" name="inspectorVersionLabel"><property name="text"><string>未绑定通道</string></property></widget></item></layout></item>
+   <item><widget class="QLabel" name="inspectorTitleLabel"><property name="text"><string>CH-01 基础检视</string></property></widget></item>
+   <item><widget class="QLabel" name="eyeAvailabilityLabel"><property name="text"><string>眼图不可用：需要明确的符号率与同步来源；不会生成推测结果。</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+   <item><widget class="QWidget" name="analysisHost" native="true"><layout class="QVBoxLayout" name="analysisHostLayout"><property name="leftMargin"><number>0</number></property><property name="topMargin"><number>0</number></property><property name="rightMargin"><number>0</number></property><property name="bottomMargin"><number>0</number></property></layout></widget></item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

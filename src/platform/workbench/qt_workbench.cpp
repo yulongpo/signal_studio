@@ -126,6 +126,22 @@ public:
     normalizeInteractiveTargets();
   }
 
+  ~QtWorkbenchWindow() noexcept override {
+    // Visualization 工作区对其根 QWidget 保持唯一所有权；QStackedWidget 只负责暂时承载。
+    // 析构前显式解除 QObject 父子关系，避免 Qt 与 C++ 所有权在关闭路径上重复销毁同一对象。
+    if (workspace_ != nullptr) {
+      auto* widget = static_cast<QWidget*>(workspace_->native_handle());
+      if (widget != nullptr) {
+        if (central_stack_ != nullptr) {
+          central_stack_->removeWidget(widget);
+        }
+        widget->setParent(nullptr);
+      }
+      workspace_.reset();
+    }
+    window_.reset();
+  }
+
   [[nodiscard]] void* native_handle() noexcept override {
     return window_.get();
   }
@@ -134,6 +150,74 @@ public:
     window_->show();
     normalizeInteractiveTargets();
     QTimer::singleShot(0, window_.get(), [this] { normalizeInteractiveTargets(); });
+  }
+
+  [[nodiscard]] core::Status install_page(WorkbenchPage page) override {
+    if (page.id.empty() || page.title.empty() || page.native_widget == nullptr ||
+        page.id.find_first_of("\t\r\n") != std::string::npos ||
+        page.title.find_first_of("\t\r\n") != std::string::npos) {
+      return core::Status::failure({core::ErrorDomain::workbench, core::ErrorReason::invalid_argument},
+                                   "应用页面需要有效 ID、标题和原生 QWidget");
+    }
+    if (page.id == "p02") {
+      return core::Status::failure({core::ErrorDomain::workbench, core::ErrorReason::unavailable},
+                                   "P02 由工作台持有的 Visualization 工作区管理，不能被替换");
+    }
+    auto* widget = static_cast<QWidget*>(page.native_widget);
+    const auto existing = page_indices_.find(page.id);
+    int index{};
+    if (existing != page_indices_.end()) {
+      index = existing->second;
+      auto* previous = central_stack_->widget(index);
+      central_stack_->removeWidget(previous);
+      central_stack_->insertWidget(index, widget);
+      page_tabs_->setTabText(index, QString::fromStdString(page.title));
+      if (previous != widget) {
+        previous->deleteLater();
+      }
+    } else {
+      index = central_stack_->addWidget(widget);
+      page_tabs_->addTab(QString::fromStdString(page.title));
+      page_indices_.emplace(page.id, index);
+      if (view_menu_ != nullptr) {
+        addPageAction(page.id, page.title);
+      }
+    }
+    page_tabs_->setTabVisible(index, page.visible_in_tabs);
+    normalizeInteractiveTargets();
+    return core::Status::success();
+  }
+
+  [[nodiscard]] core::Status show_page(std::string_view page_id) override {
+    const auto page = page_indices_.find(page_id);
+    if (page == page_indices_.end()) {
+      return core::Status::failure({core::ErrorDomain::workbench, core::ErrorReason::invalid_argument},
+                                   "工作台页面不存在", std::string{page_id});
+    }
+    showPage(page->second);
+    return core::Status::success();
+  }
+
+  [[nodiscard]] core::Status update_content(WorkbenchContent content) override {
+    configuration_.content = std::move(content);
+    if (status_label_ != nullptr) {
+      status_label_->setText(QString::fromStdString(configuration_.content.status_text));
+    }
+    if (resource_label_ != nullptr) {
+      resource_label_->setText(QString::fromStdString(configuration_.content.resource_text));
+    }
+    if (source_label_ != nullptr) {
+      source_label_->setText(QString::fromStdString(configuration_.content.source_summary));
+    }
+    for (const auto* id : {"navigator", "inspector", "task-center", "result-center"}) {
+      const auto dock = docks_.find(id);
+      if (dock != docks_.end()) {
+        dock->second->setWidget(createPanelContent(id));
+      }
+    }
+    populateTaskTable();
+    normalizeInteractiveTargets();
+    return core::Status::success();
   }
 
   [[nodiscard]] core::Status restore_layout(const WorkbenchLayout& layout) override {
@@ -353,15 +437,19 @@ private:
     home_layout->addStretch();
     central_stack_->addWidget(home);
     page_tabs_->addTab("P01  首页");
+    page_indices_.emplace("p01", 0);
 
     auto* central = static_cast<QWidget*>(workspace_->native_handle());
     central_stack_->addWidget(central);
     page_tabs_->addTab("P02  宽带");
+    page_indices_.emplace("p02", 1);
     central_stack_->addWidget(createTaskPage(central_stack_));
     page_tabs_->addTab("P04  任务");
+    page_indices_.emplace("p04", 2);
     page_tabs_->setTabVisible(2, false);
     central_stack_->addWidget(createSettingsPage(central_stack_));
     page_tabs_->addTab("P07  设置");
+    page_indices_.emplace("p07", 3);
     page_tabs_->setTabVisible(3, false);
     page_tabs_->setCurrentIndex(1);
     central_stack_->setCurrentIndex(1);
@@ -393,30 +481,30 @@ private:
     central_layout->addWidget(bottom_bar);
     shell_layout->addWidget(page_column, 1);
 
-    auto* inspector_edge = new QToolButton(central_host);
-    inspector_edge->setObjectName("InspectorEdgeButton");
-    inspector_edge->setText("属\n性");
-    inspector_edge->setToolTip("显示属性检查器");
-    inspector_edge->setFixedWidth(27);
-    inspector_edge->setStyleSheet("QToolButton{border:0;border-left:1px solid #203A55;background:#08111F;"
-                                  "color:#8FA8C2;padding:0;}"
-                                  "QToolButton:hover{background:#12324A;color:#E5F1FF;}");
-    QObject::connect(inspector_edge, &QToolButton::clicked, window_.get(), [this] {
+    inspector_edge_ = new QToolButton(central_host);
+    inspector_edge_->setObjectName("InspectorEdgeButton");
+    inspector_edge_->setText("属\n性");
+    inspector_edge_->setToolTip("显示属性检查器");
+    inspector_edge_->setFixedWidth(27);
+    inspector_edge_->setStyleSheet("QToolButton{border:0;border-left:1px solid #203A55;background:#08111F;"
+                                   "color:#8FA8C2;padding:0;}"
+                                   "QToolButton:hover{background:#12324A;color:#E5F1FF;}");
+    QObject::connect(inspector_edge_, &QToolButton::clicked, window_.get(), [this] {
       const auto inspector = docks_.find("inspector");
       if (inspector != docks_.end()) {
         inspector->second->show();
         inspector->second->raise();
       }
     });
-    shell_layout->addWidget(inspector_edge);
+    shell_layout->addWidget(inspector_edge_);
     window_->setCentralWidget(central_host);
     window_->statusBar()->setSizeGripEnabled(true);
     status_label_ = new QLabel(QString::fromStdString(configuration_.content.status_text), window_.get());
     status_label_->setAccessibleName("工作台状态通知");
     window_->statusBar()->addWidget(status_label_, 1);
-    auto* backend = new QLabel(QString::fromStdString(configuration_.content.resource_text), window_.get());
-    backend->setAccessibleName("资源状态");
-    window_->statusBar()->addPermanentWidget(backend);
+    resource_label_ = new QLabel(QString::fromStdString(configuration_.content.resource_text), window_.get());
+    resource_label_->setAccessibleName("资源状态");
+    window_->statusBar()->addPermanentWidget(resource_label_);
   }
 
   [[nodiscard]] QWidget* createTaskPage(QWidget* parent) {
@@ -459,23 +547,48 @@ private:
     filters->addWidget(priority);
     layout->addWidget(filter_panel);
 
-    auto* table = new QTableWidget(page);
-    table->setObjectName("TaskCenterPageTable");
-    table->setColumnCount(7);
-    table->setHorizontalHeaderLabels({"任务", "对象", "优先级", "状态", "进度", "耗时", "操作"});
-    table->setRowCount(static_cast<int>(configuration_.content.tasks.size()));
-    table->setShowGrid(false);
-    table->setAlternatingRowColors(true);
-    table->setSelectionBehavior(QAbstractItemView::SelectRows);
-    table->verticalHeader()->setVisible(false);
+    task_page_table_ = new QTableWidget(page);
+    task_page_table_->setObjectName("TaskCenterPageTable");
+    task_page_table_->setColumnCount(7);
+    task_page_table_->setHorizontalHeaderLabels({"任务", "对象", "优先级", "状态", "进度", "耗时", "操作"});
+    task_page_table_->setShowGrid(false);
+    task_page_table_->setAlternatingRowColors(true);
+    task_page_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
+    task_page_table_->verticalHeader()->setVisible(false);
+    populateTaskTable();
+    task_page_table_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    task_page_table_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    layout->addWidget(task_page_table_, 1);
+
+    auto* detail = new QFrame(page);
+    detail->setObjectName("PagePanel");
+    auto* detail_layout = new QVBoxLayout(detail);
+    detail_layout->setContentsMargins(8, 7, 8, 7);
+    auto* detail_title = new QLabel("任务详情 · 当前 ViewRequest", detail);
+    detail_title->setStyleSheet("font-weight:600;");
+    auto* detail_text =
+        new QLabel("执行阶段  STFT 瓦片\n取消规则  新视窗请求到达时立即过期\n资源  CPU · 有界缓存", detail);
+    detail_text->setStyleSheet("color:#8FA8C2;");
+    detail_layout->addWidget(detail_title);
+    detail_layout->addWidget(detail_text);
+    layout->addWidget(detail);
+    return page;
+  }
+
+  void populateTaskTable() {
+    if (task_page_table_ == nullptr) {
+      return;
+    }
+    task_page_table_->clearContents();
+    task_page_table_->setRowCount(static_cast<int>(configuration_.content.tasks.size()));
     for (std::size_t index = 0; index < configuration_.content.tasks.size(); ++index) {
       const auto& entry = configuration_.content.tasks[index];
       const auto row = static_cast<int>(index);
-      table->setItem(row, 0, new QTableWidgetItem(QString::fromStdString(entry.task)));
-      table->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(entry.source)));
-      table->setItem(row, 2, new QTableWidgetItem(index < 2 ? "交互" : "分析"));
-      table->setItem(row, 3, new QTableWidgetItem(QString::fromStdString(entry.state_text)));
-      auto* progress_cell = new QWidget(table);
+      task_page_table_->setItem(row, 0, new QTableWidgetItem(QString::fromStdString(entry.task)));
+      task_page_table_->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(entry.source)));
+      task_page_table_->setItem(row, 2, new QTableWidgetItem(index < 2 ? "交互" : "分析"));
+      task_page_table_->setItem(row, 3, new QTableWidgetItem(QString::fromStdString(entry.state_text)));
+      auto* progress_cell = new QWidget(task_page_table_);
       auto* progress_layout = new QHBoxLayout(progress_cell);
       progress_layout->setContentsMargins(0, 0, 0, 0);
       progress_layout->setSpacing(6);
@@ -492,28 +605,11 @@ private:
       progress_label->setStyleSheet("color:#8FA8C2; font-family:'Cascadia Mono'; font-size:10px;");
       progress_layout->addWidget(progress, 1);
       progress_layout->addWidget(progress_label);
-      table->setCellWidget(row, 4, progress_cell);
-      table->setItem(row, 5, new QTableWidgetItem(index == 0 ? "0.18 s" : "—"));
-      table->setItem(row, 6, new QTableWidgetItem("暂停  取消  详情"));
-      table->setRowHeight(row, 52);
+      task_page_table_->setCellWidget(row, 4, progress_cell);
+      task_page_table_->setItem(row, 5, new QTableWidgetItem(index == 0 ? "0.18 s" : "—"));
+      task_page_table_->setItem(row, 6, new QTableWidgetItem("暂停  取消  详情"));
+      task_page_table_->setRowHeight(row, 52);
     }
-    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    layout->addWidget(table, 1);
-
-    auto* detail = new QFrame(page);
-    detail->setObjectName("PagePanel");
-    auto* detail_layout = new QVBoxLayout(detail);
-    detail_layout->setContentsMargins(8, 7, 8, 7);
-    auto* detail_title = new QLabel("任务详情 · 当前 ViewRequest", detail);
-    detail_title->setStyleSheet("font-weight:600;");
-    auto* detail_text =
-        new QLabel("执行阶段  STFT 瓦片\n取消规则  新视窗请求到达时立即过期\n资源  CPU · 有界缓存", detail);
-    detail_text->setStyleSheet("color:#8FA8C2;");
-    detail_layout->addWidget(detail_title);
-    detail_layout->addWidget(detail_text);
-    layout->addWidget(detail);
-    return page;
   }
 
   [[nodiscard]] QWidget* createSettingsPage(QWidget* parent) {
@@ -668,8 +764,12 @@ private:
                    : QString("! 不可执行 · %1").arg(QString::fromStdString(std::string(status.message()))));
       });
       toolbar->addAction(action);
-      if (command.id.starts_with("view.")) {
+      if (command.id.starts_with("file.")) {
+        file_menu->addAction(action);
+      } else if (command.id.starts_with("view.")) {
         view_menu_->addAction(action);
+      } else if (command.id.starts_with("analysis.")) {
+        analysis_menu->addAction(action);
       } else {
         tools_menu->addAction(action);
       }
@@ -682,9 +782,9 @@ private:
     auto* toolbar_spacer = new QWidget(toolbar);
     toolbar_spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     toolbar->addWidget(toolbar_spacer);
-    auto* source = new QLabel(QString::fromStdString(configuration_.content.source_summary), toolbar);
-    source->setStyleSheet("color:#E5F1FF; font-family:'Cascadia Mono'; font-size:10px;");
-    toolbar->addWidget(source);
+    source_label_ = new QLabel(QString::fromStdString(configuration_.content.source_summary), toolbar);
+    source_label_->setStyleSheet("color:#E5F1FF; font-family:'Cascadia Mono'; font-size:10px;");
+    toolbar->addWidget(source_label_);
     auto* current = new QLabel("  ● 当前", toolbar);
     current->setStyleSheet("color:#46E6B0; padding:0 8px;");
     toolbar->addWidget(current);
@@ -692,16 +792,26 @@ private:
     analysis_menu->addAction("从 Selection 创建通道");
     help_menu->addAction("键盘与可访问性");
 
-    auto add_page_action = [this](const char* id, const char* label, int index) {
-      auto* action = view_menu_->addAction(label);
-      action->setObjectName(id);
-      QObject::connect(action, &QAction::triggered, window_.get(), [this, index] { showPage(index); });
-      return action;
-    };
-    add_page_action("page.home", "项目首页", 0);
-    add_page_action("page.wideband", "宽带浏览", 1);
-    add_page_action("page.task-center", "任务中心页面", 2);
-    add_page_action("page.settings", "设置与诊断页面", 3);
+    addPageAction("p01", "项目首页");
+    addPageAction("p02", "宽带浏览");
+    addPageAction("p04", "任务中心页面");
+    addPageAction("p07", "设置与诊断页面");
+  }
+
+  void addPageAction(const std::string& page_id, const std::string& title) {
+    if (view_menu_ == nullptr || page_actions_.contains(page_id)) {
+      return;
+    }
+    auto* action = view_menu_->addAction(QString::fromStdString(title));
+    const auto object_name = page_id == "p01"   ? "page.home"
+                             : page_id == "p02" ? "page.wideband"
+                             : page_id == "p04" ? "page.task-center"
+                             : page_id == "p07" ? "page.settings"
+                                                : "page." + page_id;
+    action->setObjectName(QString::fromStdString(object_name));
+    QObject::connect(action, &QAction::triggered, window_.get(),
+                     [this, page_id] { static_cast<void>(show_page(page_id)); });
+    page_actions_.emplace(page_id, action);
   }
 
   void buildPanels() {
@@ -761,6 +871,8 @@ private:
     if (task != docks_.end() && result != docks_.end()) {
       window_->tabifyDockWidget(task->second, result->second);
       window_->resizeDocks({task->second}, {140}, Qt::Vertical);
+      task->second->show();
+      task->second->raise();
     }
     const auto inspector = docks_.find("inspector");
     if (inspector != docks_.end()) {
@@ -771,6 +883,13 @@ private:
     if (inspector != docks_.end() && settings != docks_.end() && diagnostics != docks_.end()) {
       window_->tabifyDockWidget(inspector->second, settings->second);
       window_->tabifyDockWidget(inspector->second, diagnostics->second);
+      inspector->second->show();
+      inspector->second->raise();
+      if (inspector_edge_ != nullptr) {
+        inspector_edge_->setVisible(false);
+        QObject::connect(inspector->second, &QDockWidget::visibilityChanged, inspector_edge_,
+                         [this](bool visible) { inspector_edge_->setVisible(!visible); });
+      }
     }
     const auto navigator = docks_.find("navigator");
     if (navigator != docks_.end()) {
@@ -778,7 +897,7 @@ private:
       window_->resizeDocks({navigator->second}, {230}, Qt::Horizontal);
     }
     for (const auto& [id, dock] : docks_) {
-      if (id != "navigator") {
+      if (id != "navigator" && id != "inspector" && id != "task-center") {
         dock->hide();
       }
     }
@@ -803,6 +922,8 @@ private:
       tree->setHeaderHidden(true);
       tree->setRootIsDecorated(false);
       tree->setIndentation(13);
+      tree->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      tree->setTextElideMode(Qt::ElideRight);
       tree->setFrameShape(QFrame::NoFrame);
       tree->setStyleSheet("QTreeWidget{border:0;background:#08111F;}"
                           "QTreeWidget::item{min-height:24px;border:0;}"
@@ -935,8 +1056,7 @@ private:
     return fallback;
   }
 
-  // window_ 必须先声明；析构时 workspace_ 先删除中心 QWidget，使 QObject
-  // 子对象关系从 QMainWindow 中安全解除，再销毁主窗口。
+  // 显式析构路径先解除中心 QWidget 的 Qt 父子关系，再分别销毁工作区和主窗口。
   std::unique_ptr<QMainWindow> window_;
   Ui::SignalWorkbenchMainWindow main_ui_;
   std::unique_ptr<visualization::IAnalysisWorkspace> workspace_;
@@ -946,10 +1066,16 @@ private:
   WorkbenchConfiguration configuration_;
   std::optional<WorkbenchLayout> saved_layout_;
   std::map<std::string, QDockWidget*, std::less<>> docks_;
+  std::map<std::string, int, std::less<>> page_indices_;
+  std::map<std::string, QAction*, std::less<>> page_actions_;
   QMenu* view_menu_{};
   QTabBar* page_tabs_{};
   QStackedWidget* central_stack_{};
+  QTableWidget* task_page_table_{};
   QLabel* status_label_{};
+  QLabel* resource_label_{};
+  QToolButton* inspector_edge_{};
+  QLabel* source_label_{};
 };
 
 } // namespace

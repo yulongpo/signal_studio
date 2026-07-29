@@ -2,6 +2,7 @@
 param(
     [ValidateNotNullOrEmpty()][string]$Preset = 'windows-msvc-debug',
     [ValidateRange(1, 256)][int]$Parallel = [Environment]::ProcessorCount,
+    [string]$Target = '',
     [switch]$CleanFirst
 )
 
@@ -20,6 +21,9 @@ if (-not (Test-Path -LiteralPath $cache -PathType Leaf)) {
 }
 
 $arguments = @('--build', '--preset', $Preset, '--parallel', $Parallel)
+if (-not [string]::IsNullOrWhiteSpace($Target)) {
+    $arguments += @('--target', $Target)
+}
 if ($CleanFirst) {
     $arguments += '--clean-first'
 }

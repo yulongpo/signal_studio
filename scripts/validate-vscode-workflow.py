@@ -15,6 +15,11 @@ LOCAL_RELEASE_PRESET = "local-windows-msvc-release"
 SOURCE_DEBUG_PRESET = "windows-msvc-debug"
 TARGET_NAME = "signal_studio_platform_tests"
 TARGET_RELATIVE_PATH = Path("build") / LOCAL_DEBUG_PRESET / "bin" / f"{TARGET_NAME}.exe"
+APPLICATION_PRESET = "local-windows-msvc-cpu-debug"
+APPLICATION_TARGET_NAME = "SignalStudio"
+APPLICATION_TARGET_RELATIVE_PATH = (
+    Path("build") / APPLICATION_PRESET / "bin" / f"{APPLICATION_TARGET_NAME}.exe"
+)
 
 
 def read_json(path: Path) -> dict[str, object]:
@@ -74,6 +79,8 @@ def verify_static_contract() -> None:
     for label, expected in expected_task_presets.items():
         if task_preset(task_by_label(tasks, label)) != expected:
             raise RuntimeError(f"VS Code task preset diverges from the local tree: {label}")
+    if task_preset(task_by_label(tasks, "Signal Studio: Build CPU Debug")) != APPLICATION_PRESET:
+        raise RuntimeError("Signal Studio application task must use the local CPU Debug preset")
     if task_by_label(tasks, "Signal Studio: Build Debug").get("dependsOn") != "Signal Studio: Configure Debug":
         raise RuntimeError("Debug build must depend on local Debug configure")
     if task_by_label(tasks, "Signal Studio: Test Debug").get("dependsOn") != "Signal Studio: Build Debug":
@@ -93,13 +100,13 @@ def verify_static_contract() -> None:
     if not isinstance(configurations, list) or len(configurations) != 1 or not isinstance(configurations[0], dict):
         raise RuntimeError("MS-00 must expose one deterministic F5 configuration")
     launch = configurations[0]
-    expected_program = "${workspaceFolder}/" + TARGET_RELATIVE_PATH.as_posix()
+    expected_program = "${workspaceFolder}/" + APPLICATION_TARGET_RELATIVE_PATH.as_posix()
     if launch.get("program") != expected_program:
-        raise RuntimeError(f"F5 program must resolve from {LOCAL_DEBUG_PRESET}")
-    if launch.get("preLaunchTask") != "Signal Studio: Validate Debug Tree":
-        raise RuntimeError("F5 must use the configure/build/target-validation task chain")
-    if launch.get("args") != ["--case", "core.version"]:
-        raise RuntimeError("F5 smoke target arguments changed")
+        raise RuntimeError(f"F5 program must resolve from {APPLICATION_PRESET}")
+    if launch.get("preLaunchTask") != "Signal Studio: Build CPU Debug":
+        raise RuntimeError("F5 must build the Signal Studio CPU Debug application")
+    if launch.get("args") != []:
+        raise RuntimeError("F5 application must launch in normal interactive mode")
 
     configure_presets = presets.get("configurePresets")
     if not isinstance(configure_presets, list):
@@ -154,9 +161,9 @@ def parse_cache(path: Path) -> dict[str, str]:
 
 
 def verify_configured_target() -> None:
-    build_dir = REPOSITORY / "build" / LOCAL_DEBUG_PRESET
+    build_dir = REPOSITORY / "build" / APPLICATION_PRESET
     cache_path = build_dir / "CMakeCache.txt"
-    target_path = REPOSITORY / TARGET_RELATIVE_PATH
+    target_path = REPOSITORY / APPLICATION_TARGET_RELATIVE_PATH
     build_graph = build_dir / "build.ninja"
     for path in (cache_path, target_path, build_graph):
         if not path.is_file():
@@ -167,12 +174,15 @@ def verify_configured_target() -> None:
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_GENERATOR": "Ninja",
         "SIGNAL_STUDIO_BUILD_UI": "ON",
+        "SIGNAL_STUDIO_CUDA_MODE": "OFF",
     }
     for key, expected in expected_cache.items():
         actual = cache.get(key, "").replace("\\", "/")
         if actual.casefold() != expected.casefold():
             raise RuntimeError(f"F5 cache mismatch for {key}: {actual!r} != {expected!r}")
-    if f"bin/{TARGET_NAME}.exe" not in build_graph.read_text(encoding="utf-8", errors="replace").replace("\\", "/"):
+    if f"bin/{APPLICATION_TARGET_NAME}.exe" not in build_graph.read_text(
+        encoding="utf-8", errors="replace"
+    ).replace("\\", "/"):
         raise RuntimeError("F5 target is absent from the local Debug build graph")
 
     inputs = [REPOSITORY / "CMakeLists.txt", REPOSITORY / "CMakePresets.json"]
@@ -180,7 +190,8 @@ def verify_configured_target() -> None:
     inputs.extend((REPOSITORY / "include").rglob("*.hpp"))
     inputs.extend((REPOSITORY / "include").rglob("*.h"))
     inputs.extend((REPOSITORY / "src").rglob("*.cpp"))
-    inputs.append(REPOSITORY / "tests" / "platform" / "test_main.cpp")
+    inputs.extend((REPOSITORY / "apps").rglob("*.cpp"))
+    inputs.extend((REPOSITORY / "apps").rglob("*.hpp"))
     newest_input = max(path.stat().st_mtime_ns for path in inputs if path.is_file())
     if target_path.stat().st_mtime_ns < newest_input:
         raise RuntimeError("F5 target is stale relative to committed CMake/C++ inputs; rebuild the local Debug tree")

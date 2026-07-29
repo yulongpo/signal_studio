@@ -2,7 +2,9 @@
 
 ## MS-00 平台边界
 
-仓库是一个 C++20/C11 CMake 包，包含八个无界面库和两个可选 Qt UI 库。应用层在 MS-04 前不属于实现范围。经批准的依赖 DAG 同时由配置期断言和可执行契约测试机械校验。
+仓库是一个 C++20/C11 CMake 包，包含八个无界面库、两个可选 Qt UI 库和一个在
+MS-04 引入的 Signal Studio 最终应用。经批准的公共模块依赖 DAG 同时由配置期断言和
+可执行契约测试机械校验；最终应用只编排公共模块，不成为新的公共平台依赖。
 
 | 公共目标 | 直接公共依赖 | 构建类别 |
 |---|---|---|
@@ -97,3 +99,42 @@ Workbench 公共层提供服务、命令、面板、诊断、主题、参数、�
 六个 Qt Designer `.ui` 文件是 `qt_wrap_ui` 的生产输入，不是脱离运行时的展示附件。Qt Core/Widgets 仍为两个 UI 目标的私有依赖，无界面构建和八组件安装消费不发现 Qt。构建树与安装树部署匹配配置的 Qt Core/Gui/Widgets DLL、`qwindows`/`qoffscreen` 插件及 `qt.conf`；默认 Windows 平台启动不依赖开发机 Qt 插件环境变量。
 
 MS-03 不新增第三方依赖。Qt 本机验证版本为 6.11.1，源码/包最低支持版本仍为 6.10.3；CUDA Toolkit 12.4.131 只沿用既有可选 Compute 后端，Visualization/Workbench 不依赖 cuDNN。
+
+## MS-04 Signal Studio 基础应用
+
+MS-04 增加静态应用编排层 `SignalStudioApplicationCore` 和最终 Windows GUI
+`SignalStudio.exe`。应用核心只依赖既有 Core、Data、DSP、Compute、TaskRuntime、
+Visualization 与 Workbench 公共目标，不把 Qt 类型暴露到公共平台头；Qt 仍只存在于
+Workbench、Visualization 和最终应用的私有实现。
+
+`ApplicationController` 是工程、当前数据源、当前分析、任务历史和结果包的单一产品
+状态源。工程新建、打开、保存和关闭继续使用 Core 的原子工作区存储；外部录制只写入
+相对资源链接和源版本指纹。RAW/IQ 与 WAV 导入由 TaskRuntime 驱动有界读取，暂停、
+继续和取消不建立第二套任务状态，后台工作不访问 `QWidget`。基础分析把真实读取结果
+送入 DSP/Compute，再以同一 `ViewRequestId` 生成时域、PSD、STFT 和 Inspector
+状态；Qt 线程只绑定已完成的不可变帧。
+
+Core 新增第三方无关的 Artifact 契约。结果按测量、估计、识别、解调、频谱、采样、
+音频、导出和插件格式分类，provenance 固定包含工程、数据源版本、Selection、Channel、
+任务、算法和参数版本。`ArtifactStore` 以目录级暂存和原子重命名提交 payload、
+`manifest.json` 与内部索引，禁止静默覆盖；查询后重新校验 SHA-256，损坏内容不能被
+当作成功结果返回。CSV/JSON 编码包含 schema、单位和 provenance，批量导出生成逐项
+清单。
+
+Workbench 新增宿主页面安装、页面切换和内容刷新接口，新增虚函数放在既有虚表末端，
+保持已有二进制槽位顺序。最终应用安装 P01、P03、P05 页面并复用 P02 分析工作区；
+P04/P07 等平台页继续由 Workbench 提供。Inspector 公共契约保存独立通道状态、视图
+适用性、星座/眼图条件、结果版本绑定和布局模板降级，不用 Qt 或插件实现类型。
+产品工作台默认显示 Navigator、Inspector 和任务中心，P05 以分类、真实结果列表和
+来源详情三栏读取 ArtifactStore。W01/W05 顶层对话框在应用实现成员析构前显式销毁，
+其 `destroyed` 回调不会访问已经析构的 Ui 包装器。
+
+五个应用 `.ui` 文件由 `qt_wrap_ui` 参与生产构建：项目首页、导入向导、数据加载进度、
+检视器和结果中心。安装树同时包含 `SignalStudio.exe`、Qt DLL、Windows/offscreen
+平台插件、`qt.conf` 和匹配 VC143 运行库；安装消费者会直接运行已安装程序的 Qt 前
+自检和默认 Windows 平台启动。
+
+MS-04 不增加第三方依赖。CPU 模式完全不依赖 CUDA；CUDA 12.4 仅作为 Compute 可选
+后端，缺失时明确回退 CPU，cuDNN 不属于本里程碑且不会自动安装。100 GB 边界沿用
+批准 X310 录制的逻辑重复映射和有界访问，不创建物理 100 GB 文件；批准资料未提供
+D4，因此不把 D4 记为通过。

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SignalLoadProgressDialog</class>
+ <widget class="QDialog" name="SignalLoadProgressDialog">
+  <property name="windowTitle"><string>加载信号数据</string></property>
+  <property name="minimumSize"><size><width>620</width><height>420</height></size></property>
+  <layout class="QVBoxLayout" name="progressLayout">
+   <property name="leftMargin"><number>16</number></property>
+   <property name="topMargin"><number>14</number></property>
+   <property name="rightMargin"><number>16</number></property>
+   <property name="bottomMargin"><number>14</number></property>
+   <property name="spacing"><number>10</number></property>
+   <item><widget class="QLabel" name="progressCodeLabel"><property name="text"><string>W05 / ASYNC DATA LOADING</string></property></widget></item>
+   <item><widget class="QLabel" name="progressTitleLabel"><property name="text"><string>正在解析信号数据</string></property></widget></item>
+   <item><widget class="QLabel" name="progressDescriptionLabel"><property name="text"><string>建立后台读取任务、校验完整样本帧并构建可浏览前缀。</string></property></widget></item>
+   <item>
+    <widget class="QFrame" name="sourceFrame">
+     <layout class="QGridLayout" name="sourceGrid">
+      <item row="0" column="0"><widget class="QLabel" name="sourceLabel"><property name="text"><string>文件名</string></property></widget></item>
+      <item row="0" column="1"><widget class="QLabel" name="sourceNameLabel"><property name="text"><string>数据源</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+      <item row="1" column="0"><widget class="QLabel" name="pathLabel"><property name="text"><string>路径</string></property></widget></item>
+      <item row="1" column="1"><widget class="QLabel" name="sourcePathLabel"><property name="text"><string>—</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+      <item row="2" column="0"><widget class="QLabel" name="sizeLabel"><property name="text"><string>文件大小</string></property></widget></item>
+      <item row="2" column="1"><widget class="QLabel" name="sourceSizeLabel"><property name="text"><string>—</string></property></widget></item>
+      <item row="3" column="0"><widget class="QLabel" name="formatLabel"><property name="text"><string>信号格式</string></property></widget></item>
+      <item row="3" column="1"><widget class="QLabel" name="signalFormatLabel"><property name="text"><string>—</string></property></widget></item>
+      <item row="4" column="0"><widget class="QLabel" name="sampleRateLabel"><property name="text"><string>采样率</string></property></widget></item>
+      <item row="4" column="1"><widget class="QLabel" name="sampleRateValueLabel"><property name="text"><string>—</string></property></widget></item>
+     </layout>
+    </widget>
+   </item>
+   <item><widget class="QLabel" name="loadStatusLabel"><property name="text"><string>任务已排队</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+   <item><widget class="QProgressBar" name="loadProgressBar"><property name="value"><number>0</number></property><property name="textVisible"><bool>true</bool></property></widget></item>
+   <item>
+    <layout class="QHBoxLayout" name="metricsLayout">
+     <item><widget class="QLabel" name="processedMetricLabel"><property name="text"><string>已处理  0 MiB</string></property></widget></item>
+     <item><widget class="QLabel" name="speedMetricLabel"><property name="text"><string>读取速度  等待中</string></property></widget></item>
+     <item><widget class="QLabel" name="elapsedMetricLabel"><property name="text"><string>已用时间  00:00.0</string></property></widget></item>
+    </layout>
+   </item>
+   <item><widget class="QLabel" name="partialPrefixLabel"><property name="text"><string>取消后，已校验的完整样本前缀仍可只读使用；源文件和已保存工程不会被修改。</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+   <item><layout class="QHBoxLayout" name="progressButtonsLayout"><item><spacer name="progressButtonSpacer"><property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property><property name="sizeHint"><size><width>40</width><height>20</height></size></property></spacer></item><item><widget class="QPushButton" name="pauseResumeButton"><property name="text"><string>暂停</string></property></widget></item><item><widget class="QPushButton" name="cancelLoadButton"><property name="text"><string>取消</string></property></widget></item></layout></item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

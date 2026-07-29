@@ -115,6 +115,10 @@ set(_installed_demo "${_prefix}/bin/signal_visualization_workbench_demo${_exe_su
 if(SIGNAL_STUDIO_EXPECT_UI AND NOT EXISTS "${_installed_demo}")
   message(FATAL_ERROR "UI install is missing the Visualization/Workbench demo: ${_installed_demo}")
 endif()
+set(_installed_application "${_prefix}/bin/SignalStudio${_exe_suffix}")
+if(SIGNAL_STUDIO_EXPECT_UI AND NOT EXISTS "${_installed_application}")
+  message(FATAL_ERROR "UI install is missing the Signal Studio application: ${_installed_application}")
+endif()
 if(SIGNAL_STUDIO_EXPECT_UI)
   set(_demo_runtime_path "${_prefix}/bin;${SIGNAL_STUDIO_TOOLCHAIN_PATH}")
   if(SIGNAL_STUDIO_BUILD_TYPE STREQUAL "Debug")
@@ -136,6 +140,39 @@ if(SIGNAL_STUDIO_EXPECT_UI)
   if(NOT _demo_result EQUAL 0)
     message(FATAL_ERROR
       "Installed Qt demo startup failed with ${_demo_result}:\n${_demo_output}\n${_demo_error}")
+  endif()
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E env
+      --unset=QT_QPA_PLATFORM
+      --unset=QT_PLUGIN_PATH
+      --unset=QT_QPA_PLATFORM_PLUGIN_PATH
+      "PATH=${_demo_runtime_path}"
+      "${_installed_application}" --self-test --scratch "${_root}/s"
+    RESULT_VARIABLE _application_self_test_result
+    OUTPUT_VARIABLE _application_self_test_output
+    ERROR_VARIABLE _application_self_test_error
+  )
+  if(NOT _application_self_test_result EQUAL 0)
+    message(FATAL_ERROR
+      "Installed Signal Studio self-test failed with ${_application_self_test_result}:\n"
+      "${_application_self_test_output}\n${_application_self_test_error}")
+  endif()
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E env
+      --unset=QT_QPA_PLATFORM
+      --unset=QT_PLUGIN_PATH
+      --unset=QT_QPA_PLATFORM_PLUGIN_PATH
+      "PATH=${_demo_runtime_path}"
+      "${_installed_application}" --startup-smoke
+        --state-dir "${_root}/state"
+    RESULT_VARIABLE _application_startup_result
+    OUTPUT_VARIABLE _application_startup_output
+    ERROR_VARIABLE _application_startup_error
+  )
+  if(NOT _application_startup_result EQUAL 0)
+    message(FATAL_ERROR
+      "Installed Signal Studio startup failed with ${_application_startup_result}:\n"
+      "${_application_startup_output}\n${_application_startup_error}")
   endif()
 endif()
 message(STATUS "Installed package consumer passed: ${_run_output}")
