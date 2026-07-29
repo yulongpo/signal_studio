@@ -13,11 +13,25 @@ foreach(_case IN ITEMS
     FR-EXP-008 FR-EXP-009
     NFR-REL-001 NFR-REL-002 NFR-REL-003 NFR-REL-004
     APP-PROJECT-IMPORT-ANALYSIS APP-CANCEL-RETRY APP-ERROR-RECOVERY
-    APP-HEADLESS-SELF-TEST EXTERNAL-ALL-RECORDINGS)
+    APP-HEADLESS-SELF-TEST)
   add_test(NAME "ms04.${_case}" COMMAND signal_studio_ms04_tests --case "${_case}")
   set_tests_properties("ms04.${_case}" PROPERTIES
     TIMEOUT 120 LABELS "unit;integration;requirement;ms-04")
 endforeach()
+
+if(SIGNAL_STUDIO_EXTERNAL_TEST_DATA_AVAILABLE)
+  add_test(NAME ms04.EXTERNAL-ALL-RECORDINGS
+    COMMAND signal_studio_ms04_tests --case EXTERNAL-ALL-RECORDINGS)
+  set_tests_properties(ms04.EXTERNAL-ALL-RECORDINGS PROPERTIES
+    TIMEOUT 120 LABELS "integration;requirement;external-data;ms-04")
+else()
+  add_test(NAME ms04.EXTERNAL-ALL-RECORDINGS
+    COMMAND "${CMAKE_COMMAND}" -E echo
+      "SKIP: approved external recordings are unavailable at ${SIGNAL_STUDIO_EXTERNAL_TEST_DATA_DIR}")
+  set_tests_properties(ms04.EXTERNAL-ALL-RECORDINGS PROPERTIES
+    SKIP_REGULAR_EXPRESSION "^SKIP:"
+    LABELS "integration;external-data;environment-skip;ms-04")
+endif()
 
 add_test(NAME ms04.app.headless-self-test-before-qt
   COMMAND signal_studio --self-test --scratch "${CMAKE_CURRENT_BINARY_DIR}/headless-self-test")
