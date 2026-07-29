@@ -192,3 +192,11 @@ CTest 截图与布局断言使用 Qt offscreen，另清空三项 Qt 插件环境
 `--startup-smoke`，同时验证 Qt/VC143 运行时闭包。按用户决定不执行 Ubuntu 24.04
 无界面构建，不新增 Linux 兼容声明。GitHub Actions 的 Windows Qt/UI 作业在 MS-03
 回归之后显式执行全部 `ms-04` 标签用例，再执行十组件安装消费。
+
+MS-04 最终稳态于 2026-07-29 连续执行 28,800 秒并完成 70,024 次工程新建、导入、
+PSD/STFT、结果提交和关闭循环；标准错误为 0，生命周期峰值 Working Set 为
+19,476,480 B，采样句柄数为 79～84。最终代码提交 `04932be` 的 GitHub Actions
+运行 `30450012411` 中，`headless-build-test` 与
+`windows-ui-module-performance` 均为 success。CI 缺少批准外部录制时，外部数据
+专项明确跳过，取消/重试使用确定性 SC16 夹具继续执行；本机三份批准录制的有界验证
+保持为外部数据验收依据。
