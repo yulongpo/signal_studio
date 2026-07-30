@@ -212,10 +212,44 @@ public:
     for (const auto* id : {"navigator", "inspector", "task-center", "result-center"}) {
       const auto dock = docks_.find(id);
       if (dock != docks_.end()) {
+        if (std::string_view{id} == "inspector") {
+          for (const auto& [extension_id, widget] : inspector_extensions_) {
+            static_cast<void>(extension_id);
+            if (widget != nullptr) {
+              widget->setParent(nullptr);
+            }
+          }
+        }
         dock->second->setWidget(createPanelContent(id));
       }
     }
     populateTaskTable();
+    normalizeInteractiveTargets();
+    return core::Status::success();
+  }
+
+  [[nodiscard]] core::Status install_inspector_extension(std::string id, void* native_widget) override {
+    if (id.empty() || native_widget == nullptr || id.find_first_of("\t\r\n") != std::string::npos) {
+      return core::Status::failure({core::ErrorDomain::workbench, core::ErrorReason::invalid_argument},
+                                   "Inspector 扩展需要有效 ID 和原生 QWidget");
+    }
+    auto* widget = static_cast<QWidget*>(native_widget);
+    widget->setObjectName(QString("InspectorExtension_%1").arg(QString::fromStdString(id)));
+    const auto existing = inspector_extensions_.find(id);
+    if (existing != inspector_extensions_.end() && existing->second != widget && existing->second != nullptr) {
+      existing->second->deleteLater();
+    }
+    inspector_extensions_[std::move(id)] = widget;
+    const auto dock = docks_.find("inspector");
+    if (dock != docks_.end()) {
+      for (const auto& [extension_id, extension] : inspector_extensions_) {
+        static_cast<void>(extension_id);
+        if (extension != nullptr) {
+          extension->setParent(nullptr);
+        }
+      }
+      dock->second->setWidget(createPanelContent("inspector"));
+    }
     normalizeInteractiveTargets();
     return core::Status::success();
   }
@@ -980,6 +1014,13 @@ private:
                                          new QLabel(QString::fromStdString(entry.value), content));
         }
       }
+      for (const auto& [extension_id, widget] : inspector_extensions_) {
+        static_cast<void>(extension_id);
+        if (widget != nullptr) {
+          widget->setParent(content);
+          ui.verticalLayout->insertWidget(std::max(0, ui.verticalLayout->count() - 1), widget, 1);
+        }
+      }
       return content;
     }
     if (id == "task-center") {
@@ -1076,6 +1117,7 @@ private:
   QLabel* resource_label_{};
   QToolButton* inspector_edge_{};
   QLabel* source_label_{};
+  std::map<std::string, QWidget*, std::less<>> inspector_extensions_;
 };
 
 } // namespace

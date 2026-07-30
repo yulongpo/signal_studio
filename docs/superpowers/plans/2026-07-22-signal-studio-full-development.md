@@ -121,6 +121,32 @@ Milestone-specific tests below supplement these commands. Each milestone commit 
 
 **Commit:** `feat(ms-04): complete Signal Studio import and basic analysis workflows`
 
+## MS-4.5 — Parameterized spectrum and spectrogram analysis
+
+**Files:**
+
+- Add/modify: `include/signal_studio/dsp/analysis.hpp`, `src/platform/dsp/**`
+- Modify: `apps/signal_studio/**`, `include/signal_studio/{visualization,workbench}/**`
+- Add: `apps/signal_studio/ui/SignalAnalysisSettingsPanel.ui`
+- Add/modify: `tests/{dsp,app,visualization}/**`, `docs/milestones/MS-4.5/**`
+
+**Implementation:** Add a versioned, deterministic spectrum/PSD/STFT parameter model with
+SHA-256 identity, cost estimation, minimal invalidation, window extensions, Periodogram/Welch,
+averaging/hold, spectrum and spectrogram smoothing, ProcessingChain prefiltering, raw-result
+retention, TaskRuntime cancellation/latest-result commit, project migration, presets and Artifact
+provenance. Build the Inspector editor from Qt Designer and keep display mapping separate from DSP.
+Reuse oneMKL DFTI/VSL/LAPACKE, cuFFT and existing adapters; do not add another numerical library.
+
+**Tests:** Deterministic numerical window/FFT/PSD/STFT/filter tests; CPU/CUDA Debug and Release
+consistency; persistence/cache/provenance/latest-request tests; Qt contract, 1280/1080P/4K and
+125%–200% DPI tests; 30-minute parameter/zoom/view switching stability; full CPU regression,
+install consumer, executable self-test and VS Code F5 checks.
+
+**Evidence:** `docs/milestones/MS-4.5/{development_report,test_report,acceptance_record,commit_record}.md`
+plus the named Chinese milestone reports and `evidence/`.
+
+**Commit:** `feat(ms-4.5): parameterize spectrum and spectrogram analysis`
+
 ## MS-05 — Wideband and narrowband linked analysis
 
 **Files:**

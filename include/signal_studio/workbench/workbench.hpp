@@ -218,6 +218,8 @@ public:
   [[nodiscard]] virtual core::Status show_page(std::string_view page_id) = 0;
   /// 用宿主的单一真实状态源刷新导航、Dock、工具栏和状态栏。
   [[nodiscard]] virtual core::Status update_content(WorkbenchContent content) = 0;
+  /// 在右侧 Inspector 中安装宿主提供的原生编辑器。native_widget 的所有权转交给工作台。
+  [[nodiscard]] virtual core::Status install_inspector_extension(std::string id, void* native_widget) = 0;
 };
 
 /// 创建可复用 Qt Widgets 工作台；Qt 只存在于私有实现和不透明原生句柄中。

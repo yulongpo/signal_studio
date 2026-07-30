@@ -10,11 +10,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <future>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <numbers>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -259,6 +262,115 @@ public:
 private:
   MalformedFftResult malformed_;
 };
+
+class CancellingFftPlan final : public IFftPlan {
+public:
+  CancellingFftPlan(std::shared_ptr<IFftPlan> delegate, std::shared_ptr<std::atomic_bool> cancellation)
+      : delegate_(std::move(delegate)), cancellation_(std::move(cancellation)) {}
+
+  [[nodiscard]] FftSpec spec() const noexcept override {
+    return delegate_->spec();
+  }
+
+  [[nodiscard]] core::Result<FftResult> process(std::span<const data::ComplexSample> input) override {
+    auto result = delegate_->process(input);
+    cancellation_->store(true, std::memory_order_release);
+    return result;
+  }
+
+private:
+  std::shared_ptr<IFftPlan> delegate_;
+  std::shared_ptr<std::atomic_bool> cancellation_;
+};
+
+class CancellingFftBackend final : public IFftBackend {
+public:
+  CancellingFftBackend(std::shared_ptr<IFftBackend> delegate, std::shared_ptr<std::atomic_bool> cancellation)
+      : delegate_(std::move(delegate)), cancellation_(std::move(cancellation)) {}
+
+  [[nodiscard]] std::string_view backend_id() const noexcept override {
+    return delegate_->backend_id();
+  }
+
+  [[nodiscard]] core::Status validate(const FftSpec& spec) const override {
+    return delegate_->validate(spec);
+  }
+
+  [[nodiscard]] core::Result<std::shared_ptr<IFftPlan>> create_plan(const FftSpec& spec) override {
+    auto plan = delegate_->create_plan(spec);
+    if (!plan) {
+      return plan.error();
+    }
+    return std::shared_ptr<IFftPlan>(std::make_shared<CancellingFftPlan>(plan.value(), cancellation_));
+  }
+
+private:
+  std::shared_ptr<IFftBackend> delegate_;
+  std::shared_ptr<std::atomic_bool> cancellation_;
+};
+
+struct FftCallCounts final {
+  std::uint64_t plans{};
+  std::uint64_t executions{};
+};
+
+class CountingFftPlan final : public IFftPlan {
+public:
+  CountingFftPlan(std::shared_ptr<IFftPlan> delegate, std::shared_ptr<FftCallCounts> counts)
+      : delegate_(std::move(delegate)), counts_(std::move(counts)) {}
+
+  [[nodiscard]] FftSpec spec() const noexcept override {
+    return delegate_->spec();
+  }
+
+  [[nodiscard]] core::Result<FftResult> process(std::span<const data::ComplexSample> input) override {
+    ++counts_->executions;
+    return delegate_->process(input);
+  }
+
+private:
+  std::shared_ptr<IFftPlan> delegate_;
+  std::shared_ptr<FftCallCounts> counts_;
+};
+
+class CountingFftBackend final : public IFftBackend {
+public:
+  CountingFftBackend(std::shared_ptr<IFftBackend> delegate, std::shared_ptr<FftCallCounts> counts)
+      : delegate_(std::move(delegate)), counts_(std::move(counts)) {}
+
+  [[nodiscard]] std::string_view backend_id() const noexcept override {
+    return delegate_->backend_id();
+  }
+
+  [[nodiscard]] core::Status validate(const FftSpec& spec) const override {
+    return delegate_->validate(spec);
+  }
+
+  [[nodiscard]] core::Result<std::shared_ptr<IFftPlan>> create_plan(const FftSpec& spec) override {
+    auto plan = delegate_->create_plan(spec);
+    if (!plan) {
+      return plan.error();
+    }
+    ++counts_->plans;
+    return std::shared_ptr<IFftPlan>(std::make_shared<CountingFftPlan>(plan.value(), counts_));
+  }
+
+private:
+  std::shared_ptr<IFftBackend> delegate_;
+  std::shared_ptr<FftCallCounts> counts_;
+};
+
+std::size_t peak_index(std::span<const double> values) {
+  return static_cast<std::size_t>(std::distance(values.begin(), std::max_element(values.begin(), values.end())));
+}
+
+std::size_t frequency_index(std::span<const double> frequencies, double expected_hz) {
+  return static_cast<std::size_t>(
+      std::distance(frequencies.begin(),
+                    std::min_element(frequencies.begin(), frequencies.end(), [expected_hz](double left, double right) {
+                      return std::abs(left - expected_hz) < std::abs(right - expected_hz);
+                    })));
+}
 
 void test_dsp_001() {
   ProcessingChain chain;
@@ -1136,6 +1248,642 @@ void test_dsp_101() {
           "FFT 长度不一致必须失败");
 }
 
+void test_ms45_contracts() {
+  const auto catalog = window_catalog();
+  require(catalog.size() == 8U, "MS-4.5 窗函数目录必须完整包含八种窗");
+  std::array<bool, 8U> seen{};
+  for (const auto& descriptor : catalog) {
+    const auto index = static_cast<std::size_t>(descriptor.kind);
+    require(index < seen.size() && !seen[index], "窗函数目录 kind 重复或越界");
+    seen[index] = true;
+    require(!descriptor.english_name.empty() && !descriptor.chinese_name.empty() &&
+                !descriptor.recommended_use.empty() && !descriptor.amplitude_characteristics.empty() &&
+                !descriptor.leakage_characteristics.empty() && descriptor.reference_coherent_gain > 0.0 &&
+                descriptor.reference_enbw_bins > 0.0 &&
+                descriptor.parameter_minimum <= descriptor.recommended_parameter &&
+                descriptor.recommended_parameter <= descriptor.parameter_maximum,
+            "窗函数目录缺少名称、参数、CG、ENBW、用途或幅度/泄漏元数据");
+    if (descriptor.kind == WindowKind::kaiser || descriptor.kind == WindowKind::tukey) {
+      require(!descriptor.parameter_name.empty() && descriptor.parameter_maximum > descriptor.parameter_minimum,
+              "参数化窗缺少有效参数范围");
+    } else {
+      require(descriptor.parameter_name.empty() && descriptor.parameter_minimum == 0.0 &&
+                  descriptor.parameter_maximum == 0.0,
+              "无参数窗错误声明了参数范围");
+    }
+  }
+  const auto rectangular = make_window(WindowSpecification{WindowKind::rectangular, 0.0}, 5U);
+  const auto hann = make_window(WindowSpecification{WindowKind::hann, 0.0}, 5U);
+  const auto blackman_harris = make_window(WindowSpecification{WindowKind::blackman_harris, 0.0}, 5U);
+  const auto flat_top = make_window(WindowSpecification{WindowKind::flat_top, 0.0}, 5U);
+  const auto kaiser_zero = make_window(WindowSpecification{WindowKind::kaiser, 0.0}, 5U);
+  const auto kaiser = make_window(WindowSpecification{WindowKind::kaiser, 8.6}, 5U);
+  const auto tukey_zero = make_window(WindowSpecification{WindowKind::tukey, 0.0}, 5U);
+  const auto tukey_one = make_window(WindowSpecification{WindowKind::tukey, 1.0}, 5U);
+  require(rectangular && hann && blackman_harris && flat_top && kaiser_zero && kaiser && tukey_zero && tukey_one,
+          "MS-4.5 窗函数创建失败");
+  for (const auto coefficient : rectangular.value().coefficients) {
+    require_close(coefficient, 1.0, 1e-15, "Rectangular 系数错误");
+  }
+  require_close(rectangular.value().coherent_gain, 1.0, 1e-15, "Rectangular coherent gain 错误");
+  require_close(rectangular.value().equivalent_noise_bandwidth_bins, 1.0, 1e-15, "Rectangular ENBW 错误");
+  const std::array<double, 5U> expected_hann{0.0, 0.5, 1.0, 0.5, 0.0};
+  for (std::size_t index = 0; index < expected_hann.size(); ++index) {
+    require_close(hann.value().coefficients[index], expected_hann[index], 1e-14, "Hann 系数错误");
+    require_close(tukey_one.value().coefficients[index], expected_hann[index], 1e-14, "Tukey alpha=1 未退化为 Hann");
+  }
+  require_close(hann.value().coherent_gain, 0.4, 1e-14, "Hann coherent gain 错误");
+  require_close(hann.value().equivalent_noise_bandwidth_bins, 1.875, 1e-14, "Hann ENBW 错误");
+  require_close(blackman_harris.value().coefficients.front(), 0.00006, 1e-12, "Blackman-Harris 端点系数错误");
+  require_close(blackman_harris.value().coefficients[2U], 1.0, 1e-12, "Blackman-Harris 中心系数错误");
+  require_close(flat_top.value().coefficients[2U], 1.0, 5e-9, "Flat Top 中心系数错误");
+  for (const auto coefficient : kaiser_zero.value().coefficients) {
+    require_close(coefficient, 1.0, 1e-14, "Kaiser beta=0 未退化为 Rectangular");
+  }
+  require(kaiser.value().coefficients.front() < 0.002 && kaiser.value().coefficients[2U] > 0.999999,
+          "Kaiser beta 未真实改变窗系数");
+  for (const auto coefficient : tukey_zero.value().coefficients) {
+    require_close(coefficient, 1.0, 1e-14, "Tukey alpha=0 未退化为 Rectangular");
+  }
+  require(!make_window(WindowSpecification{WindowKind::kaiser, -0.1}, 16U), "负 Kaiser beta 必须拒绝");
+  require(!make_window(WindowSpecification{WindowKind::tukey, 1.1}, 16U), "超范围 Tukey alpha 必须拒绝");
+
+  AnalysisSettingsSnapshot settings;
+  settings.algorithm_version = "signal.dsp.analysis/1.0";
+  settings.spectrum.analysis_range_policy = AnalysisRangePolicy::all_complete_frames;
+  settings.spectrum.frame_length = 256U;
+  settings.spectrum.fft_length = 512U;
+  settings.spectrum.zero_padding_policy = ZeroPaddingPolicy::enabled;
+  settings.spectrum.window = {WindowKind::kaiser, 8.6};
+  settings.spectrum.sidedness = SpectrumSidedness::two_sided_shifted;
+  settings.spectrum.output_quantity = SpectrumOutputQuantity::linear_power_density;
+  settings.spectrum.normalization = SpectrumNormalization::window_power;
+  settings.spectrum.estimator = {PsdEstimatorKind::welch, 0.5, 4U};
+  settings.spectrum.accumulation = {SpectrumAccumulationMode::exponential_average, 0U, 0.25, 0U};
+  settings.spectrum.smoothing = {SpectrumSmoothingKind::savitzky_golay, 7U, 0.0, 3U};
+  settings.spectrum.measurement_source = MeasurementSource::raw;
+  settings.spectrogram.frame_length = 128U;
+  settings.spectrogram.fft_length = 256U;
+  settings.spectrogram.hop_length = 64U;
+  settings.spectrogram.padding_policy = ZeroPaddingPolicy::enabled;
+  settings.spectrogram.window = {WindowKind::tukey, 0.4};
+  settings.spectrogram.smoothing = {SpectrogramFrequencySmoothingKind::gaussian, 5U, 1.0,
+                                    SpectrogramTimeSmoothingKind::exponential, 0.4};
+  settings.prefilter.enabled = true;
+  settings.prefilter.boundary = BoundaryPolicy::zero_pad;
+  auto prefilter = node("analysis-lowpass", NodeKind::fir_filter);
+  prefilter.filter_shape = FilterShape::custom;
+  prefilter.numerator = {0.25, 0.5, 0.25};
+  prefilter.implementation_id = "signal.dsp.onemkl/1.0";
+  settings.prefilter.chain.nodes.push_back(prefilter);
+
+  const auto serialized = serialize_analysis_settings(settings);
+  require(serialized, "MS-4.5 参数规范化序列化失败");
+  const auto parsed = parse_analysis_settings(serialized.value());
+  require(parsed, "MS-4.5 参数解析失败");
+  const auto reserialized = serialize_analysis_settings(parsed.value());
+  require(reserialized && reserialized.value() == serialized.value(), "MS-4.5 参数序列化未确定性往返");
+  const auto hash = hash_analysis_settings(settings);
+  const auto restored_hash = hash_analysis_settings(parsed.value());
+  require(hash && restored_hash && hash.value() == restored_hash.value() && hash.value().hex.size() == 64U,
+          "MS-4.5 参数哈希不稳定或不是 SHA-256");
+  auto smoothing_changed = settings;
+  smoothing_changed.spectrum.smoothing.polynomial_order = 2U;
+  const auto smoothing_hash = hash_analysis_settings(smoothing_changed);
+  require(smoothing_hash && smoothing_hash.value() != hash.value(), "数值参数变化未进入参数哈希");
+  auto future_minor = serialized.value();
+  future_minor += "future.optional-field=ignored\n";
+  require(parse_analysis_settings(future_minor), "同主版本新增字段未安全忽略");
+  auto incompatible = serialized.value();
+  const auto schema_position = incompatible.find("signal.analysis-settings/1.0");
+  require(schema_position != std::string::npos, "MS-4.5 schema 夹具缺失");
+  incompatible.replace(schema_position, std::string_view("signal.analysis-settings/1.0").size(),
+                       "signal.analysis-settings/2.0");
+  require(!parse_analysis_settings(incompatible), "未来主版本必须明确拒绝");
+
+  const auto estimate = estimate_analysis_cost(settings, 4096U, 48'000.0);
+  require(estimate && estimate.value().spectrum_output_bins == 512U && estimate.value().spectrogram_rows == 63U &&
+              estimate.value().spectrogram_columns == 256U && estimate.value().fft_execution_count >= 67U &&
+              estimate.value().host_memory_bytes > 0U && estimate.value().estimated_operations > 0.0,
+          "MS-4.5 资源估计未反映 FFT/Welch/STFT 参数");
+  require_close(estimate.value().spectrum_bin_spacing_hz, 93.75, 1e-12, "资源估计频点间隔错误");
+  require_close(estimate.value().spectrogram_time_step_seconds, 64.0 / 48'000.0, 1e-15, "资源估计 STFT 时间步长错误");
+
+  auto changed = settings;
+  changed.spectrum.smoothing.polynomial_order = 2U;
+  auto invalidation = classify_analysis_change(settings, changed);
+  require(has_invalidation(invalidation, AnalysisInvalidation::spectrum_smoothing) &&
+              !has_invalidation(invalidation, AnalysisInvalidation::spectrum_transform),
+          "仅频谱平滑变化未执行最小失效");
+  changed = settings;
+  changed.spectrum.fft_length = 1024U;
+  invalidation = classify_analysis_change(settings, changed);
+  require(has_invalidation(invalidation, AnalysisInvalidation::spectrum_transform) &&
+              !has_invalidation(invalidation, AnalysisInvalidation::spectrogram_transform),
+          "频谱 FFT 变化错误失效 STFT");
+  changed = settings;
+  changed.spectrogram.smoothing.time_exponential_alpha = 0.6;
+  invalidation = classify_analysis_change(settings, changed);
+  require(has_invalidation(invalidation, AnalysisInvalidation::spectrogram_smoothing) &&
+              !has_invalidation(invalidation, AnalysisInvalidation::spectrogram_transform),
+          "仅 STFT 平滑变化未执行最小失效");
+  changed = settings;
+  changed.prefilter.chain.nodes.front().numerator.front() = 0.2;
+  invalidation = classify_analysis_change(settings, changed);
+  require(has_invalidation(invalidation, AnalysisInvalidation::prefilter) &&
+              has_invalidation(invalidation, AnalysisInvalidation::spectrum_transform) &&
+              has_invalidation(invalidation, AnalysisInvalidation::spectrogram_transform),
+          "预滤波变化未失效全部下游分析");
+}
+
+void test_ms45_spectrum_psd() {
+  auto backend = fft_backend();
+  constexpr double sample_rate = 48'000.0;
+  const auto tone = complex_tone(512U, 32U);
+  SpectrumAnalysisSettings spectrum_settings;
+  spectrum_settings.frame_length = 256U;
+  spectrum_settings.fft_length = 512U;
+  spectrum_settings.zero_padding_policy = ZeroPaddingPolicy::enabled;
+  spectrum_settings.window = {WindowKind::rectangular, 0.0};
+  spectrum_settings.sidedness = SpectrumSidedness::two_sided_shifted;
+  spectrum_settings.output_quantity = SpectrumOutputQuantity::magnitude_dbfs;
+  const auto spectrum = calculate_spectrum(*backend, tone.view(), sample_rate, 0.0, spectrum_settings, nullptr);
+  require(spectrum && spectrum.value().frequency_hz.size() == 512U && spectrum.value().raw_values.size() == 512U &&
+              spectrum.value().values.size() == 512U && spectrum.value().frame_length == 256U &&
+              spectrum.value().fft_length == 512U,
+          "参数化频谱未真实使用帧长和 FFT 长度");
+  const auto spectrum_peak = peak_index(spectrum.value().values);
+  require_close(spectrum.value().frequency_hz[spectrum_peak], 3'000.0, 1e-12, "补零频谱峰值频率错误");
+  require_close(spectrum.value().values[spectrum_peak], 0.0, 1e-10, "补零频谱 coherent gain 幅值错误");
+  require_close(spectrum.value().bin_spacing_hz, sample_rate / 512.0, 1e-15, "补零频点间隔错误");
+
+  auto no_padding = spectrum_settings;
+  no_padding.fft_length = 256U;
+  no_padding.zero_padding_policy = ZeroPaddingPolicy::forbidden;
+  const auto compact = calculate_spectrum(*backend, tone.view(), sample_rate, 0.0, no_padding, nullptr);
+  require(compact && compact.value().frequency_hz.size() == 256U &&
+              compact.value().bin_spacing_hz == sample_rate / 256.0,
+          "FFT 长度变化未改变 bin 数和频点间隔");
+  auto invalid_padding = spectrum_settings;
+  invalid_padding.zero_padding_policy = ZeroPaddingPolicy::forbidden;
+  require(!calculate_spectrum(*backend, tone.view(), sample_rate, 0.0, invalid_padding, nullptr),
+          "禁止补零时仍接受 FFT 长度大于帧长");
+
+  const auto real = real_tone(256U, 16U, 0.5);
+  SpectrumAnalysisSettings one_sided_amplitude;
+  one_sided_amplitude.frame_length = 256U;
+  one_sided_amplitude.fft_length = 256U;
+  one_sided_amplitude.window = {WindowKind::rectangular, 0.0};
+  one_sided_amplitude.sidedness = SpectrumSidedness::one_sided;
+  one_sided_amplitude.output_quantity = SpectrumOutputQuantity::linear_amplitude;
+  one_sided_amplitude.normalization = SpectrumNormalization::coherent_gain;
+  auto invalid_amplitude_normalization = one_sided_amplitude;
+  invalid_amplitude_normalization.normalization = SpectrumNormalization::window_power;
+  require(!calculate_spectrum(*backend, real.view(), sample_rate, 0.0, invalid_amplitude_normalization, nullptr),
+          "幅度/dBFS 错误接受 Window-power 归一化");
+  const auto amplitude_result =
+      calculate_spectrum(*backend, real.view(), sample_rate, 0.0, one_sided_amplitude, nullptr);
+  auto one_sided_power = one_sided_amplitude;
+  one_sided_power.output_quantity = SpectrumOutputQuantity::linear_power;
+  const auto power_result = calculate_spectrum(*backend, real.view(), sample_rate, 0.0, one_sided_power, nullptr);
+  require(amplitude_result && power_result && amplitude_result.value().values.size() == 129U &&
+              power_result.value().values.size() == amplitude_result.value().values.size(),
+          "实信号单边频谱尺寸错误");
+  const auto real_peak = frequency_index(amplitude_result.value().frequency_hz, 3'000.0);
+  require_close(amplitude_result.value().values[real_peak], 0.5 / std::sqrt(2.0), 1e-12, "单边 RMS 幅度缩放错误");
+  require_close(power_result.value().values[real_peak], 0.125, 1e-12, "单边 Parseval 功率缩放错误");
+  require_close(power_result.value().values[real_peak],
+                amplitude_result.value().values[real_peak] * amplitude_result.value().values[real_peak], 1e-14,
+                "线性功率不等于线性幅度平方");
+
+  std::vector<data::ComplexSample> piecewise(512U);
+  for (std::size_t index = 0; index < piecewise.size(); ++index) {
+    const auto local = index % 256U;
+    const auto amplitude = index < 256U ? 1.0 : 0.5;
+    const auto phase = 2.0 * std::numbers::pi * 16.0 * static_cast<double>(local) / 256.0;
+    piecewise[index] = {amplitude * std::cos(phase), amplitude * std::sin(phase)};
+  }
+  const auto input = data::SignalBuffer::from_complex(std::move(piecewise));
+  SpectrumAnalysisSettings psd_settings;
+  psd_settings.analysis_range_policy = AnalysisRangePolicy::all_complete_frames;
+  psd_settings.frame_length = 256U;
+  psd_settings.fft_length = 256U;
+  psd_settings.window = {WindowKind::rectangular, 0.0};
+  psd_settings.sidedness = SpectrumSidedness::two_sided_shifted;
+  psd_settings.output_quantity = SpectrumOutputQuantity::linear_power_density;
+  psd_settings.normalization = SpectrumNormalization::window_power;
+  psd_settings.estimator = {PsdEstimatorKind::welch, 0.0, 2U};
+  auto invalid_density_normalization = psd_settings;
+  invalid_density_normalization.normalization = SpectrumNormalization::coherent_gain;
+  require(!calculate_psd(*backend, input.view(), sample_rate, 0.0, invalid_density_normalization, nullptr),
+          "功率密度错误接受 coherent-gain 归一化");
+  const auto call_counts = std::make_shared<FftCallCounts>();
+  CountingFftBackend counting_backend{backend, call_counts};
+  const auto shared = calculate_spectrum_psd(counting_backend, input.view(), sample_rate, 0.0, psd_settings, nullptr);
+  require(shared && call_counts->plans == 1U && call_counts->executions == 2U &&
+              shared.value().spectrum.provenance.backend_id == shared.value().psd.provenance.backend_id &&
+              shared.value().spectrum.raw_density_linear == shared.value().psd.raw_density_linear,
+          "Spectrum/PSD 未共享同一 FFT 计划和帧变换");
+
+  const auto expected_scale = 256.0 / sample_rate;
+  const auto peak_frequency = 3'000.0;
+  const auto verify_accumulation = [&](SpectrumAccumulationMode mode, double alpha, double expected_factor) {
+    auto configured = psd_settings;
+    configured.accumulation = {mode, 2U, alpha, 0U};
+    const auto result = calculate_psd(*backend, input.view(), sample_rate, 0.0, configured, nullptr);
+    require(result && result.value().segment_count == 2U && result.value().raw_values == result.value().values,
+            "Welch 累积返回值或 raw 保留错误");
+    const auto bin = frequency_index(result.value().frequency_hz, peak_frequency);
+    require_close(result.value().values[bin], expected_factor * expected_scale, 1e-12,
+                  "Welch/平均/保持的解析功率密度错误");
+  };
+  verify_accumulation(SpectrumAccumulationMode::none, 1.0, 0.625);
+  verify_accumulation(SpectrumAccumulationMode::linear_average, 1.0, 0.625);
+  verify_accumulation(SpectrumAccumulationMode::exponential_average, 0.25, 0.8125);
+  verify_accumulation(SpectrumAccumulationMode::maximum_hold, 1.0, 1.0);
+
+  auto periodogram = psd_settings;
+  periodogram.analysis_range_policy = AnalysisRangePolicy::first_frame;
+  periodogram.estimator = {PsdEstimatorKind::periodogram, 0.0, 1U};
+  periodogram.accumulation = {};
+  const auto periodogram_result = calculate_psd(*backend, input.view(), sample_rate, 0.0, periodogram, nullptr);
+  require(periodogram_result && periodogram_result.value().segment_count == 1U, "Periodogram 未使用单段");
+  const auto periodogram_bin = frequency_index(periodogram_result.value().frequency_hz, peak_frequency);
+  require_close(periodogram_result.value().values[periodogram_bin], expected_scale, 1e-12,
+                "Periodogram 解析功率密度错误");
+
+  const std::array<double, 7U> impulse{0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0};
+  const auto moving = smooth_spectrum(impulse, {SpectrumSmoothingKind::moving_average, 3U, 0.0, 0U}, nullptr);
+  require(moving, "滑动平均失败");
+  const std::array<double, 7U> expected_moving{0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0};
+  for (std::size_t index = 0; index < expected_moving.size(); ++index) {
+    require_close(moving.value()[index], expected_moving[index], 1e-14, "滑动平均数值错误");
+  }
+  const auto gaussian = smooth_spectrum(impulse, {SpectrumSmoothingKind::gaussian, 5U, 1.0, 0U}, nullptr);
+  require(gaussian && gaussian.value()[3U] < 3.0 && gaussian.value()[3U] > gaussian.value()[2U] &&
+              gaussian.value()[2U] > gaussian.value()[1U] && gaussian.value()[1U] > 0.0,
+          "高斯平滑核形状错误");
+  std::array<double, 9U> quadratic{};
+  for (std::size_t index = 0; index < quadratic.size(); ++index) {
+    const auto x = static_cast<double>(index) - 4.0;
+    quadratic[index] = 1.0 + 2.0 * x + 0.5 * x * x;
+  }
+  const auto savitzky = smooth_spectrum(quadratic, {SpectrumSmoothingKind::savitzky_golay, 5U, 0.0, 2U}, nullptr);
+  require(savitzky, "Savitzky-Golay 平滑失败");
+  for (std::size_t index = 2U; index + 2U < quadratic.size(); ++index) {
+    require_close(savitzky.value()[index], quadratic[index], 1e-10, "Savitzky-Golay 未保持二次多项式");
+  }
+
+  auto smoothed_psd_settings = periodogram;
+  smoothed_psd_settings.smoothing = {SpectrumSmoothingKind::moving_average, 3U, 0.0, 0U};
+  const auto smoothed_psd = calculate_psd(*backend, input.view(), sample_rate, 0.0, smoothed_psd_settings, nullptr);
+  require(smoothed_psd && smoothed_psd.value().raw_values != smoothed_psd.value().values &&
+              smoothed_psd.value().raw_values[periodogram_bin] > smoothed_psd.value().values[periodogram_bin],
+          "频谱平滑未影响显示值或未保留 raw");
+  const auto reused_psd = resmooth_psd(periodogram_result.value(), smoothed_psd_settings, nullptr);
+  require(reused_psd && reused_psd.value().raw_linear_values == periodogram_result.value().raw_linear_values &&
+              reused_psd.value().raw_values == periodogram_result.value().raw_values,
+          "平滑最小失效未复用未平滑 PSD 线性结果");
+  for (std::size_t index = 0; index < smoothed_psd.value().values.size(); ++index) {
+    require_close(reused_psd.value().values[index], smoothed_psd.value().values[index], 1e-15,
+                  "复用 raw 的 PSD 平滑与完整重算不一致");
+    require_close(reused_psd.value().db_per_hz[index], smoothed_psd.value().db_per_hz[index], 1e-12,
+                  "复用 raw 的 PSD 密度平滑与完整重算不一致");
+  }
+
+  auto moving_spectrum_settings = spectrum_settings;
+  moving_spectrum_settings.smoothing = {SpectrumSmoothingKind::moving_average, 3U, 0.0, 0U};
+  const auto full_smoothed_spectrum =
+      calculate_spectrum(*backend, tone.view(), sample_rate, 0.0, moving_spectrum_settings, nullptr);
+  const auto reused_spectrum = resmooth_spectrum(spectrum.value(), moving_spectrum_settings, nullptr);
+  require(full_smoothed_spectrum && reused_spectrum &&
+              reused_spectrum.value().raw_linear_values == spectrum.value().raw_linear_values,
+          "平滑最小失效未保留频谱 FFT 的线性 raw");
+  for (std::size_t index = 0; index < full_smoothed_spectrum.value().values.size(); ++index) {
+    require_close(reused_spectrum.value().values[index], full_smoothed_spectrum.value().values[index], 1e-15,
+                  "复用 raw 的频谱平滑与完整重算不一致");
+  }
+
+  const auto cancellation = std::make_shared<std::atomic_bool>(true);
+  require(!calculate_spectrum(*backend, tone.view(), sample_rate, 0.0, spectrum_settings, cancellation),
+          "开始前取消仍发布频谱");
+  cancellation->store(false, std::memory_order_release);
+  CancellingFftBackend cancelling_backend(backend, cancellation);
+  const auto cancelled =
+      calculate_spectrum(cancelling_backend, tone.view(), sample_rate, 0.0, spectrum_settings, cancellation);
+  require(!cancelled && cancelled.error().code().reason == core::ErrorReason::cancelled,
+          "FFT 内核完成后取消仍发布结果");
+}
+
+void test_ms45_stft_prefilter() {
+  auto fft = fft_backend();
+  auto kernels = kernel_backend();
+  constexpr double sample_rate = 48'000.0;
+  constexpr std::size_t frame_length = 64U;
+  std::vector<data::ComplexSample> values(frame_length * 3U);
+  const std::array<double, 3U> amplitudes{1.0, 0.5, 0.25};
+  for (std::size_t frame = 0; frame < amplitudes.size(); ++frame) {
+    for (std::size_t index = 0; index < frame_length; ++index) {
+      const auto phase = 2.0 * std::numbers::pi * 8.0 * static_cast<double>(index) / static_cast<double>(frame_length);
+      values[frame * frame_length + index] = {amplitudes[frame] * std::cos(phase), amplitudes[frame] * std::sin(phase)};
+    }
+  }
+  const auto input = data::SignalBuffer::from_complex(std::move(values));
+  SpectrogramAnalysisSettings settings;
+  settings.frame_length = frame_length;
+  settings.fft_length = frame_length;
+  settings.hop_length = frame_length;
+  settings.window = {WindowKind::rectangular, 0.0};
+  settings.sidedness = SpectrumSidedness::two_sided_shifted;
+  settings.output_quantity = SpectrumOutputQuantity::linear_power_density;
+  settings.normalization = SpectrumNormalization::window_power;
+  settings.smoothing.time_mode = SpectrogramTimeSmoothingKind::exponential;
+  settings.smoothing.time_exponential_alpha = 0.5;
+  const auto stft = calculate_stft(*fft, input.view(), sample_rate, 0.0, settings, nullptr);
+  require(stft && stft.value().rows == 3U && stft.value().columns == frame_length &&
+              stft.value().raw_values.size() == frame_length * 3U && stft.value().values.size() == frame_length * 3U,
+          "参数化 STFT 尺寸或 raw 保留错误");
+  const auto bin = frequency_index(stft.value().frequency_hz, 6'000.0);
+  const auto scale = static_cast<double>(frame_length) / sample_rate;
+  require_close(stft.value().raw_values[bin], scale, 1e-9, "STFT 第一帧原始功率密度错误");
+  require_close(stft.value().raw_values[frame_length + bin], 0.25 * scale, 1e-9, "STFT 第二帧原始功率密度错误");
+  require_close(stft.value().values[frame_length + bin], 0.625 * scale, 1e-9, "STFT 时间指数平滑错误");
+  require_close(stft.value().values[2U * frame_length + bin], 0.34375 * scale, 1e-9, "STFT 时间指数平滑递推错误");
+  require_close(stft.value().time_seconds.front(), 31.5 / sample_rate, 1e-15, "STFT 帧中心时间戳错误");
+  const auto stft_counts = std::make_shared<FftCallCounts>();
+  CountingFftBackend stft_counting_backend{fft, stft_counts};
+  constexpr std::uint64_t source_offset = 48'000U;
+  const auto offset_stft =
+      calculate_stft(stft_counting_backend, input.view(), sample_rate, 0.0, settings, nullptr, source_offset);
+  require(offset_stft && stft_counts->plans == 1U && stft_counts->executions == 3U,
+          "参数化 STFT 未在全部帧间复用一个 FFT 计划");
+  require_close(offset_stft.value().time_seconds.front(), 1.0 + 31.5 / sample_rate, 1e-15,
+                "非零导入范围的 STFT 时间轴未叠加源样本起点");
+  require_close(spectrogram_overlap_ratio(settings), 0.0, 1e-15, "STFT overlap 派生错误");
+  auto unsmoothed_settings = settings;
+  unsmoothed_settings.smoothing = {};
+  const auto unsmoothed = calculate_stft(*fft, input.view(), sample_rate, 0.0, unsmoothed_settings, nullptr);
+  const auto reused_time_smoothing =
+      unsmoothed ? resmooth_stft(unsmoothed.value(), settings, nullptr) : core::Result<StftResult>{unsmoothed.error()};
+  require(unsmoothed && reused_time_smoothing &&
+              reused_time_smoothing.value().raw_linear_values == unsmoothed.value().raw_linear_values,
+          "STFT 平滑最小失效未复用原始线性矩阵");
+  for (std::size_t index = 0; index < stft.value().values.size(); ++index) {
+    require_close(reused_time_smoothing.value().values[index], stft.value().values[index], 1e-9,
+                  "复用 raw 的 STFT 时间平滑与完整重算不一致");
+  }
+
+  auto frequency_smoothed = settings;
+  frequency_smoothed.smoothing.time_mode = SpectrogramTimeSmoothingKind::none;
+  frequency_smoothed.smoothing.frequency_mode = SpectrogramFrequencySmoothingKind::gaussian;
+  frequency_smoothed.smoothing.frequency_kernel_length = 5U;
+  frequency_smoothed.smoothing.frequency_sigma = 1.0;
+  const auto gaussian = calculate_stft(*fft, input.view(), sample_rate, 0.0, frequency_smoothed, nullptr);
+  require(gaussian && gaussian.value().raw_values[bin] > gaussian.value().values[bin] &&
+              gaussian.value().values[bin - 1U] > gaussian.value().raw_values[bin - 1U],
+          "STFT 频率高斯平滑未生效或 raw 被覆盖");
+
+  constexpr std::size_t long_count = 4096U;
+  std::vector<data::ComplexSample> two_tone(long_count);
+  for (std::size_t index = 0; index < long_count; ++index) {
+    const auto low_phase = 2.0 * std::numbers::pi * 128.0 * static_cast<double>(index) / long_count;
+    const auto high_phase = 2.0 * std::numbers::pi * 1024.0 * static_cast<double>(index) / long_count;
+    two_tone[index] = {std::cos(low_phase) + std::cos(high_phase), std::sin(low_phase) + std::sin(high_phase)};
+  }
+  const auto prefilter_input = data::SignalBuffer::from_complex(std::move(two_tone));
+  AnalysisSettingsSnapshot snapshot;
+  snapshot.spectrum.frame_length = long_count;
+  snapshot.spectrum.fft_length = long_count;
+  snapshot.spectrum.window = {WindowKind::rectangular, 0.0};
+  snapshot.spectrum.sidedness = SpectrumSidedness::two_sided_shifted;
+  snapshot.spectrum.output_quantity = SpectrumOutputQuantity::linear_amplitude;
+  snapshot.prefilter.enabled = true;
+  snapshot.prefilter.boundary = BoundaryPolicy::zero_pad;
+  auto filter = node("analysis-prefilter", NodeKind::fir_filter);
+  filter.filter_shape = FilterShape::custom;
+  filter.numerator = lowpass(127U, 0.125);
+  snapshot.prefilter.chain.nodes.push_back(filter);
+  const auto filtered =
+      calculate_spectrum(*fft, *kernels, prefilter_input.view(),
+                         descriptor(data::SignalKind::complex, long_count, sample_rate), snapshot, nullptr);
+  require(filtered && filtered.value().prefilter_applied && !filtered.value().settings_hash.hex.empty(),
+          "分析前滤波未接入 process_chain 或结果缺少参数哈希");
+  const auto low_bin = frequency_index(filtered.value().frequency_hz, 1'500.0);
+  const auto high_bin = frequency_index(filtered.value().frequency_hz, 12'000.0);
+  require(20.0 * std::log10(
+                     std::max(filtered.value().raw_values[high_bin] / filtered.value().raw_values[low_bin], 1e-300)) <
+              -30.0,
+          "分析前 FIR 未真实抑制高频分量");
+
+  auto forbidden = snapshot;
+  forbidden.prefilter.chain.nodes.front().kind = NodeKind::resample;
+  require(!calculate_spectrum(*fft, *kernels, prefilter_input.view(),
+                              descriptor(data::SignalKind::complex, long_count, sample_rate), forbidden, nullptr),
+          "分析前滤波错误接受 MS-05 重采样/通道业务");
+}
+
+void test_ms45_backend_consistency() {
+  auto cpu = fft_backend();
+  const auto signal = complex_tone(2048U, 137U, 0.75);
+  SpectrumAnalysisSettings settings;
+  settings.frame_length = 512U;
+  settings.fft_length = 1024U;
+  settings.zero_padding_policy = ZeroPaddingPolicy::enabled;
+  settings.window = {WindowKind::blackman_harris, 0.0};
+  settings.sidedness = SpectrumSidedness::two_sided_shifted;
+  settings.output_quantity = SpectrumOutputQuantity::linear_power_density;
+  settings.normalization = SpectrumNormalization::window_power;
+  settings.estimator = {PsdEstimatorKind::welch, 0.5, 4U};
+  settings.accumulation = {SpectrumAccumulationMode::linear_average, 4U, 1.0, 0U};
+  settings.smoothing = {SpectrumSmoothingKind::gaussian, 5U, 1.0, 0U};
+  const auto cpu_psd = calculate_psd(*cpu, signal.view(), 48'000.0, 0.0, settings, nullptr);
+  require(cpu_psd, "MS-4.5 CPU Welch/高斯 PSD 失败");
+
+  SpectrogramAnalysisSettings stft_settings;
+  stft_settings.frame_length = 256U;
+  stft_settings.fft_length = 512U;
+  stft_settings.hop_length = 128U;
+  stft_settings.padding_policy = ZeroPaddingPolicy::enabled;
+  stft_settings.window = {WindowKind::kaiser, 7.5};
+  stft_settings.sidedness = SpectrumSidedness::two_sided_shifted;
+  stft_settings.smoothing = {SpectrogramFrequencySmoothingKind::gaussian, 5U, 1.0,
+                             SpectrogramTimeSmoothingKind::exponential, 0.35};
+  const auto cpu_stft = calculate_stft(*cpu, signal.view(), 48'000.0, 0.0, stft_settings, nullptr);
+  require(cpu_stft, "MS-4.5 CPU 参数化 STFT 失败");
+
+  const auto cuda = make_cuda_fft_backend();
+  if (!cuda) {
+#if defined(SIGNAL_STUDIO_TEST_CUDA_REQUIRED)
+    require(false, std::string{"CUDA 构建未能创建必需的 cuFFT 后端: "} + std::string{cuda.error().message()});
+#else
+    std::cout << "MS45_CUDA unavailable: " << cuda.error().message() << '\n';
+    return;
+#endif
+  }
+  const auto cuda_psd = calculate_psd(*cuda.value(), signal.view(), 48'000.0, 0.0, settings, nullptr);
+  const auto cuda_stft = calculate_stft(*cuda.value(), signal.view(), 48'000.0, 0.0, stft_settings, nullptr);
+  if (!cuda_psd) {
+    require(false, std::string{"CUDA backend was created but PSD execution failed: "} +
+                       std::string{cuda_psd.error().message()});
+  }
+  if (!cuda_stft) {
+    require(false, std::string{"CUDA backend was created but STFT execution failed: "} +
+                       std::string{cuda_stft.error().message()});
+  }
+  require(cuda_psd.value().frequency_hz == cpu_psd.value().frequency_hz &&
+              cuda_psd.value().values.size() == cpu_psd.value().values.size() &&
+              cuda_psd.value().raw_values.size() == cpu_psd.value().raw_values.size() &&
+              cuda_psd.value().db_per_hz.size() == cpu_psd.value().db_per_hz.size(),
+          "CPU/CUDA PSD 轴或尺寸不一致");
+  for (std::size_t index = 0; index < cpu_psd.value().values.size(); ++index) {
+    require_close(cuda_psd.value().values[index], cpu_psd.value().values[index],
+                  std::max(1e-11, std::abs(cpu_psd.value().values[index]) * 1e-9),
+                  "CPU/CUDA Welch/平滑 PSD 数值不一致");
+    require_close(cuda_psd.value().raw_values[index], cpu_psd.value().raw_values[index],
+                  std::max(1e-11, std::abs(cpu_psd.value().raw_values[index]) * 1e-9),
+                  "CPU/CUDA Welch 原始 PSD 数值不一致");
+    require_close(cuda_psd.value().db_per_hz[index], cpu_psd.value().db_per_hz[index], 1e-7,
+                  "CPU/CUDA PSD dB/Hz 数值不一致");
+  }
+  require(cuda_stft.value().time_seconds == cpu_stft.value().time_seconds &&
+              cuda_stft.value().frequency_hz == cpu_stft.value().frequency_hz &&
+              cuda_stft.value().values.size() == cpu_stft.value().values.size() &&
+              cuda_stft.value().raw_values.size() == cpu_stft.value().raw_values.size() &&
+              cuda_stft.value().db_per_hz.size() == cpu_stft.value().db_per_hz.size(),
+          "CPU/CUDA STFT 轴或尺寸不一致");
+  for (std::size_t index = 0; index < cpu_stft.value().values.size(); ++index) {
+    require_close(cuda_stft.value().values[index], cpu_stft.value().values[index],
+                  std::max(1e-6, std::abs(static_cast<double>(cpu_stft.value().values[index])) * 1e-5),
+                  "CPU/CUDA STFT/平滑数值不一致");
+    require_close(cuda_stft.value().raw_values[index], cpu_stft.value().raw_values[index],
+                  std::max(1e-6, std::abs(static_cast<double>(cpu_stft.value().raw_values[index])) * 1e-5),
+                  "CPU/CUDA STFT 原始数值不一致");
+    require_close(cuda_stft.value().db_per_hz[index], cpu_stft.value().db_per_hz[index], 1e-5,
+                  "CPU/CUDA STFT dB/Hz 数值不一致");
+  }
+
+  auto kernels = kernel_backend();
+  AnalysisSettingsSnapshot filtered_settings;
+  filtered_settings.spectrum = settings;
+  filtered_settings.prefilter.enabled = true;
+  filtered_settings.prefilter.boundary = BoundaryPolicy::zero_pad;
+  auto filter = node("backend-prefilter", NodeKind::fir_filter);
+  filter.filter_shape = FilterShape::custom;
+  filter.numerator = lowpass(31U, 0.18);
+  filtered_settings.prefilter.chain.nodes.push_back(std::move(filter));
+  const auto filtered_descriptor = descriptor(data::SignalKind::complex, signal.view().size(), 48'000.0);
+  const auto cpu_filtered =
+      calculate_psd(*cpu, *kernels, signal.view(), filtered_descriptor, filtered_settings, nullptr);
+  const auto cuda_filtered =
+      calculate_psd(*cuda.value(), *kernels, signal.view(), filtered_descriptor, filtered_settings, nullptr);
+  require(cpu_filtered && cuda_filtered && cpu_filtered.value().prefilter_applied &&
+              cuda_filtered.value().prefilter_applied &&
+              cpu_filtered.value().values.size() == cuda_filtered.value().values.size(),
+          "CPU/CUDA 分析前滤波 PSD 执行失败");
+  for (std::size_t index = 0; index < cpu_filtered.value().values.size(); ++index) {
+    require_close(cuda_filtered.value().values[index], cpu_filtered.value().values[index],
+                  std::max(1e-11, std::abs(cpu_filtered.value().values[index]) * 1e-9),
+                  "CPU/CUDA 分析前滤波 PSD 数值不一致");
+  }
+  std::cout << "MS45_CUDA backend=cuFFT PSD/STFT/prefilter consistency passed\n";
+}
+
+void test_ms45_scipy_reference() {
+  constexpr double sample_rate = 8'000.0;
+  constexpr std::size_t frame_length = 64U;
+  constexpr std::size_t fft_length = 128U;
+  constexpr std::size_t hop_length = 32U;
+  constexpr std::size_t sample_count = 192U;
+  std::vector<double> samples(sample_count);
+  for (std::size_t index = 0; index < samples.size(); ++index) {
+    const auto phase5 = 2.0 * std::numbers::pi * 5.0 * static_cast<double>(index) / static_cast<double>(frame_length);
+    const auto phase11 = 2.0 * std::numbers::pi * 11.0 * static_cast<double>(index) / static_cast<double>(frame_length);
+    const auto dither = 0.01 * static_cast<double>(static_cast<int>(index % 7U) - 3);
+    samples[index] = 0.35 * std::cos(phase5) + 0.20 * std::sin(phase11) + dither;
+  }
+  const auto input = data::SignalBuffer::from_real(std::move(samples));
+  auto backend = fft_backend();
+
+  SpectrumAnalysisSettings periodogram_settings;
+  periodogram_settings.analysis_range_policy = AnalysisRangePolicy::first_frame;
+  periodogram_settings.frame_length = frame_length;
+  periodogram_settings.fft_length = fft_length;
+  periodogram_settings.zero_padding_policy = ZeroPaddingPolicy::enabled;
+  periodogram_settings.window = {WindowKind::hann, 0.0};
+  periodogram_settings.sidedness = SpectrumSidedness::one_sided;
+  periodogram_settings.output_quantity = SpectrumOutputQuantity::linear_power_density;
+  periodogram_settings.normalization = SpectrumNormalization::window_power;
+  periodogram_settings.detrend_policy = DetrendPolicy::none;
+  periodogram_settings.estimator = {PsdEstimatorKind::periodogram, 0.0, 1U};
+  const auto periodogram = calculate_psd(*backend, input.view(), sample_rate, 0.0, periodogram_settings, nullptr);
+
+  auto welch_settings = periodogram_settings;
+  welch_settings.analysis_range_policy = AnalysisRangePolicy::all_complete_frames;
+  welch_settings.estimator = {PsdEstimatorKind::welch, 0.5, 5U};
+  const auto welch = calculate_psd(*backend, input.view(), sample_rate, 0.0, welch_settings, nullptr);
+
+  SpectrogramAnalysisSettings stft_settings;
+  stft_settings.frame_length = frame_length;
+  stft_settings.fft_length = fft_length;
+  stft_settings.hop_length = hop_length;
+  stft_settings.padding_policy = ZeroPaddingPolicy::enabled;
+  stft_settings.window = {WindowKind::hann, 0.0};
+  stft_settings.sidedness = SpectrumSidedness::one_sided;
+  stft_settings.output_quantity = SpectrumOutputQuantity::linear_power_density;
+  stft_settings.normalization = SpectrumNormalization::window_power;
+  stft_settings.detrend_policy = DetrendPolicy::none;
+  const auto stft = calculate_stft(*backend, input.view(), sample_rate, 0.0, stft_settings, nullptr);
+  require(periodogram && welch && stft && periodogram.value().segment_count == 1U &&
+              welch.value().segment_count == 5U && stft.value().rows == 5U && stft.value().columns == 65U,
+          "独立 SciPy 参考参数未产生预期尺寸");
+
+  std::ifstream reference{SIGNAL_STUDIO_MS45_REFERENCE_FILE};
+  require(reference.good(), "无法读取 MS-4.5 NumPy/SciPy 参考数据");
+  std::string line;
+  std::size_t checked{};
+  while (std::getline(reference, line)) {
+    if (line.empty() || line.front() == '#' || line.starts_with("case,")) {
+      continue;
+    }
+    std::array<std::string, 6U> fields;
+    std::stringstream row{line};
+    for (auto& field : fields) {
+      require(static_cast<bool>(std::getline(row, field, ',')), "NumPy/SciPy 参考行字段不足");
+    }
+    const auto row_index = std::stoi(fields[1]);
+    const auto bin = static_cast<std::size_t>(std::stoull(fields[2]));
+    const auto expected_frequency = std::stod(fields[3]);
+    const auto expected_time = std::stod(fields[4]);
+    const auto expected_value = std::stod(fields[5]);
+    const std::vector<double>* frequency{};
+    double actual_time{-1.0};
+    double actual_value{};
+    if (fields[0] == "periodogram") {
+      frequency = &periodogram.value().frequency_hz;
+      actual_value = periodogram.value().raw_density_linear.at(bin);
+    } else if (fields[0] == "welch") {
+      frequency = &welch.value().frequency_hz;
+      actual_value = welch.value().raw_density_linear.at(bin);
+    } else if (fields[0] == "stft") {
+      require(row_index >= 0, "SciPy STFT 参考行索引无效");
+      frequency = &stft.value().frequency_hz;
+      actual_time = stft.value().time_seconds.at(static_cast<std::size_t>(row_index));
+      actual_value =
+          stft.value().raw_density_linear.at(static_cast<std::size_t>(row_index) * stft.value().columns + bin);
+    } else {
+      require(false, "NumPy/SciPy 参考包含未知用例");
+    }
+    require_close(frequency->at(bin), expected_frequency, 1e-12, "NumPy/SciPy 参考频率轴不一致");
+    if (row_index >= 0) {
+      require_close(actual_time, expected_time, 1e-15, "NumPy/SciPy 参考 STFT 帧中心时间不一致");
+    }
+    require_close(actual_value, expected_value, std::max(1e-14, std::abs(expected_value) * 2e-10),
+                  "NumPy/SciPy 参考功率密度不一致");
+    ++checked;
+  }
+  require(checked == 49U, "NumPy/SciPy 参考检查点数量不完整");
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -1144,12 +1892,29 @@ int main(int argc, char** argv) {
       throw std::runtime_error("用法：signal_studio_dsp_tests --case <需求编号>");
     }
     const std::map<std::string_view, std::function<void()>> cases{
-        {"FR-DSP-001", test_dsp_001},  {"FR-DSP-002", test_dsp_002},  {"FR-DSP-003", test_dsp_003},
-        {"FR-DSP-004", test_dsp_004},  {"FR-DSP-005", test_dsp_005},  {"FR-DSP-006", test_dsp_006},
-        {"FR-DSP-007", test_dsp_007},  {"FR-DSP-008", test_dsp_008},  {"FR-DSP-009", test_dsp_009},
-        {"FR-DSP-010", test_dsp_010},  {"FR-DSP-011", test_dsp_011},  {"FR-DSP-012", test_dsp_012},
-        {"NFR-NUM-001", test_num_001}, {"NFR-NUM-002", test_num_002}, {"NFR-NUM-003", test_num_003},
-        {"NFR-NUM-004", test_num_004}, {"NFR-NUM-005", test_num_005}, {"FR-DSP-101", test_dsp_101},
+        {"FR-DSP-001", test_dsp_001},
+        {"FR-DSP-002", test_dsp_002},
+        {"FR-DSP-003", test_dsp_003},
+        {"FR-DSP-004", test_dsp_004},
+        {"FR-DSP-005", test_dsp_005},
+        {"FR-DSP-006", test_dsp_006},
+        {"FR-DSP-007", test_dsp_007},
+        {"FR-DSP-008", test_dsp_008},
+        {"FR-DSP-009", test_dsp_009},
+        {"FR-DSP-010", test_dsp_010},
+        {"FR-DSP-011", test_dsp_011},
+        {"FR-DSP-012", test_dsp_012},
+        {"NFR-NUM-001", test_num_001},
+        {"NFR-NUM-002", test_num_002},
+        {"NFR-NUM-003", test_num_003},
+        {"NFR-NUM-004", test_num_004},
+        {"NFR-NUM-005", test_num_005},
+        {"FR-DSP-101", test_dsp_101},
+        {"MS-4.5-CONTRACTS", test_ms45_contracts},
+        {"MS-4.5-SPECTRUM-PSD", test_ms45_spectrum_psd},
+        {"MS-4.5-STFT-PREFILTER", test_ms45_stft_prefilter},
+        {"MS-4.5-BACKENDS", test_ms45_backend_consistency},
+        {"MS-4.5-SCIPY-REFERENCE", test_ms45_scipy_reference},
     };
     const auto found = cases.find(argv[2]);
     if (found == cases.end()) {

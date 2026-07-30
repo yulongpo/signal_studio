@@ -16,11 +16,24 @@
 - `make_cpu_fft_backend()`：创建批准的 CPU FFT；当前私有实现为 oneMKL DFTI，缺失时返回 unavailable。
 - `make_cuda_fft_backend()`：创建实机 CUDA/cuFFT 后端。
 - `make_auto_fft_backend()`：优先 CUDA，并在创建或执行失败时显式降级 CPU。
-- `make_window()`：矩形、Hann、Hamming、Blackman 窗及 coherent gain/ENBW。
-- `calculate_spectrum()`：单边或移位双边幅度谱。
-- `calculate_psd()`：按 Hz 归一化 PSD。
-- `calculate_stft()`：时间行、频率列的有界 STFT。
+- `make_window()`：Rectangular、Hann、Hamming、Blackman、Blackman-Harris、
+  Flat Top、Kaiser、Tukey 窗及 coherent gain/ENBW。
+- `AnalysisSettingsSnapshot`：版本化频谱、PSD、STFT 与分析前滤波参数。
+- `validate_analysis_settings()`：按输入描述符、已读范围和实/复类型校验。
+- `serialize_analysis_settings()` / `parse_analysis_settings()`：确定性参数往返与主版本兼容。
+- `hash_analysis_settings()`：规范化参数 SHA-256。
+- `estimate_analysis_cost()`：频点、段数、STFT 行列、FFT 次数、内存、运算量、RBW。
+- `classify_analysis_change()`：区分频谱平滑、STFT 平滑、两类变换和预滤波失效。
+- `calculate_spectrum()`：单边或移位双边的幅度/功率/PSD 参数化频谱。
+- `calculate_psd()`：Periodogram/Welch、线性/指数平均、最大保持和三种平滑。
+- `calculate_stft()`：时间行、频率列的参数化有界 STFT 与二维平滑。
+- `resmooth_spectrum()` / `resmooth_psd()` / `resmooth_stft()`：复用原始线性结果。
+- `apply_analysis_prefilter()`：通过既有 ProcessingChain 执行分析前滤波。
 - 时间/样本与频率/bin 映射函数：执行边界和 Nyquist 校验。
+
+`SpectrumResult`、`PsdResult` 和 `StftResult` 保存原始线性值、原始显示值、最终显示值、
+参数哈希、帧/FFT/hop、bin spacing、RBW、预滤波标志和实际后端来源。纯显示映射不在
+本 API 内执行。
 
 ## 大文件浏览性能 API
 

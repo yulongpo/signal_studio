@@ -461,6 +461,102 @@ public:
 
 } // namespace
 
+namespace analysis_internal {
+
+core::Result<std::vector<double>> convolve_centered(std::span<const double> input,
+                                                    std::span<const double> coefficients) {
+#if defined(SIGNAL_STUDIO_HAVE_ONEMKL)
+  if (input.empty() || coefficients.empty() || coefficients.size() % 2U == 0U ||
+      std::ranges::any_of(input, [](double value) { return !std::isfinite(value); }) ||
+      std::ranges::any_of(coefficients, [](double value) { return !std::isfinite(value); })) {
+    return error(core::ErrorReason::invalid_argument, "中心卷积要求有限输入和奇数长度核");
+  }
+  const auto half = coefficients.size() / 2U;
+  std::vector<data::ComplexSample> extended;
+  extended.reserve(input.size() + 2U * half);
+  extended.insert(extended.end(), half, data::ComplexSample{input.front(), 0.0});
+  for (const auto value : input) {
+    extended.push_back({value, 0.0});
+  }
+  extended.insert(extended.end(), half, data::ComplexSample{input.back(), 0.0});
+  auto convolution = vsl_convolution(extended, coefficients);
+  if (!convolution) {
+    return convolution.error();
+  }
+  const auto offset = coefficients.size() - 1U;
+  if (convolution.value().size() < offset + input.size()) {
+    return error(core::ErrorReason::internal_failure, "oneMKL 中心卷积输出长度无效");
+  }
+  std::vector<double> output;
+  output.reserve(input.size());
+  for (std::size_t index = 0; index < input.size(); ++index) {
+    const auto& value = convolution.value()[offset + index];
+    if (!std::isfinite(value.real) || !std::isfinite(value.imag) || std::abs(value.imag) > 1e-12) {
+      return error(core::ErrorReason::internal_failure, "oneMKL 中心卷积返回非有限或非实数结果");
+    }
+    output.push_back(value.real);
+  }
+  return output;
+#else
+  static_cast<void>(input);
+  static_cast<void>(coefficients);
+  return error(core::ErrorReason::unavailable, "频谱平滑要求已批准的 oneMKL VSL 卷积适配器");
+#endif
+}
+
+core::Result<std::vector<double>> savitzky_golay_kernel(std::uint32_t window_length, std::uint32_t polynomial_order) {
+#if defined(SIGNAL_STUDIO_HAVE_ONEMKL)
+  if (window_length < 3U || window_length % 2U == 0U || polynomial_order >= window_length || polynomial_order > 12U) {
+    return error(core::ErrorReason::invalid_argument, "Savitzky-Golay 窗长或阶数无效");
+  }
+  const auto terms = static_cast<MKL_INT>(polynomial_order + 1U);
+  std::vector<double> normal_matrix(static_cast<std::size_t>(terms) * static_cast<std::size_t>(terms));
+  const auto half = static_cast<std::int64_t>(window_length / 2U);
+  for (MKL_INT row = 0; row < terms; ++row) {
+    for (MKL_INT column = 0; column < terms; ++column) {
+      double sum{};
+      for (std::int64_t offset = -half; offset <= half; ++offset) {
+        sum += std::pow(static_cast<double>(offset), static_cast<int>(row + column));
+      }
+      normal_matrix[static_cast<std::size_t>(row) * static_cast<std::size_t>(terms) +
+                    static_cast<std::size_t>(column)] = sum;
+    }
+  }
+  std::vector<double> evaluation(static_cast<std::size_t>(terms));
+  evaluation.front() = 1.0;
+  const auto status = LAPACKE_dposv(LAPACK_ROW_MAJOR, 'U', terms, 1, normal_matrix.data(), terms, evaluation.data(), 1);
+  if (status != 0) {
+    return error(core::ErrorReason::internal_failure, "oneMKL LAPACKE 无法求解 Savitzky-Golay 最小二乘核",
+                 std::to_string(status));
+  }
+  std::vector<double> coefficients(window_length);
+  double coefficient_sum{};
+  for (std::int64_t offset = -half; offset <= half; ++offset) {
+    double power{1.0};
+    double coefficient{};
+    for (MKL_INT term = 0; term < terms; ++term) {
+      coefficient += power * evaluation[static_cast<std::size_t>(term)];
+      power *= static_cast<double>(offset);
+    }
+    coefficients[static_cast<std::size_t>(offset + half)] = coefficient;
+    coefficient_sum += coefficient;
+  }
+  if (!std::isfinite(coefficient_sum) || std::abs(coefficient_sum) < 1e-15) {
+    return error(core::ErrorReason::internal_failure, "Savitzky-Golay 核归一化失败");
+  }
+  for (auto& coefficient : coefficients) {
+    coefficient /= coefficient_sum;
+  }
+  return coefficients;
+#else
+  static_cast<void>(window_length);
+  static_cast<void>(polynomial_order);
+  return error(core::ErrorReason::unavailable, "Savitzky-Golay 要求已批准的 oneMKL LAPACKE 适配器");
+#endif
+}
+
+} // namespace analysis_internal
+
 core::Result<std::shared_ptr<IFftBackend>> make_cpu_fft_backend() {
 #if defined(SIGNAL_STUDIO_HAVE_ONEMKL)
   return std::shared_ptr<IFftBackend>(std::make_shared<OneMklFftBackend>());

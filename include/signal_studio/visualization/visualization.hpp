@@ -66,6 +66,7 @@ struct StftMetadata final {
   double overlap_ratio{};
   std::string color_map{"Industrial"};
   std::string interpolation{"nearest"};
+  std::string unit{"dBFS/Hz"};
   friend bool operator==(const StftMetadata&, const StftMetadata&) = default;
 };
 
@@ -80,6 +81,10 @@ struct VisualizationFrame final {
   std::vector<double> time_secondary;
   std::vector<double> psd_db_hz;
   std::vector<float> stft_db;
+  bool psd_values_logarithmic{true};
+  bool psd_values_amplitude{};
+  bool stft_values_logarithmic{true};
+  bool stft_values_amplitude{};
   std::uint32_t stft_rows{};
   std::uint32_t stft_columns{};
   std::vector<double> constellation_i;
@@ -343,11 +348,16 @@ public:
   [[nodiscard]] virtual void* native_handle() noexcept = 0;
   [[nodiscard]] virtual core::Status bind_frame(VisualizationFrame frame) = 0;
   [[nodiscard]] virtual core::Status apply_viewport(const ViewportSnapshot& viewport) = 0;
+  [[nodiscard]] virtual core::Status set_display_mapping(DisplayMapping mapping,
+                                                         std::string interpolation = "nearest") = 0;
   [[nodiscard]] virtual core::Status set_interaction_mode(InteractionMode mode) = 0;
   [[nodiscard]] virtual core::Status fit_frequency_to_data() = 0;
   [[nodiscard]] virtual core::Result<Selection> create_selection(Selection selection) = 0;
   [[nodiscard]] virtual std::vector<Selection> selections() const = 0;
   [[nodiscard]] virtual core::Status locate_selection(std::string_view id) = 0;
+  [[nodiscard]] virtual core::Status set_chart_visible(ChartKind kind, bool visible) = 0;
+  [[nodiscard]] virtual bool chart_visible(ChartKind kind) const = 0;
+  virtual void set_visibility_callback(std::function<void(ChartKind, bool)> callback) = 0;
   [[nodiscard]] virtual core::Status save_screenshot(const std::filesystem::path& path, ScreenshotOptions options) = 0;
   [[nodiscard]] virtual ViewportSnapshot viewport() const = 0;
   [[nodiscard]] virtual std::string accessibility_summary() const = 0;

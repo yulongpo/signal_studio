@@ -138,3 +138,31 @@ MS-04 不增加第三方依赖。CPU 模式完全不依赖 CUDA；CUDA 12.4 仅�
 后端，缺失时明确回退 CPU，cuDNN 不属于本里程碑且不会自动安装。100 GB 边界沿用
 批准 X310 录制的逻辑重复映射和有界访问，不创建物理 100 GB 文件；批准资料未提供
 D4，因此不把 D4 记为通过。
+
+## MS-4.5 频谱与时频分析参数化
+
+MS-4.5 保持既有模块 DAG，在 SignalDSP 增加第三方无关的版本化分析参数契约。
+`AnalysisSettingsSnapshot` 统一承载频谱/PSD、STFT 和分析前 ProcessingChain 快照；
+显示映射保持为应用/Visualization 状态，不进入 DSP 参数哈希。规范化序列化、
+SHA-256、资源估计和失效分类均位于无 Qt 应用核心，可在无 GUI 环境测试。
+
+频谱与 PSD 支持独立帧长/FFT 长度、显式补零、八种窗、实信号单边/复信号移位双边、
+幅度/功率/PSD、Periodogram/Welch、线性/指数平均、最大保持和三种谱线平滑。STFT
+独立保存 frame/FFT/hop/边界和二维平滑。结果同时保留原始线性域与原始显示域数据，
+因此纯平滑变化只重做平滑；变换参数只失效对应频谱或 STFT；预滤波变化才失效全部
+下游。缓存身份包含源指纹、范围、描述符、算法版本、完整参数哈希和实际后端。
+
+成熟内核继续复用 MS-02 Adapter：CPU FFT 为 oneMKL DFTI，CUDA FFT 为 cuFFT，
+FIR/卷积为 VSL，IIR 与 Savitzky-Golay 系数求解为 LAPACKE。分析前滤波只执行既有
+ProcessingChain 快照；未增加 FFT、滤波、卷积、重采样或通用线性代数实现，也未新增
+第三方依赖。
+
+`ApplicationController` 保存参数、显示、用户预设、两级缓存和最新分析结果。
+TaskRuntime 负责后台执行和取消，`ViewRequestId` 只允许最新请求提交。工程通过现有
+扩展字段保存 `signal.analysis-settings/1.0`；旧工程生成有界兼容默认值，未来主版本
+明确拒绝。Artifact 来源记录真实参数哈希、算法、后端/设备、源范围和任务。
+
+Qt 最终应用使用经 `qt_wrap_ui` 编译的 `SignalAnalysisSettingsPanel.ui`，通过新增的
+Workbench Inspector extension 安装。GUI 线程只编辑参数和绑定完成帧；后台线程不
+触碰 `QWidget`。显示映射即时更新而不重算 DSP。该扩展不创建 Selection、通道、DDC、
+重采样输出或宽窄带继承，MS-05 边界保持不变。

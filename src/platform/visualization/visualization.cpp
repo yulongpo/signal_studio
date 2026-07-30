@@ -1,6 +1,7 @@
 #include "signal_studio/visualization/visualization.hpp"
 
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <cmath>
 #include <iomanip>
@@ -450,9 +451,11 @@ core::Status LayerModel::restore(std::string_view serialized) {
 }
 
 core::Status validate_display_mapping(const DisplayMapping& mapping) {
+  static constexpr std::array<std::string_view, 5U> supported_color_maps{"Industrial", "Viridis", "Turbo", "Inferno",
+                                                                         "Grayscale"};
   if (!std::isfinite(mapping.minimum) || !std::isfinite(mapping.maximum) || !std::isfinite(mapping.reference_level) ||
       !std::isfinite(mapping.dynamic_range) || mapping.minimum >= mapping.maximum || mapping.dynamic_range <= 0.0 ||
-      mapping.color_map.empty()) {
+      std::ranges::find(supported_color_maps, mapping.color_map) == supported_color_maps.end()) {
     return failure(core::ErrorReason::invalid_argument, "显示映射范围或配色无效");
   }
   return core::Status::success();

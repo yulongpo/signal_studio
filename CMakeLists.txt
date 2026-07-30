@@ -33,6 +33,7 @@ set(SIGNAL_STUDIO_EXTERNAL_TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../test_da
 
 set(SIGNAL_STUDIO_EXTERNAL_TEST_DATA_AVAILABLE OFF)
 if(EXISTS "${SIGNAL_STUDIO_EXTERNAL_TEST_DATA_DIR}/20241110-174401-662_bw_12800000_sampleTime_0.4_rollOff_0.3.wav"
+   AND EXISTS "${SIGNAL_STUDIO_EXTERNAL_TEST_DATA_DIR}/x310_capture_cf1425MHz_sr50MSps_20260521_144220.sc16"
    AND EXISTS "${SIGNAL_STUDIO_EXTERNAL_TEST_DATA_DIR}/x310_capture_cf1245MHz_sr50MSps_20260521_144927.sc16")
   set(SIGNAL_STUDIO_EXTERNAL_TEST_DATA_AVAILABLE ON)
 endif()
@@ -342,7 +343,8 @@ if(SIGNAL_STUDIO_BUILD_UI)
     apps/signal_studio/ui/SignalImportWizard.ui
     apps/signal_studio/ui/SignalLoadProgressDialog.ui
     apps/signal_studio/ui/SignalInspectorPage.ui
-    apps/signal_studio/ui/SignalResultCenterPage.ui)
+    apps/signal_studio/ui/SignalResultCenterPage.ui
+    apps/signal_studio/ui/SignalAnalysisSettingsPanel.ui)
   add_executable(signal_studio WIN32
     apps/signal_studio/main.cpp
     apps/signal_studio/qt_application.cpp
@@ -351,7 +353,8 @@ if(SIGNAL_STUDIO_BUILD_UI)
     apps/signal_studio/ui/SignalImportWizard.ui
     apps/signal_studio/ui/SignalLoadProgressDialog.ui
     apps/signal_studio/ui/SignalInspectorPage.ui
-    apps/signal_studio/ui/SignalResultCenterPage.ui)
+    apps/signal_studio/ui/SignalResultCenterPage.ui
+    apps/signal_studio/ui/SignalAnalysisSettingsPanel.ui)
   set_target_properties(signal_studio PROPERTIES OUTPUT_NAME "SignalStudio")
   target_include_directories(signal_studio PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/apps/signal_studio"

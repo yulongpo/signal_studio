@@ -19,7 +19,8 @@
 ## 3. 图层、显示与交互
 
 - `LayerModel`：图层显示、透明度、顺序、来源和持久化。
-- `DisplayMapping`：线性/对数幅度、自动/手动范围、色阶、参考电平和动态范围。
+- `DisplayMapping`：线性/对数幅度、自动/手动范围、色阶、参考电平、动态范围和
+  `nearest`/`linear` 插值。插值只改变显示采样，不进入 DSP 参数哈希或触发 FFT/STFT。
 - `OverlayModel`：时间、频率、时频 Selection；复制、删除、游标测量、通道估算和依赖失效。
 - `VisibilityController`：图表可见性、观察连接、准备和绘制计数，隐藏时停止专属活动。
 - `ChartLayoutModel`：图表顺序和逻辑高度，最小高度为 96 逻辑像素。
@@ -29,3 +30,6 @@
 
 `make_analysis_workspace()` 返回 `std::unique_ptr<IAnalysisWorkspace>`。接口提供本机句柄、视口/帧绑定、交互模式、
 Selection 创建、截图、状态文本和可访问摘要。调用方不需要在公共头中包含 Qt。
+
+MS-4.5 的 `PsdMetadata`/`StftMetadata` 由真实分析结果填充帧长、FFT、窗、估计器、
+平均/保持、RBW、hop、重叠和平滑摘要；工作区仍只消费不可变帧，不在 GUI 线程计算。

@@ -67,6 +67,12 @@ int main(int argc, char* argv[]) {
   const QCommandLineOption width_option("width", "逻辑窗口宽度", "pixels", "1600");
   const QCommandLineOption height_option("height", "逻辑窗口高度", "pixels", "900");
   const QCommandLineOption startup_smoke_option("startup-smoke", "验证默认 Qt 平台和窗口构造");
+  const QCommandLineOption analysis_settings_smoke_option("analysis-settings-smoke",
+                                                          "验证 MS-4.5 Designer 参数面板和纯显示更新边界");
+  const QCommandLineOption analysis_runtime_smoke_option(
+      "analysis-runtime-smoke", "使用真实输入验证 MS-4.5 异步提交、取消、最新结果和隐藏图表计算门禁");
+  const QCommandLineOption advanced_analysis_settings_option("advanced-analysis-settings",
+                                                             "自动化截图显示 MS-4.5 高级分析参数");
   parser.addOption(state_option);
   parser.addOption(input_option);
   parser.addOption(screenshot_option);
@@ -74,6 +80,9 @@ int main(int argc, char* argv[]) {
   parser.addOption(width_option);
   parser.addOption(height_option);
   parser.addOption(startup_smoke_option);
+  parser.addOption(analysis_settings_smoke_option);
+  parser.addOption(analysis_runtime_smoke_option);
+  parser.addOption(advanced_analysis_settings_option);
   parser.process(qt_application);
 
   auto state_directory = parser.isSet(state_option)
@@ -121,7 +130,31 @@ int main(int argc, char* argv[]) {
     std::cerr << shown.message() << '\n';
     return 7;
   }
-  if (parser.isSet(startup_smoke_option)) {
+  if (parser.isSet(advanced_analysis_settings_option)) {
+    application.set_analysis_settings_advanced(true);
+  }
+  if (parser.isSet(analysis_runtime_smoke_option)) {
+    if (!parser.isSet(input_option)) {
+      std::cerr << "--analysis-runtime-smoke 必须提供 --input\n";
+      return 10;
+    }
+    QTimer::singleShot(0, window, [&application, &qt_application] {
+      if (const auto status = application.validate_analysis_runtime(); !status) {
+        std::cerr << status.code().stable_text() << ": " << status.message() << '\n' << status.diagnostic() << '\n';
+        qt_application.exit(11);
+        return;
+      }
+      std::printf("Signal Studio MS-4.5 asynchronous analysis runtime passed\n");
+      qt_application.quit();
+    });
+  } else if (parser.isSet(analysis_settings_smoke_option)) {
+    if (const auto status = application.validate_analysis_settings_panel(); !status) {
+      std::cerr << status.code().stable_text() << ": " << status.message() << '\n' << status.diagnostic() << '\n';
+      return 9;
+    }
+    std::cout << "Signal Studio MS-4.5 analysis settings panel passed\n";
+    QTimer::singleShot(0, &qt_application, &QCoreApplication::quit);
+  } else if (parser.isSet(startup_smoke_option)) {
     std::cout << "platform=" << QGuiApplication::platformName().toStdString() << " dpr=" << window->devicePixelRatioF()
               << '\n';
     QTimer::singleShot(0, &qt_application, &QCoreApplication::quit);

@@ -30,6 +30,18 @@ foreach(_case IN ITEMS
     ENVIRONMENT "${_signal_studio_ms03_test_environment}")
 endforeach()
 
+add_test(NAME ms45.ui.inspector-extension
+  COMMAND signal_studio_ms03_tests --case MS45-INSPECTOR-EXTENSION)
+set_tests_properties(ms45.ui.inspector-extension PROPERTIES
+  TIMEOUT 30 LABELS "qt;ui;integration;ms-4.5"
+  ENVIRONMENT "${_signal_studio_ms03_test_environment}")
+
+add_test(NAME ms45.ui.visibility-display
+  COMMAND signal_studio_ms03_tests --case MS45-VISIBILITY-DISPLAY)
+set_tests_properties(ms45.ui.visibility-display PROPERTIES
+  TIMEOUT 30 LABELS "qt;ui;integration;ms-4.5"
+  ENVIRONMENT "${_signal_studio_ms03_test_environment}")
+
 foreach(_size IN ITEMS 1280x720 1600x900 1920x1080 3840x2160)
   string(REPLACE "x" ";" _dimensions "${_size}")
   list(GET _dimensions 0 _width)

@@ -200,3 +200,35 @@ PSD/STFT、结果提交和关闭循环；标准错误为 0，生命周期峰值 
 `windows-ui-module-performance` 均为 success。CI 缺少批准外部录制时，外部数据
 专项明确跳过，取消/重试使用确定性 SC16 夹具继续执行；本机三份批准录制的有界验证
 保持为外部数据验收依据。
+
+## MS-4.5 测试矩阵
+
+MS-4.5 注册 20 项 `ms-4.5` 标签测试：
+
+| 范围 | 数量 | 重点 |
+|---|---:|---|
+| DSP 数值与后端 | 4 | 参数契约、频谱/PSD、STFT/预滤波、CPU/CUDA |
+| 应用核心 | 6 | 参数生效、缓存、最新提交、迁移、来源、参数切换稳定性 |
+| Workbench/Qt 合约 | 2 | Inspector extension、Designer 参数面板 |
+| 尺寸/DPI | 7 | 1280、1080P、4K、125%、150%、175%、200% |
+| 真实截图 | 1 | P03 高级参数面板与真实分析来源 |
+
+DSP 用例使用解析单音、非 bin 对齐单音、多音、分段幅度、脉冲、二次多项式和滤波夹具，
+按明确绝对/相对/dB 容差验证八种窗、CG/ENBW、补零、单/双边、幅度/功率/PSD、
+Periodogram/Welch、线性/指数平均、最大保持、三种频谱平滑、STFT 二维平滑、FIR/IIR
+群时延、取消、序列化和哈希。CPU/CUDA 比较频率轴、幅度、PSD、Welch、STFT、原始
+结果和预滤波结果；CUDA 不可用时必须输出 unavailable，不能记为 GPU 通过。
+
+应用用例验证完整参数真实改变 bin/泄漏/估计/平滑/滤波，规范化参数哈希进入缓存和
+Artifact；纯显示变化不重算；纯平滑复用 raw；最新 `ViewRequestId` 拒绝旧结果；
+工程关闭/重开、用户预设、旧工程迁移、未来主版本拒绝和结果过期均可重复。
+
+CPU Debug/Release 必须执行全量非 benchmark CTest 和 20/20 MS-4.5 专项；CUDA
+Debug/Release 在本机可用时执行 20/20 专项。安装消费者、已安装 `SignalStudio.exe
+--self-test`、默认 Windows 平台启动、VS Code F5 同构建树、公共头、基线、依赖锁、
+格式/静态检查均为收口门禁。
+
+30 分钟专项通过 `scripts/run-ms45-parameter-stability.ps1` 在隔离 Release 进程中连续
+切换 Periodogram/Welch、六类累积/平滑组合、FFT/STFT、显示插值、缩放和频率视图，
+并周期采样 CPU、Working Set、Private Bytes、句柄和线程。完整 8 小时 MS-04 稳态不
+重复执行，但原脚本和回归必须保持兼容。

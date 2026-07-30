@@ -26,6 +26,10 @@ Visualization、TaskRuntime 和 Core，但不公开 Qt 类型。Qt Widgets 主�
 
 默认内容为空，因此平台库不会伪造录制、任务或结果。演示程序可以显式构造演示内容。
 
+`IWorkbenchWindow::install_inspector_extension()` 允许最终应用把宿主拥有的参数页面
+安装到 Inspector。公共方法只接收不透明原生句柄，Qt 类型仍留在私有实现；Workbench
+不拥有 DSP 参数，也不在后台任务完成前伪造结果。
+
 ## 4. Qt 工作台工厂
 
 `make_workbench_window()` 接收 `WorkbenchConfiguration`、一个 Visualization 工作区和可选命令/面板注册表，返回

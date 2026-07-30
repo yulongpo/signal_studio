@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SignalAnalysisSettingsPanel</class>
+ <widget class="QWidget" name="SignalAnalysisSettingsPanel">
+  <property name="minimumSize"><size><width>280</width><height>420</height></size></property>
+  <layout class="QVBoxLayout" name="rootLayout">
+   <property name="leftMargin"><number>0</number></property>
+   <property name="topMargin"><number>6</number></property>
+   <property name="rightMargin"><number>0</number></property>
+   <property name="bottomMargin"><number>0</number></property>
+   <item><widget class="QLabel" name="analysisSettingsHeading"><property name="text"><string>分析设置 · MS-4.5</string></property></widget></item>
+   <item><layout class="QHBoxLayout" name="modePresetLayout">
+    <item><widget class="QComboBox" name="settingsModeCombo"><item><property name="text"><string>基础</string></property></item><item><property name="text"><string>高级</string></property></item></widget></item>
+    <item><widget class="QComboBox" name="analysisPresetCombo">
+     <item><property name="text"><string>快速预览</string></property></item>
+     <item><property name="text"><string>平衡分析</string></property></item>
+     <item><property name="text"><string>高分辨率</string></property></item>
+     <item><property name="text"><string>低噪声 PSD</string></property></item>
+     <item><property name="text"><string>突发信号</string></property></item>
+     <item><property name="text"><string>窄带精细分析</string></property></item>
+    </widget></item>
+    <item><widget class="QComboBox" name="backendCombo"><item><property name="text"><string>CUDA 优先（可降级）</string></property></item><item><property name="text"><string>仅 CPU</string></property></item></widget></item>
+   </layout></item>
+   <item><widget class="QLabel" name="presetDescriptionLabel"><property name="text"><string>根据采样率、已加载样本和当前后端生成合法参数。</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+   <item><widget class="QScrollArea" name="analysisSettingsScrollArea">
+    <property name="widgetResizable"><bool>true</bool></property>
+    <widget class="QWidget" name="analysisSettingsScrollContent">
+     <layout class="QVBoxLayout" name="settingsContentLayout">
+      <property name="leftMargin"><number>2</number></property><property name="topMargin"><number>2</number></property><property name="rightMargin"><number>4</number></property><property name="bottomMargin"><number>2</number></property>
+      <item><widget class="QGroupBox" name="spectrumGroup"><property name="title"><string>频谱与 PSD</string></property>
+       <layout class="QFormLayout" name="spectrumForm">
+        <item row="0" column="0"><widget class="QLabel" name="frameLengthLabel"><property name="text"><string>分析帧长</string></property></widget></item>
+        <item row="0" column="1"><widget class="QSpinBox" name="frameLengthSpin"><property name="minimum"><number>16</number></property><property name="maximum"><number>1048576</number></property><property name="value"><number>16384</number></property></widget></item>
+        <item row="1" column="0"><widget class="QLabel" name="fftLengthLabel"><property name="text"><string>FFT 长度</string></property></widget></item>
+        <item row="1" column="1"><widget class="QComboBox" name="fftLengthCombo"><property name="editable"><bool>true</bool></property>
+         <item><property name="text"><string>自动</string></property></item><item><property name="text"><string>256</string></property></item>
+         <item><property name="text"><string>512</string></property></item><item><property name="text"><string>1024</string></property></item>
+         <item><property name="text"><string>2048</string></property></item><item><property name="text"><string>4096</string></property></item>
+         <item><property name="text"><string>8192</string></property></item><item><property name="text"><string>16384</string></property></item>
+         <item><property name="text"><string>32768</string></property></item><item><property name="text"><string>65536</string></property></item>
+         <item><property name="text"><string>131072</string></property></item><item><property name="text"><string>262144</string></property></item>
+         <item><property name="text"><string>524288</string></property></item><item><property name="text"><string>1048576</string></property></item>
+        </widget></item>
+        <item row="2" column="0"><widget class="QLabel" name="windowLabel"><property name="text"><string>窗函数</string></property></widget></item>
+        <item row="2" column="1"><widget class="QComboBox" name="windowCombo">
+         <item><property name="text"><string>Rectangular</string></property></item><item><property name="text"><string>Hann</string></property></item>
+         <item><property name="text"><string>Hamming</string></property></item><item><property name="text"><string>Blackman</string></property></item>
+         <item><property name="text"><string>Blackman-Harris</string></property></item><item><property name="text"><string>Flat Top</string></property></item>
+         <item><property name="text"><string>Kaiser</string></property></item><item><property name="text"><string>Tukey</string></property></item>
+        </widget></item>
+        <item row="3" column="0"><widget class="QLabel" name="windowParameterLabel"><property name="text"><string>Beta / Alpha</string></property></widget></item>
+        <item row="3" column="1"><widget class="QDoubleSpinBox" name="windowParameterSpin"><property name="decimals"><number>3</number></property><property name="minimum"><double>0.000000000000000</double></property><property name="maximum"><double>50.000000000000000</double></property><property name="value"><double>8.600000000000000</double></property></widget></item>
+        <item row="4" column="0"><widget class="QLabel" name="outputQuantityLabel"><property name="text"><string>输出</string></property></widget></item>
+        <item row="4" column="1"><widget class="QComboBox" name="outputQuantityCombo"><item><property name="text"><string>PSD dBFS/Hz</string></property></item><item><property name="text"><string>幅度 dBFS</string></property></item><item><property name="text"><string>功率 dBFS</string></property></item><item><property name="text"><string>线性功率密度</string></property></item><item><property name="text"><string>线性幅度</string></property></item><item><property name="text"><string>线性功率</string></property></item></widget></item>
+        <item row="5" column="0"><widget class="QLabel" name="estimatorLabel"><property name="text"><string>PSD 估计</string></property></widget></item>
+        <item row="5" column="1"><widget class="QComboBox" name="estimatorCombo"><item><property name="text"><string>Periodogram</string></property></item><item><property name="text"><string>Welch</string></property></item></widget></item>
+        <item row="6" column="0"><widget class="QLabel" name="welchOverlapLabel"><property name="text"><string>Welch 重叠 %</string></property></widget></item>
+        <item row="6" column="1"><widget class="QSpinBox" name="welchOverlapSpin"><property name="minimum"><number>0</number></property><property name="maximum"><number>95</number></property><property name="value"><number>50</number></property></widget></item>
+        <item row="7" column="0"><widget class="QLabel" name="welchSegmentsLabel"><property name="text"><string>分段数</string></property></widget></item>
+        <item row="7" column="1"><widget class="QSpinBox" name="welchSegmentsSpin"><property name="minimum"><number>1</number></property><property name="maximum"><number>4096</number></property><property name="value"><number>8</number></property></widget></item>
+        <item row="8" column="0"><widget class="QLabel" name="averagingLabel"><property name="text"><string>当前视窗累积</string></property></widget></item>
+        <item row="8" column="1"><widget class="QComboBox" name="averagingCombo"><item><property name="text"><string>无</string></property></item><item><property name="text"><string>线性平均</string></property></item><item><property name="text"><string>指数平均</string></property></item><item><property name="text"><string>最大保持</string></property></item></widget></item>
+        <item row="9" column="0"><widget class="QLabel" name="averagingCountLabel"><property name="text"><string>平均次数</string></property></widget></item>
+        <item row="9" column="1"><widget class="QSpinBox" name="averagingCountSpin"><property name="minimum"><number>1</number></property><property name="maximum"><number>4096</number></property><property name="value"><number>8</number></property></widget></item>
+        <item row="10" column="0"><widget class="QLabel" name="exponentialAlphaLabel"><property name="text"><string>指数 Alpha</string></property></widget></item>
+        <item row="10" column="1"><widget class="QDoubleSpinBox" name="exponentialAlphaSpin"><property name="decimals"><number>3</number></property><property name="minimum"><double>0.001000000000000</double></property><property name="maximum"><double>1.000000000000000</double></property><property name="singleStep"><double>0.050000000000000</double></property><property name="value"><double>0.200000000000000</double></property></widget></item>
+        <item row="11" column="0"><widget class="QLabel" name="spectrumSmoothingLabel"><property name="text"><string>谱线平滑</string></property></widget></item>
+        <item row="11" column="1"><widget class="QComboBox" name="spectrumSmoothingCombo"><item><property name="text"><string>无</string></property></item><item><property name="text"><string>滑动平均</string></property></item><item><property name="text"><string>Gaussian</string></property></item><item><property name="text"><string>Savitzky-Golay</string></property></item></widget></item>
+        <item row="12" column="0"><widget class="QLabel" name="smoothingWindowLabel"><property name="text"><string>核窗口</string></property></widget></item>
+        <item row="12" column="1"><widget class="QSpinBox" name="smoothingWindowSpin"><property name="minimum"><number>1</number></property><property name="maximum"><number>101</number></property><property name="singleStep"><number>2</number></property><property name="value"><number>5</number></property></widget></item>
+        <item row="13" column="0"><widget class="QLabel" name="gaussianSigmaLabel"><property name="text"><string>Gaussian Sigma</string></property></widget></item>
+        <item row="13" column="1"><widget class="QDoubleSpinBox" name="gaussianSigmaSpin"><property name="minimum"><double>0.100000000000000</double></property><property name="maximum"><double>20.000000000000000</double></property><property name="value"><double>1.000000000000000</double></property></widget></item>
+        <item row="14" column="0"><widget class="QLabel" name="savgolOrderLabel"><property name="text"><string>S-G 阶数</string></property></widget></item>
+        <item row="14" column="1"><widget class="QSpinBox" name="savgolOrderSpin"><property name="minimum"><number>1</number></property><property name="maximum"><number>6</number></property><property name="value"><number>2</number></property></widget></item>
+        <item row="15" column="0"><widget class="QLabel" name="zeroPaddingLabel"><property name="text"><string>补零</string></property></widget></item>
+        <item row="15" column="1"><widget class="QCheckBox" name="zeroPaddingCheck"><property name="text"><string>FFT 大于帧长时启用</string></property></widget></item>
+        <item row="16" column="0"><widget class="QLabel" name="sidednessLabel"><property name="text"><string>频谱边</string></property></widget></item>
+        <item row="16" column="1"><widget class="QComboBox" name="sidednessCombo"><item><property name="text"><string>fftshift 双边</string></property></item><item><property name="text"><string>单边</string></property></item></widget></item>
+        <item row="17" column="0"><widget class="QLabel" name="normalizationLabel"><property name="text"><string>归一化</string></property></widget></item>
+        <item row="17" column="1"><widget class="QComboBox" name="normalizationCombo"><item><property name="text"><string>Window power</string></property></item><item><property name="text"><string>Coherent gain</string></property></item><item><property name="text"><string>None</string></property></item></widget></item>
+        <item row="18" column="0"><widget class="QLabel" name="detrendLabel"><property name="text"><string>去趋势</string></property></widget></item>
+        <item row="18" column="1"><widget class="QComboBox" name="detrendCombo"><item><property name="text"><string>无</string></property></item><item><property name="text"><string>去均值</string></property></item></widget></item>
+        <item row="19" column="0"><widget class="QLabel" name="measurementSourceLabel"><property name="text"><string>测量来源</string></property></widget></item>
+        <item row="19" column="1"><widget class="QComboBox" name="measurementSourceCombo"><item><property name="text"><string>未平滑原始值</string></property></item><item><property name="text"><string>平滑显示值</string></property></item></widget></item>
+       </layout>
+      </widget></item>
+      <item><widget class="QGroupBox" name="spectrogramGroup"><property name="title"><string>时频图</string></property>
+       <layout class="QFormLayout" name="spectrogramForm">
+        <item row="0" column="0"><widget class="QLabel" name="stftFrameLengthLabel"><property name="text"><string>帧长</string></property></widget></item>
+        <item row="0" column="1"><widget class="QSpinBox" name="stftFrameLengthSpin"><property name="minimum"><number>16</number></property><property name="maximum"><number>1048576</number></property><property name="value"><number>1024</number></property></widget></item>
+        <item row="1" column="0"><widget class="QLabel" name="stftFftLengthLabel"><property name="text"><string>FFT 长度</string></property></widget></item>
+        <item row="1" column="1"><widget class="QComboBox" name="stftFftLengthCombo"><property name="editable"><bool>true</bool></property>
+         <item><property name="text"><string>自动</string></property></item><item><property name="text"><string>256</string></property></item>
+         <item><property name="text"><string>512</string></property></item><item><property name="text"><string>1024</string></property></item>
+         <item><property name="text"><string>2048</string></property></item><item><property name="text"><string>4096</string></property></item>
+         <item><property name="text"><string>8192</string></property></item><item><property name="text"><string>16384</string></property></item>
+         <item><property name="text"><string>32768</string></property></item><item><property name="text"><string>65536</string></property></item>
+         <item><property name="text"><string>131072</string></property></item><item><property name="text"><string>262144</string></property></item>
+         <item><property name="text"><string>524288</string></property></item><item><property name="text"><string>1048576</string></property></item>
+        </widget></item>
+        <item row="2" column="0"><widget class="QLabel" name="stftOverlapLabel"><property name="text"><string>重叠 %</string></property></widget></item>
+        <item row="2" column="1"><widget class="QSpinBox" name="stftOverlapSpin"><property name="minimum"><number>0</number></property><property name="maximum"><number>95</number></property><property name="value"><number>75</number></property></widget></item>
+        <item row="3" column="0"><widget class="QLabel" name="stftFrequencySmoothingLabel"><property name="text"><string>频率平滑</string></property></widget></item>
+        <item row="3" column="1"><widget class="QComboBox" name="stftFrequencySmoothingCombo"><item><property name="text"><string>无</string></property></item><item><property name="text"><string>Gaussian</string></property></item></widget></item>
+        <item row="4" column="0"><widget class="QLabel" name="stftTimeSmoothingLabel"><property name="text"><string>时间平滑</string></property></widget></item>
+        <item row="4" column="1"><widget class="QComboBox" name="stftTimeSmoothingCombo"><item><property name="text"><string>无</string></property></item><item><property name="text"><string>指数</string></property></item><item><property name="text"><string>时间+频率</string></property></item></widget></item>
+        <item row="5" column="0"><widget class="QLabel" name="stftTimeAlphaLabel"><property name="text"><string>时间 Alpha</string></property></widget></item>
+        <item row="5" column="1"><widget class="QDoubleSpinBox" name="stftTimeAlphaSpin"><property name="minimum"><double>0.001000000000000</double></property><property name="maximum"><double>1.000000000000000</double></property><property name="value"><double>0.250000000000000</double></property></widget></item>
+        <item row="6" column="0"><widget class="QLabel" name="stftWindowLabel"><property name="text"><string>窗函数</string></property></widget></item>
+        <item row="6" column="1"><widget class="QComboBox" name="stftWindowCombo">
+         <item><property name="text"><string>Rectangular</string></property></item><item><property name="text"><string>Hann</string></property></item>
+         <item><property name="text"><string>Hamming</string></property></item><item><property name="text"><string>Blackman</string></property></item>
+         <item><property name="text"><string>Blackman-Harris</string></property></item><item><property name="text"><string>Flat Top</string></property></item>
+         <item><property name="text"><string>Kaiser</string></property></item><item><property name="text"><string>Tukey</string></property></item>
+        </widget></item>
+        <item row="7" column="0"><widget class="QLabel" name="stftWindowParameterLabel"><property name="text"><string>Beta / Alpha</string></property></widget></item>
+        <item row="7" column="1"><widget class="QDoubleSpinBox" name="stftWindowParameterSpin"><property name="decimals"><number>3</number></property><property name="minimum"><double>0.000000000000000</double></property><property name="maximum"><double>50.000000000000000</double></property><property name="value"><double>0.250000000000000</double></property></widget></item>
+        <item row="8" column="0"><widget class="QLabel" name="stftPaddingLabel"><property name="text"><string>补零</string></property></widget></item>
+        <item row="8" column="1"><widget class="QCheckBox" name="stftPaddingCheck"><property name="text"><string>允许 FFT / 尾帧补零</string></property></widget></item>
+        <item row="9" column="0"><widget class="QLabel" name="stftBoundaryLabel"><property name="text"><string>尾帧</string></property></widget></item>
+        <item row="9" column="1"><widget class="QComboBox" name="stftBoundaryCombo"><item><property name="text"><string>丢弃不完整帧</string></property></item><item><property name="text"><string>补零不完整帧</string></property></item></widget></item>
+        <item row="10" column="0"><widget class="QLabel" name="stftOutputQuantityLabel"><property name="text"><string>输出</string></property></widget></item>
+        <item row="10" column="1"><widget class="QComboBox" name="stftOutputQuantityCombo"><item><property name="text"><string>PSD dBFS/Hz</string></property></item><item><property name="text"><string>幅度 dBFS</string></property></item><item><property name="text"><string>功率 dBFS</string></property></item><item><property name="text"><string>线性功率密度</string></property></item><item><property name="text"><string>线性幅度</string></property></item><item><property name="text"><string>线性功率</string></property></item></widget></item>
+        <item row="11" column="0"><widget class="QLabel" name="stftNormalizationLabel"><property name="text"><string>归一化</string></property></widget></item>
+        <item row="11" column="1"><widget class="QComboBox" name="stftNormalizationCombo"><item><property name="text"><string>Window power</string></property></item><item><property name="text"><string>Coherent gain</string></property></item><item><property name="text"><string>None</string></property></item></widget></item>
+        <item row="12" column="0"><widget class="QLabel" name="stftDetrendLabel"><property name="text"><string>去趋势</string></property></widget></item>
+        <item row="12" column="1"><widget class="QComboBox" name="stftDetrendCombo"><item><property name="text"><string>无</string></property></item><item><property name="text"><string>去均值</string></property></item></widget></item>
+       </layout>
+      </widget></item>
+      <item><widget class="QGroupBox" name="prefilterGroup"><property name="title"><string>分析预处理</string></property>
+       <layout class="QFormLayout" name="prefilterForm">
+        <item row="0" column="0"><widget class="QLabel" name="prefilterEnabledLabel"><property name="text"><string>启用</string></property></widget></item>
+        <item row="0" column="1"><widget class="QCheckBox" name="prefilterEnabledCheck"><property name="text"><string>应用 ProcessingChain 快照</string></property></widget></item>
+        <item row="1" column="0"><widget class="QLabel" name="filterKindLabel"><property name="text"><string>内核</string></property></widget></item>
+        <item row="1" column="1"><widget class="QComboBox" name="filterKindCombo"><item><property name="text"><string>FIR</string></property></item><item><property name="text"><string>IIR</string></property></item></widget></item>
+        <item row="2" column="0"><widget class="QLabel" name="filterShapeLabel"><property name="text"><string>形状</string></property></widget></item>
+        <item row="2" column="1"><widget class="QComboBox" name="filterShapeCombo"><item><property name="text"><string>低通</string></property></item><item><property name="text"><string>高通</string></property></item><item><property name="text"><string>带通</string></property></item><item><property name="text"><string>带阻</string></property></item><item><property name="text"><string>自定义系数</string></property></item></widget></item>
+        <item row="3" column="0"><widget class="QLabel" name="filterLowLabel"><property name="text"><string>低边界 Hz</string></property></widget></item>
+        <item row="3" column="1"><widget class="QDoubleSpinBox" name="filterLowSpin"><property name="maximum"><double>100000000000.000000000000000</double></property><property name="value"><double>10000.000000000000000</double></property></widget></item>
+        <item row="4" column="0"><widget class="QLabel" name="filterHighLabel"><property name="text"><string>高边界 Hz</string></property></widget></item>
+        <item row="4" column="1"><widget class="QDoubleSpinBox" name="filterHighSpin"><property name="maximum"><double>100000000000.000000000000000</double></property><property name="value"><double>100000.000000000000000</double></property></widget></item>
+        <item row="5" column="0"><widget class="QLabel" name="filterOrderLabel"><property name="text"><string>阶数</string></property></widget></item>
+        <item row="5" column="1"><widget class="QSpinBox" name="filterOrderSpin"><property name="minimum"><number>1</number></property><property name="maximum"><number>4096</number></property><property name="value"><number>63</number></property></widget></item>
+        <item row="6" column="0"><widget class="QLabel" name="filterQLabel"><property name="text"><string>Q</string></property></widget></item>
+        <item row="6" column="1"><widget class="QDoubleSpinBox" name="filterQSpin"><property name="minimum"><double>0.010000000000000</double></property><property name="maximum"><double>1000.000000000000000</double></property><property name="value"><double>0.707000000000000</double></property></widget></item>
+        <item row="7" column="0"><widget class="QLabel" name="boundaryLabel"><property name="text"><string>边界</string></property></widget></item>
+        <item row="7" column="1"><widget class="QComboBox" name="boundaryCombo"><item><property name="text"><string>Zero pad</string></property></item><item><property name="text"><string>Preserve state</string></property></item></widget></item>
+        <item row="8" column="0"><widget class="QLabel" name="customNumeratorLabel"><property name="text"><string>自定义 b</string></property></widget></item>
+        <item row="8" column="1"><widget class="QLineEdit" name="customNumeratorEdit"><property name="placeholderText"><string>例如 0.25,0.5,0.25</string></property></widget></item>
+        <item row="9" column="0"><widget class="QLabel" name="customDenominatorLabel"><property name="text"><string>自定义 a</string></property></widget></item>
+        <item row="9" column="1"><widget class="QLineEdit" name="customDenominatorEdit"><property name="placeholderText"><string>IIR 例如 1,-0.5</string></property></widget></item>
+        <item row="10" column="0" colspan="2"><widget class="QLabel" name="filterPreviewLabel"><property name="text"><string>频响、处理前后对比与群时延在参数合法后更新。</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+       </layout>
+      </widget></item>
+      <item><widget class="QGroupBox" name="displayGroup"><property name="title"><string>显示（不重算 DSP）</string></property>
+       <layout class="QFormLayout" name="displayForm">
+        <item row="0" column="0"><widget class="QLabel" name="referenceLevelLabel"><property name="text"><string>参考电平</string></property></widget></item>
+        <item row="0" column="1"><widget class="QDoubleSpinBox" name="referenceLevelSpin"><property name="minimum"><double>-300.000000000000000</double></property><property name="maximum"><double>100.000000000000000</double></property><property name="value"><double>-20.000000000000000</double></property></widget></item>
+        <item row="1" column="0"><widget class="QLabel" name="dynamicRangeLabel"><property name="text"><string>动态范围 dB</string></property></widget></item>
+        <item row="1" column="1"><widget class="QDoubleSpinBox" name="dynamicRangeSpin"><property name="minimum"><double>1.000000000000000</double></property><property name="maximum"><double>300.000000000000000</double></property><property name="value"><double>90.000000000000000</double></property></widget></item>
+        <item row="2" column="0"><widget class="QLabel" name="colorMapLabel"><property name="text"><string>色阶</string></property></widget></item>
+        <item row="2" column="1"><widget class="QComboBox" name="colorMapCombo"><item><property name="text"><string>Industrial</string></property></item><item><property name="text"><string>Viridis</string></property></item><item><property name="text"><string>Turbo</string></property></item><item><property name="text"><string>Inferno</string></property></item><item><property name="text"><string>Grayscale</string></property></item></widget></item>
+        <item row="3" column="0"><widget class="QLabel" name="interpolationLabel"><property name="text"><string>插值</string></property></widget></item>
+        <item row="3" column="1"><widget class="QComboBox" name="interpolationCombo"><item><property name="text"><string>nearest</string></property></item><item><property name="text"><string>linear</string></property></item></widget></item>
+        <item row="4" column="0"><widget class="QLabel" name="frequencyAxisModeLabel"><property name="text"><string>频率轴</string></property></widget></item>
+        <item row="4" column="1"><widget class="QComboBox" name="frequencyAxisModeCombo"><item><property name="text"><string>absolute-if-available</string></property></item><item><property name="text"><string>baseband</string></property></item></widget></item>
+        <item row="5" column="0"><widget class="QLabel" name="amplitudeScaleLabel"><property name="text"><string>幅度标度</string></property></widget></item>
+        <item row="5" column="1"><widget class="QComboBox" name="amplitudeScaleCombo"><item><property name="text"><string>对数</string></property></item><item><property name="text"><string>线性</string></property></item></widget></item>
+        <item row="6" column="0"><widget class="QLabel" name="rangeModeLabel"><property name="text"><string>范围模式</string></property></widget></item>
+        <item row="6" column="1"><widget class="QComboBox" name="rangeModeCombo"><item><property name="text"><string>自动</string></property></item><item><property name="text"><string>手动</string></property></item></widget></item>
+        <item row="7" column="0"><widget class="QLabel" name="displayMinimumLabel"><property name="text"><string>显示最小值</string></property></widget></item>
+        <item row="7" column="1"><widget class="QDoubleSpinBox" name="displayMinimumSpin"><property name="minimum"><double>-1000000000.000000000000000</double></property><property name="maximum"><double>1000000000.000000000000000</double></property><property name="value"><double>-140.000000000000000</double></property></widget></item>
+        <item row="8" column="0"><widget class="QLabel" name="displayMaximumLabel"><property name="text"><string>显示最大值</string></property></widget></item>
+        <item row="8" column="1"><widget class="QDoubleSpinBox" name="displayMaximumSpin"><property name="minimum"><double>-1000000000.000000000000000</double></property><property name="maximum"><double>1000000000.000000000000000</double></property><property name="value"><double>10.000000000000000</double></property></widget></item>
+       </layout>
+      </widget></item>
+      <item><widget class="QLabel" name="derivedInformationLabel"><property name="text"><string>等待数据源：Δf、RBW、ENBW、帧数和内存预算将在此显示。</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+      <item><widget class="QLabel" name="parameterWarningLabel"><property name="text"><string>补零只改善频率采样密度，不提高真实分辨率。</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+     </layout>
+    </widget>
+   </widget></item>
+   <item><layout class="QGridLayout" name="actionLayout">
+    <item row="0" column="0"><widget class="QPushButton" name="applyAnalysisSettingsButton"><property name="text"><string>应用</string></property></widget></item>
+    <item row="0" column="1"><widget class="QPushButton" name="cancelAnalysisSettingsButton"><property name="text"><string>取消修改</string></property></widget></item>
+    <item row="1" column="0"><widget class="QPushButton" name="restoreViewDefaultsButton"><property name="text"><string>当前图谱默认</string></property></widget></item>
+    <item row="1" column="1"><widget class="QPushButton" name="restoreSoftwareDefaultsButton"><property name="text"><string>软件默认</string></property></widget></item>
+    <item row="2" column="0"><widget class="QPushButton" name="savePresetButton"><property name="text"><string>保存用户预设</string></property></widget></item>
+    <item row="2" column="1"><widget class="QPushButton" name="deletePresetButton"><property name="text"><string>删除用户预设</string></property></widget></item>
+    <item row="3" column="0"><widget class="QPushButton" name="applyPsdOnlyButton"><property name="text"><string>应用到 PSD</string></property></widget></item>
+    <item row="3" column="1"><widget class="QPushButton" name="applyStftOnlyButton"><property name="text"><string>应用到 STFT</string></property></widget></item>
+    <item row="4" column="0" colspan="2"><widget class="QPushButton" name="applySharedButton"><property name="text"><string>共享参数同时应用到 PSD 与 STFT</string></property></widget></item>
+   </layout></item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

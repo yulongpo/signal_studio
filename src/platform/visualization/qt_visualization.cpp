@@ -62,12 +62,41 @@ constexpr auto selection_yellow = "#F2C94C";
   return QRectF(bounds).adjusted(50.0, 30.0, -14.0, -24.0);
 }
 
-[[nodiscard]] QColor heat_color(float value, double reference, double dynamic_range) {
+[[nodiscard]] QColor interpolate_palette(double normalized, const std::array<QColor, 5U>& palette) {
+  const auto scaled = std::clamp(normalized, 0.0, 1.0) * static_cast<double>(palette.size() - 1U);
+  const auto lower = std::min(static_cast<std::size_t>(scaled), palette.size() - 1U);
+  const auto upper = std::min(lower + 1U, palette.size() - 1U);
+  const auto ratio = scaled - static_cast<double>(lower);
+  const auto interpolate = [ratio](double left, double right) { return left + (right - left) * ratio; };
+  return QColor::fromRgbF(static_cast<float>(interpolate(palette[lower].redF(), palette[upper].redF())),
+                          static_cast<float>(interpolate(palette[lower].greenF(), palette[upper].greenF())),
+                          static_cast<float>(interpolate(palette[lower].blueF(), palette[upper].blueF())));
+}
+
+[[nodiscard]] QColor heat_color(float value, double reference, double dynamic_range, std::string_view color_map) {
   const auto rgb = [](double red, double green, double blue) {
     return QColor::fromRgbF(static_cast<float>(red), static_cast<float>(green), static_cast<float>(blue));
   };
   const auto normalized =
       std::clamp((static_cast<double>(value) - (reference - dynamic_range)) / dynamic_range, 0.0, 1.0);
+  if (color_map == "Grayscale") {
+    return rgb(normalized, normalized, normalized);
+  }
+  if (color_map == "Viridis") {
+    static const std::array<QColor, 5U> palette{QColor{68, 1, 84}, QColor{59, 82, 139}, QColor{33, 145, 140},
+                                                QColor{94, 201, 98}, QColor{253, 231, 37}};
+    return interpolate_palette(normalized, palette);
+  }
+  if (color_map == "Inferno") {
+    static const std::array<QColor, 5U> palette{QColor{0, 0, 4}, QColor{87, 15, 109}, QColor{187, 55, 84},
+                                                QColor{249, 142, 9}, QColor{252, 255, 164}};
+    return interpolate_palette(normalized, palette);
+  }
+  if (color_map == "Turbo") {
+    static const std::array<QColor, 5U> palette{QColor{48, 18, 59}, QColor{70, 100, 223}, QColor{27, 207, 212},
+                                                QColor{112, 224, 0}, QColor{217, 56, 6}};
+    return interpolate_palette(normalized, palette);
+  }
   if (normalized < 0.34) {
     const auto ratio = normalized / 0.34;
     return rgb(0.02, 0.08 + 0.32 * ratio, 0.18 + 0.32 * ratio);
@@ -334,6 +363,11 @@ public:
     if (kind_ == ChartKind::spectrogram) {
       rebuildHeatmap();
     }
+    update();
+  }
+
+  void setInterpolation(std::string_view interpolation) {
+    smooth_interpolation_ = interpolation == "linear";
     update();
   }
 
@@ -706,15 +740,62 @@ private:
     }
   }
 
+  [[nodiscard]] double displayValue(double value, bool source_logarithmic, bool source_amplitude) const {
+    const auto target_logarithmic = mapping_.amplitude_scale == AmplitudeScale::logarithmic;
+    if (source_logarithmic == target_logarithmic) {
+      return value;
+    }
+    const auto factor = source_amplitude ? 20.0 : 10.0;
+    if (target_logarithmic) {
+      return factor * std::log10(std::max(value, std::numeric_limits<double>::min()));
+    }
+    return std::pow(10.0, value / factor);
+  }
+
+  [[nodiscard]] std::pair<double, double> displayRange() const {
+    if (mapping_.range_mode == RangeMode::manual || !frame_) {
+      return {mapping_.minimum, mapping_.maximum};
+    }
+    if (mapping_.amplitude_scale == AmplitudeScale::logarithmic) {
+      return {mapping_.reference_level - mapping_.dynamic_range, mapping_.reference_level};
+    }
+    auto minimum = std::numeric_limits<double>::infinity();
+    auto maximum = -std::numeric_limits<double>::infinity();
+    const auto update = [&](double value) {
+      if (std::isfinite(value)) {
+        minimum = std::min(minimum, value);
+        maximum = std::max(maximum, value);
+      }
+    };
+    if (kind_ == ChartKind::psd || kind_ == ChartKind::spectrum) {
+      for (const auto value : frame_->psd_db_hz) {
+        update(displayValue(value, frame_->psd_values_logarithmic, frame_->psd_values_amplitude));
+      }
+    } else if (kind_ == ChartKind::spectrogram || kind_ == ChartKind::waterfall) {
+      for (const auto value : frame_->stft_db) {
+        update(displayValue(value, frame_->stft_values_logarithmic, frame_->stft_values_amplitude));
+      }
+    }
+    if (!std::isfinite(minimum) || !std::isfinite(maximum)) {
+      return {mapping_.minimum, mapping_.maximum};
+    }
+    if (!(maximum > minimum)) {
+      const auto margin = std::max(1.0, std::abs(maximum) * 0.01);
+      minimum -= margin;
+      maximum += margin;
+    }
+    return {minimum, maximum};
+  }
+
   void drawColorScale(QPainter& painter, const QRectF& area) const {
     const QRectF scale(area.right() - 9.0, area.top(), 8.0, area.height());
+    const auto [minimum, maximum] = displayRange();
+    const auto dynamic_range = maximum - minimum;
     QLinearGradient gradient(scale.bottomLeft(), scale.topLeft());
-    gradient.setColorAt(0.0, heat_color(static_cast<float>(mapping_.reference_level - mapping_.dynamic_range),
-                                        mapping_.reference_level, mapping_.dynamic_range));
-    gradient.setColorAt(0.5, heat_color(static_cast<float>(mapping_.reference_level - mapping_.dynamic_range / 2.0),
-                                        mapping_.reference_level, mapping_.dynamic_range));
-    gradient.setColorAt(1.0, heat_color(static_cast<float>(mapping_.reference_level), mapping_.reference_level,
-                                        mapping_.dynamic_range));
+    gradient.setColorAt(0.0, heat_color(static_cast<float>(minimum), maximum, dynamic_range, mapping_.color_map));
+    gradient.setColorAt(
+        0.5, heat_color(static_cast<float>(minimum + dynamic_range / 2.0), maximum, dynamic_range, mapping_.color_map));
+    gradient.setColorAt(1.0, heat_color(static_cast<float>(maximum), maximum, dynamic_range, mapping_.color_map));
     painter.fillRect(scale, gradient);
     painter.setPen(QColor(primary_text));
     painter.drawRect(scale);
@@ -841,13 +922,14 @@ private:
       return;
     }
     const auto& values = frame_->psd_db_hz;
+    const auto [minimum, maximum] = displayRange();
     QPainterPath line;
     QPainterPath fill;
     fill.moveTo(area.left(), area.bottom());
     for (std::size_t index = 0; index < values.size(); ++index) {
       const auto x = area.left() + area.width() * static_cast<double>(index) / static_cast<double>(values.size() - 1U);
-      const auto normalized =
-          std::clamp((values[index] - mapping_.minimum) / (mapping_.maximum - mapping_.minimum), 0.0, 1.0);
+      const auto value = displayValue(values[index], frame_->psd_values_logarithmic, frame_->psd_values_amplitude);
+      const auto normalized = std::clamp((value - minimum) / (maximum - minimum), 0.0, 1.0);
       const auto y = area.bottom() - normalized * area.height();
       if (index == 0) {
         line.moveTo(x, y);
@@ -868,7 +950,7 @@ private:
 
   void drawSpectrogram(QPainter& painter, const QRectF& area) const {
     if (!heatmap_.isNull()) {
-      painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
+      painter.setRenderHint(QPainter::SmoothPixmapTransform, smooth_interpolation_);
       painter.drawImage(area, heatmap_);
     }
   }
@@ -971,11 +1053,14 @@ private:
     }
     heatmap_ =
         QImage(static_cast<int>(frame_->stft_columns), static_cast<int>(frame_->stft_rows), QImage::Format_RGB32);
+    const auto [minimum, maximum] = displayRange();
+    const auto dynamic_range = maximum - minimum;
     for (std::uint32_t row = 0; row < frame_->stft_rows; ++row) {
       for (std::uint32_t column = 0; column < frame_->stft_columns; ++column) {
-        const auto value = frame_->stft_db[static_cast<std::size_t>(row) * frame_->stft_columns + column];
+        const auto raw = frame_->stft_db[static_cast<std::size_t>(row) * frame_->stft_columns + column];
+        const auto value = displayValue(raw, frame_->stft_values_logarithmic, frame_->stft_values_amplitude);
         heatmap_.setPixelColor(static_cast<int>(column), static_cast<int>(row),
-                               heat_color(value, mapping_.reference_level, mapping_.dynamic_range));
+                               heat_color(static_cast<float>(value), maximum, dynamic_range, mapping_.color_map));
       }
     }
   }
@@ -995,16 +1080,19 @@ private:
                         .arg(frame_->time_range.end());
     } else if (kind_ == ChartKind::psd || kind_ == ChartKind::spectrum) {
       static constexpr std::array<std::string_view, 3> layouts{"单边谱", "镜像双边谱", "fftshift 双边谱"};
-      description = QString("功率谱密度，%1，%2 个频率点，单位 dB/Hz，FFT %3，RBW %4 Hz")
+      description = QString("频谱，%1，%2 个频率点，单位 %3，FFT %4，RBW %5 Hz")
                         .arg(QString::fromUtf8(
                             layouts.at(static_cast<std::size_t>(spectrum_layout_)).data(),
                             static_cast<qsizetype>(layouts.at(static_cast<std::size_t>(spectrum_layout_)).size())))
                         .arg(frame_->psd_db_hz.size())
+                        .arg(QString::fromStdString(frame_->psd_metadata.unit))
                         .arg(frame_->psd_metadata.fft_size)
                         .arg(frame_->psd_metadata.rbw_hz, 0, 'f', 2);
     } else if (kind_ == ChartKind::spectrogram || kind_ == ChartKind::waterfall) {
-      description =
-          QString("时频图，%1 行 %2 列，横轴频率，纵轴时间向下递增").arg(frame_->stft_rows).arg(frame_->stft_columns);
+      description = QString("时频图，%1 行 %2 列，单位 %3，横轴频率，纵轴时间向下递增")
+                        .arg(frame_->stft_rows)
+                        .arg(frame_->stft_columns)
+                        .arg(QString::fromStdString(frame_->stft_metadata.unit));
     } else if (kind_ == ChartKind::constellation) {
       description =
           QString("星座图，%1 个复数点").arg(std::min(frame_->constellation_i.size(), frame_->constellation_q.size()));
@@ -1025,6 +1113,7 @@ private:
   std::optional<VisualizationFrame> frame_;
   ViewportSnapshot viewport_;
   DisplayMapping mapping_;
+  bool smooth_interpolation_{};
   TimeDisplayMode time_display_mode_{TimeDisplayMode::in_phase_quadrature};
   SpectrumLayout spectrum_layout_{SpectrumLayout::shifted_two_sided};
   bool time_mode_selected_{};
@@ -1107,8 +1196,12 @@ public:
     psd_toggle_ = new QCheckBox("PSD", controls);
     psd_toggle_->setChecked(configuration_.show_psd);
     psd_toggle_->setAccessibleName("显示或隐藏功率谱密度图");
+    spectrogram_toggle_ = new QCheckBox("STFT", controls);
+    spectrogram_toggle_->setChecked(configuration_.show_spectrogram);
+    spectrogram_toggle_->setAccessibleName("显示或隐藏时频图");
     interaction_layout->addWidget(waveform_toggle_);
     interaction_layout->addWidget(psd_toggle_);
+    interaction_layout->addWidget(spectrogram_toggle_);
 
     auto* display_button = new QToolButton(controls);
     display_button->setText("显示模式");
@@ -1183,7 +1276,7 @@ public:
     auto* color_label = new QLabel("色阶", controls);
     parameter_layout->addWidget(color_label);
     color_map_ = new QComboBox(controls);
-    color_map_->addItems({"Industrial", "Viridis", "Grayscale"});
+    color_map_->addItems({"Industrial", "Viridis", "Turbo", "Inferno", "Grayscale"});
     color_map_->setAccessibleName("瀑布配色预设");
     parameter_layout->addWidget(color_map_);
     reference_ = new QDoubleSpinBox(controls);
@@ -1300,10 +1393,23 @@ public:
     QObject::connect(waveform_toggle_, &QCheckBox::toggled, this, [this](bool visible) {
       waveform_->setVisible(visible);
       setStatus(visible ? "时域图已连接观察器" : "时域图已隐藏，专属准备与绘制已停止");
+      if (visibility_callback_) {
+        visibility_callback_(ChartKind::time_waveform, visible);
+      }
     });
     QObject::connect(psd_toggle_, &QCheckBox::toggled, this, [this](bool visible) {
       psd_->setVisible(visible);
       setStatus(visible ? "PSD 已连接观察器" : "PSD 已隐藏，专属准备与绘制已停止");
+      if (visibility_callback_) {
+        visibility_callback_(ChartKind::psd, visible);
+      }
+    });
+    QObject::connect(spectrogram_toggle_, &QCheckBox::toggled, this, [this](bool visible) {
+      spectrogram_->setVisible(visible);
+      setStatus(visible ? "STFT 已连接观察器" : "STFT 已隐藏，专属准备与绘制已停止");
+      if (visibility_callback_) {
+        visibility_callback_(ChartKind::spectrogram, visible);
+      }
     });
     const auto display_change = [this] {
       DisplayMapping mapping;
@@ -1348,6 +1454,50 @@ protected:
   }
 
 public:
+  [[nodiscard]] core::Status setChartVisible(ChartKind kind, bool visible) {
+    QCheckBox* toggle{};
+    switch (kind) {
+    case ChartKind::time_waveform:
+      toggle = waveform_toggle_;
+      break;
+    case ChartKind::psd:
+    case ChartKind::spectrum:
+      toggle = psd_toggle_;
+      break;
+    case ChartKind::spectrogram:
+    case ChartKind::waterfall:
+      toggle = spectrogram_toggle_;
+      break;
+    case ChartKind::constellation:
+    case ChartKind::eye_diagram:
+      return core::Status::failure({core::ErrorDomain::visualization, core::ErrorReason::unavailable},
+                                   "该图表没有独立可见性开关");
+    }
+    toggle->setChecked(visible);
+    return core::Status::success();
+  }
+
+  [[nodiscard]] bool chartVisible(ChartKind kind) const {
+    switch (kind) {
+    case ChartKind::time_waveform:
+      return waveform_toggle_->isChecked();
+    case ChartKind::psd:
+    case ChartKind::spectrum:
+      return psd_toggle_->isChecked();
+    case ChartKind::spectrogram:
+    case ChartKind::waterfall:
+      return spectrogram_toggle_->isChecked();
+    case ChartKind::constellation:
+    case ChartKind::eye_diagram:
+      return true;
+    }
+    return true;
+  }
+
+  void setVisibilityCallback(std::function<void(ChartKind, bool)> callback) {
+    visibility_callback_ = std::move(callback);
+  }
+
   void setFrame(const VisualizationFrame& frame) {
     for (auto* canvas : allCanvases()) {
       canvas->setFrame(frame);
@@ -1366,6 +1516,21 @@ public:
     frequency_input_->setText(QString::fromStdString(
         format_frequency_hz(viewport.frequency_viewport.begin_hz + viewport.frequency_viewport.bandwidth_hz() / 2)));
     span_input_->setText(QString::fromStdString(format_frequency_hz(viewport.frequency_viewport.bandwidth_hz())));
+  }
+
+  void setDisplayMapping(const DisplayMapping& mapping, std::string_view interpolation) {
+    color_map_->setCurrentText(QString::fromStdString(mapping.color_map));
+    reference_->setValue(mapping.reference_level);
+    dynamic_range_->setValue(mapping.dynamic_range);
+    for (auto* canvas : allCanvases()) {
+      canvas->setDisplayMapping(mapping);
+      if (canvas->kind() == ChartKind::spectrogram || canvas->kind() == ChartKind::waterfall) {
+        canvas->setInterpolation(interpolation);
+      }
+    }
+    setStatus(QString("显示映射已更新 · %1 · %2")
+                  .arg(QString::fromStdString(mapping.color_map))
+                  .arg(QString::fromUtf8(interpolation.data(), static_cast<qsizetype>(interpolation.size()))));
   }
 
   void setInteractionMode(InteractionMode mode) {
@@ -1655,6 +1820,7 @@ private:
   std::optional<OverlayModel> overlay_;
   QCheckBox* waveform_toggle_{};
   QCheckBox* psd_toggle_{};
+  QCheckBox* spectrogram_toggle_{};
   QToolButton* exact_button_{};
   QPushButton* screenshot_button_{};
   QLineEdit* frequency_input_{};
@@ -1663,6 +1829,7 @@ private:
   QDoubleSpinBox* reference_{};
   QDoubleSpinBox* dynamic_range_{};
   QLabel* status_{};
+  std::function<void(ChartKind, bool)> visibility_callback_;
 };
 
 class AnalysisWorkspaceImpl final : public IAnalysisWorkspace {
@@ -1685,6 +1852,18 @@ public:
     return core::Status::success();
   }
 
+  [[nodiscard]] core::Status set_display_mapping(DisplayMapping mapping, std::string interpolation) override {
+    if (const auto status = validate_display_mapping(mapping); !status) {
+      return status;
+    }
+    if (interpolation != "nearest" && interpolation != "linear") {
+      return core::Status::failure({core::ErrorDomain::visualization, core::ErrorReason::invalid_argument},
+                                   "STFT 插值只允许 nearest 或 linear");
+    }
+    widget_->setDisplayMapping(mapping, interpolation);
+    return core::Status::success();
+  }
+
   [[nodiscard]] core::Status set_interaction_mode(InteractionMode mode) override {
     if (static_cast<std::uint32_t>(mode) > static_cast<std::uint32_t>(InteractionMode::cursor)) {
       return core::Status::failure({core::ErrorDomain::visualization, core::ErrorReason::invalid_argument},
@@ -1692,6 +1871,18 @@ public:
     }
     widget_->setInteractionMode(mode);
     return core::Status::success();
+  }
+
+  [[nodiscard]] core::Status set_chart_visible(ChartKind kind, bool visible) override {
+    return widget_->setChartVisible(kind, visible);
+  }
+
+  [[nodiscard]] bool chart_visible(ChartKind kind) const override {
+    return widget_->chartVisible(kind);
+  }
+
+  void set_visibility_callback(std::function<void(ChartKind, bool)> callback) override {
+    widget_->setVisibilityCallback(std::move(callback));
   }
 
   [[nodiscard]] core::Status fit_frequency_to_data() override {

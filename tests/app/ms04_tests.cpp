@@ -6,6 +6,8 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -14,6 +16,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <future>
 #include <iostream>
 #include <map>
 #include <stdexcept>
@@ -63,6 +66,46 @@ private:
   return result;
 }
 
+[[nodiscard]] std::string json_string(std::string_view value) {
+  std::string result{"\""};
+  for (const auto character : value) {
+    switch (character) {
+    case '\\':
+      result += "\\\\";
+      break;
+    case '"':
+      result += "\\\"";
+      break;
+    case '\n':
+      result += "\\n";
+      break;
+    case '\r':
+      result += "\\r";
+      break;
+    case '\t':
+      result += "\\t";
+      break;
+    default:
+      result.push_back(character);
+      break;
+    }
+  }
+  result.push_back('"');
+  return result;
+}
+
+[[nodiscard]] std::vector<std::string_view> split(std::string_view value, char delimiter) {
+  std::vector<std::string_view> result;
+  while (true) {
+    const auto position = value.find(delimiter);
+    result.push_back(value.substr(0U, position));
+    if (position == std::string_view::npos) {
+      return result;
+    }
+    value.remove_prefix(position + 1U);
+  }
+}
+
 [[nodiscard]] std::filesystem::path write_sc16(const std::filesystem::path& path, std::size_t samples = 16'384U) {
   std::vector<std::byte> payload(samples * 4U);
   for (std::size_t index = 0; index < samples; ++index) {
@@ -91,6 +134,44 @@ private:
                            {"sample_rate_hz", {signal::data::FieldOrigin::user, true}},
                            {"center_frequency_hz", {signal::data::FieldOrigin::user, true}}};
   return descriptor;
+}
+
+[[nodiscard]] signal::studio::ImportedSignal import_fixture(signal::studio::ApplicationController& controller,
+                                                            const std::filesystem::path& directory,
+                                                            std::size_t samples = 8'192U) {
+  const auto source = write_sc16(directory / "ms45_cf10MHz_sr1MSps.sc16", samples);
+  auto confirmed =
+      signal::studio::make_confirmed_descriptor(source, signal::studio::parse_filename_hints(source), true);
+  require(confirmed, "MS-4.5 fixture descriptor failed");
+  auto task =
+      controller.start_import({source, confirmed.value(), signal::data::SourceFormat::raw, samples * 4U, 16U * 1024U});
+  require(task, "MS-4.5 fixture import submission failed");
+  auto imported = controller.finalize_import(task.value());
+  require(imported && imported.value().loaded->samples().size() == samples, "MS-4.5 fixture import failed");
+  return std::move(imported).value();
+}
+
+[[nodiscard]] signal::dsp::AnalysisSettingsSnapshot
+compact_analysis_settings(const signal::studio::ApplicationController& controller) {
+  auto settings = controller.analysis_settings();
+  settings.spectrum.analysis_range_policy = signal::dsp::AnalysisRangePolicy::first_frame;
+  settings.spectrum.frame_length = 1024U;
+  settings.spectrum.fft_length = 1024U;
+  settings.spectrum.zero_padding_policy = signal::dsp::ZeroPaddingPolicy::forbidden;
+  settings.spectrum.estimator = {signal::dsp::PsdEstimatorKind::periodogram, 0.0, 1U};
+  settings.spectrum.accumulation = {};
+  settings.spectrum.smoothing = {};
+  settings.spectrogram.frame_length = 256U;
+  settings.spectrogram.fft_length = 256U;
+  settings.spectrogram.hop_length = 128U;
+  settings.spectrogram.padding_policy = signal::dsp::ZeroPaddingPolicy::forbidden;
+  settings.spectrogram.smoothing = {};
+  return settings;
+}
+
+[[nodiscard]] double maximum(std::span<const double> values) {
+  require(!values.empty(), "Expected non-empty numerical result");
+  return *std::ranges::max_element(values);
 }
 
 [[nodiscard]] ArtifactProvenance provenance(std::string version = "source-v1") {
@@ -371,6 +452,516 @@ void test_application_flow() {
   require(after && after.value() == before.value(), "Import modified source recording");
 }
 
+void test_ms45_parameter_effects() {
+  TemporaryDirectory temporary;
+  signal::studio::ApplicationController controller{temporary.path() / "state"};
+  require(controller.create_project(temporary.path() / "parameters.signal-workspace", "ms45-parameters"),
+          "MS-4.5 parameter project creation failed");
+  const auto imported = import_fixture(controller, temporary.path());
+  auto baseline_settings = compact_analysis_settings(controller);
+  const auto baseline_request = controller.task_runtime().issue_view_request("ms45-parameter-effects");
+  auto baseline = controller.analyze(imported, baseline_settings, false, nullptr, baseline_request, "task-baseline");
+  require(baseline, "MS-4.5 baseline analysis failed");
+
+  auto changed_settings = baseline_settings;
+  changed_settings.spectrum.fft_length = 2048U;
+  changed_settings.spectrum.zero_padding_policy = signal::dsp::ZeroPaddingPolicy::enabled;
+  changed_settings.spectrum.window = {signal::dsp::WindowKind::blackman_harris, 0.0};
+  changed_settings.spectrogram.fft_length = 512U;
+  changed_settings.spectrogram.padding_policy = signal::dsp::ZeroPaddingPolicy::enabled;
+  changed_settings.spectrogram.window = {signal::dsp::WindowKind::hamming, 0.0};
+  const auto changed_request = controller.task_runtime().issue_view_request("ms45-parameter-effects");
+  auto changed = controller.analyze(imported, changed_settings, false, nullptr, changed_request, "task-changed");
+  require(changed, "MS-4.5 changed-parameter analysis failed");
+
+  require(baseline.value().spectrum.fft_length == 1024U && changed.value().spectrum.fft_length == 2048U &&
+              baseline.value().spectrum.values.size() == 1024U && changed.value().spectrum.values.size() == 2048U,
+          "FFT length did not change the spectrum bin count");
+  require(std::abs(baseline.value().spectrum.bin_spacing_hz - 976.5625) < 1.0e-9 &&
+              std::abs(changed.value().spectrum.bin_spacing_hz - 488.28125) < 1.0e-9,
+          "FFT length did not change the frequency-bin spacing");
+  require(baseline.value().stft.columns == 256U && changed.value().stft.columns == 512U &&
+              baseline.value().stft.db_per_hz.size() != changed.value().stft.db_per_hz.size(),
+          "STFT FFT parameter did not change the time-frequency result dimensions");
+  require(std::abs(maximum(baseline.value().psd.db_per_hz) - maximum(changed.value().psd.db_per_hz)) > 1.0e-4,
+          "Window and FFT parameters did not change the computed PSD values");
+  require(baseline.value().settings_hash != changed.value().settings_hash &&
+              baseline.value().cache_key != changed.value().cache_key,
+          "Numerically distinct parameter snapshots produced identical identities");
+  const auto presets = controller.built_in_analysis_presets(imported);
+  require(presets.size() == 6U &&
+              std::ranges::all_of(presets,
+                                  [](const signal::studio::AnalysisPreset& preset) {
+                                    return preset.description.find("场景：") != std::string::npos &&
+                                           preset.description.find("频率分辨率") != std::string::npos &&
+                                           preset.description.find("时间步进") != std::string::npos &&
+                                           preset.description.find("噪声方差=") != std::string::npos &&
+                                           preset.description.find("计算代价=") != std::string::npos &&
+                                           preset.description.find("平滑=") != std::string::npos &&
+                                           preset.description.find("窄峰风险=") != std::string::npos &&
+                                           preset.description.find("短突发风险=") != std::string::npos;
+                                  }),
+          "内置预设未逐项说明场景、分辨率、方差、代价、平滑和风险");
+}
+
+void test_ms45_cache_key_and_hit() {
+  TemporaryDirectory temporary;
+  signal::studio::ApplicationController controller{temporary.path() / "state"};
+  require(controller.create_project(temporary.path() / "cache.signal-workspace", "ms45-cache"),
+          "MS-4.5 cache project creation failed");
+  const auto imported = import_fixture(controller, temporary.path());
+  const auto settings = compact_analysis_settings(controller);
+  const auto first_request = controller.task_runtime().issue_view_request("ms45-cache");
+  auto first = controller.analyze(imported, settings, false, nullptr, first_request, "task-cache-first");
+  require(first && !first.value().cache_hit, "First MS-4.5 analysis unexpectedly reported a cache hit");
+  const auto second_request = controller.task_runtime().issue_view_request("ms45-cache");
+  auto second = controller.analyze(imported, settings, false, nullptr, second_request, "task-cache-second");
+  require(second && second.value().cache_hit && second.value().cache_key == first.value().cache_key,
+          "Identical MS-4.5 settings did not hit the same cache entry");
+
+  const auto fields = split(first.value().cache_key, '|');
+  require(fields.size() == 15U && fields[0] == "signal.analysis-cache/1.2" && fields[1] == "ms45-cache" &&
+              !fields[2].empty() && fields[3] == imported.fingerprint.version_id &&
+              fields[4] == std::to_string(imported.loaded->range().begin()) + ":" +
+                               std::to_string(imported.loaded->range().end()) &&
+              fields[6] == settings.algorithm_version && fields[7] == "cpu-only" && !fields[8].empty() &&
+              !fields[9].empty() && fields[10] == first.value().settings_hash.stable_text() &&
+              fields[13] == "views:11" && fields[14] == "raw+smoothed",
+          "Analysis cache key omits source/range/algorithm/backend/parameter/output identity");
+  auto sidecar = signal::data::serialize_sidecar(imported.descriptor);
+  require(sidecar, "Cache-key descriptor serialization failed");
+  auto descriptor_digest =
+      signal::core::hash_bytes(std::as_bytes(std::span<const char>{sidecar.value().data(), sidecar.value().size()}));
+  require(descriptor_digest && fields[5] == descriptor_digest.value().hex(),
+          "Analysis cache key does not contain the real SignalDescriptor digest");
+
+  require(controller.commit_analysis(second.value(), second_request),
+          "Cache baseline could not become the current analysis for minimal invalidation");
+  auto smoothing_only = settings;
+  smoothing_only.spectrum.smoothing = {signal::dsp::SpectrumSmoothingKind::gaussian, 5U, 1.0, 0U};
+  const auto smoothing_request = controller.task_runtime().issue_view_request("ms45-cache");
+  auto smoothed =
+      controller.analyze(imported, smoothing_only, false, nullptr, smoothing_request, "task-smoothing-only");
+  require(smoothed && !smoothed.value().cache_hit &&
+              smoothed.value().invalidation == signal::dsp::AnalysisInvalidation::spectrum_smoothing &&
+              smoothed.value().spectrum_transform_reused && smoothed.value().spectrogram_transform_reused &&
+              smoothed.value().psd.raw_linear_values == second.value().psd.raw_linear_values &&
+              smoothed.value().stft.raw_linear_values == second.value().stft.raw_linear_values &&
+              smoothed.value().stft.values == second.value().stft.values &&
+              smoothed.value().psd.values != second.value().psd.values,
+          "Smoothing-only change did not reuse raw spectrum/STFT results with minimal invalidation");
+
+  const auto spectrum_only_request = controller.task_runtime().issue_view_request("ms45-cache-views");
+  auto spectrum_only = controller.analyze(imported, settings, false, nullptr, spectrum_only_request,
+                                          "task-spectrum-only", {true, false});
+  const auto spectrogram_only_request = controller.task_runtime().issue_view_request("ms45-cache-views");
+  auto spectrogram_only = controller.analyze(imported, settings, false, nullptr, spectrogram_only_request,
+                                             "task-spectrogram-only", {false, true});
+  require(spectrum_only && spectrogram_only && !spectrum_only.value().psd.values.empty() &&
+              spectrum_only.value().stft.values.empty() && !spectrum_only.value().frame.psd_db_hz.empty() &&
+              spectrum_only.value().frame.stft_db.empty() && spectrogram_only.value().psd.values.empty() &&
+              !spectrogram_only.value().stft.values.empty() && spectrogram_only.value().frame.psd_db_hz.empty() &&
+              !spectrogram_only.value().frame.stft_db.empty() &&
+              spectrum_only.value().cache_key != spectrogram_only.value().cache_key &&
+              split(spectrum_only.value().cache_key, '|')[13] == "views:10" &&
+              split(spectrogram_only.value().cache_key, '|')[13] == "views:01",
+          "隐藏图表仍执行计算，或视图集合未进入缓存身份");
+
+  auto hidden_stft_invalid = settings;
+  hidden_stft_invalid.spectrogram.frame_length = imported.loaded->samples().size() * 2U;
+  hidden_stft_invalid.spectrogram.fft_length = hidden_stft_invalid.spectrogram.frame_length;
+  const auto hidden_stft_request = controller.task_runtime().issue_view_request("ms45-cache-hidden-invalid");
+  auto visible_spectrum = controller.analyze(imported, hidden_stft_invalid, false, nullptr, hidden_stft_request,
+                                             "task-hidden-stft-invalid", {true, false});
+  require(visible_spectrum && visible_spectrum.value().cost.spectrogram_rows == 0U &&
+              visible_spectrum.value().cost.spectrogram_columns == 0U,
+          "隐藏 STFT 的非法参数仍阻止 PSD-only 分析或占用资源预算");
+
+  auto hidden_spectrum_invalid = settings;
+  hidden_spectrum_invalid.spectrum.frame_length = imported.loaded->samples().size() * 2U;
+  hidden_spectrum_invalid.spectrum.fft_length = hidden_spectrum_invalid.spectrum.frame_length;
+  const auto hidden_spectrum_request = controller.task_runtime().issue_view_request("ms45-cache-hidden-invalid");
+  auto visible_stft = controller.analyze(imported, hidden_spectrum_invalid, false, nullptr, hidden_spectrum_request,
+                                         "task-hidden-spectrum-invalid", {false, true});
+  require(visible_stft && visible_stft.value().cost.spectrum_segment_count == 0U &&
+              visible_stft.value().cost.spectrum_output_bins == 0U,
+          "隐藏 PSD 的非法参数仍阻止 STFT-only 分析或占用资源预算");
+}
+
+void test_ms45_latest_view_commit() {
+  TemporaryDirectory temporary;
+  signal::studio::ApplicationController controller{temporary.path() / "state"};
+  require(controller.create_project(temporary.path() / "latest.signal-workspace", "ms45-latest"),
+          "MS-4.5 latest-result project creation failed");
+  const auto imported = import_fixture(controller, temporary.path(), 4096U);
+  auto settings = compact_analysis_settings(controller);
+  const auto stale_request = controller.task_runtime().issue_view_request("signal-studio.analysis");
+  auto latest_settings = settings;
+  latest_settings.spectrum.smoothing = {signal::dsp::SpectrumSmoothingKind::gaussian, 5U, 1.0, 0U};
+  const auto current_request = controller.task_runtime().issue_view_request("signal-studio.analysis");
+
+  auto stale_future = std::async(std::launch::async, [&] {
+    return controller.analyze(imported, settings, false, nullptr, stale_request, "task-stale");
+  });
+  auto current_future = std::async(std::launch::async, [&] {
+    return controller.analyze(imported, latest_settings, false, nullptr, current_request, "task-current");
+  });
+  auto stale = stale_future.get();
+  auto current = current_future.get();
+  require(stale && current, "并发参数分析未全部完成");
+  require(!controller.commit_analysis(stale.value(), stale_request) && !controller.current_analysis(),
+          "Superseded ViewRequestId was allowed to commit an old result");
+  require(controller.commit_analysis(current.value(), current_request),
+          "Latest ViewRequestId could not commit the current result");
+  require(controller.current_analysis() && controller.current_analysis()->task_id == "task-current" &&
+              controller.current_analysis()->view_request == current_request &&
+              controller.current_analysis()->settings_hash == current.value().settings_hash,
+          "Latest-result commit did not publish the matching task/request provenance");
+}
+
+void test_ms45_project_switch_invalidates_analysis() {
+  TemporaryDirectory temporary;
+  signal::studio::ApplicationController controller{temporary.path() / "state"};
+  const auto project_a = temporary.path() / "project-a.signal-workspace";
+  const auto project_b = temporary.path() / "project-b.signal-workspace";
+  const auto project_c = temporary.path() / "project-c.signal-workspace";
+  const auto stale_import_project = temporary.path() / "stale-import.signal-workspace";
+  std::filesystem::create_directories(temporary.path() / "source-a");
+  std::filesystem::create_directories(temporary.path() / "source-b");
+  std::filesystem::create_directories(temporary.path() / "stale-source");
+  require(controller.create_project(stale_import_project, "stale-import"), "MS-4.5 stale-import project create failed");
+  const auto stale_source = write_sc16(temporary.path() / "stale-source" / "stale_cf10MHz_sr1MSps.sc16", 262'144U);
+  auto stale_descriptor =
+      signal::studio::make_confirmed_descriptor(stale_source, signal::studio::parse_filename_hints(stale_source), true);
+  require(stale_descriptor, "MS-4.5 stale-import descriptor failed");
+  auto stale_import = controller.start_import(
+      {stale_source, stale_descriptor.value(), signal::data::SourceFormat::raw, 262'144U * 4U, 4U * 1024U});
+  require(stale_import, "MS-4.5 stale-import submission failed");
+  require(controller.create_project(project_a, "project-a"), "MS-4.5 project A create failed");
+  auto stale_result = controller.finalize_import(stale_import.value());
+  require(!stale_result && controller.workspace().project_id == "project-a" &&
+              controller.workspace().data_sources.empty() && !controller.current_signal(),
+          "旧工程导入在工程切换后污染了新工程");
+  auto imported_a = import_fixture(controller, temporary.path() / "source-a", 32'768U);
+  auto settings = compact_analysis_settings(controller);
+  const auto request_a = controller.task_runtime().issue_view_request("signal-studio.analysis");
+  auto analysis_a = controller.analyze(imported_a, settings, false, nullptr, request_a, "task-project-a");
+  require(analysis_a && analysis_a.value().project_id == "project-a", "Project A analysis provenance missing");
+
+  require(controller.create_project(project_b, "project-b"), "MS-4.5 project B create failed");
+  require(!controller.commit_analysis(analysis_a.value(), request_a),
+          "Project A result committed after switching to project B");
+  require(!controller.commit_measurement(analysis_a.value(), "old-selection", "old-channel"),
+          "Project A artifact committed after switching to project B");
+  require(controller.workspace().project_id == "project-b" && !controller.current_signal() &&
+              !controller.current_analysis(),
+          "Project switch retained the previous source or analysis");
+
+  auto imported_b = import_fixture(controller, temporary.path() / "source-b", 262'144U);
+  auto slow_settings = settings;
+  slow_settings.spectrum.analysis_range_policy = signal::dsp::AnalysisRangePolicy::all_complete_frames;
+  slow_settings.spectrum.estimator = {signal::dsp::PsdEstimatorKind::welch, 0.5, 0U};
+  slow_settings.spectrum.accumulation = {signal::dsp::SpectrumAccumulationMode::linear_average, 0U, 1.0, 0U};
+  const auto request_b = controller.task_runtime().issue_view_request("signal-studio.analysis");
+  auto running = std::async(std::launch::async, [&controller, imported_b, slow_settings, request_b] {
+    return controller.analyze(imported_b, slow_settings, false, nullptr, request_b, "task-project-b");
+  });
+  require(running.wait_for(std::chrono::milliseconds{5}) == std::future_status::timeout,
+          "并发工程切换测试未能确认分析任务已经运行");
+  const auto switched_at = std::chrono::steady_clock::now();
+  require(controller.create_project(project_c, "project-c"), "MS-4.5 project C create failed");
+  const auto switch_duration = std::chrono::steady_clock::now() - switched_at;
+  require(switch_duration < std::chrono::milliseconds{500}, "工程切换在运行中分析期间阻塞了调用线程");
+  auto completed = running.get();
+  require(!completed, "工程切换后旧工程分析仍返回了可缓存结果");
+  require(controller.workspace().project_id == "project-c" && !controller.current_signal() &&
+              !controller.current_analysis(),
+          "Concurrent project switch published stale source or analysis state");
+}
+
+void test_ms45_project_settings_persistence_and_migration() {
+  TemporaryDirectory temporary;
+  const auto project = temporary.path() / "settings.signal-workspace";
+  signal::core::WorkspaceStore workspace_store;
+  signal::dsp::AnalysisSettingsSnapshot expected_settings;
+  signal::studio::AnalysisDisplaySettings expected_display;
+  {
+    signal::studio::ApplicationController controller{temporary.path() / "state-write"};
+    require(controller.create_project(project, "ms45-settings"), "MS-4.5 settings project creation failed");
+    static_cast<void>(import_fixture(controller, temporary.path()));
+    expected_settings = compact_analysis_settings(controller);
+    expected_settings.spectrum.window = {signal::dsp::WindowKind::kaiser, 8.0};
+    expected_settings.spectrum.smoothing = {signal::dsp::SpectrumSmoothingKind::gaussian, 7U, 1.25, 0U};
+    expected_display.mapping.range_mode = signal::visualization::RangeMode::manual;
+    expected_display.mapping.minimum = -110.0;
+    expected_display.mapping.maximum = -10.0;
+    expected_display.mapping.reference_level = -10.0;
+    expected_display.mapping.dynamic_range = 100.0;
+    expected_display.mapping.color_map = "Viridis";
+    expected_display.interpolation = "linear";
+    expected_display.frequency_axis_mode = "baseband";
+    require(controller.set_analysis_settings(expected_settings) &&
+                controller.set_analysis_display_settings(expected_display) &&
+                controller.save_user_analysis_preset("lab-preset", expected_settings) &&
+                controller.set_active_analysis_preset("user:lab-preset", expected_settings, "project-channel") &&
+                controller.save_project(),
+            "MS-4.5 settings/display/preset persistence write failed");
+  }
+  {
+    signal::studio::ApplicationController restored{temporary.path() / "state-read"};
+    require(restored.open_project(project), "MS-4.5 settings project reopen failed");
+    auto expected_serialized = signal::dsp::serialize_analysis_settings(expected_settings);
+    auto actual_serialized = signal::dsp::serialize_analysis_settings(restored.analysis_settings());
+    const auto presets = restored.user_analysis_presets();
+    const auto& extensions = restored.workspace().extensions;
+    require(expected_serialized && actual_serialized && expected_serialized.value() == actual_serialized.value() &&
+                restored.analysis_display_settings() == expected_display && presets.contains("lab-preset") &&
+                extensions.at("signal.analysis-scope") == "\"project-channel\"" &&
+                extensions.at("signal.analysis-active-preset") == "\"user:lab-preset\"" &&
+                extensions.at("signal.analysis-active-preset-hash").find("sha256:") != std::string::npos,
+            "Project analysis/display settings or user preset did not restore");
+    auto preset_serialized = signal::dsp::serialize_analysis_settings(presets.at("lab-preset"));
+    require(preset_serialized && preset_serialized.value() == expected_serialized.value(),
+            "Restored user preset differs from the saved parameter snapshot");
+  }
+
+  const auto corrupt_project = temporary.path() / "corrupt-optional.signal-workspace";
+  auto corrupt_workspace = workspace_store.load(project);
+  require(corrupt_workspace, "Corrupt optional-extension fixture load failed");
+  corrupt_workspace.value().extensions["signal.analysis-display"] = json_string("not-a-display-schema");
+  corrupt_workspace.value().extensions["signal.analysis-user-preset.bad"] = json_string("not-analysis-settings");
+  require(workspace_store.save(corrupt_project, corrupt_workspace.value()),
+          "Corrupt optional-extension fixture save failed");
+  {
+    signal::studio::ApplicationController recovered{temporary.path() / "state-corrupt"};
+    require(recovered.open_project(corrupt_project) &&
+                recovered.analysis_settings().spectrum.window == expected_settings.spectrum.window &&
+                recovered.analysis_display_settings() == signal::studio::AnalysisDisplaySettings{} &&
+                recovered.user_analysis_presets().contains("lab-preset") &&
+                !recovered.user_analysis_presets().contains("bad"),
+            "损坏的可选显示/预设扩展未按字段回退，或破坏了有效分析参数");
+  }
+
+  const auto legacy_project = temporary.path() / "legacy.signal-workspace";
+  auto legacy = workspace_store.create("ms45-legacy");
+  require(legacy && legacy.value().extensions.empty() && workspace_store.save(legacy_project, legacy.value()),
+          "Legacy project fixture creation failed");
+  {
+    signal::studio::ApplicationController migrated{temporary.path() / "state-legacy"};
+    require(migrated.open_project(legacy_project) &&
+                migrated.analysis_settings().schema == "signal.analysis-settings/1.0" &&
+                migrated.analysis_display_settings().schema == "signal.analysis-display/1.0" &&
+                migrated.user_analysis_presets().empty() && migrated.save_project(),
+            "Legacy project without analysis fields did not migrate to defaults");
+  }
+  auto migrated_workspace = workspace_store.load(legacy_project);
+  require(migrated_workspace && migrated_workspace.value().extensions.contains("signal.analysis-settings") &&
+              migrated_workspace.value().extensions.contains("signal.analysis-display") &&
+              migrated_workspace.value().extensions.contains("signal.analysis-scope"),
+          "Legacy project migration did not persist the new analysis extension fields");
+
+  const auto future_project = temporary.path() / "future.signal-workspace";
+  auto future = workspace_store.create("ms45-future");
+  auto future_settings = signal::dsp::serialize_analysis_settings(expected_settings);
+  require(future && future_settings, "Future-version project fixture setup failed");
+  const auto schema_position = future_settings.value().find("signal.analysis-settings/1.0");
+  require(schema_position != std::string::npos, "Serialized analysis schema marker missing");
+  future_settings.value().replace(schema_position, std::string_view{"signal.analysis-settings/1.0"}.size(),
+                                  "signal.analysis-settings/2.0");
+  future.value().extensions["signal.analysis-settings"] = json_string(future_settings.value());
+  require(workspace_store.save(future_project, future.value()), "Future-version project fixture save failed");
+  signal::studio::ApplicationController rejected{temporary.path() / "state-future"};
+  require(rejected.open_project(project), "事务回滚测试无法先打开有效工程");
+  const auto original_project_id = rejected.workspace().project_id;
+  const auto original_path = rejected.project_path();
+  const auto original_settings = rejected.analysis_settings();
+  const auto original_settings_text = signal::dsp::serialize_analysis_settings(original_settings);
+  const auto opened = rejected.open_project(future_project);
+  const auto retained_settings_text = signal::dsp::serialize_analysis_settings(rejected.analysis_settings());
+  require(!opened && opened.code().reason == signal::core::ErrorReason::unavailable &&
+              rejected.workspace().project_id == original_project_id && rejected.project_path() == original_path &&
+              original_settings_text && retained_settings_text &&
+              original_settings_text.value() == retained_settings_text.value(),
+          "Unsupported future analysis version was not rejected transactionally");
+}
+
+void test_ms45_artifact_parameter_hash_and_provenance() {
+  TemporaryDirectory temporary;
+  signal::studio::ApplicationController controller{temporary.path() / "state"};
+  require(controller.create_project(temporary.path() / "artifact.signal-workspace", "ms45-artifact"),
+          "MS-4.5 artifact project creation failed");
+  const auto imported = import_fixture(controller, temporary.path());
+  auto settings = compact_analysis_settings(controller);
+  settings.spectrum.window = {signal::dsp::WindowKind::tukey, 0.3};
+  const auto request = controller.task_runtime().issue_view_request("signal-studio.analysis");
+  auto analysis = controller.analyze(imported, settings, false, nullptr, request, "task-ms45-artifact");
+  require(analysis && controller.commit_analysis(analysis.value(), request), "MS-4.5 artifact analysis failed");
+  auto artifact = controller.commit_measurement(analysis.value(), "SEL-MS45", "CH-MS45");
+  require(artifact, "MS-4.5 measurement artifact commit failed");
+
+  auto serialized = signal::dsp::serialize_analysis_settings(settings);
+  require(serialized, "Artifact settings serialization failed");
+  auto expected_digest = signal::core::hash_bytes(
+      std::as_bytes(std::span<const char>{serialized.value().data(), serialized.value().size()}));
+  require(expected_digest && analysis.value().settings_hash.algorithm == "sha256" &&
+              analysis.value().settings_hash.hex.size() == 64U &&
+              std::ranges::all_of(analysis.value().settings_hash.hex,
+                                  [](unsigned char character) {
+                                    return std::isxdigit(character) != 0 && (character < 'A' || character > 'F');
+                                  }) &&
+              analysis.value().settings_hash.hex == expected_digest.value().hex(),
+          "Artifact parameter identity is not the real lowercase SHA-256 of the normalized snapshot");
+  const auto& source = artifact.value().descriptor.provenance;
+  require(source.project_id == "ms45-artifact" && source.data_source_version_id == imported.fingerprint.version_id &&
+              source.selection_id == "SEL-MS45" && source.channel_id == "CH-MS45" &&
+              source.channel_version == analysis.value().inspector.channel_version &&
+              source.task_id == "task-ms45-artifact" && source.algorithm_id == "signal.dsp.psd" &&
+              source.algorithm_version == settings.algorithm_version &&
+              source.parameter_version == analysis.value().settings_hash.stable_text(),
+          "Artifact provenance omits or substitutes the real analysis source identity");
+  const auto& metadata = artifact.value().descriptor.metadata;
+  const std::array<std::string_view, 19> required_metadata{
+      "backend",        "device",       "parameterSchema",   "parameterSnapshot", "parameterHash", "sourceRangeBegin",
+      "sourceRangeEnd", "sampleRateHz", "centerFrequencyHz", "fftSize",           "frameLength",   "window",
+      "enbwHz",         "rbwHz",        "estimator",         "accumulation",      "smoothing",     "prefilterApplied",
+      "cacheKey"};
+  require(std::ranges::all_of(required_metadata,
+                              [&metadata](std::string_view key) { return metadata.contains(std::string{key}); }) &&
+              metadata.at("parameterHash") == analysis.value().settings_hash.stable_text() &&
+              metadata.at("parameterSnapshot") == serialized.value() &&
+              metadata.at("cacheKey") == analysis.value().cache_key,
+          "Artifact metadata is missing the normalized parameters, source range, DSP identity, or cache trace");
+  std::ifstream payload{artifact.value().payload_path, std::ios::binary};
+  const std::string payload_text{std::istreambuf_iterator<char>{payload}, std::istreambuf_iterator<char>{}};
+  require(payload_text.find(analysis.value().settings_hash.stable_text()) != std::string::npos &&
+              payload_text.find("\"provenance\"") != std::string::npos,
+          "Committed artifact payload does not retain parameter-hash and provenance evidence");
+}
+
+void test_ms45_parameter_switch_stability(std::chrono::seconds duration) {
+  TemporaryDirectory temporary;
+  signal::studio::ApplicationController controller{temporary.path() / "state"};
+  require(controller.create_project(temporary.path() / "stability.signal-workspace", "ms45-stability"),
+          "MS-4.5 stability project creation failed");
+  const auto imported = import_fixture(controller, temporary.path());
+
+  std::array<signal::dsp::AnalysisSettingsSnapshot, 4U> variants;
+  variants[0] = compact_analysis_settings(controller);
+
+  variants[1] = variants[0];
+  variants[1].spectrum.analysis_range_policy = signal::dsp::AnalysisRangePolicy::all_complete_frames;
+  variants[1].spectrum.frame_length = 512U;
+  variants[1].spectrum.fft_length = 1024U;
+  variants[1].spectrum.zero_padding_policy = signal::dsp::ZeroPaddingPolicy::enabled;
+  variants[1].spectrum.window = {signal::dsp::WindowKind::blackman_harris, 0.0};
+  variants[1].spectrum.output_quantity = signal::dsp::SpectrumOutputQuantity::psd_dbfs_per_hz;
+  variants[1].spectrum.normalization = signal::dsp::SpectrumNormalization::window_power;
+  variants[1].spectrum.estimator = {signal::dsp::PsdEstimatorKind::welch, 0.5, 8U};
+  variants[1].spectrum.accumulation = {signal::dsp::SpectrumAccumulationMode::linear_average, 8U, 1.0, 0U};
+  variants[1].spectrum.smoothing = {signal::dsp::SpectrumSmoothingKind::gaussian, 7U, 1.25, 0U};
+  variants[1].spectrogram.frame_length = 256U;
+  variants[1].spectrogram.fft_length = 512U;
+  variants[1].spectrogram.hop_length = 64U;
+  variants[1].spectrogram.window = {signal::dsp::WindowKind::kaiser, 7.5};
+  variants[1].spectrogram.padding_policy = signal::dsp::ZeroPaddingPolicy::enabled;
+  variants[1].spectrogram.smoothing = {signal::dsp::SpectrogramFrequencySmoothingKind::gaussian, 5U, 1.0,
+                                       signal::dsp::SpectrogramTimeSmoothingKind::exponential, 0.35};
+
+  variants[2] = variants[0];
+  variants[2].spectrum.analysis_range_policy = signal::dsp::AnalysisRangePolicy::all_complete_frames;
+  variants[2].spectrum.frame_length = 1024U;
+  variants[2].spectrum.fft_length = 2048U;
+  variants[2].spectrum.zero_padding_policy = signal::dsp::ZeroPaddingPolicy::enabled;
+  variants[2].spectrum.window = {signal::dsp::WindowKind::tukey, 0.3};
+  variants[2].spectrum.accumulation = {signal::dsp::SpectrumAccumulationMode::maximum_hold, 8U, 1.0, 1U};
+  variants[2].spectrum.smoothing = {signal::dsp::SpectrumSmoothingKind::savitzky_golay, 7U, 0.0, 3U};
+  variants[2].spectrogram.frame_length = 512U;
+  variants[2].spectrogram.fft_length = 512U;
+  variants[2].spectrogram.hop_length = 256U;
+  variants[2].spectrogram.window = {signal::dsp::WindowKind::tukey, 0.25};
+
+  variants[3] = variants[0];
+  variants[3].spectrum.analysis_range_policy = signal::dsp::AnalysisRangePolicy::all_complete_frames;
+  variants[3].spectrum.frame_length = 256U;
+  variants[3].spectrum.fft_length = 256U;
+  variants[3].spectrum.window = {signal::dsp::WindowKind::hamming, 0.0};
+  variants[3].spectrum.estimator = {signal::dsp::PsdEstimatorKind::welch, 0.75, 12U};
+  variants[3].spectrum.accumulation = {signal::dsp::SpectrumAccumulationMode::exponential_average, 12U, 0.2, 0U};
+  variants[3].spectrum.smoothing = {signal::dsp::SpectrumSmoothingKind::moving_average, 5U, 0.0, 0U};
+  variants[3].spectrogram.frame_length = 128U;
+  variants[3].spectrogram.fft_length = 256U;
+  variants[3].spectrogram.hop_length = 32U;
+  variants[3].spectrogram.window = {signal::dsp::WindowKind::flat_top, 0.0};
+  variants[3].spectrogram.padding_policy = signal::dsp::ZeroPaddingPolicy::enabled;
+  variants[3].spectrogram.smoothing = {signal::dsp::SpectrogramFrequencySmoothingKind::none, 0U, 0.0,
+                                       signal::dsp::SpectrogramTimeSmoothingKind::exponential, 0.5};
+
+  signal::visualization::ViewportController viewport{"ms45-stability"};
+  const auto frequency_range = signal::visualization::make_frequency_range(9'500'000, 10'500'000);
+  require(frequency_range &&
+              viewport.bind_source(imported.fingerprint.version_id, imported.loaded->range(), frequency_range.value()),
+          "MS-4.5 stability viewport setup failed");
+
+  const auto deadline = std::chrono::steady_clock::now() + duration;
+  std::uint64_t iterations{};
+  std::uint64_t committed{};
+  std::uint64_t stale_rejected{};
+  std::uint64_t cache_hits{};
+  do {
+    const auto variant_index = static_cast<std::size_t>(iterations % variants.size());
+    require(controller.set_analysis_settings(variants[variant_index]), "MS-4.5 stability parameter switch failed");
+
+    auto display = controller.analysis_display_settings();
+    display.mapping.range_mode = signal::visualization::RangeMode::manual;
+    display.mapping.minimum = variant_index % 2U == 0U ? -120.0 : -100.0;
+    display.mapping.maximum = variant_index % 2U == 0U ? -20.0 : -10.0;
+    display.mapping.reference_level = display.mapping.maximum;
+    display.mapping.dynamic_range = display.mapping.maximum - display.mapping.minimum;
+    display.mapping.color_map = variant_index % 2U == 0U ? "Industrial" : "Viridis";
+    display.interpolation = variant_index % 2U == 0U ? "nearest" : "linear";
+    display.frequency_axis_mode = variant_index % 2U == 0U ? "absolute-if-available" : "baseband";
+    require(controller.set_analysis_display_settings(display), "MS-4.5 stability display switch failed");
+
+    const auto span = variant_index % 2U == 0U ? 2048U : 4096U;
+    const auto maximum_begin = imported.loaded->range().size() - span;
+    const auto begin = maximum_begin == 0U ? 0U : (iterations * 257U) % maximum_begin;
+    require(viewport.resize_time(begin, span), "MS-4.5 stability time zoom failed");
+    const auto view_frequency =
+        variant_index % 2U == 0U ? signal::visualization::make_frequency_range(9'750'000, 10'250'000) : frequency_range;
+    require(view_frequency && viewport.set_frequency(view_frequency.value()),
+            "MS-4.5 stability frequency view switch failed");
+
+    const auto request = controller.task_runtime().issue_view_request("ms45-parameter-stability");
+    auto analysis = controller.analyze(imported, variants[variant_index], false, nullptr, request,
+                                       "ms45-stability-" + std::to_string(iterations));
+    require(analysis, "MS-4.5 stability analysis failed");
+    cache_hits += analysis.value().cache_hit ? 1U : 0U;
+
+    if (iterations % 17U == 0U) {
+      const auto current = controller.task_runtime().issue_view_request("ms45-parameter-stability");
+      require(!controller.commit_analysis(std::move(analysis).value(), request),
+              "MS-4.5 stability accepted a stale result");
+      ++stale_rejected;
+      analysis = controller.analyze(imported, variants[variant_index], false, nullptr, current,
+                                    "ms45-stability-current-" + std::to_string(iterations));
+      require(analysis && controller.commit_analysis(std::move(analysis).value(), current),
+              "MS-4.5 stability latest result commit failed");
+    } else {
+      require(controller.commit_analysis(std::move(analysis).value(), request),
+              "MS-4.5 stability current result commit failed");
+    }
+    ++committed;
+    ++iterations;
+    std::this_thread::sleep_for(std::chrono::milliseconds{5});
+  } while (std::chrono::steady_clock::now() < deadline);
+
+  require(iterations >= 4U && committed == iterations && stale_rejected > 0U && cache_hits > 0U &&
+              static_cast<bool>(controller.current_analysis()),
+          "MS-4.5 stability did not exercise bounded cache/latest-result/view switching");
+  std::cout << "ms45_stability_iterations=" << iterations << " duration_seconds=" << duration.count()
+            << " cache_hits=" << cache_hits << " stale_rejected=" << stale_rejected << '\n';
+}
+
 void test_headless_self_test() {
   TemporaryDirectory temporary;
   require(signal::studio::run_headless_self_test(temporary.path()), "Headless application self-test failed");
@@ -597,6 +1188,13 @@ int main(int argc, char* argv[]) {
         {"NFR-REL-003", test_rel_failure_source_safety},
         {"NFR-REL-004", test_rel_checksum},
         {"APP-PROJECT-IMPORT-ANALYSIS", test_application_flow},
+        {"APP-MS45-PARAMETER-EFFECTS", test_ms45_parameter_effects},
+        {"APP-MS45-CACHE-KEY-HIT", test_ms45_cache_key_and_hit},
+        {"APP-MS45-LATEST-VIEW-COMMIT", test_ms45_latest_view_commit},
+        {"APP-MS45-PROJECT-SWITCH-INVALIDATION", test_ms45_project_switch_invalidates_analysis},
+        {"APP-MS45-PROJECT-PERSISTENCE-MIGRATION", test_ms45_project_settings_persistence_and_migration},
+        {"APP-MS45-ARTIFACT-PROVENANCE", test_ms45_artifact_parameter_hash_and_provenance},
+        {"APP-MS45-PARAMETER-STABILITY", [soak_seconds] { test_ms45_parameter_switch_stability(soak_seconds); }},
         {"APP-CANCEL-RETRY", test_cancel_retry},
         {"APP-ERROR-RECOVERY", test_error_recovery},
         {"APP-HEADLESS-SELF-TEST", test_headless_self_test},

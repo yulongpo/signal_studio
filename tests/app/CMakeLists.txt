@@ -19,6 +19,19 @@ foreach(_case IN ITEMS
     TIMEOUT 120 LABELS "unit;integration;requirement;ms-04")
 endforeach()
 
+foreach(_case IN ITEMS
+    APP-MS45-PARAMETER-EFFECTS
+    APP-MS45-CACHE-KEY-HIT
+    APP-MS45-LATEST-VIEW-COMMIT
+    APP-MS45-PROJECT-SWITCH-INVALIDATION
+    APP-MS45-PROJECT-PERSISTENCE-MIGRATION
+    APP-MS45-ARTIFACT-PROVENANCE
+    APP-MS45-PARAMETER-STABILITY)
+  add_test(NAME "ms45.${_case}" COMMAND signal_studio_ms04_tests --case "${_case}")
+  set_tests_properties("ms45.${_case}" PROPERTIES
+    TIMEOUT 60 LABELS "unit;integration;requirement;ms-4.5")
+endforeach()
+
 if(SIGNAL_STUDIO_EXTERNAL_TEST_DATA_AVAILABLE)
   add_test(NAME ms04.EXTERNAL-ALL-RECORDINGS
     COMMAND signal_studio_ms04_tests --case EXTERNAL-ALL-RECORDINGS)
@@ -99,4 +112,63 @@ if(SIGNAL_STUDIO_MS02_PERF_RECORDING_AVAILABLE)
       TIMEOUT 120 LABELS "qt;ui;screenshot;external-data;ms-04"
       ENVIRONMENT "${_signal_studio_ms04_ui_environment}")
   endforeach()
+endif()
+
+add_test(NAME ms45.ui.analysis-settings-panel-contract
+  COMMAND signal_studio
+    --input "${CMAKE_SOURCE_DIR}/test_data/minimal/stereo_iq_int16.wav"
+    --analysis-settings-smoke --page p03 --width 1600 --height 900
+    --state-dir "${CMAKE_CURRENT_BINARY_DIR}/state-ms45-panel")
+set_tests_properties(ms45.ui.analysis-settings-panel-contract PROPERTIES
+  TIMEOUT 120 LABELS "qt;ui;designer;integration;requirement;ms-4.5"
+  ENVIRONMENT "${_signal_studio_ms04_ui_environment}")
+
+foreach(_size IN ITEMS 1280x720 1920x1080 3840x2160)
+  string(REPLACE "x" ";" _dimensions "${_size}")
+  list(GET _dimensions 0 _width)
+  list(GET _dimensions 1 _height)
+  add_test(NAME "ms45.ui.p03.${_size}"
+    COMMAND signal_studio --startup-smoke --page p03 --width "${_width}" --height "${_height}"
+      --state-dir "${CMAKE_CURRENT_BINARY_DIR}/state-ms45-${_size}")
+  set_tests_properties("ms45.ui.p03.${_size}" PROPERTIES
+    TIMEOUT 30 LABELS "qt;ui;layout;ms-4.5"
+    ENVIRONMENT "${_signal_studio_ms04_ui_environment}")
+endforeach()
+
+foreach(_dpi_case IN ITEMS
+    "125-percent|1.25"
+    "150-percent|1.5"
+    "175-percent|1.75"
+    "200-percent|2")
+  string(REPLACE "|" ";" _dpi_parts "${_dpi_case}")
+  list(GET _dpi_parts 0 _dpi_name)
+  list(GET _dpi_parts 1 _dpi_scale)
+  add_test(NAME "ms45.ui.p03.${_dpi_name}-dpi"
+    COMMAND signal_studio --startup-smoke --page p03 --width 1920 --height 1080
+      --state-dir "${CMAKE_CURRENT_BINARY_DIR}/state-ms45-${_dpi_name}")
+  set_tests_properties("ms45.ui.p03.${_dpi_name}-dpi" PROPERTIES
+    TIMEOUT 30 LABELS "qt;ui;dpi;ms-4.5"
+    ENVIRONMENT
+      "${_signal_studio_ms04_ui_environment};QT_SCALE_FACTOR=${_dpi_scale};QT_SCALE_FACTOR_ROUNDING_POLICY=PassThrough")
+endforeach()
+
+add_test(NAME ms45.ui.analysis-runtime
+  COMMAND signal_studio
+    --input "${CMAKE_SOURCE_DIR}/test_data/minimal/stereo_iq_int16.wav"
+    --analysis-runtime-smoke --page p03 --width 1600 --height 900
+    --state-dir "${CMAKE_CURRENT_BINARY_DIR}/state-ms45-runtime")
+set_tests_properties(ms45.ui.analysis-runtime PROPERTIES
+  TIMEOUT 120 LABELS "qt;ui;async;performance;requirement;ms-4.5"
+  ENVIRONMENT "${_signal_studio_ms04_ui_environment}")
+
+if(SIGNAL_STUDIO_MS02_PERF_RECORDING_AVAILABLE)
+  add_test(NAME ms45.ui.screenshot.p03
+    COMMAND signal_studio
+      --input "${SIGNAL_STUDIO_MS02_PERF_RECORDING}"
+      --screenshot "${CMAKE_CURRENT_BINARY_DIR}/ms45-p03-1600x900.png"
+      --page p03 --width 1600 --height 900
+      --state-dir "${CMAKE_BINARY_DIR}/s45-p03")
+  set_tests_properties(ms45.ui.screenshot.p03 PROPERTIES
+    TIMEOUT 120 LABELS "qt;ui;screenshot;external-data;ms-4.5"
+    ENVIRONMENT "${_signal_studio_ms04_ui_environment}")
 endif()

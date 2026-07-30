@@ -82,7 +82,8 @@ if(SIGNAL_STUDIO_BUILD_UI)
     add_test(NAME performance.qt.NFR-PERF-010
       COMMAND signal_studio_ms02_qt_performance_tests --case NFR-PERF-010)
     set_tests_properties(performance.qt.NFR-PERF-010 PROPERTIES
-      TIMEOUT 60 LABELS "qt;ui;external-data;performance;requirement;ms-02;actual-paint"
+      TIMEOUT 60 RUN_SERIAL TRUE
+      LABELS "qt;ui;external-data;performance;requirement;ms-02;actual-paint"
       ENVIRONMENT "${_signal_studio_ms02_qt_test_environment}")
   else()
     add_test(NAME performance.qt.NFR-PERF-010 COMMAND "${CMAKE_COMMAND}" -E echo

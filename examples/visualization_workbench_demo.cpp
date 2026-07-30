@@ -155,8 +155,8 @@ int main(int argc, char* argv[]) {
     return 3;
   }
   auto frame = make_demo_frame(controller.snapshot());
-  if (!workspace->bind_frame(std::move(frame))) {
-    std::cerr << "无法原子挂载演示三图\n";
+  if (const auto bound = workspace->bind_frame(std::move(frame)); !bound) {
+    std::cerr << "无法原子挂载演示三图：" << bound.message() << '\n';
     return 4;
   }
   const auto demo_selection = workspace->create_selection(

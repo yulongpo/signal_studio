@@ -48,31 +48,9 @@ public:
     if (!result_.has_value() || kind != actual_kind_) {
       return error(core::ErrorReason::internal_failure, "FFT 操作尚未生成可验证结果");
     }
-    if (kind != compute::BackendKind::cuda) {
-      return compute::ConsistencyMetrics{0.0, 0.0, result_->bins.size() * 2U, false};
-    }
-    const auto reference_plan = plans_.find(compute::BackendKind::cpu_simd);
-    if (reference_plan == plans_.end()) {
-      return error(core::ErrorReason::unavailable, "CUDA FFT 一致性验证缺少 oneMKL CPU 参考");
-    }
-    auto reference = reference_plan->second->process(input_);
-    if (!reference) {
-      return reference.error();
-    }
-    if (reference.value().bins.size() != result_->bins.size()) {
-      return error(core::ErrorReason::internal_failure, "CPU/GPU FFT 输出长度不一致");
-    }
-    std::vector<double> expected;
-    std::vector<double> actual;
-    expected.reserve(reference.value().bins.size() * 2U);
-    actual.reserve(result_->bins.size() * 2U);
-    for (std::size_t index = 0; index < result_->bins.size(); ++index) {
-      expected.push_back(reference.value().bins[index].real);
-      expected.push_back(reference.value().bins[index].imag);
-      actual.push_back(result_->bins[index].real);
-      actual.push_back(result_->bins[index].imag);
-    }
-    return compute::measure_consistency(expected, actual);
+    // CPU/CUDA numerical equivalence is covered by the dedicated backend test matrix.
+    // Production analysis must not synchronously repeat every cuFFT on the CPU.
+    return compute::ConsistencyMetrics{0.0, 0.0, result_->bins.size() * 2U, false};
   }
 
   [[nodiscard]] core::Result<FftResult> take_result(const compute::ComputeExecution& execution) {
@@ -143,7 +121,7 @@ public:
       : runtime_(std::move(runtime)), cpu_(std::move(cpu)), cuda_(std::move(cuda)), prefer_cuda_(prefer_cuda) {}
 
   [[nodiscard]] std::string_view backend_id() const noexcept override {
-    return "SignalCompute-FFT";
+    return prefer_cuda_ && cuda_ ? cuda_->backend_id() : cpu_->backend_id();
   }
 
   [[nodiscard]] core::Status validate(const FftSpec& spec) const override {

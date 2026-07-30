@@ -72,6 +72,10 @@ MS-04 最终应用另增加五个生产 `.ui` 文件：
 - `SignalInspectorPage.ui`
 - `SignalResultCenterPage.ui`
 
+MS-4.5 增加一个生产 `.ui` 文件：
+
+- `SignalAnalysisSettingsPanel.ui`
+
 构建和安装部署匹配配置的 Qt Core/Gui/Widgets DLL、Windows/offscreen 平台插件和 `qt.conf`。清空 Qt 插件环境变量后，程序仍由默认 Windows 平台启动，防止调试器再次出现无法初始化 Qt 平台插件的错误。
 
 ## 6. 可访问性与线程边界
@@ -104,3 +108,15 @@ Inspector 与任务中心；用户关闭 Inspector 后显示边缘恢复入口�
 比较。最终证据通过 Windows 平台探测本机原生 DPR，并把隐藏窗口归一化到目标 DPR，
 保留 qwindows 的真实中文字体渲染且不受桌面工作区裁剪。证据覆盖 1280×720、
 1920×1080、3840×2160、150% 和 200% DPI，并为六个有标准截图的页面保存并排对比图。
+
+## 9. MS-4.5 分析参数面板
+
+P03 Inspector 的参数面板分基础/高级模式。基础模式给出六个自适应预设、FFT、窗、
+PSD 估计、平均/保持、频谱平滑、STFT 重叠和平滑；高级模式增加帧长、补零、Kaiser/
+Tukey 参数、Welch 段数、单/双边、归一化、STFT 独立 frame/FFT/hop/边界和分析前
+滤波系数。派生区显示 bin、RBW、时间步长、矩阵规模、FFT 次数、内存和性能等级。
+
+“应用”会创建可取消后台任务，保留上一有效结果，且只提交最新 `ViewRequestId`。
+显示参数即时映射，不重算 DSP。自动化覆盖 1280×720、1080P、4K 和 125%～200% DPI；
+qwindows 真实截图显示实际 X310 图谱、参数哈希和 oneMKL 后端。面板不包含 MS-05
+通道创建或宽窄带联动控件。

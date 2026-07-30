@@ -15,9 +15,11 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QDoubleSpinBox>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QTreeWidget>
+#include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
 #include <algorithm>
@@ -766,18 +768,19 @@ void test_requirement(const std::string& id) {
     const auto actions = root->findChildren<QAction*>();
     const auto task_trees = root->findChildren<QTreeWidget*>();
     const auto result_tables = root->findChildren<QTableWidget*>();
-    check(docks.size() >= 5 && actions.size() >= 4 &&
-              workbench->accessibility_summary().find("中心") != std::string::npos &&
-              std::ranges::any_of(task_trees,
-                                  [](const QTreeWidget* tree) {
-                                    return tree->topLevelItemCount() == 1 &&
-                                           tree->topLevelItem(0)->text(0) == "注入任务";
-                                  }) &&
-              std::ranges::any_of(result_tables,
-                                  [](const QTableWidget* table) {
-                                    return table->rowCount() == 1 && table->item(0, 0)->text() == "注入结果";
-                                  }),
-          "Workbench 主框架、Dock、中心、命令、设置、诊断、主题或布局不完整");
+    const auto task_found = std::ranges::any_of(task_trees, [](const QTreeWidget* tree) {
+      const auto* item = tree->topLevelItemCount() == 1 ? tree->topLevelItem(0) : nullptr;
+      return item != nullptr && item->text(0) == "注入任务";
+    });
+    const auto result_found = std::ranges::any_of(result_tables, [](const QTableWidget* table) {
+      const auto* item = table->rowCount() == 1 ? table->item(0, 0) : nullptr;
+      return item != nullptr && item->text() == "注入结果";
+    });
+    check(docks.size() >= 5, "Workbench Dock 集合不完整");
+    check(actions.size() >= 4, "Workbench 命令集合不完整");
+    check(workbench->accessibility_summary().find("中心") != std::string::npos, "Workbench 中心可访问语义缺失");
+    check(task_found, "Workbench 任务中心未加载注入任务");
+    check(result_found, "Workbench 结果中心未加载注入结果");
     auto* task_page_action = root->findChild<QAction*>("page.task-center");
     auto* settings_page_action = root->findChild<QAction*>("page.settings");
     auto* task_page = root->findChild<QWidget*>("TaskCenterPage");
@@ -795,6 +798,108 @@ void test_requirement(const std::string& id) {
     const auto serialized = require(signal::workbench::serialize_layout(layout), "布局序列化失败");
     const auto restored = require(signal::workbench::parse_layout(serialized), "布局解析失败");
     require_status(workbench->restore_layout(restored), "布局恢复失败");
+    root->hide();
+  } else if (id == "MS45-INSPECTOR-EXTENSION") {
+    auto workbench = make_workbench(viewport);
+    auto* root = static_cast<QWidget*>(workbench->native_handle());
+    auto* extension = new QWidget;
+    extension->setObjectName("AnalysisSettingsTestPanel");
+    auto* layout = new QVBoxLayout(extension);
+    auto* marker = new QLabel("真实分析参数编辑器", extension);
+    marker->setObjectName("AnalysisSettingsMarker");
+    layout->addWidget(marker);
+    require_status(workbench->install_inspector_extension("analysis-settings", extension),
+                   "分析设置扩展无法安装到 Inspector");
+    workbench->show();
+    QApplication::processEvents();
+    check(root->findChild<QWidget*>("InspectorExtension_analysis-settings") == extension &&
+              root->findChild<QLabel*>("AnalysisSettingsMarker") == marker && extension->isVisible(),
+          "分析设置扩展没有真实出现在右侧 Inspector");
+    auto content = signal::workbench::WorkbenchContent{};
+    content.inspector = {{"参数哈希", "abc123"}};
+    require_status(workbench->update_content(std::move(content)), "刷新 Workbench 内容失败");
+    QApplication::processEvents();
+    check(root->findChild<QWidget*>("InspectorExtension_analysis-settings") == extension &&
+              root->findChild<QLabel*>("AnalysisSettingsMarker") == marker,
+          "Workbench 内容刷新后分析设置扩展丢失");
+    root->hide();
+  } else if (id == "MS45-VISIBILITY-DISPLAY") {
+    auto workspace = make_workspace(viewport);
+    std::vector<std::pair<signal::visualization::ChartKind, bool>> changes;
+    workspace->set_visibility_callback(
+        [&changes](signal::visualization::ChartKind kind, bool visible) { changes.emplace_back(kind, visible); });
+    require_status(workspace->set_chart_visible(signal::visualization::ChartKind::spectrogram, false),
+                   "STFT 可见性 API 无法隐藏图表");
+    QApplication::processEvents();
+    check(!workspace->chart_visible(signal::visualization::ChartKind::spectrogram) && changes.size() == 1U &&
+              changes.back() == std::pair{signal::visualization::ChartKind::spectrogram, false},
+          "STFT 可见性状态或取消/重提交回调未传播");
+    require_status(workspace->set_chart_visible(signal::visualization::ChartKind::spectrogram, true),
+                   "STFT 可见性 API 无法恢复图表");
+    QApplication::processEvents();
+    check(workspace->chart_visible(signal::visualization::ChartKind::spectrogram) && changes.size() == 2U &&
+              changes.back() == std::pair{signal::visualization::ChartKind::spectrogram, true},
+          "STFT 恢复可见性未传播");
+
+    signal::visualization::DisplayMapping mapping;
+    mapping.amplitude_scale = signal::visualization::AmplitudeScale::linear;
+    mapping.range_mode = signal::visualization::RangeMode::manual;
+    mapping.minimum = 0.0;
+    mapping.maximum = 1.0;
+    mapping.reference_level = 1.0;
+    mapping.dynamic_range = 1.0;
+    mapping.color_map = "Viridis";
+    require_status(workspace->set_display_mapping(mapping, "linear"), "线性幅度/手动范围显示映射未生效");
+    check(workspace->viewport().request_id == viewport.request_id, "纯显示映射错误创建了新的 DSP 视图请求");
+    auto* root = static_cast<QWidget*>(workspace->native_handle());
+    root->resize(1280, 720);
+    root->show();
+    QApplication::processEvents();
+    auto* spectrogram = find_chart(root, "STFT");
+    check(spectrogram != nullptr, "显示映射测试未找到 STFT Canvas");
+    mapping.amplitude_scale = signal::visualization::AmplitudeScale::logarithmic;
+    mapping.range_mode = signal::visualization::RangeMode::automatic;
+    mapping.reference_level = -20.0;
+    mapping.dynamic_range = 100.0;
+    require_status(workspace->set_display_mapping(mapping, "nearest"), "Viridis 映射未生效");
+    QApplication::processEvents();
+    const auto viridis = spectrogram->grab().toImage();
+    mapping.reference_level = -50.0;
+    mapping.dynamic_range = 20.0;
+    require_status(workspace->set_display_mapping(mapping, "nearest"), "参考电平/动态范围映射未生效");
+    QApplication::processEvents();
+    const auto remapped = spectrogram->grab().toImage();
+    mapping.reference_level = -20.0;
+    mapping.dynamic_range = 100.0;
+    mapping.color_map = "Grayscale";
+    require_status(workspace->set_display_mapping(mapping, "nearest"), "Grayscale 映射未生效");
+    QApplication::processEvents();
+    const auto grayscale = spectrogram->grab().toImage();
+    check(!viridis.isNull() && viridis.size() == grayscale.size(), "色表显示测试未生成可比较图像");
+    std::size_t changed_pixels{};
+    std::size_t range_changed_pixels{};
+    std::size_t grayscale_pixels{};
+    std::size_t sampled_pixels{};
+    const auto left = 55;
+    const auto right = std::max(left + 1, grayscale.width() - 20);
+    const auto top = 35;
+    const auto bottom = std::max(top + 1, grayscale.height() - 30);
+    for (auto y = top; y < bottom; y += 7) {
+      for (auto x = left; x < right; x += 11) {
+        ++sampled_pixels;
+        const auto before = viridis.pixelColor(x, y);
+        const auto range_changed = remapped.pixelColor(x, y);
+        const auto after = grayscale.pixelColor(x, y);
+        changed_pixels += before != after ? 1U : 0U;
+        range_changed_pixels += before != range_changed ? 1U : 0U;
+        grayscale_pixels +=
+            std::abs(after.red() - after.green()) <= 1 && std::abs(after.green() - after.blue()) <= 1 ? 1U : 0U;
+      }
+    }
+    check(changed_pixels > 20U && range_changed_pixels > 20U && grayscale_pixels * 2U > sampled_pixels,
+          "色表、参考电平或动态范围没有真实改变 STFT 热图像素");
+    mapping.color_map = "unsupported";
+    check(!workspace->set_display_mapping(mapping, "nearest"), "未知色表不得被静默接受");
     root->hide();
   } else {
     throw std::runtime_error("未知需求用例: " + id);

@@ -1,0 +1,4 @@
+MS45_STABILITY process_id=28796 exit_code=0
+MS45_STABILITY samples=60 duration_seconds=1800
+MS45_STABILITY working_set_min=6443008 working_set_max=21778432
+MS45_STABILITY private_memory_min=1212416 private_memory_max=14467072

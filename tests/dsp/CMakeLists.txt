@@ -1,10 +1,15 @@
 add_executable(signal_studio_dsp_tests dsp_tests.cpp)
 target_link_libraries(signal_studio_dsp_tests PRIVATE SignalStudio::DSP SignalStudio::Data)
 target_compile_definitions(signal_studio_dsp_tests PRIVATE
-  SIGNAL_STUDIO_EXTERNAL_TEST_DATA_DIR="${SIGNAL_STUDIO_EXTERNAL_TEST_DATA_DIR}")
+  SIGNAL_STUDIO_EXTERNAL_TEST_DATA_DIR="${SIGNAL_STUDIO_EXTERNAL_TEST_DATA_DIR}"
+  SIGNAL_STUDIO_MS45_REFERENCE_FILE="${CMAKE_CURRENT_SOURCE_DIR}/reference/ms45_scipy_reference.csv")
 if(SIGNAL_STUDIO_EXTERNAL_TEST_DATA_AVAILABLE)
   target_compile_definitions(signal_studio_dsp_tests PRIVATE
     SIGNAL_STUDIO_HAVE_EXTERNAL_TEST_DATA=1)
+endif()
+if(SIGNAL_STUDIO_CUDA_AVAILABLE)
+  target_compile_definitions(signal_studio_dsp_tests PRIVATE
+    SIGNAL_STUDIO_TEST_CUDA_REQUIRED=1)
 endif()
 signal_studio_enable_warnings(signal_studio_dsp_tests)
 signal_studio_deploy_msvc_runtime(signal_studio_dsp_tests)
@@ -16,4 +21,15 @@ foreach(_case IN ITEMS
   add_test(NAME "dsp.${_case}" COMMAND signal_studio_dsp_tests --case "${_case}")
   set_tests_properties("dsp.${_case}" PROPERTIES
     TIMEOUT 60 LABELS "unit;contract;numerical;requirement;ms-02;dsp")
+endforeach()
+
+foreach(_case IN ITEMS
+    MS-4.5-CONTRACTS
+    MS-4.5-SPECTRUM-PSD
+    MS-4.5-STFT-PREFILTER
+    MS-4.5-BACKENDS
+    MS-4.5-SCIPY-REFERENCE)
+  add_test(NAME "dsp.${_case}" COMMAND signal_studio_dsp_tests --case "${_case}")
+  set_tests_properties("dsp.${_case}" PROPERTIES
+    TIMEOUT 120 LABELS "unit;contract;numerical;requirement;ms-4.5;dsp")
 endforeach()

@@ -163,3 +163,19 @@
   GitHub Actions 运行 `30450012411` 的两项作业均为 success。
 - 清理 67 项中间截图、日志、安装前缀和临时配置目录；保留最终证据。MS-04 已验收
   关闭，按用户边界停止，未经确认不进入 MS-05。
+
+# 2026-07-30：MS-4.5 频谱与时频分析参数化
+
+- 增加 `signal.analysis-settings/1.0` 类型化参数、确定性序列化、SHA-256、资源估计、
+  最小失效、工程扩展迁移和 Artifact 参数来源。
+- 频谱/PSD 增加独立帧长/FFT、补零、八种窗、Periodogram/Welch、线性/指数平均、
+  最大保持及滑动平均、高斯、Savitzky-Golay；STFT 增加独立 frame/FFT/hop/边界和
+  频率/时间维平滑，全部保留 raw 结果。
+- 分析前滤波复用既有 ProcessingChain 与 oneMKL Adapter；FFT 继续复用 DFTI/cuFFT，
+  未新增第三方库，未重实现 FFT、滤波、卷积、重采样或通用线性代数内核。
+- 增加 Qt Designer `SignalAnalysisSettingsPanel.ui`、六个内置预设、基础/高级模式、
+  派生信息、后台取消、最新请求提交和显示参数免重算。
+- 增加 20 项 MS-4.5 数值/应用/UI/DPI/后端测试、30 分钟参数切换稳定性脚本、真实
+  qwindows P03 截图和完整里程碑文档；追踪矩阵交付副本新增 `ENH-SPEC-001/002`，
+  不修改批准基线 198 项内容或状态。
+- 保持 MS-05～MS-09 边界不变；完成 MS-4.5 后停止，不进入 MS-05。
