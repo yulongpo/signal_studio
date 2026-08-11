@@ -150,19 +150,13 @@ plus the named Chinese milestone reports and `evidence/`.
 ## 2026-08-11 后续计划校准
 
 本节替代原 MS-05～MS-09 计划。校准依据是当前分支 `codex/full-signal-studio-development`
-的实际代码、BL1.0 的 198 项需求、现有测试与里程碑证据，以及远程仓库当前状态。
+的实际代码、BL1.0 的 198 项需求、现有测试与里程碑证据。分析范围只包含当前分支，
+不使用其他分支的代码、提交、报告、标签或状态推导当前实现和后续安排。
 
 当前分支已完成 MS-00～MS-04 和插入里程碑 MS-4.5。现有 `Selection`、DSP
 `ProcessingChain`、Inspector 状态、TaskRuntime、Artifact 与参数化分析能力是 MS-05 的
 输入，不得重新复制实现。`SignalPluginSDK` 当前仅有 ABI-v1 基础边界，
 `SignalModelRuntime` 和 `SignalDataset` 当前只有模块描述符，不能视为功能完成。
-
-远程 `main` 已存在另一条 MS-05～MS-09 历史和公开标签 `v1.0.0`，但该历史自己的最终
-报告明确记录 ONNX Runtime、HDF5、NSIS、完整性能/稳定性和 GitHub Release 未完成，
-不满足本任务的唯一最终验收条件。后续开发不合并或复制该实现；最终集成前重新获取远程，
-逐项审计新增提交，采用保留双方历史、以本验证分支内容为准的普通合并，不使用裸强推。
-为避免改写已经发布的不可变标签，当前正式发布列车调整为 `1.0.1` / `v1.0.1`，并在
-发布说明中明确 `v1.0.0` 被完整验收版本取代。
 
 每个后续里程碑开始前执行基线、依赖锁、用户预设确定性和工作树检查；结束时完成
 CPU Debug/Release 全量、相关 CUDA 12.4 专项、安装消费者、真实数据有界测试、中文证据
@@ -276,15 +270,15 @@ Studio 并存、不同应用不共享可写配置、ABI/schema 兼容，以及 `
 插件 ABI、SBOM/许可证/安全、CI、追踪矩阵和仓库清洁度验证，并保存精确日志、版本、
 时长、失败数与 SHA-256。
 
-发布前重新获取远程 `main`，审计开发期间新增提交；保留现有 `v1.0.0` 和远程历史，
-以普通合并把本分支的已验证树集成到默认分支。发布应用和 SDK `1.0.1`，创建并推送
-注释标签 `v1.0.1`，创建 GitHub Release，上传安装包、便携包、开发包、Python wheel、
+当前分支通过全部门禁后，再按总任务执行默认分支集成、远程冲突检查和发布授权步骤；
+本次计划不依据其他分支状态预设合并策略。发布应用和 SDK `1.0.0`，创建并推送注释标签
+`v1.0.0`，创建 GitHub Release，上传安装包、便携包、开发包、Python wheel、
 调试符号、许可证/SBOM、发布说明和校验清单，并在上传后重新下载校验。
 
 **证据：** `docs/milestones/MS-09/**`、`docs/release/最终执行报告.md`、
-`docs/release/ReleaseNotes_1.0.1.md`、发布资产清单和 Release URL。
+`docs/release/ReleaseNotes_1.0.0.md`、发布资产清单和 Release URL。
 
-**提交：** `release: 发布 Signal Studio v1.0.1`
+**提交：** `release: 发布 Signal Studio v1.0.0`
 
 ## 最终复审
 
