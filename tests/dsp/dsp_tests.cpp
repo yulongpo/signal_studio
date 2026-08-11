@@ -360,6 +360,82 @@ private:
   std::shared_ptr<FftCallCounts> counts_;
 };
 
+enum class ProvenanceMutation : std::uint8_t { backend, device, precision, fallback };
+
+struct ProvenanceSwitchState final {
+  std::uint64_t executions{};
+  std::uint64_t switch_execution{};
+  ProvenanceMutation mutation{ProvenanceMutation::backend};
+};
+
+class SwitchingProvenanceFftPlan final : public IFftPlan {
+public:
+  SwitchingProvenanceFftPlan(std::shared_ptr<IFftPlan> delegate, std::shared_ptr<ProvenanceSwitchState> state)
+      : delegate_(std::move(delegate)), state_(std::move(state)) {}
+
+  [[nodiscard]] FftSpec spec() const noexcept override {
+    return delegate_->spec();
+  }
+
+  [[nodiscard]] core::Result<FftResult> process(std::span<const data::ComplexSample> input) override {
+    auto result = delegate_->process(input);
+    if (!result) {
+      return result.error();
+    }
+    ++state_->executions;
+    if (state_->executions >= state_->switch_execution) {
+      switch (state_->mutation) {
+      case ProvenanceMutation::backend:
+        result.value().provenance.actual = compute::BackendKind::cuda;
+        result.value().provenance.backend_id = "test-switched-backend";
+        break;
+      case ProvenanceMutation::device:
+        result.value().provenance.device = "test-switched-device";
+        break;
+      case ProvenanceMutation::precision:
+        result.value().provenance.precision = "complex-float32";
+        break;
+      case ProvenanceMutation::fallback:
+        result.value().provenance.requested = compute::BackendKind::cuda;
+        result.value().provenance.degraded = true;
+        result.value().provenance.reason = "test deterministic fallback";
+        break;
+      }
+    }
+    return result;
+  }
+
+private:
+  std::shared_ptr<IFftPlan> delegate_;
+  std::shared_ptr<ProvenanceSwitchState> state_;
+};
+
+class SwitchingProvenanceFftBackend final : public IFftBackend {
+public:
+  SwitchingProvenanceFftBackend(std::shared_ptr<IFftBackend> delegate, std::shared_ptr<ProvenanceSwitchState> state)
+      : delegate_(std::move(delegate)), state_(std::move(state)) {}
+
+  [[nodiscard]] std::string_view backend_id() const noexcept override {
+    return delegate_->backend_id();
+  }
+
+  [[nodiscard]] core::Status validate(const FftSpec& spec) const override {
+    return delegate_->validate(spec);
+  }
+
+  [[nodiscard]] core::Result<std::shared_ptr<IFftPlan>> create_plan(const FftSpec& spec) override {
+    auto plan = delegate_->create_plan(spec);
+    if (!plan) {
+      return plan.error();
+    }
+    return std::shared_ptr<IFftPlan>(std::make_shared<SwitchingProvenanceFftPlan>(plan.value(), state_));
+  }
+
+private:
+  std::shared_ptr<IFftBackend> delegate_;
+  std::shared_ptr<ProvenanceSwitchState> state_;
+};
+
 std::size_t peak_index(std::span<const double> values) {
   return static_cast<std::size_t>(std::distance(values.begin(), std::max_element(values.begin(), values.end())));
 }
@@ -1297,6 +1373,11 @@ void test_ms45_contracts() {
   require_close(blackman_harris.value().coefficients.front(), 0.00006, 1e-12, "Blackman-Harris 端点系数错误");
   require_close(blackman_harris.value().coefficients[2U], 1.0, 1e-12, "Blackman-Harris 中心系数错误");
   require_close(flat_top.value().coefficients[2U], 1.0, 5e-9, "Flat Top 中心系数错误");
+  const auto flat_top_descriptor = std::ranges::find(catalog, WindowKind::flat_top, &WindowDescriptor::kind);
+  const auto long_flat_top = make_window(WindowSpecification{WindowKind::flat_top, 0.0}, 4096U);
+  require(flat_top_descriptor != catalog.end() && long_flat_top, "Flat Top 目录或长窗参考创建失败");
+  require_close(flat_top_descriptor->reference_coherent_gain, long_flat_top.value().coherent_gain, 1e-3,
+                "Flat Top 目录 coherent gain 与实现不一致");
   for (const auto coefficient : kaiser_zero.value().coefficients) {
     require_close(coefficient, 1.0, 1e-14, "Kaiser beta=0 未退化为 Rectangular");
   }
@@ -1351,6 +1432,10 @@ void test_ms45_contracts() {
   smoothing_changed.spectrum.smoothing.polynomial_order = 2U;
   const auto smoothing_hash = hash_analysis_settings(smoothing_changed);
   require(smoothing_hash && smoothing_hash.value() != hash.value(), "数值参数变化未进入参数哈希");
+  auto display_axis_changed = settings;
+  display_axis_changed.spectrum.frequency_reference = data::FrequencyReference::absolute;
+  const auto display_axis_hash = hash_analysis_settings(display_axis_changed);
+  require(display_axis_hash && display_axis_hash.value() != hash.value(), "公共 DSP 频率参考变化未进入参数哈希");
   auto future_minor = serialized.value();
   future_minor += "future.optional-field=ignored\n";
   require(parse_analysis_settings(future_minor), "同主版本新增字段未安全忽略");
@@ -1360,6 +1445,20 @@ void test_ms45_contracts() {
   incompatible.replace(schema_position, std::string_view("signal.analysis-settings/1.0").size(),
                        "signal.analysis-settings/2.0");
   require(!parse_analysis_settings(incompatible), "未来主版本必须明确拒绝");
+  const auto corrupt_field = [](std::string text, std::string_view key, std::string_view value) {
+    const auto begin = text.find(key);
+    require(begin != std::string::npos, "参数损坏夹具字段缺失");
+    const auto value_begin = begin + key.size();
+    const auto end = text.find('\n', value_begin);
+    text.replace(value_begin, end - value_begin, value);
+    return text;
+  };
+  require(!parse_analysis_settings(corrupt_field(serialized.value(), "spectrum.normalization=", "255")),
+          "同主版本损坏的归一化枚举未拒绝");
+  require(!parse_analysis_settings(corrupt_field(serialized.value(), "spectrum.fft_length=", "128")),
+          "同主版本 FFT 长度小于帧长未拒绝");
+  require(!parse_analysis_settings(corrupt_field(serialized.value(), "prefilter.boundary=", "255")),
+          "同主版本损坏的预滤波边界枚举未拒绝");
 
   const auto estimate = estimate_analysis_cost(settings, 4096U, 48'000.0);
   require(estimate && estimate.value().spectrum_output_bins == 512U && estimate.value().spectrogram_rows == 63U &&
@@ -1387,6 +1486,14 @@ void test_ms45_contracts() {
   require(has_invalidation(invalidation, AnalysisInvalidation::spectrogram_smoothing) &&
               !has_invalidation(invalidation, AnalysisInvalidation::spectrogram_transform),
           "仅 STFT 平滑变化未执行最小失效");
+  changed = settings;
+  changed.spectrum.measurement_source = MeasurementSource::smoothed;
+  invalidation = classify_analysis_change(settings, changed);
+  require(invalidation == AnalysisInvalidation::none, "仅测量来源变化错误重算 FFT");
+  changed = settings;
+  changed.spectrum.frequency_reference = data::FrequencyReference::absolute;
+  invalidation = classify_analysis_change(settings, changed);
+  require(invalidation == AnalysisInvalidation::spectrum_transform, "公共 DSP 频率参考变化未失效频谱变换");
   changed = settings;
   changed.prefilter.chain.nodes.front().numerator.front() = 0.2;
   invalidation = classify_analysis_change(settings, changed);
@@ -1443,6 +1550,15 @@ void test_ms45_spectrum_psd() {
           "幅度/dBFS 错误接受 Window-power 归一化");
   const auto amplitude_result =
       calculate_spectrum(*backend, real.view(), sample_rate, 0.0, one_sided_amplitude, nullptr);
+  auto absolute_amplitude = one_sided_amplitude;
+  absolute_amplitude.frequency_reference = data::FrequencyReference::absolute;
+  constexpr double center_frequency = 10.0e6;
+  const auto absolute_amplitude_result =
+      calculate_spectrum(*backend, real.view(), sample_rate, center_frequency, absolute_amplitude, nullptr);
+  auto unnormalized_amplitude = one_sided_amplitude;
+  unnormalized_amplitude.normalization = SpectrumNormalization::none;
+  const auto unnormalized_amplitude_result =
+      calculate_spectrum(*backend, real.view(), sample_rate, 0.0, unnormalized_amplitude, nullptr);
   auto one_sided_power = one_sided_amplitude;
   one_sided_power.output_quantity = SpectrumOutputQuantity::linear_power;
   const auto power_result = calculate_spectrum(*backend, real.view(), sample_rate, 0.0, one_sided_power, nullptr);
@@ -1451,6 +1567,36 @@ void test_ms45_spectrum_psd() {
           "实信号单边频谱尺寸错误");
   const auto real_peak = frequency_index(amplitude_result.value().frequency_hz, 3'000.0);
   require_close(amplitude_result.value().values[real_peak], 0.5 / std::sqrt(2.0), 1e-12, "单边 RMS 幅度缩放错误");
+  require(absolute_amplitude_result && absolute_amplitude_result.value().values == amplitude_result.value().values,
+          "公共 DSP absolute 频率参考错误改变了频谱数值");
+  require_close(absolute_amplitude_result.value().frequency_hz[real_peak], center_frequency + 3'000.0, 1e-9,
+                "公共 DSP absolute 频率参考未加入中心频率");
+  require(unnormalized_amplitude_result, "幅度输出未接受 None 归一化");
+  require(unnormalized_amplitude_result.value().normalization == SpectrumNormalization::none,
+          "频谱结果未携带实际 None 归一化语义");
+  require_close(unnormalized_amplitude_result.value().values[real_peak],
+                amplitude_result.value().values[real_peak] * 256.0, 1e-9, "None 归一化未真实保留原始 FFT 幅度尺度");
+  auto calibrated_log = one_sided_amplitude;
+  calibrated_log.output_quantity = SpectrumOutputQuantity::magnitude_dbfs;
+  auto raw_log = calibrated_log;
+  raw_log.normalization = SpectrumNormalization::none;
+  const auto calibrated_log_result =
+      calculate_spectrum(*backend, real.view(), sample_rate, 0.0, calibrated_log, nullptr);
+  const auto raw_log_result = calculate_spectrum(*backend, real.view(), sample_rate, 0.0, raw_log, nullptr);
+  require(calibrated_log_result && raw_log_result, "None 对数频谱验证未产生结果");
+  require_close(raw_log_result.value().values[real_peak] - calibrated_log_result.value().values[real_peak],
+                20.0 * std::log10(256.0), 1e-9, "None 对数频谱未保留未归一化 FFT 尺度");
+  require(spectrum_output_unit(SpectrumOutputQuantity::magnitude_dbfs, SpectrumNormalization::coherent_gain) ==
+                  "dBFS" &&
+              spectrum_output_unit(SpectrumOutputQuantity::magnitude_dbfs, SpectrumNormalization::none) ==
+                  "dB(re 1 raw FFT amplitude unit)" &&
+              spectrum_output_unit(SpectrumOutputQuantity::power_dbfs, SpectrumNormalization::none) ==
+                  "dB(re 1 raw FFT power unit)" &&
+              spectrum_output_unit(SpectrumOutputQuantity::linear_amplitude, SpectrumNormalization::none) ==
+                  "raw FFT amplitude unit" &&
+              spectrum_output_unit(SpectrumOutputQuantity::linear_power, SpectrumNormalization::none) ==
+                  "raw FFT power unit",
+          "None 的线性/对数谱单位仍伪装为 full-scale 校准单位");
   require_close(power_result.value().values[real_peak], 0.125, 1e-12, "单边 Parseval 功率缩放错误");
   require_close(power_result.value().values[real_peak],
                 amplitude_result.value().values[real_peak] * amplitude_result.value().values[real_peak], 1e-14,
@@ -1484,6 +1630,24 @@ void test_ms45_spectrum_psd() {
               shared.value().spectrum.provenance.backend_id == shared.value().psd.provenance.backend_id &&
               shared.value().spectrum.raw_density_linear == shared.value().psd.raw_density_linear,
           "Spectrum/PSD 未共享同一 FFT 计划和帧变换");
+  auto unnormalized_density = psd_settings;
+  unnormalized_density.normalization = SpectrumNormalization::none;
+  const auto unnormalized_density_result =
+      calculate_psd(*backend, input.view(), sample_rate, 0.0, unnormalized_density, nullptr);
+  require(unnormalized_density_result, "PSD 输出未接受 None 归一化");
+  require(unnormalized_density_result.value().normalization == SpectrumNormalization::none,
+          "PSD 结果未携带实际 None 归一化语义");
+  const auto density_peak = frequency_index(shared.value().psd.frequency_hz, 3'000.0);
+  require_close(unnormalized_density_result.value().raw_density_linear[density_peak],
+                shared.value().psd.raw_density_linear[density_peak] * 256.0, 1e-9,
+                "None 归一化未真实保留原始 FFT 功率密度尺度");
+  require(spectrum_output_unit(SpectrumOutputQuantity::psd_dbfs_per_hz, SpectrumNormalization::window_power) ==
+                  "dBFS/Hz" &&
+              spectrum_output_unit(SpectrumOutputQuantity::psd_dbfs_per_hz, SpectrumNormalization::none) ==
+                  "dB(re 1 raw FFT power unit/Hz)" &&
+              spectrum_output_unit(SpectrumOutputQuantity::linear_power_density, SpectrumNormalization::none) ==
+                  "raw FFT power unit/Hz",
+          "None 的 PSD/线性功率密度单位仍伪装为校准单位");
 
   const auto expected_scale = 256.0 / sample_rate;
   const auto peak_frequency = 3'000.0;
@@ -1610,6 +1774,15 @@ void test_ms45_stft_prefilter() {
   require_close(stft.value().values[frame_length + bin], 0.625 * scale, 1e-9, "STFT 时间指数平滑错误");
   require_close(stft.value().values[2U * frame_length + bin], 0.34375 * scale, 1e-9, "STFT 时间指数平滑递推错误");
   require_close(stft.value().time_seconds.front(), 31.5 / sample_rate, 1e-15, "STFT 帧中心时间戳错误");
+  auto unnormalized_settings = settings;
+  unnormalized_settings.normalization = SpectrumNormalization::none;
+  const auto unnormalized_stft = calculate_stft(*fft, input.view(), sample_rate, 0.0, unnormalized_settings, nullptr);
+  require(unnormalized_stft, "STFT 输出未接受 None 归一化");
+  require(unnormalized_stft.value().normalization == SpectrumNormalization::none,
+          "STFT 结果未携带实际 None 归一化语义");
+  require_close(unnormalized_stft.value().raw_density_linear[bin],
+                stft.value().raw_density_linear[bin] * static_cast<double>(frame_length), 1e-9,
+                "STFT None 归一化未真实保留原始 FFT 功率密度尺度");
   const auto stft_counts = std::make_shared<FftCallCounts>();
   CountingFftBackend stft_counting_backend{fft, stft_counts};
   constexpr std::uint64_t source_offset = 48'000U;
@@ -1619,6 +1792,21 @@ void test_ms45_stft_prefilter() {
           "参数化 STFT 未在全部帧间复用一个 FFT 计划");
   require_close(offset_stft.value().time_seconds.front(), 1.0 + 31.5 / sample_rate, 1e-15,
                 "非零导入范围的 STFT 时间轴未叠加源样本起点");
+  AnalysisSettingsSnapshot offset_snapshot;
+  offset_snapshot.spectrum.frame_length = frame_length;
+  offset_snapshot.spectrum.fft_length = frame_length;
+  offset_snapshot.spectrum.window = {WindowKind::rectangular, 0.0};
+  offset_snapshot.spectrum.sidedness = SpectrumSidedness::two_sided_shifted;
+  offset_snapshot.spectrum.output_quantity = SpectrumOutputQuantity::linear_power_density;
+  offset_snapshot.spectrum.normalization = SpectrumNormalization::window_power;
+  offset_snapshot.spectrogram = settings;
+  auto offset_descriptor = descriptor(data::SignalKind::complex, input.view().size(), sample_rate);
+  offset_descriptor.requested_sample_range = data::SampleRange::from_count(source_offset, input.view().size()).value();
+  const auto descriptor_offset_stft =
+      calculate_stft(*fft, *kernels, input.view(), offset_descriptor, offset_snapshot, nullptr);
+  require(descriptor_offset_stft, "SignalDescriptor STFT 重载未完成非零范围分析");
+  require_close(descriptor_offset_stft.value().time_seconds.front(), 1.0 + 31.5 / sample_rate, 1e-15,
+                "SignalDescriptor STFT 重载忽略 requested_sample_range 起点");
   require_close(spectrogram_overlap_ratio(settings), 0.0, 1e-15, "STFT overlap 派生错误");
   auto unsmoothed_settings = settings;
   unsmoothed_settings.smoothing = {};
@@ -1697,7 +1885,8 @@ void test_ms45_backend_consistency() {
   settings.accumulation = {SpectrumAccumulationMode::linear_average, 4U, 1.0, 0U};
   settings.smoothing = {SpectrumSmoothingKind::gaussian, 5U, 1.0, 0U};
   const auto cpu_psd = calculate_psd(*cpu, signal.view(), 48'000.0, 0.0, settings, nullptr);
-  require(cpu_psd, "MS-4.5 CPU Welch/高斯 PSD 失败");
+  require(cpu_psd && cpu_psd.value().provenance.precision == "complex-float64",
+          "MS-4.5 CPU Welch/高斯 PSD 失败或未记录实际 FFT 精度");
 
   SpectrogramAnalysisSettings stft_settings;
   stft_settings.frame_length = 256U;
@@ -1709,7 +1898,25 @@ void test_ms45_backend_consistency() {
   stft_settings.smoothing = {SpectrogramFrequencySmoothingKind::gaussian, 5U, 1.0,
                              SpectrogramTimeSmoothingKind::exponential, 0.35};
   const auto cpu_stft = calculate_stft(*cpu, signal.view(), 48'000.0, 0.0, stft_settings, nullptr);
-  require(cpu_stft, "MS-4.5 CPU 参数化 STFT 失败");
+  require(cpu_stft && cpu_stft.value().provenance.precision == "complex-float64",
+          "MS-4.5 CPU 参数化 STFT 失败或未记录实际 FFT 精度");
+
+  const auto require_mixed_welch_rejected = [&](ProvenanceMutation mutation) {
+    auto state = std::make_shared<ProvenanceSwitchState>(ProvenanceSwitchState{0U, 2U, mutation});
+    SwitchingProvenanceFftBackend switching_backend{cpu, state};
+    const auto mixed = calculate_psd(switching_backend, signal.view(), 48'000.0, 0.0, settings, nullptr);
+    require(!mixed && state->executions == 2U, "Welch/平均未在第 N 帧拒绝混合 FFT provenance");
+  };
+  require_mixed_welch_rejected(ProvenanceMutation::backend);
+  require_mixed_welch_rejected(ProvenanceMutation::device);
+  require_mixed_welch_rejected(ProvenanceMutation::precision);
+  require_mixed_welch_rejected(ProvenanceMutation::fallback);
+
+  auto stft_switch =
+      std::make_shared<ProvenanceSwitchState>(ProvenanceSwitchState{0U, 3U, ProvenanceMutation::backend});
+  SwitchingProvenanceFftBackend switching_stft_backend{cpu, stft_switch};
+  const auto mixed_stft = calculate_stft(switching_stft_backend, signal.view(), 48'000.0, 0.0, stft_settings, nullptr);
+  require(!mixed_stft && stft_switch->executions == 3U, "STFT 未在第 N 帧拒绝混合 FFT provenance");
 
   const auto cuda = make_cuda_fft_backend();
   if (!cuda) {
@@ -1731,6 +1938,7 @@ void test_ms45_backend_consistency() {
                        std::string{cuda_stft.error().message()});
   }
   require(cuda_psd.value().frequency_hz == cpu_psd.value().frequency_hz &&
+              cuda_psd.value().provenance.precision == "complex-float64" &&
               cuda_psd.value().values.size() == cpu_psd.value().values.size() &&
               cuda_psd.value().raw_values.size() == cpu_psd.value().raw_values.size() &&
               cuda_psd.value().db_per_hz.size() == cpu_psd.value().db_per_hz.size(),
@@ -1746,6 +1954,7 @@ void test_ms45_backend_consistency() {
                   "CPU/CUDA PSD dB/Hz 数值不一致");
   }
   require(cuda_stft.value().time_seconds == cpu_stft.value().time_seconds &&
+              cuda_stft.value().provenance.precision == "complex-float64" &&
               cuda_stft.value().frequency_hz == cpu_stft.value().frequency_hz &&
               cuda_stft.value().values.size() == cpu_stft.value().values.size() &&
               cuda_stft.value().raw_values.size() == cpu_stft.value().raw_values.size() &&

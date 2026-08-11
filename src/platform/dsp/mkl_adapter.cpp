@@ -143,7 +143,8 @@ private:
                            "host-cpu",
                            "批准的 sequential/lp64 CPU FFT 适配器与复用计划缓存",
                            false,
-                           false};
+                           false,
+                           "complex-float64"};
       return result;
     }
     FftSpec specification;

@@ -54,6 +54,12 @@ struct ImportedSignal final {
   bool partial_read{};
 };
 
+struct AnalysisViewSelection final {
+  bool spectrum{true};
+  bool spectrogram{true};
+  friend bool operator==(const AnalysisViewSelection&, const AnalysisViewSelection&) = default;
+};
+
 struct AnalysisBundle final {
   std::string project_id;
   std::uint64_t project_generation{};
@@ -64,11 +70,15 @@ struct AnalysisBundle final {
   std::string device_id;
   std::string backend_policy;
   dsp::AnalysisSettingsSnapshot settings;
+  AnalysisViewSelection views;
   dsp::AnalysisSettingsHash settings_hash;
   dsp::AnalysisCostEstimate cost;
   dsp::SpectrumResult spectrum;
   dsp::PsdResult psd;
   dsp::StftResult stft;
+  /// Deterministic, de-duplicated ranges whose samples actually contributed to stateful results.
+  std::vector<data::SampleRange> contributing_source_ranges;
+  /// Range for the current analysis request, retained independently from stateful lineage.
   data::SampleRange source_range;
   task::ViewRequestId view_request;
   std::string cache_key;
@@ -78,12 +88,6 @@ struct AnalysisBundle final {
   bool spectrum_transform_reused{};
   bool spectrogram_transform_reused{};
   dsp::AnalysisInvalidation invalidation{dsp::AnalysisInvalidation::none};
-};
-
-struct AnalysisViewSelection final {
-  bool spectrum{true};
-  bool spectrogram{true};
-  friend bool operator==(const AnalysisViewSelection&, const AnalysisViewSelection&) = default;
 };
 
 struct AnalysisDisplaySettings final {
@@ -136,7 +140,8 @@ public:
                                                      task::ViewRequestId view_request = {}, std::string task_id = {},
                                                      AnalysisViewSelection views = {});
   [[nodiscard]] bool commit_analysis(AnalysisBundle analysis, const task::ViewRequestId& request);
-  [[nodiscard]] core::Status set_analysis_settings(dsp::AnalysisSettingsSnapshot settings);
+  [[nodiscard]] core::Status set_analysis_settings(dsp::AnalysisSettingsSnapshot settings,
+                                                   AnalysisViewSelection views = {});
   [[nodiscard]] core::Status set_analysis_display_settings(AnalysisDisplaySettings settings);
   [[nodiscard]] core::Status save_user_analysis_preset(std::string name, const dsp::AnalysisSettingsSnapshot& settings);
   [[nodiscard]] core::Status delete_user_analysis_preset(std::string_view name);
@@ -149,6 +154,9 @@ public:
                                                                       std::uint64_t viewport_samples = 0U) const;
   [[nodiscard]] core::Result<core::ArtifactRecord>
   commit_measurement(const AnalysisBundle& analysis, std::string selection_id = {}, std::string channel_id = "CH-01");
+  [[nodiscard]] core::Status rollback_measurement(const core::ArtifactRecord& record);
+  void restore_analysis_after_failed_task(std::string_view task_id,
+                                          std::shared_ptr<const AnalysisBundle> previous_analysis);
   [[nodiscard]] core::Result<core::ArtifactRecord> commit_sample_export(const ImportedSignal& imported,
                                                                         data::SourceFormat format,
                                                                         std::uint64_t maximum_samples = 16'384U);

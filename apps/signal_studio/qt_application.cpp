@@ -170,6 +170,8 @@ public:
 
 class QtApplication::Impl final {
 public:
+  enum class FormalCommitPhase : std::uint8_t { cancellable, canceling, committing, finalized };
+
   Impl(QApplication& qt_application, std::filesystem::path state_directory)
       : qt_application_(qt_application), state_directory_(std::move(state_directory)), controller_(state_directory_) {}
 
@@ -188,10 +190,12 @@ public:
       static_cast<void>(active_import_->handle().cancel());
     }
     if (active_analysis_) {
-      if (analysis_cancellation_) {
-        analysis_cancellation_->store(true, std::memory_order_release);
+      if (claim_analysis_cancellation()) {
+        if (analysis_cancellation_) {
+          analysis_cancellation_->store(true, std::memory_order_release);
+        }
+        static_cast<void>(controller_.task_runtime().cancel(*active_analysis_));
       }
-      static_cast<void>(controller_.task_runtime().cancel(*active_analysis_));
     }
     destroy_dialog(progress_dialog_);
     progress_ui_.reset();
@@ -411,10 +415,14 @@ public:
     analysis_settings_ui_->windowParameterSpin->setValue(8.6);
     analysis_settings_ui_->stftWindowCombo->setCurrentText("Tukey");
     analysis_settings_ui_->stftWindowParameterSpin->setValue(0.25);
+    analysis_settings_ui_->normalizationCombo->setCurrentIndex(2);
+    analysis_settings_ui_->stftNormalizationCombo->setCurrentIndex(2);
     auto modeled = analysis_settings_from_panel();
     if (!modeled || modeled.value().spectrum.frame_length != 1024U || modeled.value().spectrum.fft_length != 2048U ||
         modeled.value().spectrogram.frame_length != 256U || modeled.value().spectrogram.fft_length != 512U ||
-        modeled.value().spectrum.window.parameter != 8.6 || modeled.value().spectrogram.window.parameter != 0.25) {
+        modeled.value().spectrum.window.parameter != 8.6 || modeled.value().spectrogram.window.parameter != 0.25 ||
+        modeled.value().spectrum.normalization != dsp::SpectrumNormalization::none ||
+        modeled.value().spectrogram.normalization != dsp::SpectrumNormalization::none) {
       set_analysis_panel_settings(original_settings, original_display);
       return ui_failure("Designer 控件值未进入类型化分析参数模型");
     }
@@ -548,6 +556,33 @@ public:
       return ui_failure("应用共享参数没有把帧长、FFT 和窗函数真实同步到 PSD/STFT");
     }
 
+    auto hold_panel = shared_result;
+    hold_panel.spectrum.accumulation.mode = dsp::SpectrumAccumulationMode::maximum_hold;
+    hold_panel.spectrum.accumulation.hold_reset_generation = 11U;
+    set_analysis_panel_settings(hold_panel, original_display);
+    if (!analysis_settings_ui_->resetMaximumHoldButton->isEnabled()) {
+      return ui_failure("最大保持复位控件未随累积模式启用");
+    }
+    analysis_settings_ui_->resetMaximumHoldButton->click();
+    if (!wait_until_idle(30'000) || !controller_.current_analysis() ||
+        controller_.current_analysis()->settings.spectrum.accumulation.hold_reset_generation != 12U) {
+      return ui_failure("最大保持复位按钮未真实递增 generation 并提交后台重算");
+    }
+
+    const auto display_tasks_before = controller_.task_history().size();
+    const auto settings_before_axis_apply = controller_.analysis_settings();
+    analysis_settings_ui_->frequencyAxisModeCombo->setCurrentText("baseband");
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+    analysis_settings_ui_->frequencyAxisModeCombo->setCurrentText("absolute-if-available");
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+    analysis_settings_ui_->applyAnalysisSettingsButton->click();
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+    if (controller_.analysis_display_settings().frequency_axis_mode != "absolute-if-available" ||
+        controller_.task_history().size() != display_tasks_before || active_analysis_ ||
+        !hash_matches(controller_.analysis_settings(), settings_before_axis_apply)) {
+      return ui_failure("频率轴显示往返后点击应用错误触发 DSP、修改分析设置或未保存最终显示模式");
+    }
+
     set_analysis_panel_settings(shared_result, original_display);
     const auto tasks_before_invalid = controller_.task_history().size();
     analysis_settings_ui_->frameLengthSpin->setValue(512);
@@ -612,6 +647,87 @@ public:
       QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
       return !active_analysis_;
     };
+
+    commit_after_analysis_ = true;
+    parameter_recompute_ = false;
+    begin_analysis(*imported, controller_.analysis_settings(), AnalysisViewSelection{true, true});
+    if (!wait_until_idle(30'000)) {
+      return ui_failure("正式分析任务未在 30 秒内完成");
+    }
+    const auto formal_analysis = controller_.current_analysis();
+    if (!formal_analysis) {
+      return ui_failure("异步分析运行时验收缺少正式分析结果");
+    }
+    const auto formal_history = controller_.task_history();
+    const auto formal_status = std::ranges::find_if(formal_history, [&](const task::TaskStatus& status) {
+      return status.task_id.value == formal_analysis->task_id;
+    });
+    if (formal_status == formal_history.end() || formal_status->state != task::TaskState::completed) {
+      return ui_failure("正式分析任务未通过 TaskRuntime 原子完成门禁", formal_analysis->task_id);
+    }
+    auto artifacts = controller_.results();
+    if (!artifacts) {
+      return artifacts.error();
+    }
+    const auto formal_artifact = std::ranges::find_if(artifacts.value(), [&](const core::ArtifactRecord& artifact) {
+      return artifact.descriptor.provenance.task_id == formal_analysis->task_id;
+    });
+    if (formal_artifact == artifacts.value().end()) {
+      return ui_failure("正式分析任务没有对应的 Artifact provenance", formal_analysis->task_id);
+    }
+    const std::array expected_artifact_files{formal_artifact->payload_path,
+                                             formal_artifact->package_path / "manifest.json",
+                                             formal_artifact->package_path / ".artifact-index"};
+    if (formal_status->committed_artifacts.size() != expected_artifact_files.size()) {
+      return ui_failure("TaskRuntime 未登记完整 Artifact 文件集合", formal_analysis->task_id);
+    }
+    for (const auto& expected_path : expected_artifact_files) {
+      const auto record = std::ranges::find_if(formal_status->committed_artifacts, [&](const auto& candidate) {
+        return candidate.path.lexically_normal() == expected_path.lexically_normal();
+      });
+      if (record == formal_status->committed_artifacts.end()) {
+        return ui_failure("TaskRuntime 制品集合缺少 Artifact 文件", expected_path.string());
+      }
+      auto digest = core::hash_file(record->path);
+      std::error_code file_error;
+      const auto file_size = std::filesystem::file_size(record->path, file_error);
+      if (!digest || digest.value().hex() != record->sha256_digest || file_error || file_size != record->size_bytes ||
+          record->size_bytes == 0U) {
+        return ui_failure("TaskRuntime Artifact 文件 checksum 或大小无效", record->path.string());
+      }
+    }
+    {
+      ApplicationController restarted{state_directory_};
+      const auto recovered_history = restarted.task_history();
+      if (std::ranges::none_of(recovered_history, [&](const task::TaskStatus& status) {
+            return status.task_id.value == formal_analysis->task_id && status.state == task::TaskState::completed &&
+                   status.committed_artifacts == formal_status->committed_artifacts;
+          })) {
+        return ui_failure("重启后无法从 TaskRuntime journal 追溯正式分析制品及 checksum", formal_analysis->task_id);
+      }
+    }
+
+    auto canceled_settings = controller_.analysis_settings();
+    canceled_settings.spectrum.smoothing = {dsp::SpectrumSmoothingKind::gaussian, 7U, 1.75, 0U};
+    const auto analysis_before_cancel = controller_.current_analysis();
+    begin_analysis(*imported, canceled_settings, AnalysisViewSelection{true, true});
+    const auto explicitly_canceled_task = active_analysis_;
+    if (!explicitly_canceled_task) {
+      return ui_failure("显式取消验收未创建可取消的分析任务");
+    }
+    cancel_active_analysis_from_ui();
+    if (!wait_until_idle(30'000)) {
+      return ui_failure("显式取消的分析任务未在 30 秒内终止");
+    }
+    const auto analysis_after_cancel = controller_.current_analysis();
+    const auto canceled_status = controller_.task_runtime().status(*explicitly_canceled_task);
+    if (!analysis_before_cancel || !analysis_after_cancel ||
+        analysis_before_cancel->task_id != analysis_after_cancel->task_id || !canceled_status ||
+        (canceled_status.value().state != task::TaskState::canceled &&
+         canceled_status.value().state != task::TaskState::stale) ||
+        !canceled_status.value().committed_artifacts.empty()) {
+      return ui_failure("显式取消后仍发布了新分析或 TaskRuntime 制品");
+    }
 
     auto final_settings = controller_.analysis_settings();
     std::vector<double> submission_ms;
@@ -989,6 +1105,16 @@ private:
       analysis_settings_ui_->stftWindowParameterSpin->setValue(analysis_settings_ui_->windowParameterSpin->value());
       apply_analysis_settings_from_panel(0);
     });
+    QObject::connect(analysis_settings_ui_->averagingCombo, &QComboBox::currentIndexChanged, analysis_settings_panel_,
+                     [this](int index) {
+                       analysis_settings_ui_->resetMaximumHoldButton->setEnabled(
+                           index == static_cast<int>(dsp::SpectrumAccumulationMode::maximum_hold));
+                     });
+    QObject::connect(analysis_settings_ui_->resetMaximumHoldButton, &QPushButton::clicked, analysis_settings_panel_,
+                     [this] {
+                       ++hold_reset_generation_;
+                       apply_analysis_settings_from_panel(0);
+                     });
     QObject::connect(
         analysis_settings_ui_->cancelAnalysisSettingsButton, &QPushButton::clicked, analysis_settings_panel_, [this] {
           set_analysis_panel_settings(controller_.analysis_settings(), controller_.analysis_display_settings());
@@ -1182,6 +1308,9 @@ private:
     analysis_settings_ui_->welchSegmentsSpin->setValue(
         static_cast<int>(std::max<std::uint64_t>(1U, settings.spectrum.estimator.welch_segment_count)));
     analysis_settings_ui_->averagingCombo->setCurrentIndex(static_cast<int>(settings.spectrum.accumulation.mode));
+    hold_reset_generation_ = settings.spectrum.accumulation.hold_reset_generation;
+    analysis_settings_ui_->resetMaximumHoldButton->setEnabled(settings.spectrum.accumulation.mode ==
+                                                              dsp::SpectrumAccumulationMode::maximum_hold);
     analysis_settings_ui_->averagingCountSpin->setValue(
         static_cast<int>(std::max<std::uint64_t>(1U, settings.spectrum.accumulation.averaging_count)));
     analysis_settings_ui_->exponentialAlphaSpin->setValue(settings.spectrum.accumulation.exponential_alpha);
@@ -1321,9 +1450,7 @@ private:
     settings.spectrum.measurement_source = analysis_settings_ui_->measurementSourceCombo->currentIndex() == 1
                                                ? dsp::MeasurementSource::smoothed
                                                : dsp::MeasurementSource::raw;
-    settings.spectrum.frequency_reference = analysis_settings_ui_->frequencyAxisModeCombo->currentText() == "baseband"
-                                                ? data::FrequencyReference::baseband
-                                                : data::FrequencyReference::absolute;
+    settings.spectrum.frequency_reference = data::FrequencyReference::baseband;
     settings.spectrum.estimator.kind = analysis_settings_ui_->estimatorCombo->currentIndex() == 1
                                            ? dsp::PsdEstimatorKind::welch
                                            : dsp::PsdEstimatorKind::periodogram;
@@ -1336,6 +1463,7 @@ private:
     settings.spectrum.accumulation.averaging_count =
         static_cast<std::uint64_t>(analysis_settings_ui_->averagingCountSpin->value());
     settings.spectrum.accumulation.exponential_alpha = analysis_settings_ui_->exponentialAlphaSpin->value();
+    settings.spectrum.accumulation.hold_reset_generation = hold_reset_generation_;
     settings.spectrum.smoothing.kind =
         static_cast<dsp::SpectrumSmoothingKind>(analysis_settings_ui_->spectrumSmoothingCombo->currentIndex());
     settings.spectrum.smoothing.window_length =
@@ -1579,8 +1707,7 @@ private:
         return data::SignalBuffer::from_real(std::vector<double>{values.begin(), values.end()});
       }
       const auto values = preview_slice.value().complex_values();
-      return data::SignalBuffer::from_complex(
-          std::vector<data::ComplexSample>{values.begin(), values.end()});
+      return data::SignalBuffer::from_complex(std::vector<data::ComplexSample>{values.begin(), values.end()});
     }();
     auto descriptor = imported.descriptor;
     descriptor.requested_sample_range = preview_range.value();
@@ -1603,9 +1730,8 @@ private:
                        {"data-source", imported.source_path.string()}};
     spec.timeout = std::chrono::seconds{30};
     auto submitted = controller_.task_runtime().submit(
-        std::move(spec),
-        [state = filter_preview_state_, preview_input = std::move(preview_input), descriptor,
-         node](task::TaskContext& context) mutable {
+        std::move(spec), [state = filter_preview_state_, preview_input = std::move(preview_input), descriptor,
+                          node](task::TaskContext& context) mutable {
           if (!context.checkpoint()) {
             return task::TaskExecutionResult::completed();
           }
@@ -1717,19 +1843,10 @@ private:
     if (inspector_workspace_) {
       static_cast<void>(inspector_workspace_->set_display_mapping(display.mapping, display.interpolation));
     }
-    if (controller_.current_analysis()) {
-      auto displayed = *controller_.current_analysis();
-      const auto want_absolute = display.frequency_axis_mode != "baseband" && displayed.frame.center_frequency_hz != 0;
-      if (want_absolute != displayed.frame.absolute_frequency) {
-        const auto offset = want_absolute ? displayed.frame.center_frequency_hz : -displayed.frame.center_frequency_hz;
-        displayed.viewport.effective_frequency_range.begin_hz += offset;
-        displayed.viewport.effective_frequency_range.end_hz += offset;
-        displayed.viewport.frequency_viewport.begin_hz += offset;
-        displayed.viewport.frequency_viewport.end_hz += offset;
-        displayed.frame.frequency_range.begin_hz += offset;
-        displayed.frame.frequency_range.end_hz += offset;
-        displayed.frame.absolute_frequency = want_absolute;
-        static_cast<void>(apply_analysis(displayed));
+    if (const auto current = controller_.current_analysis()) {
+      if (const auto applied = apply_analysis(*current); !applied) {
+        analysis_settings_ui_->parameterWarningLabel->setText(QString::fromStdString(std::string{applied.message()}));
+        return;
       }
     }
     analysis_settings_ui_->parameterWarningLabel->setText("显示映射已实时更新；未提交 FFT、PSD、STFT 或滤波任务。");
@@ -1757,9 +1874,8 @@ private:
       analysis_settings_ui_->parameterWarningLabel->setText("请至少显示频谱或时频图中的一个视图。");
       return;
     }
-    if (const auto status =
-            dsp::validate_analysis_settings(requested.value(), imported->loaded->samples().size(),
-                                            imported->descriptor, views.spectrum, views.spectrogram);
+    if (const auto status = dsp::validate_analysis_settings(requested.value(), imported->loaded->samples().size(),
+                                                            imported->descriptor, views.spectrum, views.spectrogram);
         !status) {
       analysis_settings_ui_->parameterWarningLabel->setText(QString::fromStdString(std::string{status.message()}));
       return;
@@ -1767,6 +1883,23 @@ private:
     auto display = display_settings_from_panel();
     if (const auto status = controller_.set_analysis_display_settings(display); !status) {
       analysis_settings_ui_->parameterWarningLabel->setText(QString::fromStdString(std::string{status.message()}));
+      return;
+    }
+    const auto current_hash = dsp::hash_analysis_settings(controller_.analysis_settings());
+    const auto requested_hash = dsp::hash_analysis_settings(requested.value());
+    if (!current_hash || !requested_hash) {
+      const auto& failure = !current_hash ? current_hash.error() : requested_hash.error();
+      analysis_settings_ui_->parameterWarningLabel->setText(QString::fromStdString(std::string{failure.message()}));
+      return;
+    }
+    if (current_hash.value() == requested_hash.value()) {
+      apply_display_settings_only();
+      if (const auto saved = controller_.save_project(); !saved) {
+        analysis_settings_ui_->parameterWarningLabel->setText(
+            QString("显示设置已应用但工程保存失败：%1").arg(QString::fromStdString(std::string{saved.message()})));
+        return;
+      }
+      analysis_settings_ui_->parameterWarningLabel->setText("仅显示映射发生变化；未提交 FFT、PSD、STFT 或滤波任务。");
       return;
     }
     parameter_recompute_ = true;
@@ -1866,7 +1999,9 @@ private:
     if (path.isEmpty()) {
       return core::Status::success();
     }
-    cancel_active_analysis_for_project_change();
+    if (!cancel_active_analysis_for_project_change()) {
+      return core::Status::success();
+    }
     auto status = controller_.create_project(path.toStdWString(), QFileInfo(path).completeBaseName().toStdString());
     if (!status) {
       show_error(status);
@@ -1883,7 +2018,9 @@ private:
     if (path.isEmpty()) {
       return core::Status::success();
     }
-    cancel_active_analysis_for_project_change();
+    if (!cancel_active_analysis_for_project_change()) {
+      return core::Status::success();
+    }
     auto status = controller_.open_project(path.toStdWString());
     if (!status) {
       show_error(status);
@@ -2155,9 +2292,24 @@ private:
             primary_workspace_->chart_visible(visualization::ChartKind::spectrogram)};
   }
 
+  [[nodiscard]] bool claim_analysis_cancellation() {
+    if (!analysis_state_ || !analysis_state_->commit_artifact) {
+      return true;
+    }
+    auto expected = FormalCommitPhase::cancellable;
+    return analysis_state_->formal_phase.compare_exchange_strong(expected, FormalCommitPhase::canceling,
+                                                                 std::memory_order_acq_rel);
+  }
+
   void handle_chart_visibility_change(visualization::ChartKind kind, bool visible) {
     if (kind != visualization::ChartKind::psd && kind != visualization::ChartKind::spectrum &&
         kind != visualization::ChartKind::spectrogram && kind != visualization::ChartKind::waterfall) {
+      return;
+    }
+    if (!claim_analysis_cancellation()) {
+      if (analysis_settings_ui_) {
+        analysis_settings_ui_->parameterWarningLabel->setText("正式制品正在原子提交；完成后再刷新图表可见性。");
+      }
       return;
     }
     if (analysis_cancellation_) {
@@ -2179,7 +2331,13 @@ private:
     }
   }
 
-  void cancel_active_analysis_for_project_change() {
+  [[nodiscard]] bool cancel_active_analysis_for_project_change() {
+    if (!claim_analysis_cancellation()) {
+      if (progress_ui_) {
+        progress_ui_->loadStatusLabel->setText("正式制品正在原子提交；完成前不会切换工程。");
+      }
+      return false;
+    }
     if (analysis_cancellation_) {
       analysis_cancellation_->store(true, std::memory_order_release);
     }
@@ -2209,11 +2367,37 @@ private:
       filter_preview_state_.reset();
     }
     static_cast<void>(controller_.task_runtime().issue_view_request("signal-studio.analysis"));
+    return true;
+  }
+
+  void cancel_active_analysis_from_ui() {
+    if (!claim_analysis_cancellation()) {
+      if (progress_ui_) {
+        progress_ui_->loadStatusLabel->setText("正式制品正在原子提交，取消边界已关闭");
+      }
+      return;
+    }
+    static_cast<void>(controller_.task_runtime().issue_view_request("signal-studio.analysis"));
+    if (analysis_cancellation_) {
+      analysis_cancellation_->store(true, std::memory_order_release);
+    }
+    if (active_analysis_) {
+      static_cast<void>(controller_.task_runtime().cancel(*active_analysis_));
+    }
+    if (progress_ui_) {
+      progress_ui_->loadStatusLabel->setText("正在取消；半成品不会发布");
+    }
   }
 
   void begin_analysis(ImportedSignal imported,
                       std::optional<dsp::AnalysisSettingsSnapshot> requested_settings = std::nullopt,
                       std::optional<AnalysisViewSelection> requested_views = std::nullopt) {
+    if (!claim_analysis_cancellation()) {
+      if (analysis_settings_ui_) {
+        analysis_settings_ui_->parameterWarningLabel->setText("正式制品正在原子提交；完成后再应用新参数。");
+      }
+      return;
+    }
     if (analysis_cancellation_) {
       analysis_cancellation_->store(true, std::memory_order_release);
     }
@@ -2258,52 +2442,116 @@ private:
                        {"data-source", imported.source_path.string()}};
     spec.view_request = view_request;
     spec.timeout = std::chrono::minutes{5};
+    // Only analysis requests that produce a formal artifact need crash-recoverable task lineage.
+    // Ephemeral view recomputations are guarded by view generations; journaling every rapid
+    // cancel/stale transition would synchronize the complete history on the UI thread.
+    spec.persistent = analysis_state_->commit_artifact;
     const auto launch_ready = std::make_shared<std::atomic_bool>(false);
-    auto submitted = controller_.task_runtime().submit(
-        std::move(spec), [this, imported = std::move(imported), settings, prefer_cuda, views, view_request, task_id,
-                          cancellation = analysis_cancellation_, state = analysis_state_,
-                          launch_ready](task::TaskContext& context) mutable {
-          while (!launch_ready->load(std::memory_order_acquire)) {
-            std::this_thread::yield();
-          }
-          static_cast<void>(context.report_progress(0.1, "准备真实样本范围"));
-          if (!context.checkpoint()) {
-            cancellation->store(true, std::memory_order_release);
-            return task::TaskExecutionResult::completed();
-          }
-          auto result =
-              controller_.analyze(imported, settings, prefer_cuda, cancellation, view_request, task_id, views);
-          if (!context.checkpoint()) {
-            cancellation->store(true, std::memory_order_release);
-            return task::TaskExecutionResult::completed();
-          }
+    auto submitted = controller_.task_runtime().submit(std::move(spec), [this, imported = std::move(imported), settings,
+                                                                         prefer_cuda, views, view_request, task_id,
+                                                                         cancellation = analysis_cancellation_,
+                                                                         state = analysis_state_, launch_ready](
+                                                                            task::TaskContext& context) mutable {
+      const auto fail_task = [&state](const core::Status& status) {
+        {
+          std::lock_guard lock{state->mutex};
+          state->error = status;
+        }
+        return task::TaskExecutionResult::failed(
+            {"SS-ANALYSIS", std::string{status.message()}, std::string{status.diagnostic()},
+             "核对分析参数、工程和结果目录后重试", true, "retry", "log://signal-studio/analysis"});
+      };
+      while (!launch_ready->load(std::memory_order_acquire)) {
+        std::this_thread::yield();
+      }
+      static_cast<void>(context.report_progress(0.1, "准备真实样本范围"));
+      if (!context.checkpoint()) {
+        cancellation->store(true, std::memory_order_release);
+        return task::TaskExecutionResult::completed();
+      }
+      auto result = controller_.analyze(imported, settings, prefer_cuda, cancellation, view_request, task_id, views);
+      if (!context.checkpoint()) {
+        cancellation->store(true, std::memory_order_release);
+        return task::TaskExecutionResult::completed();
+      }
+      if (!result) {
+        return fail_task(result.error());
+      }
+      auto bundle = std::move(result.value());
+      if (state->commit_artifact) {
+        // The final checkpoint is the cancellation boundary for a formal result. Before it,
+        // cancellation/staleness wins; after it, the worker owns publication and artifact commit.
+        if (!context.checkpoint()) {
+          cancellation->store(true, std::memory_order_release);
+          return task::TaskExecutionResult::completed();
+        }
+        auto expected_phase = FormalCommitPhase::cancellable;
+        if (!state->formal_phase.compare_exchange_strong(expected_phase, FormalCommitPhase::committing,
+                                                         std::memory_order_acq_rel)) {
+          cancellation->store(true, std::memory_order_release);
+          return task::TaskExecutionResult::completed();
+        }
+        static_cast<void>(context.report_progress(0.9, "正在提交正式分析制品"));
+        const auto previous_analysis = controller_.current_analysis();
+        const auto previous_settings = controller_.analysis_settings();
+        const auto previous_views = previous_analysis ? previous_analysis->views : views;
+        const auto restore_previous_settings = [&] {
+          return controller_.set_analysis_settings(previous_settings, previous_views);
+        };
+        if (const auto settings_status = controller_.set_analysis_settings(bundle.settings, bundle.views);
+            !settings_status) {
+          return fail_task(settings_status);
+        }
+        if (!controller_.commit_analysis(bundle, view_request)) {
+          const auto restored = restore_previous_settings();
+          const auto commit_failure = ui_failure("正式分析未获得最新结果提交许可", task_id);
+          return fail_task(restored ? commit_failure : restored.with_context(std::string{commit_failure.message()}));
+        }
+        auto artifact = controller_.commit_measurement(bundle, "initial-visible-range", "CH-01");
+        if (!artifact) {
+          const auto restored = restore_previous_settings();
+          controller_.restore_analysis_after_failed_task(task_id, previous_analysis);
+          return fail_task(restored ? artifact.error() : restored.with_context("正式 Artifact 提交失败后恢复旧设置"));
+        }
+        const auto fail_formal_artifact = [&](const core::Status& status) {
           {
             std::lock_guard lock{state->mutex};
-            if (result) {
-              state->bundle = std::move(result.value());
-            } else {
-              state->error = result.error();
-            }
+            state->bundle.reset();
           }
-          if (!result) {
-            return task::TaskExecutionResult::failed({"SS-ANALYSIS", std::string{result.error().message()},
-                                                      std::string{result.error().diagnostic()}, "核对导入参数后重试",
-                                                      true, "retry", "log://signal-studio/analysis"});
+          const auto restored = restore_previous_settings();
+          const auto rollback = controller_.rollback_measurement(artifact.value());
+          controller_.restore_analysis_after_failed_task(task_id, previous_analysis);
+          if (!restored) {
+            return fail_task(restored.with_context("正式制品提交失败后恢复旧设置"));
           }
-          static_cast<void>(context.report_progress(1.0, "PSD/STFT 已完成"));
-          return task::TaskExecutionResult::completed();
-        });
+          return fail_task(
+              rollback ? status
+                       : rollback.with_context("正式制品提交失败后回滚未完全成功：" + std::string{status.message()}));
+        };
+        {
+          std::lock_guard lock{state->mutex};
+          state->bundle = std::move(bundle);
+        }
+        static_cast<void>(context.report_progress(1.0, "正在登记正式制品完整性并完成任务"));
+        const std::array artifact_files{artifact.value().payload_path, artifact.value().package_path / "manifest.json",
+                                        artifact.value().package_path / ".artifact-index"};
+        if (const auto completed = context.complete_with_existing_artifacts(artifact_files); !completed) {
+          return fail_formal_artifact(completed);
+        }
+        state->formal_phase.store(FormalCommitPhase::finalized, std::memory_order_release);
+        return task::TaskExecutionResult::completed();
+      }
+      {
+        std::lock_guard lock{state->mutex};
+        state->bundle = std::move(bundle);
+      }
+      static_cast<void>(context.report_progress(1.0, "PSD/STFT 已完成"));
+      return task::TaskExecutionResult::completed();
+    });
     if (progress_ui_) {
       QObject::disconnect(progress_ui_->cancelLoadButton, nullptr, nullptr, nullptr);
-      QObject::connect(progress_ui_->cancelLoadButton, &QPushButton::clicked, progress_dialog_, [this] {
-        if (analysis_cancellation_) {
-          analysis_cancellation_->store(true, std::memory_order_release);
-        }
-        if (active_analysis_) {
-          static_cast<void>(controller_.task_runtime().cancel(*active_analysis_));
-        }
-        progress_ui_->loadStatusLabel->setText("正在取消；半成品不会发布");
-      });
+      QObject::connect(progress_ui_->cancelLoadButton, &QPushButton::clicked, progress_dialog_,
+                       [this] { cancel_active_analysis_from_ui(); });
     }
     if (analysis_timer_) {
       analysis_timer_->stop();
@@ -2353,13 +2601,13 @@ private:
     }
     active_analysis_.reset();
     analysis_state_.reset();
-    if (!bundle) {
-      if (status.value().state == task::TaskState::canceled || status.value().state == task::TaskState::stale) {
-        if (analysis_settings_ui_) {
-          analysis_settings_ui_->parameterWarningLabel->setText("分析已取消；旧图谱保持不变。");
-        }
-        return;
+    if (status.value().state == task::TaskState::canceled || status.value().state == task::TaskState::stale) {
+      if (analysis_settings_ui_) {
+        analysis_settings_ui_->parameterWarningLabel->setText("分析已取消；旧图谱保持不变。");
       }
+      return;
+    }
+    if (!bundle) {
       const auto failure_status = error.value_or(ui_failure("分析任务未返回结果"));
       if (progress_ui_) {
         finish_progress_with_error(failure_status);
@@ -2369,17 +2617,19 @@ private:
       }
       return;
     }
-    if (!controller_.commit_analysis(*bundle, bundle->view_request)) {
+    if (!commit_artifact && !controller_.commit_analysis(*bundle, bundle->view_request)) {
       if (analysis_settings_ui_) {
         analysis_settings_ui_->parameterWarningLabel->setText("旧分析请求已完成但未获得最新结果提交许可。");
       }
       return;
     }
-    if (const auto updated = controller_.set_analysis_settings(bundle->settings); !updated) {
-      if (progress_ui_) {
-        finish_progress_with_error(updated);
+    if (!commit_artifact) {
+      if (const auto updated = controller_.set_analysis_settings(bundle->settings, bundle->views); !updated) {
+        if (progress_ui_) {
+          finish_progress_with_error(updated);
+        }
+        return;
       }
-      return;
     }
     if (const auto applied = apply_analysis(*bundle); !applied) {
       if (progress_ui_) {
@@ -2387,21 +2637,16 @@ private:
       }
       return;
     }
-    if (commit_artifact) {
-      auto committed = controller_.commit_measurement(*bundle, "initial-visible-range", "CH-01");
-      if (!committed) {
-        finish_progress_with_error(committed.error());
+    if (!commit_artifact) {
+      if (const auto saved = controller_.save_project(); !saved) {
+        if (progress_ui_) {
+          finish_progress_with_error(saved);
+        } else if (analysis_settings_ui_) {
+          analysis_settings_ui_->parameterWarningLabel->setText(
+              QString("分析已计算但工程保存失败：%1").arg(QString::fromStdString(std::string{saved.message()})));
+        }
         return;
       }
-    }
-    if (const auto saved = controller_.save_project(); !saved) {
-      if (progress_ui_) {
-        finish_progress_with_error(saved);
-      } else if (analysis_settings_ui_) {
-        analysis_settings_ui_->parameterWarningLabel->setText(
-            QString("分析已计算但工程保存失败：%1").arg(QString::fromStdString(std::string{saved.message()})));
-      }
-      return;
     }
     set_analysis_panel_settings(bundle->settings, controller_.analysis_display_settings());
     if (analysis_settings_ui_) {
@@ -2717,6 +2962,7 @@ private:
     std::optional<core::Status> error;
     bool commit_artifact{};
     bool parameter_recompute{};
+    std::atomic<FormalCommitPhase> formal_phase{FormalCommitPhase::cancellable};
   };
 
   struct PreviewState final {
@@ -2760,6 +3006,7 @@ private:
   std::optional<task::TaskId> active_filter_preview_;
   std::shared_ptr<FilterPreviewState> filter_preview_state_;
   std::uint64_t filter_preview_generation_{};
+  std::uint64_t hold_reset_generation_{};
   bool analysis_panel_loading_{};
   std::unique_ptr<visualization::IAnalysisWorkspace> inspector_workspace_;
   std::vector<core::ArtifactRecord> visible_results_;

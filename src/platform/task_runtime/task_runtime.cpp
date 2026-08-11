@@ -1353,6 +1353,55 @@ public:
     return core::Status::success();
   }
 
+  [[nodiscard]] core::Status complete_with_existing_artifacts(const TaskId& task_id,
+                                                              std::span<const std::filesystem::path> artifact_paths) {
+    if (artifact_paths.empty()) {
+      return task_error(core::ErrorReason::invalid_argument, "完成正式任务至少需要一个不可变制品文件");
+    }
+    std::shared_lock view_lock(view_mutex_);
+    std::vector<CommittedArtifact> artifacts;
+    artifacts.reserve(artifact_paths.size());
+    std::map<std::filesystem::path, bool> unique_paths;
+    for (const auto& path : artifact_paths) {
+      std::error_code error;
+      const auto normalized = path.lexically_normal();
+      if (path.empty() || !unique_paths.emplace(normalized, true).second ||
+          !std::filesystem::is_regular_file(normalized, error) || error) {
+        return task_error(core::ErrorReason::invalid_argument, "正式任务制品路径无效或重复", path.string());
+      }
+      const auto digest = digest_file(normalized);
+      if (!digest) {
+        return task_error(core::ErrorReason::unavailable, "无法计算正式任务制品 SHA-256", normalized.string());
+      }
+      artifacts.push_back({normalized, digest->sha256, digest->size_bytes});
+    }
+
+    std::optional<Emission> emission;
+    std::shared_ptr<Record> record;
+    {
+      std::lock_guard task_lock(tasks_mutex_);
+      record = find_locked(task_id);
+      if (!record || record->cancel_requested.load() || record->stale_requested.load() || record->timed_out.load() ||
+          terminal_state(record->status.state) || record->status.state != TaskState::running ||
+          !record->status.committed_artifacts.empty()) {
+        return task_error(core::ErrorReason::cancelled, "任务已取消、过期或不再允许完成正式制品提交");
+      }
+      if (record->status.view_request) {
+        const auto current = current_views_.find(record->status.view_request->scope);
+        if (current == current_views_.end() || current->second != record->status.view_request->generation) {
+          return task_error(core::ErrorReason::cancelled, "视图请求已过期，正式制品未登记");
+        }
+      }
+      record->status.committed_artifacts = std::move(artifacts);
+      record->status.progress = 1.0;
+      transition_locked(*record, TaskState::completed, "正式制品已提交，任务完成", std::nullopt);
+      emission = emission_locked(*record);
+    }
+    record->state_changed.notify_all();
+    publish(std::move(*emission));
+    return core::Status::success();
+  }
+
   void shutdown() noexcept {
     std::vector<Emission> emissions;
     std::vector<std::shared_ptr<Record>> wake;
@@ -1732,7 +1781,7 @@ private:
           add_resources(available_, record->spec.resources);
           record->resources_held = false;
         }
-        if (record->status.state != TaskState::stale) {
+        if (!terminal_state(record->status.state)) {
           if (record->timed_out.load()) {
             transition_locked(*record, TaskState::failed, "任务超时", timeout_failure());
           } else if (record->cancel_requested.load()) {
@@ -2040,6 +2089,14 @@ core::Status TaskContext::commit_artifact(const std::filesystem::path& temporary
     return task_error(core::ErrorReason::unavailable, "任务运行时不可用");
   }
   return control->commit_artifact(state_->task_id, temporary_path, final_path);
+}
+
+core::Status TaskContext::complete_with_existing_artifacts(std::span<const std::filesystem::path> artifact_paths) {
+  const auto control = state_ ? state_->control.lock() : nullptr;
+  if (!control) {
+    return task_error(core::ErrorReason::unavailable, "任务运行时不可用");
+  }
+  return control->complete_with_existing_artifacts(state_->task_id, artifact_paths);
 }
 
 TaskId TaskContext::task_id() const {

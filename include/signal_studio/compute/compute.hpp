@@ -53,6 +53,9 @@ struct BackendProvenance final {
   std::string reason;
   bool degraded{};
   bool consistency_verified{};
+  /// Numeric representation used by the executed operation, or "unspecified" when the operation has no such contract.
+  std::string precision{"unspecified"};
+  friend bool operator==(const BackendProvenance&, const BackendProvenance&) = default;
 };
 
 struct BufferCopyRequest final {

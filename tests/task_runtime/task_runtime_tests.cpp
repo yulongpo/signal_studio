@@ -1,6 +1,7 @@
 #include "signal_studio/task_runtime/task_runtime.hpp"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -754,8 +755,11 @@ void test_fr_task_101_lifecycle() {
   const auto dag_crash_journal = base / "dag-crash.journal";
   const auto unknown_state_journal = base / "unknown-state.journal";
   const auto temporary_recovery_journal = base / "temporary-recovery.journal";
+  const auto sealed_artifact_journal = base / "sealed-artifact.journal";
   const auto temporary_artifact = base / "artifact.partial";
   const auto final_artifact = base / "artifact.bin";
+  const auto sealed_artifact_a = base / "sealed-a.bin";
+  const auto sealed_artifact_b = base / "sealed-b.bin";
   std::filesystem::create_directories(base);
 
   {
@@ -892,6 +896,52 @@ void test_fr_task_101_lifecycle() {
                     "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
             "原任务制品元数据错误");
     runtime.remove_observer(subscription);
+  }
+
+  {
+    {
+      std::ofstream stream(sealed_artifact_a, std::ios::binary);
+      stream << "sealed-a";
+    }
+    {
+      std::ofstream stream(sealed_artifact_b, std::ios::binary);
+      stream << "sealed-b";
+    }
+    auto config = make_config();
+    config.history_file = sealed_artifact_journal;
+    TaskRuntime runtime{config};
+    auto submitted = runtime.submit(make_spec("sealed-artifacts"), [&](TaskContext& context) {
+      const std::array<std::filesystem::path, 2U> paths{sealed_artifact_a, sealed_artifact_b};
+      require(context.complete_with_existing_artifacts(paths).ok(), "不可变制品集合未能原子完成任务");
+      require(runtime.cancel(context.task_id()).ok(), "原子完成后的取消调用失败");
+      return TaskExecutionResult::completed();
+    });
+    require(submitted.ok(), "原子完成制品任务提交失败");
+    const auto completed = submitted.value().wait();
+    require(completed && completed.value().state == TaskState::completed &&
+                completed.value().committed_artifacts.size() == 2U,
+            "任务原子完成后仍被取消或未记录完整制品集合");
+  }
+  {
+    auto config = make_config();
+    config.history_file = sealed_artifact_journal;
+    TaskRuntime recovered{config};
+    require(recovered.history().size() == 1U && recovered.history().front().state == TaskState::completed &&
+                recovered.history().front().committed_artifacts.size() == 2U,
+            "原子完成的不可变制品集合未通过重启校验");
+  }
+  {
+    std::ofstream stream(sealed_artifact_b, std::ios::binary | std::ios::trunc);
+    stream << "corrupt";
+  }
+  {
+    auto config = make_config();
+    config.history_file = sealed_artifact_journal;
+    TaskRuntime recovered{config};
+    require(recovered.history().size() == 1U && recovered.history().front().state == TaskState::failed &&
+                recovered.history().front().failure &&
+                recovered.history().front().failure->error_code == "TASK.ARTIFACT_INVALID",
+            "不可变制品集合损坏后任务仍恢复为 completed");
   }
 
   {

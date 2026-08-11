@@ -59,6 +59,77 @@ namespace {
           "log://signal-studio/import"};
 }
 
+[[nodiscard]] core::Status
+reconcile_interrupted_formal_artifacts(core::Workspace& workspace, core::ArtifactStore& artifact_store,
+                                       core::WorkspaceStore& workspace_store, const std::filesystem::path& project_path,
+                                       std::span<const task::TaskStatus> task_history, bool read_only) {
+  auto artifacts = artifact_store.query();
+  if (!artifacts) {
+    return artifacts.error();
+  }
+  struct QuarantinedArtifact final {
+    std::filesystem::path package;
+    std::filesystem::path quarantine;
+    std::string result_id;
+  };
+  std::vector<QuarantinedArtifact> interrupted;
+  for (const auto& artifact : artifacts.value()) {
+    const auto& task_id = artifact.descriptor.provenance.task_id;
+    if (task_id.empty()) {
+      continue;
+    }
+    const auto status = std::ranges::find_if(task_history, [&](const task::TaskStatus& candidate) {
+      return candidate.task_id.value == task_id && candidate.task_type == "signal-studio.parameterized-analysis";
+    });
+    if (status == task_history.end() ||
+        (status->state == task::TaskState::completed && !status->committed_artifacts.empty())) {
+      continue;
+    }
+    if (read_only) {
+      return failure(core::ErrorReason::unavailable, "只读工程包含崩溃中断的正式分析制品，需以可写模式恢复",
+                     artifact.package_path.string());
+    }
+    auto quarantine = artifact.package_path;
+    quarantine += ".staging-reconcile-" + task_id;
+    std::error_code error;
+    std::filesystem::rename(artifact.package_path, quarantine, error);
+    if (error) {
+      for (auto iterator = interrupted.rbegin(); iterator != interrupted.rend(); ++iterator) {
+        std::error_code ignored;
+        std::filesystem::rename(iterator->quarantine, iterator->package, ignored);
+      }
+      return failure(core::ErrorReason::unavailable, "无法隔离崩溃中断的正式分析制品", error.message());
+    }
+    interrupted.push_back({artifact.package_path, std::move(quarantine), artifact.descriptor.id});
+  }
+  if (interrupted.empty()) {
+    return core::Status::success();
+  }
+
+  const auto original_results = workspace.results;
+  std::erase_if(workspace.results, [&](const auto& result) {
+    return std::ranges::any_of(interrupted, [&](const auto& artifact) { return artifact.result_id == result.id; });
+  });
+  if (workspace.results != original_results) {
+    if (const auto saved = workspace_store.save(project_path, workspace); !saved) {
+      workspace.results = original_results;
+      for (auto iterator = interrupted.rbegin(); iterator != interrupted.rend(); ++iterator) {
+        std::error_code ignored;
+        std::filesystem::rename(iterator->quarantine, iterator->package, ignored);
+      }
+      return saved.with_context("保存正式分析崩溃恢复结果");
+    }
+  }
+  for (const auto& artifact : interrupted) {
+    std::error_code error;
+    std::filesystem::remove_all(artifact.quarantine, error);
+    if (error) {
+      return failure(core::ErrorReason::unavailable, "崩溃中断制品已取消发布但隔离目录清理失败", error.message());
+    }
+  }
+  return core::Status::success();
+}
+
 [[nodiscard]] double unit_multiplier(std::string_view unit) {
   if (unit == "GHz" || unit == "GSps") {
     return 1.0e9;
@@ -134,24 +205,8 @@ template <typename Value> [[nodiscard]] std::uint64_t vector_bytes(const std::ve
   add(vector_bytes(bundle.stft.raw_values));
   add(vector_bytes(bundle.stft.values));
   add(vector_bytes(bundle.stft.raw_db_per_hz));
+  add(vector_bytes(bundle.contributing_source_ranges));
   return bytes;
-}
-
-[[nodiscard]] std::string_view quantity_unit(dsp::SpectrumOutputQuantity quantity) noexcept {
-  switch (quantity) {
-  case dsp::SpectrumOutputQuantity::magnitude_dbfs:
-  case dsp::SpectrumOutputQuantity::power_dbfs:
-    return "dBFS";
-  case dsp::SpectrumOutputQuantity::psd_dbfs_per_hz:
-    return "dBFS/Hz";
-  case dsp::SpectrumOutputQuantity::linear_amplitude:
-    return "FS";
-  case dsp::SpectrumOutputQuantity::linear_power:
-    return "FS^2";
-  case dsp::SpectrumOutputQuantity::linear_power_density:
-    return "FS^2/Hz";
-  }
-  return "unknown";
 }
 
 [[nodiscard]] bool quantity_is_logarithmic(dsp::SpectrumOutputQuantity quantity) noexcept {
@@ -163,6 +218,152 @@ template <typename Value> [[nodiscard]] std::uint64_t vector_bytes(const std::ve
 [[nodiscard]] bool quantity_is_amplitude(dsp::SpectrumOutputQuantity quantity) noexcept {
   return quantity == dsp::SpectrumOutputQuantity::magnitude_dbfs ||
          quantity == dsp::SpectrumOutputQuantity::linear_amplitude;
+}
+
+[[nodiscard]] std::string provenance_summary(const compute::BackendProvenance& provenance) {
+  std::ostringstream output;
+  output << "requested=" << static_cast<unsigned>(provenance.requested)
+         << ",actual=" << static_cast<unsigned>(provenance.actual) << ",backend=" << provenance.backend_id
+         << ",device=" << provenance.device << ",precision=" << provenance.precision
+         << ",degraded=" << provenance.degraded << ",verified=" << provenance.consistency_verified;
+  return output.str();
+}
+
+[[nodiscard]] core::Status validate_analysis_view_provenance(const dsp::SpectrumResult& spectrum,
+                                                             const dsp::PsdResult& psd, const dsp::StftResult& stft,
+                                                             AnalysisViewSelection views) {
+  if (views.spectrum && spectrum.provenance != psd.provenance) {
+    return failure(core::ErrorReason::internal_failure, "同一分析请求的 Spectrum 与 PSD provenance 不一致",
+                   "Spectrum{" + provenance_summary(spectrum.provenance) + "}；PSD{" +
+                       provenance_summary(psd.provenance) + "}");
+  }
+  if (views.spectrum && views.spectrogram && spectrum.provenance != stft.provenance) {
+    return failure(core::ErrorReason::internal_failure, "同一分析请求的 Spectrum/PSD 与 STFT provenance 不一致",
+                   "Spectrum/PSD{" + provenance_summary(spectrum.provenance) + "}；STFT{" +
+                       provenance_summary(stft.provenance) + "}");
+  }
+  return core::Status::success();
+}
+
+[[nodiscard]] bool quantity_is_density(dsp::SpectrumOutputQuantity quantity) noexcept {
+  return quantity == dsp::SpectrumOutputQuantity::psd_dbfs_per_hz ||
+         quantity == dsp::SpectrumOutputQuantity::linear_power_density;
+}
+
+void append_source_ranges(std::vector<data::SampleRange>& destination, const AnalysisBundle& source) {
+  if (source.contributing_source_ranges.empty()) {
+    destination.push_back(source.source_range);
+    return;
+  }
+  destination.insert(destination.end(), source.contributing_source_ranges.begin(),
+                     source.contributing_source_ranges.end());
+}
+
+[[nodiscard]] std::vector<data::SampleRange> canonical_source_ranges(std::vector<data::SampleRange> ranges,
+                                                                     const data::SampleRange& current_range) {
+  ranges.push_back(current_range);
+  std::erase_if(ranges, [](const data::SampleRange& range) { return range.empty(); });
+  std::ranges::sort(ranges, [](const data::SampleRange& left, const data::SampleRange& right) {
+    return left.begin() < right.begin() || (left.begin() == right.begin() && left.end() < right.end());
+  });
+  ranges.erase(std::unique(ranges.begin(), ranges.end()), ranges.end());
+  return ranges;
+}
+
+[[nodiscard]] std::string serialize_source_ranges(std::span<const data::SampleRange> ranges) {
+  std::ostringstream output;
+  output << '[';
+  for (std::size_t index = 0U; index < ranges.size(); ++index) {
+    if (index != 0U) {
+      output << ',';
+    }
+    output << '[' << ranges[index].begin() << ',' << ranges[index].end() << ']';
+  }
+  output << ']';
+  return output.str();
+}
+
+[[nodiscard]] bool can_extend_maximum_hold(const AnalysisBundle& previous, const dsp::AnalysisSettingsSnapshot& current,
+                                           std::string_view current_project_id,
+                                           std::uint64_t current_project_generation,
+                                           std::string_view current_data_source_version_id,
+                                           const compute::BackendProvenance& current_provenance,
+                                           std::string_view current_backend_policy) {
+  if (previous.spectrum.frequency_hz.empty() ||
+      previous.settings.spectrum.accumulation.mode != dsp::SpectrumAccumulationMode::maximum_hold ||
+      current.spectrum.accumulation.mode != dsp::SpectrumAccumulationMode::maximum_hold ||
+      previous.project_id != current_project_id || previous.project_generation != current_project_generation ||
+      previous.frame.data_source_version_id != previous.inspector.data_source_version_id ||
+      previous.frame.data_source_version_id != current_data_source_version_id ||
+      previous.backend_id != previous.spectrum.provenance.backend_id ||
+      previous.device_id != previous.spectrum.provenance.device ||
+      previous.spectrum.provenance != previous.psd.provenance || previous.spectrum.provenance != current_provenance ||
+      previous.backend_policy != current_backend_policy ||
+      previous.settings.spectrum.accumulation.hold_reset_generation !=
+          current.spectrum.accumulation.hold_reset_generation) {
+    return false;
+  }
+  auto compatible_previous = previous.settings;
+  compatible_previous.spectrum.smoothing = current.spectrum.smoothing;
+  compatible_previous.spectrum.measurement_source = current.spectrum.measurement_source;
+  compatible_previous.spectrum.accumulation.hold_reset_generation = current.spectrum.accumulation.hold_reset_generation;
+  compatible_previous.spectrogram = current.spectrogram;
+  const auto invalidation = dsp::classify_analysis_change(compatible_previous, current);
+  return !dsp::has_invalidation(invalidation, dsp::AnalysisInvalidation::prefilter) &&
+         !dsp::has_invalidation(invalidation, dsp::AnalysisInvalidation::spectrum_transform);
+}
+
+[[nodiscard]] core::Result<dsp::SpectrumPsdResult>
+extend_maximum_hold(const AnalysisBundle& previous, dsp::SpectrumResult current_spectrum, dsp::PsdResult current_psd,
+                    const dsp::SpectrumAnalysisSettings& settings,
+                    const std::shared_ptr<const std::atomic_bool>& cancellation) {
+  const auto size = current_spectrum.frequency_hz.size();
+  if (size == 0U || previous.spectrum.frequency_hz != current_spectrum.frequency_hz ||
+      previous.spectrum.raw_power_linear.size() != size || previous.spectrum.raw_density_linear.size() != size ||
+      current_spectrum.raw_power_linear.size() != size || current_spectrum.raw_density_linear.size() != size ||
+      current_psd.frequency_hz != current_spectrum.frequency_hz) {
+    return failure(core::ErrorReason::invalid_argument, "连续最大保持要求相同频率轴和完整线性频谱");
+  }
+  for (std::size_t index = 0U; index < size; ++index) {
+    current_spectrum.raw_power_linear[index] =
+        std::max(current_spectrum.raw_power_linear[index], previous.spectrum.raw_power_linear[index]);
+    current_spectrum.raw_density_linear[index] =
+        std::max(current_spectrum.raw_density_linear[index], previous.spectrum.raw_density_linear[index]);
+  }
+  current_spectrum.raw_amplitude_linear.resize(size);
+  std::ranges::transform(current_spectrum.raw_power_linear, current_spectrum.raw_amplitude_linear.begin(),
+                         [](double power) { return std::sqrt(std::max(0.0, power)); });
+  current_spectrum.raw_linear_values = quantity_is_density(settings.output_quantity)
+                                           ? current_spectrum.raw_density_linear
+                                           : current_spectrum.raw_power_linear;
+  auto spectrum = dsp::resmooth_spectrum(current_spectrum, settings, cancellation);
+  if (!spectrum) {
+    return spectrum.error();
+  }
+  current_psd.raw_linear_values = spectrum.value().raw_linear_values;
+  current_psd.raw_density_linear = spectrum.value().raw_density_linear;
+  auto psd = dsp::resmooth_psd(current_psd, settings, cancellation);
+  if (!psd) {
+    return psd.error();
+  }
+  return dsp::SpectrumPsdResult{std::move(spectrum.value()), std::move(psd.value())};
+}
+
+[[nodiscard]] core::Status merge_maximum_hold(const AnalysisBundle& previous, AnalysisBundle& current,
+                                              const std::shared_ptr<const std::atomic_bool>& cancellation) {
+  auto held = extend_maximum_hold(previous, std::move(current.spectrum), std::move(current.psd),
+                                  current.settings.spectrum, cancellation);
+  if (!held) {
+    return held.error();
+  }
+  current.spectrum = std::move(held.value().spectrum);
+  current.psd = std::move(held.value().psd);
+  current.frame.psd_db_hz = current.psd.values;
+  std::vector<data::SampleRange> contributing_source_ranges;
+  append_source_ranges(contributing_source_ranges, previous);
+  current.contributing_source_ranges =
+      canonical_source_ranges(std::move(contributing_source_ranges), current.source_range);
+  return core::Status::success();
 }
 
 [[nodiscard]] data::SignalSlice bounded_slice(const ImportedSignal& imported, std::uint64_t maximum_samples) {
@@ -314,8 +515,10 @@ template <typename Value> [[nodiscard]] std::uint64_t vector_bytes(const std::ve
   std::getline(input, result.schema);
   unsigned amplitude_scale{};
   unsigned range_mode{};
-  if (result.schema.rfind("signal.analysis-display/1.", 0U) != 0U ||
-      !(input >> amplitude_scale >> range_mode >> result.mapping.minimum >> result.mapping.maximum >>
+  if (result.schema.rfind("signal.analysis-display/1.", 0U) != 0U) {
+    return failure(core::ErrorReason::unavailable, "不支持的分析显示参数主版本", result.schema);
+  }
+  if (!(input >> amplitude_scale >> range_mode >> result.mapping.minimum >> result.mapping.maximum >>
         result.mapping.reference_level >> result.mapping.dynamic_range >> std::quoted(result.mapping.color_map) >>
         std::quoted(result.interpolation) >> std::quoted(result.frequency_axis_mode)) ||
       amplitude_scale > static_cast<unsigned>(visualization::AmplitudeScale::logarithmic) ||
@@ -329,6 +532,9 @@ template <typename Value> [[nodiscard]] std::uint64_t vector_bytes(const std::ve
   }
   if (result.interpolation != "nearest" && result.interpolation != "linear") {
     return failure(core::ErrorReason::invalid_argument, "STFT 插值只允许 nearest 或 linear");
+  }
+  if (result.frequency_axis_mode != "baseband" && result.frequency_axis_mode != "absolute-if-available") {
+    return failure(core::ErrorReason::invalid_argument, "频率轴模式只允许 baseband 或 absolute-if-available");
   }
   return result;
 }
@@ -350,8 +556,7 @@ template <typename Value> [[nodiscard]] std::uint64_t vector_bytes(const std::ve
   dsp::AnalysisSettingsSnapshot settings;
   const auto complex = imported.descriptor.signal_kind == data::SignalKind::complex;
   settings.spectrum.sidedness = complex ? dsp::SpectrumSidedness::two_sided_shifted : dsp::SpectrumSidedness::one_sided;
-  settings.spectrum.frequency_reference =
-      imported.descriptor.center_frequency_hz ? data::FrequencyReference::absolute : data::FrequencyReference::baseband;
+  settings.spectrum.frequency_reference = data::FrequencyReference::baseband;
   settings.spectrum.output_quantity = dsp::SpectrumOutputQuantity::psd_dbfs_per_hz;
   settings.spectrum.normalization = dsp::SpectrumNormalization::window_power;
   settings.spectrum.analysis_range_policy = dsp::AnalysisRangePolicy::all_complete_frames;
@@ -642,6 +847,12 @@ core::Status ApplicationController::open_project(const std::filesystem::path& pr
   auto candidate_artifact_store = std::make_unique<core::ArtifactStore>(
       project_path.parent_path() / (project_path.stem().string() + ".assets") / "artifacts");
   if (const auto status = candidate_artifact_store->recover(); !status) {
+    return status;
+  }
+  const auto task_history = task_runtime_.history();
+  if (const auto status = reconcile_interrupted_formal_artifacts(
+          candidate_workspace, *candidate_artifact_store, workspace_store_, project_path, task_history, read_only);
+      !status) {
     return status;
   }
   if (!candidate_workspace.data_sources.empty()) {
@@ -944,6 +1155,8 @@ ApplicationController::analyze(const ImportedSignal& imported, const dsp::Analys
     return kernels.error();
   }
   auto effective_settings = settings;
+  // Frequency-axis selection is a display mapping. Keep cached DSP coordinates canonical and baseband-only.
+  effective_settings.spectrum.frequency_reference = data::FrequencyReference::baseband;
   if (effective_settings.prefilter.enabled && !effective_settings.prefilter.chain.nodes.empty()) {
     const auto preview_count = std::min<std::uint64_t>(samples.size(), 512U);
     auto preview_slice = samples.slice(0U, preview_count);
@@ -1019,30 +1232,50 @@ ApplicationController::analyze(const ImportedSignal& imported, const dsp::Analys
   auto invalidation = previous_analysis ? dsp::classify_analysis_change(previous_analysis->settings, effective_settings)
                                         : dsp::AnalysisInvalidation::spectrum_transform |
                                               dsp::AnalysisInvalidation::spectrogram_transform;
+  std::optional<AnalysisBundle> cached_analysis;
   {
     std::lock_guard lock{analysis_state_mutex_};
     if (const auto cached = analysis_cache_.find(cache_key); cached != analysis_cache_.end()) {
-      auto bundle = *cached->second.bundle;
+      cached_analysis = *cached->second.bundle;
       cached->second.access_sequence = ++analysis_cache_sequence_;
-      bundle.cache_hit = true;
-      bundle.view_request = std::move(view_request);
-      bundle.task_id = std::move(task_id);
-      bundle.invalidation = invalidation;
-      bundle.compute_duration =
-          std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started);
-      return bundle;
+      previous_analysis = current_analysis_;
     }
+  }
+  if (cached_analysis) {
+    invalidation = previous_analysis ? dsp::classify_analysis_change(previous_analysis->settings, effective_settings)
+                                     : dsp::AnalysisInvalidation::spectrum_transform |
+                                           dsp::AnalysisInvalidation::spectrogram_transform;
+    auto bundle = std::move(cached_analysis).value();
+    bundle.contributing_source_ranges = canonical_source_ranges({}, bundle.source_range);
+    if (views.spectrum && previous_analysis &&
+        can_extend_maximum_hold(*previous_analysis, effective_settings, project_id, project_generation,
+                                imported.fingerprint.version_id, bundle.spectrum.provenance, bundle.backend_policy)) {
+      if (const auto status = merge_maximum_hold(*previous_analysis, bundle, cancellation); !status) {
+        return status;
+      }
+    }
+    bundle.cache_hit = true;
+    bundle.view_request = std::move(view_request);
+    bundle.task_id = std::move(task_id);
+    bundle.invalidation = invalidation;
+    bundle.compute_duration =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started);
+    return bundle;
   }
 
   const auto loaded_range = imported.loaded->range();
-  const auto can_reuse_current = previous_analysis && previous_signal &&
-                                 previous_signal->fingerprint.version_id == imported.fingerprint.version_id &&
-                                 previous_analysis->source_range == loaded_range &&
-                                 previous_analysis->backend_policy == backend_policy &&
-                                 previous_analysis->backend_id == backend.value()->backend_id() &&
-                                 !dsp::has_invalidation(invalidation, dsp::AnalysisInvalidation::prefilter);
+  const auto can_reuse_current =
+      previous_analysis && previous_signal && previous_analysis->project_id == project_id &&
+      previous_analysis->project_generation == project_generation &&
+      previous_analysis->frame.data_source_version_id == imported.fingerprint.version_id &&
+      previous_analysis->inspector.data_source_version_id == imported.fingerprint.version_id &&
+      previous_signal->fingerprint.version_id == imported.fingerprint.version_id &&
+      previous_analysis->source_range == loaded_range && previous_analysis->backend_policy == backend_policy &&
+      previous_analysis->backend_id == backend.value()->backend_id() &&
+      !dsp::has_invalidation(invalidation, dsp::AnalysisInvalidation::prefilter);
   const auto reuse_spectrum_transform =
-      views.spectrum && can_reuse_current && !previous_analysis->psd.frequency_hz.empty() &&
+      views.spectrum && effective_settings.spectrum.accumulation.mode != dsp::SpectrumAccumulationMode::maximum_hold &&
+      can_reuse_current && !previous_analysis->psd.frequency_hz.empty() &&
       !dsp::has_invalidation(invalidation, dsp::AnalysisInvalidation::spectrum_transform);
   const auto reuse_spectrogram_transform =
       views.spectrogram && can_reuse_current && !previous_analysis->stft.frequency_hz.empty() &&
@@ -1056,9 +1289,7 @@ ApplicationController::analyze(const ImportedSignal& imported, const dsp::Analys
     }
     filtered = std::move(filtered_result.value());
   }
-  const auto center_frequency = effective_settings.spectrum.frequency_reference == data::FrequencyReference::absolute
-                                    ? imported.descriptor.center_frequency_hz.value_or(0.0)
-                                    : 0.0;
+  constexpr double center_frequency = 0.0;
   dsp::SpectrumResult spectrum;
   dsp::PsdResult psd;
   dsp::StftResult stft;
@@ -1109,6 +1340,9 @@ ApplicationController::analyze(const ImportedSignal& imported, const dsp::Analys
     stft = std::move(stft_result.value());
     stft.settings_hash = settings_hash.value();
     stft.prefilter_applied = effective_settings.prefilter.enabled;
+  }
+  if (const auto status = validate_analysis_view_provenance(spectrum, psd, stft, views); !status) {
+    return status;
   }
   const auto& frequency_axis = views.spectrum ? psd.frequency_hz : stft.frequency_hz;
   if (frequency_axis.size() < 2U) {
@@ -1174,7 +1408,7 @@ ApplicationController::analyze(const ImportedSignal& imported, const dsp::Analys
                           effective_settings.spectrum.estimator.kind == dsp::PsdEstimatorKind::welch ? "Welch"
                                                                                                      : "Periodogram",
                           psd.equivalent_noise_bandwidth_hz,
-                          std::string{quantity_unit(effective_settings.spectrum.output_quantity)}};
+                          std::string{dsp::spectrum_output_unit(psd.output_quantity, psd.normalization)}};
   }
   if (views.spectrogram) {
     frame.stft_db = stft.values;
@@ -1188,10 +1422,9 @@ ApplicationController::analyze(const ImportedSignal& imported, const dsp::Analys
                            dsp::spectrogram_overlap_ratio(effective_settings.spectrogram),
                            display_settings.mapping.color_map,
                            display_settings.interpolation,
-                           std::string{quantity_unit(effective_settings.spectrogram.output_quantity)}};
+                           std::string{dsp::spectrum_output_unit(stft.output_quantity, stft.normalization)}};
   }
-  frame.absolute_frequency = effective_settings.spectrum.frequency_reference == data::FrequencyReference::absolute &&
-                             imported.descriptor.center_frequency_hz.has_value();
+  frame.absolute_frequency = false;
   frame.center_frequency_hz =
       static_cast<std::int64_t>(std::llround(imported.descriptor.center_frequency_hz.value_or(0.0)));
   frame.data_source_version_id = imported.fingerprint.version_id;
@@ -1214,12 +1447,14 @@ ApplicationController::analyze(const ImportedSignal& imported, const dsp::Analys
   bundle.device_id = provenance.device;
   bundle.backend_policy = backend_policy;
   bundle.settings = effective_settings;
+  bundle.views = views;
   bundle.settings_hash = settings_hash.value();
   bundle.cost = cost.value();
   bundle.spectrum = std::move(spectrum);
   bundle.psd = std::move(psd);
   bundle.stft = std::move(stft);
   bundle.source_range = viewport_range.value();
+  bundle.contributing_source_ranges = canonical_source_ranges({}, bundle.source_range);
   bundle.view_request = std::move(view_request);
   bundle.cache_key = cache_key;
   bundle.task_id = std::move(task_id);
@@ -1230,36 +1465,55 @@ ApplicationController::analyze(const ImportedSignal& imported, const dsp::Analys
   bundle.invalidation = invalidation;
   constexpr std::uint64_t cache_budget = 256ULL * 1024ULL * 1024ULL;
   const auto bundle_bytes = analysis_bundle_bytes(bundle);
-  std::lock_guard state_lock{analysis_state_mutex_};
-  if (workspace_.project_id != project_id || project_generation_ != project_generation || !current_signal_ ||
-      current_signal_->fingerprint.version_id != imported.fingerprint.version_id) {
-    return failure(core::ErrorReason::cancelled, "分析期间工程或数据源已切换，旧结果不会进入缓存");
-  }
-  if (bundle_bytes <= cache_budget) {
-    if (const auto existing = analysis_cache_.find(cache_key); existing != analysis_cache_.end()) {
-      analysis_cache_bytes_ -= std::min(analysis_cache_bytes_, existing->second.bytes);
-      analysis_cache_.erase(existing);
+  {
+    std::lock_guard state_lock{analysis_state_mutex_};
+    if (workspace_.project_id != project_id || project_generation_ != project_generation || !current_signal_ ||
+        current_signal_->fingerprint.version_id != imported.fingerprint.version_id) {
+      return failure(core::ErrorReason::cancelled, "分析期间工程或数据源已切换，旧结果不会进入缓存");
     }
-    while (!analysis_cache_.empty() && bundle_bytes > cache_budget - analysis_cache_bytes_) {
-      const auto oldest =
-          std::ranges::min_element(analysis_cache_, {}, [](const auto& entry) { return entry.second.access_sequence; });
-      analysis_cache_bytes_ -= std::min(analysis_cache_bytes_, oldest->second.bytes);
-      analysis_cache_.erase(oldest);
+    previous_analysis = current_analysis_;
+    if (bundle_bytes <= cache_budget) {
+      if (const auto existing = analysis_cache_.find(cache_key); existing != analysis_cache_.end()) {
+        analysis_cache_bytes_ -= std::min(analysis_cache_bytes_, existing->second.bytes);
+        analysis_cache_.erase(existing);
+      }
+      while (!analysis_cache_.empty() && bundle_bytes > cache_budget - analysis_cache_bytes_) {
+        const auto oldest = std::ranges::min_element(analysis_cache_, {},
+                                                     [](const auto& entry) { return entry.second.access_sequence; });
+        analysis_cache_bytes_ -= std::min(analysis_cache_bytes_, oldest->second.bytes);
+        analysis_cache_.erase(oldest);
+      }
+      auto cached_bundle = std::make_shared<const AnalysisBundle>(bundle);
+      analysis_cache_.emplace(cache_key,
+                              AnalysisCacheEntry{std::move(cached_bundle), bundle_bytes, ++analysis_cache_sequence_});
+      analysis_cache_bytes_ += bundle_bytes;
     }
-    auto cached_bundle = std::make_shared<const AnalysisBundle>(bundle);
-    analysis_cache_.emplace(cache_key,
-                            AnalysisCacheEntry{std::move(cached_bundle), bundle_bytes, ++analysis_cache_sequence_});
-    analysis_cache_bytes_ += bundle_bytes;
   }
+  bundle.invalidation =
+      previous_analysis
+          ? dsp::classify_analysis_change(previous_analysis->settings, effective_settings)
+          : dsp::AnalysisInvalidation::spectrum_transform | dsp::AnalysisInvalidation::spectrogram_transform;
+  if (views.spectrum && previous_analysis &&
+      can_extend_maximum_hold(*previous_analysis, effective_settings, project_id, project_generation,
+                              imported.fingerprint.version_id, bundle.spectrum.provenance, bundle.backend_policy)) {
+    if (const auto status = merge_maximum_hold(*previous_analysis, bundle, cancellation); !status) {
+      return status;
+    }
+  }
+  bundle.compute_duration =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started);
   return bundle;
 }
 
 bool ApplicationController::commit_analysis(AnalysisBundle analysis, const task::ViewRequestId& request) {
+  if (analysis.view_request != request ||
+      !validate_analysis_view_provenance(analysis.spectrum, analysis.psd, analysis.stft, analysis.views)) {
+    return false;
+  }
   auto permit = task_runtime_.try_begin_view_commit(request);
   if (!permit) {
     return false;
   }
-  analysis.view_request = request;
   std::lock_guard lock{analysis_state_mutex_};
   if (analysis.project_id.empty() || analysis.project_id != workspace_.project_id ||
       analysis.project_generation != project_generation_ || !current_signal_ ||
@@ -1273,16 +1527,33 @@ bool ApplicationController::commit_analysis(AnalysisBundle analysis, const task:
 core::Result<core::ArtifactRecord> ApplicationController::commit_measurement(const AnalysisBundle& analysis,
                                                                              std::string selection_id,
                                                                              std::string channel_id) {
+  auto latest_request_permit = task_runtime_.try_begin_view_commit(analysis.view_request);
+  if (!latest_request_permit) {
+    return failure(core::ErrorReason::cancelled, "分析请求已被更新代际取代，禁止提交旧测量制品");
+  }
   std::lock_guard state_lock{analysis_state_mutex_};
-  if (!artifact_store_ || workspace_.project_id.empty() || analysis.project_id != workspace_.project_id ||
-      analysis.project_generation != project_generation_ || !current_signal_ ||
-      current_signal_->fingerprint.version_id != analysis.frame.data_source_version_id ||
+  const auto matches_current_analysis =
+      current_analysis_ && current_analysis_->project_id == analysis.project_id &&
+      current_analysis_->project_generation == analysis.project_generation &&
+      current_analysis_->frame.data_source_version_id == analysis.frame.data_source_version_id &&
+      current_analysis_->source_range == analysis.source_range && current_analysis_->task_id == analysis.task_id &&
+      current_analysis_->view_request == analysis.view_request &&
+      current_analysis_->settings_hash == analysis.settings_hash &&
+      current_analysis_->cache_key == analysis.cache_key && current_analysis_->backend_id == analysis.backend_id &&
+      current_analysis_->device_id == analysis.device_id &&
+      current_analysis_->backend_policy == analysis.backend_policy && current_analysis_->views == analysis.views &&
+      current_analysis_->spectrum.provenance == analysis.spectrum.provenance &&
+      current_analysis_->psd.provenance == analysis.psd.provenance &&
+      current_analysis_->stft.provenance == analysis.stft.provenance;
+  if (!artifact_store_ || !matches_current_analysis || workspace_.project_id.empty() ||
+      analysis.project_id != workspace_.project_id || analysis.project_generation != project_generation_ ||
+      !current_signal_ || current_signal_->fingerprint.version_id != analysis.frame.data_source_version_id ||
       analysis.frame.psd_db_hz.empty()) {
     return failure(core::ErrorReason::unavailable, "当前没有可提交的分析结果");
   }
   const auto& measurement_values = analysis.settings.spectrum.measurement_source == dsp::MeasurementSource::raw
-                                       ? analysis.psd.raw_db_per_hz
-                                       : analysis.psd.db_per_hz;
+                                       ? analysis.psd.raw_values
+                                       : analysis.psd.values;
   if (measurement_values.empty()) {
     return failure(core::ErrorReason::unavailable, "分析结果缺少可提交的测量来源");
   }
@@ -1301,7 +1572,10 @@ core::Result<core::ArtifactRecord> ApplicationController::commit_measurement(con
       workspace_.project_id, analysis.frame.data_source_version_id, std::move(selection_id),
       std::move(channel_id), analysis.inspector.channel_version,    analysis.task_id,
       "signal.dsp.psd",      analysis.settings.algorithm_version,   analysis.settings_hash.stable_text()};
-  descriptor.units = {{"peak", "dBFS/Hz"}, {"mean", "dBFS/Hz"}};
+  const auto measurement_unit = dsp::spectrum_output_unit(analysis.psd.output_quantity, analysis.psd.normalization);
+  auto contributing_source_ranges = analysis.contributing_source_ranges;
+  contributing_source_ranges = canonical_source_ranges(std::move(contributing_source_ranges), analysis.source_range);
+  descriptor.units = {{"peak", std::string{measurement_unit}}, {"mean", std::string{measurement_unit}}};
   descriptor.metadata = {
       {"backend", analysis.backend_id},
       {"device", analysis.device_id},
@@ -1310,6 +1584,7 @@ core::Result<core::ArtifactRecord> ApplicationController::commit_measurement(con
       {"parameterHash", analysis.settings_hash.stable_text()},
       {"sourceRangeBegin", std::to_string(analysis.source_range.begin())},
       {"sourceRangeEnd", std::to_string(analysis.source_range.end())},
+      {"sourceRanges", serialize_source_ranges(contributing_source_ranges)},
       {"sampleRateHz", std::to_string(current_signal_ ? current_signal_->descriptor.sample_rate_hz : 0.0)},
       {"centerFrequencyHz", std::to_string(current_signal_ && current_signal_->descriptor.center_frequency_hz
                                                ? *current_signal_->descriptor.center_frequency_hz
@@ -1323,6 +1598,8 @@ core::Result<core::ArtifactRecord> ApplicationController::commit_measurement(con
        analysis.settings.spectrum.estimator.kind == dsp::PsdEstimatorKind::welch ? "Welch" : "Periodogram"},
       {"accumulation", std::to_string(static_cast<unsigned>(analysis.settings.spectrum.accumulation.mode))},
       {"smoothing", std::to_string(static_cast<unsigned>(analysis.settings.spectrum.smoothing.kind))},
+      {"outputUnit", std::string{measurement_unit}},
+      {"normalization", std::to_string(static_cast<unsigned>(analysis.psd.normalization))},
       {"prefilterApplied", analysis.settings.prefilter.enabled ? "true" : "false"},
       {"measurementSource",
        analysis.settings.spectrum.measurement_source == dsp::MeasurementSource::raw ? "raw" : "smoothed"},
@@ -1346,9 +1623,67 @@ core::Result<core::ArtifactRecord> ApplicationController::commit_measurement(con
     return committed.error();
   }
   if (const auto status = append_result_to_workspace(committed.value()); !status) {
+    std::error_code cleanup_error;
+    std::filesystem::remove_all(committed.value().package_path, cleanup_error);
+    if (cleanup_error) {
+      return status.with_context("工程结果追加失败，且未发布结果包清理失败：" + cleanup_error.message());
+    }
     return status;
   }
   return committed.value();
+}
+
+core::Status ApplicationController::rollback_measurement(const core::ArtifactRecord& record) {
+  std::lock_guard state_lock{analysis_state_mutex_};
+  if (!artifact_store_ || record.package_path.empty() ||
+      record.package_path.parent_path().lexically_normal() != artifact_store_->root().lexically_normal()) {
+    return failure(core::ErrorReason::invalid_argument, "只允许回滚当前工程结果存储中的测量制品");
+  }
+  const auto result = std::ranges::find_if(workspace_.results,
+                                           [&](const auto& candidate) { return candidate.id == record.descriptor.id; });
+  if (result == workspace_.results.end()) {
+    return failure(core::ErrorReason::unavailable, "待回滚测量不在当前工程结果中", record.descriptor.id);
+  }
+  const auto result_index = static_cast<std::size_t>(std::distance(workspace_.results.begin(), result));
+  const auto removed_result = *result;
+  auto quarantine = record.package_path;
+  quarantine += ".staging-rollback-" + record.descriptor.provenance.task_id;
+  std::error_code filesystem_error;
+  std::filesystem::rename(record.package_path, quarantine, filesystem_error);
+  if (filesystem_error) {
+    return failure(core::ErrorReason::unavailable, "无法隔离待回滚测量制品", filesystem_error.message());
+  }
+  workspace_.results.erase(workspace_.results.begin() + static_cast<std::ptrdiff_t>(result_index));
+  persist_analysis_extensions();
+  if (const auto saved = workspace_store_.save(project_path_, workspace_); !saved) {
+    workspace_.results.insert(workspace_.results.begin() + static_cast<std::ptrdiff_t>(result_index), removed_result);
+    std::error_code restore_error;
+    std::filesystem::rename(quarantine, record.package_path, restore_error);
+    return restore_error ? saved.with_context("回滚工程保存失败，且结果包恢复失败：" + restore_error.message()) : saved;
+  }
+  if (current_analysis_ && current_analysis_->task_id == record.descriptor.provenance.task_id) {
+    current_analysis_.reset();
+  }
+  std::filesystem::remove_all(quarantine, filesystem_error);
+  if (filesystem_error) {
+    return failure(core::ErrorReason::unavailable, "已撤销工程结果，但隔离结果包清理失败", filesystem_error.message());
+  }
+  return core::Status::success();
+}
+
+void ApplicationController::restore_analysis_after_failed_task(
+    std::string_view task_id, std::shared_ptr<const AnalysisBundle> previous_analysis) {
+  std::lock_guard lock{analysis_state_mutex_};
+  if (current_analysis_ && current_analysis_->task_id != task_id) {
+    return;
+  }
+  if (previous_analysis && previous_analysis->project_id == workspace_.project_id &&
+      previous_analysis->project_generation == project_generation_ && current_signal_ &&
+      previous_analysis->frame.data_source_version_id == current_signal_->fingerprint.version_id) {
+    current_analysis_ = std::move(previous_analysis);
+  } else {
+    current_analysis_.reset();
+  }
 }
 
 core::Result<core::ArtifactRecord> ApplicationController::commit_sample_export(const ImportedSignal& imported,
@@ -1466,16 +1801,25 @@ AnalysisDisplaySettings ApplicationController::analysis_display_settings() const
   return analysis_display_settings_;
 }
 
-core::Status ApplicationController::set_analysis_settings(dsp::AnalysisSettingsSnapshot settings) {
+core::Status ApplicationController::set_analysis_settings(dsp::AnalysisSettingsSnapshot settings,
+                                                          AnalysisViewSelection views) {
   std::lock_guard lock{analysis_state_mutex_};
+  settings.spectrum.frequency_reference = data::FrequencyReference::baseband;
   if (current_signal_ && current_signal_->loaded) {
-    if (const auto status = dsp::validate_analysis_settings(settings, current_signal_->loaded->samples().size(),
-                                                            current_signal_->descriptor);
+    if (const auto status =
+            dsp::validate_analysis_settings(settings, current_signal_->loaded->samples().size(),
+                                            current_signal_->descriptor, views.spectrum, views.spectrogram);
         !status) {
       return status;
     }
-  } else if (const auto serialized = dsp::serialize_analysis_settings(settings); !serialized) {
-    return serialized.error();
+  } else {
+    const auto serialized = dsp::serialize_analysis_settings(settings);
+    if (!serialized) {
+      return serialized.error();
+    }
+    if (const auto parsed = dsp::parse_analysis_settings(serialized.value()); !parsed) {
+      return parsed.error();
+    }
   }
   analysis_settings_ = std::move(settings);
   persist_analysis_extensions();
@@ -1492,6 +1836,9 @@ core::Status ApplicationController::set_analysis_display_settings(AnalysisDispla
   if (settings.interpolation != "nearest" && settings.interpolation != "linear") {
     return failure(core::ErrorReason::invalid_argument, "STFT 插值只允许 nearest 或 linear");
   }
+  if (settings.frequency_axis_mode != "baseband" && settings.frequency_axis_mode != "absolute-if-available") {
+    return failure(core::ErrorReason::invalid_argument, "频率轴模式只允许 baseband 或 absolute-if-available");
+  }
   {
     std::lock_guard lock{analysis_state_mutex_};
     analysis_display_settings_ = std::move(settings);
@@ -1505,11 +1852,13 @@ core::Status ApplicationController::save_user_analysis_preset(std::string name,
   if (name.empty() || name.size() > 128U) {
     return failure(core::ErrorReason::invalid_argument, "用户预设名称长度必须位于 1 到 128 字节");
   }
-  if (const auto serialized = dsp::serialize_analysis_settings(settings); !serialized) {
+  auto normalized_settings = settings;
+  normalized_settings.spectrum.frequency_reference = data::FrequencyReference::baseband;
+  if (const auto serialized = dsp::serialize_analysis_settings(normalized_settings); !serialized) {
     return serialized.error();
   }
   std::lock_guard lock{analysis_state_mutex_};
-  user_analysis_presets_.insert_or_assign(std::move(name), settings);
+  user_analysis_presets_.insert_or_assign(std::move(name), std::move(normalized_settings));
   persist_analysis_extensions();
   return core::Status::success();
 }
@@ -1529,7 +1878,9 @@ core::Status ApplicationController::set_active_analysis_preset(std::string prese
   if (scope != "project-view" && scope != "project-channel") {
     return failure(core::ErrorReason::invalid_argument, "分析预设作用域必须是 project-view 或 project-channel");
   }
-  auto hash = dsp::hash_analysis_settings(settings);
+  auto normalized_settings = settings;
+  normalized_settings.spectrum.frequency_reference = data::FrequencyReference::baseband;
+  auto hash = dsp::hash_analysis_settings(normalized_settings);
   if (!hash) {
     return hash.error();
   }
@@ -1692,15 +2043,18 @@ ApplicationController::restore_analysis_extensions(const core::Workspace& worksp
       return parsed.error().with_context("读取工程分析参数");
     }
     restored.settings = std::move(parsed.value());
+    restored.settings.spectrum.frequency_reference = data::FrequencyReference::baseband;
   }
   if (const auto found = workspace.extensions.find("signal.analysis-display"); found != workspace.extensions.end()) {
     auto decoded = decode_extension_string(found->second);
-    if (decoded) {
-      auto parsed = parse_display_settings(decoded.value());
-      if (parsed) {
-        restored.display = std::move(parsed.value());
-      }
+    if (!decoded) {
+      return decoded.error().with_context("读取工程分析显示参数");
     }
+    auto parsed = parse_display_settings(decoded.value());
+    if (!parsed) {
+      return parsed.error().with_context("读取工程分析显示参数");
+    }
+    restored.display = std::move(parsed.value());
   }
   for (const auto& [key, value] : workspace.extensions) {
     if (key.rfind(preset_prefix, 0U) != 0U) {
@@ -1714,7 +2068,9 @@ ApplicationController::restore_analysis_extensions(const core::Workspace& worksp
     if (!parsed) {
       continue;
     }
-    restored.user_presets.emplace(key.substr(preset_prefix.size()), std::move(parsed.value()));
+    auto preset = std::move(parsed.value());
+    preset.spectrum.frequency_reference = data::FrequencyReference::baseband;
+    restored.user_presets.emplace(key.substr(preset_prefix.size()), std::move(preset));
   }
   const auto decode_optional = [&](std::string_view key, std::string& destination) {
     if (const auto found = workspace.extensions.find(std::string{key}); found != workspace.extensions.end()) {

@@ -62,6 +62,7 @@ public:
     provenance.backend_id = native.provenance.backend_id;
     provenance.version = native.provenance.version;
     provenance.device = native.provenance.device;
+    provenance.precision = native.provenance.precision;
     provenance.reason += "；" + native.provenance.reason;
     native.provenance = std::move(provenance);
     return native;

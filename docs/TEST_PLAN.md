@@ -203,30 +203,47 @@ PSD/STFT、结果提交和关闭循环；标准错误为 0，生命周期峰值 
 
 ## MS-4.5 测试矩阵
 
-MS-4.5 注册 20 项 `ms-4.5` 标签测试：
+MS-4.5 注册 24 项 `ms-4.5` 标签测试：
 
 | 范围 | 数量 | 重点 |
 |---|---:|---|
-| DSP 数值与后端 | 4 | 参数契约、频谱/PSD、STFT/预滤波、CPU/CUDA |
-| 应用核心 | 6 | 参数生效、缓存、最新提交、迁移、来源、参数切换稳定性 |
-| Workbench/Qt 合约 | 2 | Inspector extension、Designer 参数面板 |
-| 尺寸/DPI | 7 | 1280、1080P、4K、125%、150%、175%、200% |
-| 真实截图 | 1 | P03 高级参数面板与真实分析来源 |
+| DSP 数值与后端 | 5 | 参数契约、频谱/PSD、STFT/预滤波、CPU/CUDA、SciPy 参考 |
+| 应用核心 | 7 | 参数生效、缓存、最新提交、工程切换、迁移、来源、稳定性 |
+| Visualization/Workbench 合约 | 2 | Inspector extension、可见性与显示映射 |
+| Designer、运行时、尺寸/DPI 与截图 | 10 | 参数面板、异步运行、三种尺寸、四种 DPI、真实截图 |
 
 DSP 用例使用解析单音、非 bin 对齐单音、多音、分段幅度、脉冲、二次多项式和滤波夹具，
 按明确绝对/相对/dB 容差验证八种窗、CG/ENBW、补零、单/双边、幅度/功率/PSD、
 Periodogram/Welch、线性/指数平均、最大保持、三种频谱平滑、STFT 二维平滑、FIR/IIR
 群时延、取消、序列化和哈希。CPU/CUDA 比较频率轴、幅度、PSD、Welch、STFT、原始
 结果和预滤波结果；CUDA 不可用时必须输出 unavailable，不能记为 GPU 通过。
+后端专项用代理 FFT 计划在确定的第 N 次执行切换 backend、device、precision 或 fallback
+provenance，验证 Welch/线性平均与多帧 STFT 在混入前失败；应用缓存专项构造双视图复用
+来源失配，验证 `ApplicationController` 不发布 Spectrum/PSD 与 STFT 混合 Bundle。
 
 应用用例验证完整参数真实改变 bin/泄漏/估计/平滑/滤波，规范化参数哈希进入缓存和
 Artifact；纯显示变化不重算；纯平滑复用 raw；最新 `ViewRequestId` 拒绝旧结果；
-工程关闭/重开、用户预设、旧工程迁移、未来主版本拒绝和结果过期均可重复。
+工程关闭/重开、用户预设、旧工程迁移、未来主版本拒绝和结果过期均可重复。Important
+收口还覆盖 settings/display 同主版本损坏的事务拒绝、display 同主版本新增字段迁移、
+`None` 线性/对数单位及数值尺度；maximum hold 的 project generation/source version/
+backend/device/policy 隔离，以及不同样本范围在直接计算、缓存命中、generation 复位和
+Artifact `sourceRanges` 中的确定性 lineage；公共 DSP 的 baseband/absolute 分别进入
+哈希并触发 `spectrum_transform`，同时 Signal Studio 应用仍规范化为 baseband，频率轴
+往返后点击“应用”不产生 TaskRuntime 记录。状态缓存专项还必须覆盖 CPU 范围 A→CPU
+范围 B→CUDA-preferred/policy 切换→再次 CPU 范围 B，以及 source A→B→A：返回旧 key
+只能取得当前请求基线，旧峰值不得复活，lineage 只能列出真正贡献范围。
 
-CPU Debug/Release 必须执行全量非 benchmark CTest 和 20/20 MS-4.5 专项；CUDA
-Debug/Release 在本机可用时执行 20/20 专项。安装消费者、已安装 `SignalStudio.exe
+CPU Debug/Release 必须执行全量非 benchmark CTest 和 24/24 MS-4.5 专项；CUDA
+Debug/Release 在本机可用时执行 24/24 专项。安装消费者、已安装 `SignalStudio.exe
 --self-test`、默认 Windows 平台启动、VS Code F5 同构建树、公共头、基线、依赖锁、
 格式/静态检查均为收口门禁。
+
+2026-08-11 最终代码按预设串行完成：CPU Debug/Release 全量均为 267/267
+（411.54/284.80 秒）；CPU Debug/Release 与 CUDA Debug/Release 的 MS-4.5 标签均为
+24/24，分别为 70.41、12.79、39.55、12.29 秒。运行时 smoke 验证正式 Artifact 任务
+把 payload、`manifest.json`、`.artifact-index` 三个真实文件登记到 TaskRuntime，重启后
+逐项核对大小与 SHA-256，损坏后恢复失败；N+1 已签发时 N 的发布被拒绝，完成后取消不
+能覆写已密封状态。既有 30 分钟长时证据继续保留，当前任务遵照用户要求不重复运行。
 
 30 分钟专项通过 `scripts/run-ms45-parameter-stability.ps1` 在隔离 Release 进程中连续
 切换 Periodogram/Welch、六类累积/平滑组合、FFT/STFT、显示插值、缩放和频率视图，

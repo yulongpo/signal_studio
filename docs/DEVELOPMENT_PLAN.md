@@ -9,7 +9,7 @@
 | MS-02 | DSP 与 Compute 后端 | 已验收关闭 |
 | MS-03 | Visualization 与 Workbench | 已验收关闭 |
 | MS-04 | Signal Studio 基础应用 | 已验收关闭 |
-| MS-4.5 | 频谱与时频分析参数化闭环 | 进行中 |
+| MS-4.5 | 频谱与时频分析参数化闭环 | 已验收关闭 |
 | MS-05 | 宽窄带联动分析 | 未开始 |
 | MS-06 | PluginSDK、ModelRuntime、Dataset 功能 | 未开始 |
 | MS-07 | 工程化、打包、文档 | 未开始 |
@@ -40,3 +40,31 @@ MS-04 已验收关闭。经 2026-07-29 指派，在 MS-04 与 MS-05 之间插入
 补齐频谱、PSD、STFT、分析预滤波、参数持久化、缓存和来源追溯。MS-4.5 不修改
 BL1.0 的既有里程碑编号，也不实现 Selection 建通道、DDC、重采样、调制识别、
 插件/模型/数据集或发布业务；完成并验收后停止，未经新指令不进入 MS-05。
+
+MS-4.5 已完成类型化参数、八种窗、Periodogram/Welch、平均/最大保持、频谱/STFT
+平滑、分析前滤波、两级缓存、工程迁移、Artifact 来源、Qt Designer 参数面板和异步
+最新提交。2026-08-11 最终代码 CPU Debug/Release 全量均为 267/267
+（411.54/284.80 秒），四套 CPU/CUDA Debug/Release 专项均为 24/24
+（70.41/12.79/39.55/12.29 秒）。安装/消费者、公共头、基线和依赖锁门禁包含在全量
+回归并通过。30 分钟参数切换专项的历史证据为 125,061 轮、标准错误为空且资源有界；
+本次遵照用户要求不重跑。没有新增第三方依赖，批准基线差异为 0。
+
+2026-08-01 规格复审 Important 收口在原工作树上补强：损坏 settings/display 严格且事务
+拒绝；`Normalization::none` 使用 raw FFT 数值/单位并贯穿显示与 Artifact；跨请求最大
+保持匹配工程代际、源版本及实际 backend/device/policy，并记录完整样本范围 lineage；
+公共 DSP 的 `frequency_reference` 恢复进入哈希和频谱变换失效，Signal Studio 应用仍将
+DSP 坐标规范化为 baseband，UI 轴切换后点击“应用”不提交 DSP。不重跑 30 分钟专项，
+不进入 MS-05。
+
+2026-08-02 第三次规格复审把 maximum-hold 会话状态与 full-bundle transform cache 分离：
+cache 只保存当前请求基线，返回前才与兼容的当前已提交结果合并，策略/后端或源版本
+切换后回到旧 key 不得复活历史。该代码快照串行验收为 CPU Release 267/267（215.33
+秒）、CPU Debug 267/267（353.47 秒），CPU/CUDA 四套专项均 24/24。
+
+最终规格收口要求同一请求的所有 FFT 帧及 Spectrum/PSD/STFT 双视图完整 provenance
+一致。现已增加 precision 与 backend/device/fallback 全字段门禁和确定性第 N 次切换
+回归；`commit_analysis()` 在发布前拒绝混合来源。正式 Artifact 分析任务在最新视图许可
+内提交设置、Workspace 和真实 Artifact 文件，并由 TaskRuntime 原子登记 payload、
+`manifest.json`、`.artifact-index` 的大小/SHA-256 后密封完成；重启会清理未完成结果并
+验证损坏。最终独立复审重跑受代理额度限制未返回结论，主代理完成最终规格和代码质量
+复审，未发现剩余 Critical/Important。MS-4.5 完成后停止，MS-05 仍未开始。

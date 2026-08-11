@@ -143,24 +143,63 @@ D4，因此不把 D4 记为通过。
 
 MS-4.5 保持既有模块 DAG，在 SignalDSP 增加第三方无关的版本化分析参数契约。
 `AnalysisSettingsSnapshot` 统一承载频谱/PSD、STFT 和分析前 ProcessingChain 快照；
-显示映射保持为应用/Visualization 状态，不进入 DSP 参数哈希。规范化序列化、
-SHA-256、资源估计和失效分类均位于无 Qt 应用核心，可在无 GUI 环境测试。
+规范化序列化、SHA-256、资源估计和失效分类均位于无 Qt 应用核心，可在无 GUI 环境
+测试。公共 SignalDSP 的 `frequency_reference` 是真实变换参数：absolute 会把中心频率
+加入 `frequency_hz`，因此进入参数哈希并失效 `spectrum_transform`。Signal Studio
+应用边界始终把传给 DSP、缓存和工程参数的该字段规范化为 baseband；界面的
+baseband/absolute 只由独立 `AnalysisDisplaySettings` 映射，Qt 点击“应用”不会把显示轴
+写回 DSP 设置或提交任务。
 
 频谱与 PSD 支持独立帧长/FFT 长度、显式补零、八种窗、实信号单边/复信号移位双边、
-幅度/功率/PSD、Periodogram/Welch、线性/指数平均、最大保持和三种谱线平滑。STFT
+幅度/功率/PSD、Periodogram/Welch、线性/指数平均、跨连续请求且可显式复位的最大保持
+和三种谱线平滑。STFT
 独立保存 frame/FFT/hop/边界和二维平滑。结果同时保留原始线性域与原始显示域数据，
 因此纯平滑变化只重做平滑；变换参数只失效对应频谱或 STFT；预滤波变化才失效全部
-下游。缓存身份包含源指纹、范围、描述符、算法版本、完整参数哈希和实际后端。
+下游；仅测量来源变化复用已有 raw/smoothed 结果。缓存身份包含源指纹、范围、描述符、
+算法版本、完整参数哈希和实际后端。full-bundle transform cache 只保存当前请求内部得到的
+非跨请求聚合基线，且 lineage 固定为当前单一 `source_range`；maximum hold 会话状态只
+存在于当前已提交 `previous_analysis`。缓存命中取出基线后才检查兼容性并合并，缓存条目
+本身永不写回聚合峰值。因此 backend/policy 或 source 切换后返回旧 cache key 时，只能
+得到该请求基线，不会恢复切换前的历史。
+跨请求保持额外要求 project generation、source version、实际 backend、device、backend
+policy 全匹配，并验证前一结果的 Bundle 来源与 FFT provenance 自洽；oneMKL/cuFFT、
+不同设备、工程代际或源版本的值不合并。`AnalysisBundle::source_range` 表示当前请求，
+确定性排序并精确去重的 `contributing_source_ranges` 表示返回结果的所有实际贡献范围；
+直接计算和兼容缓存命中从当前已提交状态合并，任何不兼容切换及 generation 复位都只
+保留当前范围。lineage 只描述结果来源，不参与拼接状态缓存键。
 
 成熟内核继续复用 MS-02 Adapter：CPU FFT 为 oneMKL DFTI，CUDA FFT 为 cuFFT，
 FIR/卷积为 VSL，IIR 与 Savitzky-Golay 系数求解为 LAPACKE。分析前滤波只执行既有
 ProcessingChain 快照；未增加 FFT、滤波、卷积、重采样或通用线性代数实现，也未新增
 第三方依赖。
 
+同一请求的 Spectrum/PSD 共享窗化和 FFT 变换，CPU 与 CUDA 后端均复用各自计划缓存；
+缓存键使用执行后端报告的真实身份，不以用户请求的优先项冒充实际设备。STFT 同样按
+后端计划缓存执行，CPU 路径不会为每次 FFT 构造 CUDA 参考结果。
+每次 FFT 执行的 provenance 显式包含数值精度；Welch、帧平均/保持和 STFT 在聚合前逐帧
+比较 requested/actual backend、backend id、device、version、precision、fallback/degraded
+状态、原因及一致性标志，任一变化都拒绝整项结果。`ApplicationController` 在同一双视图
+请求发布前还要求 Spectrum、PSD 与 STFT provenance 完全一致，不能用一侧首帧来源代表
+混合执行。
+
 `ApplicationController` 保存参数、显示、用户预设、两级缓存和最新分析结果。
-TaskRuntime 负责后台执行和取消，`ViewRequestId` 只允许最新请求提交。工程通过现有
-扩展字段保存 `signal.analysis-settings/1.0`；旧工程生成有界兼容默认值，未来主版本
-明确拒绝。Artifact 来源记录真实参数哈希、算法、后端/设备、源范围和任务。
+TaskRuntime 负责后台执行和取消，`ViewRequestId` 只允许最新请求提交。正式分析采用
+`cancellable/canceling/committing/finalized` 单调状态机：取消只可在提交前取胜；提交在
+最新视图许可下完成设置、Artifact 与 Workspace，再调用 TaskRuntime 把 payload、
+`manifest.json`、`.artifact-index` 三个真实文件的大小/SHA-256 与 completed 终态原子
+登记。完成后取消不能覆写终态，重启时损坏文件使任务恢复失败；工程打开会清理未完成
+或缺少完整登记文件的正式结果。仅用于参数切换或图表可见性变化的临时视图重算依靠
+view generation 保证最新提交，不创建正式 Artifact。工程通过现有
+扩展字段保存 `signal.analysis-settings/1.0`；旧工程生成有界兼容默认值，settings/display
+同主版本损坏内容和未来主版本都在候选状态严格拒绝，失败不替换当前工程。Artifact
+来源记录真实参数哈希、算法、后端/设备、当前源范围、完整 `sourceRanges` lineage、
+实际归一化和非伪装的输出单位。
+
+工程切换通过 `project_generation` 立即使旧任务与旧缓存失效，不等待长任务退出；
+提交阶段在状态互斥下同时核对工程、代际、源版本和请求代际。后台任务持有输入和参数
+的自有快照，不引用 GUI 临时对象；滤波预览只复制最多 512 个样本并在 TaskRuntime
+执行，GUI 定时器仅消费完成状态。状态与缓存访问由同一分析状态锁保护，避免切换工程、
+缓存命中和结果提交间的数据竞争。
 
 Qt 最终应用使用经 `qt_wrap_ui` 编译的 `SignalAnalysisSettingsPanel.ui`，通过新增的
 Workbench Inspector extension 安装。GUI 线程只编辑参数和绑定完成帧；后台线程不

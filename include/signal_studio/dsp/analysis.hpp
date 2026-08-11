@@ -93,6 +93,8 @@ struct SpectrumAnalysisSettings final {
   ZeroPaddingPolicy zero_padding_policy{ZeroPaddingPolicy::forbidden};
   WindowSpecification window;
   SpectrumSidedness sidedness{SpectrumSidedness::two_sided_shifted};
+  /// Output-coordinate hint retained for DSP API compatibility. Signal Studio keeps analysis results
+  /// in baseband coordinates and applies absolute/baseband selection through its display mapping.
   data::FrequencyReference frequency_reference{data::FrequencyReference::baseband};
   SpectrumOutputQuantity output_quantity{SpectrumOutputQuantity::magnitude_dbfs};
   SpectrumNormalization normalization{SpectrumNormalization::coherent_gain};
@@ -277,6 +279,10 @@ estimate_analysis_cost(const AnalysisSettingsSnapshot& settings, std::uint64_t a
                        bool include_spectrum = true, bool include_spectrogram = true);
 [[nodiscard]] AnalysisInvalidation classify_analysis_change(const AnalysisSettingsSnapshot& before,
                                                             const AnalysisSettingsSnapshot& after);
+/// Returns the semantic unit of encoded output values. Normalization::none uses explicit raw-FFT
+/// units and is never described as full-scale calibrated.
+[[nodiscard]] std::string_view spectrum_output_unit(SpectrumOutputQuantity quantity,
+                                                    SpectrumNormalization normalization) noexcept;
 [[nodiscard]] double spectrogram_overlap_ratio(const SpectrogramAnalysisSettings& settings) noexcept;
 [[nodiscard]] core::Result<std::vector<double>>
 smooth_spectrum(std::span<const double> values, const SpectrumSmoothingSettings& settings,
@@ -305,6 +311,7 @@ struct SpectrumResult final {
   std::vector<double> raw_values;
   std::vector<double> values;
   SpectrumOutputQuantity output_quantity{SpectrumOutputQuantity::magnitude_dbfs};
+  SpectrumNormalization normalization{SpectrumNormalization::coherent_gain};
   AnalysisSettingsHash settings_hash;
   std::uint64_t frame_length{};
   std::uint64_t fft_length{};
@@ -340,6 +347,7 @@ struct PsdResult final {
   std::vector<double> values;
   std::vector<double> raw_db_per_hz;
   SpectrumOutputQuantity output_quantity{SpectrumOutputQuantity::psd_dbfs_per_hz};
+  SpectrumNormalization normalization{SpectrumNormalization::window_power};
   AnalysisSettingsHash settings_hash;
   std::uint64_t frame_length{};
   std::uint64_t fft_length{};
@@ -403,6 +411,7 @@ struct StftResult final {
   std::vector<float> values;
   std::vector<float> raw_db_per_hz;
   SpectrumOutputQuantity output_quantity{SpectrumOutputQuantity::psd_dbfs_per_hz};
+  SpectrumNormalization normalization{SpectrumNormalization::window_power};
   AnalysisSettingsHash settings_hash;
   std::uint64_t frame_length{};
   std::uint64_t fft_length{};

@@ -93,6 +93,27 @@ namespace {
   return core::Status::success();
 }
 
+[[nodiscard]] std::string provenance_summary(const compute::BackendProvenance& provenance) {
+  std::ostringstream output;
+  output << "requested=" << static_cast<unsigned>(provenance.requested)
+         << ",actual=" << static_cast<unsigned>(provenance.actual) << ",backend=" << provenance.backend_id
+         << ",device=" << provenance.device << ",precision=" << provenance.precision
+         << ",degraded=" << provenance.degraded << ",verified=" << provenance.consistency_verified
+         << ",version=" << provenance.version << ",reason=" << provenance.reason;
+  return output.str();
+}
+
+[[nodiscard]] core::Status validate_provenance_consistency(const compute::BackendProvenance& expected,
+                                                           const compute::BackendProvenance& current,
+                                                           std::string_view analysis_kind) {
+  if (expected == current) {
+    return core::Status::success();
+  }
+  return error(core::ErrorReason::internal_failure,
+               std::string{analysis_kind} + " 在同一分析请求内检测到混合 FFT provenance",
+               "首帧{" + provenance_summary(expected) + "}；当前帧{" + provenance_summary(current) + "}");
+}
+
 constexpr std::uint64_t maximum_exact_double_integer = std::uint64_t{1} << 53U;
 
 class PsdEstimator final : public IPsdEstimator {
@@ -875,6 +896,40 @@ template <typename Enum>
 
 } // namespace
 
+std::string_view spectrum_output_unit(SpectrumOutputQuantity quantity, SpectrumNormalization normalization) noexcept {
+  if (normalization == SpectrumNormalization::none) {
+    switch (quantity) {
+    case SpectrumOutputQuantity::magnitude_dbfs:
+      return "dB(re 1 raw FFT amplitude unit)";
+    case SpectrumOutputQuantity::power_dbfs:
+      return "dB(re 1 raw FFT power unit)";
+    case SpectrumOutputQuantity::psd_dbfs_per_hz:
+      return "dB(re 1 raw FFT power unit/Hz)";
+    case SpectrumOutputQuantity::linear_amplitude:
+      return "raw FFT amplitude unit";
+    case SpectrumOutputQuantity::linear_power:
+      return "raw FFT power unit";
+    case SpectrumOutputQuantity::linear_power_density:
+      return "raw FFT power unit/Hz";
+    }
+    return "unknown";
+  }
+  switch (quantity) {
+  case SpectrumOutputQuantity::magnitude_dbfs:
+  case SpectrumOutputQuantity::power_dbfs:
+    return "dBFS";
+  case SpectrumOutputQuantity::psd_dbfs_per_hz:
+    return "dBFS/Hz";
+  case SpectrumOutputQuantity::linear_amplitude:
+    return "FS";
+  case SpectrumOutputQuantity::linear_power:
+    return "FS^2";
+  case SpectrumOutputQuantity::linear_power_density:
+    return "FS^2/Hz";
+  }
+  return "unknown";
+}
+
 core::Result<FftResult> IFftBackend::execute(const FftSpec& spec, std::span<const data::ComplexSample> input) {
   auto plan = create_plan(spec);
   if (!plan) {
@@ -911,8 +966,8 @@ std::span<const WindowDescriptor> window_catalog() noexcept {
       WindowDescriptor{WindowKind::blackman_harris, "Blackman-Harris", "布莱克曼-哈里斯窗", "", 0.0, 0.0, 0.0, 0.35875,
                        2.0044, "强弱信号共存和高动态范围测量", "主瓣宽、幅度需 CG 校正",
                        "极低旁瓣，适合抑制强分量泄漏"},
-      WindowDescriptor{WindowKind::flat_top, "Flat Top", "平顶窗", "", 0.0, 0.0, 0.0, 1.0, 3.7702, "高精度单音幅度测量",
-                       "峰顶平坦、幅度误差最小但主瓣最宽", "频率分辨率较低，噪声带宽最大"},
+      WindowDescriptor{WindowKind::flat_top, "Flat Top", "平顶窗", "", 0.0, 0.0, 0.0, 0.21557895, 3.7702,
+                       "高精度单音幅度测量", "峰顶平坦、幅度误差最小但主瓣最宽", "频率分辨率较低，噪声带宽最大"},
       WindowDescriptor{WindowKind::kaiser, "Kaiser", "凯泽窗", "beta", 0.0, 50.0, 8.6, 0.4208, 1.7214,
                        "需要连续权衡主瓣宽度与旁瓣的分析", "beta 增大时主瓣变宽、幅度增益降低",
                        "beta 增大时旁瓣泄漏降低"},
@@ -1047,6 +1102,13 @@ core::Status validate_spectrum_analysis_settings(const SpectrumAnalysisSettings&
   default:
     return error(core::ErrorReason::invalid_argument, "未知分析范围策略");
   }
+  switch (settings.zero_padding_policy) {
+  case ZeroPaddingPolicy::forbidden:
+  case ZeroPaddingPolicy::enabled:
+    break;
+  default:
+    return error(core::ErrorReason::invalid_argument, "未知频谱补零策略");
+  }
   switch (settings.sidedness) {
   case SpectrumSidedness::one_sided:
   case SpectrumSidedness::two_sided_shifted:
@@ -1080,12 +1142,14 @@ core::Status validate_spectrum_analysis_settings(const SpectrumAnalysisSettings&
   default:
     return error(core::ErrorReason::invalid_argument, "未知频谱归一化");
   }
-  if (is_density_quantity(settings.output_quantity) && settings.normalization != SpectrumNormalization::window_power) {
-    return error(core::ErrorReason::invalid_argument, "PSD/功率密度必须使用 Window power 归一化");
+  if (is_density_quantity(settings.output_quantity) && settings.normalization != SpectrumNormalization::window_power &&
+      settings.normalization != SpectrumNormalization::none) {
+    return error(core::ErrorReason::invalid_argument, "PSD/功率密度只允许 Window power 或 None 归一化");
   }
   if (!is_density_quantity(settings.output_quantity) &&
-      settings.normalization != SpectrumNormalization::coherent_gain) {
-    return error(core::ErrorReason::invalid_argument, "幅度、功率及 dBFS 输出必须使用 Coherent gain 归一化");
+      settings.normalization != SpectrumNormalization::coherent_gain &&
+      settings.normalization != SpectrumNormalization::none) {
+    return error(core::ErrorReason::invalid_argument, "幅度、功率及 dBFS 输出只允许 Coherent gain 或 None 归一化");
   }
   switch (settings.detrend_policy) {
   case DetrendPolicy::none:
@@ -1156,6 +1220,13 @@ core::Status validate_spectrogram_analysis_settings(const SpectrogramAnalysisSet
   default:
     return error(core::ErrorReason::invalid_argument, "未知 STFT 边界策略");
   }
+  switch (settings.padding_policy) {
+  case ZeroPaddingPolicy::forbidden:
+  case ZeroPaddingPolicy::enabled:
+    break;
+  default:
+    return error(core::ErrorReason::invalid_argument, "未知 STFT 补零策略");
+  }
   switch (settings.output_quantity) {
   case SpectrumOutputQuantity::magnitude_dbfs:
   case SpectrumOutputQuantity::power_dbfs:
@@ -1175,12 +1246,14 @@ core::Status validate_spectrogram_analysis_settings(const SpectrogramAnalysisSet
   default:
     return error(core::ErrorReason::invalid_argument, "未知 STFT 归一化");
   }
-  if (is_density_quantity(settings.output_quantity) && settings.normalization != SpectrumNormalization::window_power) {
-    return error(core::ErrorReason::invalid_argument, "STFT PSD/功率密度必须使用 Window power 归一化");
+  if (is_density_quantity(settings.output_quantity) && settings.normalization != SpectrumNormalization::window_power &&
+      settings.normalization != SpectrumNormalization::none) {
+    return error(core::ErrorReason::invalid_argument, "STFT PSD/功率密度只允许 Window power 或 None 归一化");
   }
   if (!is_density_quantity(settings.output_quantity) &&
-      settings.normalization != SpectrumNormalization::coherent_gain) {
-    return error(core::ErrorReason::invalid_argument, "STFT 幅度、功率及 dBFS 输出必须使用 Coherent gain 归一化");
+      settings.normalization != SpectrumNormalization::coherent_gain &&
+      settings.normalization != SpectrumNormalization::none) {
+    return error(core::ErrorReason::invalid_argument, "STFT 幅度、功率及 dBFS 输出只允许 Coherent gain 或 None 归一化");
   }
   switch (settings.detrend_policy) {
   case DetrendPolicy::none:
@@ -1220,6 +1293,13 @@ core::Status validate_analysis_settings(const AnalysisSettingsSnapshot& settings
   }
   if (!std::isfinite(settings.prefilter.group_delay_samples) || settings.prefilter.group_delay_samples < 0.0) {
     return error(core::ErrorReason::invalid_argument, "分析前滤波群时延必须为有限非负值");
+  }
+  switch (settings.prefilter.boundary) {
+  case BoundaryPolicy::zero_pad:
+  case BoundaryPolicy::preserve_state:
+    break;
+  default:
+    return error(core::ErrorReason::invalid_argument, "未知分析前滤波边界策略");
   }
   if (!settings.prefilter.enabled) {
     return core::Status::success();
@@ -1421,6 +1501,28 @@ core::Result<AnalysisSettingsSnapshot> parse_analysis_settings(std::string_view 
   if (const auto status = validate_spectrogram_smoothing(result.spectrogram.smoothing); !status) {
     return status;
   }
+  const auto available_samples =
+      std::max<std::uint64_t>({2U, result.spectrum.frame_length, result.spectrogram.frame_length});
+  if (const auto status =
+          validate_spectrum_analysis_settings(result.spectrum, available_samples, data::SignalKind::real);
+      !status) {
+    return status.with_context("解析频谱参数");
+  }
+  if (const auto status =
+          validate_spectrogram_analysis_settings(result.spectrogram, available_samples, data::SignalKind::real);
+      !status) {
+    return status.with_context("解析 STFT 参数");
+  }
+  switch (result.prefilter.boundary) {
+  case BoundaryPolicy::zero_pad:
+  case BoundaryPolicy::preserve_state:
+    break;
+  default:
+    return error(core::ErrorReason::invalid_argument, "未知分析前滤波边界策略");
+  }
+  if (!std::isfinite(result.prefilter.group_delay_samples) || result.prefilter.group_delay_samples < 0.0) {
+    return error(core::ErrorReason::invalid_argument, "分析前滤波群时延必须为有限非负值");
+  }
   return result;
 }
 
@@ -1564,6 +1666,8 @@ AnalysisInvalidation classify_analysis_change(const AnalysisSettingsSnapshot& be
   const auto spectrum_smoothing_changed = before_spectrum.smoothing != after_spectrum.smoothing;
   before_spectrum.smoothing = {};
   after_spectrum.smoothing = {};
+  before_spectrum.measurement_source = MeasurementSource::raw;
+  after_spectrum.measurement_source = MeasurementSource::raw;
   if (before_spectrum != after_spectrum) {
     invalidation |= AnalysisInvalidation::spectrum_transform;
   } else if (spectrum_smoothing_changed) {
@@ -1804,6 +1908,9 @@ core::Result<StftResult> calculate_stft(IFftBackend& backend, const data::Signal
       result.columns = result.frequency_hz.size();
       result.provenance = psd.value().provenance;
       result.db_per_hz.reserve(static_cast<std::size_t>(rows * result.columns));
+    } else if (const auto status = validate_provenance_consistency(result.provenance, psd.value().provenance, "STFT");
+               !status) {
+      return status;
     }
     result.time_seconds.push_back(
         (static_cast<double>(row * request.hop_length) + static_cast<double>(request.fft_length - 1U) / 2.0) /
@@ -1856,6 +1963,9 @@ core::Result<SpectrumResult> calculate_spectrum(IFftBackend& backend, const data
       frequencies = frame.value().frequency_hz;
       provenance = frame.value().provenance;
       enbw_hz = frame.value().equivalent_noise_bandwidth_hz;
+    } else if (const auto status = validate_provenance_consistency(provenance, frame.value().provenance, "频谱/PSD");
+               !status) {
+      return status;
     }
     if (const auto status = power_accumulator.add(frame.value().power); !status) {
       return status;
@@ -1905,6 +2015,7 @@ core::Result<SpectrumResult> calculate_spectrum(IFftBackend& backend, const data
   result.raw_values = encode_quantity(raw_linear, settings.output_quantity);
   result.values = encode_quantity(smoothed_linear.value(), settings.output_quantity);
   result.output_quantity = settings.output_quantity;
+  result.normalization = settings.normalization;
   result.settings_hash = std::move(settings_hash.value());
   result.frame_length = dimensions.value().frame_length;
   result.fft_length = dimensions.value().fft_length;
@@ -1920,7 +2031,7 @@ core::Result<SpectrumResult> resmooth_spectrum(const SpectrumResult& source, con
       source.raw_amplitude_linear.size() != source.raw_linear_values.size() ||
       (settings.frame_length != 0U && source.frame_length != settings.frame_length) ||
       (settings.fft_length != 0U && source.fft_length != settings.fft_length) ||
-      source.output_quantity != settings.output_quantity) {
+      source.output_quantity != settings.output_quantity || source.normalization != settings.normalization) {
     return error(core::ErrorReason::invalid_argument, "频谱平滑复用要求变换尺寸、输出类型和未平滑线性结果保持不变");
   }
   auto smoothed_linear = smooth_spectrum(source.raw_linear_values, settings.smoothing, cancellation);
@@ -1986,6 +2097,7 @@ core::Result<SpectrumPsdResult> calculate_spectrum_psd(IFftBackend& backend, con
   psd.values = spectrum.value().values;
   psd.raw_db_per_hz = encode_quantity(spectrum.value().raw_density_linear, SpectrumOutputQuantity::psd_dbfs_per_hz);
   psd.output_quantity = settings.output_quantity;
+  psd.normalization = settings.normalization;
   psd.settings_hash = spectrum.value().settings_hash;
   psd.frame_length = spectrum.value().frame_length;
   psd.fft_length = spectrum.value().fft_length;
@@ -2012,7 +2124,7 @@ core::Result<PsdResult> resmooth_psd(const PsdResult& source, const SpectrumAnal
       source.raw_density_linear.size() != source.raw_linear_values.size() ||
       (settings.frame_length != 0U && source.frame_length != settings.frame_length) ||
       (settings.fft_length != 0U && source.fft_length != settings.fft_length) ||
-      source.output_quantity != settings.output_quantity) {
+      source.output_quantity != settings.output_quantity || source.normalization != settings.normalization) {
     return error(core::ErrorReason::invalid_argument, "PSD 平滑复用要求变换尺寸、输出类型和未平滑线性结果保持不变");
   }
   auto smoothed_linear = smooth_spectrum(source.raw_linear_values, settings.smoothing, cancellation);
@@ -2082,6 +2194,9 @@ core::Result<StftResult> calculate_stft(IFftBackend& backend, const data::Signal
       result.frequency_hz = frame.value().frequency_hz;
       result.provenance = frame.value().provenance;
       result.resolution_bandwidth_hz = frame.value().equivalent_noise_bandwidth_hz;
+    } else if (const auto status = validate_provenance_consistency(result.provenance, frame.value().provenance, "STFT");
+               !status) {
+      return status;
     }
     const auto& selected = select_power_domain(frame.value(), settings.output_quantity);
     raw_linear.insert(raw_linear.end(), selected.begin(), selected.end());
@@ -2159,6 +2274,7 @@ core::Result<StftResult> calculate_stft(IFftBackend& backend, const data::Signal
     return cancellation_status("参数化 STFT 发布前已取消");
   }
   result.output_quantity = settings.output_quantity;
+  result.normalization = settings.normalization;
   result.settings_hash = std::move(settings_hash.value());
   result.frame_length = dimensions.value().frame_length;
   result.fft_length = dimensions.value().fft_length;
@@ -2175,7 +2291,7 @@ core::Result<StftResult> resmooth_stft(const StftResult& source, const Spectrogr
       (settings.frame_length != 0U && source.frame_length != settings.frame_length) ||
       (settings.fft_length != 0U && source.fft_length != settings.fft_length) ||
       (settings.hop_length != 0U && source.hop_length != settings.hop_length) ||
-      source.output_quantity != settings.output_quantity) {
+      source.output_quantity != settings.output_quantity || source.normalization != settings.normalization) {
     return error(core::ErrorReason::invalid_argument, "STFT 平滑复用要求变换尺寸、输出类型和未平滑线性矩阵保持不变");
   }
   if (const auto status = validate_spectrogram_smoothing(settings.smoothing); !status) {
@@ -2312,7 +2428,8 @@ core::Result<StftResult> calculate_stft(IFftBackend& fft_backend, ISignalKernelB
     return filtered.error();
   }
   auto result = calculate_stft(fft_backend, filtered.value().view(), descriptor.sample_rate_hz,
-                               descriptor.center_frequency_hz.value_or(0.0), settings.spectrogram, cancellation);
+                               descriptor.center_frequency_hz.value_or(0.0), settings.spectrogram, cancellation,
+                               descriptor.requested_sample_range.begin());
   if (!result) {
     return result.error();
   }

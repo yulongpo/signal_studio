@@ -106,11 +106,12 @@ private:
   }
 }
 
-[[nodiscard]] std::filesystem::path write_sc16(const std::filesystem::path& path, std::size_t samples = 16'384U) {
+[[nodiscard]] std::filesystem::path write_sc16(const std::filesystem::path& path, std::size_t samples = 16'384U,
+                                               double amplitude = 20'000.0) {
   std::vector<std::byte> payload(samples * 4U);
   for (std::size_t index = 0; index < samples; ++index) {
-    const auto i = static_cast<std::int16_t>(std::llround(std::sin(static_cast<double>(index) * 0.05) * 20'000.0));
-    const auto q = static_cast<std::int16_t>(std::llround(std::cos(static_cast<double>(index) * 0.05) * 20'000.0));
+    const auto i = static_cast<std::int16_t>(std::llround(std::sin(static_cast<double>(index) * 0.05) * amplitude));
+    const auto q = static_cast<std::int16_t>(std::llround(std::cos(static_cast<double>(index) * 0.05) * amplitude));
     std::memcpy(payload.data() + index * 4U, &i, sizeof(i));
     std::memcpy(payload.data() + index * 4U + 2U, &q, sizeof(q));
   }
@@ -519,6 +520,18 @@ void test_ms45_cache_key_and_hit() {
   require(second && second.value().cache_hit && second.value().cache_key == first.value().cache_key,
           "Identical MS-4.5 settings did not hit the same cache entry");
 
+  auto absolute_request_settings = settings;
+  absolute_request_settings.spectrum.frequency_reference = signal::data::FrequencyReference::absolute;
+  const auto absolute_request = controller.task_runtime().issue_view_request("ms45-cache-axis-canonical");
+  auto canonical_axis = controller.analyze(imported, absolute_request_settings, false, nullptr, absolute_request,
+                                           "task-cache-axis-canonical");
+  require(canonical_axis && canonical_axis.value().cache_hit &&
+              canonical_axis.value().settings.spectrum.frequency_reference ==
+                  signal::data::FrequencyReference::baseband &&
+              canonical_axis.value().settings_hash == first.value().settings_hash &&
+              canonical_axis.value().cache_key == first.value().cache_key,
+          "Signal Studio 应用层未把公共 DSP frequency_reference 规范化为 baseband");
+
   const auto fields = split(first.value().cache_key, '|');
   require(fields.size() == 15U && fields[0] == "signal.analysis-cache/1.2" && fields[1] == "ms45-cache" &&
               !fields[2].empty() && fields[3] == imported.fingerprint.version_id &&
@@ -550,6 +563,171 @@ void test_ms45_cache_key_and_hit() {
               smoothed.value().stft.values == second.value().stft.values &&
               smoothed.value().psd.values != second.value().psd.values,
           "Smoothing-only change did not reuse raw spectrum/STFT results with minimal invalidation");
+  auto measurement_only = settings;
+  measurement_only.spectrum.measurement_source = signal::dsp::MeasurementSource::smoothed;
+  const auto measurement_request = controller.task_runtime().issue_view_request("ms45-cache-measurement");
+  auto measured =
+      controller.analyze(imported, measurement_only, false, nullptr, measurement_request, "task-measurement-only");
+  require(measured && measured.value().invalidation == signal::dsp::AnalysisInvalidation::none &&
+              measured.value().spectrum_transform_reused && measured.value().spectrogram_transform_reused &&
+              measured.value().spectrum.raw_power_linear == second.value().spectrum.raw_power_linear,
+          "仅测量来源变化未复用 FFT/STFT 原始结果");
+
+  auto maximum_hold = settings;
+  maximum_hold.spectrum.accumulation = {signal::dsp::SpectrumAccumulationMode::maximum_hold, 0U, 1.0, 7U};
+  const auto hold_baseline_request = controller.task_runtime().issue_view_request("ms45-continuous-hold");
+  auto hold_baseline = controller.analyze(imported, maximum_hold, false, nullptr, hold_baseline_request,
+                                          "task-hold-baseline", {true, false});
+  require(hold_baseline && hold_baseline.value().contributing_source_ranges == std::vector{imported.loaded->range()} &&
+              controller.commit_analysis(hold_baseline.value(), hold_baseline_request),
+          "连续最大保持基线未提交");
+  auto quiet_imported = imported;
+  std::vector<signal::data::ComplexSample> quiet_samples(imported.loaded->samples().size());
+  for (std::size_t index = 0U; index < quiet_samples.size(); ++index) {
+    const auto phase = static_cast<double>(index) * 0.05;
+    quiet_samples[index] = {0.01 * std::sin(phase), 0.01 * std::cos(phase)};
+  }
+  const auto quiet_range = signal::data::SampleRange::from_count(imported.loaded->range().end(),
+                                                                 static_cast<std::uint64_t>(quiet_samples.size()));
+  require(quiet_range, "连续最大保持测试范围创建失败");
+  quiet_imported.loaded = std::make_shared<const signal::data::LoadedDataRange>(
+      quiet_range.value(), signal::data::SignalBuffer::from_complex(std::move(quiet_samples)),
+      imported.fingerprint.version_id);
+  quiet_imported.descriptor.requested_sample_range = quiet_range.value();
+  const auto hold_extend_request = controller.task_runtime().issue_view_request("ms45-continuous-hold");
+  auto held = controller.analyze(quiet_imported, maximum_hold, false, nullptr, hold_extend_request, "task-hold-extend",
+                                 {true, false});
+  const std::vector expected_hold_ranges{imported.loaded->range(), quiet_range.value()};
+  require(held && held.value().source_range == quiet_range.value() &&
+              held.value().contributing_source_ranges == expected_hold_ranges &&
+              controller.commit_analysis(held.value(), hold_extend_request),
+          "连续最大保持未跨分析请求累积或未记录完整来源范围");
+  auto held_artifact = controller.commit_measurement(held.value(), "SEL-HOLD-LINEAGE", "CH-HOLD");
+  require(held_artifact &&
+              held_artifact.value().descriptor.metadata.at("sourceRangeBegin") ==
+                  std::to_string(quiet_range.value().begin()) &&
+              held_artifact.value().descriptor.metadata.at("sourceRangeEnd") ==
+                  std::to_string(quiet_range.value().end()) &&
+              held_artifact.value().descriptor.metadata.at("sourceRanges") == "[[0,8192],[8192,16384]]",
+          "最大保持 Artifact 未同时保留当前范围与完整历史来源范围");
+  const auto hold_cache_request = controller.task_runtime().issue_view_request("ms45-continuous-hold");
+  auto held_cached = controller.analyze(quiet_imported, maximum_hold, false, nullptr, hold_cache_request,
+                                        "task-hold-cache-hit", {true, false});
+  require(held_cached && held_cached.value().cache_hit && held_cached.value().source_range == quiet_range.value() &&
+              held_cached.value().contributing_source_ranges == expected_hold_ranges &&
+              controller.commit_analysis(held_cached.value(), hold_cache_request),
+          "最大保持缓存命中丢失、重复或改写了来源 lineage");
+
+  const auto switched_policy_request = controller.task_runtime().issue_view_request("ms45-continuous-hold");
+  auto switched_policy = controller.analyze(quiet_imported, maximum_hold, true, nullptr, switched_policy_request,
+                                            "task-hold-policy-switch", {true, false});
+  require(switched_policy && switched_policy.value().backend_policy == "cuda-preferred" &&
+              maximum(switched_policy.value().spectrum.raw_power_linear) <
+                  maximum(hold_baseline.value().spectrum.raw_power_linear) / 100.0 &&
+              switched_policy.value().contributing_source_ranges == std::vector{quiet_range.value()} &&
+              controller.commit_analysis(switched_policy.value(), switched_policy_request),
+          "切换 backend policy 后仍混入 CPU maximum-hold 历史");
+  const auto returned_cpu_request = controller.task_runtime().issue_view_request("ms45-continuous-hold");
+  auto returned_cpu = controller.analyze(quiet_imported, maximum_hold, false, nullptr, returned_cpu_request,
+                                         "task-hold-return-cpu", {true, false});
+  require(returned_cpu && returned_cpu.value().cache_hit && returned_cpu.value().backend_policy == "cpu-only" &&
+              maximum(returned_cpu.value().spectrum.raw_power_linear) <
+                  maximum(hold_baseline.value().spectrum.raw_power_linear) / 100.0 &&
+              returned_cpu.value().contributing_source_ranges == std::vector{quiet_range.value()} &&
+              controller.commit_analysis(returned_cpu.value(), returned_cpu_request),
+          "返回旧 CPU cache key 时复活了不兼容切换前的 maximum-hold 历史");
+  auto reset_hold = maximum_hold;
+  ++reset_hold.spectrum.accumulation.hold_reset_generation;
+  const auto hold_reset_request = controller.task_runtime().issue_view_request("ms45-continuous-hold");
+  auto reset = controller.analyze(quiet_imported, reset_hold, false, nullptr, hold_reset_request, "task-hold-reset",
+                                  {true, false});
+  require(reset &&
+              maximum(held.value().spectrum.raw_power_linear) >
+                  maximum(reset.value().spectrum.raw_power_linear) * 100.0 &&
+              reset.value().source_range == quiet_range.value() &&
+              reset.value().contributing_source_ranges == std::vector{quiet_range.value()},
+          "hold_reset_generation 未真实复位连续最大保持及其来源 lineage");
+
+  std::uint64_t source_generation{20U};
+  const auto verify_incompatible_hold_source = [&](std::string_view field) {
+    auto source_checked_hold = maximum_hold;
+    source_checked_hold.spectrum.accumulation.hold_reset_generation = source_generation++;
+    const auto baseline_request = controller.task_runtime().issue_view_request("ms45-hold-source");
+    auto baseline = controller.analyze(imported, source_checked_hold, false, nullptr, baseline_request,
+                                       "task-hold-source-baseline", {true, false});
+    require(baseline, "最大保持来源兼容性基线分析失败");
+    const auto baseline_peak = maximum(baseline.value().spectrum.raw_power_linear);
+    const auto mutate_provenance = [field](signal::compute::BackendProvenance& provenance) {
+      if (field == "backend") {
+        provenance.backend_id += "-different";
+      } else if (field == "device") {
+        provenance.device += "-different";
+      } else if (field == "precision") {
+        provenance.precision += "-different";
+      } else if (field == "requested") {
+        provenance.requested = provenance.requested == signal::compute::BackendKind::cuda
+                                   ? signal::compute::BackendKind::cpu_scalar
+                                   : signal::compute::BackendKind::cuda;
+      } else if (field == "actual") {
+        provenance.actual = provenance.actual == signal::compute::BackendKind::cuda
+                                ? signal::compute::BackendKind::cpu_scalar
+                                : signal::compute::BackendKind::cuda;
+      } else if (field == "version") {
+        provenance.version += "-different";
+      } else if (field == "degraded") {
+        provenance.degraded = !provenance.degraded;
+      } else if (field == "reason") {
+        provenance.reason += "-different";
+      } else if (field == "consistency") {
+        provenance.consistency_verified = !provenance.consistency_verified;
+      }
+    };
+    if (field == "policy") {
+      baseline.value().backend_policy = "cuda-preferred";
+    } else {
+      mutate_provenance(baseline.value().spectrum.provenance);
+      mutate_provenance(baseline.value().psd.provenance);
+      baseline.value().backend_id = baseline.value().spectrum.provenance.backend_id;
+      baseline.value().device_id = baseline.value().spectrum.provenance.device;
+    }
+    require(controller.commit_analysis(baseline.value(), baseline_request), "最大保持来源兼容性基线未提交");
+
+    const auto current_request = controller.task_runtime().issue_view_request("ms45-hold-source");
+    auto current = controller.analyze(quiet_imported, source_checked_hold, false, nullptr, current_request,
+                                      "task-hold-source-current", {true, false});
+    require(current && maximum(current.value().spectrum.raw_power_linear) < baseline_peak / 100.0 &&
+                current.value().backend_id == current.value().spectrum.provenance.backend_id &&
+                current.value().device_id == current.value().spectrum.provenance.device &&
+                current.value().backend_policy == "cpu-only",
+            "跨请求最大保持错误混合了不兼容的实际 backend/device/backend policy，或来源记录不准确");
+  };
+  verify_incompatible_hold_source("backend");
+  verify_incompatible_hold_source("device");
+  verify_incompatible_hold_source("policy");
+  verify_incompatible_hold_source("precision");
+  verify_incompatible_hold_source("requested");
+  verify_incompatible_hold_source("actual");
+  verify_incompatible_hold_source("version");
+  verify_incompatible_hold_source("degraded");
+  verify_incompatible_hold_source("reason");
+  verify_incompatible_hold_source("consistency");
+
+  auto cross_policy_hold = maximum_hold;
+  cross_policy_hold.spectrum.accumulation.hold_reset_generation = source_generation++;
+  const auto cpu_hold_request = controller.task_runtime().issue_view_request("ms45-hold-cross-policy");
+  auto cpu_hold = controller.analyze(imported, cross_policy_hold, false, nullptr, cpu_hold_request,
+                                     "task-hold-cross-policy-cpu", {true, false});
+  require(cpu_hold && controller.commit_analysis(cpu_hold.value(), cpu_hold_request), "跨策略最大保持 CPU 基线未提交");
+  const auto preferred_request = controller.task_runtime().issue_view_request("ms45-hold-cross-policy");
+  auto preferred = controller.analyze(quiet_imported, cross_policy_hold, true, nullptr, preferred_request,
+                                      "task-hold-cross-policy-preferred", {true, false});
+  require(preferred &&
+              maximum(preferred.value().spectrum.raw_power_linear) <
+                  maximum(cpu_hold.value().spectrum.raw_power_linear) / 100.0 &&
+              preferred.value().backend_policy == "cuda-preferred" &&
+              preferred.value().backend_id == preferred.value().spectrum.provenance.backend_id &&
+              preferred.value().device_id == preferred.value().spectrum.provenance.device,
+          "真实 cpu-only/cuda-preferred 请求错误跨策略合并最大保持，或实际执行来源记录不准确");
 
   const auto spectrum_only_request = controller.task_runtime().issue_view_request("ms45-cache-views");
   auto spectrum_only = controller.analyze(imported, settings, false, nullptr, spectrum_only_request,
@@ -574,7 +752,11 @@ void test_ms45_cache_key_and_hit() {
   auto visible_spectrum = controller.analyze(imported, hidden_stft_invalid, false, nullptr, hidden_stft_request,
                                              "task-hidden-stft-invalid", {true, false});
   require(visible_spectrum && visible_spectrum.value().cost.spectrogram_rows == 0U &&
-              visible_spectrum.value().cost.spectrogram_columns == 0U,
+              visible_spectrum.value().cost.spectrogram_columns == 0U &&
+              visible_spectrum.value().views == signal::studio::AnalysisViewSelection{true, false} &&
+              !controller.set_analysis_settings(visible_spectrum.value().settings) &&
+              controller.commit_analysis(visible_spectrum.value(), hidden_stft_request) &&
+              controller.set_analysis_settings(visible_spectrum.value().settings, visible_spectrum.value().views),
           "隐藏 STFT 的非法参数仍阻止 PSD-only 分析或占用资源预算");
 
   auto hidden_spectrum_invalid = settings;
@@ -586,6 +768,104 @@ void test_ms45_cache_key_and_hit() {
   require(visible_stft && visible_stft.value().cost.spectrum_segment_count == 0U &&
               visible_stft.value().cost.spectrum_output_bins == 0U,
           "隐藏 PSD 的非法参数仍阻止 STFT-only 分析或占用资源预算");
+
+  std::filesystem::create_directories(temporary.path() / "source-version-a");
+  std::filesystem::create_directories(temporary.path() / "source-version-b");
+  signal::studio::ApplicationController source_controller{temporary.path() / "source-version-state"};
+  require(source_controller.create_project(temporary.path() / "source-version.signal-workspace", "ms45-source-version"),
+          "最大保持源版本隔离工程创建失败");
+  const auto strong_source = import_fixture(source_controller, temporary.path() / "source-version-a");
+  auto source_hold = compact_analysis_settings(source_controller);
+  source_hold.spectrum.accumulation = {signal::dsp::SpectrumAccumulationMode::maximum_hold, 0U, 1.0, 91U};
+  const auto strong_request = source_controller.task_runtime().issue_view_request("ms45-hold-source-version");
+  auto strong_analysis = source_controller.analyze(strong_source, source_hold, false, nullptr, strong_request,
+                                                   "task-hold-source-version-strong", {true, false});
+  require(strong_analysis && source_controller.commit_analysis(strong_analysis.value(), strong_request),
+          "最大保持源版本隔离基线失败");
+
+  const auto make_quiet_range = [](signal::studio::ImportedSignal source, const signal::data::SampleRange& range) {
+    std::vector<signal::data::ComplexSample> samples(static_cast<std::size_t>(range.size()));
+    for (std::size_t index = 0U; index < samples.size(); ++index) {
+      const auto phase = static_cast<double>(index) * 0.05;
+      samples[index] = {0.01 * std::sin(phase), 0.01 * std::cos(phase)};
+    }
+    source.loaded = std::make_shared<const signal::data::LoadedDataRange>(
+        range, signal::data::SignalBuffer::from_complex(std::move(samples)), source.fingerprint.version_id);
+    source.descriptor.requested_sample_range = range;
+    return source;
+  };
+  const auto source_a_quiet_range = signal::data::SampleRange::from_count(
+      strong_source.loaded->range().end(), static_cast<std::uint64_t>(strong_source.loaded->samples().size()));
+  require(source_a_quiet_range, "源版本往返 maximum-hold 范围创建失败");
+  auto source_a_quiet = make_quiet_range(strong_source, source_a_quiet_range.value());
+  const auto source_a_extend_request = source_controller.task_runtime().issue_view_request("ms45-hold-source-version");
+  auto source_a_held = source_controller.analyze(source_a_quiet, source_hold, false, nullptr, source_a_extend_request,
+                                                 "task-hold-source-a-extend", {true, false});
+  require(source_a_held &&
+              source_a_held.value().contributing_source_ranges ==
+                  std::vector{strong_source.loaded->range(), source_a_quiet_range.value()} &&
+              source_controller.commit_analysis(source_a_held.value(), source_a_extend_request),
+          "源 A maximum-hold 聚合基线失败");
+
+  const auto quiet_source_path =
+      write_sc16(temporary.path() / "source-version-b" / "quiet_cf10MHz_sr1MSps.sc16", 8'192U, 200.0);
+  auto quiet_descriptor = signal::studio::make_confirmed_descriptor(
+      quiet_source_path, signal::studio::parse_filename_hints(quiet_source_path), true);
+  require(quiet_descriptor, "最大保持源版本隔离描述符失败");
+  auto quiet_import_task = source_controller.start_import(
+      {quiet_source_path, quiet_descriptor.value(), signal::data::SourceFormat::raw, 8'192U * 4U, 16U * 1024U});
+  require(quiet_import_task, "最大保持源版本隔离导入提交失败");
+  auto quiet_source = source_controller.finalize_import(quiet_import_task.value());
+  require(quiet_source && quiet_source.value().fingerprint.version_id != strong_source.fingerprint.version_id,
+          "最大保持源版本隔离夹具未产生新 source version");
+  const auto quiet_source_request = source_controller.task_runtime().issue_view_request("ms45-hold-source-version");
+  auto isolated = source_controller.analyze(quiet_source.value(), source_hold, false, nullptr, quiet_source_request,
+                                            "task-hold-source-version-quiet", {true, false});
+  require(isolated && !isolated.value().spectrum_transform_reused &&
+              maximum(isolated.value().spectrum.raw_power_linear) <
+                  maximum(strong_analysis.value().spectrum.raw_power_linear) / 1'000.0 &&
+              isolated.value().contributing_source_ranges == std::vector{quiet_source.value().loaded->range()} &&
+              source_controller.commit_analysis(isolated.value(), quiet_source_request),
+          "最大保持或变换复用跨 source version 混入旧样本");
+
+  auto source_a_descriptor = signal::studio::make_confirmed_descriptor(
+      strong_source.source_path, signal::studio::parse_filename_hints(strong_source.source_path), true);
+  require(source_a_descriptor, "返回源 A 的描述符失败");
+  auto source_a_import_task =
+      source_controller.start_import({strong_source.source_path, source_a_descriptor.value(),
+                                      signal::data::SourceFormat::raw, 8'192U * 4U, 16U * 1024U});
+  require(source_a_import_task, "返回源 A 的导入提交失败");
+  auto returned_source_a = source_controller.finalize_import(source_a_import_task.value());
+  require(returned_source_a && returned_source_a.value().fingerprint.version_id == strong_source.fingerprint.version_id,
+          "返回源 A 未恢复同一 source version");
+  auto returned_source_a_quiet = make_quiet_range(returned_source_a.value(), source_a_quiet_range.value());
+  const auto returned_source_a_request =
+      source_controller.task_runtime().issue_view_request("ms45-hold-source-version");
+  auto source_a_baseline =
+      source_controller.analyze(returned_source_a_quiet, source_hold, false, nullptr, returned_source_a_request,
+                                "task-hold-source-a-return", {true, false});
+  require(source_a_baseline && source_a_baseline.value().cache_hit &&
+              maximum(source_a_baseline.value().spectrum.raw_power_linear) <
+                  maximum(strong_analysis.value().spectrum.raw_power_linear) / 100.0 &&
+              source_a_baseline.value().contributing_source_ranges == std::vector{source_a_quiet_range.value()},
+          "源 A→B→A 返回旧 cache key 时复活了源 A 的过期 maximum-hold 历史");
+
+  signal::studio::ApplicationController provenance_controller{temporary.path() / "provenance-state"};
+  require(provenance_controller.create_project(temporary.path() / "provenance.signal-workspace", "ms45-provenance"),
+          "双视图 provenance 工程创建失败");
+  const auto provenance_source = import_fixture(provenance_controller, temporary.path() / "provenance-source");
+  auto provenance_settings = compact_analysis_settings(provenance_controller);
+  const auto provenance_request = provenance_controller.task_runtime().issue_view_request("ms45-provenance");
+  auto provenance_baseline = provenance_controller.analyze(provenance_source, provenance_settings, false, nullptr,
+                                                           provenance_request, "task-provenance-baseline");
+  require(provenance_baseline, "双视图 provenance 基线分析失败");
+  require(provenance_controller.commit_analysis(provenance_baseline.value(), provenance_request),
+          "双视图 provenance 基线提交失败");
+  provenance_baseline.value().stft.provenance.backend_id = "test-mismatched-stft-backend";
+  require(!provenance_controller.commit_analysis(provenance_baseline.value(), provenance_request) &&
+              provenance_controller.current_analysis() &&
+              provenance_controller.current_analysis()->stft.provenance.backend_id != "test-mismatched-stft-backend",
+          "ApplicationController 未在发布前拒绝 Spectrum/PSD 与 STFT provenance 混用");
 }
 
 void test_ms45_latest_view_commit() {
@@ -617,6 +897,89 @@ void test_ms45_latest_view_commit() {
               controller.current_analysis()->view_request == current_request &&
               controller.current_analysis()->settings_hash == current.value().settings_hash,
           "Latest-result commit did not publish the matching task/request provenance");
+  auto mismatched_request_bundle = current.value();
+  mismatched_request_bundle.view_request = stale_request;
+  require(!controller.commit_analysis(mismatched_request_bundle, current_request) && controller.current_analysis() &&
+              controller.current_analysis()->task_id == "task-current" &&
+              controller.current_analysis()->view_request == current_request,
+          "commit_analysis accepted a bundle whose embedded ViewRequestId did not match the permit");
+  auto results_before_stale_measurement = controller.results();
+  const auto superseding_request = controller.task_runtime().issue_view_request("signal-studio.analysis");
+  require(results_before_stale_measurement &&
+              !controller.commit_measurement(current.value(), "superseded-current-selection", "CH-01") &&
+              !controller.commit_measurement(stale.value(), "stale-selection", "CH-01"),
+          "发布 N 后签发 N+1 仍允许 N 或更旧的同源 bundle 创建 Artifact");
+  auto results_after_stale_measurement = controller.results();
+  require(results_after_stale_measurement &&
+              results_after_stale_measurement.value().size() == results_before_stale_measurement.value().size(),
+          "拒绝旧分析 bundle 后结果存储仍发生变化");
+  auto superseding =
+      controller.analyze(imported, latest_settings, false, nullptr, superseding_request, "task-superseding-current");
+  require(superseding && controller.commit_analysis(superseding.value(), superseding_request), "N+1 最新分析无法发布");
+  auto current_artifact = controller.commit_measurement(superseding.value(), "superseding-current-selection", "CH-01");
+  require(current_artifact, "与当前发布身份完全匹配的分析 bundle 无法提交 Artifact");
+  const auto committed_package = current_artifact.value().package_path;
+  require(controller.rollback_measurement(current_artifact.value()) && !controller.current_analysis() &&
+              !std::filesystem::exists(committed_package) && controller.results() &&
+              controller.results().value().empty(),
+          "正式任务失败路径无法撤回已发布分析、工程结果和 Artifact 包");
+
+  const auto recovery_state = temporary.path() / "formal-recovery-state";
+  const auto recovery_project = temporary.path() / "formal-recovery.signal-workspace";
+  std::filesystem::path interrupted_package;
+  {
+    signal::studio::ApplicationController recovery_controller{recovery_state};
+    require(recovery_controller.create_project(recovery_project, "ms45-formal-recovery"), "正式制品恢复工程创建失败");
+    const auto recovery_source = import_fixture(recovery_controller, temporary.path() / "formal-recovery-source");
+    std::atomic_bool worker_started{};
+    std::atomic_bool release_worker{};
+    signal::task::TaskSpec spec;
+    spec.task_id = {"ms45-interrupted-formal-task"};
+    spec.task_type = "signal-studio.parameterized-analysis";
+    spec.priority = signal::task::TaskPriority::interactive;
+    spec.resources = {.cpu_units = 1U, .runtime_threads = 1U};
+    spec.idempotency_key = "ms45-interrupted-formal";
+    spec.provenance = {{"ms45-formal-recovery"},
+                       {recovery_source.fingerprint.version_id},
+                       {"data-source", recovery_source.source_path.string()}};
+    spec.timeout = std::chrono::seconds{5};
+    spec.persistent = true;
+    auto submitted =
+        recovery_controller.task_runtime().submit(std::move(spec), [&](signal::task::TaskContext& context) {
+          worker_started.store(true, std::memory_order_release);
+          while (!release_worker.load(std::memory_order_acquire) && context.checkpoint()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+          }
+          return signal::task::TaskExecutionResult::completed();
+        });
+    require(submitted, "中断正式任务提交失败");
+    while (!worker_started.load(std::memory_order_acquire)) {
+      std::this_thread::yield();
+    }
+    const auto recovery_request =
+        recovery_controller.task_runtime().issue_view_request("ms45-formal-recovery-analysis");
+    auto interrupted_analysis =
+        recovery_controller.analyze(recovery_source, compact_analysis_settings(recovery_controller), false, nullptr,
+                                    recovery_request, "ms45-interrupted-formal-task", {true, true});
+    require(interrupted_analysis && recovery_controller.commit_analysis(interrupted_analysis.value(), recovery_request),
+            "中断正式任务分析发布失败");
+    auto interrupted_artifact = recovery_controller.commit_measurement(interrupted_analysis.value());
+    require(interrupted_artifact, "中断正式任务 Artifact 准备失败");
+    interrupted_package = interrupted_artifact.value().package_path;
+    require(recovery_controller.task_runtime().cancel(submitted.value().id()), "中断正式任务取消失败");
+    release_worker.store(true, std::memory_order_release);
+    const auto canceled = submitted.value().wait();
+    require(canceled && canceled.value().state == signal::task::TaskState::canceled,
+            "中断正式任务没有形成可恢复的非完成终态");
+  }
+  {
+    signal::studio::ApplicationController recovered_controller{recovery_state};
+    require(recovered_controller.open_project(recovery_project), "中断正式任务工程恢复失败");
+    auto recovered_results = recovered_controller.results();
+    require(recovered_results && recovered_results.value().empty() &&
+                recovered_controller.workspace().results.empty() && !std::filesystem::exists(interrupted_package),
+            "工程恢复未撤回 canceled/failed 正式任务遗留的 Workspace/Artifact");
+  }
 }
 
 void test_ms45_project_switch_invalidates_analysis() {
@@ -644,9 +1007,13 @@ void test_ms45_project_switch_invalidates_analysis() {
           "旧工程导入在工程切换后污染了新工程");
   auto imported_a = import_fixture(controller, temporary.path() / "source-a", 32'768U);
   auto settings = compact_analysis_settings(controller);
+  settings.spectrum.accumulation = {signal::dsp::SpectrumAccumulationMode::maximum_hold, 0U, 1.0, 93U};
   const auto request_a = controller.task_runtime().issue_view_request("signal-studio.analysis");
   auto analysis_a = controller.analyze(imported_a, settings, false, nullptr, request_a, "task-project-a");
-  require(analysis_a && analysis_a.value().project_id == "project-a", "Project A analysis provenance missing");
+  require(analysis_a && analysis_a.value().project_id == "project-a" &&
+              analysis_a.value().contributing_source_ranges == std::vector{imported_a.loaded->range()} &&
+              controller.commit_analysis(analysis_a.value(), request_a),
+          "Project A maximum-hold analysis provenance missing");
 
   require(controller.create_project(project_b, "project-b"), "MS-4.5 project B create failed");
   require(!controller.commit_analysis(analysis_a.value(), request_a),
@@ -700,7 +1067,11 @@ void test_ms45_project_settings_persistence_and_migration() {
     expected_display.mapping.color_map = "Viridis";
     expected_display.interpolation = "linear";
     expected_display.frequency_axis_mode = "baseband";
-    require(controller.set_analysis_settings(expected_settings) &&
+    auto invalid_display = expected_display;
+    invalid_display.frequency_axis_mode = "corrupt-mode";
+    require(!controller.set_analysis_display_settings(invalid_display) &&
+                controller.analysis_display_settings() == signal::studio::AnalysisDisplaySettings{} &&
+                controller.set_analysis_settings(expected_settings) &&
                 controller.set_analysis_display_settings(expected_display) &&
                 controller.save_user_analysis_preset("lab-preset", expected_settings) &&
                 controller.set_active_analysis_preset("user:lab-preset", expected_settings, "project-channel") &&
@@ -728,18 +1099,61 @@ void test_ms45_project_settings_persistence_and_migration() {
   const auto corrupt_project = temporary.path() / "corrupt-optional.signal-workspace";
   auto corrupt_workspace = workspace_store.load(project);
   require(corrupt_workspace, "Corrupt optional-extension fixture load failed");
-  corrupt_workspace.value().extensions["signal.analysis-display"] = json_string("not-a-display-schema");
-  corrupt_workspace.value().extensions["signal.analysis-user-preset.bad"] = json_string("not-analysis-settings");
+  corrupt_workspace.value().extensions["signal.analysis-display"] =
+      json_string("signal.analysis-display/1.0\n1 1 -110 -10 -10 100 \"Viridis\" \"linear\" \"corrupt-mode\"\n");
   require(workspace_store.save(corrupt_project, corrupt_workspace.value()),
           "Corrupt optional-extension fixture save failed");
+  const auto verify_transactional_rejection = [&](const std::filesystem::path& rejected_project,
+                                                  std::string_view state_name,
+                                                  signal::core::ErrorReason expected_reason) {
+    signal::studio::ApplicationController controller{temporary.path() / std::string{state_name}};
+    require(controller.open_project(project), "事务回滚测试无法先打开有效工程");
+    const auto original_project_id = controller.workspace().project_id;
+    const auto original_path = controller.project_path();
+    const auto original_settings = signal::dsp::serialize_analysis_settings(controller.analysis_settings());
+    const auto original_display = controller.analysis_display_settings();
+    const auto opened = controller.open_project(rejected_project);
+    const auto retained_settings = signal::dsp::serialize_analysis_settings(controller.analysis_settings());
+    require(!opened && opened.code().reason == expected_reason &&
+                controller.workspace().project_id == original_project_id &&
+                controller.project_path() == original_path && original_settings && retained_settings &&
+                original_settings.value() == retained_settings.value() &&
+                controller.analysis_display_settings() == original_display,
+            "损坏或未来主版本分析扩展未严格拒绝并保持工程切换事务性");
+  };
+  verify_transactional_rejection(corrupt_project, "state-corrupt-display", signal::core::ErrorReason::invalid_argument);
+
+  const auto corrupt_settings_project = temporary.path() / "corrupt-settings.signal-workspace";
+  auto corrupt_settings_workspace = workspace_store.load(project);
+  auto corrupt_settings_text = signal::dsp::serialize_analysis_settings(expected_settings);
+  require(corrupt_settings_workspace && corrupt_settings_text, "Corrupt settings fixture setup failed");
+  const auto normalization = corrupt_settings_text.value().find("spectrum.normalization=");
+  require(normalization != std::string::npos, "Corrupt settings fixture normalization field missing");
+  const auto normalization_value = normalization + std::string_view{"spectrum.normalization="}.size();
+  const auto normalization_end = corrupt_settings_text.value().find('\n', normalization_value);
+  corrupt_settings_text.value().replace(normalization_value, normalization_end - normalization_value, "255");
+  corrupt_settings_workspace.value().extensions["signal.analysis-settings"] =
+      json_string(corrupt_settings_text.value());
+  require(workspace_store.save(corrupt_settings_project, corrupt_settings_workspace.value()),
+          "Corrupt settings fixture save failed");
+  verify_transactional_rejection(corrupt_settings_project, "state-corrupt-settings",
+                                 signal::core::ErrorReason::invalid_argument);
+
+  const auto compatible_minor_project = temporary.path() / "compatible-minor.signal-workspace";
+  auto compatible_minor = workspace_store.load(project);
+  require(compatible_minor, "Compatible display minor-version fixture load failed");
+  compatible_minor.value().extensions["signal.analysis-display"] =
+      json_string("signal.analysis-display/1.9\n1 1 -110 -10 -10 100 \"Viridis\" \"linear\" \"baseband\"\n"
+                  "future.optional-field=ignored\n");
+  require(workspace_store.save(compatible_minor_project, compatible_minor.value()),
+          "Compatible display minor-version fixture save failed");
   {
-    signal::studio::ApplicationController recovered{temporary.path() / "state-corrupt"};
-    require(recovered.open_project(corrupt_project) &&
-                recovered.analysis_settings().spectrum.window == expected_settings.spectrum.window &&
-                recovered.analysis_display_settings() == signal::studio::AnalysisDisplaySettings{} &&
-                recovered.user_analysis_presets().contains("lab-preset") &&
-                !recovered.user_analysis_presets().contains("bad"),
-            "损坏的可选显示/预设扩展未按字段回退，或破坏了有效分析参数");
+    signal::studio::ApplicationController migrated_minor{temporary.path() / "state-compatible-minor"};
+    auto expected_minor_display = expected_display;
+    expected_minor_display.schema = "signal.analysis-display/1.9";
+    require(migrated_minor.open_project(compatible_minor_project) &&
+                migrated_minor.analysis_display_settings() == expected_minor_display,
+            "同主版本新增显示字段未安全迁移");
   }
 
   const auto legacy_project = temporary.path() / "legacy.signal-workspace";
@@ -770,19 +1184,17 @@ void test_ms45_project_settings_persistence_and_migration() {
                                   "signal.analysis-settings/2.0");
   future.value().extensions["signal.analysis-settings"] = json_string(future_settings.value());
   require(workspace_store.save(future_project, future.value()), "Future-version project fixture save failed");
-  signal::studio::ApplicationController rejected{temporary.path() / "state-future"};
-  require(rejected.open_project(project), "事务回滚测试无法先打开有效工程");
-  const auto original_project_id = rejected.workspace().project_id;
-  const auto original_path = rejected.project_path();
-  const auto original_settings = rejected.analysis_settings();
-  const auto original_settings_text = signal::dsp::serialize_analysis_settings(original_settings);
-  const auto opened = rejected.open_project(future_project);
-  const auto retained_settings_text = signal::dsp::serialize_analysis_settings(rejected.analysis_settings());
-  require(!opened && opened.code().reason == signal::core::ErrorReason::unavailable &&
-              rejected.workspace().project_id == original_project_id && rejected.project_path() == original_path &&
-              original_settings_text && retained_settings_text &&
-              original_settings_text.value() == retained_settings_text.value(),
-          "Unsupported future analysis version was not rejected transactionally");
+  verify_transactional_rejection(future_project, "state-future-settings", signal::core::ErrorReason::unavailable);
+
+  const auto future_display_project = temporary.path() / "future-display.signal-workspace";
+  auto future_display = workspace_store.load(project);
+  require(future_display, "Future display-version fixture load failed");
+  future_display.value().extensions["signal.analysis-display"] =
+      json_string("signal.analysis-display/2.0\n1 1 -110 -10 -10 100 \"Viridis\" \"linear\" \"baseband\"\n");
+  require(workspace_store.save(future_display_project, future_display.value()),
+          "Future display-version fixture save failed");
+  verify_transactional_rejection(future_display_project, "state-future-display",
+                                 signal::core::ErrorReason::unavailable);
 }
 
 void test_ms45_artifact_parameter_hash_and_provenance() {
@@ -820,22 +1232,41 @@ void test_ms45_artifact_parameter_hash_and_provenance() {
               source.parameter_version == analysis.value().settings_hash.stable_text(),
           "Artifact provenance omits or substitutes the real analysis source identity");
   const auto& metadata = artifact.value().descriptor.metadata;
-  const std::array<std::string_view, 19> required_metadata{
-      "backend",        "device",       "parameterSchema",   "parameterSnapshot", "parameterHash", "sourceRangeBegin",
-      "sourceRangeEnd", "sampleRateHz", "centerFrequencyHz", "fftSize",           "frameLength",   "window",
-      "enbwHz",         "rbwHz",        "estimator",         "accumulation",      "smoothing",     "prefilterApplied",
-      "cacheKey"};
+  const std::array<std::string_view, 22> required_metadata{
+      "backend",          "device",       "parameterSchema", "parameterSnapshot", "parameterHash", "sourceRangeBegin",
+      "sourceRangeEnd",   "sourceRanges", "sampleRateHz",    "centerFrequencyHz", "fftSize",       "frameLength",
+      "window",           "enbwHz",       "rbwHz",           "estimator",         "accumulation",  "smoothing",
+      "prefilterApplied", "cacheKey",     "outputUnit",      "normalization"};
   require(std::ranges::all_of(required_metadata,
                               [&metadata](std::string_view key) { return metadata.contains(std::string{key}); }) &&
               metadata.at("parameterHash") == analysis.value().settings_hash.stable_text() &&
               metadata.at("parameterSnapshot") == serialized.value() &&
-              metadata.at("cacheKey") == analysis.value().cache_key,
+              metadata.at("cacheKey") == analysis.value().cache_key && metadata.at("sourceRanges") == "[[0,8192]]" &&
+              metadata.at("outputUnit") == "dBFS/Hz" && artifact.value().descriptor.units.at("peak") == "dBFS/Hz" &&
+              artifact.value().descriptor.units.at("mean") == "dBFS/Hz",
           "Artifact metadata is missing the normalized parameters, source range, DSP identity, or cache trace");
   std::ifstream payload{artifact.value().payload_path, std::ios::binary};
   const std::string payload_text{std::istreambuf_iterator<char>{payload}, std::istreambuf_iterator<char>{}};
   require(payload_text.find(analysis.value().settings_hash.stable_text()) != std::string::npos &&
               payload_text.find("\"provenance\"") != std::string::npos,
           "Committed artifact payload does not retain parameter-hash and provenance evidence");
+
+  auto raw_settings = settings;
+  raw_settings.spectrum.output_quantity = signal::dsp::SpectrumOutputQuantity::linear_power_density;
+  raw_settings.spectrum.normalization = signal::dsp::SpectrumNormalization::none;
+  raw_settings.spectrogram.output_quantity = signal::dsp::SpectrumOutputQuantity::psd_dbfs_per_hz;
+  raw_settings.spectrogram.normalization = signal::dsp::SpectrumNormalization::none;
+  const auto raw_request = controller.task_runtime().issue_view_request("signal-studio.analysis");
+  auto raw_analysis = controller.analyze(imported, raw_settings, false, nullptr, raw_request, "task-ms45-raw-unit");
+  require(raw_analysis && controller.commit_analysis(raw_analysis.value(), raw_request),
+          "None 单位 Artifact 基线分析失败");
+  auto raw_artifact = controller.commit_measurement(raw_analysis.value(), "SEL-MS45-RAW", "CH-MS45");
+  require(raw_artifact && raw_analysis.value().frame.psd_metadata.unit == "raw FFT power unit/Hz" &&
+              raw_analysis.value().frame.stft_metadata.unit == "dB(re 1 raw FFT power unit/Hz)" &&
+              raw_artifact.value().descriptor.units.at("peak") == "raw FFT power unit/Hz" &&
+              raw_artifact.value().descriptor.units.at("mean") == "raw FFT power unit/Hz" &&
+              raw_artifact.value().descriptor.metadata.at("outputUnit") == "raw FFT power unit/Hz",
+          "Normalization::none 的显示或 Artifact 仍伪装为 dBFS/dBFS/Hz");
 }
 
 void test_ms45_parameter_switch_stability(std::chrono::seconds duration) {

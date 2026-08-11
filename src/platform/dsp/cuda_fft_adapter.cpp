@@ -227,7 +227,8 @@ private:
                              properties.name,
                              "实机 cudaMalloc、H2D、cuFFT、D2H 端到端执行",
                              false,
-                             false};
+                             false,
+                             "complex-float64"};
         return result;
       }();
       const auto restore_status = device_scope.restore();

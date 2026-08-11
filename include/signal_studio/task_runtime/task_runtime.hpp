@@ -9,6 +9,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -182,6 +183,9 @@ public:
   [[nodiscard]] bool report_progress(double progress, std::string status_text = {});
   [[nodiscard]] core::Status commit_artifact(const std::filesystem::path& temporary_path,
                                              const std::filesystem::path& final_path);
+  /// Atomically records immutable files and seals the task as completed. This must be the final
+  /// operation performed by a successful work body; cancellation/staleness wins before the seal.
+  [[nodiscard]] core::Status complete_with_existing_artifacts(std::span<const std::filesystem::path> artifact_paths);
   [[nodiscard]] TaskId task_id() const;
   [[nodiscard]] std::uint32_t attempt() const noexcept;
 

@@ -175,7 +175,30 @@
   未新增第三方库，未重实现 FFT、滤波、卷积、重采样或通用线性代数内核。
 - 增加 Qt Designer `SignalAnalysisSettingsPanel.ui`、六个内置预设、基础/高级模式、
   派生信息、后台取消、最新请求提交和显示参数免重算。
-- 增加 20 项 MS-4.5 数值/应用/UI/DPI/后端测试、30 分钟参数切换稳定性脚本、真实
+- 收口复审修正 Flat Top 参考 coherent gain、STFT 非零源范围、`None` 归一化、隐藏视图
+  作用域提交、损坏工程参数校验、测量来源最小失效和频率轴显示往返；最大保持增加跨
+  连续请求累积、generation 复位按钮及缓存命中合并。
+- Important 复审进一步要求同主版本损坏 settings/display 严格事务拒绝；`None` 的线性/
+  对数谱与 PSD 使用 raw FFT 单位并进入结果、显示和 Artifact；maximum hold 隔离工程
+  代际、源版本及实际 backend/device/policy，并以 `contributing_source_ranges`/
+  Artifact `sourceRanges` 记录完整样本范围 lineage；公共 SignalDSP 的
+  `frequency_reference` 恢复进入参数哈希和频谱变换失效，Signal Studio UI 频率轴仍只走
+  display mapping，切换后点击“应用”不提交 DSP。
+- 第三次 Important 复审分离 maximum-hold 会话状态与 full-bundle transform cache：缓存
+  只保存当前请求的非跨请求聚合基线和单一范围，命中后再按当前已提交结果兼容合并；
+  backend/policy 与 source A→B→A 往返旧 key 均不得复活历史峰值或伪造 lineage。
+- 最终 Important 复审为每次 FFT provenance 增加显式数值精度，并在 Welch、平均/保持、
+  STFT 的所有帧及 ApplicationController 双视图之间执行完整来源一致性门禁；第 N 次执行
+  切换 backend/device/precision/fallback 时拒绝混合结果。
+- `commit_analysis()` 在发布前再次拒绝混合来源 Bundle；正式任务使用取消/提交单调 CAS
+  状态机，并在最新视图许可内提交设置、Workspace、Artifact 后，把 payload、
+  `manifest.json`、`.artifact-index` 三个真实文件的大小/SHA-256 原子登记到 TaskRuntime
+  再密封完成；重启会验证损坏并清理未完成结果。
+- 增加 24 项 MS-4.5 数值/应用/UI/DPI/后端测试、30 分钟参数切换稳定性脚本、真实
   qwindows P03 截图和完整里程碑文档；追踪矩阵交付副本新增 `ENH-SPEC-001/002`，
   不修改批准基线 198 项内容或状态。
-- 保持 MS-05～MS-09 边界不变；完成 MS-4.5 后停止，不进入 MS-05。
+- 2026-08-11 最终代码串行收口为 CPU Debug/Release 全量各 267/267
+  （411.54/284.80 秒），四套 CPU/CUDA 专项各 24/24
+  （70.41/12.79/39.55/12.29 秒）；安装/消费者门禁包含在全量测试并通过。
+- 最终独立复审重跑受代理额度限制未返回结论；主代理完成最终规格和代码质量复审，未
+  发现剩余 Critical/Important。保持 MS-05～MS-09 边界不变，未进入 MS-05。
