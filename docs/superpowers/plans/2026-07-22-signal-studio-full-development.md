@@ -147,87 +147,147 @@ plus the named Chinese milestone reports and `evidence/`.
 
 **Commit:** `feat(ms-4.5): parameterize spectrum and spectrogram analysis`
 
-## MS-05 — Wideband and narrowband linked analysis
+## 2026-08-11 后续计划校准
 
-**Files:**
+本节替代原 MS-05～MS-09 计划。校准依据是当前分支 `codex/full-signal-studio-development`
+的实际代码、BL1.0 的 198 项需求、现有测试与里程碑证据，以及远程仓库当前状态。
 
-- Add/modify: `apps/signal_studio/features/wideband/**`, `apps/signal_studio/features/narrowband/**`
-- Add: `tests/e2e/ms05/**`, `docs/user/wideband-narrowband.md`
+当前分支已完成 MS-00～MS-04 和插入里程碑 MS-4.5。现有 `Selection`、DSP
+`ProcessingChain`、Inspector 状态、TaskRuntime、Artifact 与参数化分析能力是 MS-05 的
+输入，不得重新复制实现。`SignalPluginSDK` 当前仅有 ABI-v1 基础边界，
+`SignalModelRuntime` 和 `SignalDataset` 当前只有模块描述符，不能视为功能完成。
 
-**Implementation:** Implement P03/P04/P05/P06/P07 flows, overview/detail linkage, region/channel creation, parameter inheritance, marker and measurement management, artifact provenance, channel extraction, modulation/statistics panels, and request-priority/cancellation rules for linked views.
+远程 `main` 已存在另一条 MS-05～MS-09 历史和公开标签 `v1.0.0`，但该历史自己的最终
+报告明确记录 ONNX Runtime、HDF5、NSIS、完整性能/稳定性和 GitHub Release 未完成，
+不满足本任务的唯一最终验收条件。后续开发不合并或复制该实现；最终集成前重新获取远程，
+逐项审计新增提交，采用保留双方历史、以本验证分支内容为准的普通合并，不使用裸强推。
+为避免改写已经发布的不可变标签，当前正式发布列车调整为 `1.0.1` / `v1.0.1`，并在
+发布说明中明确 `v1.0.0` 被完整验收版本取代。
 
-**Tests:** Real-data wideband navigation, narrowband extraction and reopen; deterministic linkage state; cache reuse/invalidation; cancellation; output provenance; all page/interaction acceptance cases from the approved matrix.
+每个后续里程碑开始前执行基线、依赖锁、用户预设确定性和工作树检查；结束时完成
+CPU Debug/Release 全量、相关 CUDA 12.4 专项、安装消费者、真实数据有界测试、中文证据
+文档、差异审计和 Git 提交。只删除已由文档固化的废弃生成目录，保留当前四套活动构建树
+和 `.deps` 依赖缓存；每个里程碑关闭后再清理该里程碑的临时截图、安装树和诊断目录。
 
-**Evidence:** `docs/milestones/MS-05/{development_report,test_report,acceptance_record,commit_record}.md`
+## MS-05 — 宽窄带联动分析
 
-**Commit:** `feat(ms-05): implement linked wideband and narrowband analysis`
+**文件范围：**
 
-## MS-06 — PluginSDK, ModelRuntime, and Dataset
+- 新增/修改：`apps/signal_studio/features/wideband/**`、`apps/signal_studio/features/narrowband/**`
+- 修改：`apps/signal_studio/**`、必要的公共 Selection/Channel/Inspector 契约
+- 新增：`tests/e2e/ms05/**`、`docs/user/宽窄带联动分析.md`
 
-**Files:**
+**实施顺序：**
 
-- Add/modify: `include/signal_studio/plugin_sdk/**`, `src/platform/plugin_sdk/**`
-- Add/modify: `include/signal_studio/model_runtime/**`, `src/platform/model_runtime/**`
-- Add/modify: `include/signal_studio/dataset/**`, `src/platform/dataset/**`
-- Add: `plugins/examples/**`, `python/**`, `tests/plugin_sdk/**`, `tests/model_runtime/**`, `tests/dataset/**`
-- Add: `docs/sdk/**`, `docs/plugin/**`, `docs/python/**`
+1. 建立应用层 `Selection -> AnalysisChannel` 编排、稳定 ID、版本、参数继承、模板、
+   工程保存/恢复和依赖安全删除；公共契约继续不暴露 Qt 或第三方类型。
+2. 复用既有 DSP 节点完成有界分块的复数频移、抗混叠滤波、整数抽取/插值和有理重采样，
+   保持跨块状态、边界策略、取消和下游缓存最小失效；不另写 FFT、滤波或重采样内核。
+3. 完成 P02 宽带 Selection 与 P03 独立通道 Inspector 的双向定位、游标/测量、任务进度、
+   结果过期和来源追溯。P04/P05 只补齐与通道任务/结果的集成，不重做已完成页面。
+4. 星座、眼图、直方图和瞬时频率只消费真实通道数据；符号率或同步来源缺失时明确显示
+   不适用。调制识别、ONNX/Python 算法和插件管理留在 MS-06。
 
-**Implementation:** Implement ABI-v1 discovery/query/lifecycle/capability/error boundary and example plugin; ONNX Runtime session/provider selection, preprocessing/postprocessing, cancellation and artifact metadata; HDF5 dataset adapter, schema/provenance/split/version operations; Python bindings and SDK examples without exposing private Qt types.
+**测试与退出条件：**
 
-**Tests:** ABI compatibility and hostile-plugin isolation, example plugin E2E, deterministic model smoke tests, unavailable-provider fallback, HDF5 round-trip/large-chunk tests, Python import/lifetime/error tests, and public SDK consumer builds.
+- 覆盖 FR-SEL-001～007、FR-DSP-001～009、FR-INS-001～007 的应用级闭环，重跑其
+  既有单元测试并新增宽带选区到窄带提取 E2E。
+- 使用批准的 X310 录制做有界导航、通道提取、取消/重试、工程重开、缓存失效和 Artifact
+  来源验证；不创建或扫描物理 100 GB 文件。
+- 完成 BL1.0 里程碑门禁 AT-05/14/23，保持 1280×720、1080P、4K 和 100%～200% DPI
+  无重叠/裁剪。
 
-**Evidence:** `docs/milestones/MS-06/{development_report,test_report,acceptance_record,commit_record}.md`
+**证据：** `docs/milestones/MS-05/{development_report,test_report,acceptance_record,commit_record}.md`
+及四份规定的中文里程碑文档。
 
-**Commit:** `feat(ms-06): finish plugin model and dataset platform modules`
+**提交：** `feat(ms-05): 实现宽窄带联动与窄带通道闭环`
 
-## MS-07 — Engineering, quality, packaging, and documentation
+## MS-06 — PluginSDK、ModelRuntime 与 Dataset
 
-**Files:**
+MS-06 按内部门禁 A～E 顺序推进，可以形成多个可审计实现提交，但只有五个门禁全部通过
+后才关闭里程碑。
 
-- Add: `.github/workflows/ci.yml`, `cmake/Packaging.cmake`, `packaging/**`
-- Add: `.clang-format`, `.clang-tidy`, `scripts/run_quality_gates.ps1`, `scripts/package.ps1`, `scripts/run_stability.ps1`
-- Add: `docs/development/**`, `docs/user/**`, `docs/api/**`, `docs/release/**`
-- Add: `docs/development/开发需求追踪矩阵.xlsx`
+**A. 依赖闭包：** 安装并锁定实际需要的 ONNX Runtime、HDF5 和 pybind11，验证许可证、
+Debug/Release、安装树和洁净 `PATH` 闭包。ONNX Runtime CUDA 提供程序必须与本机 CUDA
+12.4 的官方兼容矩阵一致；只有所选提供程序明确需要时才安装匹配 cuDNN，且 CPU 必须
+独立可用、GPU 缺失必须明确回退。
 
-**Implementation:** Enforce format/static-analysis/warnings; add sanitized tests where supported; generate installer and portable ZIP; deploy Qt runtime/plugins; write installation, build, debug, architecture, API/SDK/plugin, troubleshooting and packaging documents; create a source-linked traceability workbook covering all 198 requirements.
+**B. SignalPluginSDK：** 完成文件、DSP、算法、解调、视图、导出插件类型；完整 manifest
+身份/接口/架构/依赖/能力/输入输出/许可/哈希；发现、查询、生命周期、版本拒绝、启停、
+隔离、安全模式、来源/签名/信任/外联权限可见；提供 C/C++ 示例插件和多宿主契约测试。
 
-**Tests:** Clean-machine-style install-tree smoke, portable launch/self-test, uninstall metadata, Debug/Release/CPU matrix, capability-aware CUDA preset, packaging reproducibility, license inventory, security scan, formula-error-free workbook validation, and configurable stability runner.
+**C. SignalModelRuntime 与算法契约：** 以 ONNX Runtime 为默认后端，实现模型安装、注册、
+解析、会话、前后处理、批处理、设备选择、取消、实际提供程序和 Artifact 来源；覆盖
+FR-ALG-001～009 的估计质量、适用条件、Top-K/未知阈值/聚合、传统与 ONNX/Python
+适配、解调统一输出以及不可信进程故障隔离。
 
-**Evidence:** `docs/milestones/MS-07/{development_report,test_report,acceptance_record,commit_record}.md`
+**D. SignalDataset：** 完成版本化 manifest、索引、标签、分片、训练/验证/测试划分、统计、
+查询、缓存和原子提交；同时提供 HDF5 与 WebDataset 适配，覆盖大块、损坏、迁移、重开
+和并发读写边界。
 
-**Commit:** `chore(ms-07): harden engineering quality and release packaging`
+**E. 宿主集成：** P06 插件与模型页面以及 P03 算法结果接入真实服务；提供 Python 绑定、
+Headless CLI、安装后 SDK 消费工程和至少两个宿主的契约验证，公共头不得泄露 Qt、ORT、
+HDF5 或 pybind11 类型。
 
-## MS-08 — Beta second application and reuse proof
+**测试与退出条件：** 精确覆盖 MS-06 的 19 项批准需求及 TC-FUNC-102～110、136～142、
+161～163；执行 ABI 兼容/恶意插件隔离、确定性 ONNX 推理、不可用提供程序回退、HDF5/
+WebDataset 往返、Python 生命周期/错误、安装消费和多宿主契约测试。
 
-**Files:**
+**证据：** `docs/milestones/MS-06/{development_report,test_report,acceptance_record,commit_record}.md`
+及四份规定的中文里程碑文档。
 
-- Add: `apps/signal_review/**`, `tests/e2e/ms08/**`, `docs/reuse/**`
-- Modify: build/package/CI configuration
+**提交：** `feat(ms-06): 完成插件模型与数据集平台能力`
 
-**Implementation:** Build a second thin application from public modules only, demonstrating alternate workbench composition, import/review/export flows, module-level reuse and independent packaging without private-header or Qt implementation leakage.
+## MS-07 — 工程化、安全、质量、打包与文档
 
-**Tests:** Public-only include/link audit, second-app E2E, install/package smoke, shared cache/data compatibility, ABI checks and reuse matrix validation.
+MS-07 不能只做打包。先关闭 19 项 MS-07 需求：结构化分级日志、滚动与脱敏诊断包，
+设置/布局/DPI/中文国际化、真实诊断和启动硬件检查，以及默认无网络、路径防穿越、
+插件/模型最小权限、无 GUI 可测、版本化和可重复性能追踪。随后执行格式、静态分析、
+警告、泄漏/安全检查和 198 项追踪矩阵闭环。
 
-**Evidence:** `docs/milestones/MS-08/{development_report,test_report,acceptance_record,commit_record}.md`
+生成可重复的 CPack/NSIS 安装包与便携包，部署 Qt、oneMKL、CUDA 可选闭包、ORT、HDF5、
+插件、模型、许可证和 SBOM；验证离线安装、启动、卸载、升级、回滚、不删除用户工程、
+无开发机绝对路径、无未授权网络、包复现和洁净环境消费。
 
-**Commit:** `feat(ms-08): prove platform reuse with Signal Review beta`
+**证据：** `docs/milestones/MS-07/{development_report,test_report,acceptance_record,commit_record}.md`
+及中文安装、质量、安全、许可证和追踪报告。
 
-## MS-09 — Release validation and GitHub publication
+**提交：** `chore(ms-07): 完成工程质量与发布打包门禁`
 
-**Files:**
+## MS-08 — Beta 多应用复用证明
 
-- Add: `docs/milestones/MS-09/{development_report,test_report,acceptance_record,commit_record}.md`
-- Add: `docs/release/FINAL_ACCEPTANCE_REPORT.md`, `docs/release/RELEASE_NOTES_v1.0.0.md`
-- Add/update: release manifests, SHA-256 files, installer and portable deliverables under `dist/`
+按批准基线实现 Signal Generator 薄壳，而不是原计划中的 Signal Review。薄壳只消费
+安装后的公共 Data、DSP、TaskRuntime、Visualization/Workbench 包，同时提供独立的
+Headless CLI 验证路径；不得包含 Signal Studio 私有头或复制公共模块实现。
 
-**Implementation:** Execute the complete final-acceptance matrix; close or explicitly approve every requirement deviation; run the requested stability duration; validate installer/portable on a clean deployment directory; audit licenses, security, docs, CI and repository cleanliness; update main safely; sign/annotate tag `v1.0.0`; push commits/tags; create the formal GitHub release and upload artifacts/checksums.
+验证第二桌面应用的生成/导入/浏览最小闭环、公共缓存和数据兼容、独立安装与 Signal
+Studio 并存、不同应用不共享可写配置、ABI/schema 兼容，以及 `NFR-REUSE-101` /
+`TC-REUSE-001`。若发现公共能力缺口，只能通过 ADR 和公共 API 修订解决。
 
-**Tests:** Full CTest/GUI/E2E/real-data/performance/stability/package/install matrix with exact logs, versions, durations and failure counts; SHA-256 verification after upload/download; remote default-branch/tag/release verification.
+**证据：** `docs/milestones/MS-08/{development_report,test_report,acceptance_record,commit_record}.md`
 
-**Evidence:** milestone files above plus `docs/release/FINAL_ACCEPTANCE_REPORT.md`, generated reports/logs and release URL.
+**提交：** `feat(ms-08): 以 Signal Generator 证明平台复用`
 
-**Commit:** `release: publish Signal Studio v1.0.0`
+## MS-09 — 最终验收与正式发布
 
-## Final review
+执行 `CODEX_FULL_DEVELOPMENT_TASK.md` 的全部最终验收条件，而不是只检查里程碑状态。
+完成 Windows CPU Debug/Release 全量、可用时 CUDA 12.4 矩阵、GUI/E2E、三份外部录制
+有界验证、算法、性能、稳定性、安装/卸载/升级/回滚、便携包、多应用并存、Python wheel、
+插件 ABI、SBOM/许可证/安全、CI、追踪矩阵和仓库清洁度验证，并保存精确日志、版本、
+时长、失败数与 SHA-256。
 
-After MS-09, request an independent final code/acceptance review over the complete branch, fix and re-review all Critical/Important findings, then use `finishing-a-development-branch` to integrate and publish the validated result. Mark the active goal complete only after every final acceptance item is evidenced or the user has expressly accepted a recorded deviation.
+发布前重新获取远程 `main`，审计开发期间新增提交；保留现有 `v1.0.0` 和远程历史，
+以普通合并把本分支的已验证树集成到默认分支。发布应用和 SDK `1.0.1`，创建并推送
+注释标签 `v1.0.1`，创建 GitHub Release，上传安装包、便携包、开发包、Python wheel、
+调试符号、许可证/SBOM、发布说明和校验清单，并在上传后重新下载校验。
+
+**证据：** `docs/milestones/MS-09/**`、`docs/release/最终执行报告.md`、
+`docs/release/ReleaseNotes_1.0.1.md`、发布资产清单和 Release URL。
+
+**提交：** `release: 发布 Signal Studio v1.0.1`
+
+## 最终复审
+
+MS-09 后对完整分支执行独立规格、代码质量和最终验收复审；所有 Critical/Important
+发现必须修复并复审通过。只有总任务的最终验收条件全部有真实证据，或用户明确接受了
+如实记录的偏差，才允许结束目标。
