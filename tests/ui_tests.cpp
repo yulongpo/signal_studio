@@ -11,6 +11,7 @@
 #include <QDialog>
 #include <QDoubleSpinBox>
 #include <QFile>
+#include <QFileInfo>
 #include <QGuiApplication>
 #include <QImage>
 #include <QInputDialog>
@@ -20,6 +21,7 @@
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPointer>
+#include <QPushButton>
 #include <QScreen>
 #include <QSettings>
 #include <QScrollArea>
@@ -449,29 +451,47 @@ void UiTests::emptyProjectAndFileActions() {
     showWindow(window);
     auto* create = window.findChild<QAction*>("newProjectAction");
     auto* add = window.findChild<QAction*>("addDemoAction");
+    auto* openDemo = window.findChild<QAction*>("openDemoProjectAction");
+    auto* addSignal = window.findChild<QAction*>("openIqAction");
+    auto* projectAddSignal = window.findChild<QPushButton*>("projectAddSignal");
     auto* remove = window.findChild<QAction*>("removeFileAction");
     auto* mode = window.findChild<QComboBox*>("modeMain");
     auto* plot = window.findChild<PlotWidget*>("mainPlot");
     QVERIFY(create);
     QVERIFY(add);
+    QVERIFY(openDemo);
+    QVERIFY(addSignal);
+    QVERIFY(projectAddSignal);
     QVERIFY(remove);
     QVERIFY(mode);
     QVERIFY(plot);
-    const auto originalName=window.session().project().name;
-    bool cancelAnswered=false;
-    QTimer cancelNew;
-    connect(&cancelNew,&QTimer::timeout,[&cancelAnswered] {
-        if(auto* dialog=qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
-            if(auto* no=dialog->button(QMessageBox::No)) { cancelAnswered=true; no->click(); }
-        }
+    QVERIFY(!addSignal->isEnabled());
+    QVERIFY(!projectAddSignal->isVisible());
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    QTimer completeNew;
+    connect(&completeNew, &QTimer::timeout, [&] {
+        auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+        if (!dialog || dialog->objectName() != "newProjectDialog") return;
+        dialog->findChild<QLineEdit*>("newProjectName")->setText("workflow-project");
+        dialog->findChild<QLineEdit*>("newProjectLocation")->setText(directory.path());
+        dialog->findChild<QPushButton*>("createProjectButton")->click();
     });
-    cancelNew.start(5);
+    completeNew.start(5);
     create->trigger();
-    cancelNew.stop();
-    QVERIFY(cancelAnswered);
+    QTRY_VERIFY_WITH_TIMEOUT(QFileInfo::exists(directory.filePath("workflow-project/project.json")), 2'000);
+    completeNew.stop();
+    QVERIFY(addSignal->isEnabled());
+    QVERIFY(projectAddSignal->isVisible());
+    QCOMPARE(QString::fromStdString(window.session().project().name), QStringLiteral("workflow-project"));
     QCOMPARE(window.session().project().files.size(),std::size_t{0});
-    QCOMPARE(QString::fromStdString(window.session().project().name),QString::fromStdString(originalName));
-    triggerConfirmed(create);
+    QString createError;
+    QVERIFY(!window.createProject(directory.path(), "workflow-project", &createError));
+    QVERIFY(!createError.isEmpty());
+    QCOMPARE(QString::fromStdString(window.session().project().name), QStringLiteral("workflow-project"));
+    MainWindow reopened;
+    QVERIFY(reopened.openProject(directory.filePath("workflow-project")));
+    QCOMPARE(QString::fromStdString(reopened.session().project().name), QStringLiteral("workflow-project"));
     QVERIFY(window.session().project().files.empty());
     QVERIFY(!window.session().activeFile());
     QVERIFY(!remove->isEnabled());
@@ -484,6 +504,9 @@ void UiTests::emptyProjectAndFileActions() {
     triggerConfirmed(remove);
     QVERIFY(window.session().project().files.empty());
     QVERIFY(!window.session().activeFile());
+    triggerConfirmed(openDemo);
+    QCOMPARE(window.session().project().files.size(), std::size_t{3});
+    QCOMPARE(QString::fromStdString(window.session().project().name), QStringLiteral("演示工程"));
 }
 
 void UiTests::treeSelectionPreservesNodesAndShiftAnchor() {

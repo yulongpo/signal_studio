@@ -48,7 +48,7 @@ int main(int argc,char* argv[]) {
     parser.addOption({"screen","Select the 1-based connected screen number from --list-screens (validation uses 2).","number"});
     parser.addOption({"full-screen","Display the workspace full screen on the selected monitor."});
     parser.addOption({"list-screens","Print monitor names, dimensions and DPI, then exit."});
-    parser.addOption({"project","Open a native project JSON at startup.","path"});
+    parser.addOption({"project","Open a native project folder or JSON at startup.","path"});
     parser.addOption({"demo-data","Load the three prototype demo files; normal startup is an empty project."});
     parser.addOption({"iq-file","Open an interleaved int16 IQ file at startup; FS/FC/BW are read from its filename.","path"});
     parser.addOption({"psd-view","Start the auxiliary chart in real-IQ PSD mode (used with --iq-file)."});

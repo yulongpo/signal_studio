@@ -30,6 +30,7 @@ public:
     ~MainWindow() override;
     Session& session() { return session_; }
     void refresh();
+    bool createProject(const QString& parentDirectory, const QString& projectName, QString* error = nullptr);
     bool openProject(const QString& path);
     bool addIqFile(const QString& path, QString* error = nullptr);
     bool saveProject(const QString& path);
@@ -60,6 +61,8 @@ private:
     void deleteMarks();
     void renameMark();
     void showAddFileDialog();
+    void showNewProjectDialog();
+    void openDemoProject();
     void toggleMaximized(int index);
     void enforceLayout(bool reset = false);
     void updatePropertyContext();
@@ -106,7 +109,7 @@ private:
     QStackedWidget* bottomContent_ = nullptr;
     QLabel *resultSummary_ = nullptr, *taskSummary_ = nullptr;
     QPlainTextEdit* results_ = nullptr;
-    QAction *removeAction_ = nullptr, *saveAction_ = nullptr, *deleteAction_ = nullptr, *backAction_ = nullptr, *forwardAction_ = nullptr;
+    QAction *removeAction_ = nullptr, *saveAction_ = nullptr, *addSignalAction_ = nullptr, *deleteAction_ = nullptr, *backAction_ = nullptr, *forwardAction_ = nullptr;
     QMenu* recentProjectsMenu_ = nullptr;
     QTimer* rightSidebarSaveTimer_ = nullptr;
     bool restoringUiState_ = false, splitterStateRestored_ = false;

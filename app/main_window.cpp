@@ -9,6 +9,7 @@
 #include <QComboBox>
 #include <QCryptographicHash>
 #include <QDateTime>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QDialog>
 #include <QDoubleSpinBox>
@@ -17,6 +18,7 @@
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QInputDialog>
+#include <QLineEdit>
 #include <QContextMenuEvent>
 #include <QKeyEvent>
 #include <QLabel>
@@ -37,6 +39,7 @@
 #include <QSplitterHandle>
 #include <QStackedWidget>
 #include <QStatusBar>
+#include <QStandardPaths>
 #include <QSettings>
 #include <QTimer>
 #include <QToolButton>
@@ -260,21 +263,24 @@ void MainWindow::buildMenus() {
     auto* version = label("A1.4.3 · 交互可靠性优化"); version->setStyleSheet("font-size:10px;color:#edc586;border:1px solid #836d44;padding:3px 6px;border-radius:3px;");
     brandRow->addWidget(version); menuBar()->setCornerWidget(brand, Qt::TopLeftCorner);
     auto* file = menuBar()->addMenu("文件(&F)");
-    auto* action = file->addAction("▧ 新建工程", this, [this] {
-        if (QMessageBox::question(this, "新建工程", "新建空工程将清除当前未保存内容，继续吗？") != QMessageBox::Yes) return;
-        cancelInteractions(); if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
-        session_.newProject(); projectPath_.clear(); selectionAnchor_.clear(); refresh(); log("已新建空工程");
-    });
+    auto* action = file->addAction("▧ 新建工程…", this, &MainWindow::showNewProjectDialog);
     action->setObjectName("newProjectAction"); action->setShortcut(QKeySequence::New);
-    action = file->addAction("▣ 添加 IQ 文件", this, &MainWindow::showAddFileDialog); action->setObjectName("openIqAction");
-    saveAction_ = file->addAction("⇩ 保存工程结构", this, [this] {
-        const auto path = QFileDialog::getSaveFileName(this, "保存工程结构", projectPath_.isEmpty() ? "signal-studio-project.json" : projectPath_, "Signal Studio 工程 (*.json)");
-        if (!path.isEmpty()) saveProject(path);
-    }); saveAction_->setObjectName("saveProjectAction"); saveAction_->setShortcut(QKeySequence::Save);
-    action = file->addAction("⇧ 打开工程结构", this, [this] {
-        const auto path = QFileDialog::getOpenFileName(this, "打开工程结构", {}, "Signal Studio 工程 (*.json)");
+    action = file->addAction("⇧ 打开工程文件夹…", this, [this] {
+        const auto path = QFileDialog::getExistingDirectory(this, "打开工程文件夹", QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
         if (!path.isEmpty()) openProject(path);
     }); action->setObjectName("openProjectAction"); action->setShortcut(QKeySequence::Open);
+    action = file->addAction("打开旧版工程 JSON…", this, [this] {
+        const auto path = QFileDialog::getOpenFileName(this, "打开旧版工程 JSON", {}, "Signal Studio 工程 (*.json)");
+        if (!path.isEmpty()) openProject(path);
+    }); action->setObjectName("openProjectJsonAction");
+    action = file->addAction("打开演示工程", this, &MainWindow::openDemoProject); action->setObjectName("openDemoProjectAction");
+    file->addSeparator();
+    addSignalAction_ = file->addAction("▣ 添加 / 打开信号…", this, &MainWindow::showAddFileDialog); addSignalAction_->setObjectName("openIqAction");
+    saveAction_ = file->addAction("⇩ 保存工程", this, [this] {
+        if (!projectPath_.isEmpty()) { saveProject(projectPath_); return; }
+        const auto path = QFileDialog::getSaveFileName(this, "保存工程 JSON", "signal-studio-project.json", "Signal Studio 工程 (*.json)");
+        if (!path.isEmpty()) saveProject(path);
+    }); saveAction_->setObjectName("saveProjectAction"); saveAction_->setShortcut(QKeySequence::Save);
     recentProjectsMenu_ = file->addMenu("最近打开的工程"); recentProjectsMenu_->setObjectName("recentProjectsMenu");
     updateRecentProjectsMenu();
     removeAction_ = file->addAction("⊖ 从工程移除当前文件", this, [this] {
@@ -323,9 +329,9 @@ void MainWindow::buildWorkspace() {
     auto* resourceToggle = push("☰", "resourceToggle", resourceHeadRow); resourceToggle->setProperty("uiRole", "icon"); resourceToggle->setFixedSize(25, 25); resourceToggle->setToolTip("收折 / 展开工程管理"); left->addWidget(resourceHead);
     connect(resourceToggle, &QPushButton::clicked, this, [this] { cancelInteractions(false); resourcesCollapsed_ = !resourcesCollapsed_; enforceLayout(); saveUiState(); });
     resourceTools_ = new QWidget; auto* tools = new QHBoxLayout(resourceTools_); tools->setContentsMargins(8, 7, 8, 7); tools->setSpacing(5);
-    auto* add = push("＋ 添加 IQ 文件", "projectAddSignal", tools); add->setProperty("uiRole", "primary"); add->setFixedHeight(28);
-    auto* save = push("⇩ 导出工程", "projectSave", tools); save->setProperty("uiRole", "outline"); save->setFixedHeight(28);
-    connect(add, &QPushButton::clicked, this, &MainWindow::showAddFileDialog); connect(save, &QPushButton::clicked, saveAction_, &QAction::trigger); left->addWidget(resourceTools_);
+    auto* add = push("＋ 添加 / 打开信号", "projectAddSignal", tools); add->setProperty("uiRole", "primary"); add->setFixedHeight(28);
+    auto* save = push("⇩ 保存工程", "projectSave", tools); save->setProperty("uiRole", "outline"); save->setFixedHeight(28);
+    connect(add, &QPushButton::clicked, this, [this] { if (addSignalAction_->isEnabled()) addSignalAction_->trigger(); }); connect(save, &QPushButton::clicked, saveAction_, &QAction::trigger); left->addWidget(resourceTools_);
     auto* resourceScroll = new QScrollArea; resourceBody_ = resourceScroll; resourceScroll->setObjectName("resourceScroll"); resourceScroll->setWidgetResizable(true); resourceScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     auto* resourceInner = new QWidget; auto* resourceContent = new QVBoxLayout(resourceInner); resourceContent->setContentsMargins(7, 8, 7, 24); resourceContent->setSpacing(18); resourceScroll->setWidget(resourceInner);
     tree_ = new QTreeWidget; tree_->setObjectName("projectTree"); tree_->setHeaderHidden(true); tree_->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -453,9 +459,21 @@ void MainWindow::buildWorkspace() {
 
     graphArea->setObjectName("graphArea"); graphArea->installEventFilter(this);
     empty_ = new QWidget(graphArea); empty_->setObjectName("emptyWorkspace"); empty_->setStyleSheet("background:#0d1725;");
-    auto* emptyLayout = new QVBoxLayout(empty_); emptyLayout->addStretch(); auto* emptyTitle = label("空工程 · 未添加 IQ 文件"); emptyTitle->setStyleSheet("font-size:18px;"); emptyTitle->setAlignment(Qt::AlignCenter); emptyLayout->addWidget(emptyTitle);
-    auto* emptyHelp = label("请向工程添加信号文件以开始宽带研判", {}, "help"); emptyHelp->setAlignment(Qt::AlignCenter); emptyLayout->addWidget(emptyHelp);
-    auto* emptyAdd = new QPushButton("＋ 添加 IQ 文件"); emptyAdd->setObjectName("emptyAddSignal"); emptyAdd->setProperty("uiRole", "primary"); emptyLayout->addWidget(emptyAdd, 0, Qt::AlignCenter); emptyLayout->addStretch(); connect(emptyAdd, &QPushButton::clicked, this, &MainWindow::showAddFileDialog);
+    auto* emptyLayout = new QVBoxLayout(empty_); emptyLayout->setSpacing(12); emptyLayout->addStretch();
+    auto* emptyTitle = label("开始宽带数据分析", "emptyWorkflowTitle"); emptyTitle->setStyleSheet("font-size:22px;font-weight:600;color:#dce9f6;"); emptyTitle->setAlignment(Qt::AlignCenter); emptyLayout->addWidget(emptyTitle);
+    auto* emptyHelp = label("按顺序完成工程、信号和宽带数据操作", "emptyWorkflowHelp", "help"); emptyHelp->setAlignment(Qt::AlignCenter); emptyLayout->addWidget(emptyHelp);
+    auto* workflow = label("01  工程     →     02  信号     →     03  宽带数据", "emptyWorkflowSteps"); workflow->setAlignment(Qt::AlignCenter); workflow->setStyleSheet("font-size:14px;color:#79b8de;padding:14px;"); emptyLayout->addWidget(workflow);
+    auto* projectButtons = new QWidget(empty_); projectButtons->setObjectName("emptyProjectActions"); auto* projectButtonRow = new QHBoxLayout(projectButtons); projectButtonRow->setContentsMargins(0, 0, 0, 0); projectButtonRow->setSpacing(8);
+    auto* newProject = push("▧ 新建工程…", "emptyNewProject", projectButtonRow); newProject->setProperty("uiRole", "primary");
+    auto* openProject = push("⇧ 打开工程…", "emptyOpenProject", projectButtonRow); openProject->setProperty("uiRole", "outline");
+    auto* demoProject = push("打开演示工程", "emptyDemoProject", projectButtonRow); demoProject->setProperty("uiRole", "outline");
+    emptyLayout->addWidget(projectButtons, 0, Qt::AlignCenter);
+    auto* emptyAdd = push("＋ 添加 / 打开信号…", "emptyAddSignal", emptyLayout); emptyAdd->setProperty("uiRole", "primary");
+    emptyLayout->addStretch();
+    connect(newProject, &QPushButton::clicked, this, [this] { findChild<QAction*>("newProjectAction")->trigger(); });
+    connect(openProject, &QPushButton::clicked, this, [this] { findChild<QAction*>("openProjectAction")->trigger(); });
+    connect(demoProject, &QPushButton::clicked, this, [this] { findChild<QAction*>("openDemoProjectAction")->trigger(); });
+    connect(emptyAdd, &QPushButton::clicked, this, [this] { if (addSignalAction_->isEnabled()) addSignalAction_->trigger(); });
     maxVeil_ = new QWidget(this); maxVeil_->setObjectName("maximizeVeil"); maxVeil_->setStyleSheet("background:rgba(3,9,21,217);"); maxVeil_->hide(); maxVeil_->installEventFilter(this);
     maxHost_ = new QWidget(this); maxHost_->setObjectName("maximizeHost"); maxHost_->setStyleSheet("background:#121f32;"); auto* maxLayout = new QVBoxLayout(maxHost_); maxLayout->setContentsMargins(0, 0, 0, 0); maxHost_->hide();
 
@@ -822,7 +840,10 @@ void MainWindow::updateRecentProjectsMenu() {
     recentProjectsMenu_->clear();
     const auto paths = QSettings().value(QStringLiteral("recentProjects")).toStringList();
     for (const auto& path : paths) {
-        auto* action = recentProjectsMenu_->addAction(QFileInfo(path).fileName());
+        const QFileInfo info(path);
+        const QString displayName = info.fileName().compare("project.json", Qt::CaseInsensitive) == 0
+            ? QFileInfo(info.absolutePath()).fileName() : info.completeBaseName();
+        auto* action = recentProjectsMenu_->addAction(displayName.isEmpty() ? path : displayName);
         action->setObjectName(QStringLiteral("recentProjectAction"));
         action->setToolTip(path); action->setStatusTip(path); action->setEnabled(QFileInfo::exists(path));
         connect(action, &QAction::triggered, this, [this, path] { openProject(path); });
@@ -873,12 +894,20 @@ void MainWindow::syncTreeState() {
 void MainWindow::refresh() {
     if (refreshing_) return; refreshing_ = true;
     const auto* file = session_.activeFile(); updateTree(); projectLabel_->setText(q(session_.project().name));
+    const bool projectReady = !projectPath_.isEmpty() || !session_.project().files.empty();
     for (auto* control : std::array<QWidget*, 15>{mainMode_, auxMode_, waveformMode_, palette_, propertyPalette_, dynamic_, reference_, freqMode_, grid_, colorScale_, psd_, stft_, psdScope_, extract_, effectiveBandwidth_}) control->setEnabled(file != nullptr);
     waveformMode_->setEnabled(file && !file->metadata.demo && file->display.auxiliaryMode == AuxiliaryMode::Waveform);
     for (auto* button : auxiliaryButtons_) button->setEnabled(file != nullptr); for (auto* button : mainButtons_) button->setEnabled(file != nullptr);
     for (const auto& id : {"navMaximize", "auxMaximize", "specMaximize"}) findChild<QPushButton*>(id)->setEnabled(file != nullptr);
+    addSignalAction_->setEnabled(projectReady); saveAction_->setEnabled(!projectPath_.isEmpty() || !session_.project().files.empty());
     removeAction_->setEnabled(file != nullptr); deleteAction_->setEnabled(file && !file->selectedMarkIds.empty()); backAction_->setEnabled(session_.canBack()); forwardAction_->setEnabled(session_.canForward());
     empty_->setVisible(!file); if (!file) empty_->raise();
+    if (auto* title = findChild<QLabel*>("emptyWorkflowTitle")) title->setText(projectReady ? "工程已就绪 · 等待添加信号" : "开始宽带数据分析");
+    if (auto* help = findChild<QLabel*>("emptyWorkflowHelp")) help->setText(projectReady ? "当前工程：" + q(session_.project().name) + "。添加信号后即可进行宽带数据操作。" : "第一步：新建工程（自动创建工程文件夹）或打开已有工程。");
+    if (auto* actions = findChild<QWidget*>("emptyProjectActions")) actions->setVisible(!projectReady);
+    if (auto* addButton = findChild<QPushButton*>("emptyAddSignal")) addButton->setVisible(projectReady);
+    if (auto* addButton = findChild<QPushButton*>("projectAddSignal")) { addButton->setVisible(projectReady); addButton->setEnabled(projectReady); }
+    if (auto* saveButton = findChild<QPushButton*>("projectSave")) saveButton->setEnabled(saveAction_->isEnabled());
     if (file) {
         const auto& display = file->display; mainMode_->setCurrentIndex(static_cast<int>(display.mainMode)); auxMode_->setCurrentIndex(static_cast<int>(display.auxiliaryMode)); palette_->setCurrentIndex(static_cast<int>(display.palette)); propertyPalette_->setCurrentIndex(static_cast<int>(display.palette));
         dataSourceStatus_->setText(file->metadata.demo ? "演示数据 · 未运行 DSP" : "实际 IQ · FFT 已启用");
@@ -1038,6 +1067,74 @@ void MainWindow::renameMark() {
     file = session_.activeFile(); if (!ok || name.isEmpty() || !file || file->metadata.id != fileId) return;
     mark = findMark(*file, markId); if (mark) { mark->name = name.toStdString(); refresh(); log("已重命名信号标记"); }
 }
+void MainWindow::showNewProjectDialog() {
+    if ((!projectPath_.isEmpty() || !session_.project().files.empty()) &&
+        QMessageBox::question(this, "新建工程", "新建工程会切换当前工程，继续吗？") != QMessageBox::Yes) return;
+
+    auto* dialog = new QDialog(this); dialog->setObjectName("newProjectDialog"); dialog->setWindowTitle("新建 Signal Studio 工程");
+    dialog->setAttribute(Qt::WA_DeleteOnClose); dialog->setModal(true); dialog->setMinimumWidth(520);
+    auto* layout = new QVBoxLayout(dialog); layout->setContentsMargins(20, 18, 20, 18); layout->setSpacing(12);
+    auto* intro = label("新工程将创建独立文件夹，并在其中保存 project.json。", {}, "help"); intro->setWordWrap(true); layout->addWidget(intro);
+    auto* form = new QFormLayout; form->setSpacing(10);
+    auto* name = new QLineEdit("Signal Studio Project"); name->setObjectName("newProjectName");
+    auto* location = new QLineEdit(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)); location->setObjectName("newProjectLocation");
+    auto* locationRow = new QWidget(dialog); auto* rowLayout = new QHBoxLayout(locationRow); rowLayout->setContentsMargins(0, 0, 0, 0); rowLayout->setSpacing(6);
+    rowLayout->addWidget(location, 1); auto* browse = push("浏览…", "browseProjectLocation", rowLayout); browse->setProperty("uiRole", "outline");
+    form->addRow("工程名称", name); form->addRow("保存位置", locationRow); layout->addLayout(form);
+    auto* target = label({}, "newProjectTarget", "help"); target->setWordWrap(true); layout->addWidget(target);
+    auto updateTarget = [name, location, target] { target->setText("将创建：" + QDir(location->text()).filePath(name->text().trimmed())); };
+    connect(name, &QLineEdit::textChanged, dialog, [updateTarget] { updateTarget(); });
+    connect(location, &QLineEdit::textChanged, dialog, [updateTarget] { updateTarget(); }); updateTarget();
+    connect(browse, &QPushButton::clicked, dialog, [dialog, location] {
+        const auto path = QFileDialog::getExistingDirectory(dialog, "选择工程保存位置", location->text());
+        if (!path.isEmpty()) location->setText(path);
+    });
+    auto* error = label({}, "newProjectError"); error->setStyleSheet("color:#ff9b8d;"); error->setWordWrap(true); layout->addWidget(error);
+    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
+    buttons->button(QDialogButtonBox::Ok)->setText("创建工程文件夹"); buttons->button(QDialogButtonBox::Ok)->setObjectName("createProjectButton");
+    buttons->button(QDialogButtonBox::Cancel)->setText("取消"); layout->addWidget(buttons);
+    connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+    connect(buttons, &QDialogButtonBox::accepted, dialog, [this, dialog, name, location, error] {
+        QString message;
+        if (!createProject(location->text(), name->text(), &message)) { error->setText(message); return; }
+        dialog->accept();
+    });
+    dialog->open();
+}
+
+bool MainWindow::createProject(const QString& parentDirectory, const QString& projectName, QString* error) {
+    auto setError = [error](const QString& message) { if (error) *error = message; };
+    const QString name = projectName.trimmed();
+    if (name.isEmpty() || name == "." || name == ".." || name.contains('/') || name.contains('\\')) {
+        setError("工程名称不能为空，也不能包含路径分隔符。"); return false;
+    }
+    QDir parent(parentDirectory);
+    if (!parent.exists()) { setError("工程保存位置不存在，请重新选择。"); return false; }
+    if (!parent.mkdir(name)) { setError("无法创建工程文件夹；请检查名称、权限，或选择一个尚不存在的文件夹。"); return false; }
+    const QString folder = parent.absoluteFilePath(name);
+    const QString projectFile = QDir(folder).filePath("project.json");
+    Project candidate; candidate.name = name.toUtf8().toStdString();
+    QString message;
+    if (!ProjectStore::save(projectFile, candidate, message)) {
+        QFile::remove(projectFile); QDir().rmdir(folder);
+        setError("工程文件初始化失败：" + message); return false;
+    }
+    cancelInteractions(); if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
+    session_.replaceProject(std::move(candidate)); projectPath_ = QFileInfo(projectFile).absoluteFilePath();
+    selectionAnchor_.clear(); rememberProject(projectPath_); refresh(); log("已创建工程文件夹：" + folder);
+    if (error) error->clear();
+    return true;
+}
+
+void MainWindow::openDemoProject() {
+    if ((!projectPath_.isEmpty() || !session_.project().files.empty()) &&
+        QMessageBox::question(this, "打开演示工程", "打开演示工程会切换当前工程，继续吗？") != QMessageBox::Yes) return;
+    cancelInteractions(); if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
+    session_.newProject(); session_.project().name = "演示工程";
+    const auto first = session_.addDemoFile(); session_.addDemoFile(); session_.addDemoFile(); session_.activateFile(first);
+    projectPath_.clear(); selectionAnchor_.clear(); refresh(); log("已打开演示工程");
+}
+
 void MainWindow::showAddFileDialog() {
     cancelInteractions(false); auto* dialog = new QDialog(this); dialog->setObjectName("addFileDialog"); dialog->setWindowTitle("向工程添加 int16 IQ 文件"); dialog->setAttribute(Qt::WA_DeleteOnClose); dialog->setModal(true); dialog->setFixedWidth(470);
     auto* layout = new QVBoxLayout(dialog); layout->setContentsMargins(18, 18, 18, 18); layout->setSpacing(12);
@@ -1101,17 +1198,21 @@ bool MainWindow::addIqFile(const QString& path, QString* error) {
 
 bool MainWindow::openProject(const QString& path) {
     cancelInteractions(); Project candidate; QString error;
-    if (!ProjectStore::load(path, candidate, error)) { QMessageBox::critical(this, "打开失败", error); return false; }
+    const QFileInfo requested(path);
+    const QString projectFile = requested.isDir() ? QDir(path).filePath("project.json") : path;
+    if (!ProjectStore::load(projectFile, candidate, error)) { QMessageBox::critical(this, "打开失败", error); return false; }
     const auto* current = session_.activeFile();
     const DisplaySettings fallbackSettings = current ? current->display :
         (candidate.files.empty() ? DisplaySettings{} : candidate.files.front().display);
     if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_); session_.replaceProject(std::move(candidate));
     applyGlobalRightSidebarSettings(fallbackSettings);
-    projectPath_ = path; rememberProject(path); selectionAnchor_.clear(); refresh(); scheduleRightSidebarSettingsSave(); log("已打开工程结构：" + path); return true;
+    projectPath_ = QFileInfo(projectFile).absoluteFilePath(); rememberProject(projectPath_); selectionAnchor_.clear(); refresh(); scheduleRightSidebarSettingsSave(); log("已打开工程：" + projectPath_); return true;
 }
 bool MainWindow::saveProject(const QString& path) {
-    cancelInteractions(false); QString error; if (!ProjectStore::save(path, session_.project(), error)) { QMessageBox::critical(this, "保存失败", error); return false; }
-    projectPath_ = path; rememberProject(path); log("工程结构已保存：" + path); return true;
+    const QFileInfo requested(path);
+    const QString projectFile = requested.isDir() ? QDir(path).filePath("project.json") : path;
+    cancelInteractions(false); QString error; if (!ProjectStore::save(projectFile, session_.project(), error)) { QMessageBox::critical(this, "保存失败", error); return false; }
+    projectPath_ = QFileInfo(projectFile).absoluteFilePath(); rememberProject(projectPath_); refresh(); log("工程已保存：" + projectPath_); return true;
 }
 void MainWindow::log(const QString& message) {
     if (!results_) return; results_->appendPlainText(QDateTime::currentDateTime().toString("HH:mm:ss") + "  信息  " + message);
