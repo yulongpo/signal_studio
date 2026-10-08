@@ -1,0 +1,32 @@
+{
+  "baseline": "Signal Studio A1.4.3",
+  "archived_on": "2026-10-08",
+  "source_directory": "D:\\project\\signal_studio_原型设计\\Signal_Studio_A1.4.3",
+  "scope": "Product layout and interaction baseline. Archived prototype validation is not Qt implementation validation.",
+  "files": [
+    {
+      "file": "README.md",
+      "source": "D:\\project\\signal_studio_原型设计\\Signal_Studio_A1.4.3\\README.md",
+      "bytes": 1924,
+      "sha256": "1b11349f0804cc26ff21aca9be31d8968e1ef01cf431ed25598aec099a7a3895"
+    },
+    {
+      "file": "Signal_Studio_A1.4.3_交互规范.md",
+      "source": "D:\\project\\signal_studio_原型设计\\Signal_Studio_A1.4.3\\Signal_Studio_A1.4.3_交互规范.md",
+      "bytes": 7296,
+      "sha256": "1906cbe707eb83689dab704e46262f52ce82ca78b07616248a0b95fba1d45886"
+    },
+    {
+      "file": "Signal_Studio_A1.4.3_交互可靠性优化原型.html",
+      "source": "D:\\project\\signal_studio_原型设计\\Signal_Studio_A1.4.3\\Signal_Studio_A1.4.3_交互可靠性优化原型.html",
+      "bytes": 97981,
+      "sha256": "5f98d395dd3164eb82f58246143aaecb16a5511a4a0ba1f1e342700128074536"
+    },
+    {
+      "file": "Signal_Studio_A1.4.3_演示工程.json",
+      "source": "D:\\project\\signal_studio_原型设计\\Signal_Studio_A1.4.3\\Signal_Studio_A1.4.3_演示工程.json",
+      "bytes": 1568,
+      "sha256": "67aa59f5c2a61084458d2d753f92930c79b3e2d5313de6487fce8602c487f10a"
+    }
+  ]
+}

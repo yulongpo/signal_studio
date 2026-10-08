@@ -1,76 +1,89 @@
-# Signal Studio
+# Signal Studio · A1.4.3 原生界面
 
-Signal Studio 是构建于可复用 C++20 平台之上的 Windows 离线数字信号分析软件。MS-00～MS-03 已完成平台、Core/Data/TaskRuntime、DSP/Compute、Visualization/Workbench 与真实 Qt Widgets 原型验收。当前按用户边界暂停，未确认前不进入 MS-04。
+本工程从空仓库独立开发，以仓库内的 [A1.4.3 原型基线](docs/prototype/a1.4.3/BASELINE.md) 为依据，实现原型的布局、颜色、图谱方向、默认状态和交互。按用户要求只读参考 `ISA_算法中心重构开发` 的显示抽取、预览及缓存策略，并在本仓库独立实现。旧 Signal Studio 与 ISA 不参与源码、构建或运行。当前分支为 `rebuild/a143-native`。
 
-## 当前平台目标
+采用 C++20、Qt Widgets 和 QRhi。Windows 默认使用 Direct3D 11；同一渲染接口可选择 OpenGL，为 Ubuntu 原生支持保留路径。本轮实际构建环境为 Windows x64 / VS 2026 / Qt 6.11.1。QRhi 的底层接口依赖 `Qt6::GuiPrivate`，因此锁定 Qt 6.11.1；升级 Qt 时需要重新编译和验证。
 
-工程导出以下稳定 CMake 目标：
+## 当前能力
 
-`SignalStudio::Core`、`SignalStudio::Data`、`SignalStudio::DSP`、`SignalStudio::Compute`、`SignalStudio::TaskRuntime`、`SignalStudio::Visualization`、`SignalStudio::Workbench`、`SignalStudio::PluginSDK`、`SignalStudio::ModelRuntime` 和 `SignalStudio::Dataset`。
+- 原型菜单、工程树、全局时间导航、波形/PSD 辅助图、时频/瀑布主图、右侧默认展开的参数组及底部三个结果标签；鼠标操作说明位于顶部“帮助”菜单。
+- 启动后先进入工程步骤；新建工程会创建独立文件夹并立即写入 `project.json`，打开工程可选工程文件夹，旧版单 JSON 也可导入。工程就绪后添加/打开信号，再进入宽带图谱操作。文件菜单保留“打开演示工程”，`--demo-data` 仍可用于显式载入三份原型演示数据。
+- 每文件保存视图、图谱模式、颜色、有效带宽、波形模式、STFT/PSD 参数、动态范围、参考电平、标记、多选及演示通道；工程 JSON 保存分析参数，用户界面几何、侧栏/分组展开状态、底部标签和最近工程由 `QSettings` 保存。
+- 主图右键开启持续选择；普通点击选择，框内移动，边线及控制点调整，Ctrl/Shift 多选、批量删除、定位与重命名。
+- 空白主图区框选缩放，物理轴滚轮缩放/拖动平移，导航定位，每文件最多 40 条视图历史；主图滚轮 220 ms 合并。Esc 取消拖动并回滚。
+- 原生工程 JSON 的完整校验、原子写入和状态往返。样本索引采用 `uint64_t`，JSON 用十进制字符串，频率采用 Hz。
+- QRhi 持久热力图纹理、独立覆盖层纹理与 GPU 合成。颜色变化复用功率矩阵；标记/游标变化复用热力图纹理；诊断报告和状态提示记录实际后端。
+- 波形数据按物理显示宽度抽取有限的连续样本块，PSD 经 Welch FFT 后映射到显示宽度；模拟曲线仍使用原型演示包络。源数据、抽取结果及曲线路径分别缓存，显示结果不替代原始样本索引或业务范围。
+- 主图预览与精细显示分级，停止交互 60 ms 后更新精细结果。单后台线程只保留最新请求，按代次取消和拒收旧结果；缓存旧视图按真实交集映射，更新中区域有提示。
+- 可导入小端交替 `int16 I/Q` `.iq/.dat/.raw/.bin` 文件；名称包含 `FS...sps` 与 `FC...Hz` 参数，`BW` 可选并作为默认有效带宽。文件以只读内存映射访问，不将全文件读入 RAM。时域波形可切换 I、Q 或 IQ RMS 包络；有效带宽可按 MHz 调整。STFT FFT 点数支持 `2^8` 至 `2^16`（默认 `2^11`），切换会确保可见时间窗至少包含所选 FFT 点数。动态范围与参考电平支持候选下拉值和自定义输入。PSD、STFT/瀑布由有界后台任务生成；图内缩放和平移沿用原始样本索引与 RF 频率。
 
-Qt 仅作为 Visualization 和 Workbench 的私有依赖。所有公共头文件均不暴露 Qt 或其他第三方类型。
+真实 IQ 文件的工程 JSON 保存路径、元数据和每文件显示参数，重新打开时从路径重建图谱；样本数据本身不复制进工程。DDC、信号检测与设备采集未实现；演示通道只保存创建时的参数，修改源标记不会重新计算通道。
 
-## 构建与测试
+## 构建与运行
 
-Windows 本机开发基线为 MSVC 2022 x64、CMake、Ninja、Python 3，以及面向 MSVC 的 Qt 6.11.1。项目 UI 源码与安装包的最低支持版本为 Qt 6.10.3；GitHub Actions 使用同版本 `win64_msvc2022_64` 做真实最低版本门禁，不改变本机已安装实例和不可变 BL1.0 依赖选择。低于 6.10.3 时，CMake 与 UI 模块编译期守卫都会给出明确错误。仓库脚本优先复用已初始化的 MSVC 环境，否则依次通过 `VSINSTALLDIR`、`vswhere.exe` 和已知本机后备位置发现工具链：
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bootstrap.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/configure.ps1 -Preset windows-msvc-debug
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build.ps1 -Preset windows-msvc-debug
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test.ps1 -Preset windows-msvc-debug
-```
-
-Release 使用 `windows-msvc-release`。CPU 预设显式关闭 CUDA；`cuda` 预设强制使用本机 CUDA Toolkit 12.4.131，缺失时明确配置失败，`AUTO` 模式才允许记录原因后降级 CPU。初始化过程不会自动安装 CUDA 或 cuDNN。
-
-## MS-03 Qt 原型
-
-构建 CPU Debug 后可直接启动：
+本机已生成被 Git 忽略的 `CMakeUserPresets.json`，记录 Qt 路径。其他机器可设置 `SS_QT_ROOT` 为安装的 Qt 6.11.1 kit，然后使用公共 presets。
 
 ```powershell
-.\build\local-windows-msvc-cpu-debug\bin\signal_visualization_workbench_demo.exe
+.\scripts\build.ps1 -Configuration Debug
+.\scripts\build.ps1 -Configuration Release
+.\scripts\run.ps1 -Configuration Release
 ```
 
-目标目录和安装树均包含 Qt Core/Gui/Widgets DLL、Windows/offscreen 平台插件及 `qt.conf`，无需手工配置
-`QT_PLUGIN_PATH`。真实运行截图、Designer 文件和自动截图说明见
-[`docs/development/ui-preview/MS-03_UI预览索引.md`](docs/development/ui-preview/MS-03_UI预览索引.md)。
+构建脚本默认依次执行配置、编译和 CTest。输出目录：
 
-若要在同一 PowerShell 进程中连续验证 Debug 和 Release，并检查 PATH 去重、环境幂等性与用户预设稳定性，执行：
+```text
+out/vs2026-qt611-debug_bin/SignalStudio.exe
+out/vs2026-qt611-release_bin/SignalStudio.exe
+```
+
+Windows 自动使用 `windeployqt` 部署运行库，`qt.conf` 指向本目录插件。可直接从对应目录启动。独立运行验证会清理 Qt 环境并将 PATH 限制为系统路径：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-same-session.ps1
+.\scripts\verify-package.ps1 -Configuration Release
+.\scripts\verify-package.ps1 -Configuration Release -SoftwareRenderer
+.\scripts\screenshot.ps1 -Configuration Release
 ```
 
-无界面包不要求 Qt：
+命令行诊断：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/configure.ps1 -Preset windows-msvc-headless-release
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build.ps1 -Preset windows-msvc-headless-release
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test.ps1 -Preset windows-msvc-headless-release
+.\out\vs2026-qt611-release_bin\SignalStudio.exe --list-screens
+.\out\vs2026-qt611-release_bin\SignalStudio.exe --demo-data --screen 2 --full-screen --verify-4k-150 --smoke-test --require-gpu --render-report out/render-report.json
+.\out\vs2026-qt611-release_bin\SignalStudio.exe --iq-file "E:\数据集\扫频数据\ALaShan_051\20260805\xiawu\IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_154250.dat" --psd-view
+.\out\vs2026-qt611-debug_bin\SignalStudio.exe --iq-file "E:\数据集\扫频数据\ALaShan_051\20260805\xiawu\IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_154250.dat" --psd-view --iq-interaction-test --screen 2 --full-screen --verify-4k-150 --size 2560x1440 --screenshot docs/acceptance/screenshots/real-iq-debug-screen2-4k-150.png --render-report docs/acceptance/real-iq-debug-screen2-4k-150.json --require-gpu
+.\out\vs2026-qt611-release_bin\SignalStudioUiCapture.exe docs/acceptance/screenshots/4k-display2
+.\out\vs2026-qt611-release_bin\SignalStudio.exe --renderer opengl
+.\out\vs2026-qt611-release_bin\SignalStudio.exe --software-renderer
 ```
 
-脚本自动发现 MSVC、CMake、Ninja，并在 UI 预设中发现 Qt。生成的 `CMakeUserPresets.json` 保持忽略状态，通过一个隐藏工具链基预设只保存一份完整环境；Qt 隐藏基预设仅保存短标量根目录。PATH、`CMAKE_PREFIX_PATH`、Qt 根目录及 MSVC 路径列表均执行规范化和大小写不敏感去重。文件采用确定性内容和同目录原子替换，重复生成的字节内容必须稳定。已提交的预设与 VS Code 配置不含本机绝对路径。
+`--require-gpu` 必须识别为硬件设备、成功上传热力图纹理，并通过覆盖层更新时复用纹理的检查。无界面的 Qt UI 测试走软件路径，用于验证事件和业务状态，不能作为 GPU 证据。
 
-VS Code 的配置、构建、测试和 F5 均使用 `local-windows-msvc-debug` 构建树。F5 前置任务会校验缓存源目录、生成器、UI 选项、目标存在性和输入新鲜度；测试目标构建后复制所需 Qt 运行库，因此不依赖 VS Code 进程继承本机 Qt PATH。
+本轮显示适配验收仅在 **第二块连接显示器（Redmi 27 NU）** 使用系统实际 **3840×2160 / 150% DPI**，窗口全屏客户区为 2560×1440 逻辑像素。它的 Windows 内部设备路径为 DISPLAY6；设备路径后缀与当前连接序号分别记录。脚本不会修改显示器分辨率或缩放，屏幕条件不符直接失败。报告记录连接序号、屏幕名称、几何尺寸、DPR 和抓图像素尺寸；主屏超大窗口截图不作为该项验收。offscreen 的 150% 逻辑测试只验证布局和交互。
 
-`dependencies/dependency-lock.json` 将不可变获取/包元组、可接受宿主范围和精确主机快照分开。默认 bootstrap 使用 `CompatibleHost`，接受契约范围内的补丁版本和不同安装路径；`Acquisition` 仅验证 BL1.0 获取、离线缓存和 14 个包元组；只有显式 `ExactCapturedHost` 才与 `dependencies/captured-host-evidence.json` 的版本、路径和文件哈希逐项比较。`dependencies/offline-cache-manifest.json` 记录经批准的可复现缓存，vcpkg 获取仍必须使用 BL1.0 脚本规定的固定提交 `.tar.gz` URL、大小和 SHA-256。
+## 模块边界
 
-## 已批准基线与原型参考
+| 目录 | 职责 |
+|---|---|
+| `domain/` | 元数据、样本/频率范围、标记、通道、显示状态；无 Qt 依赖 |
+| `application/` | 每文件会话、选择、业务命令和视图历史；无控件依赖 |
+| `infrastructure/` | 原生 JSON 读写、校验和交替 int16 IQ 文件访问 |
+| `app/` | 程序入口、菜单、工程树、参数面板与工作区编排 |
+| `ui/charts/` | 坐标映射、手势、IQ 显示抽取、演示绘图、QRhi 渲染及着色器 |
+| `tests/` | 状态/存储与 Qt 事件回归 |
+| `docs/` | 原型冻结副本、架构、验收与实际验证记录 |
 
-不可变的 BL1.0 文档快照位于 [`docs/baseline/Signal-Studio-Dev-Docs`](docs/baseline/Signal-Studio-Dev-Docs)。原评审 Web 原型保存在快照内的 `02_原型设计/原型源文件/Signal Studio交互原型_基线归档.html`，仅用于视觉与交互参考；C++ 实现不链接、包装或依赖旧上游原型。
+渲染器只接收图像、目标矩形和覆盖层，不读取工程存储或执行信号算法。IQ 文件访问和基础 PSD/STFT 计算位于基础设施侧，在工作线程生成有限尺寸显示矩阵后提交 UI；该链路不包含 DDC、检测或持续采集。
 
-外部多 GB 录制数据仍位于 `../test_data`。完整性与夹具命令见 [`test_data/README.md`](test_data/README.md)。
+## 工程格式与验收边界
 
-## 项目文档
+原生格式为 `signal-studio-native-project`、版本 1，与浏览器的 `signal-studio-a1.4.3-prototype` 分开。不能直接打开归档的原型演示 JSON；它是产品基线样例。原生工程不包含样本数据、视图历史或业务撤销栈；项目内容仍需显式保存，界面布局偏好与最近工程列表独立写入用户设置。
 
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- [`docs/DEVELOPMENT_PLAN.md`](docs/DEVELOPMENT_PLAN.md)
-- [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)
-- [`docs/DECISIONS.md`](docs/DECISIONS.md)
-- [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
-- [`docs/api/visualization.md`](docs/api/visualization.md)
-- [`docs/api/workbench.md`](docs/api/workbench.md)
-- [`docs/milestones/MS-00`](docs/milestones/MS-00)
-- [`docs/milestones/MS-01`](docs/milestones/MS-01)
-- [`docs/milestones/MS-02`](docs/milestones/MS-02)
-- [`docs/milestones/MS-03`](docs/milestones/MS-03)
+本轮 Qt 自动测试覆盖原型默认状态、分隔条取消/复位、属性分组前置和手动展开、两套辅助 Y 范围与历史、三图最大化、标记选择/移动/八控制点/取消、重叠对象、2^53 以上坐标以及原生工程往返；对应关系见 [UI 与交互验收](docs/acceptance/ui-parity.md)。浏览器原型的 59 项结果不等于本仓库的测试结果。
+
+2026-10-09 基础 Debug / Release 构建及 CTest 均为 3/3 通过；本轮功能更新后的 Debug CTest 为 3/3，Qt UI 日志为 66 passed / 0 failed / 0 skipped。显示器 2 的本轮 4K/150% 硬件 QRhi smoke 通过，报告与截图位于 `artifacts/feature-update-debug-screen2-4k-150/`。此前显示器 2 的 12 个原生场景、三图最大化/还原回归、Debug/Release 独立包硬件启动和 Release 软件回退均已通过；原始报告与截图见上述验收记录。
+
+显示抽取、缓存与批量线段绘制减少了本机模拟图谱的绘制停顿；同一组普通滚轮观测中，完整事件循环从 198.88–216.64 ms 降到 47.94–62.08 ms。该值包括 GUI 绘制与排队处理，不能换算成 FPS 或真实 IQ 吞吐；测量范围和输入证据见 [显示性能记录](docs/acceptance/display-performance.md)。
+
+本机指定 3.27 GB IQ 文件的读取、图谱显示和第二显示器 4K 验证记录于 [真实 IQ 验收](docs/acceptance/iq-file-int16.md)；不能将该个例外推为不同磁盘、长时间录制或持续采集的吞吐保证。纹理新增行更新、GPU 曲线顶点缓冲和 Ubuntu 部署仍属后续阶段。当前覆盖层先由 QPainter 生成缓存图像，再由 QRhi 合成；字体字形、原生对话框及 hover 阴影与浏览器存在平台绘制差异。
+
+本轮实际结果见 [UI 与交互验收](docs/acceptance/ui-parity.md)，渲染策略见 [渲染架构](docs/architecture/rendering.md)。[基础骨架验证记录](docs/acceptance/verification.md) 和 [骨架验收清单](docs/acceptance/skeleton-checklist.md) 保留为此前阶段资料。

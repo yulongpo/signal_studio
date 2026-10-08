@@ -1,0 +1,1806 @@
+#include "app/main_window.h"
+#include "ui/charts/plot_widget.h"
+#include "ui/display_target.h"
+
+#include <QAction>
+#include <QApplication>
+#include <QAbstractButton>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QCoreApplication>
+#include <QDialog>
+#include <QDoubleSpinBox>
+#include <QFile>
+#include <QFileInfo>
+#include <QGuiApplication>
+#include <QImage>
+#include <QInputDialog>
+#include <QLineEdit>
+#include <QMenuBar>
+#include <QMenu>
+#include <QMessageBox>
+#include <QPlainTextEdit>
+#include <QPointer>
+#include <QPushButton>
+#include <QScreen>
+#include <QSettings>
+#include <QScrollArea>
+#include <QSplitter>
+#include <QTemporaryDir>
+#include <QTimer>
+#include <QToolBar>
+#include <QToolButton>
+#include <QTreeWidget>
+#include <QWheelEvent>
+#include <QWindow>
+#include <QtEndian>
+#include <QtTest>
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <memory>
+
+using namespace signalstudio;
+
+namespace {
+
+void showWindow(MainWindow& window) {
+    // 3840x2160 physical pixels at 150% scaling use this logical client size.
+    window.resize(2560, 1440);
+    QScreen* targetScreen = nullptr;
+    if (QGuiApplication::platformName() == "windows") {
+        for (auto* screen : QGuiApplication::screens()) {
+            if (isDisplayNumber(screen, 2)) targetScreen = screen;
+        }
+        if (!targetScreen || !isDisplayNumber(targetScreen, 2) || displayPixelSize(targetScreen) != QSize(3840, 2160) ||
+            targetScreen->geometry().size() != QSize(2560, 1440) ||
+            std::abs(targetScreen->devicePixelRatio() - 1.5) > .001) {
+            qFatal("Windows UI validation requires connected monitor 2 at 3840x2160 pixels and 150%% DPI.");
+        }
+        showFullScreenOnScreen(window, targetScreen);
+        if (!QTest::qWaitForWindowExposed(&window, 5000)) qFatal("Monitor 2 full-screen window was not exposed.");
+        QTest::qWait(250);
+    } else {
+        window.show();
+    }
+    QCoreApplication::processEvents();
+    QTest::qWait(20);
+    if (targetScreen && (window.screen() != targetScreen || !window.isFullScreen() ||
+        window.size() != QSize(2560, 1440) || std::abs(window.devicePixelRatioF() - 1.5) > .001)) {
+        qFatal("Windows UI window did not enter connected monitor 2 at native 4K / 150%% full screen.");
+    }
+}
+
+QList<QTreeWidgetItem*> descendantsOfType(QTreeWidgetItem* parent, const QString& type) {
+    QList<QTreeWidgetItem*> result;
+    if (!parent) return result;
+    for (int i = 0; i < parent->childCount(); ++i) {
+        auto* item = parent->child(i);
+        if (item->data(0, Qt::UserRole).toString() == type) result.push_back(item);
+        result.append(descendantsOfType(item, type));
+    }
+    return result;
+}
+
+void triggerConfirmed(QAction* action) {
+    QTimer responder;
+    QObject::connect(&responder, &QTimer::timeout, [] {
+        if (auto* dialog = qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
+            if (auto* yes=dialog->button(QMessageBox::Yes)) yes->click();
+            else dialog->done(QMessageBox::Yes);
+        }
+    });
+    responder.start(5);
+    action->trigger();
+    responder.stop();
+}
+
+void wheelAt(PlotWidget* plot, QPointF point, int delta = 120) {
+    QWheelEvent event(point, plot->mapToGlobal(point.toPoint()), QPoint(), QPoint(0, delta),
+                      Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+    QCoreApplication::sendEvent(plot, &event);
+}
+
+QStringList comboLabels(QComboBox* combo) {
+    QStringList labels;
+    if (combo) for (int i = 0; i < combo->count(); ++i) labels << combo->itemText(i);
+    return labels;
+}
+
+SampleIndex sampleAt(const ViewRange& view, long double fraction) {
+    return view.time.begin + static_cast<SampleIndex>((view.time.end - view.time.begin) * fraction);
+}
+
+double frequencyAt(const ViewRange& view, double fraction) {
+    return view.frequency.lowerHz + (view.frequency.upperHz - view.frequency.lowerHz) * fraction;
+}
+
+QPoint pointAt(PlotWidget* plot, const ViewRange& view, double time, double frequency) {
+    return plot->toPixel(sampleAt(view, time), frequencyAt(view, frequency)).toPoint();
+}
+
+void drag(PlotWidget* plot, QPoint start, QPoint end) {
+    QTest::mousePress(plot, Qt::LeftButton, Qt::NoModifier, start);
+    QTest::mouseMove(plot, end, 10);
+    QTest::mouseRelease(plot, Qt::LeftButton, Qt::NoModifier, end);
+    QCoreApplication::processEvents();
+}
+
+void clearDemoMarks(MainWindow& window) {
+    auto* file = window.session().activeFile();
+    file->marks.clear();
+    file->channels.clear();
+    window.session().selectMarks({});
+    window.refresh();
+}
+
+ViewRange innerRange(const ViewRange& view) {
+    return {{sampleAt(view, .25L), sampleAt(view, .45L)},
+            {frequencyAt(view, .35), frequencyAt(view, .65)}};
+}
+
+} // namespace
+
+class DemoMainWindow final : public MainWindow {
+public:
+    DemoMainWindow() {
+        const auto first = session().addDemoFile();
+        session().addDemoFile();
+        session().addDemoFile();
+        session().activateFile(first);
+        refresh();
+    }
+};
+class UiTests : public QObject {
+    Q_OBJECT
+private slots:
+    void workspaceLayout();
+    void globalDisplaySettingsApplyAcrossFiles();
+    void mainModeCoordinateDirection();
+    void continuousMarkCreation();
+    void escapeCancelsCreation();
+    void selectedMarkMovePreservesSpan();
+    void escapeRollsBackMarkMove();
+    void singleClickSelectsWithoutChangingView();
+    void boxZoomAndHistoryActions();
+    void emptyProjectAndFileActions();
+    void treeSelectionPreservesNodesAndShiftAnchor();
+    void displayChangeSurvivesPendingWheelCommit();
+    void largeSampleCoordinatePrecision_data();
+    void largeSampleCoordinatePrecision();
+    void auxiliaryYAxisIsolationAndEscape_data();
+    void auxiliaryYAxisIsolationAndEscape();
+    void selectedMarkCornerAndEdgeResize_data();
+    void selectedMarkCornerAndEdgeResize();
+    void responsiveWorkspace_data();
+    void responsiveWorkspace();
+    void propertyFieldsFitSidebar();
+    void prototypeDisplayDefaultsAndOptions();
+    void paletteControlsStaySynchronized();
+    void initialFileViewShowsFirstFivePercentOrTenMilliseconds();
+    void panelRailsAndBottomTabs();
+    void sectionContextAndManualExpansion();
+    void panelMaximizeAndRestore();
+    void mainAxisWheelIsolationAndHistory_data();
+    void mainAxisWheelIsolationAndHistory();
+    void navigationClickPreservesSpanAndCancelsDrag();
+    void fileSwitchCancelsUnfinishedEdit();
+    void allResizeHandlesStayBounded_data();
+    void allResizeHandlesStayBounded();
+    void nativeProjectRoundtripAndInvalidImport();
+    void contextMenuActionsAndCoveredMarkSelection();
+    void unselectedMarkClickAndSubthresholdGesture();
+    void clippedMarkBorderMovesWithoutInventingHandle();
+    void captureLossAndDeactivationRollback();
+    void resetRestoresCompleteViewSnapshot();
+    void displayOnlyChangesPreserveBusinessViewAndPowerCache();
+    void renameUsesPlainTextAndEightyCharacterLimit();
+    void splitterKeyboardResetAndEscapeRollback();
+    void treeToPlotShiftSelectionPreservesAnchor();
+    void changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY();
+    void creationModeSurvivesMaximize();
+    void escapeCancelsGestureBeforeLeavingMaximize();
+    void addIqFileDialogCancelsAndImportsRealInt16Iq();
+    void waveformBandwidthAndVisiblePaneStftSettings();
+    void uiStatePersistenceAndRecentProjects();
+};
+
+void UiTests::workspaceLayout() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* navigation = window.findChild<PlotWidget*>("navigationPlot");
+    auto* auxiliary = window.findChild<PlotWidget*>("auxPlot");
+    auto* main = window.findChild<PlotWidget*>("mainPlot");
+    auto* tree = window.findChild<QTreeWidget*>("projectTree");
+    auto* resultsToggle = window.findChild<QToolButton*>("resultsToggle");
+    QVERIFY(navigation);
+    QVERIFY(auxiliary);
+    QVERIFY(main);
+    QVERIFY(tree);
+    QVERIFY(resultsToggle);
+    QVERIFY(navigation->isVisible());
+    QVERIFY(auxiliary->isVisible());
+    QVERIFY(main->isVisible());
+    QVERIFY2(main->plotRect().height() >= 875, "4K at 150% scaling must retain the prototype main plot budget (about 888 logical px).");
+    QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(),5000);
+    const auto waveform=auxiliary->grab().toImage();
+    QVERIFY(!waveform.isNull());
+    const auto waveformPlot=auxiliary->plotRect().adjusted(2,2,-2,-2);
+    const auto imageDpr=waveform.devicePixelRatio();
+    const auto imagePlot=QRectF(waveformPlot.left()*imageDpr,waveformPlot.top()*imageDpr,
+        waveformPlot.width()*imageDpr,waveformPlot.height()*imageDpr).toAlignedRect().intersected(waveform.rect());
+    int greenPixels=0;
+    for(int y=imagePlot.top();y<=imagePlot.bottom();++y) {
+        for(int x=imagePlot.left();x<=imagePlot.right();++x) {
+            const auto pixel=waveform.pixel(x,y);
+            if(qGreen(pixel)>qRed(pixel)+40&&qGreen(pixel)>qBlue(pixel)+10&&qGreen(pixel)>130) ++greenPixels;
+        }
+    }
+    QVERIFY2(greenPixels>=100,"The default auxiliary plot must contain visible waveform strokes, beyond axes and grid.");
+    QCOMPARE(tree->selectionMode(), QAbstractItemView::ExtendedSelection);
+    QVERIFY(!resultsToggle->isChecked());
+    auto* results = window.findChild<QPlainTextEdit*>();
+    QVERIFY(results);
+    QVERIFY(!results->isVisible());
+    QCOMPARE(window.session().project().files.size(), std::size_t{3});
+    QVERIFY(window.session().project().activeFileId == window.session().project().files.front().metadata.id);
+    QVERIFY(window.session().activeFile()->marks.empty());
+    QVERIFY(window.findChildren<QToolBar*>().empty());
+}
+
+void UiTests::globalDisplaySettingsApplyAcrossFiles() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* mainMode = window.findChild<QComboBox*>("modeMain");
+    auto* auxiliaryMode = window.findChild<QComboBox*>("modeAux");
+    auto* palette = window.findChild<QComboBox*>("palette");
+    auto* dynamic = window.findChild<QComboBox*>("dynamic");
+    auto* reference = window.findChild<QComboBox*>("reference");
+    QVERIFY(mainMode);
+    QVERIFY(auxiliaryMode);
+    QVERIFY(palette);
+    QVERIFY(dynamic && reference);
+    const auto firstId = window.session().project().files[0].metadata.id;
+    const auto secondId = window.session().project().files[1].metadata.id;
+    mainMode->setCurrentIndex(1);
+    auxiliaryMode->setCurrentIndex(1);
+    palette->setCurrentIndex(2);
+    dynamic->setCurrentIndex(dynamic->findText("60 dB"));
+    reference->setCurrentIndex(reference->findText("-40 dBFS"));
+    QCOMPARE(static_cast<int>(window.session().activeFile()->display.mainMode), static_cast<int>(MainMode::Waterfall));
+    QCOMPARE(static_cast<int>(window.session().activeFile()->display.auxiliaryMode), static_cast<int>(AuxiliaryMode::Psd));
+    QCOMPARE(static_cast<int>(window.session().activeFile()->display.palette), static_cast<int>(Palette::Gray));
+    QCOMPARE(window.session().activeFile()->display.dynamicRangeDb, 60.0);
+    QCOMPARE(window.session().activeFile()->display.referenceLevelDb, -40.0);
+    QCOMPARE(window.session().project().files[1].display.palette, Palette::Gray);
+    QCOMPARE(window.session().project().files[1].display.dynamicRangeDb, 60.0);
+    QCOMPARE(window.session().project().files[1].display.referenceLevelDb, -40.0);
+    auto* auxiliaryPlot = window.findChild<PlotWidget*>("auxPlot");
+    QVERIFY(auxiliaryPlot);
+    const QPoint yAxisPoint(qRound(auxiliaryPlot->plotRect().left() - 20), qRound(auxiliaryPlot->plotRect().center().y()));
+    QWheelEvent yAxisWheel(yAxisPoint, auxiliaryPlot->mapToGlobal(yAxisPoint), QPoint(), QPoint(0, 120),
+                           Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+    QCoreApplication::sendEvent(auxiliaryPlot, &yAxisWheel);
+    QCOMPARE(window.session().project().files[1].display.psdMin, window.session().activeFile()->display.psdMin);
+    QCOMPARE(window.session().project().files[1].display.psdMax, window.session().activeFile()->display.psdMax);
+
+    QVERIFY(window.session().activateFile(secondId));
+    window.refresh();
+    mainMode->setCurrentIndex(0);
+    auxiliaryMode->setCurrentIndex(0);
+    palette->setCurrentIndex(0);
+    QVERIFY(window.session().activateFile(firstId));
+    window.refresh();
+    QCOMPARE(mainMode->currentIndex(), 0);
+    QCOMPARE(auxiliaryMode->currentIndex(), 0);
+    QCOMPARE(palette->currentIndex(), 0);
+    QCOMPARE(dynamic->currentText(), QString("60 dB"));
+    QCOMPARE(reference->currentText(), QString("-40 dBFS"));
+    QVERIFY(window.session().activateFile(secondId));
+    window.refresh();
+    QCOMPARE(mainMode->currentIndex(), 0);
+    QCOMPARE(auxiliaryMode->currentIndex(), 0);
+    QCOMPARE(palette->currentIndex(), 0);
+}
+
+void UiTests::mainModeCoordinateDirection() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot = window.findChild<PlotWidget*>("mainPlot");
+    auto* mode = window.findChild<QComboBox*>("modeMain");
+    QVERIFY(plot);
+    QVERIFY(mode);
+    const auto view = window.session().activeFile()->view;
+    mode->setCurrentIndex(0);
+    const auto tfEarlyLow = pointAt(plot, view, .2, .2);
+    const auto tfLateHigh = pointAt(plot, view, .8, .8);
+    QVERIFY(tfLateHigh.x() > tfEarlyLow.x());
+    QVERIFY(tfLateHigh.y() < tfEarlyLow.y());
+    mode->setCurrentIndex(1);
+    const auto wfEarlyLow = pointAt(plot, view, .2, .2);
+    const auto wfLateHigh = pointAt(plot, view, .8, .8);
+    QVERIFY(wfLateHigh.x() > wfEarlyLow.x());
+    QVERIFY(wfLateHigh.y() > wfEarlyLow.y());
+    QVERIFY(window.session().activeFile()->view == view);
+}
+
+void UiTests::continuousMarkCreation() {
+    DemoMainWindow window;
+    showWindow(window);
+    clearDemoMarks(window);
+    auto* plot = window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    const auto view = window.session().activeFile()->view;
+    plot->setCreating(true);
+    drag(plot, pointAt(plot, view, .15, .3), pointAt(plot, view, .3, .5));
+    QCOMPARE(window.session().activeFile()->marks.size(), std::size_t{1});
+    QVERIFY(plot->isCreating());
+    drag(plot, pointAt(plot, view, .6, .55), pointAt(plot, view, .75, .8));
+    QCOMPARE(window.session().activeFile()->marks.size(), std::size_t{2});
+    QVERIFY(plot->isCreating());
+    QVERIFY(window.session().activeFile()->view == view);
+}
+
+void UiTests::escapeCancelsCreation() {
+    DemoMainWindow window;
+    showWindow(window);
+    clearDemoMarks(window);
+    auto* plot = window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    const auto view = window.session().activeFile()->view;
+    const auto start = pointAt(plot, view, .15, .3);
+    const auto end = pointAt(plot, view, .3, .5);
+    plot->setCreating(true);
+    plot->setFocus();
+    QTest::mousePress(plot, Qt::LeftButton, Qt::NoModifier, start);
+    QTest::mouseMove(plot, end, 10);
+    QTest::keyClick(plot, Qt::Key_Escape);
+    QTest::mouseRelease(plot, Qt::LeftButton, Qt::NoModifier, end);
+    QVERIFY(window.session().activeFile()->marks.empty());
+    QVERIFY(!plot->isCreating());
+    QVERIFY(window.session().activeFile()->view == view);
+}
+
+void UiTests::selectedMarkMovePreservesSpan() {
+    DemoMainWindow window;
+    showWindow(window);
+    clearDemoMarks(window);
+    auto* plot = window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    const auto view = window.session().activeFile()->view;
+    const auto range = innerRange(view);
+    const auto id = window.session().addMark(range);
+    QVERIFY(!id.empty());
+    window.refresh();
+    const auto start = pointAt(plot, view, .35, .5);
+    drag(plot, start, start + QPoint(36, 18));
+    const auto* mark = findMark(*window.session().activeFile(), id);
+    QVERIFY(mark);
+    QVERIFY(!(mark->range == range));
+    QCOMPARE(mark->range.time.end - mark->range.time.begin, range.time.end - range.time.begin);
+    QVERIFY(std::abs((mark->range.frequency.upperHz - mark->range.frequency.lowerHz) -
+                     (range.frequency.upperHz - range.frequency.lowerHz)) < .001);
+    QVERIFY(window.session().activeFile()->view == view);
+}
+
+void UiTests::escapeRollsBackMarkMove() {
+    DemoMainWindow window;
+    showWindow(window);
+    clearDemoMarks(window);
+    auto* plot = window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    const auto view = window.session().activeFile()->view;
+    const auto range = innerRange(view);
+    const auto id = window.session().addMark(range);
+    QVERIFY(!id.empty());
+    window.refresh();
+    const auto start = pointAt(plot, view, .35, .5);
+    const auto end = start + QPoint(36, 18);
+    QTest::mousePress(plot, Qt::LeftButton, Qt::NoModifier, start);
+    QTest::mouseMove(plot, end, 10);
+    QTest::keyClick(plot, Qt::Key_Escape);
+    QTest::mouseRelease(plot, Qt::LeftButton, Qt::NoModifier, end);
+    const auto* mark = findMark(*window.session().activeFile(), id);
+    QVERIFY(mark);
+    QVERIFY(mark->range == range);
+    QVERIFY(window.session().activeFile()->view == view);
+}
+
+void UiTests::singleClickSelectsWithoutChangingView() {
+    DemoMainWindow window;
+    showWindow(window);
+    clearDemoMarks(window);
+    auto* plot = window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    const auto view = window.session().activeFile()->view;
+    const auto id = window.session().addMark(innerRange(view));
+    window.session().selectMarks({});
+    window.refresh();
+    QTest::mouseClick(plot, Qt::LeftButton, Qt::NoModifier, pointAt(plot, view, .35, .5));
+    QVERIFY(window.session().activeFile()->activeMarkId == id);
+    QCOMPARE(window.session().activeFile()->selectedMarkIds.size(), std::size_t{1});
+    QVERIFY(window.session().activeFile()->view == view);
+}
+
+void UiTests::boxZoomAndHistoryActions() {
+    DemoMainWindow window;
+    showWindow(window);
+    clearDemoMarks(window);
+    auto* plot = window.findChild<PlotWidget*>("mainPlot");
+    auto* back = window.findChild<QAction*>("backAction");
+    auto* forward = window.findChild<QAction*>("forwardAction");
+    QVERIFY(plot);
+    QVERIFY(back);
+    QVERIFY(forward);
+    const auto original = window.session().activeFile()->view;
+    drag(plot, pointAt(plot, original, .2, .2), pointAt(plot, original, .7, .8));
+    const auto zoomed = window.session().activeFile()->view;
+    QVERIFY(!(zoomed == original));
+    QVERIFY(zoomed.time.end - zoomed.time.begin < original.time.end - original.time.begin);
+    QVERIFY(back->isEnabled());
+    back->trigger();
+    QVERIFY(window.session().activeFile()->view == original);
+    QVERIFY(forward->isEnabled());
+    forward->trigger();
+    QVERIFY(window.session().activeFile()->view == zoomed);
+}
+
+void UiTests::emptyProjectAndFileActions() {
+    MainWindow window;
+    showWindow(window);
+    auto* create = window.findChild<QAction*>("newProjectAction");
+    auto* add = window.findChild<QAction*>("addDemoAction");
+    auto* openDemo = window.findChild<QAction*>("openDemoProjectAction");
+    auto* addSignal = window.findChild<QAction*>("openIqAction");
+    auto* projectAddSignal = window.findChild<QPushButton*>("projectAddSignal");
+    auto* remove = window.findChild<QAction*>("removeFileAction");
+    auto* mode = window.findChild<QComboBox*>("modeMain");
+    auto* plot = window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(create);
+    QVERIFY(add);
+    QVERIFY(openDemo);
+    QVERIFY(addSignal);
+    QVERIFY(projectAddSignal);
+    QVERIFY(remove);
+    QVERIFY(mode);
+    QVERIFY(plot);
+    QVERIFY(!addSignal->isEnabled());
+    QVERIFY(!projectAddSignal->isVisible());
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    QTimer completeNew;
+    connect(&completeNew, &QTimer::timeout, [&] {
+        auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+        if (!dialog || dialog->objectName() != "newProjectDialog") return;
+        dialog->findChild<QLineEdit*>("newProjectName")->setText("workflow-project");
+        dialog->findChild<QLineEdit*>("newProjectLocation")->setText(directory.path());
+        dialog->findChild<QPushButton*>("createProjectButton")->click();
+    });
+    completeNew.start(5);
+    create->trigger();
+    QTRY_VERIFY_WITH_TIMEOUT(QFileInfo::exists(directory.filePath("workflow-project/project.json")), 2'000);
+    completeNew.stop();
+    QVERIFY(addSignal->isEnabled());
+    QVERIFY(projectAddSignal->isVisible());
+    QCOMPARE(QString::fromStdString(window.session().project().name), QStringLiteral("workflow-project"));
+    QCOMPARE(window.session().project().files.size(),std::size_t{0});
+    QString createError;
+    QVERIFY(!window.createProject(directory.path(), "workflow-project", &createError));
+    QVERIFY(!createError.isEmpty());
+    QCOMPARE(QString::fromStdString(window.session().project().name), QStringLiteral("workflow-project"));
+    MainWindow reopened;
+    QVERIFY(reopened.openProject(directory.filePath("workflow-project")));
+    QCOMPARE(QString::fromStdString(reopened.session().project().name), QStringLiteral("workflow-project"));
+    QVERIFY(window.session().project().files.empty());
+    QVERIFY(!window.session().activeFile());
+    QVERIFY(!remove->isEnabled());
+    QVERIFY(!mode->isEnabled());
+    QVERIFY(plot->isVisible());
+    add->trigger();
+    QCOMPARE(window.session().project().files.size(), std::size_t{1});
+    QVERIFY(remove->isEnabled());
+    QVERIFY(mode->isEnabled());
+    triggerConfirmed(remove);
+    QVERIFY(window.session().project().files.empty());
+    QVERIFY(!window.session().activeFile());
+    triggerConfirmed(openDemo);
+    QCOMPARE(window.session().project().files.size(), std::size_t{3});
+    QCOMPARE(QString::fromStdString(window.session().project().name), QStringLiteral("演示工程"));
+}
+
+void UiTests::treeSelectionPreservesNodesAndShiftAnchor() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* tree=window.findChild<QTreeWidget*>("projectTree");
+    QVERIFY(tree);
+    const auto view=window.session().activeFile()->view;
+    clearDemoMarks(window);
+    for (int i = 0; i < 4; ++i) window.session().addMark(innerRange(view));
+    window.session().selectMarks({});
+    window.refresh();
+    QCoreApplication::processEvents();
+    auto* root=tree->topLevelItem(0);
+    QVERIFY(root);
+    auto* fileNode=root->child(0);
+    const auto markNodes=descendantsOfType(fileNode,"mark");
+    QCOMPARE(markNodes.size(),4);
+    const auto originalView=window.session().activeFile()->view;
+    auto* first=markNodes[0];
+    auto* third=markNodes[2];
+    auto* fourth=markNodes[3];
+    const auto firstId=first->data(0,Qt::UserRole+1).toString().toStdString();
+    const auto thirdId=third->data(0,Qt::UserRole+1).toString().toStdString();
+    QTest::mouseClick(tree->viewport(),Qt::LeftButton,Qt::NoModifier,tree->visualItemRect(first).center());
+    QTest::mouseClick(tree->viewport(),Qt::LeftButton,Qt::ControlModifier,tree->visualItemRect(third).center());
+    const auto& selected=window.session().activeFile()->selectedMarkIds;
+    QCOMPARE(selected.size(),std::size_t{2});
+    QVERIFY(std::find(selected.begin(),selected.end(),firstId)!=selected.end());
+    QVERIFY(std::find(selected.begin(),selected.end(),thirdId)!=selected.end());
+    QVERIFY(tree->topLevelItem(0)==root&&root->child(0)==fileNode&&descendantsOfType(fileNode,"mark")[0]==first);
+    QTest::mouseClick(tree->viewport(),Qt::LeftButton,Qt::NoModifier,tree->visualItemRect(first).center());
+    window.refresh(); // Cursor and parameter refreshes must retain the native range anchor.
+    QTest::mouseClick(tree->viewport(),Qt::LeftButton,Qt::ShiftModifier,tree->visualItemRect(fourth).center());
+    QCOMPARE(window.session().activeFile()->selectedMarkIds.size(),std::size_t{4});
+    QVERIFY(window.session().activeFile()->view==originalView);
+    QVERIFY(tree->topLevelItem(0)==root&&descendantsOfType(fileNode,"mark")[3]==fourth);
+    const auto firstFileId=window.session().project().activeFileId;
+    const auto secondFileId=window.session().project().files[1].metadata.id;
+    auto* secondFileNode=root->child(1);
+    QTest::mouseClick(tree->viewport(),Qt::LeftButton,Qt::NoModifier,tree->visualItemRect(secondFileNode).center());
+    QVERIFY(window.session().project().activeFileId==firstFileId);
+    QVERIFY(tree->topLevelItem(0)==root); // File activation cannot destroy the dispatching item.
+    QCoreApplication::processEvents();
+    QTRY_VERIFY(window.session().project().activeFileId==secondFileId);
+    QTRY_COMPARE(descendantsOfType(tree->topLevelItem(0)->child(1),"mark").size(),0);
+}
+
+void UiTests::displayChangeSurvivesPendingWheelCommit() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    auto* mode=window.findChild<QComboBox*>("modeMain");
+    auto* palette=window.findChild<QComboBox*>("palette");
+    QVERIFY(plot);
+    QVERIFY(mode);
+    QVERIFY(palette);
+    const auto original=window.session().activeFile()->view;
+    const auto point=plot->plotRect().center();
+    QWheelEvent wheel(point,plot->mapToGlobal(point.toPoint()),QPoint(),QPoint(0,120),
+                      Qt::NoButton,Qt::NoModifier,Qt::NoScrollPhase,false);
+    QCoreApplication::sendEvent(plot,&wheel);
+    const auto zoomed=window.session().activeFile()->view;
+    QVERIFY(!(zoomed==original));
+    QVERIFY(!window.session().canBack()); // Still inside the uncommitted 220ms group.
+    mode->setCurrentIndex(1);
+    QCOMPARE(mode->currentIndex(),1);
+    QCOMPARE(static_cast<int>(window.session().activeFile()->display.mainMode),static_cast<int>(MainMode::Waterfall));
+    QVERIFY(window.session().activeFile()->view==zoomed);
+    QVERIFY(window.session().canBack());
+    QWheelEvent secondWheel(point,plot->mapToGlobal(point.toPoint()),QPoint(),QPoint(0,120),
+                            Qt::NoButton,Qt::NoModifier,Qt::NoScrollPhase,false);
+    QCoreApplication::sendEvent(plot,&secondWheel);
+    palette->setCurrentIndex(2);
+    QCOMPARE(palette->currentIndex(),2);
+    QCOMPARE(static_cast<int>(window.session().activeFile()->display.palette),static_cast<int>(Palette::Gray));
+}
+
+void UiTests::largeSampleCoordinatePrecision_data() {
+    QTest::addColumn<qulonglong>("origin");
+    QTest::addColumn<bool>("waterfall");
+    constexpr qulonglong largeOrigin=(qulonglong{1}<<53)+17;
+    const auto nearMaximum=std::numeric_limits<qulonglong>::max()-4096;
+    QTest::newRow("time-frequency-beyond-2pow53")<<largeOrigin<<false;
+    QTest::newRow("waterfall-beyond-2pow53")<<largeOrigin<<true;
+    QTest::newRow("time-frequency-uint64-maximum")<<nearMaximum<<false;
+    QTest::newRow("waterfall-uint64-maximum")<<nearMaximum<<true;
+}
+
+void UiTests::largeSampleCoordinatePrecision() {
+    QFETCH(qulonglong,origin);
+    QFETCH(bool,waterfall);
+    DemoMainWindow window;
+    showWindow(window);
+    clearDemoMarks(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    auto* file=window.session().activeFile();
+    file->metadata.sampleCount=std::numeric_limits<SampleIndex>::max();
+    file->view.time={static_cast<SampleIndex>(origin),static_cast<SampleIndex>(origin)+4096};
+    file->display.mainMode=waterfall?MainMode::Waterfall:MainMode::TimeFrequency;
+    window.refresh();
+    const auto view=file->view;
+    const auto frequency=frequencyAt(view,.5);
+    const auto start=plot->toPixel(view.time.begin,frequency);
+    const auto adjacent=plot->toPixel(view.time.begin+1,frequency);
+    const auto end=plot->toPixel(view.time.end,frequency);
+    const auto delta=waterfall?adjacent.y()-start.y():adjacent.x()-start.x();
+    const auto extent=waterfall?plot->plotRect().height():plot->plotRect().width();
+    QVERIFY2(delta>0,"Adjacent uint64 sample positions must remain distinguishable.");
+    QVERIFY2(std::abs(delta-extent/4096)<1e-9,"Adjacent samples must map to exactly one sample step.");
+    const auto endDelta=waterfall?end.y()-start.y():end.x()-start.x();
+    QVERIFY(std::abs(endDelta-extent)<1e-9);
+    QVERIFY(file->view==view);
+}
+
+void UiTests::auxiliaryYAxisIsolationAndEscape_data() {
+    QTest::addColumn<bool>("psd");
+    QTest::newRow("waveform-amplitude")<<false;
+    QTest::newRow("psd-power")<<true;
+}
+
+void UiTests::auxiliaryYAxisIsolationAndEscape() {
+    QFETCH(bool,psd);
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("auxPlot");
+    QVERIFY(plot);
+    auto* file=window.session().activeFile();
+    file->display.auxiliaryMode=psd?AuxiliaryMode::Psd:AuxiliaryMode::Waveform;
+    file->display.auxiliaryMin=psd?-110:-60;
+    file->display.auxiliaryMax=psd?-10:60;
+    window.refresh();
+    const auto view=file->view;
+    const auto originalSpan=file->display.auxiliaryMax-file->display.auxiliaryMin;
+    const QPoint point(qRound(plot->plotRect().left()-20),qRound(plot->plotRect().center().y()));
+    QWheelEvent wheel(point,plot->mapToGlobal(point),QPoint(),QPoint(0,120),
+                      Qt::NoButton,Qt::NoModifier,Qt::NoScrollPhase,false);
+    QCoreApplication::sendEvent(plot,&wheel);
+    const auto wheelMin=file->display.auxiliaryMin;
+    const auto wheelMax=file->display.auxiliaryMax;
+    QVERIFY(wheelMax-wheelMin<originalSpan);
+    QVERIFY(file->view==view);
+    QVERIFY(!window.session().canBack());
+    drag(plot,point,point+QPoint(0,20));
+    QVERIFY(std::abs(file->display.auxiliaryMin-wheelMin)>1e-6);
+    QVERIFY(std::abs((file->display.auxiliaryMax-file->display.auxiliaryMin)-(wheelMax-wheelMin))<1e-8);
+    QVERIFY(file->view==view);
+    const auto beforeCancelMin=file->display.auxiliaryMin;
+    const auto beforeCancelMax=file->display.auxiliaryMax;
+    QTest::mousePress(plot,Qt::LeftButton,Qt::NoModifier,point);
+    QTest::mouseMove(plot,point+QPoint(0,24),10);
+    QVERIFY(std::abs(file->display.auxiliaryMin-beforeCancelMin)>1e-6);
+    QTest::keyClick(plot,Qt::Key_Escape);
+    QTest::mouseRelease(plot,Qt::LeftButton,Qt::NoModifier,point+QPoint(0,24));
+    QCOMPARE(file->display.auxiliaryMin,beforeCancelMin);
+    QCOMPARE(file->display.auxiliaryMax,beforeCancelMax);
+    QVERIFY(file->view==view);
+    QVERIFY(window.session().canBack());
+    QVERIFY(window.session().back());
+    QCOMPARE(file->display.auxiliaryMin,wheelMin);
+    QCOMPARE(file->display.auxiliaryMax,wheelMax);
+    QVERIFY(window.session().back());
+    QCOMPARE(file->display.auxiliaryMin,psd?-110.0:-60.0);
+    QCOMPARE(file->display.auxiliaryMax,psd?-10.0:60.0);
+    QVERIFY(!window.session().canBack());
+}
+
+void UiTests::selectedMarkCornerAndEdgeResize_data() {
+    QTest::addColumn<bool>("waterfall");
+    QTest::newRow("time-frequency")<<false;
+    QTest::newRow("waterfall")<<true;
+}
+
+void UiTests::selectedMarkCornerAndEdgeResize() {
+    QFETCH(bool,waterfall);
+    DemoMainWindow window;
+    showWindow(window);
+    clearDemoMarks(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    auto* file=window.session().activeFile();
+    file->display.mainMode=waterfall?MainMode::Waterfall:MainMode::TimeFrequency;
+    const auto view=file->view;
+    const auto original=innerRange(view);
+    const auto id=window.session().addMark(original);
+    window.refresh();
+    const auto corner=plot->toPixel(original.time.begin,
+        waterfall?original.frequency.lowerHz:original.frequency.upperHz).toPoint();
+    drag(plot,corner,corner+QPoint(24,16));
+    auto resized=findMark(*file,id)->range;
+    QVERIFY(resized.time.begin>original.time.begin);
+    QCOMPARE(resized.time.end,original.time.end);
+    QVERIFY(resized.time.begin<resized.time.end);
+    if(waterfall) {
+        QVERIFY(resized.frequency.lowerHz>original.frequency.lowerHz);
+        QCOMPARE(resized.frequency.upperHz,original.frequency.upperHz);
+    } else {
+        QCOMPARE(resized.frequency.lowerHz,original.frequency.lowerHz);
+        QVERIFY(resized.frequency.upperHz<original.frequency.upperHz);
+    }
+    QVERIFY(resized.frequency.lowerHz<resized.frequency.upperHz);
+    const auto pixelBox=QRectF(plot->toPixel(resized.time.begin,resized.frequency.lowerHz),
+        plot->toPixel(resized.time.end,resized.frequency.upperHz)).normalized();
+    const auto edge=QPointF(pixelBox.right(),pixelBox.center().y()).toPoint();
+    drag(plot,edge,edge+QPoint(25,0));
+    const auto enlarged=findMark(*file,id)->range;
+    if(waterfall) {
+        QVERIFY(enlarged.time==resized.time);
+        QCOMPARE(enlarged.frequency.lowerHz,resized.frequency.lowerHz);
+        QVERIFY(enlarged.frequency.upperHz>resized.frequency.upperHz);
+    } else {
+        QCOMPARE(enlarged.time.begin,resized.time.begin);
+        QVERIFY(enlarged.time.end>resized.time.end);
+        QVERIFY(enlarged.frequency==resized.frequency);
+    }
+    const auto bounds=fullRange(file->metadata);
+    QVERIFY(enlarged.time.begin<enlarged.time.end&&enlarged.time.end<=bounds.time.end);
+    QVERIFY(enlarged.frequency.lowerHz>=bounds.frequency.lowerHz&&enlarged.frequency.upperHz<=bounds.frequency.upperHz);
+    QVERIFY(file->view==view);
+    QVERIFY(!window.session().canBack());
+}
+
+void UiTests::responsiveWorkspace_data() {
+    QTest::addColumn<QSize>("windowSize");
+    QTest::addColumn<int>("resourceWidth");
+    QTest::addColumn<int>("propertyWidth");
+    QTest::newRow("4k-150-percent") << QSize(2560,1440) << 270 << 294;
+}
+
+void UiTests::responsiveWorkspace() {
+    QFETCH(QSize,windowSize);
+    QFETCH(int,resourceWidth);
+    QFETCH(int,propertyWidth);
+    DemoMainWindow window;
+    window.resize(windowSize);
+    window.show();
+    QCoreApplication::processEvents();
+    QTest::qWait(20);
+    auto* resources=window.findChild<QWidget*>("resources");
+    auto* properties=window.findChild<QWidget*>("properties");
+    auto* nav=window.findChild<QWidget*>("navPanel");
+    auto* aux=window.findChild<QWidget*>("auxPanel");
+    auto* spec=window.findChild<QWidget*>("specPanel");
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(resources&&properties&&nav&&aux&&spec&&plot);
+    QVERIFY2(std::abs(resources->width()-resourceWidth)<=2,"Resource width must follow the final HTML media rules.");
+    QVERIFY2(std::abs(properties->width()-propertyWidth)<=2,"Property width must follow the final HTML media rules.");
+    const int navY=nav->mapTo(&window,QPoint()).y();
+    const int auxY=aux->mapTo(&window,QPoint()).y();
+    const int specY=spec->mapTo(&window,QPoint()).y();
+    QVERIFY(navY<auxY&&auxY<specY);
+    QCOMPARE(nav->height(),82);
+    QCOMPARE(aux->height(),205);
+    QVERIFY(plot->plotRect().height()>=875);
+    QVERIFY(window.findChildren<QToolBar*>().empty());
+    QVERIFY(!window.findChild<QComboBox*>("modeMain")->isVisible());
+    QVERIFY(!window.findChild<QComboBox*>("modeAux")->isVisible());
+}
+
+void UiTests::propertyFieldsFitSidebar() {
+    DemoMainWindow window;
+    window.resize(2560, 1440);
+    window.show();
+    QCoreApplication::processEvents();
+    auto* scroll = window.findChild<QScrollArea*>("propScroll");
+    QVERIFY(scroll);
+    auto* viewport = scroll->viewport();
+    QVERIFY(viewport && viewport->width() > 0);
+    for (const auto* id : {"effectiveBandwidthMHz", "psdFft", "stftFft", "dynamic", "reference"}) {
+        auto* field = window.findChild<QWidget*>(id);
+        QVERIFY2(field, id);
+        const auto fieldRect = QRect(field->mapTo(viewport, QPoint()), field->size());
+        QVERIFY2(fieldRect.left() >= 0 && fieldRect.right() < viewport->width(),
+                 qPrintable(QString("Property field %1 must not be clipped at the right edge").arg(id)));
+    }
+}
+
+void UiTests::prototypeDisplayDefaultsAndOptions() {
+    DemoMainWindow window;
+    showWindow(window);
+    const auto* file=window.session().activeFile();
+    QVERIFY(file);
+    QCOMPARE(QString::fromStdString(file->metadata.name),QString("wideband_100MHz.iq"));
+    QCOMPARE(file->metadata.sampleRateHz,40'000'000.0);
+    QCOMPARE(file->metadata.centerFrequencyHz,100'000'000.0);
+    QCOMPARE(file->metadata.sampleCount,SampleIndex{19'200'000'000ULL});
+    QCOMPARE(file->view.time.begin,SampleIndex{0});
+    QCOMPARE(file->view.time.end,SampleIndex{960'000'000ULL});
+    QCOMPARE(file->display.palette,Palette::CoolEditClassic);
+    QCOMPARE(window.findChild<QComboBox*>("palette")->currentText(),QString("CoolEdit Classic"));
+    QCOMPARE(file->view.frequency.lowerHz,80'000'000.0);
+    QCOMPARE(file->view.frequency.upperHz,120'000'000.0);
+    QVERIFY(file->marks.empty()&&file->channels.empty());
+    QCOMPARE(file->display.waveformMin,-60.0);
+    QCOMPARE(file->display.waveformMax,60.0);
+    QCOMPARE(file->display.psdMin,-100.0);
+    QCOMPARE(file->display.psdMax,0.0);
+    auto* stft=window.findChild<QComboBox*>("stftFft");
+    auto* psd=window.findChild<QComboBox*>("psdFft");
+    auto* dynamic=window.findChild<QComboBox*>("dynamic");
+    auto* reference=window.findChild<QComboBox*>("reference");
+    auto* scope=window.findChild<QComboBox*>("psdScope");
+    auto* grid=window.findChild<QCheckBox*>("gridToggle");
+    auto* colorbar=window.findChild<QCheckBox*>("colorbarToggle");
+    QVERIFY(stft&&psd&&dynamic&&reference&&scope&&grid&&colorbar);
+    const QStringList palettes{"Turbo","Viridis","Gray","Plasma","Inferno","Magma","Cividis","CoolEdit Classic"};
+    QCOMPARE(comboLabels(window.findChild<QComboBox*>("palette")), palettes);
+    QCOMPARE(comboLabels(window.findChild<QComboBox*>("colormap")), palettes);
+    QCOMPARE(comboLabels(stft),QStringList({"256","512","1024","2048","4096","8192","16384","32768","65536"}));
+    QCOMPARE(comboLabels(psd),QStringList({"1024","2048","4096","8192"}));
+    QCOMPARE(comboLabels(dynamic),QStringList({"20 dB","40 dB","60 dB","80 dB","100 dB","120 dB"}));
+    QCOMPARE(comboLabels(reference),QStringList({"0 dBFS","-20 dBFS","-40 dBFS","-60 dBFS","-80 dBFS","-100 dBFS"}));
+    QCOMPARE(stft->currentText(),QString("2048"));
+    QCOMPARE(psd->currentText(),QString("4096"));
+    QCOMPARE(dynamic->currentIndex(),3);
+    QCOMPARE(reference->currentIndex(),0);
+    QCOMPARE(scope->currentIndex(),0);
+    QVERIFY(grid->isChecked());
+    QVERIFY(!colorbar->isChecked());
+    scope->setCurrentIndex(1);
+    QCOMPARE(scope->currentIndex(),0);
+    QVERIFY(!file->display.psdFromSelection);
+}
+
+void UiTests::initialFileViewShowsFirstFivePercentOrTenMilliseconds() {
+    Session session;
+    QVERIFY(!session.addDemoFile("five_percent.iq", 40e6, 100e6, 10.0).empty());
+    auto* file = session.activeFile();
+    QVERIFY(file);
+    QCOMPARE(file->view.time, (TimeRange{0, 20'000'000ULL}));
+
+    QVERIFY(!session.addDemoFile("ten_ms.iq", 1e6, 10e6, 0.1).empty());
+    file = session.activeFile();
+    QVERIFY(file);
+    QCOMPARE(file->view.time, (TimeRange{0, 10'000ULL}));
+
+    QVERIFY(!session.addDemoFile("short.iq", 1e6, 10e6, 0.006).empty());
+    file = session.activeFile();
+    QVERIFY(file);
+    QCOMPARE(file->view.time, (TimeRange{0, file->metadata.sampleCount}));
+}
+
+void UiTests::paletteControlsStaySynchronized() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* header=window.findChild<QComboBox*>("palette");
+    auto* property=window.findChild<QComboBox*>("colormap");
+    auto* rangeTag=window.findChild<QWidget*>("rangeTag");
+    auto* maximize=window.findChild<QAbstractButton*>("specMaximize");
+    QVERIFY(header&&property);
+    QVERIFY(rangeTag&&maximize);
+    QCOMPARE(header->width(),155);
+    auto* spectrumHeader=header->parentWidget();
+    QVERIFY(spectrumHeader);
+    QVERIFY(header->isVisible()&&rangeTag->isVisible()&&maximize->isVisible());
+    QVERIFY(header->geometry().right()<rangeTag->geometry().left());
+    QVERIFY(rangeTag->geometry().right()<maximize->geometry().left());
+    QVERIFY(maximize->geometry().right()<spectrumHeader->width());
+    const QStringList expectedPalettes{"Turbo","Viridis","Gray","Plasma","Inferno","Magma","Cividis","CoolEdit Classic"};
+    QCOMPARE(comboLabels(header),expectedPalettes);
+    QCOMPARE(comboLabels(property),expectedPalettes);
+    QCOMPARE(header->currentText(),QString("CoolEdit Classic"));
+    header->setCurrentIndex(1);
+    QCOMPARE(property->currentIndex(),1);
+    property->setCurrentIndex(2);
+    QCOMPARE(header->currentIndex(),2);
+    QCOMPARE(static_cast<int>(window.session().activeFile()->display.palette),static_cast<int>(Palette::Gray));
+    const auto first=window.session().project().activeFileId;
+    QVERIFY(window.session().activateFile(window.session().project().files[1].metadata.id));
+    window.refresh();
+    QCOMPARE(header->currentIndex(),2);
+    QCOMPARE(property->currentIndex(),2);
+    QVERIFY(window.session().activateFile(first));
+    window.refresh();
+    QCOMPARE(header->currentIndex(),2);
+    QCOMPARE(property->currentIndex(),2);
+    const auto cividisIndex=header->findText("Cividis");
+    QVERIFY(cividisIndex>=0);
+    header->setCurrentIndex(cividisIndex);
+    QCOMPARE(property->currentText(),QString("Cividis"));
+    QCOMPARE(window.session().activeFile()->display.palette,Palette::Cividis);
+    const auto classicIndex=header->findText("CoolEdit Classic");
+    QVERIFY(classicIndex>=0);
+    header->setCurrentIndex(classicIndex);
+    QCOMPARE(property->currentText(),QString("CoolEdit Classic"));
+    QCOMPARE(window.session().activeFile()->display.palette,Palette::CoolEditClassic);
+    auto* colorbar=window.findChild<QCheckBox*>("colorbarToggle");
+    auto* main=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(colorbar&&main);
+    colorbar->setChecked(true);
+    QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(),10'000);
+    const auto image=main->grab().toImage();
+    const qreal dpr=image.devicePixelRatio();
+    const int colorX=qRound((main->width()-31.5)*dpr);
+    QVERIFY(!image.isNull()&&colorX>=0&&colorX<image.width());
+    bool hasRedTransition=false;
+    const auto plot=main->plotRect();
+    for(int y=qRound((plot.top()+4)*dpr);y<qRound((plot.bottom()-4)*dpr);++y) {
+        const auto sample=image.pixelColor(colorX,y);
+        if(sample.red()>160&&sample.red()>sample.green()*1.35&&sample.red()>sample.blue()*1.35) {
+            hasRedTransition=true;
+            break;
+        }
+    }
+    QVERIFY2(hasRedTransition,"CoolEdit Classic must include its red high-energy transition.");
+}
+
+void UiTests::panelRailsAndBottomTabs() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* resources=window.findChild<QWidget*>("resources");
+    auto* properties=window.findChild<QWidget*>("properties");
+    auto* resourceToggle=window.findChild<QAbstractButton*>("resourceToggle");
+    auto* propClose=window.findChild<QAbstractButton*>("propClose");
+    auto* propOpen=window.findChild<QAbstractButton*>("propRailOpen");
+    auto* bottom=window.findChild<QWidget*>("bottom");
+    auto* toggle=window.findChild<QToolButton*>("resultsToggle");
+    QVERIFY(resources&&properties&&resourceToggle&&propClose&&propOpen&&bottom&&toggle);
+    QCOMPARE(bottom->height(),29);
+    QTest::mouseClick(resourceToggle,Qt::LeftButton);
+    QCOMPARE(resources->width(),38);
+    QTest::mouseClick(resourceToggle,Qt::LeftButton);
+    QCOMPARE(resources->width(),270);
+    QTest::mouseClick(propClose,Qt::LeftButton);
+    QCOMPARE(properties->width(),38);
+    QVERIFY(propOpen->isVisible());
+    QTest::mouseClick(propOpen,Qt::LeftButton);
+    QCOMPARE(properties->width(),294);
+    for (const auto& tabName : {"resultTab","taskTab","logTab"}) {
+        auto* tab=window.findChild<QAbstractButton*>(tabName);
+        QVERIFY(tab);
+        QTest::mouseClick(tab,Qt::LeftButton);
+        QVERIFY(tab->isChecked());
+        QCOMPARE(bottom->height(),150);
+        QVERIFY(toggle->isChecked());
+    }
+    auto* logs=window.findChild<QPlainTextEdit*>("resultsPanel");
+    QVERIFY(logs&&logs->isVisible());
+    QTest::mouseClick(toggle,Qt::LeftButton);
+    QCOMPARE(bottom->height(),29);
+    QVERIFY(!logs->isVisible());
+}
+
+void UiTests::sectionContextAndManualExpansion() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* file=window.findChild<QWidget*>("fileSection");
+    auto* mark=window.findChild<QWidget*>("markSection");
+    auto* psd=window.findChild<QWidget*>("psdSection");
+    auto* toggle=window.findChild<QToolButton*>("psdSectionToggle");
+    auto* content=window.findChild<QWidget*>("psdSectionContent");
+    QVERIFY(file&&mark&&psd&&toggle&&content);
+    QVERIFY(file->isVisible());
+    QVERIFY(!mark->isVisible());
+    QVERIFY(content->isVisible());
+    QTest::mouseClick(toggle,Qt::LeftButton);
+    QVERIFY(!content->isVisible());
+    window.refresh();window.refresh();
+    QVERIFY(!content->isVisible());
+    window.session().addMark(innerRange(window.session().activeFile()->view));
+    window.refresh();
+    QCoreApplication::processEvents();
+    QVERIFY(mark->isVisible());
+    QVERIFY(mark->mapTo(&window,QPoint()).y()<file->mapTo(&window,QPoint()).y());
+    QCOMPARE(window.findChildren<QWidget*>("markSection").size(),1);
+    window.session().selectMarks({});
+    window.refresh();
+    QCoreApplication::processEvents();
+    QVERIFY(!mark->isVisible());
+    auto* psdMode=window.findChild<QAbstractButton*>("psdMode");
+    QVERIFY(psdMode);
+    QTest::mouseClick(psdMode,Qt::LeftButton);
+    QCoreApplication::processEvents();
+    QVERIFY(!content->isVisible());
+    QVERIFY(psd->mapTo(&window,QPoint()).y()<file->mapTo(&window,QPoint()).y());
+}
+
+void UiTests::panelMaximizeAndRestore() {
+    DemoMainWindow window;
+    showWindow(window);
+    const QStringList panelNames={"navPanel","auxPanel","specPanel"};
+    const QStringList buttonNames={"navMaximize","auxMaximize","specMaximize"};
+    const QStringList plotNames={"navigationPlot","auxPlot","mainPlot"};
+    const bool checkGpu=QGuiApplication::platformName()=="windows";
+    for (int i=0;i<panelNames.size();++i) {
+        auto* panel=window.findChild<QWidget*>(panelNames[i]);
+        auto* button=window.findChild<QAbstractButton*>(buttonNames[i]);
+        auto* plot=window.findChild<PlotWidget*>(plotNames[i]);
+        QVERIFY(panel&&button&&plot);
+        if(checkGpu) {
+            QTRY_VERIFY(plot->gpuReady());
+            QTRY_VERIFY(plot->completedFrameCount()>0);
+        }
+        const auto initialFrames=plot->completedFrameCount();
+        const auto originalSize=panel->size();
+        QTest::mouseClick(button,Qt::LeftButton);
+        QCoreApplication::processEvents();
+        QVERIFY(panel->isVisible());
+        QVERIFY(panel->height()>originalSize.height());
+        if(checkGpu) {
+            QTRY_VERIFY(plot->gpuReady());
+            QTRY_VERIFY(plot->completedFrameCount()>initialFrames);
+        }
+        const auto maximizedFrames=plot->completedFrameCount();
+        QTest::mouseClick(button,Qt::LeftButton);
+        QCoreApplication::processEvents();
+        auto* graphSplitter=window.findChild<QSplitter*>("graphSplitter");
+        QVERIFY(graphSplitter);
+        qInfo().noquote()<<panelNames[i]<<"original"<<originalSize<<"restored"<<panel->size()
+                        <<"graph sizes"<<graphSplitter->sizes();
+        QVERIFY(std::abs(panel->height()-originalSize.height())<=2);
+        if(checkGpu) {
+            QTRY_VERIFY(plot->gpuReady());
+            QTRY_VERIFY(plot->completedFrameCount()>maximizedFrames);
+            qInfo().noquote()<<plotNames[i]<<plot->renderingBackend()<<"frames initial/max/restored"
+                            <<initialFrames<<maximizedFrames<<plot->completedFrameCount();
+        }
+        for (const auto& name : panelNames) QVERIFY(window.findChild<QWidget*>(name)->isVisible());
+        QVERIFY(window.findChild<QWidget*>("navSplit"));
+        QVERIFY(window.findChild<QWidget*>("auxSplit"));
+    }
+}
+
+void UiTests::mainAxisWheelIsolationAndHistory_data() {
+    QTest::addColumn<bool>("waterfall");
+    QTest::addColumn<bool>("leftAxis");
+    QTest::newRow("tf-time-x")<<false<<false;
+    QTest::newRow("tf-frequency-y")<<false<<true;
+    QTest::newRow("waterfall-frequency-x")<<true<<false;
+    QTest::newRow("waterfall-time-y")<<true<<true;
+}
+
+void UiTests::mainAxisWheelIsolationAndHistory() {
+    QFETCH(bool,waterfall);
+    QFETCH(bool,leftAxis);
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    auto* file=window.session().activeFile();
+    file->display.mainMode=waterfall?MainMode::Waterfall:MainMode::TimeFrequency;
+    window.refresh();
+    const auto original=file->view;
+    QPointF point=plot->plotRect().center();
+    if(leftAxis) point.setX(plot->plotRect().left()-20);
+    wheelAt(plot,point);wheelAt(plot,point);
+    const bool frequencyAxis=waterfall?!leftAxis:leftAxis;
+    if(frequencyAxis) {
+        QVERIFY(file->view.time==original.time);
+        QVERIFY(file->view.frequency.upperHz-file->view.frequency.lowerHz<original.frequency.upperHz-original.frequency.lowerHz);
+    } else {
+        QVERIFY(file->view.frequency==original.frequency);
+        QVERIFY(file->view.time.end-file->view.time.begin<original.time.end-original.time.begin);
+    }
+    QTRY_VERIFY_WITH_TIMEOUT(window.session().canBack(),1000);
+    QVERIFY(window.session().back());
+    QVERIFY(file->view==original);
+    QVERIFY(!window.session().canBack());
+}
+
+void UiTests::navigationClickPreservesSpanAndCancelsDrag() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* nav=window.findChild<PlotWidget*>("navigationPlot");
+    QVERIFY(nav);
+    auto* file=window.session().activeFile();
+    const auto original=file->view;
+    const auto full=fullRange(file->metadata);
+    const auto jump=nav->toPixel(sampleAt(full,.8L),file->metadata.centerFrequencyHz).toPoint();
+    QTest::mouseClick(nav,Qt::LeftButton,Qt::NoModifier,jump);
+    QVERIFY(file->view.time.begin>original.time.begin);
+    QCOMPARE(file->view.time.end-file->view.time.begin,original.time.end-original.time.begin);
+    QVERIFY(file->view.frequency==original.frequency);
+    QVERIFY(window.session().back());
+    QVERIFY(file->view==original);
+    const auto inside=nav->toPixel(sampleAt(original,.5L),file->metadata.centerFrequencyHz).toPoint();
+    QTest::mousePress(nav,Qt::LeftButton,Qt::NoModifier,inside);
+    QTest::mouseMove(nav,inside+QPoint(45,0),10);
+    QTest::keyClick(nav,Qt::Key_Escape);
+    QTest::mouseRelease(nav,Qt::LeftButton,Qt::NoModifier,inside+QPoint(45,0));
+    QVERIFY(file->view==original);
+    QVERIFY(!window.session().canBack());
+}
+
+void UiTests::fileSwitchCancelsUnfinishedEdit() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    auto* first=window.session().activeFile();
+    const auto firstId=first->metadata.id;
+    const auto view=first->view;
+    const auto markRange=innerRange(view);
+    const auto markId=window.session().addMark(markRange);
+    window.refresh();
+    const auto start=pointAt(plot,view,.35,.5);
+    QTest::mousePress(plot,Qt::LeftButton,Qt::NoModifier,start);
+    QTest::mouseMove(plot,start+QPoint(35,20),10);
+    QVERIFY(!(findMark(*first,markId)->range==markRange));
+    auto* tree=window.findChild<QTreeWidget*>("projectTree");
+    QVERIFY(tree);
+    auto* nextFile=tree->topLevelItem(0)->child(1);
+    QTest::mouseClick(tree->viewport(),Qt::LeftButton,Qt::NoModifier,tree->visualItemRect(nextFile).center());
+    QCoreApplication::processEvents();
+    QVERIFY(window.session().project().activeFileId!=firstId);
+    QTest::mouseRelease(plot,Qt::LeftButton,Qt::NoModifier,start+QPoint(35,20));
+    QVERIFY(window.session().activateFile(firstId));window.refresh();
+    QVERIFY(findMark(*window.session().activeFile(),markId)->range==markRange);
+    QVERIFY(window.session().activeFile()->view==view);
+    QVERIFY(!plot->isCreating());
+}
+
+void UiTests::allResizeHandlesStayBounded_data() {
+    QTest::addColumn<bool>("waterfall");
+    QTest::addColumn<QString>("handle");
+    for (bool waterfall : {false,true}) for (const auto& handle : {"n","ne","e","se","s","sw","w","nw"})
+        QTest::newRow(qPrintable(QString("%1-%2").arg(waterfall?"waterfall":"tf",handle)))<<waterfall<<QString(handle);
+}
+
+void UiTests::allResizeHandlesStayBounded() {
+    QFETCH(bool,waterfall);
+    QFETCH(QString,handle);
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    auto* file=window.session().activeFile();
+    file->display.mainMode=waterfall?MainMode::Waterfall:MainMode::TimeFrequency;
+    const auto view=file->view;
+    const auto range=innerRange(view);
+    const auto id=window.session().addMark(range);
+    window.refresh();
+    const QRectF box=QRectF(plot->toPixel(range.time.begin,range.frequency.lowerHz),
+                           plot->toPixel(range.time.end,range.frequency.upperHz)).normalized();
+    QPointF start=box.center();
+    int dx=0,dy=0;
+    if(handle.contains('w')) {start.setX(box.left());dx=600;}
+    if(handle.contains('e')) {start.setX(box.right());dx=-600;}
+    if(handle.contains('n')) {start.setY(box.top());dy=600;}
+    if(handle.contains('s')) {start.setY(box.bottom());dy=-600;}
+    drag(plot,start.toPoint(),start.toPoint()+QPoint(dx,dy));
+    const auto edited=findMark(*file,id)->range;
+    const auto bounds=fullRange(file->metadata);
+    QVERIFY(!(edited==range));
+    QVERIFY(edited.time.begin<edited.time.end);
+    QVERIFY(edited.time.end<=bounds.time.end);
+    QVERIFY(edited.frequency.lowerHz<edited.frequency.upperHz);
+    QVERIFY(edited.frequency.lowerHz>=bounds.frequency.lowerHz);
+    QVERIFY(edited.frequency.upperHz<=bounds.frequency.upperHz);
+    QVERIFY(edited.time.end-edited.time.begin>=static_cast<SampleIndex>(file->display.stftSize));
+    QVERIFY(edited.frequency.upperHz-edited.frequency.lowerHz>=file->metadata.sampleRateHz/file->display.stftSize-.001);
+    QVERIFY(file->view==view);
+    QVERIFY(!window.session().canBack());
+}
+
+void UiTests::nativeProjectRoundtripAndInvalidImport() {
+    DemoMainWindow window;
+    showWindow(window);
+    window.session().addMark(innerRange(window.session().activeFile()->view));
+    window.session().addMark(innerRange(window.session().activeFile()->view));
+    const auto secondId=window.session().project().files[1].metadata.id;
+    QVERIFY(window.session().activateFile(secondId));window.refresh();
+    const auto markId=window.session().addMark(innerRange(window.session().activeFile()->view));
+    window.refresh();
+    auto* mode=window.findChild<QComboBox*>("modeMain");
+    auto* auxiliary=window.findChild<QComboBox*>("modeAux");
+    auto* palette=window.findChild<QComboBox*>("palette");
+    auto* scope=window.findChild<QComboBox*>("psdScope");
+    QVERIFY(mode&&auxiliary&&palette&&scope);
+    mode->setCurrentIndex(1);
+    auxiliary->setCurrentIndex(1);
+    palette->setCurrentIndex(1);
+    scope->setCurrentIndex(1);
+    QCOMPARE(mode->currentIndex(),1);
+    QCOMPARE(auxiliary->currentIndex(),1);
+    QCOMPARE(palette->currentIndex(),1);
+    QCOMPARE(scope->currentIndex(),1);
+    const auto expected=window.session().activeFile()->view;
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const auto saved=temporary.filePath("roundtrip.json");
+    QVERIFY(window.saveProject(saved));
+    window.session().newProject();window.refresh();
+    QVERIFY(window.openProject(saved));
+    QVERIFY(window.session().project().activeFileId==secondId);
+    QVERIFY(window.session().activeFile()->view==expected);
+    QVERIFY(window.session().activeFile()->activeMarkId==markId);
+    QCOMPARE(window.session().activeFile()->selectedMarkIds.size(),std::size_t{1});
+    QCOMPARE(palette->currentIndex(),1);
+    QCOMPARE(scope->currentIndex(),1);
+    const auto invalid=temporary.filePath("invalid.json");
+    QFile file(invalid);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.write("{\"signals\":[{\"name\":\"bad\",\"fs\":0}]}");file.close();
+    QTimer dismiss;
+    connect(&dismiss,&QTimer::timeout,[]{if(auto* box=qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))box->accept();});
+    dismiss.start(5);
+    QVERIFY(!window.openProject(invalid));
+    dismiss.stop();
+    QVERIFY(window.session().project().activeFileId==secondId);
+    QVERIFY(window.session().activeFile()->view==expected);
+    QCOMPARE(window.session().project().files.size(),std::size_t{3});
+}
+
+void UiTests::contextMenuActionsAndCoveredMarkSelection() {
+    DemoMainWindow window;
+    showWindow(window);
+    const QStringList viewActions={"contextBackAction","contextForwardAction","contextFitAction","contextResetAction"};
+    for (const auto& plotName : {"navigationPlot","auxPlot","mainPlot"}) {
+        auto* plot=window.findChild<PlotWidget*>(plotName);
+        QVERIFY(plot);
+        std::unique_ptr<QMenu> menu(plot->createContextMenu(plot->plotRect().center().toPoint()));
+        QVERIFY(menu);
+        for (const auto& name : viewActions) QVERIFY(menu->findChild<QAction*>(name));
+    }
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    const auto view=window.session().activeFile()->view;
+    const auto lower=window.session().addMark(innerRange(view));
+    window.session().addMark(innerRange(view));
+    window.session().selectMarks({});window.refresh();
+    std::unique_ptr<QMenu> menu(plot->createContextMenu(pointAt(plot,view,.35,.5)));
+    auto* toggle=menu->findChild<QAction*>("contextMarkToggle");
+    QVERIFY(toggle&&toggle->isCheckable());
+    toggle->trigger();
+    QVERIFY(plot->isCreating());
+    toggle->trigger();
+    QVERIFY(!plot->isCreating());
+    QAction* covered=nullptr;
+    for (auto* action : menu->findChildren<QAction*>()) if (action->data().toString()==QString::fromStdString(lower)) covered=action;
+    QVERIFY2(covered,"The context menu must expose a covered lower mark at the same point.");
+    covered->trigger();
+    QVERIFY(window.session().activeFile()->activeMarkId==lower);
+    QVERIFY(window.session().activeFile()->view==view);
+    std::unique_ptr<QMenu> selectedMenu(plot->createContextMenu(pointAt(plot,view,.35,.5)));
+    auto* locate=selectedMenu->findChild<QAction*>("contextLocateAction");
+    auto* remove=selectedMenu->findChild<QAction*>("contextDeleteAction");
+    QVERIFY(locate&&locate->isEnabled());
+    QVERIFY(remove&&remove->isEnabled());
+    remove->trigger();
+    QVERIFY(!findMark(*window.session().activeFile(),lower));
+    QVERIFY(window.session().activeFile()->view==view);
+}
+
+void UiTests::unselectedMarkClickAndSubthresholdGesture() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    const auto view=window.session().activeFile()->view;
+    const auto range=innerRange(view);
+    const auto id=window.session().addMark(range);
+    window.session().selectMarks({});window.refresh();
+    const auto center=pointAt(plot,view,.35,.5);
+    QTest::mouseClick(plot,Qt::LeftButton,Qt::NoModifier,center);
+    QVERIFY(window.session().activeFile()->activeMarkId==id);
+    QVERIFY(findMark(*window.session().activeFile(),id)->range==range);
+    QVERIFY(window.session().activeFile()->view==view);
+    drag(plot,center,center+QPoint(3,2));
+    QVERIFY(findMark(*window.session().activeFile(),id)->range==range);
+    QVERIFY(!window.session().canBack());
+    plot->setCreating(true);
+    const auto blank=pointAt(plot,view,.7,.8);
+    drag(plot,blank,blank+QPoint(7,7));
+    QCOMPARE(window.session().activeFile()->marks.size(),std::size_t{1});
+    QVERIFY(plot->isCreating());
+    QVERIFY(window.session().activeFile()->view==view);
+}
+
+void UiTests::clippedMarkBorderMovesWithoutInventingHandle() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    auto* file=window.session().activeFile();
+    auto view=file->view;
+    const auto visibleSpan=view.time.end-view.time.begin;
+    QVERIFY(window.session().setView({{file->metadata.sampleCount/2,file->metadata.sampleCount/2+visibleSpan},view.frequency},false));
+    window.refresh();
+    view=file->view;
+    const auto span=view.time.end-view.time.begin;
+    const ViewRange range{{view.time.begin-span/5,view.time.begin+span/4},
+                          {frequencyAt(view,.35),frequencyAt(view,.65)}};
+    const auto id=window.session().addMark(range);
+    window.refresh();
+    const QPoint start(qRound(plot->plotRect().left()+2),qRound(plot->plotRect().center().y()));
+    drag(plot,start,start+QPoint(28,0));
+    const auto edited=findMark(*file,id)->range;
+    QVERIFY(!(edited==range));
+    QCOMPARE(edited.time.end-edited.time.begin,range.time.end-range.time.begin);
+    QVERIFY(edited.frequency==range.frequency);
+    QVERIFY(file->view==view);
+}
+
+void UiTests::captureLossAndDeactivationRollback() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    const auto view=window.session().activeFile()->view;
+    const auto start=pointAt(plot,view,.2,.3);
+    const auto end=pointAt(plot,view,.45,.7);
+    plot->setCreating(true);
+    QTest::mousePress(plot,Qt::LeftButton,Qt::NoModifier,start);
+    QTest::mouseMove(plot,end,10);
+    QEvent captureLost(QEvent::UngrabMouse);
+    QCoreApplication::sendEvent(plot,&captureLost);
+    QTest::mouseRelease(plot,Qt::LeftButton,Qt::NoModifier,end);
+    QVERIFY(window.session().activeFile()->marks.empty());
+    QVERIFY(plot->isCreating());
+    QTest::mousePress(plot,Qt::LeftButton,Qt::NoModifier,start);
+    QTest::mouseMove(plot,end,10);
+    QEvent deactivated(QEvent::WindowDeactivate);
+    QCoreApplication::sendEvent(&window,&deactivated);
+    QTest::mouseRelease(plot,Qt::LeftButton,Qt::NoModifier,end);
+    QVERIFY(window.session().activeFile()->marks.empty());
+    QVERIFY(!plot->isCreating());
+    QVERIFY(window.session().activeFile()->view==view);
+    QVERIFY(!window.session().canBack());
+}
+
+void UiTests::resetRestoresCompleteViewSnapshot() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* file=window.session().activeFile();
+    const auto original=file->view;
+    auto custom=original;
+    custom.time={sampleAt(original,.1L),sampleAt(original,.9L)};
+    window.session().setView(custom,false);
+    window.session().setAuxiliaryRange(-30,30,false);
+    window.session().setAuxiliaryMode(AuxiliaryMode::Psd);
+    window.session().setAuxiliaryRange(-130,-20,false);
+    const auto before=window.session().snapshot();
+    window.refresh();
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(plot);
+    std::unique_ptr<QMenu> menu(plot->createContextMenu(plot->plotRect().center().toPoint()));
+    auto* reset=menu->findChild<QAction*>("contextResetAction");
+    QVERIFY(reset);reset->trigger();
+    QVERIFY(file->view==original);
+    QCOMPARE(file->display.waveformMin,-60.0);
+    QCOMPARE(file->display.waveformMax,60.0);
+    QCOMPARE(file->display.psdMin,-100.0);
+    QCOMPARE(file->display.psdMax,0.0);
+    QVERIFY(window.session().back());
+    QVERIFY(window.session().snapshot()==before);
+}
+
+void UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    auto* palette=window.findChild<QComboBox*>("palette");
+    auto* relative=window.findChild<QComboBox*>("freqMode");
+    auto* scale=window.findChild<QCheckBox*>("colorbarToggle");
+    QVERIFY(plot&&palette&&relative&&scale);
+    QCoreApplication::processEvents();
+    QTRY_VERIFY_WITH_TIMEOUT(plot->isDisplaySettled(),5000);
+    const auto initialSamples=plot->powerGenerationCount();
+    QVERIFY(initialSamples>0);
+    const auto view=window.session().activeFile()->view;
+    palette->setCurrentIndex(1);
+    QCoreApplication::processEvents();
+    QCOMPARE(plot->powerGenerationCount(),initialSamples);
+    QTest::mouseMove(plot,plot->plotRect().center().toPoint(),10);
+    QCoreApplication::processEvents();
+    QCOMPARE(plot->powerGenerationCount(),initialSamples);
+    relative->setCurrentIndex(1);
+    QCoreApplication::processEvents();
+    QVERIFY(!window.session().activeFile()->display.absoluteFrequency);
+    QVERIFY(window.session().activeFile()->view==view);
+    const auto widthWithoutScale=plot->plotRect().width();
+    scale->setChecked(true);
+    QVERIFY(plot->plotRect().width()<widthWithoutScale);
+    QVERIFY(window.session().activeFile()->view==view);
+    wheelAt(plot,plot->plotRect().center());
+    QCoreApplication::processEvents();
+    QVERIFY(plot->powerGenerationCount()>initialSamples);
+}
+
+void UiTests::renameUsesPlainTextAndEightyCharacterLimit() {
+    DemoMainWindow window;
+    showWindow(window);
+    const auto id=window.session().addMark(innerRange(window.session().activeFile()->view));
+    window.refresh();
+    auto* rename=window.findChild<QAbstractButton*>("renameMark");
+    QVERIFY(rename);
+    const QString typed="<b>"+QString(96,'x')+"</b>";
+    QTimer accept;
+    connect(&accept,&QTimer::timeout,[typed] {
+        if(auto* dialog=qobject_cast<QInputDialog*>(QApplication::activeModalWidget())) {
+            dialog->setTextValue(typed);dialog->accept();
+        }
+    });
+    accept.start(5);rename->click();accept.stop();
+    const auto renamed=QString::fromStdString(findMark(*window.session().activeFile(),id)->name);
+    QCOMPARE(renamed,typed.left(80));
+    auto* tree=window.findChild<QTreeWidget*>("projectTree");
+    QVERIFY(tree);
+    const auto nodes=descendantsOfType(tree->topLevelItem(0),"mark");
+    QCOMPARE(nodes.size(),1);
+    QVERIFY(nodes.front()->text(0).contains(renamed));
+    QTimer reject;
+    connect(&reject,&QTimer::timeout,[]{if(auto* dialog=qobject_cast<QInputDialog*>(QApplication::activeModalWidget()))dialog->reject();});
+    reject.start(5);rename->click();reject.stop();
+    QCOMPARE(QString::fromStdString(findMark(*window.session().activeFile(),id)->name),renamed);
+}
+
+void UiTests::splitterKeyboardResetAndEscapeRollback() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* splitter=window.findChild<QSplitter*>("graphSplitter");
+    auto* handle=window.findChild<QWidget*>("navSplit");
+    auto* auxiliary=window.findChild<QWidget*>("auxSplit");
+    auto* main=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(splitter&&handle&&auxiliary&&main);
+    const auto initial=splitter->sizes();
+    handle->setFocus();
+    QTest::keyClick(handle,Qt::Key_Down);
+    QCOMPARE(splitter->sizes()[0],initial[0]+10);
+    QTest::keyClick(handle,Qt::Key_Up);
+    QCOMPARE(splitter->sizes(),initial);
+    const auto start=handle->rect().center();
+    QTest::mousePress(handle,Qt::LeftButton,Qt::NoModifier,start);
+    QTest::mouseMove(handle,start+QPoint(0,-12),10);
+    QVERIFY(splitter->sizes()!=initial);
+    QTest::keyClick(handle,Qt::Key_Escape);
+    QTest::mouseRelease(handle,Qt::LeftButton,Qt::NoModifier,start+QPoint(0,-12));
+    QCOMPARE(splitter->sizes(),initial);
+    QTest::keyClick(auxiliary,Qt::Key_Up);
+    QVERIFY(splitter->sizes()!=initial);
+    QTest::mouseDClick(auxiliary,Qt::LeftButton,Qt::NoModifier,auxiliary->rect().center());
+    QCoreApplication::processEvents();
+    QCOMPARE(splitter->sizes()[0],82);
+    QCOMPARE(splitter->sizes()[1],205);
+    QVERIFY(main->plotRect().height()>=875);
+}
+
+void UiTests::treeToPlotShiftSelectionPreservesAnchor() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    auto* tree=window.findChild<QTreeWidget*>("projectTree");
+    QVERIFY(plot&&tree);
+    const auto view=window.session().activeFile()->view;
+    std::vector<std::string> ids;
+    for(int i=0;i<4;++i) {
+        const long double start=.1L+.2L*i;
+        ids.push_back(window.session().addMark({{sampleAt(view,start),sampleAt(view,start+.1L)},
+                                               {frequencyAt(view,.35),frequencyAt(view,.65)}}));
+    }
+    window.refresh();QCoreApplication::processEvents();
+    const auto nodes=descendantsOfType(tree->topLevelItem(0),"mark");
+    QCOMPARE(nodes.size(),4);
+    QTest::mouseClick(tree->viewport(),Qt::LeftButton,Qt::NoModifier,tree->visualItemRect(nodes[1]).center());
+    QCOMPARE(window.session().activeFile()->selectedMarkIds.size(),std::size_t{1});
+    QTest::mouseClick(plot,Qt::LeftButton,Qt::ShiftModifier,pointAt(plot,view,.75,.5));
+    const auto& selected=window.session().activeFile()->selectedMarkIds;
+    QCOMPARE(selected.size(),std::size_t{3});
+    for(int i=1;i<4;++i) QVERIFY(std::find(selected.begin(),selected.end(),ids[i])!=selected.end());
+    QVERIFY(window.session().activeFile()->activeMarkId==ids[3]);
+    QVERIFY(window.session().activeFile()->view==view);
+}
+
+void UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("auxPlot");
+    auto* palette=window.findChild<QComboBox*>("palette");
+    QVERIFY(plot&&palette);
+    const auto before=window.session().snapshot();
+    const QPoint start(qRound(plot->plotRect().left()-20),qRound(plot->plotRect().center().y()));
+    QTest::mousePress(plot,Qt::LeftButton,Qt::NoModifier,start);
+    QTest::mouseMove(plot,start+QPoint(0,20),10);
+    QVERIFY(!(window.session().snapshot()==before));
+    palette->setCurrentIndex(1);
+    QTest::mouseRelease(plot,Qt::LeftButton,Qt::NoModifier,start+QPoint(0,20));
+    QVERIFY(window.session().snapshot()==before);
+    QCOMPARE(static_cast<int>(window.session().activeFile()->display.palette),static_cast<int>(Palette::Viridis));
+    QCOMPARE(palette->currentIndex(),1);
+    QVERIFY(!window.session().canBack());
+}
+
+void UiTests::creationModeSurvivesMaximize() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    auto* button=window.findChild<QAbstractButton*>("specMaximize");
+    QVERIFY(plot&&button);
+    plot->setCreating(true);
+    QTest::mouseClick(button,Qt::LeftButton);QCoreApplication::processEvents();
+    QVERIFY(plot->isCreating());
+    const auto view=window.session().activeFile()->view;
+    drag(plot,pointAt(plot,view,.2,.3),pointAt(plot,view,.4,.7));
+    QCOMPARE(window.session().activeFile()->marks.size(),std::size_t{1});
+    QVERIFY(plot->isCreating());
+    QTest::mouseClick(button,Qt::LeftButton);QCoreApplication::processEvents();
+    QVERIFY(plot->isCreating());
+    QVERIFY(window.session().activeFile()->view==view);
+}
+
+void UiTests::escapeCancelsGestureBeforeLeavingMaximize() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* plot=window.findChild<PlotWidget*>("mainPlot");
+    auto* button=window.findChild<QAbstractButton*>("specMaximize");
+    auto* host=window.findChild<QWidget*>("maximizeHost");
+    QVERIFY(plot&&button&&host);
+    QTest::mouseClick(button,Qt::LeftButton);QCoreApplication::processEvents();
+    QVERIFY(host->isVisible());
+    const auto view=window.session().activeFile()->view;
+    const auto start=pointAt(plot,view,.2,.3);
+    const auto end=pointAt(plot,view,.5,.7);
+    QTest::mousePress(plot,Qt::LeftButton,Qt::NoModifier,start);
+    QTest::mouseMove(plot,end,10);
+    QTest::keyClick(plot,Qt::Key_Escape);
+    QTest::mouseRelease(plot,Qt::LeftButton,Qt::NoModifier,end);
+    QVERIFY(host->isVisible());
+    QVERIFY(window.session().activeFile()->view==view);
+    QVERIFY(!window.session().canBack());
+    QTest::keyClick(plot,Qt::Key_Escape);QCoreApplication::processEvents();
+    QVERIFY(!host->isVisible());
+}
+
+void UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* open=window.findChild<QAbstractButton*>("projectAddSignal");
+    QVERIFY(open);
+    const auto initialCount=window.session().project().files.size();
+    open->click();QCoreApplication::processEvents();
+    QPointer<QDialog> dialog=window.findChild<QDialog*>("addFileDialog");
+    QVERIFY(dialog&&dialog->isVisible());
+    auto* fs=dialog->findChild<QDoubleSpinBox*>("loadFs");
+    auto* fc=dialog->findChild<QDoubleSpinBox*>("loadFc");
+    auto* duration=dialog->findChild<QDoubleSpinBox*>("loadDuration");
+    auto* add=dialog->findChild<QAbstractButton*>("simulateOpen");
+    auto* cancel=dialog->findChild<QAbstractButton*>("cancelOpen");
+    QVERIFY(fs&&fc&&duration&&add&&cancel);
+    QCOMPARE(fs->value(),40'000'000.0);
+    QCOMPARE(fc->value(),100'000'000.0);
+    QCOMPARE(duration->value(),180.0);
+    QVERIFY(!add->isEnabled());
+    cancel->click();
+    QTRY_VERIFY(dialog.isNull());
+    QCOMPARE(window.session().project().files.size(),initialCount);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const auto path=directory.filePath(QStringLiteral("IQ0_FS1Msps_BW800kHz_FC10MHz.dat"));
+    QFile raw(path); QVERIFY(raw.open(QIODevice::WriteOnly));
+    QByteArray samples(65'536*4, '\0');
+    QCOMPARE(raw.write(samples),static_cast<qint64>(samples.size())); raw.close();
+    QString error;
+    QVERIFY2(window.addIqFile(path,&error),qPrintable(error));
+    QCOMPARE(window.session().project().files.size(),initialCount+1);
+    const auto* file=window.session().activeFile();
+    QCOMPARE(file->metadata.sampleRateHz,1'000'000.0);
+    QCOMPARE(file->metadata.centerFrequencyHz,10'000'000.0);
+    QCOMPARE(file->metadata.declaredBandwidthHz,800'000.0);
+    QCOMPARE(file->metadata.sampleCount,SampleIndex{65'536});
+    QVERIFY(!file->metadata.demo);
+    QCOMPARE(file->display.waveformMin,-60.0);
+    QVERIFY(file->marks.empty()&&file->channels.empty());
+
+    auto* main=window.findChild<PlotWidget*>("mainPlot");
+    auto* auxiliary=window.findChild<PlotWidget*>("auxPlot");
+    QVERIFY(main&&auxiliary);
+    QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled()&&auxiliary->isDisplaySettled(),10'000);
+    QVERIFY(main->drawnPointCount()>0&&auxiliary->sourcePointCount()>0);
+    const auto zoomed=file->view;
+    auto next=zoomed; next.time={16'384,49'152};
+    QVERIFY(window.session().setView(next));
+    window.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(),10'000);
+    QVERIFY(main->drawnPointCount()>0);
+    auto* mode=window.findChild<QComboBox*>("modeAux"); QVERIFY(mode);
+    mode->setCurrentIndex(1); QCoreApplication::processEvents();
+    QTRY_VERIFY_WITH_TIMEOUT(auxiliary->isDisplaySettled(),10'000);
+    QCOMPARE(window.session().activeFile()->display.auxiliaryMode,AuxiliaryMode::Psd);
+    QVERIFY(auxiliary->sourcePointCount()>0);
+}
+
+void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    MainWindow window;
+    showWindow(window);
+    const auto path = directory.filePath(QStringLiteral("IQ0_FS1Msps_BW800kHz_FC10MHz.dat"));
+    QFile raw(path);
+    QVERIFY(raw.open(QIODevice::WriteOnly));
+    QByteArray samples(131'072 * 4, '\0');
+    for (int n = 0; n < 131'072; ++n) {
+        qToLittleEndian<qint16>(16384, reinterpret_cast<uchar*>(samples.data()) + n * 4);
+        qToLittleEndian<qint16>(-8192, reinterpret_cast<uchar*>(samples.data()) + n * 4 + 2);
+    }
+    QCOMPARE(raw.write(samples), static_cast<qint64>(samples.size()));
+    raw.close();
+    QString error;
+    QVERIFY2(window.addIqFile(path, &error), qPrintable(error));
+
+    auto* waveform = window.findChild<QComboBox*>("waveformMode");
+    auto* bandwidth = window.findChild<QDoubleSpinBox*>("effectiveBandwidthMHz");
+    auto* stft = window.findChild<QComboBox*>("stftFft");
+    auto* dynamic = window.findChild<QComboBox*>("dynamic");
+    auto* reference = window.findChild<QComboBox*>("reference");
+    QVERIFY(waveform && bandwidth && stft && dynamic && reference);
+    auto* file = window.session().activeFile();
+    QCOMPARE(static_cast<int>(file->display.waveformMode), static_cast<int>(WaveformMode::IqRms));
+    QCOMPARE(bandwidth->value(), .8);
+    QCOMPARE(fullRange(file->metadata).frequency, (FrequencyRange{9.6e6, 10.4e6}));
+    for (const auto* id : {"fileSection", "viewSection", "markSection", "psdSection", "specSection"}) {
+        auto* toggle = window.findChild<QToolButton*>(QString(id) + "Toggle");
+        QVERIFY(toggle && toggle->isChecked());
+    }
+    QVERIFY(window.findChild<QAction*>("mouseInteractionHelpAction"));
+    QVERIFY(!window.findChild<QWidget*>("helpSection"));
+
+    waveform->setCurrentIndex(static_cast<int>(WaveformMode::I));
+    QCOMPARE(static_cast<int>(file->display.waveformMode), static_cast<int>(WaveformMode::I));
+    QCOMPARE(file->display.waveformMin, -1.0);
+    QCOMPARE(file->display.waveformMax, 1.0);
+    auto* auxiliary = window.findChild<PlotWidget*>("auxPlot");
+    QVERIFY(auxiliary);
+    QTRY_VERIFY_WITH_TIMEOUT(auxiliary->isDisplaySettled(), 10'000);
+    waveform->setCurrentIndex(static_cast<int>(WaveformMode::Q));
+    QCOMPARE(static_cast<int>(file->display.waveformMode), static_cast<int>(WaveformMode::Q));
+    QTRY_VERIFY_WITH_TIMEOUT(auxiliary->isDisplaySettled(), 10'000);
+    waveform->setCurrentIndex(static_cast<int>(WaveformMode::IqRms));
+    QCOMPARE(file->display.waveformMin, -80.0);
+    QCOMPARE(file->display.waveformMax, 0.0);
+    QTRY_VERIFY_WITH_TIMEOUT(auxiliary->isDisplaySettled(), 10'000);
+
+    bandwidth->setValue(.5);
+    QCOMPARE(file->metadata.effectiveBandwidthHz, 500'000.0);
+    QCOMPARE(file->view.frequency, (FrequencyRange{9.75e6, 10.25e6}));
+    QCOMPARE(stft->count(), 9);
+    QCOMPARE(stft->currentText(), QString("2048"));
+    auto* psd = window.findChild<QComboBox*>("psdFft");
+    QVERIFY(psd);
+    psd->setCurrentText("8192");
+    QCOMPARE(file->display.psdSize, 8192);
+    const auto oldTime = file->view.time;
+    QVERIFY(window.session().setView({{oldTime.begin + 20, oldTime.begin + 120}, file->view.frequency}, false));
+    window.refresh();
+    QCOMPARE(file->view.time.end - file->view.time.begin, SampleIndex{8192});
+
+    stft->setCurrentText("65536");
+    QCOMPARE(file->display.stftSize, 65'536);
+    QVERIFY(file->view.time.end - file->view.time.begin >= 65'536);
+
+    auto* main = window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(main);
+    QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 30'000);
+    const auto initialPowerGenerations = main->powerGenerationCount();
+    const auto initialColorTransforms = main->renderStatistics().value("colorTransformGenerations").toInt();
+    dynamic->setFocus(); dynamic->lineEdit()->selectAll(); QTest::keyClicks(dynamic->lineEdit(), "87.5");
+    QTest::keyClick(dynamic->lineEdit(), Qt::Key_Return);
+    QTRY_VERIFY_WITH_TIMEOUT(std::abs(file->display.dynamicRangeDb - 87.5) < 1e-9, 2'000);
+    QTRY_VERIFY_WITH_TIMEOUT(main->renderStatistics().value("colorTransformGenerations").toInt() > initialColorTransforms, 2'000);
+    const auto dynamicColorTransforms = main->renderStatistics().value("colorTransformGenerations").toInt();
+    reference->setFocus(); reference->lineEdit()->selectAll(); QTest::keyClicks(reference->lineEdit(), "-33.5");
+    QTest::keyClick(reference->lineEdit(), Qt::Key_Return);
+    QTRY_VERIFY_WITH_TIMEOUT(std::abs(file->display.referenceLevelDb + 33.5) < 1e-9, 2'000);
+    QTRY_VERIFY_WITH_TIMEOUT(main->renderStatistics().value("colorTransformGenerations").toInt() > dynamicColorTransforms, 2'000);
+    QCOMPARE(main->powerGenerationCount(), initialPowerGenerations);
+
+    const auto projectPath = directory.filePath(QStringLiteral("saved-state.json"));
+    QVERIFY2(window.saveProject(projectPath), "The project JSON must preserve the analysis snapshot.");
+    window.session().newProject(); window.refresh();
+    QVERIFY(window.openProject(projectPath));
+    file = window.session().activeFile();
+    QVERIFY(file);
+    QCOMPARE(file->metadata.effectiveBandwidthHz, 500'000.0);
+    QCOMPARE(file->display.waveformMode, WaveformMode::IqRms);
+    QCOMPARE(file->display.stftSize, 65'536);
+    QCOMPARE(file->display.psdSize, 8192);
+    QCOMPARE(file->display.dynamicRangeDb, 87.5);
+    QCOMPARE(file->display.referenceLevelDb, -33.5);
+}
+
+void UiTests::uiStatePersistenceAndRecentProjects() {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const auto oldOrganization = QCoreApplication::organizationName();
+    const auto oldApplication = QCoreApplication::applicationName();
+    const bool oldPersistence = qApp->property("uiStatePersistenceEnabled").toBool();
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, directory.path());
+    QCoreApplication::setOrganizationName("Signal Studio UI Test");
+    QCoreApplication::setApplicationName("SignalStudioPersistenceTest");
+    QSettings().clear();
+    qApp->setProperty("uiStatePersistenceEnabled", true);
+    const auto projectPath = directory.filePath(QStringLiteral("recent-empty-project.json"));
+    const auto iqPath = directory.filePath(QStringLiteral("IQ0_FS1Msps_BW800kHz_FC10MHz.dat"));
+    const auto otherIqPath = directory.filePath(QStringLiteral("IQ1_FS2Msps_BW1MHz_FC20MHz.dat"));
+    QFile raw(iqPath);
+    QVERIFY(raw.open(QIODevice::WriteOnly));
+    const QByteArray samples(65'536 * 4, '\0');
+    QCOMPARE(raw.write(samples), static_cast<qint64>(samples.size()));
+    raw.close();
+    QFile otherRaw(otherIqPath);
+    QVERIFY(otherRaw.open(QIODevice::WriteOnly));
+    QCOMPARE(otherRaw.write(samples), static_cast<qint64>(samples.size()));
+    otherRaw.close();
+    {
+        MainWindow window;
+        window.resize(1480, 920);
+        auto* section = window.findChild<QToolButton*>("specSectionToggle");
+        auto* results = window.findChild<QToolButton*>("resultsToggle");
+        QVERIFY(section && results);
+        section->setChecked(false);
+        results->setChecked(true);
+        QVERIFY(window.saveProject(projectPath));
+        QCOMPARE(window.findChildren<QAction*>("recentProjectAction").size(), 1);
+        QString error;
+        QVERIFY2(window.addIqFile(iqPath, &error), qPrintable(error));
+        auto* palette = window.findChild<QComboBox*>("palette");
+        auto* mainMode = window.findChild<QComboBox*>("modeMain");
+        auto* auxiliaryMode = window.findChild<QComboBox*>("modeAux");
+        auto* waveformMode = window.findChild<QComboBox*>("waveformMode");
+        auto* stft = window.findChild<QComboBox*>("stftFft");
+        auto* psd = window.findChild<QComboBox*>("psdFft");
+        auto* dynamic = window.findChild<QComboBox*>("dynamic");
+        auto* reference = window.findChild<QComboBox*>("reference");
+        auto* frequency = window.findChild<QComboBox*>("freqMode");
+        auto* bandwidth = window.findChild<QDoubleSpinBox*>("effectiveBandwidthMHz");
+        auto* grid = window.findChild<QCheckBox*>("gridToggle");
+        auto* colorbar = window.findChild<QCheckBox*>("colorbarToggle");
+        QVERIFY(palette && mainMode && auxiliaryMode && waveformMode && stft && psd && dynamic && reference && frequency && bandwidth && grid && colorbar);
+        waveformMode->setCurrentIndex(static_cast<int>(WaveformMode::Q));
+        mainMode->setCurrentIndex(static_cast<int>(MainMode::Waterfall));
+        auxiliaryMode->setCurrentIndex(static_cast<int>(AuxiliaryMode::Psd));
+        palette->setCurrentIndex(palette->findText(QStringLiteral("CoolEdit Classic")));
+        stft->setCurrentText(QStringLiteral("4096"));
+        psd->setCurrentText(QStringLiteral("8192"));
+        dynamic->setCurrentText(QStringLiteral("60 dB"));
+        reference->setCurrentText(QStringLiteral("-40 dBFS"));
+        frequency->setCurrentIndex(1);
+        bandwidth->setValue(.5);
+        grid->setChecked(false);
+        colorbar->setChecked(true);
+    }
+    {
+        MainWindow restored;
+        auto* section = restored.findChild<QToolButton*>("specSectionToggle");
+        auto* results = restored.findChild<QToolButton*>("resultsToggle");
+        QVERIFY(section && results);
+        QVERIFY(!section->isChecked());
+        QVERIFY(results->isChecked());
+        QString error;
+        QVERIFY2(restored.addIqFile(iqPath, &error), qPrintable(error));
+        const auto* file = restored.session().activeFile();
+        QVERIFY(file);
+        QCOMPARE(file->display.mainMode, MainMode::Waterfall);
+        QCOMPARE(file->display.auxiliaryMode, AuxiliaryMode::Psd);
+        QCOMPARE(file->display.waveformMode, WaveformMode::Q);
+        QCOMPARE(file->display.palette, Palette::CoolEditClassic);
+        QCOMPARE(file->display.stftSize, 4096);
+        QCOMPARE(file->display.psdSize, 8192);
+        QCOMPARE(file->display.dynamicRangeDb, 60.0);
+        QCOMPARE(file->display.referenceLevelDb, -40.0);
+        QVERIFY(!file->display.absoluteFrequency);
+        QVERIFY(!file->display.grid);
+        QVERIFY(file->display.colorScale);
+        QCOMPARE(file->metadata.effectiveBandwidthHz, 500'000.0);
+        QVERIFY2(restored.addIqFile(otherIqPath, &error), qPrintable(error));
+        const auto* secondFile = restored.session().activeFile();
+        QVERIFY(secondFile);
+        QCOMPARE(secondFile->display.mainMode, MainMode::Waterfall);
+        QCOMPARE(secondFile->display.auxiliaryMode, AuxiliaryMode::Psd);
+        QCOMPARE(secondFile->display.waveformMode, WaveformMode::Q);
+        QCOMPARE(secondFile->display.palette, Palette::CoolEditClassic);
+        QCOMPARE(secondFile->display.stftSize, 4096);
+        QCOMPARE(secondFile->display.psdSize, 8192);
+        QCOMPARE(secondFile->display.dynamicRangeDb, 60.0);
+        QCOMPARE(secondFile->display.referenceLevelDb, -40.0);
+        QVERIFY(!secondFile->display.absoluteFrequency);
+        QVERIFY(!secondFile->display.grid);
+        QVERIFY(secondFile->display.colorScale);
+        QCOMPARE(secondFile->metadata.effectiveBandwidthHz, 1'000'000.0);
+        auto* menu = restored.findChild<QMenu*>("recentProjectsMenu");
+        QVERIFY(menu);
+        auto* recent = menu->findChild<QAction*>("recentProjectAction");
+        QVERIFY(recent && recent->isEnabled());
+        recent->trigger();
+        QVERIFY(restored.session().project().files.empty());
+        QCOMPARE(restored.session().project().name, std::string("射频信号分析工程"));
+    }
+    QSettings().clear();
+    QCoreApplication::setOrganizationName(oldOrganization);
+    QCoreApplication::setApplicationName(oldApplication);
+    qApp->setProperty("uiStatePersistenceEnabled", oldPersistence);
+}
+
+QTEST_MAIN(UiTests)
+#include "ui_tests.moc"

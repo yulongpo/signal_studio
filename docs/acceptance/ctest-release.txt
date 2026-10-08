@@ -1,0 +1,37 @@
+Start testing: Oct 08 23:48 中国标准时间
+----------------------------------------------------------
+1/2 Testing: signal_studio_core
+1/2 Test: signal_studio_core
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioCoreTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+"signal_studio_core" start time: Oct 08 23:48 中国标准时间
+Output:
+----------------------------------------------------------
+PASS boundary clamping and uint64 precision
+PASS independent file state and 40-entry view history
+PASS selection, focus, linked deletion and fixed demo channels
+PASS strict atomic native JSON and full-state uint64 roundtrip
+<end of output>
+Test time =   0.20 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_core" end time: Oct 08 23:48 中国标准时间
+"signal_studio_core" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/2 Testing: signal_studio_ui
+2/2 Test: signal_studio_ui
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioUiTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+"signal_studio_ui" start time: Oct 08 23:48 中国标准时间
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   1.88 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_ui" end time: Oct 08 23:48 中国标准时间
+"signal_studio_ui" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: Oct 08 23:48 中国标准时间

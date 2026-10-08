@@ -1,0 +1,12 @@
+{
+    "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+    "completedFrames": 6,
+    "files": 2,
+    "hardwareRenderer": true,
+    "heatmapUploads": 1,
+    "mainPlotHeight": 244,
+    "overlayReusesHeatmap": true,
+    "pass": true,
+    "powerGenerations": 2,
+    "uploadsAfterOverlay": 1
+}

@@ -1,0 +1,58 @@
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UiTests::initTestCase()
+QWARN  : UiTests::workspaceLayout() QFontDatabase: Cannot find font directory D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+PASS   : UiTests::workspaceLayout()
+PASS   : UiTests::independentFileDisplaySettings()
+PASS   : UiTests::mainModeCoordinateDirection()
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+PASS   : UiTests::continuousMarkCreation()
+QWARN  : UiTests::escapeCancelsCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeCancelsCreation() This plugin does not support grabbing the mouse
+PASS   : UiTests::escapeCancelsCreation()
+QWARN  : UiTests::selectedMarkMovePreservesSpan() This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkMovePreservesSpan() This plugin does not support grabbing the mouse
+PASS   : UiTests::selectedMarkMovePreservesSpan()
+QWARN  : UiTests::escapeRollsBackMarkMove() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeRollsBackMarkMove() This plugin does not support grabbing the mouse
+PASS   : UiTests::escapeRollsBackMarkMove()
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() This plugin does not support grabbing the mouse
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() This plugin does not support grabbing the mouse
+PASS   : UiTests::singleClickSelectsWithoutChangingView()
+QWARN  : UiTests::boxZoomAndHistoryActions() This plugin does not support grabbing the mouse
+QWARN  : UiTests::boxZoomAndHistoryActions() This plugin does not support grabbing the mouse
+PASS   : UiTests::boxZoomAndHistoryActions()
+PASS   : UiTests::emptyProjectAndFileActions()
+PASS   : UiTests::treeSelectionPreservesNodesAndShiftAnchor()
+PASS   : UiTests::displayChangeSurvivesPendingWheelCommit()
+PASS   : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53)
+PASS   : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53)
+PASS   : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum)
+PASS   : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum)
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+PASS   : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude)
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+PASS   : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power)
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+PASS   : UiTests::selectedMarkCornerAndEdgeResize(time-frequency)
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+PASS   : UiTests::selectedMarkCornerAndEdgeResize(waterfall)
+PASS   : UiTests::cleanupTestCase()
+Totals: 22 passed, 0 failed, 0 skipped, 0 blacklisted, 9958ms
+********* Finished testing of UiTests *********

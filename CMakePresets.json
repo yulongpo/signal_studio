@@ -1,98 +1,69 @@
 {
-  "version": 8,
-  "cmakeMinimumRequired": { "major": 3, "minor": 28, "patch": 0 },
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 4, "minor": 2, "patch": 0 },
   "configurePresets": [
     {
-      "name": "windows-msvc-base",
+      "name": "vs2026-qt611-base",
       "hidden": true,
+      "generator": "Visual Studio 18 2026",
+      "architecture": "x64",
+      "cacheVariables": {
+        "SS_QT_ROOT": "$env{SS_QT_ROOT}",
+        "SS_BUILD_TESTS": "ON",
+        "SS_DEPLOY_RUNTIME": "ON"
+      }
+    },
+    {
+      "name": "vs2026-qt611-debug",
+      "displayName": "VS 2026 / Qt 6.11 / Debug",
+      "inherits": "vs2026-qt611-base",
+      "binaryDir": "${sourceDir}/out/vs2026-qt611-debug"
+    },
+    {
+      "name": "vs2026-qt611-release",
+      "displayName": "VS 2026 / Qt 6.11 / Release",
+      "inherits": "vs2026-qt611-base",
+      "binaryDir": "${sourceDir}/out/vs2026-qt611-release"
+    },
+    {
+      "name": "portable-ninja",
+      "displayName": "Portable Ninja / Qt 6.11.1 / Debug (Linux pending validation)",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "installDir": "${sourceDir}/build/install/${presetName}",
+      "binaryDir": "${sourceDir}/out/portable-ninja",
       "cacheVariables": {
-        "BUILD_TESTING": "ON",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "SIGNAL_STUDIO_BUILD_TESTS": "ON",
-        "SIGNAL_STUDIO_BUILD_SDK_EXAMPLE": "ON"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SS_QT_ROOT": "$env{SS_QT_ROOT}",
+        "SS_OUTPUT_PREFIX": "portable-ninja",
+        "SS_BUILD_TESTS": "ON",
+        "SS_DEPLOY_RUNTIME": "OFF"
       }
-    },
-    {
-      "name": "windows-msvc-ui-base",
-      "hidden": true,
-      "inherits": "windows-msvc-base",
-      "cacheVariables": {
-        "SIGNAL_STUDIO_BUILD_UI": "ON",
-        "SIGNAL_STUDIO_QT_ROOT": "$env{SIGNAL_STUDIO_QT_ROOT}"
-      }
-    },
-    {
-      "name": "windows-msvc-debug",
-      "inherits": "windows-msvc-ui-base",
-      "displayName": "Windows MSVC Debug (UI)",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "SIGNAL_STUDIO_CUDA_MODE": "AUTO" }
-    },
-    {
-      "name": "windows-msvc-release",
-      "inherits": "windows-msvc-ui-base",
-      "displayName": "Windows MSVC Release (UI)",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "SIGNAL_STUDIO_CUDA_MODE": "AUTO" }
-    },
-    {
-      "name": "windows-msvc-relwithdebinfo",
-      "inherits": "windows-msvc-ui-base",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo", "SIGNAL_STUDIO_CUDA_MODE": "AUTO" }
-    },
-    {
-      "name": "windows-msvc-cpu-debug",
-      "inherits": "windows-msvc-debug",
-      "cacheVariables": { "SIGNAL_STUDIO_CUDA_MODE": "OFF" }
-    },
-    {
-      "name": "windows-msvc-cpu-release",
-      "inherits": "windows-msvc-release",
-      "cacheVariables": { "SIGNAL_STUDIO_CUDA_MODE": "OFF" }
-    },
-    {
-      "name": "windows-msvc-cuda-debug",
-      "inherits": "windows-msvc-debug",
-      "cacheVariables": { "SIGNAL_STUDIO_CUDA_MODE": "ON" }
-    },
-    {
-      "name": "windows-msvc-cuda-release",
-      "inherits": "windows-msvc-release",
-      "cacheVariables": { "SIGNAL_STUDIO_CUDA_MODE": "ON" }
-    },
-    {
-      "name": "windows-msvc-headless-debug",
-      "inherits": "windows-msvc-base",
-      "displayName": "Windows MSVC Debug (no Qt)",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "SIGNAL_STUDIO_BUILD_UI": "OFF", "SIGNAL_STUDIO_CUDA_MODE": "OFF" }
-    },
-    {
-      "name": "windows-msvc-headless-release",
-      "inherits": "windows-msvc-base",
-      "displayName": "Windows MSVC Release (no Qt)",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "SIGNAL_STUDIO_BUILD_UI": "OFF", "SIGNAL_STUDIO_CUDA_MODE": "OFF" }
     }
   ],
   "buildPresets": [
-    { "name": "windows-msvc-debug", "configurePreset": "windows-msvc-debug", "jobs": 0 },
-    { "name": "windows-msvc-release", "configurePreset": "windows-msvc-release", "jobs": 0 },
-    { "name": "windows-msvc-relwithdebinfo", "configurePreset": "windows-msvc-relwithdebinfo", "jobs": 0 },
-    { "name": "windows-msvc-cpu-debug", "configurePreset": "windows-msvc-cpu-debug", "jobs": 0 },
-    { "name": "windows-msvc-cpu-release", "configurePreset": "windows-msvc-cpu-release", "jobs": 0 },
-    { "name": "windows-msvc-cuda-debug", "configurePreset": "windows-msvc-cuda-debug", "jobs": 0 },
-    { "name": "windows-msvc-cuda-release", "configurePreset": "windows-msvc-cuda-release", "jobs": 0 },
-    { "name": "windows-msvc-headless-debug", "configurePreset": "windows-msvc-headless-debug", "jobs": 0 },
-    { "name": "windows-msvc-headless-release", "configurePreset": "windows-msvc-headless-release", "jobs": 0 }
+    { "name": "vs2026-qt611-debug", "configurePreset": "vs2026-qt611-debug", "configuration": "Debug" },
+    { "name": "vs2026-qt611-release", "configurePreset": "vs2026-qt611-release", "configuration": "Release" },
+    { "name": "portable-ninja", "configurePreset": "portable-ninja" }
   ],
   "testPresets": [
-    { "name": "windows-msvc-debug", "configurePreset": "windows-msvc-debug", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
-    { "name": "windows-msvc-release", "configurePreset": "windows-msvc-release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
-    { "name": "windows-msvc-cpu-debug", "configurePreset": "windows-msvc-cpu-debug", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
-    { "name": "windows-msvc-cpu-release", "configurePreset": "windows-msvc-cpu-release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
-    { "name": "windows-msvc-cuda-debug", "configurePreset": "windows-msvc-cuda-debug", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
-    { "name": "windows-msvc-cuda-release", "configurePreset": "windows-msvc-cuda-release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
-    { "name": "windows-msvc-headless-debug", "configurePreset": "windows-msvc-headless-debug", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
-    { "name": "windows-msvc-headless-release", "configurePreset": "windows-msvc-headless-release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } }
+    {
+      "name": "vs2026-qt611-debug",
+      "configurePreset": "vs2026-qt611-debug",
+      "configuration": "Debug",
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error" }
+    },
+    {
+      "name": "vs2026-qt611-release",
+      "configurePreset": "vs2026-qt611-release",
+      "configuration": "Release",
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error" }
+    },
+    {
+      "name": "portable-ninja",
+      "configurePreset": "portable-ninja",
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error" }
+    }
   ]
 }

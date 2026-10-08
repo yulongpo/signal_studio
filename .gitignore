@@ -1,44 +1,7 @@
-# Generated build and package trees
-/build/
 /out/
-/dist/
-/install/
-
-# Project-local dependency/tool caches
-/.deps/
-/.tools/
-/.cache/
-/vcpkg_installed/
-
-# User-only CMake configuration
+/artifacts/
 /CMakeUserPresets.json
-
-# IDE/user state (the shared .vscode configuration is intentionally tracked)
 /.vs/
 *.user
-*.suo
-*.VC.db
-*.VC.VC.opendb
-
-# Compiler and runtime output
-*.obj
-*.pdb
-*.ilk
-*.dll
-*.exe
-*.lib
-*.exp
-
-# Python cache
-__pycache__/
-*.py[cod]
-
-# Large external recordings must stay outside the repository
-/test_data/*.sc16
-/test_data/*.wav
-
-# OS/editor noise
-.DS_Store
-Thumbs.db
-*.swp
-*~
+*.tmp
+*.log
