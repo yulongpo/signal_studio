@@ -18,7 +18,12 @@ SampleIndex ratio(SampleIndex value, SampleIndex numerator, SampleIndex denomina
 
 ViewRange defaultView(const FileMetadata& metadata, int stftSize, int psdSize) {
     auto view = fullRange(metadata);
-    view.time = {ratio(metadata.sampleCount, 7, 20), ratio(metadata.sampleCount, 11, 20)};
+    const long double minimumVisibleSamples = static_cast<long double>(metadata.sampleRateHz) * 0.01L;
+    const auto minimumVisible = minimumVisibleSamples >= static_cast<long double>(metadata.sampleCount) ?
+        metadata.sampleCount : static_cast<SampleIndex>(std::ceil(minimumVisibleSamples));
+    const auto firstFivePercent = ratio(metadata.sampleCount, 1, 20);
+    const auto visibleSamples = std::max(firstFivePercent, minimumVisible);
+    view.time = {0, visibleSamples};
     return clampRange(view, metadata, stftSize, psdSize);
 }
 

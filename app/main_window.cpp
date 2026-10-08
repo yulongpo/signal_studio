@@ -285,17 +285,23 @@ void MainWindow::buildMenus() {
     }); removeAction_->setObjectName("removeFileAction");
     // Stable automation entry point; the user-facing file action opens the metadata dialog.
     auto* addDemo = new QAction(this); addDemo->setObjectName("addDemoAction");
-    connect(addDemo, &QAction::triggered, this, [this] { cancelInteractions(); session_.addDemoFile(); selectionAnchor_.clear(); refresh(); });
+    connect(addDemo, &QAction::triggered, this, [this] {
+        cancelInteractions();
+        const auto* active = session_.activeFile();
+        const DisplaySettings fallback = active ? active->display : DisplaySettings{};
+        session_.addDemoFile(); applyGlobalRightSidebarSettings(fallback);
+        selectionAnchor_.clear(); refresh(); scheduleRightSidebarSettingsSave();
+    });
     auto* edit = menuBar()->addMenu("编辑(&E)");
     deleteAction_ = edit->addAction("删除所选标记", this, &MainWindow::deleteMarks); deleteAction_->setObjectName("deleteMarksAction"); deleteAction_->setShortcut(QKeySequence::Delete);
     edit->addAction("重命名当前标记", this, &MainWindow::renameMark);
     auto* view = menuBar()->addMenu("视图(&V)");
-    backAction_ = view->addAction("视图后退", this, [this] { cancelInteractions(); session_.back(); refresh(); }); backAction_->setObjectName("backAction"); backAction_->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Left));
-    forwardAction_ = view->addAction("视图前进", this, [this] { cancelInteractions(); session_.forward(); refresh(); }); forwardAction_->setObjectName("forwardAction"); forwardAction_->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Right));
+    backAction_ = view->addAction("视图后退", this, [this] { cancelInteractions(); session_.back(); propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave(); }); backAction_->setObjectName("backAction"); backAction_->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Left));
+    forwardAction_ = view->addAction("视图前进", this, [this] { cancelInteractions(); session_.forward(); propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave(); }); forwardAction_->setObjectName("forwardAction"); forwardAction_->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Right));
     view->addAction("适应全部数据", this, [this] { cancelInteractions(); if (const auto* f = session_.activeFile()) session_.setView(fullRange(f->metadata)); refresh(); });
-    view->addAction("恢复默认视图", this, [this] { cancelInteractions(); session_.resetView(); refresh(); });
+    view->addAction("恢复默认视图", this, [this] { cancelInteractions(); session_.resetView(); propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave(); });
     menuBar()->addMenu("分析(&A)")->addAction("算法仅为 UI 演示", this, [this] { log("算法仅为 UI 演示，尚未处理真实 IQ"); });
-    menuBar()->addMenu("工具(&T)")->addAction("关于 Signal Studio", this, [this] { log("工程保存文件路径、元数据和每文件显示参数；IQ 样本仍保留在原始文件"); });
+    menuBar()->addMenu("工具(&T)")->addAction("关于 Signal Studio", this, [this] { log("工程保存文件路径、有效带宽和分析状态；显示参数按全局偏好保存，IQ 样本仍保留在原始文件"); });
     auto* help = menuBar()->addMenu("帮助(&H)");
     auto* interactions = help->addAction("鼠标交互帮助"); interactions->setObjectName("mouseInteractionHelpAction");
     connect(interactions, &QAction::triggered, this, [this] {
@@ -466,7 +472,9 @@ void MainWindow::buildWorkspace() {
     connect(tree_, &QTreeWidget::itemSelectionChanged, this, [this] {
         if (refreshing_) return; const auto* current = tree_->currentItem(); if (!current || current->data(0, Qt::UserRole).toString() != "mark") return;
         std::vector<std::string> ids; for (auto* item : tree_->selectedItems()) if (item->data(0, Qt::UserRole).toString() == "mark") ids.push_back(item->data(0, Qt::UserRole + 1).toString().toStdString());
-        session_.selectMarks(std::move(ids), current->data(0, Qt::UserRole + 1).toString().toStdString()); refresh();
+        session_.selectMarks(std::move(ids), current->data(0, Qt::UserRole + 1).toString().toStdString());
+        if (auto* active = session_.activeFile()) active->display.psdFromSelection = sharedPsdFromSelectionPreference_ && findMark(*active, active->activeMarkId);
+        propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave();
     });
     connect(tree_, &QTreeWidget::itemDoubleClicked, this, [this](QTreeWidgetItem* item, int) { if (item->data(0, Qt::UserRole).toString() == "mark") { cancelInteractions(); session_.focusMark(item->data(0, Qt::UserRole + 1).toString().toStdString()); refresh(); } });
     connect(tree_, &QTreeWidget::itemEntered, this, [this](QTreeWidgetItem* item, int) { main_->setHoveredMark(item->data(0, Qt::UserRole).toString() == "mark" ? item->data(0, Qt::UserRole + 1).toString() : QString{}); });
@@ -477,10 +485,10 @@ void MainWindow::buildWorkspace() {
         if (std::find(f->selectedMarkIds.begin(), f->selectedMarkIds.end(), id.toStdString()) == f->selectedMarkIds.end()) selectMark(id, Qt::NoModifier);
         cancelInteractions(false); QMenu menu(this); menu.addAction("重命名当前标记", this, &MainWindow::renameMark); menu.addAction("定位当前标记", this, &MainWindow::locateMark);
         menu.addAction(QString("删除所选标记 (%1)").arg(session_.activeFile()->selectedMarkIds.size()), this, &MainWindow::deleteMarks); menu.addSeparator(); menu.addAction(backAction_); menu.addAction(forwardAction_);
-        menu.addSeparator(); menu.addAction("适应全部数据", this, [this] { if (const auto* active = session_.activeFile()) session_.setView(fullRange(active->metadata)); refresh(); }); menu.addAction("恢复默认视图", this, [this] { session_.resetView(); refresh(); }); menu.exec(tree_->viewport()->mapToGlobal(point));
+        menu.addSeparator(); menu.addAction("适应全部数据", this, [this] { if (const auto* active = session_.activeFile()) session_.setView(fullRange(active->metadata)); refresh(); }); menu.addAction("恢复默认视图", this, [this] { session_.resetView(); propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave(); }); menu.exec(tree_->viewport()->mapToGlobal(point));
     });
     for (auto* plot : {navigation_, auxiliary_, main_}) {
-        connect(plot, &PlotWidget::stateChanged, this, [this] { refresh(); scheduleRightSidebarSettingsSave(); });
+        connect(plot, &PlotWidget::stateChanged, this, [this] { propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave(); });
         connect(plot, &PlotWidget::statusMessage, this, &MainWindow::log);
         connect(plot, &PlotWidget::markSelectionRequested, this, &MainWindow::selectMark);
         connect(plot, &PlotWidget::cursorChanged, this, &MainWindow::updateCursor);
@@ -505,8 +513,9 @@ void MainWindow::buildWorkspace() {
         display.referenceLevelDb = comboNumber(reference_, "dBFS", display.referenceLevelDb);
         display.absoluteFrequency = freqMode_->currentIndex() == 0; display.grid = grid_->isChecked(); display.colorScale = colorScale_->isChecked();
         display.psdSize = psd_->currentText().toInt(); display.stftSize = stft_->currentText().toInt();
-        display.psdFromSelection = psdScope_->currentIndex() == 1 && findMark(*f, f->activeMarkId);
-        if (psdScope_->currentIndex() == 1 && !display.psdFromSelection) log("请先选择当前文件的信号标记；PSD 统计来源仍为当前可见时间窗");
+        if (sender() == psdScope_) sharedPsdFromSelectionPreference_ = psdScope_->currentIndex() == 1;
+        display.psdFromSelection = sharedPsdFromSelectionPreference_ && findMark(*f, f->activeMarkId);
+        if (sharedPsdFromSelectionPreference_ && !display.psdFromSelection) log("请先选择当前文件的信号标记；PSD 统计来源仍为当前可见时间窗");
         cancelInteractions(false); f = session_.activeFile(); if (!f || f->metadata.id != fileId) return;
         // Use restored ranges after cancellation; controls above may have synchronously refreshed.
         display.waveformMin = f->display.waveformMin; display.waveformMax = f->display.waveformMax;
@@ -527,7 +536,7 @@ void MainWindow::buildWorkspace() {
             f->display.waveformMin = f->display.auxiliaryMin = limits.first;
             f->display.waveformMax = f->display.auxiliaryMax = limits.second;
         }
-        session_.setView(f->view, false); refresh(); scheduleRightSidebarSettingsSave();
+        session_.setView(f->view, false); propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave();
     };
     for (auto* control : {mainMode_, auxMode_, waveformMode_, palette_, psd_, stft_, psdScope_, freqMode_})
         connect(control, &QComboBox::currentIndexChanged, this, change);
@@ -648,62 +657,121 @@ void MainWindow::restoreRightSidebarSettings(FileState& file) {
     settings.endGroup();
     if (values.isEmpty() || values.value(QStringLiteral("sourcePath")).toString() != sidebarSourcePath(file.metadata)) return;
 
-    const auto integer = [&values](const QString& name, int fallback) {
-        bool ok = false;
-        const int value = values.value(name).toInt(&ok);
-        return ok ? value : fallback;
+    bool ok = false;
+    const double bandwidth = values.value(QStringLiteral("effectiveBandwidthHz"), file.metadata.effectiveBandwidthHz).toDouble(&ok);
+    if (ok && std::isfinite(bandwidth) && bandwidth >= file.metadata.sampleRateHz / 65536.0 && bandwidth <= file.metadata.sampleRateHz)
+        file.metadata.effectiveBandwidthHz = bandwidth;
+}
+
+void MainWindow::applyGlobalRightSidebarSettings(const DisplaySettings& fallback) {
+    DisplaySettings shared = fallback;
+    QVariantMap values;
+    if (qApp->property("uiStatePersistenceEnabled").toBool()) {
+        QSettings settings;
+        settings.beginGroup(QStringLiteral("rightSidebar"));
+        values = settings.value(QStringLiteral("globalSettings")).toMap();
+        if (values.isEmpty()) {
+            if (const auto* active = session_.activeFile()) {
+                const auto legacy = settings.value(sidebarSettingsKey(active->metadata)).toMap();
+                if (legacy.value(QStringLiteral("sourcePath")).toString() == sidebarSourcePath(active->metadata))
+                    values = legacy;
+            }
+        }
+        settings.endGroup();
+    }
+    const auto integer = [&values](const QString& name, int fallbackValue) {
+        bool ok = false; const int value = values.value(name).toInt(&ok); return ok ? value : fallbackValue;
     };
-    const auto real = [&values](const QString& name, double fallback) {
-        bool ok = false;
-        const double value = values.value(name).toDouble(&ok);
-        return ok && std::isfinite(value) ? value : fallback;
+    const auto real = [&values](const QString& name, double fallbackValue) {
+        bool ok = false; const double value = values.value(name).toDouble(&ok); return ok && std::isfinite(value) ? value : fallbackValue;
     };
-    auto& display = file.display;
-    const int mainMode = integer(QStringLiteral("mainMode"), static_cast<int>(display.mainMode));
-    if (mainMode >= 0 && mainMode <= 1) display.mainMode = static_cast<MainMode>(mainMode);
-    const int auxiliaryMode = integer(QStringLiteral("auxiliaryMode"), static_cast<int>(display.auxiliaryMode));
-    if (auxiliaryMode >= 0 && auxiliaryMode <= 1) display.auxiliaryMode = static_cast<AuxiliaryMode>(auxiliaryMode);
-    const int waveformMode = integer(QStringLiteral("waveformMode"), static_cast<int>(display.waveformMode));
-    if (waveformMode >= 0 && waveformMode <= 2) display.waveformMode = static_cast<WaveformMode>(waveformMode);
-    const int palette = integer(QStringLiteral("palette"), static_cast<int>(display.palette));
-    if (palette >= 0 && palette <= static_cast<int>(Palette::CoolEditClassic)) display.palette = static_cast<Palette>(palette);
     const auto supportedSize = [](int size, int minimum, int maximum) {
         return size >= minimum && size <= maximum && (size & (size - 1)) == 0;
     };
-    const int stftSize = integer(QStringLiteral("stftSize"), display.stftSize);
-    if (supportedSize(stftSize, 256, 65536)) display.stftSize = stftSize;
-    const int psdSize = integer(QStringLiteral("psdSize"), display.psdSize);
-    if (supportedSize(psdSize, 1024, 8192)) display.psdSize = psdSize;
-    const double dynamicRange = real(QStringLiteral("dynamicRangeDb"), display.dynamicRangeDb);
-    if (dynamicRange > 0 && dynamicRange <= 10000) display.dynamicRangeDb = dynamicRange;
-    const double referenceLevel = real(QStringLiteral("referenceLevelDb"), display.referenceLevelDb);
-    if (referenceLevel >= -200 && referenceLevel <= 100) display.referenceLevelDb = referenceLevel;
-    display.absoluteFrequency = values.value(QStringLiteral("absoluteFrequency"), display.absoluteFrequency).toBool();
-    display.grid = values.value(QStringLiteral("grid"), display.grid).toBool();
-    display.colorScale = values.value(QStringLiteral("colorScale"), display.colorScale).toBool();
-    display.psdFromSelection = values.value(QStringLiteral("psdFromSelection"), false).toBool() &&
-        findMark(file, file.activeMarkId) != nullptr;
+    const int mainMode = integer(QStringLiteral("mainMode"), static_cast<int>(shared.mainMode));
+    if (mainMode >= 0 && mainMode <= 1) shared.mainMode = static_cast<MainMode>(mainMode);
+    const int auxiliaryMode = integer(QStringLiteral("auxiliaryMode"), static_cast<int>(shared.auxiliaryMode));
+    if (auxiliaryMode >= 0 && auxiliaryMode <= 1) shared.auxiliaryMode = static_cast<AuxiliaryMode>(auxiliaryMode);
+    const int waveformMode = integer(QStringLiteral("waveformMode"), static_cast<int>(shared.waveformMode));
+    if (waveformMode >= 0 && waveformMode <= 2) shared.waveformMode = static_cast<WaveformMode>(waveformMode);
+    const int palette = integer(QStringLiteral("palette"), static_cast<int>(shared.palette));
+    if (palette >= 0 && palette <= static_cast<int>(Palette::CoolEditClassic)) shared.palette = static_cast<Palette>(palette);
+    const int stftSize = integer(QStringLiteral("stftSize"), shared.stftSize);
+    if (supportedSize(stftSize, 256, 65536)) shared.stftSize = stftSize;
+    const int psdSize = integer(QStringLiteral("psdSize"), shared.psdSize);
+    if (supportedSize(psdSize, 1024, 8192)) shared.psdSize = psdSize;
+    const double dynamicRange = real(QStringLiteral("dynamicRangeDb"), shared.dynamicRangeDb);
+    if (dynamicRange > 0 && dynamicRange <= 10000) shared.dynamicRangeDb = dynamicRange;
+    const double referenceLevel = real(QStringLiteral("referenceLevelDb"), shared.referenceLevelDb);
+    if (referenceLevel >= -200 && referenceLevel <= 100) shared.referenceLevelDb = referenceLevel;
+    shared.absoluteFrequency = values.value(QStringLiteral("absoluteFrequency"), shared.absoluteFrequency).toBool();
+    shared.grid = values.value(QStringLiteral("grid"), shared.grid).toBool();
+    shared.colorScale = values.value(QStringLiteral("colorScale"), shared.colorScale).toBool();
+    sharedPsdFromSelectionPreference_ = values.value(QStringLiteral("psdFromSelection"), shared.psdFromSelection).toBool();
+    shared.waveformMin = real(QStringLiteral("waveformMin"), shared.waveformMin);
+    shared.waveformMax = real(QStringLiteral("waveformMax"), shared.waveformMax);
+    shared.psdMin = real(QStringLiteral("psdMin"), shared.psdMin);
+    shared.psdMax = real(QStringLiteral("psdMax"), shared.psdMax);
+    if (!std::isfinite(shared.waveformMin) || !std::isfinite(shared.waveformMax) || shared.waveformMax - shared.waveformMin < 2.0) { shared.waveformMin = -80; shared.waveformMax = 0; }
+    if (!std::isfinite(shared.psdMin) || !std::isfinite(shared.psdMax) || shared.psdMax - shared.psdMin < 2.0) { shared.psdMin = -100; shared.psdMax = 0; }
+    shared.waveformMin = std::clamp(shared.waveformMin, -160.0, 158.0);
+    shared.waveformMax = std::clamp(shared.waveformMax, shared.waveformMin + 2.0, 160.0);
+    shared.psdMin = std::clamp(shared.psdMin, -180.0, 48.0);
+    shared.psdMax = std::clamp(shared.psdMax, shared.psdMin + 2.0, 50.0);
+    shared.auxiliaryMin = shared.auxiliaryMode == AuxiliaryMode::Waveform ? shared.waveformMin : shared.psdMin;
+    shared.auxiliaryMax = shared.auxiliaryMode == AuxiliaryMode::Waveform ? shared.waveformMax : shared.psdMax;
+    for (auto& file : session_.project().files) {
+        auto& display = file.display;
+        display.mainMode = shared.mainMode;
+        display.auxiliaryMode = shared.auxiliaryMode;
+        display.waveformMode = shared.waveformMode;
+        display.palette = shared.palette;
+        display.stftSize = shared.stftSize;
+        display.psdSize = shared.psdSize;
+        display.dynamicRangeDb = shared.dynamicRangeDb;
+        display.referenceLevelDb = shared.referenceLevelDb;
+        display.absoluteFrequency = shared.absoluteFrequency;
+        display.grid = shared.grid;
+        display.colorScale = shared.colorScale;
+        display.waveformMin = shared.waveformMin;
+        display.waveformMax = shared.waveformMax;
+        display.psdMin = shared.psdMin;
+        display.psdMax = shared.psdMax;
+        display.auxiliaryMin = shared.auxiliaryMin;
+        display.auxiliaryMax = shared.auxiliaryMax;
+        display.psdFromSelection = sharedPsdFromSelectionPreference_ && findMark(file, file.activeMarkId);
+        file.view = clampRange(file.view, file.metadata, display.stftSize, display.psdSize);
+    }
+}
 
-    const auto restoreRange = [&real](const QString& minimumKey, const QString& maximumKey,
-                                      double lowerBound, double upperBound, double fallbackMin, double fallbackMax) {
-        double minimum = real(minimumKey, fallbackMin);
-        double maximum = real(maximumKey, fallbackMax);
-        if (maximum - minimum < 2.0) return std::pair{fallbackMin, fallbackMax};
-        minimum = std::clamp(minimum, lowerBound, upperBound - 2.0);
-        maximum = std::clamp(maximum, minimum + 2.0, upperBound);
-        return std::pair{minimum, maximum};
-    };
-    const auto waveformRange = restoreRange(QStringLiteral("waveformMin"), QStringLiteral("waveformMax"), -160, 160, -80, 0);
-    const auto psdRange = restoreRange(QStringLiteral("psdMin"), QStringLiteral("psdMax"), -180, 50, -100, 0);
-    display.waveformMin = waveformRange.first; display.waveformMax = waveformRange.second;
-    display.psdMin = psdRange.first; display.psdMax = psdRange.second;
-    const auto activeRange = display.auxiliaryMode == AuxiliaryMode::Waveform ? waveformRange : psdRange;
-    display.auxiliaryMin = activeRange.first; display.auxiliaryMax = activeRange.second;
-
-    const double bandwidth = real(QStringLiteral("effectiveBandwidthHz"), file.metadata.effectiveBandwidthHz);
-    if (bandwidth >= file.metadata.sampleRateHz / 65536.0 && bandwidth <= file.metadata.sampleRateHz)
-        file.metadata.effectiveBandwidthHz = bandwidth;
-    file.view = clampRange(file.view, file.metadata, display.stftSize, display.psdSize);
+void MainWindow::propagateGlobalRightSidebarSettings() {
+    auto* active = session_.activeFile();
+    if (!active) return;
+    active->display.psdFromSelection = sharedPsdFromSelectionPreference_ && findMark(*active, active->activeMarkId);
+    const auto shared = active->display;
+    for (auto& file : session_.project().files) {
+        if (file.metadata.id == active->metadata.id) continue;
+        auto& display = file.display;
+        display.mainMode = shared.mainMode;
+        display.auxiliaryMode = shared.auxiliaryMode;
+        display.waveformMode = shared.waveformMode;
+        display.palette = shared.palette;
+        display.stftSize = shared.stftSize;
+        display.psdSize = shared.psdSize;
+        display.dynamicRangeDb = shared.dynamicRangeDb;
+        display.referenceLevelDb = shared.referenceLevelDb;
+        display.absoluteFrequency = shared.absoluteFrequency;
+        display.grid = shared.grid;
+        display.colorScale = shared.colorScale;
+        display.waveformMin = shared.waveformMin;
+        display.waveformMax = shared.waveformMax;
+        display.psdMin = shared.psdMin;
+        display.psdMax = shared.psdMax;
+        display.auxiliaryMin = shared.auxiliaryMin;
+        display.auxiliaryMax = shared.auxiliaryMax;
+        display.psdFromSelection = sharedPsdFromSelectionPreference_ && findMark(file, file.activeMarkId);
+        file.view = clampRange(file.view, file.metadata, display.stftSize, display.psdSize);
+    }
 }
 
 void MainWindow::scheduleRightSidebarSettingsSave() {
@@ -718,10 +786,15 @@ void MainWindow::saveRightSidebarSettings() {
     for (const auto& file : session_.project().files) {
         const auto key = sidebarSettingsKey(file.metadata);
         if (key.isEmpty()) continue;
-        const auto& display = file.display;
         QVariantMap values{
             {QStringLiteral("sourcePath"), sidebarSourcePath(file.metadata)},
-            {QStringLiteral("effectiveBandwidthHz"), file.metadata.effectiveBandwidthHz},
+            {QStringLiteral("effectiveBandwidthHz"), file.metadata.effectiveBandwidthHz}
+        };
+        settings.setValue(key, values);
+    }
+    if (const auto* file = session_.activeFile()) {
+        const auto& display = file->display;
+        settings.setValue(QStringLiteral("globalSettings"), QVariantMap{
             {QStringLiteral("mainMode"), static_cast<int>(display.mainMode)},
             {QStringLiteral("auxiliaryMode"), static_cast<int>(display.auxiliaryMode)},
             {QStringLiteral("waveformMode"), static_cast<int>(display.waveformMode)},
@@ -733,13 +806,12 @@ void MainWindow::saveRightSidebarSettings() {
             {QStringLiteral("absoluteFrequency"), display.absoluteFrequency},
             {QStringLiteral("grid"), display.grid},
             {QStringLiteral("colorScale"), display.colorScale},
-            {QStringLiteral("psdFromSelection"), display.psdFromSelection},
+            {QStringLiteral("psdFromSelection"), sharedPsdFromSelectionPreference_},
             {QStringLiteral("waveformMin"), display.waveformMin},
             {QStringLiteral("waveformMax"), display.waveformMax},
             {QStringLiteral("psdMin"), display.psdMin},
             {QStringLiteral("psdMax"), display.psdMax}
-        };
-        settings.setValue(key, values);
+        });
     }
     settings.endGroup();
     settings.sync();
@@ -943,10 +1015,12 @@ void MainWindow::selectMark(const QString& id, Qt::KeyboardModifiers modifiers) 
         if (first != file->marks.end() && last != file->marks.end()) { if (!(modifiers & Qt::ControlModifier)) ids.clear(); if (first > last) std::swap(first, last); for (auto it = first; it <= last; ++it) ids.push_back(it->id); }
     } else if (modifiers & Qt::ControlModifier) { const auto it = std::find(ids.begin(), ids.end(), key); if (it == ids.end()) ids.push_back(key); else ids.erase(it); selectionAnchor_ = key; }
     else { ids = {key}; selectionAnchor_ = key; }
-    session_.selectMarks(std::move(ids), key); refresh();
+    session_.selectMarks(std::move(ids), key);
+    if (auto* active = session_.activeFile()) active->display.psdFromSelection = sharedPsdFromSelectionPreference_ && findMark(*active, active->activeMarkId);
+    propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave();
 }
 void MainWindow::selectAllMarks() {
-    cancelInteractions(false); if (const auto* file = session_.activeFile()) { std::vector<std::string> ids; for (const auto& mark : file->marks) ids.push_back(mark.id); session_.selectMarks(std::move(ids)); refresh(); }
+    cancelInteractions(false); if (const auto* file = session_.activeFile()) { std::vector<std::string> ids; for (const auto& mark : file->marks) ids.push_back(mark.id); session_.selectMarks(std::move(ids)); if (auto* active = session_.activeFile()) active->display.psdFromSelection = sharedPsdFromSelectionPreference_ && findMark(*active, active->activeMarkId); propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave(); }
 }
 void MainWindow::locateMark() { cancelInteractions(false); if (const auto* file = session_.activeFile()) session_.focusMark(file->activeMarkId); refresh(); }
 void MainWindow::cancelInteractions(bool exitCreating) {
@@ -1009,10 +1083,16 @@ bool MainWindow::addIqFile(const QString& path, QString* error) {
     auto metadata = descriptor->metadata;
     metadata.declaredBandwidthHz = descriptor->declaredBandwidthHz;
     metadata.effectiveBandwidthHz = descriptor->declaredBandwidthHz > 0 ? descriptor->declaredBandwidthHz : metadata.sampleRateHz;
+    const auto* activeBeforeImport = session_.activeFile();
+    const bool hasActiveBeforeImport = activeBeforeImport != nullptr;
+    const DisplaySettings priorSettings = activeBeforeImport ? activeBeforeImport->display : DisplaySettings{};
     const auto name = QString::fromUtf8(metadata.name.data(), static_cast<qsizetype>(metadata.name.size()));
     const auto id = session_.addDemoFile(std::move(metadata));
     if (id.empty()) { if (error) *error = QStringLiteral("文件元数据无效，未能加入工程"); return false; }
-    if (auto* imported = session_.activeFile(); imported && imported->metadata.id == id) restoreRightSidebarSettings(*imported);
+    auto* imported = session_.activeFile();
+    if (imported && imported->metadata.id == id) restoreRightSidebarSettings(*imported);
+    applyGlobalRightSidebarSettings(hasActiveBeforeImport ? priorSettings :
+        (imported && imported->metadata.id == id ? imported->display : DisplaySettings{}));
     cancelInteractions(false); selectionAnchor_.clear(); refresh(); log("已加入真实 int16 IQ 文件：" + name);
     scheduleRightSidebarSettingsSave();
     if (error) error->clear();
@@ -1022,7 +1102,12 @@ bool MainWindow::addIqFile(const QString& path, QString* error) {
 bool MainWindow::openProject(const QString& path) {
     cancelInteractions(); Project candidate; QString error;
     if (!ProjectStore::load(path, candidate, error)) { QMessageBox::critical(this, "打开失败", error); return false; }
-    if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_); session_.replaceProject(std::move(candidate)); projectPath_ = path; rememberProject(path); selectionAnchor_.clear(); refresh(); scheduleRightSidebarSettingsSave(); log("已打开工程结构：" + path); return true;
+    const auto* current = session_.activeFile();
+    const DisplaySettings fallbackSettings = current ? current->display :
+        (candidate.files.empty() ? DisplaySettings{} : candidate.files.front().display);
+    if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_); session_.replaceProject(std::move(candidate));
+    applyGlobalRightSidebarSettings(fallbackSettings);
+    projectPath_ = path; rememberProject(path); selectionAnchor_.clear(); refresh(); scheduleRightSidebarSettingsSave(); log("已打开工程结构：" + path); return true;
 }
 bool MainWindow::saveProject(const QString& path) {
     cancelInteractions(false); QString error; if (!ProjectStore::save(path, session_.project(), error)) { QMessageBox::critical(this, "保存失败", error); return false; }

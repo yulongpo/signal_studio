@@ -154,7 +154,7 @@ class UiTests : public QObject {
     Q_OBJECT
 private slots:
     void workspaceLayout();
-    void independentFileDisplaySettings();
+    void globalDisplaySettingsApplyAcrossFiles();
     void mainModeCoordinateDirection();
     void continuousMarkCreation();
     void escapeCancelsCreation();
@@ -176,6 +176,7 @@ private slots:
     void propertyFieldsFitSidebar();
     void prototypeDisplayDefaultsAndOptions();
     void paletteControlsStaySynchronized();
+    void initialFileViewShowsFirstFivePercentOrTenMilliseconds();
     void panelRailsAndBottomTabs();
     void sectionContextAndManualExpansion();
     void panelMaximizeAndRestore();
@@ -246,23 +247,41 @@ void UiTests::workspaceLayout() {
     QVERIFY(window.findChildren<QToolBar*>().empty());
 }
 
-void UiTests::independentFileDisplaySettings() {
+void UiTests::globalDisplaySettingsApplyAcrossFiles() {
     DemoMainWindow window;
     showWindow(window);
     auto* mainMode = window.findChild<QComboBox*>("modeMain");
     auto* auxiliaryMode = window.findChild<QComboBox*>("modeAux");
     auto* palette = window.findChild<QComboBox*>("palette");
+    auto* dynamic = window.findChild<QComboBox*>("dynamic");
+    auto* reference = window.findChild<QComboBox*>("reference");
     QVERIFY(mainMode);
     QVERIFY(auxiliaryMode);
     QVERIFY(palette);
+    QVERIFY(dynamic && reference);
     const auto firstId = window.session().project().files[0].metadata.id;
     const auto secondId = window.session().project().files[1].metadata.id;
     mainMode->setCurrentIndex(1);
     auxiliaryMode->setCurrentIndex(1);
     palette->setCurrentIndex(2);
+    dynamic->setCurrentIndex(dynamic->findText("60 dB"));
+    reference->setCurrentIndex(reference->findText("-40 dBFS"));
     QCOMPARE(static_cast<int>(window.session().activeFile()->display.mainMode), static_cast<int>(MainMode::Waterfall));
     QCOMPARE(static_cast<int>(window.session().activeFile()->display.auxiliaryMode), static_cast<int>(AuxiliaryMode::Psd));
     QCOMPARE(static_cast<int>(window.session().activeFile()->display.palette), static_cast<int>(Palette::Gray));
+    QCOMPARE(window.session().activeFile()->display.dynamicRangeDb, 60.0);
+    QCOMPARE(window.session().activeFile()->display.referenceLevelDb, -40.0);
+    QCOMPARE(window.session().project().files[1].display.palette, Palette::Gray);
+    QCOMPARE(window.session().project().files[1].display.dynamicRangeDb, 60.0);
+    QCOMPARE(window.session().project().files[1].display.referenceLevelDb, -40.0);
+    auto* auxiliaryPlot = window.findChild<PlotWidget*>("auxPlot");
+    QVERIFY(auxiliaryPlot);
+    const QPoint yAxisPoint(qRound(auxiliaryPlot->plotRect().left() - 20), qRound(auxiliaryPlot->plotRect().center().y()));
+    QWheelEvent yAxisWheel(yAxisPoint, auxiliaryPlot->mapToGlobal(yAxisPoint), QPoint(), QPoint(0, 120),
+                           Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+    QCoreApplication::sendEvent(auxiliaryPlot, &yAxisWheel);
+    QCOMPARE(window.session().project().files[1].display.psdMin, window.session().activeFile()->display.psdMin);
+    QCOMPARE(window.session().project().files[1].display.psdMax, window.session().activeFile()->display.psdMax);
 
     QVERIFY(window.session().activateFile(secondId));
     window.refresh();
@@ -271,9 +290,11 @@ void UiTests::independentFileDisplaySettings() {
     palette->setCurrentIndex(0);
     QVERIFY(window.session().activateFile(firstId));
     window.refresh();
-    QCOMPARE(mainMode->currentIndex(), 1);
-    QCOMPARE(auxiliaryMode->currentIndex(), 1);
-    QCOMPARE(palette->currentIndex(), 2);
+    QCOMPARE(mainMode->currentIndex(), 0);
+    QCOMPARE(auxiliaryMode->currentIndex(), 0);
+    QCOMPARE(palette->currentIndex(), 0);
+    QCOMPARE(dynamic->currentText(), QString("60 dB"));
+    QCOMPARE(reference->currentText(), QString("-40 dBFS"));
     QVERIFY(window.session().activateFile(secondId));
     window.refresh();
     QCOMPARE(mainMode->currentIndex(), 0);
@@ -750,8 +771,10 @@ void UiTests::prototypeDisplayDefaultsAndOptions() {
     QCOMPARE(file->metadata.sampleRateHz,40'000'000.0);
     QCOMPARE(file->metadata.centerFrequencyHz,100'000'000.0);
     QCOMPARE(file->metadata.sampleCount,SampleIndex{19'200'000'000ULL});
-    QCOMPARE(file->view.time.begin,SampleIndex{6'720'000'000ULL});
-    QCOMPARE(file->view.time.end,SampleIndex{10'560'000'000ULL});
+    QCOMPARE(file->view.time.begin,SampleIndex{0});
+    QCOMPARE(file->view.time.end,SampleIndex{960'000'000ULL});
+    QCOMPARE(file->display.palette,Palette::CoolEditClassic);
+    QCOMPARE(window.findChild<QComboBox*>("palette")->currentText(),QString("CoolEdit Classic"));
     QCOMPARE(file->view.frequency.lowerHz,80'000'000.0);
     QCOMPARE(file->view.frequency.upperHz,120'000'000.0);
     QVERIFY(file->marks.empty()&&file->channels.empty());
@@ -786,6 +809,24 @@ void UiTests::prototypeDisplayDefaultsAndOptions() {
     QVERIFY(!file->display.psdFromSelection);
 }
 
+void UiTests::initialFileViewShowsFirstFivePercentOrTenMilliseconds() {
+    Session session;
+    QVERIFY(!session.addDemoFile("five_percent.iq", 40e6, 100e6, 10.0).empty());
+    auto* file = session.activeFile();
+    QVERIFY(file);
+    QCOMPARE(file->view.time, (TimeRange{0, 20'000'000ULL}));
+
+    QVERIFY(!session.addDemoFile("ten_ms.iq", 1e6, 10e6, 0.1).empty());
+    file = session.activeFile();
+    QVERIFY(file);
+    QCOMPARE(file->view.time, (TimeRange{0, 10'000ULL}));
+
+    QVERIFY(!session.addDemoFile("short.iq", 1e6, 10e6, 0.006).empty());
+    file = session.activeFile();
+    QVERIFY(file);
+    QCOMPARE(file->view.time, (TimeRange{0, file->metadata.sampleCount}));
+}
+
 void UiTests::paletteControlsStaySynchronized() {
     DemoMainWindow window;
     showWindow(window);
@@ -805,6 +846,7 @@ void UiTests::paletteControlsStaySynchronized() {
     const QStringList expectedPalettes{"Turbo","Viridis","Gray","Plasma","Inferno","Magma","Cividis","CoolEdit Classic"};
     QCOMPARE(comboLabels(header),expectedPalettes);
     QCOMPARE(comboLabels(property),expectedPalettes);
+    QCOMPARE(header->currentText(),QString("CoolEdit Classic"));
     header->setCurrentIndex(1);
     QCOMPARE(property->currentIndex(),1);
     property->setCurrentIndex(2);
@@ -813,8 +855,8 @@ void UiTests::paletteControlsStaySynchronized() {
     const auto first=window.session().project().activeFileId;
     QVERIFY(window.session().activateFile(window.session().project().files[1].metadata.id));
     window.refresh();
-    QCOMPARE(header->currentIndex(),0);
-    QCOMPARE(property->currentIndex(),0);
+    QCOMPARE(header->currentIndex(),2);
+    QCOMPARE(property->currentIndex(),2);
     QVERIFY(window.session().activateFile(first));
     window.refresh();
     QCOMPARE(header->currentIndex(),2);
@@ -1217,7 +1259,11 @@ void UiTests::clippedMarkBorderMovesWithoutInventingHandle() {
     auto* plot=window.findChild<PlotWidget*>("mainPlot");
     QVERIFY(plot);
     auto* file=window.session().activeFile();
-    const auto view=file->view;
+    auto view=file->view;
+    const auto visibleSpan=view.time.end-view.time.begin;
+    QVERIFY(window.session().setView({{file->metadata.sampleCount/2,file->metadata.sampleCount/2+visibleSpan},view.frequency},false));
+    window.refresh();
+    view=file->view;
     const auto span=view.time.end-view.time.begin;
     const ViewRange range{{view.time.begin-span/5,view.time.begin+span/4},
                           {frequencyAt(view,.35),frequencyAt(view,.65)}};
@@ -1500,7 +1546,7 @@ void UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() {
     QCOMPARE(file->metadata.declaredBandwidthHz,800'000.0);
     QCOMPARE(file->metadata.sampleCount,SampleIndex{65'536});
     QVERIFY(!file->metadata.demo);
-    QCOMPARE(file->display.waveformMin,-80.0);
+    QCOMPARE(file->display.waveformMin,-60.0);
     QVERIFY(file->marks.empty()&&file->channels.empty());
 
     auto* main=window.findChild<PlotWidget*>("mainPlot");
@@ -1606,7 +1652,7 @@ void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
     QCOMPARE(main->powerGenerationCount(), initialPowerGenerations);
 
     const auto projectPath = directory.filePath(QStringLiteral("saved-state.json"));
-    QVERIFY2(window.saveProject(projectPath), "The complete per-file display configuration must save with the project.");
+    QVERIFY2(window.saveProject(projectPath), "The project JSON must preserve the analysis snapshot.");
     window.session().newProject(); window.refresh();
     QVERIFY(window.openProject(projectPath));
     file = window.session().activeFile();
@@ -1633,11 +1679,16 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
     qApp->setProperty("uiStatePersistenceEnabled", true);
     const auto projectPath = directory.filePath(QStringLiteral("recent-empty-project.json"));
     const auto iqPath = directory.filePath(QStringLiteral("IQ0_FS1Msps_BW800kHz_FC10MHz.dat"));
+    const auto otherIqPath = directory.filePath(QStringLiteral("IQ1_FS2Msps_BW1MHz_FC20MHz.dat"));
     QFile raw(iqPath);
     QVERIFY(raw.open(QIODevice::WriteOnly));
     const QByteArray samples(65'536 * 4, '\0');
     QCOMPARE(raw.write(samples), static_cast<qint64>(samples.size()));
     raw.close();
+    QFile otherRaw(otherIqPath);
+    QVERIFY(otherRaw.open(QIODevice::WriteOnly));
+    QCOMPARE(otherRaw.write(samples), static_cast<qint64>(samples.size()));
+    otherRaw.close();
     {
         MainWindow window;
         window.resize(1480, 920);
@@ -1699,6 +1750,21 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
         QVERIFY(!file->display.grid);
         QVERIFY(file->display.colorScale);
         QCOMPARE(file->metadata.effectiveBandwidthHz, 500'000.0);
+        QVERIFY2(restored.addIqFile(otherIqPath, &error), qPrintable(error));
+        const auto* secondFile = restored.session().activeFile();
+        QVERIFY(secondFile);
+        QCOMPARE(secondFile->display.mainMode, MainMode::Waterfall);
+        QCOMPARE(secondFile->display.auxiliaryMode, AuxiliaryMode::Psd);
+        QCOMPARE(secondFile->display.waveformMode, WaveformMode::Q);
+        QCOMPARE(secondFile->display.palette, Palette::CoolEditClassic);
+        QCOMPARE(secondFile->display.stftSize, 4096);
+        QCOMPARE(secondFile->display.psdSize, 8192);
+        QCOMPARE(secondFile->display.dynamicRangeDb, 60.0);
+        QCOMPARE(secondFile->display.referenceLevelDb, -40.0);
+        QVERIFY(!secondFile->display.absoluteFrequency);
+        QVERIFY(!secondFile->display.grid);
+        QVERIFY(secondFile->display.colorScale);
+        QCOMPARE(secondFile->metadata.effectiveBandwidthHz, 1'000'000.0);
         auto* menu = restored.findChild<QMenu*>("recentProjectsMenu");
         QVERIFY(menu);
         auto* recent = menu->findChild<QAction*>("recentProjectAction");

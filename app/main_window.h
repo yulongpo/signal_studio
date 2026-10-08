@@ -44,6 +44,8 @@ private:
     void restoreUiState();
     void saveUiState();
     void restoreRightSidebarSettings(FileState& file);
+    void applyGlobalRightSidebarSettings(const DisplaySettings& fallback);
+    void propagateGlobalRightSidebarSettings();
     void scheduleRightSidebarSettingsSave();
     void saveRightSidebarSettings();
     void updateRecentProjectsMenu();
@@ -108,5 +110,6 @@ private:
     QMenu* recentProjectsMenu_ = nullptr;
     QTimer* rightSidebarSaveTimer_ = nullptr;
     bool restoringUiState_ = false, splitterStateRestored_ = false;
+    bool sharedPsdFromSelectionPreference_ = false;
 };
 } // namespace signalstudio

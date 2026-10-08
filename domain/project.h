@@ -34,7 +34,7 @@ struct DisplaySettings {
     MainMode mainMode = MainMode::TimeFrequency;
     AuxiliaryMode auxiliaryMode = AuxiliaryMode::Waveform;
     WaveformMode waveformMode = WaveformMode::IqRms;
-    Palette palette = Palette::Turbo;
+    Palette palette = Palette::CoolEditClassic;
     int stftSize = 2048;
     int psdSize = 4096;
     double dynamicRangeDb = 80;
