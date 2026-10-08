@@ -1,0 +1,29 @@
+{
+  "schema": "signal-studio-a1.4.3-prototype",
+  "project": "交互可靠性验收工程",
+  "activeId": "s1",
+  "signals": [
+    {
+      "id": "s1", "name": "wideband_100MHz.iq", "fc": 100, "fs": 40, "duration": 480,
+      "view": {"t0": 168, "t1": 264, "f0": 80, "f1": 120},
+      "aux": "wave", "specLayout": "spectrogram",
+      "auxY": {"wave": [-60, 60], "psd": [-100, 0]},
+      "display": {"color": "turbo", "dynamic": 80, "ref": 0, "grid": true, "showColorbar": false, "freqMode": "abs", "psdFft": "4096", "psdScope": "visible", "stftFft": "2048"},
+      "regions": [
+        {"id": "r1", "name": "Region 01", "t0": 190, "t1": 210, "f0": 96, "f1": 110},
+        {"id": "r2", "name": "Region 02", "t0": 200, "t1": 222, "f0": 100, "f1": 114}
+      ],
+      "channels": [], "markId": "r1", "selectedMarkIds": ["r1"]
+    },
+    {
+      "id": "s2", "name": "capture_2450MHz.iq", "fc": 2450, "fs": 20, "duration": 240,
+      "view": {"t0": 84, "t1": 132, "f0": 2440, "f1": 2460},
+      "aux": "psd", "specLayout": "waterfall",
+      "auxY": {"wave": [-60, 60], "psd": [-110, -10]},
+      "display": {"color": "viridis", "dynamic": 60, "ref": -20, "grid": false, "showColorbar": true, "freqMode": "base", "psdFft": "8192", "psdScope": "selection", "stftFft": "4096"},
+      "regions": [{"id": "r3", "name": "Region 03", "t0": 100, "t1": 116, "f0": 2447, "f1": 2453}],
+      "channels": [], "markId": "r3", "selectedMarkIds": ["r3"]
+    }
+  ],
+  "note": "仅用于 UI 验收的模拟工程，无真实 IQ 样本。包含重叠标记和独立文件显示参数。"
+}

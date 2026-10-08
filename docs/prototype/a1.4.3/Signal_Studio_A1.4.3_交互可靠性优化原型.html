@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>Signal Studio · A1.4.3 交互可靠性与标记编辑</title><style>
+:root{color-scheme:dark;--bg:#0b1422;--panel:#142136;--panel2:#101b2c;--panel3:#182840;--line:#294058;--line2:#20344a;--text:#dbe8f8;--muted:#8fa7bf;--cyan:#40b5ef;--teal:#49d2bf;--amber:#edb85d;--red:#f47786;--rail:38px;--navh:92px;--auxh:235px;--bottomh:150px;--resourcew:228px;--propsw:294px;font:12px/1.4 'Segoe UI','Microsoft YaHei UI',sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);overflow:hidden}button,select,input{font:inherit;color:inherit}button{border:1px solid transparent;background:transparent;cursor:pointer;border-radius:4px;white-space:nowrap}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}button:hover:not(:disabled){background:#263d56}button:disabled{opacity:.4;cursor:not-allowed}input,select{border:1px solid #314963;background:#0e1a2a;border-radius:4px;padding:5px 7px;min-width:0}select{max-width:100%}.app{height:100vh;min-height:620px;display:flex;flex-direction:column}.menubar{height:34px;background:#0b1729;display:flex;align-items:center;gap:5px;padding:0 11px;border-bottom:1px solid #28384b;flex:none}.logo{font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;margin-right:22px}.logo .mark{color:#39baf3;font-size:22px;line-height:1}.menubar .menu{padding:5px 11px;color:#b4c8dc}.grow{flex:1}.window-controls{color:#879bb1;letter-spacing:13px}.toolbar{height:46px;background:#16253a;border-bottom:1px solid #31465e;display:flex;align-items:center;gap:3px;padding:0 10px;flex:none}.tb-btn{display:flex;align-items:center;gap:7px;color:#c9d7e9;padding:7px 10px;height:33px}.tb-btn .ico{font-size:17px;color:#92bbda}.tb-btn.active,.mode-chip.active{background:#16456b;color:#d6f4ff;border-color:#3588c0}.sep{height:24px;width:1px;background:#35506b;margin:0 8px}.mini-note{font-size:10px;color:var(--muted)}.main{flex:1;display:flex;min-height:0;min-width:0}.resources{width:var(--resourcew);min-width:176px;max-width:360px;flex:none;background:#101d2f;border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}.resources.hide{width:var(--rail);min-width:var(--rail)}.resources.hide .resource-body,.resources.hide .panel-sub,.resources.hide .panel-title-text{display:none}.panel-head{height:35px;min-height:35px;background:#172740;border-bottom:1px solid #28415d;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-weight:650}.iconbtn{width:25px;height:25px;font-size:15px;color:#a4c1d8}.panel-sub{display:flex;gap:5px;padding:7px 8px;border-bottom:1px solid #223951}.panel-sub button{flex:1;padding:5px 2px;background:#132338;color:#9fb9d3;border:1px solid #2b4055}.panel-sub button.active{background:#1a4e76;color:#bdebff}.resource-body{overflow-y:auto;overflow-x:hidden;padding:9px 9px 24px}.tree-label{display:flex;align-items:center;gap:6px;color:#c4d7ea;margin:11px 0 4px;font-weight:600}.tree-item{display:flex;align-items:center;gap:7px;padding:7px 9px 7px 18px;border-radius:4px;color:#b2cbe4}.tree-item.active{background:#214c70;color:#e0f5ff}.swatch{width:9px;height:9px;border-radius:2px;background:var(--teal);display:inline-block;flex:none}.meta{font:11px 'Consolas',monospace;color:#8da8c2;margin:3px 0 4px 34px}.resource-help{font-size:11px;color:#758fa9;margin:18px 7px}.workspace{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;background:#0d1725}.top-scope{height:35px;flex:none;display:flex;align-items:center;gap:13px;padding:0 12px;border-bottom:1px solid #223752;background:#122034}.mode-chip{border:1px solid #344d68;padding:5px 12px;color:#acbfd4}.file-info{font:11px 'Cascadia Mono','Consolas',monospace;color:#8db5d3}.graphs{flex:1;display:flex;flex-direction:column;gap:5px;min-height:0;padding:5px}.chart-panel{border:1px solid #293f56;background:#121f32;min-height:0;display:flex;flex-direction:column;position:relative;border-radius:3px;overflow:hidden}.nav-panel{height:var(--navh);flex:none}.aux-panel{height:var(--auxh);flex:none}.spec-panel{flex:1}.chart-head{height:32px;min-height:32px;padding:0 9px;display:flex;align-items:center;gap:7px;border-bottom:1px solid #273c53;background:#16283e}.chart-name{font-weight:600;color:#d5e6f5}.head-right{margin-left:auto;display:flex;align-items:center;gap:6px}.field-tag{font:10px 'Consolas',monospace;color:#a0bbd3;padding:4px 6px;border:1px solid #324b67;background:#0e1d30;border-radius:3px}.mode-seg{display:flex;background:#0c192a;padding:2px;gap:2px;border:1px solid #2b445f;border-radius:4px}.mode-seg button{font-size:11px;padding:4px 10px;color:#9db4cd}.mode-seg button.active{color:#cdefff;background:#1b5883}.chart-body{flex:1;position:relative;min-height:0;padding:0 3px 1px 1px}.chart-body canvas{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}.chart-tip{position:absolute;pointer-events:none;right:12px;top:7px;padding:3px 6px;border-radius:3px;background:#091728c7;color:#c8dfef;font:10px Consolas,monospace}.splitter{height:5px;flex:none;cursor:row-resize;margin:-5px 0 0;z-index:5;background:transparent}.splitter:hover{background:#46a7d0}.spec-meta{height:32px;min-height:32px;border-top:1px solid #243b54;display:flex;align-items:center;gap:10px;padding:0 12px;color:#abc4df;font:11px Consolas,monospace;overflow:hidden;white-space:nowrap}.spec-meta strong{color:#65dcd0}.spec-meta button{border:1px solid #316084;background:#163953;color:#c6ebff;padding:3px 9px}.scale{height:13px;width:120px;border:1px solid #62718f;background:linear-gradient(90deg,#111e64,#134fca,#15b8e7,#34eb90,#f5dd43,#ed623d)}.properties{width:var(--propsw);min-width:var(--propsw);background:#111e2e;border-left:1px solid #30455e;display:flex;flex-direction:column;min-height:0}.properties.collapsed{width:var(--rail);min-width:var(--rail)}.properties.collapsed .prop-content,.properties.collapsed .panel-title-text{display:none}.prop-content{overflow:auto;min-height:0;padding-bottom:20px}.section{border-bottom:1px solid #263b52}.section-h{display:flex;align-items:center;gap:6px;background:#1b2b40;padding:8px 10px;color:#c5dcef;font-weight:600}.setting{display:grid;grid-template-columns:minmax(80px,1fr) minmax(90px,1.2fr);align-items:center;gap:7px;padding:6px 10px}.setting label{font-size:11px;color:#a8bdd3}.setting select,.setting input{width:100%;font-size:11px}.help{padding:7px 10px;font-size:11px;color:#7895b0}.bottom{height:var(--bottomh);min-height:0;display:flex;flex-direction:column;border-top:1px solid #30455e;background:#111c2e;flex:none}.bottom.closed{height:29px}.bottom .bottom-tabs{display:flex;gap:3px;align-items:center;height:29px;min-height:29px;background:#18283c;padding:0 8px;border-bottom:1px solid #2c4056}.bottom-tabs button{padding:4px 15px;color:#9cbbd2}.bottom-tabs button.active{color:#d6ebfc;background:#174668}.bottom-content{padding:0 8px;overflow:auto;flex:1}.bottom.closed .bottom-content{display:none}.log-row{display:grid;grid-template-columns:70px 65px 1fr;gap:8px;border-bottom:1px solid #21374f;padding:6px;color:#a8bcd3}.log-row .ok{color:#61d7be}.statusbar{height:25px;min-height:25px;background:#0b1726;border-top:1px solid #203851;display:flex;align-items:center;gap:0;color:#91a9c0;font:11px Consolas,monospace}.statusbar span{padding:0 12px;border-right:1px solid #294058}.toast{position:fixed;bottom:48px;left:50%;transform:translateX(-50%);background:#19445f;border:1px solid #4ab2da;border-radius:6px;color:#e0f3ff;padding:9px 17px;box-shadow:0 9px 30px #0009;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}.toast.show{opacity:1}.veil{position:fixed;inset:0;background:#020812bb;display:none;align-items:center;justify-content:center;z-index:30}.veil.show{display:flex}.dialog{width:470px;max-width:calc(100vw - 30px);background:#17263a;border:1px solid #4a647a;border-radius:8px;box-shadow:0 20px 75px #000b;padding:18px}.dialog h2{margin:0 0 5px;font-size:16px}.dialog p{font-size:11px;color:#95aac0}.dialog .setting{padding:7px 0}.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.primary{background:#1e719d!important;color:#fff!important;padding:8px 16px;border:1px solid #358cb5}.outline{border:1px solid #43607a;padding:8px 16px}.progressbar{height:8px;background:#0b1625;border-radius:5px;overflow:hidden;margin-top:12px}.progressbar>div{height:100%;width:0;background:#36b7dc;transition:width .18s}.hidden{display:none!important}.panelmax{position:fixed!important;inset:86px 12px 34px!important;width:auto!important;height:auto!important;z-index:15!important;box-shadow:0 0 0 100vmax #030915d9;flex:none!important}.panelmax .chart-body{flex:1}.hint{font-size:10px;color:#819ab2}.color-select{display:flex;align-items:center;gap:7px}.color-select select{flex:1}.kb{font:10px Consolas,monospace;background:#21374d;color:#c5dbf0;border:1px solid #36516a;border-radius:3px;padding:2px 5px}.prop-rail{display:none;align-items:center;flex-direction:column;gap:17px;padding-top:12px}.properties.collapsed .prop-rail{display:flex}.prop-rail button{font-size:18px}.resources.hide .resource-body{display:none}.overlay-svg{position:absolute;inset:0;pointer-events:none}.sel-pill{position:absolute;top:7px;left:50%;transform:translateX(-50%);background:#19354eeb;color:#a9eeff;padding:5px 12px;border:1px solid #3d7898;border-radius:4px;font-size:11px;pointer-events:none}.badge-proto{font-size:10px;color:#edc586;border:1px solid #836d44;padding:3px 6px;border-radius:3px;margin-left:7px}.mini-color{width:40px;height:9px;display:inline-block;background:linear-gradient(90deg,#140d54,#0c5abe,#23dce2,#60ee91,#f4df49,#f44e3a)}
+@media(max-width:1330px){:root{--resourcew:186px;--propsw:245px}.tb-btn{padding:6px}.toolbar .optional{display:none}.head-right .min-hide{display:none}.setting{grid-template-columns:74px 1fr}.mode-chip{padding:5px 6px}.file-info{display:none}}
+@media(max-width:990px){:root{--resourcew:38px;--propsw:38px}.resources .resource-body,.resources .panel-sub,.resources .panel-title-text,.properties .prop-content,.properties .panel-title-text{display:none}.prop-rail{display:flex}}
+
+/* A1.1 overrides */
+.toolbar {gap:1px;padding:0 6px}.toolbar .tb-btn{font-size:11px;padding:6px 7px}.resources{width:270px;min-width:190px;max-width:420px}.resource-body{padding:8px 7px}.tree-item.signal-file{width:100%;text-align:left;padding-left:16px;background:transparent;border:0}.tree-item.signal-file.active{background:#214c70}.project-root{font-weight:700;background:#1b2f45;border:1px solid #2d4f6e;padding:8px;border-radius:4px}.file-children{margin-left:19px;border-left:1px solid #36526c;padding-left:5px}.file-children .tree-label{font-weight:500;color:#93b9d6}.tree-item.mark-tree{width:100%;border:0;background:transparent;text-align:left}.tree-item.mark-tree.selected{color:#ffe199;background:#3a3e3f}.interaction-guide{padding:5px 12px;background:#102b3e;border-bottom:1px solid #254d64;color:#9bbdd4;min-height:27px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.interaction-guide strong{color:#69d7ed}.subtle-tool{font-size:11px;color:#76c6e8;border:1px solid #2b556a;padding:3px 8px;border-radius:3px}.tb-btn.active{background:#235476}.statusbar span:last-child{border:0}.tabs{overflow-x:auto;overflow-y:hidden}.tabs .tab{flex:none}.spec-meta{gap:7px}.spec-meta span{font-size:10px}.spec-meta #viewData{color:#a7bbd0}.spec-meta #selectionData{color:#edc676}.divider-meta{color:#526881}.resources.hide{width:var(--rail);min-width:var(--rail)}.resources.hide .panel-sub{display:none}.panelmax{z-index:20!important}@media(max-width:1490px){.toolbar .tb-btn{font-size:10px;padding:5px}.toolbar .sep{margin:0 3px}.properties{width:248px;min-width:248px}.resources{width:218px;min-width:176px}.toolbar #reset{display:none}}@media(max-width:1150px){.toolbar #zoomOut,.toolbar #zoomIn,.toolbar #reset,.toolbar #logToggle{display:none}.properties{width:var(--rail);min-width:var(--rail)}.properties .prop-content,.properties .panel-title-text{display:none}.resources{width:194px}.statusbar{font-size:10px}}
+
+/* A1.2: no permanent tool row; chart-driven interactions */
+.file-menu-wrap{position:relative}.file-menu{position:absolute;top:32px;left:0;width:178px;z-index:35;background:#182a42;border:1px solid #41607a;box-shadow:0 8px 22px #02070c99;border-radius:4px;padding:4px;display:flex;flex-direction:column}.file-menu button{display:block;text-align:left;padding:9px 12px;color:#d2e5f7}.file-menu button:hover{background:#264962}
+.chart-context-menu{position:fixed;z-index:60;min-width:206px;background:#1b2b41;border:1px solid #56718b;border-radius:6px;box-shadow:0 15px 40px #000a;padding:5px}.chart-context-menu button{width:100%;display:flex;justify-content:space-between;text-align:left;padding:9px 12px;color:#dfecfa}.chart-context-menu button:hover:not(:disabled){background:#275475}.chart-context-menu button span{font-size:10px;color:#9bb4c9}.context-heading{padding:6px 11px;color:#7fadc8;font-size:11px;font-weight:600}.context-separator{height:1px;background:#375168;margin:4px 0}
+.spec-select-action{position:absolute;top:13px;right:83px;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-3px);transition:opacity .13s,transform .13s;background:#175b83;border:1px solid #65cbed;color:#effdff;padding:6px 12px;box-shadow:0 4px 14px #05111bba;z-index:9;font-weight:650}
+.spec-select-action.revealed,.spec-select-action.selecting{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}.spec-select-action.selecting{background:#85601b;color:#fff7df;border-color:#f1c86a}
+.chart-body canvas{user-select:none}.chart-panel{min-width:0}.interaction-guide{font-size:11px}.chart-context-menu.hidden{display:none}
+
+/* A1.4: retain A1.3 direct manipulation and add orientation-aware waterfall rendering */
+.interaction-guide{display:none!important}.chart-body canvas{touch-action:none}
+.selection-instruction{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:#6a4a1be8;border:1px solid #edc56d;padding:7px 13px;color:#fff5d8;font-size:11px;z-index:8;pointer-events:none;border-radius:4px;white-space:nowrap}
+#interactionFeedback{color:#a8d8f0;max-width:365px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chart-panel .chart-head{white-space:nowrap}
+.section-h{cursor:pointer;user-select:none}.section-h:hover{background:#25415b}.section-content{display:block}.collapsed-section .section-content{display:none}.collapsed-section .section-h{color:#7f9cba}
+.spec-select-action{right:83px}.chart-context-menu button:disabled{opacity:.38;cursor:default}
+.file-menu{width:224px}
+@media(max-width:1490px){#interactionFeedback{display:none}}
+.spec-panel .chart-head .mode-seg{margin-left:5px;flex:none}
+.spec-panel .chart-head .mode-seg button{font-size:11px;padding:4px 9px}
+@media(max-width:1430px){.spec-panel .subtle-tool{display:none}}
+@media(max-width:1190px){.spec-panel #specAxisLabel{display:none}}
+
+
+/* A1.4.3: semantically correct pointer feedback */
+.section-h{cursor:pointer}.section-h:hover{background:#243b55}.mark-tree.selected{background:#644f23;color:#fff0c7;border-left:2px solid #ebc966}.mark-tree:hover{background:#285473;color:#f0fcff}.chart-context-menu button{cursor:pointer}#navCanvas{cursor:pointer}#specCanvas,#auxCanvas{cursor:crosshair}#selectSignalHover{cursor:pointer}.mode-seg button{cursor:pointer}
+
+/* A1.4.3: reliability within the established three-chart workspace. */
+.app{min-height:0}.graphs{position:relative}.splitter{touch-action:none;user-select:none}.splitter.dragging{background:#46a7d0}
+.setting output{color:#d5e7f5;font:11px/1.5 Consolas,'Microsoft YaHei UI',monospace;overflow-wrap:anywhere;padding:3px 0;min-width:0}
+.mark-actions{display:flex;gap:5px;padding:5px 10px 10px}.mark-actions button{border:1px solid #37566c;padding:5px 8px;color:#bfdbea}
+.tree-actions{display:flex;gap:4px;padding:5px 0}.tree-actions button{border:1px solid #37566c;padding:4px 7px;color:#bdd5e9}.tree-item.mark-tree{cursor:pointer}.mark-tree.selected{border-left:2px solid #ebc966}
+.empty-workspace{position:absolute;inset:0;z-index:11;background:#0d1725;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#8fa7bf}.empty-workspace strong{font-size:18px;color:#dbe8f8}
+.chart-context-menu{max-height:calc(100vh - 16px);overflow:auto;min-width:248px}.chart-context-menu [aria-checked="true"]{color:#ffe3a0;background:#63491e}
+#overlapChoices .context-heading{border-top:1px solid #375168}.chart-body canvas{cursor:crosshair}.selection-instruction{max-width:95%;overflow:hidden;text-overflow:ellipsis;font-size:10px}
+.nav-panel.folded{height:34px!important}.nav-panel.folded .chart-body{display:none}.nav-panel .hint{overflow:hidden;text-overflow:ellipsis}
+@media(max-width:990px){.resources{width:38px;min-width:38px}.chart-head{gap:3px}.head-right #rangeTag{display:none}.spec-meta #cursorData,.spec-meta .divider-meta{display:none}.spec-meta{padding:0 6px}.chart-name{font-size:11px}}
+</style></head><body><div class="app">
+<header class="menubar"><div class="logo"><span class="mark">◉</span> Signal Studio <span class="badge-proto">A1.4.3 · 交互可靠性优化</span></div>
+<div class="file-menu-wrap"><button aria-expanded="false" aria-haspopup="true" class="menu" id="fileMenuToggle">文件(F) ▾</button><div class="file-menu hidden" id="fileMenu" role="menu"><button id="newProject" role="menuitem">▧ 新建工程</button><button id="open" role="menuitem">▣ 添加 IQ 文件</button><button id="projectSaveMenu" role="menuitem">⇩ 保存工程结构</button><button id="projectImportMenu" role="menuitem">⇧ 打开工程结构</button><button id="removeCurrentFile" role="menuitem">⊖ 从工程移除当前文件</button><input accept=".json" hidden="" id="projectImportInput" type="file"/></div></div><button class="menu" data-toast="原型已支持视图历史、缩放与信号标记">编辑(E)</button><button class="menu" data-toast="当前为宽带研判工作区">视图(V)</button><button class="menu" data-toast="算法仅为 UI 演示，尚未处理真实 IQ">分析(A)</button><button class="menu" data-toast="当前工程数据为浏览器演示数据">工具(T)</button><div class="grow"></div><span class="window-controls">— □ ×</span></header>
+<div class="main">
+<aside class="resources" id="resources"><div class="panel-head"><span class="panel-title-text">工程管理</span><button class="iconbtn" id="resourceToggle" title="收起工程树">☰</button></div>
+<div class="panel-sub"><button class="active" id="projectAddSignal">＋ 添加 IQ 文件</button><button id="projectSave" title="下载当前模拟工程结构 JSON">⇩ 导出工程</button></div>
+<div class="resource-body"><div id="projectTree"></div><p class="resource-help">单击标记选中，Ctrl 多选 / Shift 连选；双击定位。右键菜单开启持续选择信号；选中框可移动和调整。</p></div>
+</aside>
+<main class="workspace"><div class="top-scope"><button class="mode-chip active">宽带时频研判</button><span class="file-info" id="projectLabel"></span><div class="grow"></div><span class="file-info" id="scopeText"></span></div>
+<div class="graphs" id="graphs"><div class="empty-workspace hidden" id="emptyWorkspace"><strong>工程中尚无 IQ 文件</strong><span>从左侧或文件菜单添加 IQ 文件，开始分析。</span><button class="primary" id="emptyAdd">＋ 添加 IQ 文件</button></div>
+<section class="chart-panel nav-panel" id="navPanel"><div class="chart-head"><span class="chart-name">全局时间导航</span><span class="hint">滚轮缩放时间窗 · 拖动蓝色范围 · 单击跳转</span><div class="head-right"><span class="field-tag" id="navStatus">—</span><button class="iconbtn" data-max="navPanel" title="最大化">⤢</button></div></div><div class="chart-body" id="navChartBody"><canvas aria-label="当前文件的时间导航" id="navCanvas"></canvas></div></section>
+<div aria-label="调节导航区高度" class="splitter" id="navSplit"></div>
+<section class="chart-panel aux-panel" id="auxPanel"><div class="chart-head"><span class="chart-name">辅助分析</span><div class="mode-seg"><button class="active" data-aux="wave">时域波形</button><button data-aux="psd">功率谱 (PSD)</button></div><div class="head-right"><span class="field-tag" id="auxStatus"></span><button class="iconbtn" data-max="auxPanel" title="最大化">⤢</button></div></div><div class="chart-body" id="auxChartBody"><canvas aria-label="时域波形或者功率谱" id="auxCanvas"></canvas><div class="chart-tip" id="auxTip"></div></div></section>
+<div aria-label="调节辅助图谱高度" class="splitter" id="auxSplit"></div>
+<section class="chart-panel spec-panel" id="specPanel"><div class="chart-head"><span class="chart-name">宽带图谱</span><div aria-label="主图谱方向" class="mode-seg" role="group"><button aria-pressed="true" class="active" data-spec-layout="spectrogram">时频图</button><button aria-pressed="false" data-spec-layout="waterfall">瀑布图</button></div><span class="subtle-tool" id="specMode">图内/X轴滚轮：时间 · Y轴滚轮：频率</span><div class="head-right"><span class="hint min-hide" id="specAxisLabel">X 时间 · Y 频率 · 颜色功率</span><select aria-label="色阶" id="colormapHeader"><option value="turbo">Turbo</option><option value="viridis">Viridis</option><option value="gray">Gray</option></select><span class="field-tag" id="rangeTag"></span><button class="iconbtn" data-max="specPanel" title="最大化">⤢</button></div></div>
+<div class="chart-body" id="specChartBody"><canvas aria-label="宽带时频图" id="specCanvas"></canvas><div class="selection-instruction hidden" id="selectionInstruction">持续选择信号 · 拖动创建标记 · 右键菜单关闭 / Esc 退出</div><div class="sel-pill hidden" id="selectHint">信号标记已保存（当前文件）</div></div>
+<div class="spec-meta"><span id="cursorData"></span><span class="divider-meta">|</span><span id="viewData"></span><span class="divider-meta">|</span><span id="selectionData">无信号标记</span><div class="grow"></div><button id="extract">基于标记创建窄带通道 →</button></div></section>
+</div>
+<section class="bottom closed" id="bottom"><div class="bottom-tabs"><button class="active" data-btab="result">当前文件结果</button><button data-btab="task">后台任务</button><button data-btab="log">日志</button><div class="grow"></div><button id="bottomHide" title="展开收起">⌃</button></div><div class="bottom-content" id="bottomContent"></div></section>
+</main>
+<aside class="properties" id="properties"><div class="panel-head"><span class="panel-title-text">当前文件 / 分析参数</span><button class="iconbtn" id="propClose">☷</button></div><div class="prop-rail"><button id="propRailOpen" title="展开参数">⚙</button></div><div class="prop-content">
+<div class="section" id="fileSection"><div class="section-h">▾ 活动信号文件</div><div class="section-content"><div class="setting"><label>文件</label><output id="fileName">—</output></div><div class="setting"><label>采样率</label><output id="sampleRate">—</output></div><div class="setting"><label>中心频率</label><output id="centerFreq">—</output></div><div class="setting"><label>完整时间范围</label><output id="fullRange">—</output></div></div></div>
+<div class="section collapsed-section" id="viewSection"><div class="section-h">▸ 当前视图（仅显示状态）</div><div class="section-content"><div class="setting"><label>时间范围</label><output id="visibleTime">—</output></div><div class="setting"><label>频率范围</label><output id="visibleFreq">—</output></div></div></div>
+<div class="section" id="markSection"><div class="section-h">▾ 当前信号标记（非放缩区域）</div><div class="section-content"><div class="setting"><label>开始时间</label><output id="selStart">—</output></div><div class="setting"><label>结束时间</label><output id="selEnd">—</output></div><div class="setting"><label>频率范围</label><output id="selFreq">—</output></div><div class="help">已选中 <span id="selectedCount">0</span> 个标记。拖动选中框移动，边线和顶点调整；Esc 回滚当前编辑。</div><div class="mark-actions"><button id="renameMark">重命名</button><button id="locateMark">定位</button><button id="deleteMarks">删除所选</button></div></div></div>
+<div class="section collapsed-section" id="psdSection"><div class="section-h">▸ 功率谱 PSD</div><div class="section-content"><div class="setting"><label>FFT 点数</label><select id="psdFft"><option>1024</option><option>2048</option><option selected="">4096</option><option>8192</option></select></div><div class="setting"><label>统计时间范围</label><select id="psdScope"><option value="visible">当前可见时间窗</option><option value="selection">当前活动信号标记</option></select></div></div></div>
+<div class="section collapsed-section" id="specSection"><div class="section-h">▸ 时频图设置</div><div class="section-content"><div class="setting"><label>STFT 点数</label><select id="stftFft"><option selected="">2048</option><option>4096</option><option>8192</option></select></div><div class="setting"><label>颜色映射</label><select id="colormap"><option value="turbo">Turbo</option><option value="viridis">Viridis</option><option value="gray">Gray</option></select></div><div class="setting"><label>动态范围</label><select id="dynamic"><option value="60">60 dB</option><option selected="" value="80">80 dB</option><option value="100">100 dB</option></select></div><div class="setting"><label>参考电平</label><select id="reference"><option selected="" value="0">0 dBFS</option><option value="-20">-20 dBFS</option><option value="-40">-40 dBFS</option></select></div><div class="setting"><label>频率坐标</label><select id="freqMode"><option value="abs">射频绝对频率</option><option value="base">基带相对频率</option></select></div><div class="setting"><label>显示色阶条</label><input aria-label="显示色阶条" id="colorbarToggle" style="width:16px;height:16px" type="checkbox"/></div><div class="setting"><label>网格显示</label><input checked="" id="gridToggle" style="width:16px;height:16px" type="checkbox"/></div></div>
+<div class="section help-section collapsed-section"><div class="section-h">▸ 鼠标交互帮助</div><div class="section-content"><div class="help">主图谱可切换为时频图（X 时间，Y 频率）或瀑布图（X 频率，Y 时间向下递增）。两种布局均为图内或底部 X 轴滚轮只缩放当前 X 轴、左侧 Y 轴滚轮只缩放当前 Y 轴；图内左键矩形放大、拖动 X/Y 轴平移。选择信号在主图右键菜单中开启，持续创建直到关闭或按 Esc。色阶条默认隐藏，可在参数栏显示。辅助图谱：图内 X 轴滚轮与区间拖动放大，X/Y 轴拖动平移。将鼠标移至时频图/瀑布图的信号标记区域时会高亮，单击可选中标记；已选中框内拖动移动，边线和顶点调整；空白绘图区拖动用于矩形放大。全局导航可单击跳转、拖动时间窗和滚轮缩放。坐标轴和导航范围显示抓手光标，按住拖动时变成抓取光标；图谱标记显示手形指针。三个窗格右键菜单管理视图历史。主图右键开启或关闭持续选择信号；默认模式可编辑已选中标记。Esc 取消当前拖动并回滚；Ctrl / Shift 支持工程树多选，Delete 删除当前文件内的所选标记。分隔条双击恢复默认高度。</div></div></div></div>
+</div></aside>
+</div>
+<footer class="statusbar"><span id="statusReady">● 就绪</span><span id="statusTime"></span><span id="statusFreq"></span><span id="statusSignal"></span><div class="grow"></div><span id="interactionFeedback">鼠标指向图谱查看操作提示</span><span>模拟数据 · 未运行 DSP</span></footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<div aria-label="图谱视图操作" class="chart-context-menu hidden" id="chartContextMenu" role="menu">
+<div class="context-heading" id="contextOrigin">视图操作</div><button id="contextMarkToggle" role="menuitemcheckbox" aria-checked="false">□ 选择信号（持续模式）</button><div id="overlapChoices"></div><div id="contextMarkActions"><button id="contextRename" role="menuitem">重命名当前标记</button><button id="contextLocate" role="menuitem">定位当前标记</button><button id="contextDelete" role="menuitem">删除所选标记</button></div><div class="context-separator"></div>
+<button data-context="back" role="menuitem">↶ 视图后退</button>
+<button data-context="forward" role="menuitem">↷ 视图前进</button>
+<div class="context-separator"></div>
+<button data-context="fit" role="menuitem">⤢ 适应全部数据</button>
+<button data-context="reset" role="menuitem">↺ 恢复默认视图</button>
+</div>
+<div class="veil" id="veil"><div class="dialog"><h2>向工程添加 RAW IQ 文件 <span class="badge-proto">演示流程</span></h2><p>演示中只创建文件元数据与图谱上下文，不读取或解析真实 IQ 文件内容。</p>
+<div class="setting"><label>选择文件</label><input accept=".iq,.dat,.raw,.bin,.cf32" id="fileInput" type="file"/></div><div class="setting"><label>采样率 (Hz)</label><input id="loadFs" type="number" value="40000000"/></div><div class="setting"><label>中心频率 (Hz)</label><input id="loadFc" type="number" value="100000000"/></div><div class="setting"><label>文件时长（演示）</label><input id="loadDuration" type="number" value="180"/></div><div class="progressbar"><div id="progress"></div></div><p id="progressText">等待添加文件</p><div class="dialog-actions"><button class="outline" id="cancelOpen">取消</button><button class="primary" id="simulateOpen">添加演示信号</button></div>
+</div></div>
+<script>(()=>{'use strict';
+const $=id=>document.getElementById(id);
+// A1.4.3: canonical data units remain seconds and MHz; display units adapt.
+function numberText(value,decimals=3){
+ if(!Number.isFinite(value))return '—';
+ const places=Math.max(0,Math.min(12,decimals));
+ const zero=Math.abs(value)<Math.pow(10,-places)/2?0:value;
+ return zero.toFixed(places).replace(/(\.\d*?)0+$/,'$1').replace(/\.$/,'');
+}
+function displayUnit(kind,span){
+ const n=Math.abs(span);
+ return kind==='time'?(n>=1?{unit:'s',scale:1}:n>=.001?{unit:'ms',scale:1e3}:{unit:'us',scale:1e6})
+ :(n>=1?{unit:'MHz',scale:1}:n>=.001?{unit:'kHz',scale:1e3}:{unit:'Hz',scale:1e6});
+}
+function tickDecimals(step){return Math.max(0,Math.min(12,Math.ceil(-Math.log10(Math.max(Math.abs(step),1e-12)))+2))}
+function fmtCoordinate(kind,value,span,step){
+ const magnitude=Math.abs(value),width=Math.abs(span||0);
+ // Keep absolute status/property coordinates short; axes use explicit offsets.
+ const chosen=width>0&&magnitude<width*1000?width:magnitude||width||1;
+ const d=displayUnit(kind,chosen),resolution=Math.abs(step||width/5||1e-6);
+ return numberText(value*d.scale,tickDecimals(resolution*d.scale))+' '+d.unit;
+}
+const fmtTime=(value,span,step)=>fmtCoordinate('time',value,span,step);
+const fmtFreq=(value,span,step)=>fmtCoordinate('freq',value,span,step);
+function axisScale(kind,start,end,count=5,offset=0){
+ const span=Math.abs(end-start),step=span/Math.max(1,count),d=displayUnit(kind,span||1);
+ const lo=Math.min(start,end)-offset,hi=Math.max(start,end)-offset;
+ const decimals=tickDecimals(step*d.scale);
+ const direct=[lo,hi].map(n=>numberText(n*d.scale,decimals));
+ const relative=span>0&&(Math.max(Math.abs(lo),Math.abs(hi))>=span*1000||direct.some(t=>t.length>9));
+ const origin=relative?lo:0,base=kind==='time'?'时间':'频率';
+ const originLabel=relative?(kind==='time'?'T₀ = ':'F₀ = ')+fmtCoordinate(kind,origin,undefined,step)+(offset?'（基带）':''):'';
+ return {kind,start,end,count,unit:d.unit,scale:d.scale,step,decimals,origin,offset,relative,
+  label:base+(relative?' Δ':'')+' ('+d.unit+')'+(!relative&&offset?' · 基带':''),originLabel,
+  format:value=>numberText((value-offset-origin)*d.scale,decimals)};
+}
+function frequencyAxis(start,end,count=5){return axisScale('freq',start,end,count,state.freqMode==='base'?signal().fc:0)}
+function fmtCoordinateRange(kind,start,end){
+ const d=axisScale(kind,start,end,5);
+ return d.relative?fmtCoordinate(kind,d.origin,undefined,d.step)+' + ['+d.format(start)+'–'+d.format(end)+'] '+d.unit
+ :d.format(start)+'–'+d.format(end)+' '+d.unit;
+}
+const fmtTimeRange=(start,end)=>fmtCoordinateRange('time',start,end);
+const fmtFreqRange=(start,end)=>fmtCoordinateRange('freq',start,end);
+function minimumSpans(s=signal()){
+ const sampleRateHz=Math.max(1,Number(s.fs)*1e6||1);
+ const fft=Math.max(16,Math.round(Number(s.display?.stftFft)||Number($('stftFft')?.value)||2048));
+ const hop=Math.max(1,Math.round(Number(s.display?.stftHop)||fft/2));
+ const time=Math.min(s.duration,Math.max(2*hop/sampleRateHz,Number.EPSILON*Math.max(1,s.duration)*8));
+ const freq=Math.min(s.fs,Math.max(s.fs/fft,Number.EPSILON*Math.max(1,Math.abs(s.fc))*8));
+ return {time,freq,fft,hop,sampleRateHz};
+}
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+const defaultDisplay=()=>({color:'turbo',dynamic:80,ref:0,grid:true,showColorbar:false,freqMode:'abs',psdFft:'4096',psdScope:'visible',stftFft:'2048'});
+const demo=(id,name,fc,fs,duration,seed)=>({display:defaultDisplay(),selectedMarkIds:[],selectionAnchor:null,id,name,fc,fs,duration,seed,regions:[],channels:[],aux:'wave',specLayout:'spectrogram',auxY:{wave:[-60,60],psd:[-100,0]},view:{t0:duration*.35,t1:duration*.55,f0:fc-fs/2,f1:fc+fs/2},past:[],future:[],markId:null});
+const state={projectName:'射频信号分析工程',signals:[demo('s1','wideband_100MHz.iq',100,40,480,1),demo('s2','capture_2450MHz.iq',2450,20,240,3),demo('s3','telemetry_915MHz.iq',915,10,120,7)],activeId:'s1',selecting:false,drag:null,hover:null,hoverMarkId:null,props:true,showColorbar:false,color:'turbo',dynamic:80,ref:0,grid:true,freqMode:'abs',max:null,cursorT:200,cursorF:100,navMarker:null};
+const emptySignal=demo('__empty__','未添加 IQ 文件',0,1,1,0);
+let signal=()=>state.signals.find(x=>x.id===state.activeId)||emptySignal, toastTimer=null,loadTimer=null,heldSpace=false,cacheSpec=null;
+const currentView=()=>({...signal().view});
+function toast(t){$('toast').textContent=t;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2500)}
+function log(t){const row=document.createElement('div');row.className='log-row';const at=new Date().toTimeString().slice(0,8);row.innerHTML=`<span>${at}</span><span class="ok">信息</span><span>${String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}</span>`;$('bottomContent').prepend(row)}
+function activeMark(){return signal().regions.find(x=>x.id===signal().markId)||null}
+const hasFile=()=>state.signals.length>0;
+function bounds(){const s=signal();return{t0:0,t1:s.duration,f0:s.fc-s.fs/2,f1:s.fc+s.fs/2}}
+function range(t0,t1,min,max,minWidth){
+ const total=max-min; if(!(total>0))return [min,max];
+ if(!Number.isFinite(t0)||!Number.isFinite(t1))return[min,max];
+ const width=clamp(Math.abs(t1-t0),Math.min(minWidth,total),total);
+ const center=(t0+t1)/2;const left=clamp(center-width/2,min,max-width);
+ return[left,left+width];
+}
+function snapshot(){const s=signal();return {view:{...s.view},auxY:{wave:[...s.auxY.wave],psd:[...s.auxY.psd]}}}
+function commitHistory(previous){const s=signal();s.past.push(previous);if(s.past.length>40)s.past.shift();s.future=[]}
+function restoreSnapshot(snap){const s=signal();s.view={...snap.view};s.auxY={wave:[...snap.auxY.wave],psd:[...snap.auxY.psd]};redraw(true)}
+function applyView(patch,{history=true}={}){
+ const s=signal(),old=s.view,next={...old,...patch},b=bounds();[next.t0,next.t1]=range(next.t0,next.t1,0,s.duration,minimumSpans(s).time);[next.f0,next.f1]=range(next.f0,next.f1,b.f0,b.f1,minimumSpans(s).freq);
+ if(Object.keys(next).every(k=>Math.abs(next[k]-old[k])<1e-10))return;
+ if(history){finishWheel();commitHistory(snapshot())}s.view=next;redraw(true)
+}
+function back(dir){cancelInteraction(true);finishWheel();const s=signal(),from=dir==='back'?s.past:s.future,to=dir==='back'?s.future:s.past;if(!from.length)return;to.push(snapshot());restoreSnapshot(from.pop())}
+function fitAll(){cancelInteraction(true);finishWheel();applyView(bounds());toast('已显示当前文件全部时间和完整频带')}
+function resetView(){cancelInteraction(true);finishWheel();const s=signal(),b=bounds();const before=snapshot(),newView={t0:s.duration*.35,t1:s.duration*.55,f0:b.f0,f1:b.f1};const same=Object.keys(newView).every(k=>Math.abs(newView[k]-s.view[k])<1e-9)&&s.auxY.wave[0]===-60&&s.auxY.wave[1]===60&&s.auxY.psd[0]===-100&&s.auxY.psd[1]===0;if(!same)commitHistory(before);s.view=newView;s.auxY={wave:[-60,60],psd:[-100,0]};redraw(true);toast('已重置当前文件默认视图和辅助图谱 Y 轴')}
+function zoom(which,factor,pivot,history=true){const v=currentView(),a=which==='all'||which==='time',b=which==='all'||which==='freq',patch={};if(a){let mid=pivot?.t??(v.t0+v.t1)/2;patch.t0=mid-(mid-v.t0)*factor;patch.t1=mid+(v.t1-mid)*factor}if(b){let mid=pivot?.f??(v.f0+v.f1)/2;patch.f0=mid-(mid-v.f0)*factor;patch.f1=mid+(v.f1-mid)*factor}applyView(patch,{history})}
+function zoomAuxY(factor,ratio,history=true){const s=signal(),mode=s.aux,[min,max]=s.auxY[mode],world=mode==='wave'?[-160,160]:[-180,50];const pivot=max-clamp(ratio,0,1)*(max-min);let a=pivot-(pivot-min)*factor,b=pivot+(max-pivot)*factor;
+ const width=clamp(b-a, mode==='wave'?2:2,world[1]-world[0]);a=clamp(a,world[0],world[1]-width);b=a+width;
+ if(Math.abs(a-min)<1e-8&&Math.abs(b-max)<1e-8)return;
+ if(history){finishWheel();commitHistory(snapshot())}s.auxY[mode]=[a,b];redraw();}
+function resetCanvasCursors(){for(const id of ['specCanvas','auxCanvas'])$(id).style.cursor='crosshair';$('navCanvas').style.cursor='pointer'}
+function saveDisplay(){if(!hasFile())return;signal().display={color:state.color,dynamic:state.dynamic,ref:state.ref,grid:state.grid,showColorbar:state.showColorbar,freqMode:state.freqMode,psdFft:$('psdFft').value,psdScope:$('psdScope').value,stftFft:$('stftFft').value}}
+function syncDisplay(){const d=signal().display;Object.assign(state,d);for(const [id,key] of [['colormap','color'],['colormapHeader','color'],['dynamic','dynamic'],['reference','ref'],['freqMode','freqMode'],['psdFft','psdFft'],['psdScope','psdScope'],['stftFft','stftFft']])$(id).value=String(d[key]);$('colorbarToggle').checked=d.showColorbar;$('gridToggle').checked=d.grid}
+function selectSignal(id){if(!state.signals.some(x=>x.id===id))return;cancelInteraction(true);finishWheel();saveDisplay();state.activeId=id;const s=signal();syncDisplay();state.cursorT=(s.view.t0+s.view.t1)/2;state.cursorF=s.fc;state.selecting=false;state.hover=null;state.hoverMarkId=null;updateSelectButton(false);resetCanvasCursors();cacheSpec=null;renderTree();redraw(true);log(`切换到信号文件 ${s.name}；已恢复独立视图及分析参数`)}
+function renderTree(){const target=$('projectTree');target.replaceChildren();const root=document.createElement('div');root.className='tree-label project-root';root.textContent='▾  ◧ '+state.projectName;target.append(root);
+ for(const s of state.signals){const bt=document.createElement('button');bt.className='tree-item signal-file'+(s.id===state.activeId?' active':'');bt.textContent='◈ '+s.name;bt.onclick=()=>selectSignal(s.id);target.append(bt);const info=document.createElement('div');info.className='meta';info.textContent=`${s.fs} MS/s · ${s.fc} MHz · ${fmtTime(s.duration)}`;target.append(info);
+ if(s.id===state.activeId){normalizeMarkSelection(s);const sub=document.createElement('div');sub.className='file-children';const heading=document.createElement('div');heading.className='tree-label';heading.textContent=`▾ 信号区域 (${s.regions.length}) · 已选 ${s.selectedMarkIds.length}`;sub.append(heading);
+ const actions=document.createElement('div');actions.className='tree-actions';for(const [label,fn,disabled] of [['全选',()=>{s.selectedMarkIds=s.regions.map(m=>m.id);s.markId=s.selectedMarkIds.at(-1)||null;renderTree();redraw()},!s.regions.length],['删除所选',deleteSelectedMarks,!s.selectedMarkIds.length]]){const b=document.createElement('button');b.textContent=label;b.disabled=disabled;b.onclick=fn;actions.append(b)}sub.append(actions);
+ for(const m of s.regions){const b=document.createElement('button');b.className='tree-item mark-tree'+(s.selectedMarkIds.includes(m.id)?' selected':'');b.textContent='▱ '+m.name;b.dataset.markId=m.id;b.setAttribute('aria-pressed',String(s.selectedMarkIds.includes(m.id)));b.title='单击选择 · Ctrl 多选 · Shift 连选 · 双击定位';b.onpointerenter=()=>{if(!state.drag&&!state.selecting){state.hoverMarkId=m.id;drawSpec()}};b.onpointerleave=()=>{state.hoverMarkId=null;drawSpec()};b.onclick=e=>selectMark(m.id,{toggle:e.ctrlKey||e.metaKey,range:e.shiftKey});b.ondblclick=()=>{if(!s.selectedMarkIds.includes(m.id))selectMark(m.id);s.markId=m.id;locateActiveMark()};b.oncontextmenu=e=>{if(!s.selectedMarkIds.includes(m.id))selectMark(m.id);openContext(e,'信号标记',true)};sub.append(b)}
+ const chan=document.createElement('div');chan.className='tree-label';chan.textContent=`▾ 窄带通道 (${s.channels.length})`;sub.append(chan);for(const c of s.channels){const b=document.createElement('div');b.className='tree-item';b.textContent='◇ '+c.name+' · '+fmtFreq(c.center);sub.append(b)}target.append(sub)}}
+ if(!hasFile()){const p=document.createElement('p');p.className='resource-help';p.textContent='空工程 · 请添加 IQ 文件';target.append(p)}
+}
+
+// Inject inside the prototype IIFE. Geometry and pointer positions use CSS pixels.
+function normalizeMarkSelection(s=signal()){
+ const valid=new Set(s.regions.map(m=>m.id));
+ const ids=Array.isArray(s.selectedMarkIds)?s.selectedMarkIds:(s.markId?[s.markId]:[]);
+ s.selectedMarkIds=[...new Set(ids)].filter(id=>valid.has(id));
+ if(!s.selectedMarkIds.includes(s.markId))s.markId=s.selectedMarkIds.at(-1)||null;
+ if(s.markAnchorId&&!valid.has(s.markAnchorId))s.markAnchorId=null;
+ return s.selectedMarkIds;
+}
+function markSelection(s=signal()){return normalizeMarkSelection(s)}
+function selectMark(id,{toggle=false,range=false}={}){
+ const s=signal(),ids=normalizeMarkSelection(s);
+ if(id==null){s.selectedMarkIds=[];s.markId=null;s.markAnchorId=null}
+ else{
+  const index=s.regions.findIndex(m=>m.id===id);if(index<0)return false;
+  if(range){
+   let anchor=s.regions.findIndex(m=>m.id===(s.markAnchorId||s.markId));if(anchor<0)anchor=index;
+   const span=s.regions.slice(Math.min(anchor,index),Math.max(anchor,index)+1).map(m=>m.id);
+   s.selectedMarkIds=toggle?[...new Set([...ids,...span])]:span;s.markId=id;
+  }else if(toggle){
+   s.selectedMarkIds=ids.includes(id)?ids.filter(x=>x!==id):[...ids,id];
+   s.markId=s.selectedMarkIds.includes(id)?id:s.selectedMarkIds.includes(s.markId)?s.markId:s.selectedMarkIds.at(-1)||null;
+   s.markAnchorId=id;
+  }else{s.selectedMarkIds=[id];s.markId=id;s.markAnchorId=id}
+ }
+ state.hoverMarkId=null;renderTree();redraw();return true;
+}
+function markHandlePoints(r){
+ const x=(r.x+r.x1)/2,y=(r.y+r.y1)/2;
+ return[{handle:'nw',x:r.x,y:r.y},{handle:'n',x,y:r.y},{handle:'ne',x:r.x1,y:r.y},
+  {handle:'e',x:r.x1,y},{handle:'se',x:r.x1,y:r.y1},{handle:'s',x,y:r.y1},
+  {handle:'sw',x:r.x,y:r.y1},{handle:'w',x:r.x,y}];
+}
+function markHandleCursor(handle){return handle==='move'?'move':handle==='n'||handle==='s'?'ns-resize':handle==='e'||handle==='w'?'ew-resize':handle==='ne'||handle==='sw'?'nesw-resize':'nwse-resize'}
+function markEditHit(p){
+ if(state.selecting)return null;
+ const pl=specPlot(p.w,p.h),left=pl.l,right=p.w-pl.r,top=pl.t,bottom=p.h-pl.b;
+ if(p.x<left||p.x>right||p.y<top||p.y>bottom)return null;
+ const s=signal(),selected=new Set(normalizeMarkSelection(s)),tol=6;
+ const inside=(x,y)=>x>=left&&x<=right&&y>=top&&y<=bottom;
+ for(let i=s.regions.length-1;i>=0;i--){
+  const mark=s.regions[i];if(!selected.has(mark.id))continue;
+  const r=regionPlotRect(mark,pl,p.w,p.h,s.view,isWaterfall());
+  const x0=Math.max(left,r.x),x1=Math.min(right,r.x1),y0=Math.max(top,r.y),y1=Math.min(bottom,r.y1);
+  if(x1<=x0||y1<=y0)continue;
+  // Check actual vertices before edges. Cropping never creates resize handles.
+  const handles=markHandlePoints(r).filter(h=>inside(h.x,h.y)&&Math.abs(p.x-h.x)<=tol&&Math.abs(p.y-h.y)<=tol)
+   .sort((a,b)=>((p.x-a.x)**2+(p.y-a.y)**2)-((p.x-b.x)**2+(p.y-b.y)**2)||b.handle.length-a.handle.length);
+  if(handles.length){const handle=handles[0].handle;return{mark,mode:'resize',handle,cursor:markHandleCursor(handle)}}
+  const edges=[];
+  if(r.x>=left&&r.x<=right&&Math.abs(p.x-r.x)<=tol&&p.y>=y0&&p.y<=y1)edges.push({handle:'w',distance:Math.abs(p.x-r.x)});
+  if(r.x1>=left&&r.x1<=right&&Math.abs(p.x-r.x1)<=tol&&p.y>=y0&&p.y<=y1)edges.push({handle:'e',distance:Math.abs(p.x-r.x1)});
+  if(r.y>=top&&r.y<=bottom&&Math.abs(p.y-r.y)<=tol&&p.x>=x0&&p.x<=x1)edges.push({handle:'n',distance:Math.abs(p.y-r.y)});
+  if(r.y1>=top&&r.y1<=bottom&&Math.abs(p.y-r.y1)<=tol&&p.x>=x0&&p.x<=x1)edges.push({handle:'s',distance:Math.abs(p.y-r.y1)});
+  if(edges.length){const handle=edges.sort((a,b)=>a.distance-b.distance)[0].handle;return{mark,mode:'resize',handle,cursor:markHandleCursor(handle)}}
+  if(p.x>=x0&&p.x<=x1&&p.y>=y0&&p.y<=y1)return{mark,mode:'move',handle:'move',cursor:'move'};
+ }
+ return null;
+}
+function updateMarkDrag(d,p){
+ const s=signal(),m=s.regions.find(x=>x.id===d.markId);if(!m||!d.markBase)return false;
+ const base=d.markBase,start=specCoords(d.start),now=specCoords(p),dt=now.t-start.t,df=now.f-start.f,b=bounds();
+ const limits=minimumSpans(s),minT=Math.min(limits.time??limits.t,b.t1-b.t0,base.t1-base.t0),minF=Math.min(limits.freq??limits.f,b.f1-b.f0,base.f1-base.f0);
+ let next={...base};
+ if(d.handle==='move'||d.mode==='move'||d.tool==='mark-move'){
+  const width=base.t1-base.t0,height=base.f1-base.f0;
+  next.t0=clamp(base.t0+dt,b.t0,b.t1-width);next.t1=next.t0+width;
+  next.f0=clamp(base.f0+df,b.f0,b.f1-height);next.f1=next.f0+height;
+ }else{
+  const h=d.handle||'',waterfall=isWaterfall();
+  const resizeT0=waterfall?h.includes('n'):h.includes('w'),resizeT1=waterfall?h.includes('s'):h.includes('e');
+  const resizeF0=waterfall?h.includes('w'):h.includes('s'),resizeF1=waterfall?h.includes('e'):h.includes('n');
+  if(resizeT0)next.t0=clamp(base.t0+dt,b.t0,base.t1-minT);
+  if(resizeT1)next.t1=clamp(base.t1+dt,base.t0+minT,b.t1);
+  if(resizeF0)next.f0=clamp(base.f0+df,b.f0,base.f1-minF);
+  if(resizeF1)next.f1=clamp(base.f1+df,base.f0+minF,b.f1);
+ }
+ const changed=['t0','t1','f0','f1'].some(k=>Math.abs(m[k]-next[k])>1e-12);
+ Object.assign(m,next);if(changed)redraw();return changed;
+}
+function drawMarkHandles(c,m,p,w,h,v,waterfall){
+ const s=signal();if(!normalizeMarkSelection(s).includes(m.id))return;
+ const r=regionPlotRect(m,p,w,h,v,waterfall),left=p.l,right=w-p.r,top=p.t,bottom=h-p.b;
+ c.save();c.setLineDash([]);c.lineWidth=1;c.fillStyle=m.id===s.markId?'#f7df7f':'#b6dce9';c.strokeStyle='#344653';
+ for(const h of markHandlePoints(r)){
+  if(h.x<left||h.x>right||h.y<top||h.y>bottom)continue;
+  c.fillRect(h.x-3,h.y-3,6,6);c.strokeRect(h.x-3,h.y-3,6,6);
+ }
+ c.restore();
+}
+function deleteSelectedMarks(){cancelInteraction(true);finishWheel();
+ const s=signal(),selected=new Set(normalizeMarkSelection(s));if(!selected.size){toast('请先选择当前文件的信号标记');return false}
+ const count=selected.size,channels=s.channels.length;
+ s.regions=s.regions.filter(m=>!selected.has(m.id));s.channels=s.channels.filter(c=>!selected.has(c.regionId));
+ const removedChannels=channels-s.channels.length;
+ s.selectedMarkIds=[];s.markId=null;s.markAnchorId=null;state.hoverMarkId=null;
+ if($('psdScope').value==='selection')$('psdScope').value='visible';
+ renderTree();redraw();
+ const message=`已从当前文件删除 ${count} 个标记`+(removedChannels?`，并移除引用这些标记的 ${removedChannels} 个演示通道`:'');
+ toast(message);log(message+' · '+s.name);return true;
+}
+function renameActiveMark(){cancelInteraction(true);finishWheel();
+ const m=activeMark();if(!m){toast('请先选择一个信号标记');return false}
+ const value=prompt('标记名称（最多 80 个字符）',m.name);if(value===null)return false;
+ const name=value.trim().slice(0,80);if(!name){toast('标记名称不能为空');return false}
+ if(name===m.name)return false;m.name=name;renderTree();redraw();toast('已重命名信号标记');return true;
+}
+function locateActiveMark(){cancelInteraction(true);finishWheel();
+ const m=activeMark();if(!m){toast('请先选择一个信号标记');return false}
+ const dt=m.t1-m.t0,df=m.f1-m.f0;
+ applyView({t0:m.t0-dt*.2,t1:m.t1+dt*.2,f0:m.f0-df*.2,f1:m.f1+df*.2});
+ toast('已定位 '+m.name);return true;
+}
+
+function canvasCtx(canvas){const box=canvas.getBoundingClientRect(),w=Math.max(50,Math.round(box.width)),h=Math.max(40,Math.round(box.height)),ratio=Math.min(2,window.devicePixelRatio||1);if(canvas.width!==Math.round(w*ratio)||canvas.height!==Math.round(h*ratio)){canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio)}const ctx=canvas.getContext('2d');ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,w,h);return{ctx,w,h}}
+const plot=(w,h,withScale=false)=>({l:88,r:withScale?70:22,t:12,b:34});
+const specPlot=(w,h)=>plot(w,h,state.showColorbar);
+const isWaterfall=()=>signal().specLayout==='waterfall';
+function grid(c,w,h,p,xn,yn){c.fillStyle='#0a1728';c.fillRect(0,0,w,h);if(!state.grid)return;c.strokeStyle='#31466177';c.lineWidth=1;for(let i=0;i<=xn;i++){const x=p.l+(w-p.l-p.r)*i/xn;c.beginPath();c.moveTo(x,p.t);c.lineTo(x,h-p.b);c.stroke()}for(let i=0;i<=yn;i++){const y=p.t+(h-p.t-p.b)*i/yn;c.beginPath();c.moveTo(p.l,y);c.lineTo(w-p.r,y);c.stroke()}}
+function axes(c,w,h,p,x0,x1,y0,y1,xLabel,yLabel,fx=(v)=>v.toFixed(1),fy=(v)=>v.toFixed(1)){
+ c.save();c.font='10px Consolas';c.fillStyle='#aac2d7';
+ const xd=typeof fx==='object'?fx:null,yd=typeof fy==='object'?fy:null;
+ const formatX=xd?xd.format:fx,formatY=yd?yd.format:fy;
+ const xCount=xd?.count||5,yCount=yd?.count||4;
+ c.textAlign='center';let previousRight=-Infinity;
+ for(let i=0;i<=xCount;i++){
+  const x=p.l+i*(w-p.l-p.r)/xCount,text=formatX(x0+i*(x1-x0)/xCount),width=c.measureText(text).width;
+  const left=clamp(x-width/2,p.l-3,w-p.r-width+3);
+  if(left>=previousRight+8){c.fillText(text,left+width/2,h-p.b+14);previousRight=left+width}
+ }
+ c.textAlign='right';let previousTop=Infinity;
+ for(let i=0;i<=yCount;i++){
+  const y=h-p.b-i*(h-p.t-p.b)/yCount,text=formatY(y0+i*(y1-y0)/yCount);
+  if(y+3<=previousTop-12){c.fillText(text,p.l-7,y+3);previousTop=y+3}
+ }
+ c.textAlign='center';c.fillText(xd?.label||xLabel,(w+p.l-p.r)/2,h-3);
+ c.save();c.translate(15,(h+p.t-p.b)/2);c.rotate(-Math.PI/2);c.fillText(yd?.label||yLabel,0,0);c.restore();
+ const origins=[xd?.originLabel,yd?.originLabel].filter(Boolean);
+ c.textAlign='left';origins.forEach((text,i)=>{const y=p.t+13+i*15,width=c.measureText(text).width;c.fillStyle='#071628da';c.fillRect(p.l+4,y-10,width+10,14);c.fillStyle='#d4edff';c.fillText(text,p.l+9,y)});
+ c.restore();
+}
+const random=x=>{const s=Math.sin(x*92.743+12.41)*143758.327;return s-Math.floor(s)};
+function drawNav(){const {ctx:c,w,h}=canvasCtx($('navCanvas')),s=signal(),v=s.view,l=13,r=13,mid=h*.43;c.fillStyle='#091b2b';c.fillRect(0,0,w,h);for(const dir of [-1,1]){c.beginPath();for(let x=l;x<w-r;x++){const u=(x-l)/(w-l-r),env=.1+.3*Math.exp(-(((u-.25)*6)**2))+.28*Math.exp(-(((u-.58)*9)**2))+.23*Math.exp(-(((u-.8)*13)**2));const y=mid+dir*Math.sin(x*.43+s.seed)*env*h*.48;if(x===l)c.moveTo(x,y);else c.lineTo(x,y)}c.strokeStyle='#4fb4e1';c.lineWidth=1;c.stroke()}const x0=l+v.t0/s.duration*(w-l-r),x1=l+v.t1/s.duration*(w-l-r);c.fillStyle='#38b6e128';c.fillRect(x0,0,x1-x0,h);c.strokeStyle='#8ed9ff';c.strokeRect(x0+.5,.5,x1-x0,h-1);c.font='10px Consolas';c.fillStyle='#a5bed4';for(let k=0;k<=6;k++){c.fillText(fmtTime(k*s.duration/6),l+k*(w-l-r)/6-10,h-3)}}
+function drawAux(){const {ctx:c,w,h}=canvasCtx($('auxCanvas')),p=plot(w,h),pw=w-p.l-p.r,ph=h-p.t-p.b,s=signal(),v=s.view,[ymin,ymax]=s.auxY[s.aux];grid(c,w,h,p,9,4);c.save();c.beginPath();c.rect(p.l,p.t,pw,ph);c.clip();c.beginPath();const n=Math.max(220,Math.round(pw*1.5));for(let i=0;i<n;i++){const u=i/(n-1),x=p.l+u*pw,t=v.t0+u*(v.t1-v.t0),f=v.f0+u*(v.f1-v.f0);let val;if(s.aux==='wave'){const peak=(x,center,width)=>Math.exp(-Math.pow((x-center)/width,2));let env=3+36*peak(t,s.duration*.47,s.duration*.024)+22*peak(t,s.duration*.65,s.duration*.04)+15*peak(t,s.duration*.21,s.duration*.028);val=Math.sin(t*(30+s.seed*5))*env-Math.sin(t*49+s.seed)*2}else{const peak=(center,width,height)=>height*Math.exp(-Math.pow((f-center)/width,2));val=-88+peak(s.fc-s.fs*.18,s.fs*.017,45)+peak(s.fc+s.fs*.07,s.fs*.03,62)+peak(s.fc+s.fs*.29,s.fs*.012,34)+(random(i*.7+s.seed)-.5)*6}const y=p.t+(ymax-val)/(ymax-ymin)*ph;if(i===0)c.moveTo(x,y);else c.lineTo(x,y)}c.strokeStyle=s.aux==='wave'?'#51d7c5':'#5abffa';c.lineWidth=1.5;c.stroke();if(state.drag?.target==='auxCanvas'&&state.drag.tool==='zoom-x'&&state.drag.end){const d=state.drag,x0=clamp(Math.min(d.start.x,d.end.x),p.l,w-p.r),x1=clamp(Math.max(d.start.x,d.end.x),p.l,w-p.r);c.fillStyle='#7ed3f02a';c.fillRect(x0,p.t,x1-x0,ph);c.strokeStyle='#9ceaff';c.setLineDash([4,4]);c.strokeRect(x0,p.t,x1-x0,ph);c.setLineDash([])}c.restore();
+if(s.aux==='wave'){axes(c,w,h,p,v.t0,v.t1,ymin,ymax,'时间','幅度（演示）',axisScale('time',v.t0,v.t1,5),v=>v.toFixed(1));$('auxStatus').textContent=`X 时间 · Y ${ymin.toFixed(0)}…${ymax.toFixed(0)}`;$('auxTip').textContent=`当前时间 ${fmtTimeRange(v.t0,v.t1)}`}else{axes(c,w,h,p,v.f0,v.f1,ymin,ymax,'频率','PSD (dBFS/Hz)',frequencyAxis(v.f0,v.f1,5),v=>v.toFixed(0));$('auxStatus').textContent=`X 频率 · Y ${ymin.toFixed(0)}…${ymax.toFixed(0)} dB`;$('auxTip').textContent=`${$('psdScope').value==='selection'&&activeMark()?'当前信号标记':'当前时间窗'} · FFT ${$('psdFft').value}`}
+ paintHoverAxis(c,w,h,p,'auxCanvas');
+}
+const palettes={turbo:[[8,14,52],[20,58,141],[10,144,216],[22,207,222],[40,225,138],[224,229,70],[250,159,52],[188,49,52]],viridis:[[40,18,71],[62,71,129],[49,112,142],[37,154,141],[89,189,94],[206,219,53]],gray:[[11,17,26],[62,75,95],[133,149,159],[220,228,234]]};
+function cmap(q){const a=palettes[state.color],z=clamp(q,0,.999)*(a.length-1),i=Math.floor(z),u=z-i;return[0,1,2].map(j=>Math.round(a[i][j]*(1-u)+a[i+1][j]*u))}
+function drawSpec(){
+ const {ctx:c,w,h}=canvasCtx($('specCanvas')),p=specPlot(w,h),pw=Math.max(15,w-p.l-p.r),ph=Math.max(15,h-p.t-p.b),s=signal(),v=s.view,waterfall=isWaterfall();
+ grid(c,w,h,p,9,4);
+ const draggingAxis=!!(state.drag?.target==='specCanvas'&&state.drag.tool.startsWith('pan-'));
+ const rw=Math.round(clamp(pw*(draggingAxis?.28:.65),120,750)),rh=Math.round(clamp(ph*(draggingAxis?.35:.8),90,430));
+ const powerKey=[s.id,s.seed,s.specLayout,v.t0,v.t1,v.f0,v.f1,rw,rh].join('|');
+ if(!cacheSpec||cacheSpec.powerKey!==powerKey){
+  const power=new Float32Array(rw*rh);
+  for(let yy=0;yy<rh;yy++)for(let xx=0;xx<rw;xx++){
+   // Deterministic simulated power, independent of colors and UI overlays.
+   const f=waterfall?v.f0+xx/(rw-1)*(v.f1-v.f0):v.f1-yy/(rh-1)*(v.f1-v.f0);
+   const t=waterfall?v.t0+yy/(rh-1)*(v.t1-v.t0):v.t0+xx/(rw-1)*(v.t1-v.t0);
+   const fn=(f-s.fc)/s.fs,tn=t/s.duration;
+   let z=.07+.14*random(Math.floor(tn*1200)*.83+Math.floor(fn*1000)*7+s.seed)+.07*Math.sin(tn*85+fn*91);
+   for(const ctr of [-.29,-.12,.09,.31])z+=.38*Math.exp(-(((fn-ctr)/.005)**2));
+   if(tn>.22&&tn<.75){z+=.58*Math.exp(-(((fn-.075)/.035)**2))*(.45+.55*Math.sin(tn*120+s.seed)**2);z+=.28*Math.exp(-(((fn+.17)/.02)**2))}
+   if(tn>.38&&tn<.54&&Math.sin(tn*140)>.2)z+=.48*Math.exp(-(((fn+.02)/.09)**2));
+   if(tn>.18&&tn<.75)z+=.3*Math.exp(-(((fn-(-.28+.5*(tn-.18)))/.008)**2));
+   power[yy*rw+xx]=z;
+  }
+  cacheSpec={powerKey,power,colorKey:null,img:null};
+ }
+ const colorKey=[state.color,state.dynamic,state.ref].join('|');
+ if(cacheSpec.colorKey!==colorKey){
+  const img=document.createElement('canvas');img.width=rw;img.height=rh;
+  const ox=img.getContext('2d'),data=ox.createImageData(rw,rh);
+  for(let i=0;i<cacheSpec.power.length;i++){
+   const col=cmap(clamp(cacheSpec.power[i]*80/state.dynamic+state.ref/140,0,1)),o=i*4;
+   data.data[o]=col[0];data.data[o+1]=col[1];data.data[o+2]=col[2];data.data[o+3]=255;
+  }
+  ox.putImageData(data,0,0);cacheSpec.img=img;cacheSpec.colorKey=colorKey;
+ }
+ c.drawImage(cacheSpec.img,p.l,p.t,pw,ph);
+ if(state.grid){c.strokeStyle='#b9dfff20';for(let i=0;i<=8;i++){const x=p.l+i*pw/8;c.beginPath();c.moveTo(x,p.t);c.lineTo(x,p.t+ph);c.stroke()}for(let i=0;i<=8;i++){const y=p.t+i*ph/8;c.beginPath();c.moveTo(p.l,y);c.lineTo(p.l+pw,y);c.stroke()}}
+ if(waterfall){axes(c,w,h,p,v.f0,v.f1,v.t1,v.t0,'频率','时间',frequencyAxis(v.f0,v.f1,5),axisScale('time',v.t1,v.t0,4))}
+ else{axes(c,w,h,p,v.t0,v.t1,v.f0,v.f1,'时间','频率',axisScale('time',v.t0,v.t1,5),frequencyAxis(v.f0,v.f1,4))}
+ if(state.showColorbar){const sx=w-38,sy=p.t+4,sh=ph-8;for(let i=0;i<sh;i++){const col=cmap(1-i/sh);c.fillStyle=`rgb(${col.join(',')})`;c.fillRect(sx,sy+i,13,1)}c.strokeStyle='#8197b1';c.strokeRect(sx,sy,13,sh);c.fillStyle='#bad5eb';c.font='10px Consolas';for(let i=0;i<=4;i++)c.fillText(state.ref-Math.round(state.dynamic*i/4),sx+17,sy+i*sh/4+4)}
+ const rectOf=a=>regionPlotRect(a,p,w,h,v,waterfall);
+ paintHoverAxis(c,w,h,p,'specCanvas');
+ c.save();c.beginPath();c.rect(p.l,p.t,pw,ph);c.clip();
+ for(const m of s.regions){
+  const a=rectOf(m),selected=s.selectedMarkIds.includes(m.id),hovered=m.id===state.hoverMarkId&&!state.selecting;
+  const width=a.x1-a.x,height=a.y1-a.y;if(width<=0||height<=0)continue;
+  c.save();
+  if(hovered){c.shadowColor='#e6fbff';c.shadowBlur=12}
+  c.fillStyle=hovered?'#58dbff43':selected?'#f3ce4c26':'#b4c5d015';c.fillRect(a.x,a.y,width,height);
+  c.strokeStyle=hovered?'#b8f5ff':selected?'#f5d86c':'#8baec4';c.lineWidth=hovered?2.6:selected?1.6:1;
+  c.setLineDash(selected||hovered?[]:[5,3]);c.strokeRect(a.x,a.y,width,height);c.setLineDash([]);c.restore();
+  if(hovered){
+    const label=m.name+' · 点击选中';c.save();c.font='11px Microsoft YaHei UI, Segoe UI, sans-serif';
+    const lw=Math.ceil(c.measureText(label).width)+16,lx=clamp(a.x+4,p.l+3,Math.max(p.l+3,w-p.r-lw-3));
+    const ly=clamp(a.y+4,p.t+3,Math.max(p.t+3,h-p.b-21));
+    c.fillStyle='#10374f';c.fillRect(lx,ly,lw,19);c.strokeStyle='#95e3ff';c.strokeRect(lx+.5,ly+.5,lw-1,18);
+    c.fillStyle='#e2f9ff';c.fillText(label,lx+8,ly+13);c.restore();
+  }
+  if(selected&&!state.selecting)drawMarkHandles(c,m,p,w,h,v,waterfall);
+ }
+ if(state.drag?.target==='specCanvas'&&['zoom-box','mark'].includes(state.drag.tool)){const d=state.drag,a=makeDragRect(d.start,d.end,d.tool,w,h);c.fillStyle=d.tool==='mark'?'#f0ca5c27':'#7ed3f026';c.fillRect(a.x0,a.y0,a.x1-a.x0,a.y1-a.y0);c.strokeStyle=d.tool==='mark'?'#f4cc70':'#9ceaff';c.setLineDash([4,3]);c.strokeRect(a.x0,a.y0,a.x1-a.x0,a.y1-a.y0);c.setLineDash([])}
+ if(state.cursorT>=v.t0&&state.cursorT<=v.t1&&state.cursorF>=v.f0&&state.cursorF<=v.f1){const x=waterfall?p.l+(state.cursorF-v.f0)/(v.f1-v.f0)*pw:p.l+(state.cursorT-v.t0)/(v.t1-v.t0)*pw,y=waterfall?p.t+(state.cursorT-v.t0)/(v.t1-v.t0)*ph:p.t+(v.f1-state.cursorF)/(v.f1-v.f0)*ph;c.strokeStyle='#f0dd80a3';c.setLineDash([2,5]);c.beginPath();c.moveTo(x,p.t);c.lineTo(x,p.t+ph);c.moveTo(p.l,y);c.lineTo(p.l+pw,y);c.stroke();c.setLineDash([])}
+ c.restore();
+}
+function regionPlotRect(m,p,w,h,v,waterfall){
+ const pw=w-p.l-p.r,ph=h-p.t-p.b;
+ return waterfall
+ ?{x:p.l+(m.f0-v.f0)/(v.f1-v.f0)*pw,x1:p.l+(m.f1-v.f0)/(v.f1-v.f0)*pw,y:p.t+(m.t0-v.t0)/(v.t1-v.t0)*ph,y1:p.t+(m.t1-v.t0)/(v.t1-v.t0)*ph}
+ :{x:p.l+(m.t0-v.t0)/(v.t1-v.t0)*pw,x1:p.l+(m.t1-v.t0)/(v.t1-v.t0)*pw,y:p.t+(v.f1-m.f1)/(v.f1-v.f0)*ph,y1:p.t+(v.f1-m.f0)/(v.f1-v.f0)*ph};
+}
+// Only visible, on-plot marks are interactive; last drawn region is topmost.
+function marksAt(p){if(state.selecting||axisInfo(p,state.showColorbar)!=='plot')return[];const pl=specPlot(p.w,p.h),v=signal().view;return [...signal().regions].reverse().filter(m=>{const r=regionPlotRect(m,pl,p.w,p.h,v,isWaterfall()),x0=Math.max(pl.l,r.x),x1=Math.min(p.w-pl.r,r.x1),y0=Math.max(pl.t,r.y),y1=Math.min(p.h-pl.b,r.y1);return x1>x0&&y1>y0&&p.x>=x0&&p.x<=x1&&p.y>=y0&&p.y<=y1})}
+function markAt(p){return marksAt(p)[0]||null}
+
+function makeDragRect(start,end,tool,w,h){const p=specPlot(w,h),x0=clamp(Math.min(start.x,end.x),p.l,w-p.r),x1=clamp(Math.max(start.x,end.x),p.l,w-p.r),y0=clamp(Math.min(start.y,end.y),p.t,h-p.b),y1=clamp(Math.max(start.y,end.y),p.t,h-p.b);return{x0:tool==='zoom-freq'?p.l:x0,x1:tool==='zoom-freq'?w-p.r:x1,y0:tool==='zoom-time'?p.t:y0,y1:tool==='zoom-time'?h-p.b:y1}}
+function specCoords(a){
+ const p=specPlot(a.w,a.h),v=signal().view,ux=clamp((a.x-p.l)/(a.w-p.l-p.r),0,1),uy=clamp((a.y-p.t)/(a.h-p.t-p.b),0,1);
+ return isWaterfall()?{t:v.t0+uy*(v.t1-v.t0),f:v.f0+ux*(v.f1-v.f0)}:{t:v.t0+ux*(v.t1-v.t0),f:v.f1-uy*(v.f1-v.f0)};
+}
+function redraw(invalidate=false){$('emptyWorkspace').classList.toggle('hidden',hasFile());$('removeCurrentFile').disabled=!hasFile();document.querySelectorAll('[data-aux],[data-spec-layout],[data-max],#colormapHeader,#properties select,#properties input').forEach(b=>b.disabled=!hasFile());/* cache keys decide invalidation; overlays and colors retain simulated power */const s=signal(),v=s.view,mark=activeMark();drawNav();drawAux();drawSpec();$('projectLabel').textContent=state.projectName;$('scopeText').textContent=`${s.name} · Fₛ ${s.fs} MS/s · f꜀ ${s.fc} MHz`;$('navStatus').textContent=fmtTimeRange(0,s.duration);$('fileName').value=s.name;$('sampleRate').value=s.fs+' MS/s';$('centerFreq').value=s.fc+' MHz';$('fullRange').value=fmtTimeRange(0,s.duration);$('visibleTime').value=fmtTimeRange(v.t0,v.t1);$('visibleFreq').value=fmtFreqRange(v.f0,v.f1);$('scopeText').title=`当前可视 ${fmtTimeRange(v.t0,v.t1)} / ${fmtFreqRange(v.f0,v.f1)}`;$('statusSignal').textContent=s.name;$('cursorData').textContent=`游标 T ${fmtTime(state.cursorT,v.t1-v.t0)} · F ${fmtFreq(state.cursorF,v.f1-v.f0)}`;$('statusTime').textContent=`T ${fmtTime(state.cursorT,v.t1-v.t0)}`;$('statusFreq').textContent=`F ${fmtFreq(state.cursorF,v.f1-v.f0)}`;$('viewData').textContent=`视图 ΔT ${fmtTime(v.t1-v.t0,v.t1-v.t0)} · ΔF ${fmtFreq(v.f1-v.f0,v.f1-v.f0)}`;$('rangeTag').textContent=`动态 ${state.dynamic} dB`;document.querySelectorAll('[data-spec-layout]').forEach(b=>{const current=b.dataset.specLayout===s.specLayout;b.classList.toggle('active',current);b.setAttribute('aria-pressed',String(current))});$('specAxisLabel').textContent=isWaterfall()?'X 频率 · Y 时间↓ · 颜色功率':'X 时间 · Y 频率 · 颜色功率';$('specCanvas').setAttribute('aria-label',isWaterfall()?'宽带瀑布图，X 频率，Y 时间向下':'宽带时频图，X 时间，Y 频率');
+ $('selectionData').textContent=mark?`标记 ${mark.name} · ${fmtFreq((mark.f0+mark.f1)/2,mark.f1-mark.f0)}`:'未创建信号标记';$('selStart').value=mark?fmtTime(mark.t0,mark.t1-mark.t0):'—';$('selEnd').value=mark?fmtTime(mark.t1,mark.t1-mark.t0):'—';$('selFreq').value=mark?fmtFreqRange(mark.f0,mark.f1):'—';$('selectHint').classList.toggle('hidden',!mark);$('extract').disabled=!mark;$('selectedCount').textContent=String(s.selectedMarkIds.length);for(const id of ['renameMark','locateMark','deleteMarks'])$(id).disabled=!mark;updatePropertyContext();
+ document.querySelectorAll('[data-aux]').forEach(b=>b.classList.toggle('active',b.dataset.aux===s.aux));if(!hasFile()){$('scopeText').textContent='未添加 IQ 文件';$('statusSignal').textContent='空工程';$('statusTime').textContent='T —';$('statusFreq').textContent='F —';$('navStatus').textContent='—';$('auxStatus').textContent='—';$('auxTip').textContent='';$('cursorData').textContent='未添加 IQ 文件';$('viewData').textContent='';for(const id of ['fileName','sampleRate','centerFreq','fullRange','visibleTime','visibleFreq'])$(id).value='—'}
+}
+function updateSelectButton(){const b=$('contextMarkToggle');b.textContent=(state.selecting?'☑':'□')+' 选择信号（持续模式）';b.setAttribute('aria-checked',String(state.selecting));$('selectionInstruction').classList.toggle('hidden',!state.selecting);$('specMode').textContent=state.selecting?'持续选择信号 · 右键菜单关闭 / Esc 退出':isWaterfall()?'图内/X轴滚轮：频率 · Y轴滚轮：时间':'图内/X轴滚轮：时间 · Y轴滚轮：频率'}
+function beginSelect(){if(!hasFile())return;cancelInteraction(true);finishWheel();state.selecting=!state.selecting;state.hoverMarkId=null;resetCanvasCursors();updateSelectButton();hideContext();redraw();toast(state.selecting?'持续选择信号已开启；右键菜单关闭，Esc 退出':'持续选择信号已关闭')}
+function revealSelectAt(){}
+
+const coords=(e,can)=>{let r=can.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top,w:r.width,h:r.height}};
+const axisInfo=(p,withScale=false)=>{const a=plot(p.w,p.h,withScale);if(p.x>=0&&p.x<a.l&&p.y>=a.t&&p.y<=p.h-a.b)return 'y';if(p.y>=p.h-a.b&&p.y<p.h&&p.x>=a.l&&p.x<=p.w-a.r)return 'x';if(p.x>=a.l&&p.x<=p.w-a.r&&p.y>=a.t&&p.y<=p.h-a.b)return 'plot';return 'none'};
+function paintHoverAxis(c,w,h,p,id){const hovers=state.hover;if(!hovers||hovers.target!==id||!['x','y'].includes(hovers.zone))return;c.save();c.fillStyle='#2e94cb26';c.strokeStyle='#6ac5eacc';c.lineWidth=1.5;if(hovers.zone==='x'){c.fillRect(p.l,h-p.b,w-p.l-p.r,p.b);c.beginPath();c.moveTo(p.l,h-p.b);c.lineTo(w-p.r,h-p.b);c.stroke()}else{c.fillRect(0,p.t,p.l,h-p.t-p.b);c.beginPath();c.moveTo(p.l,p.t);c.lineTo(p.l,h-p.b);c.stroke()}c.restore()}
+function mouseHint(id,zone){if(state.selecting&&id==='specCanvas')return '持续选择信号：拖动创建 · 右键菜单关闭 · Esc 退出';if(id==='navCanvas')return '全局导航：滚轮缩放 · 拖动范围平移 · 单击跳转';if(id==='specCanvas'){const typ=isWaterfall()?'瀑布图':'时频图',xAxis=isWaterfall()?'频率':'时间',yAxis=isWaterfall()?'时间':'频率';return zone==='y'?`${typ} Y 轴：滚轮缩放${yAxis} · 按住拖动平移`:zone==='x'?`${typ} X 轴：滚轮缩放${xAxis} · 按住拖动平移`:zone==='plot'?`${typ}：滚轮缩放${xAxis} · 拖动矩形放大`:`${typ}：请将鼠标移入图内或坐标轴区域`}return zone==='y'?'辅助图谱 Y 轴：滚轮缩放幅度 · 拖动平移':zone==='x'?'辅助图谱 X 轴：滚轮缩放 · 拖动平移':zone==='plot'?'辅助图谱：滚轮缩放 X · 拖动范围放大':'辅助图谱：移至图谱或坐标轴进行交互'}
+function setHover(id,p,withScale=false){
+ const zone=axisInfo(p,id==='specCanvas'?state.showColorbar:withScale),old=state.hover||{};
+ const d=state.drag,dragging=d&&d.target===id;
+ const edit=id==='specCanvas'&&!dragging&&!state.selecting?markEditHit(p):null;const mark=id==='specCanvas'&&!dragging?markAt(p):null;
+ const nextMark=mark?.id||null,markChanged=id==='specCanvas'&&nextMark!==state.hoverMarkId;
+ state.hover={target:id,zone};if(id==='specCanvas')state.hoverMarkId=nextMark;
+ // The axis is pannable, not resizable: grab -> grabbing. Plot is a precision selection crosshair.
+ $(id).style.cursor=dragging?(d.tool==='mark-move'?'grabbing':d.tool==='mark-resize'?d.cursor:d.tool.startsWith('pan-')?'grabbing':'crosshair'):state.selecting&&id==='specCanvas'?(zone==='plot'?'crosshair':'default'):edit?edit.cursor:zone==='x'||zone==='y'?'grab':mark?'pointer':zone==='plot'?'crosshair':'default';
+ $('interactionFeedback').textContent=edit?`${edit.mark.name}：拖动移动 · 边线和顶点调整`:mark&&!state.selecting?`${mark.name}：单击选中 · 拖动空白区域放大`:mouseHint(id,zone);
+ if(old.target!==id||old.zone!==zone||markChanged){if(id==='specCanvas')drawSpec();else if(id==='auxCanvas')drawAux()}
+ return zone;
+}
+function clearHover(id){
+ if(state.hover?.target===id||id==='specCanvas'&&state.hoverMarkId){state.hover=null;
+  if(id==='specCanvas')state.hoverMarkId=null;
+  if(!state.drag)$(id).style.cursor='crosshair';$('interactionFeedback').textContent='鼠标指向图谱查看操作提示';
+  if(id==='specCanvas')drawSpec();else if(id==='auxCanvas')drawAux();
+ }
+}
+let wheelSession=null;
+function sameSnapshot(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+function finishWheel(){const w=wheelSession;if(!w)return;clearTimeout(w.timer);wheelSession=null;if(w.fileId===state.activeId&&!sameSnapshot(w.before,snapshot()))commitHistory(w.before)}
+function wheelZoom(e,target,axis,pivot,ratio){e.preventDefault();if(!hasFile()||state.drag)return;const raw=Number(e.deltaY);if(!Number.isFinite(raw)||!raw)return;const px=raw*(e.deltaMode===1?16:e.deltaMode===2?Math.max(40,$(target).getBoundingClientRect().height):1),factor=Math.exp(clamp(px,-480,480)*.002),key=target+':'+axis;if(wheelSession&&(wheelSession.key!==key||wheelSession.fileId!==state.activeId))finishWheel();if(!wheelSession)wheelSession={key,fileId:state.activeId,before:snapshot(),timer:null};clearTimeout(wheelSession.timer);if(axis==='aux-y')zoomAuxY(factor,ratio,false);else zoom(axis,factor,pivot,false);wheelSession.timer=setTimeout(finishWheel,220)}
+function releaseDrag(d){if(!d)return;const el=$(d.target);if(d.pointerId!=null&&el.hasPointerCapture?.(d.pointerId))try{el.releasePointerCapture(d.pointerId)}catch(_e){}el.classList.remove('dragging')}
+function cancelInteraction(restore=true){const d=state.drag;if(!d)return false;state.drag=null;releaseDrag(d);if(restore&&d.fileId===state.activeId){if(d.markBase){const m=signal().regions.find(m=>m.id===d.markId);if(m)Object.assign(m,d.markBase)}else if(d.layoutBase){document.documentElement.style.setProperty('--navh',d.layoutBase.nav+'px');document.documentElement.style.setProperty('--auxh',d.layoutBase.aux+'px')}else if(d.base){signal().view={...d.base.view};signal().auxY={wave:[...d.base.auxY.wave],psd:[...d.base.auxY.psd]}}}state.hover=null;state.hoverMarkId=null;resetCanvasCursors();redraw(true);return true}
+function cancelChartDrag(restore=true){return cancelInteraction(restore)}
+function startDrag(d,e){cancelInteraction(true);finishWheel();d.fileId=state.activeId;d.pointerId=e.pointerId;state.drag=d;$(d.target).setPointerCapture(e.pointerId);e.preventDefault()}
+function takeDrag(target,e){const d=state.drag;if(!d||d.target!==target||d.pointerId!==e.pointerId)return null;state.drag=null;releaseDrag(d);return d}
+
+function finishPan(d){if(!d)return;const s=signal();const changed=Object.keys(d.base.view).some(k=>Math.abs(d.base.view[k]-s.view[k])>1e-8)||s.auxY.wave.some((v,i)=>Math.abs(v-d.base.auxY.wave[i])>1e-8)||s.auxY.psd.some((v,i)=>Math.abs(v-d.base.auxY.psd[i])>1e-8);if(changed)commitHistory(d.base);redraw(true)}
+function panView(d,p){const b=d.base.view,pp=d.target==='specCanvas'?specPlot(p.w,p.h):plot(p.w,p.h),spanX=p.w-pp.l-pp.r,spanY=p.h-pp.t-pp.b,deltaX=p.x-d.start.x,deltaY=p.y-d.start.y;const patch={};if(d.tool==='pan-time') {const dt=(d.target==='specCanvas'&&isWaterfall()?deltaY/spanY:deltaX/spanX)*(b.t1-b.t0);patch.t0=b.t0-dt;patch.t1=b.t1-dt}if(d.tool==='pan-freq'){const df=(d.target==='specCanvas'&&isWaterfall()?-deltaX/spanX:deltaY/spanY)*(b.f1-b.f0);patch.f0=b.f0+df;patch.f1=b.f1+df}if(d.tool==='pan-aux-x'){const kind=signal().aux;if(kind==='wave'){const dt=deltaX/spanX*(b.t1-b.t0);patch.t0=b.t0-dt;patch.t1=b.t1-dt}else{const df=deltaX/spanX*(b.f1-b.f0);patch.f0=b.f0-df;patch.f1=b.f1-df}}if(d.tool==='pan-aux-y'){const mode=signal().aux,world=mode==='wave'?[-160,160]:[-180,50],base=d.base.auxY[mode],dy=deltaY/spanY*(base[1]-base[0]);const [a,b]=range(base[0]+dy,base[1]+dy,world[0],world[1],2);signal().auxY[mode]=[a,b];redraw();return}applyView(patch,{history:false})}
+
+// 右键菜单只限三张图；选择信号时，时频图右键优先取消选择、不显示菜单。
+const contextMenu=$('chartContextMenu'),menuItems=Array.from(contextMenu.querySelectorAll('[data-context]'));
+function hideContext(){contextMenu.classList.add('hidden')}
+function cancelSignalSelection(){const was=state.selecting;cancelInteraction(true);state.selecting=false;state.hoverMarkId=null;resetCanvasCursors();updateSelectButton();hideContext();redraw();return was}
+function openContext(e,title,tree=false){e.preventDefault();e.stopPropagation();cancelInteraction(true);finishWheel();$('contextOrigin').textContent=title+' · 视图与标记';const specMenu=tree||e.currentTarget?.id==='specPanel'||e.target?.closest?.('#specPanel');$('contextMarkToggle').classList.toggle('hidden',!specMenu||tree);$('contextMarkToggle').disabled=!hasFile();$('contextMarkActions').classList.toggle('hidden',!specMenu||!activeMark());$('contextDelete').textContent=`删除所选标记 (${signal().selectedMarkIds.length})`;const overlap=$('overlapChoices');overlap.replaceChildren();if(specMenu&&!tree&&!state.selecting&&e.target?.id==='specCanvas'){const marks=marksAt(coords(e,$('specCanvas')));if(marks.length>1){const h=document.createElement('div');h.className='context-heading';h.textContent='选择重叠标记';overlap.append(h);for(const m of marks){const b=document.createElement('button');b.textContent=m.name;b.setAttribute('role','menuitem');b.onclick=()=>{selectMark(m.id);hideContext()};overlap.append(b)}}}for(const b of menuItems)b.disabled=!hasFile()||(b.dataset.context==='back'?!signal().past.length:b.dataset.context==='forward'?!signal().future.length:false);updateSelectButton();contextMenu.classList.remove('hidden');const r=contextMenu.getBoundingClientRect();contextMenu.style.left=clamp(e.clientX,4,Math.max(4,innerWidth-r.width-8))+'px';contextMenu.style.top=clamp(e.clientY,4,Math.max(4,innerHeight-r.height-8))+'px'}
+for(const [id,name] of [['navPanel','全局导航'],['auxPanel','辅助分析'],['specPanel','宽带图谱']])$(id).addEventListener('contextmenu',e=>{if(e.target.closest('button,select,input'))return;openContext(e,name)});
+for(const b of menuItems)b.onclick=()=>{const action=b.dataset.context;hideContext();if(action==='back')back('back');else if(action==='forward')back('forward');else if(action==='fit')fitAll();else if(action==='reset')resetView()};
+$('contextMarkToggle').onclick=beginSelect;
+for(const id of ['renameMark','contextRename'])$(id).onclick=()=>{hideContext();renameActiveMark()};for(const id of ['locateMark','contextLocate'])$(id).onclick=()=>{hideContext();locateActiveMark()};for(const id of ['deleteMarks','contextDelete'])$(id).onclick=()=>{hideContext();deleteSelectedMarks()};
+document.addEventListener('pointerdown',e=>{if(!contextMenu.contains(e.target))hideContext();if(!$('fileMenu').contains(e.target)&&e.target!==$('fileMenuToggle'))closeFileMenu()});
+const spec=$('specCanvas');
+spec.addEventListener('pointerdown',e=>{if(e.button===2){cancelInteraction(true);return}if(e.button!==0||!hasFile()||state.drag)return;const p=coords(e,spec),zone=axisInfo(p,state.showColorbar);if(zone==='none')return;let tool=state.selecting?(zone==='plot'?'mark':null):zone==='x'?(isWaterfall()?'pan-freq':'pan-time'):zone==='y'?(isWaterfall()?'pan-time':'pan-freq'):'zoom-box';if(!tool)return;const edit=!state.selecting&&zone==='plot'?markEditHit(p):null;const d={target:'specCanvas',tool,start:p,end:p,base:snapshot()};if(edit){d.tool=edit.mode==='move'?'mark-move':'mark-resize';d.markId=edit.mark.id;d.handle=edit.handle;d.cursor=edit.cursor;d.markBase={t0:edit.mark.t0,t1:edit.mark.t1,f0:edit.mark.f0,f1:edit.mark.f1};d.clickMarkId=edit.mark.id;signal().markId=edit.mark.id}else d.clickMarkId=markAt(p)?.id;startDrag(d,e);state.hoverMarkId=null;spec.style.cursor=d.tool==='mark-move'?'grabbing':d.tool==='mark-resize'?d.cursor:d.tool.startsWith('pan-')?'grabbing':'crosshair';hideContext()});
+spec.addEventListener('pointermove',e=>{const p=coords(e,spec),v=specCoords(p);state.cursorT=v.t;state.cursorF=v.f;const d=state.drag;if(d?.target==='specCanvas'&&d.pointerId===e.pointerId){d.end=p;if(d.tool.startsWith('pan-'))panView(d,p);else if(d.markBase){if(Math.max(Math.abs(p.x-d.start.x),Math.abs(p.y-d.start.y))>5||d.moved){d.moved=true;updateMarkDrag(d,p)}redraw()}else redraw()}else{setHover('specCanvas',p,true);redraw()}});
+spec.addEventListener('pointerleave',()=>clearHover('specCanvas'));
+spec.addEventListener('pointerup',e=>{if(e.button!==0)return;const d=takeDrag('specCanvas',e);if(!d)return;const p=coords(e,spec);if(d.tool.startsWith('pan-')){finishPan(d);setHover('specCanvas',p,true);return}if(d.markBase){if(d.moved){updateMarkDrag(d,p);renderTree();redraw();toast('已更新标记范围')}else selectMark(d.markId,{toggle:e.ctrlKey||e.metaKey,range:e.shiftKey});setHover('specCanvas',p,true);return}const rect=makeDragRect(d.start,p,d.tool,p.w,p.h),rx=rect.x1-rect.x0,ry=rect.y1-rect.y0;if(rx<8||ry<8){if(d.tool==='zoom-box'&&Math.max(Math.abs(p.x-d.start.x),Math.abs(p.y-d.start.y))<=5&&d.clickMarkId)selectMark(d.clickMarkId,{toggle:e.ctrlKey||e.metaKey,range:e.shiftKey});redraw();setHover('specCanvas',p,true);return}const a=specCoords({x:rect.x0,y:rect.y0,w:p.w,h:p.h}),b=specCoords({x:rect.x1,y:rect.y1,w:p.w,h:p.h}),q={t0:Math.min(a.t,b.t),t1:Math.max(a.t,b.t),f0:Math.min(a.f,b.f),f1:Math.max(a.f,b.f)};if(d.tool==='mark'){const s=signal(),min=minimumSpans(s);if(q.t1-q.t0<min.time||q.f1-q.f0<min.freq){toast('标记范围小于当前 STFT 分辨率');redraw();return}const m={...q,id:'r'+Date.now()+Math.floor(Math.random()*999),name:'Region '+String(s.regions.length+1).padStart(2,'0')};s.regions.push(m);s.markId=m.id;s.selectedMarkIds=[m.id];s.selectionAnchor=m.id;state.hoverMarkId=null;renderTree();updateSelectButton();redraw();toast('已创建 '+m.name+'；持续选择信号仍开启');log(`信号标记 ${m.name} 添加到 ${s.name}`)}else{applyView(q);toast('矩形区域放大')}setHover('specCanvas',p,true)});
+spec.addEventListener('wheel',e=>{const p=coords(e,spec),zone=axisInfo(p,state.showColorbar);e.preventDefault();if(zone==='none')return;const axis=isWaterfall()?(zone==='y'?'time':'freq'):(zone==='y'?'freq':'time');wheelZoom(e,'specCanvas',axis,specCoords(p));setHover('specCanvas',p,true)},{passive:false});
+const nav=$('navCanvas');
+function navHit(p,view=signal().view){const left=13+(p.w-26)*view.t0/signal().duration,right=13+(p.w-26)*view.t1/signal().duration;return p.x>=left&&p.x<=right}
+function navCursor(p){nav.style.cursor=state.drag?.target==='navCanvas'&&state.drag.inside?'grabbing':navHit(p)?'grab':'pointer'}
+nav.addEventListener('pointerdown',e=>{if(e.button===2){cancelInteraction(true);return}if(e.button!==0||!hasFile()||state.drag)return;const p=coords(e,nav);startDrag({target:'navCanvas',tool:'pan-nav',start:p,end:p,base:snapshot(),moved:false,inside:navHit(p)},e);navCursor(p)});
+nav.addEventListener('pointermove',e=>{const p=coords(e,nav),d=state.drag;if(d?.target!=='navCanvas'||d.pointerId!==e.pointerId){navCursor(p);return}d.end=p;if(Math.abs(p.x-d.start.x)>4)d.moved=true;if(d.inside&&d.moved){const dt=(p.x-d.start.x)/(p.w-26)*signal().duration,b=d.base.view;applyView({t0:b.t0+dt,t1:b.t1+dt},{history:false})}navCursor(p)});
+nav.addEventListener('pointerup',e=>{if(e.button!==0)return;const d=takeDrag('navCanvas',e);if(!d)return;const p=coords(e,nav),b=d.base.view;if(d.inside&&d.moved)finishPan(d);else if(!d.moved){const t=clamp((p.x-13)/(p.w-26),0,1)*signal().duration,span=b.t1-b.t0;applyView({t0:t-span/2,t1:t+span/2})}navCursor(p);redraw()});
+nav.addEventListener('wheel',e=>{const p=coords(e,nav),t=clamp((p.x-13)/(p.w-26),0,1)*signal().duration;wheelZoom(e,'navCanvas','time',{t})},{passive:false});
+nav.addEventListener('pointerenter',e=>{navCursor(coords(e,nav));$('interactionFeedback').textContent=mouseHint('navCanvas')});nav.addEventListener('pointerleave',()=>{if(state.drag?.target!=='navCanvas')nav.style.cursor='pointer'});
+const aux=$('auxCanvas');
+aux.addEventListener('wheel',e=>{const p=coords(e,aux),pl=plot(p.w,p.h),zone=axisInfo(p);e.preventDefault();if(zone==='none')return;const v=signal().view,ratio=clamp((p.x-pl.l)/(p.w-pl.l-pl.r),0,1);if(zone==='y')wheelZoom(e,'auxCanvas','aux-y',null,(p.y-pl.t)/(p.h-pl.t-pl.b));else if(signal().aux==='wave')wheelZoom(e,'auxCanvas','time',{t:v.t0+ratio*(v.t1-v.t0)});else wheelZoom(e,'auxCanvas','freq',{f:v.f0+ratio*(v.f1-v.f0)})},{passive:false});
+aux.addEventListener('pointerdown',e=>{if(e.button===2){cancelInteraction(true);return}if(e.button!==0||!hasFile()||state.drag)return;const p=coords(e,aux),zone=axisInfo(p);if(zone==='none')return;startDrag({target:'auxCanvas',tool:zone==='x'?'pan-aux-x':zone==='y'?'pan-aux-y':'zoom-x',start:p,end:p,base:snapshot()},e);aux.style.cursor=zone==='x'||zone==='y'?'grabbing':'crosshair'});
+aux.addEventListener('pointermove',e=>{const p=coords(e,aux);setHover('auxCanvas',p);const d=state.drag;if(d?.target!=='auxCanvas'||d.pointerId!==e.pointerId)return;d.end=p;if(d.tool.startsWith('pan-'))panView(d,p);else drawAux()});aux.addEventListener('pointerleave',()=>clearHover('auxCanvas'));
+aux.addEventListener('pointerup',e=>{if(e.button!==0)return;const d=takeDrag('auxCanvas',e);if(!d)return;const p=coords(e,aux);if(d.tool.startsWith('pan-')){finishPan(d);setHover('auxCanvas',p);return}const pl=plot(p.w,p.h),r0=clamp((d.start.x-pl.l)/(p.w-pl.l-pl.r),0,1),r1=clamp((p.x-pl.l)/(p.w-pl.l-pl.r),0,1);if(Math.abs(p.x-d.start.x)<8){redraw();return}const v=d.base.view,low=Math.min(r0,r1),high=Math.max(r0,r1);if(signal().aux==='wave')applyView({t0:v.t0+low*(v.t1-v.t0),t1:v.t0+high*(v.t1-v.t0)});else applyView({f0:v.f0+low*(v.f1-v.f0),f1:v.f0+high*(v.f1-v.f0)});setHover('auxCanvas',p)});
+for(const el of [spec,nav,aux]){el.addEventListener('pointercancel',()=>cancelInteraction(true));el.addEventListener('lostpointercapture',()=>{if(state.drag?.target===el.id)cancelInteraction(true)})}
+
+for(const b of document.querySelectorAll('[data-aux]'))b.onclick=()=>{cancelInteraction(true);finishWheel();signal().aux=b.dataset.aux;redraw();toast('辅助分析切换至 '+b.textContent)};
+for(const b of document.querySelectorAll('[data-spec-layout]'))b.onclick=()=>{const layout=b.dataset.specLayout;if(signal().specLayout===layout)return;cancelInteraction(true);finishWheel();signal().specLayout=layout;state.hover=null;state.hoverMarkId=null;resetCanvasCursors();updateSelectButton();redraw(true)};
+
+function closeFileMenu(){$('fileMenu').classList.add('hidden');$('fileMenuToggle').setAttribute('aria-expanded','false')}
+$('fileMenuToggle').onclick=()=>{const isHidden=$('fileMenu').classList.toggle('hidden');$('fileMenuToggle').setAttribute('aria-expanded',String(!isHidden))};
+$('projectImportMenu').onclick=()=>{closeFileMenu();$('projectImportInput').click()};
+function cleanDisplay(raw,legacy={}){const d=defaultDisplay(),r={...legacy,...raw};for(const [key,allowed] of [['color',['turbo','viridis','gray']],['dynamic',[60,80,100]],['ref',[0,-20,-40]],['freqMode',['abs','base']],['psdFft',['1024','2048','4096','8192']],['psdScope',['visible','selection']],['stftFft',['2048','4096','8192']]])if(allowed.includes(r[key]))d[key]=r[key];for(const key of ['grid','showColorbar'])if(typeof r[key]==='boolean')d[key]=r[key];return d}
+function projectData(){finishWheel();saveDisplay();return{schema:'signal-studio-a1.4.3-prototype',project:state.projectName,activeId:state.activeId,signals:state.signals.map(({id,name,fc,fs,duration,regions,channels,view,aux,auxY,specLayout,display,markId,selectedMarkIds})=>({id,name,fc,fs,duration,regions,channels,view,aux,auxY,specLayout,display,markId,selectedMarkIds})),note:'模拟 UI 工程；不含真实 IQ 样本'}}
+function parseProject(obj){if(!obj||!Array.isArray(obj.signals)||obj.signals.length>150)throw Error('工程文件缺少有效文件列表');const ids=new Set();const signals=obj.signals.map((r,i)=>{if(!r||typeof r.name!=='string'||!r.name.trim()||!Number.isFinite(Number(r.fs))||!(Number(r.fs)>0&&Number(r.fs)<=1e6)||!Number.isFinite(Number(r.duration))||!(Number(r.duration)>0&&Number(r.duration)<=1e9)||!Number.isFinite(Number(r.fc))||Math.abs(Number(r.fc))>1e9)throw Error('IQ 文件参数无效');let id=typeof r.id==='string'&&r.id.length<=100?r.id:'file_'+i;if(ids.has(id))throw Error('IQ 文件标识重复');ids.add(id);const z=demo(id,r.name.slice(0,160),Number(r.fc),Number(r.fs),Number(r.duration),i+1);z.display=cleanDisplay(r.display,{showColorbar:obj.showColorbar===true});if(r.aux==='wave'||r.aux==='psd')z.aux=r.aux;if(r.specLayout==='waterfall')z.specLayout='waterfall';if(r.view){const b={t0:0,t1:z.duration,f0:z.fc-z.fs/2,f1:z.fc+z.fs/2},min=minimumSpans(z);if(!['t0','t1','f0','f1'].every(k=>Number.isFinite(r.view[k])))throw Error('视图范围无效');[z.view.t0,z.view.t1]=range(r.view.t0,r.view.t1,b.t0,b.t1,min.time);[z.view.f0,z.view.f1]=range(r.view.f0,r.view.f1,b.f0,b.f1,min.freq)}if(r.auxY)for(const mode of ['wave','psd']){const vals=r.auxY[mode],b=mode==='wave'?[-160,160]:[-180,50];if(Array.isArray(vals)&&vals.length===2)z.auxY[mode]=range(Number(vals[0]),Number(vals[1]),...b,2)}const markIds=new Set();z.regions=(Array.isArray(r.regions)?r.regions:[]).slice(0,2000).map((m,k)=>{if(!m||!['t0','t1','f0','f1'].every(key=>Number.isFinite(m[key])))throw Error('信号标记范围无效');let mid=typeof m.id==='string'?m.id:'region_'+i+'_'+k;if(markIds.has(mid))throw Error('信号标记标识重复');markIds.add(mid);return{id:mid,name:typeof m.name==='string'?m.name.slice(0,80):'Region '+(k+1),t0:clamp(m.t0,0,z.duration),t1:clamp(m.t1,0,z.duration),f0:clamp(m.f0,z.fc-z.fs/2,z.fc+z.fs/2),f1:clamp(m.f1,z.fc-z.fs/2,z.fc+z.fs/2)}}).filter(m=>m.t1>m.t0&&m.f1>m.f0);z.channels=(Array.isArray(r.channels)?r.channels:[]).slice(0,100).filter(c=>c&&Number.isFinite(c.center)&&Number.isFinite(c.width)&&c.width>0&&z.regions.some(m=>m.id===c.regionId)).map(c=>({name:String(c.name||'Channel').slice(0,80),center:c.center,width:c.width,regionId:c.regionId}));z.selectedMarkIds=(Array.isArray(r.selectedMarkIds)?r.selectedMarkIds:r.markId?[r.markId]:[]).filter(id=>z.regions.some(m=>m.id===id));z.markId=r.markId;normalizeMarkSelection(z);if(z.display.psdScope==='selection'&&!z.markId)z.display.psdScope='visible';return z});return{signals,activeId:signals.some(s=>s.id===obj.activeId)?obj.activeId:signals[0]?.id||null,projectName:String(obj.project||'未命名工程').slice(0,80)}}
+function loadProject(obj){const parsed=parseProject(obj);cancelInteraction(true);finishWheel();if(state.max){$(state.max).classList.remove('panelmax');state.max=null;}Object.assign(state,parsed);state.cursorT=(signal().view.t0+signal().view.t1)/2;state.cursorF=signal().fc;state.selecting=false;state.hover=null;state.hoverMarkId=null;syncDisplay();resetCanvasCursors();updateSelectButton();renderTree();redraw(true)}
+$('projectImportInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>10*1024*1024)throw Error('工程文件超过 10 MB');loadProject(JSON.parse(await file.text()));toast('已打开工程结构（模拟数据）')}catch(err){toast('工程载入失败：'+err.message)}finally{e.target.value=''}});
+$('removeCurrentFile').onclick=()=>{closeFileMenu();if(!hasFile())return;cancelInteraction(true);finishWheel();const s=signal();if(!confirm('仅从工程移除 '+s.name+'？'))return;state.signals=state.signals.filter(x=>x.id!==s.id);state.activeId=state.signals[0]?.id||null;if(!state.signals.length&&state.max){$(state.max).classList.remove('panelmax');state.max=null;}state.selecting=false;state.hover=null;state.hoverMarkId=null;syncDisplay();resetCanvasCursors();updateSelectButton();renderTree();redraw(true);toast('已从工程移除 IQ 文件')};
+
+$('extract').onclick=()=>{let s=signal(),m=activeMark();if(!m){toast('须先使用“标记信号”工具创建区域');return}const c={name:'Channel '+String(s.channels.length+1).padStart(2,'0'),center:(m.f0+m.f1)/2,width:m.f1-m.f0,regionId:m.id};s.channels.push(c);renderTree();toast(`已在 ${s.name} 建立演示窄带通道；未执行真实 DDC`);log(`演示通道 ${c.name} 来源 ${s.name} / ${m.name}`)};
+let previousPropertyContext='';
+function updatePropertyContext(){const s=signal(),marked=!!activeMark(),context=s.id+':'+s.aux+':'+marked;$('markSection').classList.toggle('hidden',!marked);if(context!==previousPropertyContext){if(s.aux==='psd')$('psdSection').classList.remove('collapsed-section');else $('psdSection').classList.add('collapsed-section');const panel=document.querySelector('.prop-content');panel.prepend(marked?$('markSection'):s.aux==='psd'?$('psdSection'):$('fileSection'));if(marked)$('markSection').classList.remove('collapsed-section');previousPropertyContext=context}for(const h of document.querySelectorAll('.section-h')){const closed=h.parentElement.classList.contains('collapsed-section');h.setAttribute('aria-expanded',String(!closed));h.textContent=(closed?'▸':'▾')+h.textContent.replace(/^[▸▾]\s*/,'').trim()}}
+document.querySelectorAll('.section-h').forEach(h=>{h.setAttribute('role','button');h.setAttribute('tabindex','0');const toggle=()=>{const section=h.parentElement;section.classList.toggle('collapsed-section');h.textContent=(section.classList.contains('collapsed-section')?'▸':'▾')+h.textContent.replace(/^[▸▾]\s*/, '').trim()};h.addEventListener('click',toggle);h.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}})});
+function toggleProp(force){state.props=force===undefined?!state.props:force;$('properties').classList.toggle('collapsed',!state.props);redraw()}$('propClose').onclick=()=>toggleProp(false);$('propRailOpen').onclick=()=>toggleProp(true);$('resourceToggle').onclick=()=>{$('resources').classList.toggle('hide');redraw()};let bottomTab='result';document.querySelectorAll('[data-btab]').forEach(b=>b.onclick=()=>{bottomTab=b.dataset.btab;document.querySelectorAll('[data-btab]').forEach(x=>x.classList.toggle('active',x===b));$('bottom').classList.remove('closed');$('bottomContent').innerHTML='<div class="log-row"><span>'+signal().name+'</span><span class="ok">'+bottomTab+'</span><span>'+(bottomTab==='result'?`标记 ${signal().regions.length} 个，通道 ${signal().channels.length} 个。`:bottomTab==='task'?'无后台任务；全部是演示数据。':'操作日志将在此显示。')+'</span></div>';redraw()});$('bottomHide').onclick=()=>{$('bottom').classList.toggle('closed');redraw()};
+for(const id of ['colormap','colormapHeader'])$(id).onchange=e=>{state.color=e.target.value;$('colormap').value=state.color;$('colormapHeader').value=state.color;saveDisplay();redraw()};$('dynamic').onchange=e=>{state.dynamic=Number(e.target.value);saveDisplay();redraw()};$('reference').onchange=e=>{state.ref=Number(e.target.value);saveDisplay();redraw()};$('gridToggle').onchange=e=>{state.grid=e.target.checked;saveDisplay();redraw()};$('colorbarToggle').onchange=e=>{cancelInteraction(true);state.showColorbar=e.target.checked;saveDisplay();redraw(true)};$('freqMode').onchange=e=>{state.freqMode=e.target.value;saveDisplay();redraw()};$('psdFft').onchange=()=>{saveDisplay();redraw()};$('psdScope').onchange=e=>{if(e.target.value==='selection'&&!activeMark()){toast('请先选择信号标记');e.target.value='visible'}saveDisplay();redraw()};$('stftFft').onchange=()=>{cancelInteraction(true);finishWheel();saveDisplay();applyView(signal().view,{history:false});redraw(true)};
+
+function addSignal(fileName,fc,fs,duration){const count=state.signals.length+1,s=demo('s'+Date.now(),fileName,fc,fs,duration,count);state.signals.push(s);selectSignal(s.id);toast('已将演示信号加入当前工程：'+fileName)}
+$('open').onclick=$('projectAddSignal').onclick=()=>{closeFileMenu();$('veil').classList.add('show');$('progressText').textContent='输入参数以演示添加信号';$('progress').style.width='0%'};
+$('cancelOpen').onclick=()=>{clearInterval(loadTimer);$('veil').classList.remove('show')};$('simulateOpen').onclick=()=>{const file=$('fileInput').files[0],fs=Number($('loadFs').value)/1e6,fc=Number($('loadFc').value)/1e6,dur=Number($('loadDuration').value);if(![fs,fc,dur].every(Number.isFinite)||!(fs>0&&fs<=1e6&&fc>=0&&fc<=1e9&&dur>.1&&dur<=1e9)){toast('请提供有效采样率、中心频率和时长');return}const name=file?.name||`signal_${String(state.signals.length+1).padStart(2,'0')}.iq`;let n=0;clearInterval(loadTimer);$('simulateOpen').disabled=true;loadTimer=setInterval(()=>{n+=20;$('progress').style.width=n+'%';$('progressText').textContent=`正在演示建立文件上下文 ${n}%（不读取 IQ 样本）`;if(n>=100){clearInterval(loadTimer);$('simulateOpen').disabled=false;$('veil').classList.remove('show');addSignal(name,fc,fs,dur)}},70)};
+$('cancelOpen').onclick=()=>{clearInterval(loadTimer);$('simulateOpen').disabled=false;$('veil').classList.remove('show')};
+$('emptyAdd').onclick=()=>$('open').click();
+$('newProject').onclick=()=>{closeFileMenu();if(!confirm('新建空工程将清除当前未保存内容，继续吗？'))return;loadProject({project:'未命名工程',signals:[]});toast('已新建空工程')};
+$('projectSave').onclick=$('projectSaveMenu').onclick=()=>{cancelInteraction(true);closeFileMenu();const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(projectData(),null,2)],{type:'application/json'}));a.href=url;a.download='signal-studio-a1.4.3-project.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+
+function maxPanel(id){cancelInteraction(true);const old=state.max;if(old)$(old).classList.remove('panelmax');state.max=old===id?null:id;if(state.max)$(state.max).classList.add('panelmax');requestAnimationFrame(()=>redraw(true))}document.querySelectorAll('[data-max]').forEach(b=>b.onclick=()=>maxPanel(b.dataset.max));
+document.addEventListener('keydown',e=>{const editing=['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName);if(e.key==='Escape'){if($('veil').classList.contains('show'))$('cancelOpen').click();hideContext();closeFileMenu();const cancelled=cancelInteraction(true);if(state.selecting)cancelSignalSelection();else if(!cancelled&&state.max)maxPanel(state.max);e.preventDefault()}if(editing)return;if(e.key==='Delete'&&activeMark()){e.preventDefault();deleteSelectedMarks()}if(e.altKey&&e.key==='ArrowLeft'){e.preventDefault();back('back')}if(e.altKey&&e.key==='ArrowRight'){e.preventDefault();back('forward')}});
+window.addEventListener('blur',()=>{cancelInteraction(true);finishWheel();state.selecting=false;updateSelectButton();hideContext()});document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelInteraction(true);finishWheel();state.selecting=false;updateSelectButton()}});
+let layoutBusy=false;
+function layoutSizes(){const cs=getComputedStyle(document.documentElement);return{nav:parseFloat(cs.getPropertyValue('--navh'))||82,aux:parseFloat(cs.getPropertyValue('--auxh'))||205}}
+function enforceLayout(reset=false){if(layoutBusy)return;layoutBusy=true;const height=$('graphs').getBoundingClientRect().height,available=Math.max(0,height-24),mainBudget=Math.min(366,Math.max(80,available-62-116)),others=Math.max(0,available-mainBudget);let {nav,aux}=layoutSizes();if(reset){nav=82;aux=innerHeight<850?176:205}nav=clamp(nav,Math.min(62,others),Math.min(128,Math.max(0,others-116)));aux=clamp(aux,Math.min(116,Math.max(0,others-nav)),Math.max(0,others-nav));document.documentElement.style.setProperty('--navh',Math.round(nav)+'px');document.documentElement.style.setProperty('--auxh',Math.round(aux)+'px');layoutBusy=false}
+function resizeAt(id,cssvar){const b=$(id);b.setAttribute('role','separator');b.setAttribute('aria-orientation','horizontal');b.tabIndex=0;b.onpointerdown=e=>{if(e.button!==0||state.drag)return;const base=layoutSizes();startDrag({target:id,tool:'resize-panel',startY:e.clientY,layoutBase:base},e);b.classList.add('dragging')};b.onpointermove=e=>{const d=state.drag;if(d?.target!==id||d.pointerId!==e.pointerId)return;const height=$('graphs').getBoundingClientRect().height,available=height-24,mainBudget=Math.min(366,Math.max(80,available-62-116)),others=Math.max(0,available-mainBudget);const upper=cssvar==='--navh'?Math.min(128,others-d.layoutBase.aux):others-d.layoutBase.nav;const lower=cssvar==='--navh'?62:116;document.documentElement.style.setProperty(cssvar,clamp((cssvar==='--navh'?d.layoutBase.nav:d.layoutBase.aux)+e.clientY-d.startY,Math.min(lower,upper),Math.max(0,upper))+'px');redraw(true)};b.onpointerup=e=>{if(!takeDrag(id,e))return;enforceLayout();redraw(true)};b.onpointercancel=()=>cancelInteraction(true);b.onlostpointercapture=()=>{if(state.drag?.target===id)cancelInteraction(true)};b.ondblclick=()=>{cancelInteraction(true);enforceLayout(true);redraw(true)};b.onkeydown=e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();const size=layoutSizes(),key=cssvar==='--navh'?'nav':'aux';document.documentElement.style.setProperty(cssvar,size[key]+(e.key==='ArrowDown'?10:-10)+'px');enforceLayout();redraw(true)}}}resizeAt('navSplit','--navh');resizeAt('auxSplit','--auxh');
+window.addEventListener('resize',()=>{cancelInteraction(true);enforceLayout();redraw(true)});
+
+const ro=new ResizeObserver(()=>{enforceLayout();redraw(true)});['navCanvas','auxCanvas','specCanvas'].forEach(id=>ro.observe($(id)));document.querySelectorAll('[data-toast]').forEach(b=>b.onclick=()=>toast(b.dataset.toast));syncDisplay();enforceLayout(true);updateSelectButton();renderTree();requestAnimationFrame(()=>redraw(true));
+})();
+</script></body></html>

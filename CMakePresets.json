@@ -1,0 +1,69 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 4, "minor": 2, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "vs2026-qt611-base",
+      "hidden": true,
+      "generator": "Visual Studio 18 2026",
+      "architecture": "x64",
+      "cacheVariables": {
+        "SS_QT_ROOT": "$env{SS_QT_ROOT}",
+        "SS_BUILD_TESTS": "ON",
+        "SS_DEPLOY_RUNTIME": "ON"
+      }
+    },
+    {
+      "name": "vs2026-qt611-debug",
+      "displayName": "VS 2026 / Qt 6.11 / Debug",
+      "inherits": "vs2026-qt611-base",
+      "binaryDir": "${sourceDir}/out/vs2026-qt611-debug"
+    },
+    {
+      "name": "vs2026-qt611-release",
+      "displayName": "VS 2026 / Qt 6.11 / Release",
+      "inherits": "vs2026-qt611-base",
+      "binaryDir": "${sourceDir}/out/vs2026-qt611-release"
+    },
+    {
+      "name": "portable-ninja",
+      "displayName": "Portable Ninja / Qt 6.11.1 / Debug (Linux pending validation)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/portable-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SS_QT_ROOT": "$env{SS_QT_ROOT}",
+        "SS_OUTPUT_PREFIX": "portable-ninja",
+        "SS_BUILD_TESTS": "ON",
+        "SS_DEPLOY_RUNTIME": "OFF"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "vs2026-qt611-debug", "configurePreset": "vs2026-qt611-debug", "configuration": "Debug" },
+    { "name": "vs2026-qt611-release", "configurePreset": "vs2026-qt611-release", "configuration": "Release" },
+    { "name": "portable-ninja", "configurePreset": "portable-ninja" }
+  ],
+  "testPresets": [
+    {
+      "name": "vs2026-qt611-debug",
+      "configurePreset": "vs2026-qt611-debug",
+      "configuration": "Debug",
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error" }
+    },
+    {
+      "name": "vs2026-qt611-release",
+      "configurePreset": "vs2026-qt611-release",
+      "configuration": "Release",
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error" }
+    },
+    {
+      "name": "portable-ninja",
+      "configurePreset": "portable-ninja",
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error" }
+    }
+  ]
+}
