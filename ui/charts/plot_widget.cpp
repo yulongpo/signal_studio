@@ -117,7 +117,10 @@ QRgb color(float level, Palette palette) {
     static const std::vector<std::array<int, 3>> inferno{{0,0,4},{87,16,110},{188,55,84},{249,142,9},{252,255,164}};
     static const std::vector<std::array<int, 3>> magma{{0,0,4},{81,18,124},{183,55,121},{251,136,97},{252,253,191}};
     static const std::vector<std::array<int, 3>> cividis{{0,32,76},{59,82,139},{124,123,120},{188,167,72},{253,231,55}};
-    static const std::vector<std::array<int, 3>> coolEditClassic{{2,4,35},{0,16,132},{0,91,255},{0,215,255},{48,244,110},{255,244,0}};
+    static const std::vector<std::array<int, 3>> coolEditClassic{
+        {11,4,41}, {22,2,64}, {43,0,98}, {105,0,113},
+        {161,0,96}, {215,12,45}, {245,66,11}, {255,175,28}, {255,234,46}
+    };
     const auto& stops = [&]() -> const std::vector<std::array<int, 3>>& {
         switch (palette) {
         case Palette::Turbo: return turbo;

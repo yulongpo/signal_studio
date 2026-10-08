@@ -343,7 +343,7 @@ void MainWindow::buildWorkspace() {
     // Segment buttons are the visible controls. Hidden combos preserve a single mode state and automation API.
     mainMode_ = combo("modeMain", {"时频图", "瀑布图"}); mainMode_->setParent(this); mainMode_->hide();
     auxMode_ = combo("modeAux", {"时域波形", "功率谱 (PSD)"}); auxMode_->setParent(this); auxMode_->hide();
-    palette_ = combo("palette", {"Turbo", "Viridis", "Gray", "Plasma", "Inferno", "Magma", "Cividis", "CoolEdit Classic"}); palette_->setFixedWidth(120); palette_->setFixedHeight(26);
+    palette_ = combo("palette", {"Turbo", "Viridis", "Gray", "Plasma", "Inferno", "Magma", "Cividis", "CoolEdit Classic"}); palette_->setFixedSize(155, 26); palette_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     const std::array<QString, 3> panelIds{"navPanel", "auxPanel", "specPanel"}, names{"全局时间导航", "辅助分析", "宽带图谱"}, maxIds{"navMaximize", "auxMaximize", "specMaximize"};
     const std::array<PlotWidget*, 3> plots{navigation_, auxiliary_, main_};
     for (int index = 0; index < 3; ++index) {
@@ -369,7 +369,7 @@ void MainWindow::buildWorkspace() {
         if (index == 0) { navStatus_ = label({}, "navStatus", "tag"); header->addWidget(navStatus_); }
         if (index == 1) { auxStatus_ = label({}, "auxStatus", "tag"); header->addWidget(auxStatus_); }
         if (index == 2) {
-            specAxis_ = label({}, "specAxisLabel", "hint"); header->addWidget(specAxis_); header->addWidget(palette_); rangeTag_ = label({}, "rangeTag", "tag"); header->addWidget(rangeTag_);
+            specAxis_ = label({}, "specAxisLabel", "hint"); specAxis_->setMinimumWidth(0); specAxis_->setMaximumWidth(150); header->addWidget(specAxis_); header->addWidget(palette_); rangeTag_ = label({}, "rangeTag", "tag"); rangeTag_->setMinimumWidth(0); header->addWidget(rangeTag_);
         }
         auto* maximize = push("⤢", maxIds[index], header); maximize->setProperty("uiRole", "icon"); maximize->setFixedSize(25, 25); maximize->setToolTip("最大化 / 还原");
         connect(maximize, &QPushButton::clicked, this, [this, index] { toggleMaximized(index); }); layout->addWidget(head); layout->addWidget(plots[index], 1);
@@ -826,8 +826,9 @@ void MainWindow::refresh() {
         scope_->setText(QString("%1 · Fₛ %2 MS/s · fc %3 MHz").arg(q(file->metadata.name), number(file->metadata.sampleRateHz / 1e6), number(file->metadata.centerFrequencyHz / 1e6)));
         navStatus_->setText("0–" + number(duration) + " s"); auxStatus_->setText(auxiliary_->statusText()); rangeTag_->setText("动态 " + number(display.dynamicRangeDb) + " dB");
         const bool waterfall = display.mainMode == MainMode::Waterfall;
-        specMode_->setText(main_->isCreating() ? "持续选择信号 · 右键菜单关闭 / Esc 退出" : waterfall ? "图内/X轴滚轮：频率 · Y轴滚轮：时间" : "图内/X轴滚轮：时间 · Y轴滚轮：频率");
-        specAxis_->setText(waterfall ? "X 频率 · Y 时间↓ · 颜色功率" : "X 时间 · Y 频率 · 颜色功率");
+        specMode_->setText("正在框选信号 · 右键或 Esc 退出"); specMode_->setVisible(main_->isCreating() && width() > 990);
+        specAxis_->setText(waterfall ? "X 频率 · Y 时间↓" : "X 时间 · Y 频率");
+        specAxis_->setToolTip(waterfall ? "X 轴：频率；Y 轴：时间；颜色：功率" : "X 轴：时间；Y 轴：频率；颜色：功率");
         fileValues_[0]->setText(q(file->metadata.name)); fileValues_[1]->setText(number(file->metadata.sampleRateHz / 1e6) + " MS/s"); fileValues_[2]->setText(number(file->metadata.centerFrequencyHz / 1e6) + " MHz"); fileValues_[3]->setText("0–" + number(duration) + " s");
         viewValues_[0]->setText(timeRange(file->view.time, file->metadata.sampleRateHz)); viewValues_[1]->setText(frequencyRange(file->view.frequency));
         viewData_->setText("| 视图 ΔT " + coordinate(static_cast<double>(file->view.time.end - file->view.time.begin) / file->metadata.sampleRateHz, 0, true) + " · ΔF " + coordinate(file->view.frequency.upperHz - file->view.frequency.lowerHz, 0, false));
@@ -881,7 +882,7 @@ void MainWindow::enforceLayout(bool reset) {
     resourceTitle_->setVisible(!hideResources); resourceTools_->setVisible(!hideResources); resourceBody_->setVisible(!hideResources);
     propertiesTitle_->setVisible(!hideProperties); propScroll_->setVisible(!hideProperties); propRail_->setVisible(hideProperties); findChild<QPushButton*>("propClose")->setVisible(!hideProperties);
     scope_->setVisible(w > 1330); projectLabel_->setVisible(w > 990);
-    specMode_->setVisible(w > 1430); specAxis_->setVisible(w > 1330); rangeTag_->setVisible(w > 990); cursorData_->setVisible(w > 990); viewData_->setVisible(w > 1150);
+    specMode_->setVisible(main_ && main_->isCreating() && w > 990); specAxis_->setVisible(w > 1330); rangeTag_->setVisible(w > 990); cursorData_->setVisible(w > 990); viewData_->setVisible(w > 1150);
     findChild<QLabel*>("navHint")->setVisible(w > 1150);
     if (maximizedPanel_ < 0) {
         for (int i = 1; i < graphs_->count(); ++i) {

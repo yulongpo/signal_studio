@@ -791,7 +791,17 @@ void UiTests::paletteControlsStaySynchronized() {
     showWindow(window);
     auto* header=window.findChild<QComboBox*>("palette");
     auto* property=window.findChild<QComboBox*>("colormap");
+    auto* rangeTag=window.findChild<QWidget*>("rangeTag");
+    auto* maximize=window.findChild<QAbstractButton*>("specMaximize");
     QVERIFY(header&&property);
+    QVERIFY(rangeTag&&maximize);
+    QCOMPARE(header->width(),155);
+    auto* spectrumHeader=header->parentWidget();
+    QVERIFY(spectrumHeader);
+    QVERIFY(header->isVisible()&&rangeTag->isVisible()&&maximize->isVisible());
+    QVERIFY(header->geometry().right()<rangeTag->geometry().left());
+    QVERIFY(rangeTag->geometry().right()<maximize->geometry().left());
+    QVERIFY(maximize->geometry().right()<spectrumHeader->width());
     const QStringList expectedPalettes{"Turbo","Viridis","Gray","Plasma","Inferno","Magma","Cividis","CoolEdit Classic"};
     QCOMPARE(comboLabels(header),expectedPalettes);
     QCOMPARE(comboLabels(property),expectedPalettes);
@@ -819,6 +829,25 @@ void UiTests::paletteControlsStaySynchronized() {
     header->setCurrentIndex(classicIndex);
     QCOMPARE(property->currentText(),QString("CoolEdit Classic"));
     QCOMPARE(window.session().activeFile()->display.palette,Palette::CoolEditClassic);
+    auto* colorbar=window.findChild<QCheckBox*>("colorbarToggle");
+    auto* main=window.findChild<PlotWidget*>("mainPlot");
+    QVERIFY(colorbar&&main);
+    colorbar->setChecked(true);
+    QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(),10'000);
+    const auto image=main->grab().toImage();
+    const qreal dpr=image.devicePixelRatio();
+    const int colorX=qRound((main->width()-31.5)*dpr);
+    QVERIFY(!image.isNull()&&colorX>=0&&colorX<image.width());
+    bool hasRedTransition=false;
+    const auto plot=main->plotRect();
+    for(int y=qRound((plot.top()+4)*dpr);y<qRound((plot.bottom()-4)*dpr);++y) {
+        const auto sample=image.pixelColor(colorX,y);
+        if(sample.red()>160&&sample.red()>sample.green()*1.35&&sample.red()>sample.blue()*1.35) {
+            hasRedTransition=true;
+            break;
+        }
+    }
+    QVERIFY2(hasRedTransition,"CoolEdit Classic must include its red high-energy transition.");
 }
 
 void UiTests::panelRailsAndBottomTabs() {
