@@ -1,0 +1,238 @@
+{
+    "auxiliaryRendering": {
+        "acceptedHeatmapPreview": false,
+        "committedGeneration": 4,
+        "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+                "lastMs": 0,
+                "maxMs": 0,
+                "samples": 0,
+                "totalMs": 0
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+                "lastMs": 0.0886,
+                "maxMs": 0.5565,
+                "samples": 5,
+                "totalMs": 1.0709
+            },
+            "overlayPainter": {
+                "lastMs": 28.4196,
+                "maxMs": 37.0268,
+                "samples": 5,
+                "totalMs": 134.95600000000002
+            },
+            "overlayUploadEnqueue": {
+                "lastMs": 0.0226,
+                "maxMs": 0.3176,
+                "samples": 5,
+                "totalMs": 0.6718999999999998
+            },
+            "paintEventIncludingQtSubmit": {
+                "lastMs": 29.2467,
+                "maxMs": 37.8597,
+                "samples": 7,
+                "totalMs": 142.7176
+            },
+            "prepareUploads": {
+                "lastMs": 0.0088,
+                "maxMs": 37.1735,
+                "samples": 8,
+                "totalMs": 136.7732
+            },
+            "render": {
+                "lastMs": 0.0486,
+                "maxMs": 37.2506,
+                "samples": 8,
+                "totalMs": 137.25449999999998
+            },
+            "unit": "ms"
+        },
+        "curveCacheHits": 4,
+        "curvePathElements": 5622,
+        "curveRasterMethod": "QPainter::drawLines cached adjacent QLineF segments",
+        "curveReductions": 2,
+        "curveSourceGenerations": 1,
+        "drawnLineSegments": 5621,
+        "drawnPoints": 5622,
+        "generation": 4,
+        "gpuUploadsPending": false,
+        "heatmapCacheHits": 0,
+        "heatmapHeight": -1,
+        "heatmapWidth": -1,
+        "lastMatrixMs": 0,
+        "matrixReductions": 0,
+        "overlayUploads": 5,
+        "powerGenerations": 0,
+        "quality": "settled",
+        "requestedGeneration": 4,
+        "requestedHeatmapHeight": -1,
+        "requestedHeatmapWidth": -1,
+        "requestedPixels": 1,
+        "settled": true,
+        "sourcePoints": 22488,
+        "staleDrops": 0,
+        "textureUploads": 0,
+        "workerIdle": true
+    },
+    "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+    "capturePixelSize": [
+        3840,
+        2160
+    ],
+    "completedFrames": 7,
+    "devicePixelRatio": 1.5,
+    "files": 3,
+    "fourK150Verified": true,
+    "fullScreen": true,
+    "hardwareRenderer": true,
+    "heatmapUploads": 1,
+    "logicalWindowSize": [
+        2560,
+        1440
+    ],
+    "mainPlotHeight": 888,
+    "mainRendering": {
+        "acceptedHeatmapPreview": false,
+        "committedGeneration": 8,
+        "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+                "lastMs": 1.6234,
+                "maxMs": 1.6234,
+                "samples": 1,
+                "totalMs": 1.6234
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+                "lastMs": 0.6186,
+                "maxMs": 3.3013,
+                "samples": 8,
+                "totalMs": 11.9365
+            },
+            "overlayPainter": {
+                "lastMs": 8.4413,
+                "maxMs": 13.3527,
+                "samples": 8,
+                "totalMs": 80.5552
+            },
+            "overlayUploadEnqueue": {
+                "lastMs": 0.0236,
+                "maxMs": 0.2869,
+                "samples": 8,
+                "totalMs": 0.9295999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+                "lastMs": 11.7765,
+                "maxMs": 28.3838,
+                "samples": 10,
+                "totalMs": 129.7983
+            },
+            "prepareUploads": {
+                "lastMs": 0.0099,
+                "maxMs": 15.9346,
+                "samples": 11,
+                "totalMs": 95.17480000000002
+            },
+            "render": {
+                "lastMs": 0.0628,
+                "maxMs": 16.097,
+                "samples": 11,
+                "totalMs": 96.0081
+            },
+            "unit": "ms"
+        },
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "none",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 322500,
+        "generation": 8,
+        "gpuUploadsPending": false,
+        "heatmapCacheHits": 0,
+        "heatmapHeight": 430,
+        "heatmapWidth": 750,
+        "lastMatrixMs": 47.905,
+        "matrixReductions": 0,
+        "overlayUploads": 8,
+        "powerGenerations": 7,
+        "quality": "settled",
+        "requestedGeneration": 8,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "settled": true,
+        "sourcePoints": 322500,
+        "staleDrops": 6,
+        "textureUploads": 1,
+        "workerIdle": true
+    },
+    "overlayReusesHeatmap": true,
+    "pass": true,
+    "powerGenerations": 7,
+    "screen": {
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": [
+            2560,
+            0,
+            2560,
+            1440
+        ],
+        "name": "Redmi 27 NU",
+        "pixelSize": [
+            3840,
+            2160
+        ],
+        "primary": false
+    },
+    "screenLogicalDpi": 96,
+    "screenLogicalSize": [
+        2560,
+        1440
+    ],
+    "screens": [
+        {
+            "connectedIndex": 1,
+            "deviceName": "\\\\.\\DISPLAY1",
+            "devicePixelRatio": 1.5,
+            "logicalDpi": 96,
+            "logicalGeometry": [
+                0,
+                0,
+                1707,
+                1067
+            ],
+            "name": "TL160ADMP36",
+            "pixelSize": [
+                2560,
+                1600
+            ],
+            "primary": true
+        },
+        {
+            "connectedIndex": 2,
+            "deviceName": "\\\\.\\DISPLAY6",
+            "devicePixelRatio": 1.5,
+            "logicalDpi": 96,
+            "logicalGeometry": [
+                2560,
+                0,
+                2560,
+                1440
+            ],
+            "name": "Redmi 27 NU",
+            "pixelSize": [
+                3840,
+                2160
+            ],
+            "primary": false
+        }
+    ],
+    "uploadsAfterOverlay": 1
+}

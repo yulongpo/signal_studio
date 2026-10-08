@@ -1,0 +1,4919 @@
+{
+  "phase": "After stage timing, before dense curve line-batch rendering",
+  "configuration": "Release",
+  "date": "2026-10-09",
+  "executableSha256": "01EE637C9DBE951106E02BD22162E1A55546C38327241B05BFCE28285441C1F6",
+  "syntheticDataOnly": true,
+  "windowScreen": {
+    "availableLogicalGeometry": {
+      "height": 1392,
+      "width": 2560,
+      "x": 2560,
+      "y": 0
+    },
+    "connectedIndex": 2,
+    "deviceName": "\\\\.\\DISPLAY6",
+    "devicePixelRatio": 1.5,
+    "logicalDpi": 96,
+    "logicalGeometry": {
+      "height": 1440,
+      "width": 2560,
+      "x": 2560,
+      "y": 0
+    },
+    "name": "Redmi 27 NU",
+    "physicalDpi": 109.05000625015624,
+    "pixelSize": {
+      "height": 2160,
+      "width": 3840
+    },
+    "primary": false
+  },
+  "logicalWindowSize": {
+    "height": 1440,
+    "width": 2560
+  },
+  "capturedPixelSize": {
+    "height": 2160,
+    "width": 3840
+  },
+  "rapidWheelDiagnostic": {
+    "acceptedPreviewObserved": false,
+    "afterContextBack": {
+      "acceptedHeatmapPreview": false,
+      "committedGeneration": 23,
+      "cpuWallTimings": {
+        "gpuTimestamps": false,
+        "heatmapUploadPreparation": {
+          "lastMs": 0.9836,
+          "maxMs": 0.9836,
+          "samples": 4,
+          "totalMs": 2.1799999999999997
+        },
+        "measurement": "GUI-thread wall time measured with QElapsedTimer",
+        "overlayImagePreparation": {
+          "lastMs": 0.5824,
+          "maxMs": 2.9038,
+          "samples": 13,
+          "totalMs": 15.5242
+        },
+        "overlayPainter": {
+          "lastMs": 3.848,
+          "maxMs": 9.9529,
+          "samples": 13,
+          "totalMs": 53.667199999999994
+        },
+        "overlayUploadEnqueue": {
+          "lastMs": 0.0053,
+          "maxMs": 0.4876,
+          "samples": 13,
+          "totalMs": 0.8938999999999999
+        },
+        "paintEventIncludingQtSubmit": {
+          "lastMs": 7.7376,
+          "maxMs": 28.6382,
+          "samples": 15,
+          "totalMs": 126.33620000000002
+        },
+        "prepareUploads": {
+          "lastMs": 5.4247,
+          "maxMs": 13.1235,
+          "samples": 16,
+          "totalMs": 72.3177
+        },
+        "render": {
+          "lastMs": 5.4558,
+          "maxMs": 13.22,
+          "samples": 16,
+          "totalMs": 72.82579999999999
+        },
+        "unit": "ms"
+      },
+      "curveCacheHits": 0,
+      "curvePathElements": 0,
+      "curveReductions": 0,
+      "curveSourceGenerations": 0,
+      "drawnPoints": 322500,
+      "generation": 23,
+      "gpuUploadsPending": false,
+      "heatmapCacheHits": 1,
+      "heatmapHeight": 430,
+      "heatmapWidth": 750,
+      "lastMatrixMs": 30.7209,
+      "matrixReductions": 1,
+      "overlayUploads": 13,
+      "powerGenerations": 20,
+      "quality": "settled",
+      "requestedGeneration": 23,
+      "requestedHeatmapHeight": 430,
+      "requestedHeatmapWidth": 750,
+      "requestedPixels": 322500,
+      "settled": true,
+      "sourcePoints": 322500,
+      "staleDrops": 18,
+      "textureUploads": 4,
+      "workerIdle": true
+    },
+    "afterContextBackSnapshot": {
+      "beginSample": "6720000000",
+      "endSample": "10560000000",
+      "fileId": "file-1",
+      "lowerHz": 80000000,
+      "psdMax": 0,
+      "psdMin": -100,
+      "upperHz": 120000000,
+      "waveformMax": 60,
+      "waveformMin": -60
+    },
+    "afterLastEvent": {
+      "acceptedHeatmapPreview": false,
+      "committedGeneration": 8,
+      "cpuWallTimings": {
+        "gpuTimestamps": false,
+        "heatmapUploadPreparation": {
+          "lastMs": 0.7664,
+          "maxMs": 0.7664,
+          "samples": 1,
+          "totalMs": 0.7664
+        },
+        "measurement": "GUI-thread wall time measured with QElapsedTimer",
+        "overlayImagePreparation": {
+          "lastMs": 0.828,
+          "maxMs": 2.9038,
+          "samples": 7,
+          "totalMs": 11.110599999999998
+        },
+        "overlayPainter": {
+          "lastMs": 4.1763,
+          "maxMs": 9.9529,
+          "samples": 7,
+          "totalMs": 32.922999999999995
+        },
+        "overlayUploadEnqueue": {
+          "lastMs": 0.0082,
+          "maxMs": 0.4876,
+          "samples": 7,
+          "totalMs": 0.8697999999999999
+        },
+        "paintEventIncludingQtSubmit": {
+          "lastMs": 9.4745,
+          "maxMs": 28.6382,
+          "samples": 9,
+          "totalMs": 81.4218
+        },
+        "prepareUploads": {
+          "lastMs": 0.0023,
+          "maxMs": 13.1235,
+          "samples": 10,
+          "totalMs": 45.7031
+        },
+        "render": {
+          "lastMs": 0.0198,
+          "maxMs": 13.22,
+          "samples": 10,
+          "totalMs": 46.029399999999995
+        },
+        "unit": "ms"
+      },
+      "curveCacheHits": 0,
+      "curvePathElements": 0,
+      "curveReductions": 0,
+      "curveSourceGenerations": 0,
+      "drawnPoints": 322500,
+      "generation": 20,
+      "gpuUploadsPending": true,
+      "heatmapCacheHits": 0,
+      "heatmapHeight": 430,
+      "heatmapWidth": 750,
+      "lastMatrixMs": 30.7209,
+      "matrixReductions": 0,
+      "overlayUploads": 7,
+      "powerGenerations": 19,
+      "quality": "preview",
+      "requestedGeneration": 20,
+      "requestedHeatmapHeight": 178,
+      "requestedHeatmapWidth": 300,
+      "requestedPixels": 53400,
+      "settled": false,
+      "sourcePoints": 322500,
+      "staleDrops": 17,
+      "textureUploads": 1,
+      "workerIdle": false
+    },
+    "afterPostBurstEventPump": {
+      "acceptedHeatmapPreview": false,
+      "committedGeneration": 8,
+      "cpuWallTimings": {
+        "gpuTimestamps": false,
+        "heatmapUploadPreparation": {
+          "lastMs": 0.7664,
+          "maxMs": 0.7664,
+          "samples": 1,
+          "totalMs": 0.7664
+        },
+        "measurement": "GUI-thread wall time measured with QElapsedTimer",
+        "overlayImagePreparation": {
+          "lastMs": 0.7544,
+          "maxMs": 2.9038,
+          "samples": 8,
+          "totalMs": 11.864999999999998
+        },
+        "overlayPainter": {
+          "lastMs": 4.0242,
+          "maxMs": 9.9529,
+          "samples": 8,
+          "totalMs": 36.947199999999995
+        },
+        "overlayUploadEnqueue": {
+          "lastMs": 0.0071,
+          "maxMs": 0.4876,
+          "samples": 8,
+          "totalMs": 0.8768999999999999
+        },
+        "paintEventIncludingQtSubmit": {
+          "lastMs": 7.4257,
+          "maxMs": 28.6382,
+          "samples": 10,
+          "totalMs": 88.84750000000001
+        },
+        "prepareUploads": {
+          "lastMs": 4.7886,
+          "maxMs": 13.1235,
+          "samples": 11,
+          "totalMs": 50.4917
+        },
+        "render": {
+          "lastMs": 4.836,
+          "maxMs": 13.22,
+          "samples": 11,
+          "totalMs": 50.865399999999994
+        },
+        "unit": "ms"
+      },
+      "curveCacheHits": 0,
+      "curvePathElements": 0,
+      "curveReductions": 0,
+      "curveSourceGenerations": 0,
+      "drawnPoints": 322500,
+      "generation": 21,
+      "gpuUploadsPending": true,
+      "heatmapCacheHits": 0,
+      "heatmapHeight": 430,
+      "heatmapWidth": 750,
+      "lastMatrixMs": 30.7209,
+      "matrixReductions": 0,
+      "overlayUploads": 8,
+      "powerGenerations": 20,
+      "quality": "settled",
+      "requestedGeneration": 21,
+      "requestedHeatmapHeight": 430,
+      "requestedHeatmapWidth": 750,
+      "requestedPixels": 322500,
+      "settled": false,
+      "sourcePoints": 322500,
+      "staleDrops": 17,
+      "textureUploads": 1,
+      "workerIdle": false
+    },
+    "before": {
+      "acceptedHeatmapPreview": false,
+      "committedGeneration": 8,
+      "cpuWallTimings": {
+        "gpuTimestamps": false,
+        "heatmapUploadPreparation": {
+          "lastMs": 0.7664,
+          "maxMs": 0.7664,
+          "samples": 1,
+          "totalMs": 0.7664
+        },
+        "measurement": "GUI-thread wall time measured with QElapsedTimer",
+        "overlayImagePreparation": {
+          "lastMs": 0.828,
+          "maxMs": 2.9038,
+          "samples": 7,
+          "totalMs": 11.110599999999998
+        },
+        "overlayPainter": {
+          "lastMs": 4.1763,
+          "maxMs": 9.9529,
+          "samples": 7,
+          "totalMs": 32.922999999999995
+        },
+        "overlayUploadEnqueue": {
+          "lastMs": 0.0082,
+          "maxMs": 0.4876,
+          "samples": 7,
+          "totalMs": 0.8697999999999999
+        },
+        "paintEventIncludingQtSubmit": {
+          "lastMs": 9.4745,
+          "maxMs": 28.6382,
+          "samples": 9,
+          "totalMs": 81.4218
+        },
+        "prepareUploads": {
+          "lastMs": 0.0023,
+          "maxMs": 13.1235,
+          "samples": 10,
+          "totalMs": 45.7031
+        },
+        "render": {
+          "lastMs": 0.0198,
+          "maxMs": 13.22,
+          "samples": 10,
+          "totalMs": 46.029399999999995
+        },
+        "unit": "ms"
+      },
+      "curveCacheHits": 0,
+      "curvePathElements": 0,
+      "curveReductions": 0,
+      "curveSourceGenerations": 0,
+      "drawnPoints": 322500,
+      "generation": 8,
+      "gpuUploadsPending": false,
+      "heatmapCacheHits": 0,
+      "heatmapHeight": 430,
+      "heatmapWidth": 750,
+      "lastMatrixMs": 30.7209,
+      "matrixReductions": 0,
+      "overlayUploads": 7,
+      "powerGenerations": 7,
+      "quality": "settled",
+      "requestedGeneration": 8,
+      "requestedHeatmapHeight": 430,
+      "requestedHeatmapWidth": 750,
+      "requestedPixels": 322500,
+      "settled": true,
+      "sourcePoints": 322500,
+      "staleDrops": 6,
+      "textureUploads": 1,
+      "workerIdle": true
+    },
+    "beforeContextBackSnapshot": {
+      "beginSample": "7560686503",
+      "endSample": "9719313488",
+      "fileId": "file-1",
+      "lowerHz": 80000000,
+      "psdMax": 0,
+      "psdMin": -100,
+      "upperHz": 120000000,
+      "waveformMax": 60,
+      "waveformMin": -60
+    },
+    "canBackAfterContextBack": false,
+    "canBackBeforeBurst": false,
+    "canBackBeforeContextBack": true,
+    "canForwardAfterContextBack": true,
+    "contextBackTriggeredCount": 1,
+    "eventPumpBetweenWheelEvents": false,
+    "eventResponse": {
+      "max": 1.989,
+      "measurement": "Synchronous QCoreApplication::sendEvent return time, including direct UI slots",
+      "p50": 0.0457,
+      "p95": 1.989,
+      "samples": 12,
+      "unit": "ms"
+    },
+    "events": [
+      {
+        "accepted": true,
+        "angleDeltaY": 120,
+        "event": 1,
+        "eventPumpPerformed": false,
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 8,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.7664,
+              "maxMs": 0.7664,
+              "samples": 1,
+              "totalMs": 0.7664
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.828,
+              "maxMs": 2.9038,
+              "samples": 7,
+              "totalMs": 11.110599999999998
+            },
+            "overlayPainter": {
+              "lastMs": 4.1763,
+              "maxMs": 9.9529,
+              "samples": 7,
+              "totalMs": 32.922999999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0082,
+              "maxMs": 0.4876,
+              "samples": 7,
+              "totalMs": 0.8697999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.4745,
+              "maxMs": 28.6382,
+              "samples": 9,
+              "totalMs": 81.4218
+            },
+            "prepareUploads": {
+              "lastMs": 0.0023,
+              "maxMs": 13.1235,
+              "samples": 10,
+              "totalMs": 45.7031
+            },
+            "render": {
+              "lastMs": 0.0198,
+              "maxMs": 13.22,
+              "samples": 10,
+              "totalMs": 46.029399999999995
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 9,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 0,
+          "overlayUploads": 7,
+          "powerGenerations": 8,
+          "quality": "preview",
+          "requestedGeneration": 9,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 6,
+          "textureUploads": 1,
+          "workerIdle": false
+        },
+        "responseMs": 1.989,
+        "timeSincePreviousEventMs": 0
+      },
+      {
+        "accepted": true,
+        "angleDeltaY": 120,
+        "event": 2,
+        "eventPumpPerformed": false,
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 8,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.7664,
+              "maxMs": 0.7664,
+              "samples": 1,
+              "totalMs": 0.7664
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.828,
+              "maxMs": 2.9038,
+              "samples": 7,
+              "totalMs": 11.110599999999998
+            },
+            "overlayPainter": {
+              "lastMs": 4.1763,
+              "maxMs": 9.9529,
+              "samples": 7,
+              "totalMs": 32.922999999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0082,
+              "maxMs": 0.4876,
+              "samples": 7,
+              "totalMs": 0.8697999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.4745,
+              "maxMs": 28.6382,
+              "samples": 9,
+              "totalMs": 81.4218
+            },
+            "prepareUploads": {
+              "lastMs": 0.0023,
+              "maxMs": 13.1235,
+              "samples": 10,
+              "totalMs": 45.7031
+            },
+            "render": {
+              "lastMs": 0.0198,
+              "maxMs": 13.22,
+              "samples": 10,
+              "totalMs": 46.029399999999995
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 10,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 0,
+          "overlayUploads": 7,
+          "powerGenerations": 9,
+          "quality": "preview",
+          "requestedGeneration": 10,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 7,
+          "textureUploads": 1,
+          "workerIdle": false
+        },
+        "responseMs": 0.2636,
+        "timeSincePreviousEventMs": 2.1353
+      },
+      {
+        "accepted": true,
+        "angleDeltaY": -120,
+        "event": 3,
+        "eventPumpPerformed": false,
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 8,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.7664,
+              "maxMs": 0.7664,
+              "samples": 1,
+              "totalMs": 0.7664
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.828,
+              "maxMs": 2.9038,
+              "samples": 7,
+              "totalMs": 11.110599999999998
+            },
+            "overlayPainter": {
+              "lastMs": 4.1763,
+              "maxMs": 9.9529,
+              "samples": 7,
+              "totalMs": 32.922999999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0082,
+              "maxMs": 0.4876,
+              "samples": 7,
+              "totalMs": 0.8697999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.4745,
+              "maxMs": 28.6382,
+              "samples": 9,
+              "totalMs": 81.4218
+            },
+            "prepareUploads": {
+              "lastMs": 0.0023,
+              "maxMs": 13.1235,
+              "samples": 10,
+              "totalMs": 45.7031
+            },
+            "render": {
+              "lastMs": 0.0198,
+              "maxMs": 13.22,
+              "samples": 10,
+              "totalMs": 46.029399999999995
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 11,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 0,
+          "overlayUploads": 7,
+          "powerGenerations": 10,
+          "quality": "preview",
+          "requestedGeneration": 11,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 7,
+          "textureUploads": 1,
+          "workerIdle": false
+        },
+        "responseMs": 0.0581,
+        "timeSincePreviousEventMs": 0.31899999999999995
+      },
+      {
+        "accepted": true,
+        "angleDeltaY": 240,
+        "event": 4,
+        "eventPumpPerformed": false,
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 8,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.7664,
+              "maxMs": 0.7664,
+              "samples": 1,
+              "totalMs": 0.7664
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.828,
+              "maxMs": 2.9038,
+              "samples": 7,
+              "totalMs": 11.110599999999998
+            },
+            "overlayPainter": {
+              "lastMs": 4.1763,
+              "maxMs": 9.9529,
+              "samples": 7,
+              "totalMs": 32.922999999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0082,
+              "maxMs": 0.4876,
+              "samples": 7,
+              "totalMs": 0.8697999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.4745,
+              "maxMs": 28.6382,
+              "samples": 9,
+              "totalMs": 81.4218
+            },
+            "prepareUploads": {
+              "lastMs": 0.0023,
+              "maxMs": 13.1235,
+              "samples": 10,
+              "totalMs": 45.7031
+            },
+            "render": {
+              "lastMs": 0.0198,
+              "maxMs": 13.22,
+              "samples": 10,
+              "totalMs": 46.029399999999995
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 12,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 0,
+          "overlayUploads": 7,
+          "powerGenerations": 11,
+          "quality": "preview",
+          "requestedGeneration": 12,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 8,
+          "textureUploads": 1,
+          "workerIdle": false
+        },
+        "responseMs": 0.048,
+        "timeSincePreviousEventMs": 0.09379999999999988
+      },
+      {
+        "accepted": true,
+        "angleDeltaY": -120,
+        "event": 5,
+        "eventPumpPerformed": false,
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 8,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.7664,
+              "maxMs": 0.7664,
+              "samples": 1,
+              "totalMs": 0.7664
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.828,
+              "maxMs": 2.9038,
+              "samples": 7,
+              "totalMs": 11.110599999999998
+            },
+            "overlayPainter": {
+              "lastMs": 4.1763,
+              "maxMs": 9.9529,
+              "samples": 7,
+              "totalMs": 32.922999999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0082,
+              "maxMs": 0.4876,
+              "samples": 7,
+              "totalMs": 0.8697999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.4745,
+              "maxMs": 28.6382,
+              "samples": 9,
+              "totalMs": 81.4218
+            },
+            "prepareUploads": {
+              "lastMs": 0.0023,
+              "maxMs": 13.1235,
+              "samples": 10,
+              "totalMs": 45.7031
+            },
+            "render": {
+              "lastMs": 0.0198,
+              "maxMs": 13.22,
+              "samples": 10,
+              "totalMs": 46.029399999999995
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 13,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 0,
+          "overlayUploads": 7,
+          "powerGenerations": 12,
+          "quality": "preview",
+          "requestedGeneration": 13,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 9,
+          "textureUploads": 1,
+          "workerIdle": false
+        },
+        "responseMs": 0.0457,
+        "timeSincePreviousEventMs": 0.07160000000000011
+      },
+      {
+        "accepted": true,
+        "angleDeltaY": 120,
+        "event": 6,
+        "eventPumpPerformed": false,
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 8,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.7664,
+              "maxMs": 0.7664,
+              "samples": 1,
+              "totalMs": 0.7664
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.828,
+              "maxMs": 2.9038,
+              "samples": 7,
+              "totalMs": 11.110599999999998
+            },
+            "overlayPainter": {
+              "lastMs": 4.1763,
+              "maxMs": 9.9529,
+              "samples": 7,
+              "totalMs": 32.922999999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0082,
+              "maxMs": 0.4876,
+              "samples": 7,
+              "totalMs": 0.8697999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.4745,
+              "maxMs": 28.6382,
+              "samples": 9,
+              "totalMs": 81.4218
+            },
+            "prepareUploads": {
+              "lastMs": 0.0023,
+              "maxMs": 13.1235,
+              "samples": 10,
+              "totalMs": 45.7031
+            },
+            "render": {
+              "lastMs": 0.0198,
+              "maxMs": 13.22,
+              "samples": 10,
+              "totalMs": 46.029399999999995
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 14,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 0,
+          "overlayUploads": 7,
+          "powerGenerations": 13,
+          "quality": "preview",
+          "requestedGeneration": 14,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 10,
+          "textureUploads": 1,
+          "workerIdle": false
+        },
+        "responseMs": 0.045,
+        "timeSincePreviousEventMs": 0.07020000000000026
+      },
+      {
+        "accepted": true,
+        "angleDeltaY": 120,
+        "event": 7,
+        "eventPumpPerformed": false,
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 8,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.7664,
+              "maxMs": 0.7664,
+              "samples": 1,
+              "totalMs": 0.7664
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.828,
+              "maxMs": 2.9038,
+              "samples": 7,
+              "totalMs": 11.110599999999998
+            },
+            "overlayPainter": {
+              "lastMs": 4.1763,
+              "maxMs": 9.9529,
+              "samples": 7,
+              "totalMs": 32.922999999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0082,
+              "maxMs": 0.4876,
+              "samples": 7,
+              "totalMs": 0.8697999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.4745,
+              "maxMs": 28.6382,
+              "samples": 9,
+              "totalMs": 81.4218
+            },
+            "prepareUploads": {
+              "lastMs": 0.0023,
+              "maxMs": 13.1235,
+              "samples": 10,
+              "totalMs": 45.7031
+            },
+            "render": {
+              "lastMs": 0.0198,
+              "maxMs": 13.22,
+              "samples": 10,
+              "totalMs": 46.029399999999995
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 15,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 0,
+          "overlayUploads": 7,
+          "powerGenerations": 14,
+          "quality": "preview",
+          "requestedGeneration": 15,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 11,
+          "textureUploads": 1,
+          "workerIdle": false
+        },
+        "responseMs": 0.0482,
+        "timeSincePreviousEventMs": 0.06709999999999994
+      },
+      {
+        "accepted": true,
+        "angleDeltaY": -120,
+        "event": 8,
+        "eventPumpPerformed": false,
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 8,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.7664,
+              "maxMs": 0.7664,
+              "samples": 1,
+              "totalMs": 0.7664
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.828,
+              "maxMs": 2.9038,
+              "samples": 7,
+              "totalMs": 11.110599999999998
+            },
+            "overlayPainter": {
+              "lastMs": 4.1763,
+              "maxMs": 9.9529,
+              "samples": 7,
+              "totalMs": 32.922999999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0082,
+              "maxMs": 0.4876,
+              "samples": 7,
+              "totalMs": 0.8697999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.4745,
+              "maxMs": 28.6382,
+              "samples": 9,
+              "totalMs": 81.4218
+            },
+            "prepareUploads": {
+              "lastMs": 0.0023,
+              "maxMs": 13.1235,
+              "samples": 10,
+              "totalMs": 45.7031
+            },
+            "render": {
+              "lastMs": 0.0198,
+              "maxMs": 13.22,
+              "samples": 10,
+              "totalMs": 46.029399999999995
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 16,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 0,
+          "overlayUploads": 7,
+          "powerGenerations": 15,
+          "quality": "preview",
+          "requestedGeneration": 16,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 12,
+          "textureUploads": 1,
+          "workerIdle": false
+        },
+        "responseMs": 0.0468,
+        "timeSincePreviousEventMs": 0.0732999999999997
+      },
+      {
+        "accepted": true,
+        "angleDeltaY": 240,
+        "event": 9,
+        "eventPumpPerformed": false,
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 8,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.7664,
+              "maxMs": 0.7664,
+              "samples": 1,
+              "totalMs": 0.7664
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.828,
+              "maxMs": 2.9038,
+              "samples": 7,
+              "totalMs": 11.110599999999998
+            },
+            "overlayPainter": {
+              "lastMs": 4.1763,
+              "maxMs": 9.9529,
+              "samples": 7,
+              "totalMs": 32.922999999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0082,
+              "maxMs": 0.4876,
+              "samples": 7,
+              "totalMs": 0.8697999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.4745,
+              "maxMs": 28.6382,
+              "samples": 9,
+              "totalMs": 81.4218
+            },
+            "prepareUploads": {
+              "lastMs": 0.0023,
+              "maxMs": 13.1235,
+              "samples": 10,
+              "totalMs": 45.7031
+            },
+            "render": {
+              "lastMs": 0.0198,
+              "maxMs": 13.22,
+              "samples": 10,
+              "totalMs": 46.029399999999995
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 17,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 0,
+          "overlayUploads": 7,
+          "powerGenerations": 16,
+          "quality": "preview",
+          "requestedGeneration": 17,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 13,
+          "textureUploads": 1,
+          "workerIdle": false
+        },
+        "responseMs": 0.0449,
+        "timeSincePreviousEventMs": 0.06710000000000038
+      },
+      {
+        "accepted": true,
+        "angleDeltaY": 120,
+        "event": 10,
+        "eventPumpPerformed": false,
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 8,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.7664,
+              "maxMs": 0.7664,
+              "samples": 1,
+              "totalMs": 0.7664
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.828,
+              "maxMs": 2.9038,
+              "samples": 7,
+              "totalMs": 11.110599999999998
+            },
+            "overlayPainter": {
+              "lastMs": 4.1763,
+              "maxMs": 9.9529,
+              "samples": 7,
+              "totalMs": 32.922999999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0082,
+              "maxMs": 0.4876,
+              "samples": 7,
+              "totalMs": 0.8697999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.4745,
+              "maxMs": 28.6382,
+              "samples": 9,
+              "totalMs": 81.4218
+            },
+            "prepareUploads": {
+              "lastMs": 0.0023,
+              "maxMs": 13.1235,
+              "samples": 10,
+              "totalMs": 45.7031
+            },
+            "render": {
+              "lastMs": 0.0198,
+              "maxMs": 13.22,
+              "samples": 10,
+              "totalMs": 46.029399999999995
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 18,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 0,
+          "overlayUploads": 7,
+          "powerGenerations": 17,
+          "quality": "preview",
+          "requestedGeneration": 18,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 14,
+          "textureUploads": 1,
+          "workerIdle": false
+        },
+        "responseMs": 0.0448,
+        "timeSincePreviousEventMs": 0.0682999999999998
+      },
+      {
+        "accepted": true,
+        "angleDeltaY": -120,
+        "event": 11,
+        "eventPumpPerformed": false,
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 8,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.7664,
+              "maxMs": 0.7664,
+              "samples": 1,
+              "totalMs": 0.7664
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.828,
+              "maxMs": 2.9038,
+              "samples": 7,
+              "totalMs": 11.110599999999998
+            },
+            "overlayPainter": {
+              "lastMs": 4.1763,
+              "maxMs": 9.9529,
+              "samples": 7,
+              "totalMs": 32.922999999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0082,
+              "maxMs": 0.4876,
+              "samples": 7,
+              "totalMs": 0.8697999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.4745,
+              "maxMs": 28.6382,
+              "samples": 9,
+              "totalMs": 81.4218
+            },
+            "prepareUploads": {
+              "lastMs": 0.0023,
+              "maxMs": 13.1235,
+              "samples": 10,
+              "totalMs": 45.7031
+            },
+            "render": {
+              "lastMs": 0.0198,
+              "maxMs": 13.22,
+              "samples": 10,
+              "totalMs": 46.029399999999995
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 19,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 0,
+          "overlayUploads": 7,
+          "powerGenerations": 18,
+          "quality": "preview",
+          "requestedGeneration": 19,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 15,
+          "textureUploads": 1,
+          "workerIdle": false
+        },
+        "responseMs": 0.0435,
+        "timeSincePreviousEventMs": 0.06680000000000019
+      },
+      {
+        "accepted": true,
+        "angleDeltaY": 120,
+        "event": 12,
+        "eventPumpPerformed": false,
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 8,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.7664,
+              "maxMs": 0.7664,
+              "samples": 1,
+              "totalMs": 0.7664
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.828,
+              "maxMs": 2.9038,
+              "samples": 7,
+              "totalMs": 11.110599999999998
+            },
+            "overlayPainter": {
+              "lastMs": 4.1763,
+              "maxMs": 9.9529,
+              "samples": 7,
+              "totalMs": 32.922999999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0082,
+              "maxMs": 0.4876,
+              "samples": 7,
+              "totalMs": 0.8697999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.4745,
+              "maxMs": 28.6382,
+              "samples": 9,
+              "totalMs": 81.4218
+            },
+            "prepareUploads": {
+              "lastMs": 0.0023,
+              "maxMs": 13.1235,
+              "samples": 10,
+              "totalMs": 45.7031
+            },
+            "render": {
+              "lastMs": 0.0198,
+              "maxMs": 13.22,
+              "samples": 10,
+              "totalMs": 46.029399999999995
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 20,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 0,
+          "overlayUploads": 7,
+          "powerGenerations": 19,
+          "quality": "preview",
+          "requestedGeneration": 20,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 17,
+          "textureUploads": 1,
+          "workerIdle": false
+        },
+        "responseMs": 0.0437,
+        "timeSincePreviousEventMs": 0.0682999999999998
+      }
+    ],
+    "finalCommittedGeneration": 21,
+    "finalRequestedGeneration": 21,
+    "firstPostBurstEventPumpMs": 122.8132,
+    "frameCountersAreNotFps": true,
+    "heatmapCacheHitsDuringDiagnostic": 0,
+    "lastWheelRequestedGeneration": 20,
+    "maximumEventIntervalMs": 2.1353,
+    "maximumPreviewRequestedPixels": 53400,
+    "onlyCurrentGenerationCommittedAtSettle": true,
+    "originalSnapshot": {
+      "beginSample": "6720000000",
+      "endSample": "10560000000",
+      "fileId": "file-1",
+      "lowerHz": 80000000,
+      "psdMax": 0,
+      "psdMin": -100,
+      "upperHz": 120000000,
+      "waveformMax": 60,
+      "waveformMin": -60
+    },
+    "originalViewRestored": true,
+    "pass": true,
+    "restoreAction": "contextBackAction",
+    "settled": {
+      "acceptedHeatmapPreview": false,
+      "committedGeneration": 21,
+      "cpuWallTimings": {
+        "gpuTimestamps": false,
+        "heatmapUploadPreparation": {
+          "lastMs": 0.3023,
+          "maxMs": 0.7664,
+          "samples": 2,
+          "totalMs": 1.0687
+        },
+        "measurement": "GUI-thread wall time measured with QElapsedTimer",
+        "overlayImagePreparation": {
+          "lastMs": 0.5965,
+          "maxMs": 2.9038,
+          "samples": 10,
+          "totalMs": 13.7564
+        },
+        "overlayPainter": {
+          "lastMs": 2.4878,
+          "maxMs": 9.9529,
+          "samples": 10,
+          "totalMs": 43.561899999999994
+        },
+        "overlayUploadEnqueue": {
+          "lastMs": 0.0017,
+          "maxMs": 0.4876,
+          "samples": 10,
+          "totalMs": 0.8815999999999999
+        },
+        "paintEventIncludingQtSubmit": {
+          "lastMs": 6.2474,
+          "maxMs": 28.6382,
+          "samples": 12,
+          "totalMs": 102.16610000000001
+        },
+        "prepareUploads": {
+          "lastMs": 3.392,
+          "maxMs": 13.1235,
+          "samples": 13,
+          "totalMs": 59.31040000000001
+        },
+        "render": {
+          "lastMs": 3.4254,
+          "maxMs": 13.22,
+          "samples": 13,
+          "totalMs": 59.73939999999999
+        },
+        "unit": "ms"
+      },
+      "curveCacheHits": 0,
+      "curvePathElements": 0,
+      "curveReductions": 0,
+      "curveSourceGenerations": 0,
+      "drawnPoints": 322500,
+      "generation": 21,
+      "gpuUploadsPending": false,
+      "heatmapCacheHits": 0,
+      "heatmapHeight": 430,
+      "heatmapWidth": 750,
+      "lastMatrixMs": 28.137,
+      "matrixReductions": 0,
+      "overlayUploads": 10,
+      "powerGenerations": 20,
+      "quality": "settled",
+      "requestedGeneration": 21,
+      "requestedHeatmapHeight": 430,
+      "requestedHeatmapWidth": 750,
+      "requestedPixels": 322500,
+      "settled": true,
+      "sourcePoints": 322500,
+      "staleDrops": 18,
+      "textureUploads": 2,
+      "workerIdle": true
+    },
+    "settledAcceptedPixels": 322500,
+    "settledOnCurrentRequest": true,
+    "settledRequestedPixels": 322500,
+    "staleDropsDuringDiagnostic": 12,
+    "syntheticDataOnly": true,
+    "totalBurstMs": 3.1696,
+    "wheelGroupTimeoutMs": 220
+  },
+  "ordinaryEventPumpDiagnostic": {
+    "afterContextBackSnapshot": {
+      "beginSample": "6720000000",
+      "endSample": "10560000000",
+      "fileId": "file-1",
+      "lowerHz": 80000000,
+      "psdMax": 0,
+      "psdMin": -100,
+      "upperHz": 120000000,
+      "waveformMax": 60,
+      "waveformMin": -60
+    },
+    "backActionCount": 1,
+    "backActions": [
+      {
+        "afterSnapshot": {
+          "beginSample": "6720000000",
+          "endSample": "10560000000",
+          "fileId": "file-1",
+          "lowerHz": 80000000,
+          "psdMax": 0,
+          "psdMin": -100,
+          "upperHz": 120000000,
+          "waveformMax": 60,
+          "waveformMin": -60
+        },
+        "beforeSnapshot": {
+          "beginSample": "7200457742",
+          "endSample": "10079542254",
+          "fileId": "file-1",
+          "lowerHz": 80000000,
+          "psdMax": 0,
+          "psdMin": -100,
+          "upperHz": 120000000,
+          "waveformMax": 60,
+          "waveformMin": -60
+        },
+        "charts": [
+          {
+            "name": "navigationPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 3,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.0204,
+                  "maxMs": 0.129,
+                  "samples": 17,
+                  "totalMs": 0.6435000000000001
+                },
+                "overlayPainter": {
+                  "lastMs": 35.9269,
+                  "maxMs": 39.6209,
+                  "samples": 17,
+                  "totalMs": 534.2793
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0044,
+                  "maxMs": 0.6374,
+                  "samples": 17,
+                  "totalMs": 0.8957
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 36.4767,
+                  "maxMs": 40.1412,
+                  "samples": 19,
+                  "totalMs": 548.8992000000001
+                },
+                "prepareUploads": {
+                  "lastMs": 35.9539,
+                  "maxMs": 39.6538,
+                  "samples": 20,
+                  "totalMs": 535.8657
+                },
+                "render": {
+                  "lastMs": 35.9881,
+                  "maxMs": 39.6905,
+                  "samples": 20,
+                  "totalMs": 536.407
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 15,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 2,
+              "drawnPoints": 3916,
+              "generation": 3,
+              "gpuUploadsPending": false,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 17,
+              "powerGenerations": 0,
+              "quality": "settled",
+              "requestedGeneration": 3,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": true,
+              "sourcePoints": 3916,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "auxPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 22,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.099,
+                  "maxMs": 0.4706,
+                  "samples": 17,
+                  "totalMs": 3.2683
+                },
+                "overlayPainter": {
+                  "lastMs": 147.5888,
+                  "maxMs": 161.0271,
+                  "samples": 17,
+                  "totalMs": 1940.8859
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0042,
+                  "maxMs": 0.2102,
+                  "samples": 17,
+                  "totalMs": 0.434
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 148.5089,
+                  "maxMs": 161.8518,
+                  "samples": 19,
+                  "totalMs": 1961.8228
+                },
+                "prepareUploads": {
+                  "lastMs": 147.6955,
+                  "maxMs": 161.1095,
+                  "samples": 20,
+                  "totalMs": 1944.6516000000001
+                },
+                "render": {
+                  "lastMs": 147.7302,
+                  "maxMs": 161.1298,
+                  "samples": 20,
+                  "totalMs": 1945.1877
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 9,
+              "curvePathElements": 5622,
+              "curveReductions": 13,
+              "curveSourceGenerations": 8,
+              "drawnPoints": 5622,
+              "generation": 22,
+              "gpuUploadsPending": false,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 17,
+              "powerGenerations": 0,
+              "quality": "settled",
+              "requestedGeneration": 22,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": true,
+              "sourcePoints": 22488,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "mainPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 33,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0.8742,
+                  "maxMs": 0.9836,
+                  "samples": 7,
+                  "totalMs": 3.6837999999999997
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.7811,
+                  "maxMs": 2.9038,
+                  "samples": 22,
+                  "totalMs": 22.257299999999997
+                },
+                "overlayPainter": {
+                  "lastMs": 4.5426,
+                  "maxMs": 9.9529,
+                  "samples": 22,
+                  "totalMs": 91.03659999999999
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0046,
+                  "maxMs": 0.4876,
+                  "samples": 22,
+                  "totalMs": 0.9368999999999998
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 8.2264,
+                  "maxMs": 28.6382,
+                  "samples": 24,
+                  "totalMs": 203.18280000000001
+                },
+                "prepareUploads": {
+                  "lastMs": 6.2118,
+                  "maxMs": 13.1235,
+                  "samples": 25,
+                  "totalMs": 118.01089999999999
+                },
+                "render": {
+                  "lastMs": 6.238,
+                  "maxMs": 13.22,
+                  "samples": 25,
+                  "totalMs": 118.80439999999999
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 0,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 0,
+              "drawnPoints": 322500,
+              "generation": 33,
+              "gpuUploadsPending": false,
+              "heatmapCacheHits": 3,
+              "heatmapHeight": 430,
+              "heatmapWidth": 750,
+              "lastMatrixMs": 30.7209,
+              "matrixReductions": 1,
+              "overlayUploads": 22,
+              "powerGenerations": 28,
+              "quality": "settled",
+              "requestedGeneration": 33,
+              "requestedHeatmapHeight": 430,
+              "requestedHeatmapWidth": 750,
+              "requestedPixels": 322500,
+              "settled": true,
+              "sourcePoints": 322500,
+              "staleDrops": 25,
+              "textureUploads": 7,
+              "workerIdle": true
+            }
+          }
+        ],
+        "renderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 33,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.8742,
+              "maxMs": 0.9836,
+              "samples": 7,
+              "totalMs": 3.6837999999999997
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.7811,
+              "maxMs": 2.9038,
+              "samples": 22,
+              "totalMs": 22.257299999999997
+            },
+            "overlayPainter": {
+              "lastMs": 4.5426,
+              "maxMs": 9.9529,
+              "samples": 22,
+              "totalMs": 91.03659999999999
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0046,
+              "maxMs": 0.4876,
+              "samples": 22,
+              "totalMs": 0.9368999999999998
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 8.2264,
+              "maxMs": 28.6382,
+              "samples": 24,
+              "totalMs": 203.18280000000001
+            },
+            "prepareUploads": {
+              "lastMs": 6.2118,
+              "maxMs": 13.1235,
+              "samples": 25,
+              "totalMs": 118.01089999999999
+            },
+            "render": {
+              "lastMs": 6.238,
+              "maxMs": 13.22,
+              "samples": 25,
+              "totalMs": 118.80439999999999
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 33,
+          "gpuUploadsPending": false,
+          "heatmapCacheHits": 3,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 1,
+          "overlayUploads": 22,
+          "powerGenerations": 28,
+          "quality": "settled",
+          "requestedGeneration": 33,
+          "requestedHeatmapHeight": 430,
+          "requestedHeatmapWidth": 750,
+          "requestedPixels": 322500,
+          "settled": true,
+          "sourcePoints": 322500,
+          "staleDrops": 25,
+          "textureUploads": 7,
+          "workerIdle": true
+        },
+        "step": 1,
+        "triggeredCount": 1
+      }
+    ],
+    "beforeContextBackSnapshot": {
+      "beginSample": "7200457742",
+      "endSample": "10079542254",
+      "fileId": "file-1",
+      "lowerHz": 80000000,
+      "psdMax": 0,
+      "psdMin": -100,
+      "upperHz": 120000000,
+      "waveformMax": 60,
+      "waveformMin": -60
+    },
+    "eventPumpResponse": {
+      "max": 216.6446,
+      "measurement": "Actual processEvents(AllEvents, 2) elapsed time, including native paint events",
+      "p50": 214.474,
+      "p95": 216.6446,
+      "samples": 4,
+      "unit": "ms"
+    },
+    "eventResponse": {
+      "max": 1.2257,
+      "measurement": "Synchronous QCoreApplication::sendEvent return time, including direct UI slots",
+      "p50": 0.8402,
+      "p95": 1.2257,
+      "samples": 4,
+      "unit": "ms"
+    },
+    "events": [
+      {
+        "accepted": true,
+        "afterProcessCharts": [
+          {
+            "name": "navigationPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 3,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.0201,
+                  "maxMs": 0.129,
+                  "samples": 10,
+                  "totalMs": 0.4404
+                },
+                "overlayPainter": {
+                  "lastMs": 38.5377,
+                  "maxMs": 39.6209,
+                  "samples": 10,
+                  "totalMs": 278.8514
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0055,
+                  "maxMs": 0.6374,
+                  "samples": 10,
+                  "totalMs": 0.8627999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 39.0528,
+                  "maxMs": 40.1412,
+                  "samples": 12,
+                  "totalMs": 288.9997
+                },
+                "prepareUploads": {
+                  "lastMs": 38.5649,
+                  "maxMs": 39.6538,
+                  "samples": 13,
+                  "totalMs": 280.1824
+                },
+                "render": {
+                  "lastMs": 38.6014,
+                  "maxMs": 39.6905,
+                  "samples": 13,
+                  "totalMs": 280.50460000000004
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 8,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 2,
+              "drawnPoints": 3916,
+              "generation": 3,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 10,
+              "powerGenerations": 0,
+              "quality": "settled",
+              "requestedGeneration": 3,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 3916,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "auxPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": true,
+              "committedGeneration": 12,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.2842,
+                  "maxMs": 0.4706,
+                  "samples": 10,
+                  "totalMs": 2.2459
+                },
+                "overlayPainter": {
+                  "lastMs": 147.2361,
+                  "maxMs": 161.0271,
+                  "samples": 10,
+                  "totalMs": 954.462
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0058,
+                  "maxMs": 0.2102,
+                  "samples": 10,
+                  "totalMs": 0.4025000000000001
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 148.0784,
+                  "maxMs": 161.8518,
+                  "samples": 12,
+                  "totalMs": 966.5138
+                },
+                "prepareUploads": {
+                  "lastMs": 147.5298,
+                  "maxMs": 161.1095,
+                  "samples": 13,
+                  "totalMs": 957.1479
+                },
+                "render": {
+                  "lastMs": 147.5779,
+                  "maxMs": 161.1298,
+                  "samples": 13,
+                  "totalMs": 957.4628
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 6,
+              "curvePathElements": 2811,
+              "curveReductions": 7,
+              "curveSourceGenerations": 4,
+              "drawnPoints": 2811,
+              "generation": 12,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 10,
+              "powerGenerations": 0,
+              "quality": "settled",
+              "requestedGeneration": 12,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 22488,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "mainPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 23,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0.9836,
+                  "maxMs": 0.9836,
+                  "samples": 4,
+                  "totalMs": 2.1799999999999997
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.5966,
+                  "maxMs": 2.9038,
+                  "samples": 14,
+                  "totalMs": 16.1208
+                },
+                "overlayPainter": {
+                  "lastMs": 4.2337,
+                  "maxMs": 9.9529,
+                  "samples": 14,
+                  "totalMs": 57.90089999999999
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.005,
+                  "maxMs": 0.4876,
+                  "samples": 14,
+                  "totalMs": 0.8988999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 6.5631,
+                  "maxMs": 28.6382,
+                  "samples": 16,
+                  "totalMs": 132.8993
+                },
+                "prepareUploads": {
+                  "lastMs": 4.8382,
+                  "maxMs": 13.1235,
+                  "samples": 17,
+                  "totalMs": 77.1559
+                },
+                "render": {
+                  "lastMs": 4.8622,
+                  "maxMs": 13.22,
+                  "samples": 17,
+                  "totalMs": 77.68799999999999
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 0,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 0,
+              "drawnPoints": 322500,
+              "generation": 25,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 1,
+              "heatmapHeight": 430,
+              "heatmapWidth": 750,
+              "lastMatrixMs": 30.7209,
+              "matrixReductions": 1,
+              "overlayUploads": 14,
+              "powerGenerations": 22,
+              "quality": "settled",
+              "requestedGeneration": 25,
+              "requestedHeatmapHeight": 430,
+              "requestedHeatmapWidth": 750,
+              "requestedPixels": 322500,
+              "settled": false,
+              "sourcePoints": 322500,
+              "staleDrops": 18,
+              "textureUploads": 4,
+              "workerIdle": false
+            }
+          }
+        ],
+        "afterProcessRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 23,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.9836,
+              "maxMs": 0.9836,
+              "samples": 4,
+              "totalMs": 2.1799999999999997
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.5966,
+              "maxMs": 2.9038,
+              "samples": 14,
+              "totalMs": 16.1208
+            },
+            "overlayPainter": {
+              "lastMs": 4.2337,
+              "maxMs": 9.9529,
+              "samples": 14,
+              "totalMs": 57.90089999999999
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.005,
+              "maxMs": 0.4876,
+              "samples": 14,
+              "totalMs": 0.8988999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 6.5631,
+              "maxMs": 28.6382,
+              "samples": 16,
+              "totalMs": 132.8993
+            },
+            "prepareUploads": {
+              "lastMs": 4.8382,
+              "maxMs": 13.1235,
+              "samples": 17,
+              "totalMs": 77.1559
+            },
+            "render": {
+              "lastMs": 4.8622,
+              "maxMs": 13.22,
+              "samples": 17,
+              "totalMs": 77.68799999999999
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 25,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 1,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 1,
+          "overlayUploads": 14,
+          "powerGenerations": 22,
+          "quality": "settled",
+          "requestedGeneration": 25,
+          "requestedHeatmapHeight": 430,
+          "requestedHeatmapWidth": 750,
+          "requestedPixels": 322500,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 18,
+          "textureUploads": 4,
+          "workerIdle": false
+        },
+        "angleDeltaY": 120,
+        "event": 1,
+        "immediateCharts": [
+          {
+            "name": "navigationPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 3,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.023,
+                  "maxMs": 0.129,
+                  "samples": 9,
+                  "totalMs": 0.4203
+                },
+                "overlayPainter": {
+                  "lastMs": 39.6209,
+                  "maxMs": 39.6209,
+                  "samples": 9,
+                  "totalMs": 240.3137
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0075,
+                  "maxMs": 0.6374,
+                  "samples": 9,
+                  "totalMs": 0.8573
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 40.1412,
+                  "maxMs": 40.1412,
+                  "samples": 11,
+                  "totalMs": 249.9469
+                },
+                "prepareUploads": {
+                  "lastMs": 39.6538,
+                  "maxMs": 39.6538,
+                  "samples": 12,
+                  "totalMs": 241.61749999999998
+                },
+                "render": {
+                  "lastMs": 39.6905,
+                  "maxMs": 39.6905,
+                  "samples": 12,
+                  "totalMs": 241.90320000000003
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 7,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 2,
+              "drawnPoints": 3916,
+              "generation": 3,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 9,
+              "powerGenerations": 0,
+              "quality": "preview",
+              "requestedGeneration": 3,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 3916,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "auxPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 10,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.0755,
+                  "maxMs": 0.4706,
+                  "samples": 9,
+                  "totalMs": 1.9616999999999998
+                },
+                "overlayPainter": {
+                  "lastMs": 161.0271,
+                  "maxMs": 161.0271,
+                  "samples": 9,
+                  "totalMs": 807.2259
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0045,
+                  "maxMs": 0.2102,
+                  "samples": 9,
+                  "totalMs": 0.39670000000000005
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 161.8518,
+                  "maxMs": 161.8518,
+                  "samples": 11,
+                  "totalMs": 818.4354
+                },
+                "prepareUploads": {
+                  "lastMs": 161.1095,
+                  "maxMs": 161.1095,
+                  "samples": 12,
+                  "totalMs": 809.6181
+                },
+                "render": {
+                  "lastMs": 161.1298,
+                  "maxMs": 161.1298,
+                  "samples": 12,
+                  "totalMs": 809.8849
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 6,
+              "curvePathElements": 5622,
+              "curveReductions": 6,
+              "curveSourceGenerations": 3,
+              "drawnPoints": 5622,
+              "generation": 10,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 9,
+              "powerGenerations": 0,
+              "quality": "preview",
+              "requestedGeneration": 10,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 22488,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "mainPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 23,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0.9836,
+                  "maxMs": 0.9836,
+                  "samples": 4,
+                  "totalMs": 2.1799999999999997
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.5824,
+                  "maxMs": 2.9038,
+                  "samples": 13,
+                  "totalMs": 15.5242
+                },
+                "overlayPainter": {
+                  "lastMs": 3.848,
+                  "maxMs": 9.9529,
+                  "samples": 13,
+                  "totalMs": 53.667199999999994
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0053,
+                  "maxMs": 0.4876,
+                  "samples": 13,
+                  "totalMs": 0.8938999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 7.7376,
+                  "maxMs": 28.6382,
+                  "samples": 15,
+                  "totalMs": 126.33620000000002
+                },
+                "prepareUploads": {
+                  "lastMs": 5.4247,
+                  "maxMs": 13.1235,
+                  "samples": 16,
+                  "totalMs": 72.3177
+                },
+                "render": {
+                  "lastMs": 5.4558,
+                  "maxMs": 13.22,
+                  "samples": 16,
+                  "totalMs": 72.82579999999999
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 0,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 0,
+              "drawnPoints": 322500,
+              "generation": 24,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 1,
+              "heatmapHeight": 430,
+              "heatmapWidth": 750,
+              "lastMatrixMs": 30.7209,
+              "matrixReductions": 1,
+              "overlayUploads": 13,
+              "powerGenerations": 21,
+              "quality": "preview",
+              "requestedGeneration": 24,
+              "requestedHeatmapHeight": 178,
+              "requestedHeatmapWidth": 300,
+              "requestedPixels": 53400,
+              "settled": false,
+              "sourcePoints": 322500,
+              "staleDrops": 18,
+              "textureUploads": 4,
+              "workerIdle": false
+            }
+          }
+        ],
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 23,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.9836,
+              "maxMs": 0.9836,
+              "samples": 4,
+              "totalMs": 2.1799999999999997
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.5824,
+              "maxMs": 2.9038,
+              "samples": 13,
+              "totalMs": 15.5242
+            },
+            "overlayPainter": {
+              "lastMs": 3.848,
+              "maxMs": 9.9529,
+              "samples": 13,
+              "totalMs": 53.667199999999994
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0053,
+              "maxMs": 0.4876,
+              "samples": 13,
+              "totalMs": 0.8938999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 7.7376,
+              "maxMs": 28.6382,
+              "samples": 15,
+              "totalMs": 126.33620000000002
+            },
+            "prepareUploads": {
+              "lastMs": 5.4247,
+              "maxMs": 13.1235,
+              "samples": 16,
+              "totalMs": 72.3177
+            },
+            "render": {
+              "lastMs": 5.4558,
+              "maxMs": 13.22,
+              "samples": 16,
+              "totalMs": 72.82579999999999
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 24,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 1,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 1,
+          "overlayUploads": 13,
+          "powerGenerations": 21,
+          "quality": "preview",
+          "requestedGeneration": 24,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 18,
+          "textureUploads": 4,
+          "workerIdle": false
+        },
+        "processEventsElapsedMs": 214.5237,
+        "sendEventMs": 1.2257,
+        "snapshot": {
+          "beginSample": "6895749089",
+          "endSample": "10384250910",
+          "fileId": "file-1",
+          "lowerHz": 80000000,
+          "psdMax": 0,
+          "psdMin": -100,
+          "upperHz": 120000000,
+          "waveformMax": 60,
+          "waveformMin": -60
+        },
+        "timeSincePreviousEventMs": 0
+      },
+      {
+        "accepted": true,
+        "afterProcessCharts": [
+          {
+            "name": "navigationPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 3,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.0417,
+                  "maxMs": 0.129,
+                  "samples": 11,
+                  "totalMs": 0.48210000000000003
+                },
+                "overlayPainter": {
+                  "lastMs": 37.5824,
+                  "maxMs": 39.6209,
+                  "samples": 11,
+                  "totalMs": 316.4338
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0047,
+                  "maxMs": 0.6374,
+                  "samples": 11,
+                  "totalMs": 0.8674999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 38.1163,
+                  "maxMs": 40.1412,
+                  "samples": 13,
+                  "totalMs": 327.11600000000004
+                },
+                "prepareUploads": {
+                  "lastMs": 37.6337,
+                  "maxMs": 39.6538,
+                  "samples": 14,
+                  "totalMs": 317.81609999999995
+                },
+                "render": {
+                  "lastMs": 37.6708,
+                  "maxMs": 39.6905,
+                  "samples": 14,
+                  "totalMs": 318.1754
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 9,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 2,
+              "drawnPoints": 3916,
+              "generation": 3,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 11,
+              "powerGenerations": 0,
+              "quality": "settled",
+              "requestedGeneration": 3,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 3916,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "auxPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": true,
+              "committedGeneration": 14,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.0944,
+                  "maxMs": 0.4706,
+                  "samples": 11,
+                  "totalMs": 2.3402999999999996
+                },
+                "overlayPainter": {
+                  "lastMs": 144.3304,
+                  "maxMs": 161.0271,
+                  "samples": 11,
+                  "totalMs": 1098.7924
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0042,
+                  "maxMs": 0.2102,
+                  "samples": 11,
+                  "totalMs": 0.40670000000000006
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 145.1105,
+                  "maxMs": 161.8518,
+                  "samples": 13,
+                  "totalMs": 1111.6243
+                },
+                "prepareUploads": {
+                  "lastMs": 144.4319,
+                  "maxMs": 161.1095,
+                  "samples": 14,
+                  "totalMs": 1101.5798
+                },
+                "render": {
+                  "lastMs": 144.4585,
+                  "maxMs": 161.1298,
+                  "samples": 14,
+                  "totalMs": 1101.9213
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 6,
+              "curvePathElements": 2810,
+              "curveReductions": 8,
+              "curveSourceGenerations": 5,
+              "drawnPoints": 2810,
+              "generation": 14,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 11,
+              "powerGenerations": 0,
+              "quality": "settled",
+              "requestedGeneration": 14,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 22488,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "mainPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 23,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0.9836,
+                  "maxMs": 0.9836,
+                  "samples": 4,
+                  "totalMs": 2.1799999999999997
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.6131,
+                  "maxMs": 2.9038,
+                  "samples": 15,
+                  "totalMs": 16.7339
+                },
+                "overlayPainter": {
+                  "lastMs": 4.1484,
+                  "maxMs": 9.9529,
+                  "samples": 15,
+                  "totalMs": 62.049299999999995
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0044,
+                  "maxMs": 0.4876,
+                  "samples": 15,
+                  "totalMs": 0.9032999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 6.7418,
+                  "maxMs": 28.6382,
+                  "samples": 17,
+                  "totalMs": 139.64110000000002
+                },
+                "prepareUploads": {
+                  "lastMs": 4.7687,
+                  "maxMs": 13.1235,
+                  "samples": 18,
+                  "totalMs": 81.9246
+                },
+                "render": {
+                  "lastMs": 4.8058,
+                  "maxMs": 13.22,
+                  "samples": 18,
+                  "totalMs": 82.4938
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 0,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 0,
+              "drawnPoints": 322500,
+              "generation": 27,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 1,
+              "heatmapHeight": 430,
+              "heatmapWidth": 750,
+              "lastMatrixMs": 30.7209,
+              "matrixReductions": 1,
+              "overlayUploads": 15,
+              "powerGenerations": 24,
+              "quality": "settled",
+              "requestedGeneration": 27,
+              "requestedHeatmapHeight": 430,
+              "requestedHeatmapWidth": 750,
+              "requestedPixels": 322500,
+              "settled": false,
+              "sourcePoints": 322500,
+              "staleDrops": 20,
+              "textureUploads": 4,
+              "workerIdle": false
+            }
+          }
+        ],
+        "afterProcessRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 23,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.9836,
+              "maxMs": 0.9836,
+              "samples": 4,
+              "totalMs": 2.1799999999999997
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.6131,
+              "maxMs": 2.9038,
+              "samples": 15,
+              "totalMs": 16.7339
+            },
+            "overlayPainter": {
+              "lastMs": 4.1484,
+              "maxMs": 9.9529,
+              "samples": 15,
+              "totalMs": 62.049299999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0044,
+              "maxMs": 0.4876,
+              "samples": 15,
+              "totalMs": 0.9032999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 6.7418,
+              "maxMs": 28.6382,
+              "samples": 17,
+              "totalMs": 139.64110000000002
+            },
+            "prepareUploads": {
+              "lastMs": 4.7687,
+              "maxMs": 13.1235,
+              "samples": 18,
+              "totalMs": 81.9246
+            },
+            "render": {
+              "lastMs": 4.8058,
+              "maxMs": 13.22,
+              "samples": 18,
+              "totalMs": 82.4938
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 27,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 1,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 1,
+          "overlayUploads": 15,
+          "powerGenerations": 24,
+          "quality": "settled",
+          "requestedGeneration": 27,
+          "requestedHeatmapHeight": 430,
+          "requestedHeatmapWidth": 750,
+          "requestedPixels": 322500,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 20,
+          "textureUploads": 4,
+          "workerIdle": false
+        },
+        "angleDeltaY": 120,
+        "event": 2,
+        "immediateCharts": [
+          {
+            "name": "navigationPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 3,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.0201,
+                  "maxMs": 0.129,
+                  "samples": 10,
+                  "totalMs": 0.4404
+                },
+                "overlayPainter": {
+                  "lastMs": 38.5377,
+                  "maxMs": 39.6209,
+                  "samples": 10,
+                  "totalMs": 278.8514
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0055,
+                  "maxMs": 0.6374,
+                  "samples": 10,
+                  "totalMs": 0.8627999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 39.0528,
+                  "maxMs": 40.1412,
+                  "samples": 12,
+                  "totalMs": 288.9997
+                },
+                "prepareUploads": {
+                  "lastMs": 38.5649,
+                  "maxMs": 39.6538,
+                  "samples": 13,
+                  "totalMs": 280.1824
+                },
+                "render": {
+                  "lastMs": 38.6014,
+                  "maxMs": 39.6905,
+                  "samples": 13,
+                  "totalMs": 280.50460000000004
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 8,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 2,
+              "drawnPoints": 3916,
+              "generation": 3,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 10,
+              "powerGenerations": 0,
+              "quality": "preview",
+              "requestedGeneration": 3,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 3916,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "auxPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": true,
+              "committedGeneration": 12,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.2842,
+                  "maxMs": 0.4706,
+                  "samples": 10,
+                  "totalMs": 2.2459
+                },
+                "overlayPainter": {
+                  "lastMs": 147.2361,
+                  "maxMs": 161.0271,
+                  "samples": 10,
+                  "totalMs": 954.462
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0058,
+                  "maxMs": 0.2102,
+                  "samples": 10,
+                  "totalMs": 0.4025000000000001
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 148.0784,
+                  "maxMs": 161.8518,
+                  "samples": 12,
+                  "totalMs": 966.5138
+                },
+                "prepareUploads": {
+                  "lastMs": 147.5298,
+                  "maxMs": 161.1095,
+                  "samples": 13,
+                  "totalMs": 957.1479
+                },
+                "render": {
+                  "lastMs": 147.5779,
+                  "maxMs": 161.1298,
+                  "samples": 13,
+                  "totalMs": 957.4628
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 6,
+              "curvePathElements": 2811,
+              "curveReductions": 7,
+              "curveSourceGenerations": 4,
+              "drawnPoints": 2811,
+              "generation": 12,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 10,
+              "powerGenerations": 0,
+              "quality": "preview",
+              "requestedGeneration": 12,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 22488,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "mainPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 23,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0.9836,
+                  "maxMs": 0.9836,
+                  "samples": 4,
+                  "totalMs": 2.1799999999999997
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.5966,
+                  "maxMs": 2.9038,
+                  "samples": 14,
+                  "totalMs": 16.1208
+                },
+                "overlayPainter": {
+                  "lastMs": 4.2337,
+                  "maxMs": 9.9529,
+                  "samples": 14,
+                  "totalMs": 57.90089999999999
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.005,
+                  "maxMs": 0.4876,
+                  "samples": 14,
+                  "totalMs": 0.8988999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 6.5631,
+                  "maxMs": 28.6382,
+                  "samples": 16,
+                  "totalMs": 132.8993
+                },
+                "prepareUploads": {
+                  "lastMs": 4.8382,
+                  "maxMs": 13.1235,
+                  "samples": 17,
+                  "totalMs": 77.1559
+                },
+                "render": {
+                  "lastMs": 4.8622,
+                  "maxMs": 13.22,
+                  "samples": 17,
+                  "totalMs": 77.68799999999999
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 0,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 0,
+              "drawnPoints": 322500,
+              "generation": 26,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 1,
+              "heatmapHeight": 430,
+              "heatmapWidth": 750,
+              "lastMatrixMs": 30.7209,
+              "matrixReductions": 1,
+              "overlayUploads": 14,
+              "powerGenerations": 23,
+              "quality": "preview",
+              "requestedGeneration": 26,
+              "requestedHeatmapHeight": 178,
+              "requestedHeatmapWidth": 300,
+              "requestedPixels": 53400,
+              "settled": false,
+              "sourcePoints": 322500,
+              "staleDrops": 19,
+              "textureUploads": 4,
+              "workerIdle": false
+            }
+          }
+        ],
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 23,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.9836,
+              "maxMs": 0.9836,
+              "samples": 4,
+              "totalMs": 2.1799999999999997
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.5966,
+              "maxMs": 2.9038,
+              "samples": 14,
+              "totalMs": 16.1208
+            },
+            "overlayPainter": {
+              "lastMs": 4.2337,
+              "maxMs": 9.9529,
+              "samples": 14,
+              "totalMs": 57.90089999999999
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.005,
+              "maxMs": 0.4876,
+              "samples": 14,
+              "totalMs": 0.8988999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 6.5631,
+              "maxMs": 28.6382,
+              "samples": 16,
+              "totalMs": 132.8993
+            },
+            "prepareUploads": {
+              "lastMs": 4.8382,
+              "maxMs": 13.1235,
+              "samples": 17,
+              "totalMs": 77.1559
+            },
+            "render": {
+              "lastMs": 4.8622,
+              "maxMs": 13.22,
+              "samples": 17,
+              "totalMs": 77.68799999999999
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 26,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 1,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 1,
+          "overlayUploads": 14,
+          "powerGenerations": 23,
+          "quality": "preview",
+          "requestedGeneration": 26,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 18,
+          "textureUploads": 4,
+          "workerIdle": false
+        },
+        "processEventsElapsedMs": 214.474,
+        "sendEventMs": 0.5307,
+        "snapshot": {
+          "beginSample": "7055410812",
+          "endSample": "10224589186",
+          "fileId": "file-1",
+          "lowerHz": 80000000,
+          "psdMax": 0,
+          "psdMin": -100,
+          "upperHz": 120000000,
+          "waveformMax": 60,
+          "waveformMin": -60
+        },
+        "timeSincePreviousEventMs": 216.31470000000002
+      },
+      {
+        "accepted": true,
+        "afterProcessCharts": [
+          {
+            "name": "navigationPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 3,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.0235,
+                  "maxMs": 0.129,
+                  "samples": 12,
+                  "totalMs": 0.5056
+                },
+                "overlayPainter": {
+                  "lastMs": 37.966,
+                  "maxMs": 39.6209,
+                  "samples": 12,
+                  "totalMs": 354.3998
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.005,
+                  "maxMs": 0.6374,
+                  "samples": 12,
+                  "totalMs": 0.8724999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 38.4567,
+                  "maxMs": 40.1412,
+                  "samples": 14,
+                  "totalMs": 365.57270000000005
+                },
+                "prepareUploads": {
+                  "lastMs": 37.9975,
+                  "maxMs": 39.6538,
+                  "samples": 15,
+                  "totalMs": 355.81359999999995
+                },
+                "render": {
+                  "lastMs": 38.0209,
+                  "maxMs": 39.6905,
+                  "samples": 15,
+                  "totalMs": 356.1963
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 10,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 2,
+              "drawnPoints": 3916,
+              "generation": 3,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 12,
+              "powerGenerations": 0,
+              "quality": "settled",
+              "requestedGeneration": 3,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 3916,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "auxPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": true,
+              "committedGeneration": 16,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.2527,
+                  "maxMs": 0.4706,
+                  "samples": 12,
+                  "totalMs": 2.5929999999999995
+                },
+                "overlayPainter": {
+                  "lastMs": 146.3753,
+                  "maxMs": 161.0271,
+                  "samples": 12,
+                  "totalMs": 1245.1677
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0052,
+                  "maxMs": 0.2102,
+                  "samples": 12,
+                  "totalMs": 0.41190000000000004
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 147.3127,
+                  "maxMs": 161.8518,
+                  "samples": 14,
+                  "totalMs": 1258.937
+                },
+                "prepareUploads": {
+                  "lastMs": 146.6373,
+                  "maxMs": 161.1095,
+                  "samples": 15,
+                  "totalMs": 1248.2171
+                },
+                "render": {
+                  "lastMs": 146.6636,
+                  "maxMs": 161.1298,
+                  "samples": 15,
+                  "totalMs": 1248.5849
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 6,
+              "curvePathElements": 2811,
+              "curveReductions": 9,
+              "curveSourceGenerations": 6,
+              "drawnPoints": 2811,
+              "generation": 16,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 12,
+              "powerGenerations": 0,
+              "quality": "settled",
+              "requestedGeneration": 16,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 22488,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "mainPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 23,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0.9836,
+                  "maxMs": 0.9836,
+                  "samples": 4,
+                  "totalMs": 2.1799999999999997
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 1.0881,
+                  "maxMs": 2.9038,
+                  "samples": 16,
+                  "totalMs": 17.822
+                },
+                "overlayPainter": {
+                  "lastMs": 4.6737,
+                  "maxMs": 9.9529,
+                  "samples": 16,
+                  "totalMs": 66.723
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0041,
+                  "maxMs": 0.4876,
+                  "samples": 16,
+                  "totalMs": 0.9073999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 7.6121,
+                  "maxMs": 28.6382,
+                  "samples": 18,
+                  "totalMs": 147.25320000000002
+                },
+                "prepareUploads": {
+                  "lastMs": 5.7706,
+                  "maxMs": 13.1235,
+                  "samples": 19,
+                  "totalMs": 87.6952
+                },
+                "render": {
+                  "lastMs": 5.8095,
+                  "maxMs": 13.22,
+                  "samples": 19,
+                  "totalMs": 88.3033
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 0,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 0,
+              "drawnPoints": 322500,
+              "generation": 29,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 1,
+              "heatmapHeight": 430,
+              "heatmapWidth": 750,
+              "lastMatrixMs": 30.7209,
+              "matrixReductions": 1,
+              "overlayUploads": 16,
+              "powerGenerations": 26,
+              "quality": "settled",
+              "requestedGeneration": 29,
+              "requestedHeatmapHeight": 430,
+              "requestedHeatmapWidth": 750,
+              "requestedPixels": 322500,
+              "settled": false,
+              "sourcePoints": 322500,
+              "staleDrops": 22,
+              "textureUploads": 4,
+              "workerIdle": false
+            }
+          }
+        ],
+        "afterProcessRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 23,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.9836,
+              "maxMs": 0.9836,
+              "samples": 4,
+              "totalMs": 2.1799999999999997
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 1.0881,
+              "maxMs": 2.9038,
+              "samples": 16,
+              "totalMs": 17.822
+            },
+            "overlayPainter": {
+              "lastMs": 4.6737,
+              "maxMs": 9.9529,
+              "samples": 16,
+              "totalMs": 66.723
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0041,
+              "maxMs": 0.4876,
+              "samples": 16,
+              "totalMs": 0.9073999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 7.6121,
+              "maxMs": 28.6382,
+              "samples": 18,
+              "totalMs": 147.25320000000002
+            },
+            "prepareUploads": {
+              "lastMs": 5.7706,
+              "maxMs": 13.1235,
+              "samples": 19,
+              "totalMs": 87.6952
+            },
+            "render": {
+              "lastMs": 5.8095,
+              "maxMs": 13.22,
+              "samples": 19,
+              "totalMs": 88.3033
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 29,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 1,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 1,
+          "overlayUploads": 16,
+          "powerGenerations": 26,
+          "quality": "settled",
+          "requestedGeneration": 29,
+          "requestedHeatmapHeight": 430,
+          "requestedHeatmapWidth": 750,
+          "requestedPixels": 322500,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 22,
+          "textureUploads": 4,
+          "workerIdle": false
+        },
+        "angleDeltaY": -120,
+        "event": 3,
+        "immediateCharts": [
+          {
+            "name": "navigationPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 3,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.0417,
+                  "maxMs": 0.129,
+                  "samples": 11,
+                  "totalMs": 0.48210000000000003
+                },
+                "overlayPainter": {
+                  "lastMs": 37.5824,
+                  "maxMs": 39.6209,
+                  "samples": 11,
+                  "totalMs": 316.4338
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0047,
+                  "maxMs": 0.6374,
+                  "samples": 11,
+                  "totalMs": 0.8674999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 38.1163,
+                  "maxMs": 40.1412,
+                  "samples": 13,
+                  "totalMs": 327.11600000000004
+                },
+                "prepareUploads": {
+                  "lastMs": 37.6337,
+                  "maxMs": 39.6538,
+                  "samples": 14,
+                  "totalMs": 317.81609999999995
+                },
+                "render": {
+                  "lastMs": 37.6708,
+                  "maxMs": 39.6905,
+                  "samples": 14,
+                  "totalMs": 318.1754
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 9,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 2,
+              "drawnPoints": 3916,
+              "generation": 3,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 11,
+              "powerGenerations": 0,
+              "quality": "preview",
+              "requestedGeneration": 3,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 3916,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "auxPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": true,
+              "committedGeneration": 14,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.0944,
+                  "maxMs": 0.4706,
+                  "samples": 11,
+                  "totalMs": 2.3402999999999996
+                },
+                "overlayPainter": {
+                  "lastMs": 144.3304,
+                  "maxMs": 161.0271,
+                  "samples": 11,
+                  "totalMs": 1098.7924
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0042,
+                  "maxMs": 0.2102,
+                  "samples": 11,
+                  "totalMs": 0.40670000000000006
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 145.1105,
+                  "maxMs": 161.8518,
+                  "samples": 13,
+                  "totalMs": 1111.6243
+                },
+                "prepareUploads": {
+                  "lastMs": 144.4319,
+                  "maxMs": 161.1095,
+                  "samples": 14,
+                  "totalMs": 1101.5798
+                },
+                "render": {
+                  "lastMs": 144.4585,
+                  "maxMs": 161.1298,
+                  "samples": 14,
+                  "totalMs": 1101.9213
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 6,
+              "curvePathElements": 2810,
+              "curveReductions": 8,
+              "curveSourceGenerations": 5,
+              "drawnPoints": 2810,
+              "generation": 14,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 11,
+              "powerGenerations": 0,
+              "quality": "preview",
+              "requestedGeneration": 14,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 22488,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "mainPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 23,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0.9836,
+                  "maxMs": 0.9836,
+                  "samples": 4,
+                  "totalMs": 2.1799999999999997
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.6131,
+                  "maxMs": 2.9038,
+                  "samples": 15,
+                  "totalMs": 16.7339
+                },
+                "overlayPainter": {
+                  "lastMs": 4.1484,
+                  "maxMs": 9.9529,
+                  "samples": 15,
+                  "totalMs": 62.049299999999995
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0044,
+                  "maxMs": 0.4876,
+                  "samples": 15,
+                  "totalMs": 0.9032999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 6.7418,
+                  "maxMs": 28.6382,
+                  "samples": 17,
+                  "totalMs": 139.64110000000002
+                },
+                "prepareUploads": {
+                  "lastMs": 4.7687,
+                  "maxMs": 13.1235,
+                  "samples": 18,
+                  "totalMs": 81.9246
+                },
+                "render": {
+                  "lastMs": 4.8058,
+                  "maxMs": 13.22,
+                  "samples": 18,
+                  "totalMs": 82.4938
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 0,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 0,
+              "drawnPoints": 322500,
+              "generation": 28,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 1,
+              "heatmapHeight": 430,
+              "heatmapWidth": 750,
+              "lastMatrixMs": 30.7209,
+              "matrixReductions": 1,
+              "overlayUploads": 15,
+              "powerGenerations": 25,
+              "quality": "preview",
+              "requestedGeneration": 28,
+              "requestedHeatmapHeight": 178,
+              "requestedHeatmapWidth": 300,
+              "requestedPixels": 53400,
+              "settled": false,
+              "sourcePoints": 322500,
+              "staleDrops": 21,
+              "textureUploads": 4,
+              "workerIdle": false
+            }
+          }
+        ],
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 23,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.9836,
+              "maxMs": 0.9836,
+              "samples": 4,
+              "totalMs": 2.1799999999999997
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.6131,
+              "maxMs": 2.9038,
+              "samples": 15,
+              "totalMs": 16.7339
+            },
+            "overlayPainter": {
+              "lastMs": 4.1484,
+              "maxMs": 9.9529,
+              "samples": 15,
+              "totalMs": 62.049299999999995
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0044,
+              "maxMs": 0.4876,
+              "samples": 15,
+              "totalMs": 0.9032999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 6.7418,
+              "maxMs": 28.6382,
+              "samples": 17,
+              "totalMs": 139.64110000000002
+            },
+            "prepareUploads": {
+              "lastMs": 4.7687,
+              "maxMs": 13.1235,
+              "samples": 18,
+              "totalMs": 81.9246
+            },
+            "render": {
+              "lastMs": 4.8058,
+              "maxMs": 13.22,
+              "samples": 18,
+              "totalMs": 82.4938
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 28,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 1,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 1,
+          "overlayUploads": 15,
+          "powerGenerations": 25,
+          "quality": "preview",
+          "requestedGeneration": 28,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 20,
+          "textureUploads": 4,
+          "workerIdle": false
+        },
+        "processEventsElapsedMs": 216.6446,
+        "sendEventMs": 0.8402,
+        "snapshot": {
+          "beginSample": "6895749089",
+          "endSample": "10384250909",
+          "fileId": "file-1",
+          "lowerHz": 80000000,
+          "psdMax": 0,
+          "psdMin": -100,
+          "upperHz": 120000000,
+          "waveformMax": 60,
+          "waveformMin": -60
+        },
+        "timeSincePreviousEventMs": 215.45279999999997
+      },
+      {
+        "accepted": true,
+        "afterProcessCharts": [
+          {
+            "name": "navigationPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 3,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.0211,
+                  "maxMs": 0.129,
+                  "samples": 13,
+                  "totalMs": 0.5267000000000001
+                },
+                "overlayPainter": {
+                  "lastMs": 36.5447,
+                  "maxMs": 39.6209,
+                  "samples": 13,
+                  "totalMs": 390.9445
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0047,
+                  "maxMs": 0.6374,
+                  "samples": 13,
+                  "totalMs": 0.8772
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 37.0684,
+                  "maxMs": 40.1412,
+                  "samples": 15,
+                  "totalMs": 402.64110000000005
+                },
+                "prepareUploads": {
+                  "lastMs": 36.5727,
+                  "maxMs": 39.6538,
+                  "samples": 16,
+                  "totalMs": 392.38629999999995
+                },
+                "render": {
+                  "lastMs": 36.5967,
+                  "maxMs": 39.6905,
+                  "samples": 16,
+                  "totalMs": 392.793
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 11,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 2,
+              "drawnPoints": 3916,
+              "generation": 3,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 13,
+              "powerGenerations": 0,
+              "quality": "settled",
+              "requestedGeneration": 3,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 3916,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "auxPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": true,
+              "committedGeneration": 18,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.0863,
+                  "maxMs": 0.4706,
+                  "samples": 13,
+                  "totalMs": 2.6792999999999996
+                },
+                "overlayPainter": {
+                  "lastMs": 128.3985,
+                  "maxMs": 161.0271,
+                  "samples": 13,
+                  "totalMs": 1373.5662
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0042,
+                  "maxMs": 0.2102,
+                  "samples": 13,
+                  "totalMs": 0.4161
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 129.0679,
+                  "maxMs": 161.8518,
+                  "samples": 15,
+                  "totalMs": 1388.0049
+                },
+                "prepareUploads": {
+                  "lastMs": 128.4917,
+                  "maxMs": 161.1095,
+                  "samples": 16,
+                  "totalMs": 1376.7088
+                },
+                "render": {
+                  "lastMs": 128.5182,
+                  "maxMs": 161.1298,
+                  "samples": 16,
+                  "totalMs": 1377.1031
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 6,
+              "curvePathElements": 2811,
+              "curveReductions": 10,
+              "curveSourceGenerations": 7,
+              "drawnPoints": 2811,
+              "generation": 18,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 13,
+              "powerGenerations": 0,
+              "quality": "settled",
+              "requestedGeneration": 18,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 22488,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "mainPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 23,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0.9836,
+                  "maxMs": 0.9836,
+                  "samples": 4,
+                  "totalMs": 2.1799999999999997
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.6417,
+                  "maxMs": 2.9038,
+                  "samples": 17,
+                  "totalMs": 18.4637
+                },
+                "overlayPainter": {
+                  "lastMs": 3.7244,
+                  "maxMs": 9.9529,
+                  "samples": 17,
+                  "totalMs": 70.4474
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0049,
+                  "maxMs": 0.4876,
+                  "samples": 17,
+                  "totalMs": 0.9122999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 6.2074,
+                  "maxMs": 28.6382,
+                  "samples": 19,
+                  "totalMs": 153.46060000000003
+                },
+                "prepareUploads": {
+                  "lastMs": 4.3741,
+                  "maxMs": 13.1235,
+                  "samples": 20,
+                  "totalMs": 92.0693
+                },
+                "render": {
+                  "lastMs": 4.4118,
+                  "maxMs": 13.22,
+                  "samples": 20,
+                  "totalMs": 92.71509999999999
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 0,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 0,
+              "drawnPoints": 322500,
+              "generation": 31,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 1,
+              "heatmapHeight": 430,
+              "heatmapWidth": 750,
+              "lastMatrixMs": 30.7209,
+              "matrixReductions": 1,
+              "overlayUploads": 17,
+              "powerGenerations": 28,
+              "quality": "settled",
+              "requestedGeneration": 31,
+              "requestedHeatmapHeight": 430,
+              "requestedHeatmapWidth": 750,
+              "requestedPixels": 322500,
+              "settled": false,
+              "sourcePoints": 322500,
+              "staleDrops": 24,
+              "textureUploads": 4,
+              "workerIdle": false
+            }
+          }
+        ],
+        "afterProcessRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 23,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.9836,
+              "maxMs": 0.9836,
+              "samples": 4,
+              "totalMs": 2.1799999999999997
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.6417,
+              "maxMs": 2.9038,
+              "samples": 17,
+              "totalMs": 18.4637
+            },
+            "overlayPainter": {
+              "lastMs": 3.7244,
+              "maxMs": 9.9529,
+              "samples": 17,
+              "totalMs": 70.4474
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0049,
+              "maxMs": 0.4876,
+              "samples": 17,
+              "totalMs": 0.9122999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 6.2074,
+              "maxMs": 28.6382,
+              "samples": 19,
+              "totalMs": 153.46060000000003
+            },
+            "prepareUploads": {
+              "lastMs": 4.3741,
+              "maxMs": 13.1235,
+              "samples": 20,
+              "totalMs": 92.0693
+            },
+            "render": {
+              "lastMs": 4.4118,
+              "maxMs": 13.22,
+              "samples": 20,
+              "totalMs": 92.71509999999999
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 31,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 1,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 1,
+          "overlayUploads": 17,
+          "powerGenerations": 28,
+          "quality": "settled",
+          "requestedGeneration": 31,
+          "requestedHeatmapHeight": 430,
+          "requestedHeatmapWidth": 750,
+          "requestedPixels": 322500,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 24,
+          "textureUploads": 4,
+          "workerIdle": false
+        },
+        "angleDeltaY": 240,
+        "event": 4,
+        "immediateCharts": [
+          {
+            "name": "navigationPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 3,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.0235,
+                  "maxMs": 0.129,
+                  "samples": 12,
+                  "totalMs": 0.5056
+                },
+                "overlayPainter": {
+                  "lastMs": 37.966,
+                  "maxMs": 39.6209,
+                  "samples": 12,
+                  "totalMs": 354.3998
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.005,
+                  "maxMs": 0.6374,
+                  "samples": 12,
+                  "totalMs": 0.8724999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 38.4567,
+                  "maxMs": 40.1412,
+                  "samples": 14,
+                  "totalMs": 365.57270000000005
+                },
+                "prepareUploads": {
+                  "lastMs": 37.9975,
+                  "maxMs": 39.6538,
+                  "samples": 15,
+                  "totalMs": 355.81359999999995
+                },
+                "render": {
+                  "lastMs": 38.0209,
+                  "maxMs": 39.6905,
+                  "samples": 15,
+                  "totalMs": 356.1963
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 10,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 2,
+              "drawnPoints": 3916,
+              "generation": 3,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 12,
+              "powerGenerations": 0,
+              "quality": "preview",
+              "requestedGeneration": 3,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 3916,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "auxPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": true,
+              "committedGeneration": 16,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0,
+                  "maxMs": 0,
+                  "samples": 0,
+                  "totalMs": 0
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 0.2527,
+                  "maxMs": 0.4706,
+                  "samples": 12,
+                  "totalMs": 2.5929999999999995
+                },
+                "overlayPainter": {
+                  "lastMs": 146.3753,
+                  "maxMs": 161.0271,
+                  "samples": 12,
+                  "totalMs": 1245.1677
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0052,
+                  "maxMs": 0.2102,
+                  "samples": 12,
+                  "totalMs": 0.41190000000000004
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 147.3127,
+                  "maxMs": 161.8518,
+                  "samples": 14,
+                  "totalMs": 1258.937
+                },
+                "prepareUploads": {
+                  "lastMs": 146.6373,
+                  "maxMs": 161.1095,
+                  "samples": 15,
+                  "totalMs": 1248.2171
+                },
+                "render": {
+                  "lastMs": 146.6636,
+                  "maxMs": 161.1298,
+                  "samples": 15,
+                  "totalMs": 1248.5849
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 6,
+              "curvePathElements": 2811,
+              "curveReductions": 9,
+              "curveSourceGenerations": 6,
+              "drawnPoints": 2811,
+              "generation": 16,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 0,
+              "heatmapHeight": -1,
+              "heatmapWidth": -1,
+              "lastMatrixMs": 0,
+              "matrixReductions": 0,
+              "overlayUploads": 12,
+              "powerGenerations": 0,
+              "quality": "preview",
+              "requestedGeneration": 16,
+              "requestedHeatmapHeight": -1,
+              "requestedHeatmapWidth": -1,
+              "requestedPixels": 1,
+              "settled": false,
+              "sourcePoints": 22488,
+              "staleDrops": 0,
+              "textureUploads": 0,
+              "workerIdle": true
+            }
+          },
+          {
+            "name": "mainPlot",
+            "renderStatistics": {
+              "acceptedHeatmapPreview": false,
+              "committedGeneration": 23,
+              "cpuWallTimings": {
+                "gpuTimestamps": false,
+                "heatmapUploadPreparation": {
+                  "lastMs": 0.9836,
+                  "maxMs": 0.9836,
+                  "samples": 4,
+                  "totalMs": 2.1799999999999997
+                },
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                  "lastMs": 1.0881,
+                  "maxMs": 2.9038,
+                  "samples": 16,
+                  "totalMs": 17.822
+                },
+                "overlayPainter": {
+                  "lastMs": 4.6737,
+                  "maxMs": 9.9529,
+                  "samples": 16,
+                  "totalMs": 66.723
+                },
+                "overlayUploadEnqueue": {
+                  "lastMs": 0.0041,
+                  "maxMs": 0.4876,
+                  "samples": 16,
+                  "totalMs": 0.9073999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                  "lastMs": 7.6121,
+                  "maxMs": 28.6382,
+                  "samples": 18,
+                  "totalMs": 147.25320000000002
+                },
+                "prepareUploads": {
+                  "lastMs": 5.7706,
+                  "maxMs": 13.1235,
+                  "samples": 19,
+                  "totalMs": 87.6952
+                },
+                "render": {
+                  "lastMs": 5.8095,
+                  "maxMs": 13.22,
+                  "samples": 19,
+                  "totalMs": 88.3033
+                },
+                "unit": "ms"
+              },
+              "curveCacheHits": 0,
+              "curvePathElements": 0,
+              "curveReductions": 0,
+              "curveSourceGenerations": 0,
+              "drawnPoints": 322500,
+              "generation": 30,
+              "gpuUploadsPending": true,
+              "heatmapCacheHits": 1,
+              "heatmapHeight": 430,
+              "heatmapWidth": 750,
+              "lastMatrixMs": 30.7209,
+              "matrixReductions": 1,
+              "overlayUploads": 16,
+              "powerGenerations": 27,
+              "quality": "preview",
+              "requestedGeneration": 30,
+              "requestedHeatmapHeight": 178,
+              "requestedHeatmapWidth": 300,
+              "requestedPixels": 53400,
+              "settled": false,
+              "sourcePoints": 322500,
+              "staleDrops": 23,
+              "textureUploads": 4,
+              "workerIdle": false
+            }
+          }
+        ],
+        "immediateRenderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 23,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.9836,
+              "maxMs": 0.9836,
+              "samples": 4,
+              "totalMs": 2.1799999999999997
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 1.0881,
+              "maxMs": 2.9038,
+              "samples": 16,
+              "totalMs": 17.822
+            },
+            "overlayPainter": {
+              "lastMs": 4.6737,
+              "maxMs": 9.9529,
+              "samples": 16,
+              "totalMs": 66.723
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0041,
+              "maxMs": 0.4876,
+              "samples": 16,
+              "totalMs": 0.9073999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 7.6121,
+              "maxMs": 28.6382,
+              "samples": 18,
+              "totalMs": 147.25320000000002
+            },
+            "prepareUploads": {
+              "lastMs": 5.7706,
+              "maxMs": 13.1235,
+              "samples": 19,
+              "totalMs": 87.6952
+            },
+            "render": {
+              "lastMs": 5.8095,
+              "maxMs": 13.22,
+              "samples": 19,
+              "totalMs": 88.3033
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 30,
+          "gpuUploadsPending": true,
+          "heatmapCacheHits": 1,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 1,
+          "overlayUploads": 16,
+          "powerGenerations": 27,
+          "quality": "preview",
+          "requestedGeneration": 30,
+          "requestedHeatmapHeight": 178,
+          "requestedHeatmapWidth": 300,
+          "requestedPixels": 53400,
+          "settled": false,
+          "sourcePoints": 322500,
+          "staleDrops": 23,
+          "textureUploads": 4,
+          "workerIdle": false
+        },
+        "processEventsElapsedMs": 198.877,
+        "sendEventMs": 0.8699,
+        "snapshot": {
+          "beginSample": "7200457742",
+          "endSample": "10079542254",
+          "fileId": "file-1",
+          "lowerHz": 80000000,
+          "psdMax": 0,
+          "psdMin": -100,
+          "upperHz": 120000000,
+          "waveformMax": 60,
+          "waveformMin": -60
+        },
+        "timeSincePreviousEventMs": 218.0432
+      }
+    ],
+    "frameCountersAreNotFps": true,
+    "initialCharts": [
+      {
+        "name": "navigationPlot",
+        "renderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 3,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0,
+              "maxMs": 0,
+              "samples": 0,
+              "totalMs": 0
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.023,
+              "maxMs": 0.129,
+              "samples": 9,
+              "totalMs": 0.4203
+            },
+            "overlayPainter": {
+              "lastMs": 39.6209,
+              "maxMs": 39.6209,
+              "samples": 9,
+              "totalMs": 240.3137
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0075,
+              "maxMs": 0.6374,
+              "samples": 9,
+              "totalMs": 0.8573
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 40.1412,
+              "maxMs": 40.1412,
+              "samples": 11,
+              "totalMs": 249.9469
+            },
+            "prepareUploads": {
+              "lastMs": 39.6538,
+              "maxMs": 39.6538,
+              "samples": 12,
+              "totalMs": 241.61749999999998
+            },
+            "render": {
+              "lastMs": 39.6905,
+              "maxMs": 39.6905,
+              "samples": 12,
+              "totalMs": 241.90320000000003
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 7,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 2,
+          "drawnPoints": 3916,
+          "generation": 3,
+          "gpuUploadsPending": false,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": -1,
+          "heatmapWidth": -1,
+          "lastMatrixMs": 0,
+          "matrixReductions": 0,
+          "overlayUploads": 9,
+          "powerGenerations": 0,
+          "quality": "settled",
+          "requestedGeneration": 3,
+          "requestedHeatmapHeight": -1,
+          "requestedHeatmapWidth": -1,
+          "requestedPixels": 1,
+          "settled": true,
+          "sourcePoints": 3916,
+          "staleDrops": 0,
+          "textureUploads": 0,
+          "workerIdle": true
+        }
+      },
+      {
+        "name": "auxPlot",
+        "renderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 10,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0,
+              "maxMs": 0,
+              "samples": 0,
+              "totalMs": 0
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.0755,
+              "maxMs": 0.4706,
+              "samples": 9,
+              "totalMs": 1.9616999999999998
+            },
+            "overlayPainter": {
+              "lastMs": 161.0271,
+              "maxMs": 161.0271,
+              "samples": 9,
+              "totalMs": 807.2259
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0045,
+              "maxMs": 0.2102,
+              "samples": 9,
+              "totalMs": 0.39670000000000005
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 161.8518,
+              "maxMs": 161.8518,
+              "samples": 11,
+              "totalMs": 818.4354
+            },
+            "prepareUploads": {
+              "lastMs": 161.1095,
+              "maxMs": 161.1095,
+              "samples": 12,
+              "totalMs": 809.6181
+            },
+            "render": {
+              "lastMs": 161.1298,
+              "maxMs": 161.1298,
+              "samples": 12,
+              "totalMs": 809.8849
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 6,
+          "curvePathElements": 5622,
+          "curveReductions": 6,
+          "curveSourceGenerations": 3,
+          "drawnPoints": 5622,
+          "generation": 10,
+          "gpuUploadsPending": false,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": -1,
+          "heatmapWidth": -1,
+          "lastMatrixMs": 0,
+          "matrixReductions": 0,
+          "overlayUploads": 9,
+          "powerGenerations": 0,
+          "quality": "settled",
+          "requestedGeneration": 10,
+          "requestedHeatmapHeight": -1,
+          "requestedHeatmapWidth": -1,
+          "requestedPixels": 1,
+          "settled": true,
+          "sourcePoints": 22488,
+          "staleDrops": 0,
+          "textureUploads": 0,
+          "workerIdle": true
+        }
+      },
+      {
+        "name": "mainPlot",
+        "renderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 23,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.9836,
+              "maxMs": 0.9836,
+              "samples": 4,
+              "totalMs": 2.1799999999999997
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.5824,
+              "maxMs": 2.9038,
+              "samples": 13,
+              "totalMs": 15.5242
+            },
+            "overlayPainter": {
+              "lastMs": 3.848,
+              "maxMs": 9.9529,
+              "samples": 13,
+              "totalMs": 53.667199999999994
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0053,
+              "maxMs": 0.4876,
+              "samples": 13,
+              "totalMs": 0.8938999999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 7.7376,
+              "maxMs": 28.6382,
+              "samples": 15,
+              "totalMs": 126.33620000000002
+            },
+            "prepareUploads": {
+              "lastMs": 5.4247,
+              "maxMs": 13.1235,
+              "samples": 16,
+              "totalMs": 72.3177
+            },
+            "render": {
+              "lastMs": 5.4558,
+              "maxMs": 13.22,
+              "samples": 16,
+              "totalMs": 72.82579999999999
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 23,
+          "gpuUploadsPending": false,
+          "heatmapCacheHits": 1,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 30.7209,
+          "matrixReductions": 1,
+          "overlayUploads": 13,
+          "powerGenerations": 20,
+          "quality": "settled",
+          "requestedGeneration": 23,
+          "requestedHeatmapHeight": 430,
+          "requestedHeatmapWidth": 750,
+          "requestedPixels": 322500,
+          "settled": true,
+          "sourcePoints": 322500,
+          "staleDrops": 18,
+          "textureUploads": 4,
+          "workerIdle": true
+        }
+      }
+    ],
+    "maximumBackActions": 4,
+    "noAssumedHistoryGrouping": true,
+    "originalSnapshot": {
+      "beginSample": "6720000000",
+      "endSample": "10560000000",
+      "fileId": "file-1",
+      "lowerHz": 80000000,
+      "psdMax": 0,
+      "psdMin": -100,
+      "upperHz": 120000000,
+      "waveformMax": 60,
+      "waveformMin": -60
+    },
+    "originalViewRestored": true,
+    "pass": true,
+    "restoreAction": "contextBackAction",
+    "settledCharts": [
+      {
+        "name": "navigationPlot",
+        "renderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 3,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0,
+              "maxMs": 0,
+              "samples": 0,
+              "totalMs": 0
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.0541,
+              "maxMs": 0.129,
+              "samples": 15,
+              "totalMs": 0.6018000000000001
+            },
+            "overlayPainter": {
+              "lastMs": 36.2306,
+              "maxMs": 39.6209,
+              "samples": 15,
+              "totalMs": 462.7847
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0049,
+              "maxMs": 0.6374,
+              "samples": 15,
+              "totalMs": 0.8867
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 36.7934,
+              "maxMs": 40.1412,
+              "samples": 17,
+              "totalMs": 476.40920000000006
+            },
+            "prepareUploads": {
+              "lastMs": 36.2919,
+              "maxMs": 39.6538,
+              "samples": 18,
+              "totalMs": 464.31609999999995
+            },
+            "render": {
+              "lastMs": 36.3212,
+              "maxMs": 39.6905,
+              "samples": 18,
+              "totalMs": 464.7876
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 13,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 2,
+          "drawnPoints": 3916,
+          "generation": 3,
+          "gpuUploadsPending": false,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": -1,
+          "heatmapWidth": -1,
+          "lastMatrixMs": 0,
+          "matrixReductions": 0,
+          "overlayUploads": 15,
+          "powerGenerations": 0,
+          "quality": "settled",
+          "requestedGeneration": 3,
+          "requestedHeatmapHeight": -1,
+          "requestedHeatmapWidth": -1,
+          "requestedPixels": 1,
+          "settled": true,
+          "sourcePoints": 3916,
+          "staleDrops": 0,
+          "textureUploads": 0,
+          "workerIdle": true
+        }
+      },
+      {
+        "name": "auxPlot",
+        "renderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 19,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0,
+              "maxMs": 0,
+              "samples": 0,
+              "totalMs": 0
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.1925,
+              "maxMs": 0.4706,
+              "samples": 15,
+              "totalMs": 3.0713999999999997
+            },
+            "overlayPainter": {
+              "lastMs": 140.0732,
+              "maxMs": 161.0271,
+              "samples": 15,
+              "totalMs": 1649.4019
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0044,
+              "maxMs": 0.2102,
+              "samples": 15,
+              "totalMs": 0.42560000000000003
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 143.0796,
+              "maxMs": 161.8518,
+              "samples": 17,
+              "totalMs": 1668.7042999999999
+            },
+            "prepareUploads": {
+              "lastMs": 140.2752,
+              "maxMs": 161.1095,
+              "samples": 18,
+              "totalMs": 1652.9558000000002
+            },
+            "render": {
+              "lastMs": 140.3108,
+              "maxMs": 161.1298,
+              "samples": 18,
+              "totalMs": 1653.4218
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 8,
+          "curvePathElements": 5622,
+          "curveReductions": 11,
+          "curveSourceGenerations": 7,
+          "drawnPoints": 5622,
+          "generation": 19,
+          "gpuUploadsPending": false,
+          "heatmapCacheHits": 0,
+          "heatmapHeight": -1,
+          "heatmapWidth": -1,
+          "lastMatrixMs": 0,
+          "matrixReductions": 0,
+          "overlayUploads": 15,
+          "powerGenerations": 0,
+          "quality": "settled",
+          "requestedGeneration": 19,
+          "requestedHeatmapHeight": -1,
+          "requestedHeatmapWidth": -1,
+          "requestedPixels": 1,
+          "settled": true,
+          "sourcePoints": 22488,
+          "staleDrops": 0,
+          "textureUploads": 0,
+          "workerIdle": true
+        }
+      },
+      {
+        "name": "mainPlot",
+        "renderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "committedGeneration": 31,
+          "cpuWallTimings": {
+            "gpuTimestamps": false,
+            "heatmapUploadPreparation": {
+              "lastMs": 0.4472,
+              "maxMs": 0.9836,
+              "samples": 5,
+              "totalMs": 2.6271999999999998
+            },
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.5937,
+              "maxMs": 2.9038,
+              "samples": 19,
+              "totalMs": 20.3207
+            },
+            "overlayPainter": {
+              "lastMs": 3.7048,
+              "maxMs": 9.9529,
+              "samples": 19,
+              "totalMs": 78.1019
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0043,
+              "maxMs": 0.4876,
+              "samples": 19,
+              "totalMs": 0.9210999999999998
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 9.5186,
+              "maxMs": 28.6382,
+              "samples": 21,
+              "totalMs": 172.34570000000002
+            },
+            "prepareUploads": {
+              "lastMs": 4.7571,
+              "maxMs": 13.1235,
+              "samples": 22,
+              "totalMs": 102.05069999999999
+            },
+            "render": {
+              "lastMs": 4.794,
+              "maxMs": 13.22,
+              "samples": 22,
+              "totalMs": 102.75659999999999
+            },
+            "unit": "ms"
+          },
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnPoints": 322500,
+          "generation": 31,
+          "gpuUploadsPending": false,
+          "heatmapCacheHits": 1,
+          "heatmapHeight": 430,
+          "heatmapWidth": 750,
+          "lastMatrixMs": 52.0944,
+          "matrixReductions": 1,
+          "overlayUploads": 19,
+          "powerGenerations": 28,
+          "quality": "settled",
+          "requestedGeneration": 31,
+          "requestedHeatmapHeight": 430,
+          "requestedHeatmapWidth": 750,
+          "requestedPixels": 322500,
+          "settled": true,
+          "sourcePoints": 322500,
+          "staleDrops": 25,
+          "textureUploads": 5,
+          "workerIdle": true
+        }
+      }
+    ],
+    "syntheticDataOnly": true,
+    "totalBurstMs": 850.1085
+  }
+}

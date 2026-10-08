@@ -15,6 +15,7 @@ endif()
 
 # QRhi uses limited-compatibility Gui APIs. Keep headers, tools and runtime matched.
 find_package(Qt6 6.11.1 EXACT REQUIRED COMPONENTS Core Widgets GuiPrivate OpenGL ShaderTools)
+find_package(Threads REQUIRED)
 if(SS_BUILD_TESTS)
     find_package(Qt6 6.11.1 EXACT REQUIRED COMPONENTS Test)
 endif()
@@ -58,6 +59,8 @@ set_target_properties(SignalStudioCore PROPERTIES AUTOMOC OFF)
 ss_target_defaults(SignalStudioCore)
 
 add_library(SignalStudioInfrastructure STATIC
+    infrastructure/int16_iq_file.cpp
+    infrastructure/int16_iq_file.h
     infrastructure/project_store.cpp
     infrastructure/project_store.h
 )
@@ -70,18 +73,23 @@ set(SS_UI_SOURCES
     app/main_window.h
     ui/charts/plot_widget.cpp
     ui/charts/plot_widget.h
+    ui/charts/display_sampling.cpp
+    ui/charts/display_sampling.h
     ui/charts/accelerated_surface.cpp
     ui/charts/accelerated_surface.h
 )
 add_executable(SignalStudio WIN32 app/main.cpp ${SS_UI_SOURCES})
 target_link_libraries(SignalStudio PRIVATE
     SignalStudioCore SignalStudioInfrastructure Qt6::Widgets
-    Qt6::GuiPrivate Qt6::OpenGL)
+    Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
 ss_target_defaults(SignalStudio)
 ss_add_graphics_shaders(SignalStudio signalstudio_app_shaders)
 
 if(WIN32 AND SS_DEPLOY_RUNTIME)
     get_filename_component(_ss_qt_bin "${Qt6_DIR}/../../../bin" ABSOLUTE)
+    # CMAKE_GENERATOR_INSTANCE contains the actual VS installation selected by
+    # the generator; strip optional instance metadata such as ,version=...
+    string(REGEX REPLACE ",.*$" "" _ss_vs_installation "${CMAKE_GENERATOR_INSTANCE}")
     find_program(SS_WINDEPLOYQT windeployqt
         HINTS "${_ss_qt_bin}" "${SS_QT_ROOT}/bin" NO_DEFAULT_PATH REQUIRED)
     add_custom_command(TARGET SignalStudio POST_BUILD
@@ -90,6 +98,7 @@ if(WIN32 AND SS_DEPLOY_RUNTIME)
             "-DSS_QT_BIN=${_ss_qt_bin}"
             "-DSS_EXECUTABLE=$<TARGET_FILE:SignalStudio>"
             "-DSS_CONFIGURATION=$<CONFIG>"
+            "-DSS_VS_INSTALLATION_PATH=${_ss_vs_installation}"
             -P "${CMAKE_SOURCE_DIR}/cmake/deploy_runtime.cmake"
         COMMENT "Deploying Qt and compiler runtime to the standalone output directory"
         VERBATIM
@@ -104,26 +113,46 @@ if(SS_BUILD_TESTS)
     set_target_properties(SignalStudioCoreTests PROPERTIES AUTOMOC OFF)
     ss_target_defaults(SignalStudioCoreTests)
     add_test(NAME signal_studio_core COMMAND SignalStudioCoreTests)
+    add_executable(SignalStudioDisplaySamplingTests
+        tests/display_sampling_tests.cpp ui/charts/display_sampling.cpp)
+    set_target_properties(SignalStudioDisplaySamplingTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioDisplaySamplingTests)
+    add_test(NAME signal_studio_display_sampling COMMAND SignalStudioDisplaySamplingTests)
+    set_tests_properties(signal_studio_display_sampling PROPERTIES TIMEOUT 60)
 
     add_executable(SignalStudioUiTests tests/ui_tests.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioUiTests PRIVATE
         SignalStudioCore SignalStudioInfrastructure Qt6::Widgets Qt6::Test
-        Qt6::GuiPrivate Qt6::OpenGL)
+        Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
     ss_target_defaults(SignalStudioUiTests)
     ss_add_graphics_shaders(SignalStudioUiTests signalstudio_ui_test_shaders)
-    add_test(NAME signal_studio_ui COMMAND SignalStudioUiTests)
+    add_executable(SignalStudioUiCapture tests/ui_capture.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioUiCapture PRIVATE
+        SignalStudioCore SignalStudioInfrastructure Qt6::Widgets Qt6::Test
+        Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioUiCapture)
+    ss_add_graphics_shaders(SignalStudioUiCapture signalstudio_ui_capture_shaders)
+    add_test(NAME signal_studio_ui COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUiTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ui-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     set_tests_properties(signal_studio_ui PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 60)
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 180)
     set_tests_properties(signal_studio_core PROPERTIES TIMEOUT 60)
 
     if(WIN32 AND SS_DEPLOY_RUNTIME)
         # Stage the shared Qt runtime once, before either test binary is built.
         add_dependencies(SignalStudioCoreTests SignalStudio)
         add_dependencies(SignalStudioUiTests SignalStudio)
+        add_dependencies(SignalStudioUiCapture SignalStudio)
         add_custom_command(TARGET SignalStudioUiTests POST_BUILD
             COMMAND "${CMAKE_COMMAND}" -E copy_if_different
                 "$<TARGET_FILE:Qt6::Test>" "$<TARGET_FILE_DIR:SignalStudioUiTests>"
             VERBATIM
         )
+        add_custom_command(TARGET SignalStudioUiCapture POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "$<TARGET_FILE:Qt6::Test>" "$<TARGET_FILE_DIR:SignalStudioUiCapture>"
+            VERBATIM)
     endif()
 endif()

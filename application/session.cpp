@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <unordered_set>
 #include <utility>
 
@@ -15,24 +16,56 @@ SampleIndex ratio(SampleIndex value, SampleIndex numerator, SampleIndex denomina
     return value / denominator * numerator + value % denominator * numerator / denominator;
 }
 
-ViewRange defaultView(const FileMetadata& metadata, int stftSize) {
+ViewRange defaultView(const FileMetadata& metadata, int stftSize, int psdSize) {
     auto view = fullRange(metadata);
     view.time = {ratio(metadata.sampleCount, 7, 20), ratio(metadata.sampleCount, 11, 20)};
-    return clampRange(view, metadata, stftSize);
+    return clampRange(view, metadata, stftSize, psdSize);
 }
 
-void pushBounded(std::vector<ViewRange>& list, const ViewRange& view) {
+void pushBounded(std::vector<ViewSnapshot>& list, const ViewSnapshot& view) {
     if (list.size() == maximumHistory) list.erase(list.begin());
     list.push_back(view);
+}
+
+void saveActiveAuxiliary(DisplaySettings& display) {
+    if(display.auxiliaryMode==AuxiliaryMode::Waveform) {
+        display.waveformMin=display.auxiliaryMin;display.waveformMax=display.auxiliaryMax;
+    } else {
+        display.psdMin=display.auxiliaryMin;display.psdMax=display.auxiliaryMax;
+    }
+}
+
+void loadActiveAuxiliary(DisplaySettings& display) {
+    display.auxiliaryMin=display.auxiliaryMode==AuxiliaryMode::Waveform?display.waveformMin:display.psdMin;
+    display.auxiliaryMax=display.auxiliaryMode==AuxiliaryMode::Waveform?display.waveformMax:display.psdMax;
+}
+
+ViewSnapshot snapshotFor(const FileState& file) {
+    const auto& display=file.display;
+    auto result=ViewSnapshot{file.metadata.id,file.view,display.waveformMin,display.waveformMax,display.psdMin,display.psdMax};
+    if(display.auxiliaryMode==AuxiliaryMode::Waveform) {
+        result.waveformMin=display.auxiliaryMin;result.waveformMax=display.auxiliaryMax;
+    } else {result.psdMin=display.auxiliaryMin;result.psdMax=display.auxiliaryMax;}
+    return result;
+}
+
+std::pair<double,double> clampAuxiliary(double minimum,double maximum,AuxiliaryMode mode) {
+    if(minimum>maximum)std::swap(minimum,maximum);
+    const double lower=mode==AuxiliaryMode::Waveform?-160:-180;
+    const double upper=mode==AuxiliaryMode::Waveform?160:50;
+    const double width=std::clamp(maximum-minimum,2.0,upper-lower);
+    const double begin=std::clamp(minimum+(maximum-minimum)/2-width/2,lower,upper-width);
+    return {begin,begin+width};
+}
+
+std::string numbered(const std::string& prefix,std::size_t number) {
+    return prefix+(number<10?"0":"")+std::to_string(number);
 }
 
 } // namespace
 
 Session::Session() {
     project_.name = "射频信号分析工程";
-    const auto firstId = addDemoFile();
-    addDemoFile();
-    activateFile(firstId);
 }
 
 FileState* Session::activeFile() {
@@ -67,37 +100,48 @@ std::string Session::nextId(const std::string& prefix) {
 }
 
 std::string Session::addDemoFile() {
+    static const FileMetadata defaults[]{
+        {"","wideband_100MHz.iq","",40e6,100e6,19'200'000'000,true,1},
+        {"","capture_2450MHz.iq","",20e6,2450e6,4'800'000'000,true,3},
+        {"","telemetry_915MHz.iq","",10e6,915e6,1'200'000'000,true,7}};
+    return addDemoFile(defaults[demoSequence_%3]);
+}
+
+std::string Session::addDemoFile(FileMetadata metadata) {
+    if(metadata.name.empty()||metadata.sampleCount==0||!std::isfinite(metadata.sampleRateHz)||
+       metadata.sampleRateHz<=0||!std::isfinite(metadata.centerFrequencyHz))return {};
+    if (metadata.effectiveBandwidthHz <= 0) metadata.effectiveBandwidthHz = metadata.sampleRateHz;
+    if (metadata.effectiveBandwidthHz > metadata.sampleRateHz) return {};
+    const auto bounds=fullRange(metadata);
+    if(!std::isfinite(bounds.frequency.lowerHz)||!std::isfinite(bounds.frequency.upperHz)||
+       bounds.frequency.lowerHz>=bounds.frequency.upperHz)return {};
+    if(!metadata.id.empty()&&std::any_of(project_.files.begin(),project_.files.end(),
+       [&](const FileState& file){return file.metadata.id==metadata.id;}))return {};
+    if(metadata.id.empty())metadata.id=nextId("file-");
+    if(metadata.demoSeed<=0)metadata.demoSeed=static_cast<int>(project_.files.size()+1);
     FileState file;
-    const bool second = demoSequence_++ % 2 != 0;
-    file.metadata = {nextId("file-"), second ? "capture_2450MHz.iq" : "wideband_100MHz.iq", "",
-                     second ? 20e6 : 40e6, second ? 2450e6 : 100e6,
-                     second ? SampleIndex{4'800'000'000} : SampleIndex{19'200'000'000}, true};
-    if (second) {
-        file.display.mainMode = MainMode::Waterfall;
-        file.display.auxiliaryMode = AuxiliaryMode::Psd;
-        file.display.palette = Palette::Viridis;
-        file.display.stftSize = 4096;
-        file.display.psdSize = 8192;
-        file.display.dynamicRangeDb = 60;
-        file.display.referenceLevelDb = -20;
-        file.display.absoluteFrequency = false;
-        file.display.grid = false;
-        file.display.colorScale = true;
-        file.display.psdFromSelection = true;
-        file.display.auxiliaryMin = -110;
-        file.display.auxiliaryMax = -10;
-        file.marks.push_back({nextId("mark-"), "标记 01", {{2'000'000'000, 2'320'000'000}, {2447e6, 2453e6}}});
-    } else {
-        file.marks.push_back({nextId("mark-"), "标记 01", {{7'600'000'000, 8'400'000'000}, {96e6, 110e6}}});
-        file.marks.push_back({nextId("mark-"), "标记 02", {{8'000'000'000, 8'880'000'000}, {100e6, 114e6}}});
+    file.metadata=std::move(metadata);
+    if (!file.metadata.demo) {
+        file.display.waveformMin = -80;
+        file.display.waveformMax = 0;
+        file.display.auxiliaryMin = -80;
+        file.display.auxiliaryMax = 0;
     }
-    file.view = defaultView(file.metadata, file.display.stftSize);
-    file.activeMarkId = file.marks.front().id;
-    file.selectedMarkIds = {file.activeMarkId};
+    file.view = defaultView(file.metadata, file.display.stftSize, file.display.psdSize);
     const auto id = file.metadata.id;
     project_.files.push_back(std::move(file));
     project_.activeFileId = id;
+    ++demoSequence_;
     return id;
+}
+
+std::string Session::addDemoFile(const std::string& name,double sampleRateHz,
+    double centerFrequencyHz,double durationSeconds,const std::string& path) {
+    if(!std::isfinite(durationSeconds)||durationSeconds<=0||!std::isfinite(sampleRateHz)||sampleRateHz<=0)return {};
+    const long double count=static_cast<long double>(sampleRateHz)*durationSeconds;
+    if(count<1||count>=static_cast<long double>(std::numeric_limits<SampleIndex>::max()))return {};
+    return addDemoFile({"",name,path,sampleRateHz,centerFrequencyHz,static_cast<SampleIndex>(count),true,
+                        static_cast<int>(project_.files.size()+1)});
 }
 
 bool Session::activateFile(const std::string& id) {
@@ -132,7 +176,7 @@ std::string Session::addMark(ViewRange range) {
     range.frequency.upperHz = std::clamp(range.frequency.upperHz, bounds.frequency.lowerHz, bounds.frequency.upperHz);
     if (range.time.begin >= range.time.end || range.frequency.lowerHz >= range.frequency.upperHz) return {};
     const auto id = nextId("mark-");
-    file->marks.push_back({id, "标记 " + std::to_string(file->marks.size() + 1), range});
+    file->marks.push_back({id, numbered("Region ",file->marks.size()+1), range});
     selectMarks({id}, id);
     return id;
 }
@@ -185,14 +229,81 @@ bool Session::focusMark(const std::string& id) {
 bool Session::setView(ViewRange range, bool record) {
     auto* file = activeFile();
     if (!file) return false;
-    range = clampRange(range, file->metadata, file->display.stftSize);
+    range = clampRange(range, file->metadata, file->display.stftSize, file->display.psdSize);
     if (file->view == range) return false;
-    if (record) {
-        auto& history = histories_[file->metadata.id];
-        pushBounded(history.past, file->view);
-        history.future.clear();
-    }
+    const auto previous=snapshot();
     file->view = range;
+    if(record)commitViewChange(previous);
+    return true;
+}
+
+bool Session::setPsdFromSelection(bool enabled) {
+    auto* file=activeFile();if(!file)return false;
+    if(enabled&&!findMark(*file,file->activeMarkId))return false;
+    file->display.psdFromSelection=enabled;
+    return true;
+}
+
+bool Session::setEffectiveBandwidthHz(double bandwidthHz) {
+    auto* file = activeFile();
+    if (!file || !std::isfinite(bandwidthHz) || bandwidthHz <= 0 ||
+        bandwidthHz > file->metadata.sampleRateHz ||
+        bandwidthHz < file->metadata.sampleRateHz / 65536.0 ||
+        bandwidthHz == file->metadata.effectiveBandwidthHz) return false;
+    file->metadata.effectiveBandwidthHz = bandwidthHz;
+    file->view = clampRange(file->view, file->metadata, file->display.stftSize, file->display.psdSize);
+    return true;
+}
+
+bool Session::setAuxiliaryMode(AuxiliaryMode mode) {
+    auto* file=activeFile();if(!file||file->display.auxiliaryMode==mode)return false;
+    if(mode!=AuxiliaryMode::Waveform&&mode!=AuxiliaryMode::Psd)return false;
+    saveActiveAuxiliary(file->display);
+    file->display.auxiliaryMode=mode;
+    loadActiveAuxiliary(file->display);
+    return true;
+}
+
+bool Session::setAuxiliaryRange(double minimum,double maximum,bool record) {
+    auto* file=activeFile();if(!file||!std::isfinite(minimum)||!std::isfinite(maximum)||
+        !std::isfinite(maximum-minimum))return false;
+    const auto range=clampAuxiliary(minimum,maximum,file->display.auxiliaryMode);
+    if(range.first==file->display.auxiliaryMin&&range.second==file->display.auxiliaryMax)return false;
+    const auto previous=snapshot();
+    file->display.auxiliaryMin=range.first;file->display.auxiliaryMax=range.second;
+    saveActiveAuxiliary(file->display);
+    if(record)commitViewChange(previous);
+    return true;
+}
+
+ViewSnapshot Session::snapshot() const {
+    const auto* file=activeFile();if(!file)return {};
+    return snapshotFor(*file);
+}
+
+bool Session::restoreSnapshot(const ViewSnapshot& previous) {
+    const auto found=std::find_if(project_.files.begin(),project_.files.end(),
+        [&](const FileState& file){return file.metadata.id==previous.fileId;});
+    if(found==project_.files.end())return false;
+    auto* file=&*found;
+    if(!std::isfinite(previous.waveformMin)||!std::isfinite(previous.waveformMax)||
+       !std::isfinite(previous.psdMin)||!std::isfinite(previous.psdMax))return false;
+    const auto wave=clampAuxiliary(previous.waveformMin,previous.waveformMax,AuxiliaryMode::Waveform);
+    const auto psd=clampAuxiliary(previous.psdMin,previous.psdMax,AuxiliaryMode::Psd);
+    file->view=clampRange(previous.view,file->metadata,file->display.stftSize,file->display.psdSize);
+    file->display.waveformMin=wave.first;file->display.waveformMax=wave.second;
+    file->display.psdMin=psd.first;file->display.psdMax=psd.second;
+    loadActiveAuxiliary(file->display);
+    return true;
+}
+
+bool Session::commitViewChange(const ViewSnapshot& previous) {
+    const auto found=std::find_if(project_.files.begin(),project_.files.end(),
+        [&](const FileState& file){return file.metadata.id==previous.fileId;});
+    if(found==project_.files.end()||previous==snapshotFor(*found))return false;
+    const auto* file=&*found;
+    auto& history=histories_[file->metadata.id];
+    pushBounded(history.past,previous);history.future.clear();
     return true;
 }
 
@@ -200,8 +311,8 @@ bool Session::back() {
     auto* file = activeFile();
     if (!file || !canBack()) return false;
     auto& history = histories_.at(file->metadata.id);
-    pushBounded(history.future, file->view);
-    file->view = clampRange(history.past.back(), file->metadata, file->display.stftSize);
+    pushBounded(history.future, snapshot());
+    restoreSnapshot(history.past.back());
     history.past.pop_back();
     return true;
 }
@@ -210,8 +321,8 @@ bool Session::forward() {
     auto* file = activeFile();
     if (!file || !canForward()) return false;
     auto& history = histories_.at(file->metadata.id);
-    pushBounded(history.past, file->view);
-    file->view = clampRange(history.future.back(), file->metadata, file->display.stftSize);
+    pushBounded(history.past, snapshot());
+    restoreSnapshot(history.future.back());
     history.future.pop_back();
     return true;
 }
@@ -233,9 +344,12 @@ bool Session::canForward() const {
 void Session::resetView() {
     auto* file = activeFile();
     if (!file) return;
-    setView(defaultView(file->metadata, file->display.stftSize));
-    file->display.auxiliaryMin = file->display.auxiliaryMode == AuxiliaryMode::Psd ? -100 : -1;
-    file->display.auxiliaryMax = file->display.auxiliaryMode == AuxiliaryMode::Psd ? 0 : 1;
+    const auto previous=snapshot();
+    file->view=defaultView(file->metadata,file->display.stftSize,file->display.psdSize);
+    file->display.waveformMin=-60;file->display.waveformMax=60;
+    file->display.psdMin=-100;file->display.psdMax=0;
+    loadActiveAuxiliary(file->display);
+    commitViewChange(previous);
 }
 
 bool Session::createChannelFromActiveMark() {
@@ -244,7 +358,7 @@ bool Session::createChannelFromActiveMark() {
     const auto* mark = findMark(*file, file->activeMarkId);
     if (!mark) return false;
     const auto range = mark->range.frequency;
-    file->channels.push_back({nextId("channel-"), "演示窄带通道 " + std::to_string(file->channels.size() + 1), mark->id,
+    file->channels.push_back({nextId("channel-"), numbered("Channel ",file->channels.size()+1), mark->id,
         range.lowerHz + (range.upperHz - range.lowerHz) / 2, range.upperHz - range.lowerHz});
     return true;
 }

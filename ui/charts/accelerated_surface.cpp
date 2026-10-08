@@ -1,317 +1,395 @@
 #include "ui/charts/accelerated_surface.h"
 
+#include <QApplication>
 #include <QColor>
-#include <QOpenGLBuffer>
-#include <QOpenGLContext>
-#include <QOpenGLPixelTransferOptions>
-#include <QOpenGLShaderProgram>
-#include <QOpenGLTexture>
-#include <QOpenGLVertexArrayObject>
+#include <QElapsedTimer>
+#include <QFile>
 #include <QPainter>
-#include <QSurfaceFormat>
 #include <QTimer>
+#include <QVariant>
+#include <rhi/qrhi.h>
+#include <rhi/qshader.h>
 
+#include <algorithm>
 #include <array>
-#include <cmath>
 #include <utility>
 
 namespace signalstudio {
 namespace {
 
-QString glText(const GLubyte* text) {
-    return text ? QString::fromLatin1(reinterpret_cast<const char*>(text)) : QStringLiteral("unknown");
-}
+template<class Stage>
+class CpuWallScope {
+public:
+    explicit CpuWallScope(Stage& stage) : stage_(stage) { timer_.start(); }
+    ~CpuWallScope() { stage_.record(timer_.nsecsElapsed() / 1e6); }
+private:
+    Stage& stage_;
+    QElapsedTimer timer_;
+};
 
-bool isSoftwareRenderer(const QString& renderer) {
+bool isSoftwareRenderer(const QString& name) {
     constexpr std::array names{"llvmpipe", "softpipe", "swiftshader", "software",
                                "gdi generic", "microsoft basic render", "warp", "lavapipe", "swrast"};
-    for (const auto* name : names)
-        if (renderer.contains(QLatin1String(name), Qt::CaseInsensitive)) return true;
+    for (const auto* marker : names)
+        if (name.contains(QLatin1String(marker), Qt::CaseInsensitive)) return true;
     return false;
 }
 
+QShader loadShader(const QString& path) {
+    QFile file(path);
+    return file.open(QIODevice::ReadOnly) ? QShader::fromSerialized(file.readAll()) : QShader{};
+}
+
 struct Vertex {
-    GLfloat x, y, u, v;
+    float x, y, u, v;
 };
+
+std::array<Vertex, 4> makeQuad(const QRectF& rect, QSizeF canvas, bool yUp, const QRectF& uv = QRectF(0, 0, 1, 1)) {
+    const float left = static_cast<float>(2.0 * rect.left() / canvas.width() - 1.0);
+    const float right = static_cast<float>(2.0 * rect.right() / canvas.width() - 1.0);
+    const auto y = [canvas, yUp](qreal position) {
+        const qreal normalized = 1.0 - 2.0 * position / canvas.height();
+        return static_cast<float>(yUp ? normalized : -normalized);
+    };
+    const float top = y(rect.top());
+    const float bottom = y(rect.bottom());
+    // Uploads preserve QImage scanline order: its top row is sampled at v=0.
+    return {{{left, top, float(uv.left()), float(uv.top())}, {right, top, float(uv.right()), float(uv.top())},
+             {left, bottom, float(uv.left()), float(uv.bottom())}, {right, bottom, float(uv.right()), float(uv.bottom())}}};
+}
 
 } // namespace
 
-AcceleratedSurface::AcceleratedSurface(QWidget* parent) : QOpenGLWidget(parent) {
+struct AcceleratedSurface::Resources {
+    QRhi* owner = nullptr;
+    QShader vertexShader;
+    QShader fragmentShader;
+    std::unique_ptr<QRhiBuffer> vertices;
+    std::unique_ptr<QRhiSampler> sampler;
+    std::unique_ptr<QRhiTexture> heatmap;
+    std::unique_ptr<QRhiTexture> overlay;
+    std::unique_ptr<QRhiShaderResourceBindings> heatmapBindings;
+    std::unique_ptr<QRhiShaderResourceBindings> overlayBindings;
+    std::unique_ptr<QRhiRenderPassDescriptor> renderPass;
+    std::unique_ptr<QRhiGraphicsPipeline> pipeline;
+    int samples = 0;
+
+    ~Resources() {
+        pipeline.reset();
+        heatmapBindings.reset();
+        overlayBindings.reset();
+        heatmap.reset();
+        overlay.reset();
+        sampler.reset();
+        vertices.reset();
+        renderPass.reset();
+    }
+};
+
+AcceleratedSurface::AcceleratedSurface(QWidget* parent) : QRhiWidget(parent) {
+    connect(this,&QRhiWidget::frameSubmitted,this,[this]{++completedFrames_;});
     setAttribute(Qt::WA_TransparentForMouseEvents);
     setFocusPolicy(Qt::NoFocus);
-    setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
-    // No GL resources are created until Qt makes the widget context current.
+    const auto requested = qApp ? qApp->property("renderApi").toString().trimmed().toLower() : QString{};
+#ifdef Q_OS_WIN
+    setApi(requested == QStringLiteral("opengl") ? Api::OpenGL : Api::Direct3D11);
+    supportedApi_ = requested.isEmpty() || requested == QStringLiteral("auto") ||
+                    requested == QStringLiteral("d3d11") || requested == QStringLiteral("opengl");
+#else
+    setApi(Api::OpenGL);
+    supportedApi_ = requested.isEmpty() || requested == QStringLiteral("auto") || requested == QStringLiteral("opengl");
+#endif
+    if (!supportedApi_)
+        fail(QStringLiteral("当前 QRhi 骨架不支持请求的后端 %1；Vulkan 尚需平台初始化与独立验证").arg(requested));
+    connect(this, &QRhiWidget::renderFailed, this, [this] {
+        fail(QStringLiteral("QRhi 设备创建或帧提交失败，使用 QWidget 回退"));
+    });
 }
 
 AcceleratedSurface::~AcceleratedSurface() {
-    cleanup();
+    releaseResources();
 }
 
 void AcceleratedSurface::setPainter(PainterCallback painter) {
     painter_ = std::move(painter);
-    update();
+    invalidateOverlay();
 }
 
 void AcceleratedSurface::setHeatmap(const QImage& image, const QRectF& target, const QString& revision) {
+    if (target_ != target) overlayDirty_ = true;
     target_ = target;
-    // Repositioning a cached image (including resize) never uploads its pixels.
-    // The producer owns revision identity; identical revisions retain the image.
+    // The producer owns revision identity. Placement and overlay updates never
+    // replace or re-upload the pixels of an identical heatmap revision.
     if (!hasRevision_ || revision_ != revision) {
         heatmap_ = image;
         revision_ = revision;
         hasRevision_ = true;
-        textureDirty_ = !heatmap_.isNull();
-        if (heatmap_.isNull()) textureUploaded_ = false;
+        heatmapDirty_ = !heatmap_.isNull();
+        overlayDirty_ = true;
+        if (heatmap_.isNull()) heatmapUploaded_ = false;
     }
     update();
 }
 
+void AcceleratedSurface::invalidateOverlay() {
+    overlayDirty_ = true;
+    update();
+}
+void AcceleratedSurface::setHeatmapSourceRect(const QRectF& normalizedSource) {
+    if (sourceRect_ == normalizedSource) return;
+    sourceRect_ = normalizedSource;
+    update();
+}
+
 bool AcceleratedSurface::isReady() const {
-    return ready_ && isValid();
+    return ready_ && resources_ != nullptr;
 }
 
 QString AcceleratedSurface::backendDescription() const {
     return backend_;
 }
 
-void AcceleratedSurface::initializeGL() {
-    failureReported_ = false;
-    ready_ = false;
-    auto* current = context();
-    if (!current || !current->isValid()) {
-        fail(QStringLiteral("无法创建有效的 OpenGL 上下文"));
-        return;
-    }
-    resourceContext_ = current;
-    destructionConnection_ = connect(current, &QOpenGLContext::aboutToBeDestroyed,
-                                     this, &AcceleratedSurface::cleanup, Qt::DirectConnection);
-    initializeOpenGLFunctions();
-    const auto vendor = glText(glGetString(GL_VENDOR));
-    const auto renderer = glText(glGetString(GL_RENDERER));
-    const auto version = glText(glGetString(GL_VERSION));
-    backend_ = QStringLiteral("OpenGL %1 | %2 | %3").arg(version, vendor, renderer);
-    if (isSoftwareRenderer(renderer)) {
-        fail(QStringLiteral("检测到软件 OpenGL 渲染器，使用 QWidget 回退：%1").arg(backend_));
-        return;
-    }
-
-    const bool es = current->isOpenGLES();
-    const bool core = !es && current->format().profile() == QSurfaceFormat::CoreProfile;
-    const QByteArray vertexSource = core ? QByteArrayLiteral(
-        "#version 150\n"
-        "in vec2 position;\n"
-        "in vec2 texcoord;\n"
-        "out vec2 uv;\n"
-        "void main() { uv = texcoord; gl_Position = vec4(position, 0.0, 1.0); }\n") :
-        QByteArray(es ? "#version 100\n" : "#version 120\n") + QByteArrayLiteral(
-        "attribute vec2 position;\n"
-        "attribute vec2 texcoord;\n"
-        "varying vec2 uv;\n"
-        "void main() { uv = texcoord; gl_Position = vec4(position, 0.0, 1.0); }\n");
-    const QByteArray fragmentSource = core ? QByteArrayLiteral(
-        "#version 150\n"
-        "uniform sampler2D heatmap;\n"
-        "in vec2 uv;\n"
-        "out vec4 fragmentColor;\n"
-        "void main() { fragmentColor = texture(heatmap, uv); }\n") :
-        QByteArray(es ? "#version 100\nprecision mediump float;\n" : "#version 120\n") + QByteArrayLiteral(
-        "uniform sampler2D heatmap;\n"
-        "varying vec2 uv;\n"
-        "void main() { gl_FragColor = texture2D(heatmap, uv); }\n");
-
-    program_ = std::make_unique<QOpenGLShaderProgram>();
-    if (!program_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexSource) ||
-        !program_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentSource)) {
-        fail(QStringLiteral("OpenGL 热图着色器编译失败：%1").arg(program_->log()));
-        return;
-    }
-    program_->bindAttributeLocation("position", 0);
-    program_->bindAttributeLocation("texcoord", 1);
-    if (!program_->link()) {
-        fail(QStringLiteral("OpenGL 热图着色器链接失败：%1").arg(program_->log()));
-        return;
-    }
-
-    vertices_ = std::make_unique<QOpenGLBuffer>(QOpenGLBuffer::VertexBuffer);
-    if (!vertices_->create()) {
-        fail(QStringLiteral("无法创建 OpenGL 顶点缓冲"));
-        return;
-    }
-    vertices_->setUsagePattern(QOpenGLBuffer::DynamicDraw);
-    vertexArray_ = std::make_unique<QOpenGLVertexArrayObject>();
-    const bool hasVao = vertexArray_->create();
-    if (core && !hasVao) {
-        fail(QStringLiteral("OpenGL core profile 需要有效的 VAO"));
-        return;
-    }
-    texture_ = std::make_unique<QOpenGLTexture>(QOpenGLTexture::Target2D);
-    if (!texture_->create()) {
-        fail(QStringLiteral("无法创建 OpenGL 热图纹理"));
-        return;
-    }
-    textureDirty_ = !heatmap_.isNull();
-    textureUploaded_ = false;
-    ready_ = true;
-    emit backendReady(backend_);
-}
-
-void AcceleratedSurface::resizeGL(int, int) {
-    // Only quad positions and the viewport change. Pixel storage remains valid.
+QJsonObject AcceleratedSurface::cpuWallTimings() const {
+    const auto json = [](const CpuWallStage& stage) {
+        return QJsonObject{{"lastMs", stage.lastMs}, {"maxMs", stage.maxMs},
+            {"totalMs", stage.totalMs}, {"samples", static_cast<qint64>(stage.samples)}};
+    };
+    return {{"unit", "ms"}, {"measurement", "GUI-thread wall time measured with QElapsedTimer"},
+        {"gpuTimestamps", false},
+        {"prepareUploads", json(prepareUploadsTiming_)},
+        {"overlayImagePreparation", json(overlayImagePreparationTiming_)},
+        {"overlayPainter", json(overlayPainterTiming_)},
+        {"overlayUploadEnqueue", json(overlayUploadEnqueueTiming_)},
+        {"heatmapUploadPreparation", json(heatmapUploadPreparationTiming_)},
+        {"render", json(renderTiming_)},
+        {"paintEventIncludingQtSubmit", json(paintEventTiming_)}};
 }
 
 void AcceleratedSurface::paintEvent(QPaintEvent* event) {
-    QOpenGLWidget::paintEvent(event);
-    // initializeGL is not called when the platform cannot create a context.
-    if (isVisible() && !isValid() && !failureReported_)
-        fail(QStringLiteral("平台无法初始化 QOpenGLWidget，使用 QWidget 回退"));
+    // The base calls render(), then endOffscreenFrame(). Including the base
+    // captures Qt's D3D11 command execution/upload submission and Flush, which
+    // are outside render(). This is wall time, not measured GPU execution time.
+    const CpuWallScope timer(paintEventTiming_);
+    QRhiWidget::paintEvent(event);
 }
 
-void AcceleratedSurface::paintGL() {
-    QPainter painter(this);
-    painter.fillRect(rect(), QColor("#0a1728"));
-    if (ready_ && !heatmap_.isNull() && !target_.isEmpty()) {
-        painter.beginNativePainting();
-        if (uploadHeatmap()) drawHeatmap();
-        painter.endNativePainting();
+void AcceleratedSurface::initialize(QRhiCommandBuffer*) {
+    if (!supportedApi_ || failureReported_) return;
+    if (!rhi() || !renderTarget() || !renderTarget()->renderPassDescriptor()) {
+        fail(QStringLiteral("QRhi 没有有效设备或渲染目标"));
+        return;
     }
-    if (painter_) painter_(painter);
+    if (resources_ && resources_->owner != rhi()) releaseResources();
+    const bool firstInitialization = !resources_;
+    if (firstInitialization && !createResources()) return;
+    if (!ensurePipeline()) return;
+    // Qt also invokes initialize on ordinary resize. Heatmap texture and its
+    // uploaded revision survive while the QRhi device remains the same.
+    if (overlay_.size() != renderTarget()->pixelSize() || !qFuzzyCompare(overlayDpr_, devicePixelRatioF()))
+        overlayDirty_ = true;
+    ready_ = true;
+    if (firstInitialization) emit backendReady(backend_);
 }
 
-bool AcceleratedSurface::uploadHeatmap() {
-    if (!textureDirty_) return textureUploaded_;
-    if (!texture_ || heatmap_.isNull()) return false;
-    const QImage pixels = heatmap_.convertToFormat(QImage::Format_RGBA8888);
-    if (pixels.isNull()) {
-        fail(QStringLiteral("无法准备 OpenGL 热图像素"));
+bool AcceleratedSurface::createResources() {
+    const auto driver = rhi()->driverInfo();
+    const auto device = QString::fromUtf8(driver.deviceName);
+    backend_ = QStringLiteral("QRhi %1 | %2 | vendor=0x%3 device=0x%4")
+                   .arg(QString::fromLatin1(rhi()->backendName()), device)
+                   .arg(driver.vendorId, 0, 16).arg(driver.deviceId, 0, 16);
+    if (rhi()->backend() == QRhi::Null || driver.deviceType == QRhiDriverInfo::CpuDevice ||
+        isSoftwareRenderer(device)) {
+        fail(QStringLiteral("检测到软件渲染设备，使用 QWidget 回退"));
         return false;
     }
-    GLint maximumSize = 0;
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maximumSize);
-    if (pixels.width() > maximumSize || pixels.height() > maximumSize) {
-        fail(QStringLiteral("热图尺寸超过 OpenGL 纹理上限 %1").arg(maximumSize));
+    resources_ = std::make_unique<Resources>();
+    resources_->owner = rhi();
+    resources_->vertexShader = loadShader(QStringLiteral(":/signalstudio/shaders/texture.vert.qsb"));
+    resources_->fragmentShader = loadShader(QStringLiteral(":/signalstudio/shaders/texture.frag.qsb"));
+    if (!resources_->vertexShader.isValid() || !resources_->fragmentShader.isValid()) {
+        fail(QStringLiteral("QRhi 纹理着色器资源缺失或无效"));
         return false;
     }
-    // Discard errors from Qt's preceding painter work before inspecting upload.
-    for (int i = 0; i < 8 && glGetError() != GL_NO_ERROR; ++i) {}
-    if (!texture_->isStorageAllocated() || texture_->width() != pixels.width() ||
-        texture_->height() != pixels.height()) {
-        // Qt textures cannot resize allocated storage. Keep the wrapper and
-        // allocate a new GL name only when the producer changes image dimensions.
-        if (texture_->isStorageAllocated()) texture_->destroy();
-        if (!texture_->isCreated() && !texture_->create()) {
-            fail(QStringLiteral("无法重新创建 OpenGL 热图纹理"));
-            return false;
-        }
-        texture_->setSize(pixels.width(), pixels.height());
-        texture_->setFormat(context()->isOpenGLES() && context()->format().majorVersion() < 3
-                                ? QOpenGLTexture::RGBAFormat : QOpenGLTexture::RGBA8_UNorm);
-        texture_->setMipLevels(1);
-        texture_->allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8);
-        texture_->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
-        texture_->setWrapMode(QOpenGLTexture::ClampToEdge);
-    }
-    if (!texture_->isStorageAllocated()) {
-        fail(QStringLiteral("无法分配 OpenGL 热图纹理存储"));
+    resources_->vertices.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer,
+                                               static_cast<quint32>(8 * sizeof(Vertex))));
+    resources_->sampler.reset(rhi()->newSampler(QRhiSampler::Linear, QRhiSampler::Linear,
+                                               QRhiSampler::None, QRhiSampler::ClampToEdge,
+                                               QRhiSampler::ClampToEdge));
+    if (!resources_->vertices->create() || !resources_->sampler->create()) {
+        fail(QStringLiteral("无法创建 QRhi 顶点缓冲或纹理采样器"));
         return false;
     }
-    QOpenGLPixelTransferOptions transfer;
-    transfer.setAlignment(1);
-    texture_->setData(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, pixels.constBits(), &transfer);
-    const auto error = glGetError();
-    if (error != GL_NO_ERROR) {
-        fail(QStringLiteral("OpenGL 热图上传失败 (0x%1)").arg(error, 0, 16));
-        return false;
-    }
-    ++textureUploads_;
-    textureDirty_ = false;
-    textureUploaded_ = true;
+    if (!ensureTexture(false, QSize(1, 1)) || !ensureTexture(true, QSize(1, 1))) return false;
+    heatmapDirty_ = !heatmap_.isNull();
+    heatmapUploaded_ = false;
+    overlayDirty_ = true;
     return true;
 }
 
-void AcceleratedSurface::drawHeatmap() {
-    if (!textureUploaded_ || !program_ || !vertices_ || width() <= 0 || height() <= 0) return;
-    GLint oldViewport[4] = {};
-    glGetIntegerv(GL_VIEWPORT, oldViewport);
-    glViewport(0, 0, static_cast<GLsizei>(std::lround(width() * devicePixelRatioF())),
-               static_cast<GLsizei>(std::lround(height() * devicePixelRatioF())));
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_BLEND);
-    glDisable(GL_SCISSOR_TEST);
+bool AcceleratedSurface::ensurePipeline() {
+    auto* pass = renderTarget()->renderPassDescriptor();
+    const int samples = renderTarget()->sampleCount();
+    if (resources_->pipeline && resources_->samples == samples && resources_->renderPass->isCompatible(pass))
+        return true;
+    resources_->pipeline.reset();
+    resources_->renderPass.reset(pass->newCompatibleRenderPassDescriptor());
+    resources_->pipeline.reset(rhi()->newGraphicsPipeline());
+    auto* pipeline = resources_->pipeline.get();
+    pipeline->setTopology(QRhiGraphicsPipeline::TriangleStrip);
+    pipeline->setSampleCount(samples);
+    pipeline->setCullMode(QRhiGraphicsPipeline::None);
+    pipeline->setDepthTest(false);
+    pipeline->setDepthWrite(false);
+    pipeline->setShaderStages({{QRhiShaderStage::Vertex, resources_->vertexShader},
+                               {QRhiShaderStage::Fragment, resources_->fragmentShader}});
+    QRhiVertexInputLayout layout;
+    layout.setBindings({{static_cast<quint32>(sizeof(Vertex))}});
+    layout.setAttributes({{0, 0, QRhiVertexInputAttribute::Float2, 0},
+                           {0, 1, QRhiVertexInputAttribute::Float2, static_cast<quint32>(2 * sizeof(float))}});
+    pipeline->setVertexInputLayout(layout);
+    QRhiGraphicsPipeline::TargetBlend blend;
+    blend.enable = true;
+    blend.srcColor = QRhiGraphicsPipeline::One;
+    blend.dstColor = QRhiGraphicsPipeline::OneMinusSrcAlpha;
+    blend.srcAlpha = QRhiGraphicsPipeline::One;
+    blend.dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
+    pipeline->setTargetBlends({blend});
+    pipeline->setShaderResourceBindings(resources_->heatmapBindings.get());
+    pipeline->setRenderPassDescriptor(resources_->renderPass.get());
+    if (!pipeline->create()) {
+        fail(QStringLiteral("无法创建 QRhi 纹理合成管线"));
+        return false;
+    }
+    resources_->samples = samples;
+    return true;
+}
 
-    const GLfloat left = static_cast<GLfloat>(2.0 * target_.left() / width() - 1.0);
-    const GLfloat right = static_cast<GLfloat>(2.0 * target_.right() / width() - 1.0);
-    const GLfloat top = static_cast<GLfloat>(1.0 - 2.0 * target_.top() / height());
-    const GLfloat bottom = static_cast<GLfloat>(1.0 - 2.0 * target_.bottom() / height());
-    // QImage's first scanline maps to v=0 at the quad's top, avoiding a mirrored
-    // image or a second CPU image allocation merely to flip the texture.
-    const std::array<Vertex, 4> quad{{{left, top, 0, 0}, {right, top, 1, 0},
-                                     {left, bottom, 0, 1}, {right, bottom, 1, 1}}};
-    if (vertexArray_ && vertexArray_->isCreated()) vertexArray_->bind();
-    if (!program_->bind() || !vertices_->bind()) {
-        program_->release();
-        if (vertexArray_ && vertexArray_->isCreated()) vertexArray_->release();
-        glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
-        fail(QStringLiteral("无法绑定 OpenGL 热图绘制资源"));
+bool AcceleratedSurface::ensureTexture(bool overlay, const QSize& pixelSize) {
+    auto& texture = overlay ? resources_->overlay : resources_->heatmap;
+    auto& bindings = overlay ? resources_->overlayBindings : resources_->heatmapBindings;
+    if (texture && texture->pixelSize() == pixelSize && bindings) return true;
+    const int maximum = rhi()->resourceLimit(QRhi::TextureSizeMax);
+    if (pixelSize.isEmpty() || pixelSize.width() > maximum || pixelSize.height() > maximum) {
+        fail(QStringLiteral("QRhi 纹理尺寸无效或超过设备上限 %1").arg(maximum));
+        return false;
+    }
+    if (!texture) texture.reset(rhi()->newTexture(QRhiTexture::RGBA8, pixelSize));
+    else texture->setPixelSize(pixelSize);
+    if (!texture->create()) {
+        fail(QStringLiteral("无法创建 QRhi %1纹理").arg(overlay ? QStringLiteral("覆盖层") : QStringLiteral("热图")));
+        return false;
+    }
+    if (!bindings) bindings.reset(rhi()->newShaderResourceBindings());
+    bindings->setBindings({QRhiShaderResourceBinding::sampledTexture(
+        0, QRhiShaderResourceBinding::FragmentStage, texture.get(), resources_->sampler.get())});
+    if (!bindings->create()) {
+        fail(QStringLiteral("无法创建 QRhi 纹理资源绑定"));
+        return false;
+    }
+    return true;
+}
+
+bool AcceleratedSurface::prepareUploads(QRhiResourceUpdateBatch* updates) {
+    const CpuWallScope prepareTimer(prepareUploadsTiming_);
+    if (heatmapDirty_) {
+        const CpuWallScope heatmapTimer(heatmapUploadPreparationTiming_);
+        const auto pixels = heatmap_.convertToFormat(QImage::Format_RGBA8888_Premultiplied);
+        if (pixels.isNull() || !ensureTexture(false, pixels.size())) return false;
+        updates->uploadTexture(resources_->heatmap.get(), pixels);
+        ++textureUploads_;
+        heatmapDirty_ = false;
+        heatmapUploaded_ = true;
+    }
+    const auto pixels = renderTarget()->pixelSize();
+    const auto dpr = devicePixelRatioF();
+    if (overlay_.size() != pixels || !qFuzzyCompare(overlayDpr_, dpr)) overlayDirty_ = true;
+    if (overlayDirty_) {
+        {
+            const CpuWallScope imageTimer(overlayImagePreparationTiming_);
+            // Keep the raster allocation across ordinary frames. Qt may still
+            // detach here if an earlier queued upload owns the same image.
+            if (overlay_.size() != pixels || !qFuzzyCompare(overlayDpr_, dpr)) {
+                overlay_ = QImage(pixels, QImage::Format_RGBA8888_Premultiplied);
+                if (overlay_.isNull()) {
+                    fail(QStringLiteral("无法创建 QRhi 覆盖层图像"));
+                    return false;
+                }
+                overlayDpr_ = dpr;
+                overlay_.setDevicePixelRatio(dpr);
+            }
+            overlay_.fill(Qt::transparent);
+        }
+        {
+            const CpuWallScope painterTimer(overlayPainterTiming_);
+            QPainter painter(&overlay_);
+            painter.setFont(font());
+            if (painter_) painter_(painter);
+            painter.end();
+        }
+        {
+            const CpuWallScope enqueueTimer(overlayUploadEnqueueTiming_);
+            if (!ensureTexture(true, pixels)) return false;
+            updates->uploadTexture(resources_->overlay.get(), overlay_);
+        }
+        ++overlayUploads_;
+        overlayDirty_ = false;
+    }
+    return true;
+}
+
+void AcceleratedSurface::render(QRhiCommandBuffer* commandBuffer) {
+    const CpuWallScope renderTimer(renderTiming_);
+    if (!ready_ || !resources_ || !commandBuffer || width() <= 0 || height() <= 0) return;
+    if (rhi()->isDeviceLost()) {
+        fail(QStringLiteral("QRhi 图形设备丢失，使用 QWidget 回退"));
         return;
     }
-    vertices_->allocate(quad.data(), static_cast<int>(sizeof(quad)));
-    program_->enableAttributeArray(0);
-    program_->enableAttributeArray(1);
-    program_->setAttributeBuffer(0, GL_FLOAT, 0, 2, static_cast<int>(sizeof(Vertex)));
-    program_->setAttributeBuffer(1, GL_FLOAT, 2 * static_cast<int>(sizeof(GLfloat)), 2, static_cast<int>(sizeof(Vertex)));
-    texture_->bind(0);
-    program_->setUniformValue("heatmap", 0);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    texture_->release(0);
-    program_->disableAttributeArray(0);
-    program_->disableAttributeArray(1);
-    vertices_->release();
-    program_->release();
-    if (vertexArray_ && vertexArray_->isCreated()) vertexArray_->release();
-    glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
-    const auto error = glGetError();
-    if (error != GL_NO_ERROR)
-        fail(QStringLiteral("OpenGL 热图绘制失败 (0x%1)").arg(error, 0, 16));
+    auto* updates = rhi()->nextResourceUpdateBatch();
+    if (!prepareUploads(updates)) {
+        updates->release();
+        return;
+    }
+    const bool yUp = rhi()->isYUpInNDC();
+    const auto heatmapQuad = makeQuad(target_, size(), yUp, sourceRect_);
+    const auto overlayQuad = makeQuad(QRectF(QPointF(0, 0), size()), size(), yUp);
+    std::array<Vertex, 8> vertices;
+    std::copy(heatmapQuad.begin(), heatmapQuad.end(), vertices.begin());
+    std::copy(overlayQuad.begin(), overlayQuad.end(), vertices.begin() + 4);
+    updates->updateDynamicBuffer(resources_->vertices.get(), 0,
+                                  static_cast<quint32>(sizeof(vertices)), vertices.data());
+    commandBuffer->beginPass(renderTarget(), QColor("#0a1728"), {1.0f, 0}, updates);
+    commandBuffer->setGraphicsPipeline(resources_->pipeline.get());
+    const auto output = renderTarget()->pixelSize();
+    commandBuffer->setViewport(QRhiViewport(0, 0, static_cast<float>(output.width()), static_cast<float>(output.height())));
+    const QRhiCommandBuffer::VertexInput input(resources_->vertices.get(), 0);
+    commandBuffer->setVertexInput(0, 1, &input);
+    if (heatmapUploaded_ && !heatmap_.isNull() && !target_.isEmpty()) {
+        commandBuffer->setShaderResources(resources_->heatmapBindings.get());
+        commandBuffer->draw(4);
+    }
+    commandBuffer->setShaderResources(resources_->overlayBindings.get());
+    commandBuffer->draw(4, 1, 4);
+    commandBuffer->endPass();
+}
+
+void AcceleratedSurface::releaseResources() {
+    ready_ = false;
+    resources_.reset();
+    heatmapUploaded_ = false;
+    heatmapDirty_ = !heatmap_.isNull();
+    overlayDirty_ = true;
 }
 
 void AcceleratedSurface::fail(const QString& reason) {
     ready_ = false;
     if (failureReported_) return;
-    const auto message = backend_.startsWith(QStringLiteral("OpenGL ")) &&
-                         backend_ != QStringLiteral("OpenGL 初始化中") && !reason.contains(backend_)
+    const auto message = backend_.startsWith(QStringLiteral("QRhi ")) &&
+                         backend_ != QStringLiteral("QRhi 初始化中") && !reason.contains(backend_)
                              ? QStringLiteral("%1；%2").arg(reason, backend_) : reason;
     backend_ = message;
     failureReported_ = true;
-    // A parent may hide the surface in response. Notify after active GL/painter
-    // callbacks finish rather than mutate the widget hierarchy inside a paint.
+    // Hiding a surface from its parent must happen after active QRhi callbacks.
     QTimer::singleShot(0, this, [this, message] { emit backendFailed(message); });
-}
-
-void AcceleratedSurface::cleanup() {
-    if (cleaning_) return;
-    cleaning_ = true;
-    ready_ = false;
-    disconnect(destructionConnection_);
-    destructionConnection_ = {};
-    auto* resourceContext = resourceContext_.data();
-    bool madeCurrent = false;
-    // A context may already have been destroyed by Qt. Never attempt to make an
-    // invalid/dangling context current; Qt wrappers can then discard their guards.
-    if (resourceContext && resourceContext->isValid()) {
-        makeCurrent();
-        madeCurrent = QOpenGLContext::currentContext() == resourceContext;
-    }
-    texture_.reset();
-    program_.reset();
-    vertices_.reset();
-    vertexArray_.reset();
-    if (madeCurrent) doneCurrent();
-    resourceContext_.clear();
-    textureUploaded_ = false;
-    textureDirty_ = !heatmap_.isNull();
-    cleaning_ = false;
 }
 
 } // namespace signalstudio

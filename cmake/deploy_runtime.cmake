@@ -6,6 +6,11 @@ endforeach()
 
 get_filename_component(output_dir "${SS_EXECUTABLE}" DIRECTORY)
 set(ENV{PATH} "${SS_QT_BIN};$ENV{PATH}")
+if(DEFINED SS_VS_INSTALLATION_PATH AND IS_DIRECTORY "${SS_VS_INSTALLATION_PATH}/VC")
+    # Help windeployqt detect the selected installation. The explicit staging
+    # below also covers a newer Visual Studio that windeployqt cannot enumerate.
+    set(ENV{VCINSTALLDIR} "${SS_VS_INSTALLATION_PATH}/VC/")
+endif()
 if(SS_CONFIGURATION STREQUAL "Debug")
     set(configuration_flag --debug)
 else()
@@ -20,4 +25,5 @@ execute_process(
 if(NOT deployment_result EQUAL 0)
     message(FATAL_ERROR "windeployqt failed with exit code ${deployment_result}")
 endif()
+include("${CMAKE_CURRENT_LIST_DIR}/deploy_msvc_runtime.cmake")
 file(WRITE "${output_dir}/qt.conf" "[Paths]\nPrefix=.\nPlugins=.\n")

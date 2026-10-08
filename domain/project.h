@@ -27,22 +27,29 @@ struct ViewRange {
 
 enum class MainMode { TimeFrequency, Waterfall };
 enum class AuxiliaryMode { Waveform, Psd };
-enum class Palette { Turbo, Viridis, Gray };
+enum class WaveformMode { I, Q, IqRms };
+enum class Palette { Turbo, Viridis, Gray, Plasma, Inferno, Magma, Cividis, CoolEditClassic };
 
 struct DisplaySettings {
     MainMode mainMode = MainMode::TimeFrequency;
     AuxiliaryMode auxiliaryMode = AuxiliaryMode::Waveform;
+    WaveformMode waveformMode = WaveformMode::IqRms;
     Palette palette = Palette::Turbo;
     int stftSize = 2048;
     int psdSize = 4096;
-    double dynamicRangeDb = 70;
-    double referenceLevelDb = -10;
+    double dynamicRangeDb = 80;
+    double referenceLevelDb = 0;
     bool absoluteFrequency = true;
     bool grid = true;
     bool colorScale = false;
     bool psdFromSelection = false;
-    double auxiliaryMin = -1;
-    double auxiliaryMax = 1;
+    // Compatibility fields expose the active mode; Session maintains both saved ranges.
+    double auxiliaryMin = -60;
+    double auxiliaryMax = 60;
+    double waveformMin = -60;
+    double waveformMax = 60;
+    double psdMin = -100;
+    double psdMax = 0;
 };
 
 struct FileMetadata {
@@ -53,6 +60,10 @@ struct FileMetadata {
     double centerFrequencyHz = 0;
     SampleIndex sampleCount = 0;
     bool demo = true;
+    int demoSeed = 1;
+    double declaredBandwidthHz = 0;
+    // The centered band used by analysis. Zero means the complete sampled band.
+    double effectiveBandwidthHz = 0;
 };
 struct Mark {
     std::string id;
@@ -81,8 +92,18 @@ struct Project {
     std::vector<FileState> files;
 };
 
+struct ViewSnapshot {
+    std::string fileId;
+    ViewRange view;
+    double waveformMin = -60;
+    double waveformMax = 60;
+    double psdMin = -100;
+    double psdMax = 0;
+    bool operator==(const ViewSnapshot&) const = default;
+};
+
 ViewRange fullRange(const FileMetadata& metadata);
-ViewRange clampRange(ViewRange range, const FileMetadata& metadata, int stftSize);
+ViewRange clampRange(ViewRange range, const FileMetadata& metadata, int stftSize, int psdSize = 0);
 Mark* findMark(FileState& file, const std::string& id);
 const Mark* findMark(const FileState& file, const std::string& id);
 

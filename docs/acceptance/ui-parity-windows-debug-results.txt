@@ -1,0 +1,18 @@
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UiTests::initTestCase()
+QWARN  : UiTests::panelMaximizeAndRestore() QWindowsWindow::setGeometry: Unable to set geometry 3840x2160+2560+0 (frame: 3862x2216+2549-45) on QWidgetWindow/"SignalStudioWindowWindow" on "Redmi 27 NU". Resulting geometry: 3840x2130+2560+0 (frame: 3862x2186+2549-45) margins: 11, 45, 11, 11 minimum size: 720x520 MINMAXINFO(maxSize=POINT(x=0, y=0), maxpos=POINT(x=0, y=0), maxtrack=POINT(x=0, y=0), mintrack=POINT(x=1102, y=836)))
+QINFO  : UiTests::panelMaximizeAndRestore() navPanel original QSize(1986, 82) restored QSize(1986, 82) graph sizes QList(82, 205, 1000)
+QINFO  : UiTests::panelMaximizeAndRestore() navigationPlot QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e frames initial/max/restored 5 7 10
+QINFO  : UiTests::panelMaximizeAndRestore() auxPanel original QSize(1986, 205) restored QSize(1986, 205) graph sizes QList(82, 205, 1000)
+QINFO  : UiTests::panelMaximizeAndRestore() auxPlot QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e frames initial/max/restored 10 11 12
+QINFO  : UiTests::panelMaximizeAndRestore() specPanel original QSize(1986, 1000) restored QSize(1986, 1000) graph sizes QList(82, 205, 1000)
+QINFO  : UiTests::panelMaximizeAndRestore() mainPlot QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e frames initial/max/restored 12 13 14
+PASS   : UiTests::panelMaximizeAndRestore()
+QWARN  : UiTests::splitterKeyboardResetAndEscapeRollback() QWindowsWindow::setGeometry: Unable to set geometry 3840x2160+2560+0 (frame: 3862x2216+2549-45) on QWidgetWindow/"SignalStudioWindowWindow" on "Redmi 27 NU". Resulting geometry: 3840x2130+2560+0 (frame: 3862x2186+2549-45) margins: 11, 45, 11, 11 minimum size: 720x520 MINMAXINFO(maxSize=POINT(x=0, y=0), maxpos=POINT(x=0, y=0), maxtrack=POINT(x=0, y=0), mintrack=POINT(x=1102, y=836)))
+PASS   : UiTests::splitterKeyboardResetAndEscapeRollback()
+QWARN  : UiTests::creationModeSurvivesMaximize() QWindowsWindow::setGeometry: Unable to set geometry 3840x2160+2560+0 (frame: 3862x2216+2549-45) on QWidgetWindow/"SignalStudioWindowWindow" on "Redmi 27 NU". Resulting geometry: 3840x2130+2560+0 (frame: 3862x2186+2549-45) margins: 11, 45, 11, 11 minimum size: 720x520 MINMAXINFO(maxSize=POINT(x=0, y=0), maxpos=POINT(x=0, y=0), maxtrack=POINT(x=0, y=0), mintrack=POINT(x=1102, y=836)))
+PASS   : UiTests::creationModeSurvivesMaximize()
+PASS   : UiTests::cleanupTestCase()
+Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 7829ms
+********* Finished testing of UiTests *********

@@ -20,6 +20,10 @@ public:
     const FileState* activeFile() const;
     void newProject();
     std::string addDemoFile();
+    std::string addDemoFile(FileMetadata metadata);
+    std::string addDemoFile(const std::string& name, double sampleRateHz,
+                            double centerFrequencyHz, double durationSeconds,
+                            const std::string& path = {});
     bool activateFile(const std::string& id);
     bool removeActiveFile();
     std::string addMark(ViewRange range);
@@ -27,6 +31,13 @@ public:
     DeleteResult deleteSelectedMarks();
     bool focusMark(const std::string& id);
     bool setView(ViewRange range, bool record = true);
+    bool setPsdFromSelection(bool enabled);
+    bool setEffectiveBandwidthHz(double bandwidthHz);
+    bool setAuxiliaryMode(AuxiliaryMode mode);
+    bool setAuxiliaryRange(double minimum, double maximum, bool record = true);
+    ViewSnapshot snapshot() const;
+    bool restoreSnapshot(const ViewSnapshot& snapshot);
+    bool commitViewChange(const ViewSnapshot& previous);
     bool back();
     bool forward();
     bool canBack() const;
@@ -37,8 +48,8 @@ public:
 
 private:
     struct History {
-        std::vector<ViewRange> past;
-        std::vector<ViewRange> future;
+        std::vector<ViewSnapshot> past;
+        std::vector<ViewSnapshot> future;
     };
     std::string nextId(const std::string& prefix);
     Project project_;

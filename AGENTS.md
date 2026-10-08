@@ -5,16 +5,16 @@
 ## 依据与独立性
 
 - UI 与交互基线为 A1.4.3。冻结副本位于 `docs/prototype/a1.4.3/`，来源路径、文件大小与 SHA-256 记录在该目录的 `source_manifest.json`。
-- 采用全新 C++20 / Qt 6.11.1 Widgets 工程；不读取、复制或链接旧 Signal Studio 或 ISA 的业务源码。构建输入必须来自本仓库与明确安装的开发工具。
+- 采用全新 C++20 / Qt 6.11.1 Widgets 工程；不复制或链接旧 Signal Studio 或 ISA 的业务源码。用户指定 `ISA_算法中心重构开发` 后，允许只读参考 `D:/project/SCN_based_PSD_Detection` 的图谱抽取、预览及缓存策略，相关实现仍在本仓库独立编写。构建输入必须来自本仓库与明确安装的开发工具。
 - 不将外部原型目录作为构建输入；原型 HTML 和演示 JSON 是产品依据及互操作样例。归档 README 中的原型测试结果属于原型，不属于本仓库 Qt 工程的验证。
 
 ## 当前阶段
 
-- 建立主窗口、工程树、全局导航、辅助图、主图、右侧参数与底部结果区域；保持 A1.4.3 布局和物理时间/频率坐标语义。
-- 建立与 Qt 无关的 domain/application 状态层、Qt JSON 工程持久化层，以及模拟图谱与交互层。工程 JSON 导入须完整校验后替换状态。
+- 完整对齐 A1.4.3 主窗口、工程树、全局导航、辅助图、主图、右侧参数与底部结果区域及交互；保持物理时间/频率坐标语义。适配性验收仅使用第二块连接显示器的 4K 物理尺寸 3840×2160、150% DPI（2560×1440 逻辑工作区），不继续进行 1366×768 等尺寸/DPI 验证。本机第二块连接屏为 Redmi 27 NU，Windows 原生设备路径为 DISPLAY6；不能把设备路径后缀误当当前连接序号。原生验收必须使用该屏全屏窗口、实际屏幕 DPI，报告包含连接序号、友好名称、原生设备路径与尺寸；禁止以主屏超大窗口截图替代。
+- 建立与 Qt 无关的 domain/application 状态层、Qt JSON 工程持久化层，以及模拟和真实 IQ 图谱交互。工程 JSON 导入须完整校验后替换状态。
 - 图谱显示采用 QRhiWidget 的纹理与 QPainter 交互覆盖层，Windows 使用 QRhi Direct3D11。预留 Ubuntu 默认 OpenGL 与后续 Vulkan 后端；同一窗口内使用同一种图形 API。提供明确的 QWidget 软件显示回退。模拟图谱数据生成不等于 GPU DSP 计算。
 - 当前 QPainter 内容转为 RGBA 图像后上传 QRhi 纹理，不属于完整 GPU 几何绘制。后续曲线顶点缓冲、瓦片/纹理行增量更新及异步计算边界见 `docs/architecture/rendering.md`。
-- 本阶段使用模拟元数据与模拟图谱；真实 IQ 读取、FFT/STFT、DDC、信号检测、设备输入及 DSP 性能验证另行实施。不得把占位或模拟结果描述为真实分析能力。
+- 应用默认启动空工程；三份原型演示文件只由显式 `--demo-data` 或测试夹具加载。交替小端 int16 IQ 支持 I、Q、IQ RMS 波形切换、可设置的中心有效带宽、8–16 阶 STFT、PSD/STFT 与图谱抽取；项目 JSON 保存每文件参数，QSettings 保存窗口/侧栏/分组布局及最近工程。DDC、信号检测、设备输入、Ubuntu 运行及持续采集吞吐仍未实现。不得把占位或模拟结果描述为真实分析能力。
 
 ## 构建与验证
 
@@ -22,6 +22,7 @@
 - Windows 工具链为 Visual Studio 18 2026、x64、C++20。QRhi 的 GuiPrivate 兼容范围有限，CMake 锁定 Qt 6.11.1 EXACT，并使用同版本 ShaderTools 生成内置 `.qsb`。升级 Qt 必须重新编译并重跑图形验证。
 - `scripts/build.ps1` 默认完成 Windows 配置、构建、CTest；每步检查退出码。`SS_BUILD_TESTS=OFF` 可关闭测试。Ninja 预设不包含 Linux 部署实现或已通过的 Linux 验收声明。
 - Debug / Release 可执行目录分别为 `out/vs2026-qt611-debug_bin` 与 `out/vs2026-qt611-release_bin`，Windows 构建自动运行 `windeployqt`。
+- Windows 部署从生成器实际选择的 Visual Studio 安装中探测最新完整 x64 CRT 并逐个复制 DLL；Debug 额外从 Windows SDK 复制 `ucrtbased.dll`。缺少完整运行库时部署失败，不用本机预装 VC 运行库代替输出目录的交付内容。
 - 测试使用本仓库 `tests/`；不运行外部原型测试来证明 Qt 工程通过。构建、测试、独立启动及截图分别记录真实结果与未验证边界。
 - 独立启动验收必须从对应输出目录运行，并确认无需外部源码目录及 Qt 安装目录参与运行。
 - `scripts/screenshot.ps1`、`scripts/verify-package.ps1` 和 `scripts/gpu_smoke.ps1` 默认通过 Windows 平台与 `--require-gpu` 验证；成功条件必须包含非 CPU QRhi 驱动及至少一次纹理上传。`-SoftwareRenderer` 明确切换软件回退验证并标明软件结果。

@@ -1,19 +1,23 @@
-# Signal Studio · A1.4.3 原生基础骨架
+# Signal Studio · A1.4.3 原生界面
 
-本工程从空仓库独立开发，以仓库内的 [A1.4.3 原型基线](docs/prototype/a1.4.3/BASELINE.md) 为依据。旧 Signal Studio 与 ISA 不参与源码、构建或运行。当前分支为 `rebuild/a143-native`。
+本工程从空仓库独立开发，以仓库内的 [A1.4.3 原型基线](docs/prototype/a1.4.3/BASELINE.md) 为依据，实现原型的布局、颜色、图谱方向、默认状态和交互。按用户要求只读参考 `ISA_算法中心重构开发` 的显示抽取、预览及缓存策略，并在本仓库独立实现。旧 Signal Studio 与 ISA 不参与源码、构建或运行。当前分支为 `rebuild/a143-native`。
 
 采用 C++20、Qt Widgets 和 QRhi。Windows 默认使用 Direct3D 11；同一渲染接口可选择 OpenGL，为 Ubuntu 原生支持保留路径。本轮实际构建环境为 Windows x64 / VS 2026 / Qt 6.11.1。QRhi 的底层接口依赖 `Qt6::GuiPrivate`，因此锁定 Qt 6.11.1；升级 Qt 时需要重新编译和验证。
 
 ## 当前能力
 
-- 工程树、全局时间导航、可切换波形/PSD 的辅助图、时频图/瀑布图主图、右侧参数区和默认收起的底部日志。
-- 每文件保存视图、图谱模式、颜色、显示参数、标记、多选及演示通道；允许空工程。
+- 原型菜单、工程树、全局时间导航、波形/PSD 辅助图、时频/瀑布主图、右侧默认展开的参数组及底部三个结果标签；鼠标操作说明位于顶部“帮助”菜单。
+- 默认启动为空工程，可从“文件 → 最近打开的工程”恢复工程；`--demo-data` 显式载入三份原型演示数据。
+- 每文件保存视图、图谱模式、颜色、有效带宽、波形模式、STFT/PSD 参数、动态范围、参考电平、标记、多选及演示通道；工程 JSON 保存分析参数，用户界面几何、侧栏/分组展开状态、底部标签和最近工程由 `QSettings` 保存。
 - 主图右键开启持续选择；普通点击选择，框内移动，边线及控制点调整，Ctrl/Shift 多选、批量删除、定位与重命名。
 - 空白主图区框选缩放，物理轴滚轮缩放/拖动平移，导航定位，每文件最多 40 条视图历史；主图滚轮 220 ms 合并。Esc 取消拖动并回滚。
 - 原生工程 JSON 的完整校验、原子写入和状态往返。样本索引采用 `uint64_t`，JSON 用十进制字符串，频率采用 Hz。
-- QRhi 持久热力图纹理、独立覆盖层纹理与 GPU 合成。颜色变化复用模拟功率矩阵；标记变化复用热力图纹理。启动显示实际后端，失败时回退到软件绘制。
+- QRhi 持久热力图纹理、独立覆盖层纹理与 GPU 合成。颜色变化复用功率矩阵；标记/游标变化复用热力图纹理；诊断报告和状态提示记录实际后端。
+- 波形数据按物理显示宽度抽取有限的连续样本块，PSD 经 Welch FFT 后映射到显示宽度；模拟曲线仍使用原型演示包络。源数据、抽取结果及曲线路径分别缓存，显示结果不替代原始样本索引或业务范围。
+- 主图预览与精细显示分级，停止交互 60 ms 后更新精细结果。单后台线程只保留最新请求，按代次取消和拒收旧结果；缓存旧视图按真实交集映射，更新中区域有提示。
+- 可导入小端交替 `int16 I/Q` `.iq/.dat/.raw/.bin` 文件；名称包含 `FS...sps` 与 `FC...Hz` 参数，`BW` 可选并作为默认有效带宽。文件以只读内存映射访问，不将全文件读入 RAM。时域波形可切换 I、Q 或 IQ RMS 包络；有效带宽可按 MHz 调整。STFT FFT 点数支持 `2^8` 至 `2^16`（默认 `2^11`），切换会确保可见时间窗至少包含所选 FFT 点数。动态范围与参考电平支持候选下拉值和自定义输入。PSD、STFT/瀑布由有界后台任务生成；图内缩放和平移沿用原始样本索引与 RF 频率。
 
-**当前所有图谱和 IQ 文件都是演示数据。** PSD/STFT 参数保存于文件状态，STFT FFT 控制缩放下限；尚未读取真实 IQ，也未执行 FFT/STFT、DDC、检测或设备采集。演示通道只保存创建时的参数，修改源标记不会重新计算通道。
+真实 IQ 文件的工程 JSON 保存路径、元数据和每文件显示参数，重新打开时从路径重建图谱；样本数据本身不复制进工程。DDC、信号检测与设备采集未实现；演示通道只保存创建时的参数，修改源标记不会重新计算通道。
 
 ## 构建与运行
 
@@ -43,12 +47,18 @@ Windows 自动使用 `windeployqt` 部署运行库，`qt.conf` 指向本目录�
 命令行诊断：
 
 ```powershell
-.\out\vs2026-qt611-release_bin\SignalStudio.exe --smoke-test --require-gpu --render-report out/render-report.json
+.\out\vs2026-qt611-release_bin\SignalStudio.exe --list-screens
+.\out\vs2026-qt611-release_bin\SignalStudio.exe --demo-data --screen 2 --full-screen --verify-4k-150 --smoke-test --require-gpu --render-report out/render-report.json
+.\out\vs2026-qt611-release_bin\SignalStudio.exe --iq-file "E:\数据集\扫频数据\ALaShan_051\20260805\xiawu\IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_154250.dat" --psd-view
+.\out\vs2026-qt611-debug_bin\SignalStudio.exe --iq-file "E:\数据集\扫频数据\ALaShan_051\20260805\xiawu\IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_154250.dat" --psd-view --iq-interaction-test --screen 2 --full-screen --verify-4k-150 --size 2560x1440 --screenshot docs/acceptance/screenshots/real-iq-debug-screen2-4k-150.png --render-report docs/acceptance/real-iq-debug-screen2-4k-150.json --require-gpu
+.\out\vs2026-qt611-release_bin\SignalStudioUiCapture.exe docs/acceptance/screenshots/4k-display2
 .\out\vs2026-qt611-release_bin\SignalStudio.exe --renderer opengl
 .\out\vs2026-qt611-release_bin\SignalStudio.exe --software-renderer
 ```
 
 `--require-gpu` 必须识别为硬件设备、成功上传热力图纹理，并通过覆盖层更新时复用纹理的检查。无界面的 Qt UI 测试走软件路径，用于验证事件和业务状态，不能作为 GPU 证据。
+
+本轮显示适配验收仅在 **第二块连接显示器（Redmi 27 NU）** 使用系统实际 **3840×2160 / 150% DPI**，窗口全屏客户区为 2560×1440 逻辑像素。它的 Windows 内部设备路径为 DISPLAY6；设备路径后缀与当前连接序号分别记录。脚本不会修改显示器分辨率或缩放，屏幕条件不符直接失败。报告记录连接序号、屏幕名称、几何尺寸、DPR 和抓图像素尺寸；主屏超大窗口截图不作为该项验收。offscreen 的 150% 逻辑测试只验证布局和交互。
 
 ## 模块边界
 
@@ -56,18 +66,24 @@ Windows 自动使用 `windeployqt` 部署运行库，`qt.conf` 指向本目录�
 |---|---|
 | `domain/` | 元数据、样本/频率范围、标记、通道、显示状态；无 Qt 依赖 |
 | `application/` | 每文件会话、选择、业务命令和视图历史；无控件依赖 |
-| `infrastructure/` | 原生 JSON 读写和校验 |
+| `infrastructure/` | 原生 JSON 读写、校验和交替 int16 IQ 文件访问 |
 | `app/` | 程序入口、菜单、工程树、参数面板与工作区编排 |
-| `ui/charts/` | 坐标映射、手势、演示绘图、QRhi 渲染及着色器 |
+| `ui/charts/` | 坐标映射、手势、IQ 显示抽取、演示绘图、QRhi 渲染及着色器 |
 | `tests/` | 状态/存储与 Qt 事件回归 |
 | `docs/` | 原型冻结副本、架构、验收与实际验证记录 |
 
-渲染器只接收图像、目标矩形和覆盖层，不读取工程存储或执行信号算法。真实 IQ 接入时应新增独立数据源与后台计算服务，通过不可变结果提交到 UI；当前还没有这些计算服务。
+渲染器只接收图像、目标矩形和覆盖层，不读取工程存储或执行信号算法。IQ 文件访问和基础 PSD/STFT 计算位于基础设施侧，在工作线程生成有限尺寸显示矩阵后提交 UI；该链路不包含 DDC、检测或持续采集。
 
 ## 工程格式与验收边界
 
-原生格式为 `signal-studio-native-project`、版本 1，与浏览器的 `signal-studio-a1.4.3-prototype` 分开。不能直接打开归档的原型演示 JSON；它是产品基线样例。原生工程不包含样本数据或视图历史，也没有业务撤销栈、自动保存及未保存提示。
+原生格式为 `signal-studio-native-project`、版本 1，与浏览器的 `signal-studio-a1.4.3-prototype` 分开。不能直接打开归档的原型演示 JSON；它是产品基线样例。原生工程不包含样本数据、视图历史或业务撤销栈；项目内容仍需显式保存，界面布局偏好与最近工程列表独立写入用户设置。
 
-完整 A1.4.3 的 59 项原型用例仍需逐项移植。分隔条取消/双击复位、属性分组自动前置、全部刻度碰撞处理、辅助 Y 范围进入视图历史、真实大文件、持续数据流的纹理行更新、GPU 曲线顶点缓冲和 Ubuntu 部署验收留在后续阶段。当前覆盖层先由 QPainter 生成缓存图像，再由 QRhi 合成，不声称曲线和文字已全部改为 GPU 几何绘制。
+本轮 Qt 自动测试覆盖原型默认状态、分隔条取消/复位、属性分组前置和手动展开、两套辅助 Y 范围与历史、三图最大化、标记选择/移动/八控制点/取消、重叠对象、2^53 以上坐标以及原生工程往返；对应关系见 [UI 与交互验收](docs/acceptance/ui-parity.md)。浏览器原型的 59 项结果不等于本仓库的测试结果。
 
-实际通过的检查见 [验证记录](docs/acceptance/verification.md)，产品行为清单见 [骨架验收清单](docs/acceptance/skeleton-checklist.md)，渲染选型见 [渲染架构](docs/architecture/rendering.md)。
+2026-10-09 基础 Debug / Release 构建及 CTest 均为 3/3 通过；本轮功能更新后的 Debug CTest 为 3/3，Qt UI 日志为 66 passed / 0 failed / 0 skipped。显示器 2 的本轮 4K/150% 硬件 QRhi smoke 通过，报告与截图位于 `artifacts/feature-update-debug-screen2-4k-150/`。此前显示器 2 的 12 个原生场景、三图最大化/还原回归、Debug/Release 独立包硬件启动和 Release 软件回退均已通过；原始报告与截图见上述验收记录。
+
+显示抽取、缓存与批量线段绘制减少了本机模拟图谱的绘制停顿；同一组普通滚轮观测中，完整事件循环从 198.88–216.64 ms 降到 47.94–62.08 ms。该值包括 GUI 绘制与排队处理，不能换算成 FPS 或真实 IQ 吞吐；测量范围和输入证据见 [显示性能记录](docs/acceptance/display-performance.md)。
+
+本机指定 3.27 GB IQ 文件的读取、图谱显示和第二显示器 4K 验证记录于 [真实 IQ 验收](docs/acceptance/iq-file-int16.md)；不能将该个例外推为不同磁盘、长时间录制或持续采集的吞吐保证。纹理新增行更新、GPU 曲线顶点缓冲和 Ubuntu 部署仍属后续阶段。当前覆盖层先由 QPainter 生成缓存图像，再由 QRhi 合成；字体字形、原生对话框及 hover 阴影与浏览器存在平台绘制差异。
+
+本轮实际结果见 [UI 与交互验收](docs/acceptance/ui-parity.md)，渲染策略见 [渲染架构](docs/architecture/rendering.md)。[基础骨架验证记录](docs/acceptance/verification.md) 和 [骨架验收清单](docs/acceptance/skeleton-checklist.md) 保留为此前阶段资料。

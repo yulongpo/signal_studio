@@ -92,13 +92,17 @@ QJsonObject encodeRange(const ViewRange& range) {
                                                     {QStringLiteral("upperHz"), range.frequency.upperHz}}}};
 }
 
-ViewRange decodeRange(const QJsonValue& value, const FileMetadata& metadata) {
+ViewRange decodeRange(const QJsonValue& value, const FileMetadata& metadata, bool constrainToEffectiveBand = true) {
     const auto range = object(value, QStringLiteral("range"));
     const auto time = object(range.value(QStringLiteral("time")), QStringLiteral("time"));
     const auto frequency = object(range.value(QStringLiteral("frequency")), QStringLiteral("frequency"));
     const ViewRange result{{sampleIndex(time, "begin"), sampleIndex(time, "end")},
                           {number(frequency, "lowerHz"), number(frequency, "upperHz")}};
-    const auto bounds = fullRange(metadata);
+    auto bounds = fullRange(metadata);
+    if (!constrainToEffectiveBand) {
+        bounds.frequency = {metadata.centerFrequencyHz - metadata.sampleRateHz / 2,
+                            metadata.centerFrequencyHz + metadata.sampleRateHz / 2};
+    }
     require(result.time.begin < result.time.end && result.time.end <= metadata.sampleCount,
             QStringLiteral("时间范围必须有序且位于文件样本范围内"));
     require(result.frequency.lowerHz < result.frequency.upperHz &&
@@ -119,14 +123,26 @@ QJsonObject encodeDisplay(const DisplaySettings& display) {
     case AuxiliaryMode::Waveform: auxiliaryMode = QStringLiteral("waveform"); break;
     case AuxiliaryMode::Psd: auxiliaryMode = QStringLiteral("psd"); break;
     }
+    QString waveformMode;
+    switch (display.waveformMode) {
+    case WaveformMode::I: waveformMode = QStringLiteral("i"); break;
+    case WaveformMode::Q: waveformMode = QStringLiteral("q"); break;
+    case WaveformMode::IqRms: waveformMode = QStringLiteral("iqRms"); break;
+    }
     QString palette;
     switch (display.palette) {
     case Palette::Turbo: palette = QStringLiteral("turbo"); break;
     case Palette::Viridis: palette = QStringLiteral("viridis"); break;
     case Palette::Gray: palette = QStringLiteral("gray"); break;
+    case Palette::Plasma: palette = QStringLiteral("plasma"); break;
+    case Palette::Inferno: palette = QStringLiteral("inferno"); break;
+    case Palette::Magma: palette = QStringLiteral("magma"); break;
+    case Palette::Cividis: palette = QStringLiteral("cividis"); break;
+    case Palette::CoolEditClassic: palette = QStringLiteral("coolEditClassic"); break;
     }
     return {{QStringLiteral("mainMode"), mainMode},
             {QStringLiteral("auxiliaryMode"), auxiliaryMode},
+            {QStringLiteral("waveformMode"), waveformMode},
             {QStringLiteral("palette"), palette},
             {QStringLiteral("stftSize"), display.stftSize},
             {QStringLiteral("psdSize"), display.psdSize},
@@ -137,7 +153,11 @@ QJsonObject encodeDisplay(const DisplaySettings& display) {
             {QStringLiteral("colorScale"), display.colorScale},
             {QStringLiteral("psdFromSelection"), display.psdFromSelection},
             {QStringLiteral("auxiliaryMin"), display.auxiliaryMin},
-            {QStringLiteral("auxiliaryMax"), display.auxiliaryMax}};
+            {QStringLiteral("auxiliaryMax"), display.auxiliaryMax},
+            {QStringLiteral("waveformMin"), display.auxiliaryMode==AuxiliaryMode::Waveform?display.auxiliaryMin:display.waveformMin},
+            {QStringLiteral("waveformMax"), display.auxiliaryMode==AuxiliaryMode::Waveform?display.auxiliaryMax:display.waveformMax},
+            {QStringLiteral("psdMin"), display.auxiliaryMode==AuxiliaryMode::Psd?display.auxiliaryMin:display.psdMin},
+            {QStringLiteral("psdMax"), display.auxiliaryMode==AuxiliaryMode::Psd?display.auxiliaryMax:display.psdMax}};
 }
 
 DisplaySettings decodeDisplay(const QJsonValue& value) {
@@ -149,16 +169,36 @@ DisplaySettings decodeDisplay(const QJsonValue& value) {
     const auto auxiliary = string(data, "auxiliaryMode", 32);
     require(auxiliary == QStringLiteral("waveform") || auxiliary == QStringLiteral("psd"), QStringLiteral("未知辅助图模式"));
     display.auxiliaryMode = auxiliary == QStringLiteral("psd") ? AuxiliaryMode::Psd : AuxiliaryMode::Waveform;
+    if (data.contains(QStringLiteral("waveformMode"))) {
+        const auto waveform = string(data, "waveformMode", 32);
+        require(waveform == QStringLiteral("i") || waveform == QStringLiteral("q") ||
+                waveform == QStringLiteral("iqRms"), QStringLiteral("未知时域波形模式"));
+        display.waveformMode = waveform == QStringLiteral("i") ? WaveformMode::I :
+            waveform == QStringLiteral("q") ? WaveformMode::Q : WaveformMode::IqRms;
+    }
     const auto palette = string(data, "palette", 32);
-    require(palette == QStringLiteral("turbo") || palette == QStringLiteral("viridis") || palette == QStringLiteral("gray"),
+    require(palette == QStringLiteral("turbo") || palette == QStringLiteral("viridis") || palette == QStringLiteral("gray") ||
+            palette == QStringLiteral("plasma") || palette == QStringLiteral("inferno") ||
+            palette == QStringLiteral("magma") || palette == QStringLiteral("cividis") ||
+            palette == QStringLiteral("coolEditClassic"),
             QStringLiteral("未知配色"));
-    display.palette = palette == QStringLiteral("gray") ? Palette::Gray :
-                      palette == QStringLiteral("viridis") ? Palette::Viridis : Palette::Turbo;
+    if (palette == QStringLiteral("gray")) display.palette = Palette::Gray;
+    else if (palette == QStringLiteral("viridis")) display.palette = Palette::Viridis;
+    else if (palette == QStringLiteral("plasma")) display.palette = Palette::Plasma;
+    else if (palette == QStringLiteral("inferno")) display.palette = Palette::Inferno;
+    else if (palette == QStringLiteral("magma")) display.palette = Palette::Magma;
+    else if (palette == QStringLiteral("cividis")) display.palette = Palette::Cividis;
+    else if (palette == QStringLiteral("coolEditClassic")) display.palette = Palette::CoolEditClassic;
+    else display.palette = Palette::Turbo;
     display.stftSize = fftSize(data, "stftSize");
+    require(display.stftSize >= 256 && display.stftSize <= 65536,
+            QStringLiteral("STFT 点数必须对应 8–16 阶 FFT"));
     display.psdSize = fftSize(data, "psdSize");
     display.dynamicRangeDb = number(data, "dynamicRangeDb");
     require(display.dynamicRangeDb > 0 && display.dynamicRangeDb <= 10000, QStringLiteral("动态范围无效"));
     display.referenceLevelDb = number(data, "referenceLevelDb");
+    require(display.referenceLevelDb >= -200 && display.referenceLevelDb <= 100,
+            QStringLiteral("参考电平必须位于 [-200,100] dBFS"));
     display.absoluteFrequency = boolean(data, "absoluteFrequency");
     display.grid = boolean(data, "grid");
     display.colorScale = boolean(data, "colorScale");
@@ -167,6 +207,16 @@ DisplaySettings decodeDisplay(const QJsonValue& value) {
     display.auxiliaryMax = number(data, "auxiliaryMax");
     require(display.auxiliaryMin < display.auxiliaryMax &&
             std::isfinite(display.auxiliaryMax - display.auxiliaryMin), QStringLiteral("辅助 Y 轴范围无效"));
+    display.waveformMin=number(data,"waveformMin");display.waveformMax=number(data,"waveformMax");
+    display.psdMin=number(data,"psdMin");display.psdMax=number(data,"psdMax");
+    require(display.waveformMin>=-160&&display.waveformMax<=160&&
+            display.waveformMax-display.waveformMin>=2,QStringLiteral("波形 Y 轴范围必须位于 [-160,160] 且跨度至少 2"));
+    require(display.psdMin>=-180&&display.psdMax<=50&&display.psdMax-display.psdMin>=2,
+            QStringLiteral("PSD Y 轴范围必须位于 [-180,50] 且跨度至少 2"));
+    const auto activeMin=display.auxiliaryMode==AuxiliaryMode::Waveform?display.waveformMin:display.psdMin;
+    const auto activeMax=display.auxiliaryMode==AuxiliaryMode::Waveform?display.waveformMax:display.psdMax;
+    require(display.auxiliaryMin==activeMin&&display.auxiliaryMax==activeMax,
+            QStringLiteral("辅助图当前 Y 范围必须与活动模式对应"));
     return display;
 }
 
@@ -195,7 +245,11 @@ QJsonObject encodeProject(const Project& project) {
                 {QStringLiteral("sampleRateHz"), metadata.sampleRateHz},
                 {QStringLiteral("centerFrequencyHz"), metadata.centerFrequencyHz},
                 {QStringLiteral("sampleCount"), QString::number(metadata.sampleCount)},
-                {QStringLiteral("demo"), metadata.demo}}},
+            {QStringLiteral("declaredBandwidthHz"), metadata.declaredBandwidthHz},
+                {QStringLiteral("effectiveBandwidthHz"), metadata.effectiveBandwidthHz > 0 ?
+                    metadata.effectiveBandwidthHz : metadata.sampleRateHz},
+                {QStringLiteral("demo"), metadata.demo},
+                {QStringLiteral("demoSeed"), metadata.demoSeed}}},
             {QStringLiteral("view"), encodeRange(file.view)},
             {QStringLiteral("display"), encodeDisplay(file.display)},
             {QStringLiteral("marks"), marks}, {QStringLiteral("channels"), channels},
@@ -229,9 +283,20 @@ Project decodeProject(const QJsonObject& root) {
         file.metadata.sampleRateHz = number(metadata, "sampleRateHz");
         file.metadata.centerFrequencyHz = number(metadata, "centerFrequencyHz");
         file.metadata.sampleCount = sampleIndex(metadata, "sampleCount");
+        file.metadata.declaredBandwidthHz = metadata.contains(QStringLiteral("declaredBandwidthHz")) ?
+            number(metadata, "declaredBandwidthHz") : 0.0;
+        require(file.metadata.declaredBandwidthHz >= 0, QStringLiteral("声明带宽不能为负数"));
+        // Old native projects had no effective-band field and displayed the complete sample rate.
+        file.metadata.effectiveBandwidthHz = metadata.contains(QStringLiteral("effectiveBandwidthHz")) ?
+            number(metadata, "effectiveBandwidthHz") : file.metadata.sampleRateHz;
+        if (file.metadata.effectiveBandwidthHz == 0) file.metadata.effectiveBandwidthHz = file.metadata.sampleRateHz;
         file.metadata.demo = boolean(metadata, "demo");
+        const auto seed=number(metadata,"demoSeed");
+        require(seed>=1&&seed<=std::numeric_limits<int>::max()&&std::floor(seed)==seed,QStringLiteral("演示 seed 必须为正整数"));
+        file.metadata.demoSeed=static_cast<int>(seed);
         const auto bounds = fullRange(file.metadata);
         require(file.metadata.sampleRateHz > 0 && file.metadata.sampleCount > 0 &&
+                file.metadata.effectiveBandwidthHz > 0 && file.metadata.effectiveBandwidthHz <= file.metadata.sampleRateHz &&
                 std::isfinite(bounds.frequency.lowerHz) && std::isfinite(bounds.frequency.upperHz) &&
                 bounds.frequency.lowerHz < bounds.frequency.upperHz &&
                 std::isfinite(bounds.frequency.upperHz - bounds.frequency.lowerHz), QStringLiteral("IQ 文件元数据无效"));
@@ -244,9 +309,11 @@ Project decodeProject(const QJsonObject& root) {
             require(!markIds.contains(id), QStringLiteral("标记 id 重复"));
             markIds.insert(id);
             file.marks.push_back({utf8(id), utf8(string(markData, "name", 80)),
-                                  decodeRange(markData.value(QStringLiteral("range")), file.metadata)});
+                                  decodeRange(markData.value(QStringLiteral("range")), file.metadata, false)});
         }
         QSet<QString> channelIds;
+        const FrequencyRange sampledBand{file.metadata.centerFrequencyHz - file.metadata.sampleRateHz / 2,
+                                         file.metadata.centerFrequencyHz + file.metadata.sampleRateHz / 2};
         for (const auto& channelValue : array(data, "channels", 1000)) {
             const auto channelData = object(channelValue, QStringLiteral("channel"));
             const auto id = string(channelData, "id", 100);
@@ -256,13 +323,13 @@ Project decodeProject(const QJsonObject& root) {
             Channel channel{utf8(id), utf8(string(channelData, "name", 80)), utf8(sourceId),
                             number(channelData, "centerFrequencyHz"), number(channelData, "bandwidthHz")};
             // Center +/- bandwidth/2 can differ from the original edges by an ULP.
-            const auto roundingTolerance = std::max({1.0, std::abs(bounds.frequency.lowerHz),
-                std::abs(bounds.frequency.upperHz)}) * std::numeric_limits<double>::epsilon() * 8;
+            const auto roundingTolerance = std::max({1.0, std::abs(sampledBand.lowerHz),
+                std::abs(sampledBand.upperHz)}) * std::numeric_limits<double>::epsilon() * 8;
             require(channel.bandwidthHz > 0 && channel.bandwidthHz <= file.metadata.sampleRateHz + roundingTolerance &&
-                    channel.centerFrequencyHz >= bounds.frequency.lowerHz &&
-                    channel.centerFrequencyHz <= bounds.frequency.upperHz &&
-                    channel.centerFrequencyHz - channel.bandwidthHz / 2 >= bounds.frequency.lowerHz - roundingTolerance &&
-                    channel.centerFrequencyHz + channel.bandwidthHz / 2 <= bounds.frequency.upperHz + roundingTolerance,
+                    channel.centerFrequencyHz >= sampledBand.lowerHz &&
+                    channel.centerFrequencyHz <= sampledBand.upperHz &&
+                    channel.centerFrequencyHz - channel.bandwidthHz / 2 >= sampledBand.lowerHz - roundingTolerance &&
+                    channel.centerFrequencyHz + channel.bandwidthHz / 2 <= sampledBand.upperHz + roundingTolerance,
                     QStringLiteral("窄带通道频率或带宽无效"));
             file.channels.push_back(std::move(channel));
         }
