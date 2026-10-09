@@ -1,0 +1,65 @@
+{
+  "schema": "signal-studio-chart-rendering-acceptance-v1",
+  "date": "2026-10-09",
+  "branch": "rebuild/a143-native",
+  "scope": [
+    "remove the narrowband workspace navigation pane",
+    "show numeric coordinate ticks and axis units on every graph",
+    "allow narrowband graph grids to be toggled",
+    "draw wideband and narrowband waveform values in ADC-count equivalents",
+    "add wideband and narrowband magnitude-envelope modes",
+    "center waveform data in 75 percent of the plot after automatic fitting",
+    "show individual sample markers and sample-position tooltips at high zoom"
+  ],
+  "release": {
+    "build": "passed in isolated out/chart-fixes-release-verify output directory",
+    "tests": {
+      "executablesPassed": 4,
+      "executablesFailed": 0,
+      "uiPassed": 69,
+      "uiFailed": 0,
+      "widebandAndNarrowbandHighZoomSampleMarkers": "passed"
+    }
+  },
+  "debug": {
+    "modifiedSourcesCompiled": true,
+    "link": "blocked",
+    "diagnostic": "MSVC LNK1101: MSPDB140.DLL version mismatch"
+  },
+  "nativeGpu": {
+    "widebandPass": true,
+    "narrowbandPass": true,
+    "narrowbandPagesVerified": 4,
+    "backend": "QRhi D3D11",
+    "device": "AMD Radeon(TM) 880M Graphics",
+    "screen": {
+      "connectedIndex": 2,
+      "name": "Redmi 27 NU",
+      "devicePath": "\\\\.\\DISPLAY6",
+      "physicalPixels": [3840, 2160],
+      "devicePixelRatio": 1.5,
+      "logicalSize": [2560, 1440]
+    },
+    "wideband": {
+      "gpuDataDrawCalls": 25,
+      "gpuVertexUploads": 5,
+      "heatmapUploads": 1,
+      "completedFrames": 6,
+      "overlayReusesHeatmap": true,
+      "report": "wideband-release-report.json",
+      "screenshot": "wideband-release.png"
+    },
+    "narrowband": {
+      "gpuDataDrawCalls": 37,
+      "gpuVertexUploads": 6,
+      "heatmapUploads": 1,
+      "completedFrames": 20,
+      "pageGpuDataDrawCalls": [22, 132, 2, 130],
+      "overlayReusesHeatmap": true,
+      "report": "narrowband-release-report.json",
+      "screenshot": "narrowband-release.png"
+    },
+    "independentSystemPathPackageVerified": false,
+    "captureMethod": "current isolated Release executable with Release and Qt runtime paths available"
+  }
+}

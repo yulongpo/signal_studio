@@ -44,6 +44,7 @@ function(ss_add_graphics_shaders target resource_name)
         PREFIX "/signalstudio/shaders"
         BASE "${CMAKE_SOURCE_DIR}/ui/charts/shaders"
         FILES
+            "${CMAKE_SOURCE_DIR}/ui/charts/shaders/heatmap.frag"
             "${CMAKE_SOURCE_DIR}/ui/charts/shaders/texture.vert"
             "${CMAKE_SOURCE_DIR}/ui/charts/shaders/texture.frag"
     )
@@ -59,6 +60,8 @@ set_target_properties(SignalStudioCore PROPERTIES AUTOMOC OFF)
 ss_target_defaults(SignalStudioCore)
 
 add_library(SignalStudioInfrastructure STATIC
+    infrastructure/channel_processor.cpp
+    infrastructure/channel_processor.h
     infrastructure/int16_iq_file.cpp
     infrastructure/int16_iq_file.h
     infrastructure/project_store.cpp
@@ -71,6 +74,8 @@ ss_target_defaults(SignalStudioInfrastructure)
 set(SS_UI_SOURCES
     app/main_window.cpp
     app/main_window.h
+    ui/narrowband_workspace.cpp
+    ui/narrowband_workspace.h
     ui/charts/plot_widget.cpp
     ui/charts/plot_widget.h
     ui/charts/display_sampling.cpp
@@ -84,6 +89,11 @@ target_link_libraries(SignalStudio PRIVATE
     Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
 ss_target_defaults(SignalStudio)
 ss_add_graphics_shaders(SignalStudio signalstudio_app_shaders)
+qt_add_resources(SignalStudio signalstudio_narrowband_demo
+    PREFIX "/signalstudio/demo"
+    BASE "${CMAKE_SOURCE_DIR}/resources"
+    FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq"
+)
 
 if(WIN32 AND SS_DEPLOY_RUNTIME)
     get_filename_component(_ss_qt_bin "${Qt6_DIR}/../../../bin" ABSOLUTE)
@@ -113,6 +123,13 @@ if(SS_BUILD_TESTS)
     set_target_properties(SignalStudioCoreTests PROPERTIES AUTOMOC OFF)
     ss_target_defaults(SignalStudioCoreTests)
     add_test(NAME signal_studio_core COMMAND SignalStudioCoreTests)
+    add_executable(SignalStudioChannelProcessorTests tests/channel_processor_tests.cpp)
+    target_link_libraries(SignalStudioChannelProcessorTests PRIVATE
+        SignalStudioInfrastructure SignalStudioCore Qt6::Core)
+    set_target_properties(SignalStudioChannelProcessorTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioChannelProcessorTests)
+    add_test(NAME signal_studio_channel_processor COMMAND SignalStudioChannelProcessorTests)
+    set_tests_properties(signal_studio_channel_processor PROPERTIES TIMEOUT 120)
     add_executable(SignalStudioDisplaySamplingTests
         tests/display_sampling_tests.cpp ui/charts/display_sampling.cpp)
     set_target_properties(SignalStudioDisplaySamplingTests PROPERTIES AUTOMOC OFF)
@@ -126,12 +143,22 @@ if(SS_BUILD_TESTS)
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
     ss_target_defaults(SignalStudioUiTests)
     ss_add_graphics_shaders(SignalStudioUiTests signalstudio_ui_test_shaders)
+    qt_add_resources(SignalStudioUiTests signalstudio_ui_test_narrowband_demo
+        PREFIX "/signalstudio/demo"
+        BASE "${CMAKE_SOURCE_DIR}/resources"
+        FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq"
+    )
     add_executable(SignalStudioUiCapture tests/ui_capture.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioUiCapture PRIVATE
         SignalStudioCore SignalStudioInfrastructure Qt6::Widgets Qt6::Test
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
     ss_target_defaults(SignalStudioUiCapture)
     ss_add_graphics_shaders(SignalStudioUiCapture signalstudio_ui_capture_shaders)
+    qt_add_resources(SignalStudioUiCapture signalstudio_ui_capture_narrowband_demo
+        PREFIX "/signalstudio/demo"
+        BASE "${CMAKE_SOURCE_DIR}/resources"
+        FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq"
+    )
     add_test(NAME signal_studio_ui COMMAND "${CMAKE_COMMAND}"
         "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUiTests>"
         "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ui-test-results-$<LOWER_CASE:$<CONFIG>>.txt"

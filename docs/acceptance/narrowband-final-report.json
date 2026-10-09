@@ -1,0 +1,105 @@
+{
+  "schema": "signal-studio-narrowband-acceptance-v1",
+  "branch": "rebuild/a143-native",
+  "result": "implemented-with-open-acceptance-items",
+  "prototype": {
+    "designId": "NB-A1.1 DL",
+    "manifest": "docs/prototype/nb-a1.1-dl/source_manifest.json",
+    "verifiedFiles": 12,
+    "sizesAndSha256Verified": true
+  },
+  "buildAndTests": {
+    "debug": {
+      "buildPassed": true,
+      "ctestPassed": 4,
+      "ctestTotal": 4,
+      "uiAssertionsPassed": 69,
+      "ctestSeconds": 142.05,
+      "latestRebuildAfterCMakeCleanup": "failed",
+      "latestRebuildDiagnostic": "MSVC LINK LNK1101: MSPDB140.DLL version mismatch; the same error reproduced in a minimal compiler-link probe with installed toolsets"
+    },
+    "release": {
+      "buildPassed": true,
+      "ctestPassed": 4,
+      "ctestTotal": 4,
+      "uiAssertionsPassed": 69,
+      "ctestSeconds": 21.02,
+      "latestRebuildAfterCMakeCleanup": "passed",
+      "latestCtestTotal": 4
+    }
+  },
+  "nativeDisplay": {
+    "connectedIndex": 2,
+    "friendlyName": "Redmi 27 NU",
+    "devicePath": "\\\\.\\DISPLAY6",
+    "physicalPixels": [
+      3840,
+      2160
+    ],
+    "devicePixelRatio": 1.5,
+    "logicalWorkspace": [
+      2560,
+      1440
+    ],
+    "fullScreen": true
+  },
+  "renderer": {
+    "debugGpu": {
+      "passed": true,
+      "backend": "QRhi D3D11",
+      "device": "AMD Radeon(TM) 880M Graphics",
+      "fourPagesVerified": 4,
+      "completedFrames": 31,
+      "heatmapUploads": 1,
+      "gpuDataDrawCalls": 37,
+      "gpuVertexUploads": 6,
+      "captureHasVisibleContent": true,
+      "visibleSamples": 17280,
+      "report": "docs/acceptance/chart-render-debug/signal-studio-narrowband-debug-gpu-screen2-4k-150-report.json",
+      "screenshot": "docs/acceptance/chart-render-debug/signal-studio-narrowband-debug-gpu-screen2-4k-150.png"
+    },
+    "releaseGpu": {
+      "passed": true,
+      "backend": "QRhi D3D11",
+      "device": "AMD Radeon(TM) 880M Graphics",
+      "fourPagesVerified": 4,
+      "completedFrames": 31,
+      "heatmapUploads": 1,
+      "gpuDataDrawCalls": 37,
+      "gpuVertexUploads": 6,
+      "captureHasVisibleContent": true,
+      "visibleSamples": 17280,
+      "report": "docs/acceptance/chart-render-release/signal-studio-narrowband-release-gpu-screen2-4k-150-report.json",
+      "screenshot": "docs/acceptance/chart-render-release/signal-studio-narrowband-release-gpu-screen2-4k-150.png"
+    },
+    "debugSoftwareFallback": {
+      "passed": true,
+      "backend": "QPainter",
+      "fourPagesVerified": 4,
+      "report": "docs/acceptance/narrowband-debug-software/signal-studio-narrowband-debug-software-screen2-4k-150-report.json",
+      "screenshot": "docs/acceptance/narrowband-debug-software/signal-studio-narrowband-debug-software-screen2-4k-150.png"
+    }
+  },
+  "implemented": [
+    "native four-page narrowband workspace and channel configuration workflow",
+    "version-2 project persistence and version-1 channel migration",
+    "real DDC, Kaiser FIR, rational resampling, waveform, PSD, and STFT for the embedded IQ fixture",
+    "on-demand 16384-output-sample IQ blocks with a 128-MiB LRU",
+    "baseband/RF frequency labels with per-channel persistence",
+    "synthetic classification, constellation, eye, and demodulation demonstrations with source labels",
+    "shared wideband/narrowband chart zoom, pan, selection and history rules with independent channel ranges",
+    "ADC-count waveform modes with 75-percent centered auto-fit, RMS magnitude and peak envelope",
+    "shared QRhi GPU data plotting for waveform, PSD, STFT and narrowband demo charts"
+  ],
+  "openAcceptanceItems": [
+    "no separate 128-MiB analysis-matrix LRU or merged priority request scheduler",
+    "cancellation joins the single worker and can delay a rapidly changing view",
+    "constellation selection/autoscale and all chart maximize/restore workflows remain incomplete",
+    "no per-sample SciPy numerical comparison has been run",
+    "the local 3.27-GB IQ stress and memory run has not been performed",
+    "prototype modal workflows have not all received native, step-by-step interaction capture",
+    "classification and demodulation remain synthetic demonstrations"
+  ],
+  "commitCreated": false,
+  "pushPerformed": false
+}

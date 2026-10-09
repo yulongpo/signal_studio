@@ -119,17 +119,25 @@ std::optional<Int16IqDescriptor> describeInt16IqFile(const QString& path, QStrin
 }
 
 Int16IqFile::~Int16IqFile() {
-    if (mapped_) file_.unmap(mapped_);
+    if (mapped_ && ownedBytes_.isEmpty()) file_.unmap(mapped_);
 }
 
 bool Int16IqFile::open(const QString& path, QString& error) {
-    if (mapped_) { file_.unmap(mapped_); mapped_ = nullptr; }
+    if (mapped_ && ownedBytes_.isEmpty()) file_.unmap(mapped_);
+    mapped_ = nullptr; ownedBytes_.clear(); sampleCount_ = 0;
     file_.setFileName(path);
     if (!file_.open(QIODevice::ReadOnly)) { error = file_.errorString(); return false; }
     const auto bytes = file_.size();
     if (bytes <= 0 || bytes % 4 != 0) { error = QStringLiteral("IQ 文件长度无效"); file_.close(); return false; }
-    mapped_ = file_.map(0, bytes);
-    if (!mapped_) { error = QStringLiteral("无法将 IQ 文件映射到 64 位地址空间：%1").arg(file_.errorString()); file_.close(); return false; }
+    if (path.startsWith(QStringLiteral(":/"))) {
+        ownedBytes_ = file_.readAll();
+        file_.close();
+        if (ownedBytes_.size() != bytes) { error = QStringLiteral("内置 IQ 资源读取不完整"); ownedBytes_.clear(); return false; }
+        mapped_ = reinterpret_cast<uchar*>(ownedBytes_.data());
+    } else {
+        mapped_ = file_.map(0, bytes);
+        if (!mapped_) { error = QStringLiteral("无法将 IQ 文件映射到 64 位地址空间：%1").arg(file_.errorString()); file_.close(); return false; }
+    }
     sampleCount_ = static_cast<std::uint64_t>(bytes / 4);
     error.clear();
     return true;
@@ -140,6 +148,10 @@ std::complex<double> Int16IqFile::sample(std::uint64_t index) const {
     const auto i = qFromLittleEndian<qint16>(mapped_ + offset);
     const auto q = qFromLittleEndian<qint16>(mapped_ + offset + 2);
     return {static_cast<double>(i) / 32768.0, static_cast<double>(q) / 32768.0};
+}
+
+std::complex<double> Int16IqFile::sampleAt(std::uint64_t index) const {
+    return mapped_ && index < sampleCount_ ? sample(index) : std::complex<double>{};
 }
 
 void Int16IqFile::spectrum(std::uint64_t first, int fftSize, std::vector<std::complex<double>>& output) const {
@@ -168,18 +180,23 @@ bool Int16IqFile::waveform(const TimeRange& range, int points, WaveformMode mode
         if (mode == WaveformMode::I || mode == WaveformMode::Q) {
             const auto index = std::min(range.end - 1, first + (last - first) / 2);
             const auto value = sample(index);
-            output[static_cast<std::size_t>(x)] = static_cast<float>(mode == WaveformMode::I ? value.real() : value.imag());
+            output[static_cast<std::size_t>(x)] = static_cast<float>((mode == WaveformMode::I ? value.real() : value.imag()) * 32768.0);
             continue;
         }
         const auto bucket = std::max<std::uint64_t>(1, last - first);
-        // A short contiguous block per display point gives a stable IQ envelope
-        // while touching only a few mapped pages, even for multi-gigabyte files.
-        const auto count = std::min<std::uint64_t>(bucket, 1024);
-        const auto start = first + (bucket - count) / 2;
+        // Bounded, evenly spaced probes preserve narrow transients without
+        // scanning every byte of a multi-gigabyte file at overview zoom.
+        const auto count = std::min<std::uint64_t>(bucket, mode == WaveformMode::Envelope ? 4096 : 2048);
         double power = 0;
-        for (std::uint64_t n = 0; n < count; ++n) power += std::norm(sample(start + n));
-        power /= static_cast<double>(count);
-        output[static_cast<std::size_t>(x)] = static_cast<float>(10 * std::log10(std::max(power, 1e-12)));
+        double peak = 0;
+        for (std::uint64_t n = 0; n < count; ++n) {
+            const auto index = first + (count == bucket ? n : n * bucket / count);
+            const double magnitudeSquared = std::norm(sample(index));
+            power += magnitudeSquared;
+            peak = std::max(peak, magnitudeSquared);
+        }
+        const double magnitude = mode == WaveformMode::Envelope ? std::sqrt(peak) : std::sqrt(power / count);
+        output[static_cast<std::size_t>(x)] = static_cast<float>(magnitude * 32768.0);
     }
     return true;
 }

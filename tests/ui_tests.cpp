@@ -15,6 +15,7 @@
 #include <QGuiApplication>
 #include <QImage>
 #include <QInputDialog>
+#include <QLabel>
 #include <QLineEdit>
 #include <QMenuBar>
 #include <QMenu>
@@ -25,6 +26,7 @@
 #include <QScreen>
 #include <QSettings>
 #include <QScrollArea>
+#include <QStackedWidget>
 #include <QSplitter>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -202,6 +204,7 @@ private slots:
     void creationModeSurvivesMaximize();
     void escapeCancelsGestureBeforeLeavingMaximize();
     void addIqFileDialogCancelsAndImportsRealInt16Iq();
+    void narrowbandDemoResourceAndFourPages();
     void waveformBandwidthAndVisiblePaneStftSettings();
     void uiStatePersistenceAndRecentProjects();
 };
@@ -801,8 +804,10 @@ void UiTests::prototypeDisplayDefaultsAndOptions() {
     QCOMPARE(file->view.frequency.lowerHz,80'000'000.0);
     QCOMPARE(file->view.frequency.upperHz,120'000'000.0);
     QVERIFY(file->marks.empty()&&file->channels.empty());
-    QCOMPARE(file->display.waveformMin,-60.0);
-    QCOMPARE(file->display.waveformMax,60.0);
+    QVERIFY(file->display.waveformAutoFit);
+    QVERIFY(std::isfinite(file->display.waveformMin));
+    QVERIFY(std::isfinite(file->display.waveformMax));
+    QVERIFY(file->display.waveformMax>file->display.waveformMin);
     QCOMPARE(file->display.psdMin,-100.0);
     QCOMPARE(file->display.psdMax,0.0);
     auto* stft=window.findChild<QComboBox*>("stftFft");
@@ -1347,8 +1352,8 @@ void UiTests::resetRestoresCompleteViewSnapshot() {
     auto* reset=menu->findChild<QAction*>("contextResetAction");
     QVERIFY(reset);reset->trigger();
     QVERIFY(file->view==original);
-    QCOMPARE(file->display.waveformMin,-60.0);
-    QCOMPARE(file->display.waveformMax,60.0);
+    QCOMPARE(file->display.waveformMin,-32768.0);
+    QCOMPARE(file->display.waveformMax,32768.0);
     QCOMPARE(file->display.psdMin,-100.0);
     QCOMPARE(file->display.psdMax,0.0);
     QVERIFY(window.session().back());
@@ -1477,6 +1482,9 @@ void UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() {
     auto* plot=window.findChild<PlotWidget*>("auxPlot");
     auto* palette=window.findChild<QComboBox*>("palette");
     QVERIFY(plot&&palette);
+    window.session().setAuxiliaryMode(AuxiliaryMode::Waveform);
+    QVERIFY(window.session().setAuxiliaryRange(-30,30,false));
+    window.refresh();QCoreApplication::processEvents();
     const auto before=window.session().snapshot();
     const QPoint start(qRound(plot->plotRect().left()-20),qRound(plot->plotRect().center().y()));
     QTest::mousePress(plot,Qt::LeftButton,Qt::NoModifier,start);
@@ -1569,7 +1577,10 @@ void UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() {
     QCOMPARE(file->metadata.declaredBandwidthHz,800'000.0);
     QCOMPARE(file->metadata.sampleCount,SampleIndex{65'536});
     QVERIFY(!file->metadata.demo);
-    QCOMPARE(file->display.waveformMin,-60.0);
+    QVERIFY(file->display.waveformAutoFit);
+    QVERIFY(std::isfinite(file->display.waveformMin));
+    QVERIFY(std::isfinite(file->display.waveformMax));
+    QVERIFY(file->display.waveformMax>file->display.waveformMin);
     QVERIFY(file->marks.empty()&&file->channels.empty());
 
     auto* main=window.findChild<PlotWidget*>("mainPlot");
@@ -1588,6 +1599,140 @@ void UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() {
     QTRY_VERIFY_WITH_TIMEOUT(auxiliary->isDisplaySettled(),10'000);
     QCOMPARE(window.session().activeFile()->display.auxiliaryMode,AuxiliaryMode::Psd);
     QVERIFY(auxiliary->sourcePointCount()>0);
+}
+
+void UiTests::narrowbandDemoResourceAndFourPages() {
+    MainWindow window;
+    showWindow(window);
+    window.openNarrowbandDemoProject();
+
+    const auto* file = window.session().activeFile();
+    const auto* channel = window.session().activeChannel();
+    QVERIFY(file && channel);
+    QCOMPARE(file->metadata.path, std::string(":/signalstudio/demo/narrowband_demo.iq"));
+    QCOMPARE(file->metadata.sampleCount, SampleIndex{262'144});
+    QVERIFY(!file->metadata.demo);
+    QCOMPARE(channel->processingState, ChannelProcessingState::Ready);
+    const TimeRange expectedSourceTime{0, 196'608};
+    QCOMPARE(channel->sourceTime, expectedSourceTime);
+    QCOMPARE(file->marks.size(), std::size_t{2});
+
+    auto* workspace = window.findChild<QWidget*>("narrowbandWorkspace");
+    auto* stack = window.findChild<QStackedWidget*>("narrowbandPageStack");
+    auto* status = window.findChild<QLabel*>("narrowbandDataStatus");
+    auto* eyeComponent = window.findChild<QComboBox*>("eyeComponent");
+    auto* eyePeriods = window.findChild<QComboBox*>("eyePeriods");
+    auto* eyeTraces = window.findChild<QComboBox*>("eyeTraces");
+    auto* frequencyMode = window.findChild<QComboBox*>("channelFrequencyMode");
+    auto* waveformMode = window.findChild<QComboBox*>("narrowbandWaveformMode");
+    auto* waveformChart = window.findChild<QWidget*>("narrowbandWaveformPanelChart");
+    auto* channelProperties = window.findChild<QWidget*>("narrowbandChannelSection");
+    auto* grid = window.findChild<QCheckBox*>("narrowbandGrid");
+    QVERIFY(workspace && workspace->isVisible() && eyeComponent && eyePeriods && eyeTraces && frequencyMode && waveformMode && waveformChart);
+    QVERIFY(stack && status && channelProperties && channelProperties->isVisible() && grid);
+    QVERIFY(!window.findChild<QWidget*>("narrowbandNavigation"));
+    QVERIFY(window.findChild<QWidget*>("narrowbandChartToolbar"));
+    QCOMPARE(waveformMode->count(), 4);
+    QCOMPARE(waveformMode->itemText(3), QStringLiteral("幅度包络"));
+    QCOMPARE(window.findChild<QLabel*>("narrowbandCenter")->text(), QStringLiteral("2511.2 MHz"));
+    QTRY_VERIFY_WITH_TIMEOUT(status->text().contains(QStringLiteral("真实 DDC")), 15'000);
+    QTRY_VERIFY_WITH_TIMEOUT(waveformChart->property("fitDataVerticalFraction").toDouble() > 0.0, 15'000);
+    QVERIFY(std::abs(waveformChart->property("fitDataVerticalFraction").toDouble() - .75) <= .03);
+    QVERIFY(std::abs(waveformChart->property("fitDataCenterOffsetFraction").toDouble()) <= .03);
+    const std::array<const char*, 8> chartNames{"narrowbandWaveformPanelChart", "narrowbandPsdPanelChart",
+        "narrowbandStftPanelChart", "narrowbandConstellationPreviewChart", "narrowbandConstellationLargeChart",
+        "narrowbandEyeLargeChart", "recognitionTimelinePanelChart", "demodConstellationPanelChart"};
+    for (const auto* name : chartNames) {
+        auto* chart = window.findChild<QWidget*>(QString::fromLatin1(name));
+        QVERIFY2(chart, name);
+        QVERIFY2(!chart->property("xAxisLabel").toString().isEmpty(), name);
+        QVERIFY2(!chart->property("yAxisLabel").toString().isEmpty(), name);
+        QVERIFY(chart->property("gridVisible").toBool());
+    }
+    grid->setChecked(false);
+    QCoreApplication::processEvents();
+    for (const auto* name : chartNames)
+        QVERIFY(!window.findChild<QWidget*>(QString::fromLatin1(name))->property("gridVisible").toBool());
+    grid->setChecked(true);
+    const auto fullVisibleTime = window.session().activeChannel()->visibleSourceTime;
+    const auto frequencyView = window.session().activeChannel()->visibleBasebandFrequency;
+    QVERIFY(window.session().setChannelView({fullVisibleTime.begin, fullVisibleTime.begin + 512}, frequencyView, false));
+    window.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(waveformChart->property("samplePointsVisible").toBool(), 15'000);
+    QVERIFY(waveformChart->property("samplePointCount").toULongLong() > 1);
+    QVERIFY(window.session().setChannelView(fullVisibleTime, frequencyView, false));
+    window.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(!waveformChart->property("samplePointsVisible").toBool(), 15'000);
+    waveformMode->setCurrentIndex(3);
+    QCOMPARE(window.session().activeChannel()->waveform, NarrowbandWaveform::Envelope);
+    QTRY_VERIFY_WITH_TIMEOUT(waveformChart->property("fitDataVerticalFraction").toDouble() > 0.0, 15'000);
+    QVERIFY(std::abs(waveformChart->property("fitDataVerticalFraction").toDouble() - .75) <= .03);
+    const QPoint yAxisPoint(30, qRound(waveformChart->height() / 2.0));
+    const auto globalYAxisPoint = waveformChart->mapToGlobal(yAxisPoint);
+    QWheelEvent amplitudeWheel(QPointF(yAxisPoint), QPointF(globalYAxisPoint), QPoint(), QPoint(0, 120),
+                               Qt::NoButton, Qt::NoModifier, Qt::ScrollUpdate, false);
+    QApplication::sendEvent(waveformChart, &amplitudeWheel);
+    QVERIFY(!window.session().activeChannel()->waveformAutoScale);
+    waveformMode->setCurrentIndex(1);
+    QVERIFY(window.session().activeChannel()->waveformAutoScale);
+    QTRY_VERIFY_WITH_TIMEOUT(waveformChart->property("fitDataVerticalFraction").toDouble() > 0.0, 15'000);
+
+    const std::array<const char*, 4> buttons{"observePage", "modulationPage", "deepLearningPage", "demodulationPage"};
+    for (int index = 0; index < 4; ++index) {
+        auto* button = window.findChild<QPushButton*>(QString::fromLatin1(buttons[static_cast<std::size_t>(index)]));
+        QVERIFY(button && button->isEnabled());
+        button->click();
+        QCoreApplication::processEvents();
+        QCOMPARE(stack->currentIndex(), index);
+        QCOMPARE(static_cast<int>(window.session().activeChannel()->page), index);
+    }
+    QVERIFY(window.session().activeChannel()->waveformAutoScale);
+    QCOMPARE(window.session().activeChannel()->waveform, NarrowbandWaveform::Magnitude);
+    eyeComponent->setCurrentIndex(2); eyePeriods->setCurrentIndex(2); eyeTraces->setCurrentIndex(2);
+    frequencyMode->setCurrentIndex(1);
+    QVERIFY(window.session().activeChannel()->absoluteFrequencyLabels);
+    QCOMPARE(window.session().activeChannel()->eyeComponent, 2);
+    QCOMPARE(window.session().activeChannel()->eyePeriods, 3);
+    QCOMPARE(window.session().activeChannel()->eyeTraces, 128);
+    auto* run = window.findChild<QPushButton*>("runRecognition");
+    auto* stop = window.findChild<QPushButton*>("stopRecognition");
+    auto* statusText = window.findChild<QLabel*>("recognitionStatus");
+    QVERIFY(run && stop && statusText);
+    run->click();
+    QVERIFY(stop->isEnabled());
+    QTRY_VERIFY_WITH_TIMEOUT(statusText->text().contains(QStringLiteral("完成")), 5'000);
+    auto* top5 = window.findChild<QLabel*>("recognitionTop5");
+    auto* threshold = window.findChild<QDoubleSpinBox*>("recognitionThreshold");
+    QVERIFY(top5 && threshold);
+    QVERIFY(top5->text().contains(QStringLiteral("片段 1 / 18")));
+    threshold->setValue(.95);
+    QVERIFY(top5->text().contains(QStringLiteral("未知 / 需复核")));
+
+    QTemporaryDir projectDirectory;
+    QVERIFY(projectDirectory.isValid());
+    const auto projectPath = projectDirectory.filePath(QStringLiteral("narrowband-project.json"));
+    QVERIFY(window.saveProject(projectPath));
+    MainWindow reopened;
+    QVERIFY(reopened.openProject(projectPath));
+    QVERIFY(reopened.session().activeChannel());
+    QCOMPARE(reopened.session().activeChannel()->page, NarrowbandPage::Demodulation);
+    QCOMPARE(reopened.session().activeChannel()->sourceTime, expectedSourceTime);
+    QCOMPARE(reopened.session().activeChannel()->eyeComponent, 2);
+    QCOMPARE(reopened.session().activeChannel()->eyePeriods, 3);
+    QCOMPARE(reopened.session().activeChannel()->eyeTraces, 128);
+    QVERIFY(reopened.session().activeChannel()->absoluteFrequencyLabels);
+
+    const auto channelId = QString::fromStdString(channel->id);
+    auto* locate = window.findChild<QPushButton*>("narrowbandLocateSource");
+    QVERIFY(locate);
+    locate->click();
+    QVERIFY(!window.session().project().narrowbandWorkspaceOpen);
+    QCOMPARE(window.session().activeFile()->activeMarkId, std::string("demo-mark-signal-01"));
+    QVERIFY(!window.session().activeChannel());
+    QVERIFY(window.session().activateChannel(channelId.toStdString()));
+    window.refresh();
+    QVERIFY(window.session().project().narrowbandWorkspaceOpen);
+    QCOMPARE(window.session().activeChannel()->page, NarrowbandPage::Demodulation);
 }
 
 void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
@@ -1627,8 +1772,7 @@ void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
 
     waveform->setCurrentIndex(static_cast<int>(WaveformMode::I));
     QCOMPARE(static_cast<int>(file->display.waveformMode), static_cast<int>(WaveformMode::I));
-    QCOMPARE(file->display.waveformMin, -1.0);
-    QCOMPARE(file->display.waveformMax, 1.0);
+    QVERIFY(file->display.waveformAutoFit);
     auto* auxiliary = window.findChild<PlotWidget*>("auxPlot");
     QVERIFY(auxiliary);
     QTRY_VERIFY_WITH_TIMEOUT(auxiliary->isDisplaySettled(), 10'000);
@@ -1636,17 +1780,28 @@ void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
     QCOMPARE(static_cast<int>(file->display.waveformMode), static_cast<int>(WaveformMode::Q));
     QTRY_VERIFY_WITH_TIMEOUT(auxiliary->isDisplaySettled(), 10'000);
     waveform->setCurrentIndex(static_cast<int>(WaveformMode::IqRms));
-    QCOMPARE(file->display.waveformMin, -80.0);
-    QCOMPARE(file->display.waveformMax, 0.0);
+    QVERIFY(file->display.waveformAutoFit);
     QTRY_VERIFY_WITH_TIMEOUT(auxiliary->isDisplaySettled(), 10'000);
+
+    auto* psd = window.findChild<QComboBox*>("psdFft");
+    QVERIFY(psd);
+    const auto fullViewTime = file->view.time;
+    stft->setCurrentText("256");
+    psd->setCurrentText("1024");
+    QVERIFY(window.session().setView({{fullViewTime.begin, fullViewTime.begin + 1024}, file->view.frequency}, false));
+    window.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(auxiliary->isDisplaySettled(), 10'000);
+    QVERIFY(auxiliary->samplePointsVisible());
+    QCOMPARE(auxiliary->samplePointCount(), std::size_t{1024});
+    QVERIFY(window.session().setView({fullViewTime, file->view.frequency}, false));
+    window.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(!auxiliary->samplePointsVisible(), 10'000);
 
     bandwidth->setValue(.5);
     QCOMPARE(file->metadata.effectiveBandwidthHz, 500'000.0);
     QCOMPARE(file->view.frequency, (FrequencyRange{9.75e6, 10.25e6}));
     QCOMPARE(stft->count(), 9);
-    QCOMPARE(stft->currentText(), QString("2048"));
-    auto* psd = window.findChild<QComboBox*>("psdFft");
-    QVERIFY(psd);
+    QCOMPARE(stft->currentText(), QString("256"));
     psd->setCurrentText("8192");
     QCOMPARE(file->display.psdSize, 8192);
     const auto oldTime = file->view.time;

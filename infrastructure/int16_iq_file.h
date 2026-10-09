@@ -2,6 +2,7 @@
 
 #include "domain/project.h"
 
+#include <QByteArray>
 #include <QFile>
 #include <QSize>
 
@@ -32,6 +33,7 @@ public:
     bool open(const QString& path, QString& error);
     bool isOpen() const { return mapped_ != nullptr; }
     std::uint64_t sampleCount() const { return sampleCount_; }
+    std::complex<double> sampleAt(std::uint64_t index) const;
 
     bool waveform(const TimeRange& range, int points, WaveformMode mode, std::vector<float>& output,
                   const std::function<bool()>& cancelled = {}) const;
@@ -48,6 +50,7 @@ private:
     double powerDensityDb(const std::complex<double>& value, double normalization) const;
 
     QFile file_;
+    QByteArray ownedBytes_;
     uchar* mapped_ = nullptr;
     std::uint64_t sampleCount_ = 0;
 };

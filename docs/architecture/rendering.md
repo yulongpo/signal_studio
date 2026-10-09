@@ -23,15 +23,15 @@ Ninja 构建目录为 `out/portable-ninja`，Debug 可执行目录为 `out/porta
 
 设计参考 ISA 的可见像素预算、交互预览与静止重绘思路；抽取器、异步任务和 QRhi 显示路径在本仓库独立实现，构建输入保持本仓库源码及明确安装的工具。历史项目的构建或性能结果不能用作本工程的验收结果。
 
-图谱保留物理时间/频率业务坐标。演示文件的主图使用模拟功率矩阵；真实 int16 IQ 文件则在后台计算 STFT，再转为有限尺寸 Indexed8 色彩图。热图上传为独立纹理；文字、网格、标记边界、曲线与游标由 QPainter 在 CPU 上绘制到 RGBA 覆盖层，QRhi 将两张纹理合成到窗口。`AcceleratedSurface` 按热图 revision 控制像素上传，覆盖层变化和纹理位置/UV 变化复用已有热图纹理。图形设备保持不变的普通 resize 保留热图资源；设备变化时重建资源。硬件 QRhi 成功证明驱动、上传及合成生效，曲线与文字的栅格化工作仍在 CPU。
+图谱保留物理时间/频率业务坐标。宽带和窄带 STFT 都把功率强度作为无色标量纹理上传，颜色查找表作为独立纹理上传，由 QRhi 片元着色器完成调色；调色变化不重算 STFT。波形、PSD、导航曲线、星座点、眼图轨迹、识别时间轴和位流图形都以动态顶点缓冲提交给 GPU。线带展开为带宽明确的三角条带，独立三角形用退化连接顶点合并为条带；顶点 UV 选择单独上传的颜色查找表，复用已验证的 QRhi 纹理合成着色器和管线。CPU 只准备顶点与色表，不栅格化图谱内容。坐标轴、刻度文字、标记边界、游标、提示和临时选区保留为 QPainter 覆盖层，最终纹理合成仍由 QRhi 执行。`AcceleratedSurface` 按数据 revision 控制热图、颜色查找表与顶点上传；覆盖层变化及纹理位置/UV 变化复用已有分析数据。软件回退时才由 QPainter 直接绘制图谱数据，并在诊断中标为回退。硬件验收须同时记录非 CPU QRhi 驱动、热图/调色纹理上传、顶点上传以及实际图谱数据 draw call；仅完成窗口纹理合成不视为图谱 GPU 绘制证据。
 
-顶点与片元着色器位于 `ui/charts/shaders/`，分别由应用与 UI 测试的独立 `qt_add_shaders` 资源目标生成并内置为 `:/signalstudio/shaders/texture.vert.qsb` 和 `texture.frag.qsb`。同版本 Qt 的默认 qsb 配置包含 SPIR-V、GLSL、HLSL 5.0 和 MSL。当前不启用 `PRECOMPILE`，无需为普通 shader 构建额外要求 FXC 位于 PATH；后续可明确启用原生预编译。相关命令说明见 [qt_add_shaders](https://doc.qt.io/qt-6/qt-add-shaders.html)，本机生成规则以 Qt 6.11.1 的 `Qt6ShaderToolsMacros.cmake` 为准。
+热图、纹理覆盖层及几何图谱使用的顶点与片元着色器位于 `ui/charts/shaders/`，分别由应用与 UI 测试的独立 `qt_add_shaders` 资源目标生成并内置到 `:/signalstudio/shaders/`。同版本 Qt 的默认 qsb 配置包含 SPIR-V、GLSL、HLSL 5.0 和 MSL。当前不启用 `PRECOMPILE`，无需为普通 shader 构建额外要求 FXC 位于 PATH；后续可明确启用原生预编译。相关命令说明见 [qt_add_shaders](https://doc.qt.io/qt-6/qt-add-shaders.html)，本机生成规则以 Qt 6.11.1 的 `Qt6ShaderToolsMacros.cmake` 为准。
 
 ## 抽取与业务坐标
 
 `ui/charts/display_sampling.cpp` 的 `extremaEnvelope` 将不可变曲线输入按可见物理像素列分桶，每桶保留最小值与最大值，按原输入索引顺序输出，并保留首尾有效点。输出至多约 `2*columns+2` 点；非有限值跳过，全无有效值时为空。桶划分使用商与余数累加，避免大索引乘法溢出。波形与 PSD 复用缓存的源曲线，再按像素预算抽取；导航路径按尺寸与演示种子缓存。
 
-真实波形每个显示位置读取最多 1024 个相邻复采样点，输出 IQ RMS 幅度 dBFS；PSD 按当前时间窗或选中标记分成最多 64 个 Hann 窗做 Welch 平均，然后映射到可见频率。导航预览对全文件做同样的有限样本抽取。三种曲线请求均由单独工作线程执行。演示辅助曲线源点数仍为 `clamp(round(plotWidth*12),4096,65536)`。静止显示列数为 `floor(plotWidth*DPR)`，交互预览减半。源数据、抽取索引和绘图缓冲分别缓存；改变辅助 Y 仅更新坐标缓冲，游标或选框刷新不重新生成源曲线。辅助图与导航图按相邻点缓存 `QLineF`，使用 `QPainter::drawLines()` 批量绘制。曲线路径与线段计数由 `curvePathElements`、`curveRasterMethod` 和 `drawnLineSegments` 报告。
+真实波形每个显示位置读取最多 1024 个相邻复采样点；宽带辅助图保留既有 dBFS 语义，窄带时域值以 ADC 计数等效单位显示，并提供分箱 RMS 幅度和峰值保持包络。PSD 按当前时间窗或选中标记分成最多 64 个 Hann 窗做 Welch 平均，然后映射到可见频率。导航预览对全文件做有限样本抽取。曲线数据请求由单独工作线程执行；演示辅助曲线源点数仍为 `clamp(round(plotWidth*12),4096,65536)`。静止显示列数为 `floor(plotWidth*DPR)`，交互预览减半。源数据、抽取索引和绘图缓冲分别缓存；改变辅助 Y 仅更新 GPU 坐标顶点，游标或选框刷新不重新生成源曲线。辅助图与导航图的有序线段被展开为三角条带，通过共享 QRhi 管线绘制，颜色在 GPU 片元阶段从图谱专用 LUT 采样。`curveRasterMethod`、`gpuVertexUploads`、`gpuChartDrawCalls`、`gpuHeatmapDrawCalls` 和 `gpuDataDrawCalls` 报告对应路径与计数。
 
 同文件还提供 `peakReduce2D`：二维源矩阵按不重叠矩形取有限值最大值，以保留窄峰；无有效值的矩形输出 NaN，参数非法、数据不足或请求放大时返回空。演示矩阵预览可复用更细缓存矩阵；真实 STFT 每个像素频带取对应 FFT bin 的峰值，并按最多 800 万复采样点的 FFT 工作预算减少独立时间列，再扩展至显示栅格。
 
@@ -51,9 +51,9 @@ Ninja 构建目录为 `out/portable-ninja`，Debug 可执行目录为 `out/porta
 
 ## 下一阶段边界
 
-曲线可以转为顶点缓冲与独立 QRhi 管线，使时间范围变化主要更新坐标变换，数据变化才上传必要的曲线片段。时频/瀑布可以使用分级瓦片、可见区域纹理与环形历史，新帧只更新新增行；缩放期间提供对应分辨率的纹理，避免反复上传整幅高分辨率图像。
+后续可将源曲线索引映射保留在 GPU 端，以便时间范围变化时复用采样顶点并仅更新坐标变换；时频/瀑布可以使用分级瓦片、可见区域纹理与环形历史，新帧只更新新增行，缩放期间提供对应分辨率的纹理，避免反复上传整幅高分辨率图像。
 
-基础 int16 IQ 读取、PSD 与 STFT 已接入；仍未包含 DDC、检测或连续采集。真实 IQ 通过只读 QFile 内存映射访问，图谱工作线程持有路径、元数据与视图快照，按文件/视图代次丢弃迟到结果。GPU 曲线几何、连续输入队列、实时新增行更新和 Ubuntu 部署需实现并单独验收。
+宽带主工作区的真实 IQ 图谱使用 int16 读取、PSD 与 STFT。窄带工作区另有 DDC、FIR、有理重采样和按需 16,384 样本缓存，具体实现与未验收边界见[窄带通道架构](narrowband.md)。信号检测、设备输入、连续采集与 Ubuntu 部署仍需实现并单独验收。
 
 ## 验收证据
 

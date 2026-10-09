@@ -2,6 +2,7 @@
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
+    [switch]$Narrowband,
     [switch]$SoftwareRenderer
 )
 $ErrorActionPreference = 'Stop'
@@ -24,9 +25,21 @@ try {
     $renderOption = if ($SoftwareRenderer) { '--software-renderer' } else { '--require-gpu' }
     $renderMode = if ($SoftwareRenderer) { 'software' } else { 'GPU-required' }
     $softwareSuffix = if ($SoftwareRenderer) { '-software' } else { '' }
-    $reportPath = Join-Path $repoRoot "docs/acceptance/$($Configuration.ToLowerInvariant())-4k-display2${softwareSuffix}-package.json"
-    & $executable --demo-data --smoke-test --size 2560x1440 --screen 2 --full-screen --verify-4k-150 --render-report $reportPath $renderOption | Out-Host
+    $mode = if ($Narrowband) { 'narrowband-' } else { '' }
+    $reportPath = Join-Path $repoRoot "docs/acceptance/$($Configuration.ToLowerInvariant())-${mode}4k-display2${softwareSuffix}-package.json"
+    $arguments = @()
+    if ($Narrowband) { $arguments += @('--narrowband-demo', '--verify-narrowband-pages') } else { $arguments += '--demo-data' }
+    $arguments += @('--smoke-test', '--size', '2560x1440', '--screen', '2', '--full-screen', '--verify-4k-150', '--render-report', $reportPath, $renderOption)
+    & $executable @arguments | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Standalone smoke test failed with exit code $LASTEXITCODE" }
+    if (-not (Test-Path -LiteralPath $reportPath)) { throw "Renderer report was not produced: $reportPath" }
+    $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+    if ($report.pass -ne $true -or $report.fourK150Verified -ne $true -or $report.fullScreen -ne $true -or $report.captureHasVisibleContent -ne $true) { throw 'Native display or renderer acceptance failed.' }
+    if ($Narrowband -and ($report.workspaceMode -ne 'narrowband' -or $report.narrowbandPagesVerified -ne $true -or @($report.narrowbandPages).Count -ne 4)) { throw 'The four narrowband pages were not all verified.' }
+    if (-not $SoftwareRenderer -and ($report.hardwareRenderer -ne $true -or $report.heatmapUploads -le 0 -or
+        $report.gpuDataDrawCalls -le 0 -or $report.gpuVertexUploads -le 0)) { throw 'Hardware QRhi chart-data drawing and buffer uploads were not verified.' }
+    if (-not $SoftwareRenderer -and $Narrowband -and
+        @($report.narrowbandPages | Where-Object { $_.gpuDataDrawCalls -le 0 }).Count -gt 0) { throw 'A narrowband page had no GPU chart-data draw call.' }
     Write-Host "Standalone startup passed ($renderMode / Windows platform) from $outputDir with system-only PATH."
 }
 finally {

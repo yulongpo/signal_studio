@@ -92,6 +92,58 @@ QJsonObject encodeRange(const ViewRange& range) {
                                                     {QStringLiteral("upperHz"), range.frequency.upperHz}}}};
 }
 
+QJsonObject encodeTimeRange(const TimeRange& range) {
+    return {{QStringLiteral("begin"), QString::number(range.begin)},
+            {QStringLiteral("end"), QString::number(range.end)}};
+}
+
+TimeRange decodeTimeRange(const QJsonValue& value, SampleIndex maximum, const QString& label) {
+    const auto range = object(value, label);
+    const TimeRange result{sampleIndex(range, "begin"), sampleIndex(range, "end")};
+    require(result.begin < result.end && result.end <= maximum,
+            label + QStringLiteral(" 必须为有效的源样本半开区间"));
+    return result;
+}
+
+QString filterName(ChannelFilter value) {
+    switch (value) {
+    case ChannelFilter::FastPreview: return QStringLiteral("fastPreview");
+    case ChannelFilter::Standard: return QStringLiteral("standard");
+    case ChannelFilter::HighRejection: return QStringLiteral("highRejection");
+    }
+    return QStringLiteral("standard");
+}
+
+QString processingStateName(ChannelProcessingState value) {
+    switch (value) {
+    case ChannelProcessingState::Ready: return QStringLiteral("ready");
+    case ChannelProcessingState::LegacyNeedsReview: return QStringLiteral("legacyNeedsReview");
+    case ChannelProcessingState::SourceMissing: return QStringLiteral("sourceMissing");
+    case ChannelProcessingState::Invalid: return QStringLiteral("invalid");
+    }
+    return QStringLiteral("invalid");
+}
+
+QString pageName(NarrowbandPage value) {
+    switch (value) {
+    case NarrowbandPage::Observe: return QStringLiteral("observe");
+    case NarrowbandPage::Modulation: return QStringLiteral("modulation");
+    case NarrowbandPage::DeepLearning: return QStringLiteral("deepLearning");
+    case NarrowbandPage::Demodulation: return QStringLiteral("demodulation");
+    }
+    return QStringLiteral("observe");
+}
+
+QString waveformName(NarrowbandWaveform value) {
+    switch (value) {
+    case NarrowbandWaveform::IQ: return QStringLiteral("iq");
+    case NarrowbandWaveform::Magnitude: return QStringLiteral("magnitude");
+    case NarrowbandWaveform::Phase: return QStringLiteral("phase");
+    case NarrowbandWaveform::Envelope: return QStringLiteral("envelope");
+    }
+    return QStringLiteral("iq");
+}
+
 ViewRange decodeRange(const QJsonValue& value, const FileMetadata& metadata, bool constrainToEffectiveBand = true) {
     const auto range = object(value, QStringLiteral("range"));
     const auto time = object(range.value(QStringLiteral("time")), QStringLiteral("time"));
@@ -128,6 +180,7 @@ QJsonObject encodeDisplay(const DisplaySettings& display) {
     case WaveformMode::I: waveformMode = QStringLiteral("i"); break;
     case WaveformMode::Q: waveformMode = QStringLiteral("q"); break;
     case WaveformMode::IqRms: waveformMode = QStringLiteral("iqRms"); break;
+    case WaveformMode::Envelope: waveformMode = QStringLiteral("envelope"); break;
     }
     QString palette;
     switch (display.palette) {
@@ -156,6 +209,7 @@ QJsonObject encodeDisplay(const DisplaySettings& display) {
             {QStringLiteral("auxiliaryMax"), display.auxiliaryMax},
             {QStringLiteral("waveformMin"), display.auxiliaryMode==AuxiliaryMode::Waveform?display.auxiliaryMin:display.waveformMin},
             {QStringLiteral("waveformMax"), display.auxiliaryMode==AuxiliaryMode::Waveform?display.auxiliaryMax:display.waveformMax},
+            {QStringLiteral("waveformAutoFit"), display.waveformAutoFit},
             {QStringLiteral("psdMin"), display.auxiliaryMode==AuxiliaryMode::Psd?display.auxiliaryMin:display.psdMin},
             {QStringLiteral("psdMax"), display.auxiliaryMode==AuxiliaryMode::Psd?display.auxiliaryMax:display.psdMax}};
 }
@@ -172,10 +226,11 @@ DisplaySettings decodeDisplay(const QJsonValue& value) {
     if (data.contains(QStringLiteral("waveformMode"))) {
         const auto waveform = string(data, "waveformMode", 32);
         require(waveform == QStringLiteral("i") || waveform == QStringLiteral("q") ||
-                waveform == QStringLiteral("iqRms"), QStringLiteral("未知时域波形模式"));
+                waveform == QStringLiteral("iqRms") || waveform == QStringLiteral("envelope"), QStringLiteral("未知时域波形模式"));
         display.waveformMode = waveform == QStringLiteral("i") ? WaveformMode::I :
-            waveform == QStringLiteral("q") ? WaveformMode::Q : WaveformMode::IqRms;
+            waveform == QStringLiteral("q") ? WaveformMode::Q : waveform == QStringLiteral("envelope") ? WaveformMode::Envelope : WaveformMode::IqRms;
     }
+    if (data.contains(QStringLiteral("waveformAutoFit"))) display.waveformAutoFit = boolean(data, "waveformAutoFit");
     const auto palette = string(data, "palette", 32);
     require(palette == QStringLiteral("turbo") || palette == QStringLiteral("viridis") || palette == QStringLiteral("gray") ||
             palette == QStringLiteral("plasma") || palette == QStringLiteral("inferno") ||
@@ -209,8 +264,8 @@ DisplaySettings decodeDisplay(const QJsonValue& value) {
             std::isfinite(display.auxiliaryMax - display.auxiliaryMin), QStringLiteral("辅助 Y 轴范围无效"));
     display.waveformMin=number(data,"waveformMin");display.waveformMax=number(data,"waveformMax");
     display.psdMin=number(data,"psdMin");display.psdMax=number(data,"psdMax");
-    require(display.waveformMin>=-160&&display.waveformMax<=160&&
-            display.waveformMax-display.waveformMin>=2,QStringLiteral("波形 Y 轴范围必须位于 [-160,160] 且跨度至少 2"));
+    require(display.waveformMin>=-65536&&display.waveformMax<=65536&&
+            display.waveformMax-display.waveformMin>=2,QStringLiteral("波形 Y 轴范围必须位于 [-65536,65536] 且跨度至少 2"));
     require(display.psdMin>=-180&&display.psdMax<=50&&display.psdMax-display.psdMin>=2,
             QStringLiteral("PSD Y 轴范围必须位于 [-180,50] 且跨度至少 2"));
     const auto activeMin=display.auxiliaryMode==AuxiliaryMode::Waveform?display.waveformMin:display.psdMin;
@@ -230,12 +285,51 @@ QJsonObject encodeProject(const Project& project) {
                                      {QStringLiteral("name"), text(mark.name)},
                                      {QStringLiteral("range"), encodeRange(mark.range)}});
         QJsonArray channels;
-        for (const auto& channel : file.channels)
-            channels.append(QJsonObject{{QStringLiteral("id"), text(channel.id)},
+        for (const auto& channel : file.channels) {
+            const auto* sourceMark = findMark(file, channel.sourceMarkId);
+            const auto sourceTime = channel.sourceTime.begin < channel.sourceTime.end ? channel.sourceTime :
+                (sourceMark ? sourceMark->range.time : TimeRange{});
+            const auto visibleTime = channel.visibleSourceTime.begin < channel.visibleSourceTime.end ?
+                channel.visibleSourceTime : sourceTime;
+            const auto visibleFrequency = channel.visibleBasebandFrequency.lowerHz <
+                channel.visibleBasebandFrequency.upperHz ? channel.visibleBasebandFrequency :
+                FrequencyRange{-channel.outputSampleRateHz / 2, channel.outputSampleRateHz / 2};
+            QJsonObject encoded{{QStringLiteral("id"), text(channel.id)},
                                         {QStringLiteral("name"), text(channel.name)},
                                         {QStringLiteral("sourceMarkId"), text(channel.sourceMarkId)},
                                         {QStringLiteral("centerFrequencyHz"), channel.centerFrequencyHz},
-                                        {QStringLiteral("bandwidthHz"), channel.bandwidthHz}});
+                                        {QStringLiteral("bandwidthHz"), channel.bandwidthHz}};
+            encoded.insert(QStringLiteral("outputSampleRateHz"), channel.outputSampleRateHz);
+            encoded.insert(QStringLiteral("filter"), filterName(channel.filter));
+            encoded.insert(QStringLiteral("processingState"), processingStateName(channel.processingState));
+            encoded.insert(QStringLiteral("configVersion"), QString::number(channel.configVersion));
+            encoded.insert(QStringLiteral("sourceTime"), encodeTimeRange(sourceTime));
+            encoded.insert(QStringLiteral("wholeSource"), channel.wholeSource);
+            encoded.insert(QStringLiteral("preserveSourceTime"), channel.preserveSourceTime);
+            encoded.insert(QStringLiteral("page"), pageName(channel.page));
+            encoded.insert(QStringLiteral("visibleSourceTime"), encodeTimeRange(visibleTime));
+            encoded.insert(QStringLiteral("visibleBasebandFrequency"), QJsonObject{
+                {QStringLiteral("lowerHz"), visibleFrequency.lowerHz},
+                {QStringLiteral("upperHz"), visibleFrequency.upperHz}});
+            encoded.insert(QStringLiteral("psdFftSize"), channel.psdFftSize);
+            encoded.insert(QStringLiteral("stftFftSize"), channel.stftFftSize);
+            encoded.insert(QStringLiteral("waveform"), waveformName(channel.waveform));
+            encoded.insert(QStringLiteral("waveformAxisMinimum"), channel.waveformAxisMinimum);
+            encoded.insert(QStringLiteral("waveformAxisMaximum"), channel.waveformAxisMaximum);
+            encoded.insert(QStringLiteral("waveformAutoScale"), channel.waveformAutoScale);
+            encoded.insert(QStringLiteral("psdAxisMinimum"), channel.psdAxisMinimum);
+            encoded.insert(QStringLiteral("psdAxisMaximum"), channel.psdAxisMaximum);
+            encoded.insert(QStringLiteral("symbolRate"), channel.symbolRate);
+            encoded.insert(QStringLiteral("eyePeriods"), channel.eyePeriods);
+            encoded.insert(QStringLiteral("eyeTraces"), channel.eyeTraces);
+            encoded.insert(QStringLiteral("eyeComponent"), channel.eyeComponent);
+            encoded.insert(QStringLiteral("selectedBit"), channel.selectedBit);
+            encoded.insert(QStringLiteral("constellationMinimum"), channel.constellationMinimum);
+            encoded.insert(QStringLiteral("constellationMaximum"), channel.constellationMaximum);
+            encoded.insert(QStringLiteral("relativeTime"), channel.relativeTime);
+            encoded.insert(QStringLiteral("absoluteFrequencyLabels"), channel.absoluteFrequencyLabels);
+            channels.append(encoded);
+        }
         QJsonArray selected;
         for (const auto& id : file.selectedMarkIds) selected.append(text(id));
         files.append(QJsonObject{
@@ -257,18 +351,26 @@ QJsonObject encodeProject(const Project& project) {
             {QStringLiteral("activeMarkId"), text(file.activeMarkId)}});
     }
     return {{QStringLiteral("schema"), QStringLiteral("signal-studio-native-project")},
-            {QStringLiteral("version"), 1}, {QStringLiteral("name"), text(project.name)},
+            {QStringLiteral("version"), 2}, {QStringLiteral("name"), text(project.name)},
             {QStringLiteral("activeFileId"), text(project.activeFileId)},
+            {QStringLiteral("activeChannelId"), text(project.activeChannelId)},
+            {QStringLiteral("narrowbandWorkspaceOpen"), project.narrowbandWorkspaceOpen},
             {QStringLiteral("files"), files}};
 }
 
 Project decodeProject(const QJsonObject& root) {
     require(string(root, "schema", 100) == QStringLiteral("signal-studio-native-project"),
             QStringLiteral("不支持的工程格式；需要 Signal Studio 原生工程"));
-    require(number(root, "version") == 1, QStringLiteral("不支持的原生工程版本"));
+    const auto versionValue = number(root, "version");
+    require(versionValue == 1 || versionValue == 2, QStringLiteral("不支持的原生工程版本"));
+    const auto version = static_cast<int>(versionValue);
     Project project;
     project.name = utf8(string(root, "name", 80));
     project.activeFileId = utf8(string(root, "activeFileId", 100, true));
+    if (version >= 2) {
+        project.activeChannelId = utf8(string(root, "activeChannelId", 100, true));
+        project.narrowbandWorkspaceOpen = boolean(root, "narrowbandWorkspaceOpen");
+    }
     QSet<QString> fileIds;
     for (const auto& value : array(root, "files", 150)) {
         const auto data = object(value, QStringLiteral("file"));
@@ -320,8 +422,110 @@ Project decodeProject(const QJsonObject& root) {
             const auto sourceId = string(channelData, "sourceMarkId", 100);
             require(!channelIds.contains(id) && markIds.contains(sourceId), QStringLiteral("窄带通道 id 或源标记引用无效"));
             channelIds.insert(id);
-            Channel channel{utf8(id), utf8(string(channelData, "name", 80)), utf8(sourceId),
-                            number(channelData, "centerFrequencyHz"), number(channelData, "bandwidthHz")};
+            Channel channel;
+            channel.id = utf8(id);
+            channel.name = utf8(string(channelData, "name", 80));
+            channel.sourceMarkId = utf8(sourceId);
+            channel.centerFrequencyHz = number(channelData, "centerFrequencyHz");
+            channel.bandwidthHz = number(channelData, "bandwidthHz");
+            channel.processingState = ChannelProcessingState::LegacyNeedsReview;
+            if (version >= 2) {
+                channel.outputSampleRateHz = number(channelData, "outputSampleRateHz");
+                require(channel.outputSampleRateHz > 0, QStringLiteral("窄带输出采样率无效"));
+                const auto filter = string(channelData, "filter", 32);
+                require(filter == QStringLiteral("fastPreview") || filter == QStringLiteral("standard") ||
+                        filter == QStringLiteral("highRejection"), QStringLiteral("未知窄带滤波器"));
+                channel.filter = filter == QStringLiteral("fastPreview") ? ChannelFilter::FastPreview :
+                    filter == QStringLiteral("highRejection") ? ChannelFilter::HighRejection : ChannelFilter::Standard;
+                const auto state = string(channelData, "processingState", 32);
+                require(state == QStringLiteral("ready") || state == QStringLiteral("legacyNeedsReview") ||
+                        state == QStringLiteral("sourceMissing") || state == QStringLiteral("invalid"),
+                        QStringLiteral("未知窄带通道状态"));
+                channel.processingState = state == QStringLiteral("ready") ? ChannelProcessingState::Ready :
+                    state == QStringLiteral("sourceMissing") ? ChannelProcessingState::SourceMissing :
+                    state == QStringLiteral("invalid") ? ChannelProcessingState::Invalid : ChannelProcessingState::LegacyNeedsReview;
+                channel.configVersion = sampleIndex(channelData, "configVersion");
+                require(channel.configVersion > 0, QStringLiteral("通道配置版本无效"));
+                channel.sourceTime = decodeTimeRange(channelData.value(QStringLiteral("sourceTime")), file.metadata.sampleCount,
+                                                     QStringLiteral("sourceTime"));
+                channel.wholeSource = boolean(channelData, "wholeSource");
+                channel.preserveSourceTime = boolean(channelData, "preserveSourceTime");
+                const auto page = string(channelData, "page", 32);
+                require(page == QStringLiteral("observe") || page == QStringLiteral("modulation") ||
+                        page == QStringLiteral("deepLearning") || page == QStringLiteral("demodulation"),
+                        QStringLiteral("未知窄带工作页"));
+                channel.page = page == QStringLiteral("modulation") ? NarrowbandPage::Modulation :
+                    page == QStringLiteral("deepLearning") ? NarrowbandPage::DeepLearning :
+                    page == QStringLiteral("demodulation") ? NarrowbandPage::Demodulation : NarrowbandPage::Observe;
+                channel.visibleSourceTime = decodeTimeRange(channelData.value(QStringLiteral("visibleSourceTime")),
+                    file.metadata.sampleCount, QStringLiteral("visibleSourceTime"));
+                require(channel.visibleSourceTime.begin >= channel.sourceTime.begin &&
+                        channel.visibleSourceTime.end <= channel.sourceTime.end,
+                        QStringLiteral("窄带可见时间必须位于通道提取时段内"));
+                const auto visibleFrequency = object(channelData.value(QStringLiteral("visibleBasebandFrequency")),
+                                                      QStringLiteral("visibleBasebandFrequency"));
+                channel.visibleBasebandFrequency = {number(visibleFrequency, "lowerHz"),
+                                                    number(visibleFrequency, "upperHz")};
+                require(channel.visibleBasebandFrequency.lowerHz < channel.visibleBasebandFrequency.upperHz &&
+                        channel.visibleBasebandFrequency.lowerHz >= -channel.outputSampleRateHz / 2 &&
+                        channel.visibleBasebandFrequency.upperHz <= channel.outputSampleRateHz / 2,
+                        QStringLiteral("窄带可见基带频率范围无效"));
+                channel.psdFftSize = fftSize(channelData, "psdFftSize");
+                channel.stftFftSize = fftSize(channelData, "stftFftSize");
+                const auto waveform = string(channelData, "waveform", 32);
+                require(waveform == QStringLiteral("iq") || waveform == QStringLiteral("magnitude") ||
+                        waveform == QStringLiteral("phase") || waveform == QStringLiteral("envelope"),
+                        QStringLiteral("未知窄带波形模式"));
+                channel.waveform = waveform == QStringLiteral("magnitude") ? NarrowbandWaveform::Magnitude :
+                    waveform == QStringLiteral("phase") ? NarrowbandWaveform::Phase :
+                    waveform == QStringLiteral("envelope") ? NarrowbandWaveform::Envelope : NarrowbandWaveform::IQ;
+                channel.waveformAxisMinimum = channelData.contains(QStringLiteral("waveformAxisMinimum")) ?
+                    number(channelData, "waveformAxisMinimum") : -32768.0;
+                channel.waveformAxisMaximum = channelData.contains(QStringLiteral("waveformAxisMaximum")) ?
+                    number(channelData, "waveformAxisMaximum") : 32768.0;
+                channel.waveformAutoScale = channelData.contains(QStringLiteral("waveformAutoScale")) ?
+                    boolean(channelData, "waveformAutoScale") : true;
+                channel.psdAxisMinimum = channelData.contains(QStringLiteral("psdAxisMinimum")) ?
+                    number(channelData, "psdAxisMinimum") : -120.0;
+                channel.psdAxisMaximum = channelData.contains(QStringLiteral("psdAxisMaximum")) ?
+                    number(channelData, "psdAxisMaximum") : 0.0;
+                require(channel.waveformAxisMinimum < channel.waveformAxisMaximum &&
+                        channel.waveformAxisMaximum - channel.waveformAxisMinimum <= 2.0e12 &&
+                        channel.psdAxisMinimum < channel.psdAxisMaximum &&
+                        channel.psdAxisMaximum - channel.psdAxisMinimum <= 1000.0,
+                        QStringLiteral("窄带波形或 PSD 纵轴范围无效"));
+                channel.symbolRate = number(channelData, "symbolRate");
+                require(channel.symbolRate > 0, QStringLiteral("符号率必须大于 0"));
+                const auto eyePeriods = number(channelData, "eyePeriods");
+                const auto eyeTraces = number(channelData, "eyeTraces");
+                const auto eyeComponent = number(channelData, "eyeComponent");
+                const auto selectedBit = number(channelData, "selectedBit");
+                require(eyePeriods >= 1 && eyePeriods <= 8 && std::floor(eyePeriods) == eyePeriods &&
+                        eyeTraces >= 8 && eyeTraces <= 256 && std::floor(eyeTraces) == eyeTraces &&
+                        eyeComponent >= 0 && eyeComponent <= 2 && std::floor(eyeComponent) == eyeComponent &&
+                        selectedBit >= -1 && selectedBit <= 4095 && std::floor(selectedBit) == selectedBit,
+                        QStringLiteral("星座、眼图或位流视图参数超出范围"));
+                channel.eyePeriods = static_cast<int>(eyePeriods);
+                channel.eyeTraces = static_cast<int>(eyeTraces);
+                channel.eyeComponent = static_cast<int>(eyeComponent);
+                channel.selectedBit = static_cast<int>(selectedBit);
+                channel.constellationMinimum = number(channelData, "constellationMinimum");
+                channel.constellationMaximum = number(channelData, "constellationMaximum");
+                require(channel.constellationMinimum < channel.constellationMaximum,
+                        QStringLiteral("星座图范围无效"));
+                channel.relativeTime = boolean(channelData, "relativeTime");
+                channel.absoluteFrequencyLabels = channelData.contains(QStringLiteral("absoluteFrequencyLabels")) ?
+                    boolean(channelData, "absoluteFrequencyLabels") : false;
+            } else {
+                const auto* sourceMark = findMark(file, channel.sourceMarkId);
+                if (sourceMark) {
+                    channel.sourceTime = sourceMark->range.time;
+                    channel.visibleSourceTime = channel.sourceTime;
+                    channel.outputSampleRateHz = std::max(4e6, channel.bandwidthHz * 1.3);
+                    channel.visibleBasebandFrequency = {-channel.outputSampleRateHz / 2,
+                                                         channel.outputSampleRateHz / 2};
+                }
+            }
             // Center +/- bandwidth/2 can differ from the original edges by an ULP.
             const auto roundingTolerance = std::max({1.0, std::abs(sampledBand.lowerHz),
                 std::abs(sampledBand.upperHz)}) * std::numeric_limits<double>::epsilon() * 8;
@@ -349,6 +553,15 @@ Project decodeProject(const QJsonObject& root) {
     }
     require(project.files.empty() ? project.activeFileId.empty() : fileIds.contains(text(project.activeFileId)),
             QStringLiteral("活动文件引用无效"));
+    if (!project.activeChannelId.empty()) {
+        require(fileIds.contains(text(project.activeFileId)), QStringLiteral("活动通道没有活动源文件"));
+        const auto activeFile = std::find_if(project.files.begin(), project.files.end(), [&](const FileState& file) {
+            return file.metadata.id == project.activeFileId;
+        });
+        require(activeFile != project.files.end() && std::any_of(activeFile->channels.begin(), activeFile->channels.end(),
+            [&](const Channel& channel) { return channel.id == project.activeChannelId; }),
+            QStringLiteral("活动通道不属于活动源文件"));
+    }
     return project;
 }
 

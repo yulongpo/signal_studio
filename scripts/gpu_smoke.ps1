@@ -3,6 +3,7 @@ param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
     [string]$OutputDirectory,
+    [switch]$Narrowband,
     [switch]$SoftwareRenderer
 )
 $ErrorActionPreference = 'Stop'
@@ -19,7 +20,8 @@ $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $renderMode = if ($SoftwareRenderer) { 'software' } else { 'gpu' }
 $renderOption = if ($SoftwareRenderer) { '--software-renderer' } else { '--require-gpu' }
-$evidenceName = "signal-studio-${configurationName}-${renderMode}-screen2-4k-150"
+$mode = if ($Narrowband) { 'narrowband-' } else { '' }
+$evidenceName = "signal-studio-${mode}${configurationName}-${renderMode}-screen2-4k-150"
 $screenPath = Join-Path $OutputDirectory "${evidenceName}-screens.json"
 $reportPath = Join-Path $OutputDirectory "${evidenceName}-report.json"
 $screenshotPath = Join-Path $OutputDirectory "${evidenceName}.png"
@@ -45,17 +47,19 @@ try {
         throw "Monitor inventory was not produced: $screenPath"
     }
     Get-Content -LiteralPath $screenPath | Out-Host
-    $arguments = @(
-        '--demo-data', '--smoke-test', '--screen', '2', '--full-screen', '--verify-4k-150',
-        '--size', '2560x1440', '--render-report', $reportPath,
-        '--screenshot', $screenshotPath, $renderOption
-    )
+    $arguments = @()
+    if ($Narrowband) { $arguments += @('--narrowband-demo', '--verify-narrowband-pages') } else { $arguments += '--demo-data' }
+    $arguments += @('--smoke-test', '--screen', '2', '--full-screen', '--verify-4k-150',
+        '--size', '2560x1440', '--render-report', $reportPath, '--screenshot', $screenshotPath, $renderOption)
     & $executable @arguments | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Monitor 2 4K / 150% full-screen smoke failed with exit code $LASTEXITCODE" }
     if (-not (Test-Path -LiteralPath $reportPath)) { throw "Renderer report was not produced: $reportPath" }
     $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
-    if ($report.pass -ne $true -or $report.fourK150Verified -ne $true -or $report.fullScreen -ne $true) {
+    if ($report.pass -ne $true -or $report.fourK150Verified -ne $true -or $report.fullScreen -ne $true -or $report.captureHasVisibleContent -ne $true) {
         throw 'The application did not confirm a successful native 4K / 150% full-screen run.'
+    }
+    if ($Narrowband -and ($report.workspaceMode -ne 'narrowband' -or $report.narrowbandPagesVerified -ne $true -or @($report.narrowbandPages).Count -ne 4)) {
+        throw 'The narrowband capture did not validate all four pages.'
     }
     if ($report.screen.connectedIndex -ne 2 -or
         [Math]::Abs([double]$report.screen.devicePixelRatio - 1.5) -gt 0.001 -or
@@ -66,8 +70,13 @@ try {
         throw 'Renderer evidence does not match connected monitor 2 at native 3840x2160 pixels and 150% DPI.'
     }
     if (-not $SoftwareRenderer -and ($report.hardwareRenderer -ne $true -or
-        $report.heatmapUploads -le 0 -or $report.completedFrames -le 0 -or $report.overlayReusesHeatmap -ne $true)) {
-        throw 'GPU evidence requires a hardware QRhi driver, texture upload, completed frames and overlay cache reuse.'
+        $report.heatmapUploads -le 0 -or $report.completedFrames -le 0 -or $report.overlayReusesHeatmap -ne $true -or
+        $report.gpuDataDrawCalls -le 0 -or $report.gpuVertexUploads -le 0)) {
+        throw 'GPU evidence requires a hardware QRhi driver, data textures, GPU vertex uploads/draw calls, completed frames and overlay cache reuse.'
+    }
+    if (-not $SoftwareRenderer -and $Narrowband -and
+        @($report.narrowbandPages | Where-Object { $_.gpuDataDrawCalls -le 0 }).Count -gt 0) {
+        throw 'Every narrowband page must show at least one GPU chart-data draw call.'
     }
     if ($SoftwareRenderer -and $report.hardwareRenderer -eq $true) {
         throw 'Software fallback evidence unexpectedly reported GPU rendering.'

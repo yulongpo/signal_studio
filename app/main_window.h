@@ -23,6 +23,7 @@ class QTimer;
 
 namespace signalstudio {
 class PlotWidget;
+class NarrowbandWorkspace;
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
@@ -34,6 +35,7 @@ public:
     bool openProject(const QString& path);
     bool addIqFile(const QString& path, QString* error = nullptr);
     bool saveProject(const QString& path);
+    void openNarrowbandDemoProject();
     void cancelInteractions(bool exitCreating = true);
 protected:
     void resizeEvent(QResizeEvent*) override;
@@ -63,6 +65,9 @@ private:
     void showAddFileDialog();
     void showNewProjectDialog();
     void openDemoProject();
+    void showChannelDialog(const QString& channelId = {});
+    void locateActiveChannelSource();
+    void activateTreeChannel(const QString& channelId);
     void toggleMaximized(int index);
     void enforceLayout(bool reset = false);
     void updatePropertyContext();
@@ -90,7 +95,8 @@ private:
     QWidget *maxHost_ = nullptr, *maxVeil_ = nullptr;
     QScrollArea* propScroll_ = nullptr;
     QVBoxLayout* propertyLayout_ = nullptr;
-    QWidget *fileSection_ = nullptr, *viewSection_ = nullptr, *markSection_ = nullptr, *psdSection_ = nullptr;
+    QWidget *fileSection_ = nullptr, *viewSection_ = nullptr, *markSection_ = nullptr, *psdSection_ = nullptr,
+            *channelSection_ = nullptr;
     QComboBox *mainMode_ = nullptr, *auxMode_ = nullptr, *waveformMode_ = nullptr, *palette_ = nullptr, *propertyPalette_ = nullptr;
     QComboBox *stft_ = nullptr, *psd_ = nullptr, *psdScope_ = nullptr, *dynamic_ = nullptr, *reference_ = nullptr, *freqMode_ = nullptr;
     QDoubleSpinBox* effectiveBandwidth_ = nullptr;
@@ -100,6 +106,7 @@ private:
     std::array<QLabel*, 4> fileValues_{};
     std::array<QLabel*, 2> viewValues_{};
     std::array<QLabel*, 3> markValues_{};
+    std::array<QLabel*, 6> channelValues_{};
     QLabel *scope_ = nullptr, *projectLabel_ = nullptr, *navStatus_ = nullptr, *auxStatus_ = nullptr, *rangeTag_ = nullptr, *dataSourceStatus_ = nullptr;
     QLabel *specMode_ = nullptr, *specAxis_ = nullptr, *selectedCount_ = nullptr, *cursorData_ = nullptr, *viewData_ = nullptr, *selectionData_ = nullptr;
     QLabel *statusTime_ = nullptr, *statusFrequency_ = nullptr, *statusFile_ = nullptr;
@@ -107,6 +114,9 @@ private:
     QPushButton *extract_ = nullptr, *rename_ = nullptr, *locate_ = nullptr, *delete_ = nullptr;
     QToolButton* resultToggle_ = nullptr;
     QStackedWidget* bottomContent_ = nullptr;
+    QStackedWidget* workspaceStack_ = nullptr;
+    NarrowbandWorkspace* narrowband_ = nullptr;
+    QPushButton* workspaceModeButton_ = nullptr;
     QLabel *resultSummary_ = nullptr, *taskSummary_ = nullptr;
     QPlainTextEdit* results_ = nullptr;
     QAction *removeAction_ = nullptr, *saveAction_ = nullptr, *addSignalAction_ = nullptr, *deleteAction_ = nullptr, *backAction_ = nullptr, *forwardAction_ = nullptr;

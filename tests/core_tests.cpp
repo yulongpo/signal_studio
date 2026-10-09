@@ -1,6 +1,7 @@
 #include "application/session.h"
 #include "infrastructure/int16_iq_file.h"
 #include "infrastructure/project_store.h"
+#include "ui/charts/chart_interaction.h"
 
 #include <QCoreApplication>
 #include <QFile>
@@ -28,6 +29,21 @@ void check(bool condition, const char* message) {
 
 bool close(double left, double right, double tolerance = 1e-7) {
     return std::abs(left - right) <= tolerance;
+}
+
+void testSharedChartInteractionMath() {
+    using namespace chart_interaction;
+    const auto zoomed = zoomAround({-200.0, 200.0}, .5, .25);
+    check(close(zoomed.first, -150.0) && close(zoomed.last, 50.0),
+          "Shared axis zoom must preserve the pointer anchor");
+    const auto shifted = panByFraction({10.0, 30.0}, -.25);
+    check(close(shifted.first, 5.0) && close(shifted.last, 25.0),
+          "Shared axis pan must use the visible span");
+    const auto selected = selectFractions({0.0, 100.0}, .8, .2);
+    check(close(selected.first, 20.0) && close(selected.last, 80.0),
+          "Shared box selection must normalize reverse drag direction");
+    check(close(fractionAt(75.0, 50.0, 100.0), .25),
+          "Shared coordinate transform must map pixels to clamped axis fractions");
 }
 
 QByteArray readFile(const QString& path) {
@@ -99,7 +115,7 @@ void testSessionHistory() {
     for(const auto& file:session.project().files)
         check(file.marks.empty()&&file.channels.empty()&&file.display.mainMode==MainMode::TimeFrequency&&
               file.display.auxiliaryMode==AuxiliaryMode::Waveform&&file.display.dynamicRangeDb==80&&
-              file.display.referenceLevelDb==0&&file.display.auxiliaryMin==-60&&file.display.auxiliaryMax==60,
+              file.display.referenceLevelDb==0&&file.display.auxiliaryMin==-32768&&file.display.auxiliaryMax==32768,
               "Prototype startup must have empty marks/channels and common display defaults");
     const auto firstId = session.project().activeFileId;
     const auto secondId = session.project().files[1].metadata.id;
@@ -244,8 +260,8 @@ void testAuxiliarySnapshotsAndPsdScope() {
     check(!markId.empty()&&session.setPsdFromSelection(true),"Active mark must enable selection PSD");
     session.deleteSelectedMarks();
     check(!session.activeFile()->display.psdFromSelection,"Deleting active PSD source must return to visible scope");
-    check(session.setAuxiliaryRange(-1000,1000)&&session.activeFile()->display.auxiliaryMin==-160&&
-          session.activeFile()->display.auxiliaryMax==160,"Waveform Y must clamp to prototype world bounds");
+    check(session.setAuxiliaryRange(-100000,100000)&&session.activeFile()->display.auxiliaryMin==-65536&&
+          session.activeFile()->display.auxiliaryMax==65536,"ADC-count waveform Y must clamp to full supported display bounds");
 }
 
 void testSerialization() {
@@ -267,6 +283,13 @@ void testSerialization() {
     constexpr SampleIndex largeIndex = (SampleIndex{1} << 53) + 17;
     first.view.time = {largeIndex, largeIndex + 4096};
     first.marks[0].range.time = {largeIndex + 1, largeIndex + 2049};
+    auto& largeChannel = first.channels.front();
+    largeChannel.sourceMarkId = first.marks[0].id;
+    largeChannel.sourceTime = first.marks[0].range.time;
+    largeChannel.visibleSourceTime = {largeIndex + 20, largeIndex + 1024};
+    largeChannel.visibleBasebandFrequency = {-2e6, 2e6};
+    largeChannel.absoluteFrequencyLabels = true;
+    largeChannel.processingState = ChannelProcessingState::Ready;
     session.activateFile(session.project().files[1].metadata.id);
     session.addMark({{2'000'000'000,2'320'000'000},{2447e6,2453e6}});
     auto* second=session.activeFile();
@@ -294,6 +317,11 @@ void testSerialization() {
           !loaded.files[0].metadata.demo && loaded.files[0].metadata.declaredBandwidthHz == 80e6 &&
           loaded.files[0].metadata.path == "D:/演示数据/捕获.iq",
           "Roundtrip must preserve all uint64 bits beyond 2^53");
+    check(loaded.files[0].channels.front().sourceTime == TimeRange{largeIndex + 1, largeIndex + 2049} &&
+          loaded.files[0].channels.front().visibleSourceTime == TimeRange{largeIndex + 20, largeIndex + 1024} &&
+          loaded.files[0].channels.front().processingState == ChannelProcessingState::Ready &&
+          loaded.files[0].channels.front().absoluteFrequencyLabels,
+          "Channel snapshots must retain exact uint64 source and visible ranges");
     check(loaded.activeFileId == session.project().activeFileId &&
           loaded.files[1].display.mainMode == MainMode::Waterfall &&
           loaded.files[1].display.auxiliaryMode == AuxiliaryMode::Psd &&
@@ -323,6 +351,31 @@ void testSerialization() {
           "Derived channel edge rounding must not reject a valid file-boundary mark");
 
     const auto validRoot = QJsonDocument::fromJson(sourceBytes).object();
+    auto legacyRoot = validRoot;
+    legacyRoot[QStringLiteral("version")] = 1;
+    legacyRoot.remove(QStringLiteral("activeChannelId"));
+    legacyRoot.remove(QStringLiteral("narrowbandWorkspaceOpen"));
+    auto legacyFiles = legacyRoot[QStringLiteral("files")].toArray();
+    auto legacyFirst = legacyFiles[0].toObject();
+    auto legacyChannels = legacyFirst[QStringLiteral("channels")].toArray();
+    auto legacyChannel = legacyChannels[0].toObject();
+    for (const auto* key : {"outputSampleRateHz", "filter", "processingState", "configVersion", "sourceTime",
+                            "wholeSource", "preserveSourceTime", "page", "visibleSourceTime",
+                            "visibleBasebandFrequency", "psdFftSize", "stftFftSize", "waveform",
+                            "symbolRate", "eyePeriods", "eyeTraces", "eyeComponent", "selectedBit",
+                            "constellationMinimum", "constellationMaximum", "relativeTime", "absoluteFrequencyLabels"})
+        legacyChannel.remove(QString::fromLatin1(key));
+    legacyChannels[0] = legacyChannel;
+    legacyFirst[QStringLiteral("channels")] = legacyChannels;
+    legacyFiles[0] = legacyFirst;
+    legacyRoot[QStringLiteral("files")] = legacyFiles;
+    writeFile(badPath, QJsonDocument(legacyRoot).toJson());
+    Project migrated;
+    const bool migrationSucceeded = ProjectStore::load(badPath, migrated, error);
+    check(migrationSucceeded && !migrated.files.empty() && !migrated.files[0].channels.empty() &&
+          migrated.files[0].channels[0].processingState == ChannelProcessingState::LegacyNeedsReview &&
+          migrated.files[0].channels[0].sourceTime == migrated.files[0].marks[0].range.time,
+          "Version 1 channels must migrate from their source marks as pending-review snapshots");
     auto reject = [&](QJsonObject malformed) {
         writeFile(badPath, QJsonDocument(malformed).toJson());
         check(!ProjectStore::load(badPath, loaded, error) && !error.isEmpty(),
@@ -343,7 +396,7 @@ void testSerialization() {
     root[QStringLiteral("schema")] = QStringLiteral("signal-studio-a1.4.3-prototype");
     reject(root);
     root = validRoot;
-    root[QStringLiteral("version")] = 2;
+    root[QStringLiteral("version")] = 3;
     reject(root);
     root = validRoot;
     root[QStringLiteral("activeFileId")] = QStringLiteral("missing");
@@ -455,14 +508,14 @@ void testInt16IqFilePipeline() {
     std::vector<float> waveform;
     check(iq.waveform({0, 4096}, 16, WaveformMode::IqRms, waveform) && waveform.size() == 16,
           "Waveform extractor must return the requested IQ RMS envelope");
-    check(std::all_of(waveform.begin(), waveform.end(), [](float value) { return std::abs(value + 6.0206f) < .02f; }),
-          "Int16 I/Q scaling must produce the expected -6.02 dBFS amplitude");
+    check(std::all_of(waveform.begin(), waveform.end(), [](float value) { return std::abs(value - 16384.0f) < .02f; }),
+          "IQ RMS waveform must be expressed in ADC-count-equivalent amplitude");
     check(iq.waveform({0, 4096}, 16, WaveformMode::I, waveform) &&
-          std::all_of(waveform.begin(), waveform.end(), [](float value) { return std::abs(value - .5f) < .001f; }),
-          "I mode must expose normalized signed in-phase samples");
+          std::all_of(waveform.begin(), waveform.end(), [](float value) { return std::abs(value - 16384.0f) < 1.0f; }),
+          "I mode must expose ADC-count-equivalent signed in-phase samples");
     check(iq.waveform({0, 4096}, 16, WaveformMode::Q, waveform) &&
           std::all_of(waveform.begin(), waveform.end(), [](float value) { return std::abs(value) < .001f; }),
-          "Q mode must expose normalized signed quadrature samples");
+          "Q mode must expose ADC-count-equivalent signed quadrature samples");
 
     std::vector<float> psd;
     check(iq.psd({0, 4096}, {9.5e6, 10.5e6}, 1e6, 10e6, 256, 64, psd) && psd.size() == 64,
@@ -512,6 +565,8 @@ int main(int argc, char* argv[]) {
     try {
         testClamping();
         std::cout << "PASS boundary clamping and uint64 precision\n";
+        testSharedChartInteractionMath();
+        std::cout << "PASS shared wideband and narrowband chart interaction math\n";
         testSessionHistory();
         std::cout << "PASS independent file state and 40-entry view history\n";
         testSelectionAndChannels();

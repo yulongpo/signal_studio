@@ -27,8 +27,13 @@ struct ViewRange {
 
 enum class MainMode { TimeFrequency, Waterfall };
 enum class AuxiliaryMode { Waveform, Psd };
-enum class WaveformMode { I, Q, IqRms };
+enum class WaveformMode { I, Q, IqRms, Envelope };
 enum class Palette { Turbo, Viridis, Gray, Plasma, Inferno, Magma, Cividis, CoolEditClassic };
+
+enum class ChannelFilter { FastPreview, Standard, HighRejection };
+enum class ChannelProcessingState { Ready, LegacyNeedsReview, SourceMissing, Invalid };
+enum class NarrowbandPage { Observe, Modulation, DeepLearning, Demodulation };
+enum class NarrowbandWaveform { IQ, Magnitude, Phase, Envelope };
 
 struct DisplaySettings {
     MainMode mainMode = MainMode::TimeFrequency;
@@ -44,10 +49,11 @@ struct DisplaySettings {
     bool colorScale = false;
     bool psdFromSelection = false;
     // Compatibility fields expose the active mode; Session maintains both saved ranges.
-    double auxiliaryMin = -60;
-    double auxiliaryMax = 60;
-    double waveformMin = -60;
-    double waveformMax = 60;
+    double auxiliaryMin = -32768;
+    double auxiliaryMax = 32768;
+    double waveformMin = -32768;
+    double waveformMax = 32768;
+    bool waveformAutoFit = true;
     double psdMin = -100;
     double psdMax = 0;
 };
@@ -76,6 +82,45 @@ struct Channel {
     std::string sourceMarkId;
     double centerFrequencyHz = 0;
     double bandwidthHz = 0;
+    TimeRange sourceTime;
+    double outputSampleRateHz = 4e6;
+    ChannelFilter filter = ChannelFilter::Standard;
+    ChannelProcessingState processingState = ChannelProcessingState::LegacyNeedsReview;
+    std::uint64_t configVersion = 1;
+    bool wholeSource = false;
+    bool preserveSourceTime = true;
+    NarrowbandPage page = NarrowbandPage::Observe;
+    TimeRange visibleSourceTime;
+    FrequencyRange visibleBasebandFrequency;
+    int psdFftSize = 4096;
+    int stftFftSize = 2048;
+    NarrowbandWaveform waveform = NarrowbandWaveform::IQ;
+    double waveformAxisMinimum = -32768.0;
+    double waveformAxisMaximum = 32768.0;
+    bool waveformAutoScale = true;
+    double psdAxisMinimum = -120.0;
+    double psdAxisMaximum = 0.0;
+    double symbolRate = 250e3;
+    int eyePeriods = 2;
+    int eyeTraces = 64;
+    int eyeComponent = 0;
+    int selectedBit = -1;
+    double constellationMinimum = -1.0;
+    double constellationMaximum = 1.0;
+    bool relativeTime = false;
+    bool absoluteFrequencyLabels = false;
+};
+
+struct ChannelViewSnapshot {
+    std::string channelId;
+    TimeRange sourceTime;
+    FrequencyRange basebandFrequency;
+    double waveformAxisMinimum = -32768.0;
+    double waveformAxisMaximum = 32768.0;
+    bool waveformAutoScale = true;
+    double psdAxisMinimum = -120.0;
+    double psdAxisMaximum = 0.0;
+    bool operator==(const ChannelViewSnapshot&) const = default;
 };
 struct FileState {
     FileMetadata metadata;
@@ -89,16 +134,19 @@ struct FileState {
 struct Project {
     std::string name = "未命名工程";
     std::string activeFileId;
+    std::string activeChannelId;
+    bool narrowbandWorkspaceOpen = false;
     std::vector<FileState> files;
 };
 
 struct ViewSnapshot {
     std::string fileId;
     ViewRange view;
-    double waveformMin = -60;
-    double waveformMax = 60;
+    double waveformMin = -32768;
+    double waveformMax = 32768;
     double psdMin = -100;
     double psdMax = 0;
+    bool waveformAutoFit = true;
     bool operator==(const ViewSnapshot&) const = default;
 };
 

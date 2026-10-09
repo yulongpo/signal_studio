@@ -1,0 +1,402 @@
+{
+    "activeChannel": {
+    },
+    "activeFile": {
+        "auxiliaryMode": "waveform",
+        "centerFrequencyHz": 100000000,
+        "declaredBandwidthHz": 0,
+        "durationSeconds": 480,
+        "mainMode": "timeFrequency",
+        "name": "wideband_100MHz.iq",
+        "path": "",
+        "realIq": false,
+        "sampleCount": "19200000000",
+        "sampleRateHz": 40000000
+    },
+    "auxiliaryRendering": {
+        "acceptedHeatmapPreview": false,
+        "colorTransformGenerations": 0,
+        "committedGeneration": 4,
+        "cpuWallTimings": {
+            "chartDrawCalls": 8,
+            "chartDrawCallsSkipped": 0,
+            "chartPaletteUploads": 4,
+            "chartVertexUploads": 3,
+            "gpuTimestamps": false,
+            "heatmapDrawCalls": 0,
+            "heatmapUploadPreparation": {
+                "lastMs": 0,
+                "maxMs": 0,
+                "samples": 0,
+                "totalMs": 0
+            },
+            "lastChartDrawLoopIterations": 1,
+            "lastChartDrawRecordCount": 1,
+            "lastChartDrawStage": 6,
+            "lastChartVertexCount": 56218,
+            "lastRenderHeight": 171,
+            "lastRenderWidth": 1984,
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+                "lastMs": 0.0874,
+                "maxMs": 0.481,
+                "samples": 5,
+                "totalMs": 0.9465
+            },
+            "overlayPainter": {
+                "lastMs": 3.3461,
+                "maxMs": 15.8495,
+                "samples": 5,
+                "totalMs": 44.5287
+            },
+            "overlayUploadEnqueue": {
+                "lastMs": 0.0182,
+                "maxMs": 0.3184,
+                "samples": 5,
+                "totalMs": 0.576
+            },
+            "paintEventIncludingQtSubmit": {
+                "lastMs": 4.1204,
+                "maxMs": 17.5448,
+                "samples": 7,
+                "totalMs": 53.632099999999994
+            },
+            "paletteUploads": 1,
+            "prepareUploads": {
+                "lastMs": 0.0099,
+                "maxMs": 16.7226,
+                "samples": 8,
+                "totalMs": 47.135
+            },
+            "render": {
+                "lastMs": 0.0711,
+                "maxMs": 16.9631,
+                "samples": 8,
+                "totalMs": 48.1846
+            },
+            "renderInvocations": 8,
+            "unit": "ms"
+        },
+        "curveCacheHits": 4,
+        "curvePathElements": 5623,
+        "curveRasterMethod": "QRhi dynamic vertex buffer",
+        "curveReductions": 2,
+        "curveSourceGenerations": 1,
+        "drawnLineSegments": 5622,
+        "drawnPoints": 5623,
+        "generation": 4,
+        "gpuChartDrawCalls": 8,
+        "gpuDataDrawCalls": 8,
+        "gpuDataRenderer": "QRhi shader / vertex buffer",
+        "gpuHeatmapDrawCalls": 0,
+        "gpuPaletteUploads": 1,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 3,
+        "heatmapCacheHits": 0,
+        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+        "heatmapHeight": -1,
+        "heatmapWidth": -1,
+        "lastMatrixMs": 0,
+        "matrixReductions": 0,
+        "overlayUploads": 5,
+        "powerGenerations": 0,
+        "quality": "settled",
+        "requestedGeneration": 4,
+        "requestedHeatmapHeight": -1,
+        "requestedHeatmapWidth": -1,
+        "requestedPixels": 1,
+        "settled": true,
+        "sourcePoints": 22488,
+        "staleDrops": 0,
+        "textureUploads": 0,
+        "workerIdle": true
+    },
+    "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+    "captureHasVisibleContent": true,
+    "capturePixelSize": [
+        3840,
+        2160
+    ],
+    "completedFrames": 6,
+    "devicePixelRatio": 1.5,
+    "files": 3,
+    "fourK150Verified": true,
+    "fullScreen": true,
+    "gpuDataDrawCalls": 25,
+    "gpuVertexUploads": 5,
+    "hardwareRenderer": true,
+    "heatmapUploads": 1,
+    "iqInteraction": {
+    },
+    "logicalWindowSize": [
+        2560,
+        1440
+    ],
+    "mainPlotHeight": 888,
+    "mainRendering": {
+        "acceptedHeatmapPreview": false,
+        "colorTransformGenerations": 1,
+        "committedGeneration": 8,
+        "cpuWallTimings": {
+            "chartDrawCalls": 0,
+            "chartDrawCallsSkipped": 0,
+            "chartPaletteUploads": 1,
+            "chartVertexUploads": 0,
+            "gpuTimestamps": false,
+            "heatmapDrawCalls": 3,
+            "heatmapUploadPreparation": {
+                "lastMs": 1.7132,
+                "maxMs": 1.7132,
+                "samples": 1,
+                "totalMs": 1.7132
+            },
+            "lastChartDrawLoopIterations": 0,
+            "lastChartDrawRecordCount": 0,
+            "lastChartDrawStage": 0,
+            "lastChartVertexCount": 0,
+            "lastRenderHeight": 934,
+            "lastRenderWidth": 1984,
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+                "lastMs": 0.5168,
+                "maxMs": 4.3108,
+                "samples": 8,
+                "totalMs": 12.128900000000003
+            },
+            "overlayPainter": {
+                "lastMs": 6.6702,
+                "maxMs": 10.6625,
+                "samples": 8,
+                "totalMs": 62.835699999999996
+            },
+            "overlayUploadEnqueue": {
+                "lastMs": 0.0236,
+                "maxMs": 0.3583,
+                "samples": 8,
+                "totalMs": 1.0935
+            },
+            "paintEventIncludingQtSubmit": {
+                "lastMs": 9.8033,
+                "maxMs": 28.7422,
+                "samples": 9,
+                "totalMs": 117.09349999999998
+            },
+            "paletteUploads": 1,
+            "prepareUploads": {
+                "lastMs": 0.01,
+                "maxMs": 13.2887,
+                "samples": 10,
+                "totalMs": 77.9069
+            },
+            "render": {
+                "lastMs": 0.0698,
+                "maxMs": 13.6419,
+                "samples": 10,
+                "totalMs": 79.08500000000001
+            },
+            "renderInvocations": 10,
+            "unit": "ms"
+        },
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi heatmap texture",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 322500,
+        "generation": 8,
+        "gpuChartDrawCalls": 0,
+        "gpuDataDrawCalls": 3,
+        "gpuDataRenderer": "QRhi shader / vertex buffer",
+        "gpuHeatmapDrawCalls": 3,
+        "gpuPaletteUploads": 1,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 0,
+        "heatmapCacheHits": 0,
+        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+        "heatmapHeight": 430,
+        "heatmapWidth": 750,
+        "lastMatrixMs": 32.7545,
+        "matrixReductions": 0,
+        "overlayUploads": 8,
+        "powerGenerations": 7,
+        "quality": "settled",
+        "requestedGeneration": 8,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "settled": true,
+        "sourcePoints": 322500,
+        "staleDrops": 6,
+        "textureUploads": 1,
+        "workerIdle": true
+    },
+    "narrowbandPages": [
+    ],
+    "narrowbandPagesVerified": false,
+    "navigationRendering": {
+        "acceptedHeatmapPreview": false,
+        "colorTransformGenerations": 0,
+        "committedGeneration": 3,
+        "cpuWallTimings": {
+            "chartDrawCalls": 14,
+            "chartDrawCallsSkipped": 0,
+            "chartPaletteUploads": 3,
+            "chartVertexUploads": 2,
+            "gpuTimestamps": false,
+            "heatmapDrawCalls": 0,
+            "heatmapUploadPreparation": {
+                "lastMs": 0,
+                "maxMs": 0,
+                "samples": 0,
+                "totalMs": 0
+            },
+            "lastChartDrawLoopIterations": 2,
+            "lastChartDrawRecordCount": 2,
+            "lastChartDrawStage": 6,
+            "lastChartVertexCount": 39136,
+            "lastRenderHeight": 48,
+            "lastRenderWidth": 1984,
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+                "lastMs": 0.0217,
+                "maxMs": 0.1966,
+                "samples": 5,
+                "totalMs": 0.33240000000000003
+            },
+            "overlayPainter": {
+                "lastMs": 1.0069,
+                "maxMs": 11.2188,
+                "samples": 5,
+                "totalMs": 25.182899999999997
+            },
+            "overlayUploadEnqueue": {
+                "lastMs": 0.0108,
+                "maxMs": 0.8198,
+                "samples": 5,
+                "totalMs": 1.3189
+            },
+            "paintEventIncludingQtSubmit": {
+                "lastMs": 1.3358,
+                "maxMs": 14.4914,
+                "samples": 6,
+                "totalMs": 32.9387
+            },
+            "paletteUploads": 1,
+            "prepareUploads": {
+                "lastMs": 0.0074,
+                "maxMs": 11.9336,
+                "samples": 7,
+                "totalMs": 27.2425
+            },
+            "render": {
+                "lastMs": 0.0574,
+                "maxMs": 12.2871,
+                "samples": 7,
+                "totalMs": 28.129000000000005
+            },
+            "renderInvocations": 7,
+            "unit": "ms"
+        },
+        "curveCacheHits": 3,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi dynamic vertex buffer",
+        "curveReductions": 0,
+        "curveSourceGenerations": 2,
+        "drawnLineSegments": 3914,
+        "drawnPoints": 3916,
+        "generation": 3,
+        "gpuChartDrawCalls": 14,
+        "gpuDataDrawCalls": 14,
+        "gpuDataRenderer": "QRhi shader / vertex buffer",
+        "gpuHeatmapDrawCalls": 0,
+        "gpuPaletteUploads": 1,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 2,
+        "heatmapCacheHits": 0,
+        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+        "heatmapHeight": -1,
+        "heatmapWidth": -1,
+        "lastMatrixMs": 0,
+        "matrixReductions": 0,
+        "overlayUploads": 5,
+        "powerGenerations": 0,
+        "quality": "settled",
+        "requestedGeneration": 3,
+        "requestedHeatmapHeight": -1,
+        "requestedHeatmapWidth": -1,
+        "requestedPixels": 1,
+        "settled": true,
+        "sourcePoints": 3916,
+        "staleDrops": 0,
+        "textureUploads": 0,
+        "workerIdle": true
+    },
+    "overlayReusesHeatmap": true,
+    "pass": true,
+    "powerGenerations": 7,
+    "screen": {
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": [
+            2560,
+            0,
+            2560,
+            1440
+        ],
+        "name": "Redmi 27 NU",
+        "pixelSize": [
+            3840,
+            2160
+        ],
+        "primary": false
+    },
+    "screenLogicalDpi": 96,
+    "screenLogicalSize": [
+        2560,
+        1440
+    ],
+    "screens": [
+        {
+            "connectedIndex": 1,
+            "deviceName": "\\\\.\\DISPLAY1",
+            "devicePixelRatio": 1.5,
+            "logicalDpi": 96,
+            "logicalGeometry": [
+                0,
+                0,
+                1707,
+                1067
+            ],
+            "name": "TL160ADMP36",
+            "pixelSize": [
+                2560,
+                1600
+            ],
+            "primary": true
+        },
+        {
+            "connectedIndex": 2,
+            "deviceName": "\\\\.\\DISPLAY6",
+            "devicePixelRatio": 1.5,
+            "logicalDpi": 96,
+            "logicalGeometry": [
+                2560,
+                0,
+                2560,
+                1440
+            ],
+            "name": "Redmi 27 NU",
+            "pixelSize": [
+                3840,
+                2160
+            ],
+            "primary": false
+        }
+    ],
+    "uploadsAfterOverlay": 1,
+    "visibleCaptureSamples": 17280,
+    "workspaceMode": "wideband"
+}

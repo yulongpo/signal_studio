@@ -1,6 +1,8 @@
 #include "app/main_window.h"
 #include "infrastructure/project_store.h"
 #include "infrastructure/int16_iq_file.h"
+#include "infrastructure/channel_processor.h"
+#include "ui/narrowband_workspace.h"
 #include "ui/charts/plot_widget.h"
 
 #include <QAction>
@@ -13,6 +15,8 @@
 #include <QDir>
 #include <QDialog>
 #include <QDoubleSpinBox>
+#include <QComboBox>
+#include <QCheckBox>
 #include <QDoubleValidator>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -49,6 +53,7 @@
 #include <cmath>
 #include <functional>
 #include <limits>
+#include <unordered_set>
 
 namespace signalstudio {
 namespace {
@@ -273,7 +278,8 @@ void MainWindow::buildMenus() {
         const auto path = QFileDialog::getOpenFileName(this, "打开旧版工程 JSON", {}, "Signal Studio 工程 (*.json)");
         if (!path.isEmpty()) openProject(path);
     }); action->setObjectName("openProjectJsonAction");
-    action = file->addAction("打开演示工程", this, &MainWindow::openDemoProject); action->setObjectName("openDemoProjectAction");
+    action = file->addAction("打开宽带演示工程", this, &MainWindow::openDemoProject); action->setObjectName("openDemoProjectAction");
+    action = file->addAction("打开窄带演示工程", this, &MainWindow::openNarrowbandDemoProject); action->setObjectName("openNarrowbandDemoProjectAction");
     file->addSeparator();
     addSignalAction_ = file->addAction("▣ 添加 / 打开信号…", this, &MainWindow::showAddFileDialog); addSignalAction_->setObjectName("openIqAction");
     saveAction_ = file->addAction("⇩ 保存工程", this, [this] {
@@ -285,7 +291,12 @@ void MainWindow::buildMenus() {
     updateRecentProjectsMenu();
     removeAction_ = file->addAction("⊖ 从工程移除当前文件", this, [this] {
         cancelInteractions(); const auto* f = session_.activeFile(); if (!f) return;
-        if (QMessageBox::question(this, "移除文件", "仅从工程移除 " + q(f->metadata.name) + "？") != QMessageBox::Yes) return;
+        QString prompt = "从工程移除文件“" + q(f->metadata.name) + "”？源文件本身不会删除。";
+        if (!f->channels.empty()) {
+            QStringList names; for (const auto& channel : f->channels) names << q(channel.name);
+            prompt += "\n\n以下窄带通道也会移除：\n" + names.join("\n");
+        }
+        if (QMessageBox::question(this, "移除文件及关联通道", prompt) != QMessageBox::Yes) return;
         session_.removeActiveFile(); if (!session_.activeFile() && maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
         selectionAnchor_.clear(); refresh(); log("已从工程移除 IQ 文件");
     }); removeAction_->setObjectName("removeFileAction");
@@ -342,12 +353,32 @@ void MainWindow::buildWorkspace() {
     auto* workspace = new QWidget; workspace->setObjectName("workspace"); workspace->setMinimumWidth(0);
     auto* center = new QVBoxLayout(workspace); center->setContentsMargins(0, 0, 0, 0); center->setSpacing(0);
     auto* scopeBar = new QWidget; scopeBar->setObjectName("scopeBar"); scopeBar->setFixedHeight(35); auto* scopeRow = new QHBoxLayout(scopeBar); scopeRow->setContentsMargins(12, 0, 12, 0); scopeRow->setSpacing(13);
-    auto* workMode = push("宽带时频研判", "workspaceMode", scopeRow); workMode->setCheckable(true); workMode->setChecked(true); workMode->setProperty("uiRole", "primary"); workMode->setFixedHeight(28);
+    auto* workMode = push("宽带时频研判", "workspaceMode", scopeRow); workspaceModeButton_ = workMode;
+    workMode->setCheckable(true); workMode->setChecked(true); workMode->setProperty("uiRole", "primary"); workMode->setFixedHeight(28);
     projectLabel_ = label({}, "projectLabel", "hint"); scopeRow->addWidget(projectLabel_); scopeRow->addStretch(); scope_ = label({}, "scopeText", "hint"); scope_->setStyleSheet("font:11px Consolas;color:#8db5d3;"); scopeRow->addWidget(scope_); center->addWidget(scopeBar);
     auto* graphArea = new QWidget; auto* graphLayout = new QVBoxLayout(graphArea); graphLayout->setContentsMargins(5, 5, 5, 5); graphLayout->setSpacing(0);
     auto* splitter = new PrototypeSplitter; graphs_ = splitter; graphs_->setObjectName("graphSplitter"); graphs_->setChildrenCollapsible(false); graphs_->setHandleWidth(10);
     splitter->restoreDefaults = [this] { cancelInteractions(false); enforceLayout(true); };
-    graphLayout->addWidget(graphs_); center->addWidget(graphArea, 1);
+    graphLayout->addWidget(graphs_);
+    workspaceStack_ = new QStackedWidget; workspaceStack_->setObjectName("workspaceStack");
+    workspaceStack_->addWidget(graphArea);
+    narrowband_ = new NarrowbandWorkspace(session_); workspaceStack_->addWidget(narrowband_);
+    narrowband_->setCallbacks([this] { locateActiveChannelSource(); }, [this] {
+        const auto* channel = session_.activeChannel(); if (channel) showChannelDialog(q(channel->id));
+    }, [this] {
+        session_.project().narrowbandWorkspaceOpen = false; workspaceStack_->setCurrentIndex(0);
+        workspaceModeButton_->setChecked(true); refresh();
+    }, [this](const QString& message) { log(message); });
+    center->addWidget(workspaceStack_, 1);
+    connect(workMode, &QPushButton::clicked, this, [this, workMode] {
+        if (workMode->isChecked()) { session_.project().narrowbandWorkspaceOpen = false; workspaceStack_->setCurrentIndex(0); }
+        else if (session_.activeChannel()) { session_.project().narrowbandWorkspaceOpen = true; workspaceStack_->setCurrentIndex(1); narrowband_->refreshFromSession(); }
+        else {
+            workMode->setChecked(true);
+            QMessageBox::information(this, "窄带工作区", "请先从工程树打开一个窄带通道，或从信号标记创建通道。");
+        }
+        refresh();
+    });
     connect(graphs_, &QSplitter::splitterMoved, this, [this] { enforceLayout(); saveUiState(); });
     navigation_ = new PlotWidget(session_, PlotWidget::Kind::Navigation); navigation_->setObjectName("navigationPlot");
     auxiliary_ = new PlotWidget(session_, PlotWidget::Kind::Auxiliary); auxiliary_->setObjectName("auxPlot");
@@ -394,8 +425,8 @@ void MainWindow::buildWorkspace() {
     cursorData_ = label({}, "cursorData"); viewData_ = label({}, "viewData"); selectionData_ = label({}, "selectionData");
     for (auto* value : {cursorData_, viewData_, selectionData_}) { value->setStyleSheet("font:10px Consolas;color:#a7bbd0;"); metaRow->addWidget(value); }
     selectionData_->setStyleSheet("font:10px Consolas;color:#edc676;"); metaRow->addStretch();
-    extract_ = push("基于标记创建窄带通道 →", "extract", metaRow); extract_->setProperty("uiRole", "primary"); extract_->setFixedHeight(24);
-    connect(extract_, &QPushButton::clicked, this, [this] { cancelInteractions(false); if (session_.createChannelFromActiveMark()) { refresh(); log("已建立演示窄带通道；未执行真实 DDC"); } else log("请先选择一个信号标记"); });
+    extract_ = push("基于所选标记创建窄带通道 →", "extract", metaRow); extract_->setProperty("uiRole", "primary"); extract_->setFixedHeight(24);
+    connect(extract_, &QPushButton::clicked, this, [this] { cancelInteractions(false); showChannelDialog(); });
     static_cast<QVBoxLayout*>(panels_[2]->layout())->addWidget(meta);
 
     bottom_ = new QWidget; bottom_->setObjectName("bottom"); auto* bottomLayout = new QVBoxLayout(bottom_); bottomLayout->setContentsMargins(0, 0, 0, 0); bottomLayout->setSpacing(0);
@@ -438,8 +469,26 @@ void MainWindow::buildWorkspace() {
     rename_ = push("重命名", "renameMark", markRow); locate_ = push("定位", "locateMark", markRow); delete_ = push("删除所选", "deleteMarks", markRow);
     for (auto* action : {rename_, locate_, delete_}) action->setProperty("uiRole", "outline"); markRow->addStretch(); mark.form->addRow(markActions);
     connect(rename_, &QPushButton::clicked, this, &MainWindow::renameMark); connect(locate_, &QPushButton::clicked, this, &MainWindow::locateMark); connect(delete_, &QPushButton::clicked, this, &MainWindow::deleteMarks);
+    auto channel = section(propertyLayout_, "narrowbandChannelSection", "窄带通道参数", true);
+    channelSection_ = channel.widget;
+    const std::array<QString, 6> channelNames{"来源文件", "来源标记", "射频中心", "有效带宽", "输出采样率", "源样本时段"};
+    const std::array<QString, 6> channelIds{"narrowbandSourceFile", "narrowbandSourceMark", "narrowbandCenter", "narrowbandBandwidth", "narrowbandOutputRate", "narrowbandSourceTime"};
+    for (std::size_t index = 0; index < channelValues_.size(); ++index) {
+        channelValues_[index] = output(channelIds[index]);
+        row(channel.form, channelNames[index], channelValues_[index]);
+    }
+    auto* channelActions = new QWidget; auto* channelRow = new QHBoxLayout(channelActions);
+    channelRow->setContentsMargins(0, 5, 0, 0); channelRow->setSpacing(5);
+    auto* locateChannel = push("⌖ 来源定位", "propertyLocateChannelSource", channelRow);
+    auto* editChannel = push("修改参数…", "propertyEditChannel", channelRow);
+    locateChannel->setProperty("uiRole", "outline"); editChannel->setProperty("uiRole", "outline");
+    channel.form->addRow(channelActions);
+    connect(locateChannel, &QPushButton::clicked, this, &MainWindow::locateActiveChannelSource);
+    connect(editChannel, &QPushButton::clicked, this, [this] {
+        if (const auto* active = session_.activeChannel()) showChannelDialog(q(active->id));
+    });
     auto psd = section(propertyLayout_, "psdSection", "辅助图设置", true); psdSection_ = psd.widget;
-    waveformMode_ = combo("waveformMode", {"I 分量（归一化）", "Q 分量（归一化）", "IQ RMS 包络 (dBFS)"}); row(psd.form, "时域波形", waveformMode_);
+    waveformMode_ = combo("waveformMode", {"I 分量（ADC 计数）", "Q 分量（ADC 计数）", "幅度（RMS，ADC 计数）", "幅度包络（ADC 计数）"}); row(psd.form, "时域波形", waveformMode_);
     psd_ = combo("psdFft", {"1024", "2048", "4096", "8192"}); psdScope_ = combo("psdScope", {"当前可见时间窗", "当前活动信号标记"}); row(psd.form, "PSD FFT 点数", psd_); row(psd.form, "统计时间范围", psdScope_);
     auto spec = section(propertyLayout_, "specSection", "时频图设置", true);
     QStringList stftSizes; for (int order = 8; order <= 16; ++order) stftSizes << QString::number(1 << order);
@@ -479,6 +528,9 @@ void MainWindow::buildWorkspace() {
 
     connect(tree_, &QTreeWidget::itemClicked, this, [this](QTreeWidgetItem* item, int) {
         if (refreshing_) return;
+        if (item->data(0, Qt::UserRole).toString() == "channel") {
+            activateTreeChannel(item->data(0, Qt::UserRole + 1).toString()); return;
+        }
         if (item->data(0, Qt::UserRole).toString() == "mark") {
             if (!(treeSelectionModifiers_ & Qt::ShiftModifier)) selectionAnchor_ = item->data(0, Qt::UserRole + 1).toString().toStdString();
             return;
@@ -494,11 +546,45 @@ void MainWindow::buildWorkspace() {
         if (auto* active = session_.activeFile()) active->display.psdFromSelection = sharedPsdFromSelectionPreference_ && findMark(*active, active->activeMarkId);
         propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave();
     });
-    connect(tree_, &QTreeWidget::itemDoubleClicked, this, [this](QTreeWidgetItem* item, int) { if (item->data(0, Qt::UserRole).toString() == "mark") { cancelInteractions(); session_.focusMark(item->data(0, Qt::UserRole + 1).toString().toStdString()); refresh(); } });
+    connect(tree_, &QTreeWidget::itemDoubleClicked, this, [this](QTreeWidgetItem* item, int) {
+        if (item->data(0, Qt::UserRole).toString() == "mark") { cancelInteractions(); session_.focusMark(item->data(0, Qt::UserRole + 1).toString().toStdString()); session_.project().narrowbandWorkspaceOpen = false; workspaceStack_->setCurrentIndex(0); refresh(); }
+        else if (item->data(0, Qt::UserRole).toString() == "channel") activateTreeChannel(item->data(0, Qt::UserRole + 1).toString());
+    });
     connect(tree_, &QTreeWidget::itemEntered, this, [this](QTreeWidgetItem* item, int) { main_->setHoveredMark(item->data(0, Qt::UserRole).toString() == "mark" ? item->data(0, Qt::UserRole + 1).toString() : QString{}); });
     tree_->viewport()->installEventFilter(this);
     connect(tree_, &QTreeWidget::customContextMenuRequested, this, [this](QPoint point) {
-        auto* item = tree_->itemAt(point); if (!item || item->data(0, Qt::UserRole).toString() != "mark") return;
+        auto* item = tree_->itemAt(point); if (!item) return;
+        const auto kind = item->data(0, Qt::UserRole).toString();
+        if (kind == "channel") {
+            const auto channelId = item->data(0, Qt::UserRole + 1).toString();
+            QMenu menu(this);
+            menu.addAction("打开窄带工作区", this, [this, channelId] { activateTreeChannel(channelId); });
+            menu.addAction("修改通道参数…", this, [this, channelId] { showChannelDialog(channelId); });
+            menu.addAction("定位来源标记", this, [this, channelId] { session_.activateChannel(channelId.toStdString()); locateActiveChannelSource(); });
+            menu.addAction("重命名通道…", this, [this, channelId] {
+                auto* file = session_.fileForChannel(channelId.toStdString()); if (!file) return;
+                auto it = std::find_if(file->channels.begin(), file->channels.end(), [&](const Channel& value) { return value.id == channelId.toStdString(); });
+                if (it == file->channels.end()) return; bool ok = false;
+                const auto name = QInputDialog::getText(this, "重命名窄带通道", "通道名称", QLineEdit::Normal, q(it->name), &ok).trimmed();
+                if (ok && !name.isEmpty() && name.size() <= 80) { auto updated = *it; updated.name = name.toStdString(); session_.updateChannel(updated.id, updated); refresh(); }
+            });
+            menu.addAction("删除通道…", this, [this, channelId] {
+                auto* file = session_.fileForChannel(channelId.toStdString()); if (!file) return;
+                const auto* channel = [&]() -> const Channel* { for (const auto& value : file->channels) if (value.id == channelId.toStdString()) return &value; return nullptr; }();
+                if (!channel || QMessageBox::question(this, "删除窄带通道", "删除通道“" + q(channel->name) + "”？") != QMessageBox::Yes) return;
+                auto& channels = file->channels;
+                channels.erase(std::remove_if(channels.begin(), channels.end(), [&](const Channel& value) { return value.id == channelId.toStdString(); }), channels.end());
+                if (session_.project().activeChannelId == channelId.toStdString()) { session_.project().activeChannelId.clear(); session_.project().narrowbandWorkspaceOpen = false; }
+                refresh(); log("已删除窄带通道");
+            });
+            menu.exec(tree_->viewport()->mapToGlobal(point)); return;
+        }
+        if (kind == "file") {
+            const auto fileId = item->data(0, Qt::UserRole + 1).toString();
+            QMenu menu(this); menu.addAction("打开宽带工作区", this, [this, fileId] { session_.activateFile(fileId.toStdString()); session_.project().narrowbandWorkspaceOpen = false; refresh(); });
+            menu.addAction("添加 / 打开 IQ…", this, &MainWindow::showAddFileDialog); menu.exec(tree_->viewport()->mapToGlobal(point)); return;
+        }
+        if (kind != "mark") return;
         const auto id = item->data(0, Qt::UserRole + 1).toString(); const auto* f = session_.activeFile(); if (!f) return;
         if (std::find(f->selectedMarkIds.begin(), f->selectedMarkIds.end(), id.toStdString()) == f->selectedMarkIds.end()) selectMark(id, Qt::NoModifier);
         cancelInteractions(false); QMenu menu(this); menu.addAction("重命名当前标记", this, &MainWindow::renameMark); menu.addAction("定位当前标记", this, &MainWindow::locateMark);
@@ -544,16 +630,11 @@ void MainWindow::buildWorkspace() {
         display.auxiliaryMax = nextAux == AuxiliaryMode::Waveform ? display.waveformMax : display.psdMax;
         const double effectiveBandwidthHz = effectiveBandwidth_->value() * 1e6;
         const bool waveformChanged = display.waveformMode != f->display.waveformMode;
+        if (waveformChanged) display.waveformAutoFit = true;
         f->display = display;
         if (std::abs(f->metadata.effectiveBandwidthHz - effectiveBandwidthHz) > 0.5)
             session_.setEffectiveBandwidthHz(effectiveBandwidthHz);
         f = session_.activeFile(); if (!f || f->metadata.id != fileId) return;
-        if (waveformChanged && display.auxiliaryMode == AuxiliaryMode::Waveform) {
-            const auto limits = display.waveformMode == WaveformMode::IqRms ?
-                std::pair{-80.0, 0.0} : std::pair{-1.0, 1.0};
-            f->display.waveformMin = f->display.auxiliaryMin = limits.first;
-            f->display.waveformMax = f->display.auxiliaryMax = limits.second;
-        }
         session_.setView(f->view, false); propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave();
     };
     for (auto* control : {mainMode_, auxMode_, waveformMode_, palette_, psd_, stft_, psdScope_, freqMode_})
@@ -601,7 +682,13 @@ void MainWindow::rebuildTree() {
             node->setSelected(std::find(file.selectedMarkIds.begin(), file.selectedMarkIds.end(), mark.id) != file.selectedMarkIds.end()); if (mark.id == file.activeMarkId) tree_->setCurrentItem(node, 0, QItemSelectionModel::NoUpdate);
         }
         auto* channels = new QTreeWidgetItem(item, {QString("窄带通道 (%1)").arg(file.channels.size())}); channels->setData(0, Qt::UserRole, "channels"); channels->setFlags(Qt::ItemIsEnabled); channels->setExpanded(true); channels->setSizeHint(0, QSize(0, 30)); channels->setForeground(0, QColor("#93b9d6"));
-        for (const auto& channel : file.channels) { auto* node = new QTreeWidgetItem(channels, {"◇ " + q(channel.name) + " · " + coordinate(channel.centerFrequencyHz, channel.bandwidthHz, false)}); node->setData(0, Qt::UserRole, "channel"); node->setFlags(Qt::ItemIsEnabled); node->setSizeHint(0, QSize(0, 31)); node->setToolTip(0, "演示通道，未执行 DDC"); }
+        for (const auto& channel : file.channels) {
+            auto* node = new QTreeWidgetItem(channels, {"◇ " + q(channel.name) + " · " + coordinate(channel.centerFrequencyHz, channel.bandwidthHz, false)});
+            node->setData(0, Qt::UserRole, "channel"); node->setData(0, Qt::UserRole + 1, q(channel.id));
+            node->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable); node->setSizeHint(0, QSize(0, 31));
+            node->setToolTip(0, channel.processingState == ChannelProcessingState::Ready ? "打开真实窄带分析工作区" : "通道配置待确认");
+            if (channel.id == session_.project().activeChannelId) { node->setBackground(0, QColor("#3d442f")); node->setForeground(0, QColor("#fff0bf")); }
+        }
         if (file.activeMarkId.empty()) tree_->setCurrentItem(item, 0, QItemSelectionModel::NoUpdate);
     }
     treeStructure_ = treeStructure();
@@ -711,7 +798,7 @@ void MainWindow::applyGlobalRightSidebarSettings(const DisplaySettings& fallback
     const int auxiliaryMode = integer(QStringLiteral("auxiliaryMode"), static_cast<int>(shared.auxiliaryMode));
     if (auxiliaryMode >= 0 && auxiliaryMode <= 1) shared.auxiliaryMode = static_cast<AuxiliaryMode>(auxiliaryMode);
     const int waveformMode = integer(QStringLiteral("waveformMode"), static_cast<int>(shared.waveformMode));
-    if (waveformMode >= 0 && waveformMode <= 2) shared.waveformMode = static_cast<WaveformMode>(waveformMode);
+    if (waveformMode >= 0 && waveformMode <= 3) shared.waveformMode = static_cast<WaveformMode>(waveformMode);
     const int palette = integer(QStringLiteral("palette"), static_cast<int>(shared.palette));
     if (palette >= 0 && palette <= static_cast<int>(Palette::CoolEditClassic)) shared.palette = static_cast<Palette>(palette);
     const int stftSize = integer(QStringLiteral("stftSize"), shared.stftSize);
@@ -724,16 +811,17 @@ void MainWindow::applyGlobalRightSidebarSettings(const DisplaySettings& fallback
     if (referenceLevel >= -200 && referenceLevel <= 100) shared.referenceLevelDb = referenceLevel;
     shared.absoluteFrequency = values.value(QStringLiteral("absoluteFrequency"), shared.absoluteFrequency).toBool();
     shared.grid = values.value(QStringLiteral("grid"), shared.grid).toBool();
+    shared.waveformAutoFit = values.value(QStringLiteral("waveformAutoFit"), true).toBool();
     shared.colorScale = values.value(QStringLiteral("colorScale"), shared.colorScale).toBool();
     sharedPsdFromSelectionPreference_ = values.value(QStringLiteral("psdFromSelection"), shared.psdFromSelection).toBool();
     shared.waveformMin = real(QStringLiteral("waveformMin"), shared.waveformMin);
     shared.waveformMax = real(QStringLiteral("waveformMax"), shared.waveformMax);
     shared.psdMin = real(QStringLiteral("psdMin"), shared.psdMin);
     shared.psdMax = real(QStringLiteral("psdMax"), shared.psdMax);
-    if (!std::isfinite(shared.waveformMin) || !std::isfinite(shared.waveformMax) || shared.waveformMax - shared.waveformMin < 2.0) { shared.waveformMin = -80; shared.waveformMax = 0; }
+    if (!std::isfinite(shared.waveformMin) || !std::isfinite(shared.waveformMax) || shared.waveformMax - shared.waveformMin < 2.0) { shared.waveformMin = -32768; shared.waveformMax = 32768; }
     if (!std::isfinite(shared.psdMin) || !std::isfinite(shared.psdMax) || shared.psdMax - shared.psdMin < 2.0) { shared.psdMin = -100; shared.psdMax = 0; }
-    shared.waveformMin = std::clamp(shared.waveformMin, -160.0, 158.0);
-    shared.waveformMax = std::clamp(shared.waveformMax, shared.waveformMin + 2.0, 160.0);
+    shared.waveformMin = std::clamp(shared.waveformMin, -65536.0, 65534.0);
+    shared.waveformMax = std::clamp(shared.waveformMax, shared.waveformMin + 2.0, 65536.0);
     shared.psdMin = std::clamp(shared.psdMin, -180.0, 48.0);
     shared.psdMax = std::clamp(shared.psdMax, shared.psdMin + 2.0, 50.0);
     shared.auxiliaryMin = shared.auxiliaryMode == AuxiliaryMode::Waveform ? shared.waveformMin : shared.psdMin;
@@ -750,6 +838,7 @@ void MainWindow::applyGlobalRightSidebarSettings(const DisplaySettings& fallback
         display.referenceLevelDb = shared.referenceLevelDb;
         display.absoluteFrequency = shared.absoluteFrequency;
         display.grid = shared.grid;
+        display.waveformAutoFit = shared.waveformAutoFit;
         display.colorScale = shared.colorScale;
         display.waveformMin = shared.waveformMin;
         display.waveformMax = shared.waveformMax;
@@ -780,6 +869,7 @@ void MainWindow::propagateGlobalRightSidebarSettings() {
         display.referenceLevelDb = shared.referenceLevelDb;
         display.absoluteFrequency = shared.absoluteFrequency;
         display.grid = shared.grid;
+        display.waveformAutoFit = shared.waveformAutoFit;
         display.colorScale = shared.colorScale;
         display.waveformMin = shared.waveformMin;
         display.waveformMax = shared.waveformMax;
@@ -827,6 +917,7 @@ void MainWindow::saveRightSidebarSettings() {
             {QStringLiteral("psdFromSelection"), sharedPsdFromSelectionPreference_},
             {QStringLiteral("waveformMin"), display.waveformMin},
             {QStringLiteral("waveformMax"), display.waveformMax},
+            {QStringLiteral("waveformAutoFit"), display.waveformAutoFit},
             {QStringLiteral("psdMin"), display.psdMin},
             {QStringLiteral("psdMax"), display.psdMax}
         });
@@ -894,6 +985,10 @@ void MainWindow::syncTreeState() {
 void MainWindow::refresh() {
     if (refreshing_) return; refreshing_ = true;
     const auto* file = session_.activeFile(); updateTree(); projectLabel_->setText(q(session_.project().name));
+    const bool narrowOpen = session_.project().narrowbandWorkspaceOpen && session_.activeChannel() != nullptr;
+    workspaceStack_->setCurrentIndex(narrowOpen ? 1 : 0);
+    workspaceModeButton_->setChecked(!narrowOpen);
+    if (narrowband_ && narrowOpen) narrowband_->refreshFromSession();
     const bool projectReady = !projectPath_.isEmpty() || !session_.project().files.empty();
     for (auto* control : std::array<QWidget*, 15>{mainMode_, auxMode_, waveformMode_, palette_, propertyPalette_, dynamic_, reference_, freqMode_, grid_, colorScale_, psd_, stft_, psdScope_, extract_, effectiveBandwidth_}) control->setEnabled(file != nullptr);
     waveformMode_->setEnabled(file && !file->metadata.demo && file->display.auxiliaryMode == AuxiliaryMode::Waveform);
@@ -934,7 +1029,7 @@ void MainWindow::refresh() {
         viewValues_[0]->setText(timeRange(file->view.time, file->metadata.sampleRateHz)); viewValues_[1]->setText(frequencyRange(file->view.frequency));
         viewData_->setText("| 视图 ΔT " + coordinate(static_cast<double>(file->view.time.end - file->view.time.begin) / file->metadata.sampleRateHz, 0, true) + " · ΔF " + coordinate(file->view.frequency.upperHz - file->view.frequency.lowerHz, 0, false));
         const auto* mark = findMark(*file, file->activeMarkId);
-        extract_->setEnabled(mark != nullptr);
+        extract_->setEnabled(!file->marks.empty());
         if (mark) {
             const double span = static_cast<double>(mark->range.time.end - mark->range.time.begin) / file->metadata.sampleRateHz;
             markValues_[0]->setText(coordinate(static_cast<double>(mark->range.time.begin) / file->metadata.sampleRateHz, span, true)); markValues_[1]->setText(coordinate(static_cast<double>(mark->range.time.end) / file->metadata.sampleRateHz, span, true)); markValues_[2]->setText(frequencyRange(mark->range.frequency));
@@ -952,11 +1047,178 @@ void MainWindow::refresh() {
     updatePropertyContext(); updateBottom(); for (auto* plot : {navigation_, auxiliary_, main_}) plot->syncState(); refreshing_ = false;
 }
 
+void MainWindow::activateTreeChannel(const QString& channelId) {
+    cancelInteractions(false);
+    if (!session_.activateChannel(channelId.toStdString())) return;
+    session_.project().narrowbandWorkspaceOpen = true;
+    workspaceStack_->setCurrentIndex(1); refresh();
+    log("已打开窄带通道 · 真实 DDC 按可见时段按需计算");
+}
+
+void MainWindow::locateActiveChannelSource() {
+    const auto* channel = session_.activeChannel(); if (!channel) return;
+    const auto channelId = channel->id;
+    const auto* file = session_.fileForChannel(channelId); if (!file) return;
+    const auto fileId = file->metadata.id; const auto markId = channel->sourceMarkId;
+    cancelInteractions(false);
+    if (!session_.activateFile(fileId) || !session_.focusMark(markId)) return;
+    session_.project().narrowbandWorkspaceOpen = false; workspaceStack_->setCurrentIndex(0);
+    refresh(); log("已返回来源文件并定位源标记；再次打开通道可恢复窄带视图");
+}
+
+void MainWindow::showChannelDialog(const QString& channelId) {
+    cancelInteractions(false);
+    auto* file = session_.activeFile();
+    const bool editing = !channelId.isEmpty();
+    Channel original;
+    if (editing) {
+        file = session_.fileForChannel(channelId.toStdString());
+        if (!file) return;
+        const auto found = std::find_if(file->channels.begin(), file->channels.end(), [&](const Channel& value) { return value.id == channelId.toStdString(); });
+        if (found == file->channels.end()) return;
+        original = *found;
+    }
+    if (!file || file->marks.empty()) {
+        QMessageBox::information(this, "创建窄带通道", "请先为 IQ 源添加至少一个信号标记。"); return;
+    }
+
+    auto* dialog = new QDialog(this); dialog->setObjectName("channelConfigDialog");
+    dialog->setWindowTitle(editing ? "修改窄带通道" : "从源标记创建窄带通道");
+    dialog->setAttribute(Qt::WA_DeleteOnClose); dialog->setModal(true); dialog->setMinimumWidth(560);
+    auto* outer = new QVBoxLayout(dialog); outer->setContentsMargins(20, 17, 20, 16); outer->setSpacing(10);
+    auto* intro = label(editing ? "修改将作为一个配置事务提交；取消不会改变现有通道。" :
+        "选择一个来源标记并设置真实 DDC 参数。预览和校验通过后才创建通道。", {}, "help");
+    intro->setWordWrap(true); outer->addWidget(intro);
+    auto* form = new QFormLayout; form->setSpacing(9); form->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    auto* name = new QLineEdit(editing ? q(original.name) : QStringLiteral("窄带通道 %1").arg(file->channels.size() + 1)); name->setObjectName("channelName");
+    auto* sourceMark = new QComboBox; sourceMark->setObjectName("channelSourceMark");
+    for (const auto& mark : file->marks) {
+        sourceMark->addItem(q(mark.name) + " · " + timeRange(mark.range.time, file->metadata.sampleRateHz) +
+            " · " + frequencyRange(mark.range.frequency), q(mark.id));
+    }
+    if (editing) sourceMark->setCurrentIndex(std::max(0, sourceMark->findData(q(original.sourceMarkId))));
+    else if (!file->activeMarkId.empty()) sourceMark->setCurrentIndex(std::max(0, sourceMark->findData(q(file->activeMarkId))));
+    const auto sampled = fullRange(file->metadata).frequency;
+    auto* center = new QDoubleSpinBox; center->setObjectName("channelCenterMHz"); center->setRange(sampled.lowerHz / 1e6, sampled.upperHz / 1e6); center->setDecimals(6); center->setSingleStep(.1); center->setSuffix(" MHz");
+    auto* bandwidth = new QDoubleSpinBox; bandwidth->setObjectName("channelBandwidthMHz"); bandwidth->setRange(.000001, file->metadata.sampleRateHz / 1e6); bandwidth->setDecimals(6); bandwidth->setSingleStep(.1); bandwidth->setSuffix(" MHz");
+    auto* outputRate = new QDoubleSpinBox; outputRate->setObjectName("channelOutputRateMSps"); outputRate->setRange(.000001, std::max(.000002, file->metadata.sampleRateHz / 1e6)); outputRate->setDecimals(6); outputRate->setSingleStep(1); outputRate->setSuffix(" MS/s");
+    auto* timeMode = new QComboBox; timeMode->setObjectName("channelTimeScope"); timeMode->addItems({"所选标记时段", "完整源文件"});
+    auto* filter = new QComboBox; filter->setObjectName("channelFilter"); filter->addItems({"快速预览 · 40 dB", "标准 · 60 dB", "高抑制 · 80 dB"});
+    auto* preserveTime = new QCheckBox("保持源文件绝对时间显示"); preserveTime->setObjectName("channelPreserveSourceTime"); preserveTime->setChecked(!editing || original.preserveSourceTime);
+    auto* autoOpen = new QCheckBox("确认后打开窄带工作区"); autoOpen->setObjectName("channelAutoOpen"); autoOpen->setChecked(true);
+    if (editing) { center->setValue(original.centerFrequencyHz / 1e6); bandwidth->setValue(original.bandwidthHz / 1e6); outputRate->setValue(original.outputSampleRateHz / 1e6); timeMode->setCurrentIndex(original.wholeSource ? 1 : 0); filter->setCurrentIndex(static_cast<int>(original.filter)); }
+    else if (const auto* mark = findMark(*file, file->marks[static_cast<std::size_t>(sourceMark->currentIndex())].id)) {
+        center->setValue((mark->range.frequency.lowerHz + mark->range.frequency.upperHz) / 2e6);
+        bandwidth->setValue(std::max(.001, (mark->range.frequency.upperHz - mark->range.frequency.lowerHz) / 1e6));
+        outputRate->setValue(std::max(4.0, bandwidth->value() * 1.3));
+    }
+    form->addRow("通道名称", name); form->addRow("来源标记（单选）", sourceMark);
+    form->addRow("射频中心", center); form->addRow("有效带宽", bandwidth); form->addRow("输出采样率", outputRate);
+    form->addRow("提取时段", timeMode); form->addRow("FIR 滤波", filter); form->addRow("时间坐标", preserveTime);
+    outer->addLayout(form);
+    auto* preview = label({}, "channelDspPlanPreview", "help"); preview->setWordWrap(true); preview->setMinimumHeight(58); preview->setStyleSheet("background:#0c1a2a;border:1px solid #29445e;padding:8px;color:#95c9dc;"); outer->addWidget(preview);
+    auto* validation = label({}, "channelValidation"); validation->setWordWrap(true); validation->setStyleSheet("color:#ff9b8d;"); outer->addWidget(validation);
+    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
+    buttons->button(QDialogButtonBox::Ok)->setText(editing ? "应用通道参数" : "创建通道"); buttons->button(QDialogButtonBox::Ok)->setObjectName("confirmChannelConfig");
+    buttons->button(QDialogButtonBox::Cancel)->setText("取消"); outer->addWidget(buttons);
+    auto* confirm = buttons->button(QDialogButtonBox::Ok);
+    auto validate = [this, file, editing, original, name, sourceMark, center, bandwidth, outputRate, timeMode, filter, preview, validation, confirm] {
+        QString reason;
+        if (name->text().trimmed().isEmpty() || name->text().trimmed().size() > 80) reason = "通道名称长度必须为 1–80 个字符。";
+        const auto markId = sourceMark->currentData().toString().toStdString();
+        const auto* mark = findMark(*file, markId);
+        if (!mark && reason.isEmpty()) reason = "来源标记已失效，请重新选择。";
+        const double fc = center->value() * 1e6, bw = bandwidth->value() * 1e6, fs = outputRate->value() * 1e6;
+        Channel candidate = editing ? original : Channel{};
+        candidate.centerFrequencyHz = fc; candidate.bandwidthHz = bw; candidate.outputSampleRateHz = fs;
+        candidate.filter = static_cast<ChannelFilter>(filter->currentIndex());
+        if (mark) {
+            candidate.sourceMarkId = mark->id;
+            candidate.sourceTime = timeMode->currentIndex() == 1 ? TimeRange{0, file->metadata.sampleCount} : mark->range.time;
+        }
+        ChannelDspPlan plan;
+        const bool planned = reason.isEmpty() && makeChannelDspPlan(file->metadata, candidate, plan, reason);
+        if (reason.isEmpty() && !planned) reason = "DSP 参数校验未通过。";
+        if (planned) {
+            std::size_t taps = 0; for (const auto& stage : plan.stageCoefficients) taps += stage.size();
+            preview->setText(QString("DspPlan：过渡带 ±%1 kHz · 截止 %2 kHz · FIR %3 阶 / %4 taps · 有理重采样 L/M=%5/%6 · %7 dB 目标\n采样率约束：Fs′ ≥ BW + 2Δf = %8 MS/s；窗口按需提取，不预扫描全时段。")
+                .arg(plan.transitionHz / 1e3, 0, 'f', 3).arg(plan.cutoffHz / 1e3, 0, 'f', 3)
+                .arg(taps ? taps - 1 : 0).arg(taps).arg(plan.interpolation).arg(plan.decimation)
+                .arg(plan.stopbandAttenuationDb, 0, 'f', 0).arg((bw + 2 * plan.transitionHz) / 1e6, 0, 'f', 3));
+        } else {
+            preview->setText(QString("默认优先 4 MS/s；FIR、通带/过渡带和 L/M 约束均按实际 DspPlan 校验。"));
+            if (reason.isEmpty()) reason = QStringLiteral("当前设置不满足窄带处理要求。");
+        }
+        validation->setText(reason); confirm->setEnabled(reason.isEmpty() && planned);
+    };
+    connect(name, &QLineEdit::textChanged, dialog, [validate] { validate(); });
+    connect(sourceMark, &QComboBox::currentIndexChanged, dialog, [this, editing, original, file, sourceMark, center, bandwidth, validate] {
+        if (!editing && sourceMark->currentIndex() >= 0) if (const auto* mark = findMark(*file, sourceMark->currentData().toString().toStdString())) {
+            center->setValue((mark->range.frequency.lowerHz + mark->range.frequency.upperHz) / 2e6);
+            bandwidth->setValue(std::max(.001, (mark->range.frequency.upperHz - mark->range.frequency.lowerHz) / 1e6));
+        }
+        validate();
+    });
+    for (auto* control : {static_cast<QWidget*>(center), static_cast<QWidget*>(bandwidth), static_cast<QWidget*>(outputRate), static_cast<QWidget*>(timeMode), static_cast<QWidget*>(filter)}) {
+        if (auto* spin = qobject_cast<QDoubleSpinBox*>(control)) connect(spin, &QDoubleSpinBox::valueChanged, dialog, [validate] { validate(); });
+        else if (auto* combo = qobject_cast<QComboBox*>(control)) connect(combo, &QComboBox::currentIndexChanged, dialog, [validate] { validate(); });
+    }
+    validate();
+    connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+    connect(buttons, &QDialogButtonBox::accepted, dialog, [this, dialog, editing, channelId, original, file, name, sourceMark, center, bandwidth, outputRate, timeMode, filter, preserveTime, autoOpen] {
+        const auto* mark = findMark(*file, sourceMark->currentData().toString().toStdString()); if (!mark) return;
+        const auto range = timeMode->currentIndex() == 1 ? TimeRange{0, file->metadata.sampleCount} : mark->range.time;
+        bool ok = false;
+        if (editing) {
+            auto updated = original; updated.name = name->text().trimmed().toStdString(); updated.sourceMarkId = mark->id;
+            updated.centerFrequencyHz = center->value() * 1e6; updated.bandwidthHz = bandwidth->value() * 1e6;
+            updated.outputSampleRateHz = outputRate->value() * 1e6; updated.filter = static_cast<ChannelFilter>(filter->currentIndex());
+            updated.wholeSource = timeMode->currentIndex() == 1; updated.preserveSourceTime = preserveTime->isChecked();
+            updated.sourceTime = range;
+            if (updated.visibleSourceTime.begin < range.begin || updated.visibleSourceTime.end > range.end) {
+                const auto preview = static_cast<SampleIndex>(std::max(1.0, std::min(4'000'000'000.0, file->metadata.sampleRateHz * .25)));
+                updated.visibleSourceTime = {range.begin, range.begin + std::min(range.end - range.begin, preview)};
+            }
+            updated.visibleBasebandFrequency = {-updated.outputSampleRateHz / 2, updated.outputSampleRateHz / 2};
+            ok = session_.updateChannel(channelId.toStdString(), updated);
+        } else {
+            const auto id = session_.createChannel(name->text().trimmed().toStdString(), mark->id, center->value() * 1e6,
+                bandwidth->value() * 1e6, outputRate->value() * 1e6, range, static_cast<ChannelFilter>(filter->currentIndex()),
+                timeMode->currentIndex() == 1, preserveTime->isChecked());
+            ok = !id.empty();
+        }
+        if (!ok) { QMessageBox::warning(dialog, "通道参数未应用", "配置未能提交；当前通道仍保持原状态。"); return; }
+        session_.project().narrowbandWorkspaceOpen = autoOpen->isChecked();
+        workspaceStack_->setCurrentIndex(autoOpen->isChecked() ? 1 : 0);
+        refresh(); dialog->accept(); log(editing ? "窄带通道参数已更新，旧计算缓存将按配置版本失效" : "窄带通道已创建；真实 DDC 将按可见时段按需计算");
+    });
+    dialog->open();
+}
+
 void MainWindow::updatePropertyContext() {
-    const auto* file = session_.activeFile(); const bool marked = file && findMark(*file, file->activeMarkId); const bool psd = file && file->display.auxiliaryMode == AuxiliaryMode::Psd;
-    markSection_->setVisible(marked); const auto context = (file ? q(file->metadata.id) : QString{}) + ":" + QString::number(psd) + ":" + QString::number(marked);
+    const auto* file = session_.activeFile(); const auto* channel = session_.activeChannel();
+    const bool narrow = session_.project().narrowbandWorkspaceOpen && channel && file;
+    const bool marked = !narrow && file && findMark(*file, file->activeMarkId);
+    const bool psd = !narrow && file && file->display.auxiliaryMode == AuxiliaryMode::Psd;
+    channelSection_->setVisible(narrow);
+    fileSection_->setVisible(!narrow);
+    viewSection_->setVisible(!narrow);
+    psdSection_->setVisible(!narrow);
+    markSection_->setVisible(marked);
+    if (narrow) {
+        channelValues_[0]->setText(q(file->metadata.name));
+        const auto* sourceMark = findMark(*file, channel->sourceMarkId);
+        channelValues_[1]->setText(sourceMark ? q(sourceMark->name) : "来源标记丢失");
+        channelValues_[2]->setText(number(channel->centerFrequencyHz / 1e6) + " MHz");
+        channelValues_[3]->setText(number(channel->bandwidthHz / 1e6) + " MHz");
+        channelValues_[4]->setText(number(channel->outputSampleRateHz / 1e6) + " MS/s");
+        channelValues_[5]->setText(timeRange(channel->sourceTime, file->metadata.sampleRateHz));
+    }
+    const auto context = (file ? q(file->metadata.id) : QString{}) + ":" + QString::number(psd) + ":" +
+        QString::number(marked) + ":" + QString::number(narrow) + ":" +
+        (channel ? q(channel->id) + ":" + QString::number(channel->configVersion) : QString{});
     if (context == propertyContext_) return; propertyContext_ = context;
-    auto* first = marked ? markSection_ : psd ? psdSection_ : fileSection_;
+    auto* first = narrow ? channelSection_ : marked ? markSection_ : psd ? psdSection_ : fileSection_;
     propertyLayout_->removeWidget(first); propertyLayout_->insertWidget(0, first);
     propertyLayout_->activate();
 }
@@ -965,7 +1227,9 @@ void MainWindow::updateBottom() {
     for (int i = 0; i < 3; ++i) bottomButtons_[i]->setChecked(i == bottomTab_);
     const auto* file = session_.activeFile();
     resultSummary_->setText(file ? QString("%1    标记 %2 个，通道 %3 个。").arg(q(file->metadata.name)).arg(file->marks.size()).arg(file->channels.size()) : "空工程 · 请添加 IQ 文件");
-    taskSummary_->setText(!file ? "空工程 · 无后台任务。" : file->metadata.demo ?
+    if (session_.project().narrowbandWorkspaceOpen && session_.activeChannel())
+        taskSummary_->setText("窄带通道 · " + (narrowband_ ? narrowband_->dataStatusText() : QStringLiteral("等待后台处理")));
+    else taskSummary_->setText(!file ? "空工程 · 无后台任务。" : file->metadata.demo ?
         "演示图谱 · 未运行真实 DSP。" : "真实 IQ · 图谱抽取与 PSD/STFT 计算在后台线程执行。");
 }
 void MainWindow::updateCursor(SampleIndex sample, double frequencyHz) {
@@ -1057,7 +1321,16 @@ void MainWindow::cancelInteractions(bool exitCreating) {
     if (graphs_) static_cast<PrototypeSplitter*>(graphs_)->cancel();
 }
 void MainWindow::deleteMarks() {
-    cancelInteractions(false); const auto count = session_.deleteSelectedMarks(); refresh();
+    cancelInteractions(false); const auto* file = session_.activeFile(); if (!file || file->selectedMarkIds.empty()) return;
+    std::unordered_set<std::string> selected(file->selectedMarkIds.begin(), file->selectedMarkIds.end());
+    QStringList affected;
+    for (const auto& channel : file->channels) if (selected.contains(channel.sourceMarkId)) affected << q(channel.name);
+    if (!affected.empty()) {
+        const auto prompt = QStringLiteral("删除所选 %1 个源标记会同时删除引用这些标记的 %2 个窄带通道：\n\n%3\n\n继续吗？")
+            .arg(file->selectedMarkIds.size()).arg(affected.size()).arg(affected.join("\n"));
+        if (QMessageBox::question(this, "删除标记及关联通道", prompt) != QMessageBox::Yes) return;
+    }
+    const auto count = session_.deleteSelectedMarks(); refresh();
     if (count.marks) log(QString("已从当前文件删除 %1 个标记，并移除引用这些标记的 %2 个演示通道").arg(count.marks).arg(count.channels));
 }
 void MainWindow::renameMark() {
@@ -1133,6 +1406,40 @@ void MainWindow::openDemoProject() {
     session_.newProject(); session_.project().name = "演示工程";
     const auto first = session_.addDemoFile(); session_.addDemoFile(); session_.addDemoFile(); session_.activateFile(first);
     projectPath_.clear(); selectionAnchor_.clear(); refresh(); log("已打开演示工程");
+}
+
+void MainWindow::openNarrowbandDemoProject() {
+    if ((!projectPath_.isEmpty() || !session_.project().files.empty()) &&
+        QMessageBox::question(this, "打开窄带演示工程", "打开窄带演示工程会切换当前工程，继续吗？") != QMessageBox::Yes) return;
+    const QString fixturePath = QStringLiteral(":/signalstudio/demo/narrowband_demo.iq");
+    QFile resource(fixturePath);
+    if (!resource.open(QIODevice::ReadOnly) || resource.size() != 1'048'576) {
+        QMessageBox::critical(this, "窄带演示工程不可用", "内置确定性 IQ 资源缺失或长度错误。"); return;
+    }
+    Int16IqFile fixture; QString error;
+    if (!fixture.open(fixturePath, error) || fixture.sampleCount() != 262'144) {
+        QMessageBox::critical(this, "窄带演示工程不可用", "内置 IQ 样例校验失败：" + error); return;
+    }
+
+    cancelInteractions(); if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
+    session_.newProject(); session_.project().name = "窄带通道演示工程 · NB-A1.1";
+    FileMetadata metadata;
+    metadata.name = "IQ0 · 阿拉善信号样例"; metadata.path = fixturePath.toStdString();
+    metadata.sampleRateHz = 102.4e6; metadata.centerFrequencyHz = 2500e6; metadata.sampleCount = fixture.sampleCount();
+    metadata.demo = false; metadata.demoSeed = 1; metadata.declaredBandwidthHz = 102.4e6; metadata.effectiveBandwidthHz = 102.4e6;
+    const auto fileId = session_.addDemoFile(std::move(metadata));
+    auto* source = session_.activeFile();
+    if (fileId.empty() || !source) { QMessageBox::critical(this, "窄带演示工程不可用", "无法创建样例工程文件状态。"); return; }
+    const auto time1 = TimeRange{0, 196'608}, time2 = TimeRange{65'536, 262'144};
+    source->marks.push_back({"demo-mark-signal-01", "Signal-01", {time1, {2510.6e6, 2511.8e6}}});
+    source->marks.push_back({"demo-mark-signal-02", "Signal-02", {time2, {2493.0e6, 2494.2e6}}});
+    session_.selectMarks({"demo-mark-signal-01"}, "demo-mark-signal-01");
+    const auto channelId = session_.createChannel("Signal-01", "demo-mark-signal-01", 2511.2e6, 1.2e6,
+        4e6, time1, ChannelFilter::Standard, false, true);
+    if (channelId.empty()) { QMessageBox::critical(this, "窄带演示工程不可用", "样例通道参数未能通过校验。"); return; }
+    session_.project().narrowbandWorkspaceOpen = true;
+    projectPath_.clear(); selectionAnchor_.clear(); workspaceStack_->setCurrentIndex(1); refresh();
+    log("已载入内置确定性 IQ 样例；此演示工程会运行真实 DDC、FIR、重采样、PSD 与 STFT，识别/解调仍为合成示例");
 }
 
 void MainWindow::showAddFileDialog() {

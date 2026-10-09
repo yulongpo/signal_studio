@@ -50,6 +50,8 @@ public:
     qsizetype drawnPointCount() const;
     qsizetype sourcePointCount() const;
     QString renderQuality() const;
+    bool samplePointsVisible() const { return curveShowsSamplePoints_; }
+    qsizetype samplePointCount() const { return curveShowsSamplePoints_ ? static_cast<qsizetype>(curveTrace_.size()) : 0; }
     quint64 displayGeneration() const { return renderGeneration_; }
     QJsonObject renderStatistics() const;
     bool isDisplaySettled() const;
@@ -144,6 +146,7 @@ private:
     bool curvePending_ = false, curveCompleted_ = false;
     std::vector<float> curveSource_;
     std::vector<display::TracePoint> curveTrace_;
+    bool curveShowsSamplePoints_ = false;
     QPainterPath curvePath_;
     std::vector<QLineF> curveSegments_;
     std::array<QPainterPath, 2> navigationPaths_;

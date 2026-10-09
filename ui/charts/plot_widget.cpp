@@ -1,5 +1,6 @@
 #include "ui/charts/plot_widget.h"
 #include "ui/charts/accelerated_surface.h"
+#include "ui/charts/chart_interaction.h"
 #include "infrastructure/int16_iq_file.h"
 
 #include <QApplication>
@@ -16,6 +17,7 @@
 #include <QResizeEvent>
 #include <QWheelEvent>
 #include <QWidgetAction>
+#include <QToolTip>
 #include <QElapsedTimer>
 #include <QMetaObject>
 #include <algorithm>
@@ -26,6 +28,7 @@
 #include <condition_variable>
 #include <functional>
 #include <mutex>
+#include <numbers>
 #include <thread>
 
 namespace signalstudio {
@@ -139,6 +142,26 @@ QRgb color(float level, Palette palette) {
     const double ratio = z - index;
     const auto channel = [&](int i) { return static_cast<int>(std::lround(stops[index][i] * (1 - ratio) + stops[index + 1][i] * ratio)); };
     return qRgb(channel(0), channel(1), channel(2));
+}
+QImage paletteTexture(Palette palette) {
+    static const std::array<QImage, 8> palettes = [] {
+        std::array<QImage, 8> images;
+        for (int index = 0; index < static_cast<int>(images.size()); ++index) {
+            auto& image = images[static_cast<std::size_t>(index)];
+            image = QImage(256, 1, QImage::Format_RGBA8888);
+            auto* row = image.scanLine(0);
+            for (int x = 0; x < 256; ++x) {
+                const auto rgb = color(static_cast<float>(x) / 255.0f, static_cast<Palette>(index));
+                row[x * 4] = static_cast<uchar>(qRed(rgb));
+                row[x * 4 + 1] = static_cast<uchar>(qGreen(rgb));
+                row[x * 4 + 2] = static_cast<uchar>(qBlue(rgb));
+                row[x * 4 + 3] = 255;
+            }
+        }
+        return images;
+    }();
+    const auto index = std::clamp(static_cast<int>(palette), 0, static_cast<int>(palettes.size()) - 1);
+    return palettes[static_cast<std::size_t>(index)];
 }
 Qt::CursorShape edgeCursor(int edges) {
     if (edges == Move) return Qt::SizeAllCursor;
@@ -375,7 +398,11 @@ void PlotWidget::repaintChart() {
     updateHeatmap();
     if (surface_ && !softwareFallback_) {
         const auto [target, source] = heatmapPlacement();
-        surface_->setHeatmap(heatmap_, target, powerKey_ + "/" + colorKey_);
+        const auto* file = session_.activeFile();
+        const auto palette = file ? paletteTexture(file->display.palette) : QImage{};
+        const auto revision = heatmap_.isNull() ? QStringLiteral("empty/") + QString::fromStdString(displayedFile_) :
+                              powerKey_ + QLatin1Char('/') + colorKey_;
+        surface_->setHeatmap(heatmap_, target, revision, palette);
         surface_->setHeatmapSourceRect(source);
         surface_->invalidateOverlay();
     } else QWidget::update();
@@ -434,7 +461,9 @@ QString PlotWidget::statusText() const {
 QString PlotWidget::tipText() const {
     const auto* file = session_.activeFile(); if (!file || kind_ != Kind::Auxiliary) return {};
     return file->display.auxiliaryMode == AuxiliaryMode::Waveform ?
-        QString(file->display.waveformMode == WaveformMode::I ? "I 分量（归一化）" : file->display.waveformMode == WaveformMode::Q ? "Q 分量（归一化）" : "IQ RMS 包络 (dBFS)") + " · 当前时间 " + rangeText(false,
+        QString(file->display.waveformMode == WaveformMode::I ? "I 分量（ADC 计数）" :
+                file->display.waveformMode == WaveformMode::Q ? "Q 分量（ADC 计数）" :
+                file->display.waveformMode == WaveformMode::Envelope ? "幅度包络（ADC 计数）" : "幅度 RMS（ADC 计数）") + " · 当前时间 " + rangeText(false,
         seconds(file->view.time.begin, file->metadata.sampleRateHz), seconds(file->view.time.end - file->view.time.begin, file->metadata.sampleRateHz)) :
         QString(file->display.psdFromSelection && findMark(*file, file->activeMarkId) ? "当前信号标记" : "当前时间窗") + " · FFT " + QString::number(file->display.psdSize);
 }
@@ -611,20 +640,31 @@ QJsonObject PlotWidget::renderStatistics() const {
         {"drawnPoints", static_cast<qint64>(drawnPointCount())}, {"sourcePoints", static_cast<qint64>(sourcePointCount())},
         {"powerGenerations", static_cast<qint64>(powerGenerations_)}, {"colorTransformGenerations", static_cast<qint64>(colorTransformGenerations_)},
         {"curveSourceGenerations", static_cast<qint64>(curveGenerations_)},
+        {"samplePointsVisible", curveShowsSamplePoints_},
+        {"samplePointCount", static_cast<qint64>(samplePointCount())},
         {"curvePathElements", curvePath_.elementCount()},
         {"drawnLineSegments", static_cast<qint64>(kind_ == Kind::Auxiliary ? curveSegments_.size() :
             kind_ == Kind::Navigation ? navigationSegments_[0].size() + navigationSegments_[1].size() : 0)},
-        {"curveRasterMethod", kind_ == Kind::Main ? "none" : "QPainter::drawLines cached adjacent QLineF segments"},
+        {"curveRasterMethod", kind_ == Kind::Main ? "QRhi heatmap texture" :
+            (surface_ && !softwareFallback_ ? "QRhi dynamic vertex buffer" : "QPainter::drawLines software fallback")},
         {"curveReductions", static_cast<qint64>(curveReductions_)}, {"curveCacheHits", static_cast<qint64>(curveCacheHits_)},
         {"heatmapCacheHits", static_cast<qint64>(heatmapCacheHits_)}, {"staleDrops", static_cast<qint64>(staleResults_ + (worker_ ? worker_->discarded() : 0))},
         {"matrixReductions", static_cast<qint64>(matrixReductions_)},
         {"cpuWallTimings", surface_ ? surface_->cpuWallTimings() : QJsonObject{}},
         {"heatmapWidth", heatSize_.width()}, {"heatmapHeight", heatSize_.height()},
         {"lastMatrixMs", renderedPower_ ? renderedPower_->elapsedMs : 0.0}, {"textureUploads", static_cast<qint64>(textureUploadCount())},
-        {"overlayUploads", static_cast<qint64>(surface_ ? surface_->overlayUploadCount() : 0)}};
+        {"overlayUploads", static_cast<qint64>(surface_ ? surface_->overlayUploadCount() : 0)},
+        {"gpuDataRenderer", surface_ && !softwareFallback_ ? "QRhi shader / vertex buffer" : "QPainter software fallback"},
+        {"gpuVertexUploads", static_cast<qint64>(surface_ && !softwareFallback_ ? surface_->chartVertexUploadCount() : 0)},
+        {"gpuChartDrawCalls", static_cast<qint64>(surface_ && !softwareFallback_ ? surface_->chartDrawCallCount() : 0)},
+        {"gpuHeatmapDrawCalls", static_cast<qint64>(surface_ && !softwareFallback_ ? surface_->heatmapDrawCallCount() : 0)},
+        {"gpuDataDrawCalls", static_cast<qint64>(surface_ && !softwareFallback_ ?
+            surface_->chartDrawCallCount() + surface_->heatmapDrawCallCount() : 0)},
+        {"gpuPaletteUploads", static_cast<qint64>(surface_ && !softwareFallback_ ? surface_->paletteUploadCount() : 0)},
+        {"heatmapColorMapping", surface_ && !softwareFallback_ ? "QRhi fragment shader + LUT texture" : "QImage color table software fallback"}};
 }
 void PlotWidget::updateCurve() {
-    const auto* file = session_.activeFile(); if (!file || kind_ != Kind::Auxiliary) return;
+    auto* file = session_.activeFile(); if (!file || kind_ != Kind::Auxiliary) return;
     const auto plot = plotRect(); const auto& view = file->view;
     const bool psd = file->display.auxiliaryMode == AuxiliaryMode::Psd;
     const double duration = seconds(file->metadata.sampleCount, file->metadata.sampleRateHz);
@@ -635,8 +675,12 @@ void PlotWidget::updateCurve() {
         if (const auto* mark = findMark(*file, file->activeMarkId)) calculationTime = mark->range.time;
     }
     const int seed = file->metadata.demoSeed;
-    const int dense = file->metadata.demo ? std::clamp(static_cast<int>(std::lround(plot.width() * 12)), 4096, 65536) :
+    const auto normalDense = file->metadata.demo ? std::clamp(static_cast<int>(std::lround(plot.width() * 12)), 4096, 65536) :
         std::clamp(static_cast<int>(std::lround(plot.width() * 2)), 512, 8192);
+    const auto visibleSamples = view.time.end - view.time.begin;
+    const auto pointDisplayLimit = static_cast<SampleIndex>(std::max(1.0, std::floor(plot.width() * devicePixelRatioF())));
+    const bool exactSampleView = !psd && !file->metadata.demo && visibleSamples <= pointDisplayLimit;
+    const int dense = exactSampleView ? static_cast<int>(visibleSamples) : normalDense;
     const auto filePath = QString::fromUtf8(file->metadata.path.data(), static_cast<qsizetype>(file->metadata.path.size()));
     const QString sourceKey = QString::fromStdString(file->metadata.id) + QString("/%1/%2/%3/%4/%5/%6/%7/%8/%9/%10/%11/%12/%13")
         .arg(seed).arg(psd).arg(psd ? calculationTime.begin : view.time.begin).arg(psd ? calculationTime.end : view.time.end)
@@ -670,7 +714,9 @@ void PlotWidget::updateCurve() {
             } else {
                 const auto peak = [&](double center, double spread) { return std::exp(-std::pow((time - center) / spread, 2)); };
                 const double envelope = 3 + 36 * peak(duration * .47, duration * .024) + 22 * peak(duration * .65, duration * .04) + 15 * peak(duration * .21, duration * .028);
-                value = std::sin(time * (30 + seed * 5)) * envelope - std::sin(time * 49 + seed) * 2;
+                const double iComponent = std::sin(time * (30 + seed * 5)) * envelope;
+                const double q = std::sin(time * 49 + seed) * 2;
+                value = file->display.waveformMode == WaveformMode::Envelope ? std::hypot(iComponent, q) : iComponent - q;
             }
             curveSource_[i] = static_cast<float>(value);
         }
@@ -679,11 +725,26 @@ void PlotWidget::updateCurve() {
         ++curveCacheHits_;
         if (!file->metadata.demo && (curvePending_ || !curveCompleted_)) return;
     }
+    curveShowsSamplePoints_ = exactSampleView && !psd && curveSource_.size() == visibleSamples;
+    if (!psd && file->display.waveformAutoFit && !curveSource_.empty()) {
+        const auto [minimum, maximum] = std::minmax_element(curveSource_.begin(), curveSource_.end());
+        if (minimum != curveSource_.end() && std::isfinite(*minimum) && std::isfinite(*maximum)) {
+            const double center = (static_cast<double>(*minimum) + *maximum) * .5;
+            const double dataSpan = static_cast<double>(*maximum) - *minimum;
+            const double displaySpan = std::max(2.0, dataSpan / .75);
+            file->display.waveformMin = file->display.auxiliaryMin = center - displaySpan * .5;
+            file->display.waveformMax = file->display.auxiliaryMax = center + displaySpan * .5;
+        }
+    }
     const auto columns = static_cast<std::size_t>(std::max(1.0, std::floor(plot.width() * devicePixelRatioF() * (preview_ ? .5 : 1))));
     const auto reductionKey = sourceKey + "/" + QString::number(columns);
     if (curveReductionKey_ != reductionKey) {
         curveReductionKey_ = reductionKey; ++curveReductions_; ++renderGeneration_;
-        curveTrace_ = display::extremaEnvelope(curveSource_, columns); curvePathKey_.clear();
+        if (curveShowsSamplePoints_) {
+            curveTrace_.clear(); curveTrace_.reserve(curveSource_.size());
+            for (std::size_t index = 0; index < curveSource_.size(); ++index) curveTrace_.push_back({index, curveSource_[index]});
+        } else curveTrace_ = display::extremaEnvelope(curveSource_, columns);
+        curvePathKey_.clear();
     }
     const auto pathKey = reductionKey + QString("/%1/%2/%3/%4").arg(plot.width()).arg(plot.height())
         .arg(file->display.auxiliaryMin, 0, 'g', 17).arg(file->display.auxiliaryMax, 0, 'g', 17);
@@ -727,7 +788,13 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setRenderHint(QPainter::SmoothPixmapTransform);
     auto* file = session_.activeFile();
-    if (!file) return;
+    if (!file) {
+        if (accelerated && surface_ && !softwareFallback_) {
+            surface_->setHeatmap({}, {}, QStringLiteral("empty/no-active-file"));
+            surface_->setChartGeometry({}, {}, QStringLiteral("empty/no-active-file/geometry"));
+        }
+        return;
+    }
     const auto plot = plotRect(); const auto& view = file->view;
     const double duration = seconds(file->metadata.sampleCount, file->metadata.sampleRateHz);
     const bool waterfall = kind_ == Kind::Main && file->display.mainMode == MainMode::Waterfall;
@@ -737,7 +804,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
     const double frequencySpan = view.frequency.upperHz - view.frequency.lowerHz;
     const int seed = file->metadata.demoSeed;
     if (kind_ == Kind::Navigation) {
-        painter.fillRect(rect(), QColor("#091b2b"));
+        if (!accelerated) painter.fillRect(rect(), QColor("#091b2b"));
         const auto filePath = QString::fromUtf8(file->metadata.path.data(), static_cast<qsizetype>(file->metadata.path.size()));
         const auto navigationKey = QString::fromStdString(file->metadata.id) + QString("/%1/%2/%3/%4").arg(seed).arg(width()).arg(height()).arg(filePath);
         if (navigationKey_ != navigationKey) {
@@ -770,9 +837,32 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
             }
             committedGeneration_ = renderGeneration_;
         } else ++curveCacheHits_;
-        painter.setPen(QPen(QColor("#4fb4e1"), 1));
-        for (const auto& segments : navigationSegments_)
-            if (!segments.empty()) painter.drawLines(segments.data(), static_cast<int>(segments.size()));
+        if (accelerated && surface_ && !softwareFallback_) {
+            std::vector<AcceleratedSurface::ChartVertex> vertices;
+            std::vector<AcceleratedSurface::ChartDrawCall> draws;
+            const QColor color("#4fb4e1");
+            for (const auto& segments : navigationSegments_) {
+                if (segments.empty()) continue;
+                const auto first = static_cast<quint32>(vertices.size());
+                const auto append = [&](QPointF point) {
+                    const float alpha = color.alphaF();
+                    vertices.push_back({static_cast<float>(point.x() / std::max(1, width())),
+                                        static_cast<float>(point.y() / std::max(1, height())),
+                                        static_cast<float>(color.redF() * alpha), static_cast<float>(color.greenF() * alpha),
+                                        static_cast<float>(color.blueF() * alpha), alpha});
+                };
+                append(segments.front().p1());
+                for (const auto& segment : segments) append(segment.p2());
+                draws.push_back({AcceleratedSurface::ChartDrawCall::Topology::LineStrip, first,
+                                 static_cast<quint32>(vertices.size() - first)});
+            }
+            surface_->setChartGeometry(std::move(vertices), std::move(draws),
+                QStringLiteral("wide-navigation/") + navigationKey_);
+        } else {
+            painter.setPen(QPen(QColor("#4fb4e1"), 1));
+            for (const auto& segments : navigationSegments_)
+                if (!segments.empty()) painter.drawLines(segments.data(), static_cast<int>(segments.size()));
+        }
         if (!file->metadata.demo && navigationCurvePending_) {
             painter.setFont(canvasFont()); painter.setPen(QColor("#b5d9ec"));
             painter.drawText(QPointF(15, 15), "正在读取 IQ 导航预览…");
@@ -806,14 +896,57 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
     }
     if (kind_ == Kind::Auxiliary) {
         updateCurve(); painter.save(); painter.setClipRect(plot);
-        // Adjacent endpoints and the original square caps keep the thin trace
-        // connected. drawLines selects Qt's LinesHint raster route instead of
-        // constructing/stroking one outline for the entire dense curve. The
-        // diagnostic QPainterPath retains the exact same ordered vertices.
+        // Adjacent endpoints keep the thin trace connected in either renderer.
+        // The diagnostic path and the GPU vertex buffer use the same ordered data.
         const QColor waveformColor = file->display.waveformMode == WaveformMode::I ? QColor("#51d7c5") :
             file->display.waveformMode == WaveformMode::Q ? QColor("#f1aa63") : QColor("#51d7c5");
-        painter.setPen(QPen(psd ? QColor("#5abffa") : waveformColor, 1.5));
-        if (!curveSegments_.empty()) painter.drawLines(curveSegments_.data(), static_cast<int>(curveSegments_.size()));
+        if (accelerated && surface_ && !softwareFallback_) {
+            std::vector<AcceleratedSurface::ChartVertex> vertices;
+            std::vector<AcceleratedSurface::ChartDrawCall> draws;
+            const QColor color = psd ? QColor("#5abffa") : waveformColor;
+            const auto append = [&](QPointF point) {
+                const float alpha = color.alphaF();
+                vertices.push_back({static_cast<float>(point.x() / std::max(1, width())),
+                                    static_cast<float>(point.y() / std::max(1, height())),
+                                    static_cast<float>(color.redF() * alpha), static_cast<float>(color.greenF() * alpha),
+                                    static_cast<float>(color.blueF() * alpha), alpha});
+            };
+            if (!curveSegments_.empty()) {
+                const auto first = static_cast<quint32>(vertices.size());
+                append(curveSegments_.front().p1());
+                for (const auto& segment : curveSegments_) append(segment.p2());
+                draws.push_back({AcceleratedSurface::ChartDrawCall::Topology::LineStrip, first,
+                                 static_cast<quint32>(vertices.size() - first)});
+            }
+            if (!psd && curveShowsSamplePoints_ && !curveTrace_.empty()) {
+                const auto first = static_cast<quint32>(vertices.size());
+                constexpr int sectors = 8;
+                for (const auto& point : curveTrace_) {
+                    const double x = plot.left() + plot.width() * point.index / std::max<std::size_t>(1, curveSource_.size() - 1);
+                    const double y = plot.top() + (file->display.auxiliaryMax - point.value) /
+                        (file->display.auxiliaryMax - file->display.auxiliaryMin) * plot.height();
+                    const QPointF center(x, y);
+                    for (int sector = 0; sector < sectors; ++sector) {
+                        const double a0 = 2.0 * std::numbers::pi * sector / sectors;
+                        const double a1 = 2.0 * std::numbers::pi * (sector + 1) / sectors;
+                        append(center); append(center + QPointF(2.0 * std::cos(a0), 2.0 * std::sin(a0)));
+                        append(center + QPointF(2.0 * std::cos(a1), 2.0 * std::sin(a1)));
+                    }
+                }
+                draws.push_back({AcceleratedSurface::ChartDrawCall::Topology::Triangles, first,
+                                 static_cast<quint32>(vertices.size() - first)});
+            }
+            surface_->setChartGeometry(std::move(vertices), std::move(draws),
+                QStringLiteral("wide-auxiliary/") + curvePathKey_);
+        } else {
+            painter.setPen(QPen(psd ? QColor("#5abffa") : waveformColor, 1.5));
+            if (!curveSegments_.empty()) painter.drawLines(curveSegments_.data(), static_cast<int>(curveSegments_.size()));
+            if (!psd && curveShowsSamplePoints_) {
+                painter.setPen(Qt::NoPen); painter.setBrush(waveformColor);
+                for (const auto& segment : curveSegments_) painter.drawEllipse(segment.p1(), 2.0, 2.0);
+                if (!curveSegments_.empty()) painter.drawEllipse(curveSegments_.back().p2(), 2.0, 2.0);
+            }
+        }
         if (gesture_ && gesture_->tool == Tool::AuxiliaryZoom) {
             const double left = std::clamp(std::min(gesture_->start.x(), gesture_->current.x()), plot.left(), plot.right());
             const double right = std::clamp(std::max(gesture_->start.x(), gesture_->current.x()), plot.left(), plot.right());
@@ -844,7 +977,11 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
     }
     painter.drawText(QRectF(plot.left(), height() - 15, plot.width(), 14), Qt::AlignHCenter | Qt::AlignBottom, x.label);
     painter.save(); painter.translate(15, plot.center().y()); painter.rotate(-90);
-    const QString verticalTitle = kind_ == Kind::Main ? y.label : psd ? "PSD (dBFS/Hz)" : file->metadata.demo ? "幅度（演示）" : "IQ RMS (dBFS)";
+    const QString verticalTitle = kind_ == Kind::Main ? y.label : psd ? "功率谱密度（dBFS/Hz）" :
+        file->metadata.demo ? "幅值（演示单位）" :
+        file->display.waveformMode == WaveformMode::I ? "I 分量（ADC 计数）" :
+        file->display.waveformMode == WaveformMode::Q ? "Q 分量（ADC 计数）" :
+        file->display.waveformMode == WaveformMode::Envelope ? "幅度包络（ADC 计数）" : "幅度 RMS（ADC 计数）";
     painter.drawText(QPointF(-metrics.horizontalAdvance(verticalTitle) / 2, 0), verticalTitle);
     painter.restore();
     int originRow = 0;
@@ -1032,7 +1169,30 @@ void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
         cursorSample_ = offsetSample(file->view.time.begin, coordinate.sample, file->metadata.sampleCount); cursorFrequency_ = coordinate.frequency;
         emit cursorChanged(cursorSample_, cursorFrequency_);
     }
-    if (!gesture_) { updateHover(point); repaintChart(); return; }
+    if (!gesture_) {
+        if (kind_ == Kind::Auxiliary && file->display.auxiliaryMode == AuxiliaryMode::Waveform &&
+            curveShowsSamplePoints_ && !curveSource_.empty()) {
+            const auto plot = plotRect();
+            if (plot.contains(point)) {
+                const double unit = std::clamp((point.x() - plot.left()) / plot.width(), 0.0, 1.0);
+                const auto index = static_cast<std::size_t>(std::llround(unit * (curveSource_.size() - 1)));
+                const double x = plot.left() + plot.width() * index / std::max<std::size_t>(1, curveSource_.size() - 1);
+                const double y = plot.top() + (file->display.auxiliaryMax - curveSource_[index]) /
+                    std::max(1e-12, file->display.auxiliaryMax - file->display.auxiliaryMin) * plot.height();
+                if (std::hypot(point.x() - x, point.y() - y) <= 12.0) {
+                    const auto sample = file->view.time.begin + static_cast<SampleIndex>(index);
+                    const double time = seconds(sample, file->metadata.sampleRateHz);
+                    const QString label = file->display.waveformMode == WaveformMode::I ? QStringLiteral("I") :
+                        file->display.waveformMode == WaveformMode::Q ? QStringLiteral("Q") :
+                        file->display.waveformMode == WaveformMode::Envelope ? QStringLiteral("幅度包络") : QStringLiteral("幅度 RMS");
+                    QToolTip::showText(mapToGlobal(point.toPoint() + QPoint(12, 12)),
+                        QStringLiteral("源样本 #%1\nt = %2 s\n%3 = %4 ADC 计数")
+                            .arg(sample).arg(time, 0, 'g', 12).arg(label).arg(curveSource_[index], 0, 'g', 8), this);
+                } else QToolTip::hideText();
+            } else QToolTip::hideText();
+        } else QToolTip::hideText();
+        updateHover(point); repaintChart(); return;
+    }
     auto& gesture = *gesture_;
     if (gesture.device != event->pointingDevice()) return;
     if (file->metadata.id != gesture.before.fileId || file->display.mainMode != gesture.mainMode || file->display.auxiliaryMode != gesture.auxiliaryMode) { cancelGesture(file->metadata.id != gesture.before.fileId); return; }
@@ -1069,7 +1229,8 @@ void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
         const bool psd = file->display.auxiliaryMode == AuxiliaryMode::Psd;
         const double low = psd ? gesture.before.psdMin : gesture.before.waveformMin;
         const double high = psd ? gesture.before.psdMax : gesture.before.waveformMax;
-        const double delta = dy / plot.height() * (high - low); session_.setAuxiliaryRange(low + delta, high + delta, false);
+        const auto shifted = chart_interaction::panByFraction({low, high}, dy / plot.height());
+        session_.setAuxiliaryRange(shifted.first, shifted.last, false);
     } else if (gesture.tool == Tool::PanTime || gesture.tool == Tool::PanFrequency || gesture.tool == Tool::Navigate) {
         auto next = base;
         if (gesture.tool == Tool::Navigate) {
@@ -1085,8 +1246,9 @@ void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
             next.time = {first, first + span}; session_.setView(next, false);
         } else {
             const bool vertical = kind_ == Kind::Main && file->display.mainMode == MainMode::TimeFrequency;
-            const double delta = (vertical ? dy / plot.height() : -dx / plot.width()) * (base.frequency.upperHz - base.frequency.lowerHz);
-            next.frequency.lowerHz += delta; next.frequency.upperHz += delta; session_.setView(next, false);
+            const auto shifted = chart_interaction::panByFraction(
+                {base.frequency.lowerHz, base.frequency.upperHz}, vertical ? dy / plot.height() : -dx / plot.width());
+            next.frequency = {shifted.first, shifted.last}; session_.setView(next, false);
         }
     }
     updateHover(point); repaintChart();
@@ -1116,11 +1278,15 @@ void PlotWidget::finishGesture(Qt::KeyboardModifiers modifiers) {
     } else if (gesture.tool == Tool::AuxiliaryZoom) {
         if (std::abs(gesture.current.x() - gesture.start.x()) >= 8) {
             const auto plot = plotRect();
-            const double low = std::clamp((std::min(gesture.start.x(), gesture.current.x()) - plot.left()) / plot.width(), 0.0, 1.0);
-            const double high = std::clamp((std::max(gesture.start.x(), gesture.current.x()) - plot.left()) / plot.width(), 0.0, 1.0);
+            const double low = chart_interaction::fractionAt(std::min(gesture.start.x(), gesture.current.x()), plot.left(), plot.width());
+            const double high = chart_interaction::fractionAt(std::max(gesture.start.x(), gesture.current.x()), plot.left(), plot.width());
             auto next = base;
             if (file->display.auxiliaryMode == AuxiliaryMode::Waveform) next.time = {offsetSample(base.time.begin, low * static_cast<long double>(base.time.end - base.time.begin), file->metadata.sampleCount), offsetSample(base.time.begin, high * static_cast<long double>(base.time.end - base.time.begin), file->metadata.sampleCount)};
-            else { const double width = base.frequency.upperHz - base.frequency.lowerHz; next.frequency = {base.frequency.lowerHz + low * width, base.frequency.lowerHz + high * width}; }
+            else {
+                const auto selected = chart_interaction::selectFractions(
+                    {base.frequency.lowerHz, base.frequency.upperHz}, low, high);
+                next.frequency = {selected.first, selected.last};
+            }
             session_.setView(next);
         }
     } else if (gesture.tool == Tool::Navigate && !gesture.changed) {
@@ -1150,16 +1316,19 @@ void PlotWidget::wheelEvent(QWheelEvent* event) {
     if (wheelBase_ && (wheelBase_->fileId != file->metadata.id || wheelAxis_ != axis)) finishWheel();
     if (!wheelBase_) { wheelBase_ = session_.snapshot(); wheelAxis_ = axis; activeWheel = this; }
     const double factor = std::exp(std::clamp(pixels, -480.0, 480.0) * .002); const auto plot = plotRect();
-    const double x = std::clamp((event->position().x() - plot.left()) / plot.width(), 0.0, 1.0), y = std::clamp((event->position().y() - plot.top()) / plot.height(), 0.0, 1.0);
+    const double x = chart_interaction::fractionAt(event->position().x(), plot.left(), plot.width());
+    const double y = chart_interaction::fractionAt(event->position().y(), plot.top(), plot.height());
     if (axis == WheelAxis::AuxiliaryY) {
-        const double low = file->display.auxiliaryMin, high = file->display.auxiliaryMax, pivot = high - y * (high - low);
-        session_.setAuxiliaryRange(pivot - (pivot - low) * factor, pivot + (high - pivot) * factor, false);
+        const auto range = chart_interaction::zoomAround(
+            {file->display.auxiliaryMin, file->display.auxiliaryMax}, factor, 1.0 - y);
+        session_.setAuxiliaryRange(range.first, range.last, false);
     } else {
         auto next = file->view;
         if (axis == WheelAxis::Frequency) {
             const double ratio = kind_ == Kind::Main && !waterfall ? 1 - y : x;
-            const double pivot = next.frequency.lowerHz + ratio * (next.frequency.upperHz - next.frequency.lowerHz);
-            next.frequency = {pivot - (pivot - next.frequency.lowerHz) * factor, pivot + (next.frequency.upperHz - pivot) * factor};
+            const auto range = chart_interaction::zoomAround(
+                {next.frequency.lowerHz, next.frequency.upperHz}, factor, ratio);
+            next.frequency = {range.first, range.last};
         } else {
             const auto width = next.time.end - next.time.begin;
             const auto span = sampleIndex(static_cast<long double>(width) * factor, file->metadata.sampleCount);

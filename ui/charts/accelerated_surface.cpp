@@ -12,6 +12,10 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <cstddef>
+#include <limits>
+#include <unordered_map>
 #include <utility>
 
 namespace signalstudio {
@@ -44,6 +48,24 @@ struct Vertex {
     float x, y, u, v;
 };
 
+QImage defaultPalette() {
+    constexpr std::array<std::array<int, 3>, 8> stops{{
+        {{8, 14, 52}}, {{20, 58, 141}}, {{10, 144, 216}}, {{22, 207, 222}},
+        {{40, 225, 138}}, {{224, 229, 70}}, {{250, 159, 52}}, {{188, 49, 52}}}};
+    QImage image(256, 1, QImage::Format_RGBA8888);
+    auto* row = image.scanLine(0);
+    for (int index = 0; index < 256; ++index) {
+        const double position = index / 255.0 * (stops.size() - 1);
+        const auto segment = std::min<std::size_t>(static_cast<std::size_t>(position), stops.size() - 2);
+        const double fraction = position - segment;
+        for (int channel = 0; channel < 3; ++channel)
+            row[index * 4 + channel] = static_cast<uchar>(std::lround(
+                stops[segment][channel] * (1 - fraction) + stops[segment + 1][channel] * fraction));
+        row[index * 4 + 3] = 255;
+    }
+    return image;
+}
+
 std::array<Vertex, 4> makeQuad(const QRectF& rect, QSizeF canvas, bool yUp, const QRectF& uv = QRectF(0, 0, 1, 1)) {
     const float left = static_cast<float>(2.0 * rect.left() / canvas.width() - 1.0);
     const float right = static_cast<float>(2.0 * rect.right() / canvas.width() - 1.0);
@@ -64,29 +86,44 @@ struct AcceleratedSurface::Resources {
     QRhi* owner = nullptr;
     QShader vertexShader;
     QShader fragmentShader;
+    QShader overlayFragmentShader;
     std::unique_ptr<QRhiBuffer> vertices;
+    std::unique_ptr<QRhiBuffer> chartVertices;
     std::unique_ptr<QRhiSampler> sampler;
     std::unique_ptr<QRhiTexture> heatmap;
     std::unique_ptr<QRhiTexture> overlay;
+    std::unique_ptr<QRhiTexture> palette;
+    std::unique_ptr<QRhiTexture> chartPalette;
+    bool paletteCreated = false;
+    bool chartPaletteCreated = false;
     std::unique_ptr<QRhiShaderResourceBindings> heatmapBindings;
     std::unique_ptr<QRhiShaderResourceBindings> overlayBindings;
+    std::unique_ptr<QRhiShaderResourceBindings> chartBindings;
     std::unique_ptr<QRhiRenderPassDescriptor> renderPass;
     std::unique_ptr<QRhiGraphicsPipeline> pipeline;
+    std::unique_ptr<QRhiGraphicsPipeline> overlayPipeline;
     int samples = 0;
 
     ~Resources() {
         pipeline.reset();
+        overlayPipeline.reset();
         heatmapBindings.reset();
         overlayBindings.reset();
+        chartBindings.reset();
         heatmap.reset();
         overlay.reset();
+        palette.reset();
+        chartPalette.reset();
         sampler.reset();
         vertices.reset();
+        chartVertices.reset();
         renderPass.reset();
     }
 };
 
-AcceleratedSurface::AcceleratedSurface(QWidget* parent) : QRhiWidget(parent) {
+AcceleratedSurface::AcceleratedSurface(QWidget* parent) : QRhiWidget(parent), palette_(defaultPalette()),
+    chartPalette_(256, 1, QImage::Format_RGBA8888) {
+    chartPalette_.fill(Qt::transparent);
     connect(this,&QRhiWidget::frameSubmitted,this,[this]{++completedFrames_;});
     setAttribute(Qt::WA_TransparentForMouseEvents);
     setFocusPolicy(Qt::NoFocus);
@@ -115,9 +152,135 @@ void AcceleratedSurface::setPainter(PainterCallback painter) {
     invalidateOverlay();
 }
 
-void AcceleratedSurface::setHeatmap(const QImage& image, const QRectF& target, const QString& revision) {
+void AcceleratedSurface::setChartGeometry(std::vector<ChartVertex> vertices,
+                                          std::vector<ChartDrawCall> draws,
+                                          const QString& revision) {
+    if (chartGeometryRevision_ == revision) return;
+    chartGeometryRevision_ = revision;
+
+    // Keep chart primitives on the GPU, but expand line strips to thin triangle
+    // quads and join independent triangles with degenerate strip connectors.
+    // Reusing the proven QRhi texture pipeline and a per-chart color LUT avoids
+    // a second backend-specific pipeline. CPU code only prepares vertices; it
+    // never rasterizes chart contents or uploads a finished chart image.
+    std::vector<ChartVertex> expandedVertices;
+    std::vector<ChartDrawCall> expandedDraws;
+    const double logicalWidth = std::max(1, width());
+    const double logicalHeight = std::max(1, height());
+    for (const auto& draw : draws) {
+        const quint64 end = static_cast<quint64>(draw.firstVertex) + draw.vertexCount;
+        if (draw.vertexCount < 2 || end > vertices.size()) continue;
+        if (draw.topology == ChartDrawCall::Topology::Triangles) {
+            const auto first = static_cast<quint32>(expandedVertices.size());
+            expandedVertices.insert(expandedVertices.end(), vertices.begin() + draw.firstVertex,
+                                  vertices.begin() + static_cast<std::ptrdiff_t>(end));
+            expandedDraws.push_back({ChartDrawCall::Topology::Triangles, first, draw.vertexCount});
+            continue;
+        }
+
+        const auto first = static_cast<quint32>(expandedVertices.size());
+        for (quint32 index = 1; index < draw.vertexCount; ++index) {
+            const auto& a = vertices[draw.firstVertex + index - 1];
+            const auto& b = vertices[draw.firstVertex + index];
+            const double dxPixels = (static_cast<double>(b.x) - a.x) * logicalWidth;
+            const double dyPixels = (static_cast<double>(b.y) - a.y) * logicalHeight;
+            const double length = std::hypot(dxPixels, dyPixels);
+            if (!std::isfinite(length) || length < 1e-5) continue;
+            constexpr double halfWidthPixels = 0.7;
+            const float offsetX = static_cast<float>((-dyPixels / length) * halfWidthPixels / logicalWidth);
+            const float offsetY = static_cast<float>((dxPixels / length) * halfWidthPixels / logicalHeight);
+            const ChartVertex aPlus{a.x + offsetX, a.y + offsetY, a.r, a.g, a.b, a.a};
+            const ChartVertex aMinus{a.x - offsetX, a.y - offsetY, a.r, a.g, a.b, a.a};
+            const ChartVertex bPlus{b.x + offsetX, b.y + offsetY, b.r, b.g, b.b, b.a};
+            const ChartVertex bMinus{b.x - offsetX, b.y - offsetY, b.r, b.g, b.b, b.a};
+            expandedVertices.insert(expandedVertices.end(), {aPlus, aMinus, bPlus,
+                                                             bPlus, aMinus, bMinus});
+        }
+        const auto count = static_cast<quint32>(expandedVertices.size()) - first;
+        if (count >= 3) expandedDraws.push_back({ChartDrawCall::Topology::Triangles, first, count});
+    }
+
+    chartPalette_.fill(Qt::transparent);
+    std::unordered_map<QRgb, quint16> paletteSlots;
+    std::vector<QColor> paletteColors;
+    paletteColors.reserve(32);
+    const auto colorSlot = [&](const ChartVertex& vertex) -> quint16 {
+        QColor color;
+        color.setRgbF(std::clamp<double>(vertex.r, 0.0, 1.0),
+                      std::clamp<double>(vertex.g, 0.0, 1.0),
+                      std::clamp<double>(vertex.b, 0.0, 1.0),
+                      std::clamp<double>(vertex.a, 0.0, 1.0));
+        const QRgb key = color.rgba();
+        if (const auto found = paletteSlots.find(key); found != paletteSlots.end()) return found->second;
+        quint16 slot = 0;
+        if (paletteColors.size() < 256) {
+            slot = static_cast<quint16>(paletteColors.size());
+            paletteColors.push_back(color);
+            chartPalette_.setPixelColor(slot, 0, color);
+        } else {
+            double nearestDistance = std::numeric_limits<double>::infinity();
+            for (std::size_t index = 0; index < paletteColors.size(); ++index) {
+                const auto& candidate = paletteColors[index];
+                const double dr = candidate.redF() - color.redF();
+                const double dg = candidate.greenF() - color.greenF();
+                const double db = candidate.blueF() - color.blueF();
+                const double da = candidate.alphaF() - color.alphaF();
+                const double distance = dr * dr + dg * dg + db * db + da * da;
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    slot = static_cast<quint16>(index);
+                }
+            }
+        }
+        paletteSlots.emplace(key, slot);
+        return slot;
+    };
+
+    std::vector<GpuChartVertex> encodedVertices;
+    std::vector<ChartDrawCall> encodedDraws;
+    encodedVertices.reserve(expandedVertices.size() + expandedDraws.size() * 8);
+    for (const auto& draw : expandedDraws) {
+        const quint64 end = static_cast<quint64>(draw.firstVertex) + draw.vertexCount;
+        if (draw.vertexCount < 3 || end > expandedVertices.size()) continue;
+        const auto first = static_cast<quint32>(encodedVertices.size());
+        for (quint32 index = 0; index + 2 < draw.vertexCount; index += 3) {
+            const auto encode = [&colorSlot](const ChartVertex& vertex) {
+                const auto slot = colorSlot(vertex);
+                return GpuChartVertex{vertex.x, vertex.y,
+                    (static_cast<float>(slot) + 0.5f) / 256.0f, 0.5f};
+            };
+            const auto a = encode(expandedVertices[draw.firstVertex + index]);
+            const auto b = encode(expandedVertices[draw.firstVertex + index + 1]);
+            const auto c = encode(expandedVertices[draw.firstVertex + index + 2]);
+            if (encodedVertices.size() == first) {
+                encodedVertices.insert(encodedVertices.end(), {a, b, c});
+            } else {
+                // Degenerate connectors join independent triangles into one
+                // triangle-strip draw. Geometry and palette lookup stay on GPU.
+                encodedVertices.push_back(encodedVertices.back());
+                encodedVertices.insert(encodedVertices.end(), {a, a, b, c});
+            }
+        }
+        const auto count = static_cast<quint32>(encodedVertices.size()) - first;
+        if (count >= 3) encodedDraws.push_back({ChartDrawCall::Topology::TriangleStrip, first, count});
+    }
+    chartVertices_ = std::move(encodedVertices);
+    chartDraws_ = std::move(encodedDraws);
+    chartGeometryDirty_ = true;
+    chartPaletteDirty_ = true;
+    update();
+}
+
+void AcceleratedSurface::setHeatmap(const QImage& image, const QRectF& target, const QString& revision,
+                                    const QImage& palette) {
     if (target_ != target) overlayDirty_ = true;
     target_ = target;
+    const auto nextPalette = palette.isNull() ? QImage{} : palette.convertToFormat(QImage::Format_RGBA8888);
+    if (!nextPalette.isNull() &&
+        (palette_.size() != nextPalette.size() || palette_.cacheKey() != nextPalette.cacheKey())) {
+        palette_ = nextPalette;
+        paletteDirty_ = true;
+    }
     // The producer owns revision identity. Placement and overlay updates never
     // replace or re-upload the pixels of an identical heatmap revision.
     if (!hasRevision_ || revision_ != revision) {
@@ -161,6 +324,18 @@ QJsonObject AcceleratedSurface::cpuWallTimings() const {
         {"overlayPainter", json(overlayPainterTiming_)},
         {"overlayUploadEnqueue", json(overlayUploadEnqueueTiming_)},
         {"heatmapUploadPreparation", json(heatmapUploadPreparationTiming_)},
+        {"chartVertexUploads", static_cast<qint64>(chartVertexUploads_)},
+        {"chartDrawCalls", static_cast<qint64>(chartDrawCalls_)},
+        {"lastChartVertexCount", static_cast<qint64>(lastChartVertexCount_)},
+        {"lastChartDrawRecordCount", static_cast<qint64>(lastChartDrawRecordCount_)},
+        {"chartDrawCallsSkipped", static_cast<qint64>(chartDrawCallsSkipped_)},
+        {"lastChartDrawLoopIterations", static_cast<qint64>(lastChartDrawLoopIterations_)},
+        {"lastChartDrawStage", static_cast<qint64>(lastChartDrawStage_)},
+        {"renderInvocations", static_cast<qint64>(renderInvocations_)},
+        {"lastRenderWidth", lastRenderSize_.width()}, {"lastRenderHeight", lastRenderSize_.height()},
+        {"heatmapDrawCalls", static_cast<qint64>(heatmapDrawCalls_)},
+        {"paletteUploads", static_cast<qint64>(paletteUploads_)},
+        {"chartPaletteUploads", static_cast<qint64>(chartPaletteUploads_)},
         {"render", json(renderTiming_)},
         {"paintEventIncludingQtSubmit", json(paintEventTiming_)}};
 }
@@ -205,21 +380,27 @@ bool AcceleratedSurface::createResources() {
     resources_ = std::make_unique<Resources>();
     resources_->owner = rhi();
     resources_->vertexShader = loadShader(QStringLiteral(":/signalstudio/shaders/texture.vert.qsb"));
-    resources_->fragmentShader = loadShader(QStringLiteral(":/signalstudio/shaders/texture.frag.qsb"));
-    if (!resources_->vertexShader.isValid() || !resources_->fragmentShader.isValid()) {
+    resources_->fragmentShader = loadShader(QStringLiteral(":/signalstudio/shaders/heatmap.frag.qsb"));
+    resources_->overlayFragmentShader = loadShader(QStringLiteral(":/signalstudio/shaders/texture.frag.qsb"));
+    if (!resources_->vertexShader.isValid() || !resources_->fragmentShader.isValid() ||
+        !resources_->overlayFragmentShader.isValid()) {
         fail(QStringLiteral("QRhi 纹理着色器资源缺失或无效"));
         return false;
     }
     resources_->vertices.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer,
                                                static_cast<quint32>(8 * sizeof(Vertex))));
+    resources_->chartVertices.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer,
+                                                     static_cast<quint32>(sizeof(GpuChartVertex))));
     resources_->sampler.reset(rhi()->newSampler(QRhiSampler::Linear, QRhiSampler::Linear,
                                                QRhiSampler::None, QRhiSampler::ClampToEdge,
                                                QRhiSampler::ClampToEdge));
-    if (!resources_->vertices->create() || !resources_->sampler->create()) {
+    if (!resources_->vertices->create() || !resources_->chartVertices->create() || !resources_->sampler->create()) {
         fail(QStringLiteral("无法创建 QRhi 顶点缓冲或纹理采样器"));
         return false;
     }
-    if (!ensureTexture(false, QSize(1, 1)) || !ensureTexture(true, QSize(1, 1))) return false;
+    if (!ensurePaletteTexture() || !ensureChartPaletteTexture() ||
+        !ensureTexture(false, QSize(1, 1)) || !ensureTexture(true, QSize(1, 1))) return false;
+    paletteDirty_ = true;
     heatmapDirty_ = !heatmap_.isNull();
     heatmapUploaded_ = false;
     overlayDirty_ = true;
@@ -229,10 +410,22 @@ bool AcceleratedSurface::createResources() {
 bool AcceleratedSurface::ensurePipeline() {
     auto* pass = renderTarget()->renderPassDescriptor();
     const int samples = renderTarget()->sampleCount();
-    if (resources_->pipeline && resources_->samples == samples && resources_->renderPass->isCompatible(pass))
+    const bool compatiblePass = resources_->renderPass && resources_->samples == samples &&
+                               resources_->renderPass->isCompatible(pass);
+    if (resources_->pipeline && resources_->overlayPipeline && compatiblePass)
         return true;
-    resources_->pipeline.reset();
-    resources_->renderPass.reset(pass->newCompatibleRenderPassDescriptor());
+    if (!compatiblePass) {
+        resources_->pipeline.reset();
+        resources_->overlayPipeline.reset();
+        resources_->renderPass.reset(pass->newCompatibleRenderPassDescriptor());
+        resources_->samples = samples;
+    } else {
+        // Texture replacement invalidates only the pipelines that bind those
+        // textures. Keep the compatible render-pass descriptor and the
+        // independent chart-data pipelines alive.
+        resources_->pipeline.reset();
+        resources_->overlayPipeline.reset();
+    }
     resources_->pipeline.reset(rhi()->newGraphicsPipeline());
     auto* pipeline = resources_->pipeline.get();
     pipeline->setTopology(QRhiGraphicsPipeline::TriangleStrip);
@@ -260,7 +453,46 @@ bool AcceleratedSurface::ensurePipeline() {
         fail(QStringLiteral("无法创建 QRhi 纹理合成管线"));
         return false;
     }
+    resources_->overlayPipeline.reset(rhi()->newGraphicsPipeline());
+    auto* overlayPipeline = resources_->overlayPipeline.get();
+    overlayPipeline->setTopology(QRhiGraphicsPipeline::TriangleStrip);
+    overlayPipeline->setSampleCount(samples);
+    overlayPipeline->setCullMode(QRhiGraphicsPipeline::None);
+    overlayPipeline->setDepthTest(false);
+    overlayPipeline->setDepthWrite(false);
+    overlayPipeline->setShaderStages({{QRhiShaderStage::Vertex, resources_->vertexShader},
+                                      {QRhiShaderStage::Fragment, resources_->overlayFragmentShader}});
+    overlayPipeline->setVertexInputLayout(layout);
+    overlayPipeline->setTargetBlends({blend});
+    overlayPipeline->setShaderResourceBindings(resources_->overlayBindings.get());
+    overlayPipeline->setRenderPassDescriptor(resources_->renderPass.get());
+    if (!overlayPipeline->create()) {
+        fail(QStringLiteral("无法创建 QRhi 覆盖层合成管线"));
+        return false;
+    }
     resources_->samples = samples;
+    return true;
+}
+
+bool AcceleratedSurface::ensureChartBuffer() {
+    if (chartVertices_.empty()) return true;
+    const auto bytes = static_cast<quint64>(chartVertices_.size()) * sizeof(GpuChartVertex);
+    if (bytes > std::numeric_limits<quint32>::max()) {
+        fail(QStringLiteral("GPU 图谱顶点缓冲超过 QRhi 单缓冲上限"));
+        return false;
+    }
+    auto* buffer = resources_->chartVertices.get();
+    if (buffer->size() < static_cast<quint32>(bytes)) {
+        quint32 capacity = std::max<quint32>(buffer->size(), static_cast<quint32>(sizeof(GpuChartVertex)));
+        while (capacity < bytes && capacity <= std::numeric_limits<quint32>::max() / 2) capacity *= 2;
+        if (capacity < bytes) capacity = static_cast<quint32>(bytes);
+        buffer->destroy();
+        buffer->setSize(capacity);
+        if (!buffer->create()) {
+            fail(QStringLiteral("无法创建 GPU 图谱顶点缓冲"));
+            return false;
+        }
+    }
     return true;
 }
 
@@ -273,17 +505,87 @@ bool AcceleratedSurface::ensureTexture(bool overlay, const QSize& pixelSize) {
         fail(QStringLiteral("QRhi 纹理尺寸无效或超过设备上限 %1").arg(maximum));
         return false;
     }
-    if (!texture) texture.reset(rhi()->newTexture(QRhiTexture::RGBA8, pixelSize));
-    else texture->setPixelSize(pixelSize);
+    if (texture && texture->pixelSize() != pixelSize) {
+        // QRhi textures are native resources after create(). Recreate the
+        // texture and every binding/pipeline that refers to it when the plot
+        // or overlay changes size; mutating a live D3D11 texture descriptor
+        // and calling create() again is not a valid resize operation.
+        resources_->pipeline.reset();
+        resources_->overlayPipeline.reset();
+        bindings.reset();
+        texture->destroy();
+        texture->setPixelSize(pixelSize);
+    } else if (!texture) {
+        texture.reset(rhi()->newTexture(QRhiTexture::RGBA8, pixelSize));
+    }
     if (!texture->create()) {
         fail(QStringLiteral("无法创建 QRhi %1纹理").arg(overlay ? QStringLiteral("覆盖层") : QStringLiteral("热图")));
         return false;
     }
     if (!bindings) bindings.reset(rhi()->newShaderResourceBindings());
-    bindings->setBindings({QRhiShaderResourceBinding::sampledTexture(
-        0, QRhiShaderResourceBinding::FragmentStage, texture.get(), resources_->sampler.get())});
+    if (overlay) {
+        bindings->setBindings({QRhiShaderResourceBinding::sampledTexture(
+            0, QRhiShaderResourceBinding::FragmentStage, texture.get(), resources_->sampler.get())});
+    } else {
+        bindings->setBindings({QRhiShaderResourceBinding::sampledTexture(
+            0, QRhiShaderResourceBinding::FragmentStage, texture.get(), resources_->sampler.get()),
+            QRhiShaderResourceBinding::sampledTexture(
+            1, QRhiShaderResourceBinding::FragmentStage, resources_->palette.get(), resources_->sampler.get())});
+    }
     if (!bindings->create()) {
         fail(QStringLiteral("无法创建 QRhi 纹理资源绑定"));
+        return false;
+    }
+    return true;
+}
+
+bool AcceleratedSurface::ensurePaletteTexture() {
+    const QSize size(256, 1);
+    const int maximum = rhi()->resourceLimit(QRhi::TextureSizeMax);
+    if (size.width() > maximum) {
+        fail(QStringLiteral("QRhi 颜色查找纹理超过设备尺寸限制"));
+        return false;
+    }
+    if (!resources_->palette) resources_->palette.reset(rhi()->newTexture(QRhiTexture::RGBA8, size));
+    else if (resources_->palette->pixelSize() != size) {
+        resources_->palette->setPixelSize(size);
+        resources_->paletteCreated = false;
+    }
+    if (resources_->paletteCreated) return true;
+    if (!resources_->palette->create()) {
+        fail(QStringLiteral("无法创建 QRhi 图谱颜色查找纹理"));
+        return false;
+    }
+    resources_->paletteCreated = true;
+    return true;
+}
+
+bool AcceleratedSurface::ensureChartPaletteTexture() {
+    if (resources_->chartPaletteCreated && resources_->chartBindings) return true;
+    const QSize size(256, 1);
+    const int maximum = rhi()->resourceLimit(QRhi::TextureSizeMax);
+    if (size.width() > maximum) {
+        fail(QStringLiteral("QRhi 曲线颜色查找纹理超过设备尺寸限制"));
+        return false;
+    }
+    if (!resources_->chartPalette)
+        resources_->chartPalette.reset(rhi()->newTexture(QRhiTexture::RGBA8, size));
+    else if (resources_->chartPalette->pixelSize() != size) {
+        resources_->chartBindings.reset();
+        resources_->chartPalette->destroy();
+        resources_->chartPalette->setPixelSize(size);
+        resources_->chartPaletteCreated = false;
+    }
+    if (!resources_->chartPaletteCreated && !resources_->chartPalette->create()) {
+        fail(QStringLiteral("无法创建 QRhi 曲线颜色查找纹理"));
+        return false;
+    }
+    resources_->chartPaletteCreated = true;
+    if (!resources_->chartBindings) resources_->chartBindings.reset(rhi()->newShaderResourceBindings());
+    resources_->chartBindings->setBindings({QRhiShaderResourceBinding::sampledTexture(
+        0, QRhiShaderResourceBinding::FragmentStage, resources_->chartPalette.get(), resources_->sampler.get())});
+    if (!resources_->chartBindings->create()) {
+        fail(QStringLiteral("无法创建 QRhi 曲线颜色资源绑定"));
         return false;
     }
     return true;
@@ -293,12 +595,46 @@ bool AcceleratedSurface::prepareUploads(QRhiResourceUpdateBatch* updates) {
     const CpuWallScope prepareTimer(prepareUploadsTiming_);
     if (heatmapDirty_) {
         const CpuWallScope heatmapTimer(heatmapUploadPreparationTiming_);
-        const auto pixels = heatmap_.convertToFormat(QImage::Format_RGBA8888_Premultiplied);
+        QImage pixels(heatmap_.size(), QImage::Format_RGBA8888);
+        if (pixels.isNull()) {
+            fail(QStringLiteral("无法创建 QRhi 标量图谱上传图像"));
+            return false;
+        }
+        for (int y = 0; y < heatmap_.height(); ++y) {
+            auto* output = pixels.scanLine(y);
+            const auto* source = heatmap_.constScanLine(y);
+            for (int x = 0; x < heatmap_.width(); ++x) {
+                int value = 0;
+                if (heatmap_.format() == QImage::Format_Indexed8)
+                    value = source[x];
+                else if (heatmap_.format() == QImage::Format_Grayscale8)
+                    value = source[x];
+                else
+                    value = qGray(heatmap_.pixel(x, y));
+                output[x * 4] = static_cast<uchar>(value);
+                output[x * 4 + 1] = static_cast<uchar>(value);
+                output[x * 4 + 2] = static_cast<uchar>(value);
+                output[x * 4 + 3] = 255;
+            }
+        }
+        if (!ensurePaletteTexture()) return false;
         if (pixels.isNull() || !ensureTexture(false, pixels.size())) return false;
         updates->uploadTexture(resources_->heatmap.get(), pixels);
         ++textureUploads_;
         heatmapDirty_ = false;
         heatmapUploaded_ = true;
+    }
+    if (paletteDirty_) {
+        if (!ensurePaletteTexture()) return false;
+        updates->uploadTexture(resources_->palette.get(), palette_.convertToFormat(QImage::Format_RGBA8888));
+        ++paletteUploads_;
+        paletteDirty_ = false;
+    }
+    if (chartPaletteDirty_) {
+        if (!ensureChartPaletteTexture()) return false;
+        updates->uploadTexture(resources_->chartPalette.get(), chartPalette_);
+        ++chartPaletteUploads_;
+        chartPaletteDirty_ = false;
     }
     const auto pixels = renderTarget()->pixelSize();
     const auto dpr = devicePixelRatioF();
@@ -334,10 +670,21 @@ bool AcceleratedSurface::prepareUploads(QRhiResourceUpdateBatch* updates) {
         ++overlayUploads_;
         overlayDirty_ = false;
     }
+    if (chartGeometryDirty_) {
+        if (!ensureChartBuffer()) return false;
+        if (!chartVertices_.empty()) {
+            updates->updateDynamicBuffer(resources_->chartVertices.get(), 0,
+                static_cast<quint32>(chartVertices_.size() * sizeof(GpuChartVertex)), chartVertices_.data());
+            ++chartVertexUploads_;
+        }
+        chartGeometryDirty_ = false;
+    }
     return true;
 }
 
 void AcceleratedSurface::render(QRhiCommandBuffer* commandBuffer) {
+    ++renderInvocations_;
+    lastRenderSize_ = size();
     const CpuWallScope renderTimer(renderTiming_);
     if (!ready_ || !resources_ || !commandBuffer || width() <= 0 || height() <= 0) return;
     if (rhi()->isDeviceLost()) {
@@ -346,6 +693,10 @@ void AcceleratedSurface::render(QRhiCommandBuffer* commandBuffer) {
     }
     auto* updates = rhi()->nextResourceUpdateBatch();
     if (!prepareUploads(updates)) {
+        updates->release();
+        return;
+    }
+    if (!ensurePipeline()) {
         updates->release();
         return;
     }
@@ -366,7 +717,34 @@ void AcceleratedSurface::render(QRhiCommandBuffer* commandBuffer) {
     if (heatmapUploaded_ && !heatmap_.isNull() && !target_.isEmpty()) {
         commandBuffer->setShaderResources(resources_->heatmapBindings.get());
         commandBuffer->draw(4);
+        ++heatmapDrawCalls_;
     }
+    lastChartVertexCount_ = static_cast<qsizetype>(chartVertices_.size());
+    lastChartDrawRecordCount_ = static_cast<qsizetype>(chartDraws_.size());
+    lastChartDrawLoopIterations_ = 0;
+    lastChartDrawStage_ = 0;
+    if (!chartVertices_.empty() && !chartDraws_.empty()) {
+        const QRhiCommandBuffer::VertexInput chartInput(resources_->chartVertices.get(), 0);
+        for (const auto& draw : chartDraws_) {
+            ++lastChartDrawLoopIterations_;
+            if (draw.vertexCount < 3 || static_cast<quint64>(draw.firstVertex) + draw.vertexCount > chartVertices_.size()) {
+                ++chartDrawCallsSkipped_;
+                continue;
+            }
+            lastChartDrawStage_ = 1;
+            commandBuffer->setGraphicsPipeline(resources_->overlayPipeline.get());
+            lastChartDrawStage_ = 2;
+            commandBuffer->setShaderResources(resources_->chartBindings.get());
+            lastChartDrawStage_ = 3;
+            commandBuffer->setVertexInput(0, 1, &chartInput);
+            lastChartDrawStage_ = 4;
+            commandBuffer->draw(draw.vertexCount, 1, draw.firstVertex);
+            lastChartDrawStage_ = 5;
+            ++chartDrawCalls_;
+            lastChartDrawStage_ = 6;
+        }
+    }
+    commandBuffer->setGraphicsPipeline(resources_->overlayPipeline.get());
     commandBuffer->setShaderResources(resources_->overlayBindings.get());
     commandBuffer->draw(4, 1, 4);
     commandBuffer->endPass();
@@ -377,7 +755,10 @@ void AcceleratedSurface::releaseResources() {
     resources_.reset();
     heatmapUploaded_ = false;
     heatmapDirty_ = !heatmap_.isNull();
+    paletteDirty_ = true;
+    chartPaletteDirty_ = true;
     overlayDirty_ = true;
+    chartGeometryDirty_ = true;
 }
 
 void AcceleratedSurface::fail(const QString& reason) {

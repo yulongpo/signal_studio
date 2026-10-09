@@ -5,6 +5,7 @@ param(
     [string[]]$Sizes = @('2560x1440'),
     [string]$OutputDirectory,
     [string]$Project,
+    [switch]$Narrowband,
     [switch]$SoftwareRenderer
 )
 $ErrorActionPreference = 'Stop'
@@ -16,6 +17,7 @@ New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $outputDir = Join-Path $repoRoot "out/vs2026-qt611-$($Configuration.ToLowerInvariant())_bin"
 $executable = Join-Path $outputDir 'SignalStudio.exe'
 if (-not (Test-Path -LiteralPath $executable)) { throw "Executable does not exist: $executable" }
+if ($Narrowband -and $Project) { throw 'The packaged narrowband demo cannot be combined with -Project.' }
 $savedPlatform = [Environment]::GetEnvironmentVariable('QT_QPA_PLATFORM', 'Process')
 $savedScale = [Environment]::GetEnvironmentVariable('QT_SCALE_FACTOR', 'Process')
 $savedScreenScale = [Environment]::GetEnvironmentVariable('QT_SCREEN_SCALE_FACTORS', 'Process')
@@ -28,9 +30,12 @@ try {
     $env:QT_SCREEN_SCALE_FACTORS = $null
     foreach ($size in $Sizes) {
         if ($size -notmatch '^\d+x\d+$') { throw "Invalid window size: $size" }
-        $screenshotPath = Join-Path $OutputDirectory "signal-studio-$($Configuration.ToLowerInvariant())-$renderMode-$size.png"
-        $reportPath = Join-Path $OutputDirectory "signal-studio-$($Configuration.ToLowerInvariant())-$renderMode-$size.json"
-        $appArguments = @('--demo-data', '--screenshot', $screenshotPath, '--size', $size, '--screen', '2', '--full-screen', '--render-report', $reportPath, $renderOption)
+        $prefix = if ($Narrowband) { 'signal-studio-narrowband' } else { 'signal-studio' }
+        $screenshotPath = Join-Path $OutputDirectory "$prefix-$($Configuration.ToLowerInvariant())-$renderMode-$size.png"
+        $reportPath = Join-Path $OutputDirectory "$prefix-$($Configuration.ToLowerInvariant())-$renderMode-$size.json"
+        $appArguments = @()
+        if ($Narrowband) { $appArguments += @('--narrowband-demo', '--verify-narrowband-pages') } else { $appArguments += '--demo-data' }
+        $appArguments += @('--screenshot', $screenshotPath, '--size', $size, '--screen', '2', '--full-screen', '--render-report', $reportPath, $renderOption)
         if ($size -eq '2560x1440') { $appArguments += '--verify-4k-150' }
         if ($Project) { $appArguments += @('--project', $Project) }
         & $executable @appArguments | Out-Host
