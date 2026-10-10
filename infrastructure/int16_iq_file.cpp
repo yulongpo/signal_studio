@@ -40,39 +40,6 @@ std::uint64_t scaledOffset(std::uint64_t span, std::uint64_t numerator, std::uin
     return (span / denominator) * numerator + ((span % denominator) * numerator) / denominator;
 }
 
-void fft(std::vector<std::complex<double>>& data) {
-    const auto size = data.size();
-    for (std::size_t i = 1, j = 0; i < size; ++i) {
-        std::size_t bit = size >> 1;
-        for (; j & bit; bit >>= 1) j ^= bit;
-        j ^= bit;
-        if (i < j) std::swap(data[i], data[j]);
-    }
-    for (std::size_t length = 2; length <= size; length <<= 1) {
-        const auto angle = -2.0 * std::numbers::pi / static_cast<double>(length);
-        const std::complex<double> root(std::cos(angle), std::sin(angle));
-        for (std::size_t base = 0; base < size; base += length) {
-            std::complex<double> twiddle(1.0, 0.0);
-            for (std::size_t offset = 0; offset < length / 2; ++offset) {
-                const auto even = data[base + offset];
-                const auto odd = data[base + offset + length / 2] * twiddle;
-                data[base + offset] = even + odd;
-                data[base + offset + length / 2] = even - odd;
-                twiddle *= root;
-            }
-        }
-    }
-}
-
-double hannPowerSum(int size) {
-    double sum = 0;
-    for (int i = 0; i < size; ++i) {
-        const double window = .5 - .5 * std::cos(2 * std::numbers::pi * i / (size - 1));
-        sum += window * window;
-    }
-    return sum;
-}
-
 } // namespace
 
 std::optional<Int16IqDescriptor> describeInt16IqFile(const QString& path, QString& error) {
@@ -154,18 +121,18 @@ std::complex<double> Int16IqFile::sampleAt(std::uint64_t index) const {
     return mapped_ && index < sampleCount_ ? sample(index) : std::complex<double>{};
 }
 
-void Int16IqFile::spectrum(std::uint64_t first, int fftSize, std::vector<std::complex<double>>& output) const {
-    output.resize(static_cast<std::size_t>(fftSize));
-    for (int i = 0; i < fftSize; ++i) {
-        const double hann = .5 - .5 * std::cos(2 * std::numbers::pi * i / (fftSize - 1));
-        const auto index = first + static_cast<std::uint64_t>(i);
-        output[static_cast<std::size_t>(i)] = index < sampleCount_ ? sample(index) * hann : std::complex<double>{};
-    }
-    fft(output);
-}
-
-double Int16IqFile::powerDensityDb(const std::complex<double>& value, double normalization) const {
-    return 10.0 * std::log10(std::max(std::norm(value) / normalization, 1e-20));
+SpectralSource Int16IqFile::spectralSource() const {
+    SpectralSource source;
+    source.read = [this](TimeRange range, std::vector<std::complex<float>>& output, const SpectralCancel& cancel) {
+        if (!mapped_ || !validRange(range, sampleCount_)) return false;
+        output.resize(static_cast<std::size_t>(range.end - range.begin));
+        for (std::size_t n = 0; n < output.size(); ++n) {
+            if ((n & 1023) == 0 && cancel && cancel()) return false;
+            output[n] = std::complex<float>(sample(range.begin + n));
+        }
+        return true;
+    };
+    return source;
 }
 
 bool Int16IqFile::waveform(const TimeRange& range, int points, WaveformMode mode, std::vector<float>& output,
@@ -184,12 +151,13 @@ bool Int16IqFile::waveform(const TimeRange& range, int points, WaveformMode mode
             continue;
         }
         const auto bucket = std::max<std::uint64_t>(1, last - first);
-        // Bounded, evenly spaced probes preserve narrow transients without
-        // scanning every byte of a multi-gigabyte file at overview zoom.
-        const auto count = std::min<std::uint64_t>(bucket, mode == WaveformMode::Envelope ? 4096 : 2048);
+        // Envelope scans every sample to retain isolated pulses. RMS overview
+        // uses evenly distributed probes with a bounded cost.
+        const auto count = mode == WaveformMode::Envelope ? bucket : std::min<std::uint64_t>(bucket, 2048);
         double power = 0;
         double peak = 0;
         for (std::uint64_t n = 0; n < count; ++n) {
+            if ((n & 1023) == 0 && cancelled && cancelled()) return false;
             const auto index = first + (count == bucket ? n : n * bucket / count);
             const double magnitudeSquared = std::norm(sample(index));
             power += magnitudeSquared;
@@ -204,36 +172,17 @@ bool Int16IqFile::waveform(const TimeRange& range, int points, WaveformMode mode
 bool Int16IqFile::psd(const TimeRange& range, const FrequencyRange& frequencies, double sampleRateHz,
                       double centerFrequencyHz, int fftSize, int points, std::vector<float>& output,
                       const std::function<bool()>& cancelled) const {
-    if (!mapped_ || !validRange(range, sampleCount_) || fftSize < 16 || (fftSize & (fftSize - 1)) || points < 1 || sampleRateHz <= 0) return false;
-    const auto span = range.end - range.begin;
-    while (fftSize > static_cast<std::uint64_t>(span) && fftSize > 16) fftSize >>= 1;
-    if (fftSize > span) return false;
-    constexpr int maximumWindows = 64;
-    const auto maximumStart = span - static_cast<std::uint64_t>(fftSize);
-    const auto hop = static_cast<std::uint64_t>(std::max(1, fftSize / 2));
-    const auto availableWindows = 1 + maximumStart / hop;
-    const int windows = static_cast<int>(std::min<std::uint64_t>(maximumWindows, availableWindows));
-    const double normalization = sampleRateHz * hannPowerSum(fftSize);
-    std::vector<double> average(static_cast<std::size_t>(fftSize));
-    std::vector<std::complex<double>> bins;
-    for (int frame = 0; frame < windows; ++frame) {
-        if (cancelled && cancelled()) return false;
-        const auto offset = windows == 1 ? maximumStart / 2 :
-            scaledOffset(maximumStart, static_cast<std::uint64_t>(frame), static_cast<std::uint64_t>(windows - 1));
-        spectrum(range.begin + offset, fftSize, bins);
-        for (int k = 0; k < fftSize; ++k) {
-            const int shifted = (k + fftSize / 2) % fftSize;
-            average[static_cast<std::size_t>(shifted)] += std::norm(bins[static_cast<std::size_t>(k)]) / windows;
-        }
-    }
-    output.resize(static_cast<std::size_t>(points));
-    const double firstHz = centerFrequencyHz - sampleRateHz / 2;
+    if (!mapped_ || points < 1) return false;
+    auto source = spectralSource(); source.sampleRateHz = sampleRateHz;
+    const auto data = analyzeSpectrogram(source, range,
+        {frequencies.lowerHz - centerFrequencyHz, frequencies.upperHz - centerFrequencyHz}, fftSize, 64, cancelled);
+    const auto average = averageSpectrum(*data);
+    if (!average) return false;
+    output.resize(points);
     for (int x = 0; x < points; ++x) {
-        const double u = points == 1 ? .5 : static_cast<double>(x) / (points - 1);
-        const double hz = frequencies.lowerHz + u * (frequencies.upperHz - frequencies.lowerHz);
-        const auto index = static_cast<int>(std::lround((hz - firstHz) * fftSize / sampleRateHz));
-        const auto clamped = std::clamp(index, 0, fftSize - 1);
-        output[static_cast<std::size_t>(x)] = static_cast<float>(powerDensityDb({std::sqrt(average[static_cast<std::size_t>(clamped)]), 0}, normalization));
+        const auto bin = std::min(average->linearPower.size() - 1,
+            static_cast<std::size_t>(x) * average->linearPower.size() / points);
+        output[x] = average->dbAt(bin);
     }
     return true;
 }
@@ -241,63 +190,12 @@ bool Int16IqFile::psd(const TimeRange& range, const FrequencyRange& frequencies,
 bool Int16IqFile::spectrogram(const FileMetadata& metadata, const ViewRange& view, MainMode mode,
                               QSize pixels, int fftSize, std::vector<float>& output,
                               const std::function<bool()>& cancelled) const {
-    const int width = pixels.width(), height = pixels.height();
-    if (!mapped_ || !validRange(view.time, sampleCount_) || width < 2 || height < 2 || fftSize < 16 ||
-        (fftSize & (fftSize - 1)) || metadata.sampleRateHz <= 0) return false;
-    const auto timeSpan = view.time.end - view.time.begin;
-    while (fftSize > static_cast<std::uint64_t>(timeSpan) && fftSize > 16) fftSize >>= 1;
-    if (fftSize > timeSpan) return false;
-    output.assign(static_cast<std::size_t>(width) * height, -140.0f);
-    const bool waterfall = mode == MainMode::Waterfall;
-    const int lineCount = std::min(waterfall ? height : width, std::max(1, 8'000'000 / fftSize));
-    const double binHz = metadata.sampleRateHz / fftSize;
-    const double normalization = metadata.sampleRateHz * hannPowerSum(fftSize);
-    const double lower = metadata.centerFrequencyHz - metadata.sampleRateHz / 2;
-    const auto maximumStart = timeSpan - static_cast<std::uint64_t>(fftSize);
-    std::vector<std::complex<double>> bins;
-    for (int line = 0; line < lineCount; ++line) {
-        if (cancelled && cancelled()) return false;
-        const auto offset = lineCount == 1 ? maximumStart / 2 :
-            scaledOffset(maximumStart, static_cast<std::uint64_t>(line), static_cast<std::uint64_t>(lineCount - 1));
-        const auto first = view.time.begin + offset;
-        spectrum(first, fftSize, bins);
-        const int rows = waterfall ? width : height;
-        for (int row = 0; row < rows; ++row) {
-            const double v = rows == 1 ? .5 : static_cast<double>(row) / (rows - 1);
-            const double frequency = waterfall ? view.frequency.lowerHz + v * (view.frequency.upperHz - view.frequency.lowerHz) :
-                view.frequency.upperHz - v * (view.frequency.upperHz - view.frequency.lowerHz);
-            const double nextFrequency = waterfall ? view.frequency.lowerHz + std::min(1.0, v + 1.0 / (rows - 1)) * (view.frequency.upperHz - view.frequency.lowerHz) :
-                view.frequency.upperHz - std::min(1.0, v + 1.0 / (rows - 1)) * (view.frequency.upperHz - view.frequency.lowerHz);
-            int firstBin = static_cast<int>(std::floor((std::min(frequency, nextFrequency) - lower) / binHz));
-            int lastBin = static_cast<int>(std::ceil((std::max(frequency, nextFrequency) - lower) / binHz));
-            firstBin = std::clamp(firstBin, 0, fftSize - 1); lastBin = std::clamp(lastBin, firstBin + 1, fftSize);
-            double peak = 0;
-            for (int k = firstBin; k < lastBin; ++k) {
-                const int fftIndex = (k + fftSize / 2) % fftSize;
-                peak = std::max(peak, std::norm(bins[static_cast<std::size_t>(fftIndex)]));
-            }
-            const float db = static_cast<float>(powerDensityDb({std::sqrt(peak), 0}, normalization));
-            if (waterfall) {
-                const int y = std::min(height - 1, static_cast<int>((line + .5) * height / lineCount));
-                output[static_cast<std::size_t>(y) * width + row] = db;
-            } else {
-                const int x = std::min(width - 1, static_cast<int>((line + .5) * width / lineCount));
-                output[static_cast<std::size_t>(row) * width + x] = db;
-            }
-        }
-    }
-    // At large FFT sizes fewer independent columns are computed; stretch those
-    // columns across the requested raster without repeating the FFT work.
-    if (lineCount < (waterfall ? height : width)) {
-        const auto original = output;
-        for (int y = 0; y < height; ++y) for (int x = 0; x < width; ++x) {
-            const int sourceLine = std::min(lineCount - 1, static_cast<int>((waterfall ? y + .5 : x + .5) * lineCount / (waterfall ? height : width)));
-            const int sourceX = waterfall ? x : std::min(width - 1, static_cast<int>((sourceLine + .5) * width / lineCount));
-            const int sourceY = waterfall ? std::min(height - 1, static_cast<int>((sourceLine + .5) * height / lineCount)) : y;
-            output[static_cast<std::size_t>(y) * width + x] = original[static_cast<std::size_t>(sourceY) * width + sourceX];
-        }
-    }
-    return true;
+    auto source = spectralSource(); source.sampleRateHz = metadata.sampleRateHz;
+    const auto data = analyzeSpectrogram(source, view.time,
+        {view.frequency.lowerHz - metadata.centerFrequencyHz, view.frequency.upperHz - metadata.centerFrequencyHz},
+        fftSize, mode == MainMode::Waterfall ? pixels.height() : pixels.width(), cancelled);
+    output = spectralRaster(*data, pixels.width(), pixels.height(), mode);
+    return !output.empty();
 }
 
 } // namespace signalstudio

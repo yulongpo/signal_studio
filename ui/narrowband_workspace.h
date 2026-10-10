@@ -53,19 +53,28 @@ public:
     quint64 visibleGpuDataDrawCalls() const;
     quint64 visibleGpuVertexUploads() const;
     QString visibleBackendDescription() const;
+    QJsonObject renderStatistics() const;
     void invalidateVisibleOverlays();
+
+signals:
+    void displayParametersChanged();
 
 private:
     void buildPages();
     void showPage(NarrowbandPage page);
     void updateFrequencyAxisLabels();
+    void updateLinkedCursors();
+    void updatePowerColors();
+    void expandAnalysisTime();
     void finishChartWheel();
     void cancelChartWheel();
-    void requestDisplay();
+    void requestDisplay(bool settled = false);
     void installFrame(std::uint64_t generation, std::uint64_t configVersion,
                       std::vector<float> waveformI, std::vector<float> waveformQ,
                       std::vector<float> psd, QImage stft, QString status, bool samplePointsVisible,
-                      bool psdReady, bool stftReady, std::uint64_t firstOutputSample);
+                      bool psdReady, bool stftReady, std::uint64_t firstOutputSample,
+                      std::vector<SampleIndex> samplePositions,
+                      std::shared_ptr<const SpectrogramData> spectrum, std::vector<float> rasterPower);
     void startDemoRecognition();
     void stopRecognition();
     void stopDemoRecognition();
@@ -108,6 +117,8 @@ private:
     QPlainTextEdit* bitstream_ = nullptr;
     QTimer* recognitionTimer_ = nullptr;
     QTimer* chartWheelTimer_ = nullptr;
+    QTimer* displaySettleTimer_ = nullptr;
+    bool displayPending_ = false;
     std::optional<ChannelViewSnapshot> chartWheelBase_;
     QString selectedModelFile_;
     std::vector<RecognitionSegment> recognitionSegments_;
@@ -125,7 +136,8 @@ private:
     std::shared_ptr<std::atomic_bool> cancellation_;
     std::string lastChannelId_;
     std::string lastSourcePath_;
-    std::uint64_t lastConfigVersion_ = 0;
+    QString lastSourceFingerprint_;
+    std::uint64_t lastConfigVersion_ = 0, lastProjectGeneration_ = 0;
     TimeRange lastVisibleTime_;
     FrequencyRange lastVisibleFrequency_;
     NarrowbandWaveform lastWaveform_ = NarrowbandWaveform::IQ;
@@ -137,6 +149,10 @@ private:
     int recognitionProgressValue_ = 0;
     bool recognitionActive_ = false;
     ChannelSampleCache sampleCache_;
+    ChannelSampleCacheStats displayCacheStats_;
+    std::vector<float> averagePsd_;
+    QString linkedPsdKey_, powerColorKey_;
+    std::vector<float> rasterPower_;
 };
 
 } // namespace signalstudio

@@ -37,6 +37,7 @@ public:
     bool saveProject(const QString& path);
     void openNarrowbandDemoProject();
     void cancelInteractions(bool exitCreating = true);
+    bool clearActiveLinkedCursor();
 protected:
     void resizeEvent(QResizeEvent*) override;
     void keyPressEvent(QKeyEvent*) override;

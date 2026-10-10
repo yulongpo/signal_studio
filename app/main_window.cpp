@@ -363,6 +363,7 @@ void MainWindow::buildWorkspace() {
     workspaceStack_ = new QStackedWidget; workspaceStack_->setObjectName("workspaceStack");
     workspaceStack_->addWidget(graphArea);
     narrowband_ = new NarrowbandWorkspace(session_); workspaceStack_->addWidget(narrowband_);
+    connect(narrowband_, &NarrowbandWorkspace::displayParametersChanged, this, &MainWindow::refresh);
     narrowband_->setCallbacks([this] { locateActiveChannelSource(); }, [this] {
         const auto* channel = session_.activeChannel(); if (channel) showChannelDialog(q(channel->id));
     }, [this] {
@@ -572,9 +573,7 @@ void MainWindow::buildWorkspace() {
                 auto* file = session_.fileForChannel(channelId.toStdString()); if (!file) return;
                 const auto* channel = [&]() -> const Channel* { for (const auto& value : file->channels) if (value.id == channelId.toStdString()) return &value; return nullptr; }();
                 if (!channel || QMessageBox::question(this, "删除窄带通道", "删除通道“" + q(channel->name) + "”？") != QMessageBox::Yes) return;
-                auto& channels = file->channels;
-                channels.erase(std::remove_if(channels.begin(), channels.end(), [&](const Channel& value) { return value.id == channelId.toStdString(); }), channels.end());
-                if (session_.project().activeChannelId == channelId.toStdString()) { session_.project().activeChannelId.clear(); session_.project().narrowbandWorkspaceOpen = false; }
+                session_.removeChannel(channelId.toStdString());
                 refresh(); log("已删除窄带通道");
             });
             menu.exec(tree_->viewport()->mapToGlobal(point)); return;
@@ -602,6 +601,24 @@ void MainWindow::buildWorkspace() {
     }
     auto change = [this] {
         if (refreshing_) return; auto* f = session_.activeFile(); if (!f) return;
+        const bool narrow = session_.project().narrowbandWorkspaceOpen && session_.activeChannel();
+        if (narrow && sender() == freqMode_) {
+            if (auto* channel = session_.activeChannel()) channel->absoluteFrequencyLabels = freqMode_->currentIndex() == 0;
+            refresh(); return;
+        }
+        if (narrow && sender() == grid_) {
+            if (auto* grid = narrowband_->findChild<QCheckBox*>("narrowbandGrid")) grid->setChecked(grid_->isChecked());
+            refresh(); return;
+        }
+        if (narrow && (sender() == stft_ || sender() == psd_)) {
+            const auto points = (sender() == stft_ ? stft_ : psd_)->currentText().toInt();
+            const bool stftChanged = sender() == stft_;
+            cancelInteractions(false);
+            if (auto* channel = session_.activeChannel()) {
+                if (stftChanged) channel->stftFftSize = points; else channel->psdFftSize = points;
+            }
+            refresh(); return;
+        }
         const auto fileId = f->metadata.id; auto display = f->display;
         const auto nextAux = static_cast<AuxiliaryMode>(auxMode_->currentIndex());
         display.auxiliaryMode = nextAux;
@@ -615,8 +632,9 @@ void MainWindow::buildWorkspace() {
         };
         display.dynamicRangeDb = comboNumber(dynamic_, "dB", display.dynamicRangeDb);
         display.referenceLevelDb = comboNumber(reference_, "dBFS", display.referenceLevelDb);
-        display.absoluteFrequency = freqMode_->currentIndex() == 0; display.grid = grid_->isChecked(); display.colorScale = colorScale_->isChecked();
-        display.psdSize = psd_->currentText().toInt(); display.stftSize = stft_->currentText().toInt();
+        if (!narrow) { display.absoluteFrequency = freqMode_->currentIndex() == 0; display.grid = grid_->isChecked(); }
+        display.colorScale = colorScale_->isChecked();
+        if (!narrow) { display.psdSize = psd_->currentText().toInt(); display.stftSize = stft_->currentText().toInt(); }
         if (sender() == psdScope_) sharedPsdFromSelectionPreference_ = psdScope_->currentIndex() == 1;
         display.psdFromSelection = sharedPsdFromSelectionPreference_ && findMark(*f, f->activeMarkId);
         if (sharedPsdFromSelectionPreference_ && !display.psdFromSelection) log("请先选择当前文件的信号标记；PSD 统计来源仍为当前可见时间窗");
@@ -1015,8 +1033,16 @@ void MainWindow::refresh() {
         waveformMode_->setCurrentIndex(static_cast<int>(display.waveformMode));
         effectiveBandwidth_->setRange(file->metadata.sampleRateHz / 65536.0 / 1e6, file->metadata.sampleRateHz / 1e6);
         effectiveBandwidth_->setValue(file->metadata.effectiveBandwidthHz / 1e6);
-        freqMode_->setCurrentIndex(display.absoluteFrequency ? 0 : 1); grid_->setChecked(display.grid); colorScale_->setChecked(display.colorScale); psdScope_->setCurrentIndex(display.psdFromSelection ? 1 : 0);
-        psd_->setCurrentText(QString::number(display.psdSize)); stft_->setCurrentText(QString::number(display.stftSize));
+        const auto* channel = narrowOpen ? session_.activeChannel() : nullptr;
+        freqMode_->setCurrentIndex((channel ? channel->absoluteFrequencyLabels : display.absoluteFrequency) ? 0 : 1);
+        const auto* narrowGrid = narrowOpen ? narrowband_->findChild<QCheckBox*>("narrowbandGrid") : nullptr;
+        grid_->setChecked(narrowGrid ? narrowGrid->isChecked() : display.grid);
+        colorScale_->setChecked(display.colorScale); psdScope_->setCurrentIndex(display.psdFromSelection ? 1 : 0);
+        psd_->setCurrentText(QString::number(channel ? channel->psdFftSize : display.psdSize));
+        stft_->setCurrentText(QString::number(channel ? channel->stftFftSize : display.stftSize));
+        const bool framePsd = session_.linkedCursor(channel ? channel->id : file->metadata.id).framePsd;
+        psd_->setEnabled(!framePsd); psdScope_->setEnabled(!framePsd);
+        psd_->setToolTip(framePsd ? "驻留帧谱有效点数随 STFT；平均谱设置保留" : "当前可见频段内的分析点数");
         for (int i = 0; i < 2; ++i) { auxiliaryButtons_[i]->setChecked(i == auxMode_->currentIndex()); mainButtons_[i]->setChecked(i == mainMode_->currentIndex()); }
         const double duration = static_cast<double>(file->metadata.sampleCount) / file->metadata.sampleRateHz;
         scope_->setText(QString("%1 · Fₛ %2 MS/s · fc %3 MHz").arg(q(file->metadata.name), number(file->metadata.sampleRateHz / 1e6), number(file->metadata.centerFrequencyHz / 1e6)));
@@ -1277,6 +1303,13 @@ void MainWindow::toggleMaximized(int index) {
 void MainWindow::resizeEvent(QResizeEvent* event) {
     QMainWindow::resizeEvent(event); if (!graphs_) return; cancelInteractions(false); enforceLayout(); QTimer::singleShot(0, this, [this] { enforceLayout(); });
 }
+bool MainWindow::clearActiveLinkedCursor() {
+    const auto* file = session_.activeFile(); if (!file) return false;
+    const auto* channel = session_.project().narrowbandWorkspaceOpen ? session_.activeChannel() : nullptr;
+    const auto context = channel ? channel->id : file->metadata.id;
+    if (!session_.linkedCursor(context).pinned) return false;
+    session_.clearCursor(context); refresh(); return true;
+}
 void MainWindow::keyPressEvent(QKeyEvent* event) {
     if (event->key() == Qt::Key_Escape) { cancelInteractions(); if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_); event->accept(); return; }
     QMainWindow::keyPressEvent(event);
@@ -1290,7 +1323,7 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
     if (auto* widget = qobject_cast<QWidget*>(watched); widget && (widget == this || isAncestorOf(widget))) {
         if (event->type() == QEvent::KeyPress && static_cast<QKeyEvent*>(event)->key() == Qt::Key_Escape && !QApplication::activeModalWidget()) {
             const bool active = (main_ && (main_->isCreating() || main_->hasPendingInteraction())) || (auxiliary_ && auxiliary_->hasPendingInteraction()) || (navigation_ && navigation_->hasPendingInteraction()) || (narrowband_ && narrowband_->hasPendingInteraction()) || static_cast<PrototypeSplitter*>(graphs_)->isDragging(); cancelInteractions();
-            if (!active && maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_); event->accept(); return true;
+            if (!active && !clearActiveLinkedCursor() && maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_); event->accept(); return true;
         }
         if (event->type() == QEvent::ContextMenu && widget->property("chartIndex").isValid()) {
             const auto* context = static_cast<QContextMenuEvent*>(event); const int index = widget->property("chartIndex").toInt();

@@ -116,10 +116,12 @@ const Channel* Session::activeChannel() const {
 }
 
 void Session::newProject() {
+    ++projectGeneration_;
     project_ = Project{};
     histories_.clear();
     channelHistories_.clear();
     demoSequence_ = 0;
+    cursors_.clear(); spectra_.clear(); spectralLru_.clear();
 }
 
 std::string Session::nextId(const std::string& prefix) {
@@ -198,7 +200,8 @@ bool Session::removeActiveFile() {
     const auto index = static_cast<std::size_t>(found - project_.files.begin());
     std::unordered_set<std::string> removedChannels;
     for (const auto& channel : found->channels) removedChannels.insert(channel.id);
-    histories_.erase(found->metadata.id);
+    histories_.erase(found->metadata.id); clearCursor(found->metadata.id); installSpectrogram(found->metadata.id, {});
+    for (const auto& id : removedChannels) { channelHistories_.erase(id); clearCursor(id); installSpectrogram(id, {}); }
     project_.files.erase(found);
     project_.activeFileId = project_.files.empty() ? std::string{} :
         project_.files[std::min(index, project_.files.size() - 1)].metadata.id;
@@ -250,6 +253,7 @@ DeleteResult Session::deleteSelectedMarks() {
     for (const auto& channel : file->channels)
         if (selected.contains(channel.sourceMarkId)) removedChannels.insert(channel.id);
     std::erase_if(file->channels, [&](const Channel& channel) { return removedChannels.contains(channel.id); });
+    for (const auto& id : removedChannels) { channelHistories_.erase(id); clearCursor(id); installSpectrogram(id, {}); }
     if (removedChannels.contains(project_.activeChannelId)) {
         project_.activeChannelId.clear(); project_.narrowbandWorkspaceOpen = false;
     }
@@ -484,10 +488,17 @@ bool Session::updateChannel(const std::string& channelId, const Channel& replace
     value.configVersion = old->configVersion + 1;
     value.processingState = ChannelProcessingState::Ready;
     *old = std::move(value);
-    channelHistories_.erase(channelId);
+    channelHistories_.erase(channelId); installSpectrogram(channelId, {});
     return true;
 }
 
+bool Session::removeChannel(const std::string& channelId) {
+    auto* file = fileForChannel(channelId); if (!file) return false;
+    std::erase_if(file->channels, [&](const Channel& channel) { return channel.id == channelId; });
+    channelHistories_.erase(channelId); clearCursor(channelId); installSpectrogram(channelId, {});
+    if (project_.activeChannelId == channelId) { project_.activeChannelId.clear(); project_.narrowbandWorkspaceOpen = false; }
+    return true;
+}
 bool Session::activateChannel(const std::string& channelId) {
     auto* file = fileForChannel(channelId);
     if (!file) return false;
@@ -513,6 +524,7 @@ bool Session::setChannelView(TimeRange sourceTime, FrequencyRange basebandFreque
     const double half = channel->outputSampleRateHz / 2;
     basebandFrequency.lowerHz = std::clamp(basebandFrequency.lowerHz, -half, half);
     basebandFrequency.upperHz = std::clamp(basebandFrequency.upperHz, basebandFrequency.lowerHz, half);
+    if (sourceTime.begin >= sourceTime.end || basebandFrequency.lowerHz >= basebandFrequency.upperHz) return false;
     if (sourceTime == channel->visibleSourceTime && basebandFrequency == channel->visibleBasebandFrequency) return false;
     const auto before = channelViewSnapshot();
     channel->visibleSourceTime = sourceTime;
@@ -629,10 +641,52 @@ bool Session::channelForward() {
 }
 
 void Session::replaceProject(Project project) {
+    ++projectGeneration_;
     project_ = std::move(project);
     histories_.clear();
     channelHistories_.clear();
     demoSequence_ = project_.files.size();
+    cursors_.clear(); spectra_.clear(); spectralLru_.clear();
+}
+
+const LinkedCursorState& Session::linkedCursor(const std::string& context) const {
+    static const LinkedCursorState empty;
+    const auto found = cursors_.find(context);
+    return found == cursors_.end() ? empty : found->second;
+}
+void Session::pinCursor(const std::string& context, SampleIndex sample, double frequencyHz, bool selectFrame) {
+    auto& cursor = cursors_[context]; cursor.pinned = true;
+    cursor.sourceSample = sample; cursor.frequencyHz = frequencyHz;
+    if (selectFrame) cursor.framePsd = true;
+    if (const auto* frame = selectedSpectralFrame(context)) cursor.selectedFrame = frame->id;
+}
+void Session::clearCursor(const std::string& context) { cursors_.erase(context); }
+void Session::setFramePsd(const std::string& context, bool enabled) {
+    auto& cursor = cursors_[context]; cursor.framePsd = enabled && cursor.pinned;
+}
+void Session::installSpectrogram(const std::string& context, std::shared_ptr<const SpectrogramData> data) {
+    if (!data) { spectra_.erase(context); std::erase(spectralLru_, context); return; }
+    spectra_[context] = std::move(data);
+    std::erase(spectralLru_, context); spectralLru_.push_back(context);
+    std::size_t bytes = 0;
+    for (const auto& item : spectra_) if (item.second) bytes += item.second->bytes();
+    // Display payloads have a separate 64 MiB budget, keeping total analysis <=128 MiB.
+    while (bytes > 64U * 1024U * 1024U && spectralLru_.size() > 1) {
+        const auto oldest = spectralLru_.front(); spectralLru_.erase(spectralLru_.begin());
+        if (const auto found = spectra_.find(oldest); found != spectra_.end()) {
+            if (found->second) bytes -= found->second->bytes();
+            spectra_.erase(found);
+        }
+    }
+    if (const auto* frame = selectedSpectralFrame(context)) cursors_[context].selectedFrame = frame->id;
+}
+std::shared_ptr<const SpectrogramData> Session::spectrogram(const std::string& context) const {
+    const auto found = spectra_.find(context); return found == spectra_.end() ? nullptr : found->second;
+}
+const SpectralFrame* Session::selectedSpectralFrame(const std::string& context) const {
+    const auto& cursor = linkedCursor(context);
+    const auto data = spectrogram(context);
+    return cursor.pinned && data ? data->frameAt(cursor.sourceSample) : nullptr;
 }
 
 } // namespace signalstudio

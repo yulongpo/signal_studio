@@ -1,0 +1,10 @@
+{
+  "pass": true,
+  "scipyVersion": "1.17.1",
+  "points": 256,
+  "maximumAbsolutePowerError": 8.610647611595468e-10,
+  "peakBinNative": 154,
+  "peakBinScipy": 154,
+  "sameCoefficients": true,
+  "realAcquisitionSamples": 41984
+}

@@ -1,0 +1,325 @@
+{
+  "passed": true,
+  "branch": "rebuild/a143-native",
+  "qt": "6.11.1",
+  "toolchain": "Visual Studio 18 2026 x64",
+  "ctest": {
+    "debug": "5/5",
+    "release": "5/5"
+  },
+  "qtUi": {
+    "debug": {
+      "passed": 74,
+      "failed": 0,
+      "skipped": 0
+    },
+    "release": {
+      "passed": 74,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "smoke": [
+    {
+      "file": "signal-studio-debug-gpu-screen2-4k-150-report.json",
+      "passed": true,
+      "hardware": true,
+      "workspace": "wideband",
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "drawCalls": 31,
+      "vertexUploads": 5,
+      "textureUploads": 1,
+      "completedFrames": 7
+    },
+    {
+      "file": "signal-studio-debug-software-screen2-4k-150-report.json",
+      "passed": true,
+      "hardware": false,
+      "workspace": "wideband",
+      "backend": "QPainter 软件绘制",
+      "drawCalls": 0,
+      "vertexUploads": 0,
+      "textureUploads": 0,
+      "completedFrames": 0
+    },
+    {
+      "file": "signal-studio-narrowband-debug-gpu-screen2-4k-150-report.json",
+      "passed": true,
+      "hardware": true,
+      "workspace": "narrowband",
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "drawCalls": 29,
+      "vertexUploads": 6,
+      "textureUploads": 1,
+      "completedFrames": 40
+    },
+    {
+      "file": "signal-studio-narrowband-debug-software-screen2-4k-150-report.json",
+      "passed": true,
+      "hardware": false,
+      "workspace": "narrowband",
+      "backend": "QPainter 软件绘制",
+      "drawCalls": 0,
+      "vertexUploads": 0,
+      "textureUploads": 0,
+      "completedFrames": 0
+    },
+    {
+      "file": "signal-studio-narrowband-release-gpu-screen2-4k-150-report.json",
+      "passed": true,
+      "hardware": true,
+      "workspace": "narrowband",
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "drawCalls": 31,
+      "vertexUploads": 6,
+      "textureUploads": 1,
+      "completedFrames": 28
+    },
+    {
+      "file": "signal-studio-narrowband-release-software-screen2-4k-150-report.json",
+      "passed": true,
+      "hardware": false,
+      "workspace": "narrowband",
+      "backend": "QPainter 软件绘制",
+      "drawCalls": 0,
+      "vertexUploads": 0,
+      "textureUploads": 0,
+      "completedFrames": 0
+    },
+    {
+      "file": "signal-studio-release-gpu-screen2-4k-150-report.json",
+      "passed": true,
+      "hardware": true,
+      "workspace": "wideband",
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "drawCalls": 33,
+      "vertexUploads": 5,
+      "textureUploads": 1,
+      "completedFrames": 8
+    },
+    {
+      "file": "signal-studio-release-software-screen2-4k-150-report.json",
+      "passed": true,
+      "hardware": false,
+      "workspace": "wideband",
+      "backend": "QPainter 软件绘制",
+      "drawCalls": 0,
+      "vertexUploads": 0,
+      "textureUploads": 0,
+      "completedFrames": 0
+    }
+  ],
+  "packages": {
+    "debug": {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudio.exe",
+      "bytes": 5261312,
+      "sha256": "b362a7d611b0593e20ddfdb7d7fb554ae5c745a9bc4fc5b14a93d0a62dff7900",
+      "systemOnlyPath": true
+    },
+    "release": {
+      "path": "out/vs2026-qt611-release_bin/SignalStudio.exe",
+      "bytes": 2051072,
+      "sha256": "abd605d24139dc50e733d4246f1826d15789e8753b92713aaa9132ba1218ae1c",
+      "systemOnlyPath": true
+    }
+  },
+  "native": {
+    "debug": {
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "name": "Redmi 27 NU",
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      },
+      "fullScreen": true,
+      "narrowbandSidebarFftVerified": true,
+      "largeIq": {
+        "bytes": 3817472000,
+        "initial": {
+          "actualFrames": 47,
+          "analysisError": "",
+          "analysisPoints": 2048,
+          "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+          "binHz": 976.5625,
+          "frameGeneration": "14",
+          "gpuDataDrawCalls": 53,
+          "gpuVertexUploads": 15,
+          "iqCacheBytes": 400000,
+          "iqCacheHits": 10971,
+          "iqCacheMisses": 5,
+          "matrixBytes": 389912,
+          "noiseBandwidthHz": 1465.5593551538814,
+          "pending": false,
+          "requestGeneration": "14",
+          "requiredSeconds": 0.001024,
+          "textureUploads": 4
+        },
+        "initialDisplayMs": 1869,
+        "path": "E:\\数据集\\扫频数据\\ALaShan_051\\20260805\\xiawu\\IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_155446.dat"
+      },
+      "largeIqFinal": {
+        "actualFrames": 35,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+        "binHz": 732.421875,
+        "frameGeneration": "26",
+        "gpuDataDrawCalls": 79,
+        "gpuVertexUploads": 23,
+        "iqCacheBytes": 400000,
+        "iqCacheHits": 17175,
+        "iqCacheMisses": 10,
+        "matrixBytes": 290360,
+        "noiseBandwidthHz": 1098.9010989011006,
+        "pending": false,
+        "requestGeneration": "26",
+        "requiredSeconds": 0.0013655,
+        "textureUploads": 6
+      },
+      "largeIqFinalConfigVersion": "3",
+      "process": {
+        "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+        "configuration": "Debug",
+        "systemOnlyPath": true,
+        "exitCode": 0,
+        "peakWorkingSetBytes": 5070381056,
+        "peakSampledPrivateBytes": 1281081344,
+        "memoryNote": "Process memory includes Qt/QRhi resources and memory-mapped source pages; IQ and analysis cache counters are separate."
+      }
+    },
+    "release": {
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "name": "Redmi 27 NU",
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      },
+      "fullScreen": true,
+      "narrowbandSidebarFftVerified": true,
+      "largeIq": {
+        "bytes": 3817472000,
+        "initial": {
+          "actualFrames": 47,
+          "analysisError": "",
+          "analysisPoints": 2048,
+          "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+          "binHz": 976.5625,
+          "frameGeneration": "15",
+          "gpuDataDrawCalls": 54,
+          "gpuVertexUploads": 15,
+          "iqCacheBytes": 400000,
+          "iqCacheHits": 10971,
+          "iqCacheMisses": 5,
+          "matrixBytes": 389536,
+          "noiseBandwidthHz": 1465.5593551538814,
+          "pending": false,
+          "requestGeneration": "15",
+          "requiredSeconds": 0.001024,
+          "textureUploads": 4
+        },
+        "initialDisplayMs": 230,
+        "path": "E:\\数据集\\扫频数据\\ALaShan_051\\20260805\\xiawu\\IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_155446.dat"
+      },
+      "largeIqFinal": {
+        "actualFrames": 35,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+        "binHz": 732.421875,
+        "frameGeneration": "27",
+        "gpuDataDrawCalls": 80,
+        "gpuVertexUploads": 23,
+        "iqCacheBytes": 400000,
+        "iqCacheHits": 17604,
+        "iqCacheMisses": 10,
+        "matrixBytes": 290080,
+        "noiseBandwidthHz": 1098.9010989011006,
+        "pending": false,
+        "requestGeneration": "27",
+        "requiredSeconds": 0.0013655,
+        "textureUploads": 6
+      },
+      "largeIqFinalConfigVersion": "3",
+      "process": {
+        "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+        "configuration": "Release",
+        "systemOnlyPath": true,
+        "exitCode": 0,
+        "peakWorkingSetBytes": 5136568320,
+        "peakSampledPrivateBytes": 1235628032,
+        "memoryNote": "Process memory includes Qt/QRhi resources and memory-mapped source pages; IQ and analysis cache counters are separate."
+      }
+    }
+  },
+  "scipy": {
+    "debug": {
+      "pass": true,
+      "scipyVersion": "1.17.1",
+      "points": 256,
+      "maximumAbsolutePowerError": 8.610647611595468e-10,
+      "peakBinNative": 154,
+      "peakBinScipy": 154,
+      "sameCoefficients": true,
+      "realAcquisitionSamples": 41984
+    },
+    "release": {
+      "pass": true,
+      "scipyVersion": "1.17.1",
+      "points": 256,
+      "maximumAbsolutePowerError": 8.610647611595468e-10,
+      "peakBinNative": 154,
+      "peakBinScipy": 154,
+      "sameCoefficients": true,
+      "realAcquisitionSamples": 41984
+    }
+  },
+  "limitations": [
+    "No independent overlapping-request merge/priority queue; newer requests replace older work.",
+    "Narrowband retains current context spectra; older views may recompute spectra using cached IQ.",
+    "SciPy comparison covers the new spectral FIR/CZT power path, not every channel DDC/resampler complex sample.",
+    "Peak process memory includes source mappings and QRhi/Qt resources; it is not the bounded IQ/analysis cache size.",
+    "Classification, constellation, eye and demodulation remain synthetic demonstrations."
+  ],
+  "ctestSeconds": {
+    "debug": 172.0,
+    "release": 35.96
+  }
+}

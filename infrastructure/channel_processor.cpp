@@ -153,6 +153,11 @@ bool sourceCountFor(const FileMetadata& source, const Channel& channel,
 
 } // namespace
 
+bool designChannelLowpass(double sampleRateHz, double passEdgeHz, double stopEdgeHz,
+                          double attenuationDb, std::vector<double>& coefficients) {
+    return lowpass(sampleRateHz, passEdgeHz, stopEdgeHz, attenuationDb, coefficients);
+}
+
 bool makeChannelDspPlan(const FileMetadata& source, const Channel& channel,
                         ChannelDspPlan& plan, QString& error) {
     error.clear();

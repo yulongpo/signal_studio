@@ -15,6 +15,7 @@ ViewRange fullRange(const FileMetadata& metadata) {
 }
 
 ViewRange clampRange(ViewRange range, const FileMetadata& metadata, int stftSize, int psdSize) {
+    (void)stftSize; (void)psdSize;
     const auto bounds = fullRange(metadata);
     const auto sampleCount = metadata.sampleCount;
     if (sampleCount == 0 || !std::isfinite(metadata.sampleRateHz) ||
@@ -23,8 +24,7 @@ ViewRange clampRange(ViewRange range, const FileMetadata& metadata, int stftSize
 
     if (range.time.begin > range.time.end) std::swap(range.time.begin, range.time.end);
     auto width = std::min(range.time.end - range.time.begin, sampleCount);
-    const int minimumFftPoints = std::max({1, stftSize, psdSize});
-    const auto minimumTime = std::min(sampleCount, static_cast<SampleIndex>(minimumFftPoints));
+    const SampleIndex minimumTime = 1;
     width = std::max(width, minimumTime);
     const auto midpoint = range.time.begin + (range.time.end - range.time.begin) / 2;
     auto begin = midpoint > width / 2 ? midpoint - width / 2 : 0;
@@ -40,9 +40,8 @@ ViewRange clampRange(ViewRange range, const FileMetadata& metadata, int stftSize
     const long double lower = bounds.frequency.lowerHz;
     const long double upper = bounds.frequency.upperHz;
     const auto total = upper - lower;
-    const auto frequencyPoints = psdSize > 0 ? std::min(std::max(1, stftSize), std::max(1, psdSize)) : std::max(1, stftSize);
     const auto minimumFrequency = std::min(total,
-        std::max(static_cast<long double>(metadata.sampleRateHz) / frequencyPoints,
+        std::max(static_cast<long double>(1e-9),
                  static_cast<long double>(std::numeric_limits<double>::epsilon()) *
                  std::max(1.0, std::abs(metadata.centerFrequencyHz)) * 8));
     auto frequencyWidth = std::clamp(static_cast<long double>(range.frequency.upperHz) -

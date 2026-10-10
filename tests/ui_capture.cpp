@@ -1,7 +1,10 @@
 // Independent native UI acceptance diagnostics. This executable uses the real
-// Windows QRhi backend and visible controls; it does not read IQ or perform DSP.
+// Windows QRhi backend and visible controls. The linked-cursor mode drives
+// actual IQ/DSP through the application; original scene captures use demo data.
 #include "app/main_window.h"
 #include "ui/charts/plot_widget.h"
+#include "ui/charts/accelerated_surface.h"
+#include "ui/narrowband_workspace.h"
 #include "ui/display_target.h"
 
 #include <QAbstractButton>
@@ -43,6 +46,7 @@
 #include <array>
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 #include <functional>
 #include <memory>
 #include <stdexcept>
@@ -104,7 +108,7 @@ private:
     QJsonArray events_;
 };
 
-void moveThroughWindow(PlotWidget* plot, QPoint point) {
+void moveThroughWindow(QWidget* plot, QPoint point) {
     auto* native = plot->window()->windowHandle();
     require(native != nullptr, "Hover injection requires a native window handle");
     // Unlike the QWidget overload's NoButton QCursor warp, this QTest overload
@@ -702,6 +706,8 @@ void diagnoseMainHover(Capture& capture, QPoint target, QJsonObject& diagnostic)
     diagnostic["pass"] = true;
 }
 
+#include "tests/linked_cursor_capture.h"
+
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -716,6 +722,8 @@ int main(int argc, char* argv[]) {
         QTextStream(stdout) << QJsonDocument(inventory).toJson(QJsonDocument::Indented);
         return 0;
     }
+    if (arguments.size() >= 3 && arguments.at(1) == "--linked-cursors")
+        return runLinkedCursorCapture(arguments.at(2), arguments.size() > 3 ? arguments.at(3) : QString{});
     if (arguments.size() != 2 || !QFileInfo(arguments.at(1)).isAbsolute()) {
         QTextStream(stderr) << "Usage: SignalStudioUiCapture <absolute-output-directory> | --list-screens\n";
         return 2;

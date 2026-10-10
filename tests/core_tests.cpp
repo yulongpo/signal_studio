@@ -74,17 +74,17 @@ void testClamping() {
     check(clamped.time == TimeRange{7'500, 10'000}, "Panning at upper time boundary must preserve span");
     check(clamped.frequency == FrequencyRange{110e6, 120e6}, "Panning at frequency boundary must preserve span");
     clamped = clampRange({{5'000, 5'000}, {100e6, 100e6}}, metadata, 2048);
-    check(clamped.time.end - clamped.time.begin == 2048, "Minimum time span must equal 2*hop samples");
-    check(close(clamped.frequency.upperHz - clamped.frequency.lowerHz, 19'531.25), "Minimum frequency span must equal Fs/FFT");
+    check(clamped.time.end - clamped.time.begin == 1, "Waveform view must zoom to one sample independently of FFT");
+    check(clamped.frequency.upperHz > clamped.frequency.lowerHz, "Frequency range must stay positive without old Fs/FFT clipping");
     clamped = clampRange({{5'000, 5'001}, {100e6, 100e6}}, metadata, 2048, 8192);
-    check(clamped.time.end - clamped.time.begin == 8192,
-          "The visible time range must contain the larger selected PSD/STFT FFT window");
+    check(clamped.time.end - clamped.time.begin == 1,
+          "Insufficient FFT windows must not silently extend the waveform view");
     clamped = clampRange({{8'000, 2'000}, {105e6, 95e6}}, metadata, 2048);
     check(clamped.time == TimeRange{2'000, 8'000}, "Reversed time must be ordered");
     check(clamped.frequency == FrequencyRange{95e6, 105e6}, "Reversed frequency must be ordered");
     clamped = clampRange({{0, 1}, {0, 1e300}}, metadata, 16384);
-    check(clamped.time == bounds.time && clamped.frequency == bounds.frequency,
-          "Minimum resolution larger than file must resolve to file bounds");
+    check(clamped.time == TimeRange{0, 1} && clamped.frequency == bounds.frequency,
+          "FFT settings must not force the user time view to full file");
     clamped = clampRange({{0, 100}, {std::numeric_limits<double>::quiet_NaN(), 100e6}}, metadata, 2048);
     check(clamped.frequency == bounds.frequency, "Nonfinite UI frequency input must recover full band");
 
@@ -100,7 +100,7 @@ void testClamping() {
     auto huge = metadata;
     huge.sampleCount = std::numeric_limits<SampleIndex>::max();
     clamped = clampRange({{huge.sampleCount - 3, huge.sampleCount}, bounds.frequency}, huge, 2048);
-    check(clamped.time == TimeRange{huge.sampleCount - 2048, huge.sampleCount},
+    check(clamped.time == TimeRange{huge.sampleCount - 3, huge.sampleCount},
           "uint64 upper-bound clamping must not overflow or lose sample precision");
 }
 

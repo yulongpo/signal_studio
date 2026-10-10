@@ -75,6 +75,8 @@ private:
 
 bool makeChannelDspPlan(const FileMetadata& source, const Channel& channel,
                         ChannelDspPlan& plan, QString& error);
+bool designChannelLowpass(double sampleRateHz, double passEdgeHz, double stopEdgeHz,
+                          double attenuationDb, std::vector<double>& coefficients);
 bool processChannelSamples(const FileMetadata& source, const Channel& channel,
                            const ChannelDspPlan& plan, TimeRange outputSamples,
                            ChannelSampleData& result,

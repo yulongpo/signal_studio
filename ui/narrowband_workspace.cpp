@@ -1,3 +1,5 @@
+#include "infrastructure/spectral_analysis.h"
+#include "ui/charts/cursor_overlay.h"
 #include "ui/narrowband_workspace.h"
 
 #include "infrastructure/channel_processor.h"
@@ -148,11 +150,11 @@ public:
         if (mode_ == ChartMode::Heatmap) setProperty("yAxisLabel", frequencyAxisLabel_);
         invalidate();
     }
-    void setTimeAxis(TimeRange range, double sampleRateHz, bool relative) {
+    void setTimeAxis(TimeRange range, double sampleRateHz, bool relative, SampleIndex origin = 0) {
+        timeSourceRange_ = range; sourceRate_ = sampleRateHz; relativeOrigin_ = relative ? origin : 0;
         if (sampleRateHz <= 0 || range.end <= range.begin) return;
-        timeStartSeconds_ = relative ? 0.0 : static_cast<double>(range.begin) / sampleRateHz;
-        timeEndSeconds_ = relative ? static_cast<double>(range.end - range.begin) / sampleRateHz :
-            static_cast<double>(range.end) / sampleRateHz;
+        timeStartSeconds_ = static_cast<double>(range.begin - relativeOrigin_) / sampleRateHz;
+        timeEndSeconds_ = static_cast<double>(range.end - relativeOrigin_) / sampleRateHz;
         const double span = timeEndSeconds_ - timeStartSeconds_;
         timeScale_ = span < .001 ? 1e-6 : span < 1.0 ? 1e-3 : 1.0;
         timeUnit_ = span < .001 ? QStringLiteral("µs") : span < 1.0 ? QStringLiteral("ms") : QStringLiteral("s");
@@ -235,6 +237,21 @@ public:
         if (mouseGrabber() == this) releaseMouse();
         invalidate();
     }
+    std::function<void(QPointF)> pinRequested;
+    std::function<void()> clearCursorRequested, averagePsdRequested, framePsdRequested, expandAnalysisRequested;
+    std::function<bool()> pendingContextGesture;
+    void setLinkedCursor(LinkedCursorState cursor) { pinnedCursor_ = cursor; invalidate(); }
+    void setSpectralData(std::shared_ptr<const SpectrogramData> spectrum) { spectralData_ = std::move(spectrum); invalidate(); }
+    void setSamplePositions(std::vector<SampleIndex> positions) { samplePositions_ = std::move(positions); markGeometryDirty(); }
+    double seriesUnit(std::size_t index, std::size_t count) const {
+        if (mode_ == ChartMode::Curve && samplePositions_.size() == count && timeSourceRange_.end > timeSourceRange_.begin)
+            return static_cast<double>(samplePositions_[index] - timeSourceRange_.begin) / (timeSourceRange_.end - timeSourceRange_.begin);
+        return static_cast<double>(index) / std::max<std::size_t>(1, mode_ == ChartMode::Spectrum ? count : count - 1);
+    }
+    bool event(QEvent* event) override {
+        if (event->type() == QEvent::Leave) { hoverPosition_.reset(); invalidate(); }
+        return QWidget::event(event);
+    }
 protected:
     void resizeEvent(QResizeEvent* event) override {
         markGeometryDirty();
@@ -266,47 +283,28 @@ protected:
     }
     void mouseMoveEvent(QMouseEvent* event) override {
         if (dragging_) { dragEnd_ = event->position(); invalidate(); event->accept(); return; }
-        if (mode_ == ChartMode::Curve && samplePointsVisible_ && !series_.empty() && !series_.front().empty()) {
-            const QRectF plot = plotRect();
-            if (plot.contains(event->position())) {
-                const auto& values = series_.front();
-                const double unit = std::clamp((event->position().x() - plot.left()) / plot.width(), 0.0, 1.0);
-                const auto index = static_cast<std::size_t>(std::llround(unit * (values.size() - 1)));
-                const double x = plot.left() + plot.width() * index / std::max<std::size_t>(1, values.size() - 1);
-                const double y = plot.top() + (yAxisMaximum_ - values[index]) /
-                    std::max(1e-12, yAxisMaximum_ - yAxisMinimum_) * plot.height();
-                if (std::hypot(event->position().x() - x, event->position().y() - y) <= 12.0) {
-                    const double time = timeStartSeconds_ + (timeEndSeconds_ - timeStartSeconds_) * unit;
-                    QString readout = QStringLiteral("输出样本 #%1\nt = %2 s\n%3 = %4")
-                        .arg(samplePointOrigin_ + index)
-                        .arg(time, 0, 'g', 12)
-                        .arg(yAxisLabel_)
-                        .arg(values[index], 0, 'g', 8);
-                    if (series_.size() > 1 && index < series_[1].size())
-                        readout += QStringLiteral("\nQ = %1").arg(series_[1][index], 0, 'g', 8);
-                    QToolTip::showText(mapToGlobal(event->position().toPoint() + QPoint(12, 12)), readout, this);
-                    event->accept(); return;
-                }
-            }
-        }
-        QToolTip::hideText();
-        QWidget::mouseMoveEvent(event);
+        hoverPosition_ = plotRect().contains(event->position()) ? std::optional<QPointF>{event->position()} : std::nullopt;
+        QToolTip::hideText(); invalidate(); QWidget::mouseMoveEvent(event);
     }
     void mouseReleaseEvent(QMouseEvent* event) override {
         if (dragging_ && event->button() == Qt::LeftButton) {
             dragEnd_ = event->position(); dragging_ = false;
             if (mouseGrabber() == this) releaseMouse();
-            if (gesture) gesture(QPointF(dragStart_.x() / std::max(1, width()), dragStart_.y() / std::max(1, height())),
+            const bool click = std::max(std::abs(dragEnd_.x() - dragStart_.x()), std::abs(dragEnd_.y() - dragStart_.y())) <= 5;
+            if (click && pinRequested && plotRect().contains(dragEnd_)) pinRequested(dragEnd_);
+            else if (gesture) gesture(QPointF(dragStart_.x() / std::max(1, width()), dragStart_.y() / std::max(1, height())),
                                  QPointF(dragEnd_.x() / std::max(1, width()), dragEnd_.y() / std::max(1, height())), 0,
-                                 (dragEnd_ - dragStart_).manhattanLength() > 7);
+                                 !click);
             invalidate(); event->accept(); return;
         }
         QWidget::mouseReleaseEvent(event);
     }
     void keyPressEvent(QKeyEvent* event) override {
         if (event->key() == Qt::Key_Escape) {
+            const bool pending = dragging_ || (pendingContextGesture && pendingContextGesture());
             cancelInteraction();
-            if (cancelPendingGesture) cancelPendingGesture();
+            if (pending && cancelPendingGesture) cancelPendingGesture();
+            else if (clearCursorRequested) clearCursorRequested();
             invalidate(); event->accept(); return;
         }
         QWidget::keyPressEvent(event);
@@ -316,6 +314,18 @@ protected:
         if (mode_ == ChartMode::Curve || mode_ == ChartMode::Spectrum) {
             auto* reset = menu.addAction(mode_ == ChartMode::Curve ? QStringLiteral("自动适配纵轴") : QStringLiteral("重置 PSD 纵轴"));
             connect(reset, &QAction::triggered, this, [this] { if (resetYAxis) resetYAxis(); });
+            menu.addSeparator();
+        }
+        if (pinRequested) {
+            auto* clear = menu.addAction("清除驻留游标"); clear->setObjectName("nbClearCursor");
+            clear->setEnabled(pinnedCursor_.pinned);
+            connect(clear, &QAction::triggered, this, [this] { if (clearCursorRequested) clearCursorRequested(); });
+            auto* average = menu.addAction("当前窗平均谱"); average->setObjectName("nbAveragePsd");
+            connect(average, &QAction::triggered, this, [this] { if (averagePsdRequested) averagePsdRequested(); });
+            auto* frame = menu.addAction("驻留帧谱（点数随 STFT）"); frame->setObjectName("nbFramePsd"); frame->setEnabled(pinnedCursor_.pinned);
+            connect(frame, &QAction::triggered, this, [this] { if (framePsdRequested) framePsdRequested(); });
+            auto* expand = menu.addAction("扩展时间窗以满足分析点数"); expand->setObjectName("nbExpandAnalysisTime");
+            connect(expand, &QAction::triggered, this, [this] { if (expandAnalysisRequested) expandAnalysisRequested(); });
             menu.addSeparator();
         }
         auto* back = menu.addAction(QStringLiteral("视图后退"));
@@ -368,7 +378,7 @@ private:
             const auto first = static_cast<quint32>(vertices.size());
             const double span = std::max(1e-12, yAxisMaximum_ - yAxisMinimum_);
             for (std::size_t index = 0; index < values.size(); ++index) {
-                const double x = plot.left() + plot.width() * index / std::max<std::size_t>(1, values.size() - 1);
+                const double x = plot.left() + plot.width() * seriesUnit(index, values.size());
                 double y = .5;
                 if (eye) y = .5 - std::clamp<double>(values[index], -1.3, 1.3) * .34;
                 else if (mode_ == ChartMode::Curve || mode_ == ChartMode::Spectrum)
@@ -409,7 +419,7 @@ private:
                     const auto& values = series_[series];
                     const auto first = static_cast<quint32>(vertices.size());
                     for (std::size_t index = 0; index < values.size(); ++index) {
-                        const QPointF center(plot.left() + plot.width() * index / std::max<std::size_t>(1, values.size() - 1),
+                        const QPointF center(plot.left() + plot.width() * seriesUnit(index, values.size()),
                             plot.top() + (yAxisMaximum_ - values[index]) /
                                 std::max(1e-12, yAxisMaximum_ - yAxisMinimum_) * plot.height());
                         for (int sector = 0; sector < sectors; ++sector) {
@@ -518,7 +528,7 @@ private:
             for (int s = 0; s < count; ++s) {
                 QPainterPath path; const auto& values = series_[static_cast<std::size_t>(s)];
                 for (std::size_t i = 0; i < values.size(); ++i) {
-                    const QPointF p(rect.left() + rect.width() * i / std::max<std::size_t>(1, values.size() - 1),
+                    const QPointF p(rect.left() + rect.width() * seriesUnit(i, values.size()),
                         rect.center().y() - std::clamp<double>(values[i], -1.3, 1.3) * rect.height() * .34);
                     if (!i) path.moveTo(p); else path.lineTo(p);
                 }
@@ -535,7 +545,7 @@ private:
                         (values[i] - yAxisMinimum_) / std::max(1e-12, yAxisMaximum_ - yAxisMinimum_) :
                         mode_ == ChartMode::Timeline ? values[i] : mode_ == ChartMode::Heatmap ? .5 + .45 * values[i] : .5 + .5 * values[i];
                     normalized = std::clamp(normalized, 0.0, 1.0);
-                    const QPointF p(rect.left() + rect.width() * i / std::max<std::size_t>(1, values.size() - 1),
+                    const QPointF p(rect.left() + rect.width() * seriesUnit(i, values.size()),
                                     rect.bottom() - normalized * rect.height());
                     if (!i) path.moveTo(p); else path.lineTo(p);
                 }
@@ -543,7 +553,7 @@ private:
                 if (mode_ == ChartMode::Curve && samplePointsVisible_) {
                     painter.setPen(Qt::NoPen); painter.setBrush(colors[s % colors.size()]);
                     for (std::size_t i = 0; i < values.size(); ++i) {
-                        const QPointF p(rect.left() + rect.width() * i / std::max<std::size_t>(1, values.size() - 1),
+                        const QPointF p(rect.left() + rect.width() * seriesUnit(i, values.size()),
                             rect.top() + (yAxisMaximum_ - values[i]) /
                                 std::max(1e-12, yAxisMaximum_ - yAxisMinimum_) * rect.height());
                         painter.drawEllipse(p, 2.2, 2.2);
@@ -560,7 +570,67 @@ private:
             painter.setPen(QPen(QColor("#f1cf7f"), 1, Qt::DashLine));
             painter.drawRect(QRectF(dragStart_, dragEnd_).normalized());
         }
+        drawCursors(painter);
     }
+    void drawCursors(QPainter& painter) {
+        if (!pinRequested || timeSourceRange_.end <= timeSourceRange_.begin) return;
+        const auto plot = plotRect(); const double span = frequencyRange_.upperHz - frequencyRange_.lowerHz;
+        setProperty("cursorPinned", pinnedCursor_.pinned); setProperty("framePsd", pinnedCursor_.framePsd);
+        setProperty("pinnedSample", QVariant::fromValue<qulonglong>(pinnedCursor_.sourceSample));
+        setProperty("pinnedFrequencyHz", pinnedCursor_.frequencyHz);
+        if (pinnedCursor_.pinned) {
+            const double t = pinnedCursor_.sourceSample >= timeSourceRange_.begin ?
+                static_cast<double>(pinnedCursor_.sourceSample - timeSourceRange_.begin) / (timeSourceRange_.end - timeSourceRange_.begin) : -1;
+            const double f = (pinnedCursor_.frequencyHz - frequencyRange_.lowerHz) / span;
+            const bool visible = mode_ == ChartMode::Curve ? t >= 0 && t < 1 : mode_ == ChartMode::Spectrum ? f >= 0 && f < 1 : t >= 0 && t < 1 && f >= 0 && f < 1;
+            if (visible) cursor_overlay::draw(painter, plot,
+                QPointF(plot.left() + plot.width() * (mode_ == ChartMode::Spectrum ? f : t), plot.bottom() - plot.height() * f),
+                mode_ == ChartMode::Heatmap, {}, QColor("#ffdc72"), true);
+        }
+        setProperty("hoverCursorVisible", hoverPosition_.has_value());
+        if (!hoverPosition_) { setProperty("cursorReadout", QString{}); return; }
+        const auto point = *hoverPosition_;
+        const double x = std::clamp((point.x() - plot.left()) / plot.width(), 0.0, 1.0);
+        const double y = std::clamp((plot.bottom() - point.y()) / plot.height(), 0.0, 1.0);
+        const auto sample = timeSourceRange_.begin + std::min(timeSourceRange_.end - timeSourceRange_.begin - 1,
+            static_cast<SampleIndex>(x * (timeSourceRange_.end - timeSourceRange_.begin)));
+        const double frequency = frequencyRange_.lowerHz + (mode_ == ChartMode::Spectrum ? x : y) * span;
+        const double time = static_cast<double>(sample - relativeOrigin_) / sourceRate_;
+        setProperty("cursorTimeSeconds", time); setProperty("cursorSourceSample", QVariant::fromValue<qulonglong>(sample));
+        QString text;
+        if (mode_ != ChartMode::Spectrum) text = QStringLiteral("t = %1 %2").arg(time / timeScale_, 0, 'g', 10).arg(timeUnit_);
+        if (mode_ != ChartMode::Curve) text += (text.isEmpty() ? QString{} : "\n") +
+            QStringLiteral("f = %1 %2").arg((frequency + (frequencyAbsolute_ ? frequencyCenterHz_ : 0)) / frequencyScale_, 0, 'g', 10).arg(frequencyUnit_);
+        if (mode_ == ChartMode::Heatmap) {
+            const auto* frame = spectralData_ ? spectralData_->frameAt(sample) : nullptr;
+            if (frame) {
+                const auto bin = frame->binAt(frequency);
+                text += QStringLiteral("\nP = %1 dBFS/Hz · bin %2\n帧中心 %3 %4 · Δf %5 Hz")
+                    .arg(frame->dbAt(bin), 0, 'f', 2).arg(bin)
+                    .arg(static_cast<double>(frame->sourceCenter - relativeOrigin_) / sourceRate_ / timeScale_, 0, 'g', 10).arg(timeUnit_).arg(frame->binHz, 0, 'g', 6);
+                setProperty("cursorPowerDb", frame->dbAt(bin)); setProperty("cursorFrameId", QVariant::fromValue<qulonglong>(frame->id));
+            } else text += "\n分析数据不可用 / 正在更新";
+        } else if (!series_.empty() && !series_.front().empty()) {
+            const auto& values = series_.front();
+            const auto index = std::min(values.size() - 1, static_cast<std::size_t>(std::llround(x * (mode_ == ChartMode::Spectrum ? values.size() : values.size() - 1))));
+            text += QStringLiteral("\n%1 = %2 %3").arg(mode_ == ChartMode::Spectrum ? "P" : "I / 幅值")
+                .arg(values[index], 0, 'g', 8).arg(mode_ == ChartMode::Spectrum ? "dBFS/Hz" : yAxisLabel_);
+            if (mode_ == ChartMode::Curve && series_.size() > 1 && index < series_[1].size()) text += QStringLiteral("\nQ = %1 ADC 计数").arg(series_[1][index], 0, 'g', 8);
+            text += mode_ == ChartMode::Spectrum ? QStringLiteral("\n%1 · N=%2").arg(pinnedCursor_.framePsd ? "驻留帧谱" : "平均谱").arg(values.size()) :
+                QStringLiteral("\n%1 · 源样本 #%2").arg(samplePointsVisible_ ? "逐样本" : "显示分箱").arg(sample);
+            if (mode_ == ChartMode::Spectrum) setProperty("cursorPowerDb", values[index]);
+        } else text += "\n数据不可用 / 正在更新";
+        setProperty("cursorReadout", text);
+        setProperty("cursorReadoutRect", cursor_overlay::draw(painter, plot, point, mode_ == ChartMode::Heatmap, text, QColor("#91eaff"), false));
+    }
+    std::optional<QPointF> hoverPosition_;
+    LinkedCursorState pinnedCursor_;
+    TimeRange timeSourceRange_;
+    SampleIndex relativeOrigin_ = 0;
+    double sourceRate_ = 1;
+    std::shared_ptr<const SpectrogramData> spectralData_;
+    std::vector<SampleIndex> samplePositions_;
+
     ChartMode mode_;
     AcceleratedSurface* surface_ = nullptr;
     std::vector<std::vector<float>> series_;
@@ -624,7 +694,7 @@ bool mulDiv(std::uint64_t value, std::uint64_t numerator, std::uint64_t denomina
     return true;
 }
 
-QImage spectrumImage(const std::vector<float>& values, QSize size) {
+QImage spectrumImage(const std::vector<float>& values, QSize size, double referenceDb = -15, double rangeDb = 105) {
     if (values.size() != static_cast<std::size_t>(size.width()) * static_cast<std::size_t>(size.height()) ||
         size.width() < 2 || size.height() < 2) return {};
     QImage image(size, QImage::Format_Grayscale8);
@@ -633,7 +703,7 @@ QImage spectrumImage(const std::vector<float>& values, QSize size) {
         auto* line = image.scanLine(y);
         for (int x = 0; x < size.width(); ++x) {
             const double db = values[static_cast<std::size_t>(y) * size.width() + x];
-            line[x] = static_cast<uchar>(std::lround(std::clamp((db + 120.0) / 105.0, 0.0, 1.0) * 255));
+            line[x] = static_cast<uchar>(std::lround(std::clamp((db - referenceDb + rangeDb) / rangeDb, 0.0, 1.0) * 255));
         }
     }
     return image;
@@ -678,6 +748,8 @@ NarrowbandWorkspace::NarrowbandWorkspace(Session& session, QWidget* parent) : QW
     connect(recognitionTimer_, &QTimer::timeout, this, &NarrowbandWorkspace::updateRecognition);
     chartWheelTimer_ = new QTimer(this); chartWheelTimer_->setSingleShot(true); chartWheelTimer_->setInterval(220);
     connect(chartWheelTimer_, &QTimer::timeout, this, &NarrowbandWorkspace::finishChartWheel);
+    displaySettleTimer_ = new QTimer(this); displaySettleTimer_->setSingleShot(true); displaySettleTimer_->setInterval(60);
+    connect(displaySettleTimer_, &QTimer::timeout, this, [this] { requestDisplay(true); });
     refreshFromSession();
 }
 
@@ -701,6 +773,7 @@ void NarrowbandWorkspace::activatePageForAcceptance(int index) {
 }
 
 bool NarrowbandWorkspace::visibleChartsSettled() const {
+    if (displayPending_) return false;
     bool found = false;
     for (const auto* chart : charts_) {
         if (!chart || !chart->isVisible()) continue;
@@ -752,6 +825,22 @@ QString NarrowbandWorkspace::visibleBackendDescription() const {
         if (chart && chart->isVisible() && !backends.contains(chart->backendDescription())) backends.push_back(chart->backendDescription());
     }
     return backends.join(QStringLiteral("; "));
+}
+
+QJsonObject NarrowbandWorkspace::renderStatistics() const {
+    const auto cache = displayCacheStats_;
+    QJsonObject result{{"pending", displayPending_}, {"requestGeneration", QString::number(requestGeneration_)},
+        {"frameGeneration", QString::number(frameGeneration_)}, {"iqCacheBytes", static_cast<qint64>(cache.bytes)},
+        {"iqCacheHits", static_cast<qint64>(cache.hits)}, {"iqCacheMisses", static_cast<qint64>(cache.misses)},
+        {"gpuVertexUploads", static_cast<qint64>(visibleGpuVertexUploads())}, {"textureUploads", static_cast<qint64>(visibleTextureUploads())},
+        {"gpuDataDrawCalls", static_cast<qint64>(visibleGpuDataDrawCalls())}, {"backend", visibleBackendDescription()}};
+    if (const auto* channel = session_.activeChannel()) if (const auto spectrum = session_.spectrogram(channel->id)) {
+        result["analysisPoints"] = spectrum->plan.points; result["binHz"] = spectrum->plan.binHz;
+        result["requiredSeconds"] = spectrum->plan.requiredSeconds; result["noiseBandwidthHz"] = spectrum->plan.noiseBandwidthHz;
+        result["actualFrames"] = static_cast<qint64>(spectrum->frames.size()); result["matrixBytes"] = static_cast<qint64>(spectrum->bytes());
+        result["analysisError"] = QString::fromStdString(spectrum->error);
+    }
+    return result;
 }
 
 void NarrowbandWorkspace::invalidateVisibleOverlays() {
@@ -806,15 +895,15 @@ void NarrowbandWorkspace::buildPages() {
     });
     connect(displayPsdFft_, &QComboBox::currentIndexChanged, this, [this](int index) {
         if (auto* channel = session_.activeChannel()) channel->psdFftSize = 1024 << index;
-        requestDisplay();
+        requestDisplay(); emit displayParametersChanged();
     });
     connect(displayStftFft_, &QComboBox::currentIndexChanged, this, [this](int index) {
         if (auto* channel = session_.activeChannel()) channel->stftFftSize = displayStftFft_->itemData(index).toInt();
-        requestDisplay();
+        requestDisplay(); emit displayParametersChanged();
     });
     connect(frequencyMode_, &QComboBox::currentIndexChanged, this, [this](int index) {
         if (auto* channel = session_.activeChannel()) channel->absoluteFrequencyLabels = index == 1;
-        updateFrequencyAxisLabels();
+        updateFrequencyAxisLabels(); emit displayParametersChanged();
     });
     pages_ = new QStackedWidget; pages_->setObjectName("narrowbandPageStack"); root->addWidget(pages_, 1);
     auto makePage = [this](int index) {
@@ -1015,7 +1104,7 @@ void NarrowbandWorkspace::buildPages() {
                 const std::uint64_t total = channel->sourceTime.end - channel->sourceTime.begin;
                 const std::uint64_t span = globalNavigation ? total : time.end - time.begin;
                 const long double factor = std::pow(1.2L, -static_cast<long double>(wheel) / 120.0L);
-                const auto minimum = std::max<std::uint64_t>(1, rateHz(channel->outputSampleRateHz) / 65536);
+                const std::uint64_t minimum = 1;
                 const auto nextSpan = static_cast<std::uint64_t>(std::clamp(
                     std::round(static_cast<long double>(span) * factor), static_cast<long double>(minimum), static_cast<long double>(total)));
                 std::uint64_t anchorOffset = 0, leftOffset = 0;
@@ -1039,7 +1128,7 @@ void NarrowbandWorkspace::buildPages() {
             const auto zoomFrequency = [&](double anchorRatio) {
                 const double span = frequency.upperHz - frequency.lowerHz;
                 const double factor = std::pow(1.2, -wheel / 120.0);
-                const double nextSpan = std::clamp(span * factor, channel->outputSampleRateHz / 4096.0, channel->outputSampleRateHz);
+                const double nextSpan = std::clamp(span * factor, 1e-6, channel->outputSampleRateHz);
                 const auto zoomed = chart_interaction::zoomAround(
                     {frequency.lowerHz, frequency.upperHz}, nextSpan / span, anchorRatio);
                 frequency = {zoomed.first, zoomed.last};
@@ -1132,7 +1221,7 @@ void NarrowbandWorkspace::buildPages() {
                     const double ratio = 1.0 - y0;
                     const double width = frequency.upperHz - frequency.lowerHz;
                     const double nextWidth = std::clamp(width * std::pow(1.2, -wheel / 120.0),
-                        channel->outputSampleRateHz / 4096.0, channel->outputSampleRateHz);
+                        1e-6, channel->outputSampleRateHz);
                     const auto range = chart_interaction::zoomAround(
                         {frequency.lowerHz, frequency.upperHz}, nextWidth / width, ratio);
                     frequency = {range.first, range.last};
@@ -1146,8 +1235,8 @@ void NarrowbandWorkspace::buildPages() {
                 std::uint64_t beginOffset = 0, endOffset = 0;
                 mulDiv(span, fraction(x0), 1'000'000, false, beginOffset); mulDiv(span, fraction(x1), 1'000'000, true, endOffset);
                 time = {time.begin + beginOffset, time.begin + std::max(beginOffset + 1, endOffset)};
-                const double full = channel->outputSampleRateHz;
-                frequency = {full / 2 - yBottom * full, full / 2 - yTop * full};
+                const double full = frequency.upperHz - frequency.lowerHz;
+                frequency = {frequency.upperHz - yBottom * full, frequency.upperHz - yTop * full};
             } else if (selection && zone == Zone::Plot && std::abs(b.x() - a.x()) > .01) {
                 if (x1 < x0) std::swap(x0, x1);
                 std::uint64_t beginOffset = 0, endOffset = 0;
@@ -1167,6 +1256,7 @@ void NarrowbandWorkspace::buildPages() {
     };
     bindGesture(waveform_, ChartMode::Curve);
     bindGesture(psd_, ChartMode::Spectrum); bindGesture(stft_, ChartMode::Heatmap);
+    bindGesture(modulationStft_, ChartMode::Heatmap); bindGesture(recognitionStft_, ChartMode::Heatmap);
     charts_ = {waveform_, psd_, stft_, modulationStft_, recognitionStft_,
                constellationSmall_, constellationLarge_, constellationDemod_, eyeLarge_, eyeDemod_, timeline_};
     for (auto* chart : charts_) if (chart) {
@@ -1176,9 +1266,31 @@ void NarrowbandWorkspace::buildPages() {
             if (forward ? session_.channelForward() : session_.channelBack()) refreshFromSession();
         };
     }
+    for (auto* chart : {waveform_, psd_, stft_, modulationStft_, recognitionStft_}) if (chart) {
+        chart->pinRequested = [this, chart](QPointF point) {
+            const auto* channel = session_.activeChannel(); if (!channel) return;
+            const auto plot = chart->plotRect();
+            const double x = std::clamp((point.x() - plot.left()) / plot.width(), 0.0, 1.0);
+            const double y = std::clamp((plot.bottom() - point.y()) / plot.height(), 0.0, 1.0);
+            const auto& previous = session_.linkedCursor(channel->id);
+            auto sample = previous.pinned ? previous.sourceSample : channel->visibleSourceTime.begin + (channel->visibleSourceTime.end - channel->visibleSourceTime.begin) / 2;
+            double frequency = previous.pinned ? previous.frequencyHz : (channel->visibleBasebandFrequency.lowerHz + channel->visibleBasebandFrequency.upperHz) / 2;
+            if (chart != psd_) sample = channel->visibleSourceTime.begin + std::min(channel->visibleSourceTime.end - channel->visibleSourceTime.begin - 1,
+                static_cast<SampleIndex>(x * (channel->visibleSourceTime.end - channel->visibleSourceTime.begin)));
+            if (chart != waveform_) frequency = channel->visibleBasebandFrequency.lowerHz + (chart == psd_ ? x : y) *
+                (channel->visibleBasebandFrequency.upperHz - channel->visibleBasebandFrequency.lowerHz);
+            session_.pinCursor(channel->id, sample, frequency, chart != psd_); updateLinkedCursors(); emit displayParametersChanged();
+        };
+        chart->clearCursorRequested = [this] { if (const auto* channel = session_.activeChannel()) session_.clearCursor(channel->id); updateLinkedCursors(); emit displayParametersChanged(); };
+        chart->averagePsdRequested = [this] { if (const auto* channel = session_.activeChannel()) session_.setFramePsd(channel->id, false); updateLinkedCursors(); emit displayParametersChanged(); };
+        chart->framePsdRequested = [this] { if (const auto* channel = session_.activeChannel()) session_.setFramePsd(channel->id, true); updateLinkedCursors(); emit displayParametersChanged(); };
+        chart->expandAnalysisRequested = [this] { expandAnalysisTime(); };
+        chart->pendingContextGesture = [this] { return chartWheelBase_.has_value(); };
+    }
     const auto applyGrid = [this](bool visible) {
         for (auto* chart : charts_) if (chart) chart->setGridVisible(visible);
         QSettings().setValue(QStringLiteral("narrowband/gridVisible"), visible);
+        emit displayParametersChanged();
     };
     for (auto* chart : charts_) if (chart) chart->setGridVisible(grid_->isChecked());
     connect(grid_, &QCheckBox::toggled, this, applyGrid);
@@ -1289,10 +1401,58 @@ void NarrowbandWorkspace::updateFrequencyAxisLabels() {
                                 channel->centerFrequencyHz,
                                 channel->absoluteFrequencyLabels);
         chart->setTimeAxis(channel->visibleSourceTime, file->metadata.sampleRateHz,
-                           !channel->preserveSourceTime || channel->relativeTime);
+                           !channel->preserveSourceTime || channel->relativeTime, channel->sourceTime.begin);
         if (chart == eyeLarge_ || chart == eyeDemod_ || chart == eyeSmall_)
             chart->setSymbolPeriod(channel->eyePeriods);
     }
+}
+
+void NarrowbandWorkspace::updateLinkedCursors() {
+    const auto* channel = session_.activeChannel(); if (!channel) return;
+    const auto& cursor = session_.linkedCursor(channel->id);
+    for (auto* chart : {waveform_, psd_, stft_, modulationStft_, recognitionStft_}) if (chart) chart->setLinkedCursor(cursor);
+    const auto spectrum = session_.spectrogram(channel->id);
+    const auto* frame = !displayPending_ && spectrum && spectrum->sourceView == channel->visibleSourceTime && spectrum->plan.frequencies == channel->visibleBasebandFrequency ?
+        session_.selectedSpectralFrame(channel->id) : nullptr;
+    const QString key = QString::fromStdString(channel->id) + QString("/%1/%2/%3/%4")
+        .arg(frameGeneration_).arg(cursor.framePsd).arg(frame ? frame->id : 0).arg(frame ? reinterpret_cast<quintptr>(frame) : 0);
+    if (key != linkedPsdKey_) {
+        linkedPsdKey_ = key;
+        if (cursor.framePsd) {
+            psd_->setSeries(frame ? std::vector<std::vector<float>>{spectrumDb(*frame)} : std::vector<std::vector<float>>{},
+                frame ? QStringLiteral("驻留帧谱 · N=%1 · 与 STFT 帧逐 bin 一致").arg(frame->linearPower.size()) : QStringLiteral("驻留帧不可用 / 正在更新"));
+            psd_->setProperty("effectiveFftPoints", frame ? static_cast<int>(frame->linearPower.size()) : channel->stftFftSize);
+        } else {
+            psd_->setSeries(averagePsd_.empty() ? std::vector<std::vector<float>>{} : std::vector<std::vector<float>>{averagePsd_}, "当前可见时间窗平均 PSD");
+            psd_->setProperty("effectiveFftPoints", channel->psdFftSize);
+        }
+    }
+    if (displayPsdFft_) { displayPsdFft_->setEnabled(!cursor.framePsd); displayPsdFft_->setToolTip(cursor.framePsd ? "驻留帧谱的有效点数随 STFT；平均谱设置保留" : "当前可见频段内的分析点数"); }
+}
+void NarrowbandWorkspace::updatePowerColors() {
+    const auto* file = session_.activeFile(); if (!file || rasterPower_.empty() || displayPending_) return;
+    const auto key = QString("nb-power/%1/%2/%3").arg(frameGeneration_).arg(file->display.referenceLevelDb, 0, 'g', 17).arg(file->display.dynamicRangeDb, 0, 'g', 17);
+    if (key == powerColorKey_) return;
+    powerColorKey_ = key;
+    const auto image = spectrumImage(rasterPower_, QSize(560, 240), file->display.referenceLevelDb, file->display.dynamicRangeDb);
+    for (auto* chart : {stft_, modulationStft_, recognitionStft_}) if (chart) chart->setRaster(image, dataStatus_->text(), key);
+}
+
+void NarrowbandWorkspace::expandAnalysisTime() {
+    const auto* channel = session_.activeChannel(); const auto* file = session_.activeFile(); if (!channel || !file) return;
+    const auto stft = makeSpectralAnalysisPlan(channel->outputSampleRateHz, channel->visibleBasebandFrequency, channel->stftFftSize);
+    const auto psd = makeSpectralAnalysisPlan(channel->outputSampleRateHz, channel->visibleBasebandFrequency, channel->psdFftSize);
+    if (!stft.valid || !psd.valid) return;
+    std::uint64_t required = 0;
+    if (!mulDiv(std::max(stft.inputSamples, psd.inputSamples), rateHz(file->metadata.sampleRateHz), rateHz(channel->outputSampleRateHz), true, required)) return;
+    const auto total = channel->sourceTime.end - channel->sourceTime.begin;
+    if (required > total) { dataStatus_->setText("通道总时长不足以满足当前分析点数"); return; }
+    const auto& cursor = session_.linkedCursor(channel->id);
+    const auto center = cursor.pinned ? cursor.sourceSample : channel->visibleSourceTime.begin + (channel->visibleSourceTime.end - channel->visibleSourceTime.begin) / 2;
+    const auto alignment = static_cast<std::uint64_t>(std::ceil(file->metadata.sampleRateHz / channel->outputSampleRateHz));
+    const auto span = std::min(total, std::max(required + std::min(alignment, total - required), channel->visibleSourceTime.end - channel->visibleSourceTime.begin));
+    const auto first = std::clamp(center > span / 2 ? center - span / 2 : channel->sourceTime.begin, channel->sourceTime.begin, channel->sourceTime.end - span);
+    session_.setChannelView({first, first + span}, channel->visibleBasebandFrequency); requestDisplay();
 }
 
 void NarrowbandWorkspace::finishChartWheel() {
@@ -1322,20 +1482,36 @@ void NarrowbandWorkspace::cancelChartWheel() {
     refreshFromSession();
 }
 
-void NarrowbandWorkspace::requestDisplay() {
+void NarrowbandWorkspace::requestDisplay(bool settled) {
     const auto* active = session_.activeChannel(); const auto* file = session_.activeFile();
     if (!active || !file || !waveform_ || !psd_ || !stft_) return;
     updateFrequencyAxisLabels();
-    const bool unchanged = hasDisplayRequest_ && lastChannelId_ == active->id && lastSourcePath_ == file->metadata.path &&
+    const QFileInfo sourceInfo(QString::fromStdString(file->metadata.path));
+    const auto fingerprint = QString::number(sourceInfo.size()) + "/" + QString::number(sourceInfo.lastModified().toMSecsSinceEpoch());
+    const bool unchanged = lastProjectGeneration_ == session_.projectGeneration() && lastSourceFingerprint_ == fingerprint && hasDisplayRequest_ && lastChannelId_ == active->id && lastSourcePath_ == file->metadata.path &&
         lastConfigVersion_ == active->configVersion && lastVisibleTime_ == active->visibleSourceTime &&
         lastVisibleFrequency_ == active->visibleBasebandFrequency && lastWaveform_ == active->waveform &&
         lastPsdFft_ == active->psdFftSize && lastStftFft_ == active->stftFftSize;
-    if (unchanged) return;
+    if (unchanged) { updateLinkedCursors(); updatePowerColors(); return; }
     const bool invalidateChannelCache = hasDisplayRequest_ && lastChannelId_ == active->id &&
         lastConfigVersion_ != active->configVersion;
     cancelWork();
-    if (invalidateChannelCache) sampleCache_.clear();
+    averagePsd_.clear(); linkedPsdKey_.clear(); rasterPower_.clear(); powerColorKey_.clear();
+    session_.installSpectrogram(active->id, {});
+    for (auto* chart : {waveform_, psd_, stft_, modulationStft_, recognitionStft_}) if (chart) chart->setSpectralData({});
+    if (invalidateChannelCache || lastProjectGeneration_ != session_.projectGeneration()) sampleCache_.clear();
+    if (!settled) {
+        hasDisplayRequest_ = false; displayPending_ = true;
+        waveform_->setSeries({}, "等待交互停止后计算…"); psd_->setSeries({}, "等待频段分析…");
+        stft_->setRaster({}, "等待频段分析…");
+        if (modulationStft_) modulationStft_->setRaster({}, "等待频段分析…");
+        if (recognitionStft_) recognitionStft_->setRaster({}, "等待频段分析…");
+        dataStatus_->setText("等待交互停止后计算…");
+        displaySettleTimer_->start(); return;
+    }
     const auto channel = *active; const auto source = file->metadata;
+    lastProjectGeneration_ = session_.projectGeneration();
+    lastSourceFingerprint_ = fingerprint;
     lastChannelId_ = channel.id; lastSourcePath_ = source.path; lastConfigVersion_ = channel.configVersion;
     lastVisibleTime_ = channel.visibleSourceTime; lastVisibleFrequency_ = channel.visibleBasebandFrequency;
     lastWaveform_ = channel.waveform; lastPsdFft_ = channel.psdFftSize; lastStftFft_ = channel.stftFftSize;
@@ -1359,8 +1535,8 @@ void NarrowbandWorkspace::requestDisplay() {
     const auto sourceRate = rateHz(source.sampleRateHz), outputRate = rateHz(channel.outputSampleRateHz);
     std::uint64_t firstOutput = 0, lastOutput = 0;
     if (!sourceRate || !outputRate || channel.visibleSourceTime.begin < channel.sourceTime.begin ||
-        !mulDiv(channel.visibleSourceTime.begin - channel.sourceTime.begin, outputRate, sourceRate, false, firstOutput) ||
-        !mulDiv(channel.visibleSourceTime.end - channel.sourceTime.begin, outputRate, sourceRate, true, lastOutput)) {
+        !mulDiv(channel.visibleSourceTime.begin - channel.sourceTime.begin, outputRate, sourceRate, true, firstOutput) ||
+        !mulDiv(channel.visibleSourceTime.end - channel.sourceTime.begin, outputRate, sourceRate, false, lastOutput)) {
         waveform_->setSeries({}, "输出采样映射超出支持范围"); dataStatus_->setText("映射无效"); return;
     }
     std::uint64_t outputTotal = 0;
@@ -1368,12 +1544,6 @@ void NarrowbandWorkspace::requestDisplay() {
         waveform_->setSeries({}, "通道输出样本数超出 uint64 范围"); dataStatus_->setText("输出长度无效"); return;
     }
     lastOutput = std::min(lastOutput, outputTotal);
-    if (lastOutput <= firstOutput) lastOutput = std::min(outputTotal, firstOutput + static_cast<std::uint64_t>(channel.stftFftSize));
-    constexpr std::uint64_t maximumDisplaySamples = 1'500'000;
-    if (lastOutput - firstOutput > maximumDisplaySamples) {
-        lastOutput = firstOutput + maximumDisplaySamples;
-        if (lastOutput > outputTotal) { lastOutput = outputTotal; firstOutput = lastOutput > maximumDisplaySamples ? lastOutput - maximumDisplaySamples : 0; }
-    }
     if (lastOutput <= firstOutput) {
         const auto message = QStringLiteral("当前可见范围没有输出样本");
         waveform_->setSeries({}, message); psd_->setSeries({}, message); stft_->setRaster({}, message);
@@ -1388,41 +1558,80 @@ void NarrowbandWorkspace::requestDisplay() {
     waveform_->setSeries({}, "正在按需读取并处理当前可见 IQ…");
     psd_->setSeries({}, "正在计算当前可见窗的 PSD…"); stft_->setRaster({}, "正在计算真实 STFT…");
     dataStatus_->setText(QStringLiteral("处理中 · 配置 v%1 · 请求 %2").arg(config).arg(generation));
+    displayPending_ = true;
     auto cancel = std::make_shared<std::atomic_bool>(false); cancellation_ = cancel;
     worker_ = std::thread([this, channel, source, plan = std::move(plan), firstOutput, lastOutput, waveformPoints,
                            samplePointsVisible, generation, config, cancel]() mutable {
-        ChannelSampleData data; const bool ok = sampleCache_.process(source, channel, plan, {firstOutput, lastOutput}, data,
-            [cancel] { return cancel->load(std::memory_order_relaxed); });
-        std::vector<float> waveI, waveQ, psd;
-        QImage stft;
-        QString status;
-        bool psdReady = false, stftReady = false;
-        if (ok && !cancel->load(std::memory_order_relaxed)) {
-            const bool waveformReady = channel.waveform == NarrowbandWaveform::IQ ?
-                channelWaveformIQ(data, waveformPoints, waveI, waveQ) :
-                channelWaveform(data, waveformPoints, channel.waveform, waveI);
-            psdReady = waveformReady && channelPsd(data, channel.outputSampleRateHz,
-                channel.visibleBasebandFrequency, channel.psdFftSize, 1200, psd,
-                [cancel] { return cancel->load(); });
-            std::vector<float> matrix;
-            stftReady = waveformReady && channelSpectrogram(data, channel.outputSampleRateHz,
-                channel.visibleBasebandFrequency, QSize(560, 240), channel.stftFftSize, matrix,
-                [cancel] { return cancel->load(); });
-            if (stftReady) {
-                stft = spectrumImage(matrix, QSize(560, 240));
-                stftReady = !stft.isNull();
+        const auto cancelled = [cancel] { return cancel->load(std::memory_order_relaxed); };
+        SpectralSource provider; provider.sampleRateHz = channel.outputSampleRateHz;
+        const auto sourceRate = plan.sourceRateHz, outputRate = plan.outputRateHz;
+        provider.sourceRange = [channel, sourceRate, outputRate](TimeRange range) {
+            std::uint64_t begin = 0, end = 0;
+            if (!mulDiv(range.begin, sourceRate, outputRate, false, begin) ||
+                !mulDiv(range.end, sourceRate, outputRate, true, end)) return TimeRange{};
+            return TimeRange{channel.sourceTime.begin + std::min(begin, channel.sourceTime.end - channel.sourceTime.begin),
+                channel.sourceTime.begin + std::min(end, channel.sourceTime.end - channel.sourceTime.begin)};
+        };
+        provider.read = [this, &source, &channel, &plan](TimeRange range, std::vector<std::complex<float>>& values, const SpectralCancel& stop) {
+            ChannelSampleData block;
+            const bool ok = sampleCache_.process(source, channel, plan, range, block, stop);
+            if (ok) values = std::move(block.samples);
+            return ok;
+        };
+        std::vector<float> waveI(waveformPoints), waveQ, psd;
+        if (channel.waveform == NarrowbandWaveform::IQ) waveQ.resize(waveformPoints);
+        std::vector<SampleIndex> positions(waveformPoints);
+        bool waveformReady = true;
+        const auto span = lastOutput - firstOutput;
+        const auto bucketOffset = [span, waveformPoints](std::uint64_t index) {
+            return (span / waveformPoints) * index + (span % waveformPoints) * index / waveformPoints;
+        };
+        std::vector<std::complex<float>> values;
+        for (int index = 0; index < waveformPoints && !cancelled(); ++index) {
+            const auto begin = firstOutput + bucketOffset(index);
+            const auto end = std::max(begin + 1, firstOutput + bucketOffset(index + 1));
+            const auto middle = begin + (end - begin) / 2;
+            positions[index] = provider.sourceRange({middle, middle + 1}).begin;
+            if (channel.waveform == NarrowbandWaveform::IQ || channel.waveform == NarrowbandWaveform::Phase) {
+                if (!provider.read({middle, middle + 1}, values, cancelled)) { waveformReady = false; break; }
+                waveI[index] = channel.waveform == NarrowbandWaveform::Phase ? std::arg(values.front()) : values.front().real() * 32768.f;
+                if (!waveQ.empty()) waveQ[index] = values.front().imag() * 32768.f;
+            } else {
+                double power = 0, peak = 0; std::uint64_t count = 0;
+                for (auto first = begin; first < end && !cancelled(); ) {
+                    const auto last = first + std::min<std::uint64_t>(16'384, end - first);
+                    if (!provider.read({first, last}, values, cancelled)) { waveformReady = false; break; }
+                    for (const auto value : values) { const double magnitude = std::norm(value); power += magnitude; peak = std::max(peak, magnitude); }
+                    count += values.size(); first = last;
+                }
+                if (!waveformReady || !count) { waveformReady = false; break; }
+                waveI[index] = static_cast<float>(32768 * std::sqrt(channel.waveform == NarrowbandWaveform::Envelope ? peak : power / count));
             }
-            status = waveformReady ? QStringLiteral("真实 DDC + FIR + 有理重采样波形 · ADC 计数") :
-                QStringLiteral("当前范围不足以生成波形数据");
-            if (!psdReady) status += QStringLiteral(" · PSD 范围短于 FFT 或数据不足");
-            if (!stftReady) status += QStringLiteral(" · STFT 范围短于 FFT 或数据不足");
-        } else status = cancel->load() ? QStringLiteral("计算已取消") : QStringLiteral("IQ 读取或窄带计算失败");
+        }
+        if (cancelled()) return;
+        auto spectrum = analyzeSpectrogram(provider, {firstOutput, lastOutput}, channel.visibleBasebandFrequency, channel.stftFftSize, 240, cancelled);
+        spectrum->sourceView = channel.visibleSourceTime;
+        const auto psdData = channel.psdFftSize == channel.stftFftSize ? spectrum :
+            analyzeSpectrogram(provider, {firstOutput, lastOutput}, channel.visibleBasebandFrequency, channel.psdFftSize, 64, cancelled);
+        const auto average = averageSpectrum(*psdData);
+        const bool psdReady = static_cast<bool>(average), stftReady = !spectrum->frames.empty();
+        if (average) psd = spectrumDb(*average);
+        QImage stft; std::vector<float> rasterPower;
+        if (stftReady) { rasterPower = spectralRaster(*spectrum, 560, 240, MainMode::TimeFrequency); stft = spectrumImage(rasterPower, QSize(560, 240)); }
+        QString status = waveformReady ? QStringLiteral("真实 DDC · 全可见窗分箱 · ADC 计数") : QStringLiteral("IQ 读取或窄带计算失败");
+        if (stftReady) status += QStringLiteral(" · N=%1 · Δf=%2 Hz · 帧 %3 · %4 ms · ENBW %5 Hz")
+            .arg(spectrum->plan.points).arg(spectrum->plan.binHz, 0, 'g', 6).arg(spectrum->frames.size())
+            .arg(spectrum->plan.requiredSeconds * 1000, 0, 'g', 6).arg(spectrum->plan.noiseBandwidthHz, 0, 'g', 6);
+        else status += " · " + QString::fromStdString(spectrum->error);
+        if (!psdReady) status += " · PSD: " + QString::fromStdString(psdData->error);
+        if (cancelled()) return;
+        if (!waveformReady) { waveI.clear(); waveQ.clear(); }
         QMetaObject::invokeMethod(this, [this, generation, config, waveI = std::move(waveI), waveQ = std::move(waveQ),
-                                         psd = std::move(psd), stft = std::move(stft), status = std::move(status),
-                                         samplePointsVisible, psdReady, stftReady, firstOutput]() mutable {
+            psd = std::move(psd), stft = std::move(stft), status = std::move(status), samplePointsVisible,
+            psdReady, stftReady, firstOutput, positions = std::move(positions), spectrum = std::move(spectrum), rasterPower = std::move(rasterPower)]() mutable {
             installFrame(generation, config, std::move(waveI), std::move(waveQ), std::move(psd),
-                         std::move(stft), std::move(status), samplePointsVisible,
-                         psdReady, stftReady, firstOutput);
+                std::move(stft), std::move(status), samplePointsVisible, psdReady, stftReady, firstOutput,
+                std::move(positions), std::move(spectrum), std::move(rasterPower));
         }, Qt::QueuedConnection);
     });
 }
@@ -1431,10 +1640,15 @@ void NarrowbandWorkspace::installFrame(std::uint64_t generation, std::uint64_t c
                                        std::vector<float> waveformI, std::vector<float> waveformQ,
                                        std::vector<float> psd, QImage stft, QString status,
                                        bool samplePointsVisible, bool psdReady, bool stftReady,
-                                       std::uint64_t firstOutputSample) {
+                                       std::uint64_t firstOutputSample, std::vector<SampleIndex> samplePositions,
+                                       std::shared_ptr<const SpectrogramData> spectrum, std::vector<float> rasterPower) {
     auto* channel = session_.activeChannel();
     if (!channel || generation != requestGeneration_ || channel->configVersion != configVersion) return;
-    frameGeneration_ = generation;
+    frameGeneration_ = generation; displayPending_ = false; displayCacheStats_ = sampleCache_.stats();
+    session_.installSpectrogram(channel->id, spectrum);
+    averagePsd_ = psd; linkedPsdKey_.clear(); rasterPower_ = std::move(rasterPower); powerColorKey_.clear();
+    waveform_->setSamplePositions(std::move(samplePositions));
+    for (auto* chart : {stft_, modulationStft_, recognitionStft_}) if (chart) chart->setSpectralData(spectrum);
     if (channel->waveformAutoScale && !waveformI.empty()) {
         double minimum = std::numeric_limits<double>::infinity();
         double maximum = -std::numeric_limits<double>::infinity();
@@ -1473,23 +1687,26 @@ void NarrowbandWorkspace::installFrame(std::uint64_t generation, std::uint64_t c
         else waveform_->setSeries({std::move(waveformI), std::move(waveformQ)}, status);
     } else waveform_->setSeries({}, status);
     if (psdReady && !psd.empty()) psd_->setSeries({std::move(psd)}, status);
-    else psd_->setSeries({}, QStringLiteral("当前可见范围短于 PSD FFT 点数；未自动更换 FFT"));
+    else psd_->setSeries({}, status);
     const auto revision = QStringLiteral("nb-%1-%2").arg(configVersion).arg(generation);
     if (stftReady && !stft.isNull()) {
         stft_->setRaster(stft, status, revision);
         if (modulationStft_) modulationStft_->setRaster(stft, status, revision);
         if (recognitionStft_) recognitionStft_->setRaster(stft, status, revision);
     } else {
-        const QString unavailable = QStringLiteral("当前可见范围短于 STFT FFT 点数；未自动更换 FFT");
+        const QString unavailable = status;
         stft_->setRaster({}, unavailable);
         if (modulationStft_) modulationStft_->setRaster({}, unavailable);
         if (recognitionStft_) recognitionStft_->setRaster({}, unavailable);
     }
     dataStatus_->setText(status);
     if (analysisStatus_) analysisStatus_->setText(status);
+    updateLinkedCursors(); updatePowerColors();
 }
 
 void NarrowbandWorkspace::cancelWork() {
+    if (displaySettleTimer_) displaySettleTimer_->stop();
+    displayPending_ = false;
     if (cancellation_) cancellation_->store(true, std::memory_order_relaxed);
     ++requestGeneration_;
     if (worker_.joinable()) worker_.join();
@@ -1503,6 +1720,7 @@ void NarrowbandWorkspace::updateCaption() {
     caption_->setText(QStringLiteral("%1  ·  %2 / %3  ·  Fc %4 MHz  BW %5 MHz  Fs′ %6 MS/s")
         .arg(str(channel->name), str(file->metadata.name), str(channel->sourceMarkId))
         .arg(center, 0, 'f', 3).arg(bandwidth, 0, 'f', 3).arg(channel->outputSampleRateHz / 1e6, 0, 'f', 3));
+    updateLinkedCursors();
 }
 
 void NarrowbandWorkspace::startDemoRecognition() {

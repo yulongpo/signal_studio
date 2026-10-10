@@ -113,6 +113,9 @@ private:
     std::pair<QRectF, QRectF> heatmapPlacement() const;
     void paintScene(QPainter& painter, bool accelerated);
     void repaintChart();
+    void drawCursors(QPainter& painter);
+    void pinAt(QPointF point);
+    void expandAnalysisTime();
     Session& session_;
     Kind kind_;
     bool creating_ = false;
@@ -162,9 +165,11 @@ private:
     SampleIndex cursorSample_ = 0;
     double cursorFrequency_ = 0;
     std::string displayedFile_;
+    std::uint64_t displayedProjectGeneration_ = 0;
     MainMode displayedMainMode_ = MainMode::TimeFrequency;
     AuxiliaryMode displayedAuxiliaryMode_ = AuxiliaryMode::Waveform;
     int displayedFft_ = 2048;
     bool displayedColorScale_ = false;
+    std::optional<QPointF> hoverPosition_;
 };
 } // namespace signalstudio

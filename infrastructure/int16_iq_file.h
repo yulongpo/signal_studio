@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/project.h"
+#include "infrastructure/spectral_analysis.h"
 
 #include <QByteArray>
 #include <QFile>
@@ -34,6 +35,7 @@ public:
     bool isOpen() const { return mapped_ != nullptr; }
     std::uint64_t sampleCount() const { return sampleCount_; }
     std::complex<double> sampleAt(std::uint64_t index) const;
+    SpectralSource spectralSource() const;
 
     bool waveform(const TimeRange& range, int points, WaveformMode mode, std::vector<float>& output,
                   const std::function<bool()>& cancelled = {}) const;
@@ -46,7 +48,6 @@ public:
 
 private:
     std::complex<double> sample(std::uint64_t index) const;
-    void spectrum(std::uint64_t first, int fftSize, std::vector<std::complex<double>>& output) const;
     double powerDensityDb(const std::complex<double>& value, double normalization) const;
 
     QFile file_;

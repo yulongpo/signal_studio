@@ -62,6 +62,8 @@ ss_target_defaults(SignalStudioCore)
 add_library(SignalStudioInfrastructure STATIC
     infrastructure/channel_processor.cpp
     infrastructure/channel_processor.h
+    infrastructure/spectral_analysis.cpp
+    infrastructure/spectral_analysis.h
     infrastructure/int16_iq_file.cpp
     infrastructure/int16_iq_file.h
     infrastructure/project_store.cpp
@@ -129,6 +131,12 @@ if(SS_BUILD_TESTS)
     set_target_properties(SignalStudioChannelProcessorTests PROPERTIES AUTOMOC OFF)
     ss_target_defaults(SignalStudioChannelProcessorTests)
     add_test(NAME signal_studio_channel_processor COMMAND SignalStudioChannelProcessorTests)
+    add_executable(SignalStudioSpectralAnalysisTests tests/spectral_analysis_tests.cpp)
+    target_link_libraries(SignalStudioSpectralAnalysisTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    set_target_properties(SignalStudioSpectralAnalysisTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioSpectralAnalysisTests)
+    add_test(NAME signal_studio_spectral_analysis COMMAND SignalStudioSpectralAnalysisTests)
+    set_tests_properties(signal_studio_spectral_analysis PROPERTIES TIMEOUT 120)
     set_tests_properties(signal_studio_channel_processor PROPERTIES TIMEOUT 120)
     add_executable(SignalStudioDisplaySamplingTests
         tests/display_sampling_tests.cpp ui/charts/display_sampling.cpp)
@@ -170,6 +178,7 @@ if(SS_BUILD_TESTS)
     if(WIN32 AND SS_DEPLOY_RUNTIME)
         # Stage the shared Qt runtime once, before either test binary is built.
         add_dependencies(SignalStudioCoreTests SignalStudio)
+        add_dependencies(SignalStudioSpectralAnalysisTests SignalStudio)
         add_dependencies(SignalStudioUiTests SignalStudio)
         add_dependencies(SignalStudioUiCapture SignalStudio)
         add_custom_command(TARGET SignalStudioUiTests POST_BUILD

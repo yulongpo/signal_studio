@@ -239,6 +239,8 @@ private slots:
     void narrowbandPaletteSelectionUpdatesStftCharts();
     void widebandAuxiliaryRenderingAndGestures();
     void narrowbandAuxiliaryRenderingAndGestures();
+    void widebandLinkedCursorsAndFrameSpectrum();
+    void narrowbandLinkedCursorsAndFrameSpectrum();
     void initialFileViewShowsFirstFivePercentOrTenMilliseconds();
     void panelRailsAndBottomTabs();
     void sectionContextAndManualExpansion();
@@ -699,8 +701,7 @@ void UiTests::auxiliaryYAxisIsolationAndEscape() {
     QVERIFY(plot);
     auto* file=window.session().activeFile();
     file->display.auxiliaryMode=psd?AuxiliaryMode::Psd:AuxiliaryMode::Waveform;
-    file->display.auxiliaryMin=psd?-110:-60;
-    file->display.auxiliaryMax=psd?-10:60;
+    window.session().setAuxiliaryRange(psd?-110:-60, psd?-10:60, false);
     window.refresh();
     const auto view=file->view;
     const auto originalSpan=file->display.auxiliaryMax-file->display.auxiliaryMin;
@@ -1153,6 +1154,139 @@ void UiTests::narrowbandAuxiliaryRenderingAndGestures() {
         window.refresh();
     }
     workspace->cancelWork();
+}
+
+void UiTests::widebandLinkedCursorsAndFrameSpectrum() {
+    MainWindow window;
+    window.session().addDemoFile(); window.refresh(); showWindow(window);
+    auto* main = window.findChild<PlotWidget*>("mainPlot");
+    auto* aux = window.findChild<PlotWidget*>("auxiliaryPlot");
+    if (!aux) aux = window.findChild<PlotWidget*>("auxPlot");
+    QVERIFY(main && aux);
+    QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 15'000);
+    const auto context = window.session().activeFile()->metadata.id;
+    const auto matrix = window.session().spectrogram(context);
+    QVERIFY(matrix && !matrix->frames.empty());
+    const auto plot = main->plotRect();
+    const QPoint point(qRound(plot.left() + plot.width() * .35), qRound(plot.top() + plot.height() * .45));
+    const auto generations = main->powerGenerationCount();
+    const auto uploads = main->textureUploadCount();
+    auto* surface = main->findChild<AcceleratedSurface*>();
+    const auto vertices = surface ? surface->chartVertexUploadCount() : 0;
+    QTest::mouseMove(main, point); QTest::qWait(50);
+    QVERIFY(main->property("hoverCursorVisible").toBool());
+    QVERIFY(main->property("cursorReadout").toString().contains("dBFS/Hz"));
+    QVERIFY(plot.contains(main->property("cursorReadoutRect").toRectF()));
+    QCOMPARE(main->powerGenerationCount(), generations); QCOMPARE(main->textureUploadCount(), uploads);
+    if (surface) QCOMPARE(surface->chartVertexUploadCount(), vertices);
+    QTest::mouseClick(main, Qt::LeftButton, Qt::NoModifier, point);
+    const auto pinned = window.session().linkedCursor(context);
+    QVERIFY(pinned.pinned && pinned.framePsd);
+    const auto* frame = window.session().selectedSpectralFrame(context); QVERIFY(frame);
+    auto* mode = window.findChild<QComboBox*>("modeAux"); QVERIFY(mode);
+    mode->setCurrentIndex(static_cast<int>(AuxiliaryMode::Psd));
+    QTRY_VERIFY_WITH_TIMEOUT(aux->isDisplaySettled(), 15'000);
+    QTRY_COMPARE_WITH_TIMEOUT(aux->sourcePointCount(), qsizetype(frame->linearPower.size()), 15'000);
+    QTest::mouseMove(aux, aux->plotRect().center().toPoint()); QTest::qWait(30);
+    QVERIFY(aux->property("cursorPinned").toBool()); QVERIFY(aux->property("framePsd").toBool());
+    const auto pinnedBeforeFrequency = window.session().linkedCursor(context);
+    QTest::mouseClick(aux, Qt::LeftButton, Qt::NoModifier, (aux->plotRect().topLeft() + QPointF(aux->plotRect().width() * .7, 35)).toPoint());
+    QCOMPARE(window.session().linkedCursor(context).sourceSample, pinnedBeforeFrequency.sourceSample);
+    QVERIFY(window.session().linkedCursor(context).frequencyHz != pinnedBeforeFrequency.frequencyHz);
+    mode->setCurrentIndex(static_cast<int>(AuxiliaryMode::Waveform));
+    QTRY_VERIFY_WITH_TIMEOUT(aux->isDisplaySettled(), 10'000);
+    QTest::mouseMove(aux, aux->plotRect().center().toPoint()); QTest::qWait(30);
+    QVERIFY(aux->property("cursorReadout").toString().contains("ADC"));
+    auto menu = std::unique_ptr<QMenu>(main->createContextMenu(point));
+    auto* clear = menu->findChild<QAction*>("contextClearCursor"); QVERIFY(clear); clear->trigger();
+    QVERIFY(!window.session().linkedCursor(context).pinned);
+    QEvent leave(QEvent::Leave); QCoreApplication::sendEvent(main, &leave); QTest::qWait(30);
+    QVERIFY(!main->property("hoverCursorVisible").toBool());
+    auto* file = window.session().activeFile(); const auto before = file->view;
+    window.session().setView({{before.time.begin, before.time.begin + 8}, before.frequency}); window.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 10'000);
+    const auto unavailable = window.session().spectrogram(context);
+    QVERIFY(unavailable && unavailable->frames.empty() && !unavailable->error.empty());
+    menu.reset(main->createContextMenu(point));
+    auto* expand = menu->findChild<QAction*>("contextExpandAnalysisTime"); QVERIFY(expand); expand->trigger();
+    QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 15'000);
+    QVERIFY(!window.session().spectrogram(context)->frames.empty());
+    const auto generation = window.session().projectGeneration();
+    auto replacement = window.session().project(); window.session().replaceProject(std::move(replacement)); window.refresh();
+    QVERIFY(window.session().projectGeneration() != generation);
+    QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 15'000);
+    QVERIFY(window.session().spectrogram(context));
+}
+
+void UiTests::narrowbandLinkedCursorsAndFrameSpectrum() {
+    MainWindow window; window.openNarrowbandDemoProject(); showWindow(window);
+    auto* workspace = window.findChild<NarrowbandWorkspace*>("narrowbandWorkspace"); QVERIFY(workspace);
+    auto* heat = window.findChild<QWidget*>("narrowbandStftPanelChart");
+    auto* wave = window.findChild<QWidget*>("narrowbandWaveformPanelChart");
+    auto* psd = window.findChild<QWidget*>("narrowbandPsdPanelChart");
+    auto* psdPoints = window.findChild<QComboBox*>("narrowbandPsdFft");
+    QVERIFY(heat && wave && psd && psdPoints);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(), 15'000);
+    auto* rightStft = window.findChild<QComboBox*>("stftFft");
+    auto* headerStft = window.findChild<QComboBox*>("narrowbandStftFft");
+    QVERIFY(rightStft && headerStft);
+    const int wideStft = window.session().activeFile()->display.stftSize;
+    rightStft->setCurrentText("4096");
+    QCOMPARE(window.session().activeChannel()->stftFftSize, 4096);
+    QCOMPARE(headerStft->currentData().toInt(), 4096);
+    QCOMPARE(window.session().activeFile()->display.stftSize, wideStft);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(), 15'000);
+    headerStft->setCurrentIndex(headerStft->findData(2048));
+    QCOMPARE(rightStft->currentText(), QString("2048"));
+    QCOMPARE(window.session().activeFile()->display.stftSize, wideStft);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(), 15'000);
+    const auto context = window.session().activeChannel()->id;
+    const auto matrix = window.session().spectrogram(context); QVERIFY(matrix && !matrix->frames.empty());
+    const QRectF plot(66, 14, heat->width() - 82, heat->height() - 55);
+    QTest::mouseMove(heat, plot.center().toPoint()); QTest::qWait(40);
+    QVERIFY(heat->property("cursorReadout").toString().contains("dBFS/Hz"));
+    QVERIFY(plot.contains(heat->property("cursorReadoutRect").toRectF()));
+    const auto hoveredSample = heat->property("cursorSourceSample").toULongLong();
+    const double hoveredSeconds = static_cast<double>(hoveredSample) / window.session().activeFile()->metadata.sampleRateHz;
+    QCOMPARE(heat->property("cursorTimeSeconds").toDouble(), hoveredSeconds);
+    QVERIFY(heat->property("cursorReadout").toString().contains(QString::number(hoveredSeconds / .001, 'g', 10)));
+    const auto uploads = workspace->visibleTextureUploads(), vertices = workspace->visibleGpuVertexUploads();
+    QTest::mouseMove(heat, (plot.center() + QPointF(30, 20)).toPoint()); QTest::qWait(50);
+    QCOMPARE(workspace->visibleTextureUploads(), uploads); QCOMPARE(workspace->visibleGpuVertexUploads(), vertices);
+    QTest::mouseClick(heat, Qt::LeftButton, Qt::NoModifier, plot.center().toPoint()); QTest::qWait(40);
+    QVERIFY(window.session().linkedCursor(context).pinned);
+    const auto* frame = window.session().selectedSpectralFrame(context); QVERIFY(frame);
+    QCOMPARE(psd->property("effectiveFftPoints").toInt(), int(frame->linearPower.size()));
+    QVERIFY(!psdPoints->isEnabled());
+    for (auto* chart : {wave, psd, heat}) QVERIFY(chart->property("cursorPinned").toBool());
+    const auto before = window.session().linkedCursor(context);
+    const QRectF psdPlot(66, 14, psd->width() - 82, psd->height() - 55);
+    QTest::mouseClick(psd, Qt::LeftButton, Qt::NoModifier, (psdPlot.topLeft() + QPointF(psdPlot.width() * .75, 25)).toPoint());
+    QCOMPARE(window.session().linkedCursor(context).sourceSample, before.sourceSample);
+    QVERIFY(window.session().linkedCursor(context).frequencyHz != before.frequencyHz);
+    auto* frequency = window.findChild<QComboBox*>("channelFrequencyMode"); QVERIFY(frequency);
+    const auto bb = window.session().linkedCursor(context).frequencyHz; frequency->setCurrentIndex(1);
+    QCOMPARE(window.session().linkedCursor(context).frequencyHz, bb);
+    auto* rightFrequency = window.findChild<QComboBox*>("freqMode");
+    if (!rightFrequency) rightFrequency = window.findChild<QComboBox*>("frequencyMode");
+    QVERIFY(rightFrequency); QCOMPARE(rightFrequency->currentIndex(), 0);
+    rightFrequency->setCurrentIndex(1); QCOMPARE(frequency->currentIndex(), 0);
+    QCOMPARE(window.session().linkedCursor(context).frequencyHz, bb);
+    auto* rightGrid = window.findChild<QCheckBox*>("gridToggle");
+    auto* headerGrid = window.findChild<QCheckBox*>("narrowbandGrid");
+    QVERIFY(rightGrid && headerGrid);
+    rightGrid->setChecked(false); QCOMPARE(headerGrid->isChecked(), false);
+    headerGrid->setChecked(true); QCOMPARE(rightGrid->isChecked(), true);
+
+    QTest::keyClick(heat, Qt::Key_Escape); QTest::qWait(30);
+    QVERIFY(!window.session().linkedCursor(context).pinned); QVERIFY(psdPoints->isEnabled());
+    const auto time = window.session().activeChannel()->visibleSourceTime;
+    const auto band = window.session().activeChannel()->visibleBasebandFrequency;
+    window.session().setChannelView(time, {band.lowerHz / 2, band.upperHz / 2}); window.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(), 15'000);
+    const auto zoomed = window.session().spectrogram(context); QVERIFY(zoomed);
+    QCOMPARE(zoomed->plan.points, matrix->plan.points);
+    QVERIFY(zoomed->plan.binHz < matrix->plan.binHz && zoomed->plan.inputSamples > matrix->plan.inputSamples);
 }
 
 void UiTests::narrowbandPaletteSelectionUpdatesStftCharts() {
@@ -2090,11 +2224,11 @@ void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
     const auto oldTime = file->view.time;
     QVERIFY(window.session().setView({{oldTime.begin + 20, oldTime.begin + 120}, file->view.frequency}, false));
     window.refresh();
-    QCOMPARE(file->view.time.end - file->view.time.begin, SampleIndex{8192});
+    QCOMPARE(file->view.time.end - file->view.time.begin, SampleIndex{100});
 
     stft->setCurrentText("65536");
     QCOMPARE(file->display.stftSize, 65'536);
-    QVERIFY(file->view.time.end - file->view.time.begin >= 65'536);
+    QCOMPARE(file->view.time.end - file->view.time.begin, SampleIndex{100});
 
     auto* main = window.findChild<PlotWidget*>("mainPlot");
     QVERIFY(main);
