@@ -311,7 +311,7 @@ bool Session::setPsdFromSelection(bool enabled) {
 bool Session::setEffectiveBandwidthHz(double bandwidthHz) {
     auto* file = activeFile();
     if (!file || !std::isfinite(bandwidthHz) || bandwidthHz <= 0 ||
-        bandwidthHz > file->metadata.sampleRateHz ||
+        bandwidthHz > file->metadata.sampleRateHz / (file->metadata.sampleFormat.structure==SampleStructure::Real?2.0:1.0) ||
         bandwidthHz < file->metadata.sampleRateHz / 65536.0 ||
         bandwidthHz == file->metadata.effectiveBandwidthHz) return false;
     file->metadata.effectiveBandwidthHz = bandwidthHz;

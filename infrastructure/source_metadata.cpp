@@ -15,6 +15,15 @@ SourceSuggestions suggestSourceMetadata(const QString& path){
         f.iqLayout=f.structure==SampleStructure::Real?IQLayout::NotApplicable:IQLayout::IQInterleaved;f.byteOrder=bytesPerComponent(f)==1?ByteOrder::NotApplicable:ByteOrder::Little;
         f.normalizeIntegerAdc=f.componentEncoding<ComponentEncoding::Float32;s.format=f;
     }
-    s.provenance=QString("Fs：%1 · Fc：%2 · 格式：%3").arg(s.sampleRateHz?"文件名":"需手动确认",s.centerFrequencyHz?"文件名":"需手动确认",s.format?"文件名建议":"未识别，需确认");return s;
+    s.provenance=QString("Fs：%1 · Fc：%2 · 格式：%3").arg(s.sampleRateHz?"文件名":"需手动确认",s.centerFrequencyHz?"文件名":"需手动确认",s.format?"文件名建议":"未识别，需确认");
+    if(path.endsWith(".sigmf-meta",Qt::CaseInsensitive)||path.endsWith(".sigmf-data",Qt::CaseInsensitive)) {
+        const auto meta=readSigmfMetadata(path);s.dataPath=meta.dataPath;s.error=meta.error;s.warnings=meta.warnings;
+        if(!meta.error.isEmpty()){s.format.reset();s.sampleRateHz.reset();s.centerFrequencyHz.reset();return s;}
+        const auto conflict=[&](const QString& key,const auto& before,const auto& after){if(before&&after&&*before!=*after)s.conflicts+=key+"与文件名冲突；采用SigMF（可手动覆盖）。 ";};
+        conflict("Fs",s.sampleRateHz,meta.sampleRateHz);conflict("Fc",s.centerFrequencyHz,meta.centerFrequencyHz);conflict("格式",s.format,meta.format);
+        if(meta.sampleRateHz)s.sampleRateHz=meta.sampleRateHz;if(meta.centerFrequencyHz)s.centerFrequencyHz=meta.centerFrequencyHz;if(meta.format)s.format=meta.format;
+        s.provenance=meta.provenance+"优先 · "+s.provenance;
+    }
+    return s;
 }
 }

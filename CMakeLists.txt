@@ -70,7 +70,9 @@ ss_target_defaults(SignalStudioCore)
 
 add_library(SignalStudioInfrastructure STATIC
     infrastructure/import_controller.cpp
+    infrastructure/format_template_store.cpp
     infrastructure/source_metadata.cpp
+    infrastructure/sigmf_metadata.cpp
     infrastructure/raw_sample_reader.cpp
     infrastructure/channel_processor.cpp
     infrastructure/channel_processor.h
@@ -157,6 +159,11 @@ endif()
 
 if(SS_BUILD_TESTS)
     enable_testing()
+    add_executable(SignalStudioImportTests tests/import_controller_tests.cpp)
+    target_link_libraries(SignalStudioImportTests PRIVATE SignalStudioInfrastructure Qt6::Test)
+    ss_target_defaults(SignalStudioImportTests)
+    add_test(NAME signal_studio_import COMMAND SignalStudioImportTests)
+    set_tests_properties(signal_studio_import PROPERTIES TIMEOUT 120)
     add_executable(SignalStudioSampleFormatTests tests/sample_format_tests.cpp)
     target_link_libraries(SignalStudioSampleFormatTests PRIVATE SignalStudioInfrastructure Qt6::Core)
     ss_target_defaults(SignalStudioSampleFormatTests)

@@ -1,5 +1,7 @@
 #pragma once
 #include "infrastructure/import_controller.h"
+#include "infrastructure/format_template_store.h"
+#include <QSettings>
 #include <QDialog>
 #include <functional>
 
@@ -9,11 +11,14 @@ class AdaptiveValueEdit;class SourcePreviewWidget;class ParameterInputPolicy;
 class SignalImportDialog final:public QDialog {
     Q_OBJECT
 public:
-    explicit SignalImportDialog(const QString& projectName,QWidget* parent=nullptr);
+    explicit SignalImportDialog(const QString& projectName,QWidget* parent=nullptr,QSettings* templateSettings=nullptr);
     ~SignalImportDialog() override;
     bool addPath(const QString&);
     ImportController& controller(){return controller_;}
     void setPage(int);
+    bool saveTemplate(const QString&,QString&);
+    bool importTemplates(const QString&,QString&);
+    bool exportTemplates(const QString&,QString&) const;
     std::function<bool(FileState,QString&)> commitSource;
 public slots:
     void startImport();
@@ -23,10 +28,12 @@ protected:
     void reject() override;
     void dragEnterEvent(QDragEnterEvent*) override;
     void dropEvent(QDropEvent*) override;
+    void mousePressEvent(QMouseEvent*) override;
 private:
     void buildSingle(QWidget*);
     void buildBatch(QWidget*);
     void buildTemplates(QWidget*);
+    void refreshTemplates();
     void chooseFiles();
     void loadCurrent();
     void commitConfiguration();
@@ -37,6 +44,11 @@ private:
     void buildOverlay();
     void applyTemplate(int,bool batch=false);
     ImportController controller_;
+    QSettings templateSettings_;
+    FormatTemplateStore templates_{templateSettings_};
+    QVBoxLayout* templateGridHost_=nullptr;QLabel* recentTemplates_=nullptr;
+    QString batchKey_;
+    std::optional<SampleIndex> previewSample_;
     std::size_t current_=0;bool updating_=false,previewAfterLoad_=false;
     ByteOrder previousOrder_=ByteOrder::Little;IQLayout previousLayout_=IQLayout::IQInterleaved;
     ParameterInputPolicy* inputPolicy_=nullptr;

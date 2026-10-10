@@ -7,8 +7,8 @@ namespace signalstudio {
 enum class ImportStatus { Pending, Reading, Ready, Partial, Failed, Cancelled };
 struct ImportRow {
     FileMetadata metadata;
-    QString error,provenance;
-    bool confirmed=false,selected=true;
+    QString error,provenance,metadataError;
+    bool confirmed=false,selected=true,acquisitionKnown=false,committed=false;
     ImportStatus status=ImportStatus::Pending;
     SourceLoadSnapshot load;
 };
@@ -26,6 +26,7 @@ public:
     bool canCommit() const;
     std::vector<FileState> sources() const;
     void restart();
+    void markCommitted(const FileMetadata&);
 private:
     void next();
     static constexpr std::size_t invalid=static_cast<std::size_t>(-1);

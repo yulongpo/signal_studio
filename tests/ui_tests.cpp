@@ -1,6 +1,7 @@
 #include "app/main_window.h"
 #include "ui/brand/brand_assets.h"
 #include <QClipboard>
+#include <QTableWidget>
 #include "ui/charts/plot_widget.h"
 #include "ui/charts/accelerated_surface.h"
 #include "ui/charts/cursor_overlay.h"
@@ -284,6 +285,7 @@ private slots:
     void escapeCancelsGestureBeforeLeavingMaximize();
     void addIqFileDialogCancelsAndImportsRealInt16Iq();
     void importFormatAndAdaptiveDraft();
+    void importTemplatesBatchAndSigmf();
     void brandResourcesAndAbout();
     void importRealFilesAndCancelPrefix();
     void narrowbandDemoResourceAndFourPages();
@@ -2325,6 +2327,23 @@ void UiTests::escapeCancelsGestureBeforeLeavingMaximize() {
     QVERIFY(!host->isVisible());
 }
 
+void UiTests::importTemplatesBatchAndSigmf(){
+    QTemporaryDir temporary;QString error;
+    const auto data=temporary.filePath("CI16_FS2Msps_FC10MHz.sigmf-data");const auto meta=temporary.filePath("CI16_FS2Msps_FC10MHz.sigmf-meta");
+    QVERIFY(QFile::copy(QStringLiteral(SS_SOURCE_DIR "/tests/fixtures/IQ0_FS1Msps_BW800kHz_FC100MHz.dat"),data));
+    {QFile file(meta);QVERIFY(file.open(QIODevice::WriteOnly));QVERIFY(file.write(R"({"global":{"core:version":"1.2.6","core:datatype":"ci16_le","core:sample_rate":1000000},"captures":[{"core:sample_start":0,"core:frequency":0}],"annotations":[]})")>0);}
+    QSettings templateSettings(temporary.filePath("templates.ini"),QSettings::IniFormat);
+    MainWindow window;showWindow(window);SignalImportDialog dialog("test",&window,&templateSettings);dialog.show();QVERIFY(dialog.addPath(meta));
+    QCOMPARE(dialog.controller().rows()[0].metadata.sampleRateHz,1e6);QCOMPARE(dialog.controller().rows()[0].metadata.centerFrequencyHz,0.0);QVERIFY(dialog.controller().rows()[0].provenance.contains("冲突"));QVERIFY(dialog.controller().rows()[0].confirmed);
+    auto* fc=dialog.findChild<AdaptiveValueEdit*>("importCenterFrequency");fc->setFocus();fc->selectAll();QTest::keyClicks(fc,"2.450000125 GHz");QTest::keyClick(fc,Qt::Key_Return);QCOMPARE(dialog.controller().rows()[0].metadata.centerFrequencyHz,2450000125.0);
+    QVERIFY2(dialog.saveTemplate("UI完整格式",error),qPrintable(error));const auto templates=temporary.filePath("templates.json");QVERIFY(dialog.exportTemplates(templates,error));QVERIFY(!dialog.exportTemplates(data,error));QVERIFY(dialog.importTemplates(templates,error));
+    const auto real=QStringLiteral(SS_SOURCE_DIR "/tests/fixtures/real_ADC_FS1Msps_FC0Hz_RI16.raw");QVERIFY(dialog.addPath(real));QVERIFY(!dialog.addPath(real));QCOMPARE(dialog.controller().rows().size(),std::size_t{2});
+    dialog.setPage(1);auto* table=dialog.findChild<QTableWidget*>("importBatchTable");QVERIFY(table);table->selectRow(1);
+    dialog.findChild<QComboBox*>("importBatchTemplate")->setCurrentIndex(4);dialog.findChild<QPushButton*>("batchApplyTemplate")->click();QCOMPARE(dialog.controller().rows()[1].metadata.sampleFormat.structure,SampleStructure::Real);QCOMPARE(dialog.controller().rows()[1].metadata.sampleRateHz,1e6);QCOMPARE(dialog.controller().rows()[0].metadata.centerFrequencyHz,2450000125.0);
+    std::size_t committed=0;dialog.commitSource=[&](FileState file,QString& e){++committed;return window.addImportedSource(std::move(file),e);};table->clearSelection();dialog.startImport();
+    auto* finish=dialog.findChild<QPushButton*>("importProgressFinish");QTRY_VERIFY_WITH_TIMEOUT(finish->isEnabled(),15000);finish->click();QCOMPARE(committed,std::size_t{2});QCOMPARE(window.session().project().files.size(),std::size_t{2});
+    for(int i=0;i<5;++i){auto quick=std::make_unique<SignalImportDialog>("cancel",&window);quick->show();QVERIFY(quick->addPath(real));QVERIFY(quick->addPath(data));quick.reset();QCoreApplication::processEvents();}
+}
 void UiTests::brandResourcesAndAbout(){
     QVERIFY(!BrandAssets::windowIcon().isNull());
     for(const auto& kind:QStringList{"icon","wordmark","lockup"}) {

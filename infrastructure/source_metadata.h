@@ -5,9 +5,10 @@
 
 namespace signalstudio {
 struct SourceSuggestions {
-    QString dataPath,provenance,error;
+    QString dataPath,provenance,error,conflicts,warnings;
     std::optional<double> sampleRateHz,centerFrequencyHz,bandwidthHz;
     std::optional<SampleFormat> format;
 };
 SourceSuggestions suggestSourceMetadata(const QString& path);
+SourceSuggestions readSigmfMetadata(const QString& path);
 }
