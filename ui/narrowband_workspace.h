@@ -40,6 +40,8 @@ public:
     void setCallbacks(std::function<void()> locateSource, std::function<void()> editChannel,
                       std::function<void()> returnToWide, std::function<void(const QString&)> log);
     void refreshFromSession();
+    bool hasPendingInteraction() const;
+    void cancelInteractions();
     void cancelWork();
     QString dataStatusText() const;
     int currentPageIndex() const;

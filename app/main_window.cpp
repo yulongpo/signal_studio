@@ -1289,7 +1289,7 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
     if (watched->objectName() == "graphArea" && event->type() == QEvent::Resize && empty_) empty_->setGeometry(static_cast<QWidget*>(watched)->rect().adjusted(5, 5, -5, -5));
     if (auto* widget = qobject_cast<QWidget*>(watched); widget && (widget == this || isAncestorOf(widget))) {
         if (event->type() == QEvent::KeyPress && static_cast<QKeyEvent*>(event)->key() == Qt::Key_Escape && !QApplication::activeModalWidget()) {
-            const bool active = (main_ && (main_->isCreating() || main_->hasPendingInteraction())) || (auxiliary_ && auxiliary_->hasPendingInteraction()) || (navigation_ && navigation_->hasPendingInteraction()) || static_cast<PrototypeSplitter*>(graphs_)->isDragging(); cancelInteractions();
+            const bool active = (main_ && (main_->isCreating() || main_->hasPendingInteraction())) || (auxiliary_ && auxiliary_->hasPendingInteraction()) || (navigation_ && navigation_->hasPendingInteraction()) || (narrowband_ && narrowband_->hasPendingInteraction()) || static_cast<PrototypeSplitter*>(graphs_)->isDragging(); cancelInteractions();
             if (!active && maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_); event->accept(); return true;
         }
         if (event->type() == QEvent::ContextMenu && widget->property("chartIndex").isValid()) {
@@ -1318,6 +1318,7 @@ void MainWindow::selectAllMarks() {
 void MainWindow::locateMark() { cancelInteractions(false); if (const auto* file = session_.activeFile()) session_.focusMark(file->activeMarkId); refresh(); }
 void MainWindow::cancelInteractions(bool exitCreating) {
     if (main_) main_->cancelGesture(exitCreating); if (auxiliary_) auxiliary_->cancelGesture(); if (navigation_) navigation_->cancelGesture();
+    if (narrowband_) narrowband_->cancelInteractions();
     if (graphs_) static_cast<PrototypeSplitter*>(graphs_)->cancel();
 }
 void MainWindow::deleteMarks() {

@@ -1,5 +1,6 @@
 #include "app/main_window.h"
 #include "ui/charts/plot_widget.h"
+#include "ui/charts/accelerated_surface.h"
 #include "ui/display_target.h"
 #include "ui/narrowband_workspace.h"
 
@@ -99,7 +100,7 @@ void triggerConfirmed(QAction* action) {
     responder.stop();
 }
 
-void wheelAt(PlotWidget* plot, QPointF point, int delta = 120) {
+void wheelAt(QWidget* plot, QPointF point, int delta = 120) {
     QWheelEvent event(point, plot->mapToGlobal(point.toPoint()), QPoint(), QPoint(0, delta),
                       Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
     QCoreApplication::sendEvent(plot, &event);
@@ -123,11 +124,65 @@ QPoint pointAt(PlotWidget* plot, const ViewRange& view, double time, double freq
     return plot->toPixel(sampleAt(view, time), frequencyAt(view, frequency)).toPoint();
 }
 
-void drag(PlotWidget* plot, QPoint start, QPoint end) {
+void drag(QWidget* plot, QPoint start, QPoint end) {
     QTest::mousePress(plot, Qt::LeftButton, Qt::NoModifier, start);
     QTest::mouseMove(plot, end, 10);
     QTest::mouseRelease(plot, Qt::LeftButton, Qt::NoModifier, end);
     QCoreApplication::processEvents();
+}
+
+QImage chartImage(QWidget* chart) {
+    if (auto* surface = chart->findChild<AcceleratedSurface*>(); surface && surface->isReady())
+        return surface->grabFramebuffer();
+    return chart->grab().toImage();
+}
+
+bool traceCoversPlot(const QImage& image, QSize logicalSize, QRectF plot) {
+    if (image.isNull()) return false;
+    const double sx = double(image.width()) / logicalSize.width();
+    const double sy = double(image.height()) / logicalSize.height();
+    // Data must span every quarter of the physical plot, including its left
+    // half. A nonzero draw-call count alone cannot detect an NDC mapping error.
+    for (int quarter = 0; quarter < 4; ++quarter) {
+        int count = 0;
+        const int first = qRound((plot.left() + plot.width() * quarter / 4.0 + 2) * sx);
+        const int last = qRound((plot.left() + plot.width() * (quarter + 1) / 4.0 - 2) * sx);
+        for (int y = qRound(plot.top() * sy); y <= qRound(plot.bottom() * sy); ++y)
+            for (int x = first; x < last; ++x) {
+                const auto color = image.pixelColor(x, y);
+                if (color.green() > 140 && color.blue() > 140 && color.red() < 140) ++count;
+            }
+        if (count < 10) return false;
+    }
+    return true;
+}
+
+int changedPlotPixels(const QImage& a, const QImage& b, QSize logicalSize, QRectF plot) {
+    if (a.isNull() || a.size() != b.size()) return 0;
+    const double sx = double(a.width()) / logicalSize.width();
+    const double sy = double(a.height()) / logicalSize.height();
+    int changed = 0;
+    // Exclude labels and status text. Check the left half, where the broken
+    // overlay vertex binding used to leave all grid lines invisible.
+    for (int y = qRound((plot.top() + 2) * sy); y < qRound((plot.bottom() - 2) * sy); ++y)
+        for (int x = qRound((plot.left() + 2) * sx); x < qRound(plot.center().x() * sx); ++x)
+            if (a.pixel(x, y) != b.pixel(x, y)) ++changed;
+    return changed;
+}
+
+int tracePixelsOutsidePlot(const QImage& image, QSize logicalSize, QRectF plot, QColor traceColor) {
+    if (image.isNull()) return -1;
+    int count = 0;
+    const QRectF allowed = plot.adjusted(-2, -2, 2, 2);
+    for (int y = 0; y < image.height(); ++y) for (int x = 0; x < image.width(); ++x) {
+        if (allowed.contains(QPointF(double(x) * logicalSize.width() / image.width(),
+                                    double(y) * logicalSize.height() / image.height()))) continue;
+        const auto color = image.pixelColor(x, y);
+        if (std::abs(color.red() - traceColor.red()) < 8 &&
+            std::abs(color.green() - traceColor.green()) < 8 &&
+            std::abs(color.blue() - traceColor.blue()) < 8) ++count;
+    }
+    return count;
 }
 
 void clearDemoMarks(MainWindow& window) {
@@ -182,6 +237,8 @@ private slots:
     void prototypeDisplayDefaultsAndOptions();
     void paletteControlsStaySynchronized();
     void narrowbandPaletteSelectionUpdatesStftCharts();
+    void widebandAuxiliaryRenderingAndGestures();
+    void narrowbandAuxiliaryRenderingAndGestures();
     void initialFileViewShowsFirstFivePercentOrTenMilliseconds();
     void panelRailsAndBottomTabs();
     void sectionContextAndManualExpansion();
@@ -920,6 +977,182 @@ void UiTests::paletteControlsStaySynchronized() {
         }
     }
     QVERIFY2(hasRedTransition,"CoolEdit Classic must include its red high-energy transition.");
+}
+
+void UiTests::widebandAuxiliaryRenderingAndGestures() {
+    DemoMainWindow window;
+    showWindow(window);
+    auto* chart = window.findChild<PlotWidget*>("auxPlot");
+    auto* mode = window.findChild<QComboBox*>("modeAux");
+    auto* grid = window.findChild<QCheckBox*>("gridToggle");
+    QVERIFY(chart && mode && grid);
+    auto* file = window.session().activeFile();
+    for (const auto auxiliaryMode : {AuxiliaryMode::Waveform, AuxiliaryMode::Psd}) {
+        mode->setCurrentIndex(static_cast<int>(auxiliaryMode));
+        grid->setChecked(true);
+        QTRY_VERIFY_WITH_TIMEOUT(chart->isDisplaySettled(), 10'000);
+        if (QGuiApplication::platformName() == "windows") {
+            QVERIFY(chart->gpuReady());
+            auto* surface = chart->findChild<AcceleratedSurface*>();
+            QVERIFY(surface && surface->chartDrawCallCount() > 0);
+        }
+        const QRectF plot = chart->plotRect();
+        QVERIFY(traceCoversPlot(chartImage(chart), chart->size(), plot));
+        const QImage withGrid = chartImage(chart);
+        grid->setChecked(false);
+        QTest::qWait(30);
+        QVERIFY(changedPlotPixels(withGrid, chartImage(chart), chart->size(), plot) > 50);
+        grid->setChecked(true);
+        const auto renderingBase = window.session().snapshot();
+        const double center = (file->display.auxiliaryMin + file->display.auxiliaryMax) / 2.0;
+        const double halfSpan = (file->display.auxiliaryMax - file->display.auxiliaryMin) * .05;
+        QVERIFY(window.session().setAuxiliaryRange(center - halfSpan, center + halfSpan, false));
+        window.refresh();
+        QTRY_VERIFY_WITH_TIMEOUT(chart->isDisplaySettled(), 10'000);
+        QCOMPARE(tracePixelsOutsidePlot(chartImage(chart), chart->size(), plot,
+            auxiliaryMode == AuxiliaryMode::Psd ? QColor("#5abffa") : QColor("#51d7c5")), 0);
+        window.session().restoreSnapshot(renderingBase);
+        window.refresh();
+        // The real hit-test target must be the chart, not its GPU surface.
+        QCOMPARE(window.childAt(chart->mapTo(&window, plot.center().toPoint())), chart);
+
+        const auto base = file->view;
+        const QPointF anchor(plot.left() + plot.width() * .3, plot.center().y());
+        wheelAt(chart, anchor);
+        const auto zoomed = file->view;
+        if (auxiliaryMode == AuxiliaryMode::Waveform) {
+            QVERIFY(zoomed.time.end - zoomed.time.begin < base.time.end - base.time.begin);
+            QVERIFY(std::abs(double(sampleAt(base, .3L)) - double(sampleAt(zoomed, .3L))) <= 2);
+            QCOMPARE(zoomed.frequency, base.frequency);
+        } else {
+            QVERIFY(zoomed.frequency.upperHz - zoomed.frequency.lowerHz < base.frequency.upperHz - base.frequency.lowerHz);
+            QVERIFY(std::abs(frequencyAt(base, .3) - frequencyAt(zoomed, .3)) < 1e-6);
+            QCOMPARE(zoomed.time, base.time);
+        }
+        wheelAt(chart, anchor);
+        QTest::qWait(300);
+        QVERIFY(window.session().back());
+        QCOMPARE(file->view, base); // Continuous wheel events produce one entry.
+        window.refresh();
+
+        const double low = file->display.auxiliaryMin, high = file->display.auxiliaryMax;
+        wheelAt(chart, QPointF(40, plot.center().y()));
+        QVERIFY(file->display.auxiliaryMax - file->display.auxiliaryMin < high - low);
+        QCOMPARE(file->view, base);
+        QTest::qWait(300);
+        QVERIFY(window.session().back());
+        window.refresh();
+        QCOMPARE(file->display.auxiliaryMin, low);
+        QCOMPARE(file->display.auxiliaryMax, high);
+        const QPoint axis(40, qRound(plot.center().y()));
+        QTest::mousePress(chart, Qt::LeftButton, Qt::NoModifier, axis);
+        QTest::mouseMove(chart, axis + QPoint(0, 15), 10);
+        QVERIFY(file->display.auxiliaryMin != low);
+        QTest::keyClick(chart, Qt::Key_Escape);
+        QTest::mouseRelease(chart, Qt::LeftButton, Qt::NoModifier, axis + QPoint(0, 15));
+        QCOMPARE(file->display.auxiliaryMin, low);
+        QCOMPARE(file->display.auxiliaryMax, high);
+
+        const QPoint start(qRound(plot.left() + plot.width() * .2), qRound(plot.center().y()));
+        const QPoint end(qRound(plot.left() + plot.width() * .7), qRound(plot.center().y()));
+        drag(chart, start, end);
+        QVERIFY(file->view != base);
+        QVERIFY(window.session().back());
+        window.refresh();
+        QCOMPARE(file->view, base);
+        // Shrink first, so an axis pan has room to move inside the bounds.
+        drag(chart, start, end);
+        const auto beforePan = file->view;
+        drag(chart, QPoint(qRound(plot.center().x()), chart->height() - 10),
+             QPoint(qRound(plot.center().x() + plot.width() * .05), chart->height() - 10));
+        QVERIFY(file->view != beforePan);
+        window.session().setView(base, false);
+        window.refresh();
+    }
+}
+
+void UiTests::narrowbandAuxiliaryRenderingAndGestures() {
+    MainWindow window;
+    showWindow(window);
+    window.openNarrowbandDemoProject();
+    auto* workspace = window.findChild<NarrowbandWorkspace*>("narrowbandWorkspace");
+    auto* status = window.findChild<QLabel*>("narrowbandDataStatus");
+    auto* grid = window.findChild<QCheckBox*>("narrowbandGrid");
+    QVERIFY(workspace && status && grid);
+    QTRY_VERIFY_WITH_TIMEOUT(status->text().contains(QStringLiteral("真实 DDC")), 15'000);
+    // Keep the deterministic fixture's filtered noise floor inside the PSD
+    // viewport so coverage checks test the trace, not a clipped axis border.
+    QVERIFY(window.session().setChannelPsdRange(-220.0, 0.0, false));
+    workspace->refreshFromSession();
+    for (const auto* name : {"narrowbandWaveformPanelChart", "narrowbandPsdPanelChart"}) {
+        auto* chart = window.findChild<QWidget*>(QString::fromLatin1(name));
+        QVERIFY(chart);
+        const bool waveform = QString::fromLatin1(name).contains("Waveform");
+        QTRY_VERIFY_WITH_TIMEOUT(status->text().contains(QStringLiteral("真实 DDC")), 15'000);
+        auto* surface = chart->findChild<AcceleratedSurface*>();
+        if (QGuiApplication::platformName() == "windows") {
+            QTRY_VERIFY_WITH_TIMEOUT(surface && surface->isReady() && !surface->hasPendingUploads(), 5'000);
+            QVERIFY(surface->chartDrawCallCount() > 0);
+        }
+        const QRectF plot(66, 14, chart->width() - 82, chart->height() - 55);
+        grid->setChecked(true);
+        QTest::qWait(30);
+        QVERIFY(traceCoversPlot(chartImage(chart), chart->size(), plot));
+        const QImage withGrid = chartImage(chart);
+        grid->setChecked(false);
+        QTest::qWait(30);
+        QVERIFY(changedPlotPixels(withGrid, chartImage(chart), chart->size(), plot) > 50);
+        grid->setChecked(true);
+        QCOMPARE(window.childAt(chart->mapTo(&window, plot.center().toPoint())), chart);
+        const auto base = window.session().channelViewSnapshot();
+        auto* channel = window.session().activeChannel();
+        const QPointF anchor(plot.left() + plot.width() * .3, plot.center().y());
+        wheelAt(chart, anchor);
+        if (waveform) {
+            QVERIFY(channel->visibleSourceTime.end - channel->visibleSourceTime.begin < base.sourceTime.end - base.sourceTime.begin);
+            QCOMPARE(channel->visibleBasebandFrequency, base.basebandFrequency);
+            const auto oldAnchor = sampleAt({base.sourceTime, {}}, .3L);
+            const auto nextAnchor = sampleAt({channel->visibleSourceTime, {}}, .3L);
+            QVERIFY(std::abs(double(oldAnchor) - double(nextAnchor)) <= 2);
+        } else {
+            QVERIFY(channel->visibleBasebandFrequency.upperHz - channel->visibleBasebandFrequency.lowerHz <
+                base.basebandFrequency.upperHz - base.basebandFrequency.lowerHz);
+            QCOMPARE(channel->visibleSourceTime, base.sourceTime);
+            QVERIFY(std::abs(frequencyAt({{}, base.basebandFrequency}, .3) -
+                frequencyAt({{}, channel->visibleBasebandFrequency}, .3)) < 1e-6);
+        }
+        wheelAt(chart, anchor);
+        QTest::qWait(300);
+        QVERIFY(window.session().channelBack());
+        window.refresh();
+        QCOMPARE(channel->visibleSourceTime, base.sourceTime);
+        QCOMPARE(channel->visibleBasebandFrequency, base.basebandFrequency);
+        const double low = waveform ? channel->waveformAxisMinimum : channel->psdAxisMinimum;
+        const double high = waveform ? channel->waveformAxisMaximum : channel->psdAxisMaximum;
+        wheelAt(chart, QPointF(30, plot.center().y()));
+        QVERIFY((waveform ? channel->waveformAxisMaximum - channel->waveformAxisMinimum :
+            channel->psdAxisMaximum - channel->psdAxisMinimum) < high - low);
+        QTest::keyClick(chart, Qt::Key_Escape);
+        QCOMPARE(waveform ? channel->waveformAxisMinimum : channel->psdAxisMinimum, low);
+        QCOMPARE(waveform ? channel->waveformAxisMaximum : channel->psdAxisMaximum, high);
+        const QPoint start(qRound(plot.left() + plot.width() * .2), qRound(plot.center().y()));
+        const QPoint end(qRound(plot.left() + plot.width() * .7), qRound(plot.center().y()));
+        QTest::mousePress(chart, Qt::LeftButton, Qt::NoModifier, start);
+        QTest::mouseMove(chart, end, 10);
+        QTest::keyClick(chart, Qt::Key_Escape);
+        QTest::mouseRelease(chart, Qt::LeftButton, Qt::NoModifier, end);
+        QCOMPARE(channel->visibleSourceTime, base.sourceTime);
+        QCOMPARE(channel->visibleBasebandFrequency, base.basebandFrequency);
+        drag(chart, start, end);
+        const auto beforePan = window.session().channelViewSnapshot();
+        QVERIFY(beforePan.sourceTime != base.sourceTime || beforePan.basebandFrequency != base.basebandFrequency);
+        drag(chart, QPoint(qRound(plot.center().x()), chart->height() - 10),
+             QPoint(qRound(plot.center().x() + plot.width() * .05), chart->height() - 10));
+        QVERIFY(channel->visibleSourceTime != beforePan.sourceTime || channel->visibleBasebandFrequency != beforePan.basebandFrequency);
+        window.session().restoreChannelViewSnapshot(base);
+        window.refresh();
+    }
+    workspace->cancelWork();
 }
 
 void UiTests::narrowbandPaletteSelectionUpdatesStftCharts() {

@@ -1,5 +1,7 @@
 # 窄带通道验收记录
 
+> 图谱回归更新（2026-10-10）：修复 GPU 曲线右偏、覆盖层丢失、绘图区裁剪及窄带 Esc 取消。Debug/Release 已重新构建，CTest 均 4/4，完整 UI 均 72/0/0，第二屏 D3D11 四页及波形/PSD 原生回归通过。此前 Debug 链接阻断已不适用于此次构建；详情见[本次修复及证据](chart-regression-2026-10-10.md)。下方 2026-10-09 的记录作为历史保留。
+
 > 状态更新（2026-10-09）：Debug 与 Release 的宽带、窄带硬件烟测均有通过记录。目标屏为 Redmi 27 NU / `\\.\DISPLAY6` / 3840×2160 / DPR 1.5；四个窄带页均有 D3D11 数据绘制和可见窗口截图。最新资源清理后 Release 全目标构建及 CTest 4/4 通过；Debug 的强制重链接被本机 `MSPDB140.dll` 版本错误阻断（源文件编译完成，链接失败，错误在最小 MSVC 探针中复现）。此前 Debug 构建、CTest 和硬件烟测通过记录仍保留。最新验收补充见[图谱一致化记录](chart-rendering-followup.md)及[机器报告](chart-rendering-followup.json)。
 
 ## 覆盖范围

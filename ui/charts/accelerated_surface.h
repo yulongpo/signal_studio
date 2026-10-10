@@ -23,6 +23,8 @@ class AcceleratedSurface : public QRhiWidget {
     Q_OBJECT
 public:
     using PainterCallback = std::function<void(QPainter&)>;
+    // Coordinates are widget-relative fractions: (0,0) is the top left and
+    // (1,1) the bottom right. Convert to backend NDC only at GPU upload time.
     struct ChartVertex { float x = 0, y = 0, r = 1, g = 1, b = 1, a = 1; };
     struct ChartDrawCall {
         enum class Topology { LineStrip, Triangles, TriangleStrip } topology = Topology::LineStrip;
@@ -36,7 +38,7 @@ public:
 
     void setPainter(PainterCallback painter);
     void setChartGeometry(std::vector<ChartVertex> vertices, std::vector<ChartDrawCall> draws,
-                          const QString& revision);
+                          const QString& revision, const QRectF& clipRect = {});
     void setHeatmap(const QImage& image, const QRectF& target, const QString& revision,
                     const QImage& palette = {});
     void setHeatmapSourceRect(const QRectF& normalizedSource);
@@ -93,6 +95,7 @@ private:
     QImage palette_;
     QImage chartPalette_;
     QRectF target_;
+    QRectF chartClipRect_;
     QRectF sourceRect_{0, 0, 1, 1};
     QString revision_;
     QString backend_ = QStringLiteral("QRhi 初始化中");

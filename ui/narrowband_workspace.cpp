@@ -229,6 +229,12 @@ public:
     std::function<void()> cancelPendingGesture;
     std::function<void()> resetYAxis;
     std::function<void(bool)> navigateHistory;
+    bool hasPendingInteraction() const { return dragging_; }
+    void cancelInteraction() {
+        dragging_ = false;
+        if (mouseGrabber() == this) releaseMouse();
+        invalidate();
+    }
 protected:
     void resizeEvent(QResizeEvent* event) override {
         markGeometryDirty();
@@ -247,7 +253,15 @@ protected:
         event->accept();
     }
     void mousePressEvent(QMouseEvent* event) override {
-        if (event->button() == Qt::LeftButton) { dragStart_ = event->position(); dragging_ = true; setFocus(); event->accept(); return; }
+        if (event->button() == Qt::LeftButton) {
+            dragStart_ = dragEnd_ = event->position(); dragging_ = true;
+            setFocus(); grabMouse(); event->accept(); return;
+        }
+        if (event->button() == Qt::RightButton) {
+            cancelInteraction();
+            if (cancelPendingGesture) cancelPendingGesture();
+            event->accept(); return;
+        }
         QWidget::mousePressEvent(event);
     }
     void mouseMoveEvent(QMouseEvent* event) override {
@@ -281,6 +295,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent* event) override {
         if (dragging_ && event->button() == Qt::LeftButton) {
             dragEnd_ = event->position(); dragging_ = false;
+            if (mouseGrabber() == this) releaseMouse();
             if (gesture) gesture(QPointF(dragStart_.x() / std::max(1, width()), dragStart_.y() / std::max(1, height())),
                                  QPointF(dragEnd_.x() / std::max(1, width()), dragEnd_.y() / std::max(1, height())), 0,
                                  (dragEnd_ - dragStart_).manhattanLength() > 7);
@@ -290,7 +305,7 @@ protected:
     }
     void keyPressEvent(QKeyEvent* event) override {
         if (event->key() == Qt::Key_Escape) {
-            dragging_ = false;
+            cancelInteraction();
             if (cancelPendingGesture) cancelPendingGesture();
             invalidate(); event->accept(); return;
         }
@@ -412,7 +427,7 @@ private:
             }
         }
         surface_->setChartGeometry(std::move(vertices), std::move(draws),
-            QString::number(reinterpret_cast<quintptr>(this), 16) + QLatin1Char('/') + QString::number(geometryRevision_));
+            QString::number(reinterpret_cast<quintptr>(this), 16) + QLatin1Char('/') + QString::number(geometryRevision_), plot);
     }
     void draw(QPainter& painter, bool software = false) {
         if (!software) rebuildGeometry();
@@ -1285,6 +1300,18 @@ void NarrowbandWorkspace::finishChartWheel() {
     if (!chartWheelBase_) return;
     session_.commitChannelViewChange(*chartWheelBase_);
     chartWheelBase_.reset();
+}
+
+bool NarrowbandWorkspace::hasPendingInteraction() const {
+    if (chartWheelBase_) return true;
+    return std::any_of(charts_.begin(), charts_.end(), [](const auto* chart) {
+        return chart && chart->hasPendingInteraction();
+    });
+}
+
+void NarrowbandWorkspace::cancelInteractions() {
+    for (auto* chart : charts_) if (chart && chart->hasPendingInteraction()) chart->cancelInteraction();
+    cancelChartWheel();
 }
 
 void NarrowbandWorkspace::cancelChartWheel() {

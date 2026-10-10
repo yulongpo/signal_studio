@@ -154,7 +154,8 @@ void AcceleratedSurface::setPainter(PainterCallback painter) {
 
 void AcceleratedSurface::setChartGeometry(std::vector<ChartVertex> vertices,
                                           std::vector<ChartDrawCall> draws,
-                                          const QString& revision) {
+                                          const QString& revision, const QRectF& clipRect) {
+    if (chartClipRect_ != clipRect) { chartClipRect_ = clipRect; update(); }
     if (chartGeometryRevision_ == revision) return;
     chartGeometryRevision_ = revision;
 
@@ -455,6 +456,7 @@ bool AcceleratedSurface::ensurePipeline() {
     }
     resources_->overlayPipeline.reset(rhi()->newGraphicsPipeline());
     auto* overlayPipeline = resources_->overlayPipeline.get();
+    overlayPipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
     overlayPipeline->setTopology(QRhiGraphicsPipeline::TriangleStrip);
     overlayPipeline->setSampleCount(samples);
     overlayPipeline->setCullMode(QRhiGraphicsPipeline::None);
@@ -673,8 +675,14 @@ bool AcceleratedSurface::prepareUploads(QRhiResourceUpdateBatch* updates) {
     if (chartGeometryDirty_) {
         if (!ensureChartBuffer()) return false;
         if (!chartVertices_.empty()) {
+            auto gpuVertices = chartVertices_;
+            const bool yUp = rhi()->isYUpInNDC();
+            for (auto& vertex : gpuVertices) {
+                vertex.x = 2.0f * vertex.x - 1.0f;
+                vertex.y = yUp ? 1.0f - 2.0f * vertex.y : 2.0f * vertex.y - 1.0f;
+            }
             updates->updateDynamicBuffer(resources_->chartVertices.get(), 0,
-                static_cast<quint32>(chartVertices_.size() * sizeof(GpuChartVertex)), chartVertices_.data());
+                static_cast<quint32>(gpuVertices.size() * sizeof(GpuChartVertex)), gpuVertices.data());
             ++chartVertexUploads_;
         }
         chartGeometryDirty_ = false;
@@ -725,6 +733,15 @@ void AcceleratedSurface::render(QRhiCommandBuffer* commandBuffer) {
     lastChartDrawStage_ = 0;
     if (!chartVertices_.empty() && !chartDraws_.empty()) {
         const QRhiCommandBuffer::VertexInput chartInput(resources_->chartVertices.get(), 0);
+        const QRectF clip = chartClipRect_.isEmpty() ? QRectF(QPointF(0, 0), size()) :
+            chartClipRect_.intersected(QRectF(QPointF(0, 0), size()));
+        const double sx = double(output.width()) / width(), sy = double(output.height()) / height();
+        // QRhi scissor coordinates always have a bottom-left origin, including
+        // D3D11. Axes and overlays use the full canvas after the data draws.
+        const int left = int(std::ceil(clip.left() * sx));
+        const int right = int(std::floor(clip.right() * sx));
+        const int bottom = int(std::ceil((height() - clip.bottom()) * sy));
+        const int top = int(std::floor((height() - clip.top()) * sy));
         for (const auto& draw : chartDraws_) {
             ++lastChartDrawLoopIterations_;
             if (draw.vertexCount < 3 || static_cast<quint64>(draw.firstVertex) + draw.vertexCount > chartVertices_.size()) {
@@ -733,6 +750,7 @@ void AcceleratedSurface::render(QRhiCommandBuffer* commandBuffer) {
             }
             lastChartDrawStage_ = 1;
             commandBuffer->setGraphicsPipeline(resources_->overlayPipeline.get());
+            commandBuffer->setScissor(QRhiScissor(left, bottom, std::max(0, right - left), std::max(0, top - bottom)));
             lastChartDrawStage_ = 2;
             commandBuffer->setShaderResources(resources_->chartBindings.get());
             lastChartDrawStage_ = 3;
@@ -745,7 +763,11 @@ void AcceleratedSurface::render(QRhiCommandBuffer* commandBuffer) {
         }
     }
     commandBuffer->setGraphicsPipeline(resources_->overlayPipeline.get());
+    commandBuffer->setScissor(QRhiScissor(0, 0, output.width(), output.height()));
     commandBuffer->setShaderResources(resources_->overlayBindings.get());
+    // Chart draws bind a different vertex buffer. The overlay must use the
+    // full-widget quad again so axes, grid and gesture feedback stay aligned.
+    commandBuffer->setVertexInput(0, 1, &input);
     commandBuffer->draw(4, 1, 4);
     commandBuffer->endPass();
 }

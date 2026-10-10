@@ -808,7 +808,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
                                  static_cast<quint32>(vertices.size() - first)});
             }
             surface_->setChartGeometry(std::move(vertices), std::move(draws),
-                QStringLiteral("wide-navigation/") + navigationKey_);
+                QStringLiteral("wide-navigation/") + navigationKey_, plot);
         } else {
             painter.setPen(QPen(QColor("#4fb4e1"), 1));
             for (const auto& segments : navigationSegments_)
@@ -888,7 +888,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
                                  static_cast<quint32>(vertices.size() - first)});
             }
             surface_->setChartGeometry(std::move(vertices), std::move(draws),
-                QStringLiteral("wide-auxiliary/") + curvePathKey_);
+                QStringLiteral("wide-auxiliary/") + curvePathKey_, plot);
         } else {
             painter.setPen(QPen(psd ? QColor("#5abffa") : waveformColor, 1.5));
             if (!curveSegments_.empty()) painter.drawLines(curveSegments_.data(), static_cast<int>(curveSegments_.size()));

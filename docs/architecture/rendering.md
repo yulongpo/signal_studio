@@ -29,6 +29,10 @@ Ninja 构建目录为 `out/portable-ninja`，Debug 可执行目录为 `out/porta
 
 ## 抽取与业务坐标
 
+共享几何接口 `ChartVertex` 使用相对于整个 QWidget 的 0–1 坐标，原点位于左上角。上传前统一转换到 -1–1 NDC，Y 方向与热图四边形一样由 QRhi 后端决定，不能将 0–1 顶点直接交给着色器。每次绘制数据后，覆盖层必须重新绑定全窗口四边形顶点缓冲；否则坐标轴、网格、提示和手势反馈会错误地使用曲线缓冲。
+
+宽带和窄带都把各自的绘图区传给共享 GPU 层。数据绘制启用 scissor，逻辑尺寸按实际 render target 尺寸换算成物理像素，绘制覆盖层前恢复全窗口裁剪。QRhi 的 scissor 使用左下原点，与 QWidget 左上原点的转换独立于 NDC Y 方向；约定见 [QRhiCommandBuffer::setScissor](https://doc.qt.io/qt-6/qrhicommandbuffer.html#setScissor)。手动幅值/功率轴范围不会让 GPU 曲线越过坐标轴。主窗口的取消流程同时包含窄带未完成的拖动和滚轮历史，Esc 先回滚手势。
+
 `ui/charts/display_sampling.cpp` 的 `extremaEnvelope` 将不可变曲线输入按可见物理像素列分桶，每桶保留最小值与最大值，按原输入索引顺序输出，并保留首尾有效点。输出至多约 `2*columns+2` 点；非有限值跳过，全无有效值时为空。桶划分使用商与余数累加，避免大索引乘法溢出。波形与 PSD 复用缓存的源曲线，再按像素预算抽取；导航路径按尺寸与演示种子缓存。
 
 真实波形每个显示位置读取最多 1024 个相邻复采样点；宽带辅助图保留既有 dBFS 语义，窄带时域值以 ADC 计数等效单位显示，并提供分箱 RMS 幅度和峰值保持包络。PSD 按当前时间窗或选中标记分成最多 64 个 Hann 窗做 Welch 平均，然后映射到可见频率。导航预览对全文件做有限样本抽取。曲线数据请求由单独工作线程执行；演示辅助曲线源点数仍为 `clamp(round(plotWidth*12),4096,65536)`。静止显示列数为 `floor(plotWidth*DPR)`，交互预览减半。源数据、抽取索引和绘图缓冲分别缓存；改变辅助 Y 仅更新 GPU 坐标顶点，游标或选框刷新不重新生成源曲线。辅助图与导航图的有序线段被展开为三角条带，通过共享 QRhi 管线绘制，颜色在 GPU 片元阶段从图谱专用 LUT 采样。`curveRasterMethod`、`gpuVertexUploads`、`gpuChartDrawCalls`、`gpuHeatmapDrawCalls` 和 `gpuDataDrawCalls` 报告对应路径与计数。
