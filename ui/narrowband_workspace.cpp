@@ -4,6 +4,7 @@
 #include "infrastructure/int16_iq_file.h"
 #include "ui/charts/accelerated_surface.h"
 #include "ui/charts/chart_interaction.h"
+#include "ui/charts/palette.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -74,8 +75,6 @@ QString waveformAxisLabel(NarrowbandWaveform mode) {
     return QStringLiteral("幅值 (ADC 计数等效值)");
 }
 enum class ChartMode { Curve, Spectrum, Heatmap, Scatter, Eye, Timeline, Navigation };
-QImage narrowbandPaletteTexture();
-QList<QRgb> narrowbandPaletteTable();
 
 } // namespace
 
@@ -97,6 +96,7 @@ public:
         setProperty("gridVisible", gridVisible_);
         setProperty("samplePointsVisible", false);
         setProperty("samplePointCount", 0);
+        setProperty("paletteIndex", static_cast<int>(palette_));
         if (mode_ == ChartMode::Timeline) {
             yAxisMinimum_ = 0.0; yAxisMaximum_ = 1.0;
             yAxisLabel_ = QStringLiteral("置信度 (0–1)");
@@ -167,6 +167,17 @@ public:
         if (gridVisible_ == visible) return;
         gridVisible_ = visible; setProperty("gridVisible", visible); invalidate();
     }
+    void setPalette(Palette palette) {
+        if (palette_ != palette) {
+            palette_ = palette;
+            if (!scalarRaster_.isNull()) {
+                raster_.setColorTable(chart_palette::colorTable(palette_));
+                surface_->setHeatmap(scalarRaster_, plotRect(), rasterRevision_, chart_palette::texture(palette_));
+                invalidate();
+            }
+        }
+        setProperty("paletteIndex", static_cast<int>(palette_));
+    }
     void setSamplePointsVisible(bool visible) {
         if (samplePointsVisible_ == visible) return;
         samplePointsVisible_ = visible; setProperty("samplePointsVisible", visible);
@@ -183,20 +194,20 @@ public:
         markGeometryDirty();
     }
     void setRaster(QImage image, QString status = {}, QString revision = {}) {
-        QImage scalar;
         if (!image.isNull()) {
-            scalar = image.format() == QImage::Format_Grayscale8 ? image : image.convertToFormat(QImage::Format_Grayscale8);
-            raster_ = QImage(scalar.size(), QImage::Format_Indexed8);
-            raster_.setColorTable(narrowbandPaletteTable());
-            for (int y = 0; y < scalar.height(); ++y)
-                std::copy_n(scalar.constScanLine(y), scalar.width(), raster_.scanLine(y));
+            scalarRaster_ = image.format() == QImage::Format_Grayscale8 ? image : image.convertToFormat(QImage::Format_Grayscale8);
+            raster_ = QImage(scalarRaster_.size(), QImage::Format_Indexed8);
+            raster_.setColorTable(chart_palette::colorTable(palette_));
+            for (int y = 0; y < scalarRaster_.height(); ++y)
+                std::copy_n(scalarRaster_.constScanLine(y), scalarRaster_.width(), raster_.scanLine(y));
         } else {
-            raster_ = {};
+            scalarRaster_ = {}; raster_ = {};
         }
         status_ = std::move(status);
         const auto key = revision.isEmpty() ?
-            QString::number(reinterpret_cast<quintptr>(this), 16) + QLatin1Char('/') + QString::number(scalar.cacheKey()) : revision;
-        surface_->setHeatmap(scalar, scalar.isNull() ? QRectF{} : plotRect(), key, narrowbandPaletteTexture());
+            QString::number(reinterpret_cast<quintptr>(this), 16) + QLatin1Char('/') + QString::number(scalarRaster_.cacheKey()) : revision;
+        rasterRevision_ = key;
+        surface_->setHeatmap(scalarRaster_, scalarRaster_.isNull() ? QRectF{} : plotRect(), key, chart_palette::texture(palette_));
         invalidate();
     }
     void setPoints(std::vector<std::complex<float>> points, QString status = {}) {
@@ -551,6 +562,9 @@ private:
     bool geometryDirty_ = true;
     std::uint64_t geometryRevision_ = 0;
     QImage raster_;
+    QImage scalarRaster_;
+    QString rasterRevision_;
+    Palette palette_ = Palette::CoolEditClassic;
     QString status_;
     QString frequencyAxisText_;
     QString frequencyAxisLabel_ = QStringLiteral("基带频率 (Hz)");
@@ -593,41 +607,6 @@ bool mulDiv(std::uint64_t value, std::uint64_t numerator, std::uint64_t denomina
     output = whole + fraction;
     if (ceil && product % denominator) { if (output == std::numeric_limits<std::uint64_t>::max()) return false; ++output; }
     return true;
-}
-
-QColor narrowbandHeatColor(double level) {
-    level = std::clamp(level, 0.0, 1.0);
-    return QColor::fromHsvF(static_cast<float>(.53 - .43 * level), .88f,
-                             static_cast<float>(.18 + .78 * level));
-}
-
-QImage narrowbandPaletteTexture() {
-    static const QImage palette = [] {
-        QImage image(256, 1, QImage::Format_RGBA8888);
-        auto* line = image.scanLine(0);
-        for (int x = 0; x < 256; ++x) {
-            const auto color = narrowbandHeatColor(x / 255.0);
-            line[x * 4] = static_cast<uchar>(color.red());
-            line[x * 4 + 1] = static_cast<uchar>(color.green());
-            line[x * 4 + 2] = static_cast<uchar>(color.blue());
-            line[x * 4 + 3] = 255;
-        }
-        return image;
-    }();
-    return palette;
-}
-
-QList<QRgb> narrowbandPaletteTable() {
-    static const QList<QRgb> table = [] {
-        QList<QRgb> values;
-        values.reserve(256);
-        for (int x = 0; x < 256; ++x) {
-            const auto color = narrowbandHeatColor(x / 255.0);
-            values.push_back(qRgb(color.red(), color.green(), color.blue()));
-        }
-        return values;
-    }();
-    return table;
 }
 
 QImage spectrumImage(const std::vector<float>& values, QSize size) {
@@ -1228,6 +1207,7 @@ void NarrowbandWorkspace::refreshFromSession() {
         if (waveform_) waveform_->setSeries({}, "当前没有活动通道");
         return;
     }
+    for (auto* chart : charts_) if (chart) chart->setPalette(file->display.palette);
     if (!recognitionSegments_.empty() && recognitionChannelId_ == channel->id) {
         if (recognitionConfigVersion_ != channel->configVersion)
             markRecognitionStale("通道配置已变化");

@@ -1,6 +1,7 @@
 #include "app/main_window.h"
 #include "ui/charts/plot_widget.h"
 #include "ui/display_target.h"
+#include "ui/narrowband_workspace.h"
 
 #include <QAction>
 #include <QApplication>
@@ -180,6 +181,7 @@ private slots:
     void propertyFieldsFitSidebar();
     void prototypeDisplayDefaultsAndOptions();
     void paletteControlsStaySynchronized();
+    void narrowbandPaletteSelectionUpdatesStftCharts();
     void initialFileViewShowsFirstFivePercentOrTenMilliseconds();
     void panelRailsAndBottomTabs();
     void sectionContextAndManualExpansion();
@@ -920,6 +922,40 @@ void UiTests::paletteControlsStaySynchronized() {
     QVERIFY2(hasRedTransition,"CoolEdit Classic must include its red high-energy transition.");
 }
 
+void UiTests::narrowbandPaletteSelectionUpdatesStftCharts() {
+    MainWindow window;
+    window.resize(1600, 900);
+    window.show();
+    window.openNarrowbandDemoProject();
+
+    auto* palette = window.findChild<QComboBox*>("colormap");
+    auto* status = window.findChild<QLabel*>("narrowbandDataStatus");
+    auto* observation = window.findChild<QWidget*>("narrowbandStftPanelChart");
+    auto* modulation = window.findChild<QWidget*>("narrowbandModulationStftChart");
+    auto* recognition = window.findChild<QWidget*>("recognitionStftPanelChart");
+    QVERIFY(palette && status && observation && modulation && recognition);
+    QVERIFY(window.session().activeFile() && window.session().activeChannel());
+    QTRY_VERIFY_WITH_TIMEOUT(status->text().contains(QStringLiteral("真实 DDC")), 15'000);
+
+    const int originalPalette = palette->currentIndex();
+    QCOMPARE(observation->property("paletteIndex").toInt(), originalPalette);
+    QCOMPARE(modulation->property("paletteIndex").toInt(), originalPalette);
+    QCOMPARE(recognition->property("paletteIndex").toInt(), originalPalette);
+    const auto oldHeatmap = observation->grab().toImage();
+
+    const int nextPalette = originalPalette == static_cast<int>(Palette::Gray)
+        ? static_cast<int>(Palette::Turbo) : static_cast<int>(Palette::Gray);
+    palette->setCurrentIndex(nextPalette);
+    QCOMPARE(window.session().activeFile()->display.palette, static_cast<Palette>(nextPalette));
+    QCoreApplication::processEvents();
+    QCOMPARE(observation->property("paletteIndex").toInt(), nextPalette);
+    QCOMPARE(modulation->property("paletteIndex").toInt(), nextPalette);
+    QCOMPARE(recognition->property("paletteIndex").toInt(), nextPalette);
+    QVERIFY(oldHeatmap != observation->grab().toImage());
+    if (auto* workspace = window.findChild<NarrowbandWorkspace*>("narrowbandWorkspace"))
+        workspace->cancelWork();
+}
+
 void UiTests::panelRailsAndBottomTabs() {
     DemoMainWindow window;
     showWindow(window);
@@ -1626,9 +1662,11 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
     auto* frequencyMode = window.findChild<QComboBox*>("channelFrequencyMode");
     auto* waveformMode = window.findChild<QComboBox*>("narrowbandWaveformMode");
     auto* waveformChart = window.findChild<QWidget*>("narrowbandWaveformPanelChart");
+    auto* stftChart = window.findChild<QWidget*>("narrowbandStftPanelChart");
+    auto* palette = window.findChild<QComboBox*>("colormap");
     auto* channelProperties = window.findChild<QWidget*>("narrowbandChannelSection");
     auto* grid = window.findChild<QCheckBox*>("narrowbandGrid");
-    QVERIFY(workspace && workspace->isVisible() && eyeComponent && eyePeriods && eyeTraces && frequencyMode && waveformMode && waveformChart);
+    QVERIFY(workspace && workspace->isVisible() && eyeComponent && eyePeriods && eyeTraces && frequencyMode && waveformMode && waveformChart && stftChart && palette);
     QVERIFY(stack && status && channelProperties && channelProperties->isVisible() && grid);
     QVERIFY(!window.findChild<QWidget*>("narrowbandNavigation"));
     QVERIFY(window.findChild<QWidget*>("narrowbandChartToolbar"));
@@ -1636,6 +1674,18 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
     QCOMPARE(waveformMode->itemText(3), QStringLiteral("幅度包络"));
     QCOMPARE(window.findChild<QLabel*>("narrowbandCenter")->text(), QStringLiteral("2511.2 MHz"));
     QTRY_VERIFY_WITH_TIMEOUT(status->text().contains(QStringLiteral("真实 DDC")), 15'000);
+    const int originalPalette = palette->currentIndex();
+    QCOMPARE(stftChart->property("paletteIndex").toInt(), originalPalette);
+    const int nextPalette = originalPalette == static_cast<int>(Palette::Gray)
+        ? static_cast<int>(Palette::Turbo) : static_cast<int>(Palette::Gray);
+    palette->setCurrentIndex(nextPalette);
+    QCOMPARE(file->display.palette, static_cast<Palette>(nextPalette));
+    QCOMPARE(stftChart->property("paletteIndex").toInt(), nextPalette);
+    auto* modulationStftChart = window.findChild<QWidget*>("narrowbandModulationStftChart");
+    auto* recognitionStftChart = window.findChild<QWidget*>("recognitionStftPanelChart");
+    QVERIFY(modulationStftChart && recognitionStftChart);
+    QCOMPARE(modulationStftChart->property("paletteIndex").toInt(), nextPalette);
+    QCOMPARE(recognitionStftChart->property("paletteIndex").toInt(), nextPalette);
     QTRY_VERIFY_WITH_TIMEOUT(waveformChart->property("fitDataVerticalFraction").toDouble() > 0.0, 15'000);
     QVERIFY(std::abs(waveformChart->property("fitDataVerticalFraction").toDouble() - .75) <= .03);
     QVERIFY(std::abs(waveformChart->property("fitDataCenterOffsetFraction").toDouble()) <= .03);
