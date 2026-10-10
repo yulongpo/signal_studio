@@ -7,6 +7,7 @@ namespace signalstudio {
 using SpectralCancel = std::function<bool()>;
 struct SpectralSource {
     double sampleRateHz = 0;
+    bool real = false;
     // Bounded reads in the provider's integer sample grid.
     std::function<bool(TimeRange, std::vector<std::complex<float>>&, const SpectralCancel&)> read;
     std::function<TimeRange(TimeRange)> sourceRange;

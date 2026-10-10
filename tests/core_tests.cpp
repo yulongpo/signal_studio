@@ -453,7 +453,7 @@ void testSerialization() {
     root[QStringLiteral("schema")] = QStringLiteral("signal-studio-a1.4.3-prototype");
     reject(root);
     root = validRoot;
-    root[QStringLiteral("version")] = 4;
+    root[QStringLiteral("version")] = 5;
     reject(root);
     root = validRoot;
     root[QStringLiteral("activeFileId")] = QStringLiteral("missing");

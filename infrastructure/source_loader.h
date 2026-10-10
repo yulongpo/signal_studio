@@ -16,11 +16,12 @@ QString iqSourceFingerprint(const QString& path);
 class SourceLoader {
 public:
     SourceLoader(QString path, SampleIndex target);
+    SourceLoader(QString path, SampleIndex target, SampleFormat format);
     ~SourceLoader();
     void stop() { stop_ = true; }
     SourceLoadSnapshot snapshot() const;
 private:
-    void run(QString path, SampleIndex target);
+    void run(QString path, SampleIndex target, SampleFormat format);
     std::atomic_bool stop_ = false;
     mutable std::mutex mutex_;
     SourceLoadSnapshot snapshot_;

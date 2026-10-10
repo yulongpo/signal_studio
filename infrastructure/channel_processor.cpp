@@ -162,6 +162,7 @@ bool makeChannelDspPlan(const FileMetadata& source, const Channel& channel,
                         ChannelDspPlan& plan, QString& error) {
     error.clear();
     plan = {};
+    if(source.sampleFormat.structure==SampleStructure::Real){error="实数 ADC 尚未实现解析信号转换，不能创建复数 DDC 通道";return false;}
     if(!source.availability.fingerprint.empty()&&iqSourceFingerprint(QString::fromStdString(source.path)).toStdString()!=source.availability.fingerprint){error="通道源文件指纹已改变，请重新读入";return false;}
     if(source.availability.status==LoadStatus::Loading||channel.sourceTime.end>availableSamples(source)){error="通道来源未读入";return false;}
     const auto sourceRate = roundHz(source.sampleRateHz);
@@ -388,6 +389,9 @@ bool ChannelSampleCache::process(const FileMetadata& source, const Channel& chan
     QByteArray identity("signal-studio-channel-iq-v1\n");
     auto append = [&identity](const QString& value) { identity += value.toUtf8(); identity += '\n'; };
     append(sourcePath);
+    append(QString::fromStdString(sampleFormatKey(source.sampleFormat)));
+    append(QString::number(availableSamples(source)));
+    append(QString::number(source.availability.generation));
     append(QString::number(source.sampleCount));
     append(QString::number(source.sampleRateHz, 'g', 17));
     append(QString::number(source.centerFrequencyHz, 'g', 17));

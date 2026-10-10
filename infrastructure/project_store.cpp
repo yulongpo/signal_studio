@@ -1,6 +1,7 @@
 #include "infrastructure/spectral_settings_json.h"
 #include "infrastructure/project_store.h"
 #include "domain/power_display.h"
+#include "infrastructure/sample_format_json.h"
 
 #include <QFile>
 #include <QJsonArray>
@@ -153,7 +154,7 @@ ViewRange decodeRange(const QJsonValue& value, const FileMetadata& metadata, boo
     const ViewRange result{{sampleIndex(time, "begin"), sampleIndex(time, "end")},
                           {number(frequency, "lowerHz"), number(frequency, "upperHz")}};
     auto bounds = fullRange(metadata);
-    if (!constrainToEffectiveBand) {
+    if (!constrainToEffectiveBand && metadata.sampleFormat.structure!=SampleStructure::Real) {
         bounds.frequency = {metadata.centerFrequencyHz - metadata.sampleRateHz / 2,
                             metadata.centerFrequencyHz + metadata.sampleRateHz / 2};
     }
@@ -346,6 +347,7 @@ QJsonObject encodeProject(const Project& project) {
                 {QStringLiteral("sampleCount"), QString::number(metadata.sampleCount)},
                 {QStringLiteral("availableSamples"), QString::number(availableSamples(metadata))},
                 {QStringLiteral("sourceFingerprint"), text(metadata.availability.fingerprint)},
+                {QStringLiteral("sampleFormat"),encodeSampleFormat(metadata.sampleFormat)},
             {QStringLiteral("declaredBandwidthHz"), metadata.declaredBandwidthHz},
                 {QStringLiteral("effectiveBandwidthHz"), metadata.effectiveBandwidthHz > 0 ?
                     metadata.effectiveBandwidthHz : metadata.sampleRateHz},
@@ -358,7 +360,7 @@ QJsonObject encodeProject(const Project& project) {
             {QStringLiteral("activeMarkId"), text(file.activeMarkId)}});
     }
     return {{QStringLiteral("schema"), QStringLiteral("signal-studio-native-project")},
-            {QStringLiteral("version"), 3}, {QStringLiteral("name"), text(project.name)},
+            {QStringLiteral("version"), 4}, {QStringLiteral("name"), text(project.name)},
             {QStringLiteral("activeFileId"), text(project.activeFileId)},
             {QStringLiteral("activeChannelId"), text(project.activeChannelId)},
             {QStringLiteral("narrowbandWorkspaceOpen"), project.narrowbandWorkspaceOpen},
@@ -369,7 +371,7 @@ Project decodeProject(const QJsonObject& root) {
     require(string(root, "schema", 100) == QStringLiteral("signal-studio-native-project"),
             QStringLiteral("不支持的工程格式；需要 Signal Studio 原生工程"));
     const auto versionValue = number(root, "version");
-    require(versionValue == 1 || versionValue == 2 || versionValue == 3, QStringLiteral("不支持的原生工程版本"));
+    require(versionValue == 1 || versionValue == 2 || versionValue == 3 || versionValue == 4, QStringLiteral("不支持的原生工程版本"));
     const auto version = static_cast<int>(versionValue);
     Project project;
     project.name = utf8(string(root, "name", 80));
@@ -392,6 +394,11 @@ Project decodeProject(const QJsonObject& root) {
         file.metadata.sampleRateHz = number(metadata, "sampleRateHz");
         file.metadata.centerFrequencyHz = number(metadata, "centerFrequencyHz");
         file.metadata.sampleCount = sampleIndex(metadata, "sampleCount");
+        if(version>=4){
+            require(metadata["sampleFormat"].isObject(),"版本 4 缺少样本格式");
+            try {file.metadata.sampleFormat=decodeSampleFormat(metadata["sampleFormat"].toObject());}
+            catch(const std::exception& e){require(false,QString::fromUtf8(e.what()));}
+        }
         file.metadata.declaredBandwidthHz = metadata.contains(QStringLiteral("declaredBandwidthHz")) ?
             number(metadata, "declaredBandwidthHz") : 0.0;
         require(file.metadata.declaredBandwidthHz >= 0, QStringLiteral("声明带宽不能为负数"));
@@ -405,15 +412,15 @@ Project decodeProject(const QJsonObject& root) {
         file.metadata.demoSeed=static_cast<int>(seed);
         const auto bounds = fullRange(file.metadata);
         require(file.metadata.sampleRateHz > 0 && file.metadata.sampleCount > 0 &&
-                file.metadata.effectiveBandwidthHz > 0 && file.metadata.effectiveBandwidthHz <= file.metadata.sampleRateHz &&
+                file.metadata.centerFrequencyHz>=0 && file.metadata.effectiveBandwidthHz > 0 && file.metadata.effectiveBandwidthHz <= file.metadata.sampleRateHz/(file.metadata.sampleFormat.structure==SampleStructure::Real?2:1) &&
                 std::isfinite(bounds.frequency.lowerHz) && std::isfinite(bounds.frequency.upperHz) &&
                 bounds.frequency.lowerHz < bounds.frequency.upperHz &&
                 std::isfinite(bounds.frequency.upperHz - bounds.frequency.lowerHz), QStringLiteral("IQ 文件元数据无效"));
         SampleIndex prefix=file.metadata.sampleCount;
-        if(version==3){prefix=sampleIndex(metadata,"availableSamples");require(prefix<=file.metadata.sampleCount,QStringLiteral("可用前缀超出物理文件"));
+        if(version>=3){prefix=sampleIndex(metadata,"availableSamples");require(prefix<=file.metadata.sampleCount,QStringLiteral("可用前缀超出物理文件"));
             file.metadata.availability.fingerprint=utf8(string(metadata,"sourceFingerprint",200,true));}
         file.display = decodeDisplay(data.value(QStringLiteral("display")));
-        if(version==3){const auto d=data["display"].toObject();require(d.contains("psdSettings")&&d.contains("spectrogramSettings"),QStringLiteral("版本 3 缺少独立谱参数"));}
+        if(version>=3){const auto d=data["display"].toObject();require(d.contains("psdSettings")&&d.contains("spectrogramSettings"),QStringLiteral("版本 3/4 缺少独立谱参数"));}
         require(file.display.spectrogram.parameters.method==SpectralMethod::Welch||file.display.spectrogram.parameters.method==SpectralMethod::Multitaper,QStringLiteral("不支持的时频图分析方法"));
         file.view = decodeRange(data.value(QStringLiteral("view")), file.metadata);
         QSet<QString> markIds;
@@ -484,7 +491,7 @@ Project decodeProject(const QJsonObject& root) {
                         QStringLiteral("窄带可见基带频率范围无效"));
                 channel.psdFftSize = fftSize(channelData, "psdFftSize");
                 channel.stftFftSize = fftSize(channelData, "stftFftSize");
-                if(version==3){channel.psd=decodePsdSettings(channelData["psdSettings"]);channel.spectrogram.parameters=decodeSpectralParameters(channelData["spectrogramSettings"]);require(channel.spectrogram.parameters.method==SpectralMethod::Welch||channel.spectrogram.parameters.method==SpectralMethod::Multitaper,QStringLiteral("不支持的窄带时频图方法"));}
+                if(version>=3){channel.psd=decodePsdSettings(channelData["psdSettings"]);channel.spectrogram.parameters=decodeSpectralParameters(channelData["spectrogramSettings"]);require(channel.spectrogram.parameters.method==SpectralMethod::Welch||channel.spectrogram.parameters.method==SpectralMethod::Multitaper,QStringLiteral("不支持的窄带时频图方法"));}
                 else channel.psd.scope=PsdScope::Visible;
                 const auto waveform = string(channelData, "waveform", 32);
                 require(waveform == QStringLiteral("iq") || waveform == QStringLiteral("magnitude") ||

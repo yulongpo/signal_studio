@@ -28,7 +28,7 @@ std::optional<double> parseFilenameValue(const QString& name, const QString& fie
     if (!match.hasMatch()) return std::nullopt;
     bool ok = false;
     const double value = match.captured(1).toDouble(&ok) * unitScale(match.captured(2));
-    return ok && std::isfinite(value) && value > 0 ? std::optional<double>{value} : std::nullopt;
+    return ok && std::isfinite(value) && value >= 0 ? std::optional<double>{value} : std::nullopt;
 }
 
 bool validRange(const TimeRange& range, std::uint64_t samples) {
@@ -90,6 +90,7 @@ Int16IqFile::~Int16IqFile() {
 }
 
 bool Int16IqFile::open(const QString& path, QString& error) {
+    raw_.reset();format_=SampleFormat{};file_.close();
     if (mapped_ && ownedBytes_.isEmpty()) file_.unmap(mapped_);
     mapped_ = nullptr; ownedBytes_.clear(); sampleCount_ = 0;
     file_.setFileName(path);
@@ -111,6 +112,7 @@ bool Int16IqFile::open(const QString& path, QString& error) {
 }
 
 std::complex<double> Int16IqFile::sample(std::uint64_t index) const {
+    if(raw_){std::complex<double> value;raw_->sampleAt(index,value);return value;}
     const auto offset = static_cast<qsizetype>(index * 4);
     const auto i = qFromLittleEndian<qint16>(mapped_ + offset);
     const auto q = qFromLittleEndian<qint16>(mapped_ + offset + 2);
@@ -118,13 +120,15 @@ std::complex<double> Int16IqFile::sample(std::uint64_t index) const {
 }
 
 std::complex<double> Int16IqFile::sampleAt(std::uint64_t index) const {
-    return mapped_ && index < sampleCount_ ? sample(index) : std::complex<double>{};
+    return isOpen() && index < sampleCount_ ? sample(index) : std::complex<double>{};
 }
 
 SpectralSource Int16IqFile::spectralSource() const {
     SpectralSource source;
+    source.real = format_.structure==SampleStructure::Real;
     source.read = [this](TimeRange range, std::vector<std::complex<float>>& output, const SpectralCancel& cancel) {
-        if (!mapped_ || !validRange(range, sampleCount_)) return false;
+        if (!isOpen() || !validRange(range, sampleCount_)) return false;
+        if(raw_)return raw_->read(range,output,cancel);
         output.resize(static_cast<std::size_t>(range.end - range.begin));
         for (std::size_t n = 0; n < output.size(); ++n) {
             if ((n & 1023) == 0 && cancel && cancel()) return false;
@@ -137,7 +141,7 @@ SpectralSource Int16IqFile::spectralSource() const {
 
 bool Int16IqFile::waveform(const TimeRange& range, int points, WaveformMode mode, std::vector<float>& output,
                            const std::function<bool()>& cancelled) const {
-    if (!mapped_ || !validRange(range, sampleCount_) || points < 1) return false;
+    if (!isOpen() || !validRange(range, sampleCount_) || points < 1) return false;
     output.resize(static_cast<std::size_t>(points));
     const auto span = range.end - range.begin;
     for (int x = 0; x < points; ++x) {
@@ -147,7 +151,7 @@ bool Int16IqFile::waveform(const TimeRange& range, int points, WaveformMode mode
         if (mode == WaveformMode::I || mode == WaveformMode::Q) {
             const auto index = std::min(range.end - 1, first + (last - first) / 2);
             const auto value = sample(index);
-            output[static_cast<std::size_t>(x)] = static_cast<float>((mode == WaveformMode::I ? value.real() : value.imag()) * 32768.0);
+            output[static_cast<std::size_t>(x)] = static_cast<float>((mode == WaveformMode::I ? value.real() : value.imag()) * adcScale(format_));
             continue;
         }
         const auto bucket = std::max<std::uint64_t>(1, last - first);
@@ -164,7 +168,7 @@ bool Int16IqFile::waveform(const TimeRange& range, int points, WaveformMode mode
             peak = std::max(peak, magnitudeSquared);
         }
         const double magnitude = mode == WaveformMode::Envelope ? std::sqrt(peak) : std::sqrt(power / count);
-        output[static_cast<std::size_t>(x)] = static_cast<float>(magnitude * 32768.0);
+        output[static_cast<std::size_t>(x)] = static_cast<float>(magnitude * adcScale(format_));
     }
     return true;
 }
@@ -172,7 +176,7 @@ bool Int16IqFile::waveform(const TimeRange& range, int points, WaveformMode mode
 bool Int16IqFile::psd(const TimeRange& range, const FrequencyRange& frequencies, double sampleRateHz,
                       double centerFrequencyHz, int fftSize, int points, std::vector<float>& output,
                       const std::function<bool()>& cancelled) const {
-    if (!mapped_ || points < 1) return false;
+    if (!isOpen() || points < 1) return false;
     auto source = spectralSource(); source.sampleRateHz = sampleRateHz;
     const auto data = analyzeSpectrogram(source, range,
         {frequencies.lowerHz - centerFrequencyHz, frequencies.upperHz - centerFrequencyHz}, fftSize, 64, cancelled);

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "domain/sample_format.h"
 
 namespace signalstudio {
 
@@ -106,6 +107,7 @@ struct FileMetadata {
     // The centered band used by analysis. Zero means the complete sampled band.
     double effectiveBandwidthHz = 0;
     FileAvailability availability;
+    SampleFormat sampleFormat;
 };
 struct Mark {
     std::string id;
@@ -190,6 +192,7 @@ struct ViewSnapshot {
 };
 
 ViewRange fullRange(const FileMetadata& metadata);
+double analysisFrequencyOffset(const FileMetadata& metadata);
 SampleIndex availableSamples(const FileMetadata& metadata);
 ViewRange clampRange(ViewRange range, const FileMetadata& metadata, int stftSize, int psdSize = 0);
 Mark* findMark(FileState& file, const std::string& id);

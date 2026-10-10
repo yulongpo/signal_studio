@@ -13,11 +13,18 @@ SampleIndex availableSamples(const FileMetadata& metadata) {
 }
 
 ViewRange fullRange(const FileMetadata& metadata) {
+    if(metadata.sampleFormat.structure==SampleStructure::Real)
+        return {{0,availableSamples(metadata)},{0,metadata.effectiveBandwidthHz>0?
+            std::min(metadata.effectiveBandwidthHz,metadata.sampleRateHz/2):metadata.sampleRateHz/2}};
     const double bandwidth = metadata.effectiveBandwidthHz > 0 && std::isfinite(metadata.effectiveBandwidthHz) ?
         std::min(metadata.effectiveBandwidthHz, metadata.sampleRateHz) : metadata.sampleRateHz;
     return {{0, availableSamples(metadata)},
             {metadata.centerFrequencyHz - bandwidth / 2,
              metadata.centerFrequencyHz + bandwidth / 2}};
+}
+
+double analysisFrequencyOffset(const FileMetadata& metadata) {
+    return metadata.sampleFormat.structure==SampleStructure::Real?0:metadata.centerFrequencyHz;
 }
 
 ViewRange clampRange(ViewRange range, const FileMetadata& metadata, int stftSize, int psdSize) {

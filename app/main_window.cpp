@@ -1117,7 +1117,8 @@ void MainWindow::refresh() {
         viewValues_[0]->setText(timeRange(file->view.time, file->metadata.sampleRateHz)); viewValues_[1]->setText(frequencyRange(file->view.frequency));
         viewData_->setText("| 视图 ΔT " + coordinate(static_cast<double>(file->view.time.end - file->view.time.begin) / file->metadata.sampleRateHz, 0, true) + " · ΔF " + coordinate(file->view.frequency.upperHz - file->view.frequency.lowerHz, 0, false));
         const auto* mark = findMark(*file, file->activeMarkId);
-        extract_->setEnabled(!file->marks.empty());
+        extract_->setEnabled(!file->marks.empty()&&file->metadata.sampleFormat.structure!=SampleStructure::Real);
+        extract_->setToolTip(file->metadata.sampleFormat.structure==SampleStructure::Real?"实数 ADC 尚未实现解析信号转换，不能创建复数 DDC 通道":"创建真实 DDC 窄带通道");
         if (mark) {
             const double span = static_cast<double>(mark->range.time.end - mark->range.time.begin) / file->metadata.sampleRateHz;
             markValues_[0]->setText(coordinate(static_cast<double>(mark->range.time.begin) / file->metadata.sampleRateHz, span, true)); markValues_[1]->setText(coordinate(static_cast<double>(mark->range.time.end) / file->metadata.sampleRateHz, span, true)); markValues_[2]->setText(frequencyRange(mark->range.frequency));
@@ -1772,7 +1773,7 @@ void MainWindow::startSourceLoad(FileState& file, SampleIndex target) {
     }
     file.metadata.availability.status=LoadStatus::Loading;file.metadata.availability.availableSamples=0;
     ++file.metadata.availability.generation;file.navigationEnvelope.clear();
-    sourceLoads_[file.metadata.id]={std::make_shared<SourceLoader>(path,std::min(target,file.metadata.sampleCount)),session_.projectGeneration(),0};
+    sourceLoads_[file.metadata.id]={std::make_shared<SourceLoader>(path,std::min(target,file.metadata.sampleCount),file.metadata.sampleFormat),session_.projectGeneration(),0};
 }
 void MainWindow::pollSourceLoads() {
     bool changed=false;

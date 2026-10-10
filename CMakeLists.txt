@@ -59,6 +59,7 @@ function(ss_add_ui_assets target)
 endfunction()
 
 add_library(SignalStudioCore STATIC
+    domain/sample_format.cpp
     domain/project.cpp
     domain/project.h
     application/session.cpp
@@ -68,6 +69,7 @@ set_target_properties(SignalStudioCore PROPERTIES AUTOMOC OFF)
 ss_target_defaults(SignalStudioCore)
 
 add_library(SignalStudioInfrastructure STATIC
+    infrastructure/raw_sample_reader.cpp
     infrastructure/channel_processor.cpp
     infrastructure/channel_processor.h
     infrastructure/spectral_analysis.cpp
@@ -133,6 +135,10 @@ endif()
 
 if(SS_BUILD_TESTS)
     enable_testing()
+    add_executable(SignalStudioSampleFormatTests tests/sample_format_tests.cpp)
+    target_link_libraries(SignalStudioSampleFormatTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    ss_target_defaults(SignalStudioSampleFormatTests)
+    add_test(NAME signal_studio_sample_format COMMAND SignalStudioSampleFormatTests)
     add_executable(SignalStudioCoreTests tests/core_tests.cpp)
     target_link_libraries(SignalStudioCoreTests PRIVATE
         SignalStudioCore SignalStudioInfrastructure Qt6::Core)

@@ -3,6 +3,7 @@
 #include "domain/project.h"
 #include "infrastructure/spectral_analysis.h"
 #include "infrastructure/source_loader.h"
+#include "infrastructure/raw_sample_reader.h"
 
 #include <QByteArray>
 #include <QFile>
@@ -37,9 +38,15 @@ public:
         const auto path=QString::fromStdString(metadata.path);
         if(metadata.availability.status==LoadStatus::Loading||metadata.availability.status==LoadStatus::Failed){error="来源未读入或已失效";return false;}
         if(!metadata.availability.fingerprint.empty()&&iqSourceFingerprint(path).toStdString()!=metadata.availability.fingerprint){error="源文件指纹已改变，请重新读入";return false;}
-        if(!open(path,error))return false;limitTo(availableSamples(metadata));return true;
+        if(path.startsWith(":/")){if(!open(path,error))return false;}
+        else {
+            raw_=std::make_unique<RawSampleReader>();
+            if(!raw_->open(path,metadata.sampleFormat,error)){raw_.reset();return false;}
+            sampleCount_=raw_->sampleCount();format_=metadata.sampleFormat;
+        }
+        limitTo(availableSamples(metadata));return true;
     }
-    bool isOpen() const { return mapped_ != nullptr; }
+    bool isOpen() const { return mapped_ != nullptr || (raw_ && raw_->isOpen()); }
     std::uint64_t sampleCount() const { return sampleCount_; }
     void limitTo(SampleIndex count) { sampleCount_ = std::min(sampleCount_, count); }
     std::complex<double> sampleAt(std::uint64_t index) const;
@@ -59,6 +66,8 @@ private:
     double powerDensityDb(const std::complex<double>& value, double normalization) const;
 
     QFile file_;
+    std::unique_ptr<RawSampleReader> raw_;
+    SampleFormat format_;
     QByteArray ownedBytes_;
     uchar* mapped_ = nullptr;
     std::uint64_t sampleCount_ = 0;

@@ -155,8 +155,9 @@ std::string Session::addDemoFile() {
 std::string Session::addDemoFile(FileMetadata metadata) {
     if(metadata.name.empty()||metadata.sampleCount==0||!std::isfinite(metadata.sampleRateHz)||
        metadata.sampleRateHz<=0||!std::isfinite(metadata.centerFrequencyHz))return {};
-    if (metadata.effectiveBandwidthHz <= 0) metadata.effectiveBandwidthHz = metadata.sampleRateHz;
-    if (metadata.effectiveBandwidthHz > metadata.sampleRateHz) return {};
+    const double maximumBandwidth=metadata.sampleRateHz/(metadata.sampleFormat.structure==SampleStructure::Real?2:1);
+    if (metadata.effectiveBandwidthHz <= 0) metadata.effectiveBandwidthHz = maximumBandwidth;
+    if (metadata.effectiveBandwidthHz > maximumBandwidth) return {};
     const auto bounds=fullRange(metadata);
     if(!std::isfinite(bounds.frequency.lowerHz)||!std::isfinite(bounds.frequency.upperHz)||
        bounds.frequency.lowerHz>=bounds.frequency.upperHz)return {};
@@ -440,6 +441,7 @@ std::string Session::createChannel(const std::string& name, const std::string& s
     if (!file || name.empty() || name.size() > 320 || !std::isfinite(centerFrequencyHz) ||
         !std::isfinite(bandwidthHz) || !std::isfinite(outputSampleRateHz) ||
         bandwidthHz <= 0 || outputSampleRateHz <= 0) return {};
+    if(file->metadata.sampleFormat.structure==SampleStructure::Real)return {};
     const auto* mark = findMark(*file, sourceMarkId);
     if (!mark) return {};
     const auto transition = bandwidthHz * .15;

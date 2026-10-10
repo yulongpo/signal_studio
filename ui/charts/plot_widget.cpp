@@ -156,7 +156,8 @@ void addMenuHeading(QMenu& menu, const QString& text) {
 QString sourceFingerprint(const FileMetadata& metadata) {
     if (metadata.demo) return "demo";
     const QFileInfo info(QString::fromStdString(metadata.path));
-    return QString::number(info.size()) + "/" + QString::number(info.lastModified().toMSecsSinceEpoch());
+    return QString::number(info.size()) + "/" + QString::number(info.lastModified().toMSecsSinceEpoch()) +
+        "/"+QString::fromStdString(sampleFormatKey(metadata.sampleFormat))+"/"+QString::number(metadata.availability.generation);
 }
 
 struct HeatmapPayload {
@@ -223,7 +224,7 @@ private:
                 else {
                     iq.limitTo(availableSamples(metadata));auto source = iq.spectralSource(); source.sampleRateHz = metadata.sampleRateHz;
                     job->spectrum = analyzeSpectrogram(source, view.time,
-                        {view.frequency.lowerHz - metadata.centerFrequencyHz, view.frequency.upperHz - metadata.centerFrequencyHz},
+                        {view.frequency.lowerHz - analysisFrequencyOffset(metadata), view.frequency.upperHz - analysisFrequencyOffset(metadata)},
                         job->fftSize, job->mode == MainMode::Waterfall ? height : width, job->settings, 1, cancel);
                 }
             } else {
@@ -326,15 +327,15 @@ private:
             QElapsedTimer timer; timer.start();
             auto result = std::make_shared<CurvePayload>(); result->key = request.key; result->generation = request.generation;
             Int16IqFile iq; QString error;
-            if (!iq.open(QString::fromUtf8(request.metadata.path.data(), static_cast<qsizetype>(request.metadata.path.size())), error)) {
+            if (!iq.open(request.metadata, error)) {
                 result->error = error;
             } else {
                 const auto cancelled = [this, generation = request.generation] { return stop_ || generation != latest_; };
                 iq.limitTo(availableSamples(request.metadata));bool ok = false;
                 if (request.psd) {
                     auto source = iq.spectralSource(); source.sampleRateHz = request.metadata.sampleRateHz;
-                    const FrequencyRange band{request.frequency.lowerHz - request.metadata.centerFrequencyHz,
-                        request.frequency.upperHz - request.metadata.centerFrequencyHz};
+                    const FrequencyRange band{request.frequency.lowerHz - analysisFrequencyOffset(request.metadata),
+                        request.frequency.upperHz - analysisFrequencyOffset(request.metadata)};
                     std::string message; result->average = analyzeSpectrum(source, request.time, band, request.fftSize, request.settings, message, cancelled);
                     result->error=QString::fromStdString(message);
                     if (result->average) { result->samples = spectrumDb(*result->average); ok = true; }
@@ -640,7 +641,7 @@ std::shared_ptr<const SpectrogramData> PlotWidget::currentSpectrogram() const {
     const auto* file = session_.activeFile();
     if (!file || !renderedPower_ || powerKey_ != requestedPowerKey_ || !renderedPower_->spectrum ||
         renderedPower_->spectrum->frames.empty() || renderedPower_->spectrum->sourceView != file->view.time ||
-        renderedPower_->spectrum->plan.frequencies != FrequencyRange{file->view.frequency.lowerHz - file->metadata.centerFrequencyHz, file->view.frequency.upperHz - file->metadata.centerFrequencyHz}) return {};
+        renderedPower_->spectrum->plan.frequencies != FrequencyRange{file->view.frequency.lowerHz - analysisFrequencyOffset(file->metadata), file->view.frequency.upperHz - analysisFrequencyOffset(file->metadata)}) return {};
     return renderedPower_->spectrum;
 }
 std::shared_ptr<const SpectralFrame> PlotWidget::currentPowerFrame() const {
@@ -757,13 +758,13 @@ void PlotWidget::updateCurve() {
             ++curveRequestGeneration_; curveCompleted_ = true;
             const auto spectrum = session_.spectrogram(file->metadata.id);
             if (pinnedFrame && spectrum && spectrum->sourceView == view.time &&
-                spectrum->plan.frequencies == FrequencyRange{view.frequency.lowerHz - file->metadata.centerFrequencyHz, view.frequency.upperHz - file->metadata.centerFrequencyHz})
+                spectrum->plan.frequencies == FrequencyRange{view.frequency.lowerHz - analysisFrequencyOffset(file->metadata), view.frequency.upperHz - analysisFrequencyOffset(file->metadata)})
                 curveSource_ = spectrumDb(*pinnedFrame);
             else curveError_ = "驻留帧不在当前可见范围或正在更新";
         } else if (!file->metadata.demo) {
             if (psd) {
                 const auto plan = makeSpectralAnalysisPlan(file->metadata.sampleRateHz,
-                    {view.frequency.lowerHz - file->metadata.centerFrequencyHz, view.frequency.upperHz - file->metadata.centerFrequencyHz}, file->display.psdSize,file->display.psd.parameters);
+                    {view.frequency.lowerHz - analysisFrequencyOffset(file->metadata), view.frequency.upperHz - analysisFrequencyOffset(file->metadata)}, file->display.psdSize,file->display.psd.parameters);
                 if (!plan.valid) {
                     curveError_ = QString::fromStdString(plan.reason);
                     curveCompleted_ = true; return;
@@ -886,8 +887,8 @@ void PlotWidget::pinAt(QPointF point) {
 }
 void PlotWidget::expandAnalysisTime() {
     const auto* file = session_.activeFile(); if (!file) return;
-    const auto frequencies = FrequencyRange{file->view.frequency.lowerHz - file->metadata.centerFrequencyHz,
-        file->view.frequency.upperHz - file->metadata.centerFrequencyHz};
+    const auto frequencies = FrequencyRange{file->view.frequency.lowerHz - analysisFrequencyOffset(file->metadata),
+        file->view.frequency.upperHz - analysisFrequencyOffset(file->metadata)};
     const auto stft = makeSpectralAnalysisPlan(file->metadata.sampleRateHz, frequencies, file->display.stftSize);
     const auto psd = makeSpectralAnalysisPlan(file->metadata.sampleRateHz, frequencies, file->display.psdSize);
     if (!stft.valid || !psd.valid) return;
@@ -919,21 +920,21 @@ void PlotWidget::drawCursors(QPainter& painter, bool inverseMask) {
         const auto coordinate = fromPixel(position, view);
         sample = isPinned ? pinned.sourceSample : offsetSample(view.time.begin, coordinate.sample, view.time.end - 1);
         frequency = isPinned ? pinned.frequencyHz : coordinate.frequency;
-        const double displayFrequency = frequency - (file->display.absoluteFrequency ? 0 : file->metadata.centerFrequencyHz);
+        const double displayFrequency = frequency - (file->display.absoluteFrequency ? 0 : analysisFrequencyOffset(file->metadata));
         text = "t = " + coordinateText(false, seconds(sample, file->metadata.sampleRateHz), seconds(view.time.end - view.time.begin, file->metadata.sampleRateHz), 1 / file->metadata.sampleRateHz) +
             "\nf = " + coordinateText(true, displayFrequency, view.frequency.upperHz - view.frequency.lowerHz);
         const auto spectrum = session_.spectrogram(file->metadata.id);
         const auto* frame = spectrum && spectrum->sourceView == view.time && spectrum->plan.frequencies ==
-            FrequencyRange{view.frequency.lowerHz - file->metadata.centerFrequencyHz, view.frequency.upperHz - file->metadata.centerFrequencyHz} ? (isPinned ? session_.selectedSpectralFrame(file->metadata.id) : spectrum->frameAtFraction(file->display.mainMode==MainMode::Waterfall?(position.y()-plot.top())/plot.height():(position.x()-plot.left())/plot.width())) : nullptr;
+            FrequencyRange{view.frequency.lowerHz - analysisFrequencyOffset(file->metadata), view.frequency.upperHz - analysisFrequencyOffset(file->metadata)} ? (isPinned ? session_.selectedSpectralFrame(file->metadata.id) : spectrum->frameAtFraction(file->display.mainMode==MainMode::Waterfall?(position.y()-plot.top())/plot.height():(position.x()-plot.left())/plot.width())) : nullptr;
         if (frame) {
-            const auto bin = frame->binAt(frequency - file->metadata.centerFrequencyHz);
+            const auto bin = frame->binAt(frequency - analysisFrequencyOffset(file->metadata));
             text += QStringLiteral("\nP = %1 dBFS/Hz · bin %2\n帧中心 %3 s · Δf %4 Hz")
                 .arg(frame->dbAt(bin), 0, 'f', 2).arg(bin).arg(seconds(frame->sourceCenter, file->metadata.sampleRateHz), 0, 'g', 10).arg(frame->binHz, 0, 'g', 6);
             setProperty("cursorPowerDb", frame->dbAt(bin)); setProperty("cursorFrameId", QVariant::fromValue<qulonglong>(frame->id));
         } else text += "\n分析数据不可用 / 正在更新";
     } else if (psd) {
         frequency = isPinned ? pinned.frequencyHz : view.frequency.lowerHz + u * (view.frequency.upperHz - view.frequency.lowerHz);
-        const double displayFrequency = frequency - (file->display.absoluteFrequency ? 0 : file->metadata.centerFrequencyHz);
+        const double displayFrequency = frequency - (file->display.absoluteFrequency ? 0 : analysisFrequencyOffset(file->metadata));
         text = "f = " + coordinateText(true, displayFrequency, view.frequency.upperHz - view.frequency.lowerHz);
         if (!curveSource_.empty()) {
             const auto bin = std::min(curveSource_.size() - 1, static_cast<std::size_t>(std::llround(u * curveSource_.size())));
@@ -1160,7 +1161,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
         painter.restore();
     }
     painter.setFont(canvasFont()); painter.setPen(QColor("#aac2d7"));
-    const double frequencyOffset = file->display.absoluteFrequency ? 0 : file->metadata.centerFrequencyHz;
+    const double frequencyOffset = file->display.absoluteFrequency ? 0 : analysisFrequencyOffset(file->metadata);
     const Axis x = waterfall || psd ? axisScale(true, view.frequency.lowerHz, frequencySpan, 5, frequencyOffset) : axisScale(false, timeStart, timeSpan, 5);
     const Axis y = kind_ == Kind::Main ? waterfall ? axisScale(false, timeStart + timeSpan, -timeSpan, 4) : axisScale(true, view.frequency.lowerHz, frequencySpan, 4, frequencyOffset) : Axis{};
     const QFontMetricsF metrics(painter.font());

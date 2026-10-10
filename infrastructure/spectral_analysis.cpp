@@ -248,6 +248,10 @@ public:
             frame->windowEnergy/=std::max(1e-30,fullEnergy);
         }
         if(frame->linearPower.empty())return {};
+        if(source.real)for(std::size_t k=0;k<frame->linearPower.size();++k){
+            const double f=frame->frequencyAt(k);
+            if(f>0 && f<source.sampleRateHz/2)frame->linearPower[k]*=2;
+        }
         return frame;
     }
 private:
