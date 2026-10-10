@@ -10,6 +10,7 @@
 #include "ui/import/signal_import_dialog.h"
 #include "ui/controls/adaptive_value_edit.h"
 #include "ui/import/source_preview_widget.h"
+#include "tests/fixtures/raw_fixture.h"
 #include <QSpinBox>
 #include "ui/narrowband_workspace.h"
 
@@ -285,6 +286,7 @@ private slots:
     void escapeCancelsGestureBeforeLeavingMaximize();
     void addIqFileDialogCancelsAndImportsRealInt16Iq();
     void importFormatAndAdaptiveDraft();
+    void importFloatingUnitsAndFailureRecovery();
     void importTemplatesBatchAndSigmf();
     void brandResourcesAndAbout();
     void importRealFilesAndCancelPrefix();
@@ -2327,6 +2329,24 @@ void UiTests::escapeCancelsGestureBeforeLeavingMaximize() {
     QVERIFY(!host->isVisible());
 }
 
+void UiTests::importFloatingUnitsAndFailureRecovery(){
+    QTemporaryDir temporary;MainWindow window;showWindow(window);QString error;
+    const auto path=temporary.filePath("CF32_FS1Msps_FC0Hz.raw");SampleFormat format;format.componentEncoding=ComponentEncoding::Float32;format.normalizeIntegerAdc=false;
+    {QFile file(path);QVERIFY(file.open(QIODevice::WriteOnly));QVERIFY(file.write(fixtures::generate(format,64))>0);}
+    SignalImportDialog dialog("units",&window);dialog.show();QVERIFY(dialog.addPath(path));
+    dialog.commitSource=[&](FileState source,QString& e){return window.addImportedSource(std::move(source),e);};dialog.startImport();
+    auto* finish=dialog.findChild<QPushButton*>("importProgressFinish");QTRY_VERIFY_WITH_TIMEOUT(finish->isEnabled(),15000);finish->click();
+    auto* waveform=window.findChild<QComboBox*>("waveformMode");auto* reference=window.findChild<QComboBox*>("reference");
+    QVERIFY(waveform->itemText(0).contains("原始幅度"));QVERIFY(reference->currentText().contains("dB(unit^2/Hz)"));
+    reference->lineEdit()->setFocus();reference->lineEdit()->selectAll();QTest::keyClicks(reference->lineEdit(),"-42 dB(unit^2/Hz)");QTest::keyClick(reference->lineEdit(),Qt::Key_Return);
+    QCOMPARE(window.session().activeFile()->display.referenceLevelDb,-42.0);
+    const auto bad=temporary.filePath("CI16_FS1Msps_FC0Hz.raw");{QFile file(bad);QVERIFY(file.open(QIODevice::WriteOnly));QVERIFY(file.write("odd")==3);}
+    SignalImportDialog failure("recovery",&window);failure.show();QVERIFY(failure.addPath(bad));failure.startImport();
+    auto* back=failure.findChild<QPushButton*>("importProgressBack");QTRY_VERIFY_WITH_TIMEOUT(back->isVisible(),15000);back->click();QVERIFY(!failure.findChild<QWidget*>("importProgressOverlay")->isVisible());
+    {QFile file(bad);QVERIFY(file.open(QIODevice::WriteOnly));QVERIFY(file.write(fixtures::generate({}))>0);}
+    failure.startImport();QTRY_VERIFY_WITH_TIMEOUT(failure.findChild<QPushButton*>("importProgressFinish")->isEnabled(),15000);QCOMPARE(window.session().project().files.size(),std::size_t{1});
+    failure.findChild<QPushButton*>("importProgressFinish")->click();QCOMPARE(window.session().project().files.size(),std::size_t{1});
+}
 void UiTests::importTemplatesBatchAndSigmf(){
     QTemporaryDir temporary;QString error;
     const auto data=temporary.filePath("CI16_FS2Msps_FC10MHz.sigmf-data");const auto meta=temporary.filePath("CI16_FS2Msps_FC10MHz.sigmf-meta");

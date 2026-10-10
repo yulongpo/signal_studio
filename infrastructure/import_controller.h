@@ -2,6 +2,7 @@
 #include "infrastructure/source_loader.h"
 #include <memory>
 #include <vector>
+#include <QStringList>
 
 namespace signalstudio {
 enum class ImportStatus { Pending, Reading, Ready, Partial, Failed, Cancelled };
@@ -27,12 +28,15 @@ public:
     std::vector<FileState> sources() const;
     void restart();
     void markCommitted(const FileMetadata&);
+    const QStringList& importLog() const { return log_; }
 private:
+    void record(std::size_t, const QString&);
     void next();
     static constexpr std::size_t invalid=static_cast<std::size_t>(-1);
     std::vector<ImportRow> rows_;
     std::vector<std::size_t> pending_,lastRun_;
     std::size_t active_=invalid;
     std::unique_ptr<SourceLoader> loader_;
+    QStringList log_;
 };
 }

@@ -1,6 +1,7 @@
 #include "ui/import/source_preview_widget.h"
 #include "infrastructure/int16_iq_file.h"
 #include "ui/controls/adaptive_value_edit.h"
+#include "ui/source_units.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QMetaObject>
@@ -43,9 +44,11 @@ void SourcePreviewWidget::paintEvent(QPaintEvent*){
     const int w=width(),half=(w-12)/2;const QRectF psd(0,57,w,230),wave(0,299,half,174),scatter(half+12,299,w-half-12,174),stft(0,485,w,143);
     const bool real=data_&&data_->metadata.sampleFormat.structure==SampleStructure::Real;
     auto card=[&](QRectF card,const QString& title,const QString& detail){p.setPen(QColor("#2b4a61"));p.setBrush(QColor("#0b1929"));p.drawRoundedRect(card.adjusted(1,1,-1,-1),8,8);p.setPen(QColor("#c5e3f0"));p.drawText(card.adjusted(12,8,-8,-card.height()+29),title);p.setPen(QColor("#789bb5"));p.drawText(card.adjusted(12,8,-10,-card.height()+29),Qt::AlignRight,detail);return card.adjusted(38,39,-15,-28);};
-    auto ps=card(psd,"功率谱 · PSD","Welch · Hann · 1024"),wa=card(wave,real?"实数波形":"I / Q 波形","原始采样"),sc=card(scatter,real?"幅值直方图":"IQ 散点",real?"Real":"I / Q"),st=card(stft,"短时时频图",real?"实数单边谱":"预览最多 12 帧");
+    const QString waveformUnit=data_?(floatingSamples(data_->metadata)?"原始幅度":data_->metadata.sampleFormat.normalizeIntegerAdc?"归一化":"ADC 码值"):"原始采样";
+    auto ps=card(psd,"功率谱 · PSD","Welch · Hann · 1024"),wa=card(wave,real?"实数波形":"I / Q 波形",waveformUnit),sc=card(scatter,real?"幅值直方图":"IQ 散点",real?"Real":"I / Q"),st=card(stft,"短时时频图",real?"实数单边谱":"预览最多 12 帧");
     auto grid=[&](QRectF r){p.setPen(QColor("#233d52"));for(int j=0;j<=6;++j)p.drawLine(QPointF(r.left()+r.width()*j/6,r.top()),QPointF(r.left()+r.width()*j/6,r.bottom()));for(int j=0;j<=3;++j)p.drawLine(QPointF(r.left(),r.top()+r.height()*j/3),QPointF(r.right(),r.top()+r.height()*j/3));};grid(ps);grid(wa);grid(sc);
     if(!data_)return;
+    p.setPen(QColor("#789bb5"));p.drawText(QRectF(38,psd.top()+23,w-53,16),powerUnit(data_->metadata));
     const auto& d=*data_;const auto powers=spectrumDb(*d.psd);const float peak=*std::max_element(powers.begin(),powers.end()),low=peak-80;
     auto line=[&](const std::vector<float>& values,QRectF r,double lo,double hi,QColor color){if(values.empty())return;p.save();p.setClipRect(r);QPainterPath path;for(std::size_t n=0;n<values.size();++n){QPointF point(r.left()+r.width()*n/std::max<std::size_t>(1,values.size()-1),r.bottom()-r.height()*(values[n]-lo)/std::max(1e-12,hi-lo));if(n)path.lineTo(point);else path.moveTo(point);}p.setPen(QPen(color,1.2));p.drawPath(path);p.restore();};line(powers,ps,low,peak+3,QColor("#53deea"));
     p.setPen(QColor("#789bb5"));for(int j=0;j<=3;++j)p.drawText(QRectF(psd.left()+3,ps.top()+ps.height()*j/3-7,33,15),QString::number(peak+3-(83.*j/3),'f',0));

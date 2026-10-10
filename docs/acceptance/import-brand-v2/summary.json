@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-11",
+  "baseline": "8d0564a",
+  "branch": "rebuild/a143-native",
+  "milestones": { "M0": "complete", "M1": "complete", "M2": "complete", "M3": "complete", "M4": "complete", "M5": "complete" },
+  "versions": { "mainWindow": "A1.4.3", "import": "A1.2", "brand": "2.0", "product": "0.1.0", "projectJson": 4, "templateJson": 1, "configuredBuildBase": "3670d34" },
+  "builds": {
+    "debug": { "pass": true, "ctestPassed": 7, "ctestFailed": 0, "ctestSeconds": 241.62, "qtUiPassed": 87, "qtUiFailed": 0, "qtUiSkipped": 0, "qtUiMilliseconds": 233727, "log": "build-debug.log", "ctestLog": "ctest-debug.log", "uiLog": "ui-debug.txt" },
+    "release": { "pass": true, "ctestPassed": 7, "ctestFailed": 0, "ctestSeconds": 41.86, "qtUiPassed": 87, "qtUiFailed": 0, "qtUiSkipped": 0, "qtUiMilliseconds": 38189, "log": "build-release.log", "ctestLog": "ctest-release.log", "uiLog": "ui-release.txt" }
+  },
+  "numerical": { "formatReaderProjectCases": 432, "ddcCases": 72, "coherentToneCases": 12, "scriptReferenceSamples": 384, "scriptHash": "SHA-256", "scriptSeed": 12002026, "pass": true, "evidence": ["script-fixtures.txt", "script-fixtures-release.txt", "ctest-debug.log", "ctest-release.log"] },
+  "native": {
+    "pass": true,
+    "screen": { "connectedIndex": 2, "name": "Redmi 27 NU", "deviceName": "\\\\.\\DISPLAY6", "physicalPixels": [3840, 2160], "logicalPixels": [2560, 1440], "dpr": 1.5 },
+    "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+    "screenshots": 10,
+    "capture": "Native QWidget::grab on actual screen 2 fullscreen parent; modal captures explicitly cropped",
+    "report": "native-capture-report.json",
+    "partial": { "physicalSamples": "67108864", "availableSamples": "4194304", "envelopePoints": 1024, "fixtureDeleted": true }
+  },
+  "standalone": {
+    "systemOnlyPath": true,
+    "debugGpu": "package-debug-gpu.json",
+    "debugPngFallback": "package-debug-png.json",
+    "releaseGpu": "package-release-gpu.json",
+    "releaseSoftware": "package-release-software.json",
+    "releaseNarrowbandGpuFourPages": "package-release-narrowband-gpu.json",
+    "releaseNarrowbandSoftwareFourPages": "package-release-narrowband-software.json",
+    "gpuSmoke": "gpu/signal-studio-release-gpu-screen2-4k-150-report.json",
+    "brandDebug": "brand-debug.json",
+    "brandRelease": "brand-release.json",
+    "allPass": true
+  },
+  "loadMeasurement": {
+    "scope": "Reader process, actual 64 MiB zero-code CI16 RAW scan; not RF recording, GUI/GPU peak or general throughput",
+    "physicalBytes": 67108864,
+    "decodedSamples": "16777216",
+    "debugMilliseconds": 2257,
+    "releaseMilliseconds": 300,
+    "debugPeakWorkingSetBytes": 33026048,
+    "releasePeakWorkingSetBytes": 25415680,
+    "temporaryFixturesDeleted": true,
+    "reports": ["load-debug.json", "load-release.json"]
+  },
+  "executables": { "debug": "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudio.exe", "release": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudio.exe", "debugSha256": "A54DA5F073B66C61EB0383934434A582789D0BC9CE1369689C81691ED0D76FF3", "releaseSha256": "8604B03802EC13DE9E9A8A5677112AA88341E6D189C360C354A163F098129F34", "gitTracked": false },
+  "originalFixtureSha256": { "IQ0_FS1Msps_BW800kHz_FC100MHz.dat": "D026F616EFED3379AFE8A2BB31839CAAC7A7FF2F7CD0AA11F5469664AED198CC", "real_ADC_FS1Msps_FC0Hz_RI16.raw": "B1652B5AC1C066CF1A80B88BF34B32E9A8E38735E2F51F1C03766493F3AC81C6", "comparedWithTaskReferences": true },
+  "blockingIssues": [],
+  "unsupported": ["Real ADC analytic IQ/DDC", "SigMF varying-frequency captures / segment headers / unknown required extensions", "Float64-precision end-to-end DSP; existing analysis uses complex<float>"],
+  "unverified": ["Ubuntu/OpenGL/Vulkan runtime", "Multi-GB sustained throughput and long-running GUI peak memory", "Windows shell Explorer/taskbar/Alt+Tab visual icon-cache inspection"],
+  "preservedDemoOnly": ["Synthetic constellation / eye examples", "Classification / demodulation examples"],
+  "changedFiles": "../../implementation/import-brand-v2/changed-files.json",
+  "executionReport": "../../implementation/import-brand-v2/CODEX_EXECUTION_REPORT.md"
+}

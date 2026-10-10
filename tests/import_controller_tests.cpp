@@ -31,6 +31,7 @@ void sigmfPriorityAndValidation(){
     for(const auto& datatype:QStringList{"ci16","ci8_le","cu16_le","cf128_le","wat"}){write(meta,QJsonDocument(metadata(datatype)).toJson());QVERIFY(!readSigmfMetadata(meta).error.isEmpty());}
     root=metadata();auto global=root["global"].toObject();global["core:dataset"]="../outside.raw";root["global"]=global;write(meta,QJsonDocument(root).toJson());QVERIFY(readSigmfMetadata(meta).error.contains("路径"));
     root=metadata();root["captures"]=QJsonArray{QJsonObject{{"core:sample_start",0},{"core:frequency",0}},QJsonObject{{"core:sample_start",10},{"core:frequency",42}}};write(meta,QJsonDocument(root).toJson());QVERIFY(readSigmfMetadata(meta).error.contains("变频"));
+    root=metadata();root["captures"]=QJsonArray{QJsonObject{{"core:sample_start",0},{"core:frequency",0}},QJsonObject{{"core:sample_start",10}}};write(meta,QJsonDocument(root).toJson());QVERIFY(readSigmfMetadata(meta).error.contains("不继承"));
     root=metadata();global=root["global"].toObject();global["core:sample_rate"]=0;root["global"]=global;write(meta,QJsonDocument(root).toJson());QVERIFY(!readSigmfMetadata(meta).error.isEmpty());
     root=metadata();global=root["global"].toObject();global["core:extensions"]=QJsonArray{QJsonObject{{"name","unknown"},{"optional",false}}};root["global"]=global;write(meta,QJsonDocument(root).toJson());QVERIFY(readSigmfMetadata(meta).error.contains("必需扩展"));
     write(meta,"{broken");QVERIFY(!readSigmfMetadata(meta).error.isEmpty());write(meta,QByteArray(1024*1024+1,' '));QVERIFY(readSigmfMetadata(meta).error.contains("预算"));
@@ -50,6 +51,7 @@ void batchIsolationRetryDedupe(){
     QVERIFY(controller.add(row(complex),error));QVERIFY(!controller.add(row(complex),error));auto different=row(complex);different.metadata.sampleFormat.iqLayout=IQLayout::QIInterleaved;QVERIFY(controller.add(different,error));
     QVERIFY(controller.add(row(real,rf),error));QVERIFY(controller.add(row(floating,cf),error));QVERIFY(controller.add(row(bad),error));QVERIFY(controller.start({0,1,2,3,4}));QVERIFY(settle(controller));QCOMPARE(controller.sources().size(),std::size_t{4});QCOMPARE(controller.rows()[4].status,ImportStatus::Failed);
     controller.markCommitted(controller.rows()[0].metadata);QCOMPARE(controller.sources().size(),std::size_t{3});const auto completed=controller.rows()[2].load.loaded;
+    QVERIFY(controller.importLog().join('\n').contains("校验失败"));QVERIFY(controller.importLog().join('\n').contains("实际读取完成"));QVERIFY(controller.importLog().join('\n').contains("已提交工程"));
     write(bad,fixtures::generate({}));QVERIFY(controller.start({4}));QVERIFY(settle(controller));QCOMPARE(controller.rows()[4].status,ImportStatus::Ready);QCOMPARE(controller.rows()[2].load.loaded,completed);
     controller.rows()[4].metadata=controller.rows()[2].metadata;controller.rows()[4].status=ImportStatus::Pending;QVERIFY(!controller.start({4}));QCOMPARE(controller.rows()[4].status,ImportStatus::Failed);QVERIFY(controller.rows()[4].error.contains("重复"));
 }

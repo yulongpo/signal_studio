@@ -1,0 +1,25 @@
+{
+  "pass": true,
+  "exe": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe",
+  "icoLayers": [
+    16,
+    24,
+    32,
+    48,
+    64,
+    128,
+    256
+  ],
+  "embeddedLayers": [
+    16,
+    24,
+    32,
+    48,
+    64,
+    128,
+    256
+  ],
+  "svgCount": 15,
+  "resourceLibrary": "SignalStudioBrand",
+  "configuration": "Release"
+}

@@ -44,17 +44,18 @@ SourceSuggestions readSigmfMetadata(const QString& path) {
     if((bytesPerComponent(f)==1&&!type.captured(3).isEmpty())||(bytesPerComponent(f)>1&&type.captured(3).isEmpty()))return fail("datatype字节序不符合规范");
     f.byteOrder=bytesPerComponent(f)==1?ByteOrder::NotApplicable:type.captured(3)=="be"?ByteOrder::Big:ByteOrder::Little;
     f.iqLayout=f.structure==SampleStructure::Real?IQLayout::NotApplicable:IQLayout::IQInterleaved;f.normalizeIntegerAdc=f.componentEncoding<ComponentEncoding::Float32;
-    const auto integer=[&](const QJsonValue& v,quint64& result){if(!v.isDouble())return false;const auto n=v.toInteger(-1);if(n<0||v.toDouble()!=static_cast<double>(n))return false;result=static_cast<quint64>(n);return true;};
-    quint64 channels=1;if(global.contains("core:num_channels")&&(!integer(global["core:num_channels"],channels)||channels<1||channels>128))return fail("通道数必须在1–128范围");f.channels=static_cast<std::uint32_t>(channels);
+    const auto integer=[&](const QJsonValue& v,std::uint64_t& result){if(!v.isDouble())return false;const auto n=v.toInteger(-1);if(n<0||v.toDouble()!=static_cast<double>(n))return false;result=static_cast<std::uint64_t>(n);return true;};
+    std::uint64_t channels=1;if(global.contains("core:num_channels")&&(!integer(global["core:num_channels"],channels)||channels<1||channels>128))return fail("通道数必须在1–128范围");f.channels=static_cast<std::uint32_t>(channels);
     if(global.contains("core:sample_rate")){const auto value=global["core:sample_rate"];const double fs=value.toDouble(-1);if(!value.isDouble()||!std::isfinite(fs)||fs<=0||fs>1e12)return fail("sample_rate无效");s.sampleRateHz=fs;}
     if(global.contains("core:trailing_bytes")&&!integer(global["core:trailing_bytes"],f.trailerBytes))return fail("trailing_bytes无效");
-    if(global.contains("core:offset")){quint64 offset=0;if(!integer(global["core:offset"],offset))return fail("offset无效");if(offset)s.warnings+="offset是外部样本编号，不作为磁盘字节偏移；工程使用本文件0起始样本索引。 ";}
-    const auto captures=root["captures"].toArray();quint64 previous=0;
+    if(global.contains("core:offset")){std::uint64_t offset=0;if(!integer(global["core:offset"],offset))return fail("offset无效");if(offset)s.warnings+="offset是外部样本编号，不作为磁盘字节偏移；工程使用本文件0起始样本索引。 ";}
+    const auto captures=root["captures"].toArray();std::uint64_t previous=0;
     for(qsizetype i=0;i<captures.size();++i){
-        if(!captures[i].isObject())return fail("capture必须是对象");const auto capture=captures[i].toObject();quint64 begin=0;
+        if(!captures[i].isObject())return fail("capture必须是对象");const auto capture=captures[i].toObject();std::uint64_t begin=0;
         if(!integer(capture["core:sample_start"],begin)||(i&&begin<=previous)||(!i&&begin!=0))return fail("只支持从0开始、递增capture索引");previous=begin;
+        if (i && capture.contains("core:frequency") != captures[0].toObject().contains("core:frequency")) return fail("各capture频率字段不一致，不继承缺失的频率");
         if(capture.contains("core:frequency")){const auto value=capture["core:frequency"];const double fc=value.toDouble(-1);if(!value.isDouble()||!std::isfinite(fc)||fc<0||fc>1e12)return fail("frequency超出本应用非负频率范围");if(s.centerFrequencyHz&&*s.centerFrequencyHz!=fc)return fail("分段变频数据暂不支持统一RF轴");s.centerFrequencyHz=fc;}
-        quint64 header=0;if(capture.contains("core:header_bytes")){if(!integer(capture["core:header_bytes"],header)||(i&&header))return fail("不支持段间非样本header");if(!i)f.headerBytes=header;}
+        std::uint64_t header=0;if(capture.contains("core:header_bytes")){if(!integer(capture["core:header_bytes"],header)||(i&&header))return fail("不支持段间非样本header");if(!i)f.headerBytes=header;}
         if(capture.contains("core:datetime"))s.warnings+="采集时间："+capture["core:datetime"].toString().left(80)+"。 ";
     }
     for(const auto& extension:global["core:extensions"].toArray()){const auto e=extension.toObject();if(!e["optional"].toBool(false))return fail("不支持必需扩展："+e["name"].toString());s.warnings+="忽略可选扩展："+e["name"].toString().left(80)+"。 ";}

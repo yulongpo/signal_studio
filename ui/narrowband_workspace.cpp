@@ -5,6 +5,7 @@
 #include "ui/charts/cursor_overlay.h"
 #include "ui/charts/interaction_feedback.h"
 #include "ui/narrowband_workspace.h"
+#include "ui/source_units.h"
 #include "ui/brand/brand_assets.h"
 
 #include "infrastructure/channel_processor.h"
@@ -73,7 +74,8 @@ QPushButton* actionButton(const QString& value, const QString& id, QLayout* layo
     auto* button = new QPushButton(value); button->setObjectName(id); button->setCursor(Qt::PointingHandCursor);
     layout->addWidget(button); return button;
 }
-QString waveformAxisLabel(NarrowbandWaveform mode) {
+QString waveformAxisLabel(NarrowbandWaveform mode, const FileMetadata* metadata = nullptr) {
+    if (metadata) return sourceUnits(waveformAxisLabel(mode), *metadata);
     switch (mode) {
     case NarrowbandWaveform::IQ: return QStringLiteral("I / Q (ADC 计数等效值)");
     case NarrowbandWaveform::Magnitude: return QStringLiteral("幅度 RMS (ADC 计数等效值)");
@@ -631,13 +633,14 @@ private:
             const auto& values = series_.front();
             const auto index = std::min(values.size() - 1, static_cast<std::size_t>(std::llround(x * (mode_ == ChartMode::Spectrum ? values.size() : values.size() - 1))));
             const auto valueLabel=mode_==ChartMode::Spectrum ? QStringLiteral("P") : series_.size()>1 ? QStringLiteral("I") : yAxisLabel_.section('(',0,0).trimmed();
-            const auto valueUnit=mode_==ChartMode::Spectrum ? QStringLiteral("dBFS/Hz") : yAxisLabel_.contains("rad") ? QStringLiteral("rad") : QStringLiteral("ADC 计数");
+            const auto valueUnit=mode_==ChartMode::Spectrum ? property("sourcePowerUnit").toString() : yAxisLabel_.contains("rad") ? QStringLiteral("rad") : property("sourceAmplitudeUnit").toString();
             text += QStringLiteral("\n%1 = %2 %3").arg(valueLabel).arg(values[index], 0, 'g', 8).arg(valueUnit);
-            if (mode_ == ChartMode::Curve && series_.size() > 1 && index < series_[1].size()) text += QStringLiteral("\nQ = %1 ADC 计数").arg(series_[1][index], 0, 'g', 8);
+            if (mode_ == ChartMode::Curve && series_.size() > 1 && index < series_[1].size()) text += QStringLiteral("\nQ = %1 %2").arg(series_[1][index], 0, 'g', 8).arg(valueUnit);
             text += mode_ == ChartMode::Spectrum ? QStringLiteral("\n%1 · N=%2").arg(pinnedCursor_.framePsd ? "驻留帧谱" : "平均谱").arg(values.size()) :
                 QStringLiteral("\n%1 · 源样本 #%2").arg(samplePointsVisible_ ? "逐样本" : "显示分箱").arg(sample);
             if (mode_ == ChartMode::Spectrum) setProperty("cursorPowerDb", values[index]);
         } else text += "\n数据不可用 / 正在更新";
+            text.replace("dBFS/Hz", property("sourcePowerUnit").toString());
             const auto readout=cursor_overlay::parse(text,mode_==ChartMode::Heatmap);
             const auto layout=cursor_overlay::draw(painter,plot,point,mode_==ChartMode::Heatmap,
                 readout,isPinned,isPinned ? std::vector<QRectF>{} : pinLayout.rectangles(),inverseMask);
@@ -720,7 +723,7 @@ QWidget* plotPanel(const QString& title, const QString& id, ChartMode mode, Narr
     auto* layout = new QVBoxLayout(result); layout->setContentsMargins(1, 1, 1, 1); layout->setSpacing(0);
     auto* heading = new QWidget; heading->setProperty("uiRole", "chartHead"); heading->setFixedHeight(30);
     auto* row = new QHBoxLayout(heading); row->setContentsMargins(9, 0, 9, 0);
-    auto* name = textLabel(title); name->setStyleSheet("font-weight:600;color:#d5e6f5;"); row->addWidget(name); row->addStretch();
+    auto* name = textLabel(title, id + "Title"); name->setStyleSheet("font-weight:600;color:#d5e6f5;"); row->addWidget(name); row->addStretch();
     layout->addWidget(heading); chart = new NarrowbandChart(mode); chart->setObjectName(id + QStringLiteral("Chart"));
     layout->addWidget(chart, 1); return result;
 }
@@ -1203,14 +1206,14 @@ void NarrowbandWorkspace::buildPages() {
                         {channel->waveformAxisMinimum, channel->waveformAxisMaximum}, nextSpan / span, 1.0 - y0);
                     beginWheel();
                     session_.setChannelAmplitudeRange(range.first, range.last, false, false);
-                    waveform_->setYAxisRange(range.first, range.last, waveformAxisLabel(channel->waveform));
+                    waveform_->setYAxisRange(range.first, range.last, waveformAxisLabel(channel->waveform, session_.activeFile() ? &session_.activeFile()->metadata : nullptr));
                 } else if (selection) {
                     commitPointerGesture();
                     const auto range = chart_interaction::panByFraction(
                         {channel->waveformAxisMinimum, channel->waveformAxisMaximum}, dragYFraction);
                     session_.setChannelAmplitudeRange(range.first, range.last, false, true);
                     waveform_->setYAxisRange(channel->waveformAxisMinimum, channel->waveformAxisMaximum,
-                                             waveformAxisLabel(channel->waveform));
+                                             waveformAxisLabel(channel->waveform, session_.activeFile() ? &session_.activeFile()->metadata : nullptr));
                 }
                 return;
             }
@@ -1221,13 +1224,13 @@ void NarrowbandWorkspace::buildPages() {
                     const auto range = chart_interaction::zoomAround(
                         {channel->psdAxisMinimum, channel->psdAxisMaximum}, nextSpan / span, 1.0 - y0);
                     beginWheel(); session_.setChannelPsdRange(range.first, range.last, false);
-                    psd_->setYAxisRange(range.first, range.last, QStringLiteral("dBFS/Hz"));
+                    psd_->setYAxisRange(range.first, range.last, session_.activeFile() ? powerUnit(session_.activeFile()->metadata) : QStringLiteral("dBFS/Hz"));
                 } else if (selection) {
                     commitPointerGesture();
                     const auto range = chart_interaction::panByFraction(
                         {channel->psdAxisMinimum, channel->psdAxisMaximum}, dragYFraction);
                     session_.setChannelPsdRange(range.first, range.last, true);
-                    psd_->setYAxisRange(channel->psdAxisMinimum, channel->psdAxisMaximum, QStringLiteral("dBFS/Hz"));
+                    psd_->setYAxisRange(channel->psdAxisMinimum, channel->psdAxisMaximum, session_.activeFile() ? powerUnit(session_.activeFile()->metadata) : QStringLiteral("dBFS/Hz"));
                 }
                 return;
             }
@@ -1359,7 +1362,7 @@ void NarrowbandWorkspace::buildPages() {
         if (!channel) return;
         finishChartWheel();
         session_.setChannelPsdRange(-120.0, 0.0, true);
-        psd_->setYAxisRange(channel->psdAxisMinimum, channel->psdAxisMaximum, QStringLiteral("dBFS/Hz"));
+        psd_->setYAxisRange(channel->psdAxisMinimum, channel->psdAxisMaximum, session_.activeFile() ? powerUnit(session_.activeFile()->metadata) : QStringLiteral("dBFS/Hz"));
     };
     if (timeline_) timeline_->gesture = [this](QPointF a, QPointF, int wheel, bool selection) {
         if (recognitionSegments_.empty() || selection || wheel) return;
@@ -1386,7 +1389,11 @@ void NarrowbandWorkspace::refreshFromSession() {
         if (waveform_) waveform_->setSeries({}, "当前没有活动通道");
         return;
     }
-    for (auto* chart : charts_) if (chart) chart->setPalette(file->display.palette);
+    for (auto* chart : charts_) if (chart) {
+        chart->setPalette(file->display.palette);
+        chart->setProperty("sourcePowerUnit", powerUnit(file->metadata));
+        chart->setProperty("sourceAmplitudeUnit", amplitudeUnit(file->metadata));
+    }
     if (!recognitionSegments_.empty() && recognitionChannelId_ == channel->id) {
         if (recognitionConfigVersion_ != channel->configVersion)
             markRecognitionStale("通道配置已变化");
@@ -1396,6 +1403,7 @@ void NarrowbandWorkspace::refreshFromSession() {
     } else if (!recognitionSegments_.empty() && recognitionChannelId_ != channel->id) {
         markRecognitionStale("已切换活动通道");
     }
+    if (auto* title = findChild<QLabel*>("narrowbandStftPanelTitle")) title->setText("窄带时频图 · " + powerUnit(file->metadata));
     updateCaption();
     const auto index = static_cast<int>(channel->page);
     if (pages_->currentIndex() != index) pages_->setCurrentIndex(index);
@@ -1416,8 +1424,8 @@ void NarrowbandWorkspace::refreshFromSession() {
     updateFrequencyAxisLabels();
     if (waveform_)
         waveform_->setYAxisRange(channel->waveformAxisMinimum, channel->waveformAxisMaximum,
-                                 waveformAxisLabel(channel->waveform));
-    if (psd_) psd_->setYAxisRange(channel->psdAxisMinimum, channel->psdAxisMaximum, QStringLiteral("dBFS/Hz"));
+                                 waveformAxisLabel(channel->waveform, session_.activeFile() ? &session_.activeFile()->metadata : nullptr));
+    if (psd_) psd_->setYAxisRange(channel->psdAxisMinimum, channel->psdAxisMaximum, session_.activeFile() ? powerUnit(session_.activeFile()->metadata) : QStringLiteral("dBFS/Hz"));
     if (navigation_) {
         const auto total = std::max<std::uint64_t>(1, channel->sourceTime.end - channel->sourceTime.begin);
         navigation_->setNavigationViewport(
@@ -1666,8 +1674,8 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
             positions[index] = provider.sourceRange({middle, middle + 1}).begin;
             if (channel.waveform == NarrowbandWaveform::IQ || channel.waveform == NarrowbandWaveform::Phase) {
                 if (!provider.read({middle, middle + 1}, values, cancelled)) { waveformReady = false; break; }
-                waveI[index] = channel.waveform == NarrowbandWaveform::Phase ? std::arg(values.front()) : values.front().real() * 32768.f;
-                if (!waveQ.empty()) waveQ[index] = values.front().imag() * 32768.f;
+                waveI[index] = channel.waveform == NarrowbandWaveform::Phase ? std::arg(values.front()) : values.front().real() * static_cast<float>(adcScale(source.sampleFormat));
+                if (!waveQ.empty()) waveQ[index] = values.front().imag() * static_cast<float>(adcScale(source.sampleFormat));
             } else {
                 double power = 0, peak = 0; std::uint64_t count = 0;
                 for (auto first = begin; first < end && !cancelled(); ) {
@@ -1677,7 +1685,7 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
                     count += values.size(); first = last;
                 }
                 if (!waveformReady || !count) { waveformReady = false; break; }
-                waveI[index] = static_cast<float>(32768 * std::sqrt(channel.waveform == NarrowbandWaveform::Envelope ? peak : power / count));
+                waveI[index] = static_cast<float>(adcScale(source.sampleFormat) * std::sqrt(channel.waveform == NarrowbandWaveform::Envelope ? peak : power / count));
             }
         }
         if (cancelled()) return;
@@ -1687,7 +1695,7 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
         const bool psdReady=false,stftReady=!spectrum->frames.empty();
         QImage stft; std::vector<float> rasterPower;
         if (stftReady) { rasterPower = spectralRaster(*spectrum, 560, 240, MainMode::TimeFrequency); stft = spectrumImage(rasterPower, QSize(560, 240)); }
-        QString status = waveformReady ? QStringLiteral("真实 DDC · 全可见窗分箱 · ADC 计数") : QStringLiteral("IQ 读取或窄带计算失败");
+        QString status = waveformReady ? QString("真实 DDC · 全可见窗分箱 · ")+amplitudeUnit(source) : QStringLiteral("IQ 读取或窄带计算失败");
         if (stftReady) status += QStringLiteral(" · N=%1 · Δf=%2 Hz · 帧 %3 · %4 ms · ENBW %5 Hz")
             .arg(spectrum->plan.points).arg(spectrum->plan.binHz, 0, 'g', 6).arg(spectrum->frames.size())
             .arg(spectrum->plan.requiredSeconds * 1000, 0, 'g', 6).arg(spectrum->plan.noiseBandwidthHz, 0, 'g', 6);
@@ -1746,12 +1754,12 @@ void NarrowbandWorkspace::installFrame(std::uint64_t generation, std::uint64_t c
     }
     if (waveform_)
         waveform_->setYAxisRange(channel->waveformAxisMinimum, channel->waveformAxisMaximum,
-                                 waveformAxisLabel(channel->waveform));
+                                 waveformAxisLabel(channel->waveform, session_.activeFile() ? &session_.activeFile()->metadata : nullptr));
     if (waveform_) {
         waveform_->setSamplePointOrigin(firstOutputSample);
         waveform_->setSamplePointsVisible(samplePointsVisible && !waveformI.empty());
     }
-    if (psd_) psd_->setYAxisRange(channel->psdAxisMinimum, channel->psdAxisMaximum, QStringLiteral("dBFS/Hz"));
+    if (psd_) psd_->setYAxisRange(channel->psdAxisMinimum, channel->psdAxisMaximum, session_.activeFile() ? powerUnit(session_.activeFile()->metadata) : QStringLiteral("dBFS/Hz"));
     if (!waveformI.empty()) {
         if (waveformQ.empty()) waveform_->setSeries({std::move(waveformI)}, status);
         else waveform_->setSeries({std::move(waveformI), std::move(waveformQ)}, status);

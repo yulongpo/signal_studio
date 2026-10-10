@@ -350,7 +350,7 @@ QJsonObject encodeProject(const Project& project) {
                 {QStringLiteral("sampleFormat"),encodeSampleFormat(metadata.sampleFormat)},
             {QStringLiteral("declaredBandwidthHz"), metadata.declaredBandwidthHz},
                 {QStringLiteral("effectiveBandwidthHz"), metadata.effectiveBandwidthHz > 0 ?
-                    metadata.effectiveBandwidthHz : metadata.sampleRateHz},
+                    metadata.effectiveBandwidthHz : metadata.sampleRateHz/(metadata.sampleFormat.structure==SampleStructure::Real?2:1)},
                 {QStringLiteral("demo"), metadata.demo},
                 {QStringLiteral("demoSeed"), metadata.demoSeed}}},
             {QStringLiteral("view"), encodeRange(file.view)},
@@ -436,6 +436,7 @@ Project decodeProject(const QJsonObject& root) {
         const FrequencyRange sampledBand{file.metadata.centerFrequencyHz - file.metadata.sampleRateHz / 2,
                                          file.metadata.centerFrequencyHz + file.metadata.sampleRateHz / 2};
         for (const auto& channelValue : array(data, "channels", 1000)) {
+            require(file.metadata.sampleFormat.structure!=SampleStructure::Real,"实数ADC工程不支持复数DDC通道");
             const auto channelData = object(channelValue, QStringLiteral("channel"));
             const auto id = string(channelData, "id", 100);
             const auto sourceId = string(channelData, "sourceMarkId", 100);

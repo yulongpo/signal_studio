@@ -12,7 +12,7 @@ bool describeRawFile(const QString& path,const SampleFormat& format,double fs,do
     if(!info.isFile()||!info.isReadable()){error="数据文件不存在或不可读";return false;}
     if(!sampleCountForBytes(format,static_cast<std::uint64_t>(info.size()),count,message)){error=QString::fromStdString(message);return false;}
     const double maximum=fs/(format.structure==SampleStructure::Real?2:1);
-    if(!std::isfinite(fs)||fs<=0||!std::isfinite(fc)||fc<0||!std::isfinite(bandwidth)||bandwidth<0||bandwidth>maximum){error="采样率、频率或有效带宽无效";return false;}
+    if(!std::isfinite(fs)||fs<=0||fs>1e12||!std::isfinite(static_cast<double>(count)/fs)||!std::isfinite(fc)||fc<0||fc>1e12||!std::isfinite(bandwidth)||bandwidth<0||bandwidth>maximum){error="采样率、频率、时长或有效带宽无效";return false;}
     FileMetadata m;m.name=info.fileName().toUtf8().toStdString();m.path=info.canonicalFilePath().toUtf8().toStdString();
     m.sampleFormat=format;m.sampleRateHz=fs;m.centerFrequencyHz=fc;m.sampleCount=count;m.demo=false;
     m.declaredBandwidthHz=bandwidth;m.effectiveBandwidthHz=bandwidth>0?bandwidth:maximum;

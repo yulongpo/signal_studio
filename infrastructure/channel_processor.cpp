@@ -246,6 +246,8 @@ bool processChannelSamples(const FileMetadata& source, const Channel& channel,
                            const std::function<bool()>& cancelled,
                            const std::function<void(std::uint64_t, std::uint64_t)>& progress) {
     result = {};
+    if(source.sampleFormat.structure==SampleStructure::Real)return false;
+    result.waveformScale=adcScale(source.sampleFormat);
     if (plan.stageCoefficients.empty() || outputSamples.begin >= outputSamples.end ||
         outputSamples.end - outputSamples.begin > 8'000'000) return false;
     std::uint64_t outputCount = 0;
@@ -271,8 +273,7 @@ bool processChannelSamples(const FileMetadata& source, const Channel& channel,
 
     Int16IqFile iq;
     QString error;
-    const auto sourcePath = QString::fromUtf8(source.path.data(), static_cast<qsizetype>(source.path.size()));
-    if (!iq.open(sourcePath, error) || iq.sampleCount() != source.sampleCount) return false;
+    if (!iq.open(source, error) || iq.sampleCount() != availableSamples(source)) return false;
     const auto count = static_cast<std::size_t>(last - first + 1);
     std::vector<std::complex<float>> current(count);
 
@@ -379,6 +380,7 @@ bool ChannelSampleCache::process(const FileMetadata& source, const Channel& chan
                                  const std::function<bool()>& cancelled) {
     std::lock_guard lock(mutex_);
     result = {};
+    result.waveformScale=adcScale(source.sampleFormat);
     if (outputSamples.begin >= outputSamples.end || outputSamples.end - outputSamples.begin > 8'000'000)
         return false;
     std::uint64_t outputCount = 0;
@@ -494,7 +496,7 @@ ChannelSampleCacheStats ChannelSampleCache::stats() const {
 bool channelWaveform(const ChannelSampleData& data, int points, NarrowbandWaveform mode,
                      std::vector<float>& output) {
     if (points < 1 || data.samples.empty()) return false;
-    constexpr double adcCountScale = 32768.0;
+    const double adcCountScale = data.waveformScale;
     output.resize(static_cast<std::size_t>(points));
     for (int point = 0; point < points; ++point) {
         const auto first = static_cast<std::size_t>(data.samples.size()) * point / points;
@@ -528,7 +530,7 @@ bool channelWaveform(const ChannelSampleData& data, int points, NarrowbandWavefo
 bool channelWaveformIQ(const ChannelSampleData& data, int points,
                        std::vector<float>& i, std::vector<float>& q) {
     if (points < 1 || data.samples.empty()) return false;
-    constexpr float adcCountScale = 32768.0f;
+    const float adcCountScale = static_cast<float>(data.waveformScale);
     i.resize(static_cast<std::size_t>(points)); q.resize(static_cast<std::size_t>(points));
     for (int point = 0; point < points; ++point) {
         const auto first = static_cast<std::size_t>(data.samples.size()) * point / points;

@@ -53,7 +53,7 @@ classDiagram
 
 格式验证器是唯一派生来源；Int16IqFile名称保留供旧API使用，metadata入口按实际format解释，不按类名猜编码。Raw reader随机条件映射，分析read使用有界真实QFile读取；每次磁盘/解码预算32MiB，取消至少每1024样本。SourceLoader块接近4MiB且整帧，无源文件写入。
 
-Planar IQ + TimeInterleaved：全局I帧区域后全局Q帧区域，每区通道交织。Planar IQ + ChannelPlanar：每通道先全部I、后全部Q，再下一通道。IQ/QI + ChannelPlanar：每通道连续复样本；其它按时刻连续各通道。144矩阵夹具独立循环编码验证地址与实际读取。
+Planar IQ + TimeInterleaved：全局I帧区域后全局Q帧区域，每区通道交织。Planar IQ + ChannelPlanar：每通道先全部I、后全部Q，再下一通道。IQ/QI + ChannelPlanar：每通道连续复样本；其它按时刻连续各通道。432矩阵夹具覆盖三个选中通道，独立循环编码验证地址与实际读取。72组DDC对照使用实际格式入口、完整与partial前缀，并比较缓存和直接结果。
 
 ## Partial State
 
@@ -82,3 +82,7 @@ stateDiagram-v2
 v4存储完整sampleFormat，header/trailer与所有样本索引为uint64十进制字符串；v1/2/3恢复CI16/LE/IQ/单通道/零偏移。保存QSaveFile原子提交；导入先完整校验，再替换Session。运行reader、worker、图谱片段和缓存不落盘。source availability保留物理长度与已读前缀、大小/修改时间指纹；重开不将未读尾部当可用数据。
 
 缓存身份包含源路径/大小/修改时间、完整sampleFormat（含选中通道/偏移/归一化）、Fs/Fc、可用前缀及源generation；PSD和STFT参数独立加入各自key。旧CI16归一化1/32768保持不变。UInt8先减128，整数按128/32768/2^31可选归一化，浮点保留原值。实数使用0..Fs/2单边功率（非DC/Nyquist×2），Fc只是参考，不加到实数谱轴。
+
+整数波形仍显示ADC计数：归一化读取结果乘回对应满刻度；关闭归一化后比例为1。窄带ChannelSampleData携带waveformScale，不能固定乘32768。归一化整数功率为dBFS/Hz，未归一化整数为dB(ADC^2/Hz)，浮点为dB(unit^2/Hz)。主/辅助/窄带轴与游标、参考电平输入和预览一致区分单位。实数Q选择禁用，解析复数DDC未实现且不能从项目JSON绕过。
+
+导入日志最多1024条，UTC时间戳、规范源路径、完整格式key、实际样本数与错误；批量侧栏可只读查看，不写入源文件或原生工程。模板导出禁止覆盖队列源及SigMF配对元数据，也检查canonical路径。

@@ -35,10 +35,15 @@ public:
 
     bool open(const QString& path, QString& error);
     bool open(const FileMetadata& metadata, QString& error) {
+        raw_.reset();if(mapped_&&ownedBytes_.isEmpty())file_.unmap(mapped_);mapped_=nullptr;
+        ownedBytes_.clear();file_.close();sampleCount_=0;
         const auto path=QString::fromStdString(metadata.path);
         if(metadata.availability.status==LoadStatus::Loading||metadata.availability.status==LoadStatus::Failed){error="来源未读入或已失效";return false;}
         if(!metadata.availability.fingerprint.empty()&&iqSourceFingerprint(path).toStdString()!=metadata.availability.fingerprint){error="源文件指纹已改变，请重新读入";return false;}
-        if(path.startsWith(":/")){if(!open(path,error))return false;}
+        if(path.startsWith(":/")){
+            if(metadata.sampleFormat!=SampleFormat{}){error="内置 IQ 资源只支持固定的 CI16/LE/IQ 单通道格式";return false;}
+            if(!open(path,error))return false;
+        }
         else {
             raw_=std::make_unique<RawSampleReader>();
             if(!raw_->open(path,metadata.sampleFormat,error)){raw_.reset();return false;}

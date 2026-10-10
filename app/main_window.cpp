@@ -7,6 +7,8 @@
 #include "ui/checkbox_style.h"
 #include "ui/import/signal_import_dialog.h"
 #include "app/main_window.h"
+#include "ui/source_units.h"
+#include <QStandardItemModel>
 #include "ui/brand/brand_assets.h"
 #include "infrastructure/project_store.h"
 #include "infrastructure/int16_iq_file.h"
@@ -1058,7 +1060,7 @@ void MainWindow::syncTreeState() {
 
 void MainWindow::refresh() {
     if (refreshing_) return; refreshing_ = true;
-    const auto* file = session_.activeFile(); updateTree(); projectLabel_->setText(q(session_.project().name));
+    auto* file = session_.activeFile(); updateTree(); projectLabel_->setText(q(session_.project().name));
     const bool narrowOpen = session_.project().narrowbandWorkspaceOpen && session_.activeChannel() != nullptr;
     if (parameterInputPolicy_) parameterInputPolicy_->setContext(QString::number(session_.projectGeneration()) + "/" +
         q(narrowOpen ? session_.activeChannel()->id : file ? file->metadata.id : std::string{}));
@@ -1080,13 +1082,19 @@ void MainWindow::refresh() {
     if (auto* addButton = findChild<QPushButton*>("projectAddSignal")) { addButton->setVisible(projectReady); addButton->setEnabled(projectReady); }
     if (auto* saveButton = findChild<QPushButton*>("projectSave")) saveButton->setEnabled(saveAction_->isEnabled());
     if (file) {
+        const bool real=file->metadata.sampleFormat.structure==SampleStructure::Real;
+        if(real&&file->display.waveformMode==WaveformMode::Q)file->display.waveformMode=WaveformMode::I;
+        if(auto* model=qobject_cast<QStandardItemModel*>(waveformMode_->model()))model->item(1)->setEnabled(!real);
+        const QStringList waveformTitles{"I 分量（ADC 计数）","Q 分量（ADC 计数）","幅度（RMS，ADC 计数）","幅度包络（ADC 计数）"};
+        for(int i=0;i<4;++i)waveformMode_->setItemText(i,sourceUnits(waveformTitles[i],file->metadata));
         const auto& display = file->display; mainMode_->setCurrentIndex(static_cast<int>(display.mainMode)); auxMode_->setCurrentIndex(static_cast<int>(display.auxiliaryMode)); palette_->setCurrentIndex(static_cast<int>(display.palette)); propertyPalette_->setCurrentIndex(static_cast<int>(display.palette));
-        dataSourceStatus_->setText(file->metadata.demo ? "演示数据 · 未运行 DSP" : file->metadata.availability.status==LoadStatus::Loading ? "实际 IQ · 正在读入" : file->metadata.availability.status==LoadStatus::Failed ? "来源异常 · 分析不可用" : "实际 IQ · FFT 已启用");
-        dataSourceStatus_->setToolTip(file->metadata.demo ? "当前文件使用原型演示数据" : "int16 IQ 数据来自磁盘文件；波形、PSD、时频图均使用真实采样");
-        displayComboValue(dynamic_,display.dynamicRangeDb," dB");displayComboValue(reference_,display.referenceLevelDb," dBFS/Hz");
+        dataSourceStatus_->setText(file->metadata.demo ? "演示数据 · 未运行 DSP" : file->metadata.availability.status==LoadStatus::Loading ? real ? "实际 ADC · 正在读入" : "实际 IQ · 正在读入" : file->metadata.availability.status==LoadStatus::Failed ? "来源异常 · 分析不可用" : real ? "实际 ADC · 单边 FFT 已启用" : "实际 IQ · FFT 已启用");
+        dataSourceStatus_->setToolTip(file->metadata.demo ? "当前文件使用原型演示数据" : QString::fromStdString(formatId(file->metadata.sampleFormat))+" 数据来自磁盘；波形、PSD、时频图均使用实际选择通道");
+        { const QSignalBlocker blocker(reference_); for(int i=0;i<reference_->count();++i) reference_->setItemText(i,reference_->itemText(i).replace(QRegularExpression("\\s*dB.*$")," "+powerUnit(file->metadata))); }
+        displayComboValue(dynamic_,display.dynamicRangeDb," dB");displayComboValue(reference_,display.referenceLevelDb," "+powerUnit(file->metadata));
         waveformMode_->setCurrentIndex(static_cast<int>(display.waveformMode));
         const double minimumBandwidth = file->metadata.sampleRateHz / 65536.0 / 1e6;
-        const double maximumBandwidth = file->metadata.sampleRateHz / 1e6;
+        const double maximumBandwidth = file->metadata.sampleRateHz / (real?2e6:1e6);
         if (effectiveBandwidth_->minimum() != minimumBandwidth || effectiveBandwidth_->maximum() != maximumBandwidth)
             effectiveBandwidth_->setRange(minimumBandwidth, maximumBandwidth);
         displayParameterValue(effectiveBandwidth_,file->metadata.effectiveBandwidthHz / 1e6);
@@ -1128,7 +1136,7 @@ void MainWindow::refresh() {
         } else { for (auto* value : markValues_) value->setText("—"); selectionData_->setText("| 无信号标记"); }
         selectedCount_->setText(QString("已选中 %1 个标记。拖动选中框移动，边线和顶点调整；Esc 回滚当前编辑。").arg(file->selectedMarkIds.size()));
         rename_->setEnabled(mark != nullptr); locate_->setEnabled(mark != nullptr); delete_->setEnabled(!file->selectedMarkIds.empty());
-        if (cursorFileId_ != q(file->metadata.id)) { cursorFileId_ = q(file->metadata.id); cursorSample_ = file->view.time.begin + (file->view.time.end - file->view.time.begin) / 2; cursorFrequency_ = file->metadata.centerFrequencyHz; }
+        if (cursorFileId_ != q(file->metadata.id)) { cursorFileId_ = q(file->metadata.id); cursorSample_ = file->view.time.begin + (file->view.time.end - file->view.time.begin) / 2; cursorFrequency_ = real ? (file->view.frequency.lowerHz+file->view.frequency.upperHz)/2 : file->metadata.centerFrequencyHz; }
         updateCursor(cursorSample_, cursorFrequency_);
     } else {
         stopSourceLoad_->hide(); scope_->setText("未添加 IQ 文件"); navStatus_->setText("—"); auxStatus_->setText("—");
@@ -1322,7 +1330,7 @@ void MainWindow::updateBottom() {
     if (session_.project().narrowbandWorkspaceOpen && session_.activeChannel())
         taskSummary_->setText("窄带通道 · " + (narrowband_ ? narrowband_->dataStatusText() : QStringLiteral("等待后台处理")));
     else taskSummary_->setText(!file ? "空工程 · 无后台任务。" : file->metadata.demo ?
-        "演示图谱 · 未运行真实 DSP。" : "真实 IQ · 图谱抽取与 PSD/STFT 计算在后台线程执行。");
+        "演示图谱 · 未运行真实 DSP。" : file->metadata.sampleFormat.structure==SampleStructure::Real ? "真实 ADC · 单边 PSD/STFT 在后台线程计算；Fc 仅作参考。" : "真实 IQ · 图谱抽取与 PSD/STFT 计算在后台线程执行。");
 }
 void MainWindow::updateCursor(SampleIndex sample, double frequencyHz) {
     const auto* file = session_.activeFile(); if (!file) return; cursorSample_ = sample; cursorFrequency_ = frequencyHz;
@@ -1458,7 +1466,7 @@ bool MainWindow::handleWindowChrome(QObject* watched, QEvent* event) {
 void MainWindow::applyPowerInput(QComboBox* control) {
     if (refreshing_ || !session_.activeFile()) return;
     QString text = control->currentText().trimmed();
-    text.remove(QRegularExpression(QStringLiteral("\\s*dB(?:FS(?:/Hz)?)?\\s*$")));
+    text.remove(QRegularExpression(QStringLiteral("\\s*dB(?:FS(?:/Hz)?|\\((?:unit|ADC)\\^2/Hz\\))?\\s*$")));
     bool ok = false; const double value = text.toDouble(&ok);
     const auto& display = session_.activeFile()->display;
     PowerDisplayRange range{display.referenceLevelDb, display.dynamicRangeDb};
@@ -1469,7 +1477,7 @@ void MainWindow::applyPowerInput(QComboBox* control) {
     control->setToolTip(valid ? QString{} : control == dynamic_ ? "请输入大于 0 且不超过 10000 的动态范围" : "请输入 -200 至 100 的参考电平（dBFS/Hz）");
     if (!valid) return;
     if (control->property("parameterCustomCommit").toBool())
-        rememberCustomValue(control,value,control==dynamic_?" dB":" dBFS/Hz");
+        rememberCustomValue(control,value,control==dynamic_?" dB":" "+powerUnit(session_.activeFile()->metadata));
     cancelInteractions(false); session_.setPowerDisplayRange(range);
     scheduleRightSidebarSettingsSave(); refresh();
 }
@@ -1478,7 +1486,7 @@ void MainWindow::normalizePowerInput(QComboBox* control) {
     const auto& display = session_.activeFile()->display;
     const QSignalBlocker blocker(control); const QSignalBlocker editBlocker(control->lineEdit());
     control->setProperty("parameterDraft", false);
-    const auto text = number(control == dynamic_ ? display.dynamicRangeDb : display.referenceLevelDb) + (control == dynamic_ ? " dB" : " dBFS/Hz");
+    const auto text = number(control == dynamic_ ? display.dynamicRangeDb : display.referenceLevelDb) + (control == dynamic_ ? " dB" : " "+powerUnit(session_.activeFile()->metadata));
     control->setProperty("parameterCommittedText", text); control->setEditText(text);
     control->lineEdit()->setStyleSheet({}); control->setProperty("powerInputValid", true);
     control->setToolTip({});
@@ -1506,7 +1514,7 @@ void MainWindow::updatePowerFit() {
 void MainWindow::autoFitPower() {
     updatePowerFit(); if (!autoPowerFit_->isEnabled()) return;
     cancelInteractions(false); session_.setPowerDisplayRange(cachedPowerFit_.range);
-    rememberCustomValue(dynamic_,cachedPowerFit_.range.dynamicRangeDb," dB");rememberCustomValue(reference_,cachedPowerFit_.range.referenceLevelDb," dBFS/Hz");
+    rememberCustomValue(dynamic_,cachedPowerFit_.range.dynamicRangeDb," dB");rememberCustomValue(reference_,cachedPowerFit_.range.referenceLevelDb," "+powerUnit(session_.activeFile()->metadata));
     normalizePowerInput(dynamic_); normalizePowerInput(reference_);
     scheduleRightSidebarSettingsSave(); refresh();
     log(cachedPowerFit_.limited ? "自动适配已应用，达到参数合法边界" : "已按当前可见热图及 PSD 自动适配电平（上下各 3 dB 余量）");

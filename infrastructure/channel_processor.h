@@ -35,6 +35,7 @@ struct ChannelSampleData {
     std::vector<std::complex<float>> samples;
     bool leftPadded = false;
     bool rightPadded = false;
+    double waveformScale = 32768.0;
 };
 
 struct ChannelSampleCacheStats {

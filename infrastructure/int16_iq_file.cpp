@@ -90,8 +90,9 @@ Int16IqFile::~Int16IqFile() {
 }
 
 bool Int16IqFile::open(const QString& path, QString& error) {
-    raw_.reset();format_=SampleFormat{};file_.close();
+    raw_.reset();format_=SampleFormat{};
     if (mapped_ && ownedBytes_.isEmpty()) file_.unmap(mapped_);
+    file_.close();
     mapped_ = nullptr; ownedBytes_.clear(); sampleCount_ = 0;
     file_.setFileName(path);
     if (!file_.open(QIODevice::ReadOnly)) { error = file_.errorString(); return false; }
@@ -178,6 +179,7 @@ bool Int16IqFile::psd(const TimeRange& range, const FrequencyRange& frequencies,
                       const std::function<bool()>& cancelled) const {
     if (!isOpen() || points < 1) return false;
     auto source = spectralSource(); source.sampleRateHz = sampleRateHz;
+    if(format_.structure==SampleStructure::Real)centerFrequencyHz=0;
     const auto data = analyzeSpectrogram(source, range,
         {frequencies.lowerHz - centerFrequencyHz, frequencies.upperHz - centerFrequencyHz}, fftSize, 64, cancelled);
     const auto average = averageSpectrum(*data);
@@ -196,7 +198,7 @@ bool Int16IqFile::spectrogram(const FileMetadata& metadata, const ViewRange& vie
                               const std::function<bool()>& cancelled) const {
     auto source = spectralSource(); source.sampleRateHz = metadata.sampleRateHz;
     const auto data = analyzeSpectrogram(source, view.time,
-        {view.frequency.lowerHz - metadata.centerFrequencyHz, view.frequency.upperHz - metadata.centerFrequencyHz},
+        {view.frequency.lowerHz - analysisFrequencyOffset(metadata), view.frequency.upperHz - analysisFrequencyOffset(metadata)},
         fftSize, mode == MainMode::Waterfall ? pixels.height() : pixels.width(), cancelled);
     output = spectralRaster(*data, pixels.width(), pixels.height(), mode);
     return !output.empty();

@@ -1,6 +1,7 @@
 #include "infrastructure/spectral_analysis.h"
 #include "ui/charts/cursor_overlay.h"
 #include "ui/charts/plot_widget.h"
+#include "ui/source_units.h"
 #include "ui/charts/accelerated_surface.h"
 #include "ui/charts/chart_interaction.h"
 #include "ui/charts/palette.h"
@@ -454,7 +455,7 @@ QString PlotWidget::statusText() const {
 }
 QString PlotWidget::tipText() const {
     const auto* file = session_.activeFile(); if (!file || kind_ != Kind::Auxiliary) return {};
-    return file->display.auxiliaryMode == AuxiliaryMode::Waveform ?
+    return sourceUnits(file->display.auxiliaryMode == AuxiliaryMode::Waveform ?
         QString(file->display.waveformMode == WaveformMode::I ? "I 分量（ADC 计数）" :
                 file->display.waveformMode == WaveformMode::Q ? "Q 分量（ADC 计数）" :
                 file->display.waveformMode == WaveformMode::Envelope ? "幅度包络（ADC 计数）" : "幅度 RMS（ADC 计数）") + " · 当前时间 " + rangeText(false,
@@ -462,7 +463,7 @@ QString PlotWidget::tipText() const {
         QString(session_.linkedCursor(file->metadata.id).framePsd ? "驻留帧谱 · 与 STFT 帧逐 bin 一致" :
             file->display.psd.scope==PsdScope::SourceMark ? "来源标记" : file->display.psd.scope==PsdScope::Whole ? "整个文件" : "当前时间窗") +
             " · N=" + QString::number(session_.linkedCursor(file->metadata.id).framePsd ? file->display.stftSize : file->display.psdSize) + "（可见频段）" + (averagePower_&&!session_.linkedCursor(file->metadata.id).framePsd?
-                QString(" · %1 · 有效 %2 ms · 补零 %3 · ENBW %4 Hz · %5 段").arg(file->display.psd.statistic==SpectrumStatistic::Mean?"平均谱":file->display.psd.statistic==SpectrumStatistic::Maximum?"最大谱":"最小谱").arg(averagePower_->observedSeconds*1000,0,'g',6).arg(averagePower_->paddedSamples).arg(averagePower_->noiseBandwidthHz,0,'g',6).arg(averagePower_->processedFrames):QString{});
+                QString(" · %1 · 有效 %2 ms · 补零 %3 · ENBW %4 Hz · %5 段").arg(file->display.psd.statistic==SpectrumStatistic::Mean?"平均谱":file->display.psd.statistic==SpectrumStatistic::Maximum?"最大谱":"最小谱").arg(averagePower_->observedSeconds*1000,0,'g',6).arg(averagePower_->paddedSamples).arg(averagePower_->noiseBandwidthHz,0,'g',6).arg(averagePower_->processedFrames):QString{}),file->metadata);
 }
 void PlotWidget::setCursorCoordinates(SampleIndex sample, double frequency) {
     if (cursorSample_ == sample && cursorFrequency_ == frequency) return;
@@ -498,7 +499,8 @@ void PlotWidget::syncState() {
             cursorSample_ = displayedFile_.empty() && file->metadata.demoSeed == 1 ?
                 sampleIndex(200.0L * file->metadata.sampleRateHz, availableSamples(file->metadata)) :
                 file->view.time.begin + (file->view.time.end - file->view.time.begin) / 2;
-            cursorFrequency_ = file->metadata.centerFrequencyHz;
+            cursorFrequency_ = file->metadata.sampleFormat.structure==SampleStructure::Real ?
+                (file->view.frequency.lowerHz+file->view.frequency.upperHz)/2 : file->metadata.centerFrequencyHz;
             if (kind_ == Kind::Main) emit cursorChanged(cursorSample_, cursorFrequency_);
         }
         displayedFile_ = id;
@@ -952,6 +954,7 @@ void PlotWidget::drawCursors(QPainter& painter, bool inverseMask) {
                 .arg(curveSource_[index], 0, 'g', 8).arg(curveShowsSamplePoints_ ? "逐样本" : "显示分箱").arg(sample);
         } else text += "\n波形数据不可用 / 正在更新";
     }
+        text = sourceUnits(text, file->metadata);
         const auto readout = cursor_overlay::parse(text, kind_ == Kind::Main, kind_ == Kind::Main && file->display.mainMode == MainMode::Waterfall);
         const auto layout = cursor_overlay::draw(painter, plot, position, kind_ == Kind::Main, readout,
             isPinned, isPinned ? std::vector<QRectF>{} : pinLayout.rectangles(), inverseMask);
@@ -1182,11 +1185,11 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
     }
     painter.drawText(QRectF(plot.left(), height() - 15, plot.width(), 14), Qt::AlignHCenter | Qt::AlignBottom, x.label);
     painter.save(); painter.translate(15, plot.center().y()); painter.rotate(-90);
-    const QString verticalTitle = kind_ == Kind::Main ? y.label : psd ? "功率谱密度（dBFS/Hz）" :
+    const QString verticalTitle = sourceUnits(kind_ == Kind::Main ? y.label : psd ? "功率谱密度（dBFS/Hz）" :
         file->metadata.demo ? "幅值（演示单位）" :
         file->display.waveformMode == WaveformMode::I ? "I 分量（ADC 计数）" :
         file->display.waveformMode == WaveformMode::Q ? "Q 分量（ADC 计数）" :
-        file->display.waveformMode == WaveformMode::Envelope ? "幅度包络（ADC 计数）" : "幅度 RMS（ADC 计数）";
+        file->display.waveformMode == WaveformMode::Envelope ? "幅度包络（ADC 计数）" : "幅度 RMS（ADC 计数）",file->metadata);
     painter.drawText(QPointF(-metrics.horizontalAdvance(verticalTitle) / 2, 0), verticalTitle);
     painter.restore();
     int originRow = 0;
