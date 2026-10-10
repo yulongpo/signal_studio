@@ -23,6 +23,14 @@ int runImportBrandCapture(const QString& directory){
             QTemporaryDir temporary;const auto large=temporary.filePath("CI8_FS1Msps_FC0Hz.raw");{QFile file(large);require(file.open(QIODevice::WriteOnly)&&file.resize(128*1024*1024),"Prefix capture fixture failed");}
             SignalImportDialog dialog("验收工程",&window);dialog.show();dialog.windowHandle()->setScreen(screen);dialog.move(screen->geometry().center()-dialog.rect().center());require(dialog.addPath(large),"Prefix source failed");dialog.startImport();require(waitUntil([&]{return dialog.controller().rows()[0].load.loaded>0;},15000),"No actual decoded progress");dialog.findChild<QPushButton*>("importProgressStop")->click();require(waitUntil([&]{return !dialog.controller().running()&&dialog.controller().canCommit();},15000),"Prefix stop failed");require(waitUntil([&]{return dialog.findChild<QPushButton*>("importProgressFinish")->isEnabled();},15000),"Prefix first preview failed");const auto& row=dialog.controller().rows()[0];require(row.status==ImportStatus::Partial,"Capture must retain true partial data");save("07-import-progress-partial",large);report["partial"]=QJsonObject{{"physicalSamples",QString::number(row.metadata.sampleCount)},{"availableSamples",QString::number(row.load.loaded)},{"envelopePoints",static_cast<int>(row.load.envelope.size())},{"format",QString::fromStdString(formatId(row.metadata.sampleFormat))},{"fixtureDeletedAfterCapture",true}};dialog.hide();
         }
+        QTimer::singleShot(0,[]{for(auto* widget:QApplication::topLevelWidgets())if(auto* box=qobject_cast<QMessageBox*>(widget))if(auto* yes=box->button(QMessageBox::Yes))yes->click();});
+        window.openNarrowbandDemoProject();
+        require(waitUntil([&]{auto* n=window.findChild<NarrowbandWorkspace*>();return n&&n->isVisible()&&n->visibleGpuDataDrawCalls()>0;},30000),"Narrowband hardware did not settle");
+        save("08-narrowband-brand",":/signalstudio/demo/narrowband_demo.iq");
+        if(auto* n=window.findChild<NarrowbandWorkspace*>())report["narrowbandRenderer"]=n->renderStatistics();
+        window.findChild<QAction*>("aboutSignalStudioAction")->trigger();QTest::qWait(200);
+        auto* about=window.findChild<QDialog*>("aboutSignalStudioDialog");require(about!=nullptr,"About dialog missing");
+        about->windowHandle()->setScreen(screen);about->move(screen->geometry().center()-about->rect().center());save("09-about-brand");about->hide();
         report["pass"]=true;
     }catch(const std::exception& e){report["error"]=QString::fromUtf8(e.what());}
     report["scenes"]=scenes;QFile file(output.filePath("native-capture-report.json"));if(file.open(QIODevice::WriteOnly))file.write(QJsonDocument(report).toJson());return report["pass"].toBool()?0:1;

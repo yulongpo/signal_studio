@@ -7,6 +7,7 @@
 #include "ui/checkbox_style.h"
 #include "ui/import/signal_import_dialog.h"
 #include "app/main_window.h"
+#include "ui/brand/brand_assets.h"
 #include "infrastructure/project_store.h"
 #include "infrastructure/int16_iq_file.h"
 #include "infrastructure/channel_processor.h"
@@ -192,6 +193,7 @@ protected:
 } // namespace
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+    qApp->setWindowIcon(BrandAssets::windowIcon()); setWindowIcon(BrandAssets::windowIcon());
     setWindowFlag(Qt::FramelessWindowHint);
     setObjectName("SignalStudioWindow"); setWindowTitle("Signal Studio · A1.4.3"); resize(1600, 960); setMinimumSize(720, 520);
     setStyleSheet(R"(
@@ -292,11 +294,8 @@ void MainWindow::buildMenus() {
     connect(close, &QToolButton::clicked, this, &QWidget::close);
     menuBar()->setCornerWidget(controls, Qt::TopRightCorner);
     auto* brand = new QWidget; auto* brandRow = new QHBoxLayout(brand); brandRow->setContentsMargins(11, 0, 22, 0); brandRow->setSpacing(8);
-    auto* mark = label({});
-    const auto ratio = devicePixelRatioF(); QPixmap icon(qCeil(22 * ratio), qCeil(22 * ratio)); icon.setDevicePixelRatio(ratio); icon.fill(Qt::transparent);
-    QPainter painter(&icon); painter.setRenderHint(QPainter::Antialiasing); painter.setPen(QPen(QColor("#59c6f0"), 1)); painter.setBrush(QColor("#16324a")); painter.drawEllipse(QPointF(11, 11), 9, 9);
-    painter.setPen(QPen(QColor("#308ec0"), 1)); painter.setBrush(QColor("#39baf3")); painter.drawEllipse(QPointF(11, 11), 6, 6); painter.end(); mark->setPixmap(icon); brandRow->addWidget(mark);
-    auto* name = label("Signal Studio"); name->setStyleSheet("font-size:15px;font-weight:700;"); brandRow->addWidget(name);
+    brandRow->addWidget(BrandAssets::label("icon",QSize(24,24),brand,"titleBrandIcon","primary"));
+    brandRow->addWidget(BrandAssets::label("wordmark",QSize(132,24),brand,"titleBrandWordmark"));
     auto* version = label("A1.4.3 · 交互可靠性优化"); version->setStyleSheet("font-size:10px;color:#edc586;border:1px solid #836d44;padding:3px 6px;border-radius:3px;");
     brandRow->addWidget(version); menuBar()->setCornerWidget(brand, Qt::TopLeftCorner);
     auto* file = menuBar()->addMenu("文件(&F)");
@@ -350,7 +349,8 @@ void MainWindow::buildMenus() {
     view->addAction("适应全部数据", this, [this] { cancelInteractions(); if (const auto* f = session_.activeFile()) session_.setView(fullRange(f->metadata)); refresh(); });
     view->addAction("恢复默认视图", this, [this] { cancelInteractions(); session_.resetView(); propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave(); });
     menuBar()->addMenu("分析(&A)")->addAction("算法仅为 UI 演示", this, [this] { log("算法仅为 UI 演示，尚未处理真实 IQ"); });
-    menuBar()->addMenu("工具(&T)")->addAction("关于 Signal Studio", this, [this] { log("工程保存文件路径、有效带宽和分析状态；显示参数按全局偏好保存，IQ 样本仍保留在原始文件"); });
+    auto* about=menuBar()->addMenu("工具(&T)")->addAction("关于 Signal Studio", this, [this] { auto* dialog=BrandAssets::aboutDialog(this);dialog->setAttribute(Qt::WA_DeleteOnClose);dialog->open(); });
+    about->setObjectName("aboutSignalStudioAction");
     auto* help = menuBar()->addMenu("帮助(&H)");
     auto* interactions = help->addAction("鼠标交互帮助"); interactions->setObjectName("mouseInteractionHelpAction");
     connect(interactions, &QAction::triggered, this, [this] {
@@ -551,6 +551,7 @@ void MainWindow::buildWorkspace() {
     graphArea->setObjectName("graphArea"); graphArea->installEventFilter(this);
     empty_ = new QWidget(graphArea); empty_->setObjectName("emptyWorkspace"); empty_->setStyleSheet("background:#0d1725;");
     auto* emptyLayout = new QVBoxLayout(empty_); emptyLayout->setSpacing(12); emptyLayout->addStretch();
+    emptyLayout->addWidget(BrandAssets::label("lockup",QSize(360,90),empty_,"welcomeBrand"),0,Qt::AlignCenter);
     auto* emptyTitle = label("开始宽带数据分析", "emptyWorkflowTitle"); emptyTitle->setStyleSheet("font-size:22px;font-weight:600;color:#dce9f6;"); emptyTitle->setAlignment(Qt::AlignCenter); emptyLayout->addWidget(emptyTitle);
     auto* emptyHelp = label("按顺序完成工程、信号和宽带数据操作", "emptyWorkflowHelp", "help"); emptyHelp->setAlignment(Qt::AlignCenter); emptyLayout->addWidget(emptyHelp);
     auto* workflow = label("01  工程     →     02  信号     →     03  宽带数据", "emptyWorkflowSteps"); workflow->setAlignment(Qt::AlignCenter); workflow->setStyleSheet("font-size:14px;color:#79b8de;padding:14px;"); emptyLayout->addWidget(workflow);

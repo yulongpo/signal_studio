@@ -5,7 +5,7 @@
 | M0 | Complete | BASELINE_AUDIT.md；干净工作树、fetch、基线审计 |
 | M1 | Complete | Debug build；CTest 6/6 (243.80s)；144组格式/读取/v4往返；旧CI16、DDC、谱分析、UI回归 |
 | M2 | Complete | M2-ui.txt 6/6；第二屏原生捕获8场景，CI16/RI16实际文件、真实停止前缀；批量/模板深化在M4 |
-| M3 | Pending | 共享品牌资源/ICO/全局入口/关于/资源检查与截图 |
+| M3 | Complete | M3-ui.txt 3/3；共享15SVG+PNG回退；PE七层ICO；第二屏10场景截图；Debug独立包 |
 | M4 | Pending | SigMF/来源/模板/队列隔离/取消/重试/去重测试 |
 | M5 | Pending | Debug/Release/CTest、独立包、GPU/软件、九张截图、执行报告 |
 
@@ -26,3 +26,9 @@
 `SignalStudioUiTests importFormatAndAdaptiveDraft importRealFilesAndCancelPrefix addIqFileDialogCancelsAndImportsRealInt16Iq parameterInputsIgnoreWheel`：6 passed / 0 failed。首次调用有一个不存在的测试函数名，修正命令后重跑通过，没有删除断言。
 
 `SignalStudioUiCapture --import-brand <acceptance-directory>`：8场景通过，第二连接屏 Redmi 27 NU / DISPLAY6 / 3840x2160 / DPR1.5。主窗口全屏；导入图是该屏真实Qt模态窗口裁切，报告记录实际像素/DPR。系统桌面抓图返回黑图，改用既有 QWidget::grab 并加非黑像素检查。具体证据为 docs/acceptance/import-brand-v2/native-capture-report.json 与 screenshots/03..07。M3/M5将重新生成全品牌截图。
+
+## M3 自查
+
+正式资源完整复制，qrc路径有效，共享资源静态库只编译一次，三个可执行目标都锚定可用。原包ICO缺24px，使用原始PNG尺寸封装七层，PE资源实读16/24/32/48/64/128/256。15个SVG无脚本、图像、文字依赖；所有变体和PNG回退资源测试3 passed / 0 failed。
+
+欢迎、标题、导入32px、窄带24px、关于与运行窗口图标已集成；图谱颜色/纹理策略未改变。原生捕获10场景pass=true，包含08窄带真实DDC和09关于，第二屏实际4K/DPR1.5；模态尺寸按报告记录。截图切换工程的确认最初未通过，修正为点击真实Yes按钮后重新捕获通过。独立包Debug系统PATH通过，强制PNG回退同入口再验证，完整证据见BRAND_USAGE.md、brand-debug.json与M3-package-png.txt。Release验证在M5执行。

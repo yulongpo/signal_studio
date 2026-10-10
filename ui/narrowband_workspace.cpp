@@ -5,6 +5,7 @@
 #include "ui/charts/cursor_overlay.h"
 #include "ui/charts/interaction_feedback.h"
 #include "ui/narrowband_workspace.h"
+#include "ui/brand/brand_assets.h"
 
 #include "infrastructure/channel_processor.h"
 #include "infrastructure/int16_iq_file.h"
@@ -901,6 +902,7 @@ void NarrowbandWorkspace::buildPages() {
     auto* root = new QVBoxLayout(this); root->setContentsMargins(5, 4, 5, 5); root->setSpacing(4);
     auto* header = new QWidget; header->setObjectName("narrowbandHeader"); header->setFixedHeight(36);
     auto* headerRow = new QHBoxLayout(header); headerRow->setContentsMargins(4, 0, 4, 0); headerRow->setSpacing(5);
+    headerRow->addWidget(BrandAssets::label("icon",QSize(24,24),header,"narrowbandBrand","primary"));
     const std::array<QString, 4> titles{"信号观察", "调制分析", "深度学习识别", "解调工作台"};
     const std::array<QString, 4> ids{"observePage", "modulationPage", "deepLearningPage", "demodulationPage"};
     for (int i = 0; i < 4; ++i) {

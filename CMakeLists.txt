@@ -87,6 +87,15 @@ set_target_properties(SignalStudioInfrastructure PROPERTIES AUTOMOC OFF)
 target_link_libraries(SignalStudioInfrastructure PUBLIC SignalStudioCore Qt6::Core)
 ss_target_defaults(SignalStudioInfrastructure)
 
+execute_process(COMMAND git rev-parse --short HEAD WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    OUTPUT_VARIABLE SS_BUILD_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
+add_library(SignalStudioBrand STATIC ui/brand/brand_assets.cpp ui/brand/brand_assets.h
+    resources/branding/qt/resources/branding.qrc)
+set_target_properties(SignalStudioBrand PROPERTIES AUTORCC ON AUTOMOC OFF)
+ss_target_defaults(SignalStudioBrand)
+target_link_libraries(SignalStudioBrand PUBLIC Qt6::Widgets)
+target_compile_definitions(SignalStudioBrand PRIVATE SS_PRODUCT_VERSION="${PROJECT_VERSION}" SS_BUILD_REVISION="${SS_BUILD_REVISION}")
+
 set(SS_UI_SOURCES
     ui/controls/adaptive_value_edit.cpp
     ui/controls/adaptive_value_edit.h
@@ -109,8 +118,13 @@ set(SS_UI_SOURCES
     ui/charts/accelerated_surface.h
 )
 add_executable(SignalStudio WIN32 app/main.cpp ${SS_UI_SOURCES})
+if(WIN32)
+    enable_language(RC)
+    target_sources(SignalStudio PRIVATE resources/branding/qt/windows/app_icon.rc)
+    target_include_directories(SignalStudio PRIVATE resources/branding/qt/windows)
+endif()
 target_link_libraries(SignalStudio PRIVATE
-    SignalStudioCore SignalStudioInfrastructure Qt6::Widgets
+    SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets
     Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
 ss_target_defaults(SignalStudio)
 ss_add_graphics_shaders(SignalStudio signalstudio_app_shaders)
@@ -175,7 +189,7 @@ if(SS_BUILD_TESTS)
 
     add_executable(SignalStudioUiTests tests/ui_tests.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioUiTests PRIVATE
-        SignalStudioCore SignalStudioInfrastructure Qt6::Widgets Qt6::Test
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
     ss_target_defaults(SignalStudioUiTests)
     target_compile_definitions(SignalStudioUiTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
@@ -188,7 +202,7 @@ if(SS_BUILD_TESTS)
     )
     add_executable(SignalStudioUiCapture tests/ui_capture.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioUiCapture PRIVATE
-        SignalStudioCore SignalStudioInfrastructure Qt6::Widgets Qt6::Test
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
     ss_target_defaults(SignalStudioUiCapture)
     target_compile_definitions(SignalStudioUiCapture PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

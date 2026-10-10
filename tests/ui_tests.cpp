@@ -1,4 +1,6 @@
 #include "app/main_window.h"
+#include "ui/brand/brand_assets.h"
+#include <QClipboard>
 #include "ui/charts/plot_widget.h"
 #include "ui/charts/accelerated_surface.h"
 #include "ui/charts/cursor_overlay.h"
@@ -282,6 +284,7 @@ private slots:
     void escapeCancelsGestureBeforeLeavingMaximize();
     void addIqFileDialogCancelsAndImportsRealInt16Iq();
     void importFormatAndAdaptiveDraft();
+    void brandResourcesAndAbout();
     void importRealFilesAndCancelPrefix();
     void narrowbandDemoResourceAndFourPages();
     void waveformBandwidthAndVisiblePaneStftSettings();
@@ -2322,6 +2325,24 @@ void UiTests::escapeCancelsGestureBeforeLeavingMaximize() {
     QVERIFY(!host->isVisible());
 }
 
+void UiTests::brandResourcesAndAbout(){
+    QVERIFY(!BrandAssets::windowIcon().isNull());
+    for(const auto& kind:QStringList{"icon","wordmark","lockup"}) {
+        for(const auto& variant:QStringList{"primary","dark","light","mono-dark","mono-light"}) {
+            QFile file(QString(":/branding/%1-%2.svg").arg(kind,variant));QVERIFY(file.open(QIODevice::ReadOnly));
+            const auto xml=file.readAll();QVERIFY(!xml.contains("<script"));QVERIFY(!xml.contains("<image"));QVERIFY(!xml.contains("<text"));
+            const auto pixmap=BrandAssets::pixmap(kind,QSize(120,40),1.5,variant);QVERIFY(!pixmap.isNull());QCOMPARE(pixmap.size(),QSize(180,60));
+        }
+        const auto fallback=BrandAssets::pixmap(kind,QSize(120,40),1.5,"dark",true);QVERIFY(!fallback.isNull());
+        const auto image=fallback.toImage();int visible=0;for(int y=0;y<image.height();++y)for(int x=0;x<image.width();++x)if(image.pixelColor(x,y).alpha()>0)++visible;QVERIFY(visible>20);
+    }
+    MainWindow window;window.show();QVERIFY(!window.windowIcon().isNull());
+    QVERIFY(window.findChild<QLabel*>("welcomeBrand"));QVERIFY(window.findChild<QLabel*>("titleBrandWordmark"));
+    window.findChild<QAction*>("aboutSignalStudioAction")->trigger();
+    auto* about=window.findChild<QDialog*>("aboutSignalStudioDialog");QVERIFY(about);QVERIFY(about->isVisible());
+    about->findChild<QPushButton*>("aboutCopyBuild")->click();QCOMPARE(qApp->clipboard()->text(),BrandAssets::buildInformation());
+    about->reject();
+}
 void UiTests::importFormatAndAdaptiveDraft(){
     QCOMPARE(*parseAdaptiveValue("2450000125",UnitKind::Frequency),2450000125.0);
     QCOMPARE(*parseAdaptiveValue("2450.000125 MHz",UnitKind::Frequency),2450000125.0);

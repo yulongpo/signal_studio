@@ -17,10 +17,10 @@
                 "gpuTimestamps": false,
                 "heatmapDrawCalls": 2,
                 "heatmapUploadPreparation": {
-                    "lastMs": 1.8531,
-                    "maxMs": 1.8531,
+                    "lastMs": 1.8681,
+                    "maxMs": 1.8681,
                     "samples": 1,
-                    "totalMs": 1.8531
+                    "totalMs": 1.8681
                 },
                 "lastChartDrawLoopIterations": 0,
                 "lastChartDrawRecordCount": 0,
@@ -30,41 +30,41 @@
                 "lastRenderWidth": 1984,
                 "measurement": "GUI-thread wall time measured with QElapsedTimer",
                 "overlayImagePreparation": {
-                    "lastMs": 0.5342,
-                    "maxMs": 2.6289,
+                    "lastMs": 0.5541,
+                    "maxMs": 2.4257,
                     "samples": 11,
-                    "totalMs": 7.4518
+                    "totalMs": 7.124299999999999
                 },
                 "overlayPainter": {
-                    "lastMs": 5.8118,
-                    "maxMs": 9.4483,
+                    "lastMs": 6.9769,
+                    "maxMs": 9.6172,
                     "samples": 11,
-                    "totalMs": 23.271299999999997
+                    "totalMs": 24.5379
                 },
                 "overlayUploadEnqueue": {
-                    "lastMs": 0.0202,
-                    "maxMs": 0.2142,
+                    "lastMs": 0.0194,
+                    "maxMs": 0.3373,
                     "samples": 11,
-                    "totalMs": 0.6614000000000001
+                    "totalMs": 0.8936000000000001
                 },
                 "paintEventIncludingQtSubmit": {
-                    "lastMs": 12.7327,
-                    "maxMs": 20.941,
+                    "lastMs": 14.0014,
+                    "maxMs": 19.6419,
                     "samples": 14,
-                    "totalMs": 98.4588
+                    "totalMs": 101.1159
                 },
                 "paletteUploads": 2,
                 "prepareUploads": {
-                    "lastMs": 0.0127,
-                    "maxMs": 10.6789,
+                    "lastMs": 0.0129,
+                    "maxMs": 10.7969,
                     "samples": 16,
-                    "totalMs": 42.0023
+                    "totalMs": 42.9397
                 },
                 "render": {
-                    "lastMs": 0.0883,
-                    "maxMs": 10.768,
+                    "lastMs": 0.0885,
+                    "maxMs": 10.8764,
                     "samples": 16,
-                    "totalMs": 43.7234
+                    "totalMs": 44.607400000000005
                 },
                 "renderInvocations": 16,
                 "unit": "ms"
@@ -92,7 +92,7 @@
             "heatmapHeight": 430,
             "heatmapWidth": 750,
             "inverseCursorDrawCalls": 16,
-            "lastMatrixMs": 138.5681,
+            "lastMatrixMs": 135.8818,
             "matrixReductions": 0,
             "noiseBandwidthHz": 586.1664712778455,
             "overlayUploads": 11,
@@ -144,41 +144,41 @@
                 "lastRenderWidth": 1984,
                 "measurement": "GUI-thread wall time measured with QElapsedTimer",
                 "overlayImagePreparation": {
-                    "lastMs": 0.1234,
-                    "maxMs": 0.4806,
+                    "lastMs": 0.0828,
+                    "maxMs": 0.5399,
                     "samples": 11,
-                    "totalMs": 1.6885999999999999
+                    "totalMs": 1.6446999999999998
                 },
                 "overlayPainter": {
-                    "lastMs": 3.7132,
-                    "maxMs": 11.5805,
+                    "lastMs": 3.9188,
+                    "maxMs": 11.2877,
                     "samples": 11,
-                    "totalMs": 20.660600000000002
+                    "totalMs": 20.4814
                 },
                 "overlayUploadEnqueue": {
-                    "lastMs": 0.0142,
-                    "maxMs": 0.4346,
+                    "lastMs": 0.0108,
+                    "maxMs": 0.4325,
                     "samples": 11,
-                    "totalMs": 0.8320000000000001
+                    "totalMs": 0.7361
                 },
                 "paintEventIncludingQtSubmit": {
-                    "lastMs": 5.1604,
-                    "maxMs": 13.4519,
+                    "lastMs": 5.3061,
+                    "maxMs": 13.1471,
                     "samples": 14,
-                    "totalMs": 45.86820000000001
+                    "totalMs": 44.0354
                 },
                 "paletteUploads": 2,
                 "prepareUploads": {
-                    "lastMs": 0.0148,
-                    "maxMs": 12.3759,
+                    "lastMs": 0.0137,
+                    "maxMs": 12.0671,
                     "samples": 16,
-                    "totalMs": 26.284900000000004
+                    "totalMs": 25.7606
                 },
                 "render": {
-                    "lastMs": 0.1339,
-                    "maxMs": 12.6541,
+                    "lastMs": 0.0944,
+                    "maxMs": 12.322,
                     "samples": 16,
-                    "totalMs": 27.835
+                    "totalMs": 27.1356
                 },
                 "renderInvocations": 16,
                 "unit": "ms"
@@ -258,41 +258,41 @@
                 "lastRenderWidth": 1984,
                 "measurement": "GUI-thread wall time measured with QElapsedTimer",
                 "overlayImagePreparation": {
-                    "lastMs": 0.0221,
-                    "maxMs": 0.0927,
+                    "lastMs": 0.0316,
+                    "maxMs": 0.1605,
                     "samples": 11,
-                    "totalMs": 0.4055
+                    "totalMs": 0.5283
                 },
                 "overlayPainter": {
-                    "lastMs": 1.5292,
-                    "maxMs": 5.7426,
+                    "lastMs": 2.371,
+                    "maxMs": 7.5318,
                     "samples": 11,
-                    "totalMs": 9.8118
+                    "totalMs": 12.3379
                 },
                 "overlayUploadEnqueue": {
-                    "lastMs": 0.0146,
-                    "maxMs": 0.1268,
+                    "lastMs": 0.0301,
+                    "maxMs": 0.1479,
                     "samples": 11,
-                    "totalMs": 0.3597999999999999
+                    "totalMs": 0.37360000000000004
                 },
                 "paintEventIncludingQtSubmit": {
-                    "lastMs": 1.8754,
-                    "maxMs": 6.5072,
+                    "lastMs": 3.0461,
+                    "maxMs": 8.4274,
                     "samples": 14,
-                    "totalMs": 18.322999999999997
+                    "totalMs": 21.331599999999998
                 },
                 "paletteUploads": 2,
                 "prepareUploads": {
-                    "lastMs": 0.0149,
-                    "maxMs": 6.012,
+                    "lastMs": 0.0166,
+                    "maxMs": 7.9146,
                     "samples": 16,
-                    "totalMs": 10.9512
+                    "totalMs": 13.745199999999999
                 },
                 "render": {
-                    "lastMs": 0.1063,
-                    "maxMs": 6.1853,
+                    "lastMs": 0.0961,
+                    "maxMs": 8.0978,
                     "samples": 16,
-                    "totalMs": 12.1322
+                    "totalMs": 14.933
                 },
                 "renderInvocations": 16,
                 "unit": "ms"
@@ -343,6 +343,19 @@
             "workerIdle": true
         }
     ],
+    "narrowbandRenderer": {
+        "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+        "frameGeneration": "0",
+        "gpuDataDrawCalls": 7,
+        "gpuVertexUploads": 3,
+        "inverseCursorDrawCalls": 12,
+        "iqCacheBytes": 0,
+        "iqCacheHits": 0,
+        "iqCacheMisses": 0,
+        "pending": true,
+        "requestGeneration": "7",
+        "textureUploads": 0
+    },
     "partial": {
         "availableSamples": "2097152",
         "envelopePoints": 1024,
@@ -624,12 +637,88 @@
             "capturedObject": "signalImportDialog",
             "dpr": 1.5,
             "file": "screenshots/07-import-progress-partial.png",
-            "input": "C:/Users/Admin/AppData/Local/Temp/SignalStudioNativeCapture-XihMaW/CI8_FS1Msps_FC0Hz.raw",
+            "input": "C:/Users/Admin/AppData/Local/Temp/SignalStudioNativeCapture-kGwnQY/CI8_FS1Msps_FC0Hz.raw",
             "nonBlackSamples": 5915,
             "parentFullscreen": true,
             "pixelSize": {
                 "height": 1290,
                 "width": 1815
+            },
+            "screen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "connectedIndex": 2,
+                "deviceName": "\\\\.\\DISPLAY6",
+                "devicePixelRatio": 1.5,
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "name": "Redmi 27 NU",
+                "physicalDpi": 109.05000625015624,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": false
+            }
+        },
+        {
+            "captureMethod": "Native QWidget::grab; modal crop over fullscreen parent",
+            "capturedObject": "SignalStudioWindow",
+            "dpr": 1.5,
+            "file": "screenshots/08-narrowband-brand.png",
+            "input": ":/signalstudio/demo/narrowband_demo.iq",
+            "nonBlackSamples": 20736,
+            "parentFullscreen": true,
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "screen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "connectedIndex": 2,
+                "deviceName": "\\\\.\\DISPLAY6",
+                "devicePixelRatio": 1.5,
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "name": "Redmi 27 NU",
+                "physicalDpi": 109.05000625015624,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": false
+            }
+        },
+        {
+            "captureMethod": "Native QWidget::grab; modal crop over fullscreen parent",
+            "capturedObject": "aboutSignalStudioDialog",
+            "dpr": 1.5,
+            "file": "screenshots/09-about-brand.png",
+            "input": "",
+            "nonBlackSamples": 1230,
+            "parentFullscreen": true,
+            "pixelSize": {
+                "height": 600,
+                "width": 810
             },
             "screen": {
                 "availableLogicalGeometry": {

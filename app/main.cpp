@@ -1,4 +1,5 @@
 #include "app/main_window.h"
+#include "ui/brand/brand_assets.h"
 #include "ui/charts/plot_widget.h"
 #include "ui/narrowband_workspace.h"
 #include "ui/display_target.h"
@@ -42,6 +43,7 @@ QJsonArray screenInventory() {
 
 int main(int argc,char* argv[]) {
     QApplication app(argc,argv);QApplication::setOrganizationName("Signal Studio");QApplication::setApplicationName("SignalStudio");QApplication::setApplicationVersion("0.1.0");
+    app.setWindowIcon(signalstudio::BrandAssets::windowIcon());
     QCommandLineParser parser;parser.setApplicationDescription("A1.4.3 native UI with explicit demo charts");parser.addHelpOption();parser.addVersionOption();
     parser.addOption({"smoke-test","Render the workspace, validate the three charts and exit."});
     parser.addOption({"screenshot","Save a Qt-rendered workspace PNG and exit.","path"});
