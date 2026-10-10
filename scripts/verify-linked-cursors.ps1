@@ -42,7 +42,7 @@ try {
     if ($process.ExitCode -ne 0 -or $report.pass -ne $true -or $report.fullScreen -ne $true -or
         $report.screen.connectedIndex -ne 2 -or $report.logicalWindowSize.width -ne 2560 -or $report.logicalWindowSize.height -ne 1440 -or
         $report.windowChrome.systemMove -ne $true -or $report.windowChrome.systemResize -ne $true -or $report.windowChrome.close -ne $true -or
-        $report.widePowerControls.immediateInput -ne $true -or $report.narrowbandPowerControls.immediateInput -ne $true) {
+        $report.widePowerControls.committedInput -ne $true -or $report.narrowbandPowerControls.committedInput -ne $true) {
         throw "Linked cursor native acceptance failed: $($report.error)"
     }
     Write-Host "$Configuration color levels / pinned labels / window chrome / linked frame acceptance passed. Report: $reportPath"

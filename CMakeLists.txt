@@ -84,6 +84,7 @@ target_link_libraries(SignalStudioInfrastructure PUBLIC SignalStudioCore Qt6::Co
 ss_target_defaults(SignalStudioInfrastructure)
 
 set(SS_UI_SOURCES
+    ui/parameter_input.h
     ui/spectral_settings_widget.cpp
     ui/spectral_settings_widget.h
     app/main_window.cpp

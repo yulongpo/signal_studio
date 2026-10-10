@@ -23,8 +23,9 @@ inline void restoreCustomValue(QComboBox* combo,const QString& suffix) {
     if(settings.contains(key))rememberCustomValue(combo,settings.value(key).toDouble(),suffix);
 }
 inline void displayComboValue(QComboBox* combo,double value,const QString& suffix) {
-    if(combo->lineEdit()->hasFocus())return;
-    const QSignalBlocker block(combo);
+    combo->setProperty("parameterCommittedText",QString::number(value,'g',12)+suffix);
+    if(combo->property("parameterDraft").toBool())return;
+    const QSignalBlocker block(combo),edit(combo->lineEdit());
     int index=combo->findData(value);
     if(index<0){rememberCustomValue(combo,value,suffix);index=0;}
     combo->setCurrentIndex(index);

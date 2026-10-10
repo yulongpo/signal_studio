@@ -68,13 +68,27 @@ QJsonObject verifyPowerAndLabels(MainWindow& window, bool narrow) {
     const auto spectrum=window.session().spectrogram(context); require(spectrum && fit,"Power data unavailable");
     require(waitUntil([&] { return fit->isEnabled(); }),"Auto fit not enabled after data arrived");
     const auto before=narrow ? workspace->renderStatistics() : main->renderStatistics();
+    const double previousDynamic=window.session().activeFile()->display.dynamicRangeDb;
+    const auto previousCustom=dynamic->property("lastCustomValue");
     dynamic->lineEdit()->setFocus(); dynamic->lineEdit()->selectAll(); QTest::keyClicks(dynamic->lineEdit(),"87.5");
-    require(window.session().activeFile()->display.dynamicRangeDb==87.5 && dynamic->lineEdit()->hasFocus() && dynamic->lineEdit()->text()=="87.5","Dynamic range did not apply during typing or disturbed editor");
+    require(window.session().activeFile()->display.dynamicRangeDb==previousDynamic && dynamic->lineEdit()->hasFocus() && dynamic->lineEdit()->text()=="87.5","Dynamic range applied before explicit commit or disturbed editor");
+    require(dynamic->property("lastCustomValue")==previousCustom,"Draft replaced the most recent custom value");
+    QTest::keyClick(dynamic->lineEdit(),Qt::Key_Return);
+    require(window.session().activeFile()->display.dynamicRangeDb==87.5,"Return did not commit dynamic range");
     reference->lineEdit()->setFocus(); reference->lineEdit()->selectAll(); QTest::keyClicks(reference->lineEdit(),"-");
     const auto last=window.session().activeFile()->display.referenceLevelDb;
-    require(reference->lineEdit()->text()=="-" && !reference->property("powerInputValid").toBool(),"Intermediate reference text was rewritten");
+    require(reference->lineEdit()->text()=="-" && window.session().activeFile()->display.referenceLevelDb==last,"Intermediate reference text changed the parameter");
     QTest::keyClicks(reference->lineEdit(),"35.25");
-    require(window.session().activeFile()->display.referenceLevelDb==-35.25 && reference->lineEdit()->hasFocus(),"Reference level did not apply during typing");
+    require(window.session().activeFile()->display.referenceLevelDb==last && reference->lineEdit()->hasFocus(),"Reference level applied during typing");
+    QTest::keyClick(reference->lineEdit(),Qt::Key_Tab);
+    require(window.session().activeFile()->display.referenceLevelDb==-35.25,"Tab did not commit reference level");
+    reference->lineEdit()->setFocus();reference->lineEdit()->selectAll();QTest::keyClicks(reference->lineEdit(),"-35.5");
+    require(window.session().activeFile()->display.referenceLevelDb==-35.25,"Second draft applied before outside click");
+    QTest::mouseClick(window.findChild<QLabel*>("statusTime"),Qt::LeftButton);
+    require(window.session().activeFile()->display.referenceLevelDb==-35.5,"Outside click did not commit reference level");
+    reference->lineEdit()->setFocus();reference->lineEdit()->selectAll();QTest::keyClicks(reference->lineEdit(),"-35.25");
+    QTest::keyClick(reference->lineEdit(),Qt::Key_Backtab);
+    require(window.session().activeFile()->display.referenceLevelDb==-35.25,"Shift+Tab did not commit reference level");
     const auto& d=window.session().activeFile()->display;
     require(d.psdMin==-122.75 && d.psdMax==-35.25,"Wide PSD limits did not follow power controls");
     if(narrow) require(window.session().activeChannel()->psdAxisMinimum==-122.75 && window.session().activeChannel()->psdAxisMaximum==-35.25,"Narrow PSD limits did not follow power controls");
@@ -123,7 +137,23 @@ QJsonObject verifyPowerAndLabels(MainWindow& window, bool narrow) {
     const QPoint axis(25,qRound(plot.center().y())); moveThroughWindow(heat,axis); QTest::qWait(50);
     require(heat->cursor().shape()==Qt::OpenHandCursor,"Axis hover cursor differs from shared interaction feedback");
     QCoreApplication::sendEvent(heat,&leave);
-    return {{"immediateInput",true},{"focusPreserved",true},{"intermediateText",true},{"previousReference",last},
+    int wheelInputs=0;
+    for(auto* input:window.findChildren<QWidget*>()) {
+        if(!input->isVisible() || !input->isEnabled())continue;
+        auto* combo=qobject_cast<QComboBox*>(input);auto* spin=qobject_cast<QAbstractSpinBox*>(input);
+        if(!combo&&!spin)continue;
+        const auto text=combo?combo->currentText():spin->findChild<QLineEdit*>()->text();
+        const auto index=combo?combo->currentIndex():0;
+        for(int delta:{120,-120}) {
+            const QPointF point=input->rect().center();
+            QWheelEvent wheel(point,input->mapToGlobal(point.toPoint()),QPoint(),QPoint(0,delta),Qt::NoButton,Qt::NoModifier,Qt::ScrollUpdate,false);
+            QCoreApplication::sendEvent(input,&wheel);
+        }
+        require((combo?combo->currentText():spin->findChild<QLineEdit*>()->text())==text && (!combo||combo->currentIndex()==index),"Wheel changed a parameter input");
+        ++wheelInputs;
+    }
+    require(wheelInputs>=5,"Too few visible inputs checked for wheel protection");
+    return {{"committedInput",true},{"noApplyDuringTyping",true},{"tabCommit",true},{"backtabCommit",true},{"outsideClickCommit",true},{"wheelProtectedInputs",wheelInputs},{"focusPreserved",true},{"intermediateText",true},{"previousReference",last},
         {"psdCoupling",true},{"referenceDb",expected.range.referenceLevelDb},{"dynamicRangeDb",expected.range.dynamicRangeDb},
         {"noAnalysisRecompute",true},{"pinnedLabels",heat->property("pinnedReadout").toString()},
         {"inverseLineSamples",inverseLineSamples},{"inverseGlyphPixels",inverseGlyphPixels},

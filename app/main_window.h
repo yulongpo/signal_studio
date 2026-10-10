@@ -28,6 +28,7 @@ class PlotWidget;
 class NarrowbandWorkspace;
 class SourceLoader;
 class SpectralSettingsWidget;
+class ParameterInputPolicy;
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
@@ -49,6 +50,7 @@ protected:
     void keyPressEvent(QKeyEvent*) override;
     bool eventFilter(QObject*, QEvent*) override;
 private:
+    ParameterInputPolicy* parameterInputPolicy_ = nullptr;
     void startSourceLoad(FileState& file, SampleIndex target);
     void pollSourceLoads();
     struct LoadJob { std::shared_ptr<SourceLoader> loader; std::uint64_t project = 0; SampleIndex previous = 0; };

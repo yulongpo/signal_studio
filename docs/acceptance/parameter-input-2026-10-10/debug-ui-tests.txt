@@ -1,0 +1,1219 @@
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UiTests::initTestCase()
+QWARN  : UiTests::workspaceLayout() QFontDatabase: Cannot find font directory D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+QWARN  : UiTests::workspaceLayout() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::workspaceLayout() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::workspaceLayout() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::workspaceLayout() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::workspaceLayout() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::workspaceLayout() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::workspaceLayout() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::workspaceLayout() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::workspaceLayout() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::workspaceLayout() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::workspaceLayout() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::workspaceLayout()
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::globalDisplaySettingsApplyAcrossFiles()
+QWARN  : UiTests::mainModeCoordinateDirection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainModeCoordinateDirection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainModeCoordinateDirection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainModeCoordinateDirection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainModeCoordinateDirection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainModeCoordinateDirection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainModeCoordinateDirection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainModeCoordinateDirection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainModeCoordinateDirection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainModeCoordinateDirection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainModeCoordinateDirection() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::mainModeCoordinateDirection()
+QWARN  : UiTests::continuousMarkCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::continuousMarkCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::continuousMarkCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::continuousMarkCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::continuousMarkCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::continuousMarkCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::continuousMarkCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::continuousMarkCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::continuousMarkCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::continuousMarkCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::continuousMarkCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+PASS   : UiTests::continuousMarkCreation()
+QWARN  : UiTests::escapeCancelsCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsCreation() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeCancelsCreation() This plugin does not support grabbing the mouse
+PASS   : UiTests::escapeCancelsCreation()
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkMovePreservesSpan() This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkMovePreservesSpan() This plugin does not support grabbing the mouse
+PASS   : UiTests::selectedMarkMovePreservesSpan()
+QWARN  : UiTests::escapeRollsBackMarkMove() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeRollsBackMarkMove() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeRollsBackMarkMove() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeRollsBackMarkMove() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeRollsBackMarkMove() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeRollsBackMarkMove() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeRollsBackMarkMove() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeRollsBackMarkMove() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeRollsBackMarkMove() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeRollsBackMarkMove() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeRollsBackMarkMove() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeRollsBackMarkMove() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeRollsBackMarkMove() This plugin does not support grabbing the mouse
+PASS   : UiTests::escapeRollsBackMarkMove()
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() This plugin does not support grabbing the mouse
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() This plugin does not support grabbing the mouse
+PASS   : UiTests::singleClickSelectsWithoutChangingView()
+QWARN  : UiTests::boxZoomAndHistoryActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::boxZoomAndHistoryActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::boxZoomAndHistoryActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::boxZoomAndHistoryActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::boxZoomAndHistoryActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::boxZoomAndHistoryActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::boxZoomAndHistoryActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::boxZoomAndHistoryActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::boxZoomAndHistoryActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::boxZoomAndHistoryActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::boxZoomAndHistoryActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::boxZoomAndHistoryActions() This plugin does not support grabbing the mouse
+QWARN  : UiTests::boxZoomAndHistoryActions() This plugin does not support grabbing the mouse
+PASS   : UiTests::boxZoomAndHistoryActions()
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+PASS   : UiTests::emptyProjectAndFileActions()
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::treeSelectionPreservesNodesAndShiftAnchor()
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::displayChangeSurvivesPendingWheelCommit()
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53)
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53)
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum)
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum)
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+PASS   : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude)
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+PASS   : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power)
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+PASS   : UiTests::selectedMarkCornerAndEdgeResize(time-frequency)
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+PASS   : UiTests::selectedMarkCornerAndEdgeResize(waterfall)
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::responsiveWorkspace(4k-150-percent)
+QWARN  : UiTests::propertyFieldsFitSidebar() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::propertyFieldsFitSidebar() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::propertyFieldsFitSidebar() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::propertyFieldsFitSidebar() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::propertyFieldsFitSidebar() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::propertyFieldsFitSidebar() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::propertyFieldsFitSidebar() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::propertyFieldsFitSidebar() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::propertyFieldsFitSidebar() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::propertyFieldsFitSidebar() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::propertyFieldsFitSidebar() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::propertyFieldsFitSidebar()
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::prototypeDisplayDefaultsAndOptions()
+QWARN  : UiTests::paletteControlsStaySynchronized() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::paletteControlsStaySynchronized() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::paletteControlsStaySynchronized() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::paletteControlsStaySynchronized() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::paletteControlsStaySynchronized() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::paletteControlsStaySynchronized() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::paletteControlsStaySynchronized() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::paletteControlsStaySynchronized() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::paletteControlsStaySynchronized() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::paletteControlsStaySynchronized() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::paletteControlsStaySynchronized() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::paletteControlsStaySynchronized()
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QRhiWidget: No QRhi
+PASS   : UiTests::narrowbandPaletteSelectionUpdatesStftCharts()
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+PASS   : UiTests::widebandAuxiliaryRenderingAndGestures()
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+PASS   : UiTests::narrowbandAuxiliaryRenderingAndGestures()
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+PASS   : UiTests::widebandLinkedCursorsAndFrameSpectrum()
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+PASS   : UiTests::narrowbandLinkedCursorsAndFrameSpectrum()
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: No QRhi
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: No QRhi
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: No QRhi
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: No QRhi
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: No QRhi
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: No QRhi
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: No QRhi
+QWARN  : UiTests::powerInputsCommitAndFitReusesData() QRhiWidget: No QRhi
+PASS   : UiTests::powerInputsCommitAndFitReusesData()
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() QString::arg: Argument missing: "阈值 %.2f 只重判未知类别 · 合成分数不会重算", 0.75
+PASS   : UiTests::parameterDraftsRequireExplicitCommit()
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support raise()
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support grabbing the keyboard
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support propagateSizeHints()
+QINFO  : UiTests::parameterInputsIgnoreWheel() Wheel protection checked 37 combos and 18 spin boxes, including dialogs and editors
+PASS   : UiTests::parameterInputsIgnoreWheel()
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: No QRhi
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: No QRhi
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: No QRhi
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() QRhiWidget: No QRhi
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+PASS   : UiTests::pinnedAxisLabelsSurviveLeave()
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: No QRhi
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: No QRhi
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: No QRhi
+QWARN  : UiTests::sharedInteractionFeedback() QRhiWidget: No QRhi
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+PASS   : UiTests::sharedInteractionFeedback()
+QWARN  : UiTests::customWindowControls() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::customWindowControls() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::customWindowControls() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::customWindowControls() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::customWindowControls() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::customWindowControls() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::customWindowControls() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::customWindowControls() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::customWindowControls() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::customWindowControls() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::customWindowControls() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::customWindowControls()
+PASS   : UiTests::initialFileViewShowsFirstFivePercentOrTenMilliseconds()
+QWARN  : UiTests::panelRailsAndBottomTabs() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelRailsAndBottomTabs() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelRailsAndBottomTabs() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelRailsAndBottomTabs() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelRailsAndBottomTabs() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelRailsAndBottomTabs() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelRailsAndBottomTabs() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelRailsAndBottomTabs() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelRailsAndBottomTabs() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelRailsAndBottomTabs() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelRailsAndBottomTabs() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::panelRailsAndBottomTabs()
+QWARN  : UiTests::sectionContextAndManualExpansion() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sectionContextAndManualExpansion() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sectionContextAndManualExpansion() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sectionContextAndManualExpansion() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sectionContextAndManualExpansion() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sectionContextAndManualExpansion() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sectionContextAndManualExpansion() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sectionContextAndManualExpansion() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sectionContextAndManualExpansion() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sectionContextAndManualExpansion() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::sectionContextAndManualExpansion() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::sectionContextAndManualExpansion()
+QWARN  : UiTests::panelMaximizeAndRestore() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelMaximizeAndRestore() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelMaximizeAndRestore() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelMaximizeAndRestore() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelMaximizeAndRestore() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelMaximizeAndRestore() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelMaximizeAndRestore() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelMaximizeAndRestore() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelMaximizeAndRestore() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelMaximizeAndRestore() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::panelMaximizeAndRestore() QRhiWidget: QRhi is not supported on this platform.
+QINFO  : UiTests::panelMaximizeAndRestore() navPanel original QSize(1986, 82) restored QSize(1986, 82) graph sizes QList(82, 205, 1000)
+QINFO  : UiTests::panelMaximizeAndRestore() auxPanel original QSize(1986, 205) restored QSize(1986, 205) graph sizes QList(82, 205, 1000)
+QINFO  : UiTests::panelMaximizeAndRestore() specPanel original QSize(1986, 1000) restored QSize(1986, 1000) graph sizes QList(82, 205, 1000)
+PASS   : UiTests::panelMaximizeAndRestore()
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x) QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x)
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y) QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y)
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x) QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x)
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y) QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y)
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+PASS   : UiTests::navigationClickPreservesSpanAndCancelsDrag()
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: No QRhi
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: No QRhi
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: No QRhi
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: No QRhi
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: No QRhi
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: No QRhi
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: No QRhi
+QWARN  : UiTests::independentSpectralSettingsAndCustomRows() QRhiWidget: No QRhi
+PASS   : UiTests::independentSpectralSettingsAndCustomRows()
+QWARN  : UiTests::loadedPrefixStopAndRoundtrip() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::loadedPrefixStopAndRoundtrip() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::loadedPrefixStopAndRoundtrip() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::loadedPrefixStopAndRoundtrip() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::loadedPrefixStopAndRoundtrip() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::loadedPrefixStopAndRoundtrip() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::loadedPrefixStopAndRoundtrip() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::loadedPrefixStopAndRoundtrip() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::loadedPrefixStopAndRoundtrip() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::loadedPrefixStopAndRoundtrip() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::loadedPrefixStopAndRoundtrip() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::loadedPrefixStopAndRoundtrip()
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() This plugin does not support grabbing the mouse
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() This plugin does not support grabbing the mouse
+PASS   : UiTests::fileSwitchCancelsUnfinishedEdit()
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-n)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-ne)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-e)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-se)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-s)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-sw)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-w)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-nw)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-n)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-ne)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-e)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-se)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-s)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-sw)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-w)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-nw)
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() This plugin does not support propagateSizeHints()
+PASS   : UiTests::nativeProjectRoundtripAndInvalidImport()
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::contextMenuActionsAndCoveredMarkSelection()
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+PASS   : UiTests::unselectedMarkClickAndSubthresholdGesture()
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() This plugin does not support grabbing the mouse
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() This plugin does not support grabbing the mouse
+PASS   : UiTests::clippedMarkBorderMovesWithoutInventingHandle()
+QWARN  : UiTests::captureLossAndDeactivationRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::captureLossAndDeactivationRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::captureLossAndDeactivationRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::captureLossAndDeactivationRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::captureLossAndDeactivationRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::captureLossAndDeactivationRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::captureLossAndDeactivationRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::captureLossAndDeactivationRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::captureLossAndDeactivationRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::captureLossAndDeactivationRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::captureLossAndDeactivationRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+PASS   : UiTests::captureLossAndDeactivationRollback()
+QWARN  : UiTests::resetRestoresCompleteViewSnapshot() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::resetRestoresCompleteViewSnapshot() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::resetRestoresCompleteViewSnapshot() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::resetRestoresCompleteViewSnapshot() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::resetRestoresCompleteViewSnapshot() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::resetRestoresCompleteViewSnapshot() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::resetRestoresCompleteViewSnapshot() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::resetRestoresCompleteViewSnapshot() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::resetRestoresCompleteViewSnapshot() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::resetRestoresCompleteViewSnapshot() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::resetRestoresCompleteViewSnapshot() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::resetRestoresCompleteViewSnapshot()
+QWARN  : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache()
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+PASS   : UiTests::renameUsesPlainTextAndEightyCharacterLimit()
+QWARN  : UiTests::splitterKeyboardResetAndEscapeRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::splitterKeyboardResetAndEscapeRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::splitterKeyboardResetAndEscapeRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::splitterKeyboardResetAndEscapeRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::splitterKeyboardResetAndEscapeRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::splitterKeyboardResetAndEscapeRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::splitterKeyboardResetAndEscapeRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::splitterKeyboardResetAndEscapeRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::splitterKeyboardResetAndEscapeRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::splitterKeyboardResetAndEscapeRollback() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::splitterKeyboardResetAndEscapeRollback() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::splitterKeyboardResetAndEscapeRollback()
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() This plugin does not support grabbing the mouse
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() This plugin does not support grabbing the mouse
+PASS   : UiTests::treeToPlotShiftSelectionPreservesAnchor()
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() This plugin does not support grabbing the mouse
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() This plugin does not support grabbing the mouse
+PASS   : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY()
+QWARN  : UiTests::creationModeSurvivesMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::creationModeSurvivesMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::creationModeSurvivesMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::creationModeSurvivesMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::creationModeSurvivesMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::creationModeSurvivesMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::creationModeSurvivesMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::creationModeSurvivesMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::creationModeSurvivesMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::creationModeSurvivesMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::creationModeSurvivesMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::creationModeSurvivesMaximize() This plugin does not support grabbing the mouse
+QWARN  : UiTests::creationModeSurvivesMaximize() This plugin does not support grabbing the mouse
+PASS   : UiTests::creationModeSurvivesMaximize()
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() This plugin does not support grabbing the mouse
+PASS   : UiTests::escapeCancelsGestureBeforeLeavingMaximize()
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() This plugin does not support propagateSizeHints()
+PASS   : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq()
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: No QRhi
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QString::arg: Argument missing: "阈值 %.2f 只重判未知类别 · 合成分数不会重算", 0.95
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::narrowbandDemoResourceAndFourPages() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::narrowbandDemoResourceAndFourPages()
+QWARN  : UiTests::waveformBandwidthAndVisiblePaneStftSettings() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::waveformBandwidthAndVisiblePaneStftSettings() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::waveformBandwidthAndVisiblePaneStftSettings() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::waveformBandwidthAndVisiblePaneStftSettings() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::waveformBandwidthAndVisiblePaneStftSettings() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::waveformBandwidthAndVisiblePaneStftSettings() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::waveformBandwidthAndVisiblePaneStftSettings() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::waveformBandwidthAndVisiblePaneStftSettings() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::waveformBandwidthAndVisiblePaneStftSettings() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::waveformBandwidthAndVisiblePaneStftSettings() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::waveformBandwidthAndVisiblePaneStftSettings() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::waveformBandwidthAndVisiblePaneStftSettings()
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::uiStatePersistenceAndRecentProjects()
+PASS   : UiTests::cleanupTestCase()
+Totals: 82 passed, 0 failed, 0 skipped, 0 blacklisted, 181399ms
+********* Finished testing of UiTests *********

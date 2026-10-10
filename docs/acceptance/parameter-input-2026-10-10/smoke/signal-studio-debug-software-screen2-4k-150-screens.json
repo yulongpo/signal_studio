@@ -1,0 +1,38 @@
+[
+    {
+        "connectedIndex": 1,
+        "deviceName": "\\\\.\\DISPLAY1",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": [
+            0,
+            0,
+            1707,
+            1067
+        ],
+        "name": "TL160ADMP36",
+        "pixelSize": [
+            2560,
+            1600
+        ],
+        "primary": true
+    },
+    {
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": [
+            2560,
+            0,
+            2560,
+            1440
+        ],
+        "name": "Redmi 27 NU",
+        "pixelSize": [
+            3840,
+            2160
+        ],
+        "primary": false
+    }
+]

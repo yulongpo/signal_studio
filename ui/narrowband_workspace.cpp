@@ -1,3 +1,4 @@
+#include "ui/parameter_input.h"
 #include "infrastructure/source_loader.h"
 #include <chrono>
 #include "infrastructure/spectral_analysis.h"
@@ -981,7 +982,7 @@ void NarrowbandWorkspace::buildPages() {
     modulationRow->setContentsMargins(6, 4, 6, 4);
     auto* modulationType = new QComboBox; modulationType->setObjectName("modulationFormat");
     modulationType->addItems({"未知 / 自动", "BPSK", "QPSK", "8PSK", "16QAM", "64QAM", "2FSK", "4FSK", "MSK", "GMSK", "OFDM"});
-    auto* symbolRate = new QDoubleSpinBox; symbolRate->setObjectName("symbolRate"); symbolRate->setRange(1, 20'000'000); symbolRate->setDecimals(0); symbolRate->setValue(250'000); symbolRate->setSuffix(" Sym/s");
+    auto* symbolRate = new ParameterDoubleSpinBox; symbolRate->setObjectName("symbolRate"); symbolRate->setRange(1, 20'000'000); symbolRate->setDecimals(0); symbolRate->setValue(250'000); symbolRate->setSuffix(" Sym/s");
     eyeComponent_ = new QComboBox; eyeComponent_->setObjectName("eyeComponent"); eyeComponent_->addItems({"I + Q", "I 分量", "Q 分量"});
     eyePeriods_ = new QComboBox; eyePeriods_->setObjectName("eyePeriods"); eyePeriods_->addItems({"1 周期", "2 周期", "3 周期", "4 周期"});
     eyeTraces_ = new QComboBox; eyeTraces_->setObjectName("eyeTraces"); eyeTraces_->addItems({"32 条", "64 条", "128 条", "256 条"}); eyeTraces_->setCurrentIndex(1);
@@ -1037,8 +1038,8 @@ void NarrowbandWorkspace::buildPages() {
     recognitionNormalization_ = new QComboBox; recognitionNormalization_->setObjectName("recognitionNormalization"); recognitionNormalization_->addItems({"IQ RMS 归一化", "峰值归一化", "不归一化"});
     recognitionOverlap_ = new QComboBox; recognitionOverlap_->setObjectName("recognitionOverlap"); recognitionOverlap_->addItems({"0%", "25%", "50%", "75%", "90%"}); recognitionOverlap_->setCurrentIndex(2);
     recognitionScope_ = new QComboBox; recognitionScope_->setObjectName("recognitionScope"); recognitionScope_->addItems({"当前可见时间窗", "来源标记时段", "通道完整时段"});
-    recognitionSampleRate_ = new QDoubleSpinBox; recognitionSampleRate_->setObjectName("recognitionSampleRate"); recognitionSampleRate_->setRange(.1, 1000); recognitionSampleRate_->setDecimals(2); recognitionSampleRate_->setValue(4); recognitionSampleRate_->setSuffix(" MS/s");
-    recognitionThreshold_ = new QDoubleSpinBox; recognitionThreshold_->setObjectName("recognitionThreshold"); recognitionThreshold_->setRange(.01, .99); recognitionThreshold_->setSingleStep(.05); recognitionThreshold_->setValue(.5);
+    recognitionSampleRate_ = new ParameterDoubleSpinBox; recognitionSampleRate_->setObjectName("recognitionSampleRate"); recognitionSampleRate_->setRange(.1, 1000); recognitionSampleRate_->setDecimals(2); recognitionSampleRate_->setValue(4); recognitionSampleRate_->setSuffix(" MS/s");
+    recognitionThreshold_ = new ParameterDoubleSpinBox; recognitionThreshold_->setObjectName("recognitionThreshold"); recognitionThreshold_->setRange(.01, .99); recognitionThreshold_->setSingleStep(.05); recognitionThreshold_->setValue(.5);
     auto* device = new QComboBox; device->setObjectName("recognitionDevice"); device->addItems({"演示无设备", "CPU · 设计选项", "GPU · 设计选项"});
     form->addRow("模型", model_); form->addRow("窗口点数", fftSize_); form->addRow("归一化", recognitionNormalization_); form->addRow("重叠率", recognitionOverlap_);
     form->addRow("分析范围", recognitionScope_); form->addRow("目标采样率", recognitionSampleRate_); form->addRow("类别阈值", recognitionThreshold_); form->addRow("设备", device);
@@ -1398,6 +1399,9 @@ void NarrowbandWorkspace::refreshFromSession() {
     if (pages_->currentIndex() != index) pages_->setCurrentIndex(index);
     for (int i = 0; i < 4; ++i) pageButtons_[i]->setChecked(i == index);
     { QSignalBlocker blocker(waveformMode_); waveformMode_->setCurrentIndex(static_cast<int>(channel->waveform)); }
+    if (auto* rate = findChild<QDoubleSpinBox*>("symbolRate")) {
+        const QSignalBlocker blocker(rate); displayParameterValue(rate, channel->symbolRate);
+    }
     const int psdIndex = displayPsdFft_->findData(channel->psdFftSize);
     { QSignalBlocker blocker(displayPsdFft_); displayPsdFft_->setCurrentIndex(psdIndex); }
     const auto stftIndex = displayStftFft_->findData(channel->stftFftSize);

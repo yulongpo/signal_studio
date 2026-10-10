@@ -3,6 +3,7 @@
 #include "infrastructure/source_loader.h"
 #include "ui/spectral_settings_widget.h"
 #include "ui/custom_combo.h"
+#include "ui/parameter_input.h"
 #include "ui/checkbox_style.h"
 #include "app/main_window.h"
 #include "infrastructure/project_store.h"
@@ -248,7 +249,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     )" + signalstudio::checkboxStyleSheet());
     rightSidebarSaveTimer_ = new QTimer(this); rightSidebarSaveTimer_->setSingleShot(true); rightSidebarSaveTimer_->setInterval(400);
     connect(rightSidebarSaveTimer_, &QTimer::timeout, this, &MainWindow::saveRightSidebarSettings);
-    buildMenus(); buildWorkspace(); restoreUiState();
+    buildMenus(); buildWorkspace(); parameterInputPolicy_ = new ParameterInputPolicy(this); restoreUiState();
     sourceLoadTimer_ = new QTimer(this); sourceLoadTimer_->setInterval(80);
     connect(sourceLoadTimer_, &QTimer::timeout, this, &MainWindow::pollSourceLoads); sourceLoadTimer_->start();
     connect(qApp, &QApplication::applicationStateChanged, this, [this](Qt::ApplicationState state) {
@@ -258,6 +259,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     log("A1.4.3 工作区已就绪；可导入交替 int16 IQ 文件并生成真实图谱");
 }
 MainWindow::~MainWindow() {
+    delete parameterInputPolicy_; parameterInputPolicy_ = nullptr;
     if(sourceLoadTimer_)sourceLoadTimer_->stop(); sourceLoads_.clear();
     saveUiState();
     if (rightSidebarSaveTimer_) rightSidebarSaveTimer_->stop();
@@ -485,7 +487,7 @@ void MainWindow::buildWorkspace() {
     auto file = section(propertyLayout_, "fileSection", "活动信号文件", true); fileSection_ = file.widget;
     const std::array<QString, 4> fileNames{"文件", "采样率", "中心频率", "完整时间范围"}, fileIds{"fileName", "sampleRate", "centerFreq", "fullRange"};
     for (int i = 0; i < 4; ++i) { fileValues_[i] = output(fileIds[i]); row(file.form, fileNames[i], fileValues_[i]); }
-    effectiveBandwidth_ = new QDoubleSpinBox; effectiveBandwidth_->setObjectName("effectiveBandwidthMHz");
+    effectiveBandwidth_ = new ParameterDoubleSpinBox; effectiveBandwidth_->setObjectName("effectiveBandwidthMHz");
     effectiveBandwidth_->setMinimumWidth(0); effectiveBandwidth_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
     effectiveBandwidth_->setRange(0.001, 1'000'000.0); effectiveBandwidth_->setDecimals(6); effectiveBandwidth_->setSingleStep(1.0); effectiveBandwidth_->setSuffix(" MHz");
     effectiveBandwidth_->setToolTip("限定时频图和功率谱使用的中心有效带宽；最大值受采样率限制"); row(file.form, "有效带宽", effectiveBandwidth_);
@@ -639,12 +641,6 @@ void MainWindow::buildWorkspace() {
     }
     for(auto* control:{dynamic_,reference_}) {
         restoreCustomValue(control,control==dynamic_?" dB":" dBFS/Hz");
-        connect(control->lineEdit(), &QLineEdit::textEdited,this,[this,control]{
-            QString text=control->currentText();text.remove(QRegularExpression("\\s*dB(?:FS(?:/Hz)?)?\\s*$"));bool ok=false;double value=text.toDouble(&ok);
-            PowerDisplayRange range{session_.activeFile()?session_.activeFile()->display.referenceLevelDb:0,session_.activeFile()?session_.activeFile()->display.dynamicRangeDb:80};
-            if(control==dynamic_)range.dynamicRangeDb=value;else range.referenceLevelDb=value;
-            if(ok&&range.valid())rememberCustomValue(control,value,control==dynamic_?" dB":" dBFS/Hz");
-        });
     }
     const auto spectralEdit=[this](bool psd) {
         if(refreshing_)return;auto* file=session_.activeFile();if(!file)return;
@@ -703,7 +699,7 @@ void MainWindow::buildWorkspace() {
         const bool waveformChanged = display.waveformMode != f->display.waveformMode;
         if (waveformChanged) display.waveformAutoFit = true;
         f->display = display;
-        if (std::abs(f->metadata.effectiveBandwidthHz - effectiveBandwidthHz) > 0.5)
+        if (sender() == effectiveBandwidth_ && std::abs(f->metadata.effectiveBandwidthHz - effectiveBandwidthHz) > 0.5)
             session_.setEffectiveBandwidthHz(effectiveBandwidthHz);
         f = session_.activeFile(); if (!f || f->metadata.id != fileId) return;
         session_.setView(f->view, false); propagateGlobalRightSidebarSettings(); refresh(); scheduleRightSidebarSettingsSave();
@@ -711,8 +707,7 @@ void MainWindow::buildWorkspace() {
     for (auto* control : {mainMode_, auxMode_, waveformMode_, palette_, psd_, stft_, psdScope_, freqMode_})
         connect(control, &QComboBox::currentIndexChanged, this, change);
     for (auto* control : {dynamic_, reference_}) {
-        connect(control, &QComboBox::editTextChanged, this, [this, control] { applyPowerInput(control); });
-        connect(control->lineEdit(), &QLineEdit::editingFinished, this, [this, control] { normalizePowerInput(control); });
+        bindParameterCombo(control, [this, control] { applyPowerInput(control); normalizePowerInput(control); });
     }
     for (auto* chart : {main_, auxiliary_}) connect(chart, &PlotWidget::autoPowerFitRequested, this, &MainWindow::autoFitPower);
     connect(narrowband_, &NarrowbandWorkspace::autoPowerFitRequested, this, &MainWindow::autoFitPower);
@@ -1063,6 +1058,8 @@ void MainWindow::refresh() {
     if (refreshing_) return; refreshing_ = true;
     const auto* file = session_.activeFile(); updateTree(); projectLabel_->setText(q(session_.project().name));
     const bool narrowOpen = session_.project().narrowbandWorkspaceOpen && session_.activeChannel() != nullptr;
+    if (parameterInputPolicy_) parameterInputPolicy_->setContext(QString::number(session_.projectGeneration()) + "/" +
+        q(narrowOpen ? session_.activeChannel()->id : file ? file->metadata.id : std::string{}));
     workspaceStack_->setCurrentIndex(narrowOpen ? 1 : 0);
     workspaceModeButton_->setChecked(!narrowOpen);
     if (narrowband_ && narrowOpen) narrowband_->refreshFromSession();
@@ -1086,8 +1083,11 @@ void MainWindow::refresh() {
         dataSourceStatus_->setToolTip(file->metadata.demo ? "当前文件使用原型演示数据" : "int16 IQ 数据来自磁盘文件；波形、PSD、时频图均使用真实采样");
         displayComboValue(dynamic_,display.dynamicRangeDb," dB");displayComboValue(reference_,display.referenceLevelDb," dBFS/Hz");
         waveformMode_->setCurrentIndex(static_cast<int>(display.waveformMode));
-        effectiveBandwidth_->setRange(file->metadata.sampleRateHz / 65536.0 / 1e6, file->metadata.sampleRateHz / 1e6);
-        effectiveBandwidth_->setValue(file->metadata.effectiveBandwidthHz / 1e6);
+        const double minimumBandwidth = file->metadata.sampleRateHz / 65536.0 / 1e6;
+        const double maximumBandwidth = file->metadata.sampleRateHz / 1e6;
+        if (effectiveBandwidth_->minimum() != minimumBandwidth || effectiveBandwidth_->maximum() != maximumBandwidth)
+            effectiveBandwidth_->setRange(minimumBandwidth, maximumBandwidth);
+        displayParameterValue(effectiveBandwidth_,file->metadata.effectiveBandwidthHz / 1e6);
         const auto* channel = narrowOpen ? session_.activeChannel() : nullptr;
         freqMode_->setCurrentIndex((channel ? channel->absoluteFrequencyLabels : display.absoluteFrequency) ? 0 : 1);
         const auto* narrowGrid = narrowOpen ? narrowband_->findChild<QCheckBox*>("narrowbandGrid") : nullptr;
@@ -1188,9 +1188,9 @@ void MainWindow::showChannelDialog(const QString& channelId) {
     if (editing) sourceMark->setCurrentIndex(std::max(0, sourceMark->findData(q(original.sourceMarkId))));
     else if (!file->activeMarkId.empty()) sourceMark->setCurrentIndex(std::max(0, sourceMark->findData(q(file->activeMarkId))));
     const auto sampled = fullRange(file->metadata).frequency;
-    auto* center = new QDoubleSpinBox; center->setObjectName("channelCenterMHz"); center->setRange(sampled.lowerHz / 1e6, sampled.upperHz / 1e6); center->setDecimals(6); center->setSingleStep(.1); center->setSuffix(" MHz");
-    auto* bandwidth = new QDoubleSpinBox; bandwidth->setObjectName("channelBandwidthMHz"); bandwidth->setRange(.000001, file->metadata.sampleRateHz / 1e6); bandwidth->setDecimals(6); bandwidth->setSingleStep(.1); bandwidth->setSuffix(" MHz");
-    auto* outputRate = new QDoubleSpinBox; outputRate->setObjectName("channelOutputRateMSps"); outputRate->setRange(.000001, std::max(.000002, file->metadata.sampleRateHz / 1e6)); outputRate->setDecimals(6); outputRate->setSingleStep(1); outputRate->setSuffix(" MS/s");
+    auto* center = new ParameterDoubleSpinBox; center->setObjectName("channelCenterMHz"); center->setRange(sampled.lowerHz / 1e6, sampled.upperHz / 1e6); center->setDecimals(6); center->setSingleStep(.1); center->setSuffix(" MHz");
+    auto* bandwidth = new ParameterDoubleSpinBox; bandwidth->setObjectName("channelBandwidthMHz"); bandwidth->setRange(.000001, file->metadata.sampleRateHz / 1e6); bandwidth->setDecimals(6); bandwidth->setSingleStep(.1); bandwidth->setSuffix(" MHz");
+    auto* outputRate = new ParameterDoubleSpinBox; outputRate->setObjectName("channelOutputRateMSps"); outputRate->setRange(.000001, std::max(.000002, file->metadata.sampleRateHz / 1e6)); outputRate->setDecimals(6); outputRate->setSingleStep(1); outputRate->setSuffix(" MS/s");
     auto* timeMode = new QComboBox; timeMode->setObjectName("channelTimeScope"); timeMode->addItems({"所选标记时段", "完整源文件"});
     auto* filter = new QComboBox; filter->setObjectName("channelFilter"); filter->addItems({"快速预览 · 40 dB", "标准 · 60 dB", "高抑制 · 80 dB"});
     auto* preserveTime = new QCheckBox("保持源文件绝对时间显示"); preserveTime->setObjectName("channelPreserveSourceTime"); preserveTime->setChecked(!editing || original.preserveSourceTime);
@@ -1465,6 +1465,8 @@ void MainWindow::applyPowerInput(QComboBox* control) {
     control->lineEdit()->setStyleSheet(valid ? QString{} : "color:#ffbb68;");
     control->setToolTip(valid ? QString{} : control == dynamic_ ? "请输入大于 0 且不超过 10000 的动态范围" : "请输入 -200 至 100 的参考电平（dBFS/Hz）");
     if (!valid) return;
+    if (control->property("parameterCustomCommit").toBool())
+        rememberCustomValue(control,value,control==dynamic_?" dB":" dBFS/Hz");
     cancelInteractions(false); session_.setPowerDisplayRange(range);
     scheduleRightSidebarSettingsSave(); refresh();
 }
@@ -1472,7 +1474,9 @@ void MainWindow::normalizePowerInput(QComboBox* control) {
     if (refreshing_ || !session_.activeFile()) return;
     const auto& display = session_.activeFile()->display;
     const QSignalBlocker blocker(control); const QSignalBlocker editBlocker(control->lineEdit());
-    control->setEditText(number(control == dynamic_ ? display.dynamicRangeDb : display.referenceLevelDb) + (control == dynamic_ ? " dB" : " dBFS/Hz"));
+    control->setProperty("parameterDraft", false);
+    const auto text = number(control == dynamic_ ? display.dynamicRangeDb : display.referenceLevelDb) + (control == dynamic_ ? " dB" : " dBFS/Hz");
+    control->setProperty("parameterCommittedText", text); control->setEditText(text);
     control->lineEdit()->setStyleSheet({}); control->setProperty("powerInputValid", true);
     control->setToolTip({});
 }
@@ -1518,9 +1522,6 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 }
 bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
     if (destroying_) return QMainWindow::eventFilter(watched, event);
-    if (event->type() == QEvent::FocusOut && dynamic_ && reference_ &&
-        (watched == dynamic_->lineEdit() || watched == reference_->lineEdit()))
-        normalizePowerInput(watched == dynamic_->lineEdit() ? dynamic_ : reference_);
     if (handleWindowChrome(watched,event)) return true;
     if ((watched == tree_ || watched == tree_->viewport()) && (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::KeyPress))
         treeSelectionModifiers_ = event->type() == QEvent::MouseButtonPress ? static_cast<QMouseEvent*>(event)->modifiers() : static_cast<QKeyEvent*>(event)->modifiers();
@@ -1689,9 +1690,9 @@ void MainWindow::showAddFileDialog() {
     auto* note = label("格式：小端 int16，I/Q 交替；FS、FC、BW 从文件名读取。顺序读入并计算导航包络；可在导航标题栏停止，保留已读部分。", {}, "help"); note->setWordWrap(true); layout->addWidget(note);
     auto* form = new QFormLayout; form->setSpacing(12); auto* fileField = new QWidget; auto* fileRow = new QHBoxLayout(fileField); fileRow->setContentsMargins(0, 0, 0, 0); fileRow->setSpacing(6);
     auto* choose = push("选择文件…", "chooseIqFile", fileRow); choose->setProperty("uiRole", "outline"); auto* fileName = label("未选择文件", "fileInput"); fileName->setMinimumWidth(0); fileRow->addWidget(fileName, 1); row(form, "选择文件", fileField);
-    auto* fs = new QDoubleSpinBox; fs->setObjectName("loadFs"); fs->setRange(1, 1e12); fs->setDecimals(0); fs->setValue(40000000); fs->setSingleStep(1000000);
-    auto* fc = new QDoubleSpinBox; fc->setObjectName("loadFc"); fc->setRange(0, 1e15); fc->setDecimals(0); fc->setValue(100000000); fc->setSingleStep(1000000);
-    auto* duration = new QDoubleSpinBox; duration->setObjectName("loadDuration"); duration->setRange(.101, 1e9); duration->setDecimals(3); duration->setValue(180);
+    auto* fs = new ParameterDoubleSpinBox; fs->setObjectName("loadFs"); fs->setRange(1, 1e12); fs->setDecimals(0); fs->setValue(40000000); fs->setSingleStep(1000000);
+    auto* fc = new ParameterDoubleSpinBox; fc->setObjectName("loadFc"); fc->setRange(0, 1e15); fc->setDecimals(0); fc->setValue(100000000); fc->setSingleStep(1000000);
+    auto* duration = new ParameterDoubleSpinBox; duration->setObjectName("loadDuration"); duration->setRange(.101, 1e9); duration->setDecimals(3); duration->setValue(180);
     for (auto* field : {fs, fc, duration}) field->setReadOnly(true);
     row(form, "采样率 (Hz)", fs); row(form, "中心频率 (Hz)", fc); row(form, "文件时长", duration); layout->addLayout(form);
     auto* progress = new QProgressBar; progress->setObjectName("loadProgress"); progress->setTextVisible(false); progress->setRange(0, 100); progress->setValue(0); progress->setFixedHeight(8); layout->addWidget(progress);

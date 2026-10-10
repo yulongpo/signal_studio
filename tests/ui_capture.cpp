@@ -8,6 +8,7 @@
 #include "ui/display_target.h"
 
 #include <QAbstractButton>
+#include <QAbstractSpinBox>
 #include <QAbstractItemView>
 #include <QAction>
 #include <QApplication>
@@ -28,6 +29,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QLineEdit>
+#include <QLabel>
 #include <QPushButton>
 #include <QMessageBox>
 #include <QMouseEvent>
