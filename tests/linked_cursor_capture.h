@@ -71,6 +71,8 @@ int runLinkedCursorCapture(const QString& directory, const QString& largeIq) {
         const auto bin = frame->binAt((source->view.frequency.lowerHz + source->view.frequency.upperHz) / 2 - source->metadata.centerFrequencyHz);
         require(std::abs(aux->property("cursorPowerDb").toDouble() - frame->dbAt(bin)) < .01, "Frame PSD power differs from clicked STFT frame");
         save("wide-frame-psd"); report["wideFramePsd"] = aux->renderStatistics();
+        report["windowChrome"] = verifyWindowChrome(window,screen); require(readyWide(),"GPU resources did not rebuild after window actions");
+        report["widePowerControls"] = verifyPowerAndLabels(window,false); require(readyWide(),"Wide display did not settle after color updates"); save("wide-power-axis-labels");
         window.session().setView({source->view.time, {100e6 - 16000, 100e6 + 16000}}); window.refresh();
         require(readyWide(), "Frequency zoom did not settle");
         const auto zoomed = main->renderStatistics();
@@ -82,7 +84,7 @@ int runLinkedCursorCapture(const QString& directory, const QString& largeIq) {
         QTest::mouseClick(main, Qt::LeftButton, Qt::NoModifier, main->plotRect().center().toPoint());
         require(readyWide(), "Waterfall frame PSD did not settle"); save("wide-waterfall-frame");
 
-        window.openNarrowbandDemoProject(); require(readyNarrow(), "Narrowband display did not settle");
+        window.session().newProject(); window.refresh(); window.openNarrowbandDemoProject(); require(readyNarrow(), "Narrowband display did not settle");
         auto* workspace = window.findChild<NarrowbandWorkspace*>();
         auto* heat = window.findChild<QWidget*>("narrowbandStftPanelChart");
         auto* psd = window.findChild<QWidget*>("narrowbandPsdPanelChart");
@@ -109,6 +111,7 @@ int runLinkedCursorCapture(const QString& directory, const QString& largeIq) {
         const auto* nbFrame = window.session().selectedSpectralFrame(nbContext); require(nbFrame, "Narrowband frame not selected");
         require(psd->property("effectiveFftPoints").toInt() == int(nbFrame->linearPower.size()), "Narrowband frame N is inconsistent");
         save("narrowband-linked-frame");
+        report["narrowbandPowerControls"] = verifyPowerAndLabels(window,true); require(readyNarrow(),"Narrow display did not settle after color updates"); save("narrowband-power-axis-labels");
         QTest::keyClick(heat, Qt::Key_Escape);
         require(!window.session().linkedCursor(nbContext).pinned, "Narrowband Esc did not clear cursor");
         report["narrowbandHoverBefore"] = nbBefore; report["narrowbandHoverAfter"] = nbAfter;

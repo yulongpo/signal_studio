@@ -49,7 +49,11 @@ inline void showFullScreenOnScreen(QWidget& window, QScreen* screen) {
     // Reapply the target after native creation, then enter full screen there.
     QTimer::singleShot(100,&window,[&window,screen] {
         window.setScreen(screen);window.windowHandle()->setScreen(screen);
+        // QRhi surface recreation needs the target geometry. Do not let this
+        // transitional resize replace the main window's ordinary geometry.
+        window.setProperty("enteringTargetFullscreen",true);
         window.setGeometry(screen->geometry());window.showFullScreen();
+        window.setProperty("enteringTargetFullscreen",false);
     });
 }
 }

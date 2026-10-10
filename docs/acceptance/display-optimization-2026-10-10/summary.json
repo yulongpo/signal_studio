@@ -1,0 +1,369 @@
+{
+  "schema": "signal-studio-display-acceptance-v1",
+  "date": "2026-10-10T16:40:21.0703346+08:00",
+  "branch": "rebuild/a143-native",
+  "sourceBase": "6966b821ce634b0bf9e3d2eb26cf4ce2b9437278",
+  "pass": true,
+  "nativeRuns": [
+    {
+      "configuration": "debug",
+      "ctestPassed": 5,
+      "ctestFailed": 0,
+      "uiPassed": 78,
+      "uiFailed": 0,
+      "uiSkipped": 0,
+      "nativePassed": true,
+      "sceneCount": 10,
+      "nativeReport": "debug/linked-cursor-report.json",
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "name": "Redmi 27 NU",
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      },
+      "windowChrome": {
+        "buttons": true,
+        "close": true,
+        "doubleClick": true,
+        "maximizedAvailable": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "menuIsolation": true,
+        "minimizeRestore": true,
+        "moved": {
+          "height": 960,
+          "width": 1600,
+          "x": 2759,
+          "y": 139
+        },
+        "normal": {
+          "height": 960,
+          "width": 1600,
+          "x": 2640,
+          "y": 60
+        },
+        "resized": {
+          "height": 960,
+          "width": 1745,
+          "x": 2759,
+          "y": 139
+        },
+        "restoredFullscreen": true,
+        "systemMove": true,
+        "systemResize": true
+      },
+      "wideImmediateInput": true,
+      "narrowImmediateInput": true,
+      "noWideAnalysisRecompute": true,
+      "noNarrowAnalysisRecompute": true,
+      "plainCursorTextVerified": true,
+      "cursorLabelsAvoidLines": true,
+      "inverseCursor": {
+        "wideLineSamples": 4,
+        "wideGlyphPixels": 146,
+        "narrowLineSamples": 4,
+        "narrowGlyphPixels": 143,
+        "channelTolerance": 8,
+        "wideDrawCalls": 56,
+        "narrowDrawCalls": 65
+      },
+      "largeIqDisplayMs": 1891,
+      "largeIqBytes": 3817472000,
+      "largeIqCache": {
+        "actualFrames": 47,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+        "binHz": 976.5625,
+        "frameGeneration": "14",
+        "gpuDataDrawCalls": 92,
+        "gpuVertexUploads": 23,
+        "inverseCursorDrawCalls": 83,
+        "iqCacheBytes": 400000,
+        "iqCacheHits": 10971,
+        "iqCacheMisses": 5,
+        "matrixBytes": 389912,
+        "noiseBandwidthHz": 1465.5593551538814,
+        "pending": false,
+        "requestGeneration": "14",
+        "requiredSeconds": 0.001024,
+        "textureUploads": 5
+      },
+      "process": {
+        "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+        "configuration": "Debug",
+        "systemOnlyPath": true,
+        "exitCode": 0,
+        "peakWorkingSetBytes": 5314818048,
+        "peakSampledPrivateBytes": 1490944000,
+        "memoryNote": "Process memory includes Qt/QRhi resources and memory-mapped source pages; IQ and analysis cache counters are separate."
+      },
+      "executable": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudio.exe",
+        "bytes": 5393920,
+        "sha256": "DA937D6DC9F349A8A7F019B03DAEF33E4F88FB5CD9ABF2D676DEE2B25B5998F2"
+      }
+    },
+    {
+      "configuration": "release",
+      "ctestPassed": 5,
+      "ctestFailed": 0,
+      "uiPassed": 78,
+      "uiFailed": 0,
+      "uiSkipped": 0,
+      "nativePassed": true,
+      "sceneCount": 10,
+      "nativeReport": "release/linked-cursor-report.json",
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "name": "Redmi 27 NU",
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      },
+      "windowChrome": {
+        "buttons": true,
+        "close": true,
+        "doubleClick": true,
+        "maximizedAvailable": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "menuIsolation": true,
+        "minimizeRestore": true,
+        "moved": {
+          "height": 960,
+          "width": 1600,
+          "x": 2759,
+          "y": 139
+        },
+        "normal": {
+          "height": 960,
+          "width": 1600,
+          "x": 2640,
+          "y": 60
+        },
+        "resized": {
+          "height": 960,
+          "width": 1745,
+          "x": 2759,
+          "y": 139
+        },
+        "restoredFullscreen": true,
+        "systemMove": true,
+        "systemResize": true
+      },
+      "wideImmediateInput": true,
+      "narrowImmediateInput": true,
+      "noWideAnalysisRecompute": true,
+      "noNarrowAnalysisRecompute": true,
+      "plainCursorTextVerified": true,
+      "cursorLabelsAvoidLines": true,
+      "inverseCursor": {
+        "wideLineSamples": 4,
+        "wideGlyphPixels": 146,
+        "narrowLineSamples": 4,
+        "narrowGlyphPixels": 143,
+        "channelTolerance": 8,
+        "wideDrawCalls": 60,
+        "narrowDrawCalls": 66
+      },
+      "largeIqDisplayMs": 219,
+      "largeIqBytes": 3817472000,
+      "largeIqCache": {
+        "actualFrames": 47,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+        "binHz": 976.5625,
+        "frameGeneration": "16",
+        "gpuDataDrawCalls": 95,
+        "gpuVertexUploads": 23,
+        "inverseCursorDrawCalls": 86,
+        "iqCacheBytes": 400000,
+        "iqCacheHits": 10971,
+        "iqCacheMisses": 5,
+        "matrixBytes": 389536,
+        "noiseBandwidthHz": 1465.5593551538814,
+        "pending": false,
+        "requestGeneration": "16",
+        "requiredSeconds": 0.001024,
+        "textureUploads": 5
+      },
+      "process": {
+        "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+        "configuration": "Release",
+        "systemOnlyPath": true,
+        "exitCode": 0,
+        "peakWorkingSetBytes": 5394952192,
+        "peakSampledPrivateBytes": 1499758592,
+        "memoryNote": "Process memory includes Qt/QRhi resources and memory-mapped source pages; IQ and analysis cache counters are separate."
+      },
+      "executable": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe",
+        "bytes": 2093056,
+        "sha256": "6DF5E7ACE178B2CF5BAEEC36F783D78A065F3A74C06065D861CD232A08490C2A"
+      }
+    }
+  ],
+  "smokeRuns": [
+    {
+      "report": "smoke/signal-studio-debug-gpu-screen2-4k-150-report.json",
+      "pass": true,
+      "workspace": "wideband",
+      "gpu": true,
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "dataDrawCalls": 31,
+      "vertexUploads": 5,
+      "heatmapUploads": 1,
+      "completedFrames": 6,
+      "fourK150": true,
+      "pages": 0
+    },
+    {
+      "report": "smoke/signal-studio-debug-software-screen2-4k-150-report.json",
+      "pass": true,
+      "workspace": "wideband",
+      "gpu": false,
+      "backend": "QPainter 软件绘制",
+      "dataDrawCalls": 0,
+      "vertexUploads": 0,
+      "heatmapUploads": 0,
+      "completedFrames": 0,
+      "fourK150": true,
+      "pages": 0
+    },
+    {
+      "report": "smoke/signal-studio-narrowband-debug-gpu-screen2-4k-150-report.json",
+      "pass": true,
+      "workspace": "narrowband",
+      "gpu": true,
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "dataDrawCalls": 30,
+      "vertexUploads": 7,
+      "heatmapUploads": 1,
+      "completedFrames": 32,
+      "fourK150": true,
+      "pages": 4
+    },
+    {
+      "report": "smoke/signal-studio-narrowband-debug-software-screen2-4k-150-report.json",
+      "pass": true,
+      "workspace": "narrowband",
+      "gpu": false,
+      "backend": "QPainter 软件绘制",
+      "dataDrawCalls": 0,
+      "vertexUploads": 0,
+      "heatmapUploads": 0,
+      "completedFrames": 0,
+      "fourK150": true,
+      "pages": 4
+    },
+    {
+      "report": "smoke/signal-studio-narrowband-release-gpu-screen2-4k-150-report.json",
+      "pass": true,
+      "workspace": "narrowband",
+      "gpu": true,
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "dataDrawCalls": 29,
+      "vertexUploads": 6,
+      "heatmapUploads": 1,
+      "completedFrames": 28,
+      "fourK150": true,
+      "pages": 4
+    },
+    {
+      "report": "smoke/signal-studio-narrowband-release-software-screen2-4k-150-report.json",
+      "pass": true,
+      "workspace": "narrowband",
+      "gpu": false,
+      "backend": "QPainter 软件绘制",
+      "dataDrawCalls": 0,
+      "vertexUploads": 0,
+      "heatmapUploads": 0,
+      "completedFrames": 0,
+      "fourK150": true,
+      "pages": 4
+    },
+    {
+      "report": "smoke/signal-studio-release-gpu-screen2-4k-150-report.json",
+      "pass": true,
+      "workspace": "wideband",
+      "gpu": true,
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "dataDrawCalls": 31,
+      "vertexUploads": 5,
+      "heatmapUploads": 1,
+      "completedFrames": 6,
+      "fourK150": true,
+      "pages": 0
+    },
+    {
+      "report": "smoke/signal-studio-release-software-screen2-4k-150-report.json",
+      "pass": true,
+      "workspace": "wideband",
+      "gpu": false,
+      "backend": "QPainter 软件绘制",
+      "dataDrawCalls": 0,
+      "vertexUploads": 0,
+      "heatmapUploads": 0,
+      "completedFrames": 0,
+      "fourK150": true,
+      "pages": 0
+    }
+  ],
+  "limits": [
+    "Windows x64 / Qt 6.11.1 only; Ubuntu and other QRhi APIs were not tested.",
+    "Constellation, eye, classification and demodulation remain explicitly synthetic.",
+    "Process peaks include Qt/QRhi and mapped source pages; they are not IQ/analysis cache sizes."
+  ],
+  "reproduce": [
+    "scripts/build.ps1 -Configuration Debug",
+    "scripts/build.ps1 -Configuration Release",
+    "scripts/verify-linked-cursors.ps1 -Configuration Debug -OutputDirectory artifacts/display-optimization/debug -IqFile <IQ path>",
+    "scripts/verify-linked-cursors.ps1 -Configuration Release -OutputDirectory artifacts/display-optimization/release -IqFile <IQ path>",
+    "scripts/gpu_smoke.ps1 -Configuration <Debug|Release> [-Narrowband] [-SoftwareRenderer]"
+  ]
+}

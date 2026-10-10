@@ -92,26 +92,32 @@ struct AcceleratedSurface::Resources {
     std::unique_ptr<QRhiSampler> sampler;
     std::unique_ptr<QRhiTexture> heatmap;
     std::unique_ptr<QRhiTexture> overlay;
+    std::unique_ptr<QRhiTexture> inverseOverlay;
     std::unique_ptr<QRhiTexture> palette;
     std::unique_ptr<QRhiTexture> chartPalette;
     bool paletteCreated = false;
     bool chartPaletteCreated = false;
     std::unique_ptr<QRhiShaderResourceBindings> heatmapBindings;
     std::unique_ptr<QRhiShaderResourceBindings> overlayBindings;
+    std::unique_ptr<QRhiShaderResourceBindings> inverseBindings;
     std::unique_ptr<QRhiShaderResourceBindings> chartBindings;
     std::unique_ptr<QRhiRenderPassDescriptor> renderPass;
     std::unique_ptr<QRhiGraphicsPipeline> pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> overlayPipeline;
+    std::unique_ptr<QRhiGraphicsPipeline> inversePipeline;
     int samples = 0;
 
     ~Resources() {
         pipeline.reset();
         overlayPipeline.reset();
+        inversePipeline.reset();
         heatmapBindings.reset();
         overlayBindings.reset();
+        inverseBindings.reset();
         chartBindings.reset();
         heatmap.reset();
         overlay.reset();
+        inverseOverlay.reset();
         palette.reset();
         chartPalette.reset();
         sampler.reset();
@@ -149,6 +155,10 @@ AcceleratedSurface::~AcceleratedSurface() {
 
 void AcceleratedSurface::setPainter(PainterCallback painter) {
     painter_ = std::move(painter);
+    invalidateOverlay();
+}
+void AcceleratedSurface::setInversePainter(PainterCallback painter) {
+    inversePainter_ = std::move(painter);
     invalidateOverlay();
 }
 
@@ -400,7 +410,8 @@ bool AcceleratedSurface::createResources() {
         return false;
     }
     if (!ensurePaletteTexture() || !ensureChartPaletteTexture() ||
-        !ensureTexture(false, QSize(1, 1)) || !ensureTexture(true, QSize(1, 1))) return false;
+        !ensureTexture(TextureLayer::Heatmap, QSize(1, 1)) || !ensureTexture(TextureLayer::Overlay, QSize(1, 1)) ||
+        (inversePainter_ && !ensureTexture(TextureLayer::InverseOverlay, QSize(1, 1)))) return false;
     paletteDirty_ = true;
     heatmapDirty_ = !heatmap_.isNull();
     heatmapUploaded_ = false;
@@ -413,11 +424,12 @@ bool AcceleratedSurface::ensurePipeline() {
     const int samples = renderTarget()->sampleCount();
     const bool compatiblePass = resources_->renderPass && resources_->samples == samples &&
                                resources_->renderPass->isCompatible(pass);
-    if (resources_->pipeline && resources_->overlayPipeline && compatiblePass)
+    if (resources_->pipeline && resources_->overlayPipeline && (!inversePainter_ || resources_->inversePipeline) && compatiblePass)
         return true;
     if (!compatiblePass) {
         resources_->pipeline.reset();
         resources_->overlayPipeline.reset();
+        resources_->inversePipeline.reset();
         resources_->renderPass.reset(pass->newCompatibleRenderPassDescriptor());
         resources_->samples = samples;
     } else {
@@ -426,6 +438,7 @@ bool AcceleratedSurface::ensurePipeline() {
         // independent chart-data pipelines alive.
         resources_->pipeline.reset();
         resources_->overlayPipeline.reset();
+        resources_->inversePipeline.reset();
     }
     resources_->pipeline.reset(rhi()->newGraphicsPipeline());
     auto* pipeline = resources_->pipeline.get();
@@ -472,6 +485,27 @@ bool AcceleratedSurface::ensurePipeline() {
         fail(QStringLiteral("无法创建 QRhi 覆盖层合成管线"));
         return false;
     }
+    if (inversePainter_) {
+        resources_->inversePipeline.reset(rhi()->newGraphicsPipeline());
+        auto* inverse = resources_->inversePipeline.get();
+        inverse->setTopology(QRhiGraphicsPipeline::TriangleStrip);
+        inverse->setSampleCount(samples);
+        inverse->setCullMode(QRhiGraphicsPipeline::None);
+        inverse->setDepthTest(false); inverse->setDepthWrite(false);
+        inverse->setShaderStages({{QRhiShaderStage::Vertex, resources_->vertexShader},
+                                 {QRhiShaderStage::Fragment, resources_->overlayFragmentShader}});
+        inverse->setVertexInputLayout(layout);
+        // A premultiplied white alpha mask inverts the actual destination:
+        // alpha*(1-dst) + (1-alpha)*dst. Transparent pixels leave it unchanged.
+        auto inverseBlend = blend;
+        inverseBlend.srcColor = QRhiGraphicsPipeline::OneMinusDstColor;
+        inverseBlend.srcAlpha = QRhiGraphicsPipeline::Zero;
+        inverseBlend.dstAlpha = QRhiGraphicsPipeline::One;
+        inverse->setTargetBlends({inverseBlend});
+        inverse->setShaderResourceBindings(resources_->inverseBindings.get());
+        inverse->setRenderPassDescriptor(resources_->renderPass.get());
+        if (!inverse->create()) { fail(QStringLiteral("无法创建 QRhi 游标反色合成管线")); return false; }
+    }
     resources_->samples = samples;
     return true;
 }
@@ -498,9 +532,11 @@ bool AcceleratedSurface::ensureChartBuffer() {
     return true;
 }
 
-bool AcceleratedSurface::ensureTexture(bool overlay, const QSize& pixelSize) {
-    auto& texture = overlay ? resources_->overlay : resources_->heatmap;
-    auto& bindings = overlay ? resources_->overlayBindings : resources_->heatmapBindings;
+bool AcceleratedSurface::ensureTexture(TextureLayer layer, const QSize& pixelSize) {
+    const bool overlay = layer != TextureLayer::Heatmap;
+    const bool inverse = layer == TextureLayer::InverseOverlay;
+    auto& texture = inverse ? resources_->inverseOverlay : overlay ? resources_->overlay : resources_->heatmap;
+    auto& bindings = inverse ? resources_->inverseBindings : overlay ? resources_->overlayBindings : resources_->heatmapBindings;
     if (texture && texture->pixelSize() == pixelSize && bindings) return true;
     const int maximum = rhi()->resourceLimit(QRhi::TextureSizeMax);
     if (pixelSize.isEmpty() || pixelSize.width() > maximum || pixelSize.height() > maximum) {
@@ -514,6 +550,7 @@ bool AcceleratedSurface::ensureTexture(bool overlay, const QSize& pixelSize) {
         // and calling create() again is not a valid resize operation.
         resources_->pipeline.reset();
         resources_->overlayPipeline.reset();
+        resources_->inversePipeline.reset();
         bindings.reset();
         texture->destroy();
         texture->setPixelSize(pixelSize);
@@ -620,7 +657,7 @@ bool AcceleratedSurface::prepareUploads(QRhiResourceUpdateBatch* updates) {
             }
         }
         if (!ensurePaletteTexture()) return false;
-        if (pixels.isNull() || !ensureTexture(false, pixels.size())) return false;
+        if (pixels.isNull() || !ensureTexture(TextureLayer::Heatmap, pixels.size())) return false;
         updates->uploadTexture(resources_->heatmap.get(), pixels);
         ++textureUploads_;
         heatmapDirty_ = false;
@@ -666,8 +703,20 @@ bool AcceleratedSurface::prepareUploads(QRhiResourceUpdateBatch* updates) {
         }
         {
             const CpuWallScope enqueueTimer(overlayUploadEnqueueTiming_);
-            if (!ensureTexture(true, pixels)) return false;
+            if (!ensureTexture(TextureLayer::Overlay, pixels)) return false;
             updates->uploadTexture(resources_->overlay.get(), overlay_);
+        }
+        if (inversePainter_) {
+            if (inverseOverlay_.size() != pixels || !qFuzzyCompare(inverseOverlay_.devicePixelRatio(), dpr)) {
+                inverseOverlay_ = QImage(pixels, QImage::Format_RGBA8888_Premultiplied);
+                if (inverseOverlay_.isNull()) { fail(QStringLiteral("无法创建游标反色蒙版")); return false; }
+                inverseOverlay_.setDevicePixelRatio(dpr);
+            }
+            inverseOverlay_.fill(Qt::transparent);
+            QPainter painter(&inverseOverlay_); painter.setFont(font());
+            painter.setRenderHint(QPainter::Antialiasing); inversePainter_(painter); painter.end();
+            if (!ensureTexture(TextureLayer::InverseOverlay, pixels)) return false;
+            updates->uploadTexture(resources_->inverseOverlay.get(), inverseOverlay_);
         }
         ++overlayUploads_;
         overlayDirty_ = false;
@@ -769,6 +818,12 @@ void AcceleratedSurface::render(QRhiCommandBuffer* commandBuffer) {
     // full-widget quad again so axes, grid and gesture feedback stay aligned.
     commandBuffer->setVertexInput(0, 1, &input);
     commandBuffer->draw(4, 1, 4);
+    if (inversePainter_) {
+        commandBuffer->setGraphicsPipeline(resources_->inversePipeline.get());
+        commandBuffer->setShaderResources(resources_->inverseBindings.get());
+        commandBuffer->draw(4, 1, 4);
+        ++inverseOverlayDrawCalls_;
+    }
     commandBuffer->endPass();
 }
 

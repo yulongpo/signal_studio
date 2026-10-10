@@ -54,10 +54,12 @@ public:
     quint64 visibleGpuVertexUploads() const;
     QString visibleBackendDescription() const;
     QJsonObject renderStatistics() const;
+    PowerAnalysisSnapshot powerSnapshot() const;
     void invalidateVisibleOverlays();
 
 signals:
     void displayParametersChanged();
+    void autoPowerFitRequested();
 
 private:
     void buildPages();
@@ -74,7 +76,8 @@ private:
                       std::vector<float> psd, QImage stft, QString status, bool samplePointsVisible,
                       bool psdReady, bool stftReady, std::uint64_t firstOutputSample,
                       std::vector<SampleIndex> samplePositions,
-                      std::shared_ptr<const SpectrogramData> spectrum, std::vector<float> rasterPower);
+                      std::shared_ptr<const SpectrogramData> spectrum, std::vector<float> rasterPower,
+                      std::shared_ptr<const SpectralFrame> average);
     void startDemoRecognition();
     void stopRecognition();
     void stopDemoRecognition();
@@ -151,6 +154,7 @@ private:
     ChannelSampleCache sampleCache_;
     ChannelSampleCacheStats displayCacheStats_;
     std::vector<float> averagePsd_;
+    std::shared_ptr<const SpectralFrame> averagePower_;
     QString linkedPsdKey_, powerColorKey_;
     std::vector<float> rasterPower_;
 };

@@ -1,4 +1,5 @@
 #include "infrastructure/project_store.h"
+#include "domain/power_display.h"
 
 #include <QFile>
 #include <QJsonArray>
@@ -266,8 +267,7 @@ DisplaySettings decodeDisplay(const QJsonValue& value) {
     display.psdMin=number(data,"psdMin");display.psdMax=number(data,"psdMax");
     require(display.waveformMin>=-65536&&display.waveformMax<=65536&&
             display.waveformMax-display.waveformMin>=2,QStringLiteral("波形 Y 轴范围必须位于 [-65536,65536] 且跨度至少 2"));
-    require(display.psdMin>=-180&&display.psdMax<=50&&display.psdMax-display.psdMin>=2,
-            QStringLiteral("PSD Y 轴范围必须位于 [-180,50] 且跨度至少 2"));
+    require(validPsdRange(display.psdMin, display.psdMax), QStringLiteral("PSD Y 轴范围必须有限、有序且跨度不超过 10300 dB"));
     const auto activeMin=display.auxiliaryMode==AuxiliaryMode::Waveform?display.waveformMin:display.psdMin;
     const auto activeMax=display.auxiliaryMode==AuxiliaryMode::Waveform?display.waveformMax:display.psdMax;
     require(display.auxiliaryMin==activeMin&&display.auxiliaryMax==activeMax,
@@ -491,8 +491,7 @@ Project decodeProject(const QJsonObject& root) {
                     number(channelData, "psdAxisMaximum") : 0.0;
                 require(channel.waveformAxisMinimum < channel.waveformAxisMaximum &&
                         channel.waveformAxisMaximum - channel.waveformAxisMinimum <= 2.0e12 &&
-                        channel.psdAxisMinimum < channel.psdAxisMaximum &&
-                        channel.psdAxisMaximum - channel.psdAxisMinimum <= 1000.0,
+                        validPsdRange(channel.psdAxisMinimum, channel.psdAxisMaximum),
                         QStringLiteral("窄带波形或 PSD 纵轴范围无效"));
                 channel.symbolRate = number(channelData, "symbolRate");
                 require(channel.symbolRate > 0, QStringLiteral("符号率必须大于 0"));

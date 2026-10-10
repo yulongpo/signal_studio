@@ -3,6 +3,7 @@
 #include "application/session.h"
 #include <QMainWindow>
 #include <QStringList>
+#include <QPointer>
 #include <array>
 
 class QTreeWidget;
@@ -40,9 +41,25 @@ public:
     bool clearActiveLinkedCursor();
 protected:
     void resizeEvent(QResizeEvent*) override;
+    void moveEvent(QMoveEvent*) override;
+    void changeEvent(QEvent*) override;
     void keyPressEvent(QKeyEvent*) override;
     bool eventFilter(QObject*, QEvent*) override;
 private:
+    bool handleWindowChrome(QObject*, QEvent*);
+    void toggleWindowState();
+    void updateWindowControls();
+    void rememberNormalGeometry();
+    Qt::Edges resizeEdges(QPoint) const;
+    QRect normalWindowGeometry_;
+    QPoint windowDragAnchor_, windowDragOrigin_;
+    bool windowDragPending_ = false, windowDragFallback_ = false, restoringWindowGeometry_ = false;
+    QToolButton* windowMaximize_ = nullptr;
+    QPointer<QWidget> resizeCursorWidget_;
+    void applyPowerInput(QComboBox* control);
+    void normalizePowerInput(QComboBox* control);
+    void updatePowerFit();
+    void autoFitPower();
     void buildMenus();
     void buildWorkspace();
     void restoreUiState();
@@ -75,6 +92,11 @@ private:
     void updateBottom();
     void updateCursor(SampleIndex sample, double frequencyHz);
     void log(const QString& message);
+    QPushButton* autoPowerFit_ = nullptr;
+    std::shared_ptr<const SpectrogramData> powerFitHeatmap_;
+    std::shared_ptr<const SpectralFrame> powerFitPsd_;
+    PowerFitResult cachedPowerFit_;
+    bool powerFitReady_ = false;
     Session session_;
     QString projectPath_;
     std::string selectionAnchor_;

@@ -1,6 +1,7 @@
 #include "app/main_window.h"
 #include "ui/charts/plot_widget.h"
 #include "ui/charts/accelerated_surface.h"
+#include "ui/charts/cursor_overlay.h"
 #include "ui/display_target.h"
 #include "ui/narrowband_workspace.h"
 
@@ -241,6 +242,10 @@ private slots:
     void narrowbandAuxiliaryRenderingAndGestures();
     void widebandLinkedCursorsAndFrameSpectrum();
     void narrowbandLinkedCursorsAndFrameSpectrum();
+    void powerInputsAreImmediateAndFitReusesData();
+    void pinnedAxisLabelsSurviveLeave();
+    void sharedInteractionFeedback();
+    void customWindowControls();
     void initialFileViewShowsFirstFivePercentOrTenMilliseconds();
     void panelRailsAndBottomTabs();
     void sectionContextAndManualExpansion();
@@ -331,7 +336,7 @@ void UiTests::globalDisplaySettingsApplyAcrossFiles() {
     auxiliaryMode->setCurrentIndex(1);
     palette->setCurrentIndex(2);
     dynamic->setCurrentIndex(dynamic->findText("60 dB"));
-    reference->setCurrentIndex(reference->findText("-40 dBFS"));
+    reference->setCurrentIndex(reference->findText("-40 dBFS/Hz"));
     QCOMPARE(static_cast<int>(window.session().activeFile()->display.mainMode), static_cast<int>(MainMode::Waterfall));
     QCOMPARE(static_cast<int>(window.session().activeFile()->display.auxiliaryMode), static_cast<int>(AuxiliaryMode::Psd));
     QCOMPARE(static_cast<int>(window.session().activeFile()->display.palette), static_cast<int>(Palette::Gray));
@@ -360,7 +365,7 @@ void UiTests::globalDisplaySettingsApplyAcrossFiles() {
     QCOMPARE(auxiliaryMode->currentIndex(), 0);
     QCOMPARE(palette->currentIndex(), 0);
     QCOMPARE(dynamic->currentText(), QString("60 dB"));
-    QCOMPARE(reference->currentText(), QString("-40 dBFS"));
+    QCOMPARE(reference->currentText(), QString("-40 dBFS/Hz"));
     QVERIFY(window.session().activateFile(secondId));
     window.refresh();
     QCOMPARE(mainMode->currentIndex(), 0);
@@ -884,7 +889,7 @@ void UiTests::prototypeDisplayDefaultsAndOptions() {
     QCOMPARE(comboLabels(stft),QStringList({"256","512","1024","2048","4096","8192","16384","32768","65536"}));
     QCOMPARE(comboLabels(psd),QStringList({"1024","2048","4096","8192"}));
     QCOMPARE(comboLabels(dynamic),QStringList({"20 dB","40 dB","60 dB","80 dB","100 dB","120 dB"}));
-    QCOMPARE(comboLabels(reference),QStringList({"0 dBFS","-20 dBFS","-40 dBFS","-60 dBFS","-80 dBFS","-100 dBFS"}));
+    QCOMPARE(comboLabels(reference),QStringList({"0 dBFS/Hz","-20 dBFS/Hz","-40 dBFS/Hz","-60 dBFS/Hz","-80 dBFS/Hz","-100 dBFS/Hz"}));
     QCOMPARE(stft->currentText(),QString("2048"));
     QCOMPARE(psd->currentText(),QString("4096"));
     QCOMPARE(dynamic->currentIndex(),3);
@@ -895,6 +900,166 @@ void UiTests::prototypeDisplayDefaultsAndOptions() {
     scope->setCurrentIndex(1);
     QCOMPARE(scope->currentIndex(),0);
     QVERIFY(!file->display.psdFromSelection);
+}
+
+void UiTests::powerInputsAreImmediateAndFitReusesData() {
+    MainWindow window; window.openNarrowbandDemoProject(); showWindow(window);
+    auto* workspace=window.findChild<NarrowbandWorkspace*>();
+    auto* dynamic=window.findChild<QComboBox*>("dynamic");
+    auto* reference=window.findChild<QComboBox*>("reference");
+    auto* fit=window.findChild<QPushButton*>("autoPowerFit");
+    QVERIFY(workspace && dynamic && reference && fit);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(),15000);
+    QTRY_VERIFY(fit->isEnabled());
+    const auto context=window.session().activeChannel()->id;
+    window.session().pinCursor(context,window.session().activeChannel()->visibleSourceTime.begin+100,0,true); window.refresh();
+    const QJsonValue generation=workspace->renderStatistics()["requestGeneration"];
+    const auto spectrum=window.session().spectrogram(context);
+    auto* editor=dynamic->lineEdit(); editor->setFocus(); editor->selectAll();
+    QTest::keyClicks(editor,"123.5");
+    QCOMPARE(window.session().activeFile()->display.dynamicRangeDb,123.5);
+    QCOMPARE(window.session().activeChannel()->psdAxisMinimum,window.session().activeFile()->display.referenceLevelDb-123.5);
+    QVERIFY(editor->hasFocus()); QCOMPARE(editor->text(),QString("123.5")); QCOMPARE(editor->cursorPosition(),5);
+    editor=reference->lineEdit(); editor->setFocus(); editor->selectAll(); QTest::keyClicks(editor,"-");
+    const auto last=window.session().activeFile()->display.referenceLevelDb;
+    QCOMPARE(editor->text(),QString("-")); QVERIFY(!reference->property("powerInputValid").toBool());
+    QTest::keyClicks(editor,"35.25");
+    QCOMPARE(window.session().activeFile()->display.referenceLevelDb,-35.25);
+    QCOMPARE(window.session().activeChannel()->psdAxisMinimum,-158.75);
+    QCOMPARE(window.session().activeChannel()->psdAxisMaximum,-35.25);
+    QVERIFY(editor->hasFocus()); QCOMPARE(editor->text(),QString("-35.25")); QVERIFY(last!=-35.25);
+    QCOMPARE(window.session().spectrogram(context),spectrum);
+    QCOMPARE(workspace->renderStatistics()["requestGeneration"],generation);
+    QVERIFY(window.session().linkedCursor(context).pinned);
+    QVERIFY(window.session().setChannelPsdRange(-350,-250,false)); window.refresh();
+    editor->selectAll(); QTest::keyClicks(editor,"-36");
+    QCOMPARE(window.session().activeChannel()->psdAxisMaximum,-36.0);
+    auto snapshot=workspace->powerSnapshot(); QVERIFY(snapshot.ready);
+    const auto expected=fitPowerDisplayRange(*snapshot.heatmap,snapshot.psd.get()); QVERIFY(expected.valid);
+    fit->click();
+    QCOMPARE(window.session().activeFile()->display.referenceLevelDb,expected.range.referenceLevelDb);
+    QCOMPARE(window.session().activeChannel()->psdAxisMinimum,expected.range.lowerDb());
+    QCOMPARE(window.session().spectrogram(context),spectrum);
+    QCOMPARE(workspace->renderStatistics()["requestGeneration"],generation);
+    editor->selectAll(); QTest::keyClicks(editor,"101");
+    QCOMPARE(window.session().activeFile()->display.referenceLevelDb,10.0);
+    QVERIFY(!reference->property("powerInputValid").toBool());
+    dynamic->setFocus(); QVERIFY(reference->currentText().endsWith("dBFS/Hz"));
+    const auto range=window.session().activeChannel()->visibleSourceTime;
+    window.session().setChannelView({range.begin,range.begin+8},window.session().activeChannel()->visibleBasebandFrequency); window.refresh();
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(),15000);
+    QVERIFY(!fit->isEnabled());
+}
+
+void UiTests::pinnedAxisLabelsSurviveLeave() {
+    QImage overlay(900,600,QImage::Format_ARGB32_Premultiplied); const QColor background(21,41,61); overlay.fill(background);
+    QPainter painter(&overlay); const auto plain=cursor_overlay::draw(painter,QRectF(20,20,860,560),QPointF(450,300),true,
+        {"t = 1.234 ms","f = 100 MHz","P = -65.4 dBFS/Hz",{}},false); painter.end();
+    for(const auto box : plain.rectangles()) {
+        int unchanged=0,total=0;
+        for(int py=qCeil(box.top());py<qFloor(box.bottom());++py) for(int px=qCeil(box.left());px<qFloor(box.right());++px) { ++total; if(overlay.pixelColor(px,py)==background) ++unchanged; }
+        QVERIFY(total>0 && unchanged>total/2);
+    }
+    for(const auto backdrop : {QColor(21,41,61),QColor(244,236,12),QColor(190,10,170)}) {
+        QImage image(900,600,QImage::Format_ARGB32_Premultiplied); image.fill(backdrop); QPainter destination(&image);
+        cursor_overlay::paintInverseOverlay(destination,image.rect(),[](QPainter& mask) {
+            cursor_overlay::draw(mask,QRectF(20,20,860,560),QPointF(450,300),true,
+                {"t = 1.234 ms","f = 100 MHz","P = -65.4 dBFS/Hz",{}},true,{},true);
+        }); destination.end();
+        const QColor inverted(255-backdrop.red(),255-backdrop.green(),255-backdrop.blue());
+        QCOMPARE(image.pixelColor(450,100),inverted); QCOMPARE(image.pixelColor(450,300),inverted);
+        int glyphPixels=0;
+        for(int y=250;y<290;++y) for(int x=460;x<620;++x) if(image.pixelColor(x,y)==inverted) ++glyphPixels;
+        QVERIFY(glyphPixels>10); // Text glyphs, not a filled label box, also invert.
+        QCOMPARE(image.pixelColor(500,200),backdrop);
+    }
+    DemoMainWindow window; showWindow(window);
+    auto* main=window.findChild<PlotWidget*>("mainPlot"); auto* aux=window.findChild<PlotWidget*>("auxPlot");
+    QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(),10000);
+    const auto plot=main->plotRect(); const auto point=plot.center().toPoint();
+    QTest::mouseClick(main,Qt::LeftButton,Qt::NoModifier,point); QTest::qWait(30);
+    QEvent leave(QEvent::Leave); QCoreApplication::sendEvent(main,&leave); QTest::qWait(30);
+    const auto pinned=main->property("pinnedReadout").toString();
+    QVERIFY(pinned.contains("t =") && pinned.contains("f =") && pinned.contains("P ="));
+    QVERIFY(main->property("pinnedReadoutDetails").toString().contains("bin"));
+    QVERIFY(!main->property("hoverCursorVisible").toBool());
+    const auto x=main->property("pinnedXLabelRect").toRectF(); const auto y=main->property("pinnedYLabelRect").toRectF();
+    const auto power=main->property("pinnedValueRect").toRectF();
+    QVERIFY(plot.contains(x) && plot.contains(y) && plot.contains(power));
+    QVERIFY(std::abs(x.bottom()-plot.bottom())<=5 && std::abs(y.left()-plot.left())<=5);
+    QVERIFY(power.left()>point.x() && power.bottom()<point.y());
+    const QRectF cursorX(point.x()-1,plot.top(),2,plot.height()),cursorY(plot.left(),point.y()-1,plot.width(),2);
+    for(const auto& label : {x,y,power}) { QVERIFY(!label.intersects(cursorX)); QVERIFY(!label.intersects(cursorY)); }
+    window.session().setAuxiliaryMode(AuxiliaryMode::Psd); window.refresh(); QTest::qWait(50);
+    QCoreApplication::sendEvent(aux,&leave); QTest::qWait(30);
+    QVERIFY(aux->property("pinnedReadout").toString().contains("dBFS/Hz"));
+    QVERIFY(aux->plotRect().contains(aux->property("pinnedValueRect").toRectF()));
+    window.session().clearCursor(window.session().activeFile()->metadata.id); window.refresh();
+    for(const auto edge : {plot.topLeft()+QPointF(1,1),plot.bottomRight()-QPointF(1,1)}) {
+        QTest::mouseClick(main,Qt::LeftButton,Qt::NoModifier,edge.toPoint()); QCoreApplication::sendEvent(main,&leave); QTest::qWait(30);
+        QVERIFY(plot.contains(main->property("pinnedReadoutRect").toRectF()));
+    }
+    window.session().newProject(); window.refresh(); window.openNarrowbandDemoProject(); auto* workspace=window.findChild<NarrowbandWorkspace*>();
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(),15000);
+    auto* heat=window.findChild<QWidget*>("narrowbandStftPanelChart");
+    const QRectF nbPlot(66,14,heat->width()-82,heat->height()-55);
+    QTest::mouseClick(heat,Qt::LeftButton,Qt::NoModifier,nbPlot.center().toPoint()); QCoreApplication::sendEvent(heat,&leave); QTest::qWait(30);
+    for(const auto* name : {"narrowbandWaveformPanelChart","narrowbandPsdPanelChart","narrowbandStftPanelChart"}) {
+        auto* chart=window.findChild<QWidget*>(name); QCoreApplication::sendEvent(chart,&leave); QTest::qWait(20);
+        QVERIFY(!chart->property("pinnedReadout").toString().isEmpty()); QVERIFY(!chart->property("hoverCursorVisible").toBool());
+    }
+}
+
+void UiTests::sharedInteractionFeedback() {
+    DemoMainWindow window; showWindow(window);
+    auto* main=window.findChild<PlotWidget*>("mainPlot");
+    const auto plot=main->plotRect();
+    QTest::mouseMove(main,QPoint(25,qRound(plot.center().y()))); QTest::qWait(20);
+    const auto wideZone=main->property("interactionZone"); QCOMPARE(main->cursor().shape(),Qt::OpenHandCursor);
+    QTest::mousePress(main,Qt::LeftButton,Qt::NoModifier,QPoint(25,qRound(plot.center().y())));
+    QTest::mouseMove(main,QPoint(25,qRound(plot.center().y())+15)); QCOMPARE(main->cursor().shape(),Qt::ClosedHandCursor);
+    QTest::keyClick(main,Qt::Key_Escape);
+    window.session().newProject(); window.refresh(); window.openNarrowbandDemoProject(); auto* workspace=window.findChild<NarrowbandWorkspace*>();
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(),15000);
+    for(const auto* name : {"narrowbandWaveformPanelChart","narrowbandPsdPanelChart","narrowbandStftPanelChart"}) {
+        auto* chart=window.findChild<QWidget*>(name); const QRectF p(66,14,chart->width()-82,chart->height()-55);
+        const QPoint axis(25,qRound(p.center().y()));
+        QTest::mouseMove(chart,axis); QTest::qWait(20);
+        QCOMPARE(chart->property("interactionZone"),wideZone); QCOMPARE(chart->cursor().shape(),Qt::OpenHandCursor);
+        QTest::mousePress(chart,Qt::LeftButton,Qt::NoModifier,axis); QTest::mouseMove(chart,axis+QPoint(0,15));
+        QCOMPARE(chart->cursor().shape(),Qt::ClosedHandCursor); QTest::keyClick(chart,Qt::Key_Escape);
+        QEvent leave(QEvent::Leave); QCoreApplication::sendEvent(chart,&leave); QCOMPARE(chart->cursor().shape(),Qt::ArrowCursor);
+        QCOMPARE(chart->property("interactionZone").toInt(),0);
+        QTest::mouseMove(chart,p.center().toPoint()); QCOMPARE(chart->cursor().shape(),Qt::CrossCursor);
+    }
+}
+
+void UiTests::customWindowControls() {
+    DemoMainWindow window; showWindow(window);
+    QVERIFY(window.windowFlags().testFlag(Qt::FramelessWindowHint));
+    auto* maximize=window.findChild<QToolButton*>("windowMaximize");
+    auto* minimize=window.findChild<QToolButton*>("windowMinimize");
+    auto* close=window.findChild<QToolButton*>("windowClose");
+    QVERIFY(maximize && minimize && close); QCOMPARE(window.menuBar()->height(),34);
+    const auto context=window.session().activeFile()->metadata.id;
+    const auto view=window.session().activeFile()->view;
+    window.session().pinCursor(context,view.time.begin+10,view.frequency.lowerHz+100,false);
+    if(window.isFullScreen()) maximize->click();
+    if(QGuiApplication::platformName()!="windows") window.resize(window.size().boundedTo(window.screen()->availableGeometry().size()).expandedTo(window.minimumSize()));
+    QVERIFY(!window.isFullScreen()); const auto normal=window.geometry();
+    maximize->click(); QTRY_VERIFY(window.isMaximized()); QVERIFY(maximize->property("restoresWindow").toBool());
+    maximize->click(); QTRY_VERIFY(!window.isMaximized()); QCOMPARE(window.geometry(),normal);
+    if(QGuiApplication::platformName()!="windows") window.resize(2560,1440);
+    QCoreApplication::processEvents();
+    const QPoint blank(window.menuBar()->width()-210,16);
+    QVERIFY(window.menuBar()->rect().contains(blank) && !window.menuBar()->actionAt(blank) && !window.menuBar()->childAt(blank));
+    QTest::mouseDClick(window.menuBar(),Qt::LeftButton,Qt::NoModifier,blank); QTRY_VERIFY(window.isMaximized());
+    if(QGuiApplication::platformName()=="windows") QTest::mouseDClick(window.menuBar(),Qt::LeftButton,Qt::NoModifier,QPoint(window.menuBar()->width()-210,16));
+    else maximize->click();
+    QTRY_VERIFY(!window.isMaximized());
+    minimize->click(); QTRY_VERIFY(window.isMinimized()); window.showNormal(); QCoreApplication::processEvents();
+    QCOMPARE(window.session().activeFile()->view,view); QVERIFY(window.session().linkedCursor(context).pinned);
+    close->click(); QVERIFY(!window.isVisible());
 }
 
 void UiTests::initialFileViewShowsFirstFivePercentOrTenMilliseconds() {
@@ -2316,7 +2481,7 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
         stft->setCurrentText(QStringLiteral("4096"));
         psd->setCurrentText(QStringLiteral("8192"));
         dynamic->setCurrentText(QStringLiteral("60 dB"));
-        reference->setCurrentText(QStringLiteral("-40 dBFS"));
+        reference->setCurrentText(QStringLiteral("-40 dBFS/Hz"));
         frequency->setCurrentIndex(1);
         bandwidth->setValue(.5);
         grid->setChecked(false);

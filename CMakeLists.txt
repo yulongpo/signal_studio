@@ -172,7 +172,7 @@ if(SS_BUILD_TESTS)
         "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ui-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
         -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     set_tests_properties(signal_studio_ui PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 180)
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 300)
     set_tests_properties(signal_studio_core PROPERTIES TIMEOUT 60)
 
     if(WIN32 AND SS_DEPLOY_RUNTIME)

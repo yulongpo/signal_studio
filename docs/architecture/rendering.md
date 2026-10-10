@@ -35,7 +35,7 @@ Ninja 构建目录为 `out/portable-ninja`，Debug 可执行目录为 `out/porta
 
 `ui/charts/display_sampling.cpp` 的 `extremaEnvelope` 将不可变曲线输入按可见物理像素列分桶，每桶保留最小值与最大值，按原输入索引顺序输出，并保留首尾有效点。输出至多约 `2*columns+2` 点；非有限值跳过，全无有效值时为空。桶划分使用商与余数累加，避免大索引乘法溢出。波形与 PSD 复用缓存的源曲线，再按像素预算抽取；导航路径按尺寸与演示种子缓存。
 
-真实波形每个显示位置读取最多 1024 个相邻复采样点；宽带辅助图保留既有 dBFS 语义，窄带时域值以 ADC 计数等效单位显示，并提供分箱 RMS 幅度和峰值保持包络。PSD 按当前时间窗或选中标记分成最多 64 个 Hann 窗做 Welch 平均，然后映射到可见频率。导航预览对全文件做有限样本抽取。曲线数据请求由单独工作线程执行；演示辅助曲线源点数仍为 `clamp(round(plotWidth*12),4096,65536)`。静止显示列数为 `floor(plotWidth*DPR)`，交互预览减半。源数据、抽取索引和绘图缓冲分别缓存；改变辅助 Y 仅更新 GPU 坐标顶点，游标或选框刷新不重新生成源曲线。辅助图与导航图的有序线段被展开为三角条带，通过共享 QRhi 管线绘制，颜色在 GPU 片元阶段从图谱专用 LUT 采样。`curveRasterMethod`、`gpuVertexUploads`、`gpuChartDrawCalls`、`gpuHeatmapDrawCalls` 和 `gpuDataDrawCalls` 报告对应路径与计数。
+宽带和窄带真实时域波形使用 ADC 计数等效单位，均提供 RMS 幅度和峰值保持包络；首次显示、模式切换及自动适配使可见数值范围占绘图高度 75% 并居中。逐样本视图绘制具体采样位置。当前 PSD 与 STFT 通过共享频段分析服务计算，点数表示可见频段内的分析点数；平均谱保留完整线性功率，驻留帧谱直接引用 STFT 的实际帧，具体规则见[频段分析架构](linked-spectral-analysis.md)。导航预览对全文件做有限样本抽取。曲线数据请求由单独工作线程执行；演示辅助曲线源点数仍为 `clamp(round(plotWidth*12),4096,65536)`。静止显示列数为 `floor(plotWidth*DPR)`，交互预览减半。源数据、抽取索引和绘图缓冲分别缓存；改变辅助 Y 仅更新 GPU 坐标顶点，游标或选框刷新不重新生成源曲线。辅助图与导航图的有序线段被展开为三角条带，通过共享 QRhi 管线绘制，颜色在 GPU 片元阶段从图谱专用 LUT 采样。`curveRasterMethod`、`gpuVertexUploads`、`gpuChartDrawCalls`、`gpuHeatmapDrawCalls` 和 `gpuDataDrawCalls` 报告对应路径与计数。即时电平、PSD 联动、驻留标签及窗口资源恢复见[电平与窗口交互](power-and-window-interactions.md)。
 
 同文件还提供 `peakReduce2D`：二维源矩阵按不重叠矩形取有限值最大值，以保留窄峰；无有效值的矩形输出 NaN，参数非法、数据不足或请求放大时返回空。演示矩阵预览可复用更细缓存矩阵；真实 STFT 每个像素频带取对应 FFT bin 的峰值，并按最多 800 万复采样点的 FFT 工作预算减少独立时间列，再扩展至显示栅格。
 

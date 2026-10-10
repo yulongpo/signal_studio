@@ -2,6 +2,7 @@
 
 #include "domain/project.h"
 #include "domain/spectral_data.h"
+#include "domain/power_display.h"
 
 #include <unordered_map>
 
@@ -41,6 +42,7 @@ public:
     bool setEffectiveBandwidthHz(double bandwidthHz);
     bool setAuxiliaryMode(AuxiliaryMode mode);
     bool setAuxiliaryRange(double minimum, double maximum, bool record = true);
+    bool setPowerDisplayRange(PowerDisplayRange range);
     ViewSnapshot snapshot() const;
     bool restoreSnapshot(const ViewSnapshot& snapshot);
     bool commitViewChange(const ViewSnapshot& previous);

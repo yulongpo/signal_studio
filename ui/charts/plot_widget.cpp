@@ -179,6 +179,7 @@ struct CurvePayload {
     QString key;
     quint64 generation = 0;
     std::vector<float> samples;
+    std::shared_ptr<const SpectralFrame> average;
     QString error;
     double elapsedMs = 0;
 };
@@ -325,9 +326,15 @@ private:
                 result->error = error;
             } else {
                 const auto cancelled = [this, generation = request.generation] { return stop_ || generation != latest_; };
-                const bool ok = request.psd ? iq.psd(request.time, request.frequency, request.metadata.sampleRateHz,
-                    request.metadata.centerFrequencyHz, request.fftSize, request.points, result->samples, cancelled) :
-                    iq.waveform(request.time, request.points, request.waveformMode, result->samples, cancelled);
+                bool ok = false;
+                if (request.psd) {
+                    auto source = iq.spectralSource(); source.sampleRateHz = request.metadata.sampleRateHz;
+                    const FrequencyRange band{request.frequency.lowerHz - request.metadata.centerFrequencyHz,
+                        request.frequency.upperHz - request.metadata.centerFrequencyHz};
+                    const auto data = analyzeSpectrogram(source, request.time, band, request.fftSize, 64, cancelled);
+                    result->average = averageSpectrum(*data);
+                    if (result->average) { result->samples = spectrumDb(*result->average); ok = true; }
+                } else ok = iq.waveform(request.time, request.points, request.waveformMode, result->samples, cancelled);
                 if (!ok) {
                     if (stop_ || request.generation != latest_) { ++discarded_; continue; }
                     result->error = QStringLiteral("IQ 曲线计算失败");
@@ -368,6 +375,7 @@ PlotWidget::PlotWidget(Session& session, Kind kind, QWidget* parent) : QWidget(p
     if (QGuiApplication::platformName() != "offscreen" && QGuiApplication::platformName() != "minimal" && !qApp->property("softwareRenderer").toBool()) {
         surface_ = new AcceleratedSurface(this); surface_->setGeometry(rect());
         surface_->setPainter([this](QPainter& painter) { paintScene(painter, true); });
+        if (kind_ != Kind::Navigation) surface_->setInversePainter([this](QPainter& painter) { drawCursors(painter, true); });
         connect(surface_, &AcceleratedSurface::backendReady, this, [this](const QString& backend) { emit backendChanged(backend); });
         connect(surface_, &AcceleratedSurface::backendFailed, this, [this](const QString& reason) {
             softwareFallback_ = true; surface_->hide(); QWidget::update(); emit backendChanged("软件回退 · " + reason);
@@ -429,12 +437,8 @@ QRectF PlotWidget::navigationWindow() const {
     return QRectF(plot.left() + plot.width() * start, 0, plot.width() * span, height());
 }
 PlotWidget::Zone PlotWidget::zoneAt(QPointF point) const {
-    const auto plot = plotRect();
     if (kind_ == Kind::Navigation) return rect().contains(point.toPoint()) ? Zone::Plot : Zone::None;
-    if (point.x() >= 0 && point.x() < plot.left() && point.y() >= plot.top() && point.y() <= plot.bottom()) return Zone::YAxis;
-    if (point.y() >= plot.bottom() && point.y() < height() && point.x() >= plot.left() && point.x() <= plot.right()) return Zone::XAxis;
-    if (plot.contains(point)) return Zone::Plot;
-    return Zone::None;
+    return chart_feedback::zoneAt(point, plotRect());
 }
 QString PlotWidget::statusText() const {
     const auto* file = session_.activeFile(); if (!file) return "—";
@@ -523,7 +527,7 @@ void PlotWidget::cancelGesture(bool exitCreating) {
         emit stateChanged();
     }
     if (exitCreating) creating_ = false;
-    hoverZone_ = Zone::None; hoveredMark_.clear();
+    hoverZone_ = Zone::None; hoveredMark_.clear(); setProperty("interactionZone",static_cast<int>(hoverZone_)); setCursor(Qt::ArrowCursor);
     repaintChart();
 }
 void PlotWidget::updateHeatmap() {
@@ -627,6 +631,23 @@ qsizetype PlotWidget::drawnPointCount() const {
 qsizetype PlotWidget::sourcePointCount() const { return kind_ == Kind::Auxiliary ? static_cast<qsizetype>(curveSource_.size()) :
     kind_ == Kind::Main && renderedPower_ ? static_cast<qsizetype>(renderedPower_->sourcePoints) : drawnPointCount(); }
 QString PlotWidget::renderQuality() const { return preview_ ? "preview" : "settled"; }
+std::shared_ptr<const SpectrogramData> PlotWidget::currentSpectrogram() const {
+    const auto* file = session_.activeFile();
+    if (!file || !renderedPower_ || powerKey_ != requestedPowerKey_ || !renderedPower_->spectrum ||
+        renderedPower_->spectrum->frames.empty() || renderedPower_->spectrum->sourceView != file->view.time ||
+        renderedPower_->spectrum->plan.frequencies != FrequencyRange{file->view.frequency.lowerHz - file->metadata.centerFrequencyHz, file->view.frequency.upperHz - file->metadata.centerFrequencyHz}) return {};
+    return renderedPower_->spectrum;
+}
+std::shared_ptr<const SpectralFrame> PlotWidget::currentPowerFrame() const {
+    const auto* file = session_.activeFile();
+    if (!file || file->display.auxiliaryMode != AuxiliaryMode::Psd || curvePending_ || !curveError_.isEmpty()) return {};
+    if (session_.linkedCursor(file->metadata.id).framePsd) {
+        const auto spectrum = session_.spectrogram(file->metadata.id);
+        const auto* frame = session_.selectedSpectralFrame(file->metadata.id);
+        return spectrum && frame ? std::shared_ptr<const SpectralFrame>(spectrum, frame) : nullptr;
+    }
+    return averagePower_;
+}
 bool PlotWidget::isDisplaySettled() const {
     if (preview_ || (surface_ && !softwareFallback_ && surface_->hasPendingUploads())) return false;
     const auto* file = session_.activeFile();
@@ -662,6 +683,7 @@ QJsonObject PlotWidget::renderStatistics() const {
         {"heatmapWidth", heatSize_.width()}, {"heatmapHeight", heatSize_.height()},
         {"lastMatrixMs", renderedPower_ ? renderedPower_->elapsedMs : 0.0}, {"textureUploads", static_cast<qint64>(textureUploadCount())},
         {"overlayUploads", static_cast<qint64>(surface_ ? surface_->overlayUploadCount() : 0)},
+        {"inverseCursorDrawCalls", static_cast<qint64>(surface_ && !softwareFallback_ ? surface_->inverseOverlayDrawCallCount() : 0)},
         {"gpuDataRenderer", surface_ && !softwareFallback_ ? "QRhi shader / vertex buffer" : "QPainter software fallback"},
         {"gpuVertexUploads", static_cast<qint64>(surface_ && !softwareFallback_ ? surface_->chartVertexUploadCount() : 0)},
         {"gpuChartDrawCalls", static_cast<qint64>(surface_ && !softwareFallback_ ? surface_->chartDrawCallCount() : 0)},
@@ -766,6 +788,11 @@ void PlotWidget::updateCurve() {
             }
             curveSource_[i] = static_cast<float>(value);
         }
+        if (psd) {
+            auto average = std::make_shared<SpectralFrame>(); average->linearPower.reserve(curveSource_.size());
+            for (float value : curveSource_) average->linearPower.push_back(static_cast<float>(std::pow(10.0, value / 10.0)));
+            averagePower_ = std::move(average);
+        }
         }
         curveReductionKey_.clear();
     } else {
@@ -815,9 +842,9 @@ void PlotWidget::updateCurve() {
 void PlotWidget::acceptCurve(std::shared_ptr<CurvePayload> result) {
     if (!result || result->generation != curveRequestGeneration_ || result->key != curveSourceKey_) return;
     curvePending_ = false; curveCompleted_ = true; curveError_ = result->error;
-    curveSource_ = std::move(result->samples); curveReductionKey_.clear(); curvePathKey_.clear();
+    curveSource_ = std::move(result->samples); averagePower_ = std::move(result->average); curveReductionKey_.clear(); curvePathKey_.clear();
     ++curveGenerations_; ++renderGeneration_;
-    repaintChart();
+    repaintChart(); emit stateChanged();
 }
 
 void PlotWidget::acceptNavigationCurve(std::shared_ptr<CurvePayload> result) {
@@ -861,7 +888,10 @@ void PlotWidget::expandAnalysisTime() {
     view.time.begin = std::min(center > span / 2 ? center - span / 2 : 0, file->metadata.sampleCount - span);
     view.time.end = view.time.begin + span; session_.setView(view); emit stateChanged();
 }
-void PlotWidget::drawCursors(QPainter& painter) {
+void PlotWidget::drawCursors(QPainter& painter, bool inverseMask) {
+    if (!inverseMask) {
+        cursor_overlay::paintInverseOverlay(painter,rect(),[this](QPainter& mask) { drawCursors(mask,true); }); return;
+    }
     const auto* file = session_.activeFile(); if (!file || kind_ == Kind::Navigation) return;
     const auto plot = plotRect(); const auto& view = file->view;
     const auto& pinned = session_.linkedCursor(file->metadata.id);
@@ -870,27 +900,14 @@ void PlotWidget::drawCursors(QPainter& painter) {
     setProperty("pinnedSample", QVariant::fromValue<qulonglong>(pinned.sourceSample));
     setProperty("pinnedFrequencyHz", pinned.frequencyHz);
     setProperty("framePsd", pinned.framePsd);
-    if (pinned.pinned) {
-        bool visible = false; QPointF point;
-        if (kind_ == Kind::Main) {
-            visible = pinned.sourceSample >= view.time.begin && pinned.sourceSample < view.time.end &&
-                pinned.frequencyHz >= view.frequency.lowerHz && pinned.frequencyHz <= view.frequency.upperHz;
-            point = toPixel(pinned.sourceSample, pinned.frequencyHz);
-        } else {
-            const double u = psd ? (pinned.frequencyHz - view.frequency.lowerHz) / (view.frequency.upperHz - view.frequency.lowerHz) :
-                pinned.sourceSample >= view.time.begin ? static_cast<double>(pinned.sourceSample - view.time.begin) / (view.time.end - view.time.begin) : -1;
-            visible = u >= 0 && u < 1; point = QPointF(plot.left() + u * plot.width(), plot.center().y());
-        }
-        if (visible) cursor_overlay::draw(painter, plot, point, kind_ == Kind::Main, {}, QColor("#ffdc72"), true);
-    }
-    setProperty("hoverCursorVisible", hoverPosition_.has_value());
-    if (!hoverPosition_) { setProperty("cursorReadout", QString{}); return; }
-    const auto position = *hoverPosition_;
+    cursor_overlay::Layout pinLayout;
+    const auto render = [&](QPointF position, bool isPinned) {
     SampleIndex sample = view.time.begin; double frequency = 0; QString text;
     const double u = std::clamp((position.x() - plot.left()) / plot.width(), 0.0, 1.0);
     if (kind_ == Kind::Main) {
         const auto coordinate = fromPixel(position, view);
-        sample = offsetSample(view.time.begin, coordinate.sample, view.time.end - 1); frequency = coordinate.frequency;
+        sample = isPinned ? pinned.sourceSample : offsetSample(view.time.begin, coordinate.sample, view.time.end - 1);
+        frequency = isPinned ? pinned.frequencyHz : coordinate.frequency;
         const double displayFrequency = frequency - (file->display.absoluteFrequency ? 0 : file->metadata.centerFrequencyHz);
         text = "t = " + coordinateText(false, seconds(sample, file->metadata.sampleRateHz), seconds(view.time.end - view.time.begin, file->metadata.sampleRateHz), 1 / file->metadata.sampleRateHz) +
             "\nf = " + coordinateText(true, displayFrequency, view.frequency.upperHz - view.frequency.lowerHz);
@@ -904,7 +921,7 @@ void PlotWidget::drawCursors(QPainter& painter) {
             setProperty("cursorPowerDb", frame->dbAt(bin)); setProperty("cursorFrameId", QVariant::fromValue<qulonglong>(frame->id));
         } else text += "\n分析数据不可用 / 正在更新";
     } else if (psd) {
-        frequency = view.frequency.lowerHz + u * (view.frequency.upperHz - view.frequency.lowerHz);
+        frequency = isPinned ? pinned.frequencyHz : view.frequency.lowerHz + u * (view.frequency.upperHz - view.frequency.lowerHz);
         const double displayFrequency = frequency - (file->display.absoluteFrequency ? 0 : file->metadata.centerFrequencyHz);
         text = "f = " + coordinateText(true, displayFrequency, view.frequency.upperHz - view.frequency.lowerHz);
         if (!curveSource_.empty()) {
@@ -914,7 +931,7 @@ void PlotWidget::drawCursors(QPainter& painter) {
             setProperty("cursorPowerDb", curveSource_[bin]);
         } else text += "\n分析数据不可用 / 正在更新";
     } else {
-        sample = offsetSample(view.time.begin, u * static_cast<long double>(view.time.end - view.time.begin), view.time.end - 1);
+        sample = isPinned ? pinned.sourceSample : offsetSample(view.time.begin, u * static_cast<long double>(view.time.end - view.time.begin), view.time.end - 1);
         text = "t = " + coordinateText(false, seconds(sample, file->metadata.sampleRateHz), seconds(view.time.end - view.time.begin, file->metadata.sampleRateHz), 1 / file->metadata.sampleRateHz);
         if (!curveSource_.empty()) {
             const auto index = std::min(curveSource_.size() - 1, static_cast<std::size_t>(std::max(0LL, std::llround(u * curveSource_.size() - (curveShowsSamplePoints_ ? 0 : .5)))));
@@ -923,9 +940,34 @@ void PlotWidget::drawCursors(QPainter& painter) {
                 .arg(curveSource_[index], 0, 'g', 8).arg(curveShowsSamplePoints_ ? "逐样本" : "显示分箱").arg(sample);
         } else text += "\n波形数据不可用 / 正在更新";
     }
-    setProperty("cursorReadout", text);
-    const auto box = cursor_overlay::draw(painter, plot, position, kind_ == Kind::Main, text, QColor("#91eaff"), false);
-    setProperty("cursorReadoutRect", box);
+        const auto readout = cursor_overlay::parse(text, kind_ == Kind::Main, kind_ == Kind::Main && file->display.mainMode == MainMode::Waterfall);
+        const auto layout = cursor_overlay::draw(painter, plot, position, kind_ == Kind::Main, readout,
+            isPinned, isPinned ? std::vector<QRectF>{} : pinLayout.rectangles(), inverseMask);
+        const QString prefix = isPinned ? "pinned" : "cursor";
+        setProperty((prefix + "Readout").toUtf8(), text); setProperty((prefix + "ReadoutRect").toUtf8(), layout.bounds());
+        setProperty((prefix + "ReadoutDetails").toUtf8(),readout.details);
+        setProperty((prefix + "XLabelRect").toUtf8(), layout.x); setProperty((prefix + "YLabelRect").toUtf8(), layout.y);
+        setProperty((prefix + "ValueRect").toUtf8(), layout.value);
+        return layout;
+    };
+    for(const QString prefix : {QStringLiteral("pinned"),QStringLiteral("cursor")}) {
+        setProperty((prefix+"ReadoutDetails").toUtf8(),QString{});
+        for(const auto* suffix : {"XLabelRect","YLabelRect","ValueRect"}) setProperty((prefix+suffix).toUtf8(),QRectF{});
+    }
+    setProperty("pinnedReadout", QString{}); setProperty("pinnedReadoutRect", QRectF{});
+    if (pinned.pinned) {
+        QPointF point; bool visible=false;
+        if (kind_ == Kind::Main) {
+            visible = pinned.sourceSample >= view.time.begin && pinned.sourceSample < view.time.end && pinned.frequencyHz >= view.frequency.lowerHz && pinned.frequencyHz < view.frequency.upperHz;
+            point=toPixel(pinned.sourceSample,pinned.frequencyHz);
+        } else {
+            const double u=psd ? (pinned.frequencyHz-view.frequency.lowerHz)/(view.frequency.upperHz-view.frequency.lowerHz) : pinned.sourceSample >= view.time.begin ? double(pinned.sourceSample-view.time.begin)/(view.time.end-view.time.begin) : -1;
+            visible=u>=0 && u<1; point=QPointF(plot.left()+u*plot.width(),plot.center().y());
+        }
+        if (visible) pinLayout=render(point,true);
+    }
+    setProperty("hoverCursorVisible", hoverPosition_.has_value());
+    if (hoverPosition_) render(*hoverPosition_,false); else { setProperty("cursorReadout",QString{}); setProperty("cursorReadoutRect",QRectF{}); }
 }
 
 void PlotWidget::paintEvent(QPaintEvent*) {
@@ -1138,11 +1180,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
         painter.fillRect(QRectF(plot.left() + 4, top - 10, metrics.horizontalAdvance(label) + 10, 14), cssColor("#071628da"));
         painter.setPen(QColor("#d4edff")); painter.drawText(QPointF(plot.left() + 9, top), label);
     }
-    if (hoverZone_ == Zone::XAxis || hoverZone_ == Zone::YAxis) {
-        const QRectF hover = hoverZone_ == Zone::XAxis ? QRectF(plot.left(), plot.bottom(), plot.width(), height() - plot.bottom()) : QRectF(0, plot.top(), plot.left(), plot.height());
-        painter.fillRect(hover, cssColor("#2e94cb26")); painter.setPen(QPen(cssColor("#6ac5eacc"), 1.5));
-        painter.drawLine(hoverZone_ == Zone::XAxis ? QLineF(plot.bottomLeft(), plot.bottomRight()) : QLineF(plot.topLeft(), plot.bottomLeft()));
-    }
+    chart_feedback::drawAxisHighlight(painter, rect(), plot, hoverZone_);
     if (kind_ == Kind::Auxiliary) {
         const auto tip = tipText(); painter.setFont(canvasFont());
         const QFontMetricsF fm(painter.font()); const double width = std::min(static_cast<double>(this->width() - 24), std::ceil(fm.horizontalAdvance(tip)) + 12);
@@ -1156,7 +1194,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
             painter.fillRect(statusBox, cssColor("#091728d8")); painter.setPen(QColor("#d5e7f5"));
             painter.drawText(statusBox.adjusted(6, 0, -6, 0), Qt::AlignCenter, fm.elidedText(status, Qt::ElideRight, static_cast<int>(statusWidth - 12)));
         }
-        drawCursors(painter);
+        if (!accelerated) drawCursors(painter);
         return;
     }
     if (file->display.colorScale) {
@@ -1199,7 +1237,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
         painter.setBrush(mark ? cssColor("#f0ca5c27") : cssColor("#7ed3f026")); painter.drawRect(box);
     }
     painter.restore();
-    drawCursors(painter);
+    if (!accelerated) drawCursors(painter);
     if (findMark(*file, file->activeMarkId)) drawPill(painter, rect(), "信号标记已保存（当前文件）", false);
     if (creating_) drawPill(painter, rect(), "持续选择信号 · 拖动创建标记 · 右键菜单关闭 / Esc 退出", true);
     if ((!renderedPower_ || renderedPower_->key != requestedPowerKey_) || (renderedPower_ && !renderedPower_->error.isEmpty())) {
@@ -1250,7 +1288,7 @@ PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
 }
 void PlotWidget::updateHover(QPointF point) {
     const auto* file = session_.activeFile(); if (!file) { setCursor(Qt::ArrowCursor); return; }
-    hoverZone_ = zoneAt(point);
+    hoverZone_ = zoneAt(point); setProperty("interactionZone", static_cast<int>(hoverZone_));
     if (kind_ == Kind::Navigation) {
         setCursor(gesture_ && gesture_->navigationInside && gesture_->changed ? Qt::ClosedHandCursor : navigationWindow().contains(point) ? Qt::OpenHandCursor : Qt::PointingHandCursor);
         emit interactionHint("全局导航：滚轮缩放 · 拖动范围平移 · 单击跳转"); return;
@@ -1262,8 +1300,7 @@ void PlotWidget::updateHover(QPointF point) {
             gesture_->tool == Tool::PanTime || gesture_->tool == Tool::PanFrequency || gesture_->tool == Tool::AuxiliaryY ? Qt::ClosedHandCursor : Qt::CrossCursor);
     else if (creating_ && kind_ == Kind::Main) setCursor(hoverZone_ == Zone::Plot ? Qt::CrossCursor : Qt::ArrowCursor);
     else if (hit.selected) setCursor(edgeCursor(hit.edges));
-    else if (hoverZone_ == Zone::XAxis || hoverZone_ == Zone::YAxis) setCursor(Qt::OpenHandCursor);
-    else setCursor(!hit.id.empty() ? Qt::PointingHandCursor : hoverZone_ == Zone::Plot ? Qt::CrossCursor : Qt::ArrowCursor);
+    else setCursor(!hit.id.empty() ? Qt::PointingHandCursor : chart_feedback::cursor(hoverZone_));
     QString hint;
     if (creating_ && kind_ == Kind::Main) hint = "持续选择信号：拖动创建 · 右键菜单关闭 · Esc 退出";
     else if (const auto* mark = findMark(*file, hit.id)) hint = QString::fromStdString(mark->name) + (hit.selected ? "：拖动移动 · 边线和顶点调整" : "：单击选中 · 拖动空白区域放大");
@@ -1506,6 +1543,9 @@ QMenu* PlotWidget::createContextMenu(const QPoint& point) {
             [this] { if (const auto* current = session_.activeFile()) session_.setFramePsd(current->metadata.id, false); emit stateChanged(); });
         addViewAction("驻留帧谱（点数随 STFT）", "contextFramePsd", file && session_.linkedCursor(file->metadata.id).pinned,
             [this] { if (const auto* current = session_.activeFile()) session_.setFramePsd(current->metadata.id, true); emit stateChanged(); });
+        auto* fit = menu->addAction("自动适配电平"); fit->setObjectName("contextAutoPowerFit");
+        fit->setEnabled(property("autoPowerFitAvailable").toBool());
+        connect(fit, &QAction::triggered, this, &PlotWidget::autoPowerFitRequested);
         addViewAction("扩展时间窗以满足分析点数", "contextExpandAnalysisTime", file, [this] { expandAnalysisTime(); });
         menu->addSeparator();
     }
@@ -1532,9 +1572,10 @@ void PlotWidget::keyPressEvent(QKeyEvent* event) {
 }
 void PlotWidget::resizeEvent(QResizeEvent* event) { beginPreview(); cancelGesture(); if (surface_) surface_->setGeometry(rect()); QWidget::resizeEvent(event); repaintChart(); }
 bool PlotWidget::event(QEvent* event) {
+    if(cursor_overlay::tooltip(this,event)) return true;
     if ((event->type() == QEvent::UngrabMouse && !releasing_) || event->type() == QEvent::WindowDeactivate || event->type() == QEvent::Hide)
         cancelGesture(event->type() == QEvent::WindowDeactivate || event->type() == QEvent::Hide);
-    else if (event->type() == QEvent::Leave && !gesture_) { hoverPosition_.reset(); QToolTip::hideText(); hoverZone_ = Zone::None; hoveredMark_.clear(); setCursor(kind_ == Kind::Navigation ? Qt::PointingHandCursor : Qt::CrossCursor); emit interactionHint("鼠标指向图谱查看操作提示"); repaintChart(); }
+    else if (event->type() == QEvent::Leave && !gesture_) { hoverPosition_.reset(); QToolTip::hideText(); hoverZone_ = Zone::None; hoveredMark_.clear(); setProperty("interactionZone",static_cast<int>(hoverZone_)); setCursor(Qt::ArrowCursor); emit interactionHint("鼠标指向图谱查看操作提示"); repaintChart(); }
     return QWidget::event(event);
 }
 } // namespace signalstudio

@@ -37,6 +37,7 @@ public:
     ~AcceleratedSurface() override;
 
     void setPainter(PainterCallback painter);
+    void setInversePainter(PainterCallback painter);
     void setChartGeometry(std::vector<ChartVertex> vertices, std::vector<ChartDrawCall> draws,
                           const QString& revision, const QRectF& clipRect = {});
     void setHeatmap(const QImage& image, const QRectF& target, const QString& revision,
@@ -48,6 +49,7 @@ public:
     quint64 textureUploadCount() const { return textureUploads_; }
     quint64 completedFrameCount() const { return completedFrames_; }
     quint64 overlayUploadCount() const { return overlayUploads_; }
+    quint64 inverseOverlayDrawCallCount() const { return inverseOverlayDrawCalls_; }
     bool hasPendingUploads() const { return heatmapDirty_ || overlayDirty_ || chartGeometryDirty_ || paletteDirty_ || chartPaletteDirty_; }
     quint64 chartVertexUploadCount() const { return chartVertexUploads_; }
     quint64 chartDrawCallCount() const { return chartDrawCalls_; }
@@ -84,14 +86,17 @@ private:
     bool ensurePipeline();
     bool ensureChartBuffer();
     bool ensureChartPaletteTexture();
-    bool ensureTexture(bool overlay, const QSize& pixelSize);
+    enum class TextureLayer { Heatmap, Overlay, InverseOverlay };
+    bool ensureTexture(TextureLayer layer, const QSize& pixelSize);
     bool ensurePaletteTexture();
     bool prepareUploads(QRhiResourceUpdateBatch* updates);
     void fail(const QString& reason);
 
     PainterCallback painter_;
+    PainterCallback inversePainter_;
     QImage heatmap_;
     QImage overlay_;
+    QImage inverseOverlay_;
     QImage palette_;
     QImage chartPalette_;
     QRectF target_;
@@ -113,6 +118,7 @@ private:
     quint64 textureUploads_ = 0;
     quint64 completedFrames_ = 0;
     quint64 overlayUploads_ = 0;
+    quint64 inverseOverlayDrawCalls_ = 0;
     quint64 chartVertexUploads_ = 0;
     quint64 chartDrawCalls_ = 0;
     quint64 heatmapDrawCalls_ = 0;

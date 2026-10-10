@@ -22,7 +22,9 @@ try {
     # The approved native acceptance explicitly requires a visible fullscreen window.
     $process = Start-Process -FilePath $executable -WorkingDirectory $package -ArgumentList $arguments -WindowStyle Normal -PassThru
     $peakWorkingSet = 0L; $peakPrivateBytes = 0L
+    $timer = [Diagnostics.Stopwatch]::StartNew()
     while (-not $process.HasExited) {
+        if ($timer.Elapsed.TotalSeconds -gt 240) { Stop-Process -Id $process.Id; throw 'Native acceptance timed out after 240 seconds.' }
         $process.Refresh()
         $peakWorkingSet = [Math]::Max($peakWorkingSet, $process.PeakWorkingSet64)
         $peakPrivateBytes = [Math]::Max($peakPrivateBytes, $process.PrivateMemorySize64)
@@ -38,9 +40,11 @@ try {
     }) -Force
     $report | ConvertTo-Json -Depth 50 | Set-Content -LiteralPath $reportPath -Encoding utf8
     if ($process.ExitCode -ne 0 -or $report.pass -ne $true -or $report.fullScreen -ne $true -or
-        $report.screen.connectedIndex -ne 2 -or $report.logicalWindowSize.width -ne 2560 -or $report.logicalWindowSize.height -ne 1440) {
+        $report.screen.connectedIndex -ne 2 -or $report.logicalWindowSize.width -ne 2560 -or $report.logicalWindowSize.height -ne 1440 -or
+        $report.windowChrome.systemMove -ne $true -or $report.windowChrome.systemResize -ne $true -or $report.windowChrome.close -ne $true -or
+        $report.widePowerControls.immediateInput -ne $true -or $report.narrowbandPowerControls.immediateInput -ne $true) {
         throw "Linked cursor native acceptance failed: $($report.error)"
     }
-    Write-Host "$Configuration linked cursor / exact frame / frequency zoom acceptance passed. Report: $reportPath"
+    Write-Host "$Configuration color levels / pinned labels / window chrome / linked frame acceptance passed. Report: $reportPath"
 }
 finally { foreach ($name in $names) { [Environment]::SetEnvironmentVariable($name, $saved[$name], 'Process') } }

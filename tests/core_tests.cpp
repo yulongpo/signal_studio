@@ -264,6 +264,56 @@ void testAuxiliarySnapshotsAndPsdScope() {
           session.activeFile()->display.auxiliaryMax==65536,"ADC-count waveform Y must clamp to full supported display bounds");
 }
 
+void testPowerDisplayRange() {
+    SpectrogramData heatmap;
+    auto frame = std::make_shared<SpectralFrame>();
+    frame->linearPower = {1e-8f, 1e-4f, 0, -1, std::numeric_limits<float>::quiet_NaN()};
+    heatmap.frames.push_back(frame);
+    SpectralFrame psd; psd.linearPower = {1e-9f, 1e-3f};
+    const auto fit = fitPowerDisplayRange(heatmap, &psd);
+    check(fit.valid && !fit.limited && close(fit.range.referenceLevelDb,-27,1e-5) && close(fit.range.lowerDb(),-93,1e-5),
+        "Power fit must include full heatmap and current PSD with 3 dB margins");
+    frame->linearPower = {1e-6f,1e-6f}; heatmap.frames = {frame};
+    const auto constant = fitPowerDisplayRange(heatmap,nullptr);
+    check(constant.valid && close(constant.range.dynamicRangeDb,6), "Constant power must retain both margins");
+    frame->linearPower = {0,-1,std::numeric_limits<float>::infinity()};
+    check(!fitPowerDisplayRange(heatmap,nullptr).valid, "No positive finite power must disable fit");
+    frame->linearPower = {1e-30f,1e30f};
+    const auto limited = fitPowerDisplayRange(heatmap,nullptr);
+    check(limited.valid && limited.limited && limited.range.referenceLevelDb==100 && limited.range.lowerDb()==-203,
+        "Power fit must use the analysis floor and report legal reference limits");
+    check(!PowerDisplayRange{0,0}.valid() && !PowerDisplayRange{101,80}.valid() &&
+        validPsdRange(-10200,-200) && !validPsdRange(-10400,0), "Power and PSD limits must be consistent");
+
+    Session session; seedPrototypeFiles(session);
+    session.addMark({{100,10000},{99e6,101e6}}); session.createChannelFromActiveMark();
+    session.setAuxiliaryMode(AuxiliaryMode::Psd); session.pinCursor(session.activeFile()->metadata.id,250,100e6,false);
+    const auto pin = session.linkedCursor(session.activeFile()->metadata.id);
+    const auto canBack = session.canBack();
+    check(session.setPowerDisplayRange({-200,10000}), "Maximum legal display range must apply");
+    for (const auto& file : session.project().files) {
+        check(file.display.psdMin==-10200 && file.display.psdMax==-200 && file.display.referenceLevelDb==-200,
+            "Power parameters must update all file PSD axes");
+        for (const auto& channel : file.channels) check(channel.psdAxisMinimum==-10200 && channel.psdAxisMaximum==-200,
+            "Power parameters must update all channel PSD axes");
+    }
+    check(session.canBack()==canBack && session.linkedCursor(session.activeFile()->metadata.id).sourceSample==pin.sourceSample,
+        "Power edits must preserve history and linked pin");
+    check(session.setAuxiliaryRange(-300,-220,false) && session.activeFile()->display.psdMax==-220,
+        "Manual PSD range must be independent without legacy fixed bounds");
+    check(session.setPowerDisplayRange({-10,60}) && session.activeFile()->display.psdMin==-70,
+        "Next display parameter change must realign manual PSD range");
+    check(!session.setPowerDisplayRange({0,10001}) && session.activeFile()->display.psdMin==-70,
+        "Invalid parameter command must not mutate state");
+    session.setPowerDisplayRange({-200,10000});
+    QTemporaryDir directory; QString error; Project loaded;
+    const auto path=directory.filePath("power.json");
+    check(ProjectStore::save(path,session.project(),error) && ProjectStore::load(path,loaded,error),
+        "Extreme legal power ranges must roundtrip without changing project format");
+    check(loaded.files.front().display.psdMin==-10200 && loaded.files.front().channels.front().psdAxisMinimum==-10200,
+        "File and channel PSD ranges must survive project load");
+}
+
 void testSerialization() {
     QTemporaryDir directory;
     check(directory.isValid(), "Temporary directory must be available");
@@ -438,7 +488,7 @@ void testSerialization() {
     });
     mutateFirst([](QJsonObject& file) {
         auto display=file[QStringLiteral("display")].toObject();
-        display[QStringLiteral("psdMin")]=-200;
+        display[QStringLiteral("psdMin")]=-20000;
         file[QStringLiteral("display")]=display;
     });
     mutateFirst([](QJsonObject& file) {
@@ -575,6 +625,8 @@ int main(int argc, char* argv[]) {
         std::cout << "PASS independent auxiliary modes, combined snapshot history and PSD scope\n";
         testSerialization();
         std::cout << "PASS strict atomic native JSON and full-state uint64 roundtrip\n";
+        testPowerDisplayRange();
+        std::cout << "PASS full numerical power fit, global PSD coupling and extreme-range roundtrip\n";
         testInt16IqFilePipeline();
         std::cout << "PASS int16 IQ metadata, mapped reads, waveform, Welch PSD and STFT\n";
     } catch (const std::exception& error) {

@@ -26,6 +26,9 @@
 #include <QJsonObject>
 #include <QImage>
 #include <QMenu>
+#include <QMenuBar>
+#include <QLineEdit>
+#include <QPushButton>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QPointer>
@@ -51,6 +54,14 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
+#include <thread>
+#include <chrono>
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 using namespace signalstudio;
 
@@ -706,6 +717,7 @@ void diagnoseMainHover(Capture& capture, QPoint target, QJsonObject& diagnostic)
     diagnostic["pass"] = true;
 }
 
+#include "tests/display_optimization_capture.h"
 #include "tests/linked_cursor_capture.h"
 
 } // namespace

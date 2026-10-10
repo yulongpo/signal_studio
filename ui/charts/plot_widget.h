@@ -13,6 +13,7 @@
 #include <array>
 #include <vector>
 #include "ui/charts/display_sampling.h"
+#include "ui/charts/interaction_feedback.h"
 
 class QMenu;
 class QPointingDevice;
@@ -55,6 +56,8 @@ public:
     quint64 displayGeneration() const { return renderGeneration_; }
     QJsonObject renderStatistics() const;
     bool isDisplaySettled() const;
+    std::shared_ptr<const SpectrogramData> currentSpectrogram() const;
+    std::shared_ptr<const SpectralFrame> currentPowerFrame() const;
 signals:
     void stateChanged();
     void statusMessage(const QString& text);
@@ -64,6 +67,7 @@ signals:
     void interactionHint(const QString& text);
     void markRenameRequested();
     void markDeleteRequested();
+    void autoPowerFitRequested();
 protected:
     void paintEvent(QPaintEvent*) override;
     void mousePressEvent(QMouseEvent*) override;
@@ -76,7 +80,7 @@ protected:
     void resizeEvent(QResizeEvent*) override;
     bool event(QEvent*) override;
 private:
-    enum class Zone { None, Plot, XAxis, YAxis };
+    using Zone = chart_feedback::Zone;
     enum class Tool { ZoomBox, CreateMark, MarkEdit, PanTime, PanFrequency, Navigate, AuxiliaryY, AuxiliaryZoom };
     enum class WheelAxis { Time, Frequency, AuxiliaryY };
     struct Gesture {
@@ -113,7 +117,7 @@ private:
     std::pair<QRectF, QRectF> heatmapPlacement() const;
     void paintScene(QPainter& painter, bool accelerated);
     void repaintChart();
-    void drawCursors(QPainter& painter);
+    void drawCursors(QPainter& painter, bool inverseMask = false);
     void pinAt(QPointF point);
     void expandAnalysisTime();
     Session& session_;
@@ -148,6 +152,7 @@ private:
     quint64 curveRequestGeneration_ = 0;
     bool curvePending_ = false, curveCompleted_ = false;
     std::vector<float> curveSource_;
+    std::shared_ptr<const SpectralFrame> averagePower_;
     std::vector<display::TracePoint> curveTrace_;
     bool curveShowsSamplePoints_ = false;
     QPainterPath curvePath_;

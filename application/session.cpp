@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <numeric>
 #include <unordered_set>
 #include <utility>
 
@@ -56,8 +57,14 @@ ViewSnapshot snapshotFor(const FileState& file) {
 
 std::pair<double,double> clampAuxiliary(double minimum,double maximum,AuxiliaryMode mode) {
     if(minimum>maximum)std::swap(minimum,maximum);
-    const double lower=mode==AuxiliaryMode::Waveform?-65536:-180;
-    const double upper=mode==AuxiliaryMode::Waveform?65536:50;
+    if (mode == AuxiliaryMode::Psd) {
+        if (validPsdRange(minimum,maximum)) return {minimum,maximum};
+        const double width = std::clamp(maximum - minimum, .001, maximumPsdSpan);
+        const double center = std::midpoint(minimum,maximum);
+        return {center - width / 2, center + width / 2};
+    }
+    const double lower=-65536;
+    const double upper=65536;
     const double width=std::clamp(maximum-minimum,2.0,upper-lower);
     const double begin=std::clamp(minimum+(maximum-minimum)/2-width/2,lower,upper-width);
     return {begin,begin+width};
@@ -323,6 +330,7 @@ bool Session::setAuxiliaryRange(double minimum,double maximum,bool record) {
     auto* file=activeFile();if(!file||!std::isfinite(minimum)||!std::isfinite(maximum)||
         !std::isfinite(maximum-minimum))return false;
     const auto range=clampAuxiliary(minimum,maximum,file->display.auxiliaryMode);
+    if(file->display.auxiliaryMode==AuxiliaryMode::Psd && !validPsdRange(range.first,range.second)) return false;
     if(range.first==file->display.auxiliaryMin&&range.second==file->display.auxiliaryMax)return false;
     const auto previous=snapshot();
     file->display.auxiliaryMin=range.first;file->display.auxiliaryMax=range.second;
@@ -346,6 +354,7 @@ bool Session::restoreSnapshot(const ViewSnapshot& previous) {
        !std::isfinite(previous.psdMin)||!std::isfinite(previous.psdMax))return false;
     const auto wave=clampAuxiliary(previous.waveformMin,previous.waveformMax,AuxiliaryMode::Waveform);
     const auto psd=clampAuxiliary(previous.psdMin,previous.psdMax,AuxiliaryMode::Psd);
+    if(!validPsdRange(psd.first,psd.second)) return false;
     file->view=clampRange(previous.view,file->metadata,file->display.stftSize,file->display.psdSize);
     file->display.waveformMin=wave.first;file->display.waveformMax=wave.second;
     file->display.psdMin=psd.first;file->display.psdMax=psd.second;
@@ -549,7 +558,7 @@ bool Session::setChannelAmplitudeRange(double minimum, double maximum, bool auto
 
 bool Session::setChannelPsdRange(double minimum, double maximum, bool record) {
     auto* channel = activeChannel();
-    if (!channel || !std::isfinite(minimum) || !std::isfinite(maximum) || minimum >= maximum || maximum - minimum > 1000.0)
+    if (!channel || !validPsdRange(minimum, maximum))
         return false;
     if (channel->psdAxisMinimum == minimum && channel->psdAxisMaximum == maximum) return false;
     const auto before = channelViewSnapshot();
@@ -573,8 +582,7 @@ bool Session::restoreChannelViewSnapshot(const ChannelViewSnapshot& snapshot) {
         snapshot.basebandFrequency.lowerHz >= snapshot.basebandFrequency.upperHz ||
         !std::isfinite(snapshot.waveformAxisMinimum) || !std::isfinite(snapshot.waveformAxisMaximum) ||
         snapshot.waveformAxisMinimum >= snapshot.waveformAxisMaximum ||
-        !std::isfinite(snapshot.psdAxisMinimum) || !std::isfinite(snapshot.psdAxisMaximum) ||
-        snapshot.psdAxisMinimum >= snapshot.psdAxisMaximum) return false;
+        !validPsdRange(snapshot.psdAxisMinimum,snapshot.psdAxisMaximum)) return false;
     const auto sampleBegin = std::clamp(snapshot.sourceTime.begin, channel->sourceTime.begin, channel->sourceTime.end);
     const auto sampleEnd = std::clamp(snapshot.sourceTime.end, sampleBegin, channel->sourceTime.end);
     const double half = channel->outputSampleRateHz / 2;
@@ -647,6 +655,22 @@ void Session::replaceProject(Project project) {
     channelHistories_.clear();
     demoSequence_ = project_.files.size();
     cursors_.clear(); spectra_.clear(); spectralLru_.clear();
+}
+
+bool Session::setPowerDisplayRange(PowerDisplayRange range) {
+    if (!range.valid() || !activeFile()) return false;
+    for (auto& file : project_.files) {
+        file.display.referenceLevelDb = range.referenceLevelDb;
+        file.display.dynamicRangeDb = range.dynamicRangeDb;
+        file.display.psdMin = range.lowerDb(); file.display.psdMax = range.referenceLevelDb;
+        if (file.display.auxiliaryMode == AuxiliaryMode::Psd) {
+            file.display.auxiliaryMin = range.lowerDb(); file.display.auxiliaryMax = range.referenceLevelDb;
+        }
+        for (auto& channel : file.channels) {
+            channel.psdAxisMinimum = range.lowerDb(); channel.psdAxisMaximum = range.referenceLevelDb;
+        }
+    }
+    return true;
 }
 
 const LinkedCursorState& Session::linkedCursor(const std::string& context) const {

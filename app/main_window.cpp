@@ -18,6 +18,8 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QDoubleValidator>
+#include <QRegularExpressionValidator>
+#include <QWindow>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
@@ -37,6 +39,8 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QResizeEvent>
+#include <QMoveEvent>
+#include <QScreen>
 #include <QScrollArea>
 #include <QSignalBlocker>
 #include <QSplitter>
@@ -180,6 +184,7 @@ protected:
 } // namespace
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+    setWindowFlag(Qt::FramelessWindowHint);
     setObjectName("SignalStudioWindow"); setWindowTitle("Signal Studio · A1.4.3"); resize(1600, 960); setMinimumSize(720, 520);
     setStyleSheet(R"(
         QWidget { background:#101d2f; color:#dbe8f8; font-family:'Segoe UI','Microsoft YaHei UI'; font-size:12px; }
@@ -259,6 +264,22 @@ MainWindow::~MainWindow() {
 
 void MainWindow::buildMenus() {
     menuBar()->setFixedHeight(34); menuBar()->setNativeMenuBar(false);
+    menuBar()->setMouseTracking(true);
+    auto* controls = new QWidget(menuBar()); controls->setObjectName("windowControls");
+    auto* controlsRow = new QHBoxLayout(controls); controlsRow->setContentsMargins(0,0,0,0); controlsRow->setSpacing(0);
+    const auto button = [&](const char* id, const QString& text, const QString& tip) {
+        auto* control = new QToolButton(controls); control->setObjectName(id); control->setText(text); control->setToolTip(tip);
+        control->setFixedSize(44,33); control->setFocusPolicy(Qt::NoFocus);
+        control->setStyleSheet("QToolButton { border:0; border-radius:0; padding:0; font-size:18px; } QToolButton:hover { background:#29445f; }");
+        controlsRow->addWidget(control); return control;
+    };
+    connect(button("windowMinimize", "−", "最小化"), &QToolButton::clicked, this, [this] { cancelInteractions(false); showMinimized(); });
+    windowMaximize_ = button("windowMaximize", "□", "最大化");
+    connect(windowMaximize_, &QToolButton::clicked, this, &MainWindow::toggleWindowState);
+    auto* close = button("windowClose", "×", "关闭");
+    close->setStyleSheet("QToolButton { border:0; border-radius:0; padding:0; font-size:20px; } QToolButton:hover { background:#bd3547; color:white; }");
+    connect(close, &QToolButton::clicked, this, &QWidget::close);
+    menuBar()->setCornerWidget(controls, Qt::TopRightCorner);
     auto* brand = new QWidget; auto* brandRow = new QHBoxLayout(brand); brandRow->setContentsMargins(11, 0, 22, 0); brandRow->setSpacing(8);
     auto* mark = label({});
     const auto ratio = devicePixelRatioF(); QPixmap icon(qCeil(22 * ratio), qCeil(22 * ratio)); icon.setDevicePixelRatio(ratio); icon.fill(Qt::transparent);
@@ -495,15 +516,21 @@ void MainWindow::buildWorkspace() {
     QStringList stftSizes; for (int order = 8; order <= 16; ++order) stftSizes << QString::number(1 << order);
     stft_ = combo("stftFft", stftSizes); propertyPalette_ = combo("colormap", {"Turbo", "Viridis", "Gray", "Plasma", "Inferno", "Magma", "Cividis", "CoolEdit Classic"});
     dynamic_ = combo("dynamic", {"20 dB", "40 dB", "60 dB", "80 dB", "100 dB", "120 dB"});
-    reference_ = combo("reference", {"0 dBFS", "-20 dBFS", "-40 dBFS", "-60 dBFS", "-80 dBFS", "-100 dBFS"});
+    reference_ = combo("reference", {"0 dBFS/Hz", "-20 dBFS/Hz", "-40 dBFS/Hz", "-60 dBFS/Hz", "-80 dBFS/Hz", "-100 dBFS/Hz"});
     dynamic_->setEditable(true); reference_->setEditable(true);
     dynamic_->setInsertPolicy(QComboBox::NoInsert); reference_->setInsertPolicy(QComboBox::NoInsert);
-    dynamic_->lineEdit()->setValidator(new QDoubleValidator(1, 10000, 3, dynamic_->lineEdit()));
-    reference_->lineEdit()->setValidator(new QDoubleValidator(-200, 100, 3, reference_->lineEdit()));
+    for (auto* control : {dynamic_, reference_}) {
+        control->setCompleter(nullptr);
+        control->lineEdit()->setValidator(new QRegularExpressionValidator(
+            QRegularExpression(QStringLiteral(R"([-+]?(?:\d+(?:\.\d{0,3})?|\.\d{1,3})(?:\s*dB(?:FS(?:/Hz)?)?)?)")), control));
+    }
     freqMode_ = combo("freqMode", {"射频绝对频率", "基带相对频率"});
     for (int i = 0; i < dynamic_->count(); ++i) dynamic_->setItemData(i, 20 + 20 * i);
     for (int i = 0; i < reference_->count(); ++i) reference_->setItemData(i, -20 * i);
-    row(spec.form, "STFT FFT 点数", stft_); row(spec.form, "颜色映射", propertyPalette_); row(spec.form, "动态范围", dynamic_); row(spec.form, "参考电平", reference_); row(spec.form, "频率坐标", freqMode_);
+    row(spec.form, "STFT FFT 点数", stft_); row(spec.form, "颜色映射", propertyPalette_); row(spec.form, "动态范围", dynamic_); row(spec.form, "参考电平", reference_);
+    autoPowerFit_ = new QPushButton("自动适配电平"); autoPowerFit_->setObjectName("autoPowerFit");
+    spec.form->addRow(autoPowerFit_); connect(autoPowerFit_, &QPushButton::clicked, this, &MainWindow::autoFitPower);
+    row(spec.form, "频率坐标", freqMode_);
     colorScale_ = new QCheckBox; colorScale_->setObjectName("colorbarToggle"); grid_ = new QCheckBox; grid_->setObjectName("gridToggle"); row(spec.form, "显示色阶条", colorScale_); row(spec.form, "网格显示", grid_);
     propertyLayout_->addStretch(); propScroll_->setWidget(content); right->addWidget(propScroll_, 1); bodyLayout->addWidget(properties_);
 
@@ -624,14 +651,6 @@ void MainWindow::buildWorkspace() {
         display.auxiliaryMode = nextAux;
         display.mainMode = static_cast<MainMode>(mainMode_->currentIndex()); display.palette = static_cast<Palette>(palette_->currentIndex());
         display.waveformMode = static_cast<WaveformMode>(waveformMode_->currentIndex());
-        const auto comboNumber = [](QComboBox* control, const QString& suffix, double fallback) {
-            bool ok = false;
-            double value = control->currentText().trimmed().remove(suffix).trimmed().toDouble(&ok);
-            if (!ok) value = control->currentData().toDouble(&ok);
-            return ok ? value : fallback;
-        };
-        display.dynamicRangeDb = comboNumber(dynamic_, "dB", display.dynamicRangeDb);
-        display.referenceLevelDb = comboNumber(reference_, "dBFS", display.referenceLevelDb);
         if (!narrow) { display.absoluteFrequency = freqMode_->currentIndex() == 0; display.grid = grid_->isChecked(); }
         display.colorScale = colorScale_->isChecked();
         if (!narrow) { display.psdSize = psd_->currentText().toInt(); display.stftSize = stft_->currentText().toInt(); }
@@ -657,10 +676,12 @@ void MainWindow::buildWorkspace() {
     };
     for (auto* control : {mainMode_, auxMode_, waveformMode_, palette_, psd_, stft_, psdScope_, freqMode_})
         connect(control, &QComboBox::currentIndexChanged, this, change);
-    for (auto* control : {dynamic_, reference_})
-        connect(control, &QComboBox::currentIndexChanged, this, [change](int index) { if (index >= 0) change(); });
-    for (auto* control : {dynamic_, reference_})
-        connect(control->lineEdit(), &QLineEdit::editingFinished, this, change);
+    for (auto* control : {dynamic_, reference_}) {
+        connect(control, &QComboBox::editTextChanged, this, [this, control] { applyPowerInput(control); });
+        connect(control->lineEdit(), &QLineEdit::editingFinished, this, [this, control] { normalizePowerInput(control); });
+    }
+    for (auto* chart : {main_, auxiliary_}) connect(chart, &PlotWidget::autoPowerFitRequested, this, &MainWindow::autoFitPower);
+    connect(narrowband_, &NarrowbandWorkspace::autoPowerFitRequested, this, &MainWindow::autoFitPower);
     connect(effectiveBandwidth_, &QDoubleSpinBox::valueChanged, this, change);
     connect(propertyPalette_, &QComboBox::currentIndexChanged, this, [this](int index) { if (!refreshing_) palette_->setCurrentIndex(index); });
     for (auto* control : {grid_, colorScale_}) connect(control, &QCheckBox::toggled, this, change);
@@ -837,11 +858,9 @@ void MainWindow::applyGlobalRightSidebarSettings(const DisplaySettings& fallback
     shared.psdMin = real(QStringLiteral("psdMin"), shared.psdMin);
     shared.psdMax = real(QStringLiteral("psdMax"), shared.psdMax);
     if (!std::isfinite(shared.waveformMin) || !std::isfinite(shared.waveformMax) || shared.waveformMax - shared.waveformMin < 2.0) { shared.waveformMin = -32768; shared.waveformMax = 32768; }
-    if (!std::isfinite(shared.psdMin) || !std::isfinite(shared.psdMax) || shared.psdMax - shared.psdMin < 2.0) { shared.psdMin = -100; shared.psdMax = 0; }
     shared.waveformMin = std::clamp(shared.waveformMin, -65536.0, 65534.0);
     shared.waveformMax = std::clamp(shared.waveformMax, shared.waveformMin + 2.0, 65536.0);
-    shared.psdMin = std::clamp(shared.psdMin, -180.0, 48.0);
-    shared.psdMax = std::clamp(shared.psdMax, shared.psdMin + 2.0, 50.0);
+    if (!validPsdRange(shared.psdMin, shared.psdMax)) { shared.psdMin = shared.referenceLevelDb - shared.dynamicRangeDb; shared.psdMax = shared.referenceLevelDb; }
     shared.auxiliaryMin = shared.auxiliaryMode == AuxiliaryMode::Waveform ? shared.waveformMin : shared.psdMin;
     shared.auxiliaryMax = shared.auxiliaryMode == AuxiliaryMode::Waveform ? shared.waveformMax : shared.psdMax;
     for (auto& file : session_.project().files) {
@@ -1026,8 +1045,9 @@ void MainWindow::refresh() {
         dataSourceStatus_->setText(file->metadata.demo ? "演示数据 · 未运行 DSP" : "实际 IQ · FFT 已启用");
         dataSourceStatus_->setToolTip(file->metadata.demo ? "当前文件使用原型演示数据" : "int16 IQ 数据来自磁盘文件；波形、PSD、时频图均使用真实采样");
         for (const auto& item : {std::pair<QComboBox*, double>{dynamic_, display.dynamicRangeDb}, {reference_, display.referenceLevelDb}}) {
+            if (item.first->lineEdit()->hasFocus()) continue;
             int index = item.first->findData(item.second);
-            if (index < 0) { item.first->addItem(number(item.second) + (item.first == dynamic_ ? " dB" : " dBFS"), item.second); index = item.first->count() - 1; }
+            if (index < 0) { item.first->addItem(number(item.second) + (item.first == dynamic_ ? " dB" : " dBFS/Hz"), item.second); index = item.first->count() - 1; }
             item.first->setCurrentIndex(index);
         }
         waveformMode_->setCurrentIndex(static_cast<int>(display.waveformMode));
@@ -1071,6 +1091,7 @@ void MainWindow::refresh() {
         viewData_->clear(); cursorData_->clear(); selectionData_->setText("无信号标记"); statusTime_->clear(); statusFrequency_->clear(); statusFile_->clear(); cursorFileId_.clear();
     }
     updatePropertyContext(); updateBottom(); for (auto* plot : {navigation_, auxiliary_, main_}) plot->syncState(); refreshing_ = false;
+    updatePowerFit();
 }
 
 void MainWindow::activateTreeChannel(const QString& channelId) {
@@ -1301,8 +1322,146 @@ void MainWindow::toggleMaximized(int index) {
     if (creating && !main_->isCreating()) main_->setCreating(true);
 }
 void MainWindow::resizeEvent(QResizeEvent* event) {
+    rememberNormalGeometry();
     QMainWindow::resizeEvent(event); if (!graphs_) return; cancelInteractions(false); enforceLayout(); QTimer::singleShot(0, this, [this] { enforceLayout(); });
 }
+void MainWindow::moveEvent(QMoveEvent* event) {
+    QMainWindow::moveEvent(event); rememberNormalGeometry();
+    if (graphs_) cancelInteractions(false);
+}
+void MainWindow::rememberNormalGeometry() {
+    if (isVisible() && !restoringWindowGeometry_ && !property("enteringTargetFullscreen").toBool() && !(windowState() & (Qt::WindowMaximized | Qt::WindowFullScreen | Qt::WindowMinimized))) normalWindowGeometry_ = geometry();
+}
+void MainWindow::changeEvent(QEvent* event) {
+    QMainWindow::changeEvent(event);
+    if (event->type() == QEvent::WindowStateChange) {
+        windowDragPending_ = windowDragFallback_ = false;
+        if (resizeCursorWidget_) { resizeCursorWidget_->unsetCursor(); resizeCursorWidget_.clear(); }
+        if (graphs_) cancelInteractions(false);
+        updateWindowControls();
+    }
+}
+void MainWindow::updateWindowControls() {
+    if (!windowMaximize_) return;
+    const bool restore = isMaximized() || isFullScreen();
+    windowMaximize_->setText(restore ? "❐" : "□");
+    windowMaximize_->setToolTip(restore ? "窗口化" : "最大化");
+    windowMaximize_->setProperty("restoresWindow", restore);
+}
+void MainWindow::toggleWindowState() {
+    cancelInteractions(false); rememberNormalGeometry();
+    if (isMaximized() || isFullScreen()) {
+        QRect restore = normalWindowGeometry_.isValid() ? normalWindowGeometry_ : QRect(screen()->availableGeometry().topLeft() + QPoint(80,60), QSize(1600,960));
+        const auto available = screen()->availableGeometry();
+        restore.setSize(restore.size().boundedTo(available.size()).expandedTo(minimumSize()));
+        restore.moveLeft(std::clamp(restore.left(),available.left(),std::max(available.left(),available.right()-restore.width()+1)));
+        restore.moveTop(std::clamp(restore.top(),available.top(),std::max(available.top(),available.bottom()-restore.height()+1)));
+        restoringWindowGeometry_ = true; showNormal(); setGeometry(restore); restoringWindowGeometry_ = false;
+        normalWindowGeometry_ = geometry();
+    } else showMaximized();
+    updateWindowControls();
+}
+Qt::Edges MainWindow::resizeEdges(QPoint point) const {
+    if (isMaximized() || isFullScreen() || isMinimized()) return {};
+    Qt::Edges edges;
+    if (point.x() < 6) edges |= Qt::LeftEdge; else if (point.x() >= width()-6) edges |= Qt::RightEdge;
+    if (point.y() < 6) edges |= Qt::TopEdge; else if (point.y() >= height()-6) edges |= Qt::BottomEdge;
+    return edges;
+}
+bool MainWindow::handleWindowChrome(QObject* watched, QEvent* event) {
+    auto* widget = qobject_cast<QWidget*>(watched);
+    if (!widget || widget->window() != this) return false;
+    const bool mouse = event->type() == QEvent::MouseMove || event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseButtonDblClick;
+    if (!mouse) return false;
+    auto* input = static_cast<QMouseEvent*>(event);
+    const auto point = widget->mapTo(this,input->position().toPoint());
+    const auto edges = resizeEdges(point);
+    if (event->type() == QEvent::MouseMove && !(input->buttons() & Qt::LeftButton)) {
+        if (resizeCursorWidget_ && (resizeCursorWidget_ != widget || !edges)) { resizeCursorWidget_->unsetCursor(); resizeCursorWidget_.clear(); }
+        if (edges) {
+            const bool horizontal = edges.testFlag(Qt::LeftEdge) || edges.testFlag(Qt::RightEdge);
+            const bool vertical = edges.testFlag(Qt::TopEdge) || edges.testFlag(Qt::BottomEdge);
+            widget->setCursor(horizontal && vertical ? ((edges.testFlag(Qt::LeftEdge) == edges.testFlag(Qt::TopEdge)) ? Qt::SizeFDiagCursor : Qt::SizeBDiagCursor) : horizontal ? Qt::SizeHorCursor : Qt::SizeVerCursor);
+            resizeCursorWidget_ = widget;
+        }
+    }
+    if (event->type() == QEvent::MouseButtonPress && input->button() == Qt::LeftButton && edges) {
+        cancelInteractions(false); setProperty("windowResizeEdges",static_cast<int>(edges));
+        setProperty("windowSystemResizeStarted",windowHandle() && windowHandle()->startSystemResize(edges));
+        return true;
+    }
+    const bool blank = widget == menuBar() && menuBar()->rect().contains(input->position().toPoint()) && !menuBar()->actionAt(input->position().toPoint()) && !menuBar()->childAt(input->position().toPoint());
+    if (blank && event->type() == QEvent::MouseButtonDblClick && input->button() == Qt::LeftButton) {
+        windowDragPending_ = windowDragFallback_ = false; toggleWindowState(); return true;
+    }
+    if (blank && event->type() == QEvent::MouseButtonPress && input->button() == Qt::LeftButton) {
+        cancelInteractions(false); windowDragPending_ = true; windowDragAnchor_ = input->globalPosition().toPoint(); windowDragOrigin_ = pos(); return true;
+    }
+    if (windowDragPending_ && event->type() == QEvent::MouseMove && (input->buttons() & Qt::LeftButton)) {
+        const auto distance = input->globalPosition().toPoint() - windowDragAnchor_;
+        if (distance.manhattanLength() >= QApplication::startDragDistance()) {
+            cancelInteractions(false);
+            if (!windowDragFallback_ && windowHandle() && windowHandle()->startSystemMove()) { windowDragPending_ = false; return true; }
+            windowDragFallback_ = true; if (!isMaximized() && !isFullScreen()) move(windowDragOrigin_ + distance);
+        }
+        return true;
+    }
+    if (event->type() == QEvent::MouseButtonRelease && input->button() == Qt::LeftButton) { windowDragPending_ = windowDragFallback_ = false; }
+    return false;
+}
+
+void MainWindow::applyPowerInput(QComboBox* control) {
+    if (refreshing_ || !session_.activeFile()) return;
+    QString text = control->currentText().trimmed();
+    text.remove(QRegularExpression(QStringLiteral("\\s*dB(?:FS(?:/Hz)?)?\\s*$")));
+    bool ok = false; const double value = text.toDouble(&ok);
+    const auto& display = session_.activeFile()->display;
+    PowerDisplayRange range{display.referenceLevelDb, display.dynamicRangeDb};
+    if (control == dynamic_) range.dynamicRangeDb = value; else range.referenceLevelDb = value;
+    const bool valid = ok && range.valid();
+    control->setProperty("powerInputValid", valid);
+    control->lineEdit()->setStyleSheet(valid ? QString{} : "color:#ffbb68;");
+    control->setToolTip(valid ? QString{} : control == dynamic_ ? "请输入大于 0 且不超过 10000 的动态范围" : "请输入 -200 至 100 的参考电平（dBFS/Hz）");
+    if (!valid) return;
+    cancelInteractions(false); session_.setPowerDisplayRange(range);
+    scheduleRightSidebarSettingsSave(); refresh();
+}
+void MainWindow::normalizePowerInput(QComboBox* control) {
+    if (refreshing_ || !session_.activeFile()) return;
+    const auto& display = session_.activeFile()->display;
+    const QSignalBlocker blocker(control); const QSignalBlocker editBlocker(control->lineEdit());
+    control->setEditText(number(control == dynamic_ ? display.dynamicRangeDb : display.referenceLevelDb) + (control == dynamic_ ? " dB" : " dBFS/Hz"));
+    control->lineEdit()->setStyleSheet({}); control->setProperty("powerInputValid", true);
+    control->setToolTip({});
+}
+void MainWindow::updatePowerFit() {
+    if (!autoPowerFit_) return;
+    PowerAnalysisSnapshot snapshot;
+    if (session_.project().narrowbandWorkspaceOpen && session_.activeChannel()) snapshot = narrowband_->powerSnapshot();
+    else if (session_.activeFile()) {
+        snapshot.heatmap = main_->currentSpectrogram();
+        snapshot.psd = auxiliary_->currentPowerFrame();
+        snapshot.ready = snapshot.heatmap && (session_.activeFile()->display.auxiliaryMode != AuxiliaryMode::Psd || snapshot.psd);
+    }
+    if (snapshot.ready != powerFitReady_ || snapshot.heatmap != powerFitHeatmap_ || snapshot.psd != powerFitPsd_) {
+        powerFitReady_ = snapshot.ready;
+        powerFitHeatmap_ = snapshot.heatmap; powerFitPsd_ = snapshot.psd;
+        cachedPowerFit_ = snapshot.ready && snapshot.heatmap ? fitPowerDisplayRange(*snapshot.heatmap, snapshot.psd.get()) : PowerFitResult{};
+    }
+    const bool enabled = snapshot.ready && cachedPowerFit_.valid;
+    autoPowerFit_->setEnabled(enabled);
+    autoPowerFit_->setToolTip(enabled ? "按当前可见热图及 PSD 的有效功率上下各留 3 dB，一次应用" : "等待当前分析数据，或没有有效功率");
+    for (auto* chart : {main_, auxiliary_}) chart->setProperty("autoPowerFitAvailable", enabled);
+    narrowband_->setProperty("autoPowerFitAvailable", enabled);
+}
+void MainWindow::autoFitPower() {
+    updatePowerFit(); if (!autoPowerFit_->isEnabled()) return;
+    cancelInteractions(false); session_.setPowerDisplayRange(cachedPowerFit_.range);
+    normalizePowerInput(dynamic_); normalizePowerInput(reference_);
+    scheduleRightSidebarSettingsSave(); refresh();
+    log(cachedPowerFit_.limited ? "自动适配已应用，达到参数合法边界" : "已按当前可见热图及 PSD 自动适配电平（上下各 3 dB 余量）");
+}
+
 bool MainWindow::clearActiveLinkedCursor() {
     const auto* file = session_.activeFile(); if (!file) return false;
     const auto* channel = session_.project().narrowbandWorkspaceOpen ? session_.activeChannel() : nullptr;
@@ -1316,6 +1475,10 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 }
 bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
     if (destroying_) return QMainWindow::eventFilter(watched, event);
+    if (event->type() == QEvent::FocusOut && dynamic_ && reference_ &&
+        (watched == dynamic_->lineEdit() || watched == reference_->lineEdit()))
+        normalizePowerInput(watched == dynamic_->lineEdit() ? dynamic_ : reference_);
+    if (handleWindowChrome(watched,event)) return true;
     if ((watched == tree_ || watched == tree_->viewport()) && (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::KeyPress))
         treeSelectionModifiers_ = event->type() == QEvent::MouseButtonPress ? static_cast<QMouseEvent*>(event)->modifiers() : static_cast<QKeyEvent*>(event)->modifiers();
     if (watched == tree_->viewport() && event->type() == QEvent::Leave) main_->setHoveredMark({});
