@@ -39,6 +39,7 @@ public:
     bool createProject(const QString& parentDirectory, const QString& projectName, QString* error = nullptr);
     bool openProject(const QString& path);
     bool addIqFile(const QString& path, QString* error = nullptr);
+    bool addImportedSource(FileState file,QString& error);
     bool saveProject(const QString& path);
     void openNarrowbandDemoProject();
     void cancelInteractions(bool exitCreating = true);

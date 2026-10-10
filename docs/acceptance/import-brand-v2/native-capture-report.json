@@ -1,0 +1,738 @@
+{
+    "broadbandRenderers": [
+        {
+            "acceptedHeatmapPreview": false,
+            "actualFrameInputSamples": "2560",
+            "actualSpectralFrames": 6,
+            "analysisError": "",
+            "analysisPoints": 2048,
+            "binHz": 390.625,
+            "colorTransformGenerations": 1,
+            "committedGeneration": 4,
+            "cpuWallTimings": {
+                "chartDrawCalls": 0,
+                "chartDrawCallsSkipped": 0,
+                "chartPaletteUploads": 3,
+                "chartVertexUploads": 0,
+                "gpuTimestamps": false,
+                "heatmapDrawCalls": 2,
+                "heatmapUploadPreparation": {
+                    "lastMs": 1.8531,
+                    "maxMs": 1.8531,
+                    "samples": 1,
+                    "totalMs": 1.8531
+                },
+                "lastChartDrawLoopIterations": 0,
+                "lastChartDrawRecordCount": 0,
+                "lastChartDrawStage": 0,
+                "lastChartVertexCount": 0,
+                "lastRenderHeight": 934,
+                "lastRenderWidth": 1984,
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                    "lastMs": 0.5342,
+                    "maxMs": 2.6289,
+                    "samples": 11,
+                    "totalMs": 7.4518
+                },
+                "overlayPainter": {
+                    "lastMs": 5.8118,
+                    "maxMs": 9.4483,
+                    "samples": 11,
+                    "totalMs": 23.271299999999997
+                },
+                "overlayUploadEnqueue": {
+                    "lastMs": 0.0202,
+                    "maxMs": 0.2142,
+                    "samples": 11,
+                    "totalMs": 0.6614000000000001
+                },
+                "paintEventIncludingQtSubmit": {
+                    "lastMs": 12.7327,
+                    "maxMs": 20.941,
+                    "samples": 14,
+                    "totalMs": 98.4588
+                },
+                "paletteUploads": 2,
+                "prepareUploads": {
+                    "lastMs": 0.0127,
+                    "maxMs": 10.6789,
+                    "samples": 16,
+                    "totalMs": 42.0023
+                },
+                "render": {
+                    "lastMs": 0.0883,
+                    "maxMs": 10.768,
+                    "samples": 16,
+                    "totalMs": 43.7234
+                },
+                "renderInvocations": 16,
+                "unit": "ms"
+            },
+            "cursorPinned": false,
+            "curveCacheHits": 0,
+            "curvePathElements": 0,
+            "curveRasterMethod": "QRhi heatmap texture",
+            "curveReductions": 0,
+            "curveSourceGenerations": 0,
+            "drawnLineSegments": 0,
+            "drawnPoints": 322500,
+            "effectiveOverlap": 0.5,
+            "framePsd": false,
+            "generation": 4,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 2,
+            "gpuDataRenderer": "QRhi shader / vertex buffer",
+            "gpuHeatmapDrawCalls": 2,
+            "gpuPaletteUploads": 2,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 0,
+            "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+            "heatmapHeight": 430,
+            "heatmapWidth": 750,
+            "inverseCursorDrawCalls": 16,
+            "lastMatrixMs": 138.5681,
+            "matrixReductions": 0,
+            "noiseBandwidthHz": 586.1664712778455,
+            "overlayUploads": 11,
+            "paddedFrames": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 2,
+            "quality": "settled",
+            "requestedGeneration": 4,
+            "requestedHeatmapHeight": 430,
+            "requestedHeatmapWidth": 750,
+            "requestedPixels": 322500,
+            "requiredSeconds": 0.00256,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 12288,
+            "staleDrops": 1,
+            "textureUploads": 1,
+            "workerIdle": true
+        },
+        {
+            "acceptedHeatmapPreview": false,
+            "actualFrameInputSamples": "2560",
+            "actualSpectralFrames": 6,
+            "analysisError": "",
+            "analysisPoints": 2048,
+            "binHz": 390.625,
+            "colorTransformGenerations": 0,
+            "committedGeneration": 5,
+            "cpuWallTimings": {
+                "chartDrawCalls": 3,
+                "chartDrawCallsSkipped": 0,
+                "chartPaletteUploads": 5,
+                "chartVertexUploads": 1,
+                "gpuTimestamps": false,
+                "heatmapDrawCalls": 0,
+                "heatmapUploadPreparation": {
+                    "lastMs": 0,
+                    "maxMs": 0,
+                    "samples": 0,
+                    "totalMs": 0
+                },
+                "lastChartDrawLoopIterations": 1,
+                "lastChartDrawRecordCount": 1,
+                "lastChartDrawStage": 6,
+                "lastChartVertexCount": 37338,
+                "lastRenderHeight": 171,
+                "lastRenderWidth": 1984,
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                    "lastMs": 0.1234,
+                    "maxMs": 0.4806,
+                    "samples": 11,
+                    "totalMs": 1.6885999999999999
+                },
+                "overlayPainter": {
+                    "lastMs": 3.7132,
+                    "maxMs": 11.5805,
+                    "samples": 11,
+                    "totalMs": 20.660600000000002
+                },
+                "overlayUploadEnqueue": {
+                    "lastMs": 0.0142,
+                    "maxMs": 0.4346,
+                    "samples": 11,
+                    "totalMs": 0.8320000000000001
+                },
+                "paintEventIncludingQtSubmit": {
+                    "lastMs": 5.1604,
+                    "maxMs": 13.4519,
+                    "samples": 14,
+                    "totalMs": 45.86820000000001
+                },
+                "paletteUploads": 2,
+                "prepareUploads": {
+                    "lastMs": 0.0148,
+                    "maxMs": 12.3759,
+                    "samples": 16,
+                    "totalMs": 26.284900000000004
+                },
+                "render": {
+                    "lastMs": 0.1339,
+                    "maxMs": 12.6541,
+                    "samples": 16,
+                    "totalMs": 27.835
+                },
+                "renderInvocations": 16,
+                "unit": "ms"
+            },
+            "cursorPinned": false,
+            "curveCacheHits": 5,
+            "curvePathElements": 3735,
+            "curveRasterMethod": "QRhi dynamic vertex buffer",
+            "curveReductions": 1,
+            "curveSourceGenerations": 2,
+            "drawnLineSegments": 3734,
+            "drawnPoints": 3735,
+            "effectiveOverlap": 0.5,
+            "framePsd": false,
+            "generation": 5,
+            "gpuChartDrawCalls": 3,
+            "gpuDataDrawCalls": 3,
+            "gpuDataRenderer": "QRhi shader / vertex buffer",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 2,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 1,
+            "heatmapCacheHits": 0,
+            "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+            "heatmapHeight": -1,
+            "heatmapWidth": -1,
+            "inverseCursorDrawCalls": 16,
+            "lastMatrixMs": 0,
+            "matrixReductions": 0,
+            "noiseBandwidthHz": 586.1664712778455,
+            "overlayUploads": 11,
+            "paddedFrames": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 0,
+            "quality": "settled",
+            "requestedGeneration": 5,
+            "requestedHeatmapHeight": -1,
+            "requestedHeatmapWidth": -1,
+            "requestedPixels": 1,
+            "requiredSeconds": 0.00256,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 3748,
+            "staleDrops": 0,
+            "textureUploads": 0,
+            "workerIdle": true
+        },
+        {
+            "acceptedHeatmapPreview": false,
+            "actualFrameInputSamples": "2560",
+            "actualSpectralFrames": 6,
+            "analysisError": "",
+            "analysisPoints": 2048,
+            "binHz": 390.625,
+            "colorTransformGenerations": 0,
+            "committedGeneration": 3,
+            "cpuWallTimings": {
+                "chartDrawCalls": 4,
+                "chartDrawCallsSkipped": 0,
+                "chartPaletteUploads": 4,
+                "chartVertexUploads": 1,
+                "gpuTimestamps": false,
+                "heatmapDrawCalls": 0,
+                "heatmapUploadPreparation": {
+                    "lastMs": 0,
+                    "maxMs": 0,
+                    "samples": 0,
+                    "totalMs": 0
+                },
+                "lastChartDrawLoopIterations": 1,
+                "lastChartDrawRecordCount": 1,
+                "lastChartDrawStage": 6,
+                "lastChartVertexCount": 10228,
+                "lastRenderHeight": 48,
+                "lastRenderWidth": 1984,
+                "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                "overlayImagePreparation": {
+                    "lastMs": 0.0221,
+                    "maxMs": 0.0927,
+                    "samples": 11,
+                    "totalMs": 0.4055
+                },
+                "overlayPainter": {
+                    "lastMs": 1.5292,
+                    "maxMs": 5.7426,
+                    "samples": 11,
+                    "totalMs": 9.8118
+                },
+                "overlayUploadEnqueue": {
+                    "lastMs": 0.0146,
+                    "maxMs": 0.1268,
+                    "samples": 11,
+                    "totalMs": 0.3597999999999999
+                },
+                "paintEventIncludingQtSubmit": {
+                    "lastMs": 1.8754,
+                    "maxMs": 6.5072,
+                    "samples": 14,
+                    "totalMs": 18.322999999999997
+                },
+                "paletteUploads": 2,
+                "prepareUploads": {
+                    "lastMs": 0.0149,
+                    "maxMs": 6.012,
+                    "samples": 16,
+                    "totalMs": 10.9512
+                },
+                "render": {
+                    "lastMs": 0.1063,
+                    "maxMs": 6.1853,
+                    "samples": 16,
+                    "totalMs": 12.1322
+                },
+                "renderInvocations": 16,
+                "unit": "ms"
+            },
+            "cursorPinned": false,
+            "curveCacheHits": 2,
+            "curvePathElements": 0,
+            "curveRasterMethod": "QRhi dynamic vertex buffer",
+            "curveReductions": 0,
+            "curveSourceGenerations": 1,
+            "drawnLineSegments": 1023,
+            "drawnPoints": 3916,
+            "effectiveOverlap": 0.5,
+            "framePsd": false,
+            "generation": 3,
+            "gpuChartDrawCalls": 4,
+            "gpuDataDrawCalls": 4,
+            "gpuDataRenderer": "QRhi shader / vertex buffer",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 2,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 1,
+            "heatmapCacheHits": 0,
+            "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+            "heatmapHeight": -1,
+            "heatmapWidth": -1,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 0,
+            "matrixReductions": 0,
+            "noiseBandwidthHz": 586.1664712778455,
+            "overlayUploads": 11,
+            "paddedFrames": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 0,
+            "quality": "settled",
+            "requestedGeneration": 3,
+            "requestedHeatmapHeight": -1,
+            "requestedHeatmapWidth": -1,
+            "requestedPixels": 1,
+            "requiredSeconds": 0.00256,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 3916,
+            "staleDrops": 0,
+            "textureUploads": 0,
+            "workerIdle": true
+        }
+    ],
+    "partial": {
+        "availableSamples": "2097152",
+        "envelopePoints": 1024,
+        "fixtureDeletedAfterCapture": true,
+        "format": "CI8",
+        "physicalSamples": "67108864"
+    },
+    "pass": true,
+    "platform": "windows",
+    "scenes": [
+        {
+            "captureMethod": "Native QWidget::grab; modal crop over fullscreen parent",
+            "capturedObject": "SignalStudioWindow",
+            "dpr": 1.5,
+            "file": "screenshots/01-welcome-brand.png",
+            "input": "",
+            "nonBlackSamples": 20728,
+            "parentFullscreen": true,
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "screen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "connectedIndex": 2,
+                "deviceName": "\\\\.\\DISPLAY6",
+                "devicePixelRatio": 1.5,
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "name": "Redmi 27 NU",
+                "physicalDpi": 109.05000625015624,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": false
+            }
+        },
+        {
+            "captureMethod": "Native QWidget::grab; modal crop over fullscreen parent",
+            "capturedObject": "SignalStudioWindow",
+            "dpr": 1.5,
+            "file": "screenshots/02-broadband-brand.png",
+            "input": "D:/project/signal_studio_rebuild/tests/fixtures/IQ0_FS1Msps_BW800kHz_FC100MHz.dat",
+            "nonBlackSamples": 20728,
+            "parentFullscreen": true,
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "screen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "connectedIndex": 2,
+                "deviceName": "\\\\.\\DISPLAY6",
+                "devicePixelRatio": 1.5,
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "name": "Redmi 27 NU",
+                "physicalDpi": 109.05000625015624,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": false
+            }
+        },
+        {
+            "captureMethod": "Native QWidget::grab; modal crop over fullscreen parent",
+            "capturedObject": "signalImportDialog",
+            "dpr": 1.5,
+            "file": "screenshots/03-import-complex.png",
+            "input": "D:/project/signal_studio_rebuild/tests/fixtures/IQ0_FS1Msps_BW800kHz_FC100MHz.dat",
+            "nonBlackSamples": 5915,
+            "parentFullscreen": true,
+            "pixelSize": {
+                "height": 1290,
+                "width": 1815
+            },
+            "screen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "connectedIndex": 2,
+                "deviceName": "\\\\.\\DISPLAY6",
+                "devicePixelRatio": 1.5,
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "name": "Redmi 27 NU",
+                "physicalDpi": 109.05000625015624,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": false
+            }
+        },
+        {
+            "captureMethod": "Native QWidget::grab; modal crop over fullscreen parent",
+            "capturedObject": "signalImportDialog",
+            "dpr": 1.5,
+            "file": "screenshots/05-import-preview-real-file.png",
+            "input": "D:/project/signal_studio_rebuild/tests/fixtures/IQ0_FS1Msps_BW800kHz_FC100MHz.dat",
+            "nonBlackSamples": 5915,
+            "parentFullscreen": true,
+            "pixelSize": {
+                "height": 1290,
+                "width": 1815
+            },
+            "screen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "connectedIndex": 2,
+                "deviceName": "\\\\.\\DISPLAY6",
+                "devicePixelRatio": 1.5,
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "name": "Redmi 27 NU",
+                "physicalDpi": 109.05000625015624,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": false
+            }
+        },
+        {
+            "captureMethod": "Native QWidget::grab; modal crop over fullscreen parent",
+            "capturedObject": "signalImportDialog",
+            "dpr": 1.5,
+            "file": "screenshots/04-import-real.png",
+            "input": "D:/project/signal_studio_rebuild/tests/fixtures/real_ADC_FS1Msps_FC0Hz_RI16.raw",
+            "nonBlackSamples": 5915,
+            "parentFullscreen": true,
+            "pixelSize": {
+                "height": 1290,
+                "width": 1815
+            },
+            "screen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "connectedIndex": 2,
+                "deviceName": "\\\\.\\DISPLAY6",
+                "devicePixelRatio": 1.5,
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "name": "Redmi 27 NU",
+                "physicalDpi": 109.05000625015624,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": false
+            }
+        },
+        {
+            "captureMethod": "Native QWidget::grab; modal crop over fullscreen parent",
+            "capturedObject": "signalImportDialog",
+            "dpr": 1.5,
+            "file": "screenshots/06-import-batch.png",
+            "input": "D:/project/signal_studio_rebuild/tests/fixtures/IQ0_FS1Msps_BW800kHz_FC100MHz.dat; D:/project/signal_studio_rebuild/tests/fixtures/real_ADC_FS1Msps_FC0Hz_RI16.raw",
+            "nonBlackSamples": 5915,
+            "parentFullscreen": true,
+            "pixelSize": {
+                "height": 1290,
+                "width": 1815
+            },
+            "screen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "connectedIndex": 2,
+                "deviceName": "\\\\.\\DISPLAY6",
+                "devicePixelRatio": 1.5,
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "name": "Redmi 27 NU",
+                "physicalDpi": 109.05000625015624,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": false
+            }
+        },
+        {
+            "captureMethod": "Native QWidget::grab; modal crop over fullscreen parent",
+            "capturedObject": "signalImportDialog",
+            "dpr": 1.5,
+            "file": "screenshots/10-import-templates.png",
+            "input": "",
+            "nonBlackSamples": 5915,
+            "parentFullscreen": true,
+            "pixelSize": {
+                "height": 1290,
+                "width": 1815
+            },
+            "screen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "connectedIndex": 2,
+                "deviceName": "\\\\.\\DISPLAY6",
+                "devicePixelRatio": 1.5,
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "name": "Redmi 27 NU",
+                "physicalDpi": 109.05000625015624,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": false
+            }
+        },
+        {
+            "captureMethod": "Native QWidget::grab; modal crop over fullscreen parent",
+            "capturedObject": "signalImportDialog",
+            "dpr": 1.5,
+            "file": "screenshots/07-import-progress-partial.png",
+            "input": "C:/Users/Admin/AppData/Local/Temp/SignalStudioNativeCapture-XihMaW/CI8_FS1Msps_FC0Hz.raw",
+            "nonBlackSamples": 5915,
+            "parentFullscreen": true,
+            "pixelSize": {
+                "height": 1290,
+                "width": 1815
+            },
+            "screen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "connectedIndex": 2,
+                "deviceName": "\\\\.\\DISPLAY6",
+                "devicePixelRatio": 1.5,
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 2560,
+                    "y": 0
+                },
+                "name": "Redmi 27 NU",
+                "physicalDpi": 109.05000625015624,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": false
+            }
+        }
+    ],
+    "screen": {
+        "availableLogicalGeometry": {
+            "height": 1392,
+            "width": 2560,
+            "x": 2560,
+            "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": {
+            "height": 1440,
+            "width": 2560,
+            "x": 2560,
+            "y": 0
+        },
+        "name": "Redmi 27 NU",
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+            "height": 2160,
+            "width": 3840
+        },
+        "primary": false
+    },
+    "screens": [
+        {
+            "availableLogicalGeometry": {
+                "height": 1019,
+                "width": 1707,
+                "x": 0,
+                "y": 0
+            },
+            "connectedIndex": 1,
+            "deviceName": "\\\\.\\DISPLAY1",
+            "devicePixelRatio": 1.5,
+            "logicalDpi": 96,
+            "logicalGeometry": {
+                "height": 1067,
+                "width": 1707,
+                "x": 0,
+                "y": 0
+            },
+            "name": "TL160ADMP36",
+            "physicalDpi": 125.86483316481294,
+            "pixelSize": {
+                "height": 1600,
+                "width": 2560
+            },
+            "primary": true
+        },
+        {
+            "availableLogicalGeometry": {
+                "height": 1392,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+            },
+            "connectedIndex": 2,
+            "deviceName": "\\\\.\\DISPLAY6",
+            "devicePixelRatio": 1.5,
+            "logicalDpi": 96,
+            "logicalGeometry": {
+                "height": 1440,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+            },
+            "name": "Redmi 27 NU",
+            "physicalDpi": 109.05000625015624,
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "primary": false
+        }
+    ]
+}

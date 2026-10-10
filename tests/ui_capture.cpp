@@ -6,6 +6,9 @@
 #include "ui/charts/accelerated_surface.h"
 #include "ui/narrowband_workspace.h"
 #include "ui/display_target.h"
+#include "ui/import/signal_import_dialog.h"
+#include "ui/import/source_preview_widget.h"
+#include <QTemporaryDir>
 
 #include <QAbstractButton>
 #include <QAbstractSpinBox>
@@ -722,6 +725,7 @@ void diagnoseMainHover(Capture& capture, QPoint target, QJsonObject& diagnostic)
 #include "tests/display_optimization_capture.h"
 #include "tests/linked_cursor_capture.h"
 #include "tests/spectral_loading_capture.h"
+#include "tests/import_brand_capture.h"
 
 } // namespace
 
@@ -732,6 +736,7 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     QApplication::setApplicationName("SignalStudioNativeCapture");
     const auto arguments = app.arguments();
+    if(arguments.size()>=3&&arguments.at(1)=="--import-brand")return runImportBrandCapture(arguments.at(2));
     if (arguments.size() == 2 && (arguments.at(1) == "--list-screens" || arguments.at(1) == "list")) {
         const QJsonObject inventory{{"platform", QGuiApplication::platformName()}, {"screens", screensJson()}};
         QTextStream(stdout) << QJsonDocument(inventory).toJson(QJsonDocument::Indented);

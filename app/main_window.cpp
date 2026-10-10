@@ -5,6 +5,7 @@
 #include "ui/custom_combo.h"
 #include "ui/parameter_input.h"
 #include "ui/checkbox_style.h"
+#include "ui/import/signal_import_dialog.h"
 #include "app/main_window.h"
 #include "infrastructure/project_store.h"
 #include "infrastructure/int16_iq_file.h"
@@ -1685,41 +1686,23 @@ void MainWindow::openNarrowbandDemoProject() {
 }
 
 void MainWindow::showAddFileDialog() {
-    cancelInteractions(false); auto* dialog = new QDialog(this); dialog->setObjectName("addFileDialog"); dialog->setWindowTitle("向工程添加 int16 IQ 文件"); dialog->setAttribute(Qt::WA_DeleteOnClose); dialog->setModal(true); dialog->setFixedWidth(470);
-    auto* layout = new QVBoxLayout(dialog); layout->setContentsMargins(18, 18, 18, 18); layout->setSpacing(12);
-    auto* heading = label("向工程添加 RAW IQ 文件"); heading->setStyleSheet("font-size:16px;font-weight:600;"); layout->addWidget(heading);
-    auto* note = label("格式：小端 int16，I/Q 交替；FS、FC、BW 从文件名读取。顺序读入并计算导航包络；可在导航标题栏停止，保留已读部分。", {}, "help"); note->setWordWrap(true); layout->addWidget(note);
-    auto* form = new QFormLayout; form->setSpacing(12); auto* fileField = new QWidget; auto* fileRow = new QHBoxLayout(fileField); fileRow->setContentsMargins(0, 0, 0, 0); fileRow->setSpacing(6);
-    auto* choose = push("选择文件…", "chooseIqFile", fileRow); choose->setProperty("uiRole", "outline"); auto* fileName = label("未选择文件", "fileInput"); fileName->setMinimumWidth(0); fileRow->addWidget(fileName, 1); row(form, "选择文件", fileField);
-    auto* fs = new ParameterDoubleSpinBox; fs->setObjectName("loadFs"); fs->setRange(1, 1e12); fs->setDecimals(0); fs->setValue(40000000); fs->setSingleStep(1000000);
-    auto* fc = new ParameterDoubleSpinBox; fc->setObjectName("loadFc"); fc->setRange(0, 1e15); fc->setDecimals(0); fc->setValue(100000000); fc->setSingleStep(1000000);
-    auto* duration = new ParameterDoubleSpinBox; duration->setObjectName("loadDuration"); duration->setRange(.101, 1e9); duration->setDecimals(3); duration->setValue(180);
-    for (auto* field : {fs, fc, duration}) field->setReadOnly(true);
-    row(form, "采样率 (Hz)", fs); row(form, "中心频率 (Hz)", fc); row(form, "文件时长", duration); layout->addLayout(form);
-    auto* progress = new QProgressBar; progress->setObjectName("loadProgress"); progress->setTextVisible(false); progress->setRange(0, 100); progress->setValue(0); progress->setFixedHeight(8); layout->addWidget(progress);
-    auto* progressText = label("选择文件后读取文件名参数并检查长度", "progressText", "help"); layout->addWidget(progressText);
-    auto* actions = new QHBoxLayout; actions->addStretch(); auto* cancel = push("取消", "cancelOpen", actions); cancel->setProperty("uiRole", "outline"); auto* add = push("添加 IQ 数据", "simulateOpen", actions); add->setProperty("uiRole", "primary"); add->setEnabled(false); layout->addLayout(actions);
-    connect(choose, &QPushButton::clicked, dialog, [dialog, fileName, fs, fc, duration, progress, progressText, add] {
-        const auto path = QFileDialog::getOpenFileName(dialog, "选择交替 int16 IQ 文件", {}, "IQ 文件 (*.iq *.dat *.raw *.bin);;所有文件 (*)");
-        if (path.isEmpty()) return;
-        QString error; const auto info = describeInt16IqFile(path, error);
-        fileName->setText(QFileInfo(path).fileName()); fileName->setToolTip(path); fileName->setProperty("path", path);
-        if (!info) { progress->setValue(0); progressText->setText(error); add->setEnabled(false); return; }
-        fs->setValue(info->metadata.sampleRateHz); fc->setValue(info->metadata.centerFrequencyHz);
-        duration->setValue(static_cast<double>(info->metadata.sampleCount) / info->metadata.sampleRateHz);
-        progress->setValue(100);
-        const QString bw = info->declaredBandwidthHz > 0 ? QString(" · BW %1 MHz").arg(number(info->declaredBandwidthHz / 1e6)) : QString{};
-        progressText->setText(QString("已检查 %1 字节 · %2 个复采样点%3").arg(info->byteSize).arg(info->metadata.sampleCount).arg(bw));
-        add->setEnabled(true);
-    });
-    connect(cancel, &QPushButton::clicked, dialog, &QDialog::reject);
-    connect(add, &QPushButton::clicked, dialog, [this, dialog, fileName, add, progressText] {
-        const auto path = fileName->property("path").toString(); QString error;
-        add->setEnabled(false);
-        if (!addIqFile(path, &error)) { progressText->setText(error); add->setEnabled(true); return; }
-        dialog->accept();
-    });
+    cancelInteractions(false);
+    auto* dialog=new SignalImportDialog(q(session_.project().name),this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->commitSource=[this](FileState file,QString& error){return addImportedSource(std::move(file),error);};
     dialog->open();
+}
+
+bool MainWindow::addImportedSource(FileState file,QString& error){
+    if(!availableSamples(file.metadata)||file.metadata.availability.status==LoadStatus::Failed){error="没有可用的完整样本帧";return false;}
+    const auto metadata=file.metadata;const auto id=session_.addDemoFile(metadata);
+    if(id.empty()){error="文件元数据无效";return false;}
+    auto* added=session_.activeFile();added->navigationEnvelope=std::move(file.navigationEnvelope);
+    restoreRightSidebarSettings(*added);
+    if(metadata.sampleFormat.structure==SampleStructure::Real)added->display.waveformMode=WaveformMode::I;
+    cancelInteractions(false);selectionAnchor_.clear();refresh();
+    log(QString("已导入 %1 · %2 · %3 个可用样本").arg(q(metadata.name),QString::fromStdString(formatId(metadata.sampleFormat))).arg(availableSamples(metadata)));
+    error.clear();return true;
 }
 
 bool MainWindow::addIqFile(const QString& path, QString* error) {

@@ -69,6 +69,8 @@ set_target_properties(SignalStudioCore PROPERTIES AUTOMOC OFF)
 ss_target_defaults(SignalStudioCore)
 
 add_library(SignalStudioInfrastructure STATIC
+    infrastructure/import_controller.cpp
+    infrastructure/source_metadata.cpp
     infrastructure/raw_sample_reader.cpp
     infrastructure/channel_processor.cpp
     infrastructure/channel_processor.h
@@ -86,6 +88,12 @@ target_link_libraries(SignalStudioInfrastructure PUBLIC SignalStudioCore Qt6::Co
 ss_target_defaults(SignalStudioInfrastructure)
 
 set(SS_UI_SOURCES
+    ui/controls/adaptive_value_edit.cpp
+    ui/controls/adaptive_value_edit.h
+    ui/import/source_preview_widget.cpp
+    ui/import/source_preview_widget.h
+    ui/import/signal_import_dialog.cpp
+    ui/import/signal_import_dialog.h
     ui/parameter_input.h
     ui/spectral_settings_widget.cpp
     ui/spectral_settings_widget.h
@@ -170,6 +178,7 @@ if(SS_BUILD_TESTS)
         SignalStudioCore SignalStudioInfrastructure Qt6::Widgets Qt6::Test
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
     ss_target_defaults(SignalStudioUiTests)
+    target_compile_definitions(SignalStudioUiTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
     ss_add_graphics_shaders(SignalStudioUiTests signalstudio_ui_test_shaders)
     ss_add_ui_assets(SignalStudioUiTests)
     qt_add_resources(SignalStudioUiTests signalstudio_ui_test_narrowband_demo
@@ -182,6 +191,7 @@ if(SS_BUILD_TESTS)
         SignalStudioCore SignalStudioInfrastructure Qt6::Widgets Qt6::Test
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
     ss_target_defaults(SignalStudioUiCapture)
+    target_compile_definitions(SignalStudioUiCapture PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
     ss_add_graphics_shaders(SignalStudioUiCapture signalstudio_ui_capture_shaders)
     ss_add_ui_assets(SignalStudioUiCapture)
     qt_add_resources(SignalStudioUiCapture signalstudio_ui_capture_narrowband_demo

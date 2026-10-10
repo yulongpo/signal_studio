@@ -4,6 +4,9 @@
 #include "ui/charts/cursor_overlay.h"
 #include "ui/display_target.h"
 #include "ui/spectral_settings_widget.h"
+#include "ui/import/signal_import_dialog.h"
+#include "ui/controls/adaptive_value_edit.h"
+#include "ui/import/source_preview_widget.h"
 #include <QSpinBox>
 #include "ui/narrowband_workspace.h"
 
@@ -278,6 +281,8 @@ private slots:
     void creationModeSurvivesMaximize();
     void escapeCancelsGestureBeforeLeavingMaximize();
     void addIqFileDialogCancelsAndImportsRealInt16Iq();
+    void importFormatAndAdaptiveDraft();
+    void importRealFilesAndCancelPrefix();
     void narrowbandDemoResourceAndFourPages();
     void waveformBandwidthAndVisiblePaneStftSettings();
     void uiStatePersistenceAndRecentProjects();
@@ -1104,7 +1109,7 @@ void UiTests::parameterInputsIgnoreWheel() {
     wheelAt(source->view()->viewport(),source->view()->viewport()->rect().center(),-120);
     QCOMPARE(source->currentIndex(),selected);QCOMPARE(source->view()->currentIndex(),highlighted);source->hidePopup();dialog->reject();
     window.findChild<QAction*>("openIqAction")->trigger();
-    dialog=window.findChild<QDialog*>("addFileDialog");QVERIFY(dialog);check(dialog);dialog->reject();
+    dialog=window.findChild<QDialog*>("signalImportDialog");QVERIFY(dialog);check(dialog);dialog->reject();
     qInfo("Wheel protection checked %d combos and %d spin boxes, including dialogs and editors",combos,spins);
     // This global policy does not intercept wheel interaction on plot surfaces.
     auto* main=window.findChild<PlotWidget*>("mainPlot");const auto view=window.session().activeFile()->view;
@@ -2317,6 +2322,37 @@ void UiTests::escapeCancelsGestureBeforeLeavingMaximize() {
     QVERIFY(!host->isVisible());
 }
 
+void UiTests::importFormatAndAdaptiveDraft(){
+    QCOMPARE(*parseAdaptiveValue("2450000125",UnitKind::Frequency),2450000125.0);
+    QCOMPARE(*parseAdaptiveValue("2450.000125 MHz",UnitKind::Frequency),2450000125.0);
+    QCOMPARE(*parseAdaptiveValue("2.450000125 GHz",UnitKind::Frequency),2450000125.0);
+    QCOMPARE(*parseAdaptiveValue("102.4 MS/s",UnitKind::SampleRate),102400000.0);
+    QVERIFY(!parseAdaptiveValue("102 MHz",UnitKind::SampleRate));
+    QCOMPARE(*parseAdaptiveValue(formatAdaptiveValue(102400000.125,UnitKind::SampleRate),UnitKind::SampleRate),102400000.125);
+    MainWindow window;showWindow(window);SignalImportDialog dialog("test",&window);dialog.show();
+    const auto path=QStringLiteral(SS_SOURCE_DIR "/tests/fixtures/IQ0_FS1Msps_BW800kHz_FC100MHz.dat");QVERIFY(dialog.addPath(path));
+    auto* fc=dialog.findChild<AdaptiveValueEdit*>("importCenterFrequency");QVERIFY(fc);const auto original=fc->value();fc->setFocus();fc->selectAll();QTest::keyClicks(fc,"2.450000125 GHz");const auto draft=fc->text();const auto cursor=fc->cursorPosition();QCoreApplication::processEvents();QCOMPARE(fc->text(),draft);QCOMPARE(fc->cursorPosition(),cursor);QCOMPARE(fc->value(),original);QTest::keyClick(fc,Qt::Key_Return);QCOMPARE(fc->value(),2450000125.0);
+    fc->selectAll();QTest::keyClicks(fc,"bad");QTest::keyClick(fc,Qt::Key_Return);QCOMPARE(fc->value(),2450000125.0);
+    auto* structure=dialog.findChild<QComboBox*>("importStructure");auto* encoding=dialog.findChild<QComboBox*>("importEncoding");auto* order=dialog.findChild<QComboBox*>("importByteOrder");auto* layout=dialog.findChild<QComboBox*>("importIQLayout");auto* norm=dialog.findChild<QCheckBox*>("importNormalize");QVERIFY(structure&&encoding&&order&&layout&&norm);
+    order->setCurrentIndex(1);layout->setCurrentIndex(1);structure->setCurrentIndex(1);QCOMPARE(dialog.controller().rows()[0].metadata.sampleFormat.iqLayout,IQLayout::NotApplicable);QVERIFY(!layout->isVisible());structure->setCurrentIndex(0);QCOMPARE(dialog.controller().rows()[0].metadata.sampleFormat.iqLayout,IQLayout::QIInterleaved);
+    encoding->setCurrentIndex(2);QCOMPARE(dialog.controller().rows()[0].metadata.sampleFormat.byteOrder,ByteOrder::NotApplicable);QVERIFY(!order->isVisible());encoding->setCurrentIndex(1);QCOMPARE(dialog.controller().rows()[0].metadata.sampleFormat.byteOrder,ByteOrder::Big);QVERIFY(!norm->isEnabled());QVERIFY(!dialog.controller().rows()[0].metadata.sampleFormat.normalizeIntegerAdc);
+}
+
+void UiTests::importRealFilesAndCancelPrefix(){
+    MainWindow window;showWindow(window);
+    const auto complex=QStringLiteral(SS_SOURCE_DIR "/tests/fixtures/IQ0_FS1Msps_BW800kHz_FC100MHz.dat");
+    const auto real=QStringLiteral(SS_SOURCE_DIR "/tests/fixtures/real_ADC_FS1Msps_FC0Hz_RI16.raw");
+    {SignalImportDialog dialog("test",&window);dialog.show();QVERIFY(dialog.addPath(complex));dialog.findChild<QPushButton*>("importCancel")->click();QVERIFY(window.session().project().files.empty());}
+    for(const auto& path:QStringList{complex,real}){
+        SignalImportDialog dialog("test",&window);dialog.commitSource=[&window](FileState file,QString& error){return window.addImportedSource(std::move(file),error);};dialog.show();QVERIFY(dialog.addPath(path));dialog.findChild<QCheckBox*>("importConfirmFormat")->setChecked(true);
+        auto* preview=dialog.findChild<SourcePreviewWidget*>("sourcePreview");QVERIFY(preview);QTRY_VERIFY_WITH_TIMEOUT(preview->ready(),15000);QVERIFY(preview->error().isEmpty());dialog.startImport();QVERIFY(dialog.findChild<QWidget*>("importProgressOverlay")->isVisible());
+        auto* finish=dialog.findChild<QPushButton*>("importProgressFinish");QTRY_VERIFY_WITH_TIMEOUT(finish->isVisible()&&finish->isEnabled(),15000);finish->click();QCOMPARE(window.session().activeFile()->metadata.sampleCount,SampleIndex{16384});
+        if(path==real){const auto* file=window.session().activeFile();QCOMPARE(file->metadata.sampleFormat.structure,SampleStructure::Real);QCOMPARE(file->metadata.centerFrequencyHz,0.0);QVERIFY((fullRange(file->metadata).frequency==FrequencyRange{0,500000}));QVERIFY(window.session().createChannel("real","none",100000,10000,20000,{0,10000},ChannelFilter::Standard,true,true).empty());}
+    }
+    QTemporaryDir temp;const auto large=temp.filePath("CI8_FS1Msps_FC0Hz.raw");{QFile file(large);QVERIFY(file.open(QIODevice::WriteOnly));QVERIFY(file.resize(128*1024*1024));}
+    SignalImportDialog dialog("test",&window);dialog.show();QVERIFY(dialog.addPath(large));dialog.startImport();QTRY_VERIFY_WITH_TIMEOUT(dialog.controller().rows()[0].load.loaded>0,15000);dialog.findChild<QPushButton*>("importProgressStop")->click();QTRY_VERIFY_WITH_TIMEOUT(!dialog.controller().running(),15000);const auto& row=dialog.controller().rows()[0];QVERIFY(row.load.loaded>0&&row.load.loaded<row.metadata.sampleCount);QCOMPARE(row.status,ImportStatus::Partial);QVERIFY(row.load.envelope.size()<=2048);QCOMPARE(dialog.findChild<QLabel*>("importProgressTitle")->text(),QString("读入已停止 · 已保留样本前缀"));
+}
+
 void UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() {
     DemoMainWindow window;
     showWindow(window);
@@ -2324,17 +2360,15 @@ void UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() {
     QVERIFY(open);
     const auto initialCount=window.session().project().files.size();
     open->click();QCoreApplication::processEvents();
-    QPointer<QDialog> dialog=window.findChild<QDialog*>("addFileDialog");
+    QPointer<QDialog> dialog=window.findChild<QDialog*>("signalImportDialog");
     QVERIFY(dialog&&dialog->isVisible());
-    auto* fs=dialog->findChild<QDoubleSpinBox*>("loadFs");
-    auto* fc=dialog->findChild<QDoubleSpinBox*>("loadFc");
-    auto* duration=dialog->findChild<QDoubleSpinBox*>("loadDuration");
-    auto* add=dialog->findChild<QAbstractButton*>("simulateOpen");
-    auto* cancel=dialog->findChild<QAbstractButton*>("cancelOpen");
-    QVERIFY(fs&&fc&&duration&&add&&cancel);
-    QCOMPARE(fs->value(),40'000'000.0);
-    QCOMPARE(fc->value(),100'000'000.0);
-    QCOMPARE(duration->value(),180.0);
+    auto* fs=dialog->findChild<AdaptiveValueEdit*>("importSampleRate");
+    auto* fc=dialog->findChild<AdaptiveValueEdit*>("importCenterFrequency");
+    auto* add=dialog->findChild<QAbstractButton*>("importStart");
+    auto* cancel=dialog->findChild<QAbstractButton*>("importCancel");
+    QVERIFY(fs&&fc&&add&&cancel);
+    QCOMPARE(fs->value(),102'400'000.0);
+    QCOMPARE(fc->value(),830'000'000.0);
     QVERIFY(!add->isEnabled());
     cancel->click();
     QTRY_VERIFY(dialog.isNull());
