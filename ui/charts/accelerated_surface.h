@@ -54,6 +54,7 @@ public:
     quint64 chartVertexUploadCount() const { return chartVertexUploads_; }
     quint64 chartDrawCallCount() const { return chartDrawCalls_; }
     quint64 heatmapDrawCallCount() const { return heatmapDrawCalls_; }
+    QRectF heatmapTargetRect() const { return target_; }
     quint64 paletteUploadCount() const { return paletteUploads_; }
     quint64 chartPaletteUploadCount() const { return chartPaletteUploads_; }
     QJsonObject cpuWallTimings() const;

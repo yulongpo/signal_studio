@@ -14,12 +14,17 @@ struct SpectralAnalysisPlan {
     int points = 0, analysisSamples = 0, decimationStages = 0;
     std::uint64_t decimation = 1, inputSamples = 0;
     bool valid = false;
+    SpectralParameters parameters;
     std::string reason;
 };
 struct SpectralFrame {
     std::uint64_t id = 0;
     TimeRange providerSamples, sourceSamples;
     SampleIndex sourceCenter = 0;
+    std::uint64_t validSamples = 0, paddedSamples = 0;
+    double windowEnergy = 0, observedSeconds = 0, noiseBandwidthHz = 0;
+    std::uint64_t processedFrames = 1;
+    long double displayFraction = .5L;
     FrequencyRange frequencies;
     double binHz = 0;
     std::vector<float> linearPower;
@@ -38,6 +43,10 @@ struct SpectrogramData {
     TimeRange providerView, sourceView;
     std::vector<std::shared_ptr<const SpectralFrame>> frames;
     std::string error;
+    std::uint64_t totalFrames = 0, paddedFrames = 0;
+    double effectiveHop = 0;
+    double requestedOverlap = .5, effectiveOverlap = .5;
+    bool adjustedOverlap = false, repeatedObservation = false;
     std::size_t bytes() const {
         std::size_t result = 0;
         for (const auto& frame : frames) result += sizeof(SpectralFrame) + frame->linearPower.size() * sizeof(float);
@@ -51,6 +60,12 @@ struct SpectrogramData {
         if (next == frames.end()) return frames.back().get();
         const auto before = std::prev(next);
         return sample - (*before)->sourceCenter <= (*next)->sourceCenter - sample ? before->get() : next->get();
+    }
+    const SpectralFrame* frameAtFraction(long double fraction) const {
+        if(frames.empty()||fraction<0||fraction>1)return nullptr;
+        const auto next=std::lower_bound(frames.begin(),frames.end(),fraction,[](const auto& f,long double v){return f->displayFraction<v;});
+        if(next==frames.begin())return next->get();if(next==frames.end())return frames.back().get();
+        const auto before=std::prev(next);return fraction-(*before)->displayFraction<=(*next)->displayFraction-fraction?before->get():next->get();
     }
 };
 struct LinkedCursorState {

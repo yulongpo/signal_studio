@@ -71,6 +71,14 @@ private:
     void finishChartWheel();
     void cancelChartWheel();
     void requestDisplay(bool settled = false);
+    void requestPsd();
+    void cancelPsd();
+    std::thread psdWorker_;
+    std::shared_ptr<std::atomic_bool> psdCancellation_;
+    QString psdRequestKey_;
+    QString psdStatus_;
+    std::uint64_t psdGeneration_ = 0;
+    SpectrogramSettings lastSpectrogramSettings_;
     void installFrame(std::uint64_t generation, std::uint64_t configVersion,
                       std::vector<float> waveformI, std::vector<float> waveformQ,
                       std::vector<float> psd, QImage stft, QString status, bool samplePointsVisible,

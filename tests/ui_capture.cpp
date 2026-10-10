@@ -719,6 +719,7 @@ void diagnoseMainHover(Capture& capture, QPoint target, QJsonObject& diagnostic)
 
 #include "tests/display_optimization_capture.h"
 #include "tests/linked_cursor_capture.h"
+#include "tests/spectral_loading_capture.h"
 
 } // namespace
 
@@ -734,6 +735,8 @@ int main(int argc, char* argv[]) {
         QTextStream(stdout) << QJsonDocument(inventory).toJson(QJsonDocument::Indented);
         return 0;
     }
+    if (arguments.size() >= 3 && arguments.at(1) == "--spectral-loading")
+        return runSpectralLoadingCapture(arguments.at(2), arguments.size()>3?arguments.at(3):QString{});
     if (arguments.size() >= 3 && arguments.at(1) == "--linked-cursors")
         return runLinkedCursorCapture(arguments.at(2), arguments.size() > 3 ? arguments.at(3) : QString{});
     if (arguments.size() != 2 || !QFileInfo(arguments.at(1)).isAbsolute()) {

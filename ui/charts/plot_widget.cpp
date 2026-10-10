@@ -168,6 +168,7 @@ struct HeatmapPayload {
     quint64 generation = 0;
     int fftSize = 2048;
     bool preview = false;
+    SpectrogramSettings settings;
     std::vector<float> power;
     std::shared_ptr<SpectrogramData> spectrum;
     QString error;
@@ -218,33 +219,35 @@ private:
             const auto cancel = [this, generation = job->generation] { return stop_ || generation != latest_; };
             if (!metadata.demo) {
                 Int16IqFile iq; QString error;
-                if (!iq.open(QString::fromStdString(metadata.path), error)) job->error = error;
+                if (!iq.open(metadata, error)) job->error = error;
                 else {
-                    auto source = iq.spectralSource(); source.sampleRateHz = metadata.sampleRateHz;
+                    iq.limitTo(availableSamples(metadata));auto source = iq.spectralSource(); source.sampleRateHz = metadata.sampleRateHz;
                     job->spectrum = analyzeSpectrogram(source, view.time,
                         {view.frequency.lowerHz - metadata.centerFrequencyHz, view.frequency.upperHz - metadata.centerFrequencyHz},
-                        job->fftSize, job->mode == MainMode::Waterfall ? height : width, cancel);
+                        job->fftSize, job->mode == MainMode::Waterfall ? height : width, job->settings, 1, cancel);
                 }
             } else {
                 job->spectrum = std::make_shared<SpectrogramData>();
                 auto& data = *job->spectrum;
                 data.plan = makeSpectralAnalysisPlan(metadata.sampleRateHz,
-                    {view.frequency.lowerHz - metadata.centerFrequencyHz, view.frequency.upperHz - metadata.centerFrequencyHz}, job->fftSize);
+                    {view.frequency.lowerHz - metadata.centerFrequencyHz, view.frequency.upperHz - metadata.centerFrequencyHz}, job->fftSize,job->settings.parameters);
                 data.providerView = data.sourceView = view.time;
                 if (!data.plan.valid) data.error = data.plan.reason;
-                else if (view.time.end - view.time.begin < data.plan.inputSamples)
-                    data.error = "时间窗不足；所需分析时长 " + std::to_string(data.plan.requiredSeconds * 1000) + " ms";
                 else {
-                    const auto remaining = view.time.end - view.time.begin - data.plan.inputSamples;
-                    const auto hop = std::max<std::uint64_t>(1, data.plan.inputSamples / 2);
+                    const auto span = view.time.end - view.time.begin;
+                    const auto remaining = span>data.plan.inputSamples?span-data.plan.inputSamples:0;
+                    const auto hop = std::max<std::uint64_t>(1, static_cast<std::uint64_t>(data.plan.inputSamples*(1-job->settings.parameters.overlap)));
                     const int count = static_cast<int>(std::min<std::uint64_t>(1 + remaining / hop,
                         std::min(job->mode == MainMode::Waterfall ? height : width, std::max(1, 8'000'000 / data.plan.analysisSamples))));
                     for (int index = 0; index < count && !cancel(); ++index) {
                         const auto start = view.time.begin + (count == 1 ? remaining / 2 :
                             (remaining / (count - 1)) * index + (remaining % (count - 1)) * index / (count - 1));
-                        auto frame = std::make_shared<SpectralFrame>(); frame->id = start;
-                        frame->providerSamples = frame->sourceSamples = {start, start + data.plan.inputSamples};
-                        frame->sourceCenter = start + data.plan.inputSamples / 2;
+                        auto frame = std::make_shared<SpectralFrame>(); frame->id = index+1;
+                        frame->providerSamples = frame->sourceSamples = {start, std::min(view.time.end,start + data.plan.inputSamples)};
+                        frame->sourceCenter = start + (frame->sourceSamples.end-start) / 2;
+                        frame->displayFraction=static_cast<long double>(frame->sourceCenter-view.time.begin)/span;
+                        frame->validSamples=std::min<std::uint64_t>(data.plan.analysisSamples,(view.time.end-start)/data.plan.decimation);
+                        frame->paddedSamples=data.plan.analysisSamples-frame->validSamples;
                         frame->frequencies = data.plan.frequencies; frame->binHz = data.plan.binHz;
                         frame->linearPower.resize(job->fftSize);
                         const double tn = static_cast<double>(frame->sourceCenter) / metadata.sampleCount;
@@ -295,6 +298,7 @@ public:
         int fftSize = 4096;
         int points = 1024;
         bool psd = false;
+        PsdSettings settings;
         WaveformMode waveformMode = WaveformMode::IqRms;
         quint64 generation = 0;
     };
@@ -326,13 +330,13 @@ private:
                 result->error = error;
             } else {
                 const auto cancelled = [this, generation = request.generation] { return stop_ || generation != latest_; };
-                bool ok = false;
+                iq.limitTo(availableSamples(request.metadata));bool ok = false;
                 if (request.psd) {
                     auto source = iq.spectralSource(); source.sampleRateHz = request.metadata.sampleRateHz;
                     const FrequencyRange band{request.frequency.lowerHz - request.metadata.centerFrequencyHz,
                         request.frequency.upperHz - request.metadata.centerFrequencyHz};
-                    const auto data = analyzeSpectrogram(source, request.time, band, request.fftSize, 64, cancelled);
-                    result->average = averageSpectrum(*data);
+                    std::string message; result->average = analyzeSpectrum(source, request.time, band, request.fftSize, request.settings, message, cancelled);
+                    result->error=QString::fromStdString(message);
                     if (result->average) { result->samples = spectrumDb(*result->average); ok = true; }
                 } else ok = iq.waveform(request.time, request.points, request.waveformMode, result->samples, cancelled);
                 if (!ok) {
@@ -432,8 +436,8 @@ QRectF PlotWidget::markRect(const ViewRange& range) const {
 QRectF PlotWidget::navigationWindow() const {
     const auto* file = session_.activeFile(); if (!file) return {};
     const auto plot = plotRect();
-    const double start = static_cast<double>(file->view.time.begin) / file->metadata.sampleCount;
-    const double span = static_cast<double>(file->view.time.end - file->view.time.begin) / file->metadata.sampleCount;
+    const double start = static_cast<double>(file->view.time.begin) / availableSamples(file->metadata);
+    const double span = static_cast<double>(file->view.time.end - file->view.time.begin) / availableSamples(file->metadata);
     return QRectF(plot.left() + plot.width() * start, 0, plot.width() * span, height());
 }
 PlotWidget::Zone PlotWidget::zoneAt(QPointF point) const {
@@ -442,7 +446,7 @@ PlotWidget::Zone PlotWidget::zoneAt(QPointF point) const {
 }
 QString PlotWidget::statusText() const {
     const auto* file = session_.activeFile(); if (!file) return "—";
-    if (kind_ == Kind::Navigation) return rangeText(false, 0, seconds(file->metadata.sampleCount, file->metadata.sampleRateHz));
+    if (kind_ == Kind::Navigation) return rangeText(false, 0, seconds(availableSamples(file->metadata), file->metadata.sampleRateHz));
     if (kind_ == Kind::Auxiliary) return QString(file->display.auxiliaryMode == AuxiliaryMode::Psd ? "X 频率 · Y " : "X 时间 · Y ") +
         numberText(file->display.auxiliaryMin, 0) + "…" + numberText(file->display.auxiliaryMax, 0) + (file->display.auxiliaryMode == AuxiliaryMode::Psd ? " dB" : "");
     return file->display.mainMode == MainMode::Waterfall ? "X 频率 · Y 时间↓ · 颜色功率" : "X 时间 · Y 频率 · 颜色功率";
@@ -455,8 +459,9 @@ QString PlotWidget::tipText() const {
                 file->display.waveformMode == WaveformMode::Envelope ? "幅度包络（ADC 计数）" : "幅度 RMS（ADC 计数）") + " · 当前时间 " + rangeText(false,
         seconds(file->view.time.begin, file->metadata.sampleRateHz), seconds(file->view.time.end - file->view.time.begin, file->metadata.sampleRateHz)) :
         QString(session_.linkedCursor(file->metadata.id).framePsd ? "驻留帧谱 · 与 STFT 帧逐 bin 一致" :
-            file->display.psdFromSelection && findMark(*file, file->activeMarkId) ? "当前信号标记" : "当前时间窗平均谱") +
-            " · N=" + QString::number(session_.linkedCursor(file->metadata.id).framePsd ? file->display.stftSize : file->display.psdSize) + "（可见频段）";
+            file->display.psd.scope==PsdScope::SourceMark ? "来源标记" : file->display.psd.scope==PsdScope::Whole ? "整个文件" : "当前时间窗") +
+            " · N=" + QString::number(session_.linkedCursor(file->metadata.id).framePsd ? file->display.stftSize : file->display.psdSize) + "（可见频段）" + (averagePower_&&!session_.linkedCursor(file->metadata.id).framePsd?
+                QString(" · %1 · 有效 %2 ms · 补零 %3 · ENBW %4 Hz · %5 段").arg(file->display.psd.statistic==SpectrumStatistic::Mean?"平均谱":file->display.psd.statistic==SpectrumStatistic::Maximum?"最大谱":"最小谱").arg(averagePower_->observedSeconds*1000,0,'g',6).arg(averagePower_->paddedSamples).arg(averagePower_->noiseBandwidthHz,0,'g',6).arg(averagePower_->processedFrames):QString{});
 }
 void PlotWidget::setCursorCoordinates(SampleIndex sample, double frequency) {
     if (cursorSample_ == sample && cursorFrequency_ == frequency) return;
@@ -490,7 +495,7 @@ void PlotWidget::syncState() {
         displayedView_ = file ? std::optional<ViewRange>{file->view} : std::nullopt;
         if (file) {
             cursorSample_ = displayedFile_.empty() && file->metadata.demoSeed == 1 ?
-                sampleIndex(200.0L * file->metadata.sampleRateHz, file->metadata.sampleCount) :
+                sampleIndex(200.0L * file->metadata.sampleRateHz, availableSamples(file->metadata)) :
                 file->view.time.begin + (file->view.time.end - file->view.time.begin) / 2;
             cursorFrequency_ = file->metadata.centerFrequencyHz;
             if (kind_ == Kind::Main) emit cursorChanged(cursorSample_, cursorFrequency_);
@@ -532,7 +537,7 @@ void PlotWidget::cancelGesture(bool exitCreating) {
 }
 void PlotWidget::updateHeatmap() {
     const auto* file = session_.activeFile();
-    if (!file || kind_ != Kind::Main) return;
+    if (!file || kind_ != Kind::Main || file->metadata.availability.status==LoadStatus::Loading || !availableSamples(file->metadata)) return;
     // Root's cursor/status refresh can reach this before syncState when the
     // navigation or auxiliary pane changes the shared business view.
     if (file->metadata.id == displayedFile_ && displayedView_ && *displayedView_ != file->view) {
@@ -549,8 +554,8 @@ void PlotWidget::updateHeatmap() {
     const QString key = QString::fromStdString(file->metadata.id) + QString("/%1/%2/%3/%4/%5/%6/%7/%8/%9/%10/%11/%12/%13")
         .arg(file->metadata.demoSeed).arg(static_cast<int>(file->display.mainMode)).arg(view.time.begin).arg(view.time.end)
         .arg(view.frequency.lowerHz, 0, 'g', 17).arg(view.frequency.upperHz, 0, 'g', 17).arg(pixels.width()).arg(pixels.height())
-        .arg(file->metadata.sampleRateHz, 0, 'g', 17).arg(file->metadata.centerFrequencyHz, 0, 'g', 17).arg(file->metadata.sampleCount)
-        .arg(file->metadata.path.c_str()).arg(file->display.stftSize) + "/" + fingerprint + "/project" + QString::number(session_.projectGeneration());
+        .arg(file->metadata.sampleRateHz, 0, 'g', 17).arg(file->metadata.centerFrequencyHz, 0, 'g', 17).arg(availableSamples(file->metadata))
+        .arg(file->metadata.path.c_str()).arg(file->display.stftSize) + "/" + fingerprint + "/project" + QString::number(session_.projectGeneration()) + QString::fromStdString(spectralParameterKey(file->display.spectrogram.parameters));
     if (key != requestedPowerKey_) {
         requestedPowerKey_ = key; ++renderGeneration_; ++heatmapRequestGeneration_;
         if (worker_) worker_->cancel(heatmapRequestGeneration_);
@@ -565,13 +570,13 @@ void PlotWidget::updateHeatmap() {
         } else {
             auto request = std::make_shared<HeatmapPayload>(); request->key = key; request->fingerprint = fingerprint; request->metadata = file->metadata;
             request->view = view; request->mode = file->display.mainMode; request->pixels = pixels;
-            request->generation = heatmapRequestGeneration_; request->preview = preview_; request->fftSize = file->display.stftSize;
+            request->generation = heatmapRequestGeneration_; request->preview = preview_; request->fftSize = file->display.stftSize; request->settings=file->display.spectrogram;
             // Rebuild the raster from retained frames so time-to-frame mapping
             // stays exact while frequency bins use peak-preserving display LOD.
             const auto source = std::find_if(powerCache_.begin(), powerCache_.end(), [&](const auto& item) {
                 return item->fingerprint == fingerprint && item->view == view && item->metadata.id == file->metadata.id && item->mode == file->display.mainMode &&
                     item->metadata.sampleRateHz == file->metadata.sampleRateHz && item->metadata.centerFrequencyHz == file->metadata.centerFrequencyHz &&
-                    item->metadata.sampleCount == file->metadata.sampleCount && item->metadata.demoSeed == file->metadata.demoSeed &&
+                    availableSamples(item->metadata) == availableSamples(file->metadata) && item->metadata.demoSeed == file->metadata.demoSeed &&
                     item->metadata.path == file->metadata.path && item->fftSize == file->display.stftSize &&
                     item->pixels.width() >= pixels.width() && item->pixels.height() >= pixels.height();
             });
@@ -700,23 +705,27 @@ QJsonObject PlotWidget::renderStatistics() const {
             result["analysisPoints"] = spectrum->plan.points; result["binHz"] = spectrum->plan.binHz;
             result["requiredSeconds"] = spectrum->plan.requiredSeconds; result["noiseBandwidthHz"] = spectrum->plan.noiseBandwidthHz;
             result["actualSpectralFrames"] = static_cast<qint64>(spectrum->frames.size());
+            result["paddedFrames"]=static_cast<qint64>(spectrum->paddedFrames);result["effectiveOverlap"]=spectrum->effectiveOverlap;
             result["analysisError"] = QString::fromStdString(spectrum->error);
             result["actualFrameInputSamples"] = QString::number(spectrum->plan.inputSamples);
         }
     }
+    if(averagePower_){result["psdObservedSeconds"]=averagePower_->observedSeconds;result["psdPadding"]=QString::number(averagePower_->paddedSamples);result["psdProcessedFrames"]=QString::number(averagePower_->processedFrames);result["psdNoiseBandwidthHz"]=averagePower_->noiseBandwidthHz;}
     return result;
 }
 void PlotWidget::updateCurve() {
     auto* file = session_.activeFile(); if (!file || kind_ != Kind::Auxiliary) return;
+    if(file->metadata.availability.status==LoadStatus::Loading||availableSamples(file->metadata)==0)return;
     const auto plot = plotRect(); const auto& view = file->view;
     const bool psd = file->display.auxiliaryMode == AuxiliaryMode::Psd;
-    const double duration = seconds(file->metadata.sampleCount, file->metadata.sampleRateHz);
+    const double duration = seconds(availableSamples(file->metadata), file->metadata.sampleRateHz);
     const double timeStart = seconds(view.time.begin, file->metadata.sampleRateHz), timeSpan = seconds(view.time.end - view.time.begin, file->metadata.sampleRateHz);
     const double frequencySpan = view.frequency.upperHz - view.frequency.lowerHz;
     TimeRange calculationTime = view.time;
-    if (psd && file->display.psdFromSelection) {
+    if(psd&&file->display.psd.scope==PsdScope::Whole)calculationTime={0,availableSamples(file->metadata)};
+    if (psd && (file->display.psdFromSelection||file->display.psd.scope==PsdScope::SourceMark)) {
         if (const auto* mark = findMark(*file, file->activeMarkId)) {
-            calculationTime = {std::max(view.time.begin, mark->range.time.begin), std::min(view.time.end, mark->range.time.end)};
+            calculationTime = {mark->range.time.begin, std::min(availableSamples(file->metadata),mark->range.time.end)};
             if (calculationTime.end < calculationTime.begin) calculationTime.end = calculationTime.begin;
         }
     }
@@ -738,7 +747,7 @@ void PlotWidget::updateCurve() {
         .arg(filePath).arg(psd ? file->display.psdSize : 0).arg(file->display.psdFromSelection)
         + QString("/%1/frame%2/%3/%4").arg(static_cast<int>(file->display.waveformMode))
             .arg(cursorState.framePsd).arg(pinnedFrame ? pinnedFrame->id : 0)
-            .arg(pinnedFrame ? reinterpret_cast<quintptr>(pinnedFrame) : 0) + "/" + sourceFingerprint(file->metadata) + "/project" + QString::number(session_.projectGeneration());
+            .arg(pinnedFrame ? reinterpret_cast<quintptr>(pinnedFrame) : 0) + "/" + sourceFingerprint(file->metadata) + "/project" + QString::number(session_.projectGeneration()) + (psd?QString::fromStdString(spectralParameterKey(file->display.psd.parameters))+QString::number(static_cast<int>(file->display.psd.statistic)):QString{});
     if (curveSourceKey_ != sourceKey) {
         if (curveWorker_) curveWorker_->cancel(++curveRequestGeneration_);
         curveSourceKey_ = sourceKey; ++curveGenerations_; ++renderGeneration_; curveSource_.clear(); curveTrace_.clear();
@@ -754,16 +763,16 @@ void PlotWidget::updateCurve() {
         } else if (!file->metadata.demo) {
             if (psd) {
                 const auto plan = makeSpectralAnalysisPlan(file->metadata.sampleRateHz,
-                    {view.frequency.lowerHz - file->metadata.centerFrequencyHz, view.frequency.upperHz - file->metadata.centerFrequencyHz}, file->display.psdSize);
-                if (!plan.valid || calculationTime.end - calculationTime.begin < plan.inputSamples) {
-                    curveError_ = plan.valid ? QStringLiteral("时间窗不足；所需分析时长 %1 ms").arg(plan.requiredSeconds * 1000, 0, 'g', 8) : QString::fromStdString(plan.reason);
+                    {view.frequency.lowerHz - file->metadata.centerFrequencyHz, view.frequency.upperHz - file->metadata.centerFrequencyHz}, file->display.psdSize,file->display.psd.parameters);
+                if (!plan.valid) {
+                    curveError_ = QString::fromStdString(plan.reason);
                     curveCompleted_ = true; return;
                 }
             }
             CurveWorker::Request request;
             request.key = sourceKey; request.metadata = file->metadata; request.time = calculationTime;
             request.frequency = view.frequency; request.psd = psd; request.fftSize = file->display.psdSize;
-            request.points = dense; request.waveformMode = file->display.waveformMode; request.generation = ++curveRequestGeneration_;
+            request.settings=file->display.psd; request.points = dense; request.waveformMode = file->display.waveformMode; request.generation = ++curveRequestGeneration_;
             curvePending_ = true;
             curveWorker_->submit(std::move(request));
             return;
@@ -869,8 +878,10 @@ void PlotWidget::pinAt(QPointF point) {
         if (file->display.auxiliaryMode == AuxiliaryMode::Psd) frequency = file->view.frequency.lowerHz + u * (file->view.frequency.upperHz - file->view.frequency.lowerHz);
         else sample = offsetSample(file->view.time.begin, u * static_cast<long double>(file->view.time.end - file->view.time.begin), file->view.time.end - 1);
     }
+    std::uint64_t frameId=0;
+    if(kind_==Kind::Main){const auto clickSpectrum=session_.spectrogram(file->metadata.id);const auto fraction=file->display.mainMode==MainMode::Waterfall?(point.y()-plot.top())/plot.height():(point.x()-plot.left())/plot.width();if(clickSpectrum)if(const auto* frame=clickSpectrum->frameAtFraction(fraction))frameId=frame->id;}
     session_.pinCursor(file->metadata.id, sample, frequency,
-        kind_ == Kind::Main || file->display.auxiliaryMode == AuxiliaryMode::Waveform);
+        kind_ == Kind::Main || file->display.auxiliaryMode == AuxiliaryMode::Waveform,frameId);
     emit stateChanged();
 }
 void PlotWidget::expandAnalysisTime() {
@@ -881,11 +892,11 @@ void PlotWidget::expandAnalysisTime() {
     const auto psd = makeSpectralAnalysisPlan(file->metadata.sampleRateHz, frequencies, file->display.psdSize);
     if (!stft.valid || !psd.valid) return;
     const auto count = std::max(stft.inputSamples, psd.inputSamples);
-    if (count > file->metadata.sampleCount) { emit statusMessage("文件总时长不足以满足当前分析点数"); return; }
+    if (count > availableSamples(file->metadata)) { emit statusMessage("文件总时长不足以满足当前分析点数"); return; }
     auto view = file->view; const auto& cursor = session_.linkedCursor(file->metadata.id);
     const auto center = cursor.pinned ? cursor.sourceSample : view.time.begin + (view.time.end - view.time.begin) / 2;
     const auto span = std::max(count, view.time.end - view.time.begin);
-    view.time.begin = std::min(center > span / 2 ? center - span / 2 : 0, file->metadata.sampleCount - span);
+    view.time.begin = std::min(center > span / 2 ? center - span / 2 : 0, availableSamples(file->metadata) - span);
     view.time.end = view.time.begin + span; session_.setView(view); emit stateChanged();
 }
 void PlotWidget::drawCursors(QPainter& painter, bool inverseMask) {
@@ -913,7 +924,7 @@ void PlotWidget::drawCursors(QPainter& painter, bool inverseMask) {
             "\nf = " + coordinateText(true, displayFrequency, view.frequency.upperHz - view.frequency.lowerHz);
         const auto spectrum = session_.spectrogram(file->metadata.id);
         const auto* frame = spectrum && spectrum->sourceView == view.time && spectrum->plan.frequencies ==
-            FrequencyRange{view.frequency.lowerHz - file->metadata.centerFrequencyHz, view.frequency.upperHz - file->metadata.centerFrequencyHz} ? spectrum->frameAt(sample) : nullptr;
+            FrequencyRange{view.frequency.lowerHz - file->metadata.centerFrequencyHz, view.frequency.upperHz - file->metadata.centerFrequencyHz} ? (isPinned ? session_.selectedSpectralFrame(file->metadata.id) : spectrum->frameAtFraction(file->display.mainMode==MainMode::Waterfall?(position.y()-plot.top())/plot.height():(position.x()-plot.left())/plot.width())) : nullptr;
         if (frame) {
             const auto bin = frame->binAt(frequency - file->metadata.centerFrequencyHz);
             text += QStringLiteral("\nP = %1 dBFS/Hz · bin %2\n帧中心 %3 s · Δf %4 Hz")
@@ -985,8 +996,18 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
         }
         return;
     }
+    if(file->metadata.availability.status==LoadStatus::Loading||availableSamples(file->metadata)==0) {
+        if(surface_&&!softwareFallback_){surface_->setHeatmap({}, {}, "source-loading");surface_->setChartGeometry({}, {}, "source-loading");}
+        painter.setPen(QColor("#aed3e8"));painter.setFont(canvasFont());
+        if(kind_==Kind::Navigation&&file->metadata.availability.status==LoadStatus::Loading){
+            const double fraction=static_cast<double>(file->metadata.availability.availableSamples)/std::max<SampleIndex>(1,file->metadata.sampleCount);
+            painter.fillRect(rect(),QColor("#091b2b"));painter.fillRect(QRectF(0,0,width()*fraction,height()),QColor("#235c7c"));
+            painter.drawText(rect(),Qt::AlignCenter,QString("读入 %1% · %2 字节").arg(fraction*100,0,'f',1).arg(file->metadata.availability.availableSamples*4));
+        } else painter.drawText(rect(),Qt::AlignCenter,file->metadata.availability.status==LoadStatus::Loading?"等待读入完成或停止后分析":QString::fromStdString(file->metadata.availability.error));
+        return;
+    }
     const auto plot = plotRect(); const auto& view = file->view;
-    const double duration = seconds(file->metadata.sampleCount, file->metadata.sampleRateHz);
+    const double duration = seconds(availableSamples(file->metadata), file->metadata.sampleRateHz);
     const bool waterfall = kind_ == Kind::Main && file->display.mainMode == MainMode::Waterfall;
     const bool psd = kind_ == Kind::Auxiliary && file->display.auxiliaryMode == AuxiliaryMode::Psd;
     const double timeStart = seconds(view.time.begin, file->metadata.sampleRateHz);
@@ -996,34 +1017,27 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
     if (kind_ == Kind::Navigation) {
         if (!accelerated) painter.fillRect(rect(), QColor("#091b2b"));
         const auto filePath = QString::fromUtf8(file->metadata.path.data(), static_cast<qsizetype>(file->metadata.path.size()));
-        const auto navigationKey = QString::fromStdString(file->metadata.id) + QString("/%1/%2/%3/%4").arg(seed).arg(width()).arg(height()).arg(filePath);
-        if (navigationKey_ != navigationKey) {
-            navigationKey_ = navigationKey; ++curveGenerations_; ++renderGeneration_;
-            if (!file->metadata.demo && navigationCurveKey_ != navigationKey) {
-                navigationCurveKey_ = navigationKey; navigationCurve_.clear(); navigationCurveError_.clear();
-                navigationCurvePending_ = true; navigationCurveCompleted_ = false;
-                CurveWorker::Request request;
-                request.key = navigationKey; request.metadata = file->metadata; request.time = {0, file->metadata.sampleCount};
-                request.points = std::max(1, width() - 26); request.generation = ++navigationRequestGeneration_;
-                navigationWorker_->submit(std::move(request));
+        const auto navigationKey = QString::fromStdString(file->metadata.id) + QString("/%1/%2/%3/%4/%5/%6").arg(seed).arg(width()).arg(height()).arg(filePath).arg(availableSamples(file->metadata)).arg(file->navigationEnvelope.size());
+        if(navigationKey_!=navigationKey){
+            navigationKey_=navigationKey;++curveGenerations_;++renderGeneration_;
+            if(!file->metadata.demo&&!file->navigationEnvelope.empty()){
+                navigationCurve_.clear();for(const auto& point:file->navigationEnvelope)navigationCurve_.push_back(point.peak);
+                navigationCurveCompleted_=true;navigationCurvePending_=false;
+            }else if(!file->metadata.demo&&navigationCurveKey_!=filePath+QString::number(availableSamples(file->metadata))){
+                navigationCurveKey_=filePath+QString::number(availableSamples(file->metadata));navigationCurvePending_=true;navigationCurveCompleted_=false;
+                CurveWorker::Request request;request.key=navigationCurveKey_;request.metadata=file->metadata;request.time={0,availableSamples(file->metadata)};
+                request.points=static_cast<int>(std::min<SampleIndex>(2048,availableSamples(file->metadata)));request.waveformMode=WaveformMode::Envelope;request.generation=++navigationRequestGeneration_;navigationWorker_->submit(std::move(request));
             }
-            for (int direction = 0; direction < 2; ++direction) {
-                auto& path = navigationPaths_[direction]; path = {};
-                auto& segments = navigationSegments_[direction]; segments.clear();
-                if (!file->metadata.demo && navigationCurve_.empty()) continue;
-                segments.reserve(static_cast<std::size_t>(std::max(0, width() - 27)));
-                QPointF previous;
-                for (int x = 13; x < width() - 13; ++x) {
-                    const double u = (x - 13) / plot.width();
-                    double envelope = .1 + .3 * std::exp(-std::pow((u - .25) * 6, 2)) + .28 * std::exp(-std::pow((u - .58) * 9, 2)) + .23 * std::exp(-std::pow((u - .8) * 13, 2));
-                    if (!file->metadata.demo)
-                        envelope = std::clamp((navigationCurve_[static_cast<std::size_t>(x - 13)] + 80) / 80.0, .02, 1.0);
-                    const double centerY = file->metadata.demo ? height() * .43 : height() * .5;
-                    const QPointF point(x, centerY + (direction ? 1 : -1) * envelope * height() * .42);
-                    if (x == 13) path.moveTo(point);
-                    else { path.lineTo(point); segments.emplace_back(previous, point); }
-                    previous = point;
-                }
+            navigationPaths_[0]={};navigationPaths_[1]={};navigationSegments_[0].clear();navigationSegments_[1].clear();
+            const auto count=file->metadata.demo?std::min(2048,std::max(2,width()-26)):static_cast<int>(navigationCurve_.size());
+            const auto maximum=count&&!file->metadata.demo?*std::max_element(navigationCurve_.begin(),navigationCurve_.end()):1.f;
+            QPointF previous;
+            for(int n=0;n<count;++n){
+                double u=(n+.5)/count;
+                if(!file->metadata.demo&&!file->navigationEnvelope.empty())u=static_cast<double>(file->navigationEnvelope[n].peakSample)/std::max<SampleIndex>(1,availableSamples(file->metadata));
+                const double amplitude=file->metadata.demo?.1+.3*std::exp(-std::pow((u-.25)*6,2))+.28*std::exp(-std::pow((u-.58)*9,2)):navigationCurve_[n]/std::max(1.f,maximum);
+                const QPointF point(plot.left()+u*plot.width(),height()*.875-amplitude*height()*.75);
+                if(n==0)navigationPaths_[0].moveTo(point);else{navigationPaths_[0].lineTo(point);navigationSegments_[0].emplace_back(previous,point);}previous=point;
             }
             committedGeneration_ = renderGeneration_;
         } else ++curveCacheHits_;
@@ -1238,7 +1252,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
     }
     painter.restore();
     if (!accelerated) drawCursors(painter);
-    if (findMark(*file, file->activeMarkId)) drawPill(painter, rect(), "信号标记已保存（当前文件）", false);
+
     if (creating_) drawPill(painter, rect(), "持续选择信号 · 拖动创建标记 · 右键菜单关闭 / Esc 退出", true);
     if ((!renderedPower_ || renderedPower_->key != requestedPowerKey_) || (renderedPower_ && !renderedPower_->error.isEmpty())) {
         const QString text = renderedPower_ && !renderedPower_->error.isEmpty() ? "IQ 图谱错误 · " + renderedPower_->error : "正在更新图谱…"; painter.setFont(canvasFont(10, true));
@@ -1350,7 +1364,7 @@ void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
         (gesture_->tool == Tool::PanTime || gesture_->tool == Tool::PanFrequency || gesture_->tool == Tool::Navigate)) beginPreview();
     if (kind_ == Kind::Main && plotRect().contains(point)) {
         const auto coordinate = fromPixel(point, file->view);
-        cursorSample_ = offsetSample(file->view.time.begin, coordinate.sample, file->metadata.sampleCount); cursorFrequency_ = coordinate.frequency;
+        cursorSample_ = offsetSample(file->view.time.begin, coordinate.sample, availableSamples(file->metadata)); cursorFrequency_ = coordinate.frequency;
         emit cursorChanged(cursorSample_, cursorFrequency_);
     }
     if (!gesture_) {
@@ -1375,7 +1389,7 @@ void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
         const auto bounds = fullRange(file->metadata); auto next = gesture.mark;
         if (gesture.edges == Move) {
             const auto span = gesture.mark.time.end - gesture.mark.time.begin;
-            next.time.begin = offsetSample(gesture.mark.time.begin, dt, file->metadata.sampleCount - span); next.time.end = next.time.begin + span;
+            next.time.begin = offsetSample(gesture.mark.time.begin, dt, availableSamples(file->metadata) - span); next.time.end = next.time.begin + span;
             const double width = gesture.mark.frequency.upperHz - gesture.mark.frequency.lowerHz;
             next.frequency.lowerHz = std::clamp(gesture.mark.frequency.lowerHz + df, bounds.frequency.lowerHz, bounds.frequency.upperHz - width); next.frequency.upperHz = next.frequency.lowerHz + width;
         } else {
@@ -1383,7 +1397,7 @@ void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
             const auto minTime = std::min<SampleIndex>(file->display.stftSize, gesture.mark.time.end - gesture.mark.time.begin);
             const double minFrequency = std::min(file->metadata.sampleRateHz / file->display.stftSize, gesture.mark.frequency.upperHz - gesture.mark.frequency.lowerHz);
             if (gesture.edges & (waterfall ? Top : Left)) next.time.begin = offsetSample(gesture.mark.time.begin, dt, gesture.mark.time.end - minTime);
-            if (gesture.edges & (waterfall ? Bottom : Right)) next.time.end = std::max(gesture.mark.time.begin + minTime, offsetSample(gesture.mark.time.end, dt, file->metadata.sampleCount));
+            if (gesture.edges & (waterfall ? Bottom : Right)) next.time.end = std::max(gesture.mark.time.begin + minTime, offsetSample(gesture.mark.time.end, dt, availableSamples(file->metadata)));
             if (gesture.edges & (waterfall ? Left : Bottom)) next.frequency.lowerHz = std::clamp(gesture.mark.frequency.lowerHz + df, bounds.frequency.lowerHz, gesture.mark.frequency.upperHz - minFrequency);
             if (gesture.edges & (waterfall ? Right : Top)) next.frequency.upperHz = std::clamp(gesture.mark.frequency.upperHz + df, gesture.mark.frequency.lowerHz + minFrequency, bounds.frequency.upperHz);
         }
@@ -1399,13 +1413,13 @@ void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
         if (gesture.tool == Tool::Navigate) {
             if (gesture.navigationInside) {
                 const auto span = base.time.end - base.time.begin;
-                const auto first = offsetSample(base.time.begin, dx / plot.width() * static_cast<long double>(file->metadata.sampleCount), file->metadata.sampleCount - span);
+                const auto first = offsetSample(base.time.begin, dx / plot.width() * static_cast<long double>(availableSamples(file->metadata)), availableSamples(file->metadata) - span);
                 next.time = {first, first + span}; session_.setView(next, false);
             }
         } else if (gesture.tool == Tool::PanTime) {
             const bool vertical = kind_ == Kind::Main && file->display.mainMode == MainMode::Waterfall;
             const auto span = base.time.end - base.time.begin;
-            const auto first = offsetSample(base.time.begin, -(vertical ? dy / plot.height() : dx / plot.width()) * static_cast<long double>(span), file->metadata.sampleCount - span);
+            const auto first = offsetSample(base.time.begin, -(vertical ? dy / plot.height() : dx / plot.width()) * static_cast<long double>(span), availableSamples(file->metadata) - span);
             next.time = {first, first + span}; session_.setView(next, false);
         } else {
             const bool vertical = kind_ == Kind::Main && file->display.mainMode == MainMode::TimeFrequency;
@@ -1430,10 +1444,10 @@ void PlotWidget::finishGesture(Qt::KeyboardModifiers modifiers) {
         const auto box = QRectF(gesture.start, gesture.current).normalized().intersected(plotRect());
         if (box.width() >= 8 && box.height() >= 8) {
             const auto first = fromPixel(box.topLeft(), base), last = fromPixel(box.bottomRight(), base);
-            ViewRange next{{offsetSample(base.time.begin, std::min(first.sample, last.sample), file->metadata.sampleCount), offsetSample(base.time.begin, std::max(first.sample, last.sample), file->metadata.sampleCount)},
+            ViewRange next{{offsetSample(base.time.begin, std::min(first.sample, last.sample), availableSamples(file->metadata)), offsetSample(base.time.begin, std::max(first.sample, last.sample), availableSamples(file->metadata))},
                            {std::min(first.frequency, last.frequency), std::max(first.frequency, last.frequency)}};
             if (gesture.tool == Tool::CreateMark) {
-                if (next.time.end - next.time.begin < std::min<SampleIndex>(file->display.stftSize, file->metadata.sampleCount) ||
+                if (next.time.end - next.time.begin < std::min<SampleIndex>(file->display.stftSize, availableSamples(file->metadata)) ||
                     next.frequency.upperHz - next.frequency.lowerHz < file->metadata.sampleRateHz / file->display.stftSize) emit statusMessage("标记范围小于当前 STFT 分辨率");
                 else { session_.addMark(next); emit statusMessage("已创建信号标记；持续选择信号仍开启"); }
             } else { session_.setView(next); emit statusMessage("矩形区域放大"); }
@@ -1444,7 +1458,7 @@ void PlotWidget::finishGesture(Qt::KeyboardModifiers modifiers) {
             const double low = chart_interaction::fractionAt(std::min(gesture.start.x(), gesture.current.x()), plot.left(), plot.width());
             const double high = chart_interaction::fractionAt(std::max(gesture.start.x(), gesture.current.x()), plot.left(), plot.width());
             auto next = base;
-            if (file->display.auxiliaryMode == AuxiliaryMode::Waveform) next.time = {offsetSample(base.time.begin, low * static_cast<long double>(base.time.end - base.time.begin), file->metadata.sampleCount), offsetSample(base.time.begin, high * static_cast<long double>(base.time.end - base.time.begin), file->metadata.sampleCount)};
+            if (file->display.auxiliaryMode == AuxiliaryMode::Waveform) next.time = {offsetSample(base.time.begin, low * static_cast<long double>(base.time.end - base.time.begin), availableSamples(file->metadata)), offsetSample(base.time.begin, high * static_cast<long double>(base.time.end - base.time.begin), availableSamples(file->metadata))};
             else {
                 const auto selected = chart_interaction::selectFractions(
                     {base.frequency.lowerHz, base.frequency.upperHz}, low, high);
@@ -1454,7 +1468,7 @@ void PlotWidget::finishGesture(Qt::KeyboardModifiers modifiers) {
         }
     } else if (gesture.tool == Tool::Navigate && !gesture.changed) {
         const auto full = fullRange(file->metadata); const auto coordinate = fromPixel(gesture.start, full);
-        const auto span = base.time.end - base.time.begin; const auto first = sampleIndex(coordinate.sample - span / 2, file->metadata.sampleCount - span);
+        const auto span = base.time.end - base.time.begin; const auto first = sampleIndex(coordinate.sample - span / 2, availableSamples(file->metadata) - span);
         auto next = base; next.time = {first, first + span}; session_.setView(next);
     } else if (gesture.changed) session_.commitViewChange(gesture.before);
     emit stateChanged(); repaintChart();
@@ -1471,7 +1485,7 @@ void PlotWidget::mouseReleaseEvent(QMouseEvent* event) {
 void PlotWidget::mouseDoubleClickEvent(QMouseEvent* event) { mousePressEvent(event); }
 void PlotWidget::wheelEvent(QWheelEvent* event) {
     auto* file = session_.activeFile(); const auto zone = zoneAt(event->position());
-    event->accept(); if (!file || gesture_ || (activeGesture && activeGesture->window() == window()) || zone == Zone::None) return;
+    event->accept(); if (!file || file->metadata.availability.status==LoadStatus::Loading || !availableSamples(file->metadata) || gesture_ || (activeGesture && activeGesture->window() == window()) || zone == Zone::None) return;
     const bool psd = kind_ == Kind::Auxiliary && file->display.auxiliaryMode == AuxiliaryMode::Psd;
     const bool waterfall = kind_ == Kind::Main && file->display.mainMode == MainMode::Waterfall;
     const WheelAxis axis = kind_ == Kind::Auxiliary && zone == Zone::YAxis ? WheelAxis::AuxiliaryY :
@@ -1499,9 +1513,9 @@ void PlotWidget::wheelEvent(QWheelEvent* event) {
             next.frequency = {range.first, range.last};
         } else {
             const auto width = next.time.end - next.time.begin;
-            const auto span = sampleIndex(static_cast<long double>(width) * factor, file->metadata.sampleCount);
-            const auto pivotOffset = kind_ == Kind::Navigation ? static_cast<long double>(x) * file->metadata.sampleCount - static_cast<long double>(next.time.begin) : (waterfall ? y : x) * static_cast<long double>(width);
-            const auto first = offsetSample(next.time.begin, pivotOffset * (1 - factor), file->metadata.sampleCount - span); next.time = {first, first + span};
+            const auto span = sampleIndex(static_cast<long double>(width) * factor, availableSamples(file->metadata));
+            const auto pivotOffset = kind_ == Kind::Navigation ? static_cast<long double>(width) * .5L : (waterfall ? y : x) * static_cast<long double>(width);
+            const auto first = offsetSample(next.time.begin, pivotOffset * (1 - factor), availableSamples(file->metadata) - span); next.time = {first, first + span};
         }
         session_.setView(next, false);
     }

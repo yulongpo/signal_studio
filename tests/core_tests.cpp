@@ -346,6 +346,9 @@ void testSerialization() {
     second->display.mainMode=MainMode::Waterfall;second->display.palette=Palette::CoolEditClassic;
     second->display.waveformMode=WaveformMode::Q;
     second->display.psdSize=8192;second->display.stftSize=4096;
+    second->display.psd.parameters.window=SpectralWindow::Kaiser;second->display.psd.parameters.kaiserBeta=9.1;
+    second->display.psd.statistic=SpectrumStatistic::Maximum;second->display.spectrogram.parameters.overlap=.75;
+    first.metadata.availability={largeIndex+10000,LoadStatus::Partial,0,"test-source-fingerprint",{}};
     second->display.dynamicRangeDb=60;second->display.referenceLevelDb=-20;
     second->metadata.effectiveBandwidthHz=4e6;
     second->view=clampRange(second->view,second->metadata,second->display.stftSize);
@@ -380,6 +383,8 @@ void testSerialization() {
           loaded.files[1].metadata.effectiveBandwidthHz == 4e6 &&
           loaded.files[1].display.psdFromSelection && loaded.files[1].channels.size() == 1,
           "Roundtrip must preserve active file and independent display/selection/channel state");
+    check(loaded.files[0].metadata.availability.status==LoadStatus::Partial&&availableSamples(loaded.files[0].metadata)==largeIndex+10000&&loaded.files[0].metadata.availability.fingerprint=="test-source-fingerprint","Version 3 must preserve the physical length and bounded prefix separately");
+    check(loaded.files[1].display.psd.parameters==second->display.psd.parameters&&loaded.files[1].display.psd.statistic==SpectrumStatistic::Maximum&&loaded.files[1].display.spectrogram.parameters.overlap==.75,"Independent PSD/STFT parameters must survive roundtrip");
     check(ProjectStore::save(comparisonPath, loaded, error) && readFile(comparisonPath) == sourceBytes,
           "Every serialized field must survive a canonical roundtrip");
 
@@ -430,7 +435,9 @@ void testSerialization() {
         writeFile(badPath, QJsonDocument(malformed).toJson());
         check(!ProjectStore::load(badPath, loaded, error) && !error.isEmpty(),
               "Malformed project must fail with an error");
-        check(ProjectStore::save(comparisonPath, loaded, error) && readFile(comparisonPath) == sourceBytes,
+        check(loaded.files[0].metadata.availability.status==LoadStatus::Partial&&availableSamples(loaded.files[0].metadata)==largeIndex+10000&&loaded.files[0].metadata.availability.fingerprint=="test-source-fingerprint","Version 3 must preserve the physical length and bounded prefix separately");
+    check(loaded.files[1].display.psd.parameters==second->display.psd.parameters&&loaded.files[1].display.psd.statistic==SpectrumStatistic::Maximum&&loaded.files[1].display.spectrogram.parameters.overlap==.75,"Independent PSD/STFT parameters must survive roundtrip");
+    check(ProjectStore::save(comparisonPath, loaded, error) && readFile(comparisonPath) == sourceBytes,
               "Failed import must preserve the complete previous project");
     };
     auto mutateFirst = [&](const std::function<void(QJsonObject&)>& mutate) {
@@ -446,7 +453,7 @@ void testSerialization() {
     root[QStringLiteral("schema")] = QStringLiteral("signal-studio-a1.4.3-prototype");
     reject(root);
     root = validRoot;
-    root[QStringLiteral("version")] = 3;
+    root[QStringLiteral("version")] = 4;
     reject(root);
     root = validRoot;
     root[QStringLiteral("activeFileId")] = QStringLiteral("missing");
@@ -471,6 +478,9 @@ void testSerialization() {
         metadata[QStringLiteral("sampleRateHz")] = 0;
         file[QStringLiteral("metadata")] = metadata;
     });
+    mutateFirst([](QJsonObject& file) {auto d=file["display"].toObject();auto p=d["psdSettings"].toObject();auto params=p["parameters"].toObject();params["overlap"]=1.0;p["parameters"]=params;d["psdSettings"]=p;file["display"]=d;});
+    mutateFirst([](QJsonObject& file) {auto d=file["display"].toObject();d.remove("spectrogramSettings");file["display"]=d;});
+    mutateFirst([](QJsonObject& file) {auto m=file["metadata"].toObject();m["availableSamples"]="18446744073709551616";file["metadata"]=m;});
     mutateFirst([](QJsonObject& file) {
         auto display = file[QStringLiteral("display")].toObject();
         display[QStringLiteral("mainMode")] = QStringLiteral("unknown");
@@ -519,6 +529,8 @@ void testSerialization() {
     });
     writeFile(badPath, QByteArray("{invalid json"));
     check(!ProjectStore::load(badPath, loaded, error), "Invalid JSON syntax must fail");
+    check(loaded.files[0].metadata.availability.status==LoadStatus::Partial&&availableSamples(loaded.files[0].metadata)==largeIndex+10000&&loaded.files[0].metadata.availability.fingerprint=="test-source-fingerprint","Version 3 must preserve the physical length and bounded prefix separately");
+    check(loaded.files[1].display.psd.parameters==second->display.psd.parameters&&loaded.files[1].display.psd.statistic==SpectrumStatistic::Maximum&&loaded.files[1].display.spectrogram.parameters.overlap==.75,"Independent PSD/STFT parameters must survive roundtrip");
     check(ProjectStore::save(comparisonPath, loaded, error) && readFile(comparisonPath) == sourceBytes,
           "Invalid JSON syntax must leave target unchanged");
     auto invalidState = loaded;

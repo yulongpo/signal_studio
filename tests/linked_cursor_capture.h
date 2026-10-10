@@ -48,6 +48,7 @@ int runLinkedCursorCapture(const QString& directory, const QString& largeIq) {
         }
         file.write(samples); file.close();
         QString error; require(window.addIqFile(fixture, &error), error);
+        require(waitUntil([&]{return window.session().activeFile()->metadata.availability.status!=LoadStatus::Loading;},30000),"Fixture loading did not complete");
         auto* source = window.session().activeFile();
         source->display.referenceLevelDb = -30; source->display.dynamicRangeDb = 100;
         source->display.grid = true; source->display.stftSize = 2048; source->display.psdSize = 4096;
@@ -117,12 +118,23 @@ int runLinkedCursorCapture(const QString& directory, const QString& largeIq) {
         report["narrowbandHoverBefore"] = nbBefore; report["narrowbandHoverAfter"] = nbAfter;
         for (int page = 1; page < 4; ++page) {
             workspace->activatePageForAcceptance(page); require(readyNarrow(), "Narrowband page did not settle");
+            if (page < 3) {
+                auto* heatChart=window.findChild<QWidget*>(page==1 ? "narrowbandModulationStftChart" : "recognitionStftPanelChart");
+                auto* surface=heatChart->findChild<AcceleratedSurface*>();
+                const QRectF expected(66,14,heatChart->width()-82,heatChart->height()-55);
+                require(surface&&surface->heatmapTargetRect()==expected,"Page heatmap did not follow the final chart geometry");
+                const auto image=heatChart->grab().toImage();const double dpr=image.devicePixelRatio();
+                const QPoint probe(qRound((expected.left()+expected.width()*.93)*dpr),qRound((expected.top()+expected.height()*.93)*dpr));
+                require(image.pixelColor(probe)!=QColor("#0a1728"),"GPU heatmap left the resized chart background uncovered");
+            }
             save("narrowband-page-" + QString::number(page));
         }
+        report["resizedPageHeatmapsVerified"]=true;
         if (!largeIq.isEmpty()) {
             require(QFileInfo::exists(largeIq), "Requested large IQ fixture is missing");
             window.session().newProject(); window.refresh();
-            require(window.addIqFile(largeIq, &error), error); require(readyWide(), "Large IQ wideband did not settle");
+            require(window.addIqFile(largeIq, &error), error);
+            require(waitUntil([&]{return window.session().activeFile()->metadata.availability.status!=LoadStatus::Loading;},120000),"Large IQ loading did not complete"); require(readyWide(), "Large IQ wideband did not settle");
             source = window.session().activeFile();
             const auto begin = std::min<SampleIndex>(source->metadata.sampleCount / 8, 128000000);
             const auto span = static_cast<SampleIndex>(source->metadata.sampleRateHz * .025);

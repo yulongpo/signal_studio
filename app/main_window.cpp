@@ -1,3 +1,9 @@
+#include "infrastructure/spectral_settings_json.h"
+#include <QJsonDocument>
+#include "infrastructure/source_loader.h"
+#include "ui/spectral_settings_widget.h"
+#include "ui/custom_combo.h"
+#include "ui/checkbox_style.h"
 #include "app/main_window.h"
 #include "infrastructure/project_store.h"
 #include "infrastructure/int16_iq_file.h"
@@ -206,7 +212,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         QComboBox,QDoubleSpinBox,QLineEdit { border:1px solid #314963; background:#0e1a2a; border-radius:4px; padding:5px 7px; font-size:11px; }
         QComboBox:disabled,QDoubleSpinBox:disabled { color:#627a91; }
         QComboBox QAbstractItemView { background:#17263a; selection-background-color:#235476; }
-        QCheckBox::indicator { width:14px; height:14px; }
         QTreeWidget { border:0; background:#101d2f; outline:0; }
         QTreeWidget::item { border-radius:4px; padding:0 3px; color:#b2cbe4; }
         QTreeWidget::item:hover { background:#285473; color:#f0fcff; }
@@ -240,10 +245,12 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         QStatusBar { background:#0b1726; border-top:1px solid #203851; color:#91a9c0; font:11px Consolas; }
         QStatusBar::item { border:0; }
         QProgressBar { background:#0b1625; border:0; height:8px; } QProgressBar::chunk { background:#36b7dc; }
-    )");
+    )" + signalstudio::checkboxStyleSheet());
     rightSidebarSaveTimer_ = new QTimer(this); rightSidebarSaveTimer_->setSingleShot(true); rightSidebarSaveTimer_->setInterval(400);
     connect(rightSidebarSaveTimer_, &QTimer::timeout, this, &MainWindow::saveRightSidebarSettings);
     buildMenus(); buildWorkspace(); restoreUiState();
+    sourceLoadTimer_ = new QTimer(this); sourceLoadTimer_->setInterval(80);
+    connect(sourceLoadTimer_, &QTimer::timeout, this, &MainWindow::pollSourceLoads); sourceLoadTimer_->start();
     connect(qApp, &QApplication::applicationStateChanged, this, [this](Qt::ApplicationState state) {
         if (state != Qt::ApplicationActive) cancelInteractions();
     });
@@ -251,6 +258,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     log("A1.4.3 工作区已就绪；可导入交替 int16 IQ 文件并生成真实图谱");
 }
 MainWindow::~MainWindow() {
+    if(sourceLoadTimer_)sourceLoadTimer_->stop(); sourceLoads_.clear();
     saveUiState();
     if (rightSidebarSaveTimer_) rightSidebarSaveTimer_->stop();
     saveRightSidebarSettings();
@@ -431,7 +439,7 @@ void MainWindow::buildWorkspace() {
         }
             if (index == 2) { specMode_ = label({}, "specMode"); specMode_->setStyleSheet("font-size:11px;color:#76c6e8;border:1px solid #2b556a;padding:3px 8px;border-radius:3px;"); header->addWidget(specMode_); }
         header->addStretch();
-        if (index == 0) { navStatus_ = label({}, "navStatus", "tag"); header->addWidget(navStatus_); }
+        if (index == 0) { navStatus_ = label({}, "navStatus", "tag"); header->addWidget(navStatus_); stopSourceLoad_=push("停止", "stopSourceLoad",header); stopSourceLoad_->hide(); connect(stopSourceLoad_, &QPushButton::clicked,this,[this]{if(const auto* file=session_.activeFile()){const auto job=sourceLoads_.find(file->metadata.id);if(job!=sourceLoads_.end())job->second.loader->stop();}}); }
         if (index == 1) { auxStatus_ = label({}, "auxStatus", "tag"); header->addWidget(auxStatus_); }
         if (index == 2) {
             specAxis_ = label({}, "specAxisLabel", "hint"); specAxis_->setMinimumWidth(0); specAxis_->setMaximumWidth(150); header->addWidget(specAxis_); header->addWidget(palette_); rangeTag_ = label({}, "rangeTag", "tag"); rangeTag_->setMinimumWidth(0); header->addWidget(rangeTag_);
@@ -511,12 +519,15 @@ void MainWindow::buildWorkspace() {
     });
     auto psd = section(propertyLayout_, "psdSection", "辅助图设置", true); psdSection_ = psd.widget;
     waveformMode_ = combo("waveformMode", {"I 分量（ADC 计数）", "Q 分量（ADC 计数）", "幅度（RMS，ADC 计数）", "幅度包络（ADC 计数）"}); row(psd.form, "时域波形", waveformMode_);
-    psd_ = combo("psdFft", {"1024", "2048", "4096", "8192"}); psdScope_ = combo("psdScope", {"当前可见时间窗", "当前活动信号标记"}); row(psd.form, "PSD FFT 点数", psd_); row(psd.form, "统计时间范围", psdScope_);
+    QStringList fftSizes; for(int order=5;order<=16;++order)fftSizes << QString::number(1<<order);
+    psd_ = combo("psdFft", fftSizes); psdScope_ = combo("psdScope", {"当前可见时间窗", "当前活动信号标记", "整个文件 / 通道"}); row(psd.form, "PSD FFT 点数", psd_); row(psd.form, "统计时间范围", psdScope_);
+    psdParameters_=new SpectralSettingsWidget(true); psd.form->addRow(psdParameters_);
     auto spec = section(propertyLayout_, "specSection", "时频图设置", true);
-    QStringList stftSizes; for (int order = 8; order <= 16; ++order) stftSizes << QString::number(1 << order);
+    QStringList stftSizes; for (int order = 5; order <= 16; ++order) stftSizes << QString::number(1 << order);
     stft_ = combo("stftFft", stftSizes); propertyPalette_ = combo("colormap", {"Turbo", "Viridis", "Gray", "Plasma", "Inferno", "Magma", "Cividis", "CoolEdit Classic"});
     dynamic_ = combo("dynamic", {"20 dB", "40 dB", "60 dB", "80 dB", "100 dB", "120 dB"});
     reference_ = combo("reference", {"0 dBFS/Hz", "-20 dBFS/Hz", "-40 dBFS/Hz", "-60 dBFS/Hz", "-80 dBFS/Hz", "-100 dBFS/Hz"});
+    stftParameters_=new SpectralSettingsWidget(false); spec.form->addRow(stftParameters_);
     dynamic_->setEditable(true); reference_->setEditable(true);
     dynamic_->setInsertPolicy(QComboBox::NoInsert); reference_->setInsertPolicy(QComboBox::NoInsert);
     for (auto* control : {dynamic_, reference_}) {
@@ -626,8 +637,29 @@ void MainWindow::buildWorkspace() {
         connect(plot, &PlotWidget::markRenameRequested, this, &MainWindow::renameMark);
         connect(plot, &PlotWidget::markDeleteRequested, this, &MainWindow::deleteMarks);
     }
+    for(auto* control:{dynamic_,reference_}) {
+        restoreCustomValue(control,control==dynamic_?" dB":" dBFS/Hz");
+        connect(control->lineEdit(), &QLineEdit::textEdited,this,[this,control]{
+            QString text=control->currentText();text.remove(QRegularExpression("\\s*dB(?:FS(?:/Hz)?)?\\s*$"));bool ok=false;double value=text.toDouble(&ok);
+            PowerDisplayRange range{session_.activeFile()?session_.activeFile()->display.referenceLevelDb:0,session_.activeFile()?session_.activeFile()->display.dynamicRangeDb:80};
+            if(control==dynamic_)range.dynamicRangeDb=value;else range.referenceLevelDb=value;
+            if(ok&&range.valid())rememberCustomValue(control,value,control==dynamic_?" dB":" dBFS/Hz");
+        });
+    }
+    const auto spectralEdit=[this](bool psd) {
+        if(refreshing_)return;auto* file=session_.activeFile();if(!file)return;
+        auto* control=psd?psdParameters_:stftParameters_;
+        if(session_.project().narrowbandWorkspaceOpen&&session_.activeChannel()) {
+            auto* channel=session_.activeChannel();if(psd){channel->psd.parameters=control->parameters();channel->psd.statistic=control->statistic();}
+            else channel->spectrogram.parameters=control->parameters();
+        } else {if(psd){file->display.psd.parameters=control->parameters();file->display.psd.statistic=control->statistic();}
+            else file->display.spectrogram.parameters=control->parameters();propagateGlobalRightSidebarSettings();scheduleRightSidebarSettingsSave();}
+        refresh();
+    };
+    connect(psdParameters_,&SpectralSettingsWidget::edited,this,[spectralEdit]{spectralEdit(true);});
+    connect(stftParameters_,&SpectralSettingsWidget::edited,this,[spectralEdit]{spectralEdit(false);});
     auto change = [this] {
-        if (refreshing_) return; auto* f = session_.activeFile(); if (!f) return;
+        if (refreshing_) return; auto* f = session_.activeFile(); if (!f || f->metadata.availability.status==LoadStatus::Loading) return;
         const bool narrow = session_.project().narrowbandWorkspaceOpen && session_.activeChannel();
         if (narrow && sender() == freqMode_) {
             if (auto* channel = session_.activeChannel()) channel->absoluteFrequencyLabels = freqMode_->currentIndex() == 0;
@@ -637,6 +669,7 @@ void MainWindow::buildWorkspace() {
             if (auto* grid = narrowband_->findChild<QCheckBox*>("narrowbandGrid")) grid->setChecked(grid_->isChecked());
             refresh(); return;
         }
+        if (narrow && sender()==psdScope_) {session_.activeChannel()->psd.scope=static_cast<PsdScope>(psdScope_->currentIndex());refresh();return;}
         if (narrow && (sender() == stft_ || sender() == psd_)) {
             const auto points = (sender() == stft_ ? stft_ : psd_)->currentText().toInt();
             const bool stftChanged = sender() == stft_;
@@ -654,8 +687,9 @@ void MainWindow::buildWorkspace() {
         if (!narrow) { display.absoluteFrequency = freqMode_->currentIndex() == 0; display.grid = grid_->isChecked(); }
         display.colorScale = colorScale_->isChecked();
         if (!narrow) { display.psdSize = psd_->currentText().toInt(); display.stftSize = stft_->currentText().toInt(); }
-        if (sender() == psdScope_) sharedPsdFromSelectionPreference_ = psdScope_->currentIndex() == 1;
+        if (sender() == psdScope_) {sharedPsdFromSelectionPreference_ = psdScope_->currentIndex() == 1; display.psd.scope=static_cast<PsdScope>(psdScope_->currentIndex());}
         display.psdFromSelection = sharedPsdFromSelectionPreference_ && findMark(*f, f->activeMarkId);
+        if(sharedPsdFromSelectionPreference_&&!display.psdFromSelection)display.psd.scope=PsdScope::Visible;
         if (sharedPsdFromSelectionPreference_ && !display.psdFromSelection) log("请先选择当前文件的信号标记；PSD 统计来源仍为当前可见时间窗");
         cancelInteractions(false); f = session_.activeFile(); if (!f || f->metadata.id != fileId) return;
         // Use restored ranges after cancellation; controls above may have synchronously refreshed.
@@ -717,12 +751,12 @@ void MainWindow::rebuildTree() {
         auto* all = push("全选", "treeSelectAll", actionRow); auto* remove = push("删除所选", "treeDeleteMarks", actionRow); all->setProperty("uiRole", "outline"); remove->setProperty("uiRole", "outline"); all->setEnabled(!file.marks.empty()); remove->setEnabled(!file.selectedMarkIds.empty()); actionRow->addStretch(); tree_->setItemWidget(actions, 0, controls);
         connect(all, &QPushButton::clicked, this, &MainWindow::selectAllMarks); connect(remove, &QPushButton::clicked, this, &MainWindow::deleteMarks);
         for (const auto& mark : file.marks) {
-            auto* node = new QTreeWidgetItem(marks, {"▱ " + q(mark.name)}); node->setData(0, Qt::UserRole, "mark"); node->setData(0, Qt::UserRole + 1, q(mark.id)); node->setSizeHint(0, QSize(0, 31)); node->setToolTip(0, "单击选择 · Ctrl 多选 · Shift 连选 · 双击定位");
+            auto* node = new QTreeWidgetItem(marks, {"▱ " + q(mark.name)+(mark.range.time.end>availableSamples(file.metadata)?" · 来源未读入":"")}); node->setData(0, Qt::UserRole, "mark"); node->setData(0, Qt::UserRole + 1, q(mark.id)); node->setSizeHint(0, QSize(0, 31)); node->setToolTip(0, "单击选择 · Ctrl 多选 · Shift 连选 · 双击定位");
             node->setSelected(std::find(file.selectedMarkIds.begin(), file.selectedMarkIds.end(), mark.id) != file.selectedMarkIds.end()); if (mark.id == file.activeMarkId) tree_->setCurrentItem(node, 0, QItemSelectionModel::NoUpdate);
         }
         auto* channels = new QTreeWidgetItem(item, {QString("窄带通道 (%1)").arg(file.channels.size())}); channels->setData(0, Qt::UserRole, "channels"); channels->setFlags(Qt::ItemIsEnabled); channels->setExpanded(true); channels->setSizeHint(0, QSize(0, 30)); channels->setForeground(0, QColor("#93b9d6"));
         for (const auto& channel : file.channels) {
-            auto* node = new QTreeWidgetItem(channels, {"◇ " + q(channel.name) + " · " + coordinate(channel.centerFrequencyHz, channel.bandwidthHz, false)});
+            auto* node = new QTreeWidgetItem(channels, {"◇ " + q(channel.name) + " · " + coordinate(channel.centerFrequencyHz, channel.bandwidthHz, false)+(channel.sourceTime.end>availableSamples(file.metadata)?" · 来源未读入":"")});
             node->setData(0, Qt::UserRole, "channel"); node->setData(0, Qt::UserRole + 1, q(channel.id));
             node->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable); node->setSizeHint(0, QSize(0, 31));
             node->setToolTip(0, channel.processingState == ChannelProcessingState::Ready ? "打开真实窄带分析工作区" : "通道配置待确认");
@@ -840,10 +874,12 @@ void MainWindow::applyGlobalRightSidebarSettings(const DisplaySettings& fallback
     if (waveformMode >= 0 && waveformMode <= 3) shared.waveformMode = static_cast<WaveformMode>(waveformMode);
     const int palette = integer(QStringLiteral("palette"), static_cast<int>(shared.palette));
     if (palette >= 0 && palette <= static_cast<int>(Palette::CoolEditClassic)) shared.palette = static_cast<Palette>(palette);
+    try {if(values.contains("psdSettings"))shared.psd=decodePsdSettings(QJsonDocument::fromJson(values.value("psdSettings").toByteArray()).object());
+        if(values.contains("spectrogramSettings"))shared.spectrogram.parameters=decodeSpectralParameters(QJsonDocument::fromJson(values.value("spectrogramSettings").toByteArray()).object());}catch(const std::exception&){ }
     const int stftSize = integer(QStringLiteral("stftSize"), shared.stftSize);
-    if (supportedSize(stftSize, 256, 65536)) shared.stftSize = stftSize;
+    if (supportedSize(stftSize, 32, 65536)) shared.stftSize = stftSize;
     const int psdSize = integer(QStringLiteral("psdSize"), shared.psdSize);
-    if (supportedSize(psdSize, 1024, 8192)) shared.psdSize = psdSize;
+    if (supportedSize(psdSize, 32, 65536)) shared.psdSize = psdSize;
     const double dynamicRange = real(QStringLiteral("dynamicRangeDb"), shared.dynamicRangeDb);
     if (dynamicRange > 0 && dynamicRange <= 10000) shared.dynamicRangeDb = dynamicRange;
     const double referenceLevel = real(QStringLiteral("referenceLevelDb"), shared.referenceLevelDb);
@@ -869,6 +905,7 @@ void MainWindow::applyGlobalRightSidebarSettings(const DisplaySettings& fallback
         display.auxiliaryMode = shared.auxiliaryMode;
         display.waveformMode = shared.waveformMode;
         display.palette = shared.palette;
+        display.psd=shared.psd; display.spectrogram=shared.spectrogram;
         display.stftSize = shared.stftSize;
         display.psdSize = shared.psdSize;
         display.dynamicRangeDb = shared.dynamicRangeDb;
@@ -884,7 +921,7 @@ void MainWindow::applyGlobalRightSidebarSettings(const DisplaySettings& fallback
         display.auxiliaryMin = shared.auxiliaryMin;
         display.auxiliaryMax = shared.auxiliaryMax;
         display.psdFromSelection = sharedPsdFromSelectionPreference_ && findMark(file, file.activeMarkId);
-        file.view = clampRange(file.view, file.metadata, display.stftSize, display.psdSize);
+        if(file.metadata.availability.status!=LoadStatus::Loading)file.view = clampRange(file.view, file.metadata, display.stftSize, display.psdSize);
     }
 }
 
@@ -900,6 +937,7 @@ void MainWindow::propagateGlobalRightSidebarSettings() {
         display.auxiliaryMode = shared.auxiliaryMode;
         display.waveformMode = shared.waveformMode;
         display.palette = shared.palette;
+        display.psd=shared.psd; display.spectrogram=shared.spectrogram;
         display.stftSize = shared.stftSize;
         display.psdSize = shared.psdSize;
         display.dynamicRangeDb = shared.dynamicRangeDb;
@@ -915,7 +953,7 @@ void MainWindow::propagateGlobalRightSidebarSettings() {
         display.auxiliaryMin = shared.auxiliaryMin;
         display.auxiliaryMax = shared.auxiliaryMax;
         display.psdFromSelection = sharedPsdFromSelectionPreference_ && findMark(file, file.activeMarkId);
-        file.view = clampRange(file.view, file.metadata, display.stftSize, display.psdSize);
+        if(file.metadata.availability.status!=LoadStatus::Loading)file.view = clampRange(file.view, file.metadata, display.stftSize, display.psdSize);
     }
 }
 
@@ -946,6 +984,8 @@ void MainWindow::saveRightSidebarSettings() {
             {QStringLiteral("palette"), static_cast<int>(display.palette)},
             {QStringLiteral("stftSize"), display.stftSize},
             {QStringLiteral("psdSize"), display.psdSize},
+            {QStringLiteral("psdSettings"),QJsonDocument(encodePsdSettings(display.psd)).toJson(QJsonDocument::Compact)},
+            {QStringLiteral("spectrogramSettings"),QJsonDocument(encodeSpectralParameters(display.spectrogram.parameters)).toJson(QJsonDocument::Compact)},
             {QStringLiteral("dynamicRangeDb"), display.dynamicRangeDb},
             {QStringLiteral("referenceLevelDb"), display.referenceLevelDb},
             {QStringLiteral("absoluteFrequency"), display.absoluteFrequency},
@@ -1011,11 +1051,11 @@ void MainWindow::syncTreeState() {
         marks->setText(0, QString("信号区域 (%1) · 已选 %2").arg(file.marks.size()).arg(file.selectedMarkIds.size()));
         if (auto* controls = tree_->itemWidget(marks->child(0), 0)) { controls->findChild<QPushButton*>("treeSelectAll")->setEnabled(!file.marks.empty()); controls->findChild<QPushButton*>("treeDeleteMarks")->setEnabled(!file.selectedMarkIds.empty()); }
         for (std::size_t i = 0; i < file.marks.size(); ++i) {
-            const auto& mark = file.marks[i]; auto* node = marks->child(static_cast<int>(i) + 1); node->setText(0, "▱ " + q(mark.name));
+            const auto& mark = file.marks[i]; auto* node = marks->child(static_cast<int>(i) + 1); node->setText(0, "▱ " + q(mark.name)+(mark.range.time.end>availableSamples(file.metadata)?" · 来源未读入":""));
             const bool selected = std::find(file.selectedMarkIds.begin(), file.selectedMarkIds.end(), mark.id) != file.selectedMarkIds.end(); if (node->isSelected() != selected) node->setSelected(selected);
         }
         channels->setText(0, QString("窄带通道 (%1)").arg(file.channels.size()));
-        for (std::size_t i = 0; i < file.channels.size(); ++i) { const auto& channel = file.channels[i]; channels->child(static_cast<int>(i))->setText(0, "◇ " + q(channel.name) + " · " + coordinate(channel.centerFrequencyHz, channel.bandwidthHz, false)); }
+        for (std::size_t i = 0; i < file.channels.size(); ++i) { const auto& channel = file.channels[i]; channels->child(static_cast<int>(i))->setText(0, "◇ " + q(channel.name) + " · " + coordinate(channel.centerFrequencyHz, channel.bandwidthHz, false)+(channel.sourceTime.end>availableSamples(file.metadata)?" · 来源未读入":"")); }
     }
 }
 
@@ -1042,14 +1082,9 @@ void MainWindow::refresh() {
     if (auto* saveButton = findChild<QPushButton*>("projectSave")) saveButton->setEnabled(saveAction_->isEnabled());
     if (file) {
         const auto& display = file->display; mainMode_->setCurrentIndex(static_cast<int>(display.mainMode)); auxMode_->setCurrentIndex(static_cast<int>(display.auxiliaryMode)); palette_->setCurrentIndex(static_cast<int>(display.palette)); propertyPalette_->setCurrentIndex(static_cast<int>(display.palette));
-        dataSourceStatus_->setText(file->metadata.demo ? "演示数据 · 未运行 DSP" : "实际 IQ · FFT 已启用");
+        dataSourceStatus_->setText(file->metadata.demo ? "演示数据 · 未运行 DSP" : file->metadata.availability.status==LoadStatus::Loading ? "实际 IQ · 正在读入" : file->metadata.availability.status==LoadStatus::Failed ? "来源异常 · 分析不可用" : "实际 IQ · FFT 已启用");
         dataSourceStatus_->setToolTip(file->metadata.demo ? "当前文件使用原型演示数据" : "int16 IQ 数据来自磁盘文件；波形、PSD、时频图均使用真实采样");
-        for (const auto& item : {std::pair<QComboBox*, double>{dynamic_, display.dynamicRangeDb}, {reference_, display.referenceLevelDb}}) {
-            if (item.first->lineEdit()->hasFocus()) continue;
-            int index = item.first->findData(item.second);
-            if (index < 0) { item.first->addItem(number(item.second) + (item.first == dynamic_ ? " dB" : " dBFS/Hz"), item.second); index = item.first->count() - 1; }
-            item.first->setCurrentIndex(index);
-        }
+        displayComboValue(dynamic_,display.dynamicRangeDb," dB");displayComboValue(reference_,display.referenceLevelDb," dBFS/Hz");
         waveformMode_->setCurrentIndex(static_cast<int>(display.waveformMode));
         effectiveBandwidth_->setRange(file->metadata.sampleRateHz / 65536.0 / 1e6, file->metadata.sampleRateHz / 1e6);
         effectiveBandwidth_->setValue(file->metadata.effectiveBandwidthHz / 1e6);
@@ -1057,16 +1092,23 @@ void MainWindow::refresh() {
         freqMode_->setCurrentIndex((channel ? channel->absoluteFrequencyLabels : display.absoluteFrequency) ? 0 : 1);
         const auto* narrowGrid = narrowOpen ? narrowband_->findChild<QCheckBox*>("narrowbandGrid") : nullptr;
         grid_->setChecked(narrowGrid ? narrowGrid->isChecked() : display.grid);
-        colorScale_->setChecked(display.colorScale); psdScope_->setCurrentIndex(display.psdFromSelection ? 1 : 0);
-        psd_->setCurrentText(QString::number(channel ? channel->psdFftSize : display.psdSize));
-        stft_->setCurrentText(QString::number(channel ? channel->stftFftSize : display.stftSize));
+        colorScale_->setChecked(display.colorScale); psdScope_->setCurrentIndex(static_cast<int>(channel?channel->psd.scope:display.psd.scope));
+        psdParameters_->setParameters(channel?channel->psd.parameters:display.psd.parameters,channel?channel->psd.statistic:display.psd.statistic);
+        stftParameters_->setParameters(channel?channel->spectrogram.parameters:display.spectrogram.parameters);
+        const auto showFft=[](QComboBox* combo,int n){
+            if(combo->property("legacyFft").toBool()){combo->removeItem(0);combo->setProperty("legacyFft",false);}
+            const auto text=QString::number(n);if(combo->findText(text)<0){combo->insertItem(0,text,n);combo->setProperty("legacyFft",true);combo->setItemData(0,"旧 FFT 点数保留；请选择 32–65536 中的新档位后分析",Qt::ToolTipRole);}combo->setCurrentText(text);
+        };
+        showFft(psd_,channel?channel->psdFftSize:display.psdSize);showFft(stft_,channel?channel->stftFftSize:display.stftSize);
         const bool framePsd = session_.linkedCursor(channel ? channel->id : file->metadata.id).framePsd;
-        psd_->setEnabled(!framePsd); psdScope_->setEnabled(!framePsd);
+        psd_->setEnabled(!framePsd); psdScope_->setEnabled(!framePsd); psdParameters_->setEnabled(!framePsd);
         psd_->setToolTip(framePsd ? "驻留帧谱有效点数随 STFT；平均谱设置保留" : "当前可见频段内的分析点数");
         for (int i = 0; i < 2; ++i) { auxiliaryButtons_[i]->setChecked(i == auxMode_->currentIndex()); mainButtons_[i]->setChecked(i == mainMode_->currentIndex()); }
         const double duration = static_cast<double>(file->metadata.sampleCount) / file->metadata.sampleRateHz;
         scope_->setText(QString("%1 · Fₛ %2 MS/s · fc %3 MHz").arg(q(file->metadata.name), number(file->metadata.sampleRateHz / 1e6), number(file->metadata.centerFrequencyHz / 1e6)));
-        navStatus_->setText("0–" + number(duration) + " s"); auxStatus_->setText(auxiliary_->statusText()); rangeTag_->setText("动态 " + number(display.dynamicRangeDb) + " dB");
+        const bool loading=file->metadata.availability.status==LoadStatus::Loading; stopSourceLoad_->setVisible(loading);
+        psdSection_->setEnabled(!loading);findChild<QWidget*>("specSection")->setEnabled(!loading);effectiveBandwidth_->setEnabled(!loading);
+        navStatus_->setText(loading?QString("已读 %1 / %2 样本").arg(file->metadata.availability.availableSamples).arg(file->metadata.sampleCount):"0–"+number(static_cast<double>(availableSamples(file->metadata))/file->metadata.sampleRateHz)+" s"); auxStatus_->setText(auxiliary_->statusText()); rangeTag_->setText("动态 " + number(display.dynamicRangeDb) + " dB");
         const bool waterfall = display.mainMode == MainMode::Waterfall;
         specMode_->setText("正在框选信号 · 右键或 Esc 退出"); specMode_->setVisible(main_->isCreating() && width() > 990);
         specAxis_->setText(waterfall ? "X 频率 · Y 时间↓" : "X 时间 · Y 频率");
@@ -1086,7 +1128,7 @@ void MainWindow::refresh() {
         if (cursorFileId_ != q(file->metadata.id)) { cursorFileId_ = q(file->metadata.id); cursorSample_ = file->view.time.begin + (file->view.time.end - file->view.time.begin) / 2; cursorFrequency_ = file->metadata.centerFrequencyHz; }
         updateCursor(cursorSample_, cursorFrequency_);
     } else {
-        scope_->setText("未添加 IQ 文件"); navStatus_->setText("—"); auxStatus_->setText("—");
+        stopSourceLoad_->hide(); scope_->setText("未添加 IQ 文件"); navStatus_->setText("—"); auxStatus_->setText("—");
         for (auto* value : fileValues_) value->setText("—"); for (auto* value : viewValues_) value->setText("—"); for (auto* value : markValues_) value->setText("—");
         viewData_->clear(); cursorData_->clear(); selectionData_->setText("无信号标记"); statusTime_->clear(); statusFrequency_->clear(); statusFile_->clear(); cursorFileId_.clear();
     }
@@ -1457,6 +1499,7 @@ void MainWindow::updatePowerFit() {
 void MainWindow::autoFitPower() {
     updatePowerFit(); if (!autoPowerFit_->isEnabled()) return;
     cancelInteractions(false); session_.setPowerDisplayRange(cachedPowerFit_.range);
+    rememberCustomValue(dynamic_,cachedPowerFit_.range.dynamicRangeDb," dB");rememberCustomValue(reference_,cachedPowerFit_.range.referenceLevelDb," dBFS/Hz");
     normalizePowerInput(dynamic_); normalizePowerInput(reference_);
     scheduleRightSidebarSettingsSave(); refresh();
     log(cachedPowerFit_.limited ? "自动适配已应用，达到参数合法边界" : "已按当前可见热图及 PSD 自动适配电平（上下各 3 dB 余量）");
@@ -1643,7 +1686,7 @@ void MainWindow::showAddFileDialog() {
     cancelInteractions(false); auto* dialog = new QDialog(this); dialog->setObjectName("addFileDialog"); dialog->setWindowTitle("向工程添加 int16 IQ 文件"); dialog->setAttribute(Qt::WA_DeleteOnClose); dialog->setModal(true); dialog->setFixedWidth(470);
     auto* layout = new QVBoxLayout(dialog); layout->setContentsMargins(18, 18, 18, 18); layout->setSpacing(12);
     auto* heading = label("向工程添加 RAW IQ 文件"); heading->setStyleSheet("font-size:16px;font-weight:600;"); layout->addWidget(heading);
-    auto* note = label("格式：小端 int16，I/Q 交替；FS、FC、BW 从文件名读取。只映射文件，不将整份数据载入内存。", {}, "help"); note->setWordWrap(true); layout->addWidget(note);
+    auto* note = label("格式：小端 int16，I/Q 交替；FS、FC、BW 从文件名读取。顺序读入并计算导航包络；可在导航标题栏停止，保留已读部分。", {}, "help"); note->setWordWrap(true); layout->addWidget(note);
     auto* form = new QFormLayout; form->setSpacing(12); auto* fileField = new QWidget; auto* fileRow = new QHBoxLayout(fileField); fileRow->setContentsMargins(0, 0, 0, 0); fileRow->setSpacing(6);
     auto* choose = push("选择文件…", "chooseIqFile", fileRow); choose->setProperty("uiRole", "outline"); auto* fileName = label("未选择文件", "fileInput"); fileName->setMinimumWidth(0); fileRow->addWidget(fileName, 1); row(form, "选择文件", fileField);
     auto* fs = new QDoubleSpinBox; fs->setObjectName("loadFs"); fs->setRange(1, 1e12); fs->setDecimals(0); fs->setValue(40000000); fs->setSingleStep(1000000);
@@ -1694,7 +1737,7 @@ bool MainWindow::addIqFile(const QString& path, QString* error) {
     if (imported && imported->metadata.id == id) restoreRightSidebarSettings(*imported);
     applyGlobalRightSidebarSettings(hasActiveBeforeImport ? priorSettings :
         (imported && imported->metadata.id == id ? imported->display : DisplaySettings{}));
-    cancelInteractions(false); selectionAnchor_.clear(); refresh(); log("已加入真实 int16 IQ 文件：" + name);
+    cancelInteractions(false); selectionAnchor_.clear(); if(imported)startSourceLoad(*imported,imported->metadata.sampleCount); refresh(); log("正在读入真实 int16 IQ 文件：" + name);
     scheduleRightSidebarSettingsSave();
     if (error) error->clear();
     return true;
@@ -1709,6 +1752,7 @@ bool MainWindow::openProject(const QString& path) {
     const DisplaySettings fallbackSettings = current ? current->display :
         (candidate.files.empty() ? DisplaySettings{} : candidate.files.front().display);
     if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_); session_.replaceProject(std::move(candidate));
+    for(auto& file:session_.project().files)if(!file.metadata.demo)startSourceLoad(file,availableSamples(file.metadata));
     applyGlobalRightSidebarSettings(fallbackSettings);
     projectPath_ = QFileInfo(projectFile).absoluteFilePath(); rememberProject(projectPath_); selectionAnchor_.clear(); refresh(); scheduleRightSidebarSettingsSave(); log("已打开工程：" + projectPath_); return true;
 }
@@ -1717,6 +1761,39 @@ bool MainWindow::saveProject(const QString& path) {
     const QString projectFile = requested.isDir() ? QDir(path).filePath("project.json") : path;
     cancelInteractions(false); QString error; if (!ProjectStore::save(projectFile, session_.project(), error)) { QMessageBox::critical(this, "保存失败", error); return false; }
     projectPath_ = QFileInfo(projectFile).absoluteFilePath(); rememberProject(projectPath_); refresh(); log("工程已保存：" + projectPath_); return true;
+}
+void MainWindow::startSourceLoad(FileState& file, SampleIndex target) {
+    const auto path=QString::fromStdString(file.metadata.path);
+    const auto fingerprint=iqSourceFingerprint(path);
+    if(!file.metadata.availability.fingerprint.empty()&&file.metadata.availability.fingerprint!=fingerprint.toStdString()) {
+        file.metadata.availability.status=LoadStatus::Failed;file.metadata.availability.availableSamples=0;
+        file.metadata.availability.error="源文件指纹已改变，未恢复原前缀";return;
+    }
+    file.metadata.availability.status=LoadStatus::Loading;file.metadata.availability.availableSamples=0;
+    ++file.metadata.availability.generation;file.navigationEnvelope.clear();
+    sourceLoads_[file.metadata.id]={std::make_shared<SourceLoader>(path,std::min(target,file.metadata.sampleCount)),session_.projectGeneration(),0};
+}
+void MainWindow::pollSourceLoads() {
+    bool changed=false;
+    for(auto it=sourceLoads_.begin();it!=sourceLoads_.end();) {
+        const auto found=std::find_if(session_.project().files.begin(),session_.project().files.end(),[&](const auto& f){return f.metadata.id==it->first;});
+        if(it->second.project!=session_.projectGeneration()||found==session_.project().files.end()){it=sourceLoads_.erase(it);continue;}
+        auto& file=*found;const auto snapshot=it->second.loader->snapshot();
+        if(snapshot.loaded!=it->second.previous||snapshot.finished){
+            file.metadata.availability.availableSamples=snapshot.loaded;file.navigationEnvelope=snapshot.envelope;it->second.previous=snapshot.loaded;changed=true;
+        }
+        if(!snapshot.finished){++it;continue;}
+        file.metadata.availability.fingerprint=snapshot.fingerprint.toStdString();
+        file.metadata.availability.error=snapshot.error.toStdString();
+        file.metadata.availability.status=!snapshot.error.isEmpty()?LoadStatus::Failed:snapshot.loaded==file.metadata.sampleCount?LoadStatus::Ready:LoadStatus::Partial;
+        if(snapshot.loaded)file.view=clampRange(file.view,file.metadata,file.display.stftSize,file.display.psdSize);
+        log(snapshot.error.isEmpty()?QString("读入结束：%1 · %2 / %3 样本").arg(q(file.metadata.name)).arg(snapshot.loaded).arg(file.metadata.sampleCount):"读入失败："+snapshot.error);
+        if(!snapshot.loaded&&file.marks.empty()&&file.channels.empty()) {
+            const auto id=file.metadata.id;session_.activateFile(id);session_.removeActiveFile();
+        }
+        it=sourceLoads_.erase(it);
+    }
+    if(changed)refresh();
 }
 void MainWindow::log(const QString& message) {
     if (!results_) return; results_->appendPlainText(QDateTime::currentDateTime().toString("HH:mm:ss") + "  信息  " + message);

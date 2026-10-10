@@ -30,6 +30,39 @@ enum class AuxiliaryMode { Waveform, Psd };
 enum class WaveformMode { I, Q, IqRms, Envelope };
 enum class Palette { Turbo, Viridis, Gray, Plasma, Inferno, Magma, Cividis, CoolEditClassic };
 
+enum class SpectralMethod { Periodogram, Bartlett, Welch, Multitaper, Burg };
+enum class SpectrumStatistic { Mean, Maximum, Minimum };
+enum class SpectralWindow { Rectangular, Hann, Hamming, Blackman, BlackmanHarris, FlatTop, Kaiser };
+enum class PsdScope { Visible, SourceMark, Whole };
+struct SpectralParameters {
+    SpectralMethod method = SpectralMethod::Welch;
+    SpectralWindow window = SpectralWindow::Hann;
+    double overlap = .5;
+    double segmentMilliseconds = 0; // Zero selects N/B automatically.
+    double kaiserBeta = 8.6, timeBandwidth = 3.5;
+    int tapers = 6, burgOrder = 16;
+    bool removeMean = false;
+    bool operator==(const SpectralParameters&) const = default;
+};
+struct PsdSettings {
+    SpectralParameters parameters;
+    SpectrumStatistic statistic = SpectrumStatistic::Mean;
+    PsdScope scope = PsdScope::Visible;
+    bool operator==(const PsdSettings&) const = default;
+};
+struct SpectrogramSettings {
+    SpectralParameters parameters;
+    bool operator==(const SpectrogramSettings&) const = default;
+};
+enum class LoadStatus { Ready, Loading, Partial, Failed };
+struct FileAvailability {
+    SampleIndex availableSamples = 0;
+    LoadStatus status = LoadStatus::Ready;
+    std::uint64_t generation = 0;
+    std::string fingerprint, error;
+};
+struct EnvelopePoint { SampleIndex begin = 0, end = 0, peakSample = 0; float peak = 0; };
+
 enum class ChannelFilter { FastPreview, Standard, HighRejection };
 enum class ChannelProcessingState { Ready, LegacyNeedsReview, SourceMissing, Invalid };
 enum class NarrowbandPage { Observe, Modulation, DeepLearning, Demodulation };
@@ -42,6 +75,8 @@ struct DisplaySettings {
     Palette palette = Palette::CoolEditClassic;
     int stftSize = 2048;
     int psdSize = 4096;
+    PsdSettings psd;
+    SpectrogramSettings spectrogram;
     double dynamicRangeDb = 80;
     double referenceLevelDb = 0;
     bool absoluteFrequency = true;
@@ -70,6 +105,7 @@ struct FileMetadata {
     double declaredBandwidthHz = 0;
     // The centered band used by analysis. Zero means the complete sampled band.
     double effectiveBandwidthHz = 0;
+    FileAvailability availability;
 };
 struct Mark {
     std::string id;
@@ -94,6 +130,8 @@ struct Channel {
     FrequencyRange visibleBasebandFrequency;
     int psdFftSize = 4096;
     int stftFftSize = 2048;
+    PsdSettings psd{SpectralParameters{}, SpectrumStatistic::Mean, PsdScope::Whole};
+    SpectrogramSettings spectrogram;
     NarrowbandWaveform waveform = NarrowbandWaveform::IQ;
     double waveformAxisMinimum = -32768.0;
     double waveformAxisMaximum = 32768.0;
@@ -130,6 +168,7 @@ struct FileState {
     std::vector<Channel> channels;
     std::vector<std::string> selectedMarkIds;
     std::string activeMarkId;
+    std::vector<EnvelopePoint> navigationEnvelope; // Session-only; rebuilt by actual source scanning.
 };
 struct Project {
     std::string name = "未命名工程";
@@ -151,6 +190,7 @@ struct ViewSnapshot {
 };
 
 ViewRange fullRange(const FileMetadata& metadata);
+SampleIndex availableSamples(const FileMetadata& metadata);
 ViewRange clampRange(ViewRange range, const FileMetadata& metadata, int stftSize, int psdSize = 0);
 Mark* findMark(FileState& file, const std::string& id);
 const Mark* findMark(const FileState& file, const std::string& id);

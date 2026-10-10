@@ -12,6 +12,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <mutex>
 
 namespace signalstudio {
 
@@ -59,6 +60,7 @@ public:
     ChannelSampleCacheStats stats() const;
 
 private:
+    mutable std::mutex mutex_;
     struct Entry {
         std::shared_ptr<const ChannelSampleData> data;
         std::list<std::string>::iterator lru;

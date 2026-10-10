@@ -303,6 +303,7 @@ bool Session::setPsdFromSelection(bool enabled) {
     auto* file=activeFile();if(!file)return false;
     if(enabled&&!findMark(*file,file->activeMarkId))return false;
     file->display.psdFromSelection=enabled;
+    file->display.psd.scope=enabled?PsdScope::SourceMark:PsdScope::Visible;
     return true;
 }
 
@@ -678,10 +679,11 @@ const LinkedCursorState& Session::linkedCursor(const std::string& context) const
     const auto found = cursors_.find(context);
     return found == cursors_.end() ? empty : found->second;
 }
-void Session::pinCursor(const std::string& context, SampleIndex sample, double frequencyHz, bool selectFrame) {
+void Session::pinCursor(const std::string& context, SampleIndex sample, double frequencyHz, bool selectFrame, std::uint64_t frameId) {
     auto& cursor = cursors_[context]; cursor.pinned = true;
     cursor.sourceSample = sample; cursor.frequencyHz = frequencyHz;
     if (selectFrame) cursor.framePsd = true;
+    if(selectFrame)cursor.selectedFrame=frameId;
     if (const auto* frame = selectedSpectralFrame(context)) cursor.selectedFrame = frame->id;
 }
 void Session::clearCursor(const std::string& context) { cursors_.erase(context); }
@@ -691,6 +693,7 @@ void Session::setFramePsd(const std::string& context, bool enabled) {
 void Session::installSpectrogram(const std::string& context, std::shared_ptr<const SpectrogramData> data) {
     if (!data) { spectra_.erase(context); std::erase(spectralLru_, context); return; }
     spectra_[context] = std::move(data);
+    if(cursors_.contains(context))cursors_[context].selectedFrame=0;
     std::erase(spectralLru_, context); spectralLru_.push_back(context);
     std::size_t bytes = 0;
     for (const auto& item : spectra_) if (item.second) bytes += item.second->bytes();
@@ -710,7 +713,9 @@ std::shared_ptr<const SpectrogramData> Session::spectrogram(const std::string& c
 const SpectralFrame* Session::selectedSpectralFrame(const std::string& context) const {
     const auto& cursor = linkedCursor(context);
     const auto data = spectrogram(context);
-    return cursor.pinned && data ? data->frameAt(cursor.sourceSample) : nullptr;
+    if(!cursor.pinned||!data||cursor.sourceSample<data->sourceView.begin||cursor.sourceSample>=data->sourceView.end)return nullptr;
+    if(cursor.selectedFrame)for(const auto& frame:data->frames)if(frame->id==cursor.selectedFrame)return frame.get();
+    return data->frameAt(cursor.sourceSample);
 }
 
 } // namespace signalstudio

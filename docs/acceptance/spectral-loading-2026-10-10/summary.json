@@ -1,0 +1,1027 @@
+{
+  "schema": "signal-studio-spectral-loading-acceptance",
+  "version": 1,
+  "generatedAt": "2026-10-10T19:20:30.065399+08:00",
+  "branch": "rebuild/a143-native",
+  "baseCommit": "97764d81179b988cf0124ba5a0d523ff2c85b94a",
+  "sourceNote": "Reports validate the work tree committed with this acceptance directory.",
+  "builds": {
+    "Debug": {
+      "pass": true,
+      "preset": "local-debug",
+      "publicPreset": "vs2026-qt611-debug",
+      "log": "debug-spectral-build-debug.log"
+    },
+    "Release": {
+      "pass": true,
+      "preset": "local-release",
+      "publicPreset": "vs2026-qt611-release",
+      "log": "release-spectral-build-release.log"
+    }
+  },
+  "tests": {
+    "Debug": {
+      "ctestPassed": 5,
+      "ctestFailed": 0,
+      "ctestSeconds": 135.39,
+      "qtPassed": 80,
+      "qtFailed": 0,
+      "qtSkipped": 0,
+      "qtMilliseconds": 132744,
+      "ctestLog": "debug-spectral-ctest-debug.log",
+      "qtLog": "debug-ui-test-results-debug.txt"
+    },
+    "Release": {
+      "ctestPassed": 5,
+      "ctestFailed": 0,
+      "ctestSeconds": 39.54,
+      "qtPassed": 80,
+      "qtFailed": 0,
+      "qtSkipped": 0,
+      "qtMilliseconds": 38629,
+      "ctestLog": "release-spectral-ctest-release.log",
+      "qtLog": "release-ui-test-results-release.txt"
+    }
+  },
+  "native": {
+    "Debug": {
+      "pass": true,
+      "loadingReport": "debug/spectral-loading-report.json",
+      "regressionReport": "debug/regression/linked-cursor-report.json",
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "name": "Redmi 27 NU",
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      },
+      "loading": {
+        "envelopePoints": 1344,
+        "physicalBytes": 3817472000,
+        "prefixSamples": "22020096",
+        "source": "E:\\数据集\\扫频数据\\ALaShan_051\\20260805\\xiawu\\IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_155446.dat",
+        "status": "Partial"
+      },
+      "shortSpectrogram": {
+        "actualFrames": 10,
+        "analysisError": "",
+        "analysisPoints": 32,
+        "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+        "binHz": 125000,
+        "effectiveHop": "0.5",
+        "effectiveOverlap": 0.984375,
+        "frameGeneration": "11",
+        "gpuDataDrawCalls": 58,
+        "gpuVertexUploads": 17,
+        "inverseCursorDrawCalls": 44,
+        "iqCacheBytes": 61440,
+        "iqCacheHits": 3738,
+        "iqCacheMisses": 2,
+        "matrixBytes": 2880,
+        "noiseBandwidthHz": 193548.38709677418,
+        "paddedFrames": 10,
+        "pending": false,
+        "repeatedObservation": true,
+        "requestGeneration": "11",
+        "requiredSeconds": 8e-06,
+        "textureUploads": 2
+      },
+      "selectedFrame": "9",
+      "resizedPageHeatmapsVerified": true,
+      "largeIqInitialDisplayMs": 2125,
+      "largeIqCache": {
+        "actualFrames": 47,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+        "binHz": 976.5625,
+        "effectiveHop": "1024",
+        "effectiveOverlap": 0.5,
+        "frameGeneration": "14",
+        "gpuDataDrawCalls": 109,
+        "gpuVertexUploads": 32,
+        "inverseCursorDrawCalls": 89,
+        "iqCacheBytes": 400000,
+        "iqCacheHits": 10986,
+        "iqCacheMisses": 7,
+        "matrixBytes": 392544,
+        "noiseBandwidthHz": 1465.5593551538814,
+        "paddedFrames": 0,
+        "pending": false,
+        "repeatedObservation": false,
+        "requestGeneration": "14",
+        "requiredSeconds": 0.001024,
+        "textureUploads": 5
+      },
+      "loadingProcessMemory": {
+        "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+        "configuration": "Debug",
+        "systemOnlyPath": true,
+        "exitCode": 0,
+        "peakWorkingSetBytes": 1313402880,
+        "peakSampledPrivateBytes": 1160454144,
+        "memoryNote": "Process memory includes Qt/QRhi resources and memory-mapped source pages; IQ and analysis cache counters are separate."
+      },
+      "regressionProcessMemory": {
+        "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+        "configuration": "Debug",
+        "systemOnlyPath": true,
+        "exitCode": 0,
+        "peakWorkingSetBytes": 1792626688,
+        "peakSampledPrivateBytes": 1562718208,
+        "memoryNote": "Process memory includes Qt/QRhi resources and memory-mapped source pages; IQ and analysis cache counters are separate."
+      },
+      "channelDialog": {
+        "devicePixelRatio": 1.5,
+        "parentFullScreen": true,
+        "pixelSize": {
+          "height": 756,
+          "width": 840
+        },
+        "screen": {
+          "availableLogicalGeometry": {
+            "height": 1392,
+            "width": 2560,
+            "x": 2560,
+            "y": 0
+          },
+          "connectedIndex": 2,
+          "deviceName": "\\\\.\\DISPLAY6",
+          "devicePixelRatio": 1.5,
+          "logicalDpi": 96,
+          "logicalGeometry": {
+            "height": 1440,
+            "width": 2560,
+            "x": 2560,
+            "y": 0
+          },
+          "name": "Redmi 27 NU",
+          "physicalDpi": 109.05000625015624,
+          "pixelSize": {
+            "height": 2160,
+            "width": 3840
+          },
+          "primary": false
+        }
+      },
+      "screenshots": 16
+    },
+    "Release": {
+      "pass": true,
+      "loadingReport": "release/spectral-loading-report.json",
+      "regressionReport": "release/regression/linked-cursor-report.json",
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "name": "Redmi 27 NU",
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      },
+      "loading": {
+        "envelopePoints": 1632,
+        "physicalBytes": 3817472000,
+        "prefixSamples": "53477376",
+        "source": "E:\\数据集\\扫频数据\\ALaShan_051\\20260805\\xiawu\\IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_155446.dat",
+        "status": "Partial"
+      },
+      "shortSpectrogram": {
+        "actualFrames": 10,
+        "analysisError": "",
+        "analysisPoints": 32,
+        "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+        "binHz": 125000,
+        "effectiveHop": "0.5",
+        "effectiveOverlap": 0.984375,
+        "frameGeneration": "11",
+        "gpuDataDrawCalls": 63,
+        "gpuVertexUploads": 18,
+        "inverseCursorDrawCalls": 47,
+        "iqCacheBytes": 61440,
+        "iqCacheHits": 3785,
+        "iqCacheMisses": 2,
+        "matrixBytes": 2800,
+        "noiseBandwidthHz": 193548.38709677418,
+        "paddedFrames": 10,
+        "pending": false,
+        "repeatedObservation": true,
+        "requestGeneration": "11",
+        "requiredSeconds": 8e-06,
+        "textureUploads": 2
+      },
+      "selectedFrame": "9",
+      "resizedPageHeatmapsVerified": true,
+      "largeIqInitialDisplayMs": 255,
+      "largeIqCache": {
+        "actualFrames": 47,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+        "binHz": 976.5625,
+        "effectiveHop": "1024",
+        "effectiveOverlap": 0.5,
+        "frameGeneration": "14",
+        "gpuDataDrawCalls": 102,
+        "gpuVertexUploads": 27,
+        "inverseCursorDrawCalls": 80,
+        "iqCacheBytes": 400000,
+        "iqCacheHits": 10983,
+        "iqCacheMisses": 10,
+        "matrixBytes": 392168,
+        "noiseBandwidthHz": 1465.5593551538814,
+        "paddedFrames": 0,
+        "pending": false,
+        "repeatedObservation": false,
+        "requestGeneration": "14",
+        "requiredSeconds": 0.001024,
+        "textureUploads": 5
+      },
+      "loadingProcessMemory": {
+        "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+        "configuration": "Release",
+        "systemOnlyPath": true,
+        "exitCode": 0,
+        "peakWorkingSetBytes": 1191452672,
+        "peakSampledPrivateBytes": 1070743552,
+        "memoryNote": "Process memory includes Qt/QRhi resources and memory-mapped source pages; IQ and analysis cache counters are separate."
+      },
+      "regressionProcessMemory": {
+        "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+        "configuration": "Release",
+        "systemOnlyPath": true,
+        "exitCode": 0,
+        "peakWorkingSetBytes": 1725906944,
+        "peakSampledPrivateBytes": 1520091136,
+        "memoryNote": "Process memory includes Qt/QRhi resources and memory-mapped source pages; IQ and analysis cache counters are separate."
+      },
+      "channelDialog": {
+        "devicePixelRatio": 1.5,
+        "parentFullScreen": true,
+        "pixelSize": {
+          "height": 756,
+          "width": 840
+        },
+        "screen": {
+          "availableLogicalGeometry": {
+            "height": 1392,
+            "width": 2560,
+            "x": 2560,
+            "y": 0
+          },
+          "connectedIndex": 2,
+          "deviceName": "\\\\.\\DISPLAY6",
+          "devicePixelRatio": 1.5,
+          "logicalDpi": 96,
+          "logicalGeometry": {
+            "height": 1440,
+            "width": 2560,
+            "x": 2560,
+            "y": 0
+          },
+          "name": "Redmi 27 NU",
+          "physicalDpi": 109.05000625015624,
+          "pixelSize": {
+            "height": 2160,
+            "width": 3840
+          },
+          "primary": false
+        }
+      },
+      "screenshots": 16
+    }
+  },
+  "smoke": [
+    {
+      "report": "smoke/signal-studio-debug-gpu-screen2-4k-150-report.json",
+      "pass": true,
+      "mode": "GPU",
+      "hardwareRenderer": true,
+      "gpuDataDrawCalls": 22,
+      "completedFrames": 6,
+      "heatmapTextureUploads": 1
+    },
+    {
+      "report": "smoke/signal-studio-debug-software-screen2-4k-150-report.json",
+      "pass": true,
+      "mode": "software",
+      "hardwareRenderer": false,
+      "gpuDataDrawCalls": 0,
+      "completedFrames": 0,
+      "heatmapTextureUploads": 0
+    },
+    {
+      "report": "smoke/signal-studio-narrowband-debug-gpu-screen2-4k-150-report.json",
+      "pass": true,
+      "mode": "GPU",
+      "hardwareRenderer": true,
+      "gpuDataDrawCalls": 33,
+      "completedFrames": 32,
+      "heatmapTextureUploads": 1
+    },
+    {
+      "report": "smoke/signal-studio-narrowband-debug-software-screen2-4k-150-report.json",
+      "pass": true,
+      "mode": "software",
+      "hardwareRenderer": false,
+      "gpuDataDrawCalls": 0,
+      "completedFrames": 0,
+      "heatmapTextureUploads": 0
+    },
+    {
+      "report": "smoke/signal-studio-narrowband-release-gpu-screen2-4k-150-report.json",
+      "pass": true,
+      "mode": "GPU",
+      "hardwareRenderer": true,
+      "gpuDataDrawCalls": 31,
+      "completedFrames": 28,
+      "heatmapTextureUploads": 1
+    },
+    {
+      "report": "smoke/signal-studio-narrowband-release-software-screen2-4k-150-report.json",
+      "pass": true,
+      "mode": "software",
+      "hardwareRenderer": false,
+      "gpuDataDrawCalls": 0,
+      "completedFrames": 0,
+      "heatmapTextureUploads": 0
+    },
+    {
+      "report": "smoke/signal-studio-release-gpu-screen2-4k-150-report.json",
+      "pass": true,
+      "mode": "GPU",
+      "hardwareRenderer": true,
+      "gpuDataDrawCalls": 22,
+      "completedFrames": 6,
+      "heatmapTextureUploads": 1
+    },
+    {
+      "report": "smoke/signal-studio-release-software-screen2-4k-150-report.json",
+      "pass": true,
+      "mode": "software",
+      "hardwareRenderer": false,
+      "gpuDataDrawCalls": 0,
+      "completedFrames": 0,
+      "heatmapTextureUploads": 0
+    }
+  ],
+  "packages": {
+    "Debug": {
+      "directory": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin",
+      "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudio.exe",
+      "exeSha256": "74548c73e93936047f11f9a40005ffb61fc559193afa30695db7479d64e222d3",
+      "systemOnlyPathVerified": true,
+      "runtimeFiles": [
+        {
+          "path": "concrt140d.dll",
+          "bytes": 724408
+        },
+        {
+          "path": "d3dcompiler_47.dll",
+          "bytes": 4741568
+        },
+        {
+          "path": "dxcompiler.dll",
+          "bytes": 12602944
+        },
+        {
+          "path": "dxil.dll",
+          "bytes": 1225280
+        },
+        {
+          "path": "generic/qtuiotouchplugind.dll",
+          "bytes": 390456
+        },
+        {
+          "path": "iconengines/qsvgicond.dll",
+          "bytes": 209208
+        },
+        {
+          "path": "imageformats/qgifd.dll",
+          "bytes": 143672
+        },
+        {
+          "path": "imageformats/qicnsd.dll",
+          "bytes": 179512
+        },
+        {
+          "path": "imageformats/qicod.dll",
+          "bytes": 150328
+        },
+        {
+          "path": "imageformats/qjpegd.dll",
+          "bytes": 1430840
+        },
+        {
+          "path": "imageformats/qsvgd.dll",
+          "bytes": 112440
+        },
+        {
+          "path": "imageformats/qtgad.dll",
+          "bytes": 109880
+        },
+        {
+          "path": "imageformats/qtiffd.dll",
+          "bytes": 1095480
+        },
+        {
+          "path": "imageformats/qwbmpd.dll",
+          "bytes": 105784
+        },
+        {
+          "path": "imageformats/qwebpd.dll",
+          "bytes": 1442104
+        },
+        {
+          "path": "msvcp140_1d.dll",
+          "bytes": 40888
+        },
+        {
+          "path": "msvcp140_2d.dll",
+          "bytes": 462264
+        },
+        {
+          "path": "msvcp140d.dll",
+          "bytes": 891832
+        },
+        {
+          "path": "msvcp140d_atomic_wait.dll",
+          "bytes": 102328
+        },
+        {
+          "path": "msvcp140d_codecvt_ids.dll",
+          "bytes": 35256
+        },
+        {
+          "path": "networkinformation/qnetworklistmanagerd.dll",
+          "bytes": 274232
+        },
+        {
+          "path": "opengl32sw.dll",
+          "bytes": 20639888
+        },
+        {
+          "path": "platforms/qminimald.dll",
+          "bytes": 135992
+        },
+        {
+          "path": "platforms/qoffscreend.dll",
+          "bytes": 338744
+        },
+        {
+          "path": "platforms/qwindowsd.dll",
+          "bytes": 4121400
+        },
+        {
+          "path": "qt.conf",
+          "bytes": 30
+        },
+        {
+          "path": "Qt6Cored.dll",
+          "bytes": 24207672
+        },
+        {
+          "path": "Qt6Guid.dll",
+          "bytes": 28156728
+        },
+        {
+          "path": "Qt6Networkd.dll",
+          "bytes": 5402936
+        },
+        {
+          "path": "Qt6Svgd.dll",
+          "bytes": 1862968
+        },
+        {
+          "path": "Qt6Testd.dll",
+          "bytes": 1314616
+        },
+        {
+          "path": "Qt6Widgetsd.dll",
+          "bytes": 17222968
+        },
+        {
+          "path": "styles/qmodernwindowsstyled.dll",
+          "bytes": 744248
+        },
+        {
+          "path": "tls/qcertonlybackendd.dll",
+          "bytes": 420152
+        },
+        {
+          "path": "tls/qschannelbackendd.dll",
+          "bytes": 952632
+        },
+        {
+          "path": "ucrtbased.dll",
+          "bytes": 2120120
+        },
+        {
+          "path": "vccorlib140d.dll",
+          "bytes": 1509824
+        },
+        {
+          "path": "vcruntime140_1d.dll",
+          "bytes": 61368
+        },
+        {
+          "path": "vcruntime140_threadsd.dll",
+          "bytes": 50616
+        },
+        {
+          "path": "vcruntime140d.dll",
+          "bytes": 200120
+        }
+      ]
+    },
+    "Release": {
+      "directory": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin",
+      "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe",
+      "exeSha256": "cbcaf875ae851728364315102bb3188966d5477f6b590fcddd053c0074a0b913",
+      "systemOnlyPathVerified": true,
+      "runtimeFiles": [
+        {
+          "path": "concrt140.dll",
+          "bytes": 374200
+        },
+        {
+          "path": "D3Dcompiler_47.dll",
+          "bytes": 4173928
+        },
+        {
+          "path": "dxcompiler.dll",
+          "bytes": 14317000
+        },
+        {
+          "path": "dxil.dll",
+          "bytes": 1509800
+        },
+        {
+          "path": "generic/qtuiotouchplugin.dll",
+          "bytes": 101176
+        },
+        {
+          "path": "iconengines/qsvgicon.dll",
+          "bytes": 72504
+        },
+        {
+          "path": "imageformats/qgif.dll",
+          "bytes": 47928
+        },
+        {
+          "path": "imageformats/qicns.dll",
+          "bytes": 55608
+        },
+        {
+          "path": "imageformats/qico.dll",
+          "bytes": 45880
+        },
+        {
+          "path": "imageformats/qjpeg.dll",
+          "bytes": 577848
+        },
+        {
+          "path": "imageformats/qsvg.dll",
+          "bytes": 39224
+        },
+        {
+          "path": "imageformats/qtga.dll",
+          "bytes": 38200
+        },
+        {
+          "path": "imageformats/qtiff.dll",
+          "bytes": 441656
+        },
+        {
+          "path": "imageformats/qwbmp.dll",
+          "bytes": 36664
+        },
+        {
+          "path": "imageformats/qwebp.dll",
+          "bytes": 562488
+        },
+        {
+          "path": "msvcp140.dll",
+          "bytes": 643512
+        },
+        {
+          "path": "msvcp140_1.dll",
+          "bytes": 35768
+        },
+        {
+          "path": "msvcp140_2.dll",
+          "bytes": 274872
+        },
+        {
+          "path": "msvcp140_atomic_wait.dll",
+          "bytes": 57792
+        },
+        {
+          "path": "msvcp140_codecvt_ids.dll",
+          "bytes": 31160
+        },
+        {
+          "path": "networkinformation/qnetworklistmanager.dll",
+          "bytes": 70968
+        },
+        {
+          "path": "opengl32sw.dll",
+          "bytes": 20639888
+        },
+        {
+          "path": "platforms/qminimal.dll",
+          "bytes": 61752
+        },
+        {
+          "path": "platforms/qoffscreen.dll",
+          "bytes": 113976
+        },
+        {
+          "path": "platforms/qwindows.dll",
+          "bytes": 1006904
+        },
+        {
+          "path": "qt.conf",
+          "bytes": 30
+        },
+        {
+          "path": "Qt6Core.dll",
+          "bytes": 10480440
+        },
+        {
+          "path": "Qt6Gui.dll",
+          "bytes": 9589560
+        },
+        {
+          "path": "Qt6Network.dll",
+          "bytes": 1771320
+        },
+        {
+          "path": "Qt6Svg.dll",
+          "bytes": 642360
+        },
+        {
+          "path": "Qt6Test.dll",
+          "bytes": 382776
+        },
+        {
+          "path": "Qt6Widgets.dll",
+          "bytes": 6594360
+        },
+        {
+          "path": "styles/qmodernwindowsstyle.dll",
+          "bytes": 230712
+        },
+        {
+          "path": "tls/qcertonlybackend.dll",
+          "bytes": 103736
+        },
+        {
+          "path": "tls/qschannelbackend.dll",
+          "bytes": 263992
+        },
+        {
+          "path": "vccorlib140.dll",
+          "bytes": 350648
+        },
+        {
+          "path": "vcruntime140.dll",
+          "bytes": 178616
+        },
+        {
+          "path": "vcruntime140_1.dll",
+          "bytes": 50112
+        },
+        {
+          "path": "vcruntime140_threads.dll",
+          "bytes": 38840
+        }
+      ]
+    }
+  },
+  "unverified": [
+    "MATLAB pburg comparison",
+    "Ubuntu runtime/deployment",
+    "Continuous capture throughput"
+  ],
+  "demoOnly": [
+    "Constellation and eye synchronization",
+    "Deep learning inference",
+    "Demodulated bit stream"
+  ],
+  "dspExecution": "CPU DDC/FIR/resampling and spectral estimators; QRhi GPU data rendering",
+  "numericalReference": {
+    "report": "scipy-reference.json",
+    "fixture": "reference-fixture.json",
+    "pass": true,
+    "scipyVersion": "1.17.1",
+    "points": 256,
+    "maximumAbsolutePowerError": 8.610647611595468e-10,
+    "peakBinNative": 154,
+    "peakBinScipy": 154,
+    "sameCoefficients": true,
+    "realAcquisitionSamples": 41984,
+    "estimatorChecks": [
+      {
+        "method": 0,
+        "window": 0,
+        "pass": true,
+        "maximumAbsolutePowerError": 1.1112567289972564e-10,
+        "windowError": 0.0
+      },
+      {
+        "method": 0,
+        "window": 1,
+        "pass": true,
+        "maximumAbsolutePowerError": 9.470106209635842e-11,
+        "windowError": 4.440892098500626e-16
+      },
+      {
+        "method": 0,
+        "window": 2,
+        "pass": true,
+        "maximumAbsolutePowerError": 1.3950402204948587e-10,
+        "windowError": 3.3306690738754696e-16
+      },
+      {
+        "method": 0,
+        "window": 3,
+        "pass": true,
+        "maximumAbsolutePowerError": 1.869593776668288e-10,
+        "windowError": 4.996003610813204e-16
+      },
+      {
+        "method": 0,
+        "window": 4,
+        "pass": true,
+        "maximumAbsolutePowerError": 9.183425244210786e-11,
+        "windowError": 5.551115123125783e-16
+      },
+      {
+        "method": 0,
+        "window": 5,
+        "pass": true,
+        "maximumAbsolutePowerError": 4.1996464682572676e-11,
+        "windowError": 7.771561172376096e-16
+      },
+      {
+        "method": 0,
+        "window": 6,
+        "pass": true,
+        "maximumAbsolutePowerError": 7.48029186335708e-11,
+        "windowError": 8.881784197001252e-16
+      },
+      {
+        "method": 1,
+        "window": 0,
+        "pass": true,
+        "maximumAbsolutePowerError": 1.1112567289972564e-10,
+        "windowError": 0.0
+      },
+      {
+        "method": 1,
+        "window": 1,
+        "pass": true,
+        "maximumAbsolutePowerError": 9.470106209635842e-11,
+        "windowError": 4.440892098500626e-16
+      },
+      {
+        "method": 1,
+        "window": 2,
+        "pass": true,
+        "maximumAbsolutePowerError": 1.3950402204948587e-10,
+        "windowError": 3.3306690738754696e-16
+      },
+      {
+        "method": 1,
+        "window": 3,
+        "pass": true,
+        "maximumAbsolutePowerError": 1.869593776668288e-10,
+        "windowError": 4.996003610813204e-16
+      },
+      {
+        "method": 1,
+        "window": 4,
+        "pass": true,
+        "maximumAbsolutePowerError": 9.183425244210786e-11,
+        "windowError": 5.551115123125783e-16
+      },
+      {
+        "method": 1,
+        "window": 5,
+        "pass": true,
+        "maximumAbsolutePowerError": 4.1996464682572676e-11,
+        "windowError": 7.771561172376096e-16
+      },
+      {
+        "method": 1,
+        "window": 6,
+        "pass": true,
+        "maximumAbsolutePowerError": 7.48029186335708e-11,
+        "windowError": 8.881784197001252e-16
+      },
+      {
+        "method": 2,
+        "window": 0,
+        "pass": true,
+        "maximumAbsolutePowerError": 1.1112567289972564e-10,
+        "windowError": 0.0
+      },
+      {
+        "method": 2,
+        "window": 1,
+        "pass": true,
+        "maximumAbsolutePowerError": 9.470106209635842e-11,
+        "windowError": 4.440892098500626e-16
+      },
+      {
+        "method": 2,
+        "window": 2,
+        "pass": true,
+        "maximumAbsolutePowerError": 1.3950402204948587e-10,
+        "windowError": 3.3306690738754696e-16
+      },
+      {
+        "method": 2,
+        "window": 3,
+        "pass": true,
+        "maximumAbsolutePowerError": 1.869593776668288e-10,
+        "windowError": 4.996003610813204e-16
+      },
+      {
+        "method": 2,
+        "window": 4,
+        "pass": true,
+        "maximumAbsolutePowerError": 9.183425244210786e-11,
+        "windowError": 5.551115123125783e-16
+      },
+      {
+        "method": 2,
+        "window": 5,
+        "pass": true,
+        "maximumAbsolutePowerError": 4.1996464682572676e-11,
+        "windowError": 7.771561172376096e-16
+      },
+      {
+        "method": 2,
+        "window": 6,
+        "pass": true,
+        "maximumAbsolutePowerError": 7.48029186335708e-11,
+        "windowError": 8.881784197001252e-16
+      },
+      {
+        "method": 3,
+        "window": 0,
+        "pass": true,
+        "maximumAbsolutePowerError": 7.652700109890553e-11,
+        "windowError": 0.0
+      },
+      {
+        "method": 3,
+        "window": 1,
+        "pass": true,
+        "maximumAbsolutePowerError": 7.652700109890553e-11,
+        "windowError": 4.440892098500626e-16
+      },
+      {
+        "method": 3,
+        "window": 2,
+        "pass": true,
+        "maximumAbsolutePowerError": 7.652700109890553e-11,
+        "windowError": 3.3306690738754696e-16
+      },
+      {
+        "method": 3,
+        "window": 3,
+        "pass": true,
+        "maximumAbsolutePowerError": 7.652700109890553e-11,
+        "windowError": 4.996003610813204e-16
+      },
+      {
+        "method": 3,
+        "window": 4,
+        "pass": true,
+        "maximumAbsolutePowerError": 7.652700109890553e-11,
+        "windowError": 5.551115123125783e-16
+      },
+      {
+        "method": 3,
+        "window": 5,
+        "pass": true,
+        "maximumAbsolutePowerError": 7.652700109890553e-11,
+        "windowError": 7.771561172376096e-16
+      },
+      {
+        "method": 3,
+        "window": 6,
+        "pass": true,
+        "maximumAbsolutePowerError": 7.652700109890553e-11,
+        "windowError": 8.881784197001252e-16
+      },
+      {
+        "method": 4,
+        "window": 0,
+        "pass": true,
+        "maximumAbsolutePowerError": 2.5265574354893516e-11,
+        "windowError": 0.0
+      },
+      {
+        "method": 4,
+        "window": 1,
+        "pass": true,
+        "maximumAbsolutePowerError": 2.5265574354893516e-11,
+        "windowError": 4.440892098500626e-16
+      },
+      {
+        "method": 4,
+        "window": 2,
+        "pass": true,
+        "maximumAbsolutePowerError": 2.5265574354893516e-11,
+        "windowError": 3.3306690738754696e-16
+      },
+      {
+        "method": 4,
+        "window": 3,
+        "pass": true,
+        "maximumAbsolutePowerError": 2.5265574354893516e-11,
+        "windowError": 4.996003610813204e-16
+      },
+      {
+        "method": 4,
+        "window": 4,
+        "pass": true,
+        "maximumAbsolutePowerError": 2.5265574354893516e-11,
+        "windowError": 5.551115123125783e-16
+      },
+      {
+        "method": 4,
+        "window": 5,
+        "pass": true,
+        "maximumAbsolutePowerError": 2.5265574354893516e-11,
+        "windowError": 7.771561172376096e-16
+      },
+      {
+        "method": 4,
+        "window": 6,
+        "pass": true,
+        "maximumAbsolutePowerError": 2.5265574354893516e-11,
+        "windowError": 8.881784197001252e-16
+      }
+    ],
+    "dpssOrthonormalReferenceError": 4.820650620116409e-15,
+    "burgReference": "Independent complex Burg recurrence; MATLAB pburg was not executed",
+    "streamStatistics": [
+      {
+        "statistic": 0,
+        "pass": true,
+        "maximumAbsolutePowerError": 7.194935185833584e-12
+      },
+      {
+        "statistic": 1,
+        "pass": true,
+        "maximumAbsolutePowerError": 2.2798038196852888e-10
+      },
+      {
+        "statistic": 2,
+        "pass": true,
+        "maximumAbsolutePowerError": 6.472232146927104e-12
+      }
+    ],
+    "completeStatisticalFrames": 141
+  },
+  "pass": true
+}

@@ -6,10 +6,16 @@
 
 namespace signalstudio {
 
+SampleIndex availableSamples(const FileMetadata& metadata) {
+    if(metadata.availability.status==LoadStatus::Failed)return 0;
+    return metadata.availability.status == LoadStatus::Ready ? metadata.sampleCount :
+        std::min(metadata.sampleCount, metadata.availability.availableSamples);
+}
+
 ViewRange fullRange(const FileMetadata& metadata) {
     const double bandwidth = metadata.effectiveBandwidthHz > 0 && std::isfinite(metadata.effectiveBandwidthHz) ?
         std::min(metadata.effectiveBandwidthHz, metadata.sampleRateHz) : metadata.sampleRateHz;
-    return {{0, metadata.sampleCount},
+    return {{0, availableSamples(metadata)},
             {metadata.centerFrequencyHz - bandwidth / 2,
              metadata.centerFrequencyHz + bandwidth / 2}};
 }
@@ -17,7 +23,7 @@ ViewRange fullRange(const FileMetadata& metadata) {
 ViewRange clampRange(ViewRange range, const FileMetadata& metadata, int stftSize, int psdSize) {
     (void)stftSize; (void)psdSize;
     const auto bounds = fullRange(metadata);
-    const auto sampleCount = metadata.sampleCount;
+    const auto sampleCount = availableSamples(metadata);
     if (sampleCount == 0 || !std::isfinite(metadata.sampleRateHz) ||
         metadata.sampleRateHz <= 0 || !std::isfinite(metadata.centerFrequencyHz))
         return bounds;

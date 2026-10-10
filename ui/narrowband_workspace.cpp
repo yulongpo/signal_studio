@@ -1,3 +1,5 @@
+#include "infrastructure/source_loader.h"
+#include <chrono>
 #include "infrastructure/spectral_analysis.h"
 #include "ui/charts/cursor_overlay.h"
 #include "ui/charts/interaction_feedback.h"
@@ -8,6 +10,7 @@
 #include "ui/charts/accelerated_surface.h"
 #include "ui/charts/chart_interaction.h"
 #include "ui/charts/palette.h"
+#include "ui/checkbox_style.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -262,6 +265,10 @@ public:
     }
 protected:
     void resizeEvent(QResizeEvent* event) override {
+        // Hidden pages receive data before their final layout size is known.
+        // Reposition the same GPU texture when the chart becomes visible.
+        if (!scalarRaster_.isNull())
+            surface_->setHeatmap(scalarRaster_, plotRect(), rasterRevision_, chart_palette::texture(palette_));
         markGeometryDirty();
         QWidget::resizeEvent(event);
     }
@@ -609,7 +616,8 @@ private:
         if (mode_ != ChartMode::Curve) text += (text.isEmpty() ? QString{} : "\n") +
             QStringLiteral("f = %1 %2").arg((frequency + (frequencyAbsolute_ ? frequencyCenterHz_ : 0)) / frequencyScale_, 0, 'g', 10).arg(frequencyUnit_);
         if (mode_ == ChartMode::Heatmap) {
-            const auto* frame = spectralData_ ? spectralData_->frameAt(sample) : nullptr;
+            const auto* frame = spectralData_ ? spectralData_->frameAtFraction(x) : nullptr;
+            if(isPinned&&spectralData_)for(const auto& f:spectralData_->frames)if(f->id==pinnedCursor_.selectedFrame){frame=f.get();break;}
             if (frame) {
                 const auto bin = frame->binAt(frequency);
                 text += QStringLiteral("\nP = %1 dBFS/Hz · bin %2\n帧中心 %3 %4 · Δf %5 Hz")
@@ -779,7 +787,7 @@ NarrowbandWorkspace::NarrowbandWorkspace(Session& session, QWidget* parent) : QW
       QPushButton,QComboBox,QSpinBox { border:1px solid #314963;background:#122239;border-radius:4px;padding:4px 8px; }
       QPushButton:hover { background:#25435e; } QProgressBar { border:1px solid #314963;background:#0c1725;height:11px;text-align:center; }
       QProgressBar::chunk { background:#31acd0; } QPlainTextEdit { background:#0c1725;border:1px solid #29435c;color:#89e0d4;font:13px Consolas; }
-    )");
+    )" + signalstudio::checkboxStyleSheet());
     buildPages();
     recognitionTimer_ = new QTimer(this); recognitionTimer_->setInterval(85);
     connect(recognitionTimer_, &QTimer::timeout, this, &NarrowbandWorkspace::updateRecognition);
@@ -790,7 +798,7 @@ NarrowbandWorkspace::NarrowbandWorkspace(Session& session, QWidget* parent) : QW
     refreshFromSession();
 }
 
-NarrowbandWorkspace::~NarrowbandWorkspace() { finishChartWheel(); cancelWork(); }
+NarrowbandWorkspace::~NarrowbandWorkspace() { finishChartWheel(); cancelPsd(); cancelWork(); }
 
 void NarrowbandWorkspace::setCallbacks(std::function<void()> locateSource, std::function<void()> editChannel,
                                        std::function<void()> returnToWide, std::function<void(const QString&)> log) {
@@ -877,6 +885,7 @@ QJsonObject NarrowbandWorkspace::renderStatistics() const {
     if (const auto* channel = session_.activeChannel()) if (const auto spectrum = session_.spectrogram(channel->id)) {
         result["analysisPoints"] = spectrum->plan.points; result["binHz"] = spectrum->plan.binHz;
         result["requiredSeconds"] = spectrum->plan.requiredSeconds; result["noiseBandwidthHz"] = spectrum->plan.noiseBandwidthHz;
+        result["paddedFrames"]=static_cast<qint64>(spectrum->paddedFrames);result["effectiveOverlap"]=spectrum->effectiveOverlap;result["effectiveHop"]=QString::number(spectrum->effectiveHop);result["repeatedObservation"]=spectrum->repeatedObservation;
         result["actualFrames"] = static_cast<qint64>(spectrum->frames.size()); result["matrixBytes"] = static_cast<qint64>(spectrum->bytes());
         result["analysisError"] = QString::fromStdString(spectrum->error);
     }
@@ -913,9 +922,9 @@ void NarrowbandWorkspace::buildPages() {
     waveformMode_ = new QComboBox; waveformMode_->setObjectName("narrowbandWaveformMode");
     waveformMode_->addItems({"I / Q", "幅度 (RMS)", "相位", "幅度包络"});
     displayPsdFft_ = new QComboBox; displayPsdFft_->setObjectName("narrowbandPsdFft");
-    displayPsdFft_->addItems({"PSD 1024", "PSD 2048", "PSD 4096", "PSD 8192"}); displayPsdFft_->setCurrentIndex(2);
+    for(int order=5;order<=16;++order)displayPsdFft_->addItem("PSD "+QString::number(1<<order),1<<order); displayPsdFft_->setCurrentIndex(7);
     displayStftFft_ = new QComboBox; displayStftFft_->setObjectName("narrowbandStftFft");
-    for (int order = 8; order <= 16; ++order) displayStftFft_->addItem("STFT " + QString::number(1 << order), 1 << order);
+    for (int order = 5; order <= 16; ++order) displayStftFft_->addItem("STFT " + QString::number(1 << order), 1 << order);
     displayStftFft_->setCurrentIndex(5);
     frequencyMode_ = new QComboBox; frequencyMode_->setObjectName("channelFrequencyMode");
     frequencyMode_->addItems({"基带", "RF"});
@@ -934,7 +943,7 @@ void NarrowbandWorkspace::buildPages() {
         requestDisplay();
     });
     connect(displayPsdFft_, &QComboBox::currentIndexChanged, this, [this](int index) {
-        if (auto* channel = session_.activeChannel()) channel->psdFftSize = 1024 << index;
+        if (auto* channel = session_.activeChannel()) channel->psdFftSize = displayPsdFft_->itemData(index).toInt();
         requestDisplay(); emit displayParametersChanged();
     });
     connect(displayStftFft_, &QComboBox::currentIndexChanged, this, [this](int index) {
@@ -1318,7 +1327,8 @@ void NarrowbandWorkspace::buildPages() {
                 static_cast<SampleIndex>(x * (channel->visibleSourceTime.end - channel->visibleSourceTime.begin)));
             if (chart != waveform_) frequency = channel->visibleBasebandFrequency.lowerHz + (chart == psd_ ? x : y) *
                 (channel->visibleBasebandFrequency.upperHz - channel->visibleBasebandFrequency.lowerHz);
-            session_.pinCursor(channel->id, sample, frequency, chart != psd_); updateLinkedCursors(); emit displayParametersChanged();
+            std::uint64_t frameId=0;if(chart!=psd_&&chart!=waveform_)if(const auto data=session_.spectrogram(channel->id))if(const auto* frame=data->frameAtFraction(x))frameId=frame->id;
+            session_.pinCursor(channel->id, sample, frequency, chart != psd_,frameId); updateLinkedCursors(); emit displayParametersChanged();
         };
         chart->clearCursorRequested = [this] { if (const auto* channel = session_.activeChannel()) session_.clearCursor(channel->id); updateLinkedCursors(); emit displayParametersChanged(); };
         chart->averagePsdRequested = [this] { if (const auto* channel = session_.activeChannel()) session_.setFramePsd(channel->id, false); updateLinkedCursors(); emit displayParametersChanged(); };
@@ -1369,7 +1379,7 @@ void NarrowbandWorkspace::refreshFromSession() {
     const auto* file = session_.activeFile();
     if (!channel || !file) {
         markRecognitionStale("通道或源文件已关闭");
-        cancelWork(); sampleCache_.clear(); caption_->setText("未选择窄带通道"); dataStatus_->setText("等待通道数据");
+        cancelPsd(); cancelWork(); sampleCache_.clear(); caption_->setText("未选择窄带通道"); dataStatus_->setText("等待通道数据");
         if (waveform_) waveform_->setSeries({}, "当前没有活动通道");
         return;
     }
@@ -1388,7 +1398,7 @@ void NarrowbandWorkspace::refreshFromSession() {
     if (pages_->currentIndex() != index) pages_->setCurrentIndex(index);
     for (int i = 0; i < 4; ++i) pageButtons_[i]->setChecked(i == index);
     { QSignalBlocker blocker(waveformMode_); waveformMode_->setCurrentIndex(static_cast<int>(channel->waveform)); }
-    const int psdIndex = channel->psdFftSize <= 1024 ? 0 : channel->psdFftSize <= 2048 ? 1 : channel->psdFftSize <= 4096 ? 2 : 3;
+    const int psdIndex = displayPsdFft_->findData(channel->psdFftSize);
     { QSignalBlocker blocker(displayPsdFft_); displayPsdFft_->setCurrentIndex(psdIndex); }
     const auto stftIndex = displayStftFft_->findData(channel->stftFftSize);
     { QSignalBlocker blocker(displayStftFft_); displayStftFft_->setCurrentIndex(stftIndex < 0 ? 5 : stftIndex); }
@@ -1462,7 +1472,7 @@ void NarrowbandWorkspace::updateLinkedCursors() {
                 frame ? QStringLiteral("驻留帧谱 · N=%1 · 与 STFT 帧逐 bin 一致").arg(frame->linearPower.size()) : QStringLiteral("驻留帧不可用 / 正在更新"));
             psd_->setProperty("effectiveFftPoints", frame ? static_cast<int>(frame->linearPower.size()) : channel->stftFftSize);
         } else {
-            psd_->setSeries(averagePsd_.empty() ? std::vector<std::vector<float>>{} : std::vector<std::vector<float>>{averagePsd_}, "当前可见时间窗平均 PSD");
+            psd_->setSeries(averagePsd_.empty() ? std::vector<std::vector<float>>{} : std::vector<std::vector<float>>{averagePsd_}, psdStatus_);
             psd_->setProperty("effectiveFftPoints", channel->psdFftSize);
         }
     }
@@ -1534,24 +1544,30 @@ void NarrowbandWorkspace::cancelChartWheel() {
 void NarrowbandWorkspace::requestDisplay(bool settled) {
     const auto* active = session_.activeChannel(); const auto* file = session_.activeFile();
     if (!active || !file || !waveform_ || !psd_ || !stft_) return;
+    if(file->metadata.availability.status==LoadStatus::Loading||active->sourceTime.end>availableSamples(file->metadata)) {
+        cancelPsd();cancelWork();dataStatus_->setText("来源未读入 / 等待读入完成或停止");
+        for(auto* chart:{waveform_,psd_})chart->setSeries({},dataStatus_->text());
+        for(auto* chart:{stft_,modulationStft_,recognitionStft_})if(chart)chart->setRaster({},dataStatus_->text());return;
+    }
+    if(!file->metadata.demo&&active->processingState==ChannelProcessingState::Ready)requestPsd();
     updateFrequencyAxisLabels();
     const QFileInfo sourceInfo(QString::fromStdString(file->metadata.path));
     const auto fingerprint = QString::number(sourceInfo.size()) + "/" + QString::number(sourceInfo.lastModified().toMSecsSinceEpoch());
     const bool unchanged = lastProjectGeneration_ == session_.projectGeneration() && lastSourceFingerprint_ == fingerprint && hasDisplayRequest_ && lastChannelId_ == active->id && lastSourcePath_ == file->metadata.path &&
         lastConfigVersion_ == active->configVersion && lastVisibleTime_ == active->visibleSourceTime &&
         lastVisibleFrequency_ == active->visibleBasebandFrequency && lastWaveform_ == active->waveform &&
-        lastPsdFft_ == active->psdFftSize && lastStftFft_ == active->stftFftSize;
+        lastStftFft_ == active->stftFftSize && lastSpectrogramSettings_==active->spectrogram;
     if (unchanged) { updateLinkedCursors(); updatePowerColors(); return; }
     const bool invalidateChannelCache = hasDisplayRequest_ && lastChannelId_ == active->id &&
         lastConfigVersion_ != active->configVersion;
     cancelWork();
-    averagePsd_.clear(); averagePower_.reset(); linkedPsdKey_.clear(); rasterPower_.clear(); powerColorKey_.clear();
+    linkedPsdKey_.clear(); rasterPower_.clear(); powerColorKey_.clear();
     session_.installSpectrogram(active->id, {});
     for (auto* chart : {waveform_, psd_, stft_, modulationStft_, recognitionStft_}) if (chart) chart->setSpectralData({});
     if (invalidateChannelCache || lastProjectGeneration_ != session_.projectGeneration()) sampleCache_.clear();
     if (!settled) {
         hasDisplayRequest_ = false; displayPending_ = true;
-        waveform_->setSeries({}, "等待交互停止后计算…"); psd_->setSeries({}, "等待频段分析…");
+        waveform_->setSeries({}, "等待交互停止后计算…");
         stft_->setRaster({}, "等待频段分析…");
         if (modulationStft_) modulationStft_->setRaster({}, "等待频段分析…");
         if (recognitionStft_) recognitionStft_->setRaster({}, "等待频段分析…");
@@ -1563,7 +1579,7 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
     lastSourceFingerprint_ = fingerprint;
     lastChannelId_ = channel.id; lastSourcePath_ = source.path; lastConfigVersion_ = channel.configVersion;
     lastVisibleTime_ = channel.visibleSourceTime; lastVisibleFrequency_ = channel.visibleBasebandFrequency;
-    lastWaveform_ = channel.waveform; lastPsdFft_ = channel.psdFftSize; lastStftFft_ = channel.stftFftSize;
+    lastWaveform_ = channel.waveform; lastPsdFft_ = channel.psdFftSize; lastStftFft_ = channel.stftFftSize; lastSpectrogramSettings_=channel.spectrogram;
     hasDisplayRequest_ = true;
     const auto generation = ++requestGeneration_; const auto config = channel.configVersion;
     QString error; ChannelDspPlan plan;
@@ -1596,6 +1612,7 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
     if (lastOutput <= firstOutput) {
         const auto message = QStringLiteral("当前可见范围没有输出样本");
         waveform_->setSeries({}, message); psd_->setSeries({}, message); stft_->setRaster({}, message);
+        auto unavailable=std::make_shared<SpectrogramData>();unavailable->sourceView=channel.visibleSourceTime;unavailable->error="当前可见范围没有输出样本";session_.installSpectrogram(channel.id,unavailable);
         dataStatus_->setText("等待有效时间窗"); return;
     }
     const auto outputSpan = lastOutput - firstOutput;
@@ -1605,7 +1622,7 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
     const int waveformPoints = static_cast<int>(samplePointsVisible ? outputSpan :
         std::clamp(std::llround(waveform_->plotRect().width() * waveform_->devicePixelRatioF() * 2.0), 1400LL, 65536LL));
     waveform_->setSeries({}, "正在按需读取并处理当前可见 IQ…");
-    psd_->setSeries({}, "正在计算当前可见窗的 PSD…"); stft_->setRaster({}, "正在计算真实 STFT…");
+    stft_->setRaster({}, "正在计算真实 STFT…");
     dataStatus_->setText(QStringLiteral("处理中 · 配置 v%1 · 请求 %2").arg(config).arg(generation));
     displayPending_ = true;
     auto cancel = std::make_shared<std::atomic_bool>(false); cancellation_ = cancel;
@@ -1658,13 +1675,10 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
             }
         }
         if (cancelled()) return;
-        auto spectrum = analyzeSpectrogram(provider, {firstOutput, lastOutput}, channel.visibleBasebandFrequency, channel.stftFftSize, 240, cancelled);
+        auto spectrum = analyzeSpectrogram(provider, {firstOutput, lastOutput}, channel.visibleBasebandFrequency, channel.stftFftSize, 240, channel.spectrogram, 10, cancelled);
         spectrum->sourceView = channel.visibleSourceTime;
-        const auto psdData = channel.psdFftSize == channel.stftFftSize ? spectrum :
-            analyzeSpectrogram(provider, {firstOutput, lastOutput}, channel.visibleBasebandFrequency, channel.psdFftSize, 64, cancelled);
-        const auto average = averageSpectrum(*psdData);
-        const bool psdReady = static_cast<bool>(average), stftReady = !spectrum->frames.empty();
-        if (average) psd = spectrumDb(*average);
+        const std::shared_ptr<const SpectralFrame> average;
+        const bool psdReady=false,stftReady=!spectrum->frames.empty();
         QImage stft; std::vector<float> rasterPower;
         if (stftReady) { rasterPower = spectralRaster(*spectrum, 560, 240, MainMode::TimeFrequency); stft = spectrumImage(rasterPower, QSize(560, 240)); }
         QString status = waveformReady ? QStringLiteral("真实 DDC · 全可见窗分箱 · ADC 计数") : QStringLiteral("IQ 读取或窄带计算失败");
@@ -1672,13 +1686,14 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
             .arg(spectrum->plan.points).arg(spectrum->plan.binHz, 0, 'g', 6).arg(spectrum->frames.size())
             .arg(spectrum->plan.requiredSeconds * 1000, 0, 'g', 6).arg(spectrum->plan.noiseBandwidthHz, 0, 'g', 6);
         else status += " · " + QString::fromStdString(spectrum->error);
-        if (!psdReady) status += " · PSD: " + QString::fromStdString(psdData->error);
+        if(stftReady){std::uint64_t minValid=UINT64_MAX,maxValid=0,minPad=UINT64_MAX,maxPad=0;for(const auto& f:spectrum->frames){minValid=std::min(minValid,f->validSamples);maxValid=std::max(maxValid,f->validSamples);minPad=std::min(minPad,f->paddedSamples);maxPad=std::max(maxPad,f->paddedSamples);}status+=QString(" · 观测 %1–%2 ms · 补零 %3–%4/帧").arg(1000.0*minValid/spectrum->plan.analysisRateHz,0,'g',4).arg(1000.0*maxValid/spectrum->plan.analysisRateHz,0,'g',4).arg(minPad).arg(maxPad);}
+        status += QString(" · 重叠 %1%→%2% · 步长 %3 · 补零帧 %4%5").arg(spectrum->requestedOverlap*100).arg(spectrum->effectiveOverlap*100,0,'f',2).arg(spectrum->effectiveHop).arg(spectrum->paddedFrames).arg(spectrum->repeatedObservation?" · 重复观测":"");
         if (cancelled()) return;
         if (!waveformReady) { waveI.clear(); waveQ.clear(); }
-        QMetaObject::invokeMethod(this, [this, generation, config, waveI = std::move(waveI), waveQ = std::move(waveQ),
+        QMetaObject::invokeMethod(this, [self = this, generation, config, waveI = std::move(waveI), waveQ = std::move(waveQ),
             psd = std::move(psd), stft = std::move(stft), status = std::move(status), samplePointsVisible,
             psdReady, stftReady, firstOutput, positions = std::move(positions), spectrum = std::move(spectrum), rasterPower = std::move(rasterPower), average]() mutable {
-            installFrame(generation, config, std::move(waveI), std::move(waveQ), std::move(psd),
+            self->installFrame(generation, config, std::move(waveI), std::move(waveQ), std::move(psd),
                 std::move(stft), std::move(status), samplePointsVisible, psdReady, stftReady, firstOutput,
                 std::move(positions), std::move(spectrum), std::move(rasterPower), average);
         }, Qt::QueuedConnection);
@@ -1695,7 +1710,7 @@ void NarrowbandWorkspace::installFrame(std::uint64_t generation, std::uint64_t c
     if (!channel || generation != requestGeneration_ || channel->configVersion != configVersion) return;
     frameGeneration_ = generation; displayPending_ = false; displayCacheStats_ = sampleCache_.stats();
     session_.installSpectrogram(channel->id, spectrum);
-    averagePower_ = std::move(average); averagePsd_ = psd; linkedPsdKey_.clear(); rasterPower_ = std::move(rasterPower); powerColorKey_.clear();
+    if(average){averagePower_=std::move(average);averagePsd_=psd;} linkedPsdKey_.clear(); rasterPower_ = std::move(rasterPower); powerColorKey_.clear();
     waveform_->setSamplePositions(std::move(samplePositions));
     for (auto* chart : {stft_, modulationStft_, recognitionStft_}) if (chart) chart->setSpectralData(spectrum);
     if (channel->waveformAutoScale && !waveformI.empty()) {
@@ -1736,7 +1751,6 @@ void NarrowbandWorkspace::installFrame(std::uint64_t generation, std::uint64_t c
         else waveform_->setSeries({std::move(waveformI), std::move(waveformQ)}, status);
     } else waveform_->setSeries({}, status);
     if (psdReady && !psd.empty()) psd_->setSeries({std::move(psd)}, status);
-    else psd_->setSeries({}, status);
     const auto revision = QStringLiteral("nb-%1-%2").arg(configVersion).arg(generation);
     if (stftReady && !stft.isNull()) {
         stft_->setRaster(stft, status, revision);
@@ -1754,6 +1768,54 @@ void NarrowbandWorkspace::installFrame(std::uint64_t generation, std::uint64_t c
     emit displayParametersChanged();
 }
 
+void NarrowbandWorkspace::cancelPsd() {
+    if(psdCancellation_)psdCancellation_->store(true);
+    ++psdGeneration_;if(psdWorker_.joinable())psdWorker_.join();psdCancellation_.reset();psdRequestKey_.clear();
+}
+void NarrowbandWorkspace::requestPsd() {
+    const auto* active=session_.activeChannel();const auto* file=session_.activeFile();if(!active||!file)return;
+    const auto channel=*active;const auto source=file->metadata;
+    TimeRange time=channel.psd.scope==PsdScope::Whole?channel.sourceTime:channel.visibleSourceTime;
+    if(channel.psd.scope==PsdScope::SourceMark) {
+        if(const auto* mark=findMark(*file,channel.sourceMarkId))time={std::max(channel.sourceTime.begin,mark->range.time.begin),std::min(channel.sourceTime.end,mark->range.time.end)};
+    }
+    const auto key=QString::fromStdString(channel.id)+QString("/%1/%2/%3/%4/%5/%6/%7/%8")
+        .arg(session_.projectGeneration()).arg(channel.configVersion).arg(time.begin).arg(time.end)
+        .arg(channel.visibleBasebandFrequency.lowerHz,0,'g',17).arg(channel.visibleBasebandFrequency.upperHz,0,'g',17)
+        .arg(channel.psdFftSize).arg(static_cast<int>(channel.psd.statistic))+
+        QString::fromStdString(spectralParameterKey(channel.psd.parameters))+iqSourceFingerprint(QString::fromStdString(source.path));
+    if(key==psdRequestKey_)return;
+    cancelPsd();psdRequestKey_=key;averagePower_.reset();averagePsd_.clear();linkedPsdKey_.clear();
+    psd_->setProperty("psdComplete",false);psdStatus_="正在流式统计独立 PSD…";updateLinkedCursors();
+    ChannelDspPlan plan;QString error;
+    if(!makeChannelDspPlan(source,channel,plan,error)){psdStatus_=error;return;}
+    std::uint64_t first=0,last=0;
+    if(time.end<=time.begin||!mulDiv(time.begin-channel.sourceTime.begin,plan.outputRateHz,plan.sourceRateHz,true,first)||
+        !mulDiv(time.end-channel.sourceTime.begin,plan.outputRateHz,plan.sourceRateHz,false,last)||last<=first){psdStatus_="PSD 统计范围没有有效输出样本";return;}
+    const auto generation=++psdGeneration_,project=session_.projectGeneration();
+    auto stop=std::make_shared<std::atomic_bool>(false);psdCancellation_=stop;
+    psdWorker_=std::thread([this,channel,source,plan,first,last,generation,project,stop]{
+        const auto cancelled=[stop]{return stop->load();};SpectralSource provider;provider.sampleRateHz=channel.outputSampleRateHz;
+        provider.sourceRange=[channel,plan](TimeRange range){std::uint64_t begin=0,end=0;mulDiv(range.begin,plan.sourceRateHz,plan.outputRateHz,false,begin);mulDiv(range.end,plan.sourceRateHz,plan.outputRateHz,true,end);return TimeRange{channel.sourceTime.begin+begin,std::min(channel.sourceTime.end,channel.sourceTime.begin+end)};};
+        provider.read=[this,&source,&channel,&plan](TimeRange range,auto& values,const auto& cancel){ChannelSampleData block;const bool ok=sampleCache_.process(source,channel,plan,range,block,cancel);if(ok)values=std::move(block.samples);return ok;};
+        const auto deliver=[this,generation,project,channel](std::shared_ptr<const SpectralFrame> frame,QString status,bool complete){
+            QMetaObject::invokeMethod(this,[this,generation,project,channel,frame=std::move(frame),status=std::move(status),complete]{
+                const auto* active=session_.activeChannel();if(generation!=psdGeneration_||project!=session_.projectGeneration()||!active||active->id!=channel.id||active->configVersion!=channel.configVersion)return;
+                averagePower_=frame;averagePsd_=frame?spectrumDb(*frame):std::vector<float>{};psdStatus_=status;linkedPsdKey_.clear();
+                psd_->setProperty("psdComplete",complete);updateLinkedCursors();emit displayParametersChanged();
+            },Qt::QueuedConnection);
+        };
+        auto lastUpdate=std::chrono::steady_clock::now();std::string error;
+        const auto progress=[&](std::uint64_t done,std::uint64_t total,std::shared_ptr<const SpectralFrame> frame){
+            const auto now=std::chrono::steady_clock::now();if(now-lastUpdate<std::chrono::milliseconds(150))return;lastUpdate=now;
+            deliver(std::move(frame),QString("未完成 · PSD %1 / %2 段 (%3%)").arg(done).arg(total).arg(100.0*done/total,0,'f',1),false);
+        };
+        auto frame=analyzeSpectrum(provider,{first,last},channel.visibleBasebandFrequency,channel.psdFftSize,channel.psd,error,cancelled,progress);
+        if(cancelled())return;
+        const QString status=frame?QString("PSD 完成 · %1 · N=%2 · Δf=%3 Hz · 有效 %4 ms · 补零 %5 · ENBW %6 Hz · %7 段").arg(channel.psd.scope==PsdScope::Whole?"整个通道":"所选时间范围").arg(channel.psdFftSize).arg(frame->binHz,0,'g',6).arg(frame->observedSeconds*1000,0,'g',6).arg(frame->paddedSamples).arg(frame->noiseBandwidthHz,0,'g',6).arg(frame->processedFrames):QString::fromStdString(error);
+        deliver(std::move(frame),status,true);
+    });
+}
 void NarrowbandWorkspace::cancelWork() {
     if (displaySettleTimer_) displaySettleTimer_->stop();
     displayPending_ = false;

@@ -70,7 +70,7 @@ public:
     bool channelForward();
     void replaceProject(Project project);
     const LinkedCursorState& linkedCursor(const std::string& context) const;
-    void pinCursor(const std::string& context, SampleIndex sample, double frequencyHz, bool selectFrame);
+    void pinCursor(const std::string& context, SampleIndex sample, double frequencyHz, bool selectFrame, std::uint64_t frameId = 0);
     void clearCursor(const std::string& context);
     void setFramePsd(const std::string& context, bool enabled);
     void installSpectrogram(const std::string& context, std::shared_ptr<const SpectrogramData> data);

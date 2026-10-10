@@ -253,6 +253,8 @@ private slots:
     void mainAxisWheelIsolationAndHistory_data();
     void mainAxisWheelIsolationAndHistory();
     void navigationClickPreservesSpanAndCancelsDrag();
+    void independentSpectralSettingsAndCustomRows();
+    void loadedPrefixStopAndRoundtrip();
     void fileSwitchCancelsUnfinishedEdit();
     void allResizeHandlesStayBounded_data();
     void allResizeHandlesStayBounded();
@@ -886,8 +888,9 @@ void UiTests::prototypeDisplayDefaultsAndOptions() {
     const QStringList palettes{"Turbo","Viridis","Gray","Plasma","Inferno","Magma","Cividis","CoolEdit Classic"};
     QCOMPARE(comboLabels(window.findChild<QComboBox*>("palette")), palettes);
     QCOMPARE(comboLabels(window.findChild<QComboBox*>("colormap")), palettes);
-    QCOMPARE(comboLabels(stft),QStringList({"256","512","1024","2048","4096","8192","16384","32768","65536"}));
-    QCOMPARE(comboLabels(psd),QStringList({"1024","2048","4096","8192"}));
+    QStringList fftSizes;for(int order=5;order<=16;++order)fftSizes<<QString::number(1<<order);
+    QCOMPARE(comboLabels(stft),fftSizes);
+    QCOMPARE(comboLabels(psd),fftSizes);
     QCOMPARE(comboLabels(dynamic),QStringList({"20 dB","40 dB","60 dB","80 dB","100 dB","120 dB"}));
     QCOMPARE(comboLabels(reference),QStringList({"0 dBFS/Hz","-20 dBFS/Hz","-40 dBFS/Hz","-60 dBFS/Hz","-80 dBFS/Hz","-100 dBFS/Hz"}));
     QCOMPARE(stft->currentText(),QString("2048"));
@@ -945,10 +948,12 @@ void UiTests::powerInputsAreImmediateAndFitReusesData() {
     QCOMPARE(window.session().activeFile()->display.referenceLevelDb,10.0);
     QVERIFY(!reference->property("powerInputValid").toBool());
     dynamic->setFocus(); QVERIFY(reference->currentText().endsWith("dBFS/Hz"));
+    window.session().clearCursor(context);
     const auto range=window.session().activeChannel()->visibleSourceTime;
-    window.session().setChannelView({range.begin,range.begin+8},window.session().activeChannel()->visibleBasebandFrequency); window.refresh();
+    const auto shortSpan=static_cast<SampleIndex>(std::ceil(8*window.session().activeFile()->metadata.sampleRateHz/window.session().activeChannel()->outputSampleRateHz));
+    window.session().setChannelView({range.begin,range.begin+shortSpan},window.session().activeChannel()->visibleBasebandFrequency); window.refresh();
     QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(),15000);
-    QVERIFY(!fit->isEnabled());
+    QTRY_VERIFY(fit->isEnabled()); // Short windows now produce padded spectra.
 }
 
 void UiTests::pinnedAxisLabelsSurviveLeave() {
@@ -1371,7 +1376,9 @@ void UiTests::widebandLinkedCursorsAndFrameSpectrum() {
     window.session().setView({{before.time.begin, before.time.begin + 8}, before.frequency}); window.refresh();
     QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 10'000);
     const auto unavailable = window.session().spectrogram(context);
-    QVERIFY(unavailable && unavailable->frames.empty() && !unavailable->error.empty());
+    QVERIFY(unavailable && !unavailable->frames.empty() && unavailable->error.empty());
+    QCOMPARE(file->view.time,(TimeRange{before.time.begin,before.time.begin+8}));
+    QVERIFY(unavailable->frames.front()->paddedSamples>0);
     menu.reset(main->createContextMenu(point));
     auto* expand = menu->findChild<QAction*>("contextExpandAnalysisTime"); QVERIFY(expand); expand->trigger();
     QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 15'000);
@@ -1665,6 +1672,54 @@ void UiTests::navigationClickPreservesSpanAndCancelsDrag() {
     QVERIFY(!window.session().canBack());
 }
 
+void UiTests::independentSpectralSettingsAndCustomRows() {
+    MainWindow window;window.openNarrowbandDemoProject();showWindow(window);
+    auto* workspace=window.findChild<NarrowbandWorkspace*>();QVERIFY(workspace);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(),15000);
+    const auto context=window.session().activeChannel()->id;
+    const auto spectrum=window.session().spectrogram(context);
+    const QJsonValue generation=workspace->renderStatistics().value("requestGeneration");
+    auto* psd=window.findChild<QComboBox*>("psdFft");psd->setCurrentText("32");
+    QTRY_COMPARE(window.session().activeChannel()->psdFftSize,32);
+    QCOMPARE(workspace->renderStatistics()["requestGeneration"],generation);QCOMPARE(window.session().spectrogram(context),spectrum);
+    auto* windowType=window.findChild<QComboBox*>("psdWindow");windowType->setCurrentIndex(2);
+    QCOMPARE(window.session().activeChannel()->psd.parameters.window,SpectralWindow::Hamming);
+    QCOMPARE(window.session().spectrogram(context),spectrum);
+    auto* method=window.findChild<QComboBox*>("psdMethod");method->setCurrentIndex(1);
+    QCOMPARE(window.findChild<QComboBox*>("psdOverlap")->currentText(),QString("0"));
+    QVERIFY(!window.findChild<QComboBox*>("psdOverlap")->isEnabled());method->setCurrentIndex(2);
+    auto* stft=window.findChild<QComboBox*>("stftFft");stft->setCurrentText("32");
+    QTRY_VERIFY_WITH_TIMEOUT(window.session().spectrogram(context)&&window.session().spectrogram(context)!=spectrum,15000);
+    auto* dynamic=window.findChild<QComboBox*>("dynamic");const int presets=dynamic->count();
+    dynamic->lineEdit()->setFocus();dynamic->lineEdit()->selectAll();QTest::keyClicks(dynamic->lineEdit(),"71.5");
+    QCOMPARE(dynamic->itemData(0).toDouble(),71.5);QCOMPARE(dynamic->count(),presets+2);QVERIFY(dynamic->itemText(1).isEmpty());
+    dynamic->lineEdit()->selectAll();QTest::keyClicks(dynamic->lineEdit(),"87.25");
+    QCOMPARE(dynamic->itemData(0).toDouble(),87.25);QCOMPARE(dynamic->count(),presets+2);QCOMPARE(dynamic->currentText(),QString("87.25"));
+    QVERIFY(dynamic->lineEdit()->hasFocus());
+    window.session().project().narrowbandWorkspaceOpen=false;window.refresh();
+    auto* nav=window.findChild<PlotWidget*>("navigationPlot");auto* file=window.session().activeFile();
+    const auto total=availableSamples(file->metadata);window.session().setView({{total/4,total/2},file->view.frequency},false);window.refresh();
+    const auto center=file->view.time.begin+(file->view.time.end-file->view.time.begin)/2;
+    wheelAt(nav,QPointF(nav->width()*.9,nav->height()*.5));
+    const auto after=file->view.time.begin+(file->view.time.end-file->view.time.begin)/2;
+    QVERIFY(after>=center?after-center<=1:center-after<=1);
+}
+void UiTests::loadedPrefixStopAndRoundtrip() {
+    QTemporaryDir directory;QVERIFY(directory.isValid());const auto path=directory.filePath("IQ0_FS1Msps_BW800kHz_FC10MHz.dat");
+    QFile raw(path);QVERIFY(raw.open(QIODevice::WriteOnly));QVERIFY(raw.resize(256*1024*1024));raw.close();
+    MainWindow window;showWindow(window);QString error;QVERIFY2(window.addIqFile(path,&error),qPrintable(error));
+    auto* file=window.session().activeFile();QVERIFY(file);QCOMPARE(file->metadata.availability.status,LoadStatus::Loading);
+    QTRY_VERIFY_WITH_TIMEOUT(file->metadata.availability.availableSamples>0,10000);
+    auto* stop=window.findChild<QPushButton*>("stopSourceLoad");QVERIFY(stop&&stop->isVisible());stop->click();
+    QTRY_VERIFY_WITH_TIMEOUT(file->metadata.availability.status!=LoadStatus::Loading,10000);
+    QCOMPARE(file->metadata.availability.status,LoadStatus::Partial);const auto prefix=availableSamples(file->metadata);
+    QVERIFY(prefix>0&&prefix<file->metadata.sampleCount);QVERIFY(file->view.time.end<=prefix);QVERIFY(file->navigationEnvelope.size()<=2048);
+    QVERIFY(!stop->isVisible());QVERIFY(window.saveProject(directory.filePath("project.json")));
+    QVERIFY(window.openProject(directory.filePath("project.json")));
+    QTRY_VERIFY_WITH_TIMEOUT(window.session().activeFile()->metadata.availability.status!=LoadStatus::Loading,10000);
+    QCOMPARE(availableSamples(window.session().activeFile()->metadata),prefix);
+    QVERIFY(window.session().activeFile()->view.time.end<=prefix);
+}
 void UiTests::fileSwitchCancelsUnfinishedEdit() {
     DemoMainWindow window;
     showWindow(window);
@@ -2267,6 +2322,15 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
         QCoreApplication::processEvents();
         QCOMPARE(stack->currentIndex(), index);
         QCOMPARE(static_cast<int>(window.session().activeChannel()->page), index);
+        if (index < 3) {
+            const char* heatName = index == 0 ? "narrowbandStftPanelChart" :
+                index == 1 ? "narrowbandModulationStftChart" : "recognitionStftPanelChart";
+            auto* heat = window.findChild<QWidget*>(QString::fromLatin1(heatName));
+            auto* surface = heat->findChild<AcceleratedSurface*>();
+            QVERIFY(surface);
+            const QRectF expected(66, 14, std::max(1, heat->width() - 82), std::max(1, heat->height() - 55));
+            QTRY_COMPARE(surface->heatmapTargetRect(), expected);
+        }
     }
     QVERIFY(window.session().activeChannel()->waveformAutoScale);
     QCOMPARE(window.session().activeChannel()->waveform, NarrowbandWaveform::Magnitude);
@@ -2335,6 +2399,7 @@ void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
     QString error;
     QVERIFY2(window.addIqFile(path, &error), qPrintable(error));
 
+    QTRY_VERIFY_WITH_TIMEOUT(window.session().activeFile()->metadata.availability.status==LoadStatus::Ready,10000);
     auto* waveform = window.findChild<QComboBox*>("waveformMode");
     auto* bandwidth = window.findChild<QDoubleSpinBox*>("effectiveBandwidthMHz");
     auto* stft = window.findChild<QComboBox*>("stftFft");
@@ -2382,7 +2447,7 @@ void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
     bandwidth->setValue(.5);
     QCOMPARE(file->metadata.effectiveBandwidthHz, 500'000.0);
     QCOMPARE(file->view.frequency, (FrequencyRange{9.75e6, 10.25e6}));
-    QCOMPARE(stft->count(), 9);
+    QCOMPARE(stft->count(), 12);
     QCOMPARE(stft->currentText(), QString("256"));
     psd->setCurrentText("8192");
     QCOMPARE(file->display.psdSize, 8192);
@@ -2461,6 +2526,7 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
         QCOMPARE(window.findChildren<QAction*>("recentProjectAction").size(), 1);
         QString error;
         QVERIFY2(window.addIqFile(iqPath, &error), qPrintable(error));
+        QTRY_VERIFY_WITH_TIMEOUT(window.session().activeFile()->metadata.availability.status!=LoadStatus::Loading,10000);
         auto* palette = window.findChild<QComboBox*>("palette");
         auto* mainMode = window.findChild<QComboBox*>("modeMain");
         auto* auxiliaryMode = window.findChild<QComboBox*>("modeAux");

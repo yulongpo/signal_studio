@@ -1,0 +1,380 @@
+{
+  "schema": "signal-studio-acceptance-artifacts",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 82,
+      "sha256": "a4a713676848fe9b735d30ddf185b51a40999dbacd9dc484abd78cb50b7d599d"
+    },
+    {
+      "path": "debug/01-read-progress.png",
+      "bytes": 211387,
+      "sha256": "080773626509177484f45b81910c97e51430eb5fc8c7e313b6d6b337d5785f56"
+    },
+    {
+      "path": "debug/02-prefix-envelope.png",
+      "bytes": 238795,
+      "sha256": "c9eff2f2bf4423967a477e2934475908e9ab9bb1186fa7f1eb015d261cde41ca"
+    },
+    {
+      "path": "debug/03-wide-padded-32.png",
+      "bytes": 241228,
+      "sha256": "ce76cadfe551b50ef5a98a65c02440e99fb02ed44dd209e82daaeaa55a92afd2"
+    },
+    {
+      "path": "debug/04-narrow-whole-maximum.png",
+      "bytes": 249515,
+      "sha256": "5502b343873d3365da540e660dfb5178efe66d02e1b51407b7c7710f1a2aad2c"
+    },
+    {
+      "path": "debug/05-narrow-padded-frame.png",
+      "bytes": 253359,
+      "sha256": "dfe486476929ba2083d98c6fb21293566aec425fa88c1ac121f2312f60ec8d13"
+    },
+    {
+      "path": "debug/06-channel-config-checkboxes.png",
+      "bytes": 46841,
+      "sha256": "3770617c241c0e082a67b817aef8f6ea40a27f9367e58ecb6a4faecb15faabd1"
+    },
+    {
+      "path": "debug/prefix-project.json",
+      "bytes": 3152,
+      "sha256": "27b52dd26f9cae02b827c169cae1371ae3a0a6b107ee32f574fd81cb8fb640c9"
+    },
+    {
+      "path": "debug/regression/IQ0_FS1Msps_BW1MHz_FC100MHz.dat",
+      "bytes": 2097152,
+      "sha256": "e85afe7604e4cc4b2ec546c171721e230802da64827d06b342c316b175b1f9d0"
+    },
+    {
+      "path": "debug/regression/large-iq-narrowband.png",
+      "bytes": 252938,
+      "sha256": "939a40b74f9c03eed819d7d2591e537fee17bc005bfffb9ed60a2581c23efe7d"
+    },
+    {
+      "path": "debug/regression/linked-cursor-report.json",
+      "bytes": 37265,
+      "sha256": "e5b22224cbff6c6e4c6822b581888ebe99fc762ea094f80e134b15934df16ff5"
+    },
+    {
+      "path": "debug/regression/narrowband-linked-frame.png",
+      "bytes": 264811,
+      "sha256": "852ac4a50e112095c01e9f712906cf6189addb9c639ea3cd4c5211482e362a29"
+    },
+    {
+      "path": "debug/regression/narrowband-page-1.png",
+      "bytes": 829901,
+      "sha256": "db96ef4910ea7593d7fac8d3bdf9a2f7a0a428f4916e5a6a4e2509b4092e44bf"
+    },
+    {
+      "path": "debug/regression/narrowband-page-2.png",
+      "bytes": 327806,
+      "sha256": "fc2fa7d17a52b38a29eeb9d6afae5745f99c616959eef477c973c6787dfa4b37"
+    },
+    {
+      "path": "debug/regression/narrowband-page-3.png",
+      "bytes": 799649,
+      "sha256": "c3ac1ead702e2d88b5335cc0898d8ab93a45a9785f556e9faedb97ec1c92f595"
+    },
+    {
+      "path": "debug/regression/narrowband-power-axis-labels.png",
+      "bytes": 321742,
+      "sha256": "9a4615159b2038aabd3c49293ad4f42a868610699780223debfc7d3f6a5c9070"
+    },
+    {
+      "path": "debug/regression/wide-frame-psd.png",
+      "bytes": 260595,
+      "sha256": "f713e28aaddccac9ecdbd3242e2f6c3aa6b418bd4165611165a37f05ba80d662"
+    },
+    {
+      "path": "debug/regression/wide-power-axis-labels.png",
+      "bytes": 493428,
+      "sha256": "e4d91b46f57f6545ae90ee9f0ddc2c8ad3480b50ddec61be5e89eabeb4be86dd"
+    },
+    {
+      "path": "debug/regression/wide-waterfall-frame.png",
+      "bytes": 392440,
+      "sha256": "43a1ec6716ea7cde1e1288319ca0ae8981993c3dd025e944792e5b1fe9eb0e91"
+    },
+    {
+      "path": "debug/regression/wide-waveform-linked.png",
+      "bytes": 260118,
+      "sha256": "10f312d05d9b43f89ea5e07bc25ec7abafb6bdc47b78ebf5336c0cb8d012db87"
+    },
+    {
+      "path": "debug/spectral-loading-report.json",
+      "bytes": 7278,
+      "sha256": "57cd92f089e1f5e4746793ac81b8bcca881b79949997230c76a40c18f4d85eab"
+    },
+    {
+      "path": "debug-spectral-build-debug.log",
+      "bytes": 6643,
+      "sha256": "16a5880545f6aafe3d08252250919327fe40412d2dbe3cced2fe1089b543fdab"
+    },
+    {
+      "path": "debug-spectral-ctest-debug.log",
+      "bytes": 696,
+      "sha256": "9f1bdc1ca7009169be57440e6ef794102083f9b0f203b309ba5574e4bba82b07"
+    },
+    {
+      "path": "debug-ui-test-results-debug.txt",
+      "bytes": 121712,
+      "sha256": "642332542ad25c0b911644d29195919d10207accd0cd45872250a452959cab5b"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6741,
+      "sha256": "2ed576edfa884ff53dc9a06b367b86a3fc3c7627ab06db28f5ccdf075b129157"
+    },
+    {
+      "path": "reference-fixture.json",
+      "bytes": 495354,
+      "sha256": "5349ceee0601972df1aafb46f97afd69eae7d8a0173b5abc6dbc72923774c29f"
+    },
+    {
+      "path": "release/01-read-progress.png",
+      "bytes": 211615,
+      "sha256": "2273fefaf7fa79f0e0a85f45a46e4303962571a9afbf1fb9e681596520824ea3"
+    },
+    {
+      "path": "release/02-prefix-envelope.png",
+      "bytes": 240992,
+      "sha256": "e8d952db710aef1fa673a0e855f40e0fad2611185c4d4c5f20f27a138c6bc1ea"
+    },
+    {
+      "path": "release/03-wide-padded-32.png",
+      "bytes": 242935,
+      "sha256": "78dae58b61ea3cc7f58a12260ac1265b9b3792b6c6e31cb0ad465f1abdf20e3d"
+    },
+    {
+      "path": "release/04-narrow-whole-maximum.png",
+      "bytes": 249515,
+      "sha256": "5502b343873d3365da540e660dfb5178efe66d02e1b51407b7c7710f1a2aad2c"
+    },
+    {
+      "path": "release/05-narrow-padded-frame.png",
+      "bytes": 253359,
+      "sha256": "dfe486476929ba2083d98c6fb21293566aec425fa88c1ac121f2312f60ec8d13"
+    },
+    {
+      "path": "release/06-channel-config-checkboxes.png",
+      "bytes": 46841,
+      "sha256": "3770617c241c0e082a67b817aef8f6ea40a27f9367e58ecb6a4faecb15faabd1"
+    },
+    {
+      "path": "release/prefix-project.json",
+      "bytes": 3152,
+      "sha256": "b71c7909f632f3915f0431e9e129bc3df2a8e98cbe5ab499557cb86142d24220"
+    },
+    {
+      "path": "release/regression/IQ0_FS1Msps_BW1MHz_FC100MHz.dat",
+      "bytes": 2097152,
+      "sha256": "e85afe7604e4cc4b2ec546c171721e230802da64827d06b342c316b175b1f9d0"
+    },
+    {
+      "path": "release/regression/large-iq-narrowband.png",
+      "bytes": 253653,
+      "sha256": "d5caeadced62dfb303b4d9fb4d29c4a03435d180580fe9eca95a2a5fb51bec4f"
+    },
+    {
+      "path": "release/regression/linked-cursor-report.json",
+      "bytes": 37285,
+      "sha256": "40b0cca31ec2bfcfcf5ba5f14420cd84ab152873bc8f274c02d4ddf9cd0bbfc9"
+    },
+    {
+      "path": "release/regression/narrowband-linked-frame.png",
+      "bytes": 264811,
+      "sha256": "852ac4a50e112095c01e9f712906cf6189addb9c639ea3cd4c5211482e362a29"
+    },
+    {
+      "path": "release/regression/narrowband-page-1.png",
+      "bytes": 829901,
+      "sha256": "db96ef4910ea7593d7fac8d3bdf9a2f7a0a428f4916e5a6a4e2509b4092e44bf"
+    },
+    {
+      "path": "release/regression/narrowband-page-2.png",
+      "bytes": 327806,
+      "sha256": "fc2fa7d17a52b38a29eeb9d6afae5745f99c616959eef477c973c6787dfa4b37"
+    },
+    {
+      "path": "release/regression/narrowband-page-3.png",
+      "bytes": 799221,
+      "sha256": "b7badc15e4bce282011bb286fa1f353a505b41c002b32421c90374c349cf374a"
+    },
+    {
+      "path": "release/regression/narrowband-power-axis-labels.png",
+      "bytes": 321742,
+      "sha256": "9a4615159b2038aabd3c49293ad4f42a868610699780223debfc7d3f6a5c9070"
+    },
+    {
+      "path": "release/regression/wide-frame-psd.png",
+      "bytes": 260595,
+      "sha256": "f713e28aaddccac9ecdbd3242e2f6c3aa6b418bd4165611165a37f05ba80d662"
+    },
+    {
+      "path": "release/regression/wide-power-axis-labels.png",
+      "bytes": 493428,
+      "sha256": "e4d91b46f57f6545ae90ee9f0ddc2c8ad3480b50ddec61be5e89eabeb4be86dd"
+    },
+    {
+      "path": "release/regression/wide-waterfall-frame.png",
+      "bytes": 392440,
+      "sha256": "43a1ec6716ea7cde1e1288319ca0ae8981993c3dd025e944792e5b1fe9eb0e91"
+    },
+    {
+      "path": "release/regression/wide-waveform-linked.png",
+      "bytes": 260118,
+      "sha256": "10f312d05d9b43f89ea5e07bc25ec7abafb6bdc47b78ebf5336c0cb8d012db87"
+    },
+    {
+      "path": "release/spectral-loading-report.json",
+      "bytes": 7281,
+      "sha256": "da95fa43a5bfed0c3d3d7ccf15c9bdbdd7302a86f27c3c40e81730269223efd8"
+    },
+    {
+      "path": "release-spectral-build-release.log",
+      "bytes": 6098,
+      "sha256": "8b4ff2320ee53c87799f41ddae30c55b75fdcb8ebe8a1c715881779d37b9b412"
+    },
+    {
+      "path": "release-spectral-ctest-release.log",
+      "bytes": 698,
+      "sha256": "96e85207c625f8d6b4ae6aa697ad3f1d3173f1736e44a199422b5f25a151ed69"
+    },
+    {
+      "path": "release-ui-test-results-release.txt",
+      "bytes": 121715,
+      "sha256": "6acc6278aea4a426877e5839a2f25d17951bfd9162f6dda5c0382c8e29157553"
+    },
+    {
+      "path": "scipy-reference.json",
+      "bytes": 6751,
+      "sha256": "1ba3930d5cb8472ecfe9fee35d888463d6ef61ae88ebec5af347c48378b341e4"
+    },
+    {
+      "path": "smoke/signal-studio-debug-gpu-screen2-4k-150-report.json",
+      "bytes": 13924,
+      "sha256": "cf82be3573916550dc329b41c429f9f2d626240d565eb5837718ad428b84fb30"
+    },
+    {
+      "path": "smoke/signal-studio-debug-gpu-screen2-4k-150-screens.json",
+      "bytes": 749,
+      "sha256": "c60be1fca1263142cb576ab9fc1a6221667813d0c2f286489d0541e28fe46816"
+    },
+    {
+      "path": "smoke/signal-studio-debug-gpu-screen2-4k-150.png",
+      "bytes": 915271,
+      "sha256": "8f8cf79ae9d7e9114daf6f1994545017f2b4bb6e38d800de7a82eb978d9a1d44"
+    },
+    {
+      "path": "smoke/signal-studio-debug-software-screen2-4k-150-report.json",
+      "bytes": 8086,
+      "sha256": "6ebdef6770460fa2ea6fbef52a7aff54cb15ef43d668974529203037ba522631"
+    },
+    {
+      "path": "smoke/signal-studio-debug-software-screen2-4k-150-screens.json",
+      "bytes": 749,
+      "sha256": "c60be1fca1263142cb576ab9fc1a6221667813d0c2f286489d0541e28fe46816"
+    },
+    {
+      "path": "smoke/signal-studio-debug-software-screen2-4k-150.png",
+      "bytes": 997207,
+      "sha256": "e7505b41b6c4e1d22bbad13a8c9ac10faf72249cc5137ab664657531c630db2a"
+    },
+    {
+      "path": "smoke/signal-studio-narrowband-debug-gpu-screen2-4k-150-report.json",
+      "bytes": 15408,
+      "sha256": "4d91cc17f07ab2952f88a27aad2e56c9e282aea3ee98af4ea92c08f7d3b52f00"
+    },
+    {
+      "path": "smoke/signal-studio-narrowband-debug-gpu-screen2-4k-150-screens.json",
+      "bytes": 749,
+      "sha256": "c60be1fca1263142cb576ab9fc1a6221667813d0c2f286489d0541e28fe46816"
+    },
+    {
+      "path": "smoke/signal-studio-narrowband-debug-gpu-screen2-4k-150.png",
+      "bytes": 251721,
+      "sha256": "64825571dbc7516ae0185386f88bb1af4d486130a85536ab913ca3936ffdf667"
+    },
+    {
+      "path": "smoke/signal-studio-narrowband-debug-software-screen2-4k-150-report.json",
+      "bytes": 9748,
+      "sha256": "39a45fa4570f5755b1d462629973f1d5b0de5c875d1e373d2ce2aec89fa54b2d"
+    },
+    {
+      "path": "smoke/signal-studio-narrowband-debug-software-screen2-4k-150-screens.json",
+      "bytes": 749,
+      "sha256": "c60be1fca1263142cb576ab9fc1a6221667813d0c2f286489d0541e28fe46816"
+    },
+    {
+      "path": "smoke/signal-studio-narrowband-debug-software-screen2-4k-150.png",
+      "bytes": 492455,
+      "sha256": "9c7ffea30afab89a5c1ff4421eee18263f58bf5cda7a1ff19066258fd1fc69b5"
+    },
+    {
+      "path": "smoke/signal-studio-narrowband-release-gpu-screen2-4k-150-report.json",
+      "bytes": 15380,
+      "sha256": "8e5a0b23df72cd222056804c680c6b99d24200522cb6a7ba1107d323afac59fe"
+    },
+    {
+      "path": "smoke/signal-studio-narrowband-release-gpu-screen2-4k-150-screens.json",
+      "bytes": 749,
+      "sha256": "c60be1fca1263142cb576ab9fc1a6221667813d0c2f286489d0541e28fe46816"
+    },
+    {
+      "path": "smoke/signal-studio-narrowband-release-gpu-screen2-4k-150.png",
+      "bytes": 251721,
+      "sha256": "64825571dbc7516ae0185386f88bb1af4d486130a85536ab913ca3936ffdf667"
+    },
+    {
+      "path": "smoke/signal-studio-narrowband-release-software-screen2-4k-150-report.json",
+      "bytes": 9748,
+      "sha256": "5f8a64bfa467ab04e82b32d442133e7919c2d1509c8f7293b83aa90d6049a9ad"
+    },
+    {
+      "path": "smoke/signal-studio-narrowband-release-software-screen2-4k-150-screens.json",
+      "bytes": 749,
+      "sha256": "c60be1fca1263142cb576ab9fc1a6221667813d0c2f286489d0541e28fe46816"
+    },
+    {
+      "path": "smoke/signal-studio-narrowband-release-software-screen2-4k-150.png",
+      "bytes": 495449,
+      "sha256": "30b85f90685a412a8dd41b874d2b2ad841bd6908fcaff94f0f2ae52215ce294e"
+    },
+    {
+      "path": "smoke/signal-studio-release-gpu-screen2-4k-150-report.json",
+      "bytes": 13904,
+      "sha256": "e708bfe1865577f7befd437cd361730367ac978429f9fef3d65d87a01513f3be"
+    },
+    {
+      "path": "smoke/signal-studio-release-gpu-screen2-4k-150-screens.json",
+      "bytes": 749,
+      "sha256": "c60be1fca1263142cb576ab9fc1a6221667813d0c2f286489d0541e28fe46816"
+    },
+    {
+      "path": "smoke/signal-studio-release-gpu-screen2-4k-150.png",
+      "bytes": 915271,
+      "sha256": "8f8cf79ae9d7e9114daf6f1994545017f2b4bb6e38d800de7a82eb978d9a1d44"
+    },
+    {
+      "path": "smoke/signal-studio-release-software-screen2-4k-150-report.json",
+      "bytes": 8086,
+      "sha256": "e489014ea3f54041cbb4aee26328446769ab97cc77bde438e58bdff2aded25fb"
+    },
+    {
+      "path": "smoke/signal-studio-release-software-screen2-4k-150-screens.json",
+      "bytes": 749,
+      "sha256": "c60be1fca1263142cb576ab9fc1a6221667813d0c2f286489d0541e28fe46816"
+    },
+    {
+      "path": "smoke/signal-studio-release-software-screen2-4k-150.png",
+      "bytes": 997207,
+      "sha256": "e7505b41b6c4e1d22bbad13a8c9ac10faf72249cc5137ab664657531c630db2a"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 28196,
+      "sha256": "464abc17ead36fe4eef06c4ef873115a165f1918cba7fec311b4e1de85833c88"
+    }
+  ]
+}

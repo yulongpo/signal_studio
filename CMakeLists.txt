@@ -50,6 +50,14 @@ function(ss_add_graphics_shaders target resource_name)
     )
 endfunction()
 
+function(ss_add_ui_assets target)
+    qt_add_resources(${target} "${target}_ui_assets"
+        PREFIX "/signalstudio/ui"
+        BASE "${CMAKE_SOURCE_DIR}/resources/ui"
+        FILES "${CMAKE_SOURCE_DIR}/resources/ui/check.svg"
+              "${CMAKE_SOURCE_DIR}/resources/ui/check-partial.svg")
+endfunction()
+
 add_library(SignalStudioCore STATIC
     domain/project.cpp
     domain/project.h
@@ -63,6 +71,8 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/channel_processor.cpp
     infrastructure/channel_processor.h
     infrastructure/spectral_analysis.cpp
+    infrastructure/spectral_windows.cpp
+    infrastructure/source_loader.cpp
     infrastructure/spectral_analysis.h
     infrastructure/int16_iq_file.cpp
     infrastructure/int16_iq_file.h
@@ -74,6 +84,8 @@ target_link_libraries(SignalStudioInfrastructure PUBLIC SignalStudioCore Qt6::Co
 ss_target_defaults(SignalStudioInfrastructure)
 
 set(SS_UI_SOURCES
+    ui/spectral_settings_widget.cpp
+    ui/spectral_settings_widget.h
     app/main_window.cpp
     app/main_window.h
     ui/narrowband_workspace.cpp
@@ -91,6 +103,7 @@ target_link_libraries(SignalStudio PRIVATE
     Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
 ss_target_defaults(SignalStudio)
 ss_add_graphics_shaders(SignalStudio signalstudio_app_shaders)
+ss_add_ui_assets(SignalStudio)
 qt_add_resources(SignalStudio signalstudio_narrowband_demo
     PREFIX "/signalstudio/demo"
     BASE "${CMAKE_SOURCE_DIR}/resources"
@@ -151,6 +164,7 @@ if(SS_BUILD_TESTS)
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
     ss_target_defaults(SignalStudioUiTests)
     ss_add_graphics_shaders(SignalStudioUiTests signalstudio_ui_test_shaders)
+    ss_add_ui_assets(SignalStudioUiTests)
     qt_add_resources(SignalStudioUiTests signalstudio_ui_test_narrowband_demo
         PREFIX "/signalstudio/demo"
         BASE "${CMAKE_SOURCE_DIR}/resources"
@@ -162,6 +176,7 @@ if(SS_BUILD_TESTS)
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
     ss_target_defaults(SignalStudioUiCapture)
     ss_add_graphics_shaders(SignalStudioUiCapture signalstudio_ui_capture_shaders)
+    ss_add_ui_assets(SignalStudioUiCapture)
     qt_add_resources(SignalStudioUiCapture signalstudio_ui_capture_narrowband_demo
         PREFIX "/signalstudio/demo"
         BASE "${CMAKE_SOURCE_DIR}/resources"

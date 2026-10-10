@@ -162,6 +162,8 @@ bool makeChannelDspPlan(const FileMetadata& source, const Channel& channel,
                         ChannelDspPlan& plan, QString& error) {
     error.clear();
     plan = {};
+    if(!source.availability.fingerprint.empty()&&iqSourceFingerprint(QString::fromStdString(source.path)).toStdString()!=source.availability.fingerprint){error="通道源文件指纹已改变，请重新读入";return false;}
+    if(source.availability.status==LoadStatus::Loading||channel.sourceTime.end>availableSamples(source)){error="通道来源未读入";return false;}
     const auto sourceRate = roundHz(source.sampleRateHz);
     const auto outputRate = roundHz(channel.outputSampleRateHz);
     if (!sourceRate || !outputRate || sourceRate > 4'000'000'000ULL || outputRate > 4'000'000'000ULL ||
@@ -374,6 +376,7 @@ bool ChannelSampleCache::process(const FileMetadata& source, const Channel& chan
                                  const ChannelDspPlan& plan, TimeRange outputSamples,
                                  ChannelSampleData& result,
                                  const std::function<bool()>& cancelled) {
+    std::lock_guard lock(mutex_);
     result = {};
     if (outputSamples.begin >= outputSamples.end || outputSamples.end - outputSamples.begin > 8'000'000)
         return false;
@@ -473,12 +476,14 @@ bool ChannelSampleCache::process(const FileMetadata& source, const Channel& chan
 }
 
 void ChannelSampleCache::clear() {
+    std::lock_guard lock(mutex_);
     entries_.clear();
     lru_.clear();
     bytes_ = 0;
 }
 
 ChannelSampleCacheStats ChannelSampleCache::stats() const {
+    std::lock_guard lock(mutex_);
     return {entries_.size(), bytes_, hits_, misses_};
 }
 

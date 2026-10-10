@@ -5,6 +5,7 @@
 #include <QStringList>
 #include <QPointer>
 #include <array>
+#include <map>
 
 class QTreeWidget;
 class QComboBox;
@@ -25,6 +26,8 @@ class QTimer;
 namespace signalstudio {
 class PlotWidget;
 class NarrowbandWorkspace;
+class SourceLoader;
+class SpectralSettingsWidget;
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
@@ -46,6 +49,13 @@ protected:
     void keyPressEvent(QKeyEvent*) override;
     bool eventFilter(QObject*, QEvent*) override;
 private:
+    void startSourceLoad(FileState& file, SampleIndex target);
+    void pollSourceLoads();
+    struct LoadJob { std::shared_ptr<SourceLoader> loader; std::uint64_t project = 0; SampleIndex previous = 0; };
+    std::map<std::string, LoadJob> sourceLoads_;
+    QTimer* sourceLoadTimer_ = nullptr;
+    QPushButton* stopSourceLoad_ = nullptr;
+    SpectralSettingsWidget *psdParameters_ = nullptr, *stftParameters_ = nullptr;
     bool handleWindowChrome(QObject*, QEvent*);
     void toggleWindowState();
     void updateWindowControls();

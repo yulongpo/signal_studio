@@ -2,6 +2,7 @@
 
 #include "domain/project.h"
 #include "infrastructure/spectral_analysis.h"
+#include "infrastructure/source_loader.h"
 
 #include <QByteArray>
 #include <QFile>
@@ -32,8 +33,15 @@ public:
     Int16IqFile& operator=(const Int16IqFile&) = delete;
 
     bool open(const QString& path, QString& error);
+    bool open(const FileMetadata& metadata, QString& error) {
+        const auto path=QString::fromStdString(metadata.path);
+        if(metadata.availability.status==LoadStatus::Loading||metadata.availability.status==LoadStatus::Failed){error="来源未读入或已失效";return false;}
+        if(!metadata.availability.fingerprint.empty()&&iqSourceFingerprint(path).toStdString()!=metadata.availability.fingerprint){error="源文件指纹已改变，请重新读入";return false;}
+        if(!open(path,error))return false;limitTo(availableSamples(metadata));return true;
+    }
     bool isOpen() const { return mapped_ != nullptr; }
     std::uint64_t sampleCount() const { return sampleCount_; }
+    void limitTo(SampleIndex count) { sampleCount_ = std::min(sampleCount_, count); }
     std::complex<double> sampleAt(std::uint64_t index) const;
     SpectralSource spectralSource() const;
 

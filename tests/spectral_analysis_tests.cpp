@@ -9,6 +9,10 @@
 #include <iostream>
 #include <numbers>
 #include <stdexcept>
+#include "infrastructure/source_loader.h"
+#include <QTemporaryDir>
+#include <QtEndian>
+#include <thread>
 
 using namespace signalstudio;
 namespace {
@@ -65,8 +69,8 @@ void testZoomResolutionAndBounds() {
             "Longer zoom frames must resolve the two nearby tones");
     }
     const auto insufficient = analyzeSpectrogram(source, {0, 1000}, {7800, 8200}, 256, 3);
-    check(insufficient->frames.empty() && insufficient->error.find("时间窗不足") != std::string::npos,
-        "Insufficient duration must be explicit without changing N or borrowing samples");
+    check(!insufficient->frames.empty() && insufficient->frames.front()->paddedSamples > 0,
+        "Insufficient duration must zero-pad without changing N or borrowing samples");
     check(insufficient->providerView == TimeRange{0, 1000} && insufficient->plan.points == 256, "Insufficient request must retain the user's view and N");
     auto bounded = source;
     bounded.read = [source](TimeRange range, auto& samples, const auto& cancel) {
@@ -129,6 +133,50 @@ void testDensityAndInvalidPlans() {
     check(!makeSpectralAnalysisPlan(1e30, {0, 1e-30}, 65536).valid, "Extreme analysis duration must reject resource/integer overflow");
     check(!makeSpectralAnalysisPlan(rate, {-40000, 100}, 256).valid, "Frequency ranges outside Nyquist must be rejected");
 }
+void testPaddingStatisticsAndMethods() {
+    SpectralSource source;source.sampleRateHz=1024;
+    source.read=[](TimeRange r,auto& out,const auto&){check(r.begin>=100&&r.end<=103,"Padding escaped real samples");out.assign(r.end-r.begin,{.5f,0});return true;};
+    SpectrogramSettings settings;settings.parameters.window=SpectralWindow::Rectangular;
+    const auto shortData=analyzeSpectrogram(source,{100,103},{-512,512},32,240,settings,10);
+    check(shortData->frames.size()==10&&shortData->sourceView==TimeRange{100,103}&&shortData->adjustedOverlap&&shortData->repeatedObservation,
+        "Short STFT must preserve the original time axis and show ten padded cells");
+    check(std::abs(shortData->effectiveHop-.3)<1e-12&&std::abs(shortData->effectiveOverlap-(1-.3/32))<1e-12,"Reported hop must match rational display centers including repeated observations");
+    for(const auto& frame:shortData->frames)check(frame->linearPower.size()==32&&frame->paddedSamples>0&&frame->sourceSamples.end<=103,
+        "Padded frames must retain N and their bounded real sample ranges");
+    Session session;session.installSpectrogram("short",shortData);const auto* last=shortData->frameAtFraction(.99);
+    session.pinCursor("short",102,0,true,last->id);check(session.selectedSpectralFrame("short")==last,"Repeated source centers need explicit display frame IDs");
+    PsdSettings psd;psd.parameters.window=SpectralWindow::Rectangular;std::string error;
+    const auto padded=analyzeSpectrum(source,{100,103},{-512,512},32,psd,error);
+    check(padded&&error.empty()&&padded->paddedSamples>0,"Short PSD must zero-pad");
+    double integrated=0;for(auto p:padded->linearPower)integrated+=p*32;
+    check(std::abs(integrated-.25)<1e-6,"Zero extension must not dilute the observed power");
+    SampleIndex highest=0;source.read=[&](TimeRange r,auto& out,const auto&){highest=std::max(highest,r.end);out.resize(r.end-r.begin);
+        for(std::size_t n=0;n<out.size();++n){const auto sample=r.begin+n;const double amplitude=sample>=6400?.8:.1;out[n]=static_cast<std::complex<float>>(std::polar(amplitude,2*std::numbers::pi*64*sample/1024));}return true;};
+    auto mean=analyzeSpectrum(source,{0,6503},{-512,512},32,psd,error);check(mean&&highest==6503,"Final PSD must cover all data including the last incomplete segment");
+    psd.statistic=SpectrumStatistic::Maximum;auto maximum=analyzeSpectrum(source,{0,6503},{-512,512},32,psd,error);
+    psd.statistic=SpectrumStatistic::Minimum;auto minimum=analyzeSpectrum(source,{0,6503},{-512,512},32,psd,error);
+    for(int k=0;k<32;++k)check(maximum->linearPower[k]+1e-12>=mean->linearPower[k]&&mean->linearPower[k]+1e-12>=minimum->linearPower[k],"Power statistics must be evaluated in linear power");
+    psd.statistic=SpectrumStatistic::Mean;
+    for(auto method:{SpectralMethod::Periodogram,SpectralMethod::Bartlett,SpectralMethod::Welch,SpectralMethod::Multitaper,SpectralMethod::Burg}){
+        psd.parameters.method=method;auto result=analyzeSpectrum(source,{0,256},{-512,512},32,psd,error);
+        check(result&&error.empty()&&result->linearPower.size()==32,"Every enabled estimator must produce a real two-sided N-bin PSD");
+        check(std::all_of(result->linearPower.begin(),result->linearPower.end(),[](float x){return std::isfinite(x)&&x>=0;}),"PSD must contain finite nonnegative powers");
+    }
+    const auto windows=dpssWindows(128,3.5,6);check(windows.size()==6,"DPSS must calculate all configured tapers");
+    for(std::size_t i=0;i<windows.size();++i)for(std::size_t j=0;j<windows.size();++j){double dot=0;for(int n=0;n<128;++n)dot+=windows[i][n]*windows[j][n];check(std::abs(dot-(i==j?1.0:0.0))<1e-8,"DPSS must retain orthonormal tapers");}
+}
+void testSourceLoading() {
+    QTemporaryDir directory;check(directory.isValid(),"Loader temp directory missing");const auto path=directory.filePath("load.iq");
+    QFile file(path);check(file.open(QIODevice::WriteOnly),"Could not create loader fixture");QByteArray data(4*1'048'700,0);
+    qToLittleEndian<qint16>(32767,reinterpret_cast<uchar*>(data.data()+4*1'048'699));file.write(data);file.close();
+    SourceLoader loader(path,1'048'700);SourceLoadSnapshot state;
+    do{state=loader.snapshot();std::this_thread::sleep_for(std::chrono::milliseconds(2));}while(!state.finished);
+    check(state.error.isEmpty()&&state.loaded==1'048'700&&state.envelope.size()<=2048,"Loader must scan actual samples and bound the envelope point count");
+    const auto peak=std::max_element(state.envelope.begin(),state.envelope.end(),[](auto a,auto b){return a.peak<b.peak;});
+    check(peak->peakSample==1'048'699&&peak->peak==32767,"Navigator must preserve a single final-sample impulse");
+    SourceLoader partial(path,123);do{state=partial.snapshot();std::this_thread::sleep_for(std::chrono::milliseconds(2));}while(!state.finished);
+    check(state.loaded==123&&state.envelope.back().end==123,"Saved prefixes must not read the uncommitted source tail");
+}
 void dumpReference(const QString& path) {
     auto source = toneSource(65536);
     const auto data = analyzeSpectrogram(source, {0, 65536}, {7800, 8200}, 256, 1);
@@ -142,6 +190,25 @@ void dumpReference(const QString& path) {
         {"stages", plan.decimationStages}, {"decimation", static_cast<double>(plan.decimation)},
         {"first", static_cast<double>(frame.providerSamples.begin)}, {"last", static_cast<double>(frame.providerSamples.end)},
         {"viewBegin", 0}, {"viewEnd", 65536}, {"taps", coefficients}, {"linearPower", powers}};
+    SpectralSource reference;reference.sampleRateHz=1024;
+    QJsonArray real,imag;
+    std::vector<std::complex<float>> iq(79);
+    for(int n=0;n<79;++n){iq[n]=static_cast<std::complex<float>>(.3*std::polar(1.0,2*std::numbers::pi*112*n/1024)+.07*std::polar(1.0,2*std::numbers::pi*233*n/1024)+std::complex<double>(.03*std::sin(n*19.7),.02*std::cos(n*7.3)));real.append(iq[n].real());imag.append(iq[n].imag());}
+    reference.read=[&](TimeRange r,auto& out,const auto&){out.assign(iq.begin()+r.begin,iq.begin()+r.end);return true;};
+    QJsonArray cases;
+    for(auto method:{SpectralMethod::Periodogram,SpectralMethod::Bartlett,SpectralMethod::Welch,SpectralMethod::Multitaper,SpectralMethod::Burg})for(int window=0;window<7;++window){
+        PsdSettings settings;settings.parameters.method=method;settings.parameters.window=static_cast<SpectralWindow>(window);settings.parameters.burgOrder=4;
+        std::string error;auto frame=analyzeSpectrum(reference,{0,79},{-512,512},128,settings,error);check(frame!=nullptr,"Reference estimator missing");
+        QJsonArray power,coefficients;for(auto x:frame->linearPower)power.append(x);for(auto x:spectralWindow(settings.parameters.window,79))coefficients.append(x);
+        cases.append(QJsonObject{{"method",static_cast<int>(method)},{"window",window},{"linearPower",power},{"coefficients",coefficients}});
+    }
+    QJsonArray tapers;for(auto& taper:dpssWindows(79,3.5,6)){QJsonArray values;for(auto x:taper)values.append(x);tapers.append(values);}
+    QJsonArray streamReal,streamImag,statistics;
+    std::vector<std::complex<float>> stream(2257);for(int n=0;n<2257;++n){stream[n]=static_cast<std::complex<float>>(std::polar(n>=2240||n==1300?.8:.1,2*std::numbers::pi*64*n/1024));streamReal.append(stream[n].real());streamImag.append(stream[n].imag());}
+    reference.read=[&](TimeRange r,auto& out,const auto&){out.assign(stream.begin()+r.begin,stream.begin()+r.end);return true;};
+    for(int type=0;type<3;++type){PsdSettings settings;settings.statistic=static_cast<SpectrumStatistic>(type);std::string error;auto estimate=analyzeSpectrum(reference,{0,2257},{-512,512},32,settings,error);check(estimate!=nullptr,"Stream reference failed");QJsonArray power;for(auto x:estimate->linearPower)power.append(x);statistics.append(power);}
+    report["streamStatistics"]=QJsonObject{{"real",streamReal},{"imag",streamImag},{"powers",statistics},{"points",32},{"sampleRateHz",1024}};
+    report["estimators"]=QJsonObject{{"real",real},{"imag",imag},{"sampleRateHz",1024},{"points",128},{"cases",cases},{"dpss",tapers}};
     QFile file(path); check(file.open(QIODevice::WriteOnly), "Could not write SciPy comparison fixture");
     file.write(QJsonDocument(report).toJson());
 }
@@ -150,6 +217,7 @@ int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
     try {
         testDirectReference(); testZoomResolutionAndBounds(); testMappingAndLinkedFrame(); testDensityAndInvalidPlans();
+        testPaddingStatisticsAndMethods();testSourceLoading();
         if (argc == 3 && QString::fromLocal8Bit(argv[1]) == "--dump-reference") dumpReference(QString::fromLocal8Bit(argv[2]));
         std::cout << "PASS zoom CZT, actual resolution, visible bounds, cancellation, integer mapping and exact linked frames\n";
     } catch (const std::exception& error) { std::cerr << "FAIL " << error.what() << '\n'; return 1; }
