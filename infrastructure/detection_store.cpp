@@ -464,6 +464,35 @@ QString sourceHash(const DetectionRequest& request) {
   return digest(QJsonDocument(encodeSourceIdentity(request.sourceIdentity))
                     .toJson(QJsonDocument::Compact));
 }
+quint64 verifyHeadEvidence(const QDir& root, const DetectionRequest& request,
+                           const QJsonArray& mappings) {
+  quint64 bytes = 0;
+  for (const auto value : mappings) {
+    const auto mapping = value.toObject();
+    if (!mapping.contains("headEvidence")) continue;
+    const auto reference = mapping["headEvidence"].toObject();
+    onlyKeys(reference, {"path", "sha256", "bytes", "shape", "headOrder"});
+    const auto hash = string(reference, "sha256", 64, true);
+    const auto path = string(reference, "path", 32768, true);
+    const auto size = integer(reference["bytes"], "headEvidence.bytes");
+    const auto shape = reference["shape"].toArray();
+    require(hashValid(text(hash)) &&
+                text(path) == runDirectory(request.runId) + "/heads-" +
+                                  text(hash) + ".f32" &&
+                shape ==
+                    QJsonArray{1, 3, 1,
+                               static_cast<int>(request.profile.fftSize / 4)} &&
+                reference["headOrder"] == QJsonArray{"hm", "bw", "off"} &&
+                size == 3ULL * request.profile.fftSize / 4 * sizeof(float),
+            "Stored model head reference has invalid scope/layout");
+    const auto raw = readBounded(root, text(path));
+    require(
+        static_cast<quint64>(raw.size()) == size && digest(raw) == text(hash),
+        "Stored raw model heads are missing or changed");
+    bytes += size;
+  }
+  return bytes;
+}
 QJsonObject verifyChunk(const QDir& root, const DetectionRun& run,
                         const DetectionChunkReference& reference,
                         quint64& totalBytes, quint64& evidenceBytes) {
@@ -495,6 +524,7 @@ QJsonObject verifyChunk(const QDir& root, const DetectionRun& run,
   validateRecords(mappings, run.request, true);
   evidenceBytes += static_cast<quint64>(
       QJsonDocument(mappings).toJson(QJsonDocument::Compact).size() - 2);
+  evidenceBytes += verifyHeadEvidence(root, run.request, mappings);
   require(evidenceBytes <= run.request.evidenceBudgetBytes,
           "Detection mappings exceed evidence budget");
   return object;
@@ -743,6 +773,7 @@ bool appendDetectionChunk(const QString& directory, DetectionRun& run,
             "Detection chunk/store exceeds its byte budget");
     evidenceBytes += static_cast<quint64>(
         QJsonDocument(mappings).toJson(QJsonDocument::Compact).size() - 2);
+    evidenceBytes += verifyHeadEvidence(root, run.request, mappings);
     require(evidenceBytes <= run.request.evidenceBudgetBytes,
             "Detection mappings exceed evidence budget");
     const auto hash = digest(bytes);
@@ -763,6 +794,60 @@ bool appendDetectionChunk(const QString& directory, DetectionRun& run,
     const bool published = writeDetectionRun(directory, candidate, error);
     require(published, error);
     run = std::move(candidate);
+    error.clear();
+    return true;
+  } catch (const std::exception& exception) {
+    error = QString::fromUtf8(exception.what());
+    return false;
+  }
+}
+
+bool storeDetectionHeadEvidence(const QString& directory,
+                                const DetectionRequest& request,
+                                const DetectionWorkerPacket& packet,
+                                QJsonArray& target, QString& error) {
+  try {
+    const auto shape = packet.envelope["binary"].toObject()["shape"].toArray();
+    const auto count = target.size();
+    const auto width = request.profile.fftSize / 4;
+    const auto payload = packet.envelope["payload"].toObject();
+    require(count >= 1 && count <= 2 &&
+                shape == QJsonArray{static_cast<int>(count), 3, 1,
+                                    static_cast<int>(width)} &&
+                payload["headOrder"] == QJsonArray{"hm", "bw", "off"},
+            "Production worker returned an invalid raw head layout");
+    std::vector<float> heads;
+    const bool decoded = decodeFloat32Payload(packet, heads, error);
+    require(decoded, error);
+    const auto root = projectRoot(directory);
+    prepareDirectory(root, runDirectory(request.runId));
+    auto mappings = target;
+    const auto memberBytes =
+        static_cast<qsizetype>(3ULL * width * sizeof(float));
+    require(packet.binary.size() == count * memberBytes,
+            "Production model head byte count mismatch");
+    for (qsizetype index = 0; index < count; ++index) {
+      const auto bytes = packet.binary.mid(index * memberBytes, memberBytes);
+      const auto hash = digest(bytes);
+      const auto path = runDirectory(request.runId) + "/heads-" + hash + ".f32";
+      if (QFileInfo::exists(root.filePath(path)))
+        require(readBounded(root, path) == bytes,
+                "Existing immutable model heads are damaged");
+      else
+        atomicWrite(root, path, bytes);
+      auto mapped = mappings[index].toObject();
+      mapped["headEvidence"] =
+          QJsonObject{{"path", path},
+                      {"sha256", hash},
+                      {"bytes", QString::number(memberBytes)},
+                      {"shape", QJsonArray{1, 3, 1, static_cast<int>(width)}},
+                      {"headOrder", QJsonArray{"hm", "bw", "off"}}};
+      mapped["modelEvidence"] = payload["modelEvidence"];
+      const auto summaries = payload["decodeSummary"].toArray();
+      if (index < summaries.size()) mapped["decodeSummary"] = summaries[index];
+      mappings[index] = mapped;
+    }
+    target = std::move(mappings);
     error.clear();
     return true;
   } catch (const std::exception& exception) {

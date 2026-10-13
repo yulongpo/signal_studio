@@ -29,6 +29,7 @@
 #include <cmath>
 #include <deque>
 
+#include "infrastructure/detection_model_snapshot.h"
 #include "infrastructure/detection_store.h"
 #include "infrastructure/source_loader.h"
 
@@ -235,7 +236,7 @@ QString runFacts(const DetectionRun& run, std::uint64_t published) {
           .arg(run.completedWindows)
           .arg(run.eligibleWindows),
       QString(
-          "工程已发布 %1 个来源对象 · 持久化 %2 个窗口 DTO · %3 个不可变分片")
+          "工程已发布 %1 个来源对象 · 持久化 %2 条记录 · %3 个不可变分片")
           .arg(published)
           .arg(run.resultCount)
           .arg(run.chunks.size()),
@@ -520,6 +521,7 @@ bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
     error = "检测仅接受当前工程中真实文件的来源快照";
     return false;
   }
+  if (!freezeDetectionModelSnapshot(request, error)) return false;
   if (!tasks_->enqueue(projectDirectory_(), file->metadata, std::move(request),
                        error))
     return false;

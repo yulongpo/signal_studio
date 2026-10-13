@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "domain/detection.h"
+#include "infrastructure/detection_protocol.h"
 
 namespace signalstudio {
 
@@ -24,6 +25,10 @@ bool writeDetectionRun(const QString& projectDirectory, const DetectionRun& run,
 bool appendDetectionChunk(const QString& projectDirectory, DetectionRun& run,
                           const QJsonArray& results, const QJsonArray& mappings,
                           QString& error);
+bool storeDetectionHeadEvidence(const QString& projectDirectory,
+                                const DetectionRequest&,
+                                const DetectionWorkerPacket&,
+                                QJsonArray& mappings, QString& error);
 bool loadDetectionRun(const QString& projectDirectory, const QString& runId,
                       DetectionRun& run, QString& error,
                       bool verifyChunks = true);

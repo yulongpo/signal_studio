@@ -53,8 +53,9 @@ void validateConfig(const DetectionSourceConfig& config,
   require(config.fftSize >= 32 && config.fftSize <= 262144 &&
               (config.fftSize & (config.fftSize - 1)) == 0,
           "检测 FFT 长度须为 32–262144 的 2 次幂");
-  require(config.modelFrames == 10 && config.modelHopFrames == 5,
-          "本提供器仅验证 10 个真实时间槽 / 5 帧滑窗");
+  const bool scn = config.profileId == "scn-max-psd-v1";
+  require(config.modelFrames == (scn ? 16U : 10U) && config.modelHopFrames == 5,
+          "模型上下文须使用已注册的真实时间槽与 5 帧滑窗");
   require(std::isfinite(config.hopSeconds) && config.hopSeconds > 0 &&
               config.hopSeconds <= 1,
           "检测 hop 时间无效");
@@ -62,6 +63,10 @@ void validateConfig(const DetectionSourceConfig& config,
     require(config.profileVersion == 1 && config.fftSize == 65536 &&
                 config.hopSeconds == .001,
             "ffscn-gui-iq-v1 的 FFT/hop/version 已冻结");
+  if (scn)
+    require(config.profileVersion == 1 && config.fftSize == 32768 &&
+                config.hopSeconds == .001,
+            "scn-max-psd-v1 的 FFT/hop/version 已冻结");
   require(config.readBlockBytes >= bytesPerFrame(source.sampleFormat) &&
               config.readBlockBytes <= 32 * 1024 * 1024,
           "检测单次读取预算须包含完整帧且不超过 32 MiB");

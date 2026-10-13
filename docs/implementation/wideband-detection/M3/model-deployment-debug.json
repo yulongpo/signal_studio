@@ -1,0 +1,41 @@
+{
+  "schema": "signalstudio-detection-model-deployment-v1",
+  "outputBin": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin",
+  "models": [
+    {
+      "profileId": "ffscn-gui-iq-v1",
+      "manifest": "detection-models/ffscn-gui-iq-v1/manifest.json",
+      "manifestSha256": "dd3de623faf457c68be1447ef48ca9032dcb9837fe21ff7baea00236b44df6ba",
+      "engine": {
+        "path": "ffscn_epoch1200_fp32.engine",
+        "sha256": "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81",
+        "bytes": 21011788
+      }
+    },
+    {
+      "profileId": "scn-max-psd-v1",
+      "manifest": "detection-models/scn-max-psd-v1/manifest.json",
+      "manifestSha256": "689ca063995ef7f77dc8f8ec9189cdf55e616250b4278873b0edadee0a46192a",
+      "engine": {
+        "path": "scn_model.engine",
+        "sha256": "ae89d04332758d466846b71afc849c446500a82a8bd74fd8c671927247746627",
+        "bytes": 87263588
+      }
+    }
+  ],
+  "runtimeFiles": [
+    {
+      "path": "nvinfer_10.dll",
+      "sha256": "d100ec93e5abf56f8d2dafb69cde536c4f9fbb4748a5746a74b7009f6894ce67",
+      "bytes": 476635680
+    },
+    {
+      "path": "cudart64_12.dll",
+      "sha256": "760c38928bbe5759f7b31ed6692599eb7ec83cedd5702e84c2b72028a89837e1",
+      "bytes": 583680
+    }
+  ],
+  "experimental17Packaged": false,
+  "dependencyPolicy": "No training repository, Python or SDK path at runtime",
+  "verified": true
+}

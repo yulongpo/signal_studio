@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "profileId": "ffscn-gui-iq-v1",
+  "profileVersion": 1,
+  "checkpointSha256": "acd997957dd85b7fc560897874b575d4776e80270d7e377d1de7559e513e40e0",
+  "onnx": {
+    "path": "ffscn_epoch1200.onnx",
+    "sha256": "40d666f5de70b6e119a93f23be234502dd6263136af6ff7a505904cbb43d2fb4"
+  },
+  "runtime": {
+    "tensorRt": "10.11.0.33",
+    "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+    "computeCapability": [
+      12,
+      0
+    ],
+    "hardwareCompatibility": "none",
+    "versionCompatible": false
+  },
+  "input": {
+    "name": "spectrum",
+    "dtype": "float32",
+    "layout": "contiguous-NCHW",
+    "minShape": [
+      1,
+      1,
+      10,
+      65536
+    ],
+    "optShape": [
+      2,
+      1,
+      10,
+      65536
+    ],
+    "maxShape": [
+      2,
+      1,
+      10,
+      65536
+    ],
+    "stridesElements": [
+      655360,
+      655360,
+      65536,
+      1
+    ]
+  },
+  "outputs": [
+    {
+      "name": "hm",
+      "dtype": "float32",
+      "shape": [
+        "batch",
+        1,
+        1,
+        16384
+      ],
+      "stridesElements": [
+        16384,
+        16384,
+        16384,
+        1
+      ]
+    },
+    {
+      "name": "bw",
+      "dtype": "float32",
+      "shape": [
+        "batch",
+        1,
+        1,
+        16384
+      ],
+      "stridesElements": [
+        16384,
+        16384,
+        16384,
+        1
+      ]
+    },
+    {
+      "name": "off",
+      "dtype": "float32",
+      "shape": [
+        "batch",
+        1,
+        1,
+        16384
+      ],
+      "stridesElements": [
+        16384,
+        16384,
+        16384,
+        1
+      ]
+    }
+  ],
+  "engines": [
+    {
+      "path": "ffscn_epoch1200_fp32.engine",
+      "sha256": "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81",
+      "bytes": 21011788,
+      "precision": "FP32",
+      "status": "tensor-and-candidate-parity-passed"
+    },
+    {
+      "path": "ffscn_epoch1200_fp16.engine",
+      "sha256": "8b27e3e484e9d7f9c8aa456d4a95d9f066a613c471bd2531f312bdcb50572899",
+      "bytes": 15002588,
+      "precision": "FP16",
+      "status": "experimental"
+    }
+  ],
+  "defaultPrecision": "FP32",
+  "validationScope": "Three probe kinds, B1/B2; no accuracy guarantee"
+}

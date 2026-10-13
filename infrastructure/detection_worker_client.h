@@ -16,6 +16,7 @@ class DetectionWorkerClient {
   bool exchange(DetectionWorkerPacket, DetectionWorkerPacket&, QString&,
                 const std::function<bool()>& cancelled);
   void stop();
+  const QJsonObject& evidence() const { return evidence_; }
 
  private:
   bool writePacket(const DetectionWorkerPacket&, QString&);
@@ -25,6 +26,7 @@ class DetectionWorkerClient {
   DetectionPacketDecoder decoder_;
   DetectionRequest request_;
   quint64 sequence_ = 0;
+  QJsonObject evidence_;
 };
 
 }  // namespace signalstudio

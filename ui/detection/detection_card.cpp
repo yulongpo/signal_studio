@@ -22,6 +22,7 @@
 #include <cmath>
 #include <utility>
 
+#include "infrastructure/detection_model_snapshot.h"
 #include "infrastructure/detection_source.h"
 #include "ui/controls/adaptive_value_edit.h"
 #include "ui/controls/unsigned_value_edit.h"
@@ -742,7 +743,10 @@ DetectionRequest DetectionCard::request() const {
 void DetectionCard::refreshTiming() {
   const auto& profile = configuration_.profile;
   if (profile.backend == DetectionBackendKind::Scn)
-    profileHelp_->setText("SCN：16 帧最大积累，网络单行 32768 · 频率对照");
+    profileHelp_->setText(
+        "SCN：16 帧最大积累，网络单行 32768 · 频率对照。"
+        "该对照的 CNR / 频率收边裕量固定为 3 dB；"
+        "卡片噪底裕量用于 sample / ROI 时间精修。");
   else if (profile.backend == DetectionBackendKind::Experimental17)
     profileHelp_->setText(
         "17 是频率阶数，固定 10 真实帧 / N 8192–131072 · 实验");
@@ -866,7 +870,7 @@ void DetectionCard::refreshStatus() {
   if (const auto* run = latestRun()) {
     runSummary_->setText(
         QString("%1 · %2\n冻结范围：%3\n实际谱帧 %4 · unique windows %5/%6 · "
-                "窗口记录 %7\n%8%9")
+                "持久化记录 %7\n%8%9")
             .arg(lifecycleText(run->lifecycle), text(run->request.runId),
                  rangeText(run->request.requestedRange,
                            run->request.sourceIdentity.sampleRateHz))
@@ -1014,10 +1018,11 @@ QString DetectionCard::contextValidationError(
                     source_.sampleRateHz * 1000))
         .arg(
             number(static_cast<double>(support) / source_.sampleRateHz * 1000));
-  if (value.profile.backend != DetectionBackendKind::Fixture)
-    return "模型未就绪：本节点尚未接入该方案的模型执行后端；不能静默产生算法结"
-           "果";
-  if (!qApp->property("enableDetectionTestFixture").toBool())
+  if (value.profile.backend != DetectionBackendKind::Fixture) {
+    auto snapshot = value;
+    QString issue;
+    if (!freezeDetectionModelSnapshot(snapshot, issue)) return issue;
+  } else if (!qApp->property("enableDetectionTestFixture").toBool())
     return "系统链路夹具仅在显式测试模式开放，不能代替真实模型";
   DetectionSourcePlan plan;
   QString planError;

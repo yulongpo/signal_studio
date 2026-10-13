@@ -8,9 +8,13 @@
 #include <QJsonDocument>
 #include <algorithm>
 #include <cmath>
+#include <unordered_set>
 
 #include "application/annotation_service.h"
+#include "domain/scn_detection_postprocess.h"
 #include "infrastructure/annotation_json.h"
+#include "infrastructure/detection_frequency_analysis.h"
+#include "infrastructure/detection_projection.h"
 #include "infrastructure/detection_protocol.h"
 #include "infrastructure/detection_source.h"
 #include "infrastructure/detection_store.h"
@@ -74,6 +78,11 @@ QJsonObject mapping(const DetectionModelWindow& window,
   return {
       {"windowId", QString::number(window.globalWindowIndex)},
       {"firstFrameIndex", QString::number(window.firstFrameIndex)},
+      {"nominalStartSample",
+       QString::number(window.firstFrameIndex * plan.hopSamples)},
+      {"nominalEndSample",
+       QString::number((window.firstFrameIndex + plan.config.modelFrames) *
+                       plan.hopSamples)},
       {"startSample", QString::number(window.reportRange.time.begin)},
       {"endSample", QString::number(window.reportRange.time.end)},
       {"contextStartSample", QString::number(window.actualContextRange.begin)},
@@ -206,16 +215,336 @@ bool appendFixtureAnnotations(
   }
   return true;
 }
+
+void preserveRuntimeEvidence(AnnotationSourceSet& set,
+                             const QJsonObject& evidence) {
+  if (evidence.isEmpty()) return;
+  set.supplementalOriginalText =
+      QJsonDocument(evidence).toJson(QJsonDocument::Compact).toStdString();
+  set.supplementalHash =
+      digest(QByteArray::fromStdString(set.supplementalOriginalText));
+}
+
+bool decodeProductionResults(const DetectionRequest& request,
+                             const DetectionWorkerPacket& response,
+                             QJsonArray& target, QString& error) {
+  const auto payload = response.envelope["payload"].toObject();
+  const auto windows = payload["windows"].toArray();
+  const auto width = request.profile.fftSize / 4;
+  const auto shape = response.envelope["binary"].toObject()["shape"].toArray();
+  if (payload["candidateEncoding"] != "raw-heads-v1" || windows.isEmpty() ||
+      windows.size() > 2 ||
+      shape != QJsonArray{static_cast<int>(windows.size()), 3, 1,
+                          static_cast<int>(width)}) {
+    error = "Production candidate encoding or head shape is invalid";
+    return false;
+  }
+  std::vector<float> values;
+  if (!decodeFloat32Payload(response, values, error)) return false;
+  DetectionDecoderConfig config;
+  config.kind = request.profile.backend == DetectionBackendKind::Scn
+                    ? DetectionDecoderKind::ScnThreeBin
+                    : DetectionDecoderKind::FfscnSevenBin;
+  config.inputBins = request.profile.fftSize;
+  config.scoreThreshold = request.parameters.scoreThreshold;
+  config.nmsIou = request.parameters.nmsIou;
+  config.topK = request.parameters.topK;
+  QJsonArray results;
+  for (qsizetype member = 0; member < windows.size(); ++member) {
+    const auto window = windows[member].toObject();
+    if (window.size() != 2 || !window["candidates"].isArray() ||
+        !window["candidates"].toArray().isEmpty()) {
+      error = "Production window metadata contains unexpected candidates";
+      return false;
+    }
+    const auto begin =
+        values.data() + static_cast<std::size_t>(member) * 3 * width;
+    HeadView heads{{begin, width},
+                   {begin + width, width},
+                   {begin + 2 * width, width},
+                   request.profile.backend == DetectionBackendKind::Scn
+                       ? std::array<std::size_t, 3>{width, 1, 1}
+                       : std::array<std::size_t, 3>{1, 1, width}};
+    std::vector<DecodedCandidate> candidates;
+    DetectionDecodeSummary summary;
+    std::string issue;
+    if (!decodeDetectionHeads(heads, config, candidates, summary, issue)) {
+      error = QString::fromStdString(issue);
+      return false;
+    }
+    QJsonArray encoded;
+    for (const auto& candidate : candidates)
+      encoded.append(
+          QJsonObject{{"lowerBin", candidate.lowerBin},
+                      {"upperBin", candidate.upperBin},
+                      {"score", candidate.score},
+                      {"peakIndex", QString::number(candidate.peakIndex)}});
+    results.append(
+        QJsonObject{{"windowId", window["windowId"]}, {"candidates", encoded}});
+  }
+  target = std::move(results);
+  return true;
+}
+
+QJsonObject encodeCandidate(const DecodedCandidate& candidate) {
+  return {{"lowerBin", candidate.lowerBin},
+          {"upperBin", candidate.upperBin},
+          {"score", candidate.score},
+          {"peakIndex", QString::number(candidate.peakIndex)}};
+}
+QJsonArray encodeCandidates(const std::vector<DecodedCandidate>& values) {
+  QJsonArray result;
+  for (const auto& candidate : values)
+    result.append(encodeCandidate(candidate));
+  return result;
+}
+bool postprocessScnResults(const std::vector<DetectionModelWindow>& windows,
+                           const DetectionSourcePlan& plan, QJsonArray& results,
+                           QJsonArray& mappings, QString& error,
+                           const PostprocessCancellation& cancelled) {
+  if (results.size() != static_cast<qsizetype>(windows.size())) {
+    error = "SCN decoded window count differs from its physical spectra";
+    return false;
+  }
+  for (qsizetype index = 0; index < results.size(); ++index) {
+    auto result = results[index].toObject();
+    std::vector<DecodedCandidate> raw;
+    for (const auto value : result["candidates"].toArray()) {
+      const auto candidate = value.toObject();
+      quint64 peak = 0;
+      if (!workerUnsigned(candidate["peakIndex"], peak, error)) return false;
+      raw.push_back(
+          {candidate["lowerBin"].toDouble(), candidate["upperBin"].toDouble(),
+           candidate["score"].toDouble(), static_cast<std::size_t>(peak)});
+    }
+    ScnWindowPostprocess processed;
+    std::string issue;
+    if (!postprocessScnWindow(
+            windows[static_cast<std::size_t>(index)].densityDb,
+            plan.config.modelFrames, plan.config.fftSize, raw,
+            plan.frequencyFirstBinHz, plan.frequencyStepHz, processed, issue,
+            cancelled)) {
+      error = QString::fromStdString(issue);
+      return false;
+    }
+    QJsonArray measurements, refinements;
+    for (const auto& measurement : processed.measurements) {
+      auto encoded = encodeCandidate(measurement.candidate);
+      encoded["signalLevelDb"] = measurement.signalLevelDb;
+      encoded["neighborLevelDb"] = measurement.neighborLevelDb;
+      encoded["cnrDb"] = measurement.cnrDb;
+      encoded["accepted"] = measurement.accepted;
+      measurements.append(encoded);
+    }
+    for (const auto& refinement : processed.refinements) {
+      QJsonObject encoded{
+          {"originalLowerHz", refinement.originalFrequency.lowerHz},
+          {"originalUpperHz", refinement.originalFrequency.upperHz},
+          {"lowerHz", refinement.frequency.lowerHz},
+          {"upperHz", refinement.frequency.upperHz},
+          {"applied", refinement.applied},
+          {"noiseSampleCount", QString::number(refinement.noiseSampleCount)},
+          {"skippedReason", QString::fromStdString(refinement.skippedReason)}};
+      if (refinement.noiseSampleCount) {
+        encoded["noiseFloorDb"] = refinement.noiseFloorDb;
+        encoded["thresholdDb"] = refinement.thresholdDb;
+      }
+      refinements.append(encoded);
+    }
+    auto mapped = mappings[index].toObject();
+    mapped["scnPostprocess"] = QJsonObject{
+        {"version", "scn-max-cnr-fusion-min-bandwidth-before-tracking-v1"},
+        {"cnrThresholdDb", 3.0},
+        {"bandwidthMarginDb", 3.0},
+        {"fusionIou", .1},
+        {"fusionOverlapRatio", .5},
+        {"fusionGapHz", 0},
+        {"candidateCap", 150},
+        {"meanSpectrumInferenceCalls", 0},
+        {"rawCandidates", encodeCandidates(raw)},
+        {"measurements", measurements},
+        {"unfilteredFused", encodeCandidates(processed.unfilteredFused)},
+        {"filteredFused", encodeCandidates(processed.filteredFused)},
+        {"refinements", refinements}};
+    mappings[index] = mapped;
+    result["candidates"] = encodeCandidates(processed.candidates);
+    results[index] = result;
+  }
+  return true;
+}
+
+void preserveFrequencyEvidence(
+    DetectionPublication& publication,
+    const std::vector<DetectionFrequencyEvidence>& values) {
+  for (auto& annotation : publication.annotations) {
+    const auto found =
+        std::find_if(values.begin(), values.end(), [&](const auto& value) {
+          return value.seedId == annotation.originRecordId;
+        });
+    if (found == values.end() || !annotation.originEvidence) continue;
+    auto origin = std::make_shared<OriginEvidence>(*annotation.originEvidence);
+    auto fields = QJsonDocument::fromJson(
+                      QByteArray::fromStdString(origin->originalFieldsJson))
+                      .object();
+    QJsonObject frequency{
+        {"method", QString::fromStdString(found->method)},
+        {"applied", found->applied},
+        {"shrunk", found->shrunk},
+        {"skippedReason", QString::fromStdString(found->skippedReason)},
+        {"originalLowerHz", found->originalFrequency.lowerHz},
+        {"originalUpperHz", found->originalFrequency.upperHz},
+        {"correctedLowerHz", found->frequency.lowerHz},
+        {"correctedUpperHz", found->frequency.upperHz},
+        {"firstFrame", QString::number(found->firstFrame)},
+        {"lastFrameExclusive", QString::number(found->lastFrameExclusive)},
+        {"uniqueFrameCount", QString::number(found->frameCount)},
+        {"globalFrameCount", QString::number(found->globalFrameCount)},
+        {"percentileSampleCount",
+         QString::number(found->percentileSampleCount)},
+        {"meanSpectrumSha256",
+         QString::fromStdString(found->meanSpectrumSha256)},
+        {"maximumSpectrumSha256",
+         QString::fromStdString(found->maximumSpectrumSha256)},
+        {"numericalPolicy", QString::fromStdString(found->numericalPolicy)}};
+    if (found->hasNoiseFloor) {
+      frequency["noiseFloorDb"] = found->noiseFloorDb;
+      frequency["thresholdDb"] = found->thresholdDb;
+      if (found->hasPeak)
+        origin->estimatedCnrDb = found->peakDb - found->noiseFloorDb;
+    }
+    frequency["hasNoiseFloor"] = found->hasNoiseFloor;
+    frequency["hasPeak"] = found->hasPeak;
+    frequency["hasMeasuredBins"] = found->hasMeasuredBins;
+    frequency["noiseSampleCount"] = QString::number(found->noiseSampleCount);
+    frequency["globalFirstFrame"] = QString::number(found->globalFirstFrame);
+    frequency["globalLastFrameExclusive"] =
+        QString::number(found->globalLastFrameExclusive);
+    frequency["originalFirstBin"] = QString::number(found->originalFirstBin);
+    frequency["originalLastBin"] = QString::number(found->originalLastBin);
+    if (found->hasPeak) frequency["peakDb"] = found->peakDb;
+    if (found->hasMeasuredBins) {
+      frequency["measuredFirstBin"] = QString::number(found->measuredFirstBin);
+      frequency["measuredLastBin"] = QString::number(found->measuredLastBin);
+    }
+    fields["frequencyAnalysis"] = frequency;
+    origin->originalFieldsJson =
+        QJsonDocument(fields).toJson(QJsonDocument::Compact).toStdString();
+    annotation.originEvidence = std::move(origin);
+  }
+}
 }  // namespace
 
 bool recoverDetectionPublication(const QString& directory,
                                  const DetectionRun& run,
                                  DetectionPublication& target, QString& error) {
   if (run.request.profile.backend != DetectionBackendKind::Fixture) {
-    error =
-        "This backend requires its registered result projection to recover "
-        "annotations";
-    return false;
+    DetectionPublication publication;
+    publication.sourceSet = sourceSetForRequest(run.request);
+    const auto publicationBudget = run.request.workingSetBudgetBytes / 2;
+    std::uint64_t shardReserve = 65536;
+    for (const auto& shard : run.chunks) {
+      const auto bytes =
+          QFileInfo(QDir(directory).filePath(
+                        QString::fromStdString(shard.relativePath)))
+              .size();
+      if (bytes > 0)
+        shardReserve = std::max(shardReserve,
+                                8 * static_cast<std::uint64_t>(bytes) + 65536);
+    }
+    if (shardReserve + publicationBudget + 65536 >=
+        run.request.workingSetBudgetBytes) {
+      error =
+          "Recovery shard/publication reserve exceeds the working set budget";
+      return false;
+    }
+    const auto budget = run.request.workingSetBudgetBytes - shardReserve -
+                        publicationBudget - 65536;
+    DetectionResultProjector projector;
+    if (!projector.reset(run.request, run.eligibleWindows, budget, error))
+      return false;
+    std::uint64_t publicationBytes = 65536;
+    std::unordered_set<std::string> savedIds;
+    bool finalized = false, hasSavedRecords = false;
+    const bool visited = visitDetectionChunks(
+        directory, run,
+        [&](const QJsonObject& chunk, QString& issue) {
+          const auto results = chunk["results"].toArray();
+          const auto mappings = chunk["mappings"].toArray();
+          if (finalized) {
+            issue = "Result records follow a completed publication";
+            return false;
+          }
+          if (!mappings.isEmpty()) {
+            if (hasSavedRecords) {
+              issue = "Window records follow publication records";
+              return false;
+            }
+            preserveRuntimeEvidence(
+                publication.sourceSet,
+                mappings[0].toObject()["modelEvidence"].toObject());
+            return projector.consume(results, mappings, issue);
+          }
+          hasSavedRecords = true;
+          for (const auto value : results) {
+            const auto record = value.toObject();
+            if (record["kind"] == "frequency-publication-end-v1") {
+              quint64 count = 0;
+              if (finalized || record.size() != 2 ||
+                  !workerUnsigned(record["count"], count, issue) ||
+                  count !=
+                      static_cast<quint64>(publication.annotations.size())) {
+                issue =
+                    "Durable publication end marker count or fields are "
+                    "invalid";
+                return false;
+              }
+              finalized = true;
+              continue;
+            }
+            if (finalized || record["kind"] != "frequency-annotation-v1") {
+              issue = "Unknown durable production result projection";
+              return false;
+            }
+            const auto recordBytes =
+                4096 + 4 * static_cast<std::uint64_t>(
+                               QJsonDocument(record)
+                                   .toJson(QJsonDocument::Compact)
+                                   .size());
+            if (recordBytes > publicationBudget ||
+                publicationBytes > publicationBudget - recordBytes ||
+                publication.annotations.size() >= annotationSegmentBudget) {
+              issue = "Recovered publication exceeds its resident budget";
+              return false;
+            }
+            DetectionPublication decoded;
+            if (!decodeDetectionPublication(
+                    QJsonArray{record}, run.request, publication.sourceSet,
+                    publicationBudget, decoded, issue) ||
+                decoded.annotations.size() != 1)
+              return false;
+            auto annotation = std::move(decoded.annotations.front());
+            if (!savedIds.insert(annotation.id).second) {
+              issue = "Duplicate durable annotation identity";
+              return false;
+            }
+            publicationBytes += recordBytes;
+            publication.annotations.push_back(std::move(annotation));
+          }
+          return true;
+        },
+        error);
+    if (!visited) return false;
+    if (!finalized) {
+      publication.annotations.clear();
+      std::vector<FrequencyTrack> tracks;
+      if (!projector.finish(tracks, error) ||
+          !projectFrequencyTracks(run.request, publication.sourceSet, tracks,
+                                  budget, publication, error) ||
+          !projector.attachWindowEvidence(publication, error))
+        return false;
+    }
+    target = std::move(publication);
+    return true;
   }
   DetectionPublication publication;
   publication.sourceSet = sourceSetForRequest(run.request);
@@ -475,6 +804,28 @@ void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
                   "No completed model response was persisted for this range");
     }
   }
+  if (terminal.request.profile.backend != DetectionBackendKind::Fixture &&
+      terminal.completedWindows > 0) {
+    bool needsPrefix = false;
+    {
+      std::lock_guard lock(mutex_);
+      needsPrefix = job->publication.annotations.empty();
+    }
+    if (needsPrefix) {
+      DetectionPublication prefix;
+      QString recoveryError;
+      if (recoverDetectionPublication(job->directory, terminal, prefix,
+                                      recoveryError)) {
+        std::lock_guard lock(mutex_);
+        job->publication = std::move(prefix);
+      } else {
+        terminal.error += "; Durable prefix projection failed: " +
+                          recoveryError.toStdString();
+        std::lock_guard lock(mutex_);
+        job->publication = {};
+      }
+    }
+  }
   for (;;) {
     QString writeError;
     const bool persisted = persistRun_(job->directory, terminal, writeError);
@@ -554,9 +905,21 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   DetectionPublication publication;
   publication.sourceSet = sourceSetForRequest(request);
   auto& set = publication.sourceSet;
+  const bool fixture = request.profile.backend == DetectionBackendKind::Fixture;
+  DetectionResultProjector projector;
+  if (!fixture && !projector.reset(request, plan.eligibleWindowCount,
+                                   job->publicationBudgetBytes / 4, error)) {
+    finish(job, DetectionLifecycle::Failed, error);
+    return;
+  }
+  if (!fixture) preserveRuntimeEvidence(set, worker.evidence());
   {
     std::lock_guard lock(mutex_);
     job->run.lifecycle = DetectionLifecycle::Running;
+    if (!fixture) {
+      job->run.device = worker.evidence()["device"].toString().toStdString();
+      job->run.runtime = worker.evidence()["tensorRt"].toString().toStdString();
+    }
   }
   std::optional<std::uint64_t> readFrameEnd;
   for (std::uint64_t index = 0; index < plan.eligibleWindowCount;) {
@@ -585,8 +948,10 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         return;
       }
       mappings.append(mapping(window, plan));
-      tensor.insert(tensor.end(), window.normalizedTensor.begin(),
-                    window.normalizedTensor.end());
+      const auto& input = request.profile.maximumPsdOnly
+                              ? window.densityDb
+                              : window.normalizedTensor;
+      tensor.insert(tensor.end(), input.begin(), input.end());
       windows.push_back(std::move(window));
     }
     {
@@ -638,14 +1003,28 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
              "Source changed after reading the model window");
       return;
     }
-    const auto results =
-        response.envelope["payload"].toObject()["windows"].toArray();
+    auto results = response.envelope["payload"].toObject()["windows"].toArray();
+    if (!fixture)
+      preserveRuntimeEvidence(
+          set,
+          response.envelope["payload"].toObject()["modelEvidence"].toObject());
     auto nextPublication = publication;
     auto nextPublicationBytes = job->publicationBytes;
-    if (!appendFixtureAnnotations(request, plan.eligibleWindowCount, windows,
-                                  results, plan, nextPublication,
-                                  nextPublicationBytes,
-                                  job->publicationBudgetBytes, error)) {
+    if (!fixture &&
+        (!decodeProductionResults(request, response, results, error) ||
+         (request.profile.backend == DetectionBackendKind::Scn &&
+          !postprocessScnResults(windows, plan, results, mappings, error,
+                                 cancelled)) ||
+         !storeDetectionHeadEvidence(job->directory, request, response,
+                                     mappings, error) ||
+         !projector.consume(results, mappings, error, cancelled))) {
+      finish(job, DetectionLifecycle::Failed, error);
+      return;
+    }
+    if (fixture && !appendFixtureAnnotations(
+                       request, plan.eligibleWindowCount, windows, results,
+                       plan, nextPublication, nextPublicationBytes,
+                       job->publicationBudgetBytes, error)) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
     }
@@ -698,6 +1077,90 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   if (!worker.exchange(std::move(end), response, error, cancelled)) {
     finish(job, DetectionLifecycle::Failed, error);
     return;
+  }
+  if (!fixture) {
+    std::vector<FrequencyTrack> tracks;
+    std::vector<DetectionFrequencyEvidence> frequencyEvidence;
+    if (!projector.finish(tracks, error, cancelled) ||
+        (request.profile.backend != DetectionBackendKind::Scn &&
+         !applyDetectionFrequencyAnalysis(
+             source, request, tracks, frequencyEvidence, error, cancelled)) ||
+        !projectFrequencyTracks(request, set, tracks,
+                                job->publicationBudgetBytes / 2, publication,
+                                error)) {
+      finish(job, DetectionLifecycle::Failed, error);
+      return;
+    }
+    preserveFrequencyEvidence(publication, frequencyEvidence);
+    if (!projector.attachWindowEvidence(publication, error) ||
+        !validateDetectionPublicationBudget(
+            publication, job->publicationBudgetBytes / 2, error)) {
+      finish(job, DetectionLifecycle::Failed, error);
+      return;
+    }
+    // Final projections are durable before they are visible. Interrupted final
+    // shards without the end marker recover the raw frequency observations.
+    const auto shardBudget = std::min<std::uint64_t>(
+        8 * 1024 * 1024 - 8192, job->publicationBudgetBytes / 32);
+    QJsonArray shard;
+    std::uint64_t shardBytes = 0;
+    const auto flush = [&]() {
+      if (shard.isEmpty()) return true;
+      if (cancelled()) {
+        error = "Cancelled before durable projection shard";
+        return false;
+      }
+      DetectionRun next;
+      {
+        std::lock_guard lock(mutex_);
+        next = job->run;
+      }
+      if (!appendDetectionChunk(job->directory, next, shard, {}, error)) {
+        return false;
+      }
+      {
+        std::lock_guard lock(mutex_);
+        if (job->cancelled) next.lifecycle = DetectionLifecycle::Cancelling;
+        next.sourceValidity = job->run.sourceValidity;
+        job->run = std::move(next);
+      }
+      shard = {};
+      shardBytes = 0;
+      return true;
+    };
+    const auto append = [&](const QJsonObject& record) {
+      const auto bytes =
+          static_cast<std::uint64_t>(
+              QJsonDocument(record).toJson(QJsonDocument::Compact).size()) +
+          1;
+      if (bytes > shardBudget) {
+        error = "One frequency projection exceeds the bounded shard budget";
+        return false;
+      }
+      if ((shard.size() >= 4096 || shardBytes > shardBudget - bytes) &&
+          !flush())
+        return false;
+      shard.append(record);
+      shardBytes += bytes;
+      return true;
+    };
+    for (const auto& annotation : publication.annotations)
+      if (!append(QJsonObject{{"kind", "frequency-annotation-v1"},
+                              {"annotation", encodeAnnotation(annotation)}})) {
+        finish(job, DetectionLifecycle::Failed, error);
+        return;
+      }
+    if (!append(QJsonObject{
+            {"kind", "frequency-publication-end-v1"},
+            {"count", QString::number(publication.annotations.size())}}) ||
+        !flush()) {
+      finish(job, DetectionLifecycle::Failed, error);
+      return;
+    }
+    {
+      std::lock_guard lock(mutex_);
+      job->publication = std::move(publication);
+    }
   }
   finish(job, DetectionLifecycle::Completed);
 }

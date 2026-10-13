@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdio>
 #include <optional>
+#include <span>
 #include <vector>
 
 #ifdef _WIN32
@@ -13,6 +14,8 @@
 #include <io.h>
 #endif
 
+#include "domain/detection_postprocess.h"
+#include "infrastructure/detection_model_backend.h"
 #include "infrastructure/detection_protocol.h"
 #include "infrastructure/detection_store.h"
 
@@ -112,6 +115,93 @@ bool fixtureBatch(const DetectionWorkerPacket& packet,
   payload = {{"windows", results}, {"backend", "pipeline-fixture-v1"}};
   return true;
 }
+
+bool modelBatch(const DetectionWorkerPacket& packet,
+                const DetectionRequest& request, DetectionModelBackend& backend,
+                QJsonObject& payload, std::vector<float>& rawHeads,
+                std::vector<int>& rawShape, QString& error) {
+  const auto windows =
+      packet.envelope["payload"].toObject()["windows"].toArray();
+  const auto shape = packet.envelope["binary"].toObject()["shape"].toArray();
+  if (windows.isEmpty() || windows.size() > request.parameters.batchSize ||
+      shape.size() != 4 || shape[0].toInt() != windows.size() ||
+      shape[1] != 1 ||
+      shape[2].toInt() != static_cast<int>(request.profile.modelFrames) ||
+      shape[3].toInt() != static_cast<int>(request.profile.fftSize)) {
+    error = "Production tensor shape does not match the immutable request";
+    return false;
+  }
+  std::vector<quint64> windowIds;
+  for (const auto& value : windows) {
+    quint64 id = 0;
+    if (!workerUnsigned(value.toObject()["windowId"], id, error)) return false;
+    if (std::find(windowIds.begin(), windowIds.end(), id) != windowIds.end()) {
+      error = "Production batch repeats a window identity";
+      return false;
+    }
+    windowIds.push_back(id);
+  }
+  std::vector<float> input;
+  DetectionModelOutput output;
+  if (!decodeFloat32Payload(packet, input, error) ||
+      !backend.infer(input, static_cast<std::uint32_t>(windows.size()), output,
+                     error))
+    return false;
+  const bool scn = request.profile.backend == DetectionBackendKind::Scn;
+  DetectionDecoderConfig config;
+  config.kind = scn ? DetectionDecoderKind::ScnThreeBin
+                    : DetectionDecoderKind::FfscnSevenBin;
+  config.inputBins = request.profile.fftSize;
+  config.scoreThreshold = request.parameters.scoreThreshold;
+  config.nmsIou = request.parameters.nmsIou;
+  config.topK = request.parameters.topK;
+  QJsonArray results;
+  QJsonArray summaries;
+  std::vector<float> packed;
+  packed.reserve(static_cast<std::size_t>(output.batch) * output.width * 3);
+  for (std::size_t batch = 0; batch < output.batch; ++batch) {
+    const auto start = batch * output.width;
+    const HeadView heads{
+        std::span<const float>(output.hm).subspan(start, output.width),
+        std::span<const float>(output.bw).subspan(start, output.width),
+        std::span<const float>(output.off).subspan(start, output.width),
+        scn ? std::array<std::size_t, 3>{output.width, 1, 1}
+            : std::array<std::size_t, 3>{1, 1, output.width}};
+    std::vector<DecodedCandidate> decoded;
+    DetectionDecodeSummary summary;
+    std::string decodeError;
+    if (!decodeDetectionHeads(heads, config, decoded, summary, decodeError)) {
+      error = QString::fromStdString(decodeError);
+      return false;
+    }
+    const auto windowId = QString::number(windowIds[batch]);
+    // The full candidate projection is reconstructed from the verified raw
+    // heads by the client. This keeps B2/TopK512 inside the frozen 64-KiB JSON
+    // budget without dropping candidates or changing inference parameters.
+    results.append(
+        QJsonObject{{"windowId", windowId}, {"candidates", QJsonArray{}}});
+    summaries.append(QJsonObject{
+        {"windowId", windowId},
+        {"qualifyingPeaks", static_cast<int>(summary.qualifyingPeaks)},
+        {"rankedPeaks", static_cast<int>(summary.rankedPeaks)},
+        {"invalidWidthCount", static_cast<int>(summary.invalidWidthCount)},
+        {"suppressedCount", static_cast<int>(summary.suppressedCount)},
+        {"candidateCount", static_cast<int>(decoded.size())},
+        {"topKTruncated", summary.topKTruncated}});
+    for (const auto head : {heads.heatmap, heads.bandwidth, heads.offset})
+      packed.insert(packed.end(), head.begin(), head.end());
+  }
+  payload = {{"windows", results},
+             {"candidateEncoding", "raw-heads-v1"},
+             {"modelEvidence", backend.evidence()},
+             {"decodeSummary", summaries},
+             {"headOrder", QJsonArray{"hm", "bw", "off"}},
+             {"backend", scn ? "scn-maximum-tensorrt" : "ffscn-tensorrt"}};
+  rawShape = {static_cast<int>(output.batch), 3, 1,
+              static_cast<int>(output.width)};
+  rawHeads = std::move(packed);
+  return true;
+}
 }  // namespace
 }  // namespace signalstudio
 
@@ -123,6 +213,7 @@ int main(int argc, char** argv) {
 #endif
   using namespace signalstudio;
   DetectionRequest request;
+  DetectionModelBackend modelBackend;
   bool begun = false;
   quint64 lastSequence = 0;
   for (;;) {
@@ -133,13 +224,15 @@ int main(int argc, char** argv) {
     quint64 sequence = 0;
     if (!workerUnsigned(packet.envelope["sequence"], sequence, error)) return 2;
     QJsonObject payload;
+    std::vector<float> rawHeads;
+    std::vector<int> rawShape;
     QString resultType;
     if (begun && (type == "hello" || type == "begin")) {
       resultType = "error";
       error = "Worker cannot replace an active immutable request";
     } else if (type == "hello") {
       resultType = "ready";
-      payload = {{"workerVersion", 1}, {"backend", "fixture-only"}};
+      payload = {{"workerVersion", 1}, {"backend", "isolated-native-worker"}};
     } else if (type == "begin") {
       begun = decodeDetectionRequest(packet.envelope["payload"].toObject(),
                                      request, error);
@@ -155,8 +248,10 @@ int main(int argc, char** argv) {
       }
       lastSequence = sequence;
       if (begun && request.profile.backend != DetectionBackendKind::Fixture) {
-        begun = false;
-        error = "本节点尚未接入真实模型资产，请完成模型部署预检后使用该配置";
+        begun = modelBackend.load(request, error);
+        if (begun) payload = modelBackend.evidence();
+      } else if (begun) {
+        payload = {{"backend", "pipeline-fixture-v1"}};
       }
       resultType = begun ? "ready" : "error";
     } else if (begun &&
@@ -172,19 +267,35 @@ int main(int argc, char** argv) {
       error = "Worker run identity or sequence differs from the begun request";
     } else if (type == "batch" && begun) {
       lastSequence = sequence;
-      resultType =
-          fixtureBatch(packet, request, payload, error) ? "result" : "error";
+      const bool valid =
+          request.profile.backend == DetectionBackendKind::Fixture
+              ? fixtureBatch(packet, request, payload, error)
+              : modelBatch(packet, request, modelBackend, payload, rawHeads,
+                           rawShape, error);
+      resultType = valid ? "result" : "error";
     } else if ((type == "completed" || type == "cancel") && begun) {
       lastSequence = sequence;
       resultType = "completed";
       begun = false;
+      modelBackend.reset();
     } else {
       resultType = "error";
       error = "Unexpected worker request stage";
     }
     if (!error.isEmpty()) payload = {{"message", error}};
-    const auto encoded =
-        encodeWorkerPacket(response(packet, resultType, payload), error);
+    auto reply = response(packet, resultType, payload);
+    if (resultType == "result" && !rawHeads.empty())
+      attachFloat32Payload(reply, rawHeads, rawShape);
+    auto encoded = encodeWorkerPacket(reply, error);
+    if (encoded.isEmpty() && resultType == "result") {
+      const auto resultError = error;
+      reply = response(packet, "error",
+                       {{"message",
+                         "Model result exceeds the frozen protocol "
+                         "budget: " +
+                             resultError}});
+      encoded = encodeWorkerPacket(reply, error);
+    }
     if (encoded.isEmpty() ||
         std::fwrite(encoded.constData(), 1, encoded.size(), stdout) !=
             static_cast<std::size_t>(encoded.size()) ||

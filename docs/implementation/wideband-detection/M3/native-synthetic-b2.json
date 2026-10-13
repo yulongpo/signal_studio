@@ -1,0 +1,11 @@
+{
+  "schema": "signalstudio-native-model-parity-v1",
+  "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+  "batch": 2,
+  "outputs": [
+    {"name": "hm", "elements": 32768, "maxAbsolute": 3.36766e-06, "outsideTolerance": 0},
+    {"name": "bw", "elements": 32768, "maxAbsolute": 0.00402832, "outsideTolerance": 0},
+    {"name": "off", "elements": 32768, "maxAbsolute": 3.36766e-06, "outsideTolerance": 0}
+  ],
+  "passed": true
+}

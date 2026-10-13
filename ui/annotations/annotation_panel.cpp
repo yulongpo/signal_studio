@@ -887,6 +887,20 @@ void AnnotationPanel::refreshInspector(const FileState* f) {
         QString("包含样本 %1；提交按最近样本量化").arg(seg->range.time.begin));
     end_->setToolTip(
         QString("不包含样本 %1；提交按最近样本量化").arg(seg->range.time.end));
+    low_->setToolTip("当前段频率下边界（MHz），坐标语义见来源证据");
+    high_->setToolTip("当前段频率上边界（MHz），坐标语义见来源证据");
+  } else {
+    // A window observation has no editable activity geometry. Do not leave
+    // the previously selected segment's coordinates visible in its controls.
+    for (auto* edit : {begin_, end_, low_, high_}) {
+      const QSignalBlocker blocker(edit);
+      edit->setProperty("parameterDraft", false);
+      edit->setProperty("invalid", false);
+      edit->setValue(0);
+      edit->clear();
+      edit->setPlaceholderText("—");
+      edit->setToolTip("没有已定位活动段；窗口观测支持请见检测证据");
+    }
   }
   detail_->setText(
       a ? q(a->name) + "\n" + sourceName(a->sourceKind) + " · " +

@@ -7,7 +7,8 @@ param(
     [string]$Project,
     [switch]$Narrowband,
     [switch]$SoftwareRenderer,
-    [switch]$WidebandDetection
+    [switch]$WidebandDetection,
+    [switch]$ProductionModel
 )
 $ErrorActionPreference = 'Stop'
 function Assert-WidebandDetectionCapture($Report, [int]$CaptureExitCode, [string]$OutputDirectory) {
@@ -24,9 +25,10 @@ function Assert-WidebandDetectionCapture($Report, [int]$CaptureExitCode, [string
         throw 'Acceptance requires actual connected screen 2, Redmi 27 NU, DISPLAY6, native 4K/150% fullscreen.'
     }
     $captureScenes = @($Report.scenes)
-    if ($captureScenes.Count -ne 23 -or $Report.sceneCount -ne 23 -or
-        @($captureScenes.scene | Select-Object -Unique).Count -ne 23) {
-        throw 'Native capture must contain all 23 unique planned scenes.'
+    $expectedScenes = if ($Report.productionModelRequested -eq $true) { 25 } else { 23 }
+    if ($captureScenes.Count -ne $expectedScenes -or $Report.sceneCount -ne $expectedScenes -or
+        @($captureScenes.scene | Select-Object -Unique).Count -ne $expectedScenes) {
+        throw "Native capture must contain all $expectedScenes unique planned scenes."
     }
     foreach ($scene in $captureScenes) {
         if ($scene.pass -ne $true -or $scene.windowFullScreen -ne $true -or
@@ -75,7 +77,7 @@ function Assert-WidebandDetectionCapture($Report, [int]$CaptureExitCode, [string
         $Report.run.request.profile.id -ne 'pipeline-fixture-v1' -or
         $Report.run.lifecycle -ne 'Completed' -or [ulong]$Report.run.completedWindows -ne 3 -or
         [ulong]$Report.run.eligibleWindows -ne 3 -or
-        $Report.modelInferenceVerified -ne $false -or
+        $Report.modelInferenceVerified -ne ($Report.productionModelRequested -eq $true) -or
         $Report.zeroCandidates -ne ([ulong]$Report.rawCandidateCount -eq 0)) {
         throw 'Original/manual/actual fixture observations or completed-window facts are inconsistent.'
     }
@@ -136,7 +138,9 @@ try {
             Remove-Item -LiteralPath $captureReportPath
         }
         $timer = [Diagnostics.Stopwatch]::StartNew()
-        & $executable --wideband-detection $OutputDirectory | Out-Host
+        $captureArguments = @('--wideband-detection', $OutputDirectory)
+        if ($ProductionModel) { $captureArguments += '--production-model' }
+        & $executable @captureArguments | Out-Host
         $captureExitCode = $LASTEXITCODE
         if (-not (Test-Path -LiteralPath $captureReportPath -PathType Leaf)) {
             throw "Native capture produced no report; exit code $captureExitCode."

@@ -1,0 +1,651 @@
+{
+  "schema": "signalstudio-tensorrt-runtime-v1",
+  "tensorRtVersion": "10.11.0.33",
+  "cudaRuntimeVersion": "12.9.79",
+  "configuredRoot": "D:\\project\\signal_studio_rebuild\\out\\models\\runtime\\tensorrt-10.11",
+  "portableRoot": "out/models/runtime/tensorrt-10.11",
+  "pipPackage": "tensorrt-cu12==10.11.0.33",
+  "cudaCrtHeadersPackage": "nvidia-cuda-nvcc-cu12==12.9.86",
+  "headers": {
+    "repository": "https://github.com/NVIDIA/TensorRT",
+    "ref": "release/10.11",
+    "commit": "9255eb39e6642787828a4c1f7fc1d09fe004e7a2",
+    "includePath": "include"
+  },
+  "importLibraryGeneration": "Generated with MSVC lib.exe from official nvinfer_10.dll exports",
+  "layout": {
+    "include": "include",
+    "importLibrary": "lib/nvinfer.lib",
+    "tensorRtDlls": "tensorrt_libs",
+    "cudaDlls": "nvidia/cuda_runtime/bin",
+    "cudaInclude": "nvidia/cuda_runtime/include",
+    "cudaImportLibrary": "nvidia/cuda_runtime/lib/x64/cudart.lib"
+  },
+  "runtimeRequired": [
+    "tensorrt_libs/nvinfer_10.dll",
+    "nvidia/cuda_runtime/bin/cudart64_12.dll"
+  ],
+  "builderOnly": [
+    "tensorrt_libs/nvinfer_builder_resource_10.dll",
+    "tensorrt_libs/nvonnxparser_10.dll"
+  ],
+  "pluginPolicy": "Network has no plugin nodes; plugin DLL not needed at runtime",
+  "files": [
+    {
+      "path": "include/NvInfer.h",
+      "bytes": 362546,
+      "sha256": "27b48995f54661af69de4ced0d4d70340fb38c516f873b15617ae1c2885b6420"
+    },
+    {
+      "path": "include/NvInferImpl.h",
+      "bytes": 57229,
+      "sha256": "a72ad548770ba0fd6d9d61d9b6461413ccac07d760b6463c7ff4eb3777ba7632"
+    },
+    {
+      "path": "include/NvInferLegacyDims.h",
+      "bytes": 3984,
+      "sha256": "1b78e6dd77e658e665b532c387ad68e17c51a66e67e332f583281b60ca5ff1a1"
+    },
+    {
+      "path": "include/NvInferPlugin.h",
+      "bytes": 1540,
+      "sha256": "b3290404a076f3492dc627ffdfc3b1fa803ea0eccc49f23986d645a2d23a63c7"
+    },
+    {
+      "path": "include/NvInferPluginBase.h",
+      "bytes": 8933,
+      "sha256": "9a8b8565017df7282ab1ddd5f789a5eaf0aec515049cb54863c7952a97cea834"
+    },
+    {
+      "path": "include/NvInferPluginUtils.h",
+      "bytes": 10152,
+      "sha256": "c1aeed090422a0f214aa3dc334d3e435f3dd3a6cf14caece9fe9ef4daeeb50ec"
+    },
+    {
+      "path": "include/NvInferRuntime.h",
+      "bytes": 227279,
+      "sha256": "036769612951770f0ab24f73d257f7c25e53fdcdd111548d58b71a772589a414"
+    },
+    {
+      "path": "include/NvInferRuntimeBase.h",
+      "bytes": 26425,
+      "sha256": "2dc9121ae9d98b24f2602c8152a6ea1b3fef569057857581ad4b7365a484b842"
+    },
+    {
+      "path": "include/NvInferRuntimeCommon.h",
+      "bytes": 13229,
+      "sha256": "9461c9d07403c5dd1f8a6dea17fa5c3fe5cef7c4290c6768370a1d8139d4ac5d"
+    },
+    {
+      "path": "include/NvInferRuntimePlugin.h",
+      "bytes": 44801,
+      "sha256": "5a78c60ab9876232c72ec298ea25576403066be37150bbbb8cecc9e184f08cda"
+    },
+    {
+      "path": "include/NvInferVersion.h",
+      "bytes": 1840,
+      "sha256": "bee717f9dece82f585b9a0951fc4098ef4b200a2ad3c3c29832255df15249e40"
+    },
+    {
+      "path": "include/NvOnnxConfig.h",
+      "bytes": 5766,
+      "sha256": "c1476d809a528fc70213b77442e067ce89088d2a89b74cb07b1b72f1b3c8d5fa"
+    },
+    {
+      "path": "lib/nvinfer.lib",
+      "bytes": 5214098,
+      "sha256": "a092a4869e9c6455070ec0e8fdbe56df9e104999dc21a55489f8a653b01e01c6"
+    },
+    {
+      "path": "nvidia/cuda_runtime/bin/cudart64_12.dll",
+      "bytes": 583680,
+      "sha256": "760c38928bbe5759f7b31ed6692599eb7ec83cedd5702e84c2b72028a89837e1"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/builtin_types.h",
+      "bytes": 3214,
+      "sha256": "e75d7426f7b4e8abcd6e3cdd0631fa9577a6c5f8cd31f1ff2996e79d9b5ab4a3"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/channel_descriptor.h",
+      "bytes": 22443,
+      "sha256": "cae3e4f0be2931e031ba983399754984bf3bb41255302ffbcacac47ec39bc202"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/common_functions.h",
+      "bytes": 3475,
+      "sha256": "8c2f53f4d2b46fcf8adffb1403d15568ec39be63bd98c2f26fef2d670f056dd7"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/async.h",
+      "bytes": 19574,
+      "sha256": "fa8fdafc1a55c292b45506c7276c8b8d26952e073c386c5ac52f5cfaf2cc5ef1"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/coalesced_reduce.h",
+      "bytes": 4352,
+      "sha256": "03d1e18f77c39bdf2cf68ffd727f3837c504bd0232dad19845ac903ad8f4b842"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/coalesced_scan.h",
+      "bytes": 7487,
+      "sha256": "3273c657f293c1cd66096a066120c5512fdd391715de323ee55ffce1ee22d6ba"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/driver_abi.h",
+      "bytes": 4063,
+      "sha256": "234b5d0be27516cc2f34d2243f7e64469cc779d63d432abd0e6dae77303efcf8"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/functional.h",
+      "bytes": 9117,
+      "sha256": "d66e968211b98265ee813ff74d2cf94cfc49a514c090c1283432ffdb565f3948"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/helpers.h",
+      "bytes": 27169,
+      "sha256": "7e3ee03ac590af58646ebb2eb3a791880e67b21b065221a3265affcd5deb5922"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/info.h",
+      "bytes": 12810,
+      "sha256": "0ff5810d50abfb17d96627972b30f9f856d85f1dd82f0e841d6d3a15d3e005ee"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/invoke.h",
+      "bytes": 8805,
+      "sha256": "60729e6b39912e209a91d9c63710528c932278e3de9a317614ef02f76df4e2a9"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/memory.h",
+      "bytes": 5742,
+      "sha256": "7d8bafdd01a7fd6ffefc656cc2bf34c3ccd975cc464e678b42ff3676b09b7d70"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/partitioning.h",
+      "bytes": 7313,
+      "sha256": "948bfb1ae79397473a6d5475394a67bbf91aaf8164c7a6cb9c0e944bdda9e3c2"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/reduce.h",
+      "bytes": 23720,
+      "sha256": "76b358f11ac30b45eb8df272f43c118ccb584c3d02702facecad0832b29895d5"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/scan.h",
+      "bytes": 17486,
+      "sha256": "a455988d98bc04f52cee25b37066533d9a3083e93d37eae1af17f5643164c83c"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/details/sync.h",
+      "bytes": 11076,
+      "sha256": "79c962c6005385a6566edbbce65d1fd1e033cf10a9abf20f68d117cd4c821148"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/memcpy_async.h",
+      "bytes": 3022,
+      "sha256": "0e05ef6e5c38acb6be4f678d23338ba12ddc43c37a9f9a29363f38b1e48c3352"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/reduce.h",
+      "bytes": 3012,
+      "sha256": "9a86fd41b5ae66ec5abdf03a131c8f13207ae21e0a2e1e4c99fcade6748e647d"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups/scan.h",
+      "bytes": 3003,
+      "sha256": "c1131b91109572fabf6f8d91a91f1b48c0cee960537b0381aeabb9e02bbf94b9"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cooperative_groups.h",
+      "bytes": 62427,
+      "sha256": "5f042da90008ce4af671926c5683669948a3eceb9d39743ecdd6881cbfa96156"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/common_functions.h",
+      "bytes": 13869,
+      "sha256": "8123e7afb0ddc439d531a25a1bc59bfb4117ffc8648199f8c32931910b81e3db"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/cudacc_ext.h",
+      "bytes": 3288,
+      "sha256": "10b085d6b1fcbe650a75de7455e0f5d38d1be221bacddb3318144b88bc72c5a5"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/device_double_functions.h",
+      "bytes": 41130,
+      "sha256": "72329723f14175d3fcc6e4949b5b32db05b5de804097c2bbbbc94a7264a7dcde"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/device_fp128_functions.h",
+      "bytes": 52264,
+      "sha256": "a0e64a7040f151c8bca4ddc4df7c707eb481922d4e25874e9c330fbe3106054e"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/device_functions.h",
+      "bytes": 140916,
+      "sha256": "e449c2815f5dc6e3b88cb215ef5f8d9968cf3a3325756017bfab2a75a9ae41ee"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/func_macro.h",
+      "bytes": 1812,
+      "sha256": "1bb685c45385895321df70d19248a734e13225f4fb5efbfc28fcd21a93b5930d"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/host_config.h",
+      "bytes": 12479,
+      "sha256": "423209b1f5fda31fc3105ecba0db889a7371a5fdc6fbb825a1df7008ec3fd5d7"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/host_defines.h",
+      "bytes": 11732,
+      "sha256": "758a7c43c5ad87f41be852441368851621ff3cf3e1d323c1c6188c2d3058d42c"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/host_runtime.h",
+      "bytes": 10590,
+      "sha256": "f6dcef2febf6ab6f47ce29067fd2ab4e257e7ec9c54bcc3b0dadfb7e588b0bce"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/math_functions.h",
+      "bytes": 244541,
+      "sha256": "0e15c08685cf62fc03764146db4b6693aa456d8a2e71b124a7937b8d9833cf4e"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/mma.h",
+      "bytes": 63456,
+      "sha256": "adbb71ca5b4c88cf4acfff6d78dd60e29a2e684cfd4b278f57b4a536184303da"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/sm_100_rt.h",
+      "bytes": 9239,
+      "sha256": "22b83a565d4d780f0af426c498f25031c3bab0ae15205e36de6c91bbbb0e12f6"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/sm_70_rt.h",
+      "bytes": 6975,
+      "sha256": "11cfaa9a6987958ba1d573f9fe29b13041bf7fe471a8a245517d210f7d389084"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/sm_80_rt.h",
+      "bytes": 7907,
+      "sha256": "f0d3ed12f5419b910a11e6cf6ce79af7d47603be2698d87eee16af67c2a2862f"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/sm_90_rt.h",
+      "bytes": 11727,
+      "sha256": "2443718459320cd1993ec6cf66c7d822fe8866bc9eade5a197ae084884beb3a3"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/crt/storage_class.h",
+      "bytes": 4933,
+      "sha256": "14b8ddc03a85d579cbc0cb3f1f888c3affa82fad960a1ad01ae689ce6ca008db"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuComplex.h",
+      "bytes": 12534,
+      "sha256": "8c04f75b56a2d57ad07aa59d8cb903fcabd6366658a89dad00a4b4a00939150f"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda.h",
+      "bytes": 1168299,
+      "sha256": "fda3285d055a9f05e40cd76352f9f073d0ab45d42fb5bb0db4bb33b0df506d28"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_awbarrier.h",
+      "bytes": 9620,
+      "sha256": "425d45616992029b798ad78a8f53553a15fe76c62bf3c9ff6c72c65a855fc3af"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_awbarrier_helpers.h",
+      "bytes": 12854,
+      "sha256": "3fb7af882e74b95c329e0be94efbbd4b164a4a1bda0b81926fde6396e5b6b65c"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_awbarrier_primitives.h",
+      "bytes": 4808,
+      "sha256": "73e548b39b2867086da71dfd2c70268ea211c0caa4d0adc801be6919d239db14"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_bf16.h",
+      "bytes": 209636,
+      "sha256": "cac0cb30e0e9537d961af51e14f22991ea94f402150e12bae07e23e73c0dd83d"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_d3d10_interop.h",
+      "bytes": 29316,
+      "sha256": "55039312e63d29dde634e4e707fbd22c4e439739dadac4e0abd03a506e29d981"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_d3d11_interop.h",
+      "bytes": 12787,
+      "sha256": "ce04ecb5dccb3b27e48b97c1b1f8aa801bb44760ff575e60750aaac78d543d14"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_d3d9_interop.h",
+      "bytes": 31646,
+      "sha256": "50ad1133b84981533ad42e74c8a6afc73a9d83c9f6182311801a5ccf3e7c6e84"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_device_runtime_api.h",
+      "bytes": 47905,
+      "sha256": "abaf39adf3178a75bb9f25bca374665266a3a6d49573522fbfc159ac3d7b5a7e"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_egl_interop.h",
+      "bytes": 38154,
+      "sha256": "64ae1e0a083c5ffedc2a4e39cb729c8a3e56cbc676de45e4041e582f821482b2"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_fp16.h",
+      "bytes": 212222,
+      "sha256": "8980426c8de9e6db31805ed2c8237ec83e5fa2251c151f50391feec54375f58e"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_fp4.h",
+      "bytes": 14180,
+      "sha256": "9fab28f598e98de19f50950b63269b3bd72de9e20170135ee88175a999dec262"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_fp6.h",
+      "bytes": 14325,
+      "sha256": "870d0daaa39c028b63d0b221917b9e4ca93e0120db196f1050b3cc81c7c4a4ca"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_fp8.h",
+      "bytes": 19509,
+      "sha256": "e51e0a07ac5222f9625896ef85772ee8bdc939cb8225d58728851818b9958506"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_gl_interop.h",
+      "bytes": 19664,
+      "sha256": "a4a4041049b59206543d55fdc6c0720b245afd933bf3c298e9d9a2f4a8ac1de1"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_occupancy.h",
+      "bytes": 73438,
+      "sha256": "a3445fd09846af0b16a9ab2b10b302522b72b0cd93e358a91bdd2dedd19bc8a2"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_pipeline.h",
+      "bytes": 8354,
+      "sha256": "aacbf316553e1a34a8f13398ec720846f41cebb70fdedb7fdc97aa0093932262"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_pipeline_helpers.h",
+      "bytes": 14225,
+      "sha256": "f59a26516dea3b56384ac636c6128b5fc920abc3493bd4bb910306157efa2713"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_pipeline_primitives.h",
+      "bytes": 8823,
+      "sha256": "98ac2abfed83ecfe4eddbbf12f824146ef987aedabc0fa94c87b15849feba514"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_runtime.h",
+      "bytes": 101161,
+      "sha256": "00fafc879eda880a860c195933ce97a0b306fc82761388d1b2fcf4d2ee200e1e"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_runtime_api.h",
+      "bytes": 671107,
+      "sha256": "1f4ed7aab029ca8f327732349cbb63866919d2b5b8d35e4ddf4df092c9e00ccc"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_surface_types.h",
+      "bytes": 3764,
+      "sha256": "64fc83dc785b0b1ac9e6ed68d26342a4547382f7a6a97140d8aad205dad8c1e9"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cuda_texture_types.h",
+      "bytes": 3764,
+      "sha256": "e46d1704740d6a0fa338ce66cd9023d0fe432082114fbab9c06acbf69a5f20f9"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cudaD3D10.h",
+      "bytes": 32125,
+      "sha256": "71b0381d768a973c7507b1d643c98b2daa1d85882080d072bf7885e3b4ba693e"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cudaD3D10Typedefs.h",
+      "bytes": 7333,
+      "sha256": "f4eeb57be3783e56086f3b4f7aa3349d170b27f33e7575fcb16e1d29f1d5226c"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cudaD3D11.h",
+      "bytes": 14087,
+      "sha256": "c9fd2d072e99411384b0610604f3b29727f0ab897084287390d744445b6d9e73"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cudaD3D11Typedefs.h",
+      "bytes": 4484,
+      "sha256": "edb21242e2ab914b8c658da0463dedb786cf34995926629669ffe39b11ee8965"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cudaD3D9.h",
+      "bytes": 36205,
+      "sha256": "729a1bab78dee02d815a0bc757c77f0b5462bcc15c359aecc635a2a8d70bd97b"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cudaD3D9Typedefs.h",
+      "bytes": 8533,
+      "sha256": "e2e94f7c2d0f4bf23ccbca2e18854899fbcc0aab34a886be748959b2a2e2908f"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cudaGL.h",
+      "bytes": 22501,
+      "sha256": "80c4f51cf19afac8ae8e2d2002c298af85f8e4b736f472a0942fedb4d486c943"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cudaGLTypedefs.h",
+      "bytes": 6699,
+      "sha256": "e52f155f43813a55a6a8d361731cef9058d4563cd98a330ab4a87621704af543"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cudaProfilerTypedefs.h",
+      "bytes": 3375,
+      "sha256": "c8983a9a436d2ffbda06c32d6ea4fbcd6a25aa3eb20b0c4d04da8b97d4030eec"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cudart_platform.h",
+      "bytes": 2774,
+      "sha256": "533a3dc955c7e7b3c6bd3b6f6298364c832657311f5b9e3e8e6608c84550dd03"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/cudaTypedefs.h",
+      "bytes": 117233,
+      "sha256": "de38095e7fd221660ff578456e6984880f368838391640a810984f7dd9fee412"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/device_atomic_functions.h",
+      "bytes": 9693,
+      "sha256": "873238d1f1ee42428badfddf84c6d40a175de52936e4ec90efa28ca4ad0e1c1f"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/device_double_functions.h",
+      "bytes": 3517,
+      "sha256": "6d320fba0bec4047535f35190b6ed5c3c559ee7ccc081f53a9cfdfe4fe34f97f"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/device_functions.h",
+      "bytes": 3475,
+      "sha256": "030f0f2c4b270b55a2c3402de9c5c7aa52fa967c02c92d38479c5388cab6c7c0"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/device_launch_parameters.h",
+      "bytes": 3964,
+      "sha256": "32e3edf2d180dc0e3025e38779db1f10436ab8fd16069121a8e609c5fd6046e3"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/device_types.h",
+      "bytes": 3669,
+      "sha256": "2416b764cb308e6d9e93268826f3918f5a05e760d28e49c112ff9c732491e328"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/driver_functions.h",
+      "bytes": 4770,
+      "sha256": "ab08532254d6d6829ea9a650901900bf0b4588f0d4636fbc634d7ee31874c334"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/driver_types.h",
+      "bytes": 206569,
+      "sha256": "e97e8d07bff8fd583382d2ae9a209198bb40055efc535e754c1e56512294f00d"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/host_config.h",
+      "bytes": 3445,
+      "sha256": "087908be5214f2483e13630aa1ee26f2cd00e0c2aee6451016c0b46fc359117e"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/host_defines.h",
+      "bytes": 3451,
+      "sha256": "28047eea24100b91fd397e96fb2755f74ac806494fdc39a8b3d15a48bfd7b5ca"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/library_types.h",
+      "bytes": 5267,
+      "sha256": "38c2b1cb0292337a608a802ad0b2ab616b3ceb1a289c61417b2c00f084455bbc"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/math_constants.h",
+      "bytes": 7760,
+      "sha256": "9040ea02b7486f2637998cd9bcadd8dd59ec855a5d7d74f274579fdeefa6a01a"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/math_functions.h",
+      "bytes": 3463,
+      "sha256": "e556f9d919cc7d7b0a086a6d6cafdcdb9146fb397b82940e868ebaee6746f6aa"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/mma.h",
+      "bytes": 2992,
+      "sha256": "9749dd585be009be5aa5bdeab5f05aa3aa9483f0511aa4397746f999a8209934"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/sm_20_atomic_functions.h",
+      "bytes": 4579,
+      "sha256": "91f79dcef4a18056b11365dacafcb14636caa257ea63431e0a02e1e6c9bbb0c2"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/sm_20_intrinsics.h",
+      "bytes": 58858,
+      "sha256": "b46f223f215af661459e46024a5d58f8e2566f75f1e278015d88a6f2eac52736"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/sm_30_intrinsics.h",
+      "bytes": 17214,
+      "sha256": "ca500ef3ffd4463fff64a86c22d946d61c806edbba0a55921c55bc7c2051e4c7"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/sm_32_atomic_functions.h",
+      "bytes": 5825,
+      "sha256": "2e2d73fea14f23ab168a0bca19f3f34b97da9d9d7ace35309e433ac7ef517a75"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/sm_32_intrinsics.h",
+      "bytes": 34055,
+      "sha256": "f050bcd23c7cba2c21d80ade2abe23457b617d7a9d03dd7506b5a530cb12dd82"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/sm_35_atomic_functions.h",
+      "bytes": 2967,
+      "sha256": "7a15dc657fc4844847103e9db16390971c40f5e6db8282acd12586a85309b7b3"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/sm_35_intrinsics.h",
+      "bytes": 2770,
+      "sha256": "92dac7919499a3611ee4dc86cdbd9eccfa3a0ccd2c8f1d0c2328ca25807cbc3b"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/sm_60_atomic_functions.h",
+      "bytes": 13508,
+      "sha256": "e1ca160ce1a65d42197d8ba578f4fbd00429bf05bea65eca31325e673486e55d"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/sm_61_intrinsics.h",
+      "bytes": 11140,
+      "sha256": "2633fa8b29038e6ae94dc205761da8d71e1656ea8bdaf4ddc05a758888ab1a23"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/surface_functions.h",
+      "bytes": 6906,
+      "sha256": "aa9aa51007376b766123ee8b6db105d7c20ebe8af4c50faa40bad42b635033ed"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/surface_indirect_functions.h",
+      "bytes": 11120,
+      "sha256": "082f48c0649bebd37ceb80e81c50d82aa94e2e549d8a013daaae17995c59d790"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/surface_types.h",
+      "bytes": 4641,
+      "sha256": "863530cd094f387b4c4c0ee428055c91ea2733fb0a13c93136ceec9b33827c57"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/texture_fetch_functions.h",
+      "bytes": 12691,
+      "sha256": "f889b1a37fc1360eb5aa98ac1ee90b9bfdda6a67c949275c6b659a9114d101bf"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/texture_indirect_functions.h",
+      "bytes": 21801,
+      "sha256": "5d3b7b635072266c4bfc22c46c88ce25dd2eb1510fc4a9608bb07e05054281af"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/texture_types.h",
+      "bytes": 6540,
+      "sha256": "1887d9c33528c4d841b509f0cd586e7602d201274959c53c87ca5917b7e7cfed"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/vector_functions.h",
+      "bytes": 8184,
+      "sha256": "69c863a2b5c66654fca2be925ef94b1b66e6fbb8dfbb768314146fa23775d2ab"
+    },
+    {
+      "path": "nvidia/cuda_runtime/include/vector_types.h",
+      "bytes": 14179,
+      "sha256": "e3fd5898057158048c8dcc215e7426e599aa03fa5553ef9d1f65159464e35693"
+    },
+    {
+      "path": "nvidia/cuda_runtime/lib/x64/cuda.lib",
+      "bytes": 161926,
+      "sha256": "eacf5ca874891527c1231b936080abdb58f717fe4537aaee83eb8099f1b2bb16"
+    },
+    {
+      "path": "nvidia/cuda_runtime/lib/x64/cudadevrt.lib",
+      "bytes": 3121468,
+      "sha256": "c98d84a0739740aed2b8596ec050d42ba6e77185efb9e9b4707832b8c6ec3955"
+    },
+    {
+      "path": "nvidia/cuda_runtime/lib/x64/cudart.lib",
+      "bytes": 117462,
+      "sha256": "102cfd03d598f467c3698b9919b6ffc3635e4cb483f35df31f0e2c31a97a34cb"
+    },
+    {
+      "path": "nvidia/cuda_runtime/lib/x64/cudart_static.lib",
+      "bytes": 2904506,
+      "sha256": "dd650c41593ba90e9c6ea346b935ec62200b1f34c228aa7ea41f81c8c56f2b20"
+    },
+    {
+      "path": "tensorrt_libs/nvinfer_10.dll",
+      "bytes": 476635680,
+      "sha256": "d100ec93e5abf56f8d2dafb69cde536c4f9fbb4748a5746a74b7009f6894ce67"
+    },
+    {
+      "path": "tensorrt_libs/nvinfer_builder_resource_10.dll",
+      "bytes": 1791236128,
+      "sha256": "ddcd365b6b2c69a4d1b6512567da5194a302f762acd10182df94b6fa14738fc5"
+    },
+    {
+      "path": "tensorrt_libs/nvinfer_plugin_10.dll",
+      "bytes": 52724256,
+      "sha256": "36128e7ac1617e6856f8542e2262a527eb6f2357c8e8a22acf5e65fb3dbb4a84"
+    },
+    {
+      "path": "tensorrt_libs/nvonnxparser_10.dll",
+      "bytes": 3017248,
+      "sha256": "406086478ddd0cd8ccfbab7644a7c3998cb6c9887610bd5366916b8e74bd9920"
+    }
+  ],
+  "boundary": "Official SDK staging; native worker still must be built and tested"
+}

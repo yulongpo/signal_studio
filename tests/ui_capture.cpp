@@ -938,7 +938,8 @@ int main(int argc, char* argv[]) {
   QApplication::setApplicationName("SignalStudioNativeCapture");
   const auto arguments = app.arguments();
   if (arguments.size() >= 3 && arguments.at(1) == "--wideband-detection")
-    return runWidebandDetectionCapture(arguments.at(2));
+    return runWidebandDetectionCapture(
+        arguments.at(2), arguments.contains("--production-model"));
   if (arguments.size() >= 3 && arguments.at(1) == "--import-brand")
     return runImportBrandCapture(arguments.at(2));
   if (arguments.size() == 2 &&

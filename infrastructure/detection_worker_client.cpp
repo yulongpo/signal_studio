@@ -93,7 +93,9 @@ bool DetectionWorkerClient::start(const QString& executable,
                      request.sourceIdentity.projectGeneration,
                      QString::fromStdString(request.sourceIdentity.fileId)),
       {}};
-  return exchange(std::move(begin), ready, error, cancelled);
+  if (!exchange(std::move(begin), ready, error, cancelled)) return false;
+  evidence_ = ready.envelope["payload"].toObject();
+  return true;
 }
 
 bool DetectionWorkerClient::exchange(DetectionWorkerPacket packet,

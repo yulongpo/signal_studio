@@ -246,7 +246,9 @@ QPlainTextEdit* widebandOpenOriginalFields(MainWindow& window) {
   return evidence;
 }
 
-void widebandSelectAnnotation(MainWindow& window, const std::string& id) {
+void widebandSelectAnnotation(
+    MainWindow& window, const std::string& id,
+    const QString& expectedFormat = "torchsig-rfbench-sigmf-v1") {
   click(window, "resultTab");
   auto* table = child<QTableView>(window, "annotationTable");
   QModelIndex selected;
@@ -265,9 +267,8 @@ void widebandSelectAnnotation(MainWindow& window, const std::string& id) {
           [&] { return window.session().activeFile()->activeMarkId == id; }),
       "Native annotation table selection did not reach the application state");
   auto* evidence = widebandOpenOriginalFields(window);
-  require(
-      evidence->toPlainText().contains("torchsig-rfbench-sigmf-v1"),
-      "Selected original-label details do not show their actual source format");
+  require(evidence->toPlainText().contains(expectedFormat),
+          "Selected annotation details do not show their actual source format");
 }
 
 QJsonObject widebandImportActualSource(MainWindow& window, const QString& data,
@@ -1191,7 +1192,90 @@ QJsonObject widebandCaptureSingleSegmentConfirmation(
           {"modelInferenceVerified", false}};
 }
 
-int runWidebandDetectionCapture(const QString& outputDirectory) {
+QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen) {
+  auto& window = capture.window;
+  auto* card = child<QWidget>(window, "detectionCard");
+  auto* profile = child<QComboBox>(*card, "detectionProfile");
+  auto* origin = child<QComboBox>(*card, "detectionRangeOrigin");
+  child<QAction>(window, "widebandDetectionAction")->trigger();
+  widebandScrollTo(profile);
+  profile->setCurrentIndex(profile->findData("ffscn-gui-iq-v1"));
+  origin->setCurrentIndex(origin->findData("available-file"));
+  window.refresh();
+  auto* button = child<QPushButton>(window, "runWidebandDetection");
+  require(button->isVisible() && button->isEnabled(),
+          "Production asset preflight did not enable the approved resident run "
+          "action");
+  const auto previous = window.session().activeFile()->detectionRuns.size();
+  QTest::mouseClick(button, Qt::LeftButton);
+  require(waitUntil(
+              [&] {
+                return window.session().activeFile()->detectionRuns.size() ==
+                       previous + 1;
+              },
+              5000),
+          "The resident action did not freeze the production model request");
+  widebandScene(capture, "23-production-model-running", screen);
+  require(
+      waitUntil(
+          [&] {
+            return detectionIsTerminal(
+                window.session().activeFile()->detectionRuns.back().lifecycle);
+          },
+          120000),
+      "Production model task did not finish");
+  const auto run = window.session().activeFile()->detectionRuns.back();
+  require(
+      run.lifecycle == DetectionLifecycle::Completed &&
+          run.completedWindows > 0 &&
+          run.completedWindows == run.eligibleWindows &&
+          !run.request.modelSha256.empty() &&
+          run.device.find("RTX 5060 Laptop") != std::string::npos,
+      "Actual production model failed: " + QString::fromStdString(run.error));
+  std::vector<std::string> ids;
+  require(
+      waitUntil(
+          [&] {
+            ids.clear();
+            for (const auto& annotation : window.session().activeFile()->marks)
+              if (annotation.originEvidence &&
+                  annotation.originEvidence->runId == run.request.runId)
+                ids.push_back(annotation.id);
+            return !ids.empty();
+          },
+          5000),
+      "Production model results were not published into the shared annotation "
+      "table");
+  for (const auto& id : ids) {
+    const auto* annotation = findAnnotation(*window.session().activeFile(), id);
+    require(annotation &&
+                annotation->sourceKind == AnnotationSource::Algorithm &&
+                annotation->segments.empty() && !annotation->classLabel &&
+                annotation->observationTimeQuality ==
+                    TimeQuality::WindowObservation,
+            "Frequency model publication invented event time or a class");
+  }
+  widebandSelectAnnotation(window, ids.front(), "detection-v1");
+  for (const auto* name :
+       {"annotationStartMilliseconds", "annotationEndMilliseconds",
+        "annotationLowerMHz", "annotationUpperMHz"}) {
+    auto* edit = child<QLineEdit>(window, name);
+    require(!edit->isEnabled() && edit->text().isEmpty() &&
+                !edit->property("parameterDraft").toBool(),
+            "An unknown-time observation retained another segment's geometry");
+  }
+  widebandScene(capture, "24-production-model-frequency-observation", screen);
+  return {
+      {"pass", true},
+      {"run", encodeDetectionRun(run)},
+      {"annotationCount", static_cast<int>(ids.size())},
+      {"sourceCounts", widebandSourceCounts(*window.session().activeFile())},
+      {"modelInferenceVerified", true},
+      {"timeEventsVerified", false}};
+}
+
+int runWidebandDetectionCapture(const QString& outputDirectory,
+                                bool productionModel = false) {
   QDir output(outputDirectory);
   if (!QFileInfo(outputDirectory).isAbsolute() ||
       !QDir().mkpath(output.absolutePath()))
@@ -1209,6 +1293,7 @@ int runWidebandDetectionCapture(const QString& outputDirectory) {
        "Native Qt Widgets, actual cf32 IQ, pipeline fixture (not a model)"},
       {"fixtureExplicitlyEnabledBeforeMainWindow", true},
       {"modelInferenceVerified", false},
+      {"productionModelRequested", productionModel},
       {"a16AcceptanceVerified", false}};
   MainWindow window;
   Capture capture{window,
@@ -1381,10 +1466,18 @@ int runWidebandDetectionCapture(const QString& outputDirectory) {
     report["singleSegmentConfirmation"] =
         widebandCaptureSingleSegmentConfirmation(capture, screen, originalId,
                                                  project, data, iqHash);
+    if (productionModel) {
+      report["productionModel"] =
+          widebandCaptureProductionModel(capture, screen);
+      report["modelInferenceVerified"] = true;
+      report["evidenceKind"] =
+          "Native Qt Widgets, actual cf32 IQ, explicit fixture regression and "
+          "real TensorRT FP32 frequency observations";
+    }
     report["renderEvidence"] = capture.evidence();
     report["fullScreen"] = window.isFullScreen();
     report["logicalWindowSize"] = sizeJson(window.size());
-    constexpr int kExpectedScenes = 23;
+    const int kExpectedScenes = productionModel ? 25 : 23;
     QStringList uniqueScenes;
     for (const auto& value : capture.scenes) {
       const auto name = value.toObject()["scene"].toString();

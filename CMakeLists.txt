@@ -61,6 +61,8 @@ endfunction()
 add_library(SignalStudioCore STATIC
     domain/annotation.cpp
     domain/detection.cpp
+    domain/detection_postprocess.cpp
+    domain/scn_detection_postprocess.cpp
     application/annotation_service.cpp
     domain/sample_format.cpp
     domain/project.cpp
@@ -81,6 +83,9 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/detection_store.cpp
     infrastructure/detection_task.cpp
     infrastructure/detection_worker_client.cpp
+    infrastructure/detection_projection.cpp
+    infrastructure/detection_model_snapshot.cpp
+    infrastructure/detection_frequency_analysis.cpp
     infrastructure/import_controller.cpp
     infrastructure/format_template_store.cpp
     infrastructure/source_metadata.cpp
@@ -143,6 +148,8 @@ add_executable(SignalStudioDetectionWorker tools/detection_worker/main.cpp)
 ss_target_defaults(SignalStudioDetectionWorker)
 set_target_properties(SignalStudioDetectionWorker PROPERTIES AUTOMOC OFF)
 target_link_libraries(SignalStudioDetectionWorker PRIVATE SignalStudioInfrastructure)
+include(cmake/detection_model_runtime.cmake)
+signalstudio_configure_detection_model_backend(SignalStudioDetectionWorker)
 add_executable(SignalStudio WIN32 app/main.cpp ${SS_UI_SOURCES})
 add_dependencies(SignalStudio SignalStudioDetectionWorker)
 if(WIN32)
@@ -184,6 +191,27 @@ endif()
 
 if(SS_BUILD_TESTS)
     enable_testing()
+    add_executable(SignalStudioDetectionPipelineTests tests/detection_pipeline_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionPipelineTests)
+    set_target_properties(SignalStudioDetectionPipelineTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionPipelineTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_pipeline COMMAND SignalStudioDetectionPipelineTests)
+    add_executable(SignalStudioDetectionPostprocessTests tests/detection_postprocess_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionPostprocessTests)
+    set_target_properties(SignalStudioDetectionPostprocessTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionPostprocessTests PRIVATE SignalStudioCore)
+    add_test(NAME signal_studio_detection_postprocess COMMAND SignalStudioDetectionPostprocessTests)
+    add_executable(SignalStudioDetectionModelBackendTests tests/detection_model_backend_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionModelBackendTests)
+    set_target_properties(SignalStudioDetectionModelBackendTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionModelBackendTests PRIVATE SignalStudioInfrastructure)
+    signalstudio_configure_detection_model_backend(SignalStudioDetectionModelBackendTests)
+    add_test(NAME signal_studio_detection_model_backend COMMAND SignalStudioDetectionModelBackendTests)
+    add_executable(SignalStudioDetectionFrequencyAnalysisTests tests/detection_frequency_analysis_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionFrequencyAnalysisTests)
+    set_target_properties(SignalStudioDetectionFrequencyAnalysisTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionFrequencyAnalysisTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_frequency_analysis COMMAND SignalStudioDetectionFrequencyAnalysisTests)
     foreach(test_kind IN ITEMS Store Protocol Task)
         string(TOLOWER "${test_kind}" test_kind_lower)
         set(test_target "SignalStudioDetection${test_kind}Tests")
