@@ -30,6 +30,13 @@
 - `scripts/screenshot.ps1`、`scripts/verify-package.ps1` 和 `scripts/gpu_smoke.ps1` 默认通过 Windows 平台与 `--require-gpu` 验证；成功条件必须包含非 CPU QRhi 驱动及至少一次纹理上传。`-SoftwareRenderer` 明确切换软件回退验证并标明软件结果。
 - CTest 的基础 UI 测试使用 offscreen 与 QWidget 回退验证交互，不证明 GPU 加速。GPU smoke 独立执行并记录本机驱动及实际 renderer 证据。
 
+## 任务产物目录
+
+- 按 `docs/architecture/output-layout.md` 执行。公共 presets 的 `out/vs2026-qt611-*/` 构建树和对应 `_bin/` 部署目录保留规定路径。
+- 节点中间产物直接写入 `out/tasks/wideband-detection/<node>/` 下的 `logs/`、`diagnostics/`、`assets/`、`local-builds/`、`deferred/`；可复用工具环境位于 `out/toolchains/`。不把任务日志、模型或临时工具写到 `out/` 根目录。
+- 本机 Python 工作优先使用用户指定的 `D:/profiles/anaconda/python.exe`；任务所需冻结依赖可由项目工具目录显式提供。
+- 每个节点实现、自检通过并本地提交后再进入下一节点。最终证据归档到对应 `docs/implementation/`；本次全部节点完成后才统一推送。
+
 ## 变更纪律
 
 搜索优先使用 `rg`；独立查询可并行，共享状态和连续决策由同一 Agent 处理。测试应覆盖行为和数据边界，避免复述实现的低价值测试。除用户明确授权外不提交、不推送。
