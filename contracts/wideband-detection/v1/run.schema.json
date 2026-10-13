@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:signalstudio:wideband:run:1",
+  "title": "Signal Studio Detection Run v1",
+  "type": "object", "additionalProperties": false,
+  "required": ["schemaVersion", "runId", "projectGeneration", "fileId", "sourceIdentity", "profileId", "profileVersion", "parameters", "requestedRange", "lifecycle", "sourceValidity", "coverage", "chunks"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "runId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "projectGeneration": {"$ref": "#/$defs/sample"},
+    "fileId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "parentRunId": {"type": ["string", "null"], "maxLength": 128},
+    "sourceIdentity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["formatRevision", "sampleChannel", "sampleRateHz", "physicalSamples", "availableSamples", "fingerprintKind", "fingerprint"],
+      "properties": {
+        "formatRevision": {"$ref": "#/$defs/sample"},
+        "sampleChannel": {"type": "integer", "minimum": 0, "maximum": 127},
+        "sampleRateHz": {"type": "number", "exclusiveMinimum": 0, "maximum": 1e12},
+        "centerFrequencyHz": {"type": ["number", "null"], "minimum": 0, "maximum": 1e12},
+        "physicalSamples": {"$ref": "#/$defs/sample"},
+        "availableSamples": {"$ref": "#/$defs/sample"},
+        "fingerprintKind": {"enum": ["size-mtime", "range-sha256", "file-sha256"]},
+        "fingerprint": {"type": "string", "minLength": 1, "maxLength": 1024}
+      }
+    },
+    "profileId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "profileVersion": {"type": "integer", "minimum": 1},
+    "modelSha256": {"$ref": "#/$defs/hash"},
+    "parameters": {"type": "object"},
+    "requestedRange": {"$ref": "#/$defs/range"},
+    "contextRange": {"$ref": "#/$defs/range"},
+    "lifecycle": {"enum": ["Queued", "Validating", "Running", "Cancelling", "Completed", "Cancelled", "Failed", "Interrupted"]},
+    "sourceValidity": {"enum": ["Current", "Missing", "Changed", "Unsupported"]},
+    "stageProgress": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "coverage": {
+      "type": "array", "maxItems": 100000,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["kind", "range", "reason"],
+        "properties": {
+          "kind": {"enum": ["read", "eligible", "completed", "excluded", "unread"]},
+          "range": {"$ref": "#/$defs/range"},
+          "reason": {"type": ["string", "null"], "maxLength": 1024}
+        }
+      }
+    },
+    "chunks": {
+      "type": "array", "maxItems": 100000,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["sequence", "relativePath", "sha256", "resultCount"],
+        "properties": {
+          "sequence": {"$ref": "#/$defs/sample"},
+          "relativePath": {"type": "string", "minLength": 1, "maxLength": 1024},
+          "sha256": {"$ref": "#/$defs/hash"},
+          "resultCount": {"type": "integer", "minimum": 0, "maximum": 4096}
+        }
+      }
+    },
+    "error": {"type": ["string", "null"], "maxLength": 4096}
+  },
+  "$defs": {
+    "sample": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,19})(?![\\s\\S])"},
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}(?![\\s\\S])"},
+    "range": {
+      "type": "object", "additionalProperties": false,
+      "required": ["startSample", "endSample", "frequencyLowerHz", "frequencyUpperHz", "frequencyFrame"],
+      "properties": {
+        "startSample": {"$ref": "#/$defs/sample"},
+        "endSample": {"$ref": "#/$defs/sample"},
+        "frequencyLowerHz": {"type": "number", "minimum": -1e12, "maximum": 1e12},
+        "frequencyUpperHz": {"type": "number", "minimum": -1e12, "maximum": 1e12},
+        "frequencyFrame": {"enum": ["RF", "Baseband", "RealOneSided"]}
+      }
+    }
+  },
+  "$comment": "Validate uint64 and range ordering, source bounds, coverage meaning, project-contained paths and immutable hashes before publication. Completed does not imply complete physical-file coverage."
+}

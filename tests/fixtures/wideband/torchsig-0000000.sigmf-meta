@@ -1,0 +1,58 @@
+{
+  "global": {
+    "core:datatype": "cf32_le",
+    "core:sample_rate": 20000000.0,
+    "core:version": "1.0.0",
+    "core:description": "TorchSig synthetic enhanced detection benchmark",
+    "rfbench:scenario": "baseline",
+    "rfbench:split": "train"
+  },
+  "captures": [
+    {
+      "core:sample_start": 0,
+      "core:frequency": 2500000000.0
+    }
+  ],
+  "annotations": [
+    {
+      "core:sample_start": 51107,
+      "core:sample_count": 292170,
+      "core:freq_lower_edge": 2502021605.9327126,
+      "core:freq_upper_edge": 2502282009.1227803,
+      "core:label": "64qam",
+      "rfbench:emitter_id": 0,
+      "rfbench:snr_inband_db": 10.979427058095588,
+      "rfbench:hop_index": null
+    },
+    {
+      "core:sample_start": 38498,
+      "core:sample_count": 315326,
+      "core:freq_lower_edge": 2492059313.3481555,
+      "core:freq_upper_edge": 2492749655.595414,
+      "core:label": "2gmsk",
+      "rfbench:emitter_id": 1,
+      "rfbench:snr_inband_db": 16.809667164045955,
+      "rfbench:hop_index": null
+    },
+    {
+      "core:sample_start": 70248,
+      "core:sample_count": 289733,
+      "core:freq_lower_edge": 2491820030.553922,
+      "core:freq_upper_edge": 2492454138.891255,
+      "core:label": "bpsk",
+      "rfbench:emitter_id": 2,
+      "rfbench:snr_inband_db": 6.275496027073526,
+      "rfbench:hop_index": null
+    },
+    {
+      "core:sample_start": 173404,
+      "core:sample_count": 171890,
+      "core:freq_lower_edge": 2502885255.8388267,
+      "core:freq_upper_edge": 2503155805.4215245,
+      "core:label": "64qam",
+      "rfbench:emitter_id": 3,
+      "rfbench:snr_inband_db": 15.476337031213557,
+      "rfbench:hop_index": null
+    }
+  ]
+}

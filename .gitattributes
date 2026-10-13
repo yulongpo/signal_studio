@@ -1,0 +1,4 @@
+# Source-derived label fixtures keep their exact bytes, including writer padding.
+tests/fixtures/wideband/*.txt -text whitespace=-blank-at-eol
+tests/fixtures/wideband/*.json -text
+tests/fixtures/wideband/*.sigmf-meta -text

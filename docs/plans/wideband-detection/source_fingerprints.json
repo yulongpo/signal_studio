@@ -1,0 +1,605 @@
+{
+  "schema": "signalstudio-planning-evidence-v1",
+  "checkedOn": "2026-10-13",
+  "timezone": "Asia/Shanghai",
+  "scope": "Read-only evidence audit and document creation; no model execution, conversion, build, application tests, commit or push",
+  "project": {
+    "path": "D:/project/signal_studio_rebuild",
+    "branch": "rebuild/a143-native",
+    "head": "b151f14324b595d34e8b260ed9f84308a4bb4c80",
+    "initialWorkingTreeClean": true
+  },
+  "referenceWorkingTree": {
+    "path": "D:/project/SCN_based_PSD_Detection",
+    "branch": "scn_dev",
+    "head": "be95399aa17409a45380bdf46f3e42e75bfc647b",
+    "dirty": true,
+    "note": "SCN semantics include uncommitted files; hashes below identify the observed working tree, not HEAD alone"
+  },
+  "prototype": {
+    "root": "D:/project/signal_studio_原型设计/SignalStudio_Triggered_Design_b151f143",
+    "manifest": "FILE_MANIFEST.json",
+    "verifiedCount": 24,
+    "allMatched": true,
+    "files": [
+      {
+        "path": "README.md",
+        "bytes": 2963,
+        "sha256": "525babf7744e8ead96e34ffbbcd0f9dfcee362ef1e99c7215844a89aeb99de3e",
+        "matchesManifest": true
+      },
+      {
+        "path": "screenshots/prototype-interactions.png",
+        "bytes": 704390,
+        "sha256": "2490cbdb8e6b9f10a2727b42aa6c0d784a17bcd2d900afc2019684ac40dfe01a",
+        "matchesManifest": true
+      },
+      {
+        "path": "screenshots/prototype.png",
+        "bytes": 673357,
+        "sha256": "c37ddfe4140f4722f8f92b5e9d17fb7c675466c67824e961db71e775de669c1a",
+        "matchesManifest": true
+      },
+      {
+        "path": "docs/05_MIGRATION_AND_ACCEPTANCE.md",
+        "bytes": 6123,
+        "sha256": "693d22bde687335cf5b64c69ec668f6770b2ef5a63b8c2e9d1082d69fff85d80",
+        "matchesManifest": true
+      },
+      {
+        "path": "docs/architecture.svg",
+        "bytes": 18001,
+        "sha256": "c644d46ea7f85c227f6283be7e7402d63e2025c3fa9e980ec01ffdd116ff2409",
+        "matchesManifest": true
+      },
+      {
+        "path": "docs/03_ALGORITHM_ARCHITECTURE.md",
+        "bytes": 11368,
+        "sha256": "330e427b85f4a6346965d3ab601458ceec8ff1a53c1f3cd1f8866be6dbd75520",
+        "matchesManifest": true
+      },
+      {
+        "path": "docs/02_OFFLINE_DETECTION_UX.md",
+        "bytes": 7571,
+        "sha256": "b81f5f5c024c6ea0b9b9745520274aefa4f2475e06e9817e7f5cb6b38de78556",
+        "matchesManifest": true
+      },
+      {
+        "path": "docs/architecture.png",
+        "bytes": 234129,
+        "sha256": "1b8332332c610af473911566d26801bb1318bf28a8af31d47b57489a2ae22b56",
+        "matchesManifest": true
+      },
+      {
+        "path": "docs/architecture.dot",
+        "bytes": 1734,
+        "sha256": "a32745b71d3b170f3fdfa2718e978f25699b109ed3a0e3a577f4438b4b20b767",
+        "matchesManifest": true
+      },
+      {
+        "path": "docs/06_CODEX_IMPLEMENTATION_PROMPT.md",
+        "bytes": 2596,
+        "sha256": "c7feb840362a97b908cb6a7a2f14c054f35979158467e9501d95a541ae5c7f7b",
+        "matchesManifest": true
+      },
+      {
+        "path": "docs/00_FULL_REPORT.md",
+        "bytes": 45672,
+        "sha256": "b3896800b6beb19833c6a02b949bbdffea64e11031ab7a48cbd78ae52dc3a499",
+        "matchesManifest": true
+      },
+      {
+        "path": "docs/08_PROTOTYPE_QA.md",
+        "bytes": 1523,
+        "sha256": "5af6d5b903c4b9adf4d01d0ebc41dc31097e7480858b80d0b346c52d410e0d4d",
+        "matchesManifest": true
+      },
+      {
+        "path": "docs/04_DATA_AND_ABI_CONTRACT.md",
+        "bytes": 6832,
+        "sha256": "bd2eb06c75380e3010fcecb7076e445813eb7264087dba7b81c648d695f6fffd",
+        "matchesManifest": true
+      },
+      {
+        "path": "docs/07_SOURCE_INDEX.md",
+        "bytes": 2762,
+        "sha256": "3b1658d8586ef10e1c0642191c04da9a2395b90282449ac694fc43c095b44397",
+        "matchesManifest": true
+      },
+      {
+        "path": "docs/01_CHANGE_AUDIT.md",
+        "bytes": 5982,
+        "sha256": "db60a640dee4231baac7a63613969e5558bd79a3f4115e99b1aa0769d0445e31",
+        "matchesManifest": true
+      },
+      {
+        "path": "interfaces/example_ffscn_manifest.json",
+        "bytes": 1191,
+        "sha256": "b4a70875f9536ab5fc949cbee4e23a34b44bac6003194daf8be5acd2e779140d",
+        "matchesManifest": true
+      },
+      {
+        "path": "interfaces/example_scn_manifest.json",
+        "bytes": 1035,
+        "sha256": "082f97ad0a5f615d453914e63f755c2ed15a3c9e9ee5e421788b98608cd965d8",
+        "matchesManifest": true
+      },
+      {
+        "path": "interfaces/algorithm_manifest.schema.json",
+        "bytes": 2855,
+        "sha256": "c3457737749cab8dc609e58247d8366691913b930cc82db8f6b9787d1ff6d0c1",
+        "matchesManifest": true
+      },
+      {
+        "path": "interfaces/algorithm_plugin_api.h",
+        "bytes": 2737,
+        "sha256": "38703d678b1e5ed4bd77103f4dadacb89573153b74327bf441fd57c5a914bcdb",
+        "matchesManifest": true
+      },
+      {
+        "path": "interfaces/example_result.json",
+        "bytes": 1110,
+        "sha256": "7a51af0d08bf3df71770fe7b91510aa6a1a0a3d819ebb663c6278abbce7a520b",
+        "matchesManifest": true
+      },
+      {
+        "path": "prototype/standalone.html",
+        "bytes": 49258,
+        "sha256": "1ba99e81abbedf0b9ca4e94a64e502dfab8bc427b8c96334c9db0370cc2ef67a",
+        "matchesManifest": true
+      },
+      {
+        "path": "prototype/app.js",
+        "bytes": 23007,
+        "sha256": "3f4a904472607bb932e6156911bd512ec1b973dbfcf300b8fcc7d20bc56cb798",
+        "matchesManifest": true
+      },
+      {
+        "path": "prototype/index.html",
+        "bytes": 12272,
+        "sha256": "3ea472a1461caacb49e0e9047c78c65881e886b07b79a3723ba4cb60eaab7984",
+        "matchesManifest": true
+      },
+      {
+        "path": "prototype/style.css",
+        "bytes": 14013,
+        "sha256": "ce1e6eb8993408bd0f4ee9bd917522a5aacfdb503c1e71d6229001e7597d9518",
+        "matchesManifest": true
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "D:/project/signal_studio_rebuild/domain/project.h",
+      "bytes": 7030,
+      "sha256": "5692ee9d798dac562ef0f7a8d28566289fa1ba35ebe21caa9ec325e85ecbf85e"
+    },
+    {
+      "path": "D:/project/signal_studio_rebuild/domain/project.cpp",
+      "bytes": 4044,
+      "sha256": "36961f69b2b0cf3d006e8023642e10535f350e1a11f639f7a9a166b73f4f2d3d"
+    },
+    {
+      "path": "D:/project/signal_studio_rebuild/domain/sample_format.h",
+      "bytes": 1407,
+      "sha256": "1d47018d4332ef08a2806c906c3409754fba90da3db35be786fa216898a073e7"
+    },
+    {
+      "path": "D:/project/signal_studio_rebuild/domain/spectral_data.h",
+      "bytes": 3626,
+      "sha256": "c48f9831cfe7dfcf1d3a144d6fa8f4f8725d8f944b15a60fbc0c4f0a7c54ffae"
+    },
+    {
+      "path": "D:/project/signal_studio_rebuild/application/session.h",
+      "bytes": 4523,
+      "sha256": "cdb484bdda8e6fe167eb01cee96d883a0ad6c9a39670370f1efad1ab4a8c1586"
+    },
+    {
+      "path": "D:/project/signal_studio_rebuild/infrastructure/project_store.cpp",
+      "bytes": 43299,
+      "sha256": "4b98adf6c11e6be96b9114ff1ac9775631e72d82e7587b8cd8d217c99861483c"
+    },
+    {
+      "path": "D:/project/signal_studio_rebuild/infrastructure/sigmf_metadata.cpp",
+      "bytes": 6819,
+      "sha256": "c34f9b1f1ff8696a2c75b18e41cdb8de26c2972a52839492cf985655e8a25caa"
+    },
+    {
+      "path": "D:/project/signal_studio_rebuild/infrastructure/raw_sample_reader.cpp",
+      "bytes": 7271,
+      "sha256": "28b2b842954fe8c4f11f7f8ee28ec8f175d95ceb31e2f25bbefb9a176f1e2f64"
+    },
+    {
+      "path": "D:/project/signal_studio_rebuild/infrastructure/source_loader.cpp",
+      "bytes": 3473,
+      "sha256": "272113d25c68e3b1776d543ae96ec8ba82b81cfcc4f37f532ed1888b98b4f72b"
+    },
+    {
+      "path": "D:/project/signal_studio_rebuild/infrastructure/spectral_analysis.cpp",
+      "bytes": 26345,
+      "sha256": "69832120a17284732149f4824dc5d02bdce6477a5f10d4880a07045329abb84b"
+    },
+    {
+      "path": "D:/project/signal_studio_rebuild/app/main_window.cpp",
+      "bytes": 151926,
+      "sha256": "47056ad7e74e404f23b75b2dfefe677926d8092b2bfd8bc4b826a3fb872df0bc"
+    },
+    {
+      "path": "D:/project/signal_studio_rebuild/docs/implementation/import-brand-v2/CODEX_EXECUTION_REPORT.md",
+      "bytes": 11470,
+      "sha256": "e9afc8180034a8b974cfa2a1103121d150b3a81fdfaa66304a2314d0a2f40533"
+    },
+    {
+      "path": "D:/project/SCN_based_PSD_Detection/algorithm/DetectionEngine/DetectionEngine.cpp",
+      "bytes": 19443,
+      "sha256": "523b14164155768e5dc342c58726215e5ce5b981df9e139e5158be79e72cc1d2"
+    },
+    {
+      "path": "D:/project/SCN_based_PSD_Detection/algorithm/refine/BandwidthRefiner.cpp",
+      "bytes": 6393,
+      "sha256": "979bf8d0e2152cc50be3769a9e4bc956746080c5226b7592ec4ba95c1ebe0cfb"
+    },
+    {
+      "path": "D:/project/SCN_based_PSD_Detection/algorithm/DetectionConfig.h",
+      "bytes": 2614,
+      "sha256": "001d6edcbf58da2313766e16ba676fb007db1afd1d1d202b8dc6e393cf781ddf"
+    },
+    {
+      "path": "D:/project/HY/dataset_wideband/report/report.md",
+      "bytes": 10146,
+      "sha256": "7e4d87ed62fd701a29607c625afb461141ae7b8d4466ffbb615b4eb88891a59e"
+    },
+    {
+      "path": "D:/coding/FFSCN_train2/broadband_signal_generation/write_test_record.m",
+      "bytes": 1531,
+      "sha256": "d3df0b9b629bf47830b699243058cb5d0fa382eb60b438d9816c5bed08c75a11"
+    },
+    {
+      "path": "D:/coding/FFSCN_train2/broadband_signal_generation/HY_TRAINVAL_10MHz.md",
+      "bytes": 6614,
+      "sha256": "ebc188aad9bcc5232d5f8991a13c5fba821d048dbb52b1b51fcc64384104b84f"
+    },
+    {
+      "path": "D:/coding/FFSCN_train2/broadband_signal_generation/hy_trainval_config.m",
+      "bytes": 2046,
+      "sha256": "b206abcc78cba84a1be08bd5babe7d8eb4d78345bb72273d760125678d2aa5a6"
+    },
+    {
+      "path": "D:/coding/FFSCN_train2/broadband_signal_generation/HY_TRAINVAL_VALIDATION_20260908.md",
+      "bytes": 4322,
+      "sha256": "b8d19cbd01ea56bedba7e824e8654f1488729e869e8815e8c12f086e98f4c8ed"
+    },
+    {
+      "path": "D:/coding/FFSCN_train2/broadband_signal_generation/GENERATION_REPORT_20260907.md",
+      "bytes": 2003,
+      "sha256": "d4098dd7c3ae2871457f8ef3e73396487e06d22bff74bf910e0f1472b9e23b45"
+    },
+    {
+      "path": "D:/coding/FFSCN_train2/broadband_signal_generation/figures/examples_60MHz_10ms_20260906/sparse/label/20260906-213604-798_914585_bw_60000000_sampleTime_0.01_rollOff_0.35.txt",
+      "bytes": 1989,
+      "sha256": "4f57fea14a0fbcb209945f96a89034f808925f544d204db5260b363d25072d0f"
+    },
+    {
+      "path": "D:/project/FFSCN_train2/reports/eval1000_timefps1ms_20260908/REPORT_1000.md",
+      "bytes": 7525,
+      "sha256": "fb8d6345f59e1c0be65a7d75c7a59db45325b74fa552f449e5e45e8ca4936724"
+    },
+    {
+      "path": "D:/project/FFSCN_train2/reports/eval1000_timefps1ms_20260908/summary_1000.json",
+      "bytes": 330003,
+      "sha256": "8025902ed01395b71c869ac443cb9d430ee6b3cb277bea195cbb4ffebaf19ed2"
+    },
+    {
+      "path": "D:/project/FFSCN_train2/reports/eval1000_timefps1ms_20260908/source/z_test_whole.py",
+      "bytes": 27700,
+      "sha256": "593ff4a6653678c33a5a2c673f13a5693de95597277ba303c749fa3f7c1bb1de"
+    },
+    {
+      "path": "D:/project/FFSCN_train2/docs/STFT_TIME_FPS_1MS.md",
+      "bytes": 1936,
+      "sha256": "f193807080f44230f9cf8976bdd4731b1902c314bdf3970908a5070f214db113"
+    },
+    {
+      "path": "D:/project/FFSCN_train2/docs/SPECTRAL_BAND_REFINE.md",
+      "bytes": 4494,
+      "sha256": "6b0877e6c367b693282b0d648d00c8c6ee0842b68fe0f08bc65471ec020a6a73"
+    },
+    {
+      "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/config.py",
+      "bytes": 8130,
+      "sha256": "8aad0115a7962230870395035d13e6e8cdcd0051784f5e34b7d1d5c4da1fd51d"
+    },
+    {
+      "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/tracker.py",
+      "bytes": 11564,
+      "sha256": "77c36a2b7f584c560e2109c97a78ff1688b527ace9765b736941657f0e862ed1"
+    },
+    {
+      "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/stft.py",
+      "bytes": 4845,
+      "sha256": "2195f4db1c51c93f6206bc8b6ae03c5c2b4392c54500a2f7fd98bd03a34e550b"
+    },
+    {
+      "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/refine_roi.py",
+      "bytes": 7222,
+      "sha256": "c6d06e2a681a6e2e2c86a8c782e57cc83da0d777b8181d9e85f56fac56543a99"
+    },
+    {
+      "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/refine_sample.py",
+      "bytes": 9218,
+      "sha256": "0ec2916095eab0686db47b6169926ac6c4e61ed768a6752b82ab59415844edad"
+    },
+    {
+      "path": "D:/project/isa/docs/haiaispecmonitor-file-spectrum-large-bandwidth-detection-data-flow.md",
+      "bytes": 24519,
+      "sha256": "e472e8b59dcdad1149f2525c5dde65e2fcc6679e07a27d45b7f2ef0884854a55"
+    },
+    {
+      "path": "D:/project/01RadioAI/3rdparty/haisignal/include/haisignal/ISignalDetectionSCN.h",
+      "bytes": 3063,
+      "sha256": "852c9b28c65d03736e9b1f6f3f6a8a0c4aaf43113b2a05fd477a7c3b294a76bc"
+    },
+    {
+      "path": "D:/project/01RadioAI/3rdparty/haisignal/include/haisignal/ISignalDetectionFFSCN.h",
+      "bytes": 2277,
+      "sha256": "3f2122e2238e1da89c160b1c0befac64fbc068229d5b2ba272205468084fb6a1"
+    },
+    {
+      "path": "W:/wbSig53_rfbench20m/train/baseline/0000000.json",
+      "bytes": 2728,
+      "sha256": "3a8f4cc11248a72508bf837ca55ee82ead36e99ba9eaa636c1789595ff206438"
+    },
+    {
+      "path": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-data",
+      "bytes": 3200000,
+      "sha256": "3a47e55b5f02851d702d5c5782998bf3e374f67cde592c35689acf9ec5399254"
+    },
+    {
+      "path": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta",
+      "bytes": 1677,
+      "sha256": "5efd03dae0f53002c8400ddc2ba65e367d7dde315b232a24cd77a2b1bd982a29"
+    },
+    {
+      "path": "D:/coding/FFSCN_train2/broadband_signal_generation/base_function/save_signal_wav.m",
+      "bytes": 2198,
+      "sha256": "529baaa05b8d7a7281d194f837c36a8f57d442695b4eccdad5bba59cee27ca12"
+    }
+  ],
+  "referenceGitObjects": [
+    {
+      "path": "algorithm/preprocess/FfscnPreprocessor.cpp",
+      "commit": "649cc247f948d8ef71975c9ae1ed4675e12bb68a",
+      "gitBlob": "af595997e1ad1e1d00bbfc23e75ded8cef1791c2"
+    },
+    {
+      "path": "models/ffscn_17.manifest.json",
+      "commit": "649cc247f948d8ef71975c9ae1ed4675e12bb68a",
+      "gitBlob": "0e7952fe11f71972acc3de49a66e3322f78cc573"
+    },
+    {
+      "path": "models/ffscn_17_runtime_validation.json",
+      "commit": "649cc247f948d8ef71975c9ae1ed4675e12bb68a",
+      "gitBlob": "82165d113f7d550a2dc341eef105815199d7c6e9"
+    }
+  ],
+  "torchsigSampleChecks": {
+    "profile": "rfbench-v1 SigMF sample",
+    "events": 4,
+    "annotations": 4,
+    "allSampleStartsEndsAndLabelsEqual": true,
+    "maximumFrequencyDifferenceHzLessThan": 2.4E-07,
+    "dataBytes": 3200000,
+    "sampleCount": 400000,
+    "sampleRateHz": 20000000,
+    "centerFrequencyHz": 2500000000,
+    "note": "Metadata and data byte count/hash checked; no signal detection was executed"
+  },
+  "externalReferences": [
+    {
+      "url": "https://github.com/TorchDSP/torchsig",
+      "role": "User-corrected upstream reference; main is not asserted to be sample generation revision"
+    },
+    {
+      "url": "https://sigmf.org/",
+      "role": "SigMF field semantics"
+    },
+    {
+      "url": "https://docs.nvidia.com/deeplearning/tensorrt/latest/getting-started/support-matrix.html",
+      "role": "Engine portability constraints"
+    },
+    {
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.periodogram.html",
+      "role": "PSD scaling definition"
+    }
+  ],
+  "limitations": [
+    "Selected source files and relevant conversation turns were inspected, not an exhaustive review of every repository or conversation",
+    "Remote model hashes are historical manifest/report values, not freshly hashed weights",
+    "No historical accuracy or performance evaluation was rerun",
+    "No general TorchSig format compatibility is claimed from one rfbench-v1 sample"
+  ],
+  "reviewDraft4": {
+    "reviewDraft": 4,
+    "checkedOn": "2026-10-13",
+    "referencePriority": "FFSCN_TEST_GUI complete time-frequency detection capability; original Signal Studio prototype for interactions",
+    "thread": {
+      "id": "01a052c9-0ce5-7e41-a376-2c4a677ce9ca",
+      "title": "审查 FFSCN_TEST_GUI",
+      "readTurns": 5,
+      "hasMore": false,
+      "reviewTurn": "01a052c9-101c-7ae2-9d02-034fb2cfb6ce",
+      "optimizationTurn": "01a052e0-0dc7-7170-88db-ed016ddbcb0c",
+      "lastLayoutTurn": "01a055fb-50f3-7a71-89df-282688d45d0a"
+    },
+    "referenceWorkingTree": {
+      "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI",
+      "head": "d2d9dd947c58314d09406cf9fd0bfbe89a57c465",
+      "dirty": true,
+      "note": "Changes and untracked evaluation code are not represented by HEAD alone"
+    },
+    "files": [
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/README.md",
+        "bytes": 9350,
+        "sha256": "cab2161d73b96d263b5207997f3d3f7329065c0cafca41274cd29f9e2e67e582",
+        "role": "Current working-tree source inspected read-only"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/config.py",
+        "bytes": 8130,
+        "sha256": "8aad0115a7962230870395035d13e6e8cdcd0051784f5e34b7d1d5c4da1fd51d",
+        "role": "Current working-tree source inspected read-only"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/detection.py",
+        "bytes": 33725,
+        "sha256": "f825313f692b13813624b5adef2db8fa46099b6a11978cf7a088817160503c75",
+        "role": "Current working-tree source inspected read-only"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/tracker.py",
+        "bytes": 11564,
+        "sha256": "77c36a2b7f584c560e2109c97a78ff1688b527ace9765b736941657f0e862ed1",
+        "role": "Current working-tree source inspected read-only"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/evaluation.py",
+        "bytes": 3030,
+        "sha256": "e460dd0f3b85c233bde0247df9b5634502b2dd1bc03d27677db211b1148667e9",
+        "role": "Current working-tree source inspected read-only"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/result_export.py",
+        "bytes": 6393,
+        "sha256": "c468a40aaef100ed0ddbafe098ba57e3ed08844ad29203d0cb94e29ff2b9c5e5",
+        "role": "Current working-tree source inspected read-only"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/stft.py",
+        "bytes": 4845,
+        "sha256": "2195f4db1c51c93f6206bc8b6ae03c5c2b4392c54500a2f7fd98bd03a34e550b",
+        "role": "Current working-tree source inspected read-only"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/nms.py",
+        "bytes": 6695,
+        "sha256": "5da650118b1fb8e4ee4805cb6bbc0bc53aa235d220c3c35901dd41d2aa0a6cb0",
+        "role": "Current working-tree source inspected read-only"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/refine_sample.py",
+        "bytes": 9218,
+        "sha256": "0ec2916095eab0686db47b6169926ac6c4e61ed768a6752b82ab59415844edad",
+        "role": "Current working-tree source inspected read-only"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/refine_roi.py",
+        "bytes": 7222,
+        "sha256": "c6d06e2a681a6e2e2c86a8c782e57cc83da0d777b8181d9e85f56fac56543a99",
+        "role": "Current working-tree source inspected read-only"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/infrastructure/file_io.py",
+        "bytes": 4550,
+        "sha256": "cbf0dc28629fe7fc6d1d1f6e587430ea4c70195f0cd33814252b3c18a251dc35",
+        "role": "Current working-tree source inspected read-only"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/tests/test_review_fixes.py",
+        "bytes": 4698,
+        "sha256": "8c8a8f4b04211d7fca5790815e3a32f353b51cc9a890aa8b599e52c9fe74babb",
+        "role": "Behavioral test source inspected; tests not run"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/tests/test_gui_analysis_state.py",
+        "bytes": 15910,
+        "sha256": "e790d1a482ecfa59f73fd3ccb52c0a4520c568e42ace3443eefc5c3ddcf4f1a2",
+        "role": "Behavioral test source inspected; tests not run"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/config/epoch_1200.pth",
+        "bytes": 11145701,
+        "sha256": "acd997957dd85b7fc560897874b575d4776e80270d7e377d1de7559e513e40e0",
+        "role": "Model identity only; not loaded or executed"
+      },
+      {
+        "path": "D:/project/signal_studio_rebuild/ui/charts/plot_widget.cpp",
+        "bytes": 121013,
+        "sha256": "464cd8a0607423396a9b347ce273b2136feddbbe0227f81558f856a87dac7e56",
+        "role": "Prototype/gesture mapping checked; screenshot visually inspected; no interactive QA executed"
+      },
+      {
+        "path": "D:/project/signal_studio_原型设计/SignalStudio_Triggered_Design_b151f143/prototype/index.html",
+        "bytes": 12272,
+        "sha256": "3ea472a1461caacb49e0e9047c78c65881e886b07b79a3723ba4cb60eaab7984",
+        "role": "Prototype/gesture mapping checked; screenshot visually inspected; no interactive QA executed"
+      },
+      {
+        "path": "D:/project/signal_studio_原型设计/SignalStudio_Triggered_Design_b151f143/prototype/app.js",
+        "bytes": 23007,
+        "sha256": "3f4a904472607bb932e6156911bd512ec1b973dbfcf300b8fcc7d20bc56cb798",
+        "role": "Prototype/gesture mapping checked; screenshot visually inspected; no interactive QA executed"
+      },
+      {
+        "path": "D:/project/signal_studio_原型设计/SignalStudio_Triggered_Design_b151f143/screenshots/prototype-interactions.png",
+        "bytes": 704390,
+        "sha256": "2490cbdb8e6b9f10a2727b42aa6c0d784a17bcd2d900afc2019684ac40dfe01a",
+        "role": "Prototype/gesture mapping checked; screenshot visually inspected; no interactive QA executed"
+      },
+      {
+        "path": "D:/project/signal_studio_原型设计/SignalStudio_Triggered_Design_b151f143/docs/02_OFFLINE_DETECTION_UX.md",
+        "bytes": 7571,
+        "sha256": "b81f5f5c024c6ea0b9b9745520274aefa4f2475e06e9817e7f5cb6b38de78556",
+        "role": "Prototype/gesture mapping checked; screenshot visually inspected; no interactive QA executed"
+      },
+      {
+        "path": "D:/project/signal_studio_原型设计/SignalStudio_Triggered_Design_b151f143/docs/05_MIGRATION_AND_ACCEPTANCE.md",
+        "bytes": 6123,
+        "sha256": "693d22bde687335cf5b64c69ec668f6770b2ef5a63b8c2e9d1082d69fff85d80",
+        "role": "Prototype/gesture mapping checked; screenshot visually inspected; no interactive QA executed"
+      }
+    ],
+    "historicalEvaluation": {
+      "evidenceType": "Historical conversation report; not rerun",
+      "files": 10,
+      "truthBlocks": 594,
+      "metrics": [
+        {
+          "tfIou": 0.3,
+          "precision": 0.949,
+          "recall": 0.8148,
+          "f1": 0.8768
+        },
+        {
+          "tfIou": 0.5,
+          "precision": 0.8941,
+          "recall": 0.7677,
+          "f1": 0.8261
+        },
+        {
+          "tfIou": 0.7,
+          "precision": 0.851,
+          "recall": 0.7306,
+          "f1": 0.7862
+        }
+      ],
+      "singleFileGuiBlocks": 88,
+      "historicalTemporarySelftestPath": "D:/project/FFSCN_train2/.codex_ffscn_verify_20260830/selftest.json",
+      "historicalTemporarySelftestCurrentlyExists": false,
+      "limitations": [
+        "Original ten-file prediction/label manifest not reconstructed",
+        "Pre-review and current evaluator matching strategies differ",
+        "Present selftest_optimized.json is dated 2026-08-27 and is not substituted for post-review evidence"
+      ]
+    },
+    "outputs": "Nine planning Markdown files and this evidence JSON; new clickable prototype is a proposed M0-P deliverable, not created in this turn",
+    "actionsNotPerformed": [
+      "source-code changes",
+      "external repository changes",
+      "prototype implementation",
+      "model execution or conversion",
+      "builds or tests",
+      "git commit or push"
+    ]
+  }
+}
