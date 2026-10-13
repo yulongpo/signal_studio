@@ -1,0 +1,177 @@
+{
+  "date": "2026-10-13",
+  "recordedAtUtc": "2026-10-13T05:17:37.455Z",
+  "url": "file:///D:/project/signal_studio_rebuild/docs/prototype/wideband-detection-r1/index.html",
+  "browser": "155.0.4283.45",
+  "viewport": {
+    "width": 2560,
+    "height": 1440,
+    "deviceScaleFactor": 1
+  },
+  "evidence": "Browser prototype with synthetic data; not Qt, hardware DPI, DSP or model validation",
+  "checks": [
+    {
+      "name": "Bootstrap and target layout",
+      "status": "passed"
+    },
+    {
+      "name": "I01 three detection entries do not start a run",
+      "status": "passed"
+    },
+    {
+      "name": "I03 ROI cancellation restores continuous mark tool",
+      "status": "passed"
+    },
+    {
+      "name": "I04 ROI confirmation is separate from marking",
+      "status": "passed"
+    },
+    {
+      "name": "I04 ROI is clipped at usable source boundaries",
+      "status": "passed"
+    },
+    {
+      "name": "I06 mode switch preserves physical records",
+      "status": "passed"
+    },
+    {
+      "name": "I10 accepting twice keeps one source object",
+      "status": "passed"
+    },
+    {
+      "name": "I11 source filter and visible-only select all",
+      "status": "passed"
+    },
+    {
+      "name": "I11 score sorting and batch review preserve unselected records",
+      "status": "passed"
+    },
+    {
+      "name": "I12 layer visibility does not mutate stored records",
+      "status": "passed"
+    },
+    {
+      "name": "I13 precision strategy enables only effective parameters",
+      "status": "passed"
+    },
+    {
+      "name": "I14 parameter drafts survive refresh until Enter",
+      "status": "passed"
+    },
+    {
+      "name": "I14 blur preserves drafts and Tab/ShiftTab/click commit",
+      "status": "passed"
+    },
+    {
+      "name": "I14 invalid shape/hop stays draft and effective hop round-trips",
+      "status": "passed"
+    },
+    {
+      "name": "I15 wheel does not commit parameter changes",
+      "status": "passed"
+    },
+    {
+      "name": "I16 cancellation keeps published partial results",
+      "status": "passed"
+    },
+    {
+      "name": "I08 undo preserves subsequently published run results",
+      "status": "passed"
+    },
+    {
+      "name": "S0-S9 scenarios remain distinct",
+      "status": "passed"
+    },
+    {
+      "name": "I18 unknown-time evidence remains an observation",
+      "status": "passed"
+    },
+    {
+      "name": "Profile17 keeps ten real time frames",
+      "status": "passed"
+    },
+    {
+      "name": "I13 committed parameters stay with their own profile",
+      "status": "passed"
+    },
+    {
+      "name": "I02 frozen run survives background zoom",
+      "status": "passed"
+    },
+    {
+      "name": "I02 short ROI borrows bounded real-frame context",
+      "status": "passed"
+    },
+    {
+      "name": "I05 box zoom and wheel remain within source bounds",
+      "status": "passed"
+    },
+    {
+      "name": "I05 axis pan changes only its physical axis",
+      "status": "passed"
+    },
+    {
+      "name": "I07 overlap choice and Ctrl selection",
+      "status": "passed"
+    },
+    {
+      "name": "I08 manual command, eight handles, undo and redo",
+      "status": "passed"
+    },
+    {
+      "name": "I09 imported label requires revision and preserves origin",
+      "status": "passed"
+    },
+    {
+      "name": "I09 review belongs to revision and geometry returns to Pending",
+      "status": "passed"
+    },
+    {
+      "name": "I17 file/project isolation for pending task and drafts",
+      "status": "passed"
+    },
+    {
+      "name": "I19 same-object segment split and merge",
+      "status": "passed"
+    },
+    {
+      "name": "I20 both label previews and idempotent import",
+      "status": "passed"
+    },
+    {
+      "name": "I20 actual writer TXT keeps FC axis and multi-burst quantization",
+      "status": "passed"
+    },
+    {
+      "name": "I20 TorchSig JSON pairs independent of order and rejects class conflict",
+      "status": "passed"
+    },
+    {
+      "name": "I21 conflict rejects import and Partial keeps full labels",
+      "status": "passed"
+    },
+    {
+      "name": "I22 channel stores old revision after source edit",
+      "status": "passed"
+    },
+    {
+      "name": "I23 save/reopen and demo-only JSON download",
+      "status": "passed"
+    },
+    {
+      "name": "I23 malformed saved state is rejected atomically",
+      "status": "passed"
+    },
+    {
+      "name": "I24 maximize and layout restore preserve geometry",
+      "status": "passed"
+    },
+    {
+      "name": "I24 three dividers and folding keep usable layout",
+      "status": "passed"
+    }
+  ],
+  "errors": [],
+  "passed": 40,
+  "failed": 0
+}

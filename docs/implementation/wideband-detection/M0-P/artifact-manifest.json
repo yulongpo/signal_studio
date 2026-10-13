@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "artifactType": "browser-interaction-prototype",
+  "prototypeVersion": "wideband-detection-r1.0",
+  "status": "ready-for-user-interaction-review",
+  "generatedAtUtc": "2026-10-13T05:19:32.1791851Z",
+  "m0Commit": "889da729249f8d52267b21b50da6afb808e59828",
+  "verification": {
+    "browserChecksPassed": 40,
+    "failed": 0,
+    "javascriptErrors": 0,
+    "viewportWidth": 2560,
+    "viewportHeight": 1440,
+    "deviceScaleFactor": 1,
+    "specReview": "SPEC_PASS",
+    "qualityReview": "QUALITY_PASS",
+    "excludes": [
+      "Qt",
+      "native second-display DPI",
+      "real IQ/DSP",
+      "model accuracy"
+    ]
+  },
+  "files": [
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/browser-checks.json",
+      "bytes": 4641,
+      "sha256": "a391e23b784c7fb559d63b629800879c2a656920636c7cd2b6f53271e34ff175",
+      "hashMode": "utf8-lf"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/demo-export.json",
+      "bytes": 38867,
+      "sha256": "82fc752c9a56fda8be9958f56a5e89b03ae029bd7c1d6ff7965a318ed6220d7e",
+      "hashMode": "utf8-lf"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/REVIEW.md",
+      "bytes": 2687,
+      "sha256": "f9fb247d8b8594f631b48c4574f9b24a1bc76df94ad7734d0e1120dddb795a5d",
+      "hashMode": "utf8-lf"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/adjusted-layout.png",
+      "bytes": 949048,
+      "sha256": "0a6d7e52c06bca591bf4ef7466f414f0b6debee00896a35c3ed9f102943e2728",
+      "hashMode": "raw"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/background-task-other-file.png",
+      "bytes": 893142,
+      "sha256": "fca9565dc70155d976cdcf217cae68d018459871da17c015538dafc493b4a07a",
+      "hashMode": "raw"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/cancelled-partial.png",
+      "bytes": 993718,
+      "sha256": "e0a9139bc9d74aa416959edc25a1ca46ac9969d6a1fd6513f5dfadfd52540f0a",
+      "hashMode": "raw"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/channel-source-changed.png",
+      "bytes": 1017378,
+      "sha256": "527ba58153ccfcdcaabcb0e2d550244d91c505139d2e6a181475f04b60b5f5fe",
+      "hashMode": "raw"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/channel-source.png",
+      "bytes": 951032,
+      "sha256": "d1d91f1f4682dde2a16a258c9f1b168394f0bea091e5206fe614fe2dc074e863",
+      "hashMode": "raw"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/import-conflict.png",
+      "bytes": 572847,
+      "sha256": "d19b68d6e04a7db78e0a45a1da6683dbfd1a802b8a4eac4cdbb27b825057c400",
+      "hashMode": "raw"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/ready.png",
+      "bytes": 996192,
+      "sha256": "ef4ef799679efe99cac9cc1eb83eeb37e99ac7d59ca5e55d1b0e8f33c4803846",
+      "hashMode": "raw"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/review-evidence.png",
+      "bytes": 876176,
+      "sha256": "4b4ed8456cce92336f23e6987634ff46e8db3c7fcdf64d98166bfc9017a3af53",
+      "hashMode": "raw"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/roi-confirm.png",
+      "bytes": 1008209,
+      "sha256": "a204dc7e5ff058dab811f2af3ecb307b767542e4e987ccef2d5697f248bbede9",
+      "hashMode": "raw"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/running-frozen.png",
+      "bytes": 993567,
+      "sha256": "e698127fa0a72008d2e959cd4e353356be1f0fbe6125f9f38ca3af82caae43af",
+      "hashMode": "raw"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/VALIDATION.md",
+      "bytes": 5223,
+      "sha256": "f37af8618f35084d02d180170ad8a0d0a534a30c55e25b34d64cdf1ff643dbe4",
+      "hashMode": "utf8-lf"
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/app.js",
+      "bytes": 113633,
+      "sha256": "33430853b553bfa188c3e148796549fb9b79d9546650a02d1f549970a39825f4",
+      "hashMode": "utf8-lf"
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/data.js",
+      "bytes": 9746,
+      "sha256": "b33e53f66b6e5a5b7b7a9c834980f02ec9bacdf7d06645fe5acfde327aa0bdf1",
+      "hashMode": "utf8-lf"
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/index.html",
+      "bytes": 15998,
+      "sha256": "828dc7eb876c35352275af20065994ee8dc71dc55477ee8c642d0f8ba019d1fd",
+      "hashMode": "utf8-lf"
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/README.md",
+      "bytes": 17296,
+      "sha256": "82d98b865d5a76838ceafb5f095bdf85bb877fb2376fa579646f1e84db1a0a99",
+      "hashMode": "utf8-lf"
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/styles.css",
+      "bytes": 18584,
+      "sha256": "40f16b69b140dd0e3cf1bdba7a85107abc989689e2083e0ff0cd7462051a4103",
+      "hashMode": "utf8-lf"
+    },
+    {
+      "path": "resources/branding/svg/icon-dark.svg",
+      "bytes": 1357,
+      "sha256": "2c1aa47d626a60a380c5e152ccd1298efbace9d6023ac8bf8b61688e98ebd256",
+      "hashMode": "utf8-lf"
+    },
+    {
+      "path": "resources/branding/svg/wordmark-dark.svg",
+      "bytes": 7428,
+      "sha256": "e8f180ec6f5c28c0fa00d7845787a6ac6023026b403ccee9f6863bdfea846e31",
+      "hashMode": "utf8-lf"
+    },
+    {
+      "path": "scripts/verify_wideband_prototype.mjs",
+      "bytes": 40731,
+      "sha256": "5f9b9e71d1e05100f61958a0a87ee26cd093ccc383734ded92795ec6af6cf8f7",
+      "hashMode": "utf8-lf"
+    }
+  ],
+  "hashPolicy": "Text: UTF-8 without BOM, line endings normalized to LF. Binary: exact raw bytes."
+}

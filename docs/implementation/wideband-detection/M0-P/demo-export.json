@@ -1,0 +1,1249 @@
+{
+  "demoOnly": true,
+  "prototypeVersion": "wideband-detection-r1.0",
+  "scenario": "S1",
+  "project": {
+    "id": "project-a",
+    "name": "RF Bench · 宽带统一标记评审",
+    "generation": 38
+  },
+  "files": [
+    {
+      "id": "file-a",
+      "name": "0000000 · TorchSig / rfbench baseline.cf32",
+      "sampleRateHz": 20000000,
+      "centerFrequencyHz": 2500000000,
+      "totalSamples": 400000,
+      "availableSamples": 400000,
+      "state": "Ready",
+      "view": {
+        "t0": 0,
+        "t1": 0.02,
+        "f0": 2490000000,
+        "f1": 2510000000
+      },
+      "viewPast": [],
+      "viewFuture": [],
+      "annotations": [
+        {
+          "schemaVersion": 1,
+          "id": "label-1",
+          "annotationId": "label-1",
+          "fileId": "file-a",
+          "sourceSetId": "torchsig-0000000",
+          "sourceKind": "ImportedLabel",
+          "originRecordId": "label-1-origin",
+          "revisionId": "label-1-r0",
+          "reviewStatus": "Pending",
+          "reviewedRevisionId": null,
+          "name": "GT 01 · 64qam",
+          "classLabel": "64qam",
+          "note": "",
+          "segments": [
+            {
+              "id": "label-1-s1",
+              "range": {
+                "startSample": "51107",
+                "endSample": "343277",
+                "frequencyLowerHz": 2502021605.9327126,
+                "frequencyUpperHz": 2502282009.1227803,
+                "frequencyFrame": "RF"
+              },
+              "timeQuality": "SampleLabel",
+              "frequencyQuality": "NominalLabel",
+              "confirmed": false
+            }
+          ],
+          "observation": null,
+          "originEvidence": {
+            "formatId": "torchsig-rfbench-sigmf-v1",
+            "originRef": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta",
+            "runId": null,
+            "refineMethod": "none",
+            "refineStatus": "skipped",
+            "scoreMean": null,
+            "scoreMax": null,
+            "windowIds": [],
+            "windowCount": 0,
+            "originalFields": {
+              "core:sample_start": 51107,
+              "core:sample_count": 292170,
+              "core:freq_lower_edge": 2502021605.9327126,
+              "core:freq_upper_edge": 2502282009.1227803,
+              "core:label": "64qam",
+              "rfbench:emitter_id": 0,
+              "rfbench:snr_inband_db": 10.979427058095588
+            }
+          },
+          "revisions": [],
+          "reviewHistory": [],
+          "revisionNumber": 0,
+          "origin": {
+            "segments": [
+              {
+                "id": "label-1-s1",
+                "range": {
+                  "startSample": "51107",
+                  "endSample": "343277",
+                  "frequencyLowerHz": 2502021605.9327126,
+                  "frequencyUpperHz": 2502282009.1227803,
+                  "frequencyFrame": "RF"
+                },
+                "timeQuality": "SampleLabel",
+                "frequencyQuality": "NominalLabel",
+                "confirmed": false
+              }
+            ],
+            "observation": null,
+            "evidence": {
+              "formatId": "torchsig-rfbench-sigmf-v1",
+              "originRef": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta",
+              "runId": null,
+              "refineMethod": "none",
+              "refineStatus": "skipped",
+              "scoreMean": null,
+              "scoreMax": null,
+              "windowIds": [],
+              "windowCount": 0,
+              "originalFields": {
+                "core:sample_start": 51107,
+                "core:sample_count": 292170,
+                "core:freq_lower_edge": 2502021605.9327126,
+                "core:freq_upper_edge": 2502282009.1227803,
+                "core:label": "64qam",
+                "rfbench:emitter_id": 0,
+                "rfbench:snr_inband_db": 10.979427058095588
+              }
+            },
+            "name": "GT 01 · 64qam"
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "id": "label-2",
+          "annotationId": "label-2",
+          "fileId": "file-a",
+          "sourceSetId": "torchsig-0000000",
+          "sourceKind": "ImportedLabel",
+          "originRecordId": "label-2-origin",
+          "revisionId": "label-2-r0",
+          "reviewStatus": "Pending",
+          "reviewedRevisionId": null,
+          "name": "GT 02 · 2gmsk",
+          "classLabel": "2gmsk",
+          "note": "",
+          "segments": [
+            {
+              "id": "label-2-s1",
+              "range": {
+                "startSample": "38498",
+                "endSample": "353824",
+                "frequencyLowerHz": 2492059313.3481555,
+                "frequencyUpperHz": 2492749655.595414,
+                "frequencyFrame": "RF"
+              },
+              "timeQuality": "SampleLabel",
+              "frequencyQuality": "NominalLabel",
+              "confirmed": false
+            }
+          ],
+          "observation": null,
+          "originEvidence": {
+            "formatId": "torchsig-rfbench-sigmf-v1",
+            "originRef": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta",
+            "runId": null,
+            "refineMethod": "none",
+            "refineStatus": "skipped",
+            "scoreMean": null,
+            "scoreMax": null,
+            "windowIds": [],
+            "windowCount": 0,
+            "originalFields": {
+              "core:sample_start": 38498,
+              "core:sample_count": 315326,
+              "core:freq_lower_edge": 2492059313.3481555,
+              "core:freq_upper_edge": 2492749655.595414,
+              "core:label": "2gmsk",
+              "rfbench:emitter_id": 1,
+              "rfbench:snr_inband_db": 16.809667164045955
+            }
+          },
+          "revisions": [],
+          "reviewHistory": [],
+          "revisionNumber": 0,
+          "origin": {
+            "segments": [
+              {
+                "id": "label-2-s1",
+                "range": {
+                  "startSample": "38498",
+                  "endSample": "353824",
+                  "frequencyLowerHz": 2492059313.3481555,
+                  "frequencyUpperHz": 2492749655.595414,
+                  "frequencyFrame": "RF"
+                },
+                "timeQuality": "SampleLabel",
+                "frequencyQuality": "NominalLabel",
+                "confirmed": false
+              }
+            ],
+            "observation": null,
+            "evidence": {
+              "formatId": "torchsig-rfbench-sigmf-v1",
+              "originRef": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta",
+              "runId": null,
+              "refineMethod": "none",
+              "refineStatus": "skipped",
+              "scoreMean": null,
+              "scoreMax": null,
+              "windowIds": [],
+              "windowCount": 0,
+              "originalFields": {
+                "core:sample_start": 38498,
+                "core:sample_count": 315326,
+                "core:freq_lower_edge": 2492059313.3481555,
+                "core:freq_upper_edge": 2492749655.595414,
+                "core:label": "2gmsk",
+                "rfbench:emitter_id": 1,
+                "rfbench:snr_inband_db": 16.809667164045955
+              }
+            },
+            "name": "GT 02 · 2gmsk"
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "id": "label-3",
+          "annotationId": "label-3",
+          "fileId": "file-a",
+          "sourceSetId": "torchsig-0000000",
+          "sourceKind": "ImportedLabel",
+          "originRecordId": "label-3-origin",
+          "revisionId": "label-3-r0",
+          "reviewStatus": "Pending",
+          "reviewedRevisionId": null,
+          "name": "GT 03 · bpsk",
+          "classLabel": "bpsk",
+          "note": "",
+          "segments": [
+            {
+              "id": "label-3-s1",
+              "range": {
+                "startSample": "70248",
+                "endSample": "359981",
+                "frequencyLowerHz": 2491820030.553922,
+                "frequencyUpperHz": 2492454138.891255,
+                "frequencyFrame": "RF"
+              },
+              "timeQuality": "SampleLabel",
+              "frequencyQuality": "NominalLabel",
+              "confirmed": false
+            }
+          ],
+          "observation": null,
+          "originEvidence": {
+            "formatId": "torchsig-rfbench-sigmf-v1",
+            "originRef": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta",
+            "runId": null,
+            "refineMethod": "none",
+            "refineStatus": "skipped",
+            "scoreMean": null,
+            "scoreMax": null,
+            "windowIds": [],
+            "windowCount": 0,
+            "originalFields": {
+              "core:sample_start": 70248,
+              "core:sample_count": 289733,
+              "core:freq_lower_edge": 2491820030.553922,
+              "core:freq_upper_edge": 2492454138.891255,
+              "core:label": "bpsk",
+              "rfbench:emitter_id": 2,
+              "rfbench:snr_inband_db": 6.275496027073526
+            }
+          },
+          "revisions": [],
+          "reviewHistory": [],
+          "revisionNumber": 0,
+          "origin": {
+            "segments": [
+              {
+                "id": "label-3-s1",
+                "range": {
+                  "startSample": "70248",
+                  "endSample": "359981",
+                  "frequencyLowerHz": 2491820030.553922,
+                  "frequencyUpperHz": 2492454138.891255,
+                  "frequencyFrame": "RF"
+                },
+                "timeQuality": "SampleLabel",
+                "frequencyQuality": "NominalLabel",
+                "confirmed": false
+              }
+            ],
+            "observation": null,
+            "evidence": {
+              "formatId": "torchsig-rfbench-sigmf-v1",
+              "originRef": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta",
+              "runId": null,
+              "refineMethod": "none",
+              "refineStatus": "skipped",
+              "scoreMean": null,
+              "scoreMax": null,
+              "windowIds": [],
+              "windowCount": 0,
+              "originalFields": {
+                "core:sample_start": 70248,
+                "core:sample_count": 289733,
+                "core:freq_lower_edge": 2491820030.553922,
+                "core:freq_upper_edge": 2492454138.891255,
+                "core:label": "bpsk",
+                "rfbench:emitter_id": 2,
+                "rfbench:snr_inband_db": 6.275496027073526
+              }
+            },
+            "name": "GT 03 · bpsk"
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "id": "label-4",
+          "annotationId": "label-4",
+          "fileId": "file-a",
+          "sourceSetId": "torchsig-0000000",
+          "sourceKind": "ImportedLabel",
+          "originRecordId": "label-4-origin",
+          "revisionId": "label-4-r0",
+          "reviewStatus": "Pending",
+          "reviewedRevisionId": null,
+          "name": "GT 04 · 64qam",
+          "classLabel": "64qam",
+          "note": "",
+          "segments": [
+            {
+              "id": "label-4-s1",
+              "range": {
+                "startSample": "173404",
+                "endSample": "345294",
+                "frequencyLowerHz": 2502885255.8388267,
+                "frequencyUpperHz": 2503155805.4215245,
+                "frequencyFrame": "RF"
+              },
+              "timeQuality": "SampleLabel",
+              "frequencyQuality": "NominalLabel",
+              "confirmed": false
+            }
+          ],
+          "observation": null,
+          "originEvidence": {
+            "formatId": "torchsig-rfbench-sigmf-v1",
+            "originRef": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta",
+            "runId": null,
+            "refineMethod": "none",
+            "refineStatus": "skipped",
+            "scoreMean": null,
+            "scoreMax": null,
+            "windowIds": [],
+            "windowCount": 0,
+            "originalFields": {
+              "core:sample_start": 173404,
+              "core:sample_count": 171890,
+              "core:freq_lower_edge": 2502885255.8388267,
+              "core:freq_upper_edge": 2503155805.4215245,
+              "core:label": "64qam",
+              "rfbench:emitter_id": 3,
+              "rfbench:snr_inband_db": 15.476337031213557
+            }
+          },
+          "revisions": [],
+          "reviewHistory": [],
+          "revisionNumber": 0,
+          "origin": {
+            "segments": [
+              {
+                "id": "label-4-s1",
+                "range": {
+                  "startSample": "173404",
+                  "endSample": "345294",
+                  "frequencyLowerHz": 2502885255.8388267,
+                  "frequencyUpperHz": 2503155805.4215245,
+                  "frequencyFrame": "RF"
+                },
+                "timeQuality": "SampleLabel",
+                "frequencyQuality": "NominalLabel",
+                "confirmed": false
+              }
+            ],
+            "observation": null,
+            "evidence": {
+              "formatId": "torchsig-rfbench-sigmf-v1",
+              "originRef": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta",
+              "runId": null,
+              "refineMethod": "none",
+              "refineStatus": "skipped",
+              "scoreMean": null,
+              "scoreMax": null,
+              "windowIds": [],
+              "windowCount": 0,
+              "originalFields": {
+                "core:sample_start": 173404,
+                "core:sample_count": 171890,
+                "core:freq_lower_edge": 2502885255.8388267,
+                "core:freq_upper_edge": 2503155805.4215245,
+                "core:label": "64qam",
+                "rfbench:emitter_id": 3,
+                "rfbench:snr_inband_db": 15.476337031213557
+              }
+            },
+            "name": "GT 04 · 64qam"
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "id": "manual-1",
+          "annotationId": "manual-1",
+          "fileId": "file-a",
+          "sourceSetId": "manual-set",
+          "sourceKind": "Manual",
+          "originRecordId": "manual-1-origin",
+          "revisionId": "manual-1-r0",
+          "reviewStatus": "Accepted",
+          "reviewedRevisionId": "manual-1-r0",
+          "name": "Manual 01 · 双突发复核区",
+          "classLabel": null,
+          "note": "",
+          "segments": [
+            {
+              "id": "manual-1-s1",
+              "range": {
+                "startSample": "80000",
+                "endSample": "120000",
+                "frequencyLowerHz": 2491820000,
+                "frequencyUpperHz": 2492580000,
+                "frequencyFrame": "RF"
+              },
+              "timeQuality": "Manual",
+              "frequencyQuality": "Manual",
+              "confirmed": false
+            },
+            {
+              "id": "manual-1-s2",
+              "range": {
+                "startSample": "180000",
+                "endSample": "240000",
+                "frequencyLowerHz": 2491820000,
+                "frequencyUpperHz": 2492580000,
+                "frequencyFrame": "RF"
+              },
+              "timeQuality": "Manual",
+              "frequencyQuality": "Manual",
+              "confirmed": false
+            }
+          ],
+          "observation": null,
+          "originEvidence": {
+            "formatId": "manual-v1",
+            "originRef": "浏览器手动示例",
+            "runId": null,
+            "refineMethod": "manual",
+            "refineStatus": "applied",
+            "scoreMean": null,
+            "scoreMax": null,
+            "windowIds": [],
+            "windowCount": 0,
+            "originalFields": {
+              "demoOnly": true
+            }
+          },
+          "revisions": [],
+          "reviewHistory": [
+            {
+              "from": "Pending",
+              "to": "Accepted",
+              "revisionId": "manual-1-r0",
+              "reviewedRevisionId": "manual-1-r0",
+              "actor": "Manual",
+              "at": "DEMO",
+              "reason": "人工创建合法标记"
+            }
+          ],
+          "revisionNumber": 0,
+          "origin": {
+            "segments": [
+              {
+                "id": "manual-1-s1",
+                "range": {
+                  "startSample": "80000",
+                  "endSample": "120000",
+                  "frequencyLowerHz": 2491820000,
+                  "frequencyUpperHz": 2492580000,
+                  "frequencyFrame": "RF"
+                },
+                "timeQuality": "Manual",
+                "frequencyQuality": "Manual",
+                "confirmed": false
+              },
+              {
+                "id": "manual-1-s2",
+                "range": {
+                  "startSample": "180000",
+                  "endSample": "240000",
+                  "frequencyLowerHz": 2491820000,
+                  "frequencyUpperHz": 2492580000,
+                  "frequencyFrame": "RF"
+                },
+                "timeQuality": "Manual",
+                "frequencyQuality": "Manual",
+                "confirmed": false
+              }
+            ],
+            "observation": null,
+            "evidence": {
+              "formatId": "manual-v1",
+              "originRef": "浏览器手动示例",
+              "runId": null,
+              "refineMethod": "manual",
+              "refineStatus": "applied",
+              "scoreMean": null,
+              "scoreMax": null,
+              "windowIds": [],
+              "windowCount": 0,
+              "originalFields": {
+                "demoOnly": true
+              }
+            },
+            "name": "Manual 01 · 双突发复核区"
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "id": "algo-coarse",
+          "annotationId": "algo-coarse",
+          "fileId": "file-a",
+          "sourceSetId": "run-demo",
+          "sourceKind": "Algorithm",
+          "originRecordId": "algo-coarse-origin",
+          "revisionId": "algo-coarse-r0",
+          "reviewStatus": "Pending",
+          "reviewedRevisionId": null,
+          "name": "ALG 01 · 粗时间事件",
+          "classLabel": null,
+          "note": "",
+          "segments": [
+            {
+              "id": "algo-coarse-s1",
+              "range": {
+                "startSample": "60000",
+                "endSample": "320000",
+                "frequencyLowerHz": 2497400000,
+                "frequencyUpperHz": 2498150000,
+                "frequencyFrame": "RF"
+              },
+              "timeQuality": "AlgorithmEstimated",
+              "frequencyQuality": "Refined",
+              "confirmed": false
+            }
+          ],
+          "observation": null,
+          "originEvidence": {
+            "formatId": "detection-v1",
+            "originRef": "合成演示结果 · 非模型实测",
+            "runId": "run-demo",
+            "refineMethod": "coarse",
+            "refineStatus": "applied",
+            "scoreMean": 0.79,
+            "scoreMax": 0.86,
+            "windowIds": [
+              0,
+              1
+            ],
+            "windowCount": 3,
+            "originalFields": {
+              "demoOnly": true
+            },
+            "noiseFloorDb": -77.8,
+            "noiseTrackDb": [
+              -78,
+              -77.6,
+              -78.2,
+              -76.9,
+              -77.8,
+              -78.1,
+              -77.5,
+              -77.7
+            ],
+            "timeBasis": "模型窗口并集的粗时间",
+            "noiseMarginDb": 6
+          },
+          "revisions": [],
+          "reviewHistory": [],
+          "revisionNumber": 0,
+          "origin": {
+            "segments": [
+              {
+                "id": "algo-coarse-s1",
+                "range": {
+                  "startSample": "0",
+                  "endSample": "360000",
+                  "frequencyLowerHz": 2497100000,
+                  "frequencyUpperHz": 2498500000,
+                  "frequencyFrame": "RF"
+                },
+                "timeQuality": "AlgorithmEstimated",
+                "frequencyQuality": "Refined",
+                "confirmed": false
+              }
+            ],
+            "observation": null,
+            "evidence": {
+              "formatId": "detection-v1",
+              "originRef": "合成演示结果 · 非模型实测",
+              "runId": "run-demo",
+              "refineMethod": "coarse",
+              "refineStatus": "applied",
+              "scoreMean": 0.79,
+              "scoreMax": 0.86,
+              "windowIds": [
+                0,
+                1
+              ],
+              "windowCount": 3,
+              "originalFields": {
+                "demoOnly": true
+              },
+              "noiseFloorDb": -77.8,
+              "noiseTrackDb": [
+                -78,
+                -77.6,
+                -78.2,
+                -76.9,
+                -77.8,
+                -78.1,
+                -77.5,
+                -77.7
+              ],
+              "timeBasis": "模型窗口并集的粗时间",
+              "noiseMarginDb": 6
+            },
+            "name": "ALG 01 · 粗时间事件"
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "id": "algo-window",
+          "annotationId": "algo-window",
+          "fileId": "file-a",
+          "sourceSetId": "run-demo",
+          "sourceKind": "Algorithm",
+          "originRecordId": "algo-window-origin",
+          "revisionId": "algo-window-r0",
+          "reviewStatus": "Pending",
+          "reviewedRevisionId": null,
+          "name": "ALG 02 · 时间未定位观察带",
+          "classLabel": null,
+          "note": "",
+          "segments": [],
+          "observation": {
+            "startSample": "0",
+            "endSample": "265536",
+            "frequencyLowerHz": 2499380000,
+            "frequencyUpperHz": 2500120000,
+            "frequencyFrame": "RF"
+          },
+          "originEvidence": {
+            "formatId": "detection-v1",
+            "originRef": "合成演示结果 · 非模型实测",
+            "runId": "run-demo",
+            "refineMethod": "none",
+            "refineStatus": "unknown",
+            "scoreMean": 0.82,
+            "scoreMax": 0.91,
+            "windowIds": [
+              0,
+              2
+            ],
+            "windowCount": 3,
+            "originalFields": {
+              "demoOnly": true
+            },
+            "noiseFloorDb": -77.8,
+            "noiseTrackDb": [
+              -78,
+              -77.6,
+              -78.2,
+              -76.9,
+              -77.8,
+              -78.1,
+              -77.5,
+              -77.7
+            ],
+            "timeBasis": "仅窗口观察支持，未定位活动起止"
+          },
+          "revisions": [],
+          "reviewHistory": [],
+          "revisionNumber": 0,
+          "origin": {
+            "segments": [],
+            "observation": {
+              "startSample": "0",
+              "endSample": "265536",
+              "frequencyLowerHz": 2499380000,
+              "frequencyUpperHz": 2500120000,
+              "frequencyFrame": "RF"
+            },
+            "evidence": {
+              "formatId": "detection-v1",
+              "originRef": "合成演示结果 · 非模型实测",
+              "runId": "run-demo",
+              "refineMethod": "none",
+              "refineStatus": "unknown",
+              "scoreMean": 0.82,
+              "scoreMax": 0.91,
+              "windowIds": [
+                0,
+                2
+              ],
+              "windowCount": 3,
+              "originalFields": {
+                "demoOnly": true
+              },
+              "noiseFloorDb": -77.8,
+              "noiseTrackDb": [
+                -78,
+                -77.6,
+                -78.2,
+                -76.9,
+                -77.8,
+                -78.1,
+                -77.5,
+                -77.7
+              ],
+              "timeBasis": "仅窗口观察支持，未定位活动起止"
+            },
+            "name": "ALG 02 · 时间未定位观察带"
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "id": "algo-sample",
+          "annotationId": "algo-sample",
+          "fileId": "file-a",
+          "sourceSetId": "run-demo",
+          "sourceKind": "Algorithm",
+          "originRecordId": "algo-sample-origin",
+          "revisionId": "algo-sample-r0",
+          "reviewStatus": "Pending",
+          "reviewedRevisionId": null,
+          "name": "ALG 03 · sample 精修成功",
+          "classLabel": null,
+          "note": "",
+          "segments": [
+            {
+              "id": "algo-sample-s1",
+              "range": {
+                "startSample": "58000",
+                "endSample": "142000",
+                "frequencyLowerHz": 2502000000,
+                "frequencyUpperHz": 2502340000,
+                "frequencyFrame": "RF"
+              },
+              "timeQuality": "AlgorithmEstimated",
+              "frequencyQuality": "Refined",
+              "confirmed": false
+            },
+            {
+              "id": "algo-sample-s2",
+              "range": {
+                "startSample": "188000",
+                "endSample": "332000",
+                "frequencyLowerHz": 2502000000,
+                "frequencyUpperHz": 2502340000,
+                "frequencyFrame": "RF"
+              },
+              "timeQuality": "AlgorithmEstimated",
+              "frequencyQuality": "Refined",
+              "confirmed": false
+            }
+          ],
+          "observation": null,
+          "originEvidence": {
+            "formatId": "detection-v1",
+            "originRef": "合成演示结果 · 非模型实测",
+            "runId": "run-demo",
+            "refineMethod": "sample",
+            "refineStatus": "applied",
+            "scoreMean": 0.91,
+            "scoreMax": 0.96,
+            "windowIds": [
+              0,
+              1,
+              2
+            ],
+            "windowCount": 3,
+            "originalFields": {
+              "demoOnly": true
+            },
+            "noiseFloorDb": -77.8,
+            "noiseTrackDb": [
+              -78,
+              -77.6,
+              -78.2,
+              -76.9,
+              -77.8,
+              -78.1,
+              -77.5,
+              -77.7
+            ],
+            "timeBasis": "合成样本功率门控 / 非实测",
+            "effectiveObservationMs": 16.6,
+            "edgeFraction": 0.6
+          },
+          "revisions": [],
+          "reviewHistory": [],
+          "revisionNumber": 0,
+          "origin": {
+            "segments": [
+              {
+                "id": "algo-sample-origin",
+                "range": {
+                  "startSample": "0",
+                  "endSample": "380000",
+                  "frequencyLowerHz": 2501700000,
+                  "frequencyUpperHz": 2502600000,
+                  "frequencyFrame": "RF"
+                },
+                "timeQuality": "AlgorithmEstimated",
+                "frequencyQuality": "Refined",
+                "confirmed": false
+              }
+            ],
+            "observation": null,
+            "evidence": {
+              "formatId": "detection-v1",
+              "originRef": "合成演示结果 · 非模型实测",
+              "runId": "run-demo",
+              "refineMethod": "sample",
+              "refineStatus": "applied",
+              "scoreMean": 0.91,
+              "scoreMax": 0.96,
+              "windowIds": [
+                0,
+                1,
+                2
+              ],
+              "windowCount": 3,
+              "originalFields": {
+                "demoOnly": true
+              },
+              "noiseFloorDb": -77.8,
+              "noiseTrackDb": [
+                -78,
+                -77.6,
+                -78.2,
+                -76.9,
+                -77.8,
+                -78.1,
+                -77.5,
+                -77.7
+              ],
+              "timeBasis": "合成样本功率门控 / 非实测",
+              "effectiveObservationMs": 16.6,
+              "edgeFraction": 0.6
+            },
+            "name": "ALG 03 · sample 精修成功"
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "id": "algo-roi",
+          "annotationId": "algo-roi",
+          "fileId": "file-a",
+          "sourceSetId": "run-demo",
+          "sourceKind": "Algorithm",
+          "originRecordId": "algo-roi-origin",
+          "revisionId": "algo-roi-r0",
+          "reviewStatus": "Pending",
+          "reviewedRevisionId": null,
+          "name": "ALG 04 · ROI 精修成功",
+          "classLabel": null,
+          "note": "",
+          "segments": [
+            {
+              "id": "algo-roi-s1",
+              "range": {
+                "startSample": "174000",
+                "endSample": "348000",
+                "frequencyLowerHz": 2502870000,
+                "frequencyUpperHz": 2503180000,
+                "frequencyFrame": "RF"
+              },
+              "timeQuality": "AlgorithmEstimated",
+              "frequencyQuality": "Refined",
+              "confirmed": false
+            }
+          ],
+          "observation": null,
+          "originEvidence": {
+            "formatId": "detection-v1",
+            "originRef": "合成演示结果 · 非模型实测",
+            "runId": "run-demo",
+            "refineMethod": "roi",
+            "refineStatus": "applied",
+            "scoreMean": 0.88,
+            "scoreMax": 0.94,
+            "windowIds": [
+              0,
+              1,
+              2
+            ],
+            "windowCount": 3,
+            "originalFields": {
+              "demoOnly": true
+            },
+            "noiseFloorDb": -77.8,
+            "noiseTrackDb": [
+              -78,
+              -77.6,
+              -78.2,
+              -76.9,
+              -77.8,
+              -78.1,
+              -77.5,
+              -77.7
+            ],
+            "timeBasis": "合成 ROI STFT 噪底轨迹 / 非实测",
+            "noiseMarginDb": 6
+          },
+          "revisions": [],
+          "reviewHistory": [],
+          "revisionNumber": 0,
+          "origin": {
+            "segments": [
+              {
+                "id": "algo-roi-origin",
+                "range": {
+                  "startSample": "100000",
+                  "endSample": "400000",
+                  "frequencyLowerHz": 2502600000,
+                  "frequencyUpperHz": 2503500000,
+                  "frequencyFrame": "RF"
+                },
+                "timeQuality": "AlgorithmEstimated",
+                "frequencyQuality": "Refined",
+                "confirmed": false
+              }
+            ],
+            "observation": null,
+            "evidence": {
+              "formatId": "detection-v1",
+              "originRef": "合成演示结果 · 非模型实测",
+              "runId": "run-demo",
+              "refineMethod": "roi",
+              "refineStatus": "applied",
+              "scoreMean": 0.88,
+              "scoreMax": 0.94,
+              "windowIds": [
+                0,
+                1,
+                2
+              ],
+              "windowCount": 3,
+              "originalFields": {
+                "demoOnly": true
+              },
+              "noiseFloorDb": -77.8,
+              "noiseTrackDb": [
+                -78,
+                -77.6,
+                -78.2,
+                -76.9,
+                -77.8,
+                -78.1,
+                -77.5,
+                -77.7
+              ],
+              "timeBasis": "合成 ROI STFT 噪底轨迹 / 非实测",
+              "noiseMarginDb": 6
+            },
+            "name": "ALG 04 · ROI 精修成功"
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "id": "algo-fallback",
+          "annotationId": "algo-fallback",
+          "fileId": "file-a",
+          "sourceSetId": "run-demo",
+          "sourceKind": "Algorithm",
+          "originRecordId": "algo-fallback-origin",
+          "revisionId": "algo-fallback-r0",
+          "reviewStatus": "Pending",
+          "reviewedRevisionId": null,
+          "name": "ALG 05 · 精修回退",
+          "classLabel": null,
+          "note": "",
+          "segments": [
+            {
+              "id": "algo-fallback-s1",
+              "range": {
+                "startSample": "100000",
+                "endSample": "300000",
+                "frequencyLowerHz": 2505100000,
+                "frequencyUpperHz": 2505800000,
+                "frequencyFrame": "RF"
+              },
+              "timeQuality": "AlgorithmEstimated",
+              "frequencyQuality": "Refined",
+              "confirmed": false
+            }
+          ],
+          "observation": null,
+          "originEvidence": {
+            "formatId": "detection-v1",
+            "originRef": "合成演示结果 · 非模型实测",
+            "runId": "run-demo",
+            "refineMethod": "sample",
+            "refineStatus": "fallback",
+            "scoreMean": 0.73,
+            "scoreMax": 0.83,
+            "windowIds": [
+              0,
+              1
+            ],
+            "windowCount": 3,
+            "originalFields": {
+              "demoOnly": true
+            },
+            "noiseFloorDb": -77.8,
+            "noiseTrackDb": [
+              -78,
+              -77.6,
+              -78.2,
+              -76.9,
+              -77.8,
+              -78.1,
+              -77.5,
+              -77.7
+            ],
+            "fallbackReason": "演示：目标频带有效观测不足，回退到粗窗口支持",
+            "timeBasis": "粗时间，非 sample 定位"
+          },
+          "revisions": [],
+          "reviewHistory": [],
+          "revisionNumber": 0,
+          "origin": {
+            "segments": [
+              {
+                "id": "algo-fallback-s1",
+                "range": {
+                  "startSample": "100000",
+                  "endSample": "300000",
+                  "frequencyLowerHz": 2505100000,
+                  "frequencyUpperHz": 2505800000,
+                  "frequencyFrame": "RF"
+                },
+                "timeQuality": "AlgorithmEstimated",
+                "frequencyQuality": "Refined",
+                "confirmed": false
+              }
+            ],
+            "observation": null,
+            "evidence": {
+              "formatId": "detection-v1",
+              "originRef": "合成演示结果 · 非模型实测",
+              "runId": "run-demo",
+              "refineMethod": "sample",
+              "refineStatus": "fallback",
+              "scoreMean": 0.73,
+              "scoreMax": 0.83,
+              "windowIds": [
+                0,
+                1
+              ],
+              "windowCount": 3,
+              "originalFields": {
+                "demoOnly": true
+              },
+              "noiseFloorDb": -77.8,
+              "noiseTrackDb": [
+                -78,
+                -77.6,
+                -78.2,
+                -76.9,
+                -77.8,
+                -78.1,
+                -77.5,
+                -77.7
+              ],
+              "fallbackReason": "演示：目标频带有效观测不足，回退到粗窗口支持",
+              "timeBasis": "粗时间，非 sample 定位"
+            },
+            "name": "ALG 05 · 精修回退"
+          }
+        }
+      ],
+      "channels": [],
+      "sourceAvailable": true
+    },
+    {
+      "id": "file-b",
+      "name": "generator_60MHz_10ms · 双通道WAV元信息演示",
+      "sampleRateHz": 60000000,
+      "centerFrequencyHz": 2500000000,
+      "totalSamples": 600000,
+      "availableSamples": 600000,
+      "state": "Ready",
+      "view": {
+        "t0": 0,
+        "t1": 0.01,
+        "f0": 2470000000,
+        "f1": 2530000000
+      },
+      "viewPast": [],
+      "viewFuture": [],
+      "annotations": [],
+      "channels": [],
+      "sourceAvailable": true
+    }
+  ],
+  "activeFileId": "file-a",
+  "selectedIds": [],
+  "activeAnnotationId": null,
+  "activeSegmentId": null,
+  "tool": "browse",
+  "previousTool": "browse",
+  "roi": null,
+  "roiDraft": null,
+  "geometryDraft": null,
+  "revisionModeId": null,
+  "pointer": null,
+  "mode": "spectrogram",
+  "frequencyMode": "RF",
+  "auxMode": "wave",
+  "layers": {
+    "ImportedLabel": true,
+    "Manual": true,
+    "Algorithm": true
+  },
+  "filters": {
+    "source": "all",
+    "run": "all",
+    "status": "all",
+    "score": 0
+  },
+  "sort": {
+    "key": "name",
+    "ascending": true
+  },
+  "params": {
+    "profile": "ffscn",
+    "rangeKind": "view",
+    "nfft": 65536,
+    "hopMs": 1,
+    "modelFrames": 10,
+    "modelHopFrames": 5,
+    "score": 0.7,
+    "nms": 0.3,
+    "topK": 512,
+    "noiseMargin": 6,
+    "strategy": "sample",
+    "splitEnabled": true,
+    "edgeFraction": 0.6,
+    "smoothMs": 1,
+    "minOnMs": 5,
+    "minOffMs": 10,
+    "splitGapMs": 20,
+    "minBurstMs": 10
+  },
+  "profileParams": {
+    "ffscn": {
+      "profile": "ffscn",
+      "rangeKind": "view",
+      "nfft": 65536,
+      "hopMs": 1,
+      "modelFrames": 10,
+      "modelHopFrames": 5,
+      "score": 0.7,
+      "nms": 0.3,
+      "topK": 512,
+      "noiseMargin": 6,
+      "strategy": "sample",
+      "splitEnabled": true,
+      "edgeFraction": 0.6,
+      "smoothMs": 1,
+      "minOnMs": 5,
+      "minOffMs": 10,
+      "splitGapMs": 20,
+      "minBurstMs": 10
+    },
+    "scn": {
+      "profile": "scn",
+      "rangeKind": "view",
+      "nfft": 32768,
+      "hopMs": 1,
+      "modelFrames": 16,
+      "modelHopFrames": 5,
+      "score": 0.7,
+      "nms": 0.3,
+      "topK": 512,
+      "noiseMargin": 6,
+      "strategy": "coarse",
+      "splitEnabled": true,
+      "edgeFraction": 0.6,
+      "smoothMs": 1,
+      "minOnMs": 5,
+      "minOffMs": 10,
+      "splitGapMs": 20,
+      "minBurstMs": 10
+    },
+    "ffscn17": {
+      "profile": "ffscn17",
+      "rangeKind": "view",
+      "nfft": 131072,
+      "hopMs": 1,
+      "modelFrames": 10,
+      "modelHopFrames": 5,
+      "score": 0.7,
+      "nms": 0.3,
+      "topK": 512,
+      "noiseMargin": 6,
+      "strategy": "sample",
+      "splitEnabled": true,
+      "edgeFraction": 0.6,
+      "smoothMs": 1,
+      "minOnMs": 5,
+      "minOffMs": 10,
+      "splitGapMs": 20,
+      "minBurstMs": 10
+    }
+  },
+  "paramDrafts": {},
+  "runs": [],
+  "activeRunId": null,
+  "modelAvailable": true,
+  "undo": [],
+  "redo": [],
+  "logs": [
+    {
+      "at": "13:17:32",
+      "level": "信息",
+      "message": "完整校验后原子重开demoOnly状态；未恢复后台模拟执行"
+    },
+    {
+      "at": "DEMO",
+      "level": "说明",
+      "message": "已加载四条 TorchSig 标签几何；合成波形、图谱与算法框均非实测。"
+    }
+  ],
+  "layout": {
+    "left": 300,
+    "right": 416,
+    "bottom": 270
+  },
+  "storageError": false,
+  "sourceSetIds": [
+    "torchsig-0000000"
+  ],
+  "importCount": 0,
+  "detectionOpen": true,
+  "savedAt": "2026-10-13T05:17:33.056Z"
+}
