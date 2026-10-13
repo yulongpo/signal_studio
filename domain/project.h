@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "domain/annotation.h"
+#include "domain/detection.h"
 #include "domain/sample_format.h"
 
 namespace signalstudio {
@@ -174,6 +175,13 @@ struct ChannelViewSnapshot {
   double psdAxisMaximum = 0.0;
   bool operator==(const ChannelViewSnapshot&) const = default;
 };
+struct AnnotationViewFilter {
+  int source = -1;
+  int review = -1;
+  std::string runId;
+  double minimumMean = 0;
+};
+
 struct FileState {
   FileMetadata metadata;
   ViewRange view;
@@ -185,10 +193,29 @@ struct FileState {
   std::vector<EnvelopePoint>
       navigationEnvelope;  // Session-only; rebuilt by actual source scanning.
   std::vector<AnnotationSourceSet> sourceSets;
+  std::vector<DetectionRun> detectionRuns;
   std::string activeSegmentId, revisionEditingAnnotationId,
       revisionEditingBaseRevisionId;
   std::array<bool, 3> annotationLayers{true, true, true};
+  AnnotationViewFilter annotationFilter;
 };
+inline bool annotationVisible(const FileState& file, const Annotation& value) {
+  const auto& filter = file.annotationFilter;
+  return !value.deleted &&
+         file.annotationLayers[static_cast<int>(value.sourceKind)] &&
+         (filter.source < 0 ||
+          filter.source == static_cast<int>(value.sourceKind)) &&
+         (filter.review < 0 ||
+          filter.review == static_cast<int>(value.reviewStatus)) &&
+         (filter.runId.empty() ||
+          (filter.runId == "__no_run__" &&
+           (!value.originEvidence || value.originEvidence->runId.empty())) ||
+          (value.originEvidence &&
+           value.originEvidence->runId == filter.runId)) &&
+         (filter.minimumMean <= 0 ||
+          (value.originEvidence && value.originEvidence->scoreMean &&
+           *value.originEvidence->scoreMean >= filter.minimumMean));
+}
 struct Project {
   std::string name = "未命名工程";
   std::string activeFileId;

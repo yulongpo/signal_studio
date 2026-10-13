@@ -4,7 +4,10 @@ endif()
 # The Windows Qt GUI entry point may have no stdout console. Preserve QtTest's
 # explicit file logger and surface its actual diagnostics through CTest.
 file(REMOVE "${SS_UI_LOG}")
+file(REMOVE "${SS_UI_LOG}.timing.jsonl")
+set(ENV{SS_UI_TIMING_LOG} "${SS_UI_LOG}.timing.jsonl")
 execute_process(COMMAND "${SS_UI_TEST}" -o "${SS_UI_LOG},txt"
+    -o "${SS_UI_LOG}.xml,junitxml"
     RESULT_VARIABLE ui_result)
 if(EXISTS "${SS_UI_LOG}")
     file(READ "${SS_UI_LOG}" ui_output)

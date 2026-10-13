@@ -1,6 +1,7 @@
 #include "infrastructure/project_store.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -16,6 +17,7 @@
 #include "domain/power_display.h"
 #include "infrastructure/annotation_json.h"
 #include "infrastructure/annotation_store.h"
+#include "infrastructure/detection_store.h"
 #include "infrastructure/sample_format_json.h"
 #include "infrastructure/spectral_settings_json.h"
 
@@ -491,6 +493,19 @@ QJsonObject encodeProject(const Project& project, const QString& path) {
     }
     QJsonArray selected;
     for (const auto& id : file.selectedMarkIds) selected.append(text(id));
+    QJsonArray detectionRuns;
+    require(file.detectionRuns.size() <= 4096, "检测运行索引超过预算");
+    for (const auto& run : file.detectionRuns) {
+      QString runError;
+      require(run.request.sourceIdentity.fileId == file.metadata.id,
+              "检测运行与工程文件身份不符");
+      DetectionRun persistedRun;
+      const bool runStored =
+          loadDetectionRun(QFileInfo(path).absolutePath(),
+                           text(run.request.runId), persistedRun, runError);
+      require(runStored, runError);
+      detectionRuns.append(text(run.request.runId));
+    }
     files.append(QJsonObject{
         {QStringLiteral("metadata"),
          QJsonObject{
@@ -521,11 +536,19 @@ QJsonObject encodeProject(const Project& project, const QString& path) {
         {QStringLiteral("view"), encodeRange(file.view)},
         {QStringLiteral("display"), encodeDisplay(file.display)},
         {QStringLiteral("annotationStore"), annotationIndex},
+        {QStringLiteral("detectionRuns"), detectionRuns},
         {QStringLiteral("channels"), channels},
         {QStringLiteral("activeSegmentId"), text(file.activeSegmentId)},
         {QStringLiteral("annotationLayers"),
          QJsonArray{file.annotationLayers[0], file.annotationLayers[1],
                     file.annotationLayers[2]}},
+        {QStringLiteral("annotationView"),
+         QJsonObject{
+             {QStringLiteral("source"), file.annotationFilter.source},
+             {QStringLiteral("review"), file.annotationFilter.review},
+             {QStringLiteral("runId"), text(file.annotationFilter.runId)},
+             {QStringLiteral("minimumMean"),
+              file.annotationFilter.minimumMean}}},
         {QStringLiteral("selectedMarkIds"), selected},
         {QStringLiteral("activeMarkId"), text(file.activeMarkId)}});
   }
@@ -650,7 +673,38 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
         require(layers[i].isBool(), "图层值须为布尔");
         file.annotationLayers[i] = layers[i].toBool();
       }
+      if (data.contains("annotationView")) {
+        const auto filter = object(data["annotationView"], "annotationView");
+        const auto source = number(filter, "source");
+        const auto review = number(filter, "review");
+        const auto score = number(filter, "minimumMean");
+        require(source >= -1 && source <= 2 && std::floor(source) == source &&
+                    review >= -1 && review <= 2 &&
+                    std::floor(review) == review && score >= -1 && score <= 1,
+                "标记显示筛选无效");
+        file.annotationFilter.source = static_cast<int>(source);
+        file.annotationFilter.review = static_cast<int>(review);
+        file.annotationFilter.minimumMean = score;
+        file.annotationFilter.runId = utf8(string(filter, "runId", 128, true));
+      }
       file.activeSegmentId = utf8(string(data, "activeSegmentId", 128, true));
+      if (data.contains("detectionRuns")) {
+        QSet<QString> runIds;
+        for (const auto& idValue : array(data, "detectionRuns", 4096)) {
+          require(idValue.isString(), "检测运行ID须为字符串");
+          const auto id = idValue.toString();
+          require(!id.isEmpty() && id.size() <= 128 && !runIds.contains(id),
+                  "检测运行ID重复或无效");
+          runIds.insert(id);
+          DetectionRun run;
+          const bool loaded =
+              loadDetectionRun(QFileInfo(path).absolutePath(), id, run, why);
+          require(loaded, why);
+          require(run.request.sourceIdentity.fileId == file.metadata.id,
+                  "检测运行引用属于其它文件");
+          file.detectionRuns.push_back(std::move(run));
+        }
+      }
     } else {
       for (const auto& markValue : array(data, "marks", 2000)) {
         const auto markData = object(markValue, QStringLiteral("mark"));

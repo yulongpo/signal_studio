@@ -143,6 +143,16 @@ ChannelSourceRelation channelSourceRelation(const FileState& file,
     return ChannelSourceRelation::Unconfirmed;
   return ChannelSourceRelation::Current;
 }
+bool annotationSourceCurrent(const FileState& file,
+                             const Annotation& annotation) {
+  const auto* set = findSourceSet(file, annotation.sourceSetId);
+  return set && !set->deleted && !annotation.deleted &&
+         set->fileId == file.metadata.id &&
+         annotation.fileId == file.metadata.id &&
+         set->sourceKind == annotation.sourceKind &&
+         set->sampleChannel == file.metadata.sampleFormat.selectedChannel &&
+         !sourceChanged(set->sourceIdentity, file.metadata);
+}
 void refreshChannelSourceRelations(FileState& file) {
   for (auto& channel : file.channels)
     channel.sourceRelation = channelSourceRelation(file, channel);
@@ -843,6 +853,56 @@ AnnotationResult AnnotationService::restoreOrigin(FileState& file,
   // samples have become available for analysis.
   return commit(file, before, std::move(after), "restore-origin",
                 std::move(actor));
+}
+
+AnnotationResult AnnotationService::confirmSegment(FileState& file,
+                                                   const std::string& id,
+                                                   const std::string& segmentId,
+                                                   std::string actor) {
+  auto* annotation = findAnnotation(file, id);
+  if (!annotation || annotation->deleted)
+    return fail("Annotation is unavailable");
+  if (annotation->reviewStatus == ReviewStatus::Rejected)
+    return fail("Rejected annotations cannot confirm activity segments");
+  const auto* set = findSourceSet(file, annotation->sourceSetId);
+  if (!set || set->deleted || set->fileId != file.metadata.id ||
+      annotation->fileId != file.metadata.id ||
+      set->sourceKind != annotation->sourceKind ||
+      set->sampleChannel != file.metadata.sampleFormat.selectedChannel ||
+      sourceChanged(set->sourceIdentity, file.metadata))
+    return fail(
+        "Annotation source is unavailable, changed, or belongs to another "
+        "sample channel");
+  if (file.metadata.availability.status == LoadStatus::Loading ||
+      file.metadata.availability.status == LoadStatus::Failed)
+    return fail(
+        "Activity confirmation requires a ready source or partial "
+        "available prefix");
+  const auto bounds = annotationBounds(file.metadata);
+  if (const auto result = validateAnnotation(*annotation, bounds); !result)
+    return fail(result.error);
+  const auto* segment = findSegment(*annotation, segmentId);
+  if (!segment)
+    return fail("Activity confirmation requires an explicit located segment");
+  if (const auto result = validateSegment(*segment, bounds, true); !result)
+    return fail(result.error);
+  if (segment->confirmed) return success(id);
+
+  auto after = *annotation;
+  findSegment(after, segmentId)->confirmed = true;
+  after.reviewHistory.push_back({after.reviewStatus, after.revisionId,
+                                 std::move(actor), now(),
+                                 "Confirmed activity segment: " + segmentId});
+  if (const auto result = validateAnnotation(after, bounds); !result)
+    return fail(result.error);
+  Command command;
+  command.patches.push_back(difference(*annotation, after));
+  if (commandBytes(command) > annotationCommandByteBudget)
+    return fail("Segment confirmation exceeds the annotation command budget");
+  *annotation = std::move(after);
+  record(file, std::move(command));
+  refreshChannelSourceRelations(file);
+  return success(id, true);
 }
 
 AnnotationResult AnnotationService::reviewBatch(

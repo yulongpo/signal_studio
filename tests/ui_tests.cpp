@@ -6,21 +6,28 @@
 #include <QClipboard>
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDialog>
 #include <QDoubleSpinBox>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <QGuiApplication>
+#include <QHeaderView>
 #include <QImage>
 #include <QInputDialog>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListView>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPointer>
 #include <QPushButton>
+#include <QScopeGuard>
 #include <QScreen>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -45,6 +52,7 @@
 #include <memory>
 
 #include "app/main_window.h"
+#include "infrastructure/annotation_json.h"
 #include "infrastructure/source_metadata.h"
 #include "tests/fixtures/raw_fixture.h"
 #include "ui/annotations/annotation_panel.h"
@@ -54,6 +62,8 @@
 #include "ui/charts/plot_widget.h"
 #include "ui/controls/adaptive_value_edit.h"
 #include "ui/controls/unsigned_value_edit.h"
+#include "ui/detection/detection_card.h"
+#include "ui/detection/detection_panel.h"
 #include "ui/display_target.h"
 #include "ui/import/signal_import_dialog.h"
 #include "ui/import/source_preview_widget.h"
@@ -63,6 +73,10 @@
 using namespace signalstudio;
 
 namespace {
+
+// Preserve the A1.4.3 plot budget after adding the approved persistent layers
+// bar (31 px) and bottom resize handle (5 px), without changing chart ratios.
+constexpr int kCollapsedWidebandPlotMinimum = 875 - 31 - 5;
 
 void showWindow(MainWindow& window) {
   // 3840x2160 physical pixels at 150% scaling use this logical client size.
@@ -257,7 +271,23 @@ class DemoMainWindow final : public MainWindow {
 };
 class UiTests : public QObject {
   Q_OBJECT
+ private:
+  QElapsedTimer caseTimer_;
  private slots:
+  void init() { caseTimer_.start(); }
+  void cleanup() {
+    const auto path = qEnvironmentVariable("SS_UI_TIMING_LOG");
+    if (path.isEmpty()) return;
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Append)) return;
+    const QJsonObject record{
+        {"test", QTest::currentTestFunction()},
+        {"data", QTest::currentDataTag()},
+        {"elapsedMilliseconds", static_cast<double>(caseTimer_.elapsed())},
+        {"finishedUtc",
+         QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)}};
+    file.write(QJsonDocument(record).toJson(QJsonDocument::Compact) + '\n');
+  }
   void workspaceLayout();
   void globalDisplaySettingsApplyAcrossFiles();
   void mainModeCoordinateDirection();
@@ -329,6 +359,10 @@ class UiTests : public QObject {
   void unifiedAnnotationDraftsAndSegmentSwitch();
   void torchSigLabelsNativeRoundtrip();
   void annotationTableBoundsAndIndependentSelection();
+  void widebandFixtureTaskNativeRoundtrip();
+  void widebandConfigurationCommittedDrafts();
+  void widebandRoiPreservesManualTool();
+  void widebandAnnotationSelectionAndOverlap();
 };
 
 void UiTests::workspaceLayout() {
@@ -347,9 +381,11 @@ void UiTests::workspaceLayout() {
   QVERIFY(navigation->isVisible());
   QVERIFY(auxiliary->isVisible());
   QVERIFY(main->isVisible());
-  QVERIFY2(main->plotRect().height() >= 875,
-           "4K at 150% scaling must retain the prototype main plot budget "
-           "(about 888 logical px).");
+  QCOMPARE(window.findChild<QWidget*>("annotationLayerBar")->height(), 31);
+  QCOMPARE(window.findChild<QWidget*>("bottomPanelResize")->height(), 5);
+  QVERIFY2(main->plotRect().height() >= kCollapsedWidebandPlotMinimum,
+           "The approved layers bar and resize handle must be the only new "
+           "vertical deductions from the A1.4.3 main plot budget.");
   QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 5000);
   const auto waveform = auxiliary->grab().toImage();
   QVERIFY(!waveform.isNull());
@@ -928,7 +964,7 @@ void UiTests::responsiveWorkspace_data() {
   QTest::addColumn<QSize>("windowSize");
   QTest::addColumn<int>("resourceWidth");
   QTest::addColumn<int>("propertyWidth");
-  QTest::newRow("4k-150-percent") << QSize(2560, 1440) << 270 << 294;
+  QTest::newRow("4k-150-percent") << QSize(2560, 1440) << 278 << 390;
 }
 
 void UiTests::responsiveWorkspace() {
@@ -948,16 +984,16 @@ void UiTests::responsiveWorkspace() {
   auto* plot = window.findChild<PlotWidget*>("mainPlot");
   QVERIFY(resources && properties && nav && aux && spec && plot);
   QVERIFY2(std::abs(resources->width() - resourceWidth) <= 2,
-           "Resource width must follow the final HTML media rules.");
+           "Resource width must follow the approved M0-P default.");
   QVERIFY2(std::abs(properties->width() - propertyWidth) <= 2,
-           "Property width must follow the final HTML media rules.");
+           "Property width must follow the approved M0-P default.");
   const int navY = nav->mapTo(&window, QPoint()).y();
   const int auxY = aux->mapTo(&window, QPoint()).y();
   const int specY = spec->mapTo(&window, QPoint()).y();
   QVERIFY(navY < auxY && auxY < specY);
   QCOMPARE(nav->height(), 82);
   QCOMPARE(aux->height(), 205);
-  QVERIFY(plot->plotRect().height() >= 875);
+  QVERIFY(plot->plotRect().height() >= kCollapsedWidebandPlotMinimum);
   QVERIFY(window.findChildren<QToolBar*>().empty());
   QVERIFY(!window.findChild<QComboBox*>("modeMain")->isVisible());
   QVERIFY(!window.findChild<QComboBox*>("modeAux")->isVisible());
@@ -2165,12 +2201,12 @@ void UiTests::panelRailsAndBottomTabs() {
   QTest::mouseClick(resourceToggle, Qt::LeftButton);
   QCOMPARE(resources->width(), 38);
   QTest::mouseClick(resourceToggle, Qt::LeftButton);
-  QCOMPARE(resources->width(), 270);
+  QCOMPARE(resources->width(), 278);
   QTest::mouseClick(propClose, Qt::LeftButton);
   QCOMPARE(properties->width(), 38);
   QVERIFY(propOpen->isVisible());
   QTest::mouseClick(propOpen, Qt::LeftButton);
-  QCOMPARE(properties->width(), 294);
+  QCOMPARE(properties->width(), 390);
   for (const auto& tabName : {"resultTab", "taskTab", "logTab"}) {
     auto* tab = window.findChild<QAbstractButton*>(tabName);
     QVERIFY(tab);
@@ -2198,6 +2234,11 @@ void UiTests::sectionContextAndManualExpansion() {
   QVERIFY(file->isVisible());
   QVERIFY(!mark->isVisible());
   QVERIFY(content->isVisible());
+  auto* scroll = window.findChild<QScrollArea*>("propScroll");
+  QVERIFY(scroll);
+  scroll->ensureWidgetVisible(toggle);
+  QTRY_VERIFY(scroll->viewport()->rect().contains(
+      toggle->mapTo(scroll->viewport(), toggle->rect().center())));
   QTest::mouseClick(toggle, Qt::LeftButton);
   QVERIFY(!content->isVisible());
   window.refresh();
@@ -2863,7 +2904,7 @@ void UiTests::splitterKeyboardResetAndEscapeRollback() {
   QCoreApplication::processEvents();
   QCOMPARE(splitter->sizes()[0], 82);
   QCOMPARE(splitter->sizes()[1], 205);
-  QVERIFY(main->plotRect().height() >= 875);
+  QVERIFY(main->plotRect().height() >= kCollapsedWidebandPlotMinimum);
 }
 
 void UiTests::treeToPlotShiftSelectionPreservesAnchor() {
@@ -3714,6 +3755,7 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
   QCoreApplication::setApplicationName("SignalStudioPersistenceTest");
   QSettings().clear();
   qApp->setProperty("uiStatePersistenceEnabled", true);
+  int storedResourceWidth = 0, storedPropertyWidth = 0, storedBottomHeight = 0;
   const auto projectPath =
       directory.filePath(QStringLiteral("recent-empty-project.json"));
   const auto iqPath =
@@ -3775,9 +3817,39 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
     bandwidth->setValue(.5);
     grid->setChecked(false);
     colorbar->setChecked(true);
+    showWindow(window);
+    const auto resizePanel = [&](const char* id, QPoint delta) {
+      auto* handle = window.findChild<QWidget*>(id);
+      const auto origin = handle->mapToGlobal(handle->rect().center());
+      QTest::mousePress(handle, Qt::LeftButton, Qt::NoModifier,
+                        handle->mapFromGlobal(origin));
+      QTest::mouseMove(handle, handle->mapFromGlobal(origin + delta), 10);
+      QTest::mouseRelease(handle, Qt::LeftButton, Qt::NoModifier,
+                          handle->mapFromGlobal(origin + delta));
+      QCoreApplication::processEvents();
+    };
+    resizePanel("leftPanelResize", QPoint(40, 0));
+    resizePanel("rightPanelResize", QPoint(-50, 0));
+    resizePanel("bottomPanelResize", QPoint(0, -55));
+    storedResourceWidth = window.findChild<QWidget*>("resources")->width();
+    storedPropertyWidth = window.findChild<QWidget*>("properties")->width();
+    storedBottomHeight = window.findChild<QWidget*>("bottom")->height();
+    QCOMPARE(storedResourceWidth, 318);
+    QCOMPARE(storedPropertyWidth, 440);
+    QCOMPARE(storedBottomHeight, 315);
+    window.findChild<QPushButton*>("detectionEvidenceMode")->click();
   }
   {
     MainWindow restored;
+    showWindow(restored);
+    QCOMPARE(restored.findChild<QWidget*>("resources")->width(),
+             storedResourceWidth);
+    QCOMPARE(restored.findChild<QWidget*>("properties")->width(),
+             storedPropertyWidth);
+    QCOMPARE(restored.findChild<QWidget*>("bottom")->height(),
+             storedBottomHeight);
+    QVERIFY(
+        restored.findChild<QPushButton*>("detectionEvidenceMode")->isChecked());
     auto* section = restored.findChild<QToolButton*>("specSectionToggle");
     auto* results = restored.findChild<QToolButton*>("resultsToggle");
     QVERIFY(section && results);
@@ -3849,28 +3921,49 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   showWindow(window);
   window.refresh();
   auto* panel = window.findChild<AnnotationPanel*>("annotationPanel");
-  auto* start = window.findChild<QLineEdit*>("annotationStartSample");
-  auto* low = window.findChild<AdaptiveValueEdit*>("annotationLowerHz");
+  auto* start = window.findChild<QLineEdit*>("annotationStartMilliseconds");
+  auto* low = window.findChild<AdaptiveValueEdit*>("annotationLowerMHz");
   auto* segments = window.findChild<QComboBox*>("annotationSegment");
   QVERIFY(panel && start && low && segments);
   start->setFocus();
   start->selectAll();
-  QTest::keyClicks(start, "125");
+  QTest::keyClicks(start, "0.125");
   window.refresh();
-  QCOMPARE(start->text(), QString("125"));
+  QCOMPARE(start->text(), QString("0.125"));
   QCOMPARE(annotation->segments[0].range.time.begin, SampleIndex{100});
   segments->setCurrentIndex(1);
   QVERIFY(!start->property("parameterDraft").toBool());
-  QCOMPARE(start->text(), QString("600"));
+  QCOMPARE(start->text(), QString("0.6"));
   QTest::keyClick(start, Qt::Key_Return);
   QCOMPARE(annotation->segments[1].range.time.begin, SampleIndex{600});
   low->setFocus();
   low->selectAll();
-  QTest::keyClicks(low, "-190 kHz");
+  QTest::keyClicks(low, "-0.19");
   QCOMPARE(annotation->segments[1].range.frequency.lowerHz, -200000.0);
   QTest::keyClick(low, Qt::Key_Return);
   QCOMPARE(annotation->segments[1].range.frequency.lowerHz, -190000.0);
   QCOMPARE(annotation->reviewStatus, ReviewStatus::Pending);
+  QVERIFY(!segmentCanCreateChannel(*annotation, annotation->activeSegmentId));
+  auto* extract = window.findChild<QPushButton*>("extract");
+  QVERIFY(extract->isEnabled());
+  extract->click();
+  auto* channelDialog = window.findChild<QDialog*>("channelConfigDialog");
+  QVERIFY(channelDialog && channelDialog->isVisible());
+  auto* confirmed =
+      channelDialog->findChild<QCheckBox*>("channelConfirmedSegment");
+  auto* create = channelDialog->findChild<QPushButton*>("confirmChannelConfig");
+  QVERIFY(confirmed && !confirmed->isChecked() && create &&
+          !create->isEnabled());
+  confirmed->setChecked(true);
+  QVERIFY(create->isEnabled());
+  channelDialog->reject();
+  QCOMPARE(annotation->reviewStatus, ReviewStatus::Pending);
+  QVERIFY(!annotation->segments[1].confirmed && file->channels.empty());
+  window.findChild<QPushButton*>("confirmAnnotationSegment")->click();
+  QCOMPARE(annotation->reviewStatus, ReviewStatus::Pending);
+  QVERIFY(segmentCanCreateChannel(*annotation, annotation->activeSegmentId));
+  QVERIFY(!annotation->segments[0].confirmed);
+  window.findChild<QPushButton*>("undoAnnotations")->click();
   QVERIFY(!segmentCanCreateChannel(*annotation, annotation->activeSegmentId));
   window.findChild<QPushButton*>("acceptAnnotations")->click();
   QVERIFY(segmentCanCreateChannel(*annotation, annotation->activeSegmentId));
@@ -3910,7 +4003,7 @@ void UiTests::torchSigLabelsNativeRoundtrip() {
   const auto annotationId = file->marks[0].id;
   window.session().selectMarks({annotationId}, annotationId);
   window.refresh();
-  auto* editor = window.findChild<QLineEdit*>("annotationStartSample");
+  auto* editor = window.findChild<QLineEdit*>("annotationStartMilliseconds");
   QVERIFY(editor && !editor->isEnabled());
   window.findChild<QPushButton*>("beginAnnotationRevision")->click();
   QVERIFY(editor->isEnabled());
@@ -3950,5 +4043,341 @@ void UiTests::annotationTableBoundsAndIndependentSelection() {
                     "many-1199") != file->selectedMarkIds.end());
 }
 
+void UiTests::widebandAnnotationSelectionAndOverlap() {
+  MainWindow window;
+  window.session().addDemoFile("selection.iq", 1e6, 100e6, .01);
+  const auto firstId =
+      window.session().addMark({{1000, 5000}, {99.9e6, 100.1e6}});
+  auto* file = window.session().activeFile();
+  QVERIFY(window.session()
+              .annotations()
+              .addSegment(*file, firstId, {{3000, 7000}, {99.9e6, 100.1e6}})
+              .ok);
+  const auto hiddenId =
+      window.session().addMark({{1000, 5000}, {100.3e6, 100.4e6}});
+  const auto lastId =
+      window.session().addMark({{1000, 5000}, {99.6e6, 99.7e6}});
+  QVERIFY(window.session()
+              .annotations()
+              .reviewBatch(*file, {lastId}, ReviewStatus::Pending)
+              .ok);
+  auto* first = findAnnotation(*file, firstId);
+  first->name = "A";
+  findAnnotation(*file, hiddenId)->name = "B";
+  findAnnotation(*file, lastId)->name = "C";
+  const auto firstSegment = first->segments[0].id;
+  const auto secondSegment = first->segments[1].id;
+  const auto originalFirstRange = first->segments[0].range;
+  QVERIFY(window.session()
+              .annotations()
+              .select(*file, {firstId}, firstId, secondSegment)
+              .ok);
+  window.session().setView(fullRange(file->metadata));
+  showWindow(window);
+  window.refresh();
+  auto* plot = window.findChild<PlotWidget*>("mainPlot");
+  auto* inspector = window.findChild<QComboBox*>("annotationSegment");
+  auto* cardSegment = window.findChild<QComboBox*>("detectionActiveSegment");
+  auto* range = window.findChild<QComboBox*>("detectionRangeOrigin");
+  auto* table = window.findChild<QTableView*>("annotationTable");
+  QVERIFY(plot && inspector && cardSegment && range && table);
+  window.findChild<QPushButton*>("resultTab")->click();
+  QVERIFY(table->isVisible());
+
+  // The second segment's left handle lies inside the first segment.
+  drag(plot, plot->toPixel(3000, 100e6).toPoint(),
+       plot->toPixel(3500, 100e6).toPoint());
+  first = findAnnotation(*file, firstId);
+  QCOMPARE(first->activeSegmentId, secondSegment);
+  QCOMPARE(first->segments[0].range, originalFirstRange);
+  QVERIFY(first->segments[1].range.time.begin > 3000);
+  QTest::mouseClick(plot, Qt::LeftButton, Qt::NoModifier,
+                    plot->toPixel(4000, 100e6).toPoint());
+  auto* overlaps = plot->findChild<QMenu*>("overlappingAnnotationsMenu");
+  QTRY_VERIFY(overlaps && overlaps->isVisible());
+  QAction* choice = nullptr;
+  for (auto* action : overlaps->actions())
+    if (action->property("segmentId").toString().toStdString() == firstSegment)
+      choice = action;
+  QVERIFY(choice && choice->text().contains("手动") &&
+          choice->text().contains("段 1"));
+  QTest::mouseClick(overlaps, Qt::LeftButton, Qt::NoModifier,
+                    overlaps->actionGeometry(choice).center());
+  QTRY_COMPARE(file->activeSegmentId, firstSegment);
+  range->setCurrentIndex(range->findData("active-segment"));
+  QVERIFY(cardSegment->isVisible());
+  cardSegment->setCurrentIndex(
+      cardSegment->findData(QString::fromStdString(secondSegment)));
+  QTRY_COMPARE(inspector->currentData().toString(),
+               QString::fromStdString(secondSegment));
+
+  // Hidden rows must not be pulled into a Shift range or a batch operation.
+  window.findChild<QComboBox*>("annotationReviewFilter")->setCurrentIndex(1);
+  QCOMPARE(table->model()->rowCount(), 2);
+  QTest::mouseClick(plot, Qt::LeftButton, Qt::NoModifier,
+                    plot->toPixel(1500, 100e6).toPoint());
+  QTest::mouseClick(plot, Qt::LeftButton, Qt::ShiftModifier,
+                    plot->toPixel(1500, 99.65e6).toPoint());
+  QCOMPARE(file->selectedMarkIds.size(), std::size_t{2});
+  QVERIFY(std::find(file->selectedMarkIds.begin(), file->selectedMarkIds.end(),
+                    hiddenId) == file->selectedMarkIds.end());
+  QVERIFY(window.findChild<QPushButton*>("acceptAnnotations")
+              ->text()
+              .endsWith("接受所选 2"));
+  // Checkbox toggles preserve the other selected row; ordinary clicks replace.
+  const auto firstCell = table->model()->index(0, 0);
+  QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    table->visualRect(firstCell).center());
+  QCOMPARE(file->selectedMarkIds.size(), std::size_t{1});
+  QCOMPARE(file->selectedMarkIds.front(), lastId);
+  const auto lastCell = table->model()->index(1, 1);
+  QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    table->visualRect(lastCell).center());
+  QCOMPARE(file->selectedMarkIds, std::vector<std::string>{lastId});
+  QTest::mouseClick(plot, Qt::LeftButton, Qt::ControlModifier,
+                    plot->toPixel(1500, 99.65e6).toPoint());
+  QCOMPARE(file->selectedMarkIds.size(), std::size_t{0});
+  QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    table->visualRect(table->model()->index(1, 1)).center());
+  QCOMPARE(file->selectedMarkIds, std::vector<std::string>{lastId});
+  QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    table->visualRect(table->model()->index(1, 0)).center());
+  QCOMPARE(file->selectedMarkIds.size(), std::size_t{0});
+  auto* frequency = window.findChild<QComboBox*>("freqMode");
+  QVERIFY(frequency->isVisible() && frequency->width() >= 160);
+}
+
+void UiTests::widebandFixtureTaskNativeRoundtrip() {
+  QTemporaryDir directory;
+  const auto iqPath = directory.filePath("IQ_FS1Msps_FC100MHz.dat");
+  QFile iq(iqPath);
+  QVERIFY(iq.open(QIODevice::WriteOnly));
+  QByteArray bytes(20000 * 4, '\0');
+  for (int i = 0; i < 20000; ++i)
+    qToLittleEndian<qint16>(12000, bytes.data() + i * 4);
+  QCOMPARE(iq.write(bytes), static_cast<qint64>(bytes.size()));
+  iq.close();
+  MainWindow window;
+  QString error;
+  QVERIFY2(window.createProject(directory.path(), "M2 task", &error),
+           qPrintable(error));
+  QVERIFY2(window.addIqFile(iqPath, &error), qPrintable(error));
+  showWindow(window);
+  QTRY_VERIFY_WITH_TIMEOUT(
+      window.session().activeFile()->metadata.availability.status ==
+          LoadStatus::Ready,
+      10000);
+  auto* file = window.session().activeFile();
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  QVERIFY(panel);
+  DetectionRequest request;
+  request.runId = "qt-fixture-run";
+  request.sourceIdentity = annotationSourceIdentity(
+      file->metadata, window.session().projectGeneration());
+  request.profile = *findDetectionProfile("pipeline-fixture-v1");
+  request.requestedRange = fullRange(file->metadata);
+  request.contextRange = request.requestedRange;
+  request.rangeOrigin = "native-ui-fixture";
+  QVERIFY2(panel->startRequest(request, error), qPrintable(error));
+  QTRY_VERIFY_WITH_TIMEOUT(
+      !file->detectionRuns.empty() &&
+          detectionIsTerminal(file->detectionRuns[0].lifecycle),
+      15000);
+  QCOMPARE(file->detectionRuns[0].lifecycle, DetectionLifecycle::Completed);
+  QTRY_VERIFY(!file->marks.empty());
+  QCOMPARE(file->marks[0].sourceKind, AnnotationSource::Algorithm);
+  QVERIFY(file->marks[0].segments.empty() && file->marks[0].observation);
+  const auto count = file->marks.size();
+  const auto projectPath = directory.filePath("M2 task/project.json");
+  QVERIFY(window.saveProject(projectPath));
+  QVERIFY(window.openProject(projectPath));
+  file = window.session().activeFile();
+  QCOMPARE(file->detectionRuns.size(), std::size_t{1});
+  QCOMPARE(file->detectionRuns[0].request.runId, request.runId);
+  QCOMPARE(file->marks.size(), count);
+  QCOMPARE(file->marks[0].sourceKind, AnnotationSource::Algorithm);
+  const auto annotationBeforeEvidence = encodeAnnotation(file->marks[0]);
+  window.session().annotations().select(*file, {file->marks[0].id},
+                                        file->marks[0].id);
+  window.refresh();
+  auto* evidenceMode = window.findChild<QPushButton*>("detectionEvidenceMode");
+  QVERIFY(evidenceMode && evidenceMode->isVisible());
+  QTest::mouseClick(evidenceMode, Qt::LeftButton);
+  auto* evidence = window.findChild<QWidget*>("auxiliaryDetectionEvidence");
+  QVERIFY(evidence && evidence->isVisible());
+  auto* timeSummary =
+      evidence->findChild<QWidget*>("annotationAuxiliaryTimeSummary");
+  auto* scoreSummary =
+      evidence->findChild<QWidget*>("annotationAuxiliaryScoreSummary");
+  auto* diagnostics =
+      evidence->findChild<QWidget*>("annotationAuxiliaryDiagnosticSummary");
+  QTRY_VERIFY(timeSummary && scoreSummary && diagnostics &&
+              timeSummary->x() < scoreSummary->x() &&
+              scoreSummary->x() < diagnostics->x());
+  QVERIFY(evidence->findChild<QLabel*>("annotationEvidenceMean")
+              ->text()
+              .contains("0.95"));
+  QVERIFY(evidence->findChild<QLabel*>("annotationEvidenceNoise")
+              ->text()
+              .contains("暂无"));
+  auto* evidenceDetails =
+      evidence->findChild<QWidget*>("annotationAuxiliaryEvidenceDetails");
+  auto* detailsToggle =
+      evidence->findChild<QToolButton*>("annotationEvidenceDetailsToggle");
+  QVERIFY(evidenceDetails && detailsToggle && !evidenceDetails->isVisible());
+  detailsToggle->click();
+  QVERIFY(evidenceDetails->isVisible());
+  QCOMPARE(encodeAnnotation(file->marks[0]), annotationBeforeEvidence);
+  detailsToggle->click();
+  window.findChild<QPushButton*>("psdMode")->click();
+  QVERIFY(!evidence->isVisible());
+  const auto sourceFileId = file->metadata.id;
+  window.session().addDemoFile("other-file.iq", 1e6, 100e6, .02);
+  window.refresh();
+  panel->refresh();
+  auto* runTable = window.findChild<QListView*>("detectionRunList");
+  QVERIFY(runTable && runTable->model()->rowCount() == 1);
+  QCOMPARE(runTable->model()->index(0, 0).data(Qt::UserRole).toString(),
+           QString::fromStdString(request.runId));
+  QVERIFY(window.session().activateFile(sourceFileId));
+  window.refresh();
+}
+
+void UiTests::widebandConfigurationCommittedDrafts() {
+  const auto previousFixture = qApp->property("enableDetectionTestFixture");
+  qApp->setProperty("enableDetectionTestFixture", true);
+  const auto restoreFixture = qScopeGuard([&] {
+    qApp->setProperty("enableDetectionTestFixture", previousFixture);
+  });
+  QTemporaryDir directory;
+  const auto iqPath = directory.filePath("IQ_FS20Msps_FC2500MHz.dat");
+  QFile iq(iqPath);
+  QVERIFY(iq.open(QIODevice::WriteOnly));
+  const QByteArray bytes(400000 * 4, '\0');
+  QCOMPARE(iq.write(bytes), static_cast<qint64>(bytes.size()));
+  iq.close();
+  MainWindow window;
+  QString error;
+  QVERIFY2(window.createProject(directory.path(), "card drafts", &error),
+           qPrintable(error));
+  QVERIFY2(window.addIqFile(iqPath, &error), qPrintable(error));
+  showWindow(window);
+  QTRY_COMPARE_WITH_TIMEOUT(
+      window.session().activeFile()->metadata.availability.status,
+      LoadStatus::Ready, 10000);
+  auto* card = window.findChild<DetectionCard*>("detectionCard");
+  QVERIFY(card);
+  auto* profile = card->findChild<QComboBox*>("detectionProfile");
+  QVERIFY(profile);
+  profile->setCurrentIndex(profile->findData("pipeline-fixture-v1"));
+  auto* score = card->findChild<AdaptiveValueEdit*>("detectionScoreThreshold");
+  auto* origin = card->findChild<QComboBox*>("detectionRangeOrigin");
+  QVERIFY(score && origin);
+  window.findChild<QAction*>("widebandDetectionAction")->trigger();
+  QVERIFY(!QApplication::activeModalWidget());
+  score->setFocus();
+  score->selectAll();
+  QTest::keyClicks(score, "0.8");
+  card->refresh();
+  QCOMPARE(card->request().parameters.scoreThreshold, .7);
+  QCOMPARE(score->text(), QString("0.8"));
+  QTest::keyClick(score, Qt::Key_Return);
+  QCOMPARE(card->request().parameters.scoreThreshold, .8);
+  QCOMPARE(score->text(), QString("0.8"));
+  wheelAt(score, score->rect().center());
+  QCOMPARE(card->request().parameters.scoreThreshold, .8);
+  const auto sourceId = window.session().activeFile()->metadata.id;
+  const auto requested = ViewRange{{100, 10000}, {2490000000, 2510000000}};
+  card->setRequestedRoi(requested);
+  QCOMPARE(card->request().requestedRange, requested);
+  window.findChild<QPushButton*>("widebandDetect")->click();
+  QCOMPARE(card->request().requestedRange, requested);
+  origin->setCurrentIndex(1);
+  QCOMPARE(card->request().requestedRange.time, (TimeRange{0, 400000}));
+  QCOMPARE(card->request().requestedRange.frequency,
+           (FrequencyRange{2490000000, 2510000000}));
+  origin->setCurrentIndex(2);
+  QVERIFY(card->validationError().contains("时间未定位") ||
+          card->validationError().contains("活动"));
+  profile->setCurrentIndex(profile->findData("scn-max-psd-v1"));
+  QCOMPARE(card->request().profile.modelHopFrames, std::uint32_t{5});
+  QCOMPARE(card->request().parameters.timeStrategy,
+           DetectionTimeStrategy::Coarse);
+  profile->setCurrentIndex(profile->findData("pipeline-fixture-v1"));
+  QCOMPARE(card->request().parameters.scoreThreshold, .8);
+  window.session().addDemoFile("other-file.iq", 20e6, 2500e6, .02);
+  QVERIFY(window.session().activateFile(sourceId));
+  window.refresh();
+  auto* tree = window.findChild<QTreeWidget*>("projectTree");
+  QTRY_VERIFY(tree->topLevelItemCount() == 1 &&
+              tree->topLevelItem(0)->childCount() == 2);
+  score->setFocus();
+  score->selectAll();
+  QTest::keyClicks(score, "0.9");
+  QCOMPARE(card->request().parameters.scoreThreshold, .8);
+  auto* other = tree->topLevelItem(0)->child(1);
+  const auto otherId =
+      other->data(0, Qt::UserRole + 1).toString().toStdString();
+  QTest::mouseClick(tree->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    tree->visualItemRect(other).center());
+  QTRY_COMPARE(window.session().project().activeFileId, otherId);
+  QVERIFY(window.session().activateFile(sourceId));
+  window.refresh();
+  QCOMPARE(card->request().parameters.scoreThreshold, .8);
+  QVERIFY(!score->property("parameterDraft").toBool());
+}
+
+void UiTests::widebandRoiPreservesManualTool() {
+  DemoMainWindow window;
+  showWindow(window);
+  clearDemoMarks(window);
+  auto* plot = window.findChild<PlotWidget*>("mainPlot");
+  auto* card = window.findChild<DetectionCard*>("detectionCard");
+  QVERIFY(plot && card);
+  const auto view = window.session().activeFile()->view;
+  QSignalSpy confirmed(plot, &PlotWidget::detectionRoiConfirmed);
+  plot->setCreating(true);
+  window.findChild<QPushButton*>("detectionRoiTool")->click();
+  QVERIFY(plot->isSelectingDetectionRoi());
+  drag(plot, pointAt(plot, view, .20, .30), pointAt(plot, view, .40, .60));
+  QVERIFY(plot->hasDetectionRoiPreview());
+  auto* confirmation = window.findChild<QWidget*>("detectionRoiConfirmation");
+  auto* rangeText = window.findChild<QLabel*>("detectionRoiRange");
+  QVERIFY(confirmation && confirmation->isVisible() && rangeText);
+  const auto preview = plot->detectionRoiPreview();
+  QVERIFY(preview);
+  const auto rate = window.session().activeFile()->metadata.sampleRateHz;
+  QVERIFY(rangeText->text().contains(
+      QString::number(preview->time.begin / rate * 1000, 'f', 4)));
+  QVERIFY(rangeText->text().contains(
+      QString::number(preview->frequency.upperHz / 1e6, 'f', 6)));
+  QVERIFY(rangeText->text().contains("RF"));
+  QVERIFY(rangeText->toolTip().contains(
+      QString("[%1, %2)")
+          .arg(QString::number(preview->time.begin),
+               QString::number(preview->time.end))));
+  QVERIFY(std::abs(confirmation->geometry().center().x() -
+                   plot->plotRect().center().x()) <= 1);
+  QVERIFY(plot->plotRect().contains(confirmation->geometry()));
+  QVERIFY(window.session().activeFile()->marks.empty());
+  QVERIFY(window.session().activeFile()->view == view);
+  QTest::keyClick(plot, Qt::Key_Escape);
+  QVERIFY(!plot->isSelectingDetectionRoi());
+  QVERIFY(plot->isCreating());
+  QCOMPARE(confirmed.count(), 0);
+  window.findChild<QPushButton*>("detectionRoiTool")->click();
+  drag(plot, pointAt(plot, view, .20, .30), pointAt(plot, view, .40, .60));
+  QVERIFY(plot->hasDetectionRoiPreview());
+  window.findChild<QPushButton*>("confirmDetectionRoi")->click();
+  QCOMPARE(confirmed.count(), 1);
+  QVERIFY(!plot->isSelectingDetectionRoi());
+  QVERIFY(plot->isCreating());
+  QVERIFY(window.session().activeFile()->marks.empty());
+  QVERIFY(window.session().activeFile()->view == view);
+  QCOMPARE(card->request().rangeOrigin, std::string("custom"));
+  QVERIFY(card->request().requestedRange.time.begin <
+          card->request().requestedRange.time.end);
+  QCOMPARE(window.session().activeFile()->detectionRuns.size(), std::size_t{0});
+}
 QTEST_MAIN(UiTests)
 #include "ui_tests.moc"

@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "node": "M2",
+  "baseCommit": "02aee9b",
+  "prototypeCommit": "c638cb92d0ed56a127d49618934b45638d7ecd73",
+  "frozenPrototypeFilesVerified": 22,
+  "prototypeHashMismatches": 0,
+  "ctestPassed": 15,
+  "ctestFailed": 0,
+  "qtUiPassed": 94,
+  "qtUiFailed": 0,
+  "nativeScenesPassed": 23,
+  "nativeScenesFailed": 0,
+  "sourceDataSha256": "3a47e55b5f02851d702d5c5782998bf3e374f67cde592c35689acf9ec5399254",
+  "screen": {
+    "availableLogicalGeometry": {
+      "height": 1392,
+      "width": 2560,
+      "x": 2560,
+      "y": 0
+    },
+    "connectedIndex": 2,
+    "deviceName": "\\\\.\\DISPLAY6",
+    "devicePath": "\\\\.\\DISPLAY6",
+    "devicePixelRatio": 1.5,
+    "friendlyName": "Redmi 27 NU",
+    "identityMethod": "Windows active DisplayConfig source/target",
+    "logicalDpi": 96,
+    "logicalGeometry": {
+      "height": 1440,
+      "width": 2560,
+      "x": 2560,
+      "y": 0
+    },
+    "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+    "name": "Redmi 27 NU",
+    "physicalDpi": 109.05000625015624,
+    "pixelSize": {
+      "height": 2160,
+      "width": 3840
+    },
+    "primary": false
+  },
+  "modelInferenceVerified": false,
+  "finalA16Verified": false,
+  "files": [
+    {
+      "path": "screenshots/01-imported-manual-resident-card.png",
+      "bytes": 1268363,
+      "sha256": "179aabf6d2554df698bf1111b083f82fadc18cdfebd4535be76cbc9dcb70623c"
+    },
+    {
+      "path": "screenshots/02-config-card-visible-crop.png",
+      "bytes": 78493,
+      "sha256": "66f196b3564889564c5ea95aa259fcb801efabf97ec2c023ad3aa93e8a6be0ca"
+    },
+    {
+      "path": "screenshots/02-config-main-window.png",
+      "bytes": 1269057,
+      "sha256": "62ae0a836ec29416ff680f89365679f069230c94c418d48f57813a5eeca8cc9c"
+    },
+    {
+      "path": "screenshots/03-completed-task-cards.png",
+      "bytes": 919091,
+      "sha256": "11d2fb22ab175f8efd9459cffe9c090374ff7baa2b7bdefa4f815aa073673dc8"
+    },
+    {
+      "path": "screenshots/04-task-readable-details.png",
+      "bytes": 92837,
+      "sha256": "be7d231dff4621d6a87870611aba0ceb3649d8c2bdc46f605ce8e69464d3f1cc"
+    },
+    {
+      "path": "screenshots/05-three-layers-revision-pending.png",
+      "bytes": 1052358,
+      "sha256": "f73bce373ad8d7059b3a15186dfc44492ecd3a44837f9221abdd59131b60c80e"
+    },
+    {
+      "path": "screenshots/06-saved-reopened.png",
+      "bytes": 1050815,
+      "sha256": "e04bac50e9571a39a4930bcca00844d86367ed6b8b2490d986a64c111d95f95e"
+    },
+    {
+      "path": "screenshots/07-roi-preview-before-esc.png",
+      "bytes": 983390,
+      "sha256": "c96a13e02c15a64ff2e3814e321863c8736ff1a64b9d876e3e5528bef8e3f2fb"
+    },
+    {
+      "path": "screenshots/08-roi-esc-manual-restored.png",
+      "bytes": 1010683,
+      "sha256": "7effe0fadc3a381f62547b7ccd0e8a6a79e9ab8aac0f9fe6cda2aec8b1773a20"
+    },
+    {
+      "path": "screenshots/09-roi-preview-before-enter.png",
+      "bytes": 983390,
+      "sha256": "c96a13e02c15a64ff2e3814e321863c8736ff1a64b9d876e3e5528bef8e3f2fb"
+    },
+    {
+      "path": "screenshots/10-roi-enter-confirmed.png",
+      "bytes": 1008931,
+      "sha256": "ffa4b3c6478adfc466bd00721b29d084744175efbdcd979c2fe9aa69f75b45bf"
+    },
+    {
+      "path": "screenshots/11-layout-left-committed.png",
+      "bytes": 986834,
+      "sha256": "3403ec019def8ec1bf9533d5c455953bd6118dd07afc77e3a06a4b2eaf001b20"
+    },
+    {
+      "path": "screenshots/12-layout-left-esc-restored.png",
+      "bytes": 986834,
+      "sha256": "3403ec019def8ec1bf9533d5c455953bd6118dd07afc77e3a06a4b2eaf001b20"
+    },
+    {
+      "path": "screenshots/13-layout-right-committed.png",
+      "bytes": 956604,
+      "sha256": "b52c178a50916aa546d94072ffea4c27bcdd8d4ed9637798b8315d7412775e10"
+    },
+    {
+      "path": "screenshots/14-layout-right-esc-restored.png",
+      "bytes": 958984,
+      "sha256": "01586b8c2aacf2e95a49bd6dcf3933a5814fa1224b93727e7d8eb32905897b93"
+    },
+    {
+      "path": "screenshots/15-layout-bottom-committed.png",
+      "bytes": 1074476,
+      "sha256": "b404c7cdc3ce66bbfd449872b0e58b9591f486a72dcb9fff518b58195235d035"
+    },
+    {
+      "path": "screenshots/16-layout-bottom-esc-restored.png",
+      "bytes": 1077114,
+      "sha256": "7fadebe424390c79651144264e20849270e718b2a114414d4078d2dd4c99c571"
+    },
+    {
+      "path": "screenshots/17-auxiliary-evidence-facts.png",
+      "bytes": 1179732,
+      "sha256": "62fa09c3477f990329f6678169d8fdf0ff9313bb7a2d4d781e7e295033bc925f"
+    },
+    {
+      "path": "screenshots/18-auxiliary-original-fields-collapsed.png",
+      "bytes": 1175847,
+      "sha256": "e8e148082cc41edc557e4d4f42d6c34da4de66128c62a18559c6ca7b105588f8"
+    },
+    {
+      "path": "screenshots/19-auxiliary-original-fields-visible.png",
+      "bytes": 1177781,
+      "sha256": "cd435e0e6b0648196f33a11094322a23ccce2660def64663b52a9c73426c8b88"
+    },
+    {
+      "path": "screenshots/20-single-original-segment-confirmed-pending.png",
+      "bytes": 1157030,
+      "sha256": "e254c455c61a3f2663a8946eb74b16dba9072c5627550a0a94734fc21bf71380"
+    },
+    {
+      "path": "screenshots/21-pending-confirmed-segment-channel-dialog.png",
+      "bytes": 52704,
+      "sha256": "b15107a07dd2c84798a85b5f84059bd6eeb6be2be01fcc0070f6ee24d78e6075"
+    },
+    {
+      "path": "screenshots/22-single-segment-confirmation-saved-reopened.png",
+      "bytes": 1153411,
+      "sha256": "5041bf5ce8ca14e6150796ce1f701ff08dbbc8fd2130f1e9496e5091db4ac65e"
+    }
+  ]
+}

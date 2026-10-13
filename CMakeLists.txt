@@ -60,6 +60,7 @@ endfunction()
 
 add_library(SignalStudioCore STATIC
     domain/annotation.cpp
+    domain/detection.cpp
     application/annotation_service.cpp
     domain/sample_format.cpp
     domain/project.cpp
@@ -75,6 +76,11 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/label_import.cpp
     infrastructure/annotation_json.cpp
     infrastructure/annotation_store.cpp
+    infrastructure/detection_source.cpp
+    infrastructure/detection_protocol.cpp
+    infrastructure/detection_store.cpp
+    infrastructure/detection_task.cpp
+    infrastructure/detection_worker_client.cpp
     infrastructure/import_controller.cpp
     infrastructure/format_template_store.cpp
     infrastructure/source_metadata.cpp
@@ -105,8 +111,14 @@ target_link_libraries(SignalStudioBrand PUBLIC Qt6::Widgets)
 target_compile_definitions(SignalStudioBrand PRIVATE SS_PRODUCT_VERSION="${PROJECT_VERSION}" SS_BUILD_REVISION="${SS_BUILD_REVISION}")
 
 set(SS_UI_SOURCES
+    ui/detection/detection_card.cpp
+    ui/detection/detection_card.h
+    ui/detection/detection_panel.cpp
+    ui/detection/detection_panel.h
     ui/annotations/annotation_panel.cpp
     ui/annotations/annotation_panel.h
+    ui/annotations/annotation_evidence_widget.cpp
+    ui/annotations/annotation_evidence_widget.h
     ui/controls/adaptive_value_edit.cpp
     ui/controls/adaptive_value_edit.h
     ui/import/source_preview_widget.cpp
@@ -127,7 +139,12 @@ set(SS_UI_SOURCES
     ui/charts/accelerated_surface.cpp
     ui/charts/accelerated_surface.h
 )
+add_executable(SignalStudioDetectionWorker tools/detection_worker/main.cpp)
+ss_target_defaults(SignalStudioDetectionWorker)
+set_target_properties(SignalStudioDetectionWorker PROPERTIES AUTOMOC OFF)
+target_link_libraries(SignalStudioDetectionWorker PRIVATE SignalStudioInfrastructure)
 add_executable(SignalStudio WIN32 app/main.cpp ${SS_UI_SOURCES})
+add_dependencies(SignalStudio SignalStudioDetectionWorker)
 if(WIN32)
     enable_language(RC)
     target_sources(SignalStudio PRIVATE resources/branding/qt/windows/app_icon.rc)
@@ -167,6 +184,24 @@ endif()
 
 if(SS_BUILD_TESTS)
     enable_testing()
+    foreach(test_kind IN ITEMS Store Protocol Task)
+        string(TOLOWER "${test_kind}" test_kind_lower)
+        set(test_target "SignalStudioDetection${test_kind}Tests")
+        add_executable(${test_target} "tests/detection_${test_kind_lower}_tests.cpp")
+        ss_target_defaults(${test_target})
+        set_target_properties(${test_target} PROPERTIES AUTOMOC OFF)
+        target_link_libraries(${test_target} PRIVATE SignalStudioInfrastructure)
+        add_test(NAME "signal_studio_detection_${test_kind_lower}" COMMAND ${test_target})
+    endforeach()
+    add_dependencies(SignalStudioDetectionTaskTests SignalStudio)
+    add_executable(SignalStudioDetectionSourceTests tests/detection_source_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionSourceTests)
+    target_link_libraries(SignalStudioDetectionSourceTests PRIVATE SignalStudioInfrastructure Qt6::Test)
+    target_compile_definitions(SignalStudioDetectionSourceTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    add_test(NAME signal_studio_detection_source COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioDetectionSourceTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/detection-source-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     add_executable(SignalStudioAnnotationTests tests/annotation_tests.cpp)
     target_link_libraries(SignalStudioAnnotationTests PRIVATE SignalStudioCore)
     set_target_properties(SignalStudioAnnotationTests PROPERTIES AUTOMOC OFF)
@@ -268,7 +303,7 @@ if(SS_BUILD_TESTS)
         add_dependencies(SignalStudioSpectralAnalysisTests SignalStudio)
         add_dependencies(SignalStudioUiTests SignalStudio)
         add_dependencies(SignalStudioUiCapture SignalStudio)
-        foreach(test_target IN ITEMS SignalStudioLabelImportTests SignalStudioWavTests
+        foreach(test_target IN ITEMS SignalStudioDetectionSourceTests SignalStudioLabelImportTests SignalStudioWavTests
                 SignalStudioImportTests SignalStudioUiTests SignalStudioUiCapture)
             add_dependencies(${test_target} SignalStudio)
             add_custom_command(TARGET ${test_target} POST_BUILD

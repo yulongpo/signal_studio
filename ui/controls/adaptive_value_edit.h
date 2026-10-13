@@ -6,7 +6,7 @@
 #include "ui/parameter_input.h"
 
 namespace signalstudio {
-enum class UnitKind { Frequency, SampleRate, Time };
+enum class UnitKind { Frequency, SampleRate, Time, Scalar };
 std::optional<double> parseAdaptiveValue(const QString&, UnitKind,
                                          bool allowNegative = false);
 QString formatAdaptiveValue(double, UnitKind);

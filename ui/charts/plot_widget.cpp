@@ -692,6 +692,49 @@ PlotWidget::Coordinate PlotWidget::fromPixel(QPointF point,
               (waterfall ? x : 1 - y) *
                   (view.frequency.upperHz - view.frequency.lowerHz)};
 }
+bool PlotWidget::detectionRoiContextMatches() const {
+  const auto* file = session_.activeFile();
+  return detectionRoi_ && file && kind_ == Kind::Main &&
+         file->metadata.id == detectionRoi_->fileId &&
+         session_.projectGeneration() == detectionRoi_->projectGeneration &&
+         file->metadata.availability.generation ==
+             detectionRoi_->availabilityGeneration &&
+         file->metadata.availability.status != LoadStatus::Loading &&
+         file->display.mainMode == detectionRoi_->mainMode &&
+         file->view == detectionRoi_->view &&
+         fullRange(file->metadata) == detectionRoi_->bounds;
+}
+std::optional<ViewRange> PlotWidget::detectionRoiRange(
+    const Gesture& gesture) const {
+  if (!detectionRoiContextMatches() || !gesture.changed) return std::nullopt;
+  const auto box = QRectF(gesture.start, gesture.current)
+                       .normalized()
+                       .intersected(plotRect());
+  if (box.width() < 1 || box.height() < 1) return std::nullopt;
+  const auto& draft = *detectionRoi_;
+  const auto first = fromPixel(box.topLeft(), draft.view);
+  const auto last = fromPixel(box.bottomRight(), draft.view);
+  if (!std::isfinite(first.sample) || !std::isfinite(last.sample) ||
+      !std::isfinite(first.frequency) || !std::isfinite(last.frequency))
+    return std::nullopt;
+  // Round offsets, never absolute sample indices. The upper edge is exclusive.
+  ViewRange range{{offsetSample(draft.view.time.begin,
+                                std::floor(std::min(first.sample, last.sample)),
+                                draft.bounds.time.end),
+                   offsetSample(draft.view.time.begin,
+                                std::ceil(std::max(first.sample, last.sample)),
+                                draft.bounds.time.end)},
+                  {std::max(draft.bounds.frequency.lowerHz,
+                            std::min(first.frequency, last.frequency)),
+                   std::min(draft.bounds.frequency.upperHz,
+                            std::max(first.frequency, last.frequency))}};
+  range.time.begin = std::max(range.time.begin, draft.view.time.begin);
+  range.time.end = std::min(range.time.end, draft.view.time.end);
+  if (range.time.begin >= range.time.end ||
+      range.frequency.lowerHz >= range.frequency.upperHz)
+    return std::nullopt;
+  return range;
+}
 QRectF PlotWidget::markRect(const ViewRange& range) const {
   return QRectF(toPixel(range.time.begin, range.frequency.lowerHz),
                 toPixel(range.time.end, range.frequency.upperHz))
@@ -803,6 +846,69 @@ void PlotWidget::setCreating(bool enabled) {
   emit statusMessage(creating_ ? "持续选择信号已开启；右键菜单关闭，Esc 退出"
                                : "持续选择信号已关闭");
 }
+void PlotWidget::beginDetectionRoi() {
+  if (activeGesture && activeGesture != this &&
+      activeGesture->window() == window())
+    activeGesture->cancelGesture();
+  if (activeWheel && activeWheel != this && activeWheel->window() == window())
+    activeWheel->finishWheel();
+  cancelGesture();
+  const auto* file = session_.activeFile();
+  if (!file || kind_ != Kind::Main ||
+      file->metadata.availability.status == LoadStatus::Loading ||
+      !availableSamples(file->metadata)) {
+    emit statusMessage("检测 ROI 需要已载入的可用数据");
+    return;
+  }
+  const auto bounds = fullRange(file->metadata);
+  const auto& view = file->view;
+  if (!std::isfinite(bounds.frequency.lowerHz) ||
+      !std::isfinite(bounds.frequency.upperHz) ||
+      !std::isfinite(view.frequency.lowerHz) ||
+      !std::isfinite(view.frequency.upperHz) ||
+      view.time.begin >= view.time.end || view.time.end > bounds.time.end ||
+      view.frequency.lowerHz < bounds.frequency.lowerHz ||
+      view.frequency.upperHz > bounds.frequency.upperHz ||
+      view.frequency.lowerHz >= view.frequency.upperHz) {
+    emit statusMessage("当前视图没有合法的检测 ROI 物理范围");
+    return;
+  }
+  DetectionRoiDraft draft;
+  draft.fileId = file->metadata.id;
+  draft.projectGeneration = session_.projectGeneration();
+  draft.availabilityGeneration = file->metadata.availability.generation;
+  draft.mainMode = file->display.mainMode;
+  draft.view = view;
+  draft.bounds = bounds;
+  draft.previousCreating = creating_;
+  detectionRoi_ = draft;
+  creating_ = false;
+  hoveredMark_.clear();
+  setFocus(Qt::OtherFocusReason);
+  setCursor(Qt::CrossCursor);
+  repaintChart();
+  emit detectionRoiPreviewChanged();
+  emit stateChanged();
+  emit statusMessage("检测 ROI：拖动后待确认 · Enter 确认 / Esc 恢复前一工具");
+}
+void PlotWidget::confirmDetectionRoi() {
+  if (!detectionRoi_) return;
+  if (!detectionRoiContextMatches()) {
+    cancelDetectionRoi();
+    emit statusMessage("数据或视图已变化，请重新选择检测 ROI");
+    return;
+  }
+  if (gesture_ || !detectionRoi_->preview) return;
+  const auto range = *detectionRoi_->preview;
+  cancelGesture();
+  emit detectionRoiConfirmed(range);
+  emit statusMessage("检测 ROI 已确认；可继续配置检测");
+}
+void PlotWidget::cancelDetectionRoi() {
+  if (!detectionRoi_) return;
+  cancelGesture();
+  emit statusMessage("检测 ROI 已取消；已恢复前一工具");
+}
 void PlotWidget::syncState() {
   const auto* file = session_.activeFile();
   const auto id = file ? file->metadata.id : std::string{};
@@ -854,6 +960,7 @@ void PlotWidget::syncState() {
                       file->display.stftSize != displayedFft_ ||
                       file->display.colorScale != displayedColorScale_))
     cancelGesture();
+  if (detectionRoi_ && !detectionRoiContextMatches()) cancelGesture();
   if (!file) creating_ = false;
   if (file) {
     if (displayedView_ && *displayedView_ != file->view) beginPreview();
@@ -876,26 +983,35 @@ void PlotWidget::finishWheel() {
 }
 void PlotWidget::cancelGesture(bool exitCreating) {
   finishWheel();
+  const bool cancellingRoi = detectionRoi_.has_value();
+  const bool cancellingGesture = gesture_.has_value();
+  if (detectionRoi_) {
+    creating_ = detectionRoi_->previousCreating;
+    detectionRoi_.reset();
+  }
   if (gesture_) {
     const auto gesture = *gesture_;
     gesture_.reset();
     if (activeGesture == this) activeGesture.clear();
-    session_.restoreSnapshot(gesture.before);
-    for (auto& file : session_.project().files)
-      if (file.metadata.id == gesture.before.fileId)
-        if (auto* mark = findMark(file, gesture.markId))
-          mark->range = gesture.mark;
+    if (gesture.tool != Tool::DetectionRoi) {
+      session_.restoreSnapshot(gesture.before);
+      for (auto& file : session_.project().files)
+        if (file.metadata.id == gesture.before.fileId)
+          if (auto* mark = findMark(file, gesture.markId))
+            mark->range = gesture.mark;
+    }
     releasing_ = true;
     if (mouseGrabber() == this) releaseMouse();
     releasing_ = false;
-    emit stateChanged();
   }
   if (exitCreating) creating_ = false;
   hoverZone_ = Zone::None;
   hoveredMark_.clear();
   setProperty("interactionZone", static_cast<int>(hoverZone_));
-  setCursor(Qt::ArrowCursor);
+  setCursor(creating_ ? Qt::CrossCursor : Qt::ArrowCursor);
   repaintChart();
+  if (cancellingRoi) emit detectionRoiPreviewChanged();
+  if (cancellingRoi || cancellingGesture) emit stateChanged();
 }
 void PlotWidget::updateHeatmap() {
   const auto* file = session_.activeFile();
@@ -2229,9 +2345,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
   painter.setClipRect(plot);
   painter.setFont(canvasFont(11, true));
   for (const auto& mark : file->marks) {
-    if (mark.deleted ||
-        !file->annotationLayers[static_cast<int>(mark.sourceKind)])
-      continue;
+    if (!annotationVisible(*file, mark)) continue;
     std::vector<ViewRange> ranges;
     for (const auto& segment : mark.segments)
       ranges.push_back(segment.id == mark.activeSegmentId ? mark.range
@@ -2243,7 +2357,8 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
       const bool selected =
           std::find(file->selectedMarkIds.begin(), file->selectedMarkIds.end(),
                     mark.id) != file->selectedMarkIds.end();
-      const bool hovered = hoveredMark_ == mark.id && !creating_;
+      const bool hovered =
+          hoveredMark_ == mark.id && !creating_ && !detectionRoi_;
       if (hovered) {
         painter.setBrush(Qt::NoBrush);
         for (const int thickness : {10, 6}) {
@@ -2294,7 +2409,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
         painter.setPen(QColor("#e2f9ff"));
         painter.drawText(QPointF(left + 8, top + 13), label);
       }
-      if (selected && !creating_ && range == mark.range &&
+      if (selected && !creating_ && !detectionRoi_ && range == mark.range &&
           session_.annotations().canEdit(*file, mark.id))
         for (const auto& [point, edge] : handles(box)) {
           Q_UNUSED(edge);
@@ -2322,6 +2437,38 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
                                   : cssColor("#7ed3f026"));
     painter.drawRect(box);
   }
+  if (detectionRoi_ && detectionRoiContextMatches()) {
+    auto range = detectionRoi_->preview;
+    if (gesture_ && gesture_->tool == Tool::DetectionRoi)
+      range = detectionRoiRange(*gesture_);
+    if (range) {
+      const auto box = markRect(*range).intersected(plot);
+      painter.setBrush(cssColor("#e3bf7025"));
+      painter.setPen(QPen(QColor("#111727"), 5));
+      painter.drawRect(box);
+      QPen pen(QColor("#e3bf70"), 2);
+      pen.setDashPattern({5, 3});
+      painter.setPen(pen);
+      painter.setBrush(Qt::NoBrush);
+      painter.drawRect(box);
+    }
+    if (!detectionRoi_->preview) {
+      const QString text = "检测 ROI · 拖动选择 · Esc 恢复前一工具";
+      const QFontMetricsF roiMetrics(painter.font());
+      const double labelWidth =
+          std::min(std::ceil(roiMetrics.horizontalAdvance(text)) + 20,
+                   plot.width() - 16);
+      const QRectF label(plot.left() + 8, plot.top() + 8,
+                         std::max(1.0, labelWidth), 25);
+      painter.setBrush(QColor("#2a3029"));
+      painter.setPen(QPen(QColor("#e3bf70"), 1));
+      painter.drawRoundedRect(label, 3, 3);
+      painter.setPen(QColor("#f1d590"));
+      painter.drawText(label.adjusted(7, 0, -7, 0), Qt::AlignVCenter,
+                       roiMetrics.elidedText(text, Qt::ElideRight,
+                                             std::max(1.0, labelWidth - 14)));
+    }
+  }
   painter.restore();
   if (!accelerated) drawCursors(painter);
 
@@ -2346,29 +2493,87 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
   }
 }
 
+std::vector<PlotWidget::Hit> PlotWidget::markChoicesAt(QPointF point) const {
+  std::vector<Hit> hits;
+  const auto* file = session_.activeFile();
+  if (!file || creating_ || detectionRoi_ || kind_ != Kind::Main ||
+      zoneAt(point) != Zone::Plot)
+    return hits;
+  for (auto it = file->marks.rbegin(); it != file->marks.rend(); ++it) {
+    if (!annotationVisible(*file, *it)) continue;
+    for (const auto& s : it->segments)
+      if (markRect(s.range).intersected(plotRect()).contains(point))
+        hits.push_back({it->id, 0, false, s.id});
+    if (it->segments.empty() && it->observation &&
+        markRect(*it->observation).intersected(plotRect()).contains(point))
+      hits.push_back({it->id, 0, false, {}});
+  }
+  return hits;
+}
 std::vector<std::string> PlotWidget::marksAt(QPointF point) const {
   std::vector<std::string> ids;
-  const auto* file = session_.activeFile();
-  if (!file || creating_ || kind_ != Kind::Main || zoneAt(point) != Zone::Plot)
-    return ids;
-  for (auto it = file->marks.rbegin(); it != file->marks.rend(); ++it) {
-    if (it->deleted ||
-        !file->annotationLayers[static_cast<int>(it->sourceKind)])
-      continue;
-    bool hit = false;
-    for (const auto& s : it->segments)
-      hit = hit || markRect(s.range).intersected(plotRect()).contains(point);
-    if (it->observation)
-      hit = hit ||
-            markRect(*it->observation).intersected(plotRect()).contains(point);
-    if (hit) ids.push_back(it->id);
-  }
+  for (const auto& hit : markChoicesAt(point))
+    if (std::find(ids.begin(), ids.end(), hit.id) == ids.end())
+      ids.push_back(hit.id);
   return ids;
+}
+void PlotWidget::addMarkChoices(QMenu* menu, const std::vector<Hit>& hits,
+                                Qt::KeyboardModifiers modifiers) {
+  const auto* file = session_.activeFile();
+  if (!file) return;
+  const auto generation = session_.projectGeneration();
+  const auto fileId = file->metadata.id;
+  const QStringList sources{"原始标签", "手动", "算法"};
+  for (const auto& hit : hits) {
+    const auto* annotation = findAnnotation(*file, hit.id);
+    if (!annotation) continue;
+    const auto segment = std::find_if(
+        annotation->segments.begin(), annotation->segments.end(),
+        [&](const auto& item) { return item.id == hit.segmentId; });
+    const auto title =
+        QString::fromStdString(annotation->name) + " · " +
+        sources.value(static_cast<int>(annotation->sourceKind)) +
+        (segment == annotation->segments.end()
+             ? " · 时间未定位"
+             : QString(" · 段 %1")
+                   .arg(segment - annotation->segments.begin() + 1));
+    auto* choice = menu->addAction(title);
+    choice->setData(QString::fromStdString(hit.id));
+    choice->setProperty("segmentId", QString::fromStdString(hit.segmentId));
+    connect(choice, &QAction::triggered, this,
+            [this, hit, modifiers, generation, fileId] {
+              const auto* current = session_.activeFile();
+              if (!current || current->metadata.id != fileId ||
+                  session_.projectGeneration() != generation)
+                return;
+              emit markSegmentSelectionRequested(
+                  QString::fromStdString(hit.id),
+                  QString::fromStdString(hit.segmentId), modifiers);
+            });
+  }
+}
+void PlotWidget::selectAt(QPointF point, Qt::KeyboardModifiers modifiers) {
+  const auto hits = markChoicesAt(point);
+  if (hits.size() > 1) {
+    auto* menu = new QMenu(this);
+    menu->setObjectName("overlappingAnnotationsMenu");
+    menu->setAttribute(Qt::WA_DeleteOnClose);
+    addMenuHeading(*menu, "选择重叠标记 / 活动段");
+    addMarkChoices(menu, hits, modifiers);
+    menu->popup(mapToGlobal(point.toPoint()));
+  } else if (!hits.empty()) {
+    emit markSegmentSelectionRequested(
+        QString::fromStdString(hits.front().id),
+        QString::fromStdString(hits.front().segmentId), modifiers);
+  } else if (!(modifiers & (Qt::ControlModifier | Qt::ShiftModifier))) {
+    emit markSelectionRequested({}, modifiers);
+  }
 }
 PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
   const auto* file = session_.activeFile();
   const auto plot = plotRect();
-  if (!file || creating_ || kind_ != Kind::Main || zoneAt(point) != Zone::Plot)
+  if (!file || creating_ || detectionRoi_ || kind_ != Kind::Main ||
+      zoneAt(point) != Zone::Plot)
     return {};
   std::vector<const Mark*> selected;
   for (auto it = file->marks.rbegin(); it != file->marks.rend(); ++it)
@@ -2376,7 +2581,8 @@ PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
                   it->id) != file->selectedMarkIds.end())
       selected.push_back(&*it);
   for (const auto* mark : selected) {
-    if (mark->deleted || !session_.annotations().canEdit(*file, mark->id))
+    if (!annotationVisible(*file, *mark) ||
+        !session_.annotations().canEdit(*file, mark->id))
       continue;
     const auto box = markRect(mark->range), clip = box.intersected(plot);
     if (clip.isEmpty()) continue;
@@ -2393,7 +2599,7 @@ PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
           bestDistance = distance;
         }
       }
-    if (bestEdge) return {mark->id, bestEdge, true};
+    if (bestEdge) return {mark->id, bestEdge, true, mark->activeSegmentId};
     const auto consider = [&](int edge, double coordinate, double actual,
                               bool visible, bool inSpan) {
       const double distance = std::abs(coordinate - actual);
@@ -2414,11 +2620,12 @@ PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
     consider(Bottom, point.y(), box.bottom(),
              box.bottom() >= plot.top() && box.bottom() <= plot.bottom(),
              point.x() >= clip.left() && point.x() <= clip.right());
-    if (bestEdge) return {mark->id, bestEdge, true};
-    if (clip.contains(point)) return {mark->id, Move, true};
+    if (bestEdge) return {mark->id, bestEdge, true, mark->activeSegmentId};
+    if (clip.contains(point))
+      return {mark->id, Move, true, mark->activeSegmentId};
   }
-  const auto ids = marksAt(point);
-  return ids.empty() ? Hit{} : Hit{ids.front(), 0, false};
+  const auto hits = markChoicesAt(point);
+  return hits.empty() ? Hit{} : hits.front();
 }
 void PlotWidget::updateHover(QPointF point) {
   const auto* file = session_.activeFile();
@@ -2449,7 +2656,7 @@ void PlotWidget::updateHover(QPointF point) {
                       gesture_->tool == Tool::AuxiliaryY
                   ? Qt::ClosedHandCursor
                   : Qt::CrossCursor);
-  else if (creating_ && kind_ == Kind::Main)
+  else if ((creating_ || detectionRoi_) && kind_ == Kind::Main)
     setCursor(hoverZone_ == Zone::Plot ? Qt::CrossCursor : Qt::ArrowCursor);
   else if (hit.selected)
     setCursor(edgeCursor(hit.edges));
@@ -2457,7 +2664,11 @@ void PlotWidget::updateHover(QPointF point) {
     setCursor(!hit.id.empty() ? Qt::PointingHandCursor
                               : chart_feedback::cursor(hoverZone_));
   QString hint;
-  if (creating_ && kind_ == Kind::Main)
+  if (detectionRoi_)
+    hint = detectionRoi_->preview
+               ? "检测 ROI 待确认：Enter 确认 · Esc 取消并恢复前一工具"
+               : "检测 ROI：拖动预览 · Enter 确认 · Esc 恢复前一工具";
+  else if (creating_ && kind_ == Kind::Main)
     hint = "持续选择信号：拖动创建 · 右键菜单关闭 · Esc 退出";
   else if (const auto* mark = findMark(*file, hit.id))
     hint = QString::fromStdString(mark->name) +
@@ -2498,25 +2709,30 @@ void PlotWidget::mousePressEvent(QMouseEvent* event) {
   const auto zone = zoneAt(point);
   if (event->button() != Qt::LeftButton || !file || zone == Zone::None) return;
   if (creating_ && kind_ == Kind::Main && zone != Zone::Plot) return;
+  if (detectionRoi_ && !detectionRoiContextMatches()) {
+    cancelGesture();
+    event->accept();
+    return;
+  }
+  if (detectionRoi_ && gesture_) {
+    event->accept();
+    return;
+  }
   if (activeGesture && activeGesture != this &&
       activeGesture->window() == window())
     activeGesture->cancelGesture();
   if (activeWheel && activeWheel != this && activeWheel->window() == window())
     activeWheel->finishWheel();
-  cancelGesture();
+  const bool roiAxisPan = detectionRoi_ && zone != Zone::Plot;
+  if (detectionRoi_ && zone == Zone::Plot) {
+    finishWheel();
+    detectionRoi_->preview.reset();
+    emit detectionRoiPreviewChanged();
+  } else
+    cancelGesture();
   setFocus();
   file = session_.activeFile();
   const auto hit = hitMark(point);
-  if (auto* annotation = findAnnotation(*file, hit.id)) {
-    for (const auto& segment : annotation->segments)
-      if (markRect(segment.range).intersected(plotRect()).contains(point)) {
-        annotation->activeSegmentId = segment.id;
-        refreshAnnotationProjection(*annotation);
-        if (file->activeMarkId == annotation->id)
-          file->activeSegmentId = segment.id;
-        break;
-      }
-  }
   Gesture gesture;
   gesture.before = session_.snapshot();
   gesture.start = point;
@@ -2525,6 +2741,7 @@ void PlotWidget::mousePressEvent(QMouseEvent* event) {
   gesture.mainMode = file->display.mainMode;
   gesture.auxiliaryMode = file->display.auxiliaryMode;
   gesture.clickMarkId = hit.id;
+  gesture.clickSegmentId = hit.segmentId;
   if (kind_ == Kind::Navigation) {
     gesture.tool = Tool::Navigate;
     gesture.navigationInside = navigationWindow().contains(point);
@@ -2535,7 +2752,9 @@ void PlotWidget::mousePressEvent(QMouseEvent* event) {
                              ? Tool::PanFrequency
                              : Tool::PanTime
                        : Tool::AuxiliaryZoom;
-  else if (creating_)
+  else if (detectionRoi_)
+    gesture.tool = Tool::DetectionRoi;
+  else if (creating_ && !roiAxisPan)
     gesture.tool = Tool::CreateMark;
   else if (zone == Zone::YAxis || zone == Zone::XAxis)
     gesture.tool =
@@ -2561,6 +2780,10 @@ void PlotWidget::mousePressEvent(QMouseEvent* event) {
 void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
   auto* file = session_.activeFile();
   if (!file) return;
+  if (detectionRoi_ && !detectionRoiContextMatches()) {
+    cancelGesture();
+    return;
+  }
   const auto point = event->position();
   hoverPosition_ =
       plotRect().contains(point) ? std::optional<QPointF>{point} : std::nullopt;
@@ -2720,12 +2943,25 @@ void PlotWidget::finishGesture(Qt::KeyboardModifiers modifiers) {
   if (mouseGrabber() == this) releaseMouse();
   releasing_ = false;
   auto* file = session_.activeFile();
+  if (gesture.tool == Tool::DetectionRoi) {
+    if (!detectionRoiContextMatches()) {
+      cancelDetectionRoi();
+      return;
+    }
+    detectionRoi_->preview = detectionRoiRange(gesture);
+    const auto message = QString(
+        detectionRoi_->preview ? "检测 ROI 待确认 · Enter 确认 / Esc 取消"
+                               : "请拖出非空的检测 ROI；未改变视图或标记");
+    repaintChart();
+    emit detectionRoiPreviewChanged();
+    emit statusMessage(message);
+    return;
+  }
   if (!file || file->metadata.id != gesture.before.fileId) return;
   const auto& base = gesture.before.view;
   if (gesture.tool == Tool::MarkEdit) {
     if (!gesture.changed)
-      emit markSelectionRequested(QString::fromStdString(gesture.markId),
-                                  modifiers);
+      selectAt(gesture.start, modifiers);
     else if (auto* mark = findMark(*file, gesture.markId)) {
       const auto next = mark->range;
       mark->range = gesture.mark;
@@ -2764,10 +3000,8 @@ void PlotWidget::finishGesture(Qt::KeyboardModifiers modifiers) {
         session_.setView(next);
         emit statusMessage("矩形区域放大");
       }
-    } else if (!gesture.changed && !gesture.clickMarkId.empty() &&
-               gesture.tool == Tool::ZoomBox)
-      emit markSelectionRequested(QString::fromStdString(gesture.clickMarkId),
-                                  modifiers);
+    } else if (!gesture.changed && gesture.tool == Tool::ZoomBox)
+      selectAt(gesture.start, modifiers);
   } else if (gesture.tool == Tool::AuxiliaryZoom) {
     if (std::abs(gesture.current.x() - gesture.start.x()) >= 8) {
       const auto plot = plotRect();
@@ -2813,6 +3047,10 @@ void PlotWidget::mouseReleaseEvent(QMouseEvent* event) {
       gesture_->device != event->pointingDevice())
     return;
   mouseMoveEvent(event);
+  if (!gesture_) {
+    event->accept();
+    return;
+  }
   const bool click = !gesture_->changed && !creating_ &&
                      plotRect().contains(event->position()) &&
                      (gesture_->tool == Tool::ZoomBox ||
@@ -2828,6 +3066,7 @@ void PlotWidget::mouseDoubleClickEvent(QMouseEvent* event) {
   mousePressEvent(event);
 }
 void PlotWidget::wheelEvent(QWheelEvent* event) {
+  if (detectionRoi_) cancelDetectionRoi();
   auto* file = session_.activeFile();
   const auto zone = zoneAt(event->position());
   event->accept();
@@ -2934,19 +3173,11 @@ QMenu* PlotWidget::createContextMenu(const QPoint& point) {
     toggle->setEnabled(file);
     connect(toggle, &QAction::triggered, this,
             [this](bool checked) { setCreating(checked); });
-    const auto overlaps = marksAt(point);
+    const auto overlaps = markChoicesAt(point);
     if (overlaps.size() > 1) {
       menu->addSeparator();
       addMenuHeading(*menu, "选择重叠标记");
-      for (const auto& id : overlaps)
-        if (const auto* mark = findMark(*file, id)) {
-          auto* choice = menu->addAction(QString::fromStdString(mark->name));
-          choice->setData(QString::fromStdString(id));
-          connect(choice, &QAction::triggered, this, [this, id] {
-            emit markSelectionRequested(QString::fromStdString(id),
-                                        Qt::NoModifier);
-          });
-        }
+      addMarkChoices(menu, overlaps, Qt::NoModifier);
     }
     if (file && findMark(*file, file->activeMarkId)) {
       auto* rename = menu->addAction("重命名当前标记");
@@ -2966,6 +3197,20 @@ QMenu* PlotWidget::createContextMenu(const QPoint& point) {
       connect(remove, &QAction::triggered, this,
               &PlotWidget::markDeleteRequested);
     }
+    auto* detect = menu->addAction("检测当前可见区域…");
+    detect->setObjectName("contextWidebandDetectionAction");
+    detect->setEnabled(file && !file->metadata.demo &&
+                       file->metadata.availability.status !=
+                           LoadStatus::Loading &&
+                       availableSamples(file->metadata) > 0);
+    connect(detect, &QAction::triggered, this,
+            &PlotWidget::widebandDetectionRequested);
+    auto* roi = menu->addAction("选择检测 ROI…");
+    roi->setObjectName("contextDetectionRoiAction");
+    roi->setEnabled(file &&
+                    file->metadata.availability.status != LoadStatus::Loading &&
+                    availableSamples(file->metadata) > 0);
+    connect(roi, &QAction::triggered, this, &PlotWidget::detectionRoiRequested);
   }
   menu->addSeparator();
   const auto addViewAction = [&](const QString& label, const char* name,
@@ -3032,6 +3277,17 @@ void PlotWidget::contextMenuEvent(QContextMenuEvent* event) {
   event->accept();
 }
 void PlotWidget::keyPressEvent(QKeyEvent* event) {
+  if (detectionRoi_ &&
+      (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter)) {
+    confirmDetectionRoi();
+    event->accept();
+    return;
+  }
+  if (detectionRoi_ && event->key() == Qt::Key_Escape) {
+    cancelDetectionRoi();
+    event->accept();
+    return;
+  }
   if (event->key() == Qt::Key_Escape) {
     const bool pending = hasPendingInteraction() || creating_;
     cancelGesture(true);
@@ -3067,9 +3323,11 @@ bool PlotWidget::event(QEvent* event) {
   if (cursor_overlay::tooltip(this, event)) return true;
   if ((event->type() == QEvent::UngrabMouse && !releasing_) ||
       event->type() == QEvent::WindowDeactivate ||
-      event->type() == QEvent::Hide)
-    cancelGesture(event->type() == QEvent::WindowDeactivate ||
-                  event->type() == QEvent::Hide);
+      event->type() == QEvent::Hide ||
+      (event->type() == QEvent::FocusOut && gesture_ && detectionRoi_))
+    cancelGesture(!detectionRoi_ &&
+                  (event->type() == QEvent::WindowDeactivate ||
+                   event->type() == QEvent::Hide));
   else if (event->type() == QEvent::Leave && !gesture_) {
     hoverPosition_.reset();
     QToolTip::hideText();

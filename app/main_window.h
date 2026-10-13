@@ -26,11 +26,15 @@ class QTimer;
 
 namespace signalstudio {
 class AnnotationPanel;
+class AnnotationEvidenceWidget;
+class DetectionPanel;
+class DetectionCard;
 class PlotWidget;
 class NarrowbandWorkspace;
 class SourceLoader;
 class SpectralSettingsWidget;
 class ParameterInputPolicy;
+class PanelResizeHandle;
 class MainWindow : public QMainWindow {
   Q_OBJECT
  public:
@@ -73,6 +77,9 @@ class MainWindow : public QMainWindow {
   bool handleWindowChrome(QObject*, QEvent*);
   void toggleWindowState();
   void updateWindowControls();
+  void openWidebandDetection(const DetectionRun* parentRun = nullptr);
+  void beginDetectionRoi();
+  void updateDetectionRoiConfirmation();
   void rememberNormalGeometry();
   Qt::Edges resizeEdges(QPoint) const;
   QRect normalWindowGeometry_;
@@ -100,7 +107,8 @@ class MainWindow : public QMainWindow {
   void updateTree();
   void syncTreeState();
   QStringList treeStructure() const;
-  void selectMark(const QString& id, Qt::KeyboardModifiers modifiers);
+  void selectMark(const QString& id, Qt::KeyboardModifiers modifiers,
+                  const QString& segmentId = {});
   void selectAllMarks();
   void locateMark();
   void deleteMarks();
@@ -123,7 +131,22 @@ class MainWindow : public QMainWindow {
   PowerFitResult cachedPowerFit_;
   bool powerFitReady_ = false;
   Session session_;
+  DetectionPanel* detection_ = nullptr;
+  DetectionCard* detectionCard_ = nullptr;
+  QWidget* detectionSection_ = nullptr;
+  QWidget* detectionRoiConfirmation_ = nullptr;
+  QPushButton* detectionRoiTool_ = nullptr;
+  QPushButton* manualTool_ = nullptr;
+  PanelResizeHandle *leftResize_ = nullptr, *rightResize_ = nullptr,
+                    *bottomResize_ = nullptr;
+  int resourceWidth_ = 278, propertyWidth_ = 390, bottomHeight_ = 260;
+  QPushButton* widebandDetect_ = nullptr;
+  QAction* detectionAction_ = nullptr;
   AnnotationPanel* annotations_ = nullptr;
+  QStackedWidget* auxiliaryDisplay_ = nullptr;
+  AnnotationEvidenceWidget* auxiliaryEvidence_ = nullptr;
+  QPushButton* evidenceMode_ = nullptr;
+  bool auxiliaryEvidenceVisible_ = false;
   QString projectPath_;
   std::string selectionAnchor_;
   Qt::KeyboardModifiers treeSelectionModifiers_ = Qt::NoModifier;
@@ -162,6 +185,7 @@ class MainWindow : public QMainWindow {
   std::array<QLabel*, 2> viewValues_{};
   std::array<QLabel*, 3> markValues_{};
   std::array<QLabel*, 6> channelValues_{};
+  QLabel *channelRevision_ = nullptr, *channelRelation_ = nullptr;
   QLabel *scope_ = nullptr, *projectLabel_ = nullptr, *navStatus_ = nullptr,
          *auxStatus_ = nullptr, *rangeTag_ = nullptr,
          *dataSourceStatus_ = nullptr;

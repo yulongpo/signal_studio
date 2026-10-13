@@ -1,6 +1,7 @@
 #include "ui/controls/adaptive_value_edit.h"
 
 #include <array>
+#include <charconv>
 #include <limits>
 
 namespace signalstudio {
@@ -16,7 +17,9 @@ std::optional<double> parseAdaptiveValue(const QString& text, UnitKind kind,
   if (!ok || !std::isfinite(v)) return {};
   auto unit = match.captured(2).toLower();
   double scale = 1;
-  if (kind == UnitKind::Time) {
+  if (kind == UnitKind::Scalar) {
+    if (!unit.isEmpty()) return {};
+  } else if (kind == UnitKind::Time) {
     if (unit.isEmpty() || unit == "ms")
       scale = .001;
     else if (unit == "s")
@@ -48,12 +51,23 @@ std::optional<double> parseAdaptiveValue(const QString& text, UnitKind kind,
   }
   v *= scale;
   if (!std::isfinite(v) ||
-      (v < 0 && !(allowNegative && kind == UnitKind::Frequency)) ||
+      (v < 0 && !(allowNegative &&
+                  (kind == UnitKind::Frequency || kind == UnitKind::Scalar))) ||
       (kind == UnitKind::SampleRate && v == 0))
     return {};
   return v;
 }
 QString formatAdaptiveValue(double value, UnitKind kind) {
+  if (kind == UnitKind::Scalar) {
+    // Shortest round-trip text preserves the committed double without exposing
+    // binary representation artifacts such as 0.69999999999999996.
+    std::array<char, 64> buffer{};
+    const auto converted =
+        std::to_chars(buffer.data(), buffer.data() + buffer.size(), value);
+    if (converted.ec == std::errc{})
+      return QString::fromLatin1(buffer.data(), converted.ptr - buffer.data());
+    return QString::number(value, 'g', 17);
+  }
   double scale = 1;
   QString unit = kind == UnitKind::SampleRate ? "S/s" : "Hz";
   if (kind == UnitKind::Time) {
@@ -110,6 +124,9 @@ void AdaptiveValueEdit::setValue(double value) {
     setText(formatAdaptiveValue(value_, kind_));
 }
 void AdaptiveValueEdit::commit() {
+  if (!property("parameterDraft").toBool() &&
+      text() == formatAdaptiveValue(value_, kind_))
+    return;
   if (!property("parameterDraft").toBool()) return;
   const auto parsed = parseAdaptiveValue(text(), kind_, allowNegative_);
   setProperty("parameterDraft", false);
@@ -138,8 +155,7 @@ void AdaptiveValueEdit::keyPressEvent(QKeyEvent* event) {
     QLineEdit::keyPressEvent(event);
 }
 void AdaptiveValueEdit::focusOutEvent(QFocusEvent* event) {
-  if (event->reason() == Qt::MouseFocusReason ||
-      event->reason() == Qt::TabFocusReason ||
+  if (event->reason() == Qt::TabFocusReason ||
       event->reason() == Qt::BacktabFocusReason)
     commit();
   QLineEdit::focusOutEvent(event);

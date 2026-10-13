@@ -231,6 +231,10 @@ AnnotationValidation validateAnnotation(const Annotation& annotation,
     return invalid("Current revision does not exist");
   if (annotation.reviewRevisionId != annotation.revisionId)
     return invalid("Review status must bind to the current revision");
+  if (annotation.reviewStatus != ReviewStatus::Pending &&
+      annotation.reviewStatus != ReviewStatus::Accepted &&
+      annotation.reviewStatus != ReviewStatus::Rejected)
+    return invalid("Invalid review status");
   for (const auto& review : annotation.reviewHistory)
     if (!revisions.contains(review.revisionId))
       return invalid("Review references a missing revision");
@@ -239,10 +243,10 @@ AnnotationValidation validateAnnotation(const Annotation& annotation,
       if (!segment.confirmed)
         return invalid(
             "Accepted active segments require explicit confirmation");
-  } else {
+  } else if (annotation.reviewStatus == ReviewStatus::Rejected) {
     for (const auto& segment : annotation.segments)
       if (segment.confirmed)
-        return invalid("Pending/rejected segments cannot remain confirmed");
+        return invalid("Rejected segments cannot remain confirmed");
   }
   return {};
 }
@@ -255,7 +259,17 @@ bool annotationConfirmed(const Annotation& annotation) {
 bool segmentCanCreateChannel(const Annotation& annotation,
                              const std::string& segmentId) {
   const auto* segment = findSegment(annotation, segmentId);
-  return annotationConfirmed(annotation) && segment && segment->confirmed &&
+  const bool currentRevision =
+      !annotation.revisionId.empty() &&
+      annotation.reviewRevisionId == annotation.revisionId &&
+      std::any_of(annotation.revisions.begin(), annotation.revisions.end(),
+                  [&](const auto& revision) {
+                    return revision.id == annotation.revisionId;
+                  });
+  return !annotation.deleted &&
+         (annotation.reviewStatus == ReviewStatus::Pending ||
+          annotation.reviewStatus == ReviewStatus::Accepted) &&
+         currentRevision && segment && segment->confirmed &&
          knownTime(segment->timeQuality) &&
          knownFrequency(segment->frequencyQuality);
 }

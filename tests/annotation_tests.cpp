@@ -212,6 +212,13 @@ void testUnknownObservation() {
   const auto* unknown = findAnnotation(file, "unknown");
   check(unknown->segments.empty() && unknown->range == ViewRange{},
         "Unknown time must not fabricate an active rectangle");
+  const auto reviewCount = unknown->reviewHistory.size();
+  const auto historyCount = service.historySize(file);
+  check(!service.confirmSegment(file, unknown->id, "missing") &&
+            unknown->segments.empty() &&
+            unknown->reviewHistory.size() == reviewCount &&
+            service.historySize(file) == historyCount,
+        "Confirmation must not turn an observation into a located segment");
   checkResult(service.reviewBatch(file, {unknown->id}, ReviewStatus::Accepted),
               "Unknown object can be reviewed");
   Channel channel;
@@ -238,6 +245,397 @@ void testUnknownObservation() {
   invalid.segments[0].timeQuality = TimeQuality::Unknown;
   check(!validateAnnotation(invalid, annotationBounds(file.metadata)),
         "Unknown-time segment must be rejected");
+}
+
+void testPendingSingleSegmentConfirmation() {
+  auto file = fileFixture();
+  AnnotationService service;
+  const auto set = sourceFixture(file, "pending-confirmation");
+  const auto imported =
+      annotationFixture(set, "pending-event", {geometry(), geometry(800, 900)});
+  checkResult(service.publishSourceSet(file, set, {imported}),
+              "Multi-segment confirmation fixture publication failed");
+  auto* annotation = findAnnotation(file, imported.id);
+  const auto firstId = annotation->segments.front().id;
+  const auto secondId = annotation->segments.back().id;
+  checkResult(service.select(file, {annotation->id}, annotation->id, secondId),
+              "Confirmation fixture selection failed");
+  const auto before = *annotation;
+  const auto sourceBefore = file.sourceSets.front();
+  const auto historyBefore = service.historySize(file);
+  const auto result =
+      service.confirmSegment(file, annotation->id, firstId, "segment-reviewer");
+  checkResult(result, "Pending activity segment confirmation failed");
+  auto expectedSegments = before.segments;
+  expectedSegments.front().confirmed = true;
+  check(result.changed && annotation->segments == expectedSegments &&
+            annotation->reviewStatus == ReviewStatus::Pending &&
+            !annotationConfirmed(*annotation),
+        "Confirming one Pending segment must not accept or confirm siblings");
+  check(annotation->id == before.id &&
+            annotation->sourceKind == before.sourceKind &&
+            annotation->sourceSetId == before.sourceSetId &&
+            annotation->originRecordId == before.originRecordId &&
+            annotation->fileId == before.fileId &&
+            annotation->name == before.name &&
+            annotation->classLabel == before.classLabel &&
+            annotation->note == before.note &&
+            annotation->revisionId == before.revisionId &&
+            annotation->reviewRevisionId == before.reviewRevisionId &&
+            annotation->activeSegmentId == secondId &&
+            file.activeSegmentId == secondId &&
+            annotation->revisions == before.revisions &&
+            annotation->originEvidence == before.originEvidence &&
+            file.sourceSets.front() == sourceBefore,
+        "Single-segment confirmation must preserve identity, origin, "
+        "geometry revision, selection and source text");
+  const auto& review = annotation->reviewHistory.back();
+  check(annotation->reviewHistory.size() == before.reviewHistory.size() + 1 &&
+            review.status == ReviewStatus::Pending &&
+            review.revisionId == before.revisionId &&
+            review.actor == "segment-reviewer" && !review.timestamp.empty() &&
+            review.note == "Confirmed activity segment: " + firstId &&
+            service.historySize(file) == historyBefore + 1,
+        "Confirmation must record the actor and exact segment in review "
+        "history without a geometry revision");
+  check(segmentCanCreateChannel(*annotation, firstId) &&
+            !segmentCanCreateChannel(*annotation, secondId),
+        "Only the explicitly confirmed Pending segment can create a channel");
+  Channel confirmedChannel;
+  confirmedChannel.id = "pending-channel";
+  checkResult(service.bindChannelSource(file, confirmedChannel, annotation->id,
+                                        firstId),
+              "Confirmed Pending segment must bind a channel");
+  check(
+      confirmedChannel.sourceSnapshot->reviewStatus == ReviewStatus::Pending &&
+          confirmedChannel.sourceSnapshot->revisionId == before.revisionId &&
+          confirmedChannel.sourceSnapshot->range == before.segments[0].range,
+      "Pending channel snapshot must retain its unchanged source revision");
+  Channel unconfirmedChannel;
+  check(!service.bindChannelSource(file, unconfirmedChannel, annotation->id,
+                                   secondId) &&
+            !unconfirmedChannel.sourceSnapshot,
+        "An unconfirmed sibling must not bind a channel");
+  const auto auditCount = annotation->reviewHistory.size();
+  const auto commandCount = service.historySize(file);
+  const auto repeated =
+      service.confirmSegment(file, annotation->id, firstId, "another-reviewer");
+  check(repeated.ok && !repeated.changed &&
+            annotation->reviewHistory.size() == auditCount &&
+            service.historySize(file) == commandCount,
+        "Repeated confirmation must not duplicate commands or audit records");
+  checkResult(
+      service.reviewBatch(file, {annotation->id}, ReviewStatus::Accepted),
+      "Whole-object acceptance after segment confirmation failed");
+  check(annotationConfirmed(*annotation) &&
+            annotation->segments.front().confirmed &&
+            annotation->segments.back().confirmed &&
+            segmentCanCreateChannel(*annotation, secondId),
+        "Whole-object acceptance must still confirm every activity segment");
+  check(validateFileAnnotations(file).ok,
+        "Confirmed Pending and Accepted objects must remain valid v5 states");
+}
+
+void testConfirmationUndoRedoAndRejection() {
+  auto file = fileFixture();
+  AnnotationService service;
+  const auto set =
+      sourceFixture(file, "confirmation-history", AnnotationSource::Algorithm);
+  const auto event = annotationFixture(set, "confirmation-event",
+                                       {geometry(), geometry(800, 900)});
+  checkResult(service.publishSourceSet(file, set, {event}),
+              "Confirmation history fixture publication failed");
+  auto* annotation = findAnnotation(file, event.id);
+  const auto segmentId = annotation->segments.front().id;
+  const auto revisionId = annotation->revisionId;
+  const auto origin = annotation->originEvidence;
+  checkResult(service.confirmSegment(file, event.id, segmentId),
+              "Confirmation history setup failed");
+  Channel channel;
+  channel.id = "confirmed-history-channel";
+  channel.sourceTime = geometry().time;
+  checkResult(service.bindChannelSource(file, channel, event.id, segmentId),
+              "Confirmation history channel binding failed");
+  file.channels.push_back(channel);
+  const auto snapshot = file.channels.front().sourceSnapshot;
+  const auto confirmationReviews = annotation->reviewHistory;
+  checkResult(service.undo(file), "Segment confirmation undo failed");
+  check(!annotation->segments.front().confirmed &&
+            annotation->reviewStatus == ReviewStatus::Pending &&
+            annotation->revisionId == revisionId &&
+            annotation->reviewHistory == confirmationReviews &&
+            annotation->originEvidence == origin &&
+            file.channels.front().sourceSnapshot == snapshot &&
+            file.channels.front().sourceRelation ==
+                ChannelSourceRelation::Unconfirmed,
+        "Undo must restore only confirmation state while retaining immutable "
+        "review history and channel snapshot");
+  checkResult(service.redo(file), "Segment confirmation redo failed");
+  check(
+      annotation->segments.front().confirmed &&
+          !annotation->segments.back().confirmed &&
+          annotation->reviewStatus == ReviewStatus::Pending &&
+          annotation->reviewHistory == confirmationReviews &&
+          file.channels.front().sourceRelation ==
+              ChannelSourceRelation::Current,
+      "Redo must restore the same single confirmation without duplicate audit");
+  checkResult(service.reviewBatch(file, {event.id}, ReviewStatus::Rejected),
+              "Confirmed Pending object rejection failed");
+  check(
+      annotation->reviewStatus == ReviewStatus::Rejected &&
+          !annotation->segments.front().confirmed &&
+          !annotation->segments.back().confirmed &&
+          !segmentCanCreateChannel(*annotation, segmentId) &&
+          file.channels.front().sourceRelation ==
+              ChannelSourceRelation::Rejected,
+      "Rejection must clear confirmation and preserve the referenced channel");
+  const auto rejectionReviews = annotation->reviewHistory;
+  const auto rejectionHistory = service.historySize(file);
+  check(
+      !service.confirmSegment(file, event.id, segmentId) &&
+          annotation->reviewHistory == rejectionReviews &&
+          service.historySize(file) == rejectionHistory,
+      "Rejected objects cannot be reconfirmed without changing review status");
+  auto invalid = *annotation;
+  invalid.segments.front().confirmed = true;
+  check(!validateAnnotation(invalid, annotationBounds(file.metadata)),
+        "A persisted Rejected confirmation must fail domain validation");
+  checkResult(service.undo(file), "Rejection after confirmation undo failed");
+  check(annotation->reviewStatus == ReviewStatus::Pending &&
+            annotation->segments.front().confirmed &&
+            !annotation->segments.back().confirmed &&
+            annotation->reviewHistory == rejectionReviews &&
+            file.channels.front().sourceRelation ==
+                ChannelSourceRelation::Current,
+        "Undo rejection must restore the exact Pending confirmation set");
+  checkResult(service.redo(file), "Rejection after confirmation redo failed");
+  check(
+      annotation->reviewStatus == ReviewStatus::Rejected &&
+          !annotation->segments.front().confirmed &&
+          annotation->reviewHistory == rejectionReviews &&
+          file.channels.front().sourceSnapshot == snapshot,
+      "Redo rejection must retain append-only review records and DDC snapshot");
+  check(validateFileAnnotations(file).ok,
+        "Confirmation/rejection undo and redo left an invalid state");
+}
+
+void testConfirmationGeometryInvalidation() {
+  auto file = fileFixture();
+  AnnotationService service;
+  const auto set = sourceFixture(file, "confirmed-geometry");
+  const auto event = annotationFixture(set, "geometry-event",
+                                       {geometry(), geometry(800, 900)});
+  checkResult(service.publishSourceSet(file, set, {event}),
+              "Confirmed geometry fixture publication failed");
+  auto* annotation = findAnnotation(file, event.id);
+  const auto firstId = annotation->segments.front().id;
+  const auto secondId = annotation->segments.back().id;
+  checkResult(service.confirmSegment(file, event.id, firstId),
+              "First geometry confirmation failed");
+  checkResult(service.confirmSegment(file, event.id, secondId),
+              "Second geometry confirmation failed");
+  const auto revisionBefore = annotation->revisionId;
+  const auto origin = annotation->originEvidence;
+  Channel channel;
+  channel.id = "geometry-confirmation-channel";
+  channel.sourceTime = geometry().time;
+  checkResult(service.bindChannelSource(file, channel, event.id, firstId),
+              "Confirmed geometry channel binding failed");
+  file.channels.push_back(channel);
+  const auto snapshot = file.channels.front().sourceSnapshot;
+  checkResult(service.beginRevision(file, event.id),
+              "Confirmed geometry revision session failed");
+  checkResult(
+      service.commitGeometry(file, event.id, secondId, geometry(810, 910)),
+      "Confirmed geometry update failed");
+  const auto revised = annotation->revisionId;
+  const auto revisionReviews = annotation->reviewHistory;
+  check(revised != revisionBefore &&
+            annotation->reviewStatus == ReviewStatus::Pending &&
+            annotation->reviewRevisionId == revised &&
+            !annotation->segments.front().confirmed &&
+            !annotation->segments.back().confirmed &&
+            annotation->segments.front().range == geometry() &&
+            annotation->originEvidence == origin &&
+            file.channels.front().sourceRelation ==
+                ChannelSourceRelation::Changed,
+        "Any geometry revision must invalidate current confirmations, even "
+        "for an unchanged sibling");
+  checkResult(service.undo(file), "Confirmed geometry revision undo failed");
+  check(annotation->revisionId == revisionBefore &&
+            annotation->segments.front().confirmed &&
+            annotation->segments.back().confirmed &&
+            annotation->reviewStatus == ReviewStatus::Pending &&
+            annotation->reviewHistory == revisionReviews &&
+            file.channels.front().sourceRelation ==
+                ChannelSourceRelation::Current,
+        "Geometry undo must restore confirmations bound to the old revision");
+  checkResult(service.redo(file), "Confirmed geometry revision redo failed");
+  check(annotation->revisionId == revised &&
+            !annotation->segments.front().confirmed &&
+            !annotation->segments.back().confirmed &&
+            annotation->segments.back().range == geometry(810, 910) &&
+            annotation->reviewHistory == revisionReviews &&
+            file.channels.front().sourceSnapshot == snapshot &&
+            file.channels.front().sourceTime == geometry().time,
+        "Geometry redo must retain original review/DDC evidence and require "
+        "fresh confirmation");
+  checkResult(service.confirmSegment(file, event.id, firstId),
+              "Revised Pending segment confirmation failed");
+  check(annotation->revisionId == revised &&
+            annotation->reviewHistory.back().revisionId == revised &&
+            segmentCanCreateChannel(*annotation, firstId) &&
+            !segmentCanCreateChannel(*annotation, secondId) &&
+            file.channels.front().sourceRelation ==
+                ChannelSourceRelation::Changed,
+        "New-revision confirmation must not relabel an existing old DDC "
+        "snapshot");
+  check(validateFileAnnotations(file).ok,
+        "Geometry confirmation revisions must remain valid v5 states");
+}
+
+void testConfirmationAvailableAndEffectiveBounds() {
+  auto file = fileFixture();
+  file.metadata.availability.status = LoadStatus::Partial;
+  file.metadata.availability.availableSamples = 1000;
+  AnnotationService service;
+  const auto set = sourceFixture(file, "confirmation-prefix");
+  const auto event =
+      annotationFixture(set, "prefix-event",
+                        {geometry(),
+                         geometry(800, 1000),
+                         geometry(900, 1001),
+                         {{100, 600}, {99'600'000, 99'700'000}}});
+  checkResult(service.publishSourceSet(file, set, {event}),
+              "Confirmation prefix fixture publication failed");
+  auto* annotation = findAnnotation(file, event.id);
+  const auto origin = annotation->originEvidence;
+  const auto atBoundary = annotation->segments[1].id;
+  checkResult(service.confirmSegment(file, event.id, atBoundary),
+              "Confirmation ending exactly at available boundary failed");
+  check(annotation->segments[1].confirmed &&
+            !annotation->segments[0].confirmed &&
+            !annotation->segments[2].confirmed &&
+            !annotation->segments[3].confirmed,
+        "Only the explicitly confirmed read-boundary segment may change");
+  const auto history = service.historySize(file);
+  const auto reviews = annotation->reviewHistory;
+  check(!service.confirmSegment(file, event.id, annotation->segments[2].id),
+        "Even one sample beyond the available prefix must reject confirmation");
+  check(!service.confirmSegment(file, event.id, annotation->segments[3].id),
+        "A physical label outside the effective band must not be confirmed");
+  check(annotation->segments[2].range == event.segments[2].range &&
+            annotation->segments[3].range == event.segments[3].range &&
+            annotation->reviewHistory == reviews &&
+            service.historySize(file) == history &&
+            annotation->originEvidence == origin,
+        "Rejected confirmations must preserve physical tails, original "
+        "evidence and the complete existing command history");
+  file.metadata.availability.availableSamples = 0;
+  check(!service.confirmSegment(file, event.id, atBoundary),
+        "Previously confirmed geometry cannot bypass a now-unavailable prefix");
+  file.metadata.availability.availableSamples = 1000;
+  auto* unknown = &annotation->segments[0];
+  unknown->timeQuality = TimeQuality::Unknown;
+  check(!service.confirmSegment(file, event.id, unknown->id),
+        "Unknown-time active segments must not be confirmed");
+  unknown->timeQuality = TimeQuality::RoundedLabel;
+  unknown->frequencyQuality = FrequencyQuality::Unknown;
+  check(!service.confirmSegment(file, event.id, unknown->id),
+        "Unknown-frequency active segments must not be confirmed");
+  unknown->frequencyQuality = FrequencyQuality::NominalLabel;
+  check(validateFileAnnotations(file).ok,
+        "Unconfirmed physical tails must remain valid while Pending has one "
+        "confirmed available segment");
+}
+
+void testConfirmationCurrentSourceAndRevision() {
+  auto file = fileFixture();
+  file.metadata.availability.fingerprint = "original-fingerprint";
+  AnnotationService service;
+  const auto set = sourceFixture(file, "confirmation-source");
+  const auto event = annotationFixture(set, "source-event");
+  checkResult(service.publishSourceSet(file, set, {event}),
+              "Confirmation source fixture publication failed");
+  auto* annotation = findAnnotation(file, event.id);
+  const auto segmentId = annotation->segments.front().id;
+  const auto reviewCount = annotation->reviewHistory.size();
+  const auto commandCount = service.historySize(file);
+  const auto metadataBefore = file.metadata;
+  const auto revisionId = annotation->revisionId;
+  for (const auto status : {LoadStatus::Loading, LoadStatus::Failed}) {
+    file.metadata.availability.status = status;
+    file.metadata.availability.availableSamples = 1000;
+    check(!service.confirmSegment(file, event.id, segmentId),
+          "Loading/failed source cannot confirm a segment");
+  }
+  file.metadata = metadataBefore;
+  file.sourceSets.front().deleted = true;
+  check(!service.confirmSegment(file, event.id, segmentId),
+        "Deleted source set cannot confirm a segment");
+  file.sourceSets.front().deleted = false;
+  file.metadata.path = "replacement.iq";
+  check(!service.confirmSegment(file, event.id, segmentId),
+        "Changed source path cannot confirm an old label");
+  file.metadata = metadataBefore;
+  file.metadata.availability.fingerprint = "changed-fingerprint";
+  check(!service.confirmSegment(file, event.id, segmentId),
+        "Changed source fingerprint cannot confirm an old label");
+  file.metadata = metadataBefore;
+  file.metadata.sampleFormat.componentEncoding = ComponentEncoding::Float32;
+  check(!service.confirmSegment(file, event.id, segmentId),
+        "Changed sample format cannot confirm an old label");
+  file.metadata = metadataBefore;
+  file.metadata.sampleFormat.channels = 2;
+  file.metadata.sampleFormat.selectedChannel = 1;
+  check(!service.confirmSegment(file, event.id, segmentId),
+        "Another selected sample channel cannot confirm an old label");
+  file.metadata = metadataBefore;
+  file.metadata.sampleRateHz *= 2;
+  check(!service.confirmSegment(file, event.id, segmentId),
+        "Changed source sample rate cannot confirm an old label");
+  file.metadata = metadataBefore;
+  annotation->reviewRevisionId = "obsolete-review";
+  check(!service.confirmSegment(file, event.id, segmentId),
+        "Review state must bind to the current geometry revision");
+  annotation->reviewRevisionId = revisionId;
+  annotation->revisionId = "missing-revision";
+  annotation->reviewRevisionId = annotation->revisionId;
+  check(!service.confirmSegment(file, event.id, segmentId),
+        "Confirmation cannot bind to a nonexistent current revision");
+  annotation->segments.front().confirmed = true;
+  check(!segmentCanCreateChannel(*annotation, segmentId),
+        "Missing current revision must block the domain channel predicate");
+  annotation->segments.front().confirmed = false;
+  annotation->revisionId = revisionId;
+  annotation->reviewRevisionId = revisionId;
+  check(
+      annotation->reviewHistory.size() == reviewCount &&
+          service.historySize(file) == commandCount &&
+          !annotation->segments.front().confirmed,
+      "Invalid confirmation attempts must not publish review or command state");
+  checkResult(service.confirmSegment(file, event.id, segmentId),
+              "Restored current source must allow confirmation");
+  auto invalid = *annotation;
+  invalid.reviewRevisionId = "obsolete-review";
+  check(!segmentCanCreateChannel(invalid, segmentId),
+        "Confirmed flags cannot bypass a stale review revision");
+  invalid = *annotation;
+  invalid.reviewStatus = static_cast<ReviewStatus>(99);
+  check(!segmentCanCreateChannel(invalid, segmentId) &&
+            !validateAnnotation(invalid, annotationBounds(file.metadata)),
+        "Unknown review states cannot masquerade as non-Rejected confirmation");
+  checkResult(service.deleteBatch(file, {event.id}),
+              "Confirmed source deletion failed");
+  check(!service.confirmSegment(file, event.id, segmentId) &&
+            !segmentCanCreateChannel(*annotation, segmentId),
+        "Deleted annotations must not regain confirmation");
+  checkResult(service.undo(file), "Confirmed source deletion undo failed");
+  check(annotation->reviewStatus == ReviewStatus::Pending &&
+            annotation->segments.front().confirmed &&
+            annotation->reviewRevisionId == annotation->revisionId &&
+            validateFileAnnotations(file).ok,
+        "Deletion undo must restore the exact valid Pending confirmation");
 }
 
 void testPhysicalAndAvailableBounds() {
@@ -592,6 +990,16 @@ int main() {
       {"legacy compatibility", testLegacyCompatibility},
       {"three sources and immutable origin", testSourcesAndImmutableOrigin},
       {"unknown-time observation", testUnknownObservation},
+      {"Pending single-segment confirmation",
+       testPendingSingleSegmentConfirmation},
+      {"confirmation undo/redo and rejection",
+       testConfirmationUndoRedoAndRejection},
+      {"confirmation geometry invalidation",
+       testConfirmationGeometryInvalidation},
+      {"confirmation available and effective bounds",
+       testConfirmationAvailableAndEffectiveBounds},
+      {"confirmation current source and revision",
+       testConfirmationCurrentSourceAndRevision},
       {"physical and available bounds", testPhysicalAndAvailableBounds},
       {"multi-segment editing and selection", testSegmentsAndSelection},
       {"atomic batch and concurrent undo", testAtomicBatchAndConcurrentUndo},

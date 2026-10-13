@@ -23,6 +23,7 @@ const Annotation* findAnnotation(const FileState&, const std::string& id);
 AnnotationSourceSet* findSourceSet(FileState&, const std::string& id);
 const AnnotationSourceSet* findSourceSet(const FileState&,
                                          const std::string& id);
+bool annotationSourceCurrent(const FileState&, const Annotation&);
 ChannelSourceRelation channelSourceRelation(const FileState&, const Channel&);
 void refreshChannelSourceRelations(FileState&);
 AnnotationValidation validateFileAnnotations(const FileState&);
@@ -66,6 +67,12 @@ class AnnotationService {
                           std::string actor = "user");
   AnnotationResult restoreOrigin(FileState&, const std::string& annotationId,
                                  std::string actor = "user");
+  // Confirms only one known, available segment for its current revision. This
+  // does not accept the whole object or create a geometry revision; its review
+  // record remains append-only under undo/redo, like the other review actions.
+  AnnotationResult confirmSegment(FileState&, const std::string& annotationId,
+                                  const std::string& segmentId,
+                                  std::string actor = "user");
   AnnotationResult reviewBatch(FileState&,
                                const std::vector<std::string>& annotationIds,
                                ReviewStatus, std::string actor = "user",
