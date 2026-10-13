@@ -59,6 +59,8 @@ function(ss_add_ui_assets target)
 endfunction()
 
 add_library(SignalStudioCore STATIC
+    domain/annotation.cpp
+    application/annotation_service.cpp
     domain/sample_format.cpp
     domain/project.cpp
     domain/project.h
@@ -69,6 +71,10 @@ set_target_properties(SignalStudioCore PROPERTIES AUTOMOC OFF)
 ss_target_defaults(SignalStudioCore)
 
 add_library(SignalStudioInfrastructure STATIC
+    infrastructure/wav_metadata.cpp
+    infrastructure/label_import.cpp
+    infrastructure/annotation_json.cpp
+    infrastructure/annotation_store.cpp
     infrastructure/import_controller.cpp
     infrastructure/format_template_store.cpp
     infrastructure/source_metadata.cpp
@@ -99,6 +105,8 @@ target_link_libraries(SignalStudioBrand PUBLIC Qt6::Widgets)
 target_compile_definitions(SignalStudioBrand PRIVATE SS_PRODUCT_VERSION="${PROJECT_VERSION}" SS_BUILD_REVISION="${SS_BUILD_REVISION}")
 
 set(SS_UI_SOURCES
+    ui/annotations/annotation_panel.cpp
+    ui/annotations/annotation_panel.h
     ui/controls/adaptive_value_edit.cpp
     ui/controls/adaptive_value_edit.h
     ui/import/source_preview_widget.cpp
@@ -159,6 +167,32 @@ endif()
 
 if(SS_BUILD_TESTS)
     enable_testing()
+    add_executable(SignalStudioAnnotationTests tests/annotation_tests.cpp)
+    target_link_libraries(SignalStudioAnnotationTests PRIVATE SignalStudioCore)
+    set_target_properties(SignalStudioAnnotationTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioAnnotationTests)
+    add_test(NAME signal_studio_annotations COMMAND SignalStudioAnnotationTests)
+    add_executable(SignalStudioAnnotationStoreTests tests/annotation_store_tests.cpp)
+    target_link_libraries(SignalStudioAnnotationStoreTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    set_target_properties(SignalStudioAnnotationStoreTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioAnnotationStoreTests)
+    add_test(NAME signal_studio_annotation_store COMMAND SignalStudioAnnotationStoreTests)
+    add_executable(SignalStudioLabelImportTests tests/label_import_tests.cpp)
+    target_link_libraries(SignalStudioLabelImportTests PRIVATE SignalStudioInfrastructure Qt6::Test)
+    target_compile_definitions(SignalStudioLabelImportTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    ss_target_defaults(SignalStudioLabelImportTests)
+    add_test(NAME signal_studio_label_import COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioLabelImportTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/label-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    add_executable(SignalStudioWavTests tests/wav_input_tests.cpp)
+    target_link_libraries(SignalStudioWavTests PRIVATE SignalStudioInfrastructure Qt6::Test)
+    target_compile_definitions(SignalStudioWavTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    ss_target_defaults(SignalStudioWavTests)
+    add_test(NAME signal_studio_wav COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioWavTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/wav-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     add_executable(SignalStudioImportTests tests/import_controller_tests.cpp)
     target_link_libraries(SignalStudioImportTests PRIVATE SignalStudioInfrastructure Qt6::Test)
     ss_target_defaults(SignalStudioImportTests)
@@ -234,14 +268,13 @@ if(SS_BUILD_TESTS)
         add_dependencies(SignalStudioSpectralAnalysisTests SignalStudio)
         add_dependencies(SignalStudioUiTests SignalStudio)
         add_dependencies(SignalStudioUiCapture SignalStudio)
-        add_custom_command(TARGET SignalStudioUiTests POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-                "$<TARGET_FILE:Qt6::Test>" "$<TARGET_FILE_DIR:SignalStudioUiTests>"
-            VERBATIM
-        )
-        add_custom_command(TARGET SignalStudioUiCapture POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-                "$<TARGET_FILE:Qt6::Test>" "$<TARGET_FILE_DIR:SignalStudioUiCapture>"
-            VERBATIM)
+        foreach(test_target IN ITEMS SignalStudioLabelImportTests SignalStudioWavTests
+                SignalStudioImportTests SignalStudioUiTests SignalStudioUiCapture)
+            add_dependencies(${test_target} SignalStudio)
+            add_custom_command(TARGET ${test_target} POST_BUILD
+                COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                    "$<TARGET_FILE:Qt6::Test>" "$<TARGET_FILE_DIR:${test_target}>"
+                VERBATIM)
+        endforeach()
     endif()
 endif()
