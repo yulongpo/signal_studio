@@ -1,0 +1,14 @@
+{
+  "oldSummarySha256": "d3fdb2d08b5f1f439d054411ee4c72aceb76f7440e4bc1fff0eb9485c197f9de",
+  "ownedProcessesConfirmedStopped": true,
+  "schema": "signalstudio-user-validation-scope-change-v1",
+  "suitePid": 65656,
+  "stoppedAtUtc": "2026-10-14T02:10:16.2462432Z",
+  "oldScopeReportsPreserved": true,
+  "decision": "stop bulk validation; representative functional and workflow validation; manual full matrix after M5",
+  "activeStagePid": 58864,
+  "interruptedSampleId": "T07-06",
+  "completedPairedFiles": 122,
+  "lastStage": "native",
+  "executionFreezeSha256": "7e2d9fa220e766be60fd5ece80aed79c66749e09ae2821b22baff4269ab6ad8a"
+}

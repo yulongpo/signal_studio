@@ -102,6 +102,8 @@ struct DetectionRun {
   std::uint64_t eligibleWindows = 0;
   std::uint64_t completedWindows = 0;
   std::uint64_t resultCount = 0;
+  std::string computationPhase = "none";
+  std::uint64_t refinedCandidates = 0, totalRefinementCandidates = 0;
   std::uint64_t startedAtMilliseconds = 0;
   std::uint64_t finishedAtMilliseconds = 0;
   std::string error;

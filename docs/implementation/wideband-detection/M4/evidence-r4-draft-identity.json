@@ -1,0 +1,33 @@
+{
+  "draftAndCloneEqual": true,
+  "files": [
+    {
+      "path": "domain\\detection_refinement.cpp",
+      "sha256": "86fa33d603276d9c3c62a5115c48c4bb91413772c2dc7dfb060e03d37a05d131"
+    },
+    {
+      "path": "infrastructure\\detection_time_analysis.cpp",
+      "sha256": "2559dd69a79cccee6e839e9da677ed2fc3c0b25776d6d310f0d42a422971df3a"
+    },
+    {
+      "path": "tests\\detection_refinement_tests.cpp",
+      "sha256": "62aacf3aff831bb86a0b73e083d08e72b516a25ab795fadda14aa0061b673ec8"
+    },
+    {
+      "path": "tests\\detection_time_pipeline_tests.cpp",
+      "sha256": "13c14ac7d04d1d025ed82f077e78541396d91c495c4ea525d904e1d2f9cdee5c"
+    },
+    {
+      "path": "ui\\annotations\\annotation_evidence_widget.cpp",
+      "sha256": "83c14cc6c8758ea5b076fe6754f7b4a2ae2e27a45c7363557ff6381122cd4c27"
+    },
+    {
+      "path": "domain\\detection_refinement.h",
+      "sha256": "d137990069a730bb8f2dadbb4ffa8fedaccc88d245b0705662d4d91f62e2316b"
+    },
+    {
+      "path": "tests\\wideband_detection_capture.h",
+      "sha256": "550690abe0665ec5171102bffd11b151916280168ceef4c54a0ffb8dc5cc2112"
+    }
+  ]
+}

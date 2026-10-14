@@ -1,0 +1,312 @@
+{
+  "archive": "frozen-own-text-inputs-r3.zip",
+  "sha256": "7dfe56e5aeb7bd191b428c3fbd9b52e49546b7d1a88ee46bf945797d6df33d4e",
+  "scope": "repository-owned-frozen-text-inputs-only",
+  "files": [
+    {
+      "path": "docs/implementation/wideband-detection/M4/generator-freeze.json",
+      "sha256": "6c6158119f11ec61b085ffd39b99cbc2c44feb03bf5371f4a38d5dc8ffec855c",
+      "bytes": 276513
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M4/input-manifest.json",
+      "sha256": "0ce9a7cfc3d78c2c460e85a46fa7d547525194ea276ece639f076ab312037dab",
+      "bytes": 42206
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M4/PARAMETER_DECISION.md",
+      "sha256": "ff050dd1b73bb60efbbf1f63789c455f85a75c3f960c1a20b4885bdfd71abc68",
+      "bytes": 3472
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M4/validation-protocol.json",
+      "sha256": "8db8fd328d865f99ca3b30a1ee7fb39b50000b21d6a46f5d1d15a07ffc794a51",
+      "bytes": 7439
+    },
+    {
+      "path": "domain/annotation.cpp",
+      "sha256": "f8f3751b4e8a23b5d9ff7bbbebef35ab88a8235190d199961e4bf0cb85c7ede4",
+      "bytes": 12663
+    },
+    {
+      "path": "domain/annotation.h",
+      "sha256": "c1db0624d08128d1a95e6303eebab59e2ddd871ef79fdddbf3dba86589b71bdb",
+      "bytes": 6941
+    },
+    {
+      "path": "domain/detection.cpp",
+      "sha256": "c32dd6052d67a80fd66255652ecdffddcb55c85babd7fdee27ffdfdf87a8a52f",
+      "bytes": 9267
+    },
+    {
+      "path": "domain/detection.h",
+      "sha256": "b8296bc910cfaf94984d438a5b1217f5962e228cde345519420374e679b0f621",
+      "bytes": 3926
+    },
+    {
+      "path": "domain/detection_postprocess.cpp",
+      "sha256": "1ad03fbe51856c3f4043bc9df0b2e6a1cd3422d837c4b56b80b233ceaabf027d",
+      "bytes": 30393
+    },
+    {
+      "path": "domain/detection_postprocess.h",
+      "sha256": "5ec7d10a2666b1948e756137e78837c5cc246d92ac0bf20e8a4f66b333c0d474",
+      "bytes": 5735
+    },
+    {
+      "path": "domain/detection_refined_fusion.cpp",
+      "sha256": "5ae74cf49f9ea4a337c7267857361aeb9a81b22c0b2b288683658149096cc4d8",
+      "bytes": 11741
+    },
+    {
+      "path": "domain/detection_refined_fusion.h",
+      "sha256": "6821530bcc2427a882b2fcae3047a32a8fe941aab934e96777d437823081e626",
+      "bytes": 2154
+    },
+    {
+      "path": "domain/detection_refinement.cpp",
+      "sha256": "4b5b1231a6eaa73502b76361ea78bd5f323750e8678e6e7202c4a3d1f4be089a",
+      "bytes": 49364
+    },
+    {
+      "path": "domain/detection_refinement.h",
+      "sha256": "9f4634be4dc637439cc55482790156fb14696c59e4f3b41ea9139f3bdba5e029",
+      "bytes": 8205
+    },
+    {
+      "path": "infrastructure/annotation_json.cpp",
+      "sha256": "ae2b7fa77e0f46b2183e40a527d3a708f0eccae2ad1447d9ce6df7ca12a8847c",
+      "bytes": 30807
+    },
+    {
+      "path": "infrastructure/annotation_json.h",
+      "sha256": "cdca253c5a510cba868c22d144cd4f95c2c791ae783316cf82adf4f21a705d11",
+      "bytes": 1020
+    },
+    {
+      "path": "infrastructure/detection_frequency_analysis.cpp",
+      "sha256": "13d2c93249595b33dc6bbb4ffb2372968d62fb248797526a5197afd457aa5b3a",
+      "bytes": 23175
+    },
+    {
+      "path": "infrastructure/detection_frequency_analysis.h",
+      "sha256": "1186b47b3b5c4fc709337d6eaa6c12d73e96da349192e727e37598f9adb8c78c",
+      "bytes": 2496
+    },
+    {
+      "path": "infrastructure/detection_model_backend.cpp",
+      "sha256": "8c08b3aebbb745a2bd802b25e176c130a734a4b654593995dcc0f7673bc627cd",
+      "bytes": 33302
+    },
+    {
+      "path": "infrastructure/detection_model_backend.h",
+      "sha256": "86ddb21761f03947b217bb7743eb91961ed21e893ed74efdabed9c8ba21e2f2a",
+      "bytes": 3037
+    },
+    {
+      "path": "infrastructure/detection_model_snapshot.cpp",
+      "sha256": "99e563b7e958e14acd3442d400e9a53682fe0c940d06aaab341448dbddc7131b",
+      "bytes": 2251
+    },
+    {
+      "path": "infrastructure/detection_model_snapshot.h",
+      "sha256": "ceec5bd06da855732f894e400393454c6ed1a55a6efa79a76c9935873831a306",
+      "bytes": 333
+    },
+    {
+      "path": "infrastructure/detection_projection.cpp",
+      "sha256": "b36bd47d8c22cb4dcf8445d7b389cf954edbc243883c766e9e275a7eec11de69",
+      "bytes": 20757
+    },
+    {
+      "path": "infrastructure/detection_projection.h",
+      "sha256": "82b9e49d4c866b7bb0674b7caf65a01dd2ea998592a14e91b2443e0f5731279f",
+      "bytes": 2159
+    },
+    {
+      "path": "infrastructure/detection_protocol.cpp",
+      "sha256": "a0229d89342220156aea73a10a78a9d5cacb5ae44949ee47b64b622a2639b704",
+      "bytes": 10919
+    },
+    {
+      "path": "infrastructure/detection_protocol.h",
+      "sha256": "b75b8114bf6a526787a99a77c3626163b9b1732e63beff05e71b89c43186d0bc",
+      "bytes": 1464
+    },
+    {
+      "path": "infrastructure/detection_refined_publication.cpp",
+      "sha256": "1ecbad4537280210e464e8437a26b6a1cbfe021e4fa8a76cdd4572fdcfefa2bf",
+      "bytes": 10621
+    },
+    {
+      "path": "infrastructure/detection_refined_publication.h",
+      "sha256": "4a3b055ce778c08313579e5308b41a8583e2fe5377aed3b618bc0fd646dba979",
+      "bytes": 363
+    },
+    {
+      "path": "infrastructure/detection_sample_energy.cpp",
+      "sha256": "35a3e2fc40a34938493f79a04243080f7fc73a98a659e445429d891f7b7947ee",
+      "bytes": 8896
+    },
+    {
+      "path": "infrastructure/detection_sample_energy.h",
+      "sha256": "105466ca77c2e82c340c8c4b93dc20a6139e6aaf4f60d8335b0fb5d77793a1e1",
+      "bytes": 1122
+    },
+    {
+      "path": "infrastructure/detection_source.cpp",
+      "sha256": "5fbb192c8e887f62319b2bc1141a3e86a7edf4900e39e8a0070f6cd14dce27dc",
+      "bytes": 26647
+    },
+    {
+      "path": "infrastructure/detection_source.h",
+      "sha256": "656ab0be5f9ee6a28e9ff5e4a726192427ee6a9491099179c7027fcec799d492",
+      "bytes": 4876
+    },
+    {
+      "path": "infrastructure/detection_store.cpp",
+      "sha256": "369676110b56df8049b71f386fe62ec0a3359fba8dbcf4dc5e5db6af2bec35ee",
+      "bytes": 48407
+    },
+    {
+      "path": "infrastructure/detection_store.h",
+      "sha256": "009c451a64c421cd1d958844c2f0dfc261259c4535a1b4f24b711d6ea32430a7",
+      "bytes": 2183
+    },
+    {
+      "path": "infrastructure/detection_task.cpp",
+      "sha256": "417494ecb2d70cf1e3b4db5faab6f4d47fd753b3c38b7586a5cacc6a432de6bf",
+      "bytes": 53319
+    },
+    {
+      "path": "infrastructure/detection_task.h",
+      "sha256": "67ab89a6cedec31c71795b01ba746eea1463efdc07f71dd8c021f161ecd2c4d7",
+      "bytes": 2228
+    },
+    {
+      "path": "infrastructure/detection_time_analysis.cpp",
+      "sha256": "7e05dc86747bd5a03ea9de6acfe4c56591cf45d829dc8b244936f2e3546c29aa",
+      "bytes": 16002
+    },
+    {
+      "path": "infrastructure/detection_time_analysis.h",
+      "sha256": "cc3b7f4aeb803c1377d7e5dddb629b895db3b6ca7962389ae3a56572019ea7fe",
+      "bytes": 710
+    },
+    {
+      "path": "infrastructure/detection_worker_client.cpp",
+      "sha256": "293f46efc6b1c06625031acb6c94cf8d6e5a72c7fede41fefc87c3b6f3ad0dee",
+      "bytes": 4849
+    },
+    {
+      "path": "infrastructure/detection_worker_client.h",
+      "sha256": "fdab0af24ab0c9c3bd723472a28ab2b131ecd61573adfa4b287fe74f6979ae29",
+      "bytes": 912
+    },
+    {
+      "path": "infrastructure/int16_iq_file.cpp",
+      "sha256": "88ffdab92c98473e7f65035b05b9a5df0219e5c485f94dd29062a9da9372e37e",
+      "bytes": 10255
+    },
+    {
+      "path": "infrastructure/wav_metadata.cpp",
+      "sha256": "dcb16c9b1f619cb8ea8751a9a87c7e64267d5e378f9020f4c5bb2ea026875a9b",
+      "bytes": 5304
+    },
+    {
+      "path": "out/tasks/wideband-detection/M4/assets/holdout/manifest.json",
+      "sha256": "8e5e88b84853123e0aed101fbfbdb70f5f3ba071ceafb070837b687633103d48",
+      "bytes": 100191
+    },
+    {
+      "path": "out/tasks/wideband-detection/M4/diagnostics/energy-configs/G-arbitrary.json",
+      "sha256": "20956e8c84a74bde7c5e121a055671ea7e0b5843a682d3856ac3d5d46922430d",
+      "bytes": 609
+    },
+    {
+      "path": "out/tasks/wideband-detection/M4/diagnostics/energy-configs/G-carrier1.json",
+      "sha256": "0bd840cbc954707a647acd950c6845a1024b9d780254f920f2d7e3422e15dbeb",
+      "bytes": 610
+    },
+    {
+      "path": "out/tasks/wideband-detection/M4/diagnostics/energy-configs/index.json",
+      "sha256": "610544ecbfcb8c915e90737a1d335360fb56e9686aba7317875746ff2c66d92a",
+      "bytes": 1048
+    },
+    {
+      "path": "out/tasks/wideband-detection/M4/diagnostics/energy-configs/T-short.json",
+      "sha256": "1b9819d7ac742d4459245f7449bcff06ffdfa33786834f463d83a4f292c63852",
+      "bytes": 607
+    },
+    {
+      "path": "out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+      "sha256": "dd3de623faf457c68be1447ef48ca9032dcb9837fe21ff7baea00236b44df6ba",
+      "bytes": 1351
+    },
+    {
+      "path": "tests/detection_refinement_tests.cpp",
+      "sha256": "dcdbf743c9373e50d444b5e0a5bfe7b9623d13605680fce7201d29071ae23b5c",
+      "bytes": 25933
+    },
+    {
+      "path": "tests/detection_sample_energy_tests.cpp",
+      "sha256": "9f01f8482fe8303c8102f66edd14db25868533926938d3d6047385938307f243",
+      "bytes": 14796
+    },
+    {
+      "path": "tests/detection_time_pipeline_tests.cpp",
+      "sha256": "57d250f01ba764283a041566b8c91c5a2196b959c16757fc93198c984300c371",
+      "bytes": 21889
+    },
+    {
+      "path": "tools/detection/model_controls.py",
+      "sha256": "1f3acde8fbcb4374bce73d2db3e2212cfbb48077c792ff8026b72570959b2b12",
+      "bytes": 8498
+    },
+    {
+      "path": "tools/detection/model_ffscn.py",
+      "sha256": "0405ccdab139f03e496b307495c71624d91cf182427eadd4374d5552b687d583",
+      "bytes": 10708
+    },
+    {
+      "path": "tools/detection/model_frequency_parity.py",
+      "sha256": "eff7a6849c70e11c6a5ef2caa5a754f7df5cbec7cf00b7438c84a6c284174681",
+      "bytes": 54397
+    },
+    {
+      "path": "tools/detection/model_pipeline_parity.py",
+      "sha256": "2f52c6d17e0177a972128cc9f783be74713c5654c6d47a9c7404e5ec96d9b2ce",
+      "bytes": 7428
+    },
+    {
+      "path": "tools/detection/model_probe.py",
+      "sha256": "d1fe6b19ee06d1d5a0658847fbe33487becc4170dc4fd5b4a9c7476f40c4c58d",
+      "bytes": 20524
+    },
+    {
+      "path": "tools/detection/time_energy_parity.py",
+      "sha256": "91927d8ff63c0d548094b6dc3e5de1bb19cccb644af119827c84f53e111af66a",
+      "bytes": 23086
+    },
+    {
+      "path": "tools/detection/time_evaluation.py",
+      "sha256": "f16c0ee852ef8cedc58a5c8ac6c61532d54fe004f9faeaa97d699a5546bc2390",
+      "bytes": 35144
+    },
+    {
+      "path": "tools/detection/time_holdout.py",
+      "sha256": "16d0fefd0dd7a28c8a0ec261f69f861239352b3d93110951629740738df1ab30",
+      "bytes": 22050
+    },
+    {
+      "path": "tools/detection/time_reference.py",
+      "sha256": "5f59e46d8ae6f28f991633e0eca7161620976194eaad47a9b4e644b5a6774291",
+      "bytes": 37440
+    },
+    {
+      "path": "tools/detection/time_suite.py",
+      "sha256": "c8dd975505733a5b4d600a55ac885108c7150a336d604e22468e90c9f6ed05e7",
+      "bytes": 42677
+    }
+  ]
+}

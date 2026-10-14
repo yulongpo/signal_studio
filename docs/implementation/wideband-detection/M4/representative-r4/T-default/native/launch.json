@@ -1,0 +1,42 @@
+{
+  "schema": "signalstudio-m4-stage-launch-v1",
+  "stage": "native",
+  "identity": {
+    "sample": {
+      "sampleId": "T00-00",
+      "group": "pure-noise",
+      "source": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T00-00.wav",
+        "sha256": "6a5d91565954af972f775997b0bdd4355436098b6bfea0b4a28a1766ebe5fbd9"
+      },
+      "truth": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T00-00.json",
+        "sha256": "f9984b017ca5d85ea930fdc02ac450fa713f1bbb4357f00b088ce6f4ad37ed33"
+      },
+      "sampleRateHz": 20000000,
+      "physicalSamples": "4000000",
+      "centerFrequencyHz": 2500000000.0,
+      "effectiveBandwidthHz": 20000000,
+      "expectedTruthEvents": 0
+    },
+    "strategy": "sample",
+    "shortProfile": false,
+    "semantics": "product-v2",
+    "executionFreezeSha256": "4d8985a72f2333dd53378f9195ade67b3889fd140a2fd2660340e927b3be66a6",
+    "nativeBinarySha256": "75b0354f4307ee85933eb090d756a4958563a9489c191a8857d5db2eb32b7f79",
+    "referenceSourceSha256": "5f59e46d8ae6f28f991633e0eca7161620976194eaad47a9b4e644b5a6774291",
+    "configuration": "Release",
+    "nativeWorkingBudgetBytes": 268435456,
+    "nativeEvidenceBudgetBytes": 134217728,
+    "referenceWorkingBudgetBytes": 2147483648
+  },
+  "command": [
+    "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionTimePipelineTests.exe",
+    "--file",
+    "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T00-00.wav",
+    "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-noise\\T-default\\T00-00\\native",
+    "sample"
+  ],
+  "startedAtUtc": "2026-10-14T02:28:17.771051+00:00",
+  "timeoutSeconds": 1500
+}

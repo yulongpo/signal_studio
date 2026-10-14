@@ -255,6 +255,15 @@ struct Capture {
       previousGenerations{};
 
   void waitForSettledDisplay() {
+    const auto* narrow = window.findChild<NarrowbandWorkspace*>();
+    if (narrow && narrow->isVisible()) {
+      require(waitUntil([narrow] { return narrow->visibleChartsSettled(); }),
+              "Visible narrowband charts did not settle for capture");
+      QTest::qWait(80);
+      require(narrow->visibleChartsSettled(),
+              "Narrowband resumed preview before capture");
+      return;
+    }
     require(waitUntil([this] { return plots[2]->isDisplaySettled(); }),
             "Main chart did not settle on the latest requested display");
     QTest::qWait(80);
@@ -263,6 +272,16 @@ struct Capture {
   }
 
   void waitForGpu() {
+    const auto* narrow = window.findChild<NarrowbandWorkspace*>();
+    if (narrow && narrow->isVisible()) {
+      require(waitUntil([narrow] {
+                return narrow->visibleChartsGpuReady() &&
+                       narrow->visibleCompletedFrames() > 0 &&
+                       narrow->visibleTextureUploads() > 0;
+              }),
+              "Visible narrowband charts lack hardware QRhi data frames");
+      return;
+    }
     require(waitUntil([this] {
               for (const auto* plot : plots)
                 if (!plot->gpuReady() || plot->completedFrameCount() == 0)

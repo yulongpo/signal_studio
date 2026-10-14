@@ -11,8 +11,8 @@
 | M1 统一标记与标签/WAV | 完成，自检通过 | 原生领域/命令、两类标签、v5、手动交互；Debug CTest 11/11、Qt UI 90/90 | 02aee9b |
 | M2 数据与任务链 | 完成，自检通过并提交 | 固定网格、worker、覆盖/取消/恢复；原型纠偏、15/15 CTest、94/94 UI、23原生场景 | cc103e3 |
 | /out 整理 | 完成，自检通过并提交 | 165项迁移/身份复核、3资产hash、Python契约/构建通过；目录规则及索引 | 9080162 |
-| M3 模型前向与关联 | 完成，自检通过，待本地提交 | 正式 FFSCN/SCN worker、L1/L2 与多窗频率 oracle；19/19 CTest、94/94 UI、25/25 原生场景；SPEC_PASS、QUALITY_PASS | 待本次节点提交 |
-| M4 精修、效果与复核 | 待 M3 | sample/ROI、二维效果、通道来源 | — |
+| M3 模型前向与关联 | 完成，自检通过并提交 | 正式 FFSCN/SCN worker、L1/L2 与多窗频率 oracle；19/19 CTest、94/94 UI、25/25 原生场景；SPEC_PASS、QUALITY_PASS | 6ed5ce0 |
+| M4 精修、效果与复核 | 完成，实现/自检/审查通过（代表性验证范围） | Debug/Release23/23、UI各94/94、原生34/34、2代表样本流程；SPEC/QUALITY通过，效果缺项保留；批量在M5后手动 | 本节点提交 |
 | M5 验收与交付 | 待 M4 | 原生第二屏、规模/异常、Debug/Release 部署 | — |
 | 远端推送 | 待全部节点完成 | 按用户指令最后统一推送 | — |
 
@@ -23,3 +23,23 @@ M1 annotation core 子代理因模型服务容量不足退出；已写入代码�
 用户进一步明确要求严格按节点执行：每个节点实现、自检通过、本地提交之后，才可进入下一节点。已经停止后续节点工作；此前提前产生的 M2/M3 草稿及 M4 接口隔离到被忽略的 `out/deferred-wideband/20261013/`，没有加入 M1 构建或提交范围。后续仅在前一节点提交后恢复对应节点。该隔离记录不代表后续节点完成或验收通过。
 
 M2提交后按用户要求整理`out/`：当前隔离草稿位于`out/tasks/wideband-detection/<node>/deferred/20261013/`，旧根日志归入各节点或历史feature目录；Python环境位于`out/toolchains/wideband-python/`。迁移索引及后续规则见`docs/architecture/output-layout.md`。M3必须在整理检查和本地提交完成后才恢复。
+
+M4 当前版本记录见 `M4/SELF_REVIEW_R3.md`。用户已确认参数 A；SCN 无效裕量控件例外、UI CTest 300→480 秒保护上限仍分别待确认，尚未改变。Debug 非 UI CTest 22/22、R3 修正范围 SPEC/QUALITY 通过；完整 220 对数值矩阵继续执行。ROI 实际门限及融合完整 seed durable 补验在 M4 独立目录构建、自检 2/2 通过，尚未改当前冻结运行版本。完整矩阵、最终 UI/原生及证据集成退出前不提交 M4、不进入 M5、不推送。
+
+最新：前四个 G scopes 共 40 对均已产生完整组报告。Sample、Coarse、Sample noSplit 未达到本配置 L3 门槛，ROI scoped 达到门槛；noSplit 原生 9 成功/1 原子 checkpoint 写入失败，失败按零预测与全部真值保留。ROI noSplit 及后续固定矩阵仍运行。evidence-r4 的实际门限/完整 seed/双重无活动回退草稿已完成 SPEC→QUALITY 和相关 2/2，自有 Release offscreen UI 94/94、原300秒预算57.93秒通过；canonical Debug 复查300.06秒仍超时。新写入错误诊断草稿仅隔离 store 1/1通过，正式故障根因未确认；草稿集成、新版原生与正式自检尚未完成。详见各 M4 报告，节点顺序与最终统一推送规则不变。
+
+IO 诊断及终态错误 UTF-8 预算增量草稿随后完成相关 4/4（5.57秒）及 SPEC→QUALITY v2 复审；修正操作后取错、相对路径摘要和多次追加的4096字节边界，保留原原因/最新失败及旧 manifest。它仍是隔离草稿，未变更当前 R3 输入、失败历史或矩阵口径；M4 最终集成/验收/提交的前置条件不变。
+
+矩阵进度更新：G/ROI noSplit 也完成全部10对，无失败、精确恢复；主 F1 双方 .7739534884、差与CI为0，达到本配置门槛。前五组共50对已归档，Coarse noSplit及后续T按原R3继续运行。次要策略成功不替代Sample主门槛，完整节点仍未完成。
+
+2026-10-14 用户批准两项建议：SCN 无效裕量控件例外与 UI CTest 480 秒保护上限。已应用对应 UI/CMake 修改，等待实际回归；不再等待这两项确认。R3 数值输入保持冻结，M4 其它草稿在固定矩阵结束后集成；M4 自检、复审、本地提交完成前不进入 M5。
+
+六个G scopes共60对已完成归档。Coarse noSplit 主 F1 原生 .1934883721、参考 .7795348837，335条未知观察与参考parent span政策保留，本配置未达门槛；其余次要配置和主配置分别见既有报告。T/default继续固定全96文件。获批SCN规则的Debug独立UI场景通过（3/3含init/cleanup，1931ms），canonical Debug Configure/Build通过。合并证据/IO草稿及获批UI规则的隔离最终候选，正在使用自身复制的 scripts/build.ps1 进行 Debug All；不替代之后canonical集成与最终原生验收。
+
+隔离候选 Debug All 已通过：23/23，470.48秒；Qt UI 94/94、0跳过，QtTest321.854秒/CTest322.17秒，保持获批480秒保护。日志已归档 M4/final-candidate-debug-all.txt 和 final-candidate-debug-ui.txt。获批UI三文件也已按SPEC→QUALITY通过。R3的61份仓库内冻结文本输入另存ZIP及逐文件SHA，便于后续代码演进后追溯；二进制/运行库仅在本机out快照，不把文本ZIP当完整构建包。当前仍待冻结矩阵结束、canonical集成/实际原生及最终自检复审，未提交M4。
+
+预退出 SPEC 对 M4 流程核对仅发现回退卡标题将实测粗回退描述为保留原观察支持。r5 七文件快照只改此标题为中性“精修回退”，原始/当前范围和时间依据仍显示保存证据；SPEC复核关闭该项，候选 Debug脚本重建及既有UI证据回环3/3通过。R3仍保持原输入，T默认长文件继续；最终主目录集成将采用 r5 而非旧标题版本，不以本预检查代替节点退出。
+
+2026-10-14 用户明确调整验证量：只选少量代表性文件验证功能/流程，批量数据验证在 M5 完成后交用户手动执行。已停止R3套件与自有子进程，停止前72输入完全一致；六G组60对和T/default62对已产生配对阶段记录，T07-06被本次决定中断，其余T未执行。原始失败/超时/分片均保留。r5七文件和IO-r2四文件已按审查身份集成主目录，开始自身 scripts/build.ps1 Debug All；最终自检/新版原生/节点复审和逐节点提交要求不变。当前口径见 M4/VALIDATION_SCOPE_DECISION.md。
+
+M4 最终主目录 Debug/Release All各23/23、UI各94/94，新版第二屏34/34原生旅程及两个代表性真实链路完成。最终SPEC_PASS、QUALITY_PASS，11集成文件、72当前执行输入、35native归档及7源码/runtime身份复核通过，原型22声明指纹一致。旧R3效果FAIL、写入失败、CLI期限及用户中断如实保留，不能把代表性流程成功当全量效果成功。详见 M4/FINAL_SELF_REVIEW.md；按节点完成本地提交后才进入M5。

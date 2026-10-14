@@ -73,6 +73,7 @@ class AnnotationEvidenceWidget final : public QWidget {
   QLabel* scoreDefinition_ = nullptr;
   QToolButton* rawToggle_ = nullptr;
   QPlainTextEdit* rawFields_ = nullptr;
+  QWidget* measuredTrace_ = nullptr;
   std::array<QLabel*, static_cast<std::size_t>(Fact::Count)> values_{};
   QByteArray displayKey_;
   std::shared_ptr<const OriginEvidence> displayedOrigin_;

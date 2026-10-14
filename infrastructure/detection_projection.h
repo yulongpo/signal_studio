@@ -9,6 +9,10 @@
 
 namespace signalstudio {
 
+// Keep existing short record IDs; hash longer seeds without losing the full
+// seed preserved in immutable track evidence.
+std::string detectionTrackRecordId(const std::string& seedId);
+
 // Replays the same durable candidate/mapping pairs used by the live task.
 // Frequency association never invents activity intervals from window support.
 class DetectionResultProjector {

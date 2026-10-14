@@ -1,0 +1,417 @@
+{
+  "scope": "G-no-split",
+  "plannedFiles": 10,
+  "selectedFiles": 10,
+  "pairs": [
+    {
+      "sampleId": "20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "native",
+        "finishedAtUtc": "2026-10-13T22:52:52.523758+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "resultSha256": "f9804af2bf30e84aeca7fa1ab8416ca96a58c44acf77a0ca761465e2be7b79ea",
+        "wallSeconds": 344.28804430004675,
+        "mainProcessPeakRssBytes": 212688896,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 1969
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      },
+      "reference": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "reference",
+        "finishedAtUtc": "2026-10-13T22:53:40.659375+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "resultSha256": "b1765fdf54124671845dd547e94047cbaeb72b91ea65d1db6cafa6943224f8d2",
+        "wallSeconds": 48.13071789999958,
+        "mainProcessPeakRssBytes": 2827485184,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 3353
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      }
+    },
+    {
+      "sampleId": "20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "native",
+        "finishedAtUtc": "2026-10-13T22:58:49.669078+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "resultSha256": "ffae21ef714ff4c49249f45ffe6376b06f87018b1840e58038da405cdafda85c",
+        "wallSeconds": 309.0029383000219,
+        "mainProcessPeakRssBytes": 151248896,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 1969
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      },
+      "reference": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "reference",
+        "finishedAtUtc": "2026-10-13T22:59:34.011037+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "resultSha256": "bd95c6723ab9c761f96d92b9b8bbffffd71d03344414671e6c51f0372efdb11e",
+        "wallSeconds": 44.338590600003954,
+        "mainProcessPeakRssBytes": 2160713728,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 2845
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      }
+    },
+    {
+      "sampleId": "20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "native",
+        "finishedAtUtc": "2026-10-13T23:02:19.116057+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "resultSha256": "3b7111d33b816dc80eef47175a714f63958ca21486a8001f02f914666ada2464",
+        "wallSeconds": 165.09148629999254,
+        "mainProcessPeakRssBytes": 147816448,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 1969
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      },
+      "reference": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "reference",
+        "finishedAtUtc": "2026-10-13T23:02:48.730077+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "resultSha256": "af60b5a5d714c0937f848a945c68c60602ce380827d2c02d08cac0decc13d508",
+        "wallSeconds": 29.607865100027993,
+        "mainProcessPeakRssBytes": 2599739392,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 2813
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      }
+    },
+    {
+      "sampleId": "20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "native",
+        "finishedAtUtc": "2026-10-13T23:07:39.321624+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "resultSha256": "4c07c6535a8098c20b12886031b6591558e61eab31a1ee81738dda9009bba189",
+        "wallSeconds": 290.58321820001584,
+        "mainProcessPeakRssBytes": 152973312,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 1969
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      },
+      "reference": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "reference",
+        "finishedAtUtc": "2026-10-13T23:08:19.799610+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "resultSha256": "426d925598fe487732e90d041985c0282d5d35389a50dfe0debdc492f424dfa6",
+        "wallSeconds": 40.473502799985,
+        "mainProcessPeakRssBytes": 2861387776,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 3493
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      }
+    },
+    {
+      "sampleId": "20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "native",
+        "finishedAtUtc": "2026-10-13T23:12:29.554594+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "resultSha256": "53d8ab5fdd718d6ca88570821c532a6a69cb928454fa74a444596dd1afd3bc2c",
+        "wallSeconds": 249.74908239999786,
+        "mainProcessPeakRssBytes": 149860352,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 1969
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      },
+      "reference": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "reference",
+        "finishedAtUtc": "2026-10-13T23:13:05.629333+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "resultSha256": "75859c90f1f1166f219748e51fce29f5c71212075a93d044e9d18f947a39eac5",
+        "wallSeconds": 36.070821100031026,
+        "mainProcessPeakRssBytes": 2446397440,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 3369
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      }
+    },
+    {
+      "sampleId": "20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "native",
+        "finishedAtUtc": "2026-10-13T23:16:49.887860+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "resultSha256": "307380fb0a9337a75db3159e4a87b0df57c1c46f9f8a4d711afe3574f2e99882",
+        "wallSeconds": 224.24938410002505,
+        "mainProcessPeakRssBytes": 150753280,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 1969
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      },
+      "reference": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "reference",
+        "finishedAtUtc": "2026-10-13T23:17:24.864802+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "resultSha256": "5f374a1e2a4ebe7c3a02df5bdeca39b0b503ce797d511e5b43594eaeb4cae096",
+        "wallSeconds": 34.972250399994664,
+        "mainProcessPeakRssBytes": 2338856960,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 2907
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      }
+    },
+    {
+      "sampleId": "20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "native",
+        "finishedAtUtc": "2026-10-13T23:17:54.259103+00:00",
+        "returnCode": 1,
+        "timedOut": false,
+        "failed": true,
+        "reason": "result-not-complete",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "resultSha256": "364a3d860e2d3a586d9658f8c99102643add6b363a5b5ec01766a404a2216b96",
+        "wallSeconds": 29.385143399995286,
+        "mainProcessPeakRssBytes": 49061888,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 1969
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      },
+      "reference": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "reference",
+        "finishedAtUtc": "2026-10-13T23:18:21.186164+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "resultSha256": "8fdb7b7f44e9c89d4f552d67baa06645c54f41e58fd9defcd22c1e9bbc5b4fa0",
+        "wallSeconds": 26.924304599990137,
+        "mainProcessPeakRssBytes": 2758397952,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 2813
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      }
+    },
+    {
+      "sampleId": "20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "native",
+        "finishedAtUtc": "2026-10-13T23:22:13.875621+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "resultSha256": "326c72441f28e47502b90a995822bc2a80dff6f7a83d4856117c59b9404d9731",
+        "wallSeconds": 232.67819730000338,
+        "mainProcessPeakRssBytes": 149307392,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 1969
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      },
+      "reference": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "reference",
+        "finishedAtUtc": "2026-10-13T23:22:47.826200+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "resultSha256": "40cde0b7054789d34a3011a4341b0ce1478b564134af9a0c785b10dab942b658",
+        "wallSeconds": 33.94726469996385,
+        "mainProcessPeakRssBytes": 2277998592,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 2813
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      }
+    },
+    {
+      "sampleId": "20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "native",
+        "finishedAtUtc": "2026-10-13T23:27:16.026333+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "resultSha256": "70569fc855975fb1fcea2ce1c9824cd64ddccacbda2a30abc915a50b0a2f9cc0",
+        "wallSeconds": 268.1924158000038,
+        "mainProcessPeakRssBytes": 150437888,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 1969
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      },
+      "reference": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "reference",
+        "finishedAtUtc": "2026-10-13T23:27:52.492558+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "resultSha256": "23f3a6dafaa34a42c0fffe807d39a9b4855556adc4944a09da8e856115698a85",
+        "wallSeconds": 36.462155600020196,
+        "mainProcessPeakRssBytes": 2411839488,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 2813
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      }
+    },
+    {
+      "sampleId": "20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "native",
+        "finishedAtUtc": "2026-10-13T23:31:11.161404+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "resultSha256": "935b5ba973b884f77d12ba93366ad8526b26db55d5af3ffa7dbacc0d3e396c46",
+        "wallSeconds": 198.65573300002143,
+        "mainProcessPeakRssBytes": 148987904,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 1969
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      },
+      "reference": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "reference",
+        "finishedAtUtc": "2026-10-13T23:31:46.259286+00:00",
+        "returnCode": 0,
+        "timedOut": false,
+        "failed": false,
+        "reason": "",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "resultSha256": "898da7659444c385735dbe64eb1fc9e3613353532097aa44d99333a5f1e4daf2",
+        "wallSeconds": 35.09354789997451,
+        "mainProcessPeakRssBytes": 2117799936,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 2931
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      }
+    }
+  ]
+}

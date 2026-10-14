@@ -1,0 +1,520 @@
+{
+  "schema": "signalstudio-same-source-energy-parity-v1",
+  "pass": false,
+  "scope": "one exact physical source ROI and declared RF band; not full M4 model/effect gate",
+  "sourceKind": "generated-IQ-not-real-RF",
+  "freezePath": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\execution-freeze-r3-release.json",
+  "freezeSha256": "7e2d9fa220e766be60fd5ece80aed79c66749e09ae2821b22baff4269ab6ad8a",
+  "config": {
+    "schema": "signalstudio-sample-energy-parity-config-v1",
+    "startSample": "0",
+    "endSample": "800000",
+    "sampleRateHz": 20000000,
+    "centerFrequencyHz": 2500000000,
+    "bandRFHz": {
+      "lowerHz": 2501450000.0,
+      "upperHz": 2501550000.0
+    },
+    "smoothSeconds": 0.0001,
+    "sampleEdgeRatio": 0.6,
+    "minOnSeconds": 0.0005,
+    "minOffSeconds": 0.001,
+    "splitBursts": true,
+    "windowCoverage": 0,
+    "referenceSemantics": "product-v2",
+    "sourceKind": "generated-IQ-not-real-RF",
+    "selection": "fixed before outcomes; scoped physical support and RF band, not model-selected events"
+  },
+  "configSha256": "1b9819d7ac742d4459245f7449bcff06ffdfa33786834f463d83a4f292c63852",
+  "nativeReport": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\native\\native-energy.json",
+  "nativeReportSha256": "8a33f918d1d266183c6e9373416b8b955af7ac7e48ca6a52b645657245b0e2bd",
+  "protocolSha256": "8db8fd328d865f99ca3b30a1ee7fb39b50000b21d6a46f5d1d15a07ffc794a51",
+  "sourceSha256": "3ac2edc11dcdebcc9ed0ae02adba93eb1666021101c4196f1dc90d112750cac3",
+  "device": "cuda:0",
+  "torchVersion": "2.12.0+cu132",
+  "numpyVersion": "2.4.4",
+  "workingByteBudget": "268435456",
+  "estimatedLiveWorkingBytes": "104529152",
+  "budgetDefinition": "conservative array/scratch estimate excluding process/runtime baseline; not an OS hard RSS limit",
+  "cudaPeakAllocatedBytes": "48800256",
+  "elapsedSeconds": 1.327113899984397,
+  "support": {
+    "startSample": "0",
+    "endSample": "800000",
+    "fftSamples": "800000",
+    "sourceStepSamples": "1",
+    "sampleRateHz": 20000000,
+    "relativeCenterHz": 1500000.0,
+    "bandwidthHz": 100000.0,
+    "smoothingSamples": "2000",
+    "leftZeroPaddingSamples": "1999"
+  },
+  "numericalVersions": {
+    "energy": "cpu-exact-length-complex64-raised-cosine-fft-v1",
+    "nativeSmoothing": "f64-causal-rolling-f32-storage",
+    "referenceSmoothing": "frozen-torch-float32-cumsum",
+    "referenceSemantics": "product-v2"
+  },
+  "arrays": {
+    "power": {
+      "samples": "800000",
+      "atol": 1e-07,
+      "rtol": 0.001,
+      "maxAbs": 5.587935447692871e-09,
+      "maxAbsLocalSample": "80385",
+      "meanAbs": 1.571083546494153e-10,
+      "p50Abs": 1.0186340659856796e-10,
+      "p95Abs": 4.656612873077393e-10,
+      "p99Abs": 8.149072527885437e-10,
+      "maxToleranceRatio": 0.003192858096350265,
+      "overToleranceCount": 0,
+      "firstViolationLocalSamples": [],
+      "signedDifference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\reference\\power.signed-diff.f64",
+        "dtype": "float64-little-endian",
+        "sha256": "128363987a9fa5cd8706bc801e9f04b3f0aae065f902faf1c0b8695f6a5a954e"
+      },
+      "violationIndices": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\reference\\power.violations.u64",
+        "dtype": "uint64-little-endian",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "smoothed": {
+      "samples": "800000",
+      "atol": 1e-07,
+      "rtol": 0.001,
+      "maxAbs": 1.5489058569073677e-07,
+      "maxAbsLocalSample": "760900",
+      "meanAbs": 8.965634428115265e-09,
+      "p50Abs": 5.617039278149605e-09,
+      "p95Abs": 2.9045622795820236e-08,
+      "p99Abs": 5.0495145842432976e-08,
+      "maxToleranceRatio": 0.5145536731803173,
+      "overToleranceCount": 0,
+      "firstViolationLocalSamples": [],
+      "signedDifference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\reference\\smoothed.signed-diff.f64",
+        "dtype": "float64-little-endian",
+        "sha256": "8f4c281154e1c1261fa40defc2e6cc99d6f8f6157c041d5bffdf60a47e68c40b"
+      },
+      "violationIndices": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\reference\\smoothed.violations.u64",
+        "dtype": "uint64-little-endian",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "same-native-power-smoothing": {
+      "samples": "800000",
+      "atol": 1e-07,
+      "rtol": 0.001,
+      "maxAbs": 1.4665420167148113e-07,
+      "maxAbsLocalSample": "746378",
+      "meanAbs": 9.593961376364036e-09,
+      "p50Abs": 6.315531209111214e-09,
+      "p95Abs": 2.981687430292368e-08,
+      "p99Abs": 5.0495145842432976e-08,
+      "maxToleranceRatio": 0.4760372738035335,
+      "overToleranceCount": 0,
+      "firstViolationLocalSamples": [],
+      "signedDifference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\reference\\same-native-power-smoothing.signed-diff.f64",
+        "dtype": "float64-little-endian",
+        "sha256": "9f4ac0be34ac01a1b00dded525b7b659a9d113210c67a6f6d8c27f4e14e3e1df"
+      },
+      "violationIndices": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\reference\\same-native-power-smoothing.violations.u64",
+        "dtype": "uint64-little-endian",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "referenceAndMaskArtifacts": {
+    "reference-power": {
+      "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\reference\\reference-power.f32",
+      "dtype": "float32-little-endian",
+      "samples": "800000",
+      "sha256": "14acddd1b3f92dc666be3795f314665627a41b57bddf2fdecaeb59571644369c"
+    },
+    "reference-smoothed": {
+      "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\reference\\reference-smoothed.f32",
+      "dtype": "float32-little-endian",
+      "samples": "800000",
+      "sha256": "948bd0d0074395bd97b5223dfb262e0c8d6ce6f56b8882c518aa5079ad4c7ba9"
+    },
+    "native-mask": {
+      "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\reference\\native-mask.u8",
+      "dtype": "uint8-one-value-per-source-sample",
+      "samples": "800000",
+      "sha256": "20bfef2ecc7649f1b40bacd3331899450183fb88aba82ac4f4e03b02a6517f69",
+      "diagnosticOnlyAfterProductionFallback": false
+    },
+    "reference-mask": {
+      "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\reference\\reference-mask.u8",
+      "dtype": "uint8-one-value-per-source-sample",
+      "samples": "800000",
+      "sha256": "1455cfff7f8a8d657f06b85f77bdccf01566850039abcea6cb8a40221d57dd0c",
+      "diagnosticOnlyAfterProductionFallback": false
+    }
+  },
+  "nativeRollingMirrorExact": true,
+  "nativeProductionDecisionMirrorChecks": {
+    "noise": true,
+    "burst": true,
+    "status": true,
+    "fallbackReason": true,
+    "segments": true,
+    "minOnSamples": true,
+    "minOffSamples": true,
+    "threshold": true,
+    "comparisonThreshold": true,
+    "onFraction": true
+  },
+  "scalarDiagnostics": {
+    "noise": {
+      "native": 0.00011375280882930383,
+      "reference": 0.00011375427129678428,
+      "absError": 1.4624674804508686e-09,
+      "limit": 2.1375427129678428e-07,
+      "withinTolerance": true
+    },
+    "burst": {
+      "native": 0.0002929992333520204,
+      "reference": 0.0002929992915596813,
+      "absError": 5.820766091346741e-11,
+      "limit": 3.929992915596813e-07,
+      "withinTolerance": true
+    },
+    "threshold": {
+      "native": 0.00022130066354293377,
+      "reference": 0.00022130128345452247,
+      "absError": 6.199115886959018e-10,
+      "limit": 3.213012834545225e-07,
+      "withinTolerance": true
+    },
+    "comparisonThreshold": {
+      "native": 0.0002213006664533168,
+      "reference": 0.0002213012776337564,
+      "absError": 6.111804395914078e-10,
+      "limit": 3.213012776337564e-07,
+      "withinTolerance": true
+    }
+  },
+  "nativeProduction": {
+    "burst": 0.0002929992333520204,
+    "comparisonThreshold": 0.0002213006664533168,
+    "continuousTrack": false,
+    "durationParametersApplied": true,
+    "effectiveEdgeRatio": 0.6,
+    "energyMethod": "cpu-exact-length-complex64-raised-cosine-fft-v1",
+    "fallbackReason": "",
+    "minOffSamples": "20000",
+    "minOnSamples": "10000",
+    "noise": 0.00011375280882930383,
+    "numericalVersion": "signalstudio-refinement-m0p-parameters-v2",
+    "onFraction": 0.82541125,
+    "segments": [
+      {
+        "endSample": "161581",
+        "startSample": "24781"
+      },
+      {
+        "endSample": "228613",
+        "startSample": "192351"
+      },
+      {
+        "endSample": "290697",
+        "startSample": "276533"
+      },
+      {
+        "endSample": "357052",
+        "startSample": "345043"
+      },
+      {
+        "endSample": "448363",
+        "startSample": "384771"
+      },
+      {
+        "endSample": "512289",
+        "startSample": "499528"
+      },
+      {
+        "endSample": "664422",
+        "startSample": "558367"
+      },
+      {
+        "endSample": "775619",
+        "startSample": "762664"
+      }
+    ],
+    "smoothedExport": "same arithmetic loop as domain refinement",
+    "smoothingNumericalVersion": "native-f64-causal-rolling-f32-storage-v1",
+    "smoothingSamples": "2000",
+    "splittingApplied": true,
+    "status": "applied",
+    "threshold": 0.00022130066354293377
+  },
+  "nativeFromFullSmoothedDiagnostic": {
+    "noise": 0.00011375280882930383,
+    "burst": 0.0002929992333520204,
+    "threshold": 0.00022130066354293377,
+    "comparisonThreshold": 0.0002213006664533168,
+    "effectiveEdgeRatio": 0.6,
+    "onFraction": 0.82541125,
+    "minOnSamples": "10000",
+    "minOffSamples": "20000",
+    "continuousTrack": false,
+    "splittingApplied": true,
+    "status": "applied",
+    "fallbackReason": "",
+    "diagnosticMaskAvailableBeforeFallback": true,
+    "maskSha256": "0b2bf5045cbed88ab7bea047a5effaa694c452fafb26adc97dc11c88fb8ca037",
+    "rawIntegerRuns": [
+      [
+        "24781",
+        "161581"
+      ],
+      [
+        "192351",
+        "228613"
+      ],
+      [
+        "276533",
+        "290697"
+      ],
+      [
+        "345043",
+        "357052"
+      ],
+      [
+        "384771",
+        "448363"
+      ],
+      [
+        "499528",
+        "512289"
+      ],
+      [
+        "558367",
+        "664422"
+      ],
+      [
+        "762664",
+        "775619"
+      ]
+    ],
+    "segments": [
+      {
+        "startSample": "24781",
+        "endSample": "161581"
+      },
+      {
+        "startSample": "192351",
+        "endSample": "228613"
+      },
+      {
+        "startSample": "276533",
+        "endSample": "290697"
+      },
+      {
+        "startSample": "345043",
+        "endSample": "357052"
+      },
+      {
+        "startSample": "384771",
+        "endSample": "448363"
+      },
+      {
+        "startSample": "499528",
+        "endSample": "512289"
+      },
+      {
+        "startSample": "558367",
+        "endSample": "664422"
+      },
+      {
+        "startSample": "762664",
+        "endSample": "775619"
+      }
+    ]
+  },
+  "reference": {
+    "noise": 0.00011375427129678428,
+    "burst": 0.0002929992915596813,
+    "threshold": 0.00022130128345452247,
+    "comparisonThreshold": 0.0002213012776337564,
+    "effectiveEdgeRatio": 0.6,
+    "onFraction": 0.8254,
+    "minOnSamples": "10000",
+    "minOffSamples": "20000",
+    "continuousTrack": false,
+    "splittingApplied": true,
+    "status": "applied",
+    "fallbackReason": "",
+    "diagnosticMaskAvailableBeforeFallback": true,
+    "maskSha256": "73e659f99565605e17516531b6e14834dc4ff69d6703ea598ff5ceec869e62d7",
+    "rawIntegerRuns": [
+      [
+        "24781",
+        "161581"
+      ],
+      [
+        "192351",
+        "228613"
+      ],
+      [
+        "276533",
+        "290697"
+      ],
+      [
+        "345043",
+        "357052"
+      ],
+      [
+        "384771",
+        "448363"
+      ],
+      [
+        "499528",
+        "512289"
+      ],
+      [
+        "558367",
+        "664422"
+      ],
+      [
+        "762664",
+        "775618"
+      ]
+    ],
+    "segments": [
+      {
+        "startSample": "24781",
+        "endSample": "161581"
+      },
+      {
+        "startSample": "192351",
+        "endSample": "228613"
+      },
+      {
+        "startSample": "276533",
+        "endSample": "290697"
+      },
+      {
+        "startSample": "345043",
+        "endSample": "357052"
+      },
+      {
+        "startSample": "384771",
+        "endSample": "448363"
+      },
+      {
+        "startSample": "499528",
+        "endSample": "512289"
+      },
+      {
+        "startSample": "558367",
+        "endSample": "664422"
+      },
+      {
+        "startSample": "762664",
+        "endSample": "775618"
+      }
+    ]
+  },
+  "mask": {
+    "exact": false,
+    "differentSamplesOwnThresholds": 25,
+    "differentSamplesReferenceThreshold": 25,
+    "nearThresholdReferenceSamples": 4052,
+    "noncriticalDifferentSamples": 0,
+    "criticalDefinition": "distance to reference comparison threshold <= pre-frozen value tolerance plus pre-frozen threshold tolerance; diagnostic only",
+    "firstMismatchSourceSamples": [
+      "64884",
+      "183694",
+      "190132",
+      "255976",
+      "398840",
+      "427228",
+      "462867",
+      "494916",
+      "512359",
+      "522139",
+      "541683",
+      "541792",
+      "547160",
+      "550492",
+      "557843",
+      "570900",
+      "589320",
+      "623531",
+      "735209",
+      "745272",
+      "775618",
+      "781801",
+      "785951",
+      "786357",
+      "789767"
+    ],
+    "allMismatchLocalIndicesPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\reference\\mask-mismatch-local-samples.u64",
+    "allMismatchLocalIndicesSha256": "c842b1b6a19340ca6a21cc0c3603caf6cbbb289103ec97f5f804ee67612caccd"
+  },
+  "edges": {
+    "nativeCount": 8,
+    "referenceCount": 8,
+    "equalCount": true,
+    "exactIntegerEndpoints": false,
+    "orderedPairsOnlyIfEqualCount": [
+      {
+        "startSignedErrorSamples": "0",
+        "endSignedErrorSamples": "0",
+        "startSignedErrorSeconds": 0.0,
+        "endSignedErrorSeconds": 0.0
+      },
+      {
+        "startSignedErrorSamples": "0",
+        "endSignedErrorSamples": "0",
+        "startSignedErrorSeconds": 0.0,
+        "endSignedErrorSeconds": 0.0
+      },
+      {
+        "startSignedErrorSamples": "0",
+        "endSignedErrorSamples": "0",
+        "startSignedErrorSeconds": 0.0,
+        "endSignedErrorSeconds": 0.0
+      },
+      {
+        "startSignedErrorSamples": "0",
+        "endSignedErrorSamples": "0",
+        "startSignedErrorSeconds": 0.0,
+        "endSignedErrorSeconds": 0.0
+      },
+      {
+        "startSignedErrorSamples": "0",
+        "endSignedErrorSamples": "0",
+        "startSignedErrorSeconds": 0.0,
+        "endSignedErrorSeconds": 0.0
+      },
+      {
+        "startSignedErrorSamples": "0",
+        "endSignedErrorSamples": "0",
+        "startSignedErrorSeconds": 0.0,
+        "endSignedErrorSeconds": 0.0
+      },
+      {
+        "startSignedErrorSamples": "0",
+        "endSignedErrorSamples": "0",
+        "startSignedErrorSeconds": 0.0,
+        "endSignedErrorSeconds": 0.0
+      },
+      {
+        "startSignedErrorSamples": "0",
+        "endSignedErrorSamples": "1",
+        "startSignedErrorSeconds": 0.0,
+        "endSignedErrorSeconds": 5e-08
+      }
+    ]
+  },
+  "statusAndReasonExact": true,
+  "equivalenceClaim": "not equivalent under frozen scoped checks"
+}

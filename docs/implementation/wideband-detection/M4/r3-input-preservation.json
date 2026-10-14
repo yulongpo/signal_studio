@@ -1,0 +1,493 @@
+{
+  "schema": "signalstudio-m4-r3-preserved-v1",
+  "createdUtc": "2026-10-13T23:32:36.847982+00:00",
+  "reason": "Preserve frozen source and binary identities before final evidence-only M4 integration; running R3 suite remains unchanged",
+  "freezeSha256": "7e2d9fa220e766be60fd5ece80aed79c66749e09ae2821b22baff4269ab6ad8a",
+  "allFrozenFilesVerified": 72,
+  "repositoryFilesPreserved": 69,
+  "files": [
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\generator-freeze.json",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\docs\\implementation\\wideband-detection\\M4\\generator-freeze.json",
+      "path": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\generator-freeze.json",
+      "bytes": 276513,
+      "sha256": "6c6158119f11ec61b085ffd39b99cbc2c44feb03bf5371f4a38d5dc8ffec855c"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\input-manifest.json",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\docs\\implementation\\wideband-detection\\M4\\input-manifest.json",
+      "path": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\input-manifest.json",
+      "bytes": 42206,
+      "sha256": "0ce9a7cfc3d78c2c460e85a46fa7d547525194ea276ece639f076ab312037dab"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\PARAMETER_DECISION.md",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\docs\\implementation\\wideband-detection\\M4\\PARAMETER_DECISION.md",
+      "path": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\PARAMETER_DECISION.md",
+      "bytes": 3472,
+      "sha256": "ff050dd1b73bb60efbbf1f63789c455f85a75c3f960c1a20b4885bdfd71abc68"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\validation-protocol.json",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\docs\\implementation\\wideband-detection\\M4\\validation-protocol.json",
+      "path": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\validation-protocol.json",
+      "bytes": 7439,
+      "sha256": "8db8fd328d865f99ca3b30a1ee7fb39b50000b21d6a46f5d1d15a07ffc794a51"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\domain\\annotation.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\domain\\annotation.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\domain\\annotation.cpp",
+      "bytes": 12663,
+      "sha256": "f8f3751b4e8a23b5d9ff7bbbebef35ab88a8235190d199961e4bf0cb85c7ede4"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\domain\\annotation.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\domain\\annotation.h",
+      "path": "D:\\project\\signal_studio_rebuild\\domain\\annotation.h",
+      "bytes": 6941,
+      "sha256": "c1db0624d08128d1a95e6303eebab59e2ddd871ef79fdddbf3dba86589b71bdb"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\domain\\detection.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\domain\\detection.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\domain\\detection.cpp",
+      "bytes": 9267,
+      "sha256": "c32dd6052d67a80fd66255652ecdffddcb55c85babd7fdee27ffdfdf87a8a52f"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\domain\\detection.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\domain\\detection.h",
+      "path": "D:\\project\\signal_studio_rebuild\\domain\\detection.h",
+      "bytes": 3926,
+      "sha256": "b8296bc910cfaf94984d438a5b1217f5962e228cde345519420374e679b0f621"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\domain\\detection_postprocess.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\domain\\detection_postprocess.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\domain\\detection_postprocess.cpp",
+      "bytes": 30393,
+      "sha256": "1ad03fbe51856c3f4043bc9df0b2e6a1cd3422d837c4b56b80b233ceaabf027d"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\domain\\detection_postprocess.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\domain\\detection_postprocess.h",
+      "path": "D:\\project\\signal_studio_rebuild\\domain\\detection_postprocess.h",
+      "bytes": 5735,
+      "sha256": "5ec7d10a2666b1948e756137e78837c5cc246d92ac0bf20e8a4f66b333c0d474"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\domain\\detection_refined_fusion.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\domain\\detection_refined_fusion.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\domain\\detection_refined_fusion.cpp",
+      "bytes": 11741,
+      "sha256": "5ae74cf49f9ea4a337c7267857361aeb9a81b22c0b2b288683658149096cc4d8"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\domain\\detection_refined_fusion.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\domain\\detection_refined_fusion.h",
+      "path": "D:\\project\\signal_studio_rebuild\\domain\\detection_refined_fusion.h",
+      "bytes": 2154,
+      "sha256": "6821530bcc2427a882b2fcae3047a32a8fe941aab934e96777d437823081e626"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\domain\\detection_refinement.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\domain\\detection_refinement.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\domain\\detection_refinement.cpp",
+      "bytes": 49364,
+      "sha256": "4b5b1231a6eaa73502b76361ea78bd5f323750e8678e6e7202c4a3d1f4be089a"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\domain\\detection_refinement.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\domain\\detection_refinement.h",
+      "path": "D:\\project\\signal_studio_rebuild\\domain\\detection_refinement.h",
+      "bytes": 8205,
+      "sha256": "9f4634be4dc637439cc55482790156fb14696c59e4f3b41ea9139f3bdba5e029"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\annotation_json.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\annotation_json.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\annotation_json.cpp",
+      "bytes": 30807,
+      "sha256": "ae2b7fa77e0f46b2183e40a527d3a708f0eccae2ad1447d9ce6df7ca12a8847c"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\annotation_json.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\annotation_json.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\annotation_json.h",
+      "bytes": 1020,
+      "sha256": "cdca253c5a510cba868c22d144cd4f95c2c791ae783316cf82adf4f21a705d11"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_frequency_analysis.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_frequency_analysis.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_frequency_analysis.cpp",
+      "bytes": 23175,
+      "sha256": "13d2c93249595b33dc6bbb4ffb2372968d62fb248797526a5197afd457aa5b3a"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_frequency_analysis.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_frequency_analysis.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_frequency_analysis.h",
+      "bytes": 2496,
+      "sha256": "1186b47b3b5c4fc709337d6eaa6c12d73e96da349192e727e37598f9adb8c78c"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_model_backend.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_model_backend.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_model_backend.cpp",
+      "bytes": 33302,
+      "sha256": "8c08b3aebbb745a2bd802b25e176c130a734a4b654593995dcc0f7673bc627cd"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_model_backend.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_model_backend.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_model_backend.h",
+      "bytes": 3037,
+      "sha256": "86ddb21761f03947b217bb7743eb91961ed21e893ed74efdabed9c8ba21e2f2a"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_model_snapshot.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_model_snapshot.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_model_snapshot.cpp",
+      "bytes": 2251,
+      "sha256": "99e563b7e958e14acd3442d400e9a53682fe0c940d06aaab341448dbddc7131b"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_model_snapshot.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_model_snapshot.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_model_snapshot.h",
+      "bytes": 333,
+      "sha256": "ceec5bd06da855732f894e400393454c6ed1a55a6efa79a76c9935873831a306"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_projection.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_projection.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_projection.cpp",
+      "bytes": 20757,
+      "sha256": "b36bd47d8c22cb4dcf8445d7b389cf954edbc243883c766e9e275a7eec11de69"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_projection.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_projection.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_projection.h",
+      "bytes": 2159,
+      "sha256": "82b9e49d4c866b7bb0674b7caf65a01dd2ea998592a14e91b2443e0f5731279f"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_protocol.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_protocol.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_protocol.cpp",
+      "bytes": 10919,
+      "sha256": "a0229d89342220156aea73a10a78a9d5cacb5ae44949ee47b64b622a2639b704"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_protocol.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_protocol.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_protocol.h",
+      "bytes": 1464,
+      "sha256": "b75b8114bf6a526787a99a77c3626163b9b1732e63beff05e71b89c43186d0bc"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_refined_publication.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_refined_publication.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_refined_publication.cpp",
+      "bytes": 10621,
+      "sha256": "1ecbad4537280210e464e8437a26b6a1cbfe021e4fa8a76cdd4572fdcfefa2bf"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_refined_publication.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_refined_publication.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_refined_publication.h",
+      "bytes": 363,
+      "sha256": "4a3b055ce778c08313579e5308b41a8583e2fe5377aed3b618bc0fd646dba979"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_sample_energy.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_sample_energy.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_sample_energy.cpp",
+      "bytes": 8896,
+      "sha256": "35a3e2fc40a34938493f79a04243080f7fc73a98a659e445429d891f7b7947ee"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_sample_energy.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_sample_energy.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_sample_energy.h",
+      "bytes": 1122,
+      "sha256": "105466ca77c2e82c340c8c4b93dc20a6139e6aaf4f60d8335b0fb5d77793a1e1"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_source.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_source.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_source.cpp",
+      "bytes": 26647,
+      "sha256": "5fbb192c8e887f62319b2bc1141a3e86a7edf4900e39e8a0070f6cd14dce27dc"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_source.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_source.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_source.h",
+      "bytes": 4876,
+      "sha256": "656ab0be5f9ee6a28e9ff5e4a726192427ee6a9491099179c7027fcec799d492"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_store.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_store.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_store.cpp",
+      "bytes": 48407,
+      "sha256": "369676110b56df8049b71f386fe62ec0a3359fba8dbcf4dc5e5db6af2bec35ee"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_store.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_store.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_store.h",
+      "bytes": 2183,
+      "sha256": "009c451a64c421cd1d958844c2f0dfc261259c4535a1b4f24b711d6ea32430a7"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_task.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_task.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_task.cpp",
+      "bytes": 53319,
+      "sha256": "417494ecb2d70cf1e3b4db5faab6f4d47fd753b3c38b7586a5cacc6a432de6bf"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_task.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_task.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_task.h",
+      "bytes": 2228,
+      "sha256": "67ab89a6cedec31c71795b01ba746eea1463efdc07f71dd8c021f161ecd2c4d7"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_time_analysis.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_time_analysis.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_time_analysis.cpp",
+      "bytes": 16002,
+      "sha256": "7e05dc86747bd5a03ea9de6acfe4c56591cf45d829dc8b244936f2e3546c29aa"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_time_analysis.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_time_analysis.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_time_analysis.h",
+      "bytes": 710,
+      "sha256": "cc3b7f4aeb803c1377d7e5dddb629b895db3b6ca7962389ae3a56572019ea7fe"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_worker_client.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_worker_client.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_worker_client.cpp",
+      "bytes": 4849,
+      "sha256": "293f46efc6b1c06625031acb6c94cf8d6e5a72c7fede41fefc87c3b6f3ad0dee"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_worker_client.h",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\detection_worker_client.h",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\detection_worker_client.h",
+      "bytes": 912,
+      "sha256": "fdab0af24ab0c9c3bd723472a28ab2b131ecd61573adfa4b287fe74f6979ae29"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\int16_iq_file.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\int16_iq_file.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\int16_iq_file.cpp",
+      "bytes": 10255,
+      "sha256": "88ffdab92c98473e7f65035b05b9a5df0219e5c485f94dd29062a9da9372e37e"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\infrastructure\\wav_metadata.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\infrastructure\\wav_metadata.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\infrastructure\\wav_metadata.cpp",
+      "bytes": 5304,
+      "sha256": "dcb16c9b1f619cb8ea8751a9a87c7e64267d5e378f9020f4c5bb2ea026875a9b"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-00.wav",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-00.wav",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-00.wav",
+      "bytes": 3200044,
+      "sha256": "3ac2edc11dcdebcc9ed0ae02adba93eb1666021101c4196f1dc90d112750cac3"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\manifest.json",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\manifest.json",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\manifest.json",
+      "bytes": 100191,
+      "sha256": "8e5e88b84853123e0aed101fbfbdb70f5f3ba071ceafb070837b687633103d48"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-configs\\G-arbitrary.json",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-configs\\G-arbitrary.json",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-configs\\G-arbitrary.json",
+      "bytes": 609,
+      "sha256": "20956e8c84a74bde7c5e121a055671ea7e0b5843a682d3856ac3d5d46922430d"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-configs\\G-carrier1.json",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-configs\\G-carrier1.json",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-configs\\G-carrier1.json",
+      "bytes": 610,
+      "sha256": "0bd840cbc954707a647acd950c6845a1024b9d780254f920f2d7e3422e15dbeb"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-configs\\index.json",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-configs\\index.json",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-configs\\index.json",
+      "bytes": 1048,
+      "sha256": "610544ecbfcb8c915e90737a1d335360fb56e9686aba7317875746ff2c66d92a"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-configs\\T-short.json",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-configs\\T-short.json",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-configs\\T-short.json",
+      "bytes": 607,
+      "sha256": "1b9819d7ac742d4459245f7449bcff06ffdfa33786834f463d83a4f292c63852"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\cudart64_12.dll",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\vs2026-qt611-release_bin\\cudart64_12.dll",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\cudart64_12.dll",
+      "bytes": 583680,
+      "sha256": "760c38928bbe5759f7b31ed6692599eb7ec83cedd5702e84c2b72028a89837e1"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\detection-models\\ffscn-gui-iq-v1\\ffscn_epoch1200_fp32.engine",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\vs2026-qt611-release_bin\\detection-models\\ffscn-gui-iq-v1\\ffscn_epoch1200_fp32.engine",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\detection-models\\ffscn-gui-iq-v1\\ffscn_epoch1200_fp32.engine",
+      "bytes": 21011788,
+      "sha256": "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\detection-models\\ffscn-gui-iq-v1\\manifest.json",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\vs2026-qt611-release_bin\\detection-models\\ffscn-gui-iq-v1\\manifest.json",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\detection-models\\ffscn-gui-iq-v1\\manifest.json",
+      "bytes": 1351,
+      "sha256": "dd3de623faf457c68be1447ef48ca9032dcb9837fe21ff7baea00236b44df6ba"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\nvinfer_10.dll",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\vs2026-qt611-release_bin\\nvinfer_10.dll",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\nvinfer_10.dll",
+      "bytes": 476635680,
+      "sha256": "d100ec93e5abf56f8d2dafb69cde536c4f9fbb4748a5746a74b7009f6894ce67"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionRefinementTests.exe",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionRefinementTests.exe",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionRefinementTests.exe",
+      "bytes": 161792,
+      "sha256": "0cf6bc670a7ef63632d9b978d481afb97baab548e00b2a5b45a3628a3f4e6c30"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionSampleEnergyTests.exe",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionSampleEnergyTests.exe",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionSampleEnergyTests.exe",
+      "bytes": 130560,
+      "sha256": "aa9f88f3df19107a77ff6aa26c8a91bd1088280aa1cef5fc407a8269555355a8"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionTimePipelineTests.exe",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionTimePipelineTests.exe",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionTimePipelineTests.exe",
+      "bytes": 770048,
+      "sha256": "61db19667a989701109f79bc508998ef35ce92925ec696aaec55edd69b897552"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionWorker.exe",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionWorker.exe",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionWorker.exe",
+      "bytes": 203264,
+      "sha256": "b36235136109ec051cdd02c0d3768542e837b0e945085e3ee393786a60d1fe1d"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tests\\detection_refinement_tests.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tests\\detection_refinement_tests.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\tests\\detection_refinement_tests.cpp",
+      "bytes": 25933,
+      "sha256": "dcdbf743c9373e50d444b5e0a5bfe7b9623d13605680fce7201d29071ae23b5c"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tests\\detection_sample_energy_tests.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tests\\detection_sample_energy_tests.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\tests\\detection_sample_energy_tests.cpp",
+      "bytes": 14796,
+      "sha256": "9f01f8482fe8303c8102f66edd14db25868533926938d3d6047385938307f243"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tests\\detection_time_pipeline_tests.cpp",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tests\\detection_time_pipeline_tests.cpp",
+      "path": "D:\\project\\signal_studio_rebuild\\tests\\detection_time_pipeline_tests.cpp",
+      "bytes": 21889,
+      "sha256": "57d250f01ba764283a041566b8c91c5a2196b959c16757fc93198c984300c371"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tools\\detection\\model_controls.py",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tools\\detection\\model_controls.py",
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\model_controls.py",
+      "bytes": 8498,
+      "sha256": "1f3acde8fbcb4374bce73d2db3e2212cfbb48077c792ff8026b72570959b2b12"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tools\\detection\\model_ffscn.py",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tools\\detection\\model_ffscn.py",
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\model_ffscn.py",
+      "bytes": 10708,
+      "sha256": "0405ccdab139f03e496b307495c71624d91cf182427eadd4374d5552b687d583"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tools\\detection\\model_frequency_parity.py",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tools\\detection\\model_frequency_parity.py",
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\model_frequency_parity.py",
+      "bytes": 54397,
+      "sha256": "eff7a6849c70e11c6a5ef2caa5a754f7df5cbec7cf00b7438c84a6c284174681"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tools\\detection\\model_pipeline_parity.py",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tools\\detection\\model_pipeline_parity.py",
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\model_pipeline_parity.py",
+      "bytes": 7428,
+      "sha256": "2f52c6d17e0177a972128cc9f783be74713c5654c6d47a9c7404e5ec96d9b2ce"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tools\\detection\\model_probe.py",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tools\\detection\\model_probe.py",
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\model_probe.py",
+      "bytes": 20524,
+      "sha256": "d1fe6b19ee06d1d5a0658847fbe33487becc4170dc4fd5b4a9c7476f40c4c58d"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_energy_parity.py",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tools\\detection\\time_energy_parity.py",
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_energy_parity.py",
+      "bytes": 23086,
+      "sha256": "91927d8ff63c0d548094b6dc3e5de1bb19cccb644af119827c84f53e111af66a"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_evaluation.py",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tools\\detection\\time_evaluation.py",
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_evaluation.py",
+      "bytes": 35144,
+      "sha256": "f16c0ee852ef8cedc58a5c8ac6c61532d54fe004f9faeaa97d699a5546bc2390"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_holdout.py",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tools\\detection\\time_holdout.py",
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_holdout.py",
+      "bytes": 22050,
+      "sha256": "16d0fefd0dd7a28c8a0ec261f69f861239352b3d93110951629740738df1ab30"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_reference.py",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tools\\detection\\time_reference.py",
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_reference.py",
+      "bytes": 37440,
+      "sha256": "5f59e46d8ae6f28f991633e0eca7161620976194eaad47a9b4e644b5a6774291"
+    },
+    {
+      "original": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_suite.py",
+      "snapshot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\r3-preserved\\snapshot\\tools\\detection\\time_suite.py",
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_suite.py",
+      "bytes": 42677,
+      "sha256": "c8dd975505733a5b4d600a55ac885108c7150a336d604e22468e90c9f6ed05e7"
+    }
+  ]
+}

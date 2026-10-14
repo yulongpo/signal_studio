@@ -1,0 +1,200 @@
+{
+  "archivedFiles": [
+    {
+      "sha256": "151ff923ede36a256342a9483a2454633ec50323e1832419978e63fda4527575",
+      "file": "T-default/scope-summary.json"
+    },
+    {
+      "sha256": "b82e0ad7ac92df8d11835c8de67ab695aeb804f3a40eda31bea2ab910e6abc48",
+      "file": "T-default/scope-manifest.json"
+    },
+    {
+      "sha256": "b3425631671b850637f97f6f668e1a9754ee7f57c26f4647c3596098e2197e08",
+      "file": "T-default/evaluation.json"
+    },
+    {
+      "sha256": "08f39292abaea31e5be9a41297a14764cdf9e20088c8f60beb43479247ae2eb0",
+      "file": "T-default/evaluation-completion.json"
+    },
+    {
+      "sha256": "b62c1cb4ee4d4df78ff72d820cc44c1d24abf40c9d40516d5ea8294dec2da1d9",
+      "file": "T-default/evaluation-identity.json"
+    },
+    {
+      "sha256": "f3911e0b0cfc34707e6acc2e28aeb06a15aec94f459dd266fa1f4026ee250834",
+      "file": "T-default/paired-index.json"
+    },
+    {
+      "sha256": "6027a6a97682578aaa2d17a112ce25d2cef99ad1b348118761050458d99f07aa",
+      "file": "T-default/pair-run-records.json"
+    },
+    {
+      "sha256": "170b87403aec31c715ff4478cc2ff515f377f5fc4bd6e40bba1a19d86fb8d6f8",
+      "file": "T-default/native/result.json"
+    },
+    {
+      "sha256": "e58c171582bb9b5f2f0cfee28eee9aee025b3a390d00337cb9829de8eb8ffcee",
+      "file": "T-default/native/completion.json"
+    },
+    {
+      "sha256": "eaf51610151df1d14fead68185b521b0515a5b362869c06dd9d725802ed728f7",
+      "file": "T-default/native/launch.json"
+    },
+    {
+      "sha256": "299002521ec696319515625df095b75fe1fd3e5d8b61776bdb396960e05fe421",
+      "file": "T-default/native/process-identity.json"
+    },
+    {
+      "sha256": "df165db0f4e47671e28dba0d9002b01224e3e836804eb9382fa1d1b63c8d5ecf",
+      "file": "T-default/native/process.log"
+    },
+    {
+      "sha256": "a072b54b4b136288c9c1a8d89f5b0f7f33a6dffb0cdb77552b60d02acc9eee1a",
+      "file": "T-default/reference/result.json"
+    },
+    {
+      "sha256": "68aff47395bd19a7384ea12b6173c0557705f6f5d3cb21b7ce9aa8665d6fba54",
+      "file": "T-default/reference/completion.json"
+    },
+    {
+      "sha256": "bcacc8334ac52fe5bd10be00ed461a1e59f5b6eb9c4983fb64071bac714b71d1",
+      "file": "T-default/reference/launch.json"
+    },
+    {
+      "sha256": "3fdaa278f38bc2a82cf64b1badf50bf92a4bce189ed484984d7db7ffe18a6906",
+      "file": "T-default/reference/process-identity.json"
+    },
+    {
+      "sha256": "83c5ffb0932cef29b96773b057e941b4d5d52c3ab64e69dc3ea7afd3cd1581a7",
+      "file": "T-default/reference/process.log"
+    },
+    {
+      "sha256": "8b0e07c8cd4377f96aec9ffbf1827536fdd304ae5d33a7f02adae8da4181021c",
+      "file": "T-sample-short/scope-summary.json"
+    },
+    {
+      "sha256": "517b575d3729f81e474b2079c7992bad23506e756e953326fb9d71ba3c5f0c02",
+      "file": "T-sample-short/scope-manifest.json"
+    },
+    {
+      "sha256": "dd9e2357cf26025ef6f2ed41856a6d44189a1fbd30ccd6ea2508c8639d5d0802",
+      "file": "T-sample-short/evaluation.json"
+    },
+    {
+      "sha256": "745c123b7bc33d40219cb9c76b724f70a74f690bce877debceb8213f8efc509b",
+      "file": "T-sample-short/evaluation-completion.json"
+    },
+    {
+      "sha256": "955ee280afa350e47df791f1a7e0f202b0d7c7629af8d9e8d77d3cf6fa070fcc",
+      "file": "T-sample-short/evaluation-identity.json"
+    },
+    {
+      "sha256": "711f15a6bf1d8357fea4c3e63b302619286a4a5327368baaa387c5a2d390469e",
+      "file": "T-sample-short/paired-index.json"
+    },
+    {
+      "sha256": "b4135ea5c2440e96d3bf7646640d650b78dd119ac7da00aa13bd0ffb358c6238",
+      "file": "T-sample-short/pair-run-records.json"
+    },
+    {
+      "sha256": "9bc0f33cf8ccacb1666e3b2ce3ab727201054836cc586e63b26ab7623f302d49",
+      "file": "T-sample-short/native/result.json"
+    },
+    {
+      "sha256": "8b579fbb3b64c6c2cceadd469f20090747dc7f1a6ab3efc4d7d1ae2a24b7e567",
+      "file": "T-sample-short/native/completion.json"
+    },
+    {
+      "sha256": "4515cc93cb001078744884563c623ff13b57327a4cef633e5cffa62798d9d1db",
+      "file": "T-sample-short/native/launch.json"
+    },
+    {
+      "sha256": "774df9e0739bb8a782f544ad84778541b24171ad98198714ad622df2667e28be",
+      "file": "T-sample-short/native/process-identity.json"
+    },
+    {
+      "sha256": "de1371b481be19e9aa8e71ef7941e0c420b13da146c5e58a0084072d1dcf8094",
+      "file": "T-sample-short/native/process.log"
+    },
+    {
+      "sha256": "51fba01392886a839139cc6d1fdc25240c70620b330c67bf9171353deefb2777",
+      "file": "T-sample-short/reference/result.json"
+    },
+    {
+      "sha256": "ecd6ccacc3815360f8fc3ff17847d4c63216f14f122e76988abe7fa35f201dbe",
+      "file": "T-sample-short/reference/completion.json"
+    },
+    {
+      "sha256": "be04078319701ba0327844ff42ed65eeac69bda85dab91f3f5b8349946bcd7b3",
+      "file": "T-sample-short/reference/launch.json"
+    },
+    {
+      "sha256": "f4881157d93292ce904a4f5a1cdd1c87ac8327198a078b249b1919f40727e2da",
+      "file": "T-sample-short/reference/process-identity.json"
+    },
+    {
+      "sha256": "0e2bb2995a6d79b5e63ec8ef515ad275358feb4380c086f6bdeab6b9a8aaecf4",
+      "file": "T-sample-short/reference/process.log"
+    }
+  ],
+  "executionFreezeSha256": "4d8985a72f2333dd53378f9195ade67b3889fd140a2fd2660340e927b3be66a6",
+  "noFullGateClaim": true,
+  "cases": [
+    {
+      "scope": "T-default",
+      "assessment": "representative-function-workflow-only",
+      "sampleId": "T00-00",
+      "rows": [
+        {
+          "wallSeconds": 15.67550370004028,
+          "exactRecovery": true,
+          "completedWindows": "39",
+          "eligibleWindows": "39",
+          "pipelinePass": true,
+          "side": "native",
+          "resultCount": 0,
+          "processSuccess": true
+        },
+        {
+          "wallSeconds": 10.069040699978359,
+          "exactRecovery": null,
+          "completedWindows": null,
+          "eligibleWindows": null,
+          "pipelinePass": true,
+          "side": "reference",
+          "resultCount": 0,
+          "processSuccess": true
+        }
+      ],
+      "fullEffectGateEligible": false
+    },
+    {
+      "scope": "T-sample-short",
+      "assessment": "representative-function-workflow-only",
+      "sampleId": "T08-00",
+      "rows": [
+        {
+          "wallSeconds": 5.4575256000389345,
+          "exactRecovery": true,
+          "completedWindows": "7",
+          "eligibleWindows": "7",
+          "pipelinePass": true,
+          "side": "native",
+          "resultCount": 0,
+          "processSuccess": true
+        },
+        {
+          "wallSeconds": 8.328841700043995,
+          "exactRecovery": null,
+          "completedWindows": null,
+          "eligibleWindows": null,
+          "pipelinePass": true,
+          "side": "reference",
+          "resultCount": 0,
+          "processSuccess": true
+        }
+      ],
+      "fullEffectGateEligible": false
+    }
+  ]
+}

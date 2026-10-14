@@ -32,6 +32,7 @@
 #include "infrastructure/detection_model_snapshot.h"
 #include "infrastructure/detection_store.h"
 #include "infrastructure/source_loader.h"
+#include "ui/detection/detection_phase.h"
 
 namespace signalstudio {
 namespace {
@@ -116,11 +117,12 @@ QString shortRunId(const std::string& runId) {
 }
 struct RunCard {
   struct Signature {
-    QString sourceName, error;
+    QString sourceName, error, phase;
     DetectionLifecycle lifecycle = DetectionLifecycle::Queued;
     DetectionSourceValidity validity = DetectionSourceValidity::Current;
     std::uint64_t read = 0, completed = 0, eligible = 0, results = 0,
-                  published = 0, started = 0, finished = 0;
+                  published = 0, started = 0, finished = 0, refined = 0,
+                  refinementTotal = 0;
     std::size_t coverageCount = 0, chunkCount = 0;
     bool recoverable = false;
     bool operator==(const Signature&) const = default;
@@ -135,6 +137,7 @@ RunCard::Signature cardSignature(const FileState& file, const DetectionRun& run,
                                  std::uint64_t published) {
   return {q(file.metadata.name),
           q(run.error),
+          q(run.computationPhase),
           run.lifecycle,
           run.sourceValidity,
           run.readFrames,
@@ -144,6 +147,8 @@ RunCard::Signature cardSignature(const FileState& file, const DetectionRun& run,
           published,
           run.startedAtMilliseconds,
           run.finishedAtMilliseconds,
+          run.refinedCandidates,
+          run.totalRefinementCandidates,
           run.coverage.size(),
           run.chunks.size(),
           run.recoverable};
@@ -235,8 +240,11 @@ QString runFacts(const DetectionRun& run, std::uint64_t published) {
           .arg(run.readFrames)
           .arg(run.completedWindows)
           .arg(run.eligibleWindows),
-      QString(
-          "工程已发布 %1 个来源对象 · 持久化 %2 条记录 · %3 个不可变分片")
+      QString("计算阶段 %1 · 精修候选处理 %2 / %3（包含回退，非成功数）")
+          .arg(detectionPhaseText(run.computationPhase))
+          .arg(run.refinedCandidates)
+          .arg(run.totalRefinementCandidates),
+      QString("工程已发布 %1 个来源对象 · 持久化 %2 条记录 · %3 个不可变分片")
           .arg(published)
           .arg(run.resultCount)
           .arg(run.chunks.size()),

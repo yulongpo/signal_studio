@@ -1,0 +1,1649 @@
+{
+  "schema": "signalstudio-m4-suite-scope-v1",
+  "plan": {
+    "scope": "T-default",
+    "strategy": "sample",
+    "shortProfile": false,
+    "semantics": "product-v2",
+    "plannedFileCount": 96,
+    "selectedFileCount": 96,
+    "diagnosticPartial": false,
+    "samples": [
+      {
+        "sampleId": "T00-00",
+        "group": "pure-noise",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T00-00.wav",
+          "sha256": "6a5d91565954af972f775997b0bdd4355436098b6bfea0b4a28a1766ebe5fbd9"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T00-00.json",
+          "sha256": "f9984b017ca5d85ea930fdc02ac450fa713f1bbb4357f00b088ce6f4ad37ed33"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 0
+      },
+      {
+        "sampleId": "T00-01",
+        "group": "pure-noise",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T00-01.wav",
+          "sha256": "d60c8d1d856c8bf359ab491d0a8211490a35ec0e40d9da70afb11c9e31edfdd8"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T00-01.json",
+          "sha256": "75622faa0d55a16c5c5192b7e47cc9a0fb33b72b192e139a6f8b767aec775bf7"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 0
+      },
+      {
+        "sampleId": "T00-02",
+        "group": "pure-noise",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T00-02.wav",
+          "sha256": "63ef47dd8c46a0c87b2e116ebcbb0c8ec4997aa2b1eefef22b0193635929ea66"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T00-02.json",
+          "sha256": "033241ef8c2eaf3e48584a2abc8f4e5cc3feaa7e9696f13b23e6dc6330bee834"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 0
+      },
+      {
+        "sampleId": "T00-03",
+        "group": "pure-noise",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T00-03.wav",
+          "sha256": "c8b0e0f93dcecb96b751fb9b799c9cbe711fc0c0ae827b88c89baf3c87f1ca0f"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T00-03.json",
+          "sha256": "ca37b3badac3e4b39392656bb773430954ff4989b9af14b4ee0606d16aec4b20"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 0
+      },
+      {
+        "sampleId": "T00-04",
+        "group": "pure-noise",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T00-04.wav",
+          "sha256": "a016507373df22e5e0c48735acf1c7a139d0bc441280a6bfb3178e20d948a56a"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T00-04.json",
+          "sha256": "7e4dddf5c6f797fd04e2a8f99bc27a3c0bec5a78f00901733afb0589a1ac23d1"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 0
+      },
+      {
+        "sampleId": "T00-05",
+        "group": "pure-noise",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T00-05.wav",
+          "sha256": "270a705c11923b0a71e82d204e19188f0a4a5610f739d1e2f69f95763744492e"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T00-05.json",
+          "sha256": "051d2d4dc10de7dc97d751a08a48e9dcef027bee522d39ca611b91d986e92954"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 0
+      },
+      {
+        "sampleId": "T00-06",
+        "group": "pure-noise",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T00-06.wav",
+          "sha256": "d1ac4cb6a20bff20b0ed60d5b96ad216eefaa7ca89a3316e9268ef937ca063c1"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T00-06.json",
+          "sha256": "0d683a05e053f054789257ad2952a85169c4ef838997de21932d30572df4af22"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 0
+      },
+      {
+        "sampleId": "T00-07",
+        "group": "pure-noise",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T00-07.wav",
+          "sha256": "9398bbcbf55d7a331e493fbeb37f4980f98bfccd8dc2e7ca45c10fa97a852880"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T00-07.json",
+          "sha256": "22ec3cb0e0d88ef12bb5406861c30857a5cf82d3a18a6dbfe60fd9ee9d1990c1"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 0
+      },
+      {
+        "sampleId": "T01-00",
+        "group": "low-CNR",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T01-00.wav",
+          "sha256": "ed8a6fe6574a1001dbd13b20cd6e283c8c405f67cbbc05e67a298c51c6e1dcd4"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T01-00.json",
+          "sha256": "c85d54b136b98c24e2b9767a18d944fa0e4f4c2f2b37d95783ae1bc4dda95f2c"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T01-01",
+        "group": "low-CNR",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T01-01.wav",
+          "sha256": "19dddda6c1c11b12a62aa9d70b32480ccd9ae4991fb5d7af88a2b1402afdc068"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T01-01.json",
+          "sha256": "895ca2502d925c53485ccfe7b0c264c85330f1767abf144f590eec9813b735c6"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T01-02",
+        "group": "low-CNR",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T01-02.wav",
+          "sha256": "b06b4318d068eafc4c9a5b0dc2b3decdfeaeb1c27f4adc616af802d939e21eeb"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T01-02.json",
+          "sha256": "8536031c402b13d0708d0125223ccce7fba63de1b2789eb54ee21ae980d81902"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T01-03",
+        "group": "low-CNR",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T01-03.wav",
+          "sha256": "c9ad25277d60c188612d6f4c44a185c6a9fc7a811e66dd17d5675a7efb47c597"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T01-03.json",
+          "sha256": "bfc988510849ad08c9f17906488006886d3e32cf67068f08f79fa3efc34ac5db"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T01-04",
+        "group": "low-CNR",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T01-04.wav",
+          "sha256": "278ba38b34832573978550915a7935aa3929bf896ad5f7891b0d39f2c05c77b7"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T01-04.json",
+          "sha256": "1fb88d54f4aa7e0620346a17545ff894480edd7d22fcf5537d96937e4660f36e"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T01-05",
+        "group": "low-CNR",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T01-05.wav",
+          "sha256": "f0f431da87f318eb0bc364e0a0d877d634d9d1e45c0740d7131ffade6ddc1c9e"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T01-05.json",
+          "sha256": "6d65296d60d52de4637e267a927457035ecd825ca41fdb699f3a5ca00c6aa423"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T01-06",
+        "group": "low-CNR",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T01-06.wav",
+          "sha256": "23a645b022f43b07cf21dd884428d73be04d6698ee3426ba0d5aac419929df8d"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T01-06.json",
+          "sha256": "0f317bc843ed82ae579d3cdaaac018440654defa8251f9ae60ebdd8140cfaa59"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T01-07",
+        "group": "low-CNR",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T01-07.wav",
+          "sha256": "9762737c5a1a1da9d26a2348abf2d9041c5f45fef5ef2213091a6c14745cd306"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T01-07.json",
+          "sha256": "fda7d22e17b82331c87db6e2d155da1a4d3f7ee0c5d542886474723eab29f748"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T02-00",
+        "group": "extreme-narrow",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T02-00.wav",
+          "sha256": "eff0082bd3af9437a818d50a2b705e11b26cb20a493ad2792e36539f5c2a3485"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T02-00.json",
+          "sha256": "3555fb7f91b16930566439463077b59cd3e8c39d1c8b3c87b85cb8a23bebd89a"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T02-01",
+        "group": "extreme-narrow",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T02-01.wav",
+          "sha256": "3aeeacf0b0b0d5882c2268ef5fe6e5d457c154652c109bca12ae363ec05b98b0"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T02-01.json",
+          "sha256": "e5da3c033e5b8e79f5925f8ea89f69198b18e21c99175ce6c2bc2ddf9670959b"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T02-02",
+        "group": "extreme-narrow",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T02-02.wav",
+          "sha256": "7cb4c5214b2e2c8f58854638d21bff52a14397d0886deda4218993a8e6d01930"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T02-02.json",
+          "sha256": "89a2ace7c5a6c17cacfd2c7f84951a6ea308109e3bd1c642e84e410667eea5a3"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T02-03",
+        "group": "extreme-narrow",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T02-03.wav",
+          "sha256": "ccf4707c429ce6a2f8c8cd7a9b29df602600d734deb093f578efef90e1f6cfcc"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T02-03.json",
+          "sha256": "cdabf27bf5feacaf9c45fd6579e50b42983a45886e23144f49de6e1e86a0c969"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T02-04",
+        "group": "extreme-narrow",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T02-04.wav",
+          "sha256": "8bdb441f7ec3e487cb1780b15c720e8c0df979bd6dd8064141b2e6a8d16f11dc"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T02-04.json",
+          "sha256": "3c19d19688a328e92b37d9ce4c4182e3a4c33e470492896959f9f3b95949acce"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T02-05",
+        "group": "extreme-narrow",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T02-05.wav",
+          "sha256": "9cfeb5e1a00097d219ee5b8b2f7a7168561f5e678f14649d044faace076fd011"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T02-05.json",
+          "sha256": "9bcf65d038a6d4600cf1cd8a310215085bfde12a8e1800a33ccfa87becfa67b4"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T02-06",
+        "group": "extreme-narrow",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T02-06.wav",
+          "sha256": "cded86700651ffc97cad8587dfd05b71e56053e29077f94dfa275baf5975b36f"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T02-06.json",
+          "sha256": "047c5ae5dcb0e4771b03b8d0e83b2a0fc2ae8ceaf65ccd935cf25ccb8cca7c4e"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T02-07",
+        "group": "extreme-narrow",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T02-07.wav",
+          "sha256": "1e5d18337e76bb3296d3db719a55540558d99a5b9ca0d62fdb9bd60a87e427b8"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T02-07.json",
+          "sha256": "5e9ca01399f021ec7f9824af726426e314024f45cc7b169d8e0df46a5abbc5ef"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T03-00",
+        "group": "extreme-wide",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T03-00.wav",
+          "sha256": "44033d3602ca1c44316b924f92cb7cfdf30ee8055dc71f5a7565e7565d851e13"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T03-00.json",
+          "sha256": "d4e5a5606adfffdf58155ffa1d31c2a89b42b1fd4bd7d30f024dd1ce1571acd4"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T03-01",
+        "group": "extreme-wide",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T03-01.wav",
+          "sha256": "20466f782b4f752d674286f91d15be5669f751e92326efd000dc5bbabdaf512e"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T03-01.json",
+          "sha256": "ae87e09e77e0587ac640d8c0fb188d943f924510a5681c9d1d5f134bbff57488"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T03-02",
+        "group": "extreme-wide",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T03-02.wav",
+          "sha256": "1c0fdb27d8854831d05458c7d22c5a918d78b7b6712d287732a4f2e9a83ccff6"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T03-02.json",
+          "sha256": "e027c3904d3d678cc3f90679c2efa3880cbe0b7deb07f3d0bb171a62053e4968"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T03-03",
+        "group": "extreme-wide",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T03-03.wav",
+          "sha256": "7f0e469f56fc12c1ba2fdff4270010450ee1e13c9f92af707faf5d52033d7442"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T03-03.json",
+          "sha256": "17b7d100aff2520ac34bae0a9444a2cd510d9c20aedec87692128db5a2c14071"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T03-04",
+        "group": "extreme-wide",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T03-04.wav",
+          "sha256": "85e927ab48f77e81fa04a84967327861947ff9f486c029f37d7113f8f6ba39dd"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T03-04.json",
+          "sha256": "fed11bf60285b1023ee23cb4a25a62773d0dbc5cfe87910e26357764cae08fa1"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T03-05",
+        "group": "extreme-wide",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T03-05.wav",
+          "sha256": "8fbf0eb382b237beac585d2a923c07a8b0446d48539ab002d4e1c78343e3863b"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T03-05.json",
+          "sha256": "4098265e1ddd3a7bfe38e7e5d33e4021bd554bd5437ed6304db196a1be81d890"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T03-06",
+        "group": "extreme-wide",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T03-06.wav",
+          "sha256": "418f57b7c5b9beec8ad0f1563184aad9f7f38320b31036f85b36d596db38a6d7"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T03-06.json",
+          "sha256": "84f321b7ce07d8a25a40577450c213e7b7372c991e2358da2fd71b44980278a4"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T03-07",
+        "group": "extreme-wide",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T03-07.wav",
+          "sha256": "5aea448dc2c4c403a4756e4505144c0745b3be14259eeed35e3c98e785e1e111"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T03-07.json",
+          "sha256": "57ce0cc799b843a14ab763c7c487ba454efdbdf9fd152f29a111f3137b53c277"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T04-00",
+        "group": "dense-overlap",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T04-00.wav",
+          "sha256": "9d53f887837e29d032ed6c15ffa124e0301850561372637524f21bd3957f2bd0"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T04-00.json",
+          "sha256": "dee4342eaaad7c062049e52329bdd713d73c2d98ec11e70be0c6c15db38e0676"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 4
+      },
+      {
+        "sampleId": "T04-01",
+        "group": "dense-overlap",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T04-01.wav",
+          "sha256": "3e1eba032fe4ddb77e2670aecdea3f855db83a382516b022aa4bbb0a34c90393"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T04-01.json",
+          "sha256": "3830e7e4b7eefdd40f06c35deecefccaf7cb6ef91f873a76b7570acf4446c5f4"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 4
+      },
+      {
+        "sampleId": "T04-02",
+        "group": "dense-overlap",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T04-02.wav",
+          "sha256": "7444317c63ba144e16c357a6af699f7ddf5d8bbb70b9b6b1ff41b555f8083148"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T04-02.json",
+          "sha256": "29bb05b583bb3029da26f84f2a7b97b4e64b6e8cc64c68841cfce46e2123ce94"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 16
+      },
+      {
+        "sampleId": "T04-03",
+        "group": "dense-overlap",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T04-03.wav",
+          "sha256": "3eb6c53226805a440a365aa496111ef34f417a07bc53477062fae1e8e6923743"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T04-03.json",
+          "sha256": "e143291e3d9e6de1f072f90b76fc3f7a7be0ced287e40f87e2c44d550a958750"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 16
+      },
+      {
+        "sampleId": "T04-04",
+        "group": "dense-overlap",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T04-04.wav",
+          "sha256": "baf3030b45327020f57b34d9ffbc9823d7880bb951863a6a82e7f41f1c8ad983"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T04-04.json",
+          "sha256": "88023d3db3590e0b62ba02571432d10330707500601c79e8029b3b31ca6a57a4"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 64
+      },
+      {
+        "sampleId": "T04-05",
+        "group": "dense-overlap",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T04-05.wav",
+          "sha256": "c33e957e47d92cb476f25edb81e27d8ca37dc938fa1bd32af8edaf70f0a67071"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T04-05.json",
+          "sha256": "7f053f66c8d1603c7ec29f7359fb8271e20b41d562fe4f3609068a3637f57d62"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 64
+      },
+      {
+        "sampleId": "T04-06",
+        "group": "dense-overlap",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T04-06.wav",
+          "sha256": "2e90a56da71544ae2bcb1e87f5ef46cb660f8a2c5d470c1345478c17fda8cd40"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T04-06.json",
+          "sha256": "11ef4c54e49c3e52e95f2074fe3f81c48335e5de4dee354a039cdd3a96b7fb7d"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 128
+      },
+      {
+        "sampleId": "T04-07",
+        "group": "dense-overlap",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T04-07.wav",
+          "sha256": "09484be97bf5342aa5ac0465db4335762dec7e8977e80d19923ce72ae04d17af"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T04-07.json",
+          "sha256": "38dc9ca3d5cc984043b73e742a5cd7a1cc2167218f68b0f41127221cd05be8dd"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 128
+      },
+      {
+        "sampleId": "T05-00",
+        "group": "band-edges",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T05-00.wav",
+          "sha256": "3de2823bcfbcf8f346aa00a73bc26c3b3e4ff5172fdc445a162b8545fdc4fbc1"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T05-00.json",
+          "sha256": "ff6306fafc326c7a42c4f0d94efcb241205baf6b6a237155dee1ebcec95cb80f"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T05-01",
+        "group": "band-edges",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T05-01.wav",
+          "sha256": "cf856afd5fb2f8f16635c39343fa13ebbaaad9d6bfa5c80bf89cf3a2bc240c2d"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T05-01.json",
+          "sha256": "049495a592d630a5c45a9684fc2d560f313311673b161733aa2fe99ab65a28be"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T05-02",
+        "group": "band-edges",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T05-02.wav",
+          "sha256": "b85fd9b9485ce866be3ae7c6d9f99fd3c2b5b147b80ba0a5a0940965ee35310c"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T05-02.json",
+          "sha256": "c2f558d16d1b0ecccebfc61b089b7616873c8b33b8bfab80c73eefa270bcb6d5"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T05-03",
+        "group": "band-edges",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T05-03.wav",
+          "sha256": "5ace0ce1938943291e6e8c936dc8dda5ff62a58c16b8d99f1ab7c08f5a853b42"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T05-03.json",
+          "sha256": "8baf30d85948de7560c65e3733fd9933442769c2cdb2af48d1092625732a6843"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T05-04",
+        "group": "band-edges",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T05-04.wav",
+          "sha256": "234ef10d8ce459a730a03f5acc7d9aa25ca42efc16c40bedaeab28bafb89be99"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T05-04.json",
+          "sha256": "5af842979a61e49f57cf428028b502372ef9cce9f4b5cc1584309002b3af7d28"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T05-05",
+        "group": "band-edges",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T05-05.wav",
+          "sha256": "18105fbe508ff3eddaff5e5fe624233de822688b6e14b4ab9ec849833452d70d"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T05-05.json",
+          "sha256": "a6ad15ae4ecd7a47cfb8186b1cda377a7b10c4743716c32a89cb601cadc15132"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T05-06",
+        "group": "band-edges",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T05-06.wav",
+          "sha256": "d8e9780585ec16219b9f694b0fcbe82ccdf17538c9b90e51c1275bd1a301c7c4"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T05-06.json",
+          "sha256": "de19b92cfb7c0b7e486cf403fbd60fa30e08f5d1ff9ba87c64848a09997bba73"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T05-07",
+        "group": "band-edges",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T05-07.wav",
+          "sha256": "1825847090b9658b929f275e0cf2bf4cab70ac63a4127c29208effab2ba17f99"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T05-07.json",
+          "sha256": "dcdf140581df8e25139168914e1fa0be4ed6198935a8debb29bd812e42bf9a49"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T06-00",
+        "group": "same-frequency-gaps",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T06-00.wav",
+          "sha256": "f8f233cad554cdb8b97945d79fb966bc4a6748b631fbd57973c41bcc1fa58257"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T06-00.json",
+          "sha256": "28df1144ea31efdf20db1c85fa526303c011d60bd6869bd935df4024a483070a"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T06-01",
+        "group": "same-frequency-gaps",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T06-01.wav",
+          "sha256": "7389d9bd6fc830e86afbd21fdd6d5cb82bff9a2bed8088b0b6e00fd4fb79fe99"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T06-01.json",
+          "sha256": "c74f8b35e982350c65dcc994464d88499738a71ded07366700ba67332f42f47e"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T06-02",
+        "group": "same-frequency-gaps",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T06-02.wav",
+          "sha256": "e174d95e0ff1b0315a721c876251bc003e7b53d375ca9bbb2650a1e0fea217f7"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T06-02.json",
+          "sha256": "98bd478ef01fef7981d011bbc33ecd08a8461bae12321ba292c8d0e113dc1073"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T06-03",
+        "group": "same-frequency-gaps",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T06-03.wav",
+          "sha256": "f0eb9f634bc26e6637706168e98cff962baab665ec941a790c05036fc2407f17"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T06-03.json",
+          "sha256": "5a5321e28564c8278255c784d2d026cf4418127e979b311383569982b3dd24e7"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T06-04",
+        "group": "same-frequency-gaps",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T06-04.wav",
+          "sha256": "b065f8bb38ea689c7519bd06ce903c6b802e7deff9e40a269d9d87acce92bd1a"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T06-04.json",
+          "sha256": "483f08206692a57fc689b2618f1081663ab8c9f0859aa16f7b40a7d2f67719a2"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T06-05",
+        "group": "same-frequency-gaps",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T06-05.wav",
+          "sha256": "b9429a617dfc170622dabf6e414d49f55cd69c9bb68d351ad0f787e6ab03f144"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T06-05.json",
+          "sha256": "22741f22433c99a092bf6ae6bc740448f87e99d05d3448ad7372b6cf42b44905"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T06-06",
+        "group": "same-frequency-gaps",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T06-06.wav",
+          "sha256": "74e8836c672318b41142a6bf462086f596056e5fdb4e396cd9514ac5b4f4f362"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T06-06.json",
+          "sha256": "8d4b9b239e49e9d60e81e451cb701b46d082f70ba8a5aa3b8f8b2db796a19c4b"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T06-07",
+        "group": "same-frequency-gaps",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T06-07.wav",
+          "sha256": "fea38bd0c32d8bdc38eb72108a5b64ea4b4fb31eac0a168c22ba2251205ec3f5"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T06-07.json",
+          "sha256": "95d3da934233ad60f34766ecc8910249947808268c08c7d69b6a71d37edf78cb"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "4000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T07-00",
+        "group": "long-duration",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T07-00.wav",
+          "sha256": "458980540103906c07009e0707fcc041def8e989024f1d7cd3a1c02e8d3ad129"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T07-00.json",
+          "sha256": "e839017a67852e718af2fbebe497f7c4b30d2489319dba7243f062dccb6a523c"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "20000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T07-01",
+        "group": "long-duration",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T07-01.wav",
+          "sha256": "72ce35d620ba6dd92b3211e3282d56f555c1cf14f7b2f37ae84eb2706c0fceb8"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T07-01.json",
+          "sha256": "69e4b584985f0870ade5d71d5f13088feb6c5e3988313bc15a85e62964106036"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "20000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T07-02",
+        "group": "long-duration",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T07-02.wav",
+          "sha256": "5cd5b2ae03aeca3b1871f429d500d63a1007fe9dc9b8e44348c999c2428d88f0"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T07-02.json",
+          "sha256": "4013491c66c73c7e19f2fbef770a8182d5b12a17a3c6fae2e77c1825cdf6f4a0"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "40000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T07-03",
+        "group": "long-duration",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T07-03.wav",
+          "sha256": "e3035f4b90ce5e3f8bc8df55e7dac4d9a4ed9b4c477d78d1e6cd44c764d66764"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T07-03.json",
+          "sha256": "7c94ec96bd8ef328b8503baa20e84c5e067665c30959b7109c6708f5e60f66ec"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "40000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T07-04",
+        "group": "long-duration",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T07-04.wav",
+          "sha256": "326a6d587471f7f9ccf078f116e9d9c77c93a94f911ec6a45fbf44deaddb3714"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T07-04.json",
+          "sha256": "da0ee7b7252c9e5f1e0fc87eea075a67cd7bdf800654cd778d8e5cfe7dc71360"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "80000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T07-05",
+        "group": "long-duration",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T07-05.wav",
+          "sha256": "5e806dd333c14d9420fdb8d5ab11abf5de7e7460e69950bec32060b7acb73c6f"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T07-05.json",
+          "sha256": "13acd54a2154f2837a2b13582a2a573fe899f8789e930e15f9d4ee4428478612"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "80000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T07-06",
+        "group": "long-duration",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T07-06.wav",
+          "sha256": "5c6357f71d34c375cb835542f586c33ed25a0bb5db102301b3796847c3ea5426"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T07-06.json",
+          "sha256": "c2e1c94e855e57feea7f46f740712089f86a88f18b70deb92038dac976c9828a"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "160000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 1
+      },
+      {
+        "sampleId": "T07-07",
+        "group": "long-duration",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T07-07.wav",
+          "sha256": "79abbfc759be84c7d2b8184f4b3194d89f8afaa956bb16aa136e791662680dde"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T07-07.json",
+          "sha256": "797524ae067cfb4cb03f70b541281ee0d1e0f75ee9294e2d1017c147640d9dfa"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "160000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-00",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-00.wav",
+          "sha256": "3ac2edc11dcdebcc9ed0ae02adba93eb1666021101c4196f1dc90d112750cac3"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-00.json",
+          "sha256": "235a04b2b2e5677390c950708dd91f7184ae7383ddd063174dc1233893df687f"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-01",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-01.wav",
+          "sha256": "9ed2847164a82c62e78b0590634b63958cf8c48f85a01b2893d1dc108c31b2e6"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-01.json",
+          "sha256": "601113404c52f92f5f6d0444c487d05cef23394cb79dbbdf90a44d57340d9935"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-02",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-02.wav",
+          "sha256": "4913fff756c0235b4aea1fff0f5422dee86f43c973c8e40e81bdb20ba5254e04"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-02.json",
+          "sha256": "0e56213cba12225ea005ce4ec7f0671ba6629009fd36ff3159c8cb073d1aa415"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-03",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-03.wav",
+          "sha256": "894722b4316782a4f7ef6ca17b3999169d4e6cf5f048fd16a6954fb7722d1e56"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-03.json",
+          "sha256": "af11bf5ff6d425df0c4f66fc2699f70a11987ae6fba65e79e6fbb31e9f1ac02f"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-04",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-04.wav",
+          "sha256": "d091899ed08779e97d5c385bd030c41c8ddf78e7468e314d1411c01bc8809e07"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-04.json",
+          "sha256": "ac62f7b338e36b36ef5ce75fef6ea9e6efe04897384c2368a560ce00d9c78094"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-05",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-05.wav",
+          "sha256": "bb1e8d7de90e16d12cbce7463a758af22779320b2136566c96bb683edd41f295"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-05.json",
+          "sha256": "a47c236c86691ec0b8bd2cb62ed8366177c7b749ea444aa25faf92a5e4e33559"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-06",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-06.wav",
+          "sha256": "d679a2f5b29d99c8ad62bad365a9d83052e772fbb33b53e4a9ceda31796d648d"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-06.json",
+          "sha256": "61d55685c24f627fd565fe04acc0a21669f8e1e69e0c1e359cec9884fc8e98c8"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-07",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-07.wav",
+          "sha256": "46c3cdd3630a16e9f931d735929180e51c7308c5fe72cfd8e42c453c8e3261df"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-07.json",
+          "sha256": "c314a85b70684a66ac03ae971c9a1a9980f478199209bc0586c3981ae1222d66"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-08",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-08.wav",
+          "sha256": "62544c4b8be6cddf49cffb5a3a132bdc302a7c045653c546d94722159ac29424"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-08.json",
+          "sha256": "5bb2c9a5011bbecc3417ab3821c765e15640e0098f56241092a192ad875fc1b0"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-09",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-09.wav",
+          "sha256": "8e6498703bc805a00dfcff498ca7f4d778937e7ba8f95c98011c8a31917715da"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-09.json",
+          "sha256": "92c86c49711f586bdd2537c2541a5eeeb1cfe770f83e0275153230382361b3cc"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-10",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-10.wav",
+          "sha256": "072366107777f754a57cd853d1eba4a9a28aaf53a6004e3a25d31eca0f90b504"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-10.json",
+          "sha256": "c73dc33c6cc44839b2ffbd6c970a83096db931e70d152b10b1a7adbb90c100f8"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-11",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-11.wav",
+          "sha256": "d875731013868c8ea15a71225eda5ee784319887ba0925e64aaf35cfba940710"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-11.json",
+          "sha256": "38dd92111b5674124106130fb7318e55e6a0e70ec84dce08b4b2d3dda95e94f7"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-12",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-12.wav",
+          "sha256": "f838dd4693dde4b3f523de93343a50b30e0a21977b8445bc90bf6859a74b42e8"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-12.json",
+          "sha256": "da0023ea160b6b9d73adb86510f87fce28e5d7d4cc5182f3ddddd2115ed02742"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-13",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-13.wav",
+          "sha256": "66738b1a3f4e31bcdb823360e65406dca57d54de9155ba8292601f819029948c"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-13.json",
+          "sha256": "8bac75aa53896cb5c8bd9e4fe0dc3da44b53d513eaac257e10ca6f6d074800f9"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-14",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-14.wav",
+          "sha256": "5038ca1fc7b005fb15b4256c96e767bf401a07094bfa9a98c79e46209a0060c2"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-14.json",
+          "sha256": "29846ee5de512f675098c8a055ea9dc014bc22064c42b3b7df52dd813e30b39b"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-15",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-15.wav",
+          "sha256": "3efd33a9e64b4ca1243989ffb5e45fb2c67dd72b24cd863b4713611b868204e7"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-15.json",
+          "sha256": "29820671dc715b81c07eba9e9fb6248b72f0ac28794f6e72390c5d4b239acd2d"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-16",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-16.wav",
+          "sha256": "c1e13149fa11e08157d1954693166effc8d0cda49988688ae5fb657d9aca6c14"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-16.json",
+          "sha256": "588df6358179a30d9c7482a0f24bcbcb87efcf8a6516e9f366abbceb91330d65"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-17",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-17.wav",
+          "sha256": "d672c4cfab49b52c671a76dc775b218aaa4714cef74d582e17c59e6b1c19470d"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-17.json",
+          "sha256": "18411563e719e84674eea438ef21306266b45210b5da88672d7786c014837b10"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-18",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-18.wav",
+          "sha256": "edd463116ef41f71961e409d09c9a9aea2f2de72720b13ab26459ae1791906aa"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-18.json",
+          "sha256": "2eb1379cf0362072d2513e5d9e319152aebc95977810e2367a1f7e531aa14c03"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-19",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-19.wav",
+          "sha256": "da717a4ee6425d24c8ac12374b755932ac1b264112783f96647bbb1e71278d1d"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-19.json",
+          "sha256": "fec63123cfcec5b312fe6ea3f47594b7004d2f6bc74a8e6188c39915e16fecdb"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-20",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-20.wav",
+          "sha256": "290a412830e45093b21d934adf31a7f3d24ac0aa7ef0e3d4b82d0f2eb57cb6c8"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-20.json",
+          "sha256": "2382eaafc96df733f349640f76808ab3b5086930ff860a7a10b810c7f06df5d1"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-21",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-21.wav",
+          "sha256": "6043eb4b6414035f55f754afe95021289a052af3b5ad856ea864c45019360e26"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-21.json",
+          "sha256": "975165a8836b6150a30f484a4f314d5891c261140d5c63f5dc6e10bef59a08b5"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-22",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-22.wav",
+          "sha256": "47ff458241274f0fdf161b6c79a475164459d81fabcb65e7b94fad45f1faef80"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-22.json",
+          "sha256": "d83c65f59998280d995706a3b95c5b3b8110a589d483909598107d0e2e7b20a1"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-23",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-23.wav",
+          "sha256": "d6d5590fd954fc0f3dfc53f9e5a3a7d370a773cfaea014bd072ae6b91155eabb"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-23.json",
+          "sha256": "219c0d8cc7b1afd238b91db7aea20dba9d83c2a9cd30dd3ac0d32968e5913a5c"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-24",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-24.wav",
+          "sha256": "dcc2d828ddbe73e7024cdb87534885d3842e800231f39ba784b0165381530254"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-24.json",
+          "sha256": "2833435a6012f8ed5e89c0b53cc538ca56dfffce224f04eb5bc448a19d515a42"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-25",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-25.wav",
+          "sha256": "ee0f5f08ecbfdcadb2f562d6ae25cee9afdaa89ca17ca1819868285e314da2da"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-25.json",
+          "sha256": "9941802dfc5f13b37fc9501e4800c0d7c735f2314caf010841d7bfb212c7f11c"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-26",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-26.wav",
+          "sha256": "718f1a5b4ee2c76bced093134f0782b07cec9072c2b6ad8bbe796f39da99c7d8"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-26.json",
+          "sha256": "9fc9ad660454fbe574a191317339d545770c7a1634d79654195bf8c58d658211"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-27",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-27.wav",
+          "sha256": "a5109ed13b19ef9c4dea0a66639da949ea8f6e52da966e24da04f0d5e82f11a3"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-27.json",
+          "sha256": "6b0145ff7ebb4deaf0c978f08a04aa0ab62eb4061e5ac3b8f7a8bf1c9d278b1c"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-28",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-28.wav",
+          "sha256": "f21c6cc5c0ba3ab069a7403459a782239adec366a10f34c69b54ec39bdee54be"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-28.json",
+          "sha256": "6f7f6f176302db1353d286de189fb1a7c6eadc90b705ef993ecff9265daca5e4"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-29",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-29.wav",
+          "sha256": "d14cd8af77bb30a7e269a7eb022e2432b8fc41a9fc63f39e91a7822191367b06"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-29.json",
+          "sha256": "8183d2b9c4a5fe78d3d6c40582ce300610ab5788ab82656b4a339b4f89ba2f36"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-30",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-30.wav",
+          "sha256": "d9305a95f99e1deeae268ea8719abcae6a56a852f11666ae7f43096bdc9124d0"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-30.json",
+          "sha256": "e107da4dc7518da1ef6eb6d95a45c758192f471eb6c4dbbe5792ed11bd77bf14"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      },
+      {
+        "sampleId": "T08-31",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-31.wav",
+          "sha256": "b1462518c855ca703c9e08ebad8d5cc145944aa1700f5d1ce5fbe21b22c8b772"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-31.json",
+          "sha256": "abf04b5a31ec9fb8efdce8fb7b9f602ec92575276c627d44b5b0e3c2c871d5c8"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      }
+    ],
+    "expectedTruthCount": 548
+  },
+  "executionFreezeSha256": "7e2d9fa220e766be60fd5ece80aed79c66749e09ae2821b22baff4269ab6ad8a",
+  "configuration": "Release"
+}

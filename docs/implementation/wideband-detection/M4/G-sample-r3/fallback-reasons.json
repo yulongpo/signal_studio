@@ -1,0 +1,7 @@
+{
+  "fallbackReasons": {
+    "sample-burst-noise-ratio-too-low": 64
+  },
+  "scope": "G-sample-r3",
+  "interpretation": "Report existing fallback reasons; no parameter or result changes"
+}

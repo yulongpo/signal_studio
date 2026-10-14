@@ -1,0 +1,158 @@
+{
+  "schema": "signalstudio-m4-validation-protocol-v1",
+  "protocolId": "m4-gui-time-events-pre-results-20261014-v1",
+  "status": "mathematical-protocol-and-input-identity-frozen-before-new-outcomes",
+  "baseCommit": "6ed5ce0338cc2020b8bf6a529874e1cc07166177",
+  "newOutcomesRead": false,
+  "holdoutGenerated": false,
+  "externalBusinessModuleImportAllowed": false,
+  "pythonExecutable": "D:/profiles/anaconda/python.exe",
+  "inputManifest": "input-manifest.json",
+  "primaryProfile": {"id": "ffscn-gui-iq-v1", "version": 1, "precision": "FP32"},
+  "mathematicalVersion": "frequency-postprocess-v1-unique-window-max-score",
+  "baseline": {
+    "id": "gui-local10-m0-20261013",
+    "files": 10, "carrierRows": 117, "truthTimePairs": 594,
+    "fullFileSeconds": 0.8, "sampleRateHz": 20000000,
+    "effectiveBandwidthHz": 20000000,
+    "historicalG1ReproductionClaimAllowed": false
+  },
+  "defaultTime": {
+    "strategy": "sample", "splitEnabled": true,
+    "edgeFraction": 0.6, "minRunMs": 0.5,
+    "minOnMs": 5, "minOffMs": 10, "smoothMs": 1, "searchMarginMs": 8,
+    "roiFrequencyRows": 512, "roiTimeCols": 64,
+    "coarseMinBurstMs": 10, "coarseSplitGapMs": 20,
+    "fineSuppressesCoarseTimeFiltering": true,
+    "continuousCoverageThresholdInclusive": 0.7,
+    "continuousSampleEdgeFraction": 0.5,
+    "continuousDisablesSplit": true
+  },
+  "shortBurstProfile": {
+    "id": "ffscn-gui-iq-v1-short-burst-m4-v1",
+    "inheritsPrimaryProfile": true,
+    "overrides": {"minOnMs": 0.5, "minOffMs": 1, "smoothMs": 0.1},
+    "overridesProductDefault": false,
+    "primaryStrategy": "sample",
+    "roiReportsSeparatelyAtSameThresholds": true,
+    "roiTargetAssumedAchievable": false
+  },
+  "strategyMatrix": [
+    {"strategy":"sample", "splitEnabled":true},
+    {"strategy":"roi", "splitEnabled":true},
+    {"strategy":"coarse", "splitEnabled":true},
+    {"strategy":"sample", "splitEnabled":false},
+    {"strategy":"roi", "splitEnabled":false},
+    {"strategy":"coarse", "splitEnabled":false}
+  ],
+  "comparison": {
+    "reference": "repository-owned-standalone-independent-full-IQ-chain",
+    "target": "production-cpp-pipeline",
+    "sharedEvaluator": true,
+    "sameIqLabelsModelParametersAndProfileRequired": true,
+    "nativeHeadsOnlyIsFullChainReference": false,
+    "runtimeAndEvaluatorExecutableHashesRequiredBeforeFirstOutcome": true
+  },
+  "evaluator": {
+    "id": "tf-iou-max-cardinality-then-max-iou-v1",
+    "mathematicalSourceSha256": "e460dd0f3b85c233bde0247df9b5634502b2dd1bc03d27677db211b1148667e9",
+    "implementationStatusAtFreeze": "independent-implementation-and-code-hash-pending",
+    "thresholds": [0.3,0.5,0.7],
+    "thresholdComparison": ">=",
+    "independentAssignmentPerThreshold": true,
+    "cardinalityBonus": "min(nPred,nTruth)+1",
+    "validPairWeight": "cardinalityBonus+tfIou",
+    "invalidPairWeight": 0,
+    "iouDtype": "float64",
+    "zeroDenominatorMetric": 0,
+    "aggregate": "micro-from-summed-tp-fp-fn",
+    "failedFilePolicy": "zero-prediction-with-all-known-truth-as-fn",
+    "partialPolicy": "diagnostic-only-for-failed-full-file-run",
+    "includeZeroDetectionFiles": true,
+    "includePureNoiseFiles": true,
+    "newExclusionAfterOutcomesAllowed": false
+  },
+  "bootstrap": {
+    "prng": "NumPy-PCG64", "seed": 2026101405,
+    "unit": "paired-file", "repeats": 10000,
+    "resampleFileCount": "original-file-count-with-replacement",
+    "sameIndicesForBothImplementations": true,
+    "statistic": "pooled-tf-f1-at-0.5-cpp-minus-reference",
+    "confidence": 0.95, "percentiles": [2.5,97.5], "method": "linear"
+  },
+  "l3": {
+    "primaryGroup": "G", "primaryStrategy": "sample-default",
+    "minimumCppMinusReferenceTfF1At05": -0.01,
+    "historicalF1IsGateBaseline": false,
+    "reportCiAndGroups": true,
+    "lowerCiBelowMinusOnePointMeaning": "uncertain-no-statistical-noninferiority-claim"
+  },
+  "l4": {
+    "primaryShortStrategy": "sample-short",
+    "eventRecallTfThreshold": 0.5,
+    "shortRecallTarget": 0.9,
+    "shortMatchedCombinedEdgeP95MsTarget": 1,
+    "edgeQuantileMethod": "linear",
+    "reportUnmatchedAndStartEndSeparately": true,
+    "reportDefault5msAndRoiSeparately": true,
+    "manualRevisionsAllowedInAlgorithmGate": false,
+    "continuousCoverageIsDutyCycle": false
+  },
+  "tolerances": {
+    "discreteMappingsAndCounts": "exact",
+    "psdDensityMaxAbsDbStrictLess": 0.02,
+    "frequencyNoiseFloorMaxAbsDb": 0.02,
+    "normalizedInputMaxAbsStrictLess": 0.002,
+    "rawHeads": {"atol":0.0001,"rtol":0.001},
+    "decodedOrderedEdgeBins": 0.05,
+    "decodedScore": 0.001,
+    "sampleComplexIntermediate": {"atol":0.000001,"rtol":0.001},
+    "samplePowerEnvelopeThreshold": {"atol":0.0000001,"rtol":0.001},
+    "roiPooledDb": 0.02,
+    "finalSampleEndpointMapping": "exact-integer-endpoint-plus-at-most-one-source-sample-floating-seconds-conversion-residual",
+    "evaluatorIouMaxAbs": 0.000000000001,
+    "maskRunCountAndThresholdDecisionsCheckedSeparately": true,
+    "sampleToleranceFrozenBeforeOutcomes": true,
+    "sampleToleranceExplicitExecutionFreezeReferenceRequired": true
+  },
+  "truth": {
+    "sampleCoordinates": "zero-based-half-open-source-sample",
+    "sampleIntegerSerialization": "uint64-decimal-string",
+    "gTxtTimeDecimalPlaces": 5,
+    "gTxtTimeQuantizationSeconds": 0.00001,
+    "gTxtEndpointRoundingUncertaintySeconds": 0.000005,
+    "generatorFcBasebandConversion": "FC-sourceSampleRateHz/2",
+    "generatorFrequencyLabelsAreNominal": true,
+    "tTruthAuthority": "sample-exact-not-text-rounded",
+    "labelModulationIsModelPrediction": false
+  },
+  "holdout": {
+    "id": "m4-independent-synthetic-holdout-v1",
+    "status": "not-generated",
+    "seed": 2026101404, "prng": "NumPy-PCG64",
+    "fileSeed": "seed+1000*groupIndex+fileIndex",
+    "recommendedMinimumFiles": 96,
+    "defaultSourceSampleRateHz": 20000000,
+    "minimumRealTimeFrames": 10,
+    "groups": [
+      {"groupIndex":0,"name":"pure-noise","files":8,"coverage":"4 white and 4 colored; 0.2 s"},
+      {"groupIndex":1,"name":"low-CNR","files":8,"cnrDb":[-5,0,3,6],"bandwidthHz":[100000,1000000]},
+      {"groupIndex":2,"name":"extreme-narrow","files":8,"bandwidthBins":[2,8,32,512],"centers":2},
+      {"groupIndex":3,"name":"extreme-wide","files":8,"bandwidthFractionFs":[0.1,0.25,0.4,0.75],"centers":2},
+      {"groupIndex":4,"name":"dense-overlap","files":8,"carrierCounts":[4,16,64,128],"layouts":2},
+      {"groupIndex":5,"name":"band-edges","files":8,"guardBins":[0,1,4,16],"sides":["left","right"],"bandwidthHz":100000},
+      {"groupIndex":6,"name":"same-frequency-gaps","files":8,"gapMs":[0.5,1,10,20],"activityProportions":["low","high"]},
+      {"groupIndex":7,"name":"long-duration","files":8,"durationSeconds":[1,2,4,8],"configurations":2},
+      {"groupIndex":8,"name":"short-1-to-8ms","files":32,"burstMs":[1,2,3,4,5,6,7,8],"cnrDb":[6,20],"onsetPhaseHop":[0,0.5],"minimumFileMs":40,"eventsPerFile":2,"gapMsByFileIndexParity":[1,3]}
+    ],
+    "fullGeneratorGridAndSourceHashRequiredBeforeGeneration": true,
+    "iqAndTruthHashesRequiredBeforeInference": true,
+    "realRfCaptured": {"status":"unavailable-not-identified","isSyntheticSubset":false}
+  },
+  "separateEvidence": {
+    "H": "historical-frequency-only-exact-1000-file-replay-unavailable",
+    "FFSCN17": "experimental-instrument-spectrum-profile",
+    "TorchSigTrain0000000": "actual-import-and-linkage-fixture-not-blind-test",
+    "G": "generated-WAV-frozen-local-new-baseline-not-real-RF-capture"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "schema": "signalstudio-m4-stage-launch-v1",
+  "stage": "reference",
+  "identity": {
+    "sample": {
+      "sampleId": "T08-00",
+      "group": "short-1-to-8ms",
+      "source": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-00.wav",
+        "sha256": "3ac2edc11dcdebcc9ed0ae02adba93eb1666021101c4196f1dc90d112750cac3"
+      },
+      "truth": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-00.json",
+        "sha256": "235a04b2b2e5677390c950708dd91f7184ae7383ddd063174dc1233893df687f"
+      },
+      "sampleRateHz": 20000000,
+      "physicalSamples": "800000",
+      "centerFrequencyHz": 2500000000.0,
+      "effectiveBandwidthHz": 20000000,
+      "expectedTruthEvents": 2
+    },
+    "strategy": "sample",
+    "shortProfile": true,
+    "semantics": "product-v2",
+    "executionFreezeSha256": "4d8985a72f2333dd53378f9195ade67b3889fd140a2fd2660340e927b3be66a6",
+    "nativeBinarySha256": "75b0354f4307ee85933eb090d756a4958563a9489c191a8857d5db2eb32b7f79",
+    "referenceSourceSha256": "5f59e46d8ae6f28f991633e0eca7161620976194eaad47a9b4e644b5a6774291",
+    "configuration": "Release",
+    "nativeWorkingBudgetBytes": 268435456,
+    "nativeEvidenceBudgetBytes": 134217728,
+    "referenceWorkingBudgetBytes": 2147483648
+  },
+  "command": [
+    "D:\\profiles\\anaconda\\python.exe",
+    "-B",
+    "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_reference.py",
+    "--file",
+    "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-00.wav",
+    "--output",
+    "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-short\\T-sample-short\\T08-00\\reference",
+    "--strategy",
+    "sample",
+    "--semantics",
+    "product-v2",
+    "--checkpoint",
+    "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\config\\epoch_1200.pth",
+    "--device",
+    "cuda:0",
+    "--sample-budget-mib",
+    "2048",
+    "--center",
+    "2500000000.0",
+    "--freeze",
+    "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\execution-freeze-representative-r4-release.json",
+    "--short"
+  ],
+  "startedAtUtc": "2026-10-14T02:28:56.031287+00:00",
+  "timeoutSeconds": 1500
+}

@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <QWidget>
+#include <array>
 #include <functional>
 #include <map>
 #include <optional>
@@ -120,6 +121,8 @@ class DetectionCard : public QWidget {
   QLabel* draftNote_ = nullptr;
   QLabel* preflight_ = nullptr;
   QLabel* runSummary_ = nullptr;
+  std::array<QLabel*, 5> phaseSteps_{};
+  QWidget* phaseBar_ = nullptr;
   std::string displayRunId_;
   AdaptiveValueEdit* hopMilliseconds_ = nullptr;
   AdaptiveValueEdit* noiseMargin_ = nullptr;

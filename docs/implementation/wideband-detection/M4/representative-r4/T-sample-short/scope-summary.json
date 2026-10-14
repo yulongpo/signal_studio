@@ -1,0 +1,229 @@
+{
+  "scope": "T-sample-short",
+  "plannedFileCount": 32,
+  "pairedFiles": 1,
+  "diagnosticPartial": true,
+  "acceptanceEligible": false,
+  "assessment": "diagnostic-partial-no-gate",
+  "nativeFailedRuns": 0,
+  "referenceFailedRuns": 0,
+  "evaluation": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-short\\T-sample-short\\evaluation.json",
+  "evaluationSha256": "dd9e2357cf26025ef6f2ed41856a6d44189a1fbd30ccd6ea2508c8639d5d0802",
+  "pairedIndex": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-short\\T-sample-short\\paired-index.json",
+  "pairedIndexSha256": "711f15a6bf1d8357fea4c3e63b302619286a4a5327368baaa387c5a2d390469e",
+  "includedSamples": [
+    "T08-00"
+  ],
+  "nativeAccounting": {
+    "fileCount": 1,
+    "failedFiles": 0,
+    "metrics": [
+      {
+        "threshold": 0.3,
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "startAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "endAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "combinedEdgeAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "centerMaeHz": null,
+        "bandwidthMaeHz": null
+      },
+      {
+        "threshold": 0.5,
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "startAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "endAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "combinedEdgeAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "centerMaeHz": null,
+        "bandwidthMaeHz": null
+      },
+      {
+        "threshold": 0.7,
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "startAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "endAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "combinedEdgeAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "centerMaeHz": null,
+        "bandwidthMaeHz": null
+      }
+    ],
+    "unknownObservations": 0,
+    "annotations": 0,
+    "fallbackAnnotations": 0,
+    "splitRate": 0.0,
+    "mergeRate": 0,
+    "noise": {
+      "files": 0,
+      "failedFiles": 0,
+      "observedFiles": 0,
+      "falsePositives": 0,
+      "zeroDetectionFiles": 0,
+      "falsePositivesPerFile": null,
+      "exposureMHzSeconds": 0,
+      "falsePositivesPerMHzSecond": null
+    }
+  },
+  "referenceAccounting": {
+    "fileCount": 1,
+    "failedFiles": 0,
+    "metrics": [
+      {
+        "threshold": 0.3,
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "startAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "endAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "combinedEdgeAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "centerMaeHz": null,
+        "bandwidthMaeHz": null
+      },
+      {
+        "threshold": 0.5,
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "startAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "endAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "combinedEdgeAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "centerMaeHz": null,
+        "bandwidthMaeHz": null
+      },
+      {
+        "threshold": 0.7,
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "startAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "endAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "combinedEdgeAbsoluteErrorSeconds": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "centerMaeHz": null,
+        "bandwidthMaeHz": null
+      }
+    ],
+    "unknownObservations": 0,
+    "annotations": 0,
+    "fallbackAnnotations": 0,
+    "splitRate": 0.0,
+    "mergeRate": 0,
+    "noise": {
+      "files": 0,
+      "failedFiles": 0,
+      "observedFiles": 0,
+      "falsePositives": 0,
+      "zeroDetectionFiles": 0,
+      "falsePositivesPerFile": null,
+      "exposureMHzSeconds": 0,
+      "falsePositivesPerMHzSecond": null
+    }
+  },
+  "pairedFileBootstrap": {
+    "fileCount": 1,
+    "seed": 2026101405,
+    "repeats": 10000,
+    "difference": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "pointDropAtMostOnePercentagePoint": true,
+    "statisticalNoninferiorityEstablished": true
+  },
+  "numericResultsAreAcceptanceClaims": false,
+  "referenceBaselineComplete": true
+}

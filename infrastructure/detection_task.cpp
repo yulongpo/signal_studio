@@ -16,13 +16,35 @@
 #include "infrastructure/detection_frequency_analysis.h"
 #include "infrastructure/detection_projection.h"
 #include "infrastructure/detection_protocol.h"
+#include "infrastructure/detection_refined_publication.h"
 #include "infrastructure/detection_source.h"
 #include "infrastructure/detection_store.h"
+#include "infrastructure/detection_time_analysis.h"
 #include "infrastructure/detection_worker_client.h"
 #include "infrastructure/source_loader.h"
 
 namespace signalstudio {
 namespace {
+std::string boundedErrorSummary(const QString& error) {
+  constexpr qsizetype kMaximumBytes = 4096;
+  constexpr qsizetype kLeadingBytes = 3072;
+  const QByteArray separator = "\n...\n";
+  const auto bytes = error.toUtf8();
+  if (bytes.size() <= kMaximumBytes) return bytes.toStdString();
+  const auto continuation = [&](qsizetype index) {
+    return (static_cast<unsigned char>(bytes[index]) & 0xc0) == 0x80;
+  };
+  auto leadingEnd = kLeadingBytes;
+  while (continuation(leadingEnd)) --leadingEnd;
+  auto trailingBegin =
+      bytes.size() - (kMaximumBytes - kLeadingBytes - separator.size());
+  while (continuation(trailingBegin)) ++trailingBegin;
+  // Keep the original cause and the last failure, without cutting a UTF-8
+  // code point or exceeding the persistent run's error budget.
+  return (bytes.left(leadingEnd) + separator + bytes.mid(trailingBegin))
+      .toStdString();
+}
+
 std::uint64_t nowMilliseconds() {
   return static_cast<std::uint64_t>(QDateTime::currentMSecsSinceEpoch());
 }
@@ -379,7 +401,8 @@ void preserveFrequencyEvidence(
   for (auto& annotation : publication.annotations) {
     const auto found =
         std::find_if(values.begin(), values.end(), [&](const auto& value) {
-          return value.seedId == annotation.originRecordId;
+          return detectionTrackRecordId(value.seedId) ==
+                 annotation.originRecordId;
         });
     if (found == values.end() || !annotation.originEvidence) continue;
     auto origin = std::make_shared<OriginEvidence>(*annotation.originEvidence);
@@ -501,7 +524,8 @@ bool recoverDetectionPublication(const QString& directory,
               finalized = true;
               continue;
             }
-            if (finalized || record["kind"] != "frequency-annotation-v1") {
+            if (finalized || (record["kind"] != "frequency-annotation-v1" &&
+                              record["kind"] != "refined-annotation-v1")) {
               issue = "Unknown durable production result projection";
               return false;
             }
@@ -792,8 +816,10 @@ void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
     terminal = job->run;
     terminal.lifecycle =
         job->cancelled ? DetectionLifecycle::Cancelled : lifecycle;
-    terminal.error = error.toStdString();
+    terminal.error = boundedErrorSummary(error);
     terminal.finishedAtMilliseconds = nowMilliseconds();
+    if (terminal.lifecycle == DetectionLifecycle::Completed)
+      terminal.computationPhase = "completed";
     if (terminal.lifecycle != DetectionLifecycle::Completed) {
       auto unread = terminal.request.requestedRange;
       for (const auto& coverage : terminal.coverage)
@@ -819,12 +845,30 @@ void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
         std::lock_guard lock(mutex_);
         job->publication = std::move(prefix);
       } else {
-        terminal.error += "; Durable prefix projection failed: " +
-                          recoveryError.toStdString();
+        terminal.error = boundedErrorSummary(
+            QString::fromStdString(terminal.error) +
+            "; Durable prefix projection failed: " + recoveryError);
         std::lock_guard lock(mutex_);
         job->publication = {};
       }
     }
+  }
+  // Refinement may outlive the model loop. Its final source identity
+  // participates in the same terminal persistence boundary as a change during
+  // inference.
+  const auto sourcePath =
+      QString::fromStdString(terminal.request.sourceIdentity.path);
+  auto observedValidity = DetectionSourceValidity::Current;
+  if (!QFileInfo(sourcePath).exists())
+    observedValidity = DetectionSourceValidity::Missing;
+  else if (iqSourceFingerprint(sourcePath).toStdString() !=
+           terminal.request.sourceIdentity.quickFingerprint)
+    observedValidity = DetectionSourceValidity::Changed;
+  if (observedValidity != DetectionSourceValidity::Current) {
+    std::lock_guard lock(mutex_);
+    if (job->run.sourceValidity == DetectionSourceValidity::Current)
+      job->run.sourceValidity = observedValidity;
+    terminal.sourceValidity = job->run.sourceValidity;
   }
   for (;;) {
     QString writeError;
@@ -832,8 +876,11 @@ void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
     std::lock_guard lock(mutex_);
     if (!persisted) {
       terminal.lifecycle = DetectionLifecycle::Failed;
+      if (terminal.computationPhase == "completed")
+        terminal.computationPhase = "publishing";
       terminal.sourceValidity = job->run.sourceValidity;
-      terminal.error += "; " + writeError.toStdString();
+      terminal.error = boundedErrorSummary(
+          QString::fromStdString(terminal.error) + "; " + writeError);
     } else if (terminal.sourceValidity != job->run.sourceValidity) {
       // Source changes remain effective during disk IO. Keep the same terminal
       // lifecycle and durably replace its validity before exposing results.
@@ -928,6 +975,10 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       return;
     }
     std::vector<DetectionModelWindow> windows;
+    {
+      std::lock_guard lock(mutex_);
+      job->run.computationPhase = "reading";
+    }
     std::vector<float> tensor;
     QJsonArray mappings;
     for (std::uint32_t batch = 0; batch < request.parameters.batchSize &&
@@ -985,6 +1036,10 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
                           static_cast<int>(config.modelFrames),
                           static_cast<int>(config.fftSize)});
     DetectionWorkerPacket response;
+    {
+      std::lock_guard lock(mutex_);
+      job->run.computationPhase = "inference";
+    }
     if (!worker.exchange(std::move(packet), response, error, cancelled)) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
@@ -1081,10 +1136,20 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   if (!fixture) {
     std::vector<FrequencyTrack> tracks;
     std::vector<DetectionFrequencyEvidence> frequencyEvidence;
+    auto frequencyRequest = request;
+    if (frequencyRequest.parameters.timeStrategy ==
+        DetectionTimeStrategy::Coarse)
+      frequencyRequest.parameters.bandwidthMarginDb =
+          DetectionParameters{}.bandwidthMarginDb;
+    {
+      std::lock_guard lock(mutex_);
+      job->run.computationPhase = "frequency";
+    }
     if (!projector.finish(tracks, error, cancelled) ||
         (request.profile.backend != DetectionBackendKind::Scn &&
-         !applyDetectionFrequencyAnalysis(
-             source, request, tracks, frequencyEvidence, error, cancelled)) ||
+         !applyDetectionFrequencyAnalysis(source, frequencyRequest, tracks,
+                                          frequencyEvidence, error,
+                                          cancelled)) ||
         !projectFrequencyTracks(request, set, tracks,
                                 job->publicationBudgetBytes / 2, publication,
                                 error)) {
@@ -1092,11 +1157,33 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       return;
     }
     preserveFrequencyEvidence(publication, frequencyEvidence);
-    if (!projector.attachWindowEvidence(publication, error) ||
+    {
+      std::lock_guard lock(mutex_);
+      job->run.computationPhase = "refine";
+      job->run.totalRefinementCandidates = publication.annotations.size();
+    }
+    if (!checkpoint(job, error)) {
+      finish(job, DetectionLifecycle::Failed, error);
+      return;
+    }
+    const auto refinedProgress = [&](std::size_t done, std::size_t total) {
+      std::lock_guard lock(mutex_);
+      job->run.refinedCandidates = done;
+      job->run.totalRefinementCandidates = total;
+    };
+    if (!applyDetectionTimeAnalysis(source, job->metadata, request, tracks,
+                                    publication, error, cancelled,
+                                    refinedProgress) ||
+        !projector.attachWindowEvidence(publication, error) ||
+        !fuseDetectionPublication(request, publication, error, cancelled) ||
         !validateDetectionPublicationBudget(
             publication, job->publicationBudgetBytes / 2, error)) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
+    }
+    {
+      std::lock_guard lock(mutex_);
+      job->run.computationPhase = "publishing";
     }
     // Final projections are durable before they are visible. Interrupted final
     // shards without the end marker recover the raw frequency observations.
@@ -1145,7 +1232,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       return true;
     };
     for (const auto& annotation : publication.annotations)
-      if (!append(QJsonObject{{"kind", "frequency-annotation-v1"},
+      if (!append(QJsonObject{{"kind", "refined-annotation-v1"},
                               {"annotation", encodeAnnotation(annotation)}})) {
         finish(job, DetectionLifecycle::Failed, error);
         return;

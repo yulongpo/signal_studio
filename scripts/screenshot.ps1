@@ -25,7 +25,7 @@ function Assert-WidebandDetectionCapture($Report, [int]$CaptureExitCode, [string
         throw 'Acceptance requires actual connected screen 2, Redmi 27 NU, DISPLAY6, native 4K/150% fullscreen.'
     }
     $captureScenes = @($Report.scenes)
-    $expectedScenes = if ($Report.productionModelRequested -eq $true) { 25 } else { 23 }
+    $expectedScenes = if ($Report.productionModelRequested -eq $true) { 34 } else { 23 }
     if ($captureScenes.Count -ne $expectedScenes -or $Report.sceneCount -ne $expectedScenes -or
         @($captureScenes.scene | Select-Object -Unique).Count -ne $expectedScenes) {
         throw "Native capture must contain all $expectedScenes unique planned scenes."

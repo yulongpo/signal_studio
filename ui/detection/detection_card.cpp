@@ -26,6 +26,7 @@
 #include "infrastructure/detection_source.h"
 #include "ui/controls/adaptive_value_edit.h"
 #include "ui/controls/unsigned_value_edit.h"
+#include "ui/detection/detection_phase.h"
 #include "ui/parameter_input.h"
 
 namespace signalstudio {
@@ -525,6 +526,21 @@ void DetectionCard::setupStatus(QVBoxLayout* layout) {
   layout->addWidget(preflight_);
   runSummary_ = wrappingLabel("detectionRunSummary", this);
   layout->addWidget(runSummary_);
+  phaseBar_ = new QWidget(this);
+  phaseBar_->setObjectName("detectionPhaseProgress");
+  auto* phases = new QHBoxLayout(phaseBar_);
+  phases->setContentsMargins(0, 0, 0, 0);
+  phases->setSpacing(4);
+  const std::array<QString, 5> phaseNames{"排队", "谱帧", "推理 / 关联",
+                                          "精修 / 发布", "完成"};
+  for (std::size_t index = 0; index < phaseSteps_.size(); ++index) {
+    phaseSteps_[index] = new QLabel(phaseBar_);
+    phaseSteps_[index]->setFixedHeight(3);
+    phaseSteps_[index]->setToolTip(phaseNames[index]);
+    phases->addWidget(phaseSteps_[index], 1);
+  }
+  phaseBar_->hide();
+  layout->addWidget(phaseBar_);
   actions_ = new QWidget(this);
   actions_->setObjectName("detectionRunActions");
   auto* actions = new QHBoxLayout(actions_);
@@ -745,8 +761,8 @@ void DetectionCard::refreshTiming() {
   if (profile.backend == DetectionBackendKind::Scn)
     profileHelp_->setText(
         "SCN：16 帧最大积累，网络单行 32768 · 频率对照。"
-        "该对照的 CNR / 频率收边裕量固定为 3 dB；"
-        "卡片噪底裕量用于 sample / ROI 时间精修。");
+        "CNR / 频率收边固定 3 dB；Coarse / 粗回退固定 6 dB。"
+        "噪底裕量不可调，已保存的配置值保留。");
   else if (profile.backend == DetectionBackendKind::Experimental17)
     profileHelp_->setText(
         "17 是频率阶数，固定 10 真实帧 / N 8192–131072 · 实验");
@@ -795,15 +811,18 @@ void DetectionCard::refreshBranchState() {
                                     split);
   minBurstMilliseconds_->setEnabled(strategy == DetectionTimeStrategy::Coarse &&
                                     split);
-  noiseMargin_->setEnabled(strategy != DetectionTimeStrategy::Coarse);
+  const bool scn = configuration_.profile.backend == DetectionBackendKind::Scn;
+  noiseMargin_->setEnabled(!scn && strategy != DetectionTimeStrategy::Coarse);
   if (strategy == DetectionTimeStrategy::Sample)
     branchHelp_->setText(
         "sample：带限功率门控；边缘比例 / 平滑生效。允许拆分时 min on/off "
         "生效；粗分段参数不生效。");
   else if (strategy == DetectionTimeStrategy::Roi)
     branchHelp_->setText(
-        "ROI：ROI STFT / 噪底轨迹；边缘比例 / 平滑与噪底裕量生效。允许拆分时 "
-        "min on/off 生效。");
+        scn ? "ROI：ROI STFT 自适应门限；边缘比例 / 平滑生效。允许拆分时 "
+              "min on/off 生效；SCN 裕量固定。"
+            : "ROI：ROI STFT / 噪底轨迹；边缘比例 / 平滑与噪底裕量生效。"
+              "允许拆分时 min on/off 生效。");
   else
     branchHelp_->setText(
         "coarse：窗口支持 / 粗事件。精修参数不生效；允许拆分时粗分段间隔 / "
@@ -868,6 +887,20 @@ void DetectionCard::refreshStatus() {
                                 : "没有未完成任务");
   selectRoi_->setEnabled(metadata_ && availableSamples(*metadata_) > 0);
   if (const auto* run = latestRun()) {
+    const auto phase = text(run->computationPhase);
+    const int step = phase == "completed"                           ? 4
+                     : phase == "refine" || phase == "publishing"   ? 3
+                     : phase == "inference" || phase == "frequency" ? 2
+                     : phase == "reading"                           ? 1
+                                                                    : 0;
+    phaseBar_->show();
+    if (phaseBar_->property("completedStageIndex") != QVariant(step)) {
+      phaseBar_->setProperty("completedStageIndex", step);
+      for (std::size_t index = 0; index < phaseSteps_.size(); ++index)
+        phaseSteps_[index]->setStyleSheet(static_cast<int>(index) <= step
+                                              ? "background: #61c3ca;"
+                                              : "background: #26465d;");
+    }
     runSummary_->setText(
         QString("%1 · %2\n冻结范围：%3\n实际谱帧 %4 · unique windows %5/%6 · "
                 "持久化记录 %7\n%8%9")
@@ -881,8 +914,13 @@ void DetectionCard::refreshStatus() {
             .arg(run->coverage.empty()
                      ? "尚未发布覆盖；请求范围尚无完整结论。"
                      : "实际覆盖见后台任务详情；未读与排除区域没有检测结论。")
-            .arg(run->error.empty() ? "" : "\n" + text(run->error)));
+            .arg(run->error.empty() ? "" : "\n" + text(run->error)) +
+        QString("\n阶段 %1 · 精修候选处理 %2/%3")
+            .arg(detectionPhaseText(run->computationPhase))
+            .arg(run->refinedCandidates)
+            .arg(run->totalRefinementCandidates));
   } else {
+    phaseBar_->hide();
     runSummary_->setText(
         "尚无本次任务；三个检测入口只打开此配置卡。" +
         QString(activeRun ? "本工程已有未完成运行，新参数用于下一次。" : ""));

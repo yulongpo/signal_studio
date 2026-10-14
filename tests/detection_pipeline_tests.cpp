@@ -265,6 +265,9 @@ void livePipeline(const QString& wavPath, const QString& output) {
     request.runId = std::string("m3-live-") + profileId;
     request.sourceIdentity = annotationSourceIdentity(metadata, 901);
     request.profile = *findDetectionProfile(profileId);
+    // This retained M3 oracle isolates frequency/L1/L2. M4 event accuracy is
+    // exercised by the separate full-file time pipeline and paired evaluator.
+    request.parameters.timeStrategy = DetectionTimeStrategy::None;
     request.requestedRange = {
         {0, std::min(metadata.sampleCount,
                      static_cast<SampleIndex>(descriptor.sampleRateHz / 50))},

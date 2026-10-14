@@ -331,6 +331,7 @@ void testFailedTerminalPersistenceKeepsRecoveryPrefix() {
   check(tasks.enqueue(directory.path(), metadata, request, error), error);
   const auto failed = waitForRun(tasks, request.runId);
   check(failed.lifecycle == DetectionLifecycle::Failed &&
+            failed.computationPhase == "publishing" &&
             QString::fromStdString(failed.error).contains("write failure") &&
             !failed.chunks.empty(),
         "Terminal IO failure must expose failure and keep durable chunks");
@@ -400,6 +401,76 @@ void testAccumulatedRecoveryBudget() {
         "atomically: " +
             error);
 }
+
+void testLongFailureSummariesPreserveTerminalContract() {
+  QTemporaryDir directory;
+  const auto metadata = sourceFixture(directory);
+  const QString injected =
+      "Injected IO failure: " + QString(6000, QChar(0x6d4b)) +
+      "initial-io-last-cause";
+  const QString terminalFailure =
+      "Injected terminal IO failure: " + QString(6000, QChar(0x6d4b)) +
+      "terminal-io-last-cause";
+  for (const bool refuseTerminal : {false, true}) {
+    DetectionTaskManager tasks(
+        workerPath(),
+        [&](const QString& path, const DetectionRun& run, QString& error) {
+          if (run.lifecycle == DetectionLifecycle::Validating) {
+            error = injected;
+            return false;
+          }
+          if (refuseTerminal && detectionIsTerminal(run.lifecycle)) {
+            error = terminalFailure;
+            return false;
+          }
+          return writeDetectionRun(path, run, error);
+        });
+    const auto request = requestFixture(
+        metadata, refuseTerminal ? "long-error-terminal-refused"
+                                 : "long-error-terminal-persisted");
+    QString error;
+    check(tasks.enqueue(directory.path(), metadata, request, error), error);
+    const auto initialPath = directory.filePath(
+        encodeDetectionRun(tasks.snapshots().front())["manifestRelativePath"]
+            .toString());
+    QFile initialFile(initialPath);
+    const bool initialOpened = initialFile.open(QIODevice::ReadOnly);
+    check(initialOpened, initialFile.errorString());
+    const auto initialBytes = initialFile.readAll();
+    initialFile.close();
+    const auto terminal = waitForRun(tasks, request.runId);
+    const auto bytes = QByteArray::fromStdString(terminal.error);
+    check(terminal.lifecycle == DetectionLifecycle::Failed &&
+              bytes.size() <= 4096 && bytes.startsWith("Injected IO failure") &&
+              bytes.contains("\n...\n") &&
+              bytes.endsWith(refuseTerminal ? "terminal-io-last-cause"
+                                            : "initial-io-last-cause") &&
+              QString::fromUtf8(bytes).toUtf8() == bytes,
+          "Long IO summaries must retain the cause and valid bounded UTF-8");
+    DetectionRun decoded;
+    const bool decodedOk =
+        decodeDetectionRun(encodeDetectionRun(terminal), decoded, error);
+    check(decodedOk && decoded.error == terminal.error,
+          "A visible terminal failure must still meet the durable DTO budget");
+    DetectionRun durable;
+    check(
+        loadDetectionRun(directory.path(),
+                         QString::fromStdString(request.runId), durable, error),
+        error);
+    if (refuseTerminal) {
+      QFile preservedFile(initialPath);
+      const bool preservedOpened = preservedFile.open(QIODevice::ReadOnly);
+      check(preservedOpened, preservedFile.errorString());
+      check(durable.lifecycle == DetectionLifecycle::Interrupted &&
+                durable.recoverable && preservedFile.readAll() == initialBytes,
+            "A refused terminal write must retain the previous active state");
+    } else {
+      check(durable.lifecycle == DetectionLifecycle::Failed &&
+                durable.error == terminal.error,
+            "A long initial error must not prevent terminal persistence");
+    }
+  }
+}
 }  // namespace
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
@@ -410,6 +481,7 @@ int main(int argc, char** argv) {
     testTerminalCommitAndSourceInvalidation();
     testFailedTerminalPersistenceKeepsRecoveryPrefix();
     testAccumulatedRecoveryBudget();
+    testLongFailureSummariesPreserveTerminalContract();
     std::cout << "PASS isolated native worker, bounded task lifecycle, "
                  "provenance and persistence\n";
   } catch (const std::exception& error) {

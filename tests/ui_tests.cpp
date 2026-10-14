@@ -4299,12 +4299,44 @@ void UiTests::widebandConfigurationCommittedDrafts() {
   origin->setCurrentIndex(2);
   QVERIFY(card->validationError().contains("时间未定位") ||
           card->validationError().contains("活动"));
+  auto* margin =
+      card->findChild<AdaptiveValueEdit*>("detectionBandwidthMarginDb");
+  QVERIFY(margin);
+  card->findChild<QPushButton*>("detectionStrategySample")->click();
+  QVERIFY(margin->isEnabled());
+  margin->setFocus();
+  margin->selectAll();
+  QTest::keyClicks(margin, "9");
+  QTest::keyClick(margin, Qt::Key_Return);
+  QCOMPARE(card->request().parameters.bandwidthMarginDb, 9.);
   profile->setCurrentIndex(profile->findData("scn-max-psd-v1"));
   QCOMPARE(card->request().profile.modelHopFrames, std::uint32_t{5});
   QCOMPARE(card->request().parameters.timeStrategy,
            DetectionTimeStrategy::Coarse);
+  DetectionRun scnSnapshot;
+  scnSnapshot.request = card->request();
+  scnSnapshot.request.runId = "scn-fixed-margin-snapshot";
+  scnSnapshot.request.parameters.bandwidthMarginDb = 11.25;
+  card->configure(&scnSnapshot);
+  auto* description = card->findChild<QLabel*>("detectionProfileDescription");
+  QVERIFY(description && description->text().contains("固定 3 dB") &&
+          description->text().contains("固定 6 dB"));
+  for (const auto* name : {"detectionStrategySample", "detectionStrategyRoi",
+                           "detectionStrategyCoarse"}) {
+    auto* strategy = card->findChild<QPushButton*>(name);
+    QVERIFY(strategy);
+    strategy->click();
+    QVERIFY(!margin->isEnabled());
+    QCOMPARE(card->request().parameters.bandwidthMarginDb, 11.25);
+  }
+  scnSnapshot.request.parameters.timeStrategy = DetectionTimeStrategy::None;
+  card->configure(&scnSnapshot);
+  QVERIFY(!margin->isEnabled());
+  QCOMPARE(card->request().parameters.bandwidthMarginDb, 11.25);
   profile->setCurrentIndex(profile->findData("pipeline-fixture-v1"));
   QCOMPARE(card->request().parameters.scoreThreshold, .8);
+  QVERIFY(margin->isEnabled());
+  QCOMPARE(card->request().parameters.bandwidthMarginDb, 9.);
   window.session().addDemoFile("other-file.iq", 20e6, 2500e6, .02);
   QVERIFY(window.session().activateFile(sourceId));
   window.refresh();

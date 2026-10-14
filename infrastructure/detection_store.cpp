@@ -399,9 +399,19 @@ void atomicWrite(const QDir& root, const QString& relative,
           "Detection write path escapes its project");
   QSaveFile file(root.filePath(relative));
   file.setDirectWriteFallback(false);
-  require(file.open(QIODevice::WriteOnly) &&
-              file.write(bytes) == bytes.size() && file.commit(),
-          "Cannot atomically publish detection data: " + file.errorString());
+  const auto failureMessage = [&](const char* operation) {
+    return QString("Cannot atomically publish detection data (%1): %2: %3")
+        .arg(QString::fromLatin1(operation), relative,
+             file.errorString().left(1024));
+  };
+  // Capture each error after the operation; argument evaluation can otherwise
+  // read errorString() before QSaveFile has reported the real failure.
+  const bool opened = file.open(QIODevice::WriteOnly);
+  require(opened, failureMessage("open"));
+  const auto written = file.write(bytes);
+  require(written == bytes.size(), failureMessage("write"));
+  const bool committed = file.commit();
+  require(committed, failureMessage("commit"));
 }
 void validateRecords(const QJsonArray& values, const DetectionRequest& request,
                      bool mappings) {
@@ -624,7 +634,7 @@ QJsonObject encodeDetectionRun(const DetectionRun& run) {
                     {"sha256", text(chunk.sha256)},
                     {"resultCount", static_cast<int>(chunk.resultCount)}});
   return {{"schema", "signal-studio-detection-run"},
-          {"version", 1},
+          {"version", 2},
           {"request", encodeDetectionRequest(run.request)},
           {"lifecycle", enumText(static_cast<int>(run.lifecycle), kLifecycles)},
           {"sourceValidity",
@@ -635,6 +645,9 @@ QJsonObject encodeDetectionRun(const DetectionRun& run) {
           {"eligibleWindows", decimal(run.eligibleWindows)},
           {"completedWindows", decimal(run.completedWindows)},
           {"resultCount", decimal(run.resultCount)},
+          {"computationPhase", text(run.computationPhase)},
+          {"refinedCandidates", decimal(run.refinedCandidates)},
+          {"totalRefinementCandidates", decimal(run.totalRefinementCandidates)},
           {"startedAtMilliseconds", decimal(run.startedAtMilliseconds)},
           {"finishedAtMilliseconds", decimal(run.finishedAtMilliseconds)},
           {"error", text(run.error)},
@@ -646,12 +659,29 @@ QJsonObject encodeDetectionRun(const DetectionRun& run) {
 bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
                         QString& error) {
   return decodeSafely(o, target, error, [&] {
-    onlyKeys(o, {"schema", "version", "request", "lifecycle", "sourceValidity",
-                 "coverage", "chunks", "readFrames", "eligibleWindows",
-                 "completedWindows", "resultCount", "startedAtMilliseconds",
-                 "finishedAtMilliseconds", "error", "device", "runtime",
-                 "manifestRelativePath", "recoverable"});
-    require(o["schema"] == "signal-studio-detection-run" && o["version"] == 1,
+    onlyKeys(o, {"schema",
+                 "version",
+                 "request",
+                 "lifecycle",
+                 "sourceValidity",
+                 "coverage",
+                 "chunks",
+                 "readFrames",
+                 "eligibleWindows",
+                 "completedWindows",
+                 "resultCount",
+                 "startedAtMilliseconds",
+                 "finishedAtMilliseconds",
+                 "error",
+                 "device",
+                 "runtime",
+                 "manifestRelativePath",
+                 "recoverable",
+                 "computationPhase",
+                 "refinedCandidates",
+                 "totalRefinementCandidates"});
+    require(o["schema"] == "signal-studio-detection-run" &&
+                (o["version"] == 1 || o["version"] == 2),
             "Unsupported detection run manifest version");
     DetectionRun run;
     QString requestError;
@@ -681,6 +711,25 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
     run.eligibleWindows = integer(o["eligibleWindows"], "eligibleWindows");
     run.completedWindows = integer(o["completedWindows"], "completedWindows");
     run.resultCount = integer(o["resultCount"], "resultCount");
+    if (o["version"] == 2) {
+      run.computationPhase = string(o, "computationPhase", 32, true);
+      require(QStringList{"none", "reading", "inference", "frequency", "refine",
+                          "publishing", "completed"}
+                  .contains(text(run.computationPhase)),
+              "Unknown detection computation phase");
+      run.refinedCandidates =
+          integer(o["refinedCandidates"], "refinedCandidates");
+      run.totalRefinementCandidates =
+          integer(o["totalRefinementCandidates"], "totalRefinementCandidates");
+      require(run.refinedCandidates <= run.totalRefinementCandidates &&
+                  run.totalRefinementCandidates <= annotationSegmentBudget,
+              "Detection refinement counters exceed their frozen total");
+    } else {
+      require(!o.contains("computationPhase") &&
+                  !o.contains("refinedCandidates") &&
+                  !o.contains("totalRefinementCandidates"),
+              "Version 1 cannot contain version 2 progress fields");
+    }
     run.startedAtMilliseconds =
         integer(o["startedAtMilliseconds"], "startedAtMilliseconds");
     run.finishedAtMilliseconds =

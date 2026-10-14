@@ -11,6 +11,13 @@
 
 #include "infrastructure/detection_store.h"
 
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 using namespace signalstudio;
 
 namespace {
@@ -98,6 +105,26 @@ void roundtripAndRecovery() {
           request.parameters == run.request.parameters &&
           request.contextRange == run.request.contextRange,
       "Source identity, uint64 generation, parameters and ROI must roundtrip");
+  auto oldManifest = encodeDetectionRun(run);
+  oldManifest["version"] = 1;
+  oldManifest.remove("computationPhase");
+  oldManifest.remove("refinedCandidates");
+  oldManifest.remove("totalRefinementCandidates");
+  DetectionRun oldRun;
+  check(decodeDetectionRun(oldManifest, oldRun, error) &&
+            oldRun.totalRefinementCandidates == 0 &&
+            oldRun.computationPhase == "none",
+        "Version 1 run history must remain readable without invented progress");
+  auto progress = encodeDetectionRun(run);
+  progress["computationPhase"] = "refine";
+  progress["totalRefinementCandidates"] = "3";
+  progress["refinedCandidates"] = "2";
+  check(decodeDetectionRun(progress, oldRun, error) &&
+            oldRun.refinedCandidates == 2,
+        "Version 2 must preserve actual refinement progress");
+  progress["refinedCandidates"] = "4";
+  check(!decodeDetectionRun(progress, oldRun, error),
+        "Refinement progress cannot exceed its frozen candidate total");
   writeFile(directory.filePath("project.json"), "untouched project index");
   check(writeDetectionRun(directory.path(), run, error), error);
   check(
@@ -199,6 +226,34 @@ void failedReadsAndAtomicPublication() {
   writeFile(manifestPath, manifest.left(manifest.size() / 2));
   check(!loadDetectionRun(directory.path(), "run-1", sentinel, error),
         "A truncated crash manifest must not yield partially recovered state");
+}
+
+void failedManifestReplacementPreservesDataAndCause() {
+#ifdef Q_OS_WIN
+  QTemporaryDir directory;
+  auto run = fixture(directory.path(), "locked-manifest");
+  QString error;
+  check(writeDetectionRun(directory.path(), run, error), error);
+  const auto path = directory.filePath(
+      encodeDetectionRun(run)["manifestRelativePath"].toString());
+  const auto original = readFile(path);
+  // Permit validation reads, but deny replacement of this test-owned file.
+  const auto handle = CreateFileW(
+      reinterpret_cast<const wchar_t*>(path.utf16()), GENERIC_READ,
+      FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  check(handle != INVALID_HANDLE_VALUE,
+        "Cannot establish the test-owned manifest replacement lock");
+  const bool published = writeDetectionRun(directory.path(), run, error);
+  CloseHandle(handle);
+  check(!published && readFile(path) == original,
+        "A denied atomic replacement must preserve the previous manifest");
+  check(error.contains("commit") && error.contains("manifest.json") &&
+            !error.contains("Unknown error"),
+        "Failed replacement must retain its operation, path and Qt cause: " +
+            error);
+  check(writeDetectionRun(directory.path(), run, error),
+        "The unchanged snapshot must publish after releasing the test lock");
+#endif
 }
 void budgetsAndMalformedRequests() {
   QTemporaryDir directory;
@@ -353,6 +408,7 @@ int main(int argc, char** argv) {
   try {
     roundtripAndRecovery();
     failedReadsAndAtomicPublication();
+    failedManifestReplacementPreservesDataAndCause();
     budgetsAndMalformedRequests();
     unpublishedChunksAndLargeIndices();
     accumulatedReadsAndStreamingBudget();

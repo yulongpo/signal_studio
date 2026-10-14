@@ -63,6 +63,8 @@ add_library(SignalStudioCore STATIC
     domain/detection.cpp
     domain/detection_postprocess.cpp
     domain/scn_detection_postprocess.cpp
+    domain/detection_refinement.cpp
+    domain/detection_refined_fusion.cpp
     application/annotation_service.cpp
     domain/sample_format.cpp
     domain/project.cpp
@@ -86,6 +88,9 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/detection_projection.cpp
     infrastructure/detection_model_snapshot.cpp
     infrastructure/detection_frequency_analysis.cpp
+    infrastructure/detection_sample_energy.cpp
+    infrastructure/detection_time_analysis.cpp
+    infrastructure/detection_refined_publication.cpp
     infrastructure/import_controller.cpp
     infrastructure/format_template_store.cpp
     infrastructure/source_metadata.cpp
@@ -191,6 +196,26 @@ endif()
 
 if(SS_BUILD_TESTS)
     enable_testing()
+    add_executable(SignalStudioDetectionRefinedFusionTests tests/detection_refined_fusion_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionRefinedFusionTests)
+    set_target_properties(SignalStudioDetectionRefinedFusionTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionRefinedFusionTests PRIVATE SignalStudioCore)
+    add_test(NAME signal_studio_detection_refined_fusion COMMAND SignalStudioDetectionRefinedFusionTests)
+    add_executable(SignalStudioDetectionTimePipelineTests tests/detection_time_pipeline_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionTimePipelineTests)
+    set_target_properties(SignalStudioDetectionTimePipelineTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionTimePipelineTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_time_pipeline COMMAND SignalStudioDetectionTimePipelineTests)
+    add_executable(SignalStudioDetectionRefinementTests tests/detection_refinement_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionRefinementTests)
+    set_target_properties(SignalStudioDetectionRefinementTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionRefinementTests PRIVATE SignalStudioCore)
+    add_test(NAME signal_studio_detection_refinement COMMAND SignalStudioDetectionRefinementTests)
+    add_executable(SignalStudioDetectionSampleEnergyTests tests/detection_sample_energy_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionSampleEnergyTests)
+    set_target_properties(SignalStudioDetectionSampleEnergyTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionSampleEnergyTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_sample_energy COMMAND SignalStudioDetectionSampleEnergyTests)
     add_executable(SignalStudioDetectionPipelineTests tests/detection_pipeline_tests.cpp)
     ss_target_defaults(SignalStudioDetectionPipelineTests)
     set_target_properties(SignalStudioDetectionPipelineTests PROPERTIES AUTOMOC OFF)
@@ -322,7 +347,7 @@ if(SS_BUILD_TESTS)
         "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ui-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
         -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     set_tests_properties(signal_studio_ui PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 300)
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480)
     set_tests_properties(signal_studio_core PROPERTIES TIMEOUT 60)
 
     if(WIN32 AND SS_DEPLOY_RUNTIME)

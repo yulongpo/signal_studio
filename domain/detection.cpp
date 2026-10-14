@@ -189,9 +189,17 @@ DetectionValidation validateDetectionRun(const DetectionRun& run) {
   if (const auto valid = validateDetectionRequest(run.request); !valid)
     return valid;
   if (run.completedWindows > run.eligibleWindows ||
+      run.refinedCandidates > run.totalRefinementCandidates ||
+      run.totalRefinementCandidates > annotationSegmentBudget ||
       run.chunks.size() > 100000 || run.coverage.size() > 100000 ||
       run.resultCount > 100000)
     return {false, "Detection run counts exceed their coverage/budget"};
+  if (run.computationPhase != "none" && run.computationPhase != "reading" &&
+      run.computationPhase != "inference" &&
+      run.computationPhase != "frequency" && run.computationPhase != "refine" &&
+      run.computationPhase != "publishing" &&
+      run.computationPhase != "completed")
+    return {false, "Unknown detection computation phase"};
   std::unordered_set<std::uint64_t> sequences;
   for (const auto& chunk : run.chunks)
     if (!sequences.insert(chunk.sequence).second || chunk.resultCount > 4096 ||

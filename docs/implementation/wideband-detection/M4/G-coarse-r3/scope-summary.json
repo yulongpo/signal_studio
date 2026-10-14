@@ -1,0 +1,238 @@
+{
+  "scope": "G-coarse",
+  "plannedFileCount": 10,
+  "pairedFiles": 10,
+  "diagnosticPartial": false,
+  "acceptanceEligible": true,
+  "assessment": "complete-scope-numeric-results",
+  "nativeFailedRuns": 0,
+  "referenceFailedRuns": 0,
+  "evaluation": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-coarse\\evaluation.json",
+  "evaluationSha256": "bc0abf5fc961d0d0dace655ee004ae37a2998a673f6bb775e9447ef7797cefa7",
+  "pairedIndex": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-coarse\\paired-index.json",
+  "pairedIndexSha256": "12102f780ae920ec736eb618a2e2a55b334a6cdebca5b1f3c3ed716024145f53",
+  "includedSamples": [
+    "20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35",
+    "20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35",
+    "20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35",
+    "20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35",
+    "20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35",
+    "20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35",
+    "20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35",
+    "20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35",
+    "20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35",
+    "20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35"
+  ],
+  "nativeAccounting": {
+    "fileCount": 10,
+    "failedFiles": 0,
+    "metrics": [
+      {
+        "threshold": 0.3,
+        "tp": 219,
+        "fp": 173,
+        "fn": 375,
+        "precision": 0.5586734693877551,
+        "recall": 0.3686868686868687,
+        "f1": 0.4442190669371196,
+        "startAbsoluteErrorSeconds": {
+          "count": 219,
+          "median": 0.00039000000000000146,
+          "p95": 0.05039499999999999
+        },
+        "endAbsoluteErrorSeconds": {
+          "count": 219,
+          "median": 0.00045000000000006146,
+          "p95": 0.07451600000000001
+        },
+        "combinedEdgeAbsoluteErrorSeconds": {
+          "count": 438,
+          "median": 0.0004299999999999929,
+          "p95": 0.05658549999999994
+        },
+        "centerMaeHz": 7821.6898990439495,
+        "bandwidthMaeHz": 21273.530572203195
+      },
+      {
+        "threshold": 0.5,
+        "tp": 191,
+        "fp": 201,
+        "fn": 403,
+        "precision": 0.4872448979591837,
+        "recall": 0.32154882154882153,
+        "f1": 0.3874239350912778,
+        "startAbsoluteErrorSeconds": {
+          "count": 191,
+          "median": 0.00036999999999998145,
+          "p95": 0.029899999999999996
+        },
+        "endAbsoluteErrorSeconds": {
+          "count": 191,
+          "median": 0.00041999999999997595,
+          "p95": 0.03058499999999997
+        },
+        "combinedEdgeAbsoluteErrorSeconds": {
+          "count": 382,
+          "median": 0.00039000000000000146,
+          "p95": 0.03048499999999998
+        },
+        "centerMaeHz": 7374.557428010471,
+        "bandwidthMaeHz": 20457.756483147907
+      },
+      {
+        "threshold": 0.7,
+        "tp": 164,
+        "fp": 228,
+        "fn": 430,
+        "precision": 0.41836734693877553,
+        "recall": 0.2760942760942761,
+        "f1": 0.3326572008113591,
+        "startAbsoluteErrorSeconds": {
+          "count": 164,
+          "median": 0.00034000000000000696,
+          "p95": 0.001084999999999991
+        },
+        "endAbsoluteErrorSeconds": {
+          "count": 164,
+          "median": 0.00037500000000000033,
+          "p95": 0.0011569999999999996
+        },
+        "combinedEdgeAbsoluteErrorSeconds": {
+          "count": 328,
+          "median": 0.00034999999999996145,
+          "p95": 0.0011400000000000104
+        },
+        "centerMaeHz": 7663.170612614329,
+        "bandwidthMaeHz": 21486.54072980183
+      }
+    ],
+    "unknownObservations": 164,
+    "annotations": 271,
+    "fallbackAnnotations": 164,
+    "splitRate": 0.0,
+    "mergeRate": 0.17091836734693877,
+    "noise": {
+      "files": 0,
+      "failedFiles": 0,
+      "observedFiles": 0,
+      "falsePositives": 0,
+      "zeroDetectionFiles": 0,
+      "falsePositivesPerFile": null,
+      "exposureMHzSeconds": 0,
+      "falsePositivesPerMHzSecond": null
+    }
+  },
+  "referenceAccounting": {
+    "fileCount": 10,
+    "failedFiles": 0,
+    "metrics": [
+      {
+        "threshold": 0.3,
+        "tp": 373,
+        "fp": 19,
+        "fn": 221,
+        "precision": 0.951530612244898,
+        "recall": 0.6279461279461279,
+        "f1": 0.7565922920892495,
+        "startAbsoluteErrorSeconds": {
+          "count": 373,
+          "median": 0.00045000000000006146,
+          "p95": 0.05439599999999996
+        },
+        "endAbsoluteErrorSeconds": {
+          "count": 373,
+          "median": 0.0004599999999999882,
+          "p95": 0.074528
+        },
+        "combinedEdgeAbsoluteErrorSeconds": {
+          "count": 746,
+          "median": 0.00045500000000002483,
+          "p95": 0.058510000000000006
+        },
+        "centerMaeHz": 8093.789889829089,
+        "bandwidthMaeHz": 22384.269300854558
+      },
+      {
+        "threshold": 0.5,
+        "tp": 331,
+        "fp": 61,
+        "fn": 263,
+        "precision": 0.8443877551020408,
+        "recall": 0.5572390572390572,
+        "f1": 0.6713995943204868,
+        "startAbsoluteErrorSeconds": {
+          "count": 331,
+          "median": 0.00039000000000000146,
+          "p95": 0.025980000000000003
+        },
+        "endAbsoluteErrorSeconds": {
+          "count": 331,
+          "median": 0.00039000000000000146,
+          "p95": 0.02609500000000003
+        },
+        "combinedEdgeAbsoluteErrorSeconds": {
+          "count": 662,
+          "median": 0.00039000000000000146,
+          "p95": 0.026573999999999907
+        },
+        "centerMaeHz": 7946.225760007553,
+        "bandwidthMaeHz": 22080.688054663897
+      },
+      {
+        "threshold": 0.7,
+        "tp": 292,
+        "fp": 100,
+        "fn": 302,
+        "precision": 0.7448979591836735,
+        "recall": 0.49158249158249157,
+        "f1": 0.592292089249493,
+        "startAbsoluteErrorSeconds": {
+          "count": 292,
+          "median": 0.00034000000000000696,
+          "p95": 0.006202999999999999
+        },
+        "endAbsoluteErrorSeconds": {
+          "count": 292,
+          "median": 0.00031999999999998696,
+          "p95": 0.0065789999999999885
+        },
+        "combinedEdgeAbsoluteErrorSeconds": {
+          "count": 584,
+          "median": 0.0003300000000000247,
+          "p95": 0.006399999999999985
+        },
+        "centerMaeHz": 7828.28573817423,
+        "bandwidthMaeHz": 22498.731017230308
+      }
+    ],
+    "unknownObservations": 0,
+    "annotations": 271,
+    "fallbackAnnotations": 164,
+    "splitRate": 0.0,
+    "mergeRate": 0.25255102040816324,
+    "noise": {
+      "files": 0,
+      "failedFiles": 0,
+      "observedFiles": 0,
+      "falsePositives": 0,
+      "zeroDetectionFiles": 0,
+      "falsePositivesPerFile": null,
+      "exposureMHzSeconds": 0,
+      "falsePositivesPerMHzSecond": null
+    }
+  },
+  "pairedFileBootstrap": {
+    "fileCount": 10,
+    "seed": 2026101405,
+    "repeats": 10000,
+    "difference": -0.2839756592292089,
+    "ci95": [
+      -0.3407734920039001,
+      -0.24089031886285056
+    ],
+    "pointDropAtMostOnePercentagePoint": false,
+    "statisticalNoninferiorityEstablished": false
+  },
+  "numericResultsAreAcceptanceClaims": false,
+  "referenceBaselineComplete": true
+}

@@ -1,0 +1,34 @@
+{
+  "schema": "signalstudio-m4-suite-scope-v1",
+  "plan": {
+    "scope": "T-sample-short",
+    "strategy": "sample",
+    "shortProfile": true,
+    "semantics": "product-v2",
+    "plannedFileCount": 32,
+    "selectedFileCount": 1,
+    "diagnosticPartial": true,
+    "samples": [
+      {
+        "sampleId": "T08-00",
+        "group": "short-1-to-8ms",
+        "source": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-00.wav",
+          "sha256": "3ac2edc11dcdebcc9ed0ae02adba93eb1666021101c4196f1dc90d112750cac3"
+        },
+        "truth": {
+          "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-00.json",
+          "sha256": "235a04b2b2e5677390c950708dd91f7184ae7383ddd063174dc1233893df687f"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "800000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 2
+      }
+    ],
+    "expectedTruthCount": 2
+  },
+  "executionFreezeSha256": "4d8985a72f2333dd53378f9195ade67b3889fd140a2fd2660340e927b3be66a6",
+  "configuration": "Release"
+}

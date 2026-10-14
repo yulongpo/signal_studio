@@ -1192,7 +1192,8 @@ QJsonObject widebandCaptureSingleSegmentConfirmation(
           {"modelInferenceVerified", false}};
 }
 
-QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen) {
+QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
+                                           const QString& projectPath) {
   auto& window = capture.window;
   auto* card = child<QWidget>(window, "detectionCard");
   auto* profile = child<QComboBox>(*card, "detectionProfile");
@@ -1248,30 +1249,277 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen) {
       "table");
   for (const auto& id : ids) {
     const auto* annotation = findAnnotation(*window.session().activeFile(), id);
-    require(annotation &&
-                annotation->sourceKind == AnnotationSource::Algorithm &&
-                annotation->segments.empty() && !annotation->classLabel &&
-                annotation->observationTimeQuality ==
-                    TimeQuality::WindowObservation,
-            "Frequency model publication invented event time or a class");
+    require(
+        annotation && annotation->sourceKind == AnnotationSource::Algorithm &&
+            !annotation->classLabel && annotation->originEvidence &&
+            annotation->observationTimeQuality ==
+                TimeQuality::WindowObservation,
+        "Production publication lost observation evidence or invented a class");
   }
-  widebandSelectAnnotation(window, ids.front(), "detection-v1");
-  for (const auto* name :
-       {"annotationStartMilliseconds", "annotationEndMilliseconds",
-        "annotationLowerMHz", "annotationUpperMHz"}) {
+  std::string selectedId;
+  for (const auto& id : ids) {
+    const auto* annotation = findAnnotation(*window.session().activeFile(), id);
+    if (!annotation->segments.empty() &&
+        annotation->originEvidence->refineMethod == RefineMethod::Sample &&
+        annotation->originEvidence->refineStatus == RefineStatus::Applied) {
+      selectedId = id;
+      break;
+    }
+  }
+  require(!selectedId.empty(),
+          "Actual IQ produced no applied sample time event");
+  widebandSelectAnnotation(window, selectedId, "detection-v1");
+  const auto* selected =
+      findAnnotation(*window.session().activeFile(), selectedId);
+  const auto originalFields = selected->originEvidence->originalFieldsJson;
+  const auto segmentId = selected->activeSegmentId;
+  require(
+      selected->segments == selected->originEvidence->originalSegments &&
+          activeSegment(*selected)->timeQuality ==
+              TimeQuality::AlgorithmEstimated &&
+          !activeSegment(*selected)->confirmed,
+      "Time publication must preserve measured origin and pending activity");
+  auto* measured = child<QWidget>(window, "auxiliaryDetectionEvidence")
+                       ->findChild<QWidget*>("annotationMeasuredEvidenceTrace");
+  auto* evidenceMode = child<QPushButton>(window, "detectionEvidenceMode");
+  if (!evidenceMode->isChecked())
+    QTest::mouseClick(evidenceMode, Qt::LeftButton);
+  require(
+      waitUntil([&] { return measured && measured->isVisible(); }),
+      "Actual saved sample trace did not enter the auxiliary evidence mode");
+  widebandScrollTo(measured);
+  require(measured && measured->isVisible() &&
+              widebandVisibleRect(measured, window).height() >= 40 &&
+              measured->property("measuredPointCount").toULongLong() >= 2,
+          "Saved sample evidence lacks its measured, bounded energy trace");
+  widebandScene(capture, "24-production-model-time-refinement", screen);
+  const auto countBeforeReview = window.session().activeFile()->marks.size();
+  click(window, "acceptAnnotations");
+  selected = findAnnotation(*window.session().activeFile(), selectedId);
+  require(
+      selected->reviewStatus == ReviewStatus::Accepted &&
+          activeSegment(*selected)->confirmed &&
+          window.session().activeFile()->marks.size() == countBeforeReview &&
+          selected->originEvidence->originalFieldsJson == originalFields,
+      "Accept must confirm the same measured object without copying it");
+  widebandScene(capture, "25-real-algorithm-object-accepted", screen);
+  auto* extract = child<QPushButton>(window, "extract");
+  require(extract->isEnabled(),
+          "Confirmed algorithm activity cannot create a channel");
+  QTest::mouseClick(extract, Qt::LeftButton);
+  auto* dialog = window.findChild<QDialog*>("channelConfigDialog");
+  require(dialog && dialog->isVisible(),
+          "Algorithm channel dialog did not open");
+  dialog->windowHandle()->setScreen(screen);
+  dialog->move(screen->geometry().center() - dialog->rect().center());
+  require(child<QCheckBox>(*dialog, "channelConfirmedSegment")->isChecked() &&
+              child<QPushButton>(*dialog, "confirmChannelConfig")->isEnabled(),
+          "Actual channel parameters rejected confirmed model activity");
+  widebandScene(capture, "26-real-algorithm-channel-parameters", screen,
+                dialog);
+  const auto channelCount = window.session().activeFile()->channels.size();
+  click(*dialog, "confirmChannelConfig");
+  require(waitUntil([&] {
+            return window.session().activeFile()->channels.size() ==
+                   channelCount + 1;
+          }),
+          "Confirmed algorithm channel was not created");
+  const auto channel = window.session().activeFile()->channels.back();
+  require(
+      channel.sourceSnapshot &&
+          channel.sourceSnapshot->annotationId == selectedId &&
+          channel.sourceSnapshot->segmentId == segmentId &&
+          channel.sourceSnapshot->sourceKind == AnnotationSource::Algorithm &&
+          channel.sourceRelation == ChannelSourceRelation::Current,
+      "Channel lost actual algorithm/revision/source identity");
+  ChannelDspPlan dsp;
+  ChannelSampleData samples;
+  QString error;
+  const auto metadata = window.session().activeFile()->metadata;
+  require(makeChannelDspPlan(metadata, channel, dsp, error), error);
+  const auto outputCount = static_cast<SampleIndex>(
+      (channel.sourceTime.end - channel.sourceTime.begin) *
+      static_cast<long double>(channel.outputSampleRateHz) /
+      metadata.sampleRateHz);
+  require(outputCount > 0 &&
+              processChannelSamples(
+                  metadata, channel, dsp,
+                  {0, std::min<SampleIndex>(16384, outputCount)}, samples),
+          "CPU DDC did not produce actual samples from model activity");
+  double energy = 0;
+  for (const auto value : samples.samples) {
+    require(std::isfinite(value.real()) && std::isfinite(value.imag()),
+            "CPU DDC output is not finite");
+    energy += std::norm(value);
+  }
+  require(energy > 0, "CPU DDC output has no source signal energy");
+  const QByteArray outputBytes(
+      reinterpret_cast<const char*>(samples.samples.data()),
+      static_cast<qsizetype>(samples.samples.size() *
+                             sizeof(std::complex<float>)));
+  const auto outputHash = QString::fromLatin1(
+      QCryptographicHash::hash(outputBytes, QCryptographicHash::Sha256)
+          .toHex());
+  auto* narrow = window.findChild<NarrowbandWorkspace*>();
+  require(narrow && waitUntil(
+                        [&] {
+                          return narrow->isVisible() &&
+                                 narrow->visibleChartsSettled() &&
+                                 narrow->visibleChartsGpuReady() &&
+                                 narrow->visibleTextureUploads() > 0 &&
+                                 narrow->visibleCompletedFrames() > 0 &&
+                                 narrow->dataStatusText().contains("真实 DDC");
+                        },
+                        60000),
+          "Native narrowband did not display the actual CPU DDC");
+  const auto narrowRendering = narrow->renderStatistics();
+  widebandScene(capture, "27-real-algorithm-cpu-ddc", screen);
+  click(window, "narrowbandClose");
+  require(widebandDisplayReady(window),
+          "Return from real DDC did not restore wideband");
+  require(window.saveProject(projectPath) && window.openProject(projectPath) &&
+              widebandDisplayReady(window),
+          "Actual model/DDC project did not reopen");
+  require(window.session().activeFile()->channels.back().sourceSnapshot &&
+              *window.session().activeFile()->channels.back().sourceSnapshot ==
+                  *channel.sourceSnapshot &&
+              window.session().activeFile()->channels.back().sourceTime ==
+                  channel.sourceTime,
+          "Reopen silently changed actual channel provenance or timing");
+  widebandSelectAnnotation(window, selectedId, "detection-v1");
+  widebandScene(capture, "28-real-algorithm-ddc-saved-reopened", screen);
+  selected = findAnnotation(*window.session().activeFile(), selectedId);
+  const auto newEnd = activeSegment(*selected)->range.time.end - 1;
+  click(window, "beginAnnotationRevision");
+  auto* endEdit = child<QLineEdit>(window, "annotationEndMilliseconds");
+  widebandScrollTo(endEdit);
+  endEdit->setFocus();
+  endEdit->selectAll();
+  QTest::keyClicks(
+      endEdit, QString::number(newEnd / metadata.sampleRateHz * 1000, 'g', 17));
+  QTest::keyClick(endEdit, Qt::Key_Return);
+  selected = findAnnotation(*window.session().activeFile(), selectedId);
+  require(selected->sourceKind == AnnotationSource::Algorithm &&
+              selected->originEvidence->originalFieldsJson == originalFields &&
+              window.session().activeFile()->channels.back().sourceSnapshot &&
+              *window.session().activeFile()->channels.back().sourceSnapshot ==
+                  *channel.sourceSnapshot &&
+              window.session().activeFile()->channels.back().sourceRelation ==
+                  ChannelSourceRelation::Changed,
+          "Manual revision rewrote model evidence or silently recomputed "
+          "channel source");
+  widebandScene(capture, "29-real-algorithm-revision-preserves-ddc", screen);
+  require(window.saveProject(projectPath) && window.openProject(projectPath) &&
+              widebandDisplayReady(window),
+          "Changed model source relation did not reopen");
+  require(window.session().activeFile()->channels.back().sourceRelation ==
+                  ChannelSourceRelation::Changed &&
+              window.session().activeFile()->channels.back().sourceSnapshot &&
+              *window.session().activeFile()->channels.back().sourceSnapshot ==
+                  *channel.sourceSnapshot,
+          "Changed source relation or old DDC snapshot was lost");
+  widebandSelectAnnotation(window, selectedId, "detection-v1");
+  widebandScene(capture, "30-real-algorithm-changed-source-reopened", screen);
+  child<QAction>(window, "widebandDetectionAction")->trigger();
+  auto* roiButton = child<QPushButton>(window, "detectionStrategyRoi");
+  widebandScrollTo(roiButton);
+  QTest::mouseClick(roiButton, Qt::LeftButton);
+  auto* split = child<QCheckBox>(window, "detectionSplitBursts");
+  widebandScrollTo(split);
+  if (split->isChecked())
+    QTest::mouseClick(split, Qt::LeftButton, Qt::NoModifier,
+                      QPoint(12, split->height() / 2));
+  require(waitUntil([&] { return !split->isChecked(); }),
+          "Actual no-split checkbox indicator did not toggle");
+  const auto setParameter = [&](const char* name, const char* value) {
     auto* edit = child<QLineEdit>(window, name);
-    require(!edit->isEnabled() && edit->text().isEmpty() &&
-                !edit->property("parameterDraft").toBool(),
-            "An unknown-time observation retained another segment's geometry");
+    widebandScrollTo(edit);
+    require(edit->isEnabled(), "Approved ROI parameter is disabled");
+    edit->setFocus();
+    edit->selectAll();
+    QTest::keyClicks(edit, value);
+    QTest::keyClick(edit, Qt::Key_Return);
+  };
+  setParameter("detectionSampleEdgeRatio", "0.75");
+  setParameter("detectionSmoothMilliseconds", "2");
+  require(
+      !child<QLineEdit>(window, "detectionMinOnMilliseconds")->isEnabled() &&
+          !child<QLineEdit>(window, "detectionMinOffMilliseconds")->isEnabled(),
+      "Approved no-split min on/off matrix changed");
+  widebandScene(capture, "31-real-roi-approved-parameter-matrix", screen);
+  const auto beforeRoi = window.session().activeFile()->detectionRuns.size();
+  button = child<QPushButton>(window, "runWidebandDetection");
+  widebandScrollTo(button);
+  QTest::mouseClick(button, Qt::LeftButton);
+  require(waitUntil([&] {
+            return window.session().activeFile()->detectionRuns.size() ==
+                   beforeRoi + 1;
+          }),
+          "ROI request was not frozen");
+  require(
+      waitUntil(
+          [&] {
+            return detectionIsTerminal(
+                window.session().activeFile()->detectionRuns.back().lifecycle);
+          },
+          120000),
+      "Actual ROI model task did not finish");
+  const auto roiRun = window.session().activeFile()->detectionRuns.back();
+  require(
+      roiRun.lifecycle == DetectionLifecycle::Completed &&
+          roiRun.request.parameters.timeStrategy ==
+              DetectionTimeStrategy::Roi &&
+          !roiRun.request.parameters.splitBursts,
+      "Actual ROI model task failed: " + QString::fromStdString(roiRun.error));
+  std::string roiId;
+  QJsonObject roiTime;
+  for (const auto& annotation : window.session().activeFile()->marks) {
+    if (!annotation.originEvidence ||
+        annotation.originEvidence->runId != roiRun.request.runId ||
+        annotation.originEvidence->refineStatus != RefineStatus::Applied)
+      continue;
+    const auto fields = QJsonDocument::fromJson(
+                            QByteArray::fromStdString(
+                                annotation.originEvidence->originalFieldsJson))
+                            .object();
+    const auto time = fields["timeAnalysis"].toObject();
+    if (time["roiSmoothingCells"].toInt() == 11 &&
+        time["durationParametersApplied"] == false &&
+        time["effectiveEdgeRatio"].toDouble() == .75 &&
+        time["roiThresholdDomain"] == "positive-db-residual-mean-v1" &&
+        time["roiTimeThreshold"].isDouble() &&
+        time["roiFrequencyThreshold"].isDouble()) {
+      roiId = annotation.id;
+      roiTime = time;
+      break;
+    }
   }
-  widebandScene(capture, "24-production-model-frequency-observation", screen);
+  require(!roiId.empty(),
+          "Actual ROI evidence did not apply approved v2 parameters");
+  widebandSelectAnnotation(window, roiId, "detection-v1");
+  widebandScene(capture, "32-real-roi-time-result", screen);
+  require(window.saveProject(projectPath) && window.openProject(projectPath) &&
+              widebandDisplayReady(window),
+          "ROI result did not save/reopen");
+  widebandSelectAnnotation(window, roiId, "detection-v1");
+  widebandScene(capture, "33-real-roi-saved-reopened", screen);
   return {
       {"pass", true},
       {"run", encodeDetectionRun(run)},
       {"annotationCount", static_cast<int>(ids.size())},
       {"sourceCounts", widebandSourceCounts(*window.session().activeFile())},
       {"modelInferenceVerified", true},
-      {"timeEventsVerified", false}};
+      {"timeEventsVerified", true},
+      {"ddcExecutionVerified", true},
+      {"ddcOutputSha256", outputHash},
+      {"ddcSamples", static_cast<int>(samples.samples.size())},
+      {"ddcEnergy", energy},
+      {"roiRun", encodeDetectionRun(roiRun)},
+      {"roiActualTimeEvidence", roiTime},
+      {"roiV2NoSplitParametersVerified", true},
+      {"narrowbandRenderEvidence", narrowRendering},
+      {"immutableOriginPreserved", true},
+      {"changedChannelSnapshotPreserved", true}};
 }
 
 int runWidebandDetectionCapture(const QString& outputDirectory,
@@ -1468,16 +1716,17 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
                                                  project, data, iqHash);
     if (productionModel) {
       report["productionModel"] =
-          widebandCaptureProductionModel(capture, screen);
+          widebandCaptureProductionModel(capture, screen, project);
       report["modelInferenceVerified"] = true;
+      report["timeEventsVerified"] = true;
       report["evidenceKind"] =
           "Native Qt Widgets, actual cf32 IQ, explicit fixture regression and "
-          "real TensorRT FP32 frequency observations";
+          "real TensorRT FP32 inference, sample refinement and real CPU DDC";
     }
     report["renderEvidence"] = capture.evidence();
     report["fullScreen"] = window.isFullScreen();
     report["logicalWindowSize"] = sizeJson(window.size());
-    const int kExpectedScenes = productionModel ? 25 : 23;
+    const int kExpectedScenes = productionModel ? 34 : 23;
     QStringList uniqueScenes;
     for (const auto& value : capture.scenes) {
       const auto name = value.toObject()["scene"].toString();

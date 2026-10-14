@@ -2,3 +2,8 @@
 tests/fixtures/wideband/*.txt -text whitespace=-blank-at-eol
 tests/fixtures/wideband/*.json -text
 tests/fixtures/wideband/*.sigmf-meta -text
+# M4 evidence hashes refer to archived bytes; do not normalize these artifacts.
+docs/implementation/wideband-detection/M4/** -text whitespace=cr-at-eol
+# Tool logs retain literal diagnostics, including generator trailing spaces.
+docs/implementation/wideband-detection/M4/**/*.txt whitespace=-blank-at-eol,cr-at-eol
+docs/implementation/wideband-detection/M4/**/*.log whitespace=-blank-at-eol,cr-at-eol

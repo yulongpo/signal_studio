@@ -3,7 +3,12 @@
 #include <QDataStream>
 #include <QFont>
 #include <QGridLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
+#include <QPainter>
+#include <QPainterPath>
 #include <QPlainTextEdit>
 #include <QSizePolicy>
 #include <QStringList>
@@ -244,7 +249,7 @@ QString evidenceTitle(const Annotation& annotation) {
     return "导入标签 · 原始元数据";
   }
   if (evidence && evidence->refineStatus == RefineStatus::Fallback)
-    return "精修回退 · 保留原始支持范围";
+    return "精修回退";
   if (annotation.segments.empty()) return "窗口观察频带 · 时间未知";
   if (!evidence || evidence->refineStatus != RefineStatus::Applied)
     return "时间事件 · 暂无已应用的精修证据";
@@ -299,6 +304,91 @@ QString optionalScore(const std::optional<double>& score) {
   return score ? number(*score) : "暂无保存值";
 }
 
+class MeasuredEvidenceTrace final : public QWidget {
+ public:
+  explicit MeasuredEvidenceTrace(QWidget* parent) : QWidget(parent) {
+    setObjectName("annotationMeasuredEvidenceTrace");
+    setFixedHeight(70);
+    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    hide();
+  }
+  void setEvidence(const QJsonObject& evidence) {
+    points_.clear();
+    maximum_ = 0;
+    threshold_ = evidence["comparisonThreshold"].toDouble(-1);
+    const auto trace = evidence["trace"].toObject();
+    const auto savedPoints = trace["points"].toArray();
+    bool valid = savedPoints.size() >= 2 && savedPoints.size() <= 512 &&
+                 trace["kind"] == "measured-causal-mean-power-v1";
+    bool beginOk = false, endOk = false;
+    const auto begin =
+        trace["sourceOriginSample"].toString().toULongLong(&beginOk);
+    const auto end =
+        trace["sourceSupportEndSample"].toString().toULongLong(&endOk);
+    valid &= beginOk && endOk && begin < end;
+    quint64 previous = begin;
+    for (const auto item : savedPoints) {
+      const auto pair = item.toArray();
+      if (pair.size() != 2) {
+        valid = false;
+        break;
+      }
+      bool ok = false;
+      const auto sample = pair.at(0).toString().toULongLong(&ok);
+      const double power = pair.at(1).toDouble(-1);
+      if (!valid || !ok || sample < previous || sample >= end ||
+          !std::isfinite(power) || power < 0) {
+        valid = false;
+        break;
+      }
+      points_.emplace_back(static_cast<double>(sample - begin) / (end - begin),
+                           power);
+      maximum_ = std::max(maximum_, power);
+      previous = sample;
+    }
+    setProperty("measuredPointCount",
+                static_cast<qulonglong>(valid ? points_.size() : 0));
+    setVisible(valid && maximum_ > 0);
+    update();
+  }
+
+ protected:
+  void paintEvent(QPaintEvent*) override {
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    const QRectF area(2, 3, width() - 4, height() - 21);
+    painter.fillRect(area, QColor("#0d2233"));
+    painter.setPen(QColor("#26465d"));
+    painter.drawLine(area.topLeft(), area.topRight());
+    painter.drawLine(area.bottomLeft(), area.bottomRight());
+    if (points_.empty() || maximum_ <= 0) return;
+    QPainterPath path;
+    for (std::size_t i = 0; i < points_.size(); ++i) {
+      const QPointF point(
+          area.left() + points_[i].x() * area.width(),
+          area.bottom() - points_[i].y() / maximum_ * area.height());
+      if (!i)
+        path.moveTo(point);
+      else
+        path.lineTo(point);
+    }
+    painter.setPen(QPen(QColor("#61c3ca"), 1.5));
+    painter.drawPath(path);
+    if (threshold_ >= 0 && threshold_ <= maximum_) {
+      painter.setPen(QPen(QColor("#e4b26d"), 1, Qt::DashLine));
+      const auto y = area.bottom() - threshold_ / maximum_ * area.height();
+      painter.drawLine(QPointF(area.left(), y), QPointF(area.right(), y));
+    }
+    painter.setPen(QColor("#94b3c6"));
+    painter.drawText(QRectF(2, height() - 17, width() - 4, 17),
+                     "已保存的实测包络 / 线性功率");
+  }
+
+ private:
+  std::vector<QPointF> points_;
+  double maximum_ = 0, threshold_ = -1;
+};
+
 }  // namespace
 
 AnnotationEvidenceWidget::AnnotationEvidenceWidget(QWidget* parent)
@@ -332,6 +422,10 @@ AnnotationEvidenceWidget::AnnotationEvidenceWidget(Mode mode, QWidget* parent)
     layout->addWidget(context_);
     layout->addWidget(notice_);
     buildFacts(layout);
+  }
+  if (mode_ == Mode::Inspector) {
+    measuredTrace_ = new MeasuredEvidenceTrace(this);
+    layout->addWidget(measuredTrace_);
   }
   rawToggle_ = new QToolButton(this);
   rawToggle_->setObjectName("annotationOriginalFieldsToggle");
@@ -454,6 +548,8 @@ void AnnotationEvidenceWidget::buildAuxiliary(QVBoxLayout* layout) {
   addFact(diagnosticFacts, Fact::Noise, "保存证据", "annotationEvidenceNoise");
   addFact(diagnosticFacts, Fact::Reason, "回退 / 原因",
           "annotationEvidenceReason");
+  measuredTrace_ = new MeasuredEvidenceTrace(this);
+  diagnostics->addWidget(measuredTrace_);
   layout->addWidget(summary);
 
   auto* detailsToggle = new QToolButton(this);
@@ -524,6 +620,7 @@ void AnnotationEvidenceWidget::clearEvidence() {
   empty_ = true;
   displayKey_.clear();
   displayedOrigin_.reset();
+  static_cast<MeasuredEvidenceTrace*>(measuredTrace_)->setEvidence({});
   setLabelText(title_, "检测证据");
   setLabelText(context_, "选择一个标记查看原始来源与当前修订。");
   setLabelText(notice_, mode_ == Mode::Auxiliary
@@ -732,6 +829,37 @@ void AnnotationEvidenceWidget::showScores(const Annotation& annotation,
         "\nuniqueWindowCount: " + count(unique.size()) +
         "\nwindowCount (denominator): " + count(evidence->windowCount));
   QString noise = "暂无噪底、门限、时间能量或轨迹预览数据";
+  const auto timeEvidence =
+      evidence ? QJsonDocument::fromJson(
+                     QByteArray::fromStdString(evidence->originalFieldsJson))
+                     .object()["timeAnalysis"]
+                     .toObject()
+               : QJsonObject{};
+  static_cast<MeasuredEvidenceTrace*>(measuredTrace_)
+      ->setEvidence(timeEvidence);
+  if (timeEvidence["noise"].isDouble())
+    noise = (timeEvidence["coarseParametersApplied"].toBool()
+                 ? "Coarse 谱密度噪底（dB 域） "
+                 : "带限线性功率噪底 ") +
+            number(timeEvidence["noise"].toDouble());
+  if (timeEvidence["coarseParametersApplied"].toBool() &&
+      timeEvidence["threshold"].isDouble())
+    noise += "\n实际比较门限（dB 域） " +
+             number(timeEvidence["threshold"].toDouble());
+  if (timeEvidence["comparisonThreshold"].isDouble())
+    noise += "\n实际比较门限 " +
+             number(timeEvidence["comparisonThreshold"].toDouble());
+  if (timeEvidence["roiSmoothingCells"].toInt() > 0)
+    noise += QString("\nROI 自适应门限 · %1 单元平滑")
+                 .arg(timeEvidence["roiSmoothingCells"].toInt());
+  if (timeEvidence["roiTimeThreshold"].isDouble() &&
+      timeEvidence["roiFrequencyThreshold"].isDouble())
+    noise = "ROI 正像素轨迹（去均值 dB 域）\n时间比较门限 " +
+            number(timeEvidence["roiTimeThreshold"].toDouble()) +
+            " · 频率比较门限 " +
+            number(timeEvidence["roiFrequencyThreshold"].toDouble()) +
+            QString("\n%1 单元平滑；不是线性功率噪底")
+                .arg(timeEvidence["roiSmoothingCells"].toInt());
   if (evidence && !evidence->evidenceRefs.empty())
     noise += "；保留 " + count(evidence->evidenceRefs.size()) +
              " 项证据引用，当前卡未加载其内容";

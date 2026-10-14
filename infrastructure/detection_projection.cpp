@@ -221,6 +221,10 @@ bool DetectionResultProjector::finish(
   return true;
 }
 
+std::string detectionTrackRecordId(const std::string& seedId) {
+  return seedId.size() <= 128 ? seedId : "track:" + hash(seedId);
+}
+
 bool projectFrequencyTracks(const DetectionRequest& request,
                             const AnnotationSourceSet& sourceSet,
                             const std::vector<FrequencyTrack>& tracks,
@@ -247,7 +251,7 @@ bool projectFrequencyTracks(const DetectionRequest& request,
                           : "FFSCN IQ 频率观察";
     annotation.fileId = request.sourceIdentity.fileId;
     annotation.sourceSetId = sourceSet.id;
-    annotation.originRecordId = track.seedId;
+    annotation.originRecordId = detectionTrackRecordId(track.seedId);
     annotation.sourceKind = AnnotationSource::Algorithm;
     const TimeRange report{
         std::max(track.nominalSupport.begin, request.requestedRange.time.begin),
@@ -344,8 +348,10 @@ bool validateDetectionPublicationBudget(const DetectionPublication& publication,
 QJsonArray encodeDetectionPublication(const DetectionPublication& publication) {
   QJsonArray results;
   for (const auto& annotation : publication.annotations)
-    results.append(QJsonObject{{"kind", "frequency-annotation-v1"},
-                               {"annotation", encodeAnnotation(annotation)}});
+    results.append(QJsonObject{
+        {"kind", annotation.segments.empty() ? "frequency-annotation-v1"
+                                             : "refined-annotation-v1"},
+        {"annotation", encodeAnnotation(annotation)}});
   return results;
 }
 
@@ -368,7 +374,9 @@ bool decodeDetectionPublication(const QJsonArray& records,
   for (const auto value : records) {
     const auto record = value.toObject();
     Annotation annotation;
-    if (record.size() != 2 || record["kind"] != "frequency-annotation-v1" ||
+    const bool refined = record["kind"] == "refined-annotation-v1";
+    if (record.size() != 2 ||
+        (!refined && record["kind"] != "frequency-annotation-v1") ||
         !decodeAnnotation(record["annotation"].toObject(), metadata, annotation,
                           error))
       return false;
@@ -376,9 +384,34 @@ bool decodeDetectionPublication(const QJsonArray& records,
         !ids.insert(annotation.id).second ||
         annotation.sourceSetId != sourceSet.id ||
         annotation.sourceKind != AnnotationSource::Algorithm ||
-        !annotation.originEvidence ||
+        !annotation.originEvidence || annotation.deleted ||
+        annotation.classLabel.has_value() ||
+        annotation.reviewStatus != ReviewStatus::Pending ||
+        annotation.revisions.size() != 1 ||
+        annotation.revisionId != annotation.id + ":r0" ||
+        annotation.revisions.front().id != annotation.revisionId ||
+        !annotation.revisions.front().parentRevisionId.empty() ||
+        annotation.revisions.front().action != "algorithm-origin" ||
+        annotation.revisions.front().actor != "model" ||
+        annotation.revisions.front().nameBefore ||
+        annotation.revisions.front().nameAfter ||
+        annotation.revisions.front().noteBefore ||
+        annotation.revisions.front().noteAfter ||
+        annotation.revisions.front().observationChanged ||
+        annotation.revisions.front().observationBefore ||
+        annotation.revisions.front().observationAfter ||
+        annotation.reviewHistory.size() != 1 ||
+        annotation.reviewHistory.front().status != ReviewStatus::Pending ||
+        annotation.reviewHistory.front().revisionId != annotation.revisionId ||
+        annotation.reviewHistory.front().actor != "model" ||
+        annotation.reviewRevisionId != annotation.revisionId ||
+        annotation.originEvidence->originalSegments != annotation.segments ||
+        annotation.originEvidence->refineMethod == RefineMethod::Manual ||
+        annotation.observationFrequencyFrame != FrequencyFrame::RF ||
+        annotation.originEvidence->observationFrequencyFrame !=
+            FrequencyFrame::RF ||
         annotation.originEvidence->runId != request.runId ||
-        !annotation.segments.empty() || !annotation.observation ||
+        (!refined && !annotation.segments.empty()) || !annotation.observation ||
         annotation.observationTimeQuality != TimeQuality::WindowObservation ||
         annotation.observation->time.begin <
             request.requestedRange.time.begin ||
@@ -389,6 +422,35 @@ bool decodeDetectionPublication(const QJsonArray& records,
             request.requestedRange.frequency.upperHz) {
       error = "Stored frequency publication differs from its immutable run";
       return false;
+    }
+    for (const auto& segment : annotation.segments) {
+      if (segment.range.time.begin < request.requestedRange.time.begin ||
+          segment.range.time.end > request.requestedRange.time.end ||
+          segment.range.frequency.lowerHz <
+              request.requestedRange.frequency.lowerHz ||
+          segment.range.frequency.upperHz >
+              request.requestedRange.frequency.upperHz ||
+          segment.timeQuality != TimeQuality::AlgorithmEstimated ||
+          segment.frequencyQuality == FrequencyQuality::Manual ||
+          segment.frequencyFrame != FrequencyFrame::RF || segment.confirmed) {
+        error = "Stored activity differs from immutable run bounds or review";
+        return false;
+      }
+    }
+    const auto& changes = annotation.revisions.front().segmentChanges;
+    if (changes.size() != annotation.segments.size()) {
+      error = "Raw algorithm revision differs from original activity";
+      return false;
+    }
+    for (const auto& segment : annotation.segments) {
+      const auto change =
+          std::find_if(changes.begin(), changes.end(),
+                       [&](const auto& item) { return item.id == segment.id; });
+      if (change == changes.end() || change->before || !change->after ||
+          *change->after != segment) {
+        error = "Raw algorithm revision contains modified activity";
+        return false;
+      }
     }
     if (!reserveAnnotation(annotation, resident, residentBudget, error))
       return false;

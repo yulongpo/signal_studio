@@ -1,0 +1,15 @@
+{
+  "reason": "user-directed bulk stop and manual validation after M5",
+  "acceptanceGateEligible": false,
+  "files": [
+    {
+      "file": "scope-manifest.json",
+      "sha256": "b1d3951b2c881bc0089498aba50ee7c5c0fe587be4d7fa1c1af9bcd486a16566"
+    },
+    {
+      "file": "pair-run-records.json",
+      "sha256": "04fcdaa6088c1e687da6138295abe914059a3f20afcf2b617c51365a4c03f480"
+    }
+  ],
+  "partial": true
+}

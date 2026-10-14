@@ -1,0 +1,18 @@
+{
+  "schema": "signalstudio-m4-protocol-freeze-v1",
+  "frozenAtUtc": "2026-10-13T17:49:20.309815+00:00",
+  "newOutcomesRead": false,
+  "holdoutGenerated": false,
+  "files": {
+    "VALIDATION_PROTOCOL.md": "762e9e8fdd37a5d37ac8359a989a90d7323e9f9f0b4af842d3d22b218b12824e",
+    "validation-protocol.json": "8db8fd328d865f99ca3b30a1ee7fb39b50000b21d6a46f5d1d15a07ffc794a51",
+    "input-manifest.json": "0ce9a7cfc3d78c2c460e85a46fa7d547525194ea276ece639f076ab312037dab"
+  },
+  "pendingBeforeFirstFormalOutcome": [
+    "independent reference executable and source hash",
+    "independent evaluator code hash",
+    "C++ binary and runtime identities",
+    "generator full parameter grid and source hash before generation",
+    "T IQ and sample-exact truth hashes before inference"
+  ]
+}
