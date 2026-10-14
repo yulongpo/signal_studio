@@ -1522,8 +1522,11 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
       {"changedChannelSnapshotPreserved", true}};
 }
 
+#include "tests/wideband_final_capture.h"
+
 int runWidebandDetectionCapture(const QString& outputDirectory,
-                                bool productionModel = false) {
+                                bool productionModel = false,
+                                bool finalAcceptance = false) {
   QDir output(outputDirectory);
   if (!QFileInfo(outputDirectory).isAbsolute() ||
       !QDir().mkpath(output.absolutePath()))
@@ -1542,6 +1545,7 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
       {"fixtureExplicitlyEnabledBeforeMainWindow", true},
       {"modelInferenceVerified", false},
       {"productionModelRequested", productionModel},
+      {"finalAcceptanceRequested", finalAcceptance},
       {"a16AcceptanceVerified", false}};
   MainWindow window;
   Capture capture{window,
@@ -1581,6 +1585,22 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
                     5000),
             "The native main window did not occupy the required second screen "
             "fullscreen");
+    if (finalAcceptance) {
+      require(productionModel,
+              "Final acceptance requires the real model journey");
+      capture.scene(
+          "00-no-project-workflow", nullptr,
+          [&] {
+            require(!window.session().activeFile(),
+                    "No-project entry unexpectedly contains a source file");
+          },
+          false);
+      auto scene = capture.scenes.last().toObject();
+      scene["captureKind"] = "native-main-window";
+      scene["screen"] = widebandScreenJson(screen);
+      capture.scenes[0] = scene;
+      require(scene["pass"].toBool(), scene["error"].toString());
+    }
     const auto projectName = "wideband-project-" +
                              QUuid::createUuid().toString(QUuid::WithoutBraces);
     QString error;
@@ -1723,10 +1743,15 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
           "Native Qt Widgets, actual cf32 IQ, explicit fixture regression and "
           "real TensorRT FP32 inference, sample refinement and real CPU DDC";
     }
+    if (finalAcceptance)
+      report["finalAcceptance"] =
+          widebandFinalAcceptance(capture, screen, project);
     report["renderEvidence"] = capture.evidence();
     report["fullScreen"] = window.isFullScreen();
     report["logicalWindowSize"] = sizeJson(window.size());
-    const int kExpectedScenes = productionModel ? 34 : 23;
+    const int kExpectedScenes = finalAcceptance   ? 43
+                                : productionModel ? 34
+                                                  : 23;
     QStringList uniqueScenes;
     for (const auto& value : capture.scenes) {
       const auto name = value.toObject()["scene"].toString();

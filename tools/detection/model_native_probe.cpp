@@ -4,6 +4,7 @@
 #include <cuda_runtime_api.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <fstream>
@@ -71,6 +72,7 @@ std::vector<T> ReadBinary(const std::string& path) {
 
 bool RunProbe(const std::string& directory, const std::string& prefix,
               int batch, const std::string& report_path) {
+  const auto cold_start = std::chrono::steady_clock::now();
   Logger logger;
   auto engine_bytes =
       ReadBinary<char>(directory + "/ffscn_epoch1200_fp32.engine");
@@ -118,13 +120,56 @@ bool RunProbe(const std::string& directory, const std::string& prefix,
     throw std::runtime_error("TensorRT enqueue failed");
   }
   CheckCuda(cudaStreamSynchronize(stream.get()), "cudaStreamSynchronize");
+  const auto cold_ms = std::chrono::duration<double, std::milli>(
+                           std::chrono::steady_clock::now() - cold_start)
+                           .count();
+  std::size_t gpu_free_bytes = 0, gpu_total_bytes = 0;
+  CheckCuda(cudaMemGetInfo(&gpu_free_bytes, &gpu_total_bytes),
+            "cudaMemGetInfo");
+  std::vector<double> hot_ms;
+  for (int iteration = 0; iteration < 5; ++iteration) {
+    const auto start = std::chrono::steady_clock::now();
+    CheckCuda(cudaMemcpyAsync(device_input.get(), input.data(),
+                              input.size() * sizeof(float),
+                              cudaMemcpyHostToDevice, stream.get()),
+              "hot input upload");
+    if (!context->enqueueV3(stream.get()))
+      throw std::runtime_error("Hot TensorRT enqueue failed");
+    std::vector<float> downloaded(elements);
+    for (const auto& output : device_outputs)
+      CheckCuda(cudaMemcpyAsync(downloaded.data(), output.get(),
+                                elements * sizeof(float),
+                                cudaMemcpyDeviceToHost, stream.get()),
+                "hot output download");
+    CheckCuda(cudaStreamSynchronize(stream.get()), "hot synchronization");
+    hot_ms.push_back(std::chrono::duration<double, std::milli>(
+                         std::chrono::steady_clock::now() - start)
+                         .count());
+  }
   cudaDeviceProp device{};
   CheckCuda(cudaGetDeviceProperties(&device, 0), "cudaGetDeviceProperties");
   std::ofstream report(report_path);
   if (!report) throw std::runtime_error("Cannot open native report");
   report << "{\n  \"schema\": \"signalstudio-native-model-parity-v1\",\n"
          << "  \"gpu\": \"" << device.name << "\",\n"
-         << "  \"batch\": " << batch << ",\n  \"outputs\": [\n";
+         << "  \"batch\": " << batch
+         << ",\n  \"coldReadEngineContextAllocateUploadInferMilliseconds\": "
+         << cold_ms << ",\n  \"hotUploadInferDownloadMilliseconds\": [";
+  for (std::size_t index = 0; index < hot_ms.size(); ++index)
+    report << (index ? ", " : "") << hot_ms[index];
+  auto ordered_hot = hot_ms;
+  std::sort(ordered_hot.begin(), ordered_hot.end());
+  report << "],\n  \"hotMedianWindowsPerSecond\": "
+         << batch * 1000.0 / ordered_hot[ordered_hot.size() / 2]
+         << ",\n  \"explicitIoAllocationBytes\": "
+         << (input.size() + elements * 3) * sizeof(float)
+         << ",\n  \"engineContextDeviceMemoryBytes\": "
+         << engine->getDeviceMemorySizeV2() << ",\n  \"wholeDeviceUsedBytes\": "
+         << gpu_total_bytes - gpu_free_bytes
+         << ",\n  \"resourceScope\": \"Whole-device usage is not process "
+            "allocation; "
+            "timings exclude source DSP, tracking, refinement and persistence\""
+         << ",\n  \"outputs\": [\n";
   bool passed = true;
   for (std::size_t index = 0; index < 3; ++index) {
     std::vector<float> actual(elements);

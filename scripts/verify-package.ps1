@@ -3,7 +3,8 @@ param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
     [switch]$Narrowband,
-    [switch]$SoftwareRenderer
+    [switch]$SoftwareRenderer,
+    [string]$ReportPath
 )
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -26,7 +27,11 @@ try {
     $renderMode = if ($SoftwareRenderer) { 'software' } else { 'GPU-required' }
     $softwareSuffix = if ($SoftwareRenderer) { '-software' } else { '' }
     $mode = if ($Narrowband) { 'narrowband-' } else { '' }
-    $reportPath = Join-Path $repoRoot "docs/acceptance/$($Configuration.ToLowerInvariant())-${mode}4k-display2${softwareSuffix}-package.json"
+    if (-not $ReportPath) {
+        $ReportPath = Join-Path $repoRoot "docs/acceptance/$($Configuration.ToLowerInvariant())-${mode}4k-display2${softwareSuffix}-package.json"
+    }
+    $reportPath = [IO.Path]::GetFullPath($ReportPath)
+    New-Item -ItemType Directory -Path (Split-Path -Parent $reportPath) -Force | Out-Null
     $arguments = @()
     if ($Narrowband) { $arguments += @('--narrowband-demo', '--verify-narrowband-pages') } else { $arguments += '--demo-data' }
     $arguments += @('--smoke-test', '--size', '2560x1440', '--screen', '2', '--full-screen', '--verify-4k-150', '--render-report', $reportPath, $renderOption)

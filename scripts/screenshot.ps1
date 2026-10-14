@@ -8,7 +8,8 @@ param(
     [switch]$Narrowband,
     [switch]$SoftwareRenderer,
     [switch]$WidebandDetection,
-    [switch]$ProductionModel
+    [switch]$ProductionModel,
+    [switch]$FinalAcceptance
 )
 $ErrorActionPreference = 'Stop'
 function Assert-WidebandDetectionCapture($Report, [int]$CaptureExitCode, [string]$OutputDirectory) {
@@ -25,7 +26,7 @@ function Assert-WidebandDetectionCapture($Report, [int]$CaptureExitCode, [string
         throw 'Acceptance requires actual connected screen 2, Redmi 27 NU, DISPLAY6, native 4K/150% fullscreen.'
     }
     $captureScenes = @($Report.scenes)
-    $expectedScenes = if ($Report.productionModelRequested -eq $true) { 34 } else { 23 }
+    $expectedScenes = if ($Report.finalAcceptanceRequested -eq $true) { 43 } elseif ($Report.productionModelRequested -eq $true) { 34 } else { 23 }
     if ($captureScenes.Count -ne $expectedScenes -or $Report.sceneCount -ne $expectedScenes -or
         @($captureScenes.scene | Select-Object -Unique).Count -ne $expectedScenes) {
         throw "Native capture must contain all $expectedScenes unique planned scenes."
@@ -49,8 +50,8 @@ function Assert-WidebandDetectionCapture($Report, [int]$CaptureExitCode, [string
             (Get-Item -LiteralPath $scene.png).Length -eq 0) {
             throw "Native PNG is absent or empty: $($scene.png)"
         }
-        if (@($scene.annotationLayers).Count -ne 3 -or
-            @($scene.annotationLayers | Where-Object { $_.checked -ne $true }).Count -ne 0) {
+        if ($scene.requiresRenderedData -ne $false -and (@($scene.annotationLayers).Count -ne 3 -or
+            @($scene.annotationLayers | Where-Object { $_.checked -ne $true }).Count -ne 0)) {
             throw "The three actual annotation layers are not enabled: $($scene.scene)"
         }
     }
@@ -140,6 +141,7 @@ try {
         $timer = [Diagnostics.Stopwatch]::StartNew()
         $captureArguments = @('--wideband-detection', $OutputDirectory)
         if ($ProductionModel) { $captureArguments += '--production-model' }
+        if ($FinalAcceptance) { $captureArguments += '--final-acceptance' }
         & $executable @captureArguments | Out-Host
         $captureExitCode = $LASTEXITCODE
         if (-not (Test-Path -LiteralPath $captureReportPath -PathType Leaf)) {

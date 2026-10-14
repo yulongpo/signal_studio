@@ -1,13 +1,14 @@
 param(
   [string]$VisualStudioRoot = 'C:/Program Files/Microsoft Visual Studio/18/Community',
-  [string]$RuntimeRoot = 'out/tasks/wideband-detection/M3/assets/runtime/tensorrt-10.11'
+  [string]$RuntimeRoot = 'out/tasks/wideband-detection/M3/assets/runtime/tensorrt-10.11',
+  [string]$OutputDirectory = 'out/tasks/wideband-detection/M3/local-builds/native-probe'
 )
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $taskRepository = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
 $taskRuntime = (Resolve-Path -LiteralPath (Join-Path $taskRepository $RuntimeRoot)).Path
-$taskOutput = Join-Path $taskRepository 'out/tasks/wideband-detection/M3/local-builds/native-probe'
+$taskOutput = [IO.Path]::GetFullPath((Join-Path $taskRepository $OutputDirectory))
 New-Item -ItemType Directory -Path $taskOutput -Force | Out-Null
 $taskVcVars = Join-Path $VisualStudioRoot 'VC/Auxiliary/Build/vcvars64.bat'
 $taskSource = Join-Path $PSScriptRoot 'model_native_probe.cpp'

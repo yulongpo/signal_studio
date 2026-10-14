@@ -15,10 +15,13 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QDoubleSpinBox>
 #include <QElapsedTimer>
 #include <QEventLoop>
 #include <QFile>
+#include <QFileDialog>
 #include <QFileInfo>
+#include <QHeaderView>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -79,6 +82,7 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+#include <psapi.h>
 #include <windows.h>
 #endif
 
@@ -368,18 +372,22 @@ struct Capture {
   }
 
   void scene(const QString& name, QWidget* target = nullptr,
-             const std::function<void()>& verify = {}) {
+             const std::function<void()>& verify = {},
+             bool requiresRenderedData = true) {
     QTest::qWait(80);
     QString failure;
     try {
-      waitForGpu();
-      waitForSettledDisplay();
+      if (requiresRenderedData) {
+        waitForGpu();
+        waitForSettledDisplay();
+      }
       if (verify) verify();
     } catch (const std::exception& error) {
       failure = QString::fromUtf8(error.what());
     }
     auto record = evidence();
     record["scene"] = name;
+    record["requiresRenderedData"] = requiresRenderedData;
     record["parentDevicePixelRatio"] = window.devicePixelRatioF();
     QWidget* captured = target ? target : &window;
     const auto pixmap = captured->grab();
@@ -956,9 +964,13 @@ int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   QApplication::setApplicationName("SignalStudioNativeCapture");
   const auto arguments = app.arguments();
+  if (arguments.size() == 5 && arguments.at(1) == "--wideband-unavailable")
+    return runWidebandUnavailableCapture(arguments.at(2), arguments.at(3),
+                                         arguments.at(4));
   if (arguments.size() >= 3 && arguments.at(1) == "--wideband-detection")
     return runWidebandDetectionCapture(
-        arguments.at(2), arguments.contains("--production-model"));
+        arguments.at(2), arguments.contains("--production-model"),
+        arguments.contains("--final-acceptance"));
   if (arguments.size() >= 3 && arguments.at(1) == "--import-brand")
     return runImportBrandCapture(arguments.at(2));
   if (arguments.size() == 2 &&
