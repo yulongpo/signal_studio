@@ -1007,10 +1007,6 @@ void PlotWidget::cancelGesture(bool exitCreating) {
     if (activeGesture == this) activeGesture.clear();
     if (gesture.tool != Tool::DetectionRoi) {
       session_.restoreSnapshot(gesture.before);
-      for (auto& file : session_.project().files)
-        if (file.metadata.id == gesture.before.fileId)
-          if (auto* mark = findMark(file, gesture.markId))
-            mark->range = gesture.mark;
     }
     releasing_ = true;
     if (mouseGrabber() == this) releaseMouse();
@@ -2377,12 +2373,15 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
       const bool hovered =
           objectHovered && (file->hoveredSegmentId.empty() ||
                             (segment && segment->id == file->hoveredSegmentId));
-      const auto& range = segment ? segment->id == mark.activeSegmentId
-                                        ? mark.range
-                                        : segment->range
-                                  : *mark.observation;
+      const bool editing =
+          gesture_ && gesture_->tool == Tool::MarkEdit &&
+          gesture_->markId == mark.id &&
+          (!segment || segment->id == gesture_->editContext.segmentId);
+      const auto& range = editing   ? gesture_->draft
+                          : segment ? segment->range
+                                    : *mark.observation;
       const bool currentSegment =
-          current && segment && segment->id == file->activeSegmentId;
+          current && (!segment || segment->id == file->activeSegmentId);
       const auto box = markRect(range);
       if (box.isEmpty() || !box.intersects(plot)) continue;
       if (hovered) {
@@ -2436,7 +2435,9 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
       if (currentSegment && !creating_ && !detectionRoi_ &&
           session_.annotations().canEdit(*file, mark.id))
         for (const auto& [point, edge] : handles(box)) {
-          Q_UNUSED(edge);
+          if (!segment && edge != (waterfall ? Left : Top) &&
+              edge != (waterfall ? Right : Bottom))
+            continue;
           if (!plot.contains(point)) continue;
           ++handleCount;
           const QRectF handle(point - QPointF(3, 3), QSizeF(6, 6));
@@ -2604,31 +2605,40 @@ PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
     return {};
   std::vector<const Mark*> selected;
   if (const auto* current = findMark(*file, file->activeMarkId);
-      current && activeSegment(*current))
+      current && (activeSegment(*current) || current->observation))
     selected.push_back(current);
   for (const auto* mark : selected) {
     if (!annotationVisible(*file, *mark) ||
         !session_.annotations().canEdit(*file, mark->id))
       continue;
-    const auto box = markRect(mark->range), clip = box.intersected(plot);
+    const bool observation = mark->segments.empty();
+    const bool waterfall = file->display.mainMode == MainMode::Waterfall;
+    const auto box = markRect(observation ? *mark->observation : mark->range);
+    const auto clip = box.intersected(plot);
     if (clip.isEmpty()) continue;
     int bestEdge = 0;
     double bestDistance = std::numeric_limits<double>::infinity();
     for (const auto& [handle, edge] : handles(box))
-      if (plot.contains(handle) && std::abs(point.x() - handle.x()) <= 6 &&
-          std::abs(point.y() - handle.y()) <= 6) {
-        const double distance = std::pow(point.x() - handle.x(), 2) +
-                                std::pow(point.y() - handle.y(), 2);
-        const bool corner = (edge & (Left | Right)) && (edge & (Top | Bottom));
-        if (distance < bestDistance || (distance == bestDistance && corner)) {
-          bestEdge = edge;
-          bestDistance = distance;
+      if (!observation || edge == (waterfall ? Left : Top) ||
+          edge == (waterfall ? Right : Bottom))
+        if (plot.contains(handle) && std::abs(point.x() - handle.x()) <= 6 &&
+            std::abs(point.y() - handle.y()) <= 6) {
+          const double distance = std::pow(point.x() - handle.x(), 2) +
+                                  std::pow(point.y() - handle.y(), 2);
+          const bool corner =
+              (edge & (Left | Right)) && (edge & (Top | Bottom));
+          if (distance < bestDistance || (distance == bestDistance && corner)) {
+            bestEdge = edge;
+            bestDistance = distance;
+          }
         }
-      }
     if (bestEdge) return {mark->id, bestEdge, true, mark->activeSegmentId};
     const auto consider = [&](int edge, double coordinate, double actual,
                               bool visible, bool inSpan) {
       const double distance = std::abs(coordinate - actual);
+      if (observation && edge != (waterfall ? Left : Top) &&
+          edge != (waterfall ? Right : Bottom))
+        return;
       if (visible && inSpan && distance <= 6 && distance < bestDistance) {
         bestDistance = distance;
         bestEdge = edge;
@@ -2658,8 +2668,10 @@ PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
     if (!selectedIds.contains(it->id) || it->id == file->activeMarkId ||
         !annotationVisible(*file, *it))
       continue;
-    if (activeSegment(*it) &&
-        markRect(it->range).intersected(plot).contains(point) &&
+    if ((activeSegment(*it) || it->observation) &&
+        markRect(activeSegment(*it) ? it->range : *it->observation)
+            .intersected(plot)
+            .contains(point) &&
         session_.annotations().canEdit(*file, it->id))
       return {it->id, Move, true, it->activeSegmentId};
   }
@@ -2814,7 +2826,13 @@ void PlotWidget::mousePressEvent(QMouseEvent* event) {
     gesture.tool = Tool::MarkEdit;
     gesture.markId = hit.id;
     gesture.edges = hit.edges;
-    gesture.mark = findMark(*file, hit.id)->range;
+    auto* annotation = findMark(*file, hit.id);
+    gesture.observationOnly = annotation->segments.empty();
+    gesture.mark =
+        gesture.observationOnly ? *annotation->observation : annotation->range;
+    gesture.draft = gesture.mark;
+    gesture.editContext =
+        annotationEditContext(*file, hit.id, session_.projectGeneration());
   } else
     gesture.tool = Tool::ZoomBox;
   gesture_ = gesture;
@@ -2882,7 +2900,10 @@ void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
   const auto& base = gesture.before.view;
   if (gesture.tool == Tool::MarkEdit) {
     auto* mark = findMark(*file, gesture.markId);
-    if (!mark) {
+    if (!mark ||
+        !annotationEditContextMatches(*file, gesture.editContext,
+                                      session_.projectGeneration()) ||
+        !session_.annotations().canEdit(*file, gesture.markId)) {
       cancelGesture();
       return;
     }
@@ -2893,10 +2914,12 @@ void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
     const auto bounds = fullRange(file->metadata);
     auto next = gesture.mark;
     if (gesture.edges == Move) {
-      const auto span = gesture.mark.time.end - gesture.mark.time.begin;
-      next.time.begin = offsetSample(gesture.mark.time.begin, dt,
-                                     availableSamples(file->metadata) - span);
-      next.time.end = next.time.begin + span;
+      if (!gesture.observationOnly) {
+        const auto span = gesture.mark.time.end - gesture.mark.time.begin;
+        next.time.begin = offsetSample(gesture.mark.time.begin, dt,
+                                       availableSamples(file->metadata) - span);
+        next.time.end = next.time.begin + span;
+      }
       const double width =
           gesture.mark.frequency.upperHz - gesture.mark.frequency.lowerHz;
       next.frequency.lowerHz = std::clamp(gesture.mark.frequency.lowerHz + df,
@@ -2911,10 +2934,12 @@ void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
       const double minFrequency = std::min(
           file->metadata.sampleRateHz / file->display.stftSize,
           gesture.mark.frequency.upperHz - gesture.mark.frequency.lowerHz);
-      if (gesture.edges & (waterfall ? Top : Left))
+      if (!gesture.observationOnly &&
+          (gesture.edges & (waterfall ? Top : Left)))
         next.time.begin = offsetSample(gesture.mark.time.begin, dt,
                                        gesture.mark.time.end - minTime);
-      if (gesture.edges & (waterfall ? Bottom : Right))
+      if (!gesture.observationOnly &&
+          (gesture.edges & (waterfall ? Bottom : Right)))
         next.time.end =
             std::max(gesture.mark.time.begin + minTime,
                      offsetSample(gesture.mark.time.end, dt,
@@ -2929,7 +2954,7 @@ void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
                        gesture.mark.frequency.lowerHz + minFrequency,
                        bounds.frequency.upperHz);
     }
-    mark->range = next;
+    gesture.draft = next;
   } else if (gesture.tool == Tool::AuxiliaryY) {
     const bool psd = file->display.auxiliaryMode == AuxiliaryMode::Psd;
     const double low = psd ? gesture.before.psdMin : gesture.before.waveformMin;
@@ -3007,12 +3032,14 @@ void PlotWidget::finishGesture(Qt::KeyboardModifiers modifiers) {
   if (!file || file->metadata.id != gesture.before.fileId) return;
   const auto& base = gesture.before.view;
   if (gesture.tool == Tool::MarkEdit) {
-    if (!gesture.changed)
+    if (!gesture.changed) {
       selectAt(gesture.start, modifiers);
-    else if (auto* mark = findMark(*file, gesture.markId)) {
-      const auto next = mark->range;
-      mark->range = gesture.mark;
-      const auto result = session_.commitAnnotationGeometry(mark->id, next);
+    } else if (auto* mark = findMark(*file, gesture.markId)) {
+      const auto result =
+          annotationEditContextMatches(*file, gesture.editContext,
+                                       session_.projectGeneration())
+              ? session_.commitAnnotationGeometry(mark->id, gesture.draft)
+              : AnnotationResult{false, false, {}, "编辑对象或基础修订已改变"};
       emit statusMessage(result.ok
                              ? QStringLiteral("已提交一次标记修订；需重新复核")
                              : QString::fromStdString(result.error));

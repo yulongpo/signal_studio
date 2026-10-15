@@ -94,8 +94,17 @@ AnnotationSourceSet interactionSource(const Session& session,
                      : "detection-v1";
   set.parserId = "native-interaction-capture";
   set.parserVersion = "1";
-  set.sourceHash = "explicit-ui-fixture:" + id;
-  set.originalText = "Synthetic annotations for native interaction only.\n";
+  set.originalText = QJsonDocument(QJsonObject{{"syntheticAnnotation", true},
+                                               {"modelInference", false},
+                                               {"fixtureSourceId",
+                                                QString::fromStdString(id)}})
+                         .toJson(QJsonDocument::Compact)
+                         .toStdString();
+  set.sourceHash =
+      QCryptographicHash::hash(QByteArray::fromStdString(set.originalText),
+                               QCryptographicHash::Sha256)
+          .toHex()
+          .toStdString();
   set.sourceIdentity =
       annotationSourceIdentity(file.metadata, session.projectGeneration());
   return set;
@@ -302,9 +311,12 @@ void interactionSelectionScenes(Capture& capture, QScreen* screen) {
   interactionScene(capture, "08-filter-restored-without-old-selection", screen);
 }
 
-int runAnnotationInteractionsCapture(const QString& node,
-                                     const QString& outputDirectory) {
-  if (node != "U1" || !QFileInfo(outputDirectory).isAbsolute() ||
+int runAnnotationInteractionsCapture(
+    const QString& node, const QString& outputDirectory,
+    const std::function<void(Capture&, QScreen*)>& captureScenes = {},
+    int expectedScenes = 8) {
+  if ((node != "U1" && node != "U2") ||
+      !QFileInfo(outputDirectory).isAbsolute() ||
       !QDir().mkpath(outputDirectory))
     return 2;
   qApp->setProperty("uiStatePersistenceEnabled", false);
@@ -355,7 +367,7 @@ int runAnnotationInteractionsCapture(const QString& node,
                     5000),
             "Native window did not fill the specified second screen");
     QString error;
-    const auto projectName = "u1-native-project-" +
+    const auto projectName = node.toLower() + "-native-project-" +
                              QUuid::createUuid().toString(QUuid::WithoutBraces);
     require(window.createProject(outputDirectory, projectName, &error), error);
     const QString data =
@@ -388,11 +400,14 @@ int runAnnotationInteractionsCapture(const QString& node,
       QTest::mouseClick(detectionToggle, Qt::LeftButton);
     require(widebandDisplayReady(window),
             "Actual IQ display did not settle on hardware QRhi");
-    interactionSelectionScenes(capture, screen);
+    if (captureScenes)
+      captureScenes(capture, screen);
+    else
+      interactionSelectionScenes(capture, screen);
     report["renderEvidence"] = capture.evidence();
     report["fullScreen"] = window.isFullScreen();
     report["logicalWindowSize"] = sizeJson(window.size());
-    report["pass"] = capture.passed && capture.scenes.size() == 8;
+    report["pass"] = capture.passed && capture.scenes.size() == expectedScenes;
   } catch (const std::exception& error) {
     report["error"] = QString::fromUtf8(error.what());
     QTextStream(stderr) << error.what() << '\n';

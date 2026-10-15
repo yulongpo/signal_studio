@@ -5,8 +5,8 @@
 | 节点 | 状态 | 证据 / 下一步 |
 |---|---|---|
 | U0 | 已获用户确认 | 本地提交 `6615b33`；状态行为 61/61、浏览器 59/59、0 页面异常；SPEC_PASS / QUALITY_PASS；[验证记录](U0/VALIDATION.md) |
-| U1 | 已完成自检与本地提交 | [验证记录](U1/VALIDATION.md)：23/23 全量；最终 UI 104/104；原生 8/8；SPEC_PASS / QUALITY_PASS |
-| U2 | 未开始 | 等待 U1 自检及本地提交 |
+| U1 | 已完成自检与本地提交 | `3384e17`；[验证记录](U1/VALIDATION.md)：23/23 全量；最终 UI 104/104；原生 8/8；SPEC_PASS / QUALITY_PASS |
+| U2 | 已完成自检与本地提交 | [验证记录](U2/VALIDATION.md)：Debug 22 项非 UI 哈希一致复用＋最终完整 UI 108/108；原生 10/10；SPEC_PASS / QUALITY_PASS |
 | U3 | 未开始 | 等待 U2 自检及本地提交；原生工程仍为 v5 |
 | U4 | 未开始 | 等待 U3 自检及本地提交；最后统一推送 |
 

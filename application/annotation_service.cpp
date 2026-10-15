@@ -112,6 +112,29 @@ Annotation* findAnnotation(FileState& file, const std::string& id) {
 const Annotation* findAnnotation(const FileState& file, const std::string& id) {
   return findMark(file, id);
 }
+AnnotationEditContext annotationEditContext(const FileState& file,
+                                            const std::string& id,
+                                            std::uint64_t generation) {
+  const auto* annotation = findAnnotation(file, id);
+  return {generation,
+          file.metadata.sampleFormat.selectedChannel,
+          file.metadata.id,
+          id,
+          annotation ? annotation->revisionId : std::string{},
+          annotation ? annotation->activeSegmentId : std::string{}};
+}
+bool annotationEditContextMatches(const FileState& file,
+                                  const AnnotationEditContext& context,
+                                  std::uint64_t generation) {
+  const auto* annotation = findAnnotation(file, context.annotationId);
+  return annotation && !annotation->deleted &&
+         context.projectGeneration == generation &&
+         context.fileId == file.metadata.id &&
+         context.sampleChannel == file.metadata.sampleFormat.selectedChannel &&
+         file.activeMarkId == context.annotationId &&
+         annotation->revisionId == context.baseRevisionId &&
+         annotation->activeSegmentId == context.segmentId;
+}
 AnnotationSourceSet* findSourceSet(FileState& file, const std::string& id) {
   return const_cast<AnnotationSourceSet*>(
       findSourceSet(std::as_const(file), id));
@@ -135,7 +158,8 @@ ChannelSourceRelation channelSourceRelation(const FileState& file,
   if (annotation->reviewStatus == ReviewStatus::Rejected)
     return ChannelSourceRelation::Rejected;
   const auto* segment = findSegment(*annotation, channel.segmentId);
-  if (!segment || annotation->revisionId != channel.revisionId ||
+  if (!segment) return ChannelSourceRelation::Missing;
+  if (annotation->revisionId != channel.revisionId ||
       segment->range != channel.sourceSnapshot->range ||
       sourceChanged(channel.sourceSnapshot->sourceIdentity, file.metadata))
     return ChannelSourceRelation::Changed;
@@ -566,10 +590,7 @@ bool AnnotationService::canEdit(const FileState& file,
       set->sampleChannel != file.metadata.sampleFormat.selectedChannel ||
       sourceChanged(set->sourceIdentity, file.metadata))
     return false;
-  return annotation && !annotation->deleted &&
-         (annotation->sourceKind == AnnotationSource::Manual ||
-          (file.revisionEditingAnnotationId == id &&
-           file.revisionEditingBaseRevisionId == annotation->revisionId));
+  return annotation && annotationSourceCurrent(file, *annotation);
 }
 
 AnnotationResult AnnotationService::commit(FileState& file,
@@ -584,8 +605,19 @@ AnnotationResult AnnotationService::commit(FileState& file,
     return fail("File activity segment budget exceeded (100000)");
   after.revisionId = nextId(file, "revision-");
   after.reviewRevisionId = after.revisionId;
-  after.reviewStatus = ReviewStatus::Pending;
-  for (auto& segment : after.segments) segment.confirmed = false;
+  const bool geometryChanged = before.segments != after.segments ||
+                               before.observation != after.observation;
+  if (geometryChanged) {
+    after.reviewStatus = ReviewStatus::Pending;
+    std::unordered_set<std::string> changedGeometry;
+    for (const auto& change : initial.segments)
+      if (change.after &&
+          (!change.before || change.before->range != change.after->range ||
+           change.before->frequencyFrame != change.after->frequencyFrame))
+        changedGeometry.insert(change.id);
+    for (auto& segment : after.segments)
+      if (changedGeometry.contains(segment.id)) segment.confirmed = false;
+  }
   refreshAnnotationProjection(after);
   auto patch = difference(before, after);
   AnnotationRevision revision;
@@ -609,9 +641,10 @@ AnnotationResult AnnotationService::commit(FileState& file,
     revision.observationAfter = after.observation;
   }
   after.revisions.push_back(std::move(revision));
-  after.reviewHistory.push_back({ReviewStatus::Pending, after.revisionId,
-                                 std::move(actor), now(),
-                                 "Revision requires review"});
+  after.reviewHistory.push_back(
+      {after.reviewStatus, after.revisionId, std::move(actor), now(),
+       geometryChanged ? "Geometry revision requires review"
+                       : "Metadata revision preserves review"});
   if (const auto result =
           validateAnnotation(after, annotationBounds(file.metadata));
       !result)
@@ -642,7 +675,7 @@ AnnotationResult AnnotationService::commitGeometry(FileState& file,
                                                    std::string actor) {
   if (!canEdit(file, id))
     return fail(
-        "Read-only source requires an explicit current revision session");
+        "Annotation source is unavailable or its physical identity changed");
   const auto before = *findAnnotation(file, id);
   auto after = before;
   auto* segment = findSegment(after, segmentId);
@@ -660,13 +693,41 @@ AnnotationResult AnnotationService::commitGeometry(FileState& file,
     return fail(result.error);
   return commit(file, before, std::move(after), "geometry", std::move(actor));
 }
+AnnotationResult AnnotationService::commitObservationFrequency(
+    FileState& file, const std::string& id, FrequencyRange frequency,
+    std::string actor) {
+  if (!canEdit(file, id))
+    return fail(
+        "Annotation source is unavailable or its physical identity changed");
+  const auto before = *findAnnotation(file, id);
+  if (!before.segments.empty() || !before.observation)
+    return fail("Frequency-only editing requires an unknown-time observation");
+  if (before.observation->frequency == frequency) return success(id);
+  auto physicalFrequency = frequency;
+  if (before.observationFrequencyFrame == FrequencyFrame::Baseband) {
+    physicalFrequency.lowerHz += file.metadata.centerFrequencyHz;
+    physicalFrequency.upperHz += file.metadata.centerFrequencyHz;
+  }
+  const auto band = annotationBounds(file.metadata).effectiveFrequency;
+  if (!std::isfinite(physicalFrequency.lowerHz) ||
+      !std::isfinite(physicalFrequency.upperHz) ||
+      physicalFrequency.lowerHz >= physicalFrequency.upperHz ||
+      physicalFrequency.lowerHz < band.lowerHz ||
+      physicalFrequency.upperHz > band.upperHz)
+    return fail(
+        "Frequency range exceeds the effective analysis band or is empty");
+  auto after = before;
+  after.observation->frequency = frequency;
+  return commit(file, before, std::move(after), "observation-frequency",
+                std::move(actor));
+}
 AnnotationResult AnnotationService::addSegment(FileState& file,
                                                const std::string& id,
                                                ViewRange range,
                                                std::string actor) {
   if (!canEdit(file, id))
     return fail(
-        "Read-only source requires an explicit current revision session");
+        "Annotation source is unavailable or its physical identity changed");
   const auto before = *findAnnotation(file, id);
   auto after = before;
   Segment segment;
@@ -691,14 +752,13 @@ AnnotationResult AnnotationService::deleteSegment(FileState& file,
                                                   std::string actor) {
   if (!canEdit(file, id))
     return fail(
-        "Read-only source requires an explicit current revision session");
+        "Annotation source is unavailable or its physical identity changed");
   const auto before = *findAnnotation(file, id);
   auto after = before;
   if (!findSegment(after, segmentId))
     return fail("Selected segment does not belong to this annotation");
-  if (after.segments.size() == 1 && !after.observation)
-    return fail(
-        "Delete the object explicitly instead of erasing its last geometry");
+  if (after.segments.size() == 1)
+    return deleteBatch(file, {id}, std::move(actor));
   std::erase_if(after.segments,
                 [&](const auto& segment) { return segment.id == segmentId; });
   if (after.activeSegmentId == segmentId) after.activeSegmentId.clear();
@@ -712,7 +772,7 @@ AnnotationResult AnnotationService::splitSegment(FileState& file,
                                                  std::string actor) {
   if (!canEdit(file, id))
     return fail(
-        "Read-only source requires an explicit current revision session");
+        "Annotation source is unavailable or its physical identity changed");
   const auto before = *findAnnotation(file, id);
   auto after = before;
   auto* segment = findSegment(after, segmentId);
@@ -744,7 +804,7 @@ AnnotationResult AnnotationService::mergeSegments(
     const std::vector<std::string>& segmentIds, std::string actor) {
   if (!canEdit(file, id))
     return fail(
-        "Read-only source requires an explicit current revision session");
+        "Annotation source is unavailable or its physical identity changed");
   const auto before = *findAnnotation(file, id);
   auto after = before;
   std::unordered_set<std::string> selected(segmentIds.begin(),
@@ -803,7 +863,7 @@ AnnotationResult AnnotationService::adoptObservation(FileState& file,
                                                      std::string actor) {
   if (!canEdit(file, id))
     return fail(
-        "Read-only source requires an explicit current revision session");
+        "Annotation source is unavailable or its physical identity changed");
   const auto* annotation = findAnnotation(file, id);
   if (!annotation->observation || !annotation->segments.empty())
     return fail("Only an observation-only object can adopt its observation");
@@ -828,7 +888,7 @@ AnnotationResult AnnotationService::rename(FileState& file,
                                            std::string actor) {
   if (!canEdit(file, id))
     return fail(
-        "Read-only source requires an explicit current revision session");
+        "Annotation source is unavailable or its physical identity changed");
   const auto before = *findAnnotation(file, id);
   auto after = before;
   after.name = std::move(name);
@@ -841,13 +901,34 @@ AnnotationResult AnnotationService::restoreOrigin(FileState& file,
                                                   std::string actor) {
   if (!canEdit(file, id))
     return fail(
-        "Read-only source requires an explicit current revision session");
+        "Annotation source is unavailable or its physical identity changed");
   const auto before = *findAnnotation(file, id);
   auto after = before;
   if (!before.originEvidence) return fail("Original evidence is unavailable");
+  const auto& original = before.originEvidence->originalSegments;
+  if (before.observation == before.originEvidence->originalObservation &&
+      before.segments.size() == original.size() &&
+      std::equal(
+          before.segments.begin(), before.segments.end(), original.begin(),
+          [](const Segment& current, const Segment& source) {
+            return current.id == source.id && current.range == source.range &&
+                   current.frequencyFrame == source.frequencyFrame;
+          }))
+    return success(id);
   after.segments = before.originEvidence->originalSegments;
+  std::unordered_map<std::string, const Segment*> currentSegments;
+  for (const auto& segment : before.segments)
+    currentSegments.emplace(segment.id, &segment);
+  for (auto& segment : after.segments) {
+    const auto current = currentSegments.find(segment.id);
+    if (current != currentSegments.end() &&
+        current->second->range == segment.range &&
+        current->second->frequencyFrame == segment.frequencyFrame)
+      segment = *current->second;
+  }
   after.observation = before.originEvidence->originalObservation;
-  after.activeSegmentId.clear();
+  if (!findSegment(after, before.activeSegmentId))
+    after.activeSegmentId.clear();
   refreshAnnotationProjection(after);
   // Restoration can retain physical imported tails; it never claims those
   // samples have become available for analysis.
@@ -1033,6 +1114,7 @@ AnnotationResult AnnotationService::select(FileState& file,
     file.activeSegmentId = annotation->activeSegmentId;
   } else
     file.activeSegmentId.clear();
+  if (file.activeSegmentId.empty()) file.display.psdFromSelection = false;
   if (old != file.activeMarkId) endRevision(file);
   return success(file.activeMarkId, changed);
 }
@@ -1074,6 +1156,7 @@ void AnnotationService::reconcileSelection(FileState& file) {
   } else {
     file.activeSegmentId.clear();
   }
+  if (file.activeSegmentId.empty()) file.display.psdFromSelection = false;
   if (!visible(file.hoveredMarkId)) {
     file.hoveredMarkId.clear();
     file.hoveredSegmentId.clear();

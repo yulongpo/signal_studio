@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QCryptographicHash>
 #include <QLayout>
 #include <QTreeWidgetItemIterator>
 #include <array>
@@ -24,8 +25,18 @@ AnnotationSourceSet annotationUiSource(const FileState& file, std::string id,
                                                        : "detection-v1";
   source.parserId = "native-qt-test";
   source.parserVersion = "1";
-  source.sourceHash = "fixture:" + source.id;
-  source.originalText = R"({"syntheticFixture":true,"modelInference":false})";
+  source.originalText =
+      QJsonDocument(
+          QJsonObject{{"syntheticFixture", true},
+                      {"modelInference", false},
+                      {"fixtureSourceId", QString::fromStdString(source.id)}})
+          .toJson(QJsonDocument::Compact)
+          .toStdString();
+  source.sourceHash =
+      QCryptographicHash::hash(QByteArray::fromStdString(source.originalText),
+                               QCryptographicHash::Sha256)
+          .toHex()
+          .toStdString();
   source.sourceIdentity = annotationSourceIdentity(file.metadata);
   return source;
 }
@@ -407,7 +418,7 @@ void UiTests::annotationCurrentSegmentGeometryAndHandles() {
            100.35);
   QVERIFY(file->activeSegmentId.empty() &&
           findAnnotation(*file, "unknown")->segments.empty());
-  QTRY_COMPARE(plot->property("annotationHandleCount").toInt(), 0);
+  QTRY_COMPARE(plot->property("annotationHandleCount").toInt(), 2);
 }
 
 void UiTests::annotationSelectionContextAndPublication() {

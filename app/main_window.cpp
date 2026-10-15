@@ -43,6 +43,7 @@
 #include <QStandardPaths>
 #include <QStatusBar>
 #include <QStyledItemDelegate>
+#include <QTextEdit>
 #include <QTimer>
 #include <QToolButton>
 #include <QTreeWidget>
@@ -570,6 +571,7 @@ void MainWindow::buildMenus() {
   brandRow->addWidget(version);
   menuBar()->setCornerWidget(brand, Qt::TopLeftCorner);
   auto* file = menuBar()->addMenu("文件(&F)");
+  file->menuAction()->setProperty("preserveParameterDrafts", true);
   auto* action =
       file->addAction("▧ 新建工程…", this, &MainWindow::showNewProjectDialog);
   action->setObjectName("newProjectAction");
@@ -649,6 +651,7 @@ void MainWindow::buildMenus() {
     scheduleRightSidebarSettingsSave();
   });
   auto* edit = menuBar()->addMenu("编辑(&E)");
+  edit->menuAction()->setProperty("preserveParameterDrafts", true);
   for (bool redo : {false, true}) {
     auto* history = edit->addAction(redo ? "重做标记命令" : "撤销标记命令");
     history->setObjectName(redo ? "redoAnnotationAction"
@@ -1336,7 +1339,8 @@ void MainWindow::buildWorkspace() {
   markRow->setSpacing(5);
   rename_ = push("重命名", "renameMark", markRow);
   locate_ = push("定位", "locateMark", markRow);
-  delete_ = push("删除所选", "deleteMarks", markRow);
+  delete_ = push("删除所选标记", "deleteMarks", markRow);
+  delete_->setProperty("preserveParameterDrafts", true);
   for (auto* action : {rename_, locate_, delete_})
     action->setProperty("uiRole", "outline");
   markRow->addStretch();
@@ -1676,7 +1680,6 @@ void MainWindow::buildWorkspace() {
         if (std::find(f->selectedMarkIds.begin(), f->selectedMarkIds.end(),
                       id.toStdString()) == f->selectedMarkIds.end())
           selectMark(id, Qt::NoModifier);
-        cancelInteractions(false);
         QMenu menu(this);
         menu.addAction("重命名当前标记", this, &MainWindow::renameMark);
         menu.addAction("定位当前标记", this, &MainWindow::locateMark);
@@ -1923,6 +1926,10 @@ void MainWindow::buildWorkspace() {
 }
 
 void MainWindow::rebuildTree() {
+  if (treePointerPressed_) {
+    treeRefreshAfterRelease_ = true;
+    return;
+  }
   QSignalBlocker block(tree_);
   std::map<QString, bool> expanded;
   const auto itemKey = [](QTreeWidgetItem* item) {
@@ -1999,7 +2006,8 @@ void MainWindow::rebuildTree() {
     actionRow->setSpacing(4);
     controlColumn->addLayout(actionRow);
     auto* all = push("全选匹配", "treeSelectAll", actionRow);
-    auto* remove = push("删除所选", "treeDeleteMarks", actionRow);
+    auto* remove = push("删除所选标记", "treeDeleteMarks", actionRow);
+    remove->setProperty("preserveParameterDrafts", true);
     all->setProperty("uiRole", "outline");
     remove->setProperty("uiRole", "outline");
     all->setEnabled(annotationCounts(file).matching != 0);
@@ -2555,6 +2563,13 @@ void MainWindow::rememberProject(const QString& path) {
 }
 
 void MainWindow::updateTree() {
+  // A committed editor or worker publication can request a rebuild between a
+  // native press and release. Keep the original item widget until its click is
+  // delivered; a zero-delay refresh alone does not protect that interval.
+  if (treePointerPressed_) {
+    treeRefreshAfterRelease_ = true;
+    return;
+  }
   const auto* file = session_.activeFile();
   const auto context =
       QString::number(session_.projectGeneration()) + ":" +
@@ -3846,6 +3861,41 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 }
 bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
   if (destroying_) return QMainWindow::eventFilter(watched, event);
+  if (event->type() == QEvent::MouseButtonPress ||
+      event->type() == QEvent::MouseButtonDblClick) {
+    auto* target = qobject_cast<QWidget*>(watched);
+    if (static_cast<QMouseEvent*>(event)->button() == Qt::LeftButton &&
+        target && (target == tree_ || tree_->isAncestorOf(target))) {
+      treePointerPressed_ = true;
+      ++treePointerSequence_;
+    }
+  }
+  if (treePointerPressed_ &&
+      ((event->type() == QEvent::MouseButtonRelease &&
+        static_cast<QMouseEvent*>(event)->button() == Qt::LeftButton) ||
+       (event->type() == QEvent::WindowDeactivate && watched == this))) {
+    const auto sequence = treePointerSequence_;
+    QTimer::singleShot(0, this, [this, sequence] {
+      if (sequence != treePointerSequence_) return;
+      treePointerPressed_ = false;
+      if (treeRefreshAfterRelease_) {
+        treeRefreshAfterRelease_ = false;
+        updateTree();
+      }
+    });
+  }
+  if (event->type() == QEvent::ShortcutOverride &&
+      static_cast<QKeyEvent*>(event)->key() == Qt::Key_Delete) {
+    auto* focus = QApplication::focusWidget();
+    const auto* line = qobject_cast<QLineEdit*>(focus);
+    const auto* plain = qobject_cast<QPlainTextEdit*>(focus);
+    const auto* rich = qobject_cast<QTextEdit*>(focus);
+    if ((line && !line->isReadOnly()) || (plain && !plain->isReadOnly()) ||
+        (rich && !rich->isReadOnly())) {
+      event->accept();
+      return true;
+    }
+  }
   if (handleWindowChrome(watched, event)) return true;
   if (watched == tree_->viewport()) {
     if (event->type() == QEvent::MouseButtonPress ||
@@ -3943,6 +3993,15 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
     if (event->type() == QEvent::KeyPress &&
         static_cast<QKeyEvent*>(event)->key() == Qt::Key_Escape &&
         !QApplication::activeModalWidget()) {
+      if (auto* focus = QApplication::focusWidget();
+          focus && (focus->property("parameterDraft").toBool() ||
+                    focus->objectName() == "annotationTableEditor")) {
+        if (auto* draft = dynamic_cast<ParameterDraft*>(focus)) {
+          draft->discard();
+          event->accept();
+          return true;
+        }
+      }
       if (main_ && main_->isSelectingDetectionRoi()) {
         main_->cancelDetectionRoi();
         refresh();
@@ -4096,21 +4155,7 @@ void MainWindow::cancelInteractions(bool exitCreating) {
   if (graphs_) static_cast<PrototypeSplitter*>(graphs_)->cancel();
 }
 void MainWindow::deleteMarks() {
-  cancelInteractions(false);
-  const auto* file = session_.activeFile();
-  if (!file || file->selectedMarkIds.empty()) return;
-  std::unordered_set<std::string> selected(file->selectedMarkIds.begin(),
-                                           file->selectedMarkIds.end());
-  QStringList affected;
-  for (const auto& channel : file->channels)
-    if (selected.contains(channel.sourceMarkId)) affected << q(channel.name);
-  const auto count = session_.deleteSelectedMarks();
-  refresh();
-  if (count.marks)
-    log(QString(
-            "已删除 %1 个标记；保留 %2 个关联通道及来源快照，可撤销标记删除")
-            .arg(count.marks)
-            .arg(affected.size()));
+  if (annotations_) annotations_->deleteSelected();
 }
 void MainWindow::renameMark() {
   cancelInteractions(false);
@@ -4118,7 +4163,8 @@ void MainWindow::renameMark() {
   if (!file) return;
   auto* mark = findMark(*file, file->activeMarkId);
   if (!mark) return;
-  const auto fileId = file->metadata.id, markId = mark->id;
+  const auto context =
+      annotationEditContext(*file, mark->id, session_.projectGeneration());
   bool ok = false;
   const auto name =
       QInputDialog::getText(this, "重命名标记", "标记名称（最多 80 个字符）",
@@ -4126,11 +4172,14 @@ void MainWindow::renameMark() {
           .trimmed()
           .left(80);
   file = session_.activeFile();
-  if (!ok || name.isEmpty() || !file || file->metadata.id != fileId) return;
-  mark = findMark(*file, markId);
+  if (!ok || name.isEmpty() || !file ||
+      !annotationEditContextMatches(*file, context,
+                                    session_.projectGeneration()))
+    return;
+  mark = findMark(*file, context.annotationId);
   if (mark) {
     const auto result = session_.annotations().rename(
-        *file, markId, name.toStdString(), mark->note);
+        *file, context.annotationId, name.toStdString(), mark->note);
     refresh();
     log(result.ok ? "已创建名称修订" : q(result.error));
   }

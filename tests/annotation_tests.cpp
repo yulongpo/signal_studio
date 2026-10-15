@@ -155,8 +155,8 @@ void testSourcesAndImmutableOrigin() {
             label->segments.size() == 2,
         "Imported burst label must be Pending and multi-segment");
   const auto segmentId = label->segments.front().id;
-  check(!service.commitGeometry(file, label->id, segmentId, geometry(101, 500)),
-        "Imported source must be read-only before revision session");
+  check(service.canEdit(file, label->id),
+        "Imported sources must support direct editing without a revision gate");
   checkResult(service.beginRevision(file, label->id),
               "Beginning explicit revision failed");
   checkResult(
@@ -435,6 +435,9 @@ void testConfirmationGeometryInvalidation() {
               "First geometry confirmation failed");
   checkResult(service.confirmSegment(file, event.id, secondId),
               "Second geometry confirmation failed");
+  checkResult(service.reviewBatch(file, {event.id}, ReviewStatus::Accepted),
+              "Accepted multi-segment setup failed");
+  const auto unchangedSibling = annotation->segments.front();
   const auto revisionBefore = annotation->revisionId;
   const auto origin = annotation->originEvidence;
   Channel channel;
@@ -454,26 +457,26 @@ void testConfirmationGeometryInvalidation() {
   check(revised != revisionBefore &&
             annotation->reviewStatus == ReviewStatus::Pending &&
             annotation->reviewRevisionId == revised &&
-            !annotation->segments.front().confirmed &&
+            annotation->segments.front() == unchangedSibling &&
             !annotation->segments.back().confirmed &&
             annotation->segments.front().range == geometry() &&
             annotation->originEvidence == origin &&
             file.channels.front().sourceRelation ==
                 ChannelSourceRelation::Changed,
-        "Any geometry revision must invalidate current confirmations, even "
-        "for an unchanged sibling");
+        "Editing one Accepted segment must preserve the confirmed sibling "
+        "byte-for-byte and make only the changed segment Pending");
   checkResult(service.undo(file), "Confirmed geometry revision undo failed");
   check(annotation->revisionId == revisionBefore &&
             annotation->segments.front().confirmed &&
             annotation->segments.back().confirmed &&
-            annotation->reviewStatus == ReviewStatus::Pending &&
+            annotation->reviewStatus == ReviewStatus::Accepted &&
             annotation->reviewHistory == revisionReviews &&
             file.channels.front().sourceRelation ==
                 ChannelSourceRelation::Current,
         "Geometry undo must restore confirmations bound to the old revision");
   checkResult(service.redo(file), "Confirmed geometry revision redo failed");
   check(annotation->revisionId == revised &&
-            !annotation->segments.front().confirmed &&
+            annotation->segments.front() == unchangedSibling &&
             !annotation->segments.back().confirmed &&
             annotation->segments.back().range == geometry(810, 910) &&
             annotation->reviewHistory == revisionReviews &&
@@ -1078,12 +1081,242 @@ void testBudgetsAndIndependentHistories() {
   check(large.marks.size() == 1,
         "Budget rejection must not partially publish state");
 }
+void testDirectEditsPreserveOriginAndMetadataQuality() {
+  for (const auto source :
+       {AnnotationSource::ImportedLabel, AnnotationSource::Manual,
+        AnnotationSource::Algorithm}) {
+    auto file = fileFixture();
+    AnnotationService service;
+    std::string id;
+    if (source == AnnotationSource::Manual) {
+      id = manual(service, file);
+    } else {
+      const auto set = sourceFixture(file, "direct-source", source);
+      checkResult(service.publishSourceSet(
+                      file, set, {annotationFixture(set, "direct-event")}),
+                  "Direct-edit publication failed");
+      id = "direct-event";
+    }
+    auto* annotation = findAnnotation(file, id);
+    const auto origin = annotation->originEvidence;
+    const auto originId = annotation->originRecordId;
+    const auto setId = annotation->sourceSetId;
+    const auto segmentId = annotation->segments.front().id;
+    for (const auto review : {ReviewStatus::Accepted, ReviewStatus::Rejected}) {
+      checkResult(service.reviewBatch(file, {id}, review),
+                  "Review setup failed");
+      const auto confirmed = annotation->segments.front().confirmed;
+      checkResult(
+          service.rename(file, id, "Name " + std::to_string(int(review)),
+                         "Edited note"),
+          "All sources must allow direct metadata edits");
+      check(annotation->reviewStatus == review &&
+                annotation->segments.front().confirmed == confirmed &&
+                annotation->reviewRevisionId == annotation->revisionId,
+            "Metadata revisions must preserve quality and confirmation");
+    }
+    const auto history = service.historySize(file);
+    const auto revisionCount = annotation->revisions.size();
+    check(
+        !service.rename(file, id, annotation->name, annotation->note).changed &&
+            !service
+                 .commitGeometry(file, id, segmentId,
+                                 annotation->segments.front().range)
+                 .changed &&
+            service.historySize(file) == history &&
+            annotation->revisions.size() == revisionCount,
+        "Unchanged submissions must not create commands or revisions");
+    auto next = annotation->segments.front().range;
+    next.frequency.lowerHz += .125;
+    const auto originalUpper = next.frequency.upperHz;
+    checkResult(service.commitGeometry(file, id, segmentId, next),
+                "Direct geometry edit failed");
+    next.time.begin += 1;
+    checkResult(service.commitGeometry(file, id, segmentId, next),
+                "Consecutive direct edit must not require beginRevision");
+    check(annotation->reviewStatus == ReviewStatus::Pending &&
+              annotation->segments.front().range.frequency.upperHz ==
+                  originalUpper &&
+              annotation->originEvidence == origin &&
+              annotation->originRecordId == originId &&
+              annotation->sourceSetId == setId &&
+              annotation->sourceKind == source && file.marks.size() == 1,
+          "Direct edits must preserve provenance, precision, and object "
+          "identity");
+    checkResult(service.undo(file), "Geometry undo failed");
+    check(
+        annotation->segments.front().range.time.begin == geometry().time.begin,
+        "One geometry submission must correspond to one undo");
+    check(validateFileAnnotations(file).ok, "Direct edit invariant failed");
+  }
+}
+
+void testUnknownFrequencyAndEditContext() {
+  auto file = fileFixture();
+  file.metadata.sampleFormat.channels = 2;
+  AnnotationService service;
+  const auto set =
+      sourceFixture(file, "frequency-only", AnnotationSource::Algorithm);
+  auto value = annotationFixture(set, "observation-only", {});
+  value.observation = geometry();
+  value.observationTimeQuality = TimeQuality::WindowObservation;
+  auto evidence = std::make_shared<OriginEvidence>(*value.originEvidence);
+  evidence->originalObservation = value.observation;
+  value.originEvidence = evidence;
+  checkResult(service.publishSourceSet(file, set, {value}),
+              "Observation setup failed");
+  const auto publishedOrigin = findAnnotation(file, value.id)->originEvidence;
+  const auto originalEvidence = *publishedOrigin;
+  check(originalEvidence == *evidence,
+        "Publication must retain the complete fixture evidence contents");
+  checkResult(service.select(file, {value.id}, value.id),
+              "Observation selection failed");
+  const auto context = annotationEditContext(file, value.id, 23);
+  check(annotationEditContextMatches(file, context, 23),
+        "Draft context must match");
+  check(!annotationEditContextMatches(file, context, 24),
+        "A replacement project must invalidate a draft");
+  const FrequencyRange next{99'950'000.125, 100'090'000.875};
+  checkResult(service.commitObservationFrequency(file, value.id, next),
+              "Unknown-time frequency edit failed");
+  const auto* annotation = findAnnotation(file, value.id);
+  check(annotation->segments.empty() && annotation->range == ViewRange{} &&
+            annotation->observation->time == geometry().time &&
+            annotation->observation->frequency == next &&
+            annotation->observationTimeQuality ==
+                TimeQuality::WindowObservation &&
+            annotation->originEvidence == publishedOrigin &&
+            *annotation->originEvidence == originalEvidence,
+        "Frequency editing must retain unknown activity time and origin");
+  check(!annotationEditContextMatches(file, context, 23),
+        "A newer object revision must invalidate an old draft");
+  const auto revision = annotation->revisionId;
+  check(!service.commitObservationFrequency(file, value.id, next).changed &&
+            annotation->revisionId == revision,
+        "Unchanged frequency must not create a revision");
+  check(!service.commitObservationFrequency(file, value.id, {100e6, 100e6}),
+        "Empty frequency must be rejected atomically");
+  check(annotation->observation->frequency == next,
+        "Rejected frequency must leave geometry unchanged");
+  const auto current = annotationEditContext(file, value.id, 23);
+  file.metadata.sampleFormat.selectedChannel = 1;
+  check(!annotationEditContextMatches(file, current, 23) &&
+            !service.canEdit(file, value.id),
+        "Switching sample channels must invalidate editing");
+  file.metadata.sampleFormat.selectedChannel = 0;
+  file.metadata.centerFrequencyHz += 100;
+  check(!service.canEdit(file, value.id),
+        "Physical source identity validation remains required");
+}
+
+void testSegmentDeletionSnapshotAndConcurrentUndo() {
+  auto file = fileFixture();
+  AnnotationService service;
+  const auto set =
+      sourceFixture(file, "delete-source", AnnotationSource::Algorithm);
+  auto value =
+      annotationFixture(set, "delete-event", {geometry(), geometry(700, 900)});
+  checkResult(service.publishSourceSet(file, set, {value}),
+              "Delete fixture failed");
+  checkResult(service.reviewBatch(file, {value.id}, ReviewStatus::Accepted),
+              "Delete confirmation failed");
+  auto* annotation = findAnnotation(file, value.id);
+  const auto first = annotation->segments.front().id;
+  const auto second = annotation->segments.back().id;
+  Channel channel;
+  channel.id = "retained-channel";
+  checkResult(service.bindChannelSource(file, channel, value.id, first),
+              "Channel snapshot setup failed");
+  file.channels.push_back(channel);
+  const auto snapshot = channel.sourceSnapshot;
+  checkResult(service.deleteSegment(file, value.id, first),
+              "Direct segment deletion failed");
+  check(
+      file.channels.front().sourceRelation == ChannelSourceRelation::Missing &&
+          file.channels.front().sourceSnapshot == snapshot &&
+          file.channels.size() == 1,
+      "Deleting a bound segment must retain its channel and immutable "
+      "snapshot");
+  const auto newer =
+      sourceFixture(file, "later-worker", AnnotationSource::Algorithm);
+  checkResult(service.publishSourceSet(
+                  file, newer, {annotationFixture(newer, "later-result")}),
+              "Concurrent worker publication failed");
+  checkResult(service.undo(file), "Segment deletion undo failed");
+  annotation = findAnnotation(file, value.id);
+  check(annotation->segments.size() == 2 &&
+            findAnnotation(file, "later-result") &&
+            file.channels.front().sourceRelation ==
+                ChannelSourceRelation::Current,
+        "Undo must restore only touched IDs and keep later worker results");
+  checkResult(service.redo(file), "Segment deletion redo failed");
+  checkResult(service.deleteSegment(file, value.id, second),
+              "Last segment deletion failed");
+  annotation = findAnnotation(file, value.id);
+  check(annotation->deleted && annotation->segments.size() == 1 &&
+            file.channels.front().sourceSnapshot == snapshot,
+        "Deleting the last segment must soft-delete its object with geometry "
+        "retained");
+  checkResult(service.undo(file), "Last segment deletion undo failed");
+  check(!findAnnotation(file, value.id)->deleted &&
+            findAnnotation(file, "later-result"),
+        "One undo must restore last-segment object deletion");
+}
+
+void testRestoreOriginPreservesConfirmedSibling() {
+  auto file = fileFixture();
+  AnnotationService service;
+  const auto set =
+      sourceFixture(file, "restore-sibling", AnnotationSource::Algorithm);
+  const auto value = annotationFixture(set, "restore-object",
+                                       {geometry(), geometry(700, 900)});
+  checkResult(service.publishSourceSet(file, set, {value}),
+              "Restore fixture failed");
+  checkResult(service.reviewBatch(file, {value.id}, ReviewStatus::Accepted),
+              "Restore Accepted setup failed");
+  auto* annotation = findAnnotation(file, value.id);
+  const auto first = annotation->segments.front();
+  const auto second = annotation->segments.back();
+  const auto origin = annotation->originEvidence;
+  checkResult(service.select(file, {value.id}, value.id, second.id),
+              "Restore current-segment setup failed");
+  checkResult(
+      service.commitGeometry(file, value.id, second.id, geometry(710, 910)),
+      "Restore second-segment edit failed");
+  const auto edited = annotation->segments.back();
+  const auto beforeRevision = annotation->revisionId;
+  const auto beforeHistory = service.historySize(file);
+  checkResult(service.restoreOrigin(file, value.id),
+              "Restore original geometry failed");
+  check(annotation->segments.front() == first &&
+            annotation->segments.back().range == second.range &&
+            !annotation->segments.back().confirmed &&
+            annotation->activeSegmentId == second.id &&
+            annotation->reviewStatus == ReviewStatus::Pending &&
+            annotation->originEvidence == origin &&
+            service.historySize(file) == beforeHistory + 1,
+        "Restoring changed geometry must retain the entire confirmed sibling "
+        "and origin");
+  checkResult(service.undo(file), "Restore geometry undo failed");
+  check(annotation->segments.front() == first &&
+            annotation->segments.back() == edited &&
+            annotation->revisionId == beforeRevision,
+        "One undo must restore exactly the geometry before restoration");
+}
 }  // namespace
 
 int main() {
   const std::vector<std::pair<const char*, std::function<void()>>> tests{
       {"legacy compatibility", testLegacyCompatibility},
       {"three sources and immutable origin", testSourcesAndImmutableOrigin},
+      {"direct edits preserve origin and metadata quality",
+       testDirectEditsPreserveOriginAndMetadataQuality},
+      {"unknown frequency and edit context",
+       testUnknownFrequencyAndEditContext},
+      {"segment deletion snapshot and concurrent undo",
+       testSegmentDeletionSnapshotAndConcurrentUndo},
+      {"restore origin preserves confirmed sibling",
+       testRestoreOriginPreservesConfirmedSibling},
       {"unknown-time observation", testUnknownObservation},
       {"Pending single-segment confirmation",
        testPendingSingleSegmentConfirmation},

@@ -642,13 +642,10 @@ QJsonObject widebandReviseImported(Capture& capture, QScreen* screen,
   require(segment && segment->range.time.end > segment->range.time.begin + 1,
           "Actual label has no editable nonempty active interval");
   const auto newEnd = segment->range.time.end - 1;
-  auto* revise = child<QPushButton>(window, "beginAnnotationRevision");
-  widebandScrollTo(revise);
-  click(window, "beginAnnotationRevision");
   auto* end = child<QLineEdit>(window, "annotationEndMilliseconds");
   widebandScrollTo(end);
   require(end->isEnabled(),
-          "Native imported-label revision did not unlock geometry");
+          "Native imported-label geometry is not directly editable");
   end->setFocus();
   end->selectAll();
   const double sampleRate =
@@ -1463,7 +1460,6 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
   widebandScene(capture, "28-real-algorithm-ddc-saved-reopened", screen);
   selected = findAnnotation(*window.session().activeFile(), selectedId);
   const auto newEnd = activeSegment(*selected)->range.time.end - 1;
-  click(window, "beginAnnotationRevision");
   auto* endEdit = child<QLineEdit>(window, "annotationEndMilliseconds");
   widebandScrollTo(endEdit);
   endEdit->setFocus();

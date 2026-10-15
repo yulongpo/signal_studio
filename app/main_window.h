@@ -164,6 +164,8 @@ class MainWindow : public QMainWindow {
   std::unordered_set<std::string> treeRevealedAnnotationIds_;
   std::string treeActiveAnnotationId_;
   bool treeRevealPending_ = false;
+  std::uint64_t treePointerSequence_ = 0;
+  bool treePointerPressed_ = false, treeRefreshAfterRelease_ = false;
   bool refreshing_ = false, treeRebuildPending_ = false, layoutBusy_ = false,
        destroying_ = false;
   bool resourcesCollapsed_ = false, propertiesCollapsed_ = false;

@@ -1,0 +1,7 @@
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+    Start 13: signal_studio_annotations
+1/1 Test #13: signal_studio_annotations ........   Passed    3.55 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   3.56 sec

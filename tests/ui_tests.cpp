@@ -128,6 +128,11 @@ QList<QTreeWidgetItem*> descendantsOfType(QTreeWidgetItem* parent,
 void triggerConfirmed(QAction* action) {
   QTimer responder;
   QObject::connect(&responder, &QTimer::timeout, [] {
+    if (auto* dialog = QApplication::activeModalWidget();
+        dialog && dialog->objectName() == "annotationDeleteDialog") {
+      dialog->findChild<QPushButton*>("deleteAnnotationsConfirm")->click();
+      return;
+    }
     if (auto* dialog =
             qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
       if (auto* yes = dialog->button(QMessageBox::Yes))
@@ -373,6 +378,10 @@ class UiTests : public QObject {
   void annotationHoverTargetsOnlyOneSegment();
   void annotationTreeStructuralNavigationAndLocate();
   void annotationTreeSourceColorsSurviveInteractionStates();
+  void annotationDirectTableDraftsAndPublication();
+  void annotationAtomicRangeAndUnknownFrequency();
+  void annotationDeletePreviewPreservesDraftAndChannels();
+  void annotationFileMenuCancelsWithoutSubmittingDrafts();
 };
 
 void UiTests::workspaceLayout() {
@@ -2507,24 +2516,85 @@ void UiTests::fileSwitchCancelsUnfinishedEdit() {
   const auto markRange = innerRange(view);
   const auto markId = window.session().addMark(markRange);
   window.refresh();
+  const auto revision = findMark(*first, markId)->revisionId;
+  const auto revisionCount = findMark(*first, markId)->revisions.size();
+  const auto history = window.session().annotations().historySize(*first);
+  const bool couldNavigateBack = window.session().canBack();
+  const bool couldNavigateForward = window.session().canForward();
+  const auto nextId = window.session().project().files[1].metadata.id;
+  const auto nextHistory = window.session().annotations().historySize(
+      window.session().project().files[1]);
+  const auto nextView = window.session().project().files[1].view;
+  const auto handlePixels = [plot](const QImage& image, QPointF center) {
+    if (image.isNull()) return 0;
+    const double sx = double(image.width()) / plot->width();
+    const double sy = double(image.height()) / plot->height();
+    const auto patch =
+        QRect(qFloor((center.x() - 3) * sx), qFloor((center.y() - 3) * sy),
+              qCeil(6 * sx), qCeil(6 * sy))
+            .intersected(image.rect());
+    int count = 0;
+    for (int y = patch.top(); y <= patch.bottom(); ++y)
+      for (int x = patch.left(); x <= patch.right(); ++x) {
+        const auto color = image.pixelColor(x, y);
+        if (std::abs(color.red() - 217) <= 1 &&
+            std::abs(color.green() - 248) <= 1 &&
+            std::abs(color.blue() - 255) <= 1)
+          ++count;
+      }
+    return count;
+  };
+  const auto originalHandle =
+      plot->toPixel(markRange.time.end, markRange.frequency.upperHz);
+  const QPoint displacement(35, 20);
+  const auto previewHandle = originalHandle + displacement;
+  QVERIFY(plot->plotRect().contains(previewHandle));
+  QTRY_VERIFY_WITH_TIMEOUT(handlePixels(chartImage(plot), originalHandle) >= 8,
+                           1500);
+  const auto beforePreview = chartImage(plot);
+  QVERIFY(handlePixels(beforePreview, previewHandle) < 8);
   const auto start = pointAt(plot, view, .35, .5);
   QTest::mousePress(plot, Qt::LeftButton, Qt::NoModifier, start);
-  QTest::mouseMove(plot, start + QPoint(35, 20), 10);
-  QVERIFY(!(findMark(*first, markId)->range == markRange));
+  QTest::mouseMove(plot, start + displacement, 10);
+  QVERIFY(plot->hasPendingInteraction());
+  QTRY_VERIFY_WITH_TIMEOUT(handlePixels(chartImage(plot), previewHandle) >= 8,
+                           1500);
+  QVERIFY(handlePixels(chartImage(plot), originalHandle) < 8);
+  QCOMPARE(findMark(*first, markId)->range, markRange);
+  QCOMPARE(findMark(*first, markId)->revisionId, revision);
+  QCOMPARE(window.session().annotations().historySize(*first), history);
   auto* tree = window.findChild<QTreeWidget*>("projectTree");
-  QVERIFY(tree);
+  auto* resource = window.findChild<QScrollArea*>("resourceScroll");
+  QVERIFY(tree && resource);
   auto* nextFile = tree->topLevelItem(0)->child(1);
+  QCOMPARE(nextFile->data(0, Qt::UserRole + 1).toString().toStdString(),
+           nextId);
+  const auto nextPoint = tree->visualItemRect(nextFile).center();
+  QVERIFY(tree->viewport()->rect().contains(nextPoint));
+  QVERIFY(
+      resource->viewport()->rect().contains(resource->viewport()->mapFromGlobal(
+          tree->viewport()->mapToGlobal(nextPoint))));
   QTest::mouseClick(tree->viewport(), Qt::LeftButton, Qt::NoModifier,
-                    tree->visualItemRect(nextFile).center());
+                    nextPoint);
   QCoreApplication::processEvents();
-  QVERIFY(window.session().project().activeFileId != firstId);
+  QCOMPARE(window.session().project().activeFileId, nextId);
+  QCOMPARE(window.session().activeFile()->view, nextView);
+  QVERIFY(!plot->hasPendingInteraction());
   QTest::mouseRelease(plot, Qt::LeftButton, Qt::NoModifier,
-                      start + QPoint(35, 20));
+                      start + displacement);
+  QCOMPARE(window.session().annotations().historySize(
+               *window.session().activeFile()),
+           nextHistory);
   QVERIFY(window.session().activateFile(firstId));
   window.refresh();
   QVERIFY(findMark(*window.session().activeFile(), markId)->range == markRange);
+  QCOMPARE(findMark(*first, markId)->revisionId, revision);
+  QCOMPARE(findMark(*first, markId)->revisions.size(), revisionCount);
+  QCOMPARE(window.session().annotations().historySize(*first), history);
   QVERIFY(window.session().activeFile()->view == view);
-  QVERIFY(!plot->isCreating());
+  QCOMPARE(window.session().canBack(), couldNavigateBack);
+  QCOMPARE(window.session().canForward(), couldNavigateForward);
+  QVERIFY(!plot->isCreating() && !plot->hasPendingInteraction());
 }
 
 void UiTests::allResizeHandlesStayBounded_data() {
@@ -2692,7 +2762,7 @@ void UiTests::contextMenuActionsAndCoveredMarkSelection() {
   auto* remove = selectedMenu->findChild<QAction*>("contextDeleteAction");
   QVERIFY(locate && locate->isEnabled());
   QVERIFY(remove && remove->isEnabled());
-  remove->trigger();
+  triggerConfirmed(remove);
   QVERIFY(findMark(*window.session().activeFile(), lower)->deleted);
   QVERIFY(window.session().activeFile()->view == view);
 }
@@ -3972,7 +4042,7 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   window.findChild<QPushButton*>("confirmAnnotationSegment")->click();
   QCOMPARE(annotation->reviewStatus, ReviewStatus::Pending);
   QVERIFY(segmentCanCreateChannel(*annotation, annotation->activeSegmentId));
-  QVERIFY(!annotation->segments[0].confirmed);
+  QVERIFY(annotation->segments[0].confirmed);
   window.findChild<QPushButton*>("undoAnnotations")->click();
   QVERIFY(!segmentCanCreateChannel(*annotation, annotation->activeSegmentId));
   window.findChild<QPushButton*>("acceptAnnotations")->click();
@@ -4014,9 +4084,7 @@ void UiTests::torchSigLabelsNativeRoundtrip() {
   window.session().selectMarks({annotationId}, annotationId);
   window.refresh();
   auto* editor = window.findChild<QLineEdit*>("annotationStartMilliseconds");
-  QVERIFY(editor && !editor->isEnabled());
-  window.findChild<QPushButton*>("beginAnnotationRevision")->click();
-  QVERIFY(editor->isEnabled());
+  QVERIFY(editor && editor->isEnabled());
   QTemporaryDir directory;
   const auto path = directory.filePath("project.json");
   QVERIFY(window.saveProject(path));
@@ -4457,5 +4525,8 @@ void UiTests::widebandRoiPreservesManualTool() {
   QCOMPARE(window.session().activeFile()->detectionRuns.size(), std::size_t{0});
 }
 #include "tests/annotation_interactions_tests.h"
+
+// Editing scenes reuse the synthetic fixtures defined by interaction scenes.
+#include "tests/annotation_editing_tests.h"
 QTEST_MAIN(UiTests)
 #include "ui_tests.moc"

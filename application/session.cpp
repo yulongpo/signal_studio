@@ -318,7 +318,11 @@ AnnotationResult Session::commitAnnotationGeometry(const std::string& id,
   const auto* annotation = findMark(*file, id);
   if (!annotation) return {false, false, {}, "标记已失效"};
   const auto* segment = activeSegment(*annotation);
-  if (!segment) return {false, false, {}, "时间未定位对象需要显式采用观察范围"};
+  if (!segment) {
+    if (!annotation->observation || range.time != annotation->observation->time)
+      return {false, false, {}, "时间未定位对象只能编辑频率"};
+    return annotations_.commitObservationFrequency(*file, id, range.frequency);
+  }
   return annotations_.commitGeometry(*file, id, segment->id, range);
 }
 

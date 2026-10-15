@@ -16,6 +16,21 @@ struct AnnotationResult {
 };
 enum class AnnotationSelectionMode { Replace, Toggle, Range, ExtendRange };
 
+// A UI draft is tied to the exact object and segment it started from. Worker
+// publications may append other objects without invalidating this identity.
+struct AnnotationEditContext {
+  std::uint64_t projectGeneration = 0;
+  std::uint32_t sampleChannel = 0;
+  std::string fileId, annotationId, baseRevisionId, segmentId;
+  bool operator==(const AnnotationEditContext&) const = default;
+};
+AnnotationEditContext annotationEditContext(const FileState&,
+                                            const std::string& annotationId,
+                                            std::uint64_t projectGeneration);
+bool annotationEditContextMatches(const FileState&,
+                                  const AnnotationEditContext&,
+                                  std::uint64_t projectGeneration);
+
 AnnotationBounds annotationBounds(const FileMetadata&);
 SourceIdentity annotationSourceIdentity(const FileMetadata&,
                                         std::uint64_t projectGeneration = 0);
@@ -47,6 +62,12 @@ class AnnotationService {
   AnnotationResult commitGeometry(FileState&, const std::string& annotationId,
                                   const std::string& segmentId, ViewRange,
                                   std::string actor = "user");
+  // Observation time remains unknown. Editing frequency never creates a
+  // located activity segment or changes its saved observation support.
+  AnnotationResult commitObservationFrequency(FileState&,
+                                              const std::string& annotationId,
+                                              FrequencyRange,
+                                              std::string actor = "user");
   AnnotationResult addSegment(FileState&, const std::string& annotationId,
                               ViewRange, std::string actor = "user");
   AnnotationResult deleteSegment(FileState&, const std::string& annotationId,

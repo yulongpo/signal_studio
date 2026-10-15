@@ -128,7 +128,9 @@ class PlotWidget : public QWidget {
     QPointF start, current;
     const QPointingDevice* device = nullptr;
     std::string markId, clickMarkId, clickSegmentId;
-    ViewRange mark;
+    ViewRange mark, draft;
+    AnnotationEditContext editContext;
+    bool observationOnly = false;
     int edges = 0;
     bool changed = false;
     bool navigationInside = false;

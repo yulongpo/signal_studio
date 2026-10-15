@@ -14,6 +14,7 @@
 #include <QKeyEvent>
 #include <QKeySequence>
 #include <QLabel>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPlainTextEdit>
@@ -23,6 +24,7 @@
 #include <QStyledItemDelegate>
 #include <QTableView>
 #include <QTableWidget>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <algorithm>
 #include <cmath>
@@ -102,6 +104,7 @@ class AnnotationTableModel final : public QAbstractTableModel {
  public:
   Session& session;
   std::vector<const Annotation*> rows;
+  std::vector<Annotation> snapshots;
   std::vector<std::string> filteredIds;
   std::unordered_map<std::string, int> channelCounts;
   std::unordered_set<std::string> selectedIds;
@@ -209,8 +212,19 @@ class AnnotationTableModel final : public QAbstractTableModel {
     }
   }
   Qt::ItemFlags flags(const QModelIndex& index) const override {
-    return QAbstractTableModel::flags(index) |
-           (index.column() == 0 ? Qt::ItemIsUserCheckable : Qt::NoItemFlags);
+    auto flags = QAbstractTableModel::flags(index);
+    if (index.column() == 0) flags |= Qt::ItemIsUserCheckable;
+    const auto* file = session.activeFile();
+    if (!file || !index.isValid() || index.row() >= rowCount()) return flags;
+    const auto& annotation = *rows[static_cast<std::size_t>(index.row())];
+    if (session.annotations().canEdit(*file, annotation.id) &&
+        (index.column() == 1 ||
+         ((index.column() == 4 || index.column() == 5) &&
+          activeSegment(annotation)) ||
+         ((index.column() == 6 || index.column() == 7) &&
+          rowFrequency(annotation))))
+      flags |= Qt::ItemIsEditable;
+    return flags;
   }
   bool setData(const QModelIndex& i, const QVariant& value, int role) override {
     auto* file = session.activeFile();
@@ -312,6 +326,13 @@ class AnnotationTableModel final : public QAbstractTableModel {
     rows = std::vector<const Annotation*>(
         rows.begin() + static_cast<std::ptrdiff_t>(offset),
         rows.begin() + static_cast<std::ptrdiff_t>(finish));
+    // A worker can reallocate file.marks while an editor keeps this page
+    // visible. Keep only the displayed page as stable snapshots until refresh.
+    snapshots.clear();
+    snapshots.reserve(rows.size());
+    for (const auto* annotation : rows) snapshots.push_back(*annotation);
+    rows.clear();
+    for (const auto& annotation : snapshots) rows.push_back(&annotation);
     endResetModel();
   }
 };
@@ -354,12 +375,15 @@ class AnnotationTableView final : public QTableView {
   using QTableView::QTableView;
   std::function<void(const QModelIndex&, Qt::KeyboardModifiers, bool)> choose;
   std::function<void(const QModelIndex&)> locate;
+  std::function<void(const QModelIndex&)> editCell;
 
  protected:
   void mousePressEvent(QMouseEvent* event) override {
     const auto index = indexAt(event->position().toPoint());
     if (event->button() == Qt::LeftButton && index.isValid()) {
       setFocus(Qt::MouseFocusReason);
+      setCurrentIndex(index);
+      setProperty("annotationCurrentColumn", index.column());
       if (choose) choose(index, event->modifiers(), index.column() == 0);
       event->accept();
       return;
@@ -376,11 +400,55 @@ class AnnotationTableView final : public QTableView {
   void mouseDoubleClickEvent(QMouseEvent* event) override {
     const auto index = indexAt(event->position().toPoint());
     if (event->button() == Qt::LeftButton && index.isValid()) {
-      if (locate) locate(index);
+      if (index.flags() & Qt::ItemIsEditable) {
+        if (editCell) editCell(index);
+      } else if (locate) {
+        locate(index);
+      }
       event->accept();
       return;
     }
     QTableView::mouseDoubleClickEvent(event);
+  }
+};
+
+class AnnotationCellEditor final : public QLineEdit, public ParameterDraft {
+ public:
+  using QLineEdit::QLineEdit;
+  std::function<void(bool, bool)> finish;
+  void commit() override {
+    if (finish) finish(true, false);
+  }
+  void discard() override {
+    if (finish) finish(false, false);
+  }
+
+ protected:
+  void focusOutEvent(QFocusEvent* event) override {
+    QLineEdit::focusOutEvent(event);
+    if (event->reason() == Qt::ActiveWindowFocusReason ||
+        event->reason() == Qt::PopupFocusReason ||
+        event->reason() == Qt::MenuBarFocusReason)
+      return;
+    QTimer::singleShot(0, this, [this] {
+      auto* target = QApplication::focusWidget();
+      if (!isVisible() || !target || target->window() != window()) return;
+      for (auto* owner = target; owner; owner = owner->parentWidget())
+        if (owner->property("preserveParameterDrafts").toBool()) return;
+      if (finish) finish(true, false);
+    });
+  }
+  bool event(QEvent* event) override {
+    if (event->type() == QEvent::KeyPress) {
+      const auto key = static_cast<QKeyEvent*>(event)->key();
+      if (key == Qt::Key_Return || key == Qt::Key_Enter || key == Qt::Key_Tab ||
+          key == Qt::Key_Backtab || key == Qt::Key_Escape) {
+        if (finish) finish(key != Qt::Key_Escape, true);
+        event->accept();
+        return true;
+      }
+    }
+    return QLineEdit::event(event);
   }
 };
 
@@ -394,7 +462,9 @@ AnnotationPanel::AnnotationPanel(Session& s, QWidget* parent)
   buildReviewBar(outer);
   buildTable(outer);
   buildInspector();
+  qApp->installEventFilter(this);
 }
+AnnotationPanel::~AnnotationPanel() { qApp->removeEventFilter(this); }
 const std::vector<std::string>& AnnotationPanel::sortedVisibleIds() const {
   return model_->filteredIds;
 }
@@ -458,6 +528,15 @@ void AnnotationPanel::buildFilters(QVBoxLayout* outer) {
 
 void AnnotationPanel::buildReviewBar(QVBoxLayout* outer) {
   auto* review = new QHBoxLayout;
+  button(review, "定位当前标记", "locateAnnotation", [this] {
+    if (auto* file = session_.activeFile()) {
+      session_.focusMark(file->activeMarkId);
+      emit changed();
+    }
+  });
+  button(review, "删除所选标记", "deleteSelectedAnnotations", [this] {
+    deleteSelected();
+  })->setProperty("preserveParameterDrafts", true);
   button(review, "接受所选", "acceptAnnotations", [this] {
     if (auto* f = session_.activeFile())
       action(session_.annotations().reviewBatch(*f, f->selectedMarkIds,
@@ -509,6 +588,7 @@ void AnnotationPanel::buildTable(QVBoxLayout* outer) {
     revealActive();
     emit changed();
   };
+  view->editCell = [this](const QModelIndex& index) { editCell(index); };
   table_->setObjectName("annotationTable");
   table_->installEventFilter(this);
   table_->viewport()->installEventFilter(this);
@@ -517,6 +597,31 @@ void AnnotationPanel::buildTable(QVBoxLayout* outer) {
   table_->setItemDelegate(new AnnotationSelectionDelegate(table_));
   table_->setMouseTracking(true);
   table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  table_->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(table_, &QTableView::customContextMenuRequested, this,
+          [this](QPoint point) {
+            const auto index = table_->indexAt(point);
+            if (!index.isValid()) return;
+            auto* file = session_.activeFile();
+            const auto id = index.data(Qt::UserRole).toString().toStdString();
+            if (!file) return;
+            if (std::find(file->selectedMarkIds.begin(),
+                          file->selectedMarkIds.end(),
+                          id) == file->selectedMarkIds.end())
+              chooseRow(index, Qt::NoModifier, false);
+            QMenu menu(this);
+            menu.addAction("定位当前标记", this, [this] {
+              if (auto* file = session_.activeFile()) {
+                session_.focusMark(file->activeMarkId);
+                emit changed();
+              }
+            });
+            menu.addAction("编辑当前范围…", this, &AnnotationPanel::editRange);
+            auto* remove = menu.addAction("删除所选标记…", this,
+                                          [this] { deleteSelected(); });
+            remove->setObjectName("annotationTableDeleteAction");
+            menu.exec(table_->viewport()->mapToGlobal(point));
+          });
   table_->setSelectionBehavior(QAbstractItemView::SelectRows);
   table_->setSelectionMode(QAbstractItemView::ExtendedSelection);
   table_->verticalHeader()->hide();
@@ -626,42 +731,31 @@ void AnnotationPanel::buildInspector() {
   form->addWidget(high_, 3, 1);
   details->addLayout(form);
   auto* draftActions = new QHBoxLayout;
-  button(draftActions, "提交修订", "commitAnnotationGeometry", [this] {
-    for (auto* edit : {begin_, end_, low_, high_}) edit->commit();
-    if (auto* file = session_.activeFile())
-      session_.annotations().endRevision(*file);
-    emit changed();
-  });
+  button(draftActions, "完整范围编辑…", "editAnnotationRange", [this] {
+    editRange();
+  })->setProperty("preserveParameterDrafts", true);
   button(draftActions, "撤销草稿 · Esc", "cancelAnnotationGeometry", [this] {
     discardDrafts();
     if (auto* file = session_.activeFile())
       session_.annotations().endRevision(*file);
     emit changed();
-  });
+  })->setProperty("preserveParameterDrafts", true);
   details->addLayout(draftActions);
-  connect(begin_, &AdaptiveValueEdit::valueCommitted, this,
-          [this] { geometry(0); });
-  connect(end_, &AdaptiveValueEdit::valueCommitted, this,
-          [this] { geometry(1); });
-  connect(low_, &AdaptiveValueEdit::valueCommitted, this,
-          [this] { geometry(2); });
-  connect(high_, &AdaptiveValueEdit::valueCommitted, this,
-          [this] { geometry(3); });
+  const std::array fields{begin_, end_, low_, high_};
+  for (int field = 0; field < 4; ++field) {
+    connect(fields[field], &QLineEdit::textEdited, this, [this, field] {
+      if (!inlineContexts_[field])
+        if (const auto* file = session_.activeFile())
+          inlineContexts_[field] = annotationEditContext(
+              *file, file->activeMarkId, session_.projectGeneration());
+    });
+    connect(fields[field], &AdaptiveValueEdit::valueCommitted, this,
+            [this, field] { geometry(field); });
+  }
   auto* edit = new QHBoxLayout;
-  button(edit, "创建修订", "beginAnnotationRevision", [this] {
-    if (auto* f = session_.activeFile())
-      action(session_.annotations().beginRevision(*f, f->activeMarkId));
-  });
   button(edit, "恢复原始", "restoreAnnotationOrigin", [this] {
     if (auto* f = session_.activeFile())
       action(session_.annotations().restoreOrigin(*f, f->activeMarkId));
-  });
-  button(edit, "结束修订", "endAnnotationRevision", [this] {
-    if (auto* file = session_.activeFile()) {
-      session_.annotations().endRevision(*file);
-      discardDrafts();
-      emit changed();
-    }
   });
   details->addLayout(edit);
   auto* add = new QHBoxLayout;
@@ -697,12 +791,9 @@ void AnnotationPanel::buildInspector() {
                                                     {first->id, second->id}));
       }
   });
-  button(parts, "删段", "deleteAnnotationSegment", [this] {
-    if (auto* f = session_.activeFile())
-      if (auto* a = findMark(*f, f->activeMarkId))
-        action(session_.annotations().deleteSegment(*f, a->id,
-                                                    a->activeSegmentId));
-  });
+  button(parts, "删除当前段", "deleteAnnotationSegment", [this] {
+    deleteSelected(true);
+  })->setProperty("preserveParameterDrafts", true);
   details->addLayout(parts);
   auto* unknown = new QHBoxLayout;
   button(unknown, "采用观察范围（人工）", "adoptAnnotationObservation", [this] {
@@ -715,12 +806,18 @@ void AnnotationPanel::buildInspector() {
     auto* annotation = file ? findMark(*file, file->activeMarkId) : nullptr;
     if (!annotation || !session_.annotations().canEdit(*file, annotation->id))
       return;
+    const auto context = annotationEditContext(*file, annotation->id,
+                                               session_.projectGeneration());
+    const auto name = annotation->name;
     bool accepted = false;
     const auto text = QInputDialog::getMultiLineText(
         this, "标记备注", "备注随修订记录保存", q(annotation->note), &accepted);
-    if (accepted)
-      action(session_.annotations().rename(
-          *file, annotation->id, annotation->name, text.toStdString()));
+    file = session_.activeFile();
+    if (accepted && file &&
+        annotationEditContextMatches(*file, context,
+                                     session_.projectGeneration()))
+      action(session_.annotations().rename(*file, context.annotationId, name,
+                                           text.toStdString()));
   });
   error_ = new QLabel;
   error_->setTextFormat(Qt::PlainText);
@@ -764,6 +861,13 @@ void AnnotationPanel::chooseRow(const QModelIndex& index,
   action(result);
 }
 bool AnnotationPanel::eventFilter(QObject* watched, QEvent* event) {
+  if (cellDraft_ && event->type() == QEvent::MouseButtonPress) {
+    auto* mouse = static_cast<QMouseEvent*>(event);
+    auto* target = qobject_cast<QWidget*>(watched);
+    if (target && target->window() == window() && target != cellEditor_ &&
+        !preservesParameterDrafts(target, mouse))
+      finishCell(true);
+  }
   if (watched == table_->viewport()) {
     if (event->type() == QEvent::MouseMove) {
       const auto index = table_->indexAt(
@@ -782,6 +886,25 @@ bool AnnotationPanel::eventFilter(QObject* watched, QEvent* event) {
     auto* key = static_cast<QKeyEvent*>(event);
     auto* file = session_.activeFile();
     if (!file) return QWidget::eventFilter(watched, event);
+    if (key->key() == Qt::Key_F2) {
+      auto index = table_->currentIndex();
+      if (!index.isValid() || !(index.flags() & Qt::ItemIsEditable)) {
+        for (int row = 0; row < model_->rowCount(); ++row)
+          if (model_->index(row, 1)
+                  .data(Qt::UserRole)
+                  .toString()
+                  .toStdString() == file->activeMarkId) {
+            index = model_->index(row, 1);
+            break;
+          }
+      }
+      editCell(index);
+      return true;
+    }
+    if (key->key() == Qt::Key_Delete) {
+      deleteSelected();
+      return true;
+    }
     if (key->matches(QKeySequence::SelectAll)) {
       session_.selectMarks(
           model_->filteredIds,
@@ -842,26 +965,412 @@ bool AnnotationPanel::eventFilter(QObject* watched, QEvent* event) {
   return QWidget::eventFilter(watched, event);
 }
 void AnnotationPanel::discardDrafts() {
+  finishCell(false);
   begin_->discard();
   end_->discard();
   low_->discard();
   high_->discard();
+  inlineContexts_ = {};
 }
+void AnnotationPanel::queueRefresh() {
+  if (refreshQueued_) return;
+  refreshQueued_ = true;
+  QTimer::singleShot(0, this, [this] {
+    refreshQueued_ = false;
+    emit changed();
+  });
+}
+
+void AnnotationPanel::editCell(const QModelIndex& index) {
+  if (!index.isValid() || !(index.flags() & Qt::ItemIsEditable)) return;
+  const auto id = index.data(Qt::UserRole).toString().toStdString();
+  const int column = index.column();
+  if (cellDraft_ && !finishCell(true)) return;
+  auto* file = session_.activeFile();
+  const auto* annotation = file ? findAnnotation(*file, id) : nullptr;
+  if (!annotation || !session_.annotations().canEdit(*file, id)) return;
+  if (file->activeMarkId != id) {
+    session_.annotations().select(*file, {id}, id);
+    queueRefresh();
+  }
+  const auto* segment = activeSegment(*annotation);
+  const auto range =
+      segment ? segment->range : annotation->observation.value_or(ViewRange{});
+  QString text;
+  if (column == 1)
+    text = q(annotation->name);
+  else if (column == 4 || column == 5)
+    text = formatAdaptiveValue(
+        static_cast<double>(column == 4 ? range.time.begin : range.time.end) /
+            file->metadata.sampleRateHz * 1000,
+        UnitKind::Scalar);
+  else if (column == 6)
+    text = formatAdaptiveValue(
+        (range.frequency.lowerHz + range.frequency.upperHz) / 2e6,
+        UnitKind::Scalar);
+  else if (column == 7)
+    text = formatAdaptiveValue(
+        (range.frequency.upperHz - range.frequency.lowerHz) / 1000,
+        UnitKind::Scalar);
+  else
+    return;
+  cellDraft_ =
+      CellDraft{annotationEditContext(*file, id, session_.projectGeneration()),
+                column, range, text};
+  auto* editor = new AnnotationCellEditor(table_->viewport());
+  cellEditor_ = editor;
+  editor->setObjectName("annotationTableEditor");
+  editor->setProperty("annotationId", q(id));
+  editor->setProperty("baseRevisionId", q(annotation->revisionId));
+  editor->setProperty("segmentId", q(annotation->activeSegmentId));
+  editor->setText(text);
+  editor->setGeometry(table_->visualRect(index).adjusted(1, 1, -1, -1));
+  editor->finish = [this](bool commit, bool focus) {
+    finishCell(commit, focus);
+  };
+  connect(editor, &QLineEdit::textEdited, editor,
+          [editor] { editor->setProperty("parameterDraft", true); });
+  editor->show();
+  editor->setFocus(Qt::OtherFocusReason);
+  editor->selectAll();
+}
+
+bool AnnotationPanel::finishCell(bool commit, bool focusTable) {
+  if (!cellDraft_ || !cellEditor_) return true;
+  const auto pending = *cellDraft_;
+  const auto text = cellEditor_->text();
+  auto* file = session_.activeFile();
+  AnnotationResult result{true};
+  const bool current =
+      file && annotationEditContextMatches(*file, pending.context,
+                                           session_.projectGeneration());
+  if (commit && !current)
+    result = {false, false, {}, "编辑目标或来源修订已改变，草稿已取消"};
+  if (commit && current && text != pending.initialText) {
+    const auto* annotation =
+        findAnnotation(*file, pending.context.annotationId);
+    if (pending.column == 1) {
+      const auto name = text.trimmed();
+      if (name.isEmpty() || name.size() > 80)
+        result = {false, false, {}, "名称须为 1–80 个字符"};
+      else
+        result = session_.annotations().rename(
+            *file, annotation->id, name.toStdString(), annotation->note);
+    } else {
+      const auto value =
+          parseAdaptiveValue(text, UnitKind::Scalar, pending.column == 6);
+      auto range = pending.range;
+      if (!value) {
+        result = {false, false, {}, "请输入有限的数值"};
+      } else if (pending.column == 4 || pending.column == 5) {
+        const long double samples =
+            std::round(static_cast<long double>(*value) / 1000 *
+                       file->metadata.sampleRateHz);
+        if (samples < 0 || samples > std::numeric_limits<SampleIndex>::max())
+          result = {false, false, {}, "时间超出可表示样本范围"};
+        else if (pending.column == 4)
+          range.time.begin = static_cast<SampleIndex>(samples);
+        else
+          range.time.end = static_cast<SampleIndex>(samples);
+      } else if (pending.column == 6) {
+        const auto oldCenter =
+            (range.frequency.lowerHz + range.frequency.upperHz) / 2e6;
+        if (*value != oldCenter) {
+          const auto offset = *value * 1e6 - oldCenter * 1e6;
+          range.frequency.lowerHz += offset;
+          range.frequency.upperHz += offset;
+        }
+      } else if (pending.column == 7) {
+        const auto oldBandwidth =
+            (range.frequency.upperHz - range.frequency.lowerHz) / 1000;
+        if (*value != oldBandwidth) {
+          const auto center =
+              (range.frequency.lowerHz + range.frequency.upperHz) / 2;
+          range.frequency = {center - *value * 500, center + *value * 500};
+        }
+      }
+      if (result.ok)
+        result = pending.context.segmentId.empty()
+                     ? session_.annotations().commitObservationFrequency(
+                           *file, pending.context.annotationId, range.frequency)
+                     : session_.annotations().commitGeometry(
+                           *file, pending.context.annotationId,
+                           pending.context.segmentId, range);
+    }
+  }
+  if (!result.ok && current) {
+    error_->setText(q(result.error));
+    cellEditor_->setProperty("invalid", true);
+    emit message(q(result.error));
+    return false;
+  }
+  auto* editor = cellEditor_.data();
+  cellEditor_.clear();
+  cellDraft_.reset();
+  editor->setProperty("parameterDraft", false);
+  editor->setObjectName({});
+  editor->hide();
+  editor->deleteLater();
+  if (focusTable) table_->setFocus(Qt::OtherFocusReason);
+  if (!result.ok) {
+    error_->setText(q(result.error));
+    emit message(q(result.error));
+  } else {
+    error_->clear();
+  }
+  // Wait until the original mouse target has received its click. A reset here
+  // can otherwise destroy a tree/button target before its release event.
+  if (commit || deferredRefresh_) queueRefresh();
+  deferredRefresh_ = false;
+  return result.ok;
+}
+
+void AnnotationPanel::editRange() {
+  auto* file = session_.activeFile();
+  const auto* annotation =
+      file ? findAnnotation(*file, file->activeMarkId) : nullptr;
+  if (!annotation || !session_.annotations().canEdit(*file, annotation->id))
+    return;
+  const auto context = annotationEditContext(*file, annotation->id,
+                                             session_.projectGeneration());
+  const auto* segment = activeSegment(*annotation);
+  if (!segment && !annotation->observation) return;
+  const auto base = segment ? segment->range : *annotation->observation;
+  const double sampleRate = file->metadata.sampleRateHz;
+  const std::array original{
+      static_cast<double>(base.time.begin) / sampleRate * 1000,
+      static_cast<double>(base.time.end) / sampleRate * 1000,
+      base.frequency.lowerHz / 1e6, base.frequency.upperHz / 1e6};
+  QDialog dialog(this);
+  dialog.setObjectName("annotationRangeDialog");
+  dialog.setProperty("preserveParameterDrafts", true);
+  dialog.setWindowTitle(segment ? "完整范围编辑 · 当前活动段"
+                                : "频率范围编辑 · 时间未定位");
+  dialog.setMinimumWidth(450);
+  auto* layout = new QVBoxLayout(&dialog);
+  auto* notice = new QLabel(
+      segment ? "只修改当前活动段；全部字段一次校验、一次提交，可一次撤销。"
+              : "仅修改频率；观察支持和未知活动时间保留，不生成活动段。");
+  notice->setWordWrap(true);
+  layout->addWidget(notice);
+  auto* form = new QFormLayout;
+  const std::array names{"annotationRangeStartMilliseconds",
+                         "annotationRangeEndMilliseconds",
+                         "annotationRangeLowerMHz", "annotationRangeUpperMHz"};
+  const std::array labels{"起始 / ms", "结束 / ms", "下边界 / MHz",
+                          "上边界 / MHz"};
+  const std::array inlineFields{begin_, end_, low_, high_};
+  std::array<QLineEdit*, 4> fields{};
+  for (int i = 0; i < 4; ++i) {
+    fields[i] =
+        new QLineEdit(formatAdaptiveValue(original[i], UnitKind::Scalar));
+    fields[i]->setObjectName(names[i]);
+    fields[i]->setEnabled(segment || i >= 2);
+    if (inlineFields[i]->property("parameterDraft").toBool() &&
+        inlineContexts_[i] && *inlineContexts_[i] == context)
+      fields[i]->setText(inlineFields[i]->text());
+    form->addRow(labels[i], fields[i]);
+  }
+  layout->addLayout(form);
+  auto* error = new QLabel;
+  error->setObjectName("annotationRangeError");
+  error->setWordWrap(true);
+  error->setStyleSheet("color:#f3bd76");
+  layout->addWidget(error);
+  auto* buttons =
+      new QDialogButtonBox(QDialogButtonBox::Apply | QDialogButtonBox::Cancel);
+  auto* apply = buttons->button(QDialogButtonBox::Apply);
+  apply->setObjectName("applyAnnotationRange");
+  apply->setText("应用范围");
+  buttons->button(QDialogButtonBox::Cancel)
+      ->setObjectName("cancelAnnotationRange");
+  buttons->button(QDialogButtonBox::Cancel)->setText("取消");
+  layout->addWidget(buttons);
+  AnnotationResult result{true};
+  connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+  connect(apply, &QPushButton::clicked, &dialog, [&] {
+    auto* current = session_.activeFile();
+    if (!current || !annotationEditContextMatches(
+                        *current, context, session_.projectGeneration())) {
+      error->setText("工程、文件、当前段或来源修订已改变，请取消后重新编辑。");
+      return;
+    }
+    auto next = base;
+    for (int i = 0; i < 4; ++i) {
+      if (!fields[i]->isEnabled()) continue;
+      const auto value =
+          parseAdaptiveValue(fields[i]->text(), UnitKind::Scalar, i >= 2);
+      if (!value) {
+        error->setText("全部字段必须是有限数值；时间不能为负。");
+        return;
+      }
+      // Preserve original samples/Hz for untouched or numerically unchanged
+      // fields. Formatting is never a reason to rebuild the other boundaries.
+      if (*value == original[i]) continue;
+      if (i < 2) {
+        const auto samples =
+            std::round(static_cast<long double>(*value) / 1000 * sampleRate);
+        if (samples < 0 || samples > std::numeric_limits<SampleIndex>::max()) {
+          error->setText("时间超出可表示样本范围。");
+          return;
+        }
+        if (i == 0)
+          next.time.begin = static_cast<SampleIndex>(samples);
+        else
+          next.time.end = static_cast<SampleIndex>(samples);
+      } else if (i == 2) {
+        next.frequency.lowerHz = *value * 1e6;
+      } else {
+        next.frequency.upperHz = *value * 1e6;
+      }
+    }
+    result = context.segmentId.empty()
+                 ? session_.annotations().commitObservationFrequency(
+                       *current, context.annotationId, next.frequency)
+                 : session_.annotations().commitGeometry(
+                       *current, context.annotationId, context.segmentId, next);
+    if (!result.ok) {
+      error->setText(q(result.error));
+      return;
+    }
+    dialog.accept();
+  });
+  if (dialog.exec() == QDialog::Accepted) {
+    discardDrafts();
+    action(result);
+  }
+}
+
+void AnnotationPanel::deleteSelected(bool currentSegmentOnly) {
+  auto* file = session_.activeFile();
+  if (!file) return;
+  session_.annotations().reconcileSelection(*file);
+  const auto generation = session_.projectGeneration();
+  const auto fileId = file->metadata.id;
+  const auto sampleChannel = file->metadata.sampleFormat.selectedChannel;
+  const auto* active = findAnnotation(*file, file->activeMarkId);
+  const auto* segment = active ? activeSegment(*active) : nullptr;
+  if (currentSegmentOnly && !segment) return;
+  const bool lastSegment = currentSegmentOnly && active->segments.size() == 1;
+  const auto segmentId = segment ? segment->id : std::string{};
+  std::vector<std::pair<std::string, std::string>> targets;
+  std::size_t segmentCount = 0, channelCount = 0;
+  for (const auto& id : currentSegmentOnly
+                            ? std::vector<std::string>{active->id}
+                            : file->selectedMarkIds) {
+    const auto* annotation = findAnnotation(*file, id);
+    if (!annotation || !annotationVisible(*file, *annotation)) continue;
+    targets.emplace_back(id, annotation->revisionId);
+    segmentCount +=
+        currentSegmentOnly && !lastSegment ? 1 : annotation->segments.size();
+  }
+  if (targets.empty()) return;
+  for (const auto& channel : file->channels)
+    for (const auto& [id, revision] : targets) {
+      Q_UNUSED(revision);
+      if ((channel.annotationId == id || channel.sourceMarkId == id) &&
+          (!currentSegmentOnly || lastSegment ||
+           channel.segmentId == segmentId)) {
+        ++channelCount;
+        break;
+      }
+    }
+  QDialog dialog(this);
+  dialog.setObjectName("annotationDeleteDialog");
+  dialog.setProperty("preserveParameterDrafts", true);
+  dialog.setWindowTitle(lastSegment ? "删除最后一段将删除标记对象"
+                        : currentSegmentOnly ? "删除当前活动段"
+                                             : "删除所选标记");
+  dialog.setMinimumWidth(440);
+  auto* layout = new QVBoxLayout(&dialog);
+  const auto objects = currentSegmentOnly && !lastSegment ? 0 : targets.size();
+  auto* summary =
+      new QLabel(QString("%1 个标记对象 · %2 个活动段 · %3 个关联通道")
+                     .arg(objects)
+                     .arg(segmentCount)
+                     .arg(channelCount));
+  summary->setObjectName("annotationDeleteSummary");
+  summary->setProperty("objectCount", static_cast<qulonglong>(objects));
+  summary->setProperty("segmentCount", static_cast<qulonglong>(segmentCount));
+  summary->setProperty("channelCount", static_cast<qulonglong>(channelCount));
+  layout->addWidget(summary);
+  auto* explanation = new QLabel(
+      lastSegment
+          ? "最后一段按删除对象处理。关联通道保留创建时快照并标示来源已删除。"
+          : "仅处理当前筛选内的所选标记。关联通道保留创建时快照并标示来源已删除"
+            "。");
+  explanation->setWordWrap(true);
+  layout->addWidget(explanation);
+  layout->addWidget(new QLabel("确认后一次撤销可恢复。取消不会提交范围草稿。"));
+  auto* buttons =
+      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  buttons->button(QDialogButtonBox::Ok)
+      ->setObjectName("deleteAnnotationsConfirm");
+  buttons->button(QDialogButtonBox::Ok)
+      ->setText(currentSegmentOnly && !lastSegment ? "删除当前段" : "删除标记");
+  buttons->button(QDialogButtonBox::Cancel)
+      ->setObjectName("deleteAnnotationsCancel");
+  buttons->button(QDialogButtonBox::Cancel)->setText("取消");
+  layout->addWidget(buttons);
+  connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+  connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+  if (dialog.exec() != QDialog::Accepted) return;
+  file = session_.activeFile();
+  if (!file || generation != session_.projectGeneration() ||
+      file->metadata.id != fileId ||
+      file->metadata.sampleFormat.selectedChannel != sampleChannel) {
+    emit message("删除目标上下文已改变，请重新选择。");
+    return;
+  }
+  std::vector<std::string> ids;
+  for (const auto& [id, revision] : targets) {
+    const auto* annotation = findAnnotation(*file, id);
+    if (!annotation || !annotationVisible(*file, *annotation) ||
+        annotation->revisionId != revision) {
+      emit message("删除目标或修订已改变，请重新预览。");
+      return;
+    }
+    ids.push_back(id);
+  }
+  discardDrafts();
+  action(
+      currentSegmentOnly && !lastSegment
+          ? session_.annotations().deleteSegment(*file, ids.front(), segmentId)
+          : session_.annotations().deleteBatch(*file, ids));
+}
+
 void AnnotationPanel::geometry(int field) {
   auto* f = session_.activeFile();
   if (!f) return;
-  auto* a = findMark(*f, f->activeMarkId);
+  const auto context = inlineContexts_[field];
+  inlineContexts_[field].reset();
+  if (!context || !annotationEditContextMatches(*f, *context,
+                                                session_.projectGeneration())) {
+    error_->setText("编辑目标或来源修订已改变，草稿已取消");
+    queueRefresh();
+    return;
+  }
+  auto* a = findMark(*f, context->annotationId);
   if (!a) return;
   const auto* seg = activeSegment(*a);
-  if (!seg) return;
-  auto range = seg->range;
+  if (!seg && !a->observation) return;
+  auto range = seg ? seg->range : *a->observation;
+  const std::array fields{begin_, end_, low_, high_};
+  const std::array displayed{
+      static_cast<double>(range.time.begin) / f->metadata.sampleRateHz * 1000,
+      static_cast<double>(range.time.end) / f->metadata.sampleRateHz * 1000,
+      range.frequency.lowerHz / 1e6, range.frequency.upperHz / 1e6};
+  if (fields[field]->value() == displayed[field]) {
+    queueRefresh();
+    return;
+  }
   if (field == 0 || field == 1) {
     const auto seconds = (field == 0 ? begin_->value() : end_->value()) / 1000;
     const long double samples = std::round(static_cast<long double>(seconds) *
                                            f->metadata.sampleRateHz);
     if (samples < 0 || samples > std::numeric_limits<SampleIndex>::max()) {
       error_->setText("时间超出可表示样本范围");
-      refresh();
+      queueRefresh();
       return;
     }
     if (field == 0)
@@ -871,17 +1380,28 @@ void AnnotationPanel::geometry(int field) {
   }
   if (field == 2) range.frequency.lowerHz = low_->value() * 1e6;
   if (field == 3) range.frequency.upperHz = high_->value() * 1e6;
-  const auto sourceKind = a->sourceKind;
   const auto r = session_.commitAnnotationGeometry(a->id, range);
-  if (r.ok && sourceKind != AnnotationSource::Manual)
-    session_.annotations().endRevision(*f);
-  action(r);
-  if (!r.ok) refresh();
+  if (!r.ok) {
+    error_->setText(q(r.error));
+    emit message(q(r.error));
+  } else {
+    error_->clear();
+  }
+  queueRefresh();
 }
 void AnnotationPanel::refresh() {
   refreshing_ = true;
   auto* f = session_.activeFile();
   if (f) session_.annotations().reconcileSelection(*f);
+  if (cellDraft_) {
+    if (f && annotationEditContextMatches(*f, cellDraft_->context,
+                                          session_.projectGeneration())) {
+      deferredRefresh_ = true;
+      refreshing_ = false;
+      return;
+    }
+    finishCell(false);
+  }
   const auto context =
       std::to_string(session_.projectGeneration()) + ":" +
       (f ? f->metadata.id + ":" +
@@ -949,9 +1469,14 @@ void AnnotationPanel::refreshTableSelection(const FileState* file) {
             model_->index(row, 0),
             QItemSelectionModel::Select | QItemSelectionModel::Rows);
       if (file->activeMarkId == id) {
+        const int column =
+            std::clamp(table_->property("annotationCurrentColumn").isValid()
+                           ? table_->property("annotationCurrentColumn").toInt()
+                           : 1,
+                       0, 10);
         table_->selectionModel()->setCurrentIndex(
-            model_->index(row, 1), QItemSelectionModel::NoUpdate);
-        table_->scrollTo(model_->index(row, 1),
+            model_->index(row, column), QItemSelectionModel::NoUpdate);
+        table_->scrollTo(model_->index(row, column),
                          QAbstractItemView::EnsureVisible);
       }
     }
@@ -1017,15 +1542,18 @@ void AnnotationPanel::refreshInspector(const FileState* f) {
           q(a->segments[i].id));
     segments_->setCurrentIndex(segments_->findData(q(a->activeSegmentId)));
   }
-  const bool editable = a && session_.annotations().canEdit(*f, a->id) && seg;
+  const bool editable = a && session_.annotations().canEdit(*f, a->id);
   inspector_->findChild<QPushButton*>("confirmAnnotationSegment")
       ->setEnabled(
           a && seg && !a->deleted &&
           a->reviewStatus != ReviewStatus::Rejected && !seg->confirmed &&
           validateSegment(*seg, annotationBounds(f->metadata), true).ok);
-  for (auto* w : {static_cast<QWidget*>(begin_), static_cast<QWidget*>(end_),
-                  static_cast<QWidget*>(low_), static_cast<QWidget*>(high_)})
-    w->setEnabled(editable);
+  begin_->setEnabled(editable && seg);
+  end_->setEnabled(editable && seg);
+  low_->setEnabled(editable && (seg || a->observation));
+  high_->setEnabled(editable && (seg || a->observation));
+  inspector_->findChild<QPushButton*>("editAnnotationRange")
+      ->setEnabled(editable && (seg || a->observation));
   if (seg) {
     if (!begin_->property("parameterDraft").toBool())
       begin_->setValue(seg->range.time.begin / f->metadata.sampleRateHz * 1000);
@@ -1042,9 +1570,9 @@ void AnnotationPanel::refreshInspector(const FileState* f) {
     low_->setToolTip("当前段频率下边界（MHz），坐标语义见来源证据");
     high_->setToolTip("当前段频率上边界（MHz），坐标语义见来源证据");
   } else {
-    // A window observation has no editable activity geometry. Do not leave
-    // the previously selected segment's coordinates visible in its controls.
-    for (auto* edit : {begin_, end_, low_, high_}) {
+    // Observation support is not an activity-time editor. Its frequency
+    // boundaries remain directly editable without manufacturing a segment.
+    for (auto* edit : {begin_, end_}) {
       const QSignalBlocker blocker(edit);
       edit->setProperty("parameterDraft", false);
       edit->setProperty("invalid", false);
@@ -1052,6 +1580,20 @@ void AnnotationPanel::refreshInspector(const FileState* f) {
       edit->clear();
       edit->setPlaceholderText("—");
       edit->setToolTip("没有已定位活动段；窗口观测支持请见检测证据");
+    }
+    if (a && a->observation) {
+      if (!low_->property("parameterDraft").toBool())
+        low_->setValue(a->observation->frequency.lowerHz / 1e6);
+      if (!high_->property("parameterDraft").toBool())
+        high_->setValue(a->observation->frequency.upperHz / 1e6);
+      low_->setToolTip("只修改频率下边界；活动时间保持未知");
+      high_->setToolTip("只修改频率上边界；活动时间保持未知");
+    } else {
+      for (auto* edit : {low_, high_}) {
+        edit->setValue(0);
+        edit->clear();
+        edit->setPlaceholderText("—");
+      }
     }
   }
   detail_->setText(

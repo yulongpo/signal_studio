@@ -10,7 +10,7 @@ param(
     [switch]$WidebandDetection,
     [switch]$ProductionModel,
     [switch]$FinalAcceptance,
-    [ValidateSet('U1')]
+    [ValidateSet('U1', 'U2')]
     [string]$AnnotationInteractions
 )
 $ErrorActionPreference = 'Stop'
@@ -28,18 +28,30 @@ function Assert-AnnotationInteractionsCapture($Report, [int]$CaptureExitCode, [s
         throw 'Annotation acceptance requires connected screen 2, Redmi 27 NU / DISPLAY6, native 4K/150% fullscreen.'
     }
     $scenes = @($Report.scenes)
-    if ($scenes.Count -ne 8 -or $Report.sceneCount -ne 8 -or @($scenes.scene | Select-Object -Unique).Count -ne 8) {
-        throw 'U1 capture must contain all eight unique planned interaction scenes.'
+    $expectedScenes = if ($Node -eq 'U2') { 10 } else { 8 }
+    if ($scenes.Count -ne $expectedScenes -or $Report.sceneCount -ne $expectedScenes -or
+        @($scenes.scene | Select-Object -Unique).Count -ne $expectedScenes) {
+        throw "$Node capture must contain all $expectedScenes unique planned interaction scenes."
     }
     foreach ($scene in $scenes) {
         if ($scene.pass -ne $true -or $scene.windowFullScreen -ne $true -or
             $scene.windowScreen.connectedIndex -ne 2 -or $scene.capturedScreen.connectedIndex -ne 2 -or
-            $scene.capturedPixelSize.width -ne 3840 -or $scene.capturedPixelSize.height -ne 2160 -or
             [Math]::Abs($scene.capturedDevicePixelRatio - 1.5) -gt 0.001 -or
             $scene.logicalWindowSize.width -ne 2560 -or $scene.logicalWindowSize.height -ne 1440 -or
             @($scene.annotationLayers).Count -ne 3 -or
             -not (Test-Path -LiteralPath $scene.png -PathType Leaf) -or (Get-Item -LiteralPath $scene.png).Length -eq 0) {
             throw "Native interaction scene/DPI validation failed: $($scene.scene)"
+        }
+        if ($scene.captureKind -eq 'native-main-window') {
+            if ($scene.capturedPixelSize.width -ne 3840 -or $scene.capturedPixelSize.height -ne 2160) {
+                throw "The actual main-window PNG is not 4K: $($scene.scene)"
+            }
+        } elseif ($Node -ne 'U2' -or $scene.captureKind -ne 'native-dialog-crop') {
+            throw "Unexpected native capture type: $($scene.scene)"
+        }
+        if ([Math]::Abs($scene.capturedLogicalWidgetSize.width * 1.5 - $scene.capturedPixelSize.width) -gt 1 -or
+            [Math]::Abs($scene.capturedLogicalWidgetSize.height * 1.5 - $scene.capturedPixelSize.height) -gt 1) {
+            throw "Native crop does not match actual 150% DPI: $($scene.scene)"
         }
     }
     $charts = @($Report.renderEvidence.charts)
@@ -53,6 +65,13 @@ function Assert-AnnotationInteractionsCapture($Report, [int]$CaptureExitCode, [s
         $Report.source.iqSha256 -ne '3a47e55b5f02851d702d5c5782998bf3e374f67cde592c35689acf9ec5399254' -or
         (Get-FileHash -LiteralPath $Report.source.dataPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $Report.source.iqSha256) {
         throw 'Actual IQ identity or the synthetic-annotation evidence boundary is inconsistent.'
+    }
+    if ($Node -eq 'U2') {
+        $last = @($scenes | Where-Object { $_.scene -eq '10-origin-and-edits-preserved-after-reopen' })
+        if ($last.Count -ne 1 -or $last[0].reopenVerified -ne $true -or
+            $last[0].originalEvidenceUnchanged -ne $true -or $last[0].associatedChannelDdcVerified -ne $false) {
+            throw 'U2 must preserve the edited project and original evidence without claiming DDC verification.'
+        }
     }
 }
 function Assert-WidebandDetectionCapture($Report, [int]$CaptureExitCode, [string]$OutputDirectory) {

@@ -1,12 +1,15 @@
 #pragma once
 
 #include <QAbstractScrollArea>
+#include <QAction>
 #include <QApplication>
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QFocusEvent>
 #include <QKeyEvent>
 #include <QLineEdit>
+#include <QMenu>
+#include <QMenuBar>
 #include <QMouseEvent>
 #include <QPointer>
 #include <QSignalBlocker>
@@ -15,6 +18,21 @@
 #include <functional>
 
 namespace signalstudio {
+inline bool preservesParameterDrafts(QWidget* target, QMouseEvent* mouse) {
+  if (mouse->button() != Qt::LeftButton) return true;
+  for (auto* owner = target; owner; owner = owner->parentWidget()) {
+    if (qobject_cast<QMenu*>(owner) ||
+        owner->property("preserveParameterDrafts").toBool())
+      return true;
+    if (auto* bar = qobject_cast<QMenuBar*>(owner))
+      if (const auto* action = bar->actionAt(
+              bar->mapFromGlobal(mouse->globalPosition().toPoint()));
+          action && action->property("preserveParameterDrafts").toBool())
+        return true;
+  }
+  return false;
+}
+
 // Draft text must never become an analysis parameter through a refresh,
 // window deactivation, or a wheel event. Return, Tab and outside clicks commit.
 class ParameterDraft {
@@ -252,6 +270,10 @@ class ParameterInputPolicy final : public QObject {
       }
     }
     if (event->type() == QEvent::MouseButtonPress) {
+      // Confirmation dialogs and menus can explicitly keep a draft pending.
+      // Cancelling an action must not have applied its underlying geometry.
+      if (preservesParameterDrafts(target, static_cast<QMouseEvent*>(event)))
+        return false;
       if (changesContext &&
           changesContext(target, static_cast<QMouseEvent*>(event))) {
         discardDrafts();
@@ -262,7 +284,8 @@ class ParameterInputPolicy final : public QObject {
       QList<QPointer<QWidget>> pending;
       for (auto* widget : root_->findChildren<QWidget*>())
         if (widget->property("parameterDraft").toBool() &&
-            !contains(widget, target))
+            // A modal dialog must not apply another window's pending values.
+            widget->window() == target->window() && !contains(widget, target))
           pending.append(widget);
       for (const auto& widget : pending)
         if (widget) {

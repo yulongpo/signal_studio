@@ -1,6 +1,9 @@
 #pragma once
 #include <QModelIndex>
+#include <QPointer>
 #include <QWidget>
+#include <array>
+#include <optional>
 
 #include "application/session.h"
 class QTableView;
@@ -9,6 +12,7 @@ class QLabel;
 class QCheckBox;
 class QVBoxLayout;
 class QDoubleSpinBox;
+class QLineEdit;
 namespace signalstudio {
 class UnsignedValueEdit;
 class AdaptiveValueEdit;
@@ -18,6 +22,7 @@ class AnnotationPanel final : public QWidget {
   Q_OBJECT
  public:
   explicit AnnotationPanel(Session&, QWidget* parent = nullptr);
+  ~AnnotationPanel() override;
   QWidget* inspectorWidget() const { return inspector_; }
   QWidget* layerWidget() const { return layerBar_; }
   const std::vector<std::string>& sortedVisibleIds() const;
@@ -25,6 +30,8 @@ class AnnotationPanel final : public QWidget {
   void revealActive();
   void refreshHover();
   void discardDrafts();
+  void editRange();
+  void deleteSelected(bool currentSegmentOnly = false);
   bool importLabels(const QString&, QString* error = nullptr,
                     bool preview = true);
  signals:
@@ -48,6 +55,9 @@ class AnnotationPanel final : public QWidget {
   void chooseRow(const QModelIndex&, Qt::KeyboardModifiers, bool toggle);
   void filterChanged();
   void geometry(int);
+  void editCell(const QModelIndex&);
+  bool finishCell(bool commit, bool focusTable = false);
+  void queueRefresh();
   void exportFile(bool csv);
   Session& session_;
   AnnotationTableModel* model_ = nullptr;
@@ -74,5 +84,15 @@ class AnnotationPanel final : public QWidget {
   std::string displayedActiveId_;
   std::string context_;
   std::string filterContext_;
+  struct CellDraft {
+    AnnotationEditContext context;
+    int column = 1;
+    ViewRange range;
+    QString initialText;
+  };
+  std::optional<CellDraft> cellDraft_;
+  QPointer<QLineEdit> cellEditor_;
+  std::array<std::optional<AnnotationEditContext>, 4> inlineContexts_;
+  bool deferredRefresh_ = false, refreshQueued_ = false;
 };
 }  // namespace signalstudio
