@@ -1,0 +1,11 @@
+{
+  "pass": true,
+  "oldFreezeOverwriteRejected": true,
+  "changedImmutableInputRejected": true,
+  "newRuntimeIdentityIncluded": true,
+  "trackedResourcesIncluded": true,
+  "datasetChangeAndMissingRejected": true,
+  "legacyDatasetChangeRejected": true,
+  "gpuUsed": false,
+  "inferenceStarted": false
+}

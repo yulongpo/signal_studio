@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "fullPairs": 220,
+  "scopes": 9,
+  "diagnosticOnePerScopePairs": 9,
+  "checks": [
+    "exact-scope-matrix",
+    "partial-never-gate",
+    "failed-resume-preserved",
+    "changed-freeze-parameters-rejected",
+    "late-result-rejected",
+    "interrupted-history-kept",
+    "failed-subprocess-accounting-overlay-preserves-original",
+    "cpu-timeout-process-tree-contained"
+  ],
+  "formalRunsStarted": false,
+  "gpuUsed": false
+}

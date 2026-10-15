@@ -1,0 +1,13 @@
+usage: freeze_validation.py [-h] [--template TEMPLATE] [--output OUTPUT]
+                            [--include-current-inputs] [--self-check]
+
+Create a new manual validation identity; never rewrite old outcomes.
+
+options:
+  -h, --help            show this help message and exit
+  --template TEMPLATE
+  --output OUTPUT
+  --include-current-inputs
+                        Add all tracked build inputs and both deployed
+                        packages, including new engine filenames
+  --self-check

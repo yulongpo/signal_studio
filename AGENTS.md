@@ -43,6 +43,7 @@
 
 ## 宽带离线检测状态
 
-- 当前以获批 M0-P 为界面与交互基线，三来源标记共用记录、图层、修订及复核。FFSCN GUI IQ 和 SCN 由独立 TensorRT worker 执行，显示 QRhi 与推理 GPU 分开记录。所有谱类型均可用于检测，参考配置的最大谱是默认方式，不是算法能力限制。模型输入频率长度须为2的整数次幂且不小于各自的2^down_nums；不规则分析网格由适配层重新匹配FFT或插值，保留物理频率映射。R2负责后端与持久化，R3接通界面和数据源，不提前宣称整条流程完成。Sample/ROI/Coarse 的实际时间依据、回退和未知观察保留保存证据；确认同一对象后创建 CPU DDC 通道，来源修订不静默重算已有通道。
+- 当前以获批 M0-P 为界面与交互基线，三来源标记共用记录、图层、修订及复核。FFSCN GUI IQ 和 SCN 由独立 TensorRT worker 执行，显示 QRhi 与推理 GPU 分开记录。当前/平均/最大/最小谱均可用于检测；默认FFSCN保留逐帧输入、SCN最大保持，不能把默认预处理当算法限制。主FFSCN/SCN均按用户确认的down_nums=11处理，模型频率长度须为2次幂且至少2048；不规则分析网格内部重新匹配FFT或插值并映射回Hz，SCN当前固定32768仅为部署规格。R2/R3适配及真实短文件/ROI/Partial流程已完成，任务保存实际观测支持，不重复真实谱帧补足默认值。Sample/ROI/Coarse 的实际时间依据、回退和未知观察保留保存证据；确认同一对象后创建 CPU DDC 通道，来源修订不静默重算已有通道。
 - 参数方案 A、SCN 无效裕量控件禁用例外和 UI CTest 480 秒终止保护均获用户明确批准；其余布局、手势与参数提交规则保持。
 - 用户当前要求少量代表性样本验证功能/流程，批量 G/T 矩阵在 M5 完成后交用户手动运行。本轮旧 R3 的失败、超时和中断保留；L3/L4 未完整通过，不声称全部效果门槛或真实 RF 精度已通过。节点事实以 docs/implementation/wideband-detection/EXECUTION_STATUS.md 及对应最终报告为准。
+- R5 Debug/Release各23/23及UI94/94，规定第二屏Release原生46/46、Debug43/43；GPU显示、软件回退、TensorRT和CPU DDC分别有证据。Release反馈及十万合成活动段达到200ms建议目标；Debug一次启动921.536ms未达，Debug未测最终取消/压力，不宣称全配置性能通过。当前部署为TensorRT10.11/RTX5060 SM12.0验证包，不承诺其它GPU直接复用；源码clone不含out中的模型/DLL。交付与手动入口见docs/implementation/wideband-detection/R6/。

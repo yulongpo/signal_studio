@@ -1,0 +1,30 @@
+usage: model_dynamic_package.py [-h] --checkpoint CHECKPOINT
+                                --trt-root TRT_ROOT --output OUTPUT
+                                --report REPORT
+                                [--max-time-frames MAX_TIME_FRAMES]
+                                [--max-frequency-bins MAX_FREQUENCY_BINS]
+                                [--wide-time-frames WIDE_TIME_FRAMES]
+                                [--long-frequency-bins LONG_FREQUENCY_BINS]
+                                [--workspace-mib WORKSPACE_MIB]
+                                [--reuse-engine] [--stage-only]
+                                [--output-bin OUTPUT_BIN]
+
+Build and probe the independent FFSCN model with dynamic input dimensions.
+Only frozen epoch-1200 weights are accepted. TensorRT resources and generated
+models stay outside source control. Staging replaces only the FFSCN model
+directory; it does not copy or alter SCN assets or deployment dependencies.
+
+options:
+  -h, --help            show this help message and exit
+  --checkpoint CHECKPOINT
+  --trt-root TRT_ROOT
+  --output OUTPUT
+  --report REPORT
+  --max-time-frames MAX_TIME_FRAMES
+  --max-frequency-bins MAX_FREQUENCY_BINS
+  --wide-time-frames WIDE_TIME_FRAMES
+  --long-frequency-bins LONG_FREQUENCY_BINS
+  --workspace-mib WORKSPACE_MIB
+  --reuse-engine
+  --stage-only
+  --output-bin OUTPUT_BIN

@@ -1,0 +1,9 @@
+{
+  "pass": true,
+  "localLinks": 24,
+  "markdownDocuments": 7,
+  "powershellBlocks": 7,
+  "r5ProductInputHashes": 13,
+  "pythonAst": true,
+  "inferenceStarted": false
+}
