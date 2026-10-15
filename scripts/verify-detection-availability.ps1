@@ -12,10 +12,10 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $sourceBin = Join-Path $repoRoot "out/vs2026-qt611-$($Configuration.ToLowerInvariant())_bin"
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 $Project = [IO.Path]::GetFullPath($Project)
-$allowedRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot 'out/tasks/wideband-detection/M5'))
+$allowedRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot 'out/tasks/wideband-detection'))
 if (-not $OutputDirectory.StartsWith($allowedRoot + [IO.Path]::DirectorySeparatorChar,
         [StringComparison]::OrdinalIgnoreCase)) {
-    throw 'Availability copies must stay under the M5 task output directory.'
+    throw 'Availability copies must stay under a wideband task node directory.'
 }
 $missingBin = Join-Path $OutputDirectory 'missing-models-bin'
 if (Test-Path -LiteralPath $missingBin) { throw 'Use a new output directory; preserve prior diagnostics.' }

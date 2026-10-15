@@ -284,7 +284,8 @@ int runWidebandUnavailableCapture(const QString& outputDirectory,
 }
 
 QJsonObject widebandFinalAcceptance(Capture& capture, QScreen* screen,
-                                    const QString& project) {
+                                    const QString& project,
+                                    bool includePressure = true) {
   auto& window = capture.window;
   auto* file = window.session().activeFile();
   auto* sourceFilter = child<QComboBox>(window, "annotationSourceFilter");
@@ -293,6 +294,73 @@ QJsonObject widebandFinalAcceptance(Capture& capture, QScreen* screen,
   sourceFilter->setCurrentIndex(0);
   statusFilter->setCurrentIndex(0);
   score->setValue(0);
+  auto* runFilter = child<QComboBox>(window, "annotationRunFilter");
+  runFilter->setCurrentIndex(0);
+  const auto allAnnotations = widebandAnnotations(*file);
+  QJsonArray allSources, allRuns;
+  for (const auto& source : file->sourceSets)
+    allSources.append(encodeSourceSet(source));
+  for (const auto& run : file->detectionRuns)
+    allRuns.append(encodeDetectionRun(run));
+  const auto unchanged = [&] {
+    QJsonArray sources, runs;
+    for (const auto& source : file->sourceSets)
+      sources.append(encodeSourceSet(source));
+    for (const auto& run : file->detectionRuns)
+      runs.append(encodeDetectionRun(run));
+    return widebandAnnotations(*file) == allAnnotations &&
+           sources == allSources && runs == allRuns;
+  };
+  auto* visibleTable = child<QTableView>(window, "annotationTable");
+  const auto sourceCounts = widebandSourceCounts(*file);
+  const auto storedCount = sourceCounts["total"].toInt();
+  QJsonArray visibilityChecks;
+  for (int layerIndex = 0; layerIndex < 3; ++layerIndex) {
+    auto* layer = child<QCheckBox>(
+        window, qPrintable(QString("annotationLayer%1").arg(layerIndex)));
+    const auto key =
+        QStringList{"importedLabels", "manual", "algorithm"}.at(layerIndex);
+    const auto sourceCount = sourceCounts[key].toInt();
+    require(sourceCount > 0, "Layer verification requires all three sources");
+    QTest::mouseClick(layer, Qt::LeftButton, Qt::NoModifier,
+                      QPoint(8, layer->height() / 2));
+    require(waitUntil([&] {
+              return visibleTable->model()->rowCount() ==
+                     storedCount - sourceCount;
+            }) &&
+                unchanged(),
+            "Layer hiding changed stored annotations or did not filter rows");
+    QTest::mouseClick(layer, Qt::LeftButton, Qt::NoModifier,
+                      QPoint(8, layer->height() / 2));
+    sourceFilter->setCurrentIndex(layerIndex + 1);
+    require(waitUntil([&] {
+              return visibleTable->model()->rowCount() == sourceCount;
+            }) &&
+                unchanged(),
+            "Source filter changed stored records or has wrong visible rows");
+    visibilityChecks.append(QJsonObject{{"source", key},
+                                        {"sourceCount", sourceCount},
+                                        {"storedUnchanged", true}});
+    sourceFilter->setCurrentIndex(0);
+  }
+  const auto runId = file->detectionRuns.back().request.runId;
+  const auto runIndex = runFilter->findData(QString::fromStdString(runId));
+  require(runIndex > 0, "Real model run is absent from the visible run filter");
+  runFilter->setCurrentIndex(runIndex);
+  const auto expectedRunCount = std::count_if(
+      file->marks.begin(), file->marks.end(), [&](const auto& annotation) {
+        return !annotation.deleted && annotation.originEvidence &&
+               annotation.originEvidence->runId == runId;
+      });
+  require(expectedRunCount > 0 && waitUntil([&] {
+            return visibleTable->model()->rowCount() == expectedRunCount;
+          }) &&
+              unchanged(),
+          "Run filter changed durable records or did not isolate the real run");
+  runFilter->setCurrentIndex(0);
+  require(
+      visibleTable->model()->rowCount() == storedCount && unchanged(),
+      "Restoring layers and filters did not restore the visible record set");
   std::string algorithmId;
   for (const auto& annotation : file->marks)
     if (annotation.sourceKind == AnnotationSource::Algorithm &&
@@ -421,12 +489,19 @@ QJsonObject widebandFinalAcceptance(Capture& capture, QScreen* screen,
   }
   widebandScene(capture, "40-native-branch-enable-matrix", screen);
   require(window.saveProject(project), "Final native scenario save failed");
-  return {{"reviewSameIdAndOrigin", true},
-          {"filteredBatchHiddenLabelUnchanged", true},
-          {"waterfallSelectionGeometryPreserved", true},
-          {"splitMergeRestoreSameObject", true},
-          {"jsonExportSha256", widebandFileHash(json)},
-          {"csvExportSha256", widebandFileHash(csv)},
-          {"branchEnableMatrix", matrix},
-          {"pressure", finalPressure(capture, screen, project)}};
+  QJsonObject result{
+      {"layerAndSourceVisibility", visibilityChecks},
+      {"runFilterId", QString::fromStdString(runId)},
+      {"runFilterVisibleObjects", static_cast<int>(expectedRunCount)},
+      {"storedRecordsUnchangedByVisibility", true},
+      {"reviewSameIdAndOrigin", true},
+      {"filteredBatchHiddenLabelUnchanged", true},
+      {"waterfallSelectionGeometryPreserved", true},
+      {"splitMergeRestoreSameObject", true},
+      {"jsonExportSha256", widebandFileHash(json)},
+      {"csvExportSha256", widebandFileHash(csv)},
+      {"branchEnableMatrix", matrix}};
+  if (includePressure)
+    result["pressure"] = finalPressure(capture, screen, project);
+  return result;
 }

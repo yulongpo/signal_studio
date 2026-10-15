@@ -436,6 +436,10 @@ AnnotationEvidenceWidget::AnnotationEvidenceWidget(Mode mode, QWidget* parent)
   rawFields_ = new QPlainTextEdit(this);
   rawFields_->setObjectName("annotationEvidence");
   rawFields_->setReadOnly(true);
+  // Keep expanded evidence readable when wrapped source paths make the
+  // inspector taller than the viewport. A zero minimum can collapse the
+  // editor instead of increasing the enclosing scroll area's content size.
+  rawFields_->setMinimumHeight(100);
   rawFields_->setMaximumHeight(170);
   rawFields_->setMinimumWidth(0);
   rawFields_->setLineWrapMode(QPlainTextEdit::WidgetWidth);

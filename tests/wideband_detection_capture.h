@@ -98,17 +98,30 @@ bool widebandDisplayReady(MainWindow& window) {
 QRect widebandVisibleRect(QWidget* widget, QWidget& window);
 
 void widebandScrollTo(QWidget* widget) {
+  QScrollArea* scroll = nullptr;
   for (auto* owner = widget->parentWidget(); owner;
        owner = owner->parentWidget())
     if (auto* area = qobject_cast<QScrollArea*>(owner)) {
-      area->ensureWidgetVisible(widget, 12, 12);
+      scroll = area;
       break;
     }
-  require(waitUntil([widget] {
+  require(waitUntil([widget, scroll] {
+            // Wrapped source fields can change the layout after selection.
+            // Re-evaluate scrolling against the current native geometry.
+            if (scroll) scroll->ensureWidgetVisible(widget, 12, 12);
             return widget->isVisible() &&
                    !widebandVisibleRect(widget, *widget->window()).isEmpty();
           }),
-          "Native scroll did not expose the requested widget");
+          QString("Native scroll did not expose widget %1: visible=%2, "
+                  "geometry=%3,%4 %5x%6, scroll=%7/%8")
+              .arg(widget->objectName())
+              .arg(widget->isVisible())
+              .arg(widget->x())
+              .arg(widget->y())
+              .arg(widget->width())
+              .arg(widget->height())
+              .arg(scroll ? scroll->verticalScrollBar()->value() : -1)
+              .arg(scroll ? scroll->verticalScrollBar()->maximum() : -1));
 }
 
 void widebandScene(Capture& capture, const QString& name, QScreen* screen,
@@ -240,6 +253,27 @@ QPlainTextEdit* widebandOpenOriginalFields(MainWindow& window) {
                 .arg(evidence->height()));
   }
   widebandScrollTo(evidence);
+  require(waitUntil([&] {
+            for (auto* owner = evidence->parentWidget(); owner;
+                 owner = owner->parentWidget()) {
+              auto* area = qobject_cast<QScrollArea*>(owner);
+              if (!area) continue;
+              const auto center =
+                  evidence->mapTo(area->widget(), evidence->rect().center());
+              // Scroll the editor rectangle, independently of its text cursor.
+              area->ensureVisible(center.x(), center.y(), 0,
+                                  evidence->height() / 2 + 8);
+              break;
+            }
+            const auto visible = widebandVisibleRect(evidence, window);
+            return visible.height() >= 95 && visible.width() >= 150;
+          }),
+          QString("Expanded original evidence lacks a readable viewport: "
+                  "editor=%1x%2 visible=%3x%4")
+              .arg(evidence->width())
+              .arg(evidence->height())
+              .arg(widebandVisibleRect(evidence, window).width())
+              .arg(widebandVisibleRect(evidence, window).height()));
   require(
       evidence->isVisible() && !widebandVisibleRect(evidence, window).isEmpty(),
       "Immutable original fields are hidden; hidden text is not visual proof");
@@ -1522,6 +1556,7 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
       {"changedChannelSnapshotPreserved", true}};
 }
 
+#include "tests/wideband_adaptation_capture.h"
 #include "tests/wideband_final_capture.h"
 
 int runWidebandDetectionCapture(const QString& outputDirectory,
@@ -1742,15 +1777,16 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
       report["evidenceKind"] =
           "Native Qt Widgets, actual cf32 IQ, explicit fixture regression and "
           "real TensorRT FP32 inference, sample refinement and real CPU DDC";
+      report["adaptationClosure"] =
+          widebandAdaptationClosure(capture, screen, project);
+      report["reviewClosure"] =
+          widebandFinalAcceptance(capture, screen, project, finalAcceptance);
     }
-    if (finalAcceptance)
-      report["finalAcceptance"] =
-          widebandFinalAcceptance(capture, screen, project);
     report["renderEvidence"] = capture.evidence();
     report["fullScreen"] = window.isFullScreen();
     report["logicalWindowSize"] = sizeJson(window.size());
-    const int kExpectedScenes = finalAcceptance   ? 43
-                                : productionModel ? 34
+    const int kExpectedScenes = finalAcceptance   ? 45
+                                : productionModel ? 43
                                                   : 23;
     QStringList uniqueScenes;
     for (const auto& value : capture.scenes) {
