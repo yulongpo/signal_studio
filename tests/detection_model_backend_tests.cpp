@@ -90,7 +90,91 @@ void shapeFiniteAndBudget() {
         "A shortened tensor must fail before allocation/forward");
   snapshot.profile.modelFrames = 9;
   check(!prepareDetectionModelInput(snapshot, input, 1, output, error),
-        "Unregistered shape changes are prohibited");
+        "Actual input bytes must match the changed analysis shape");
+  input.assign(9 * snapshot.profile.fftSize, .125f);
+  check(prepareDetectionModelInput(snapshot, input, 1, output, error),
+        "Nine real frames are valid independently of reference defaults");
+}
+
+void adaptableInputGrids() {
+  auto snapshot = request("ffscn-gui-iq-v1");
+  snapshot.profile.fftSize = 32;
+  snapshot.profile.modelFrames = 10;
+  std::vector<float> input(3 * 32, .25f), output;
+  QString error;
+  check(prepareDetectionModelInput(snapshot, input, 1, output, error, 3),
+        error);
+  check(output.size() == 3 * 2048 &&
+            std::all_of(output.begin(), output.end(),
+                        [](float value) { return value == .25f; }) &&
+            detectionModelBinScale(snapshot) == 1.0 / 64,
+        "FFSCN interpolates the full physical band without fabricating rows");
+  snapshot.profile.fftSize = 3001;
+  input.assign(3 * 3001, .25f);
+  check(prepareDetectionModelInput(snapshot, input, 1, output, error, 3) &&
+            output.size() == 3 * 4096 &&
+            detectionModelInputBins(snapshot) == 4096 &&
+            detectionModelBinScale(snapshot) == 3001.0 / 4096,
+        "An irregular FFSCN grid must match a power of two above 2^down_nums");
+  snapshot = request("scn-max-psd-v1");
+  snapshot.profile.fftSize = 65536;
+  snapshot.profile.modelFrames = 3;
+  input.assign(3 * 65536, -100);
+  input[0] = 0;
+  input[2] = input[3] = 0;
+  check(prepareDetectionModelInput(snapshot, input, 1, output, error), error);
+  check(output.size() == 32768 && std::abs(output[0] - .969897f) < 1e-5 &&
+            output[1] == 1 && output[2] == 0 &&
+            detectionModelBinScale(snapshot) == 2,
+        "SCN preserves integrated linear power and maps model bins to source "
+        "bins");
+  snapshot.profile.fftSize = 64;
+  input.assign(3 * 64, -100);
+  input[2 * 64 + 7] = -90;
+  check(prepareDetectionModelInput(snapshot, input, 1, output, error), error);
+  check(output[7 * 512] == 1 && output[8 * 512 - 1] == 1 &&
+            output[8 * 512] == 0 &&
+            detectionModelBinScale(snapshot) == 1.0 / 512,
+        "SCN expands the frequency grid while keeping actual-frame maximum "
+        "semantics");
+}
+
+void selectedSpectrumInputs() {
+  QString error;
+  for (const auto* profile : {"ffscn-gui-iq-v1", "scn-max-psd-v1"}) {
+    auto snapshot = request(profile);
+    snapshot.profile.fftSize = 32;
+    snapshot.profile.modelFrames = 2;
+    std::vector<float> input(64, -100), output;
+    input[1] = input[33] = -40;
+    input[2] = 0;
+    const auto modelBins = detectionModelInputBins(snapshot);
+    const auto first = modelBins / 32;
+    const auto second = 2 * first;
+    for (auto mode :
+         {DetectionSpectrumMode::Mean, DetectionSpectrumMode::Maximum,
+          DetectionSpectrumMode::Minimum, DetectionSpectrumMode::Current}) {
+      snapshot.spectrumMode = mode;
+      check(prepareDetectionModelInput(snapshot, input, 1, output, error),
+            error);
+      check(output.size() == modelBins &&
+                std::all_of(output.begin(), output.end(),
+                            [](float value) { return std::isfinite(value); }),
+            "Every selected spectrum is one real finite model input");
+      if (mode == DetectionSpectrumMode::Mean ||
+          mode == DetectionSpectrumMode::Maximum)
+        check(output[second] > output[first],
+              "Mean and maximum must include the transient in the first row");
+      else
+        check(output[first] > output[second],
+              "Minimum and current must use their selected observations");
+      if (snapshot.profile.backend == DetectionBackendKind::Scn &&
+          mode == DetectionSpectrumMode::Mean)
+        check(std::abs(output[first] - 60.0 / (100 - 10 * std::log10(2.0))) <
+                  1e-6,
+              "Average detection spectrum must average linear power, not dB");
+    }
+  }
 }
 
 void separateMemoryBudgets() {
@@ -245,6 +329,123 @@ std::vector<float> readFloats(const QString& path) {
   return values;
 }
 
+void adaptedLiveParity(const QString& modelRoot, const QString& goldenRoot) {
+  QFile manifestFile(QDir(modelRoot).filePath("ffscn-gui-iq-v1/manifest.json"));
+  check(manifestFile.open(QIODevice::ReadOnly),
+        "Dynamic model package is absent");
+  const auto manifest =
+      QJsonDocument::fromJson(manifestFile.readAll()).object();
+  for (const auto spec : {std::array{1, 1, 2048}, std::array{1, 3, 8192},
+                          std::array{2, 10, 65536}, std::array{1, 32, 2048},
+                          std::array{1, 1, 131072}}) {
+    const auto [batch, frames, bins] = spec;
+    auto snapshot = request("ffscn-gui-iq-v1");
+    snapshot.modelSha256 =
+        manifest["engine"].toObject()["sha256"].toString().toStdString();
+    snapshot.profile.fftSize = bins;
+    snapshot.profile.modelFrames = frames;
+    const auto prefix =
+        QString("shape-b%1-t%2-f%3").arg(batch).arg(frames).arg(bins);
+    DetectionModelBackend backend(modelRoot);
+    QString error;
+    check(backend.load(snapshot, error), error);
+    const auto input =
+        readFloats(QDir(goldenRoot).filePath(prefix + ".input.f32"));
+    DetectionModelOutput output;
+    check(backend.infer(input, batch, output, error), error);
+    check(output.actualFrames == frames && output.inputBins == bins &&
+              output.width == bins / 4,
+          "Actual dynamic output layout was not preserved");
+    const std::array<const std::vector<float>*, 3> actual{
+        &output.hm, &output.bw, &output.off};
+    double maximum = 0;
+    for (int head = 0; head < 3; ++head) {
+      const auto expected = readFloats(
+          QDir(goldenRoot)
+              .filePath(prefix + "." + QStringList{"hm", "bw", "off"}[head] +
+                        ".reference.f32"));
+      check(expected.size() == actual[head]->size(),
+            "Dynamic head length mismatch");
+      for (std::size_t index = 0; index < expected.size(); ++index) {
+        const double delta =
+            std::abs(double((*actual[head])[index]) - expected[index]);
+        maximum = std::max(maximum, delta);
+        check(std::isfinite((*actual[head])[index]) &&
+                  delta <= 1e-4 + 1e-3 * std::abs(expected[index]),
+              "Dynamic native head differs from PyTorch: " + prefix);
+      }
+    }
+    std::cout << prefix.toStdString() << " PASS maxAbsolute=" << maximum << ' '
+              << QJsonDocument(backend.evidence())
+                     .toJson(QJsonDocument::Compact)
+                     .toStdString()
+              << '\n';
+  }
+  auto varied = request("scn-max-psd-v1");
+  varied.profile.fftSize = 65536;
+  varied.profile.modelFrames = 3;
+  std::vector<float> spectra(3 * 65536, -100), prepared;
+  spectra[2 * 65536 + 19000] = -80;
+  spectra[11000] = -85;
+  QString error;
+  check(prepareDetectionModelInput(varied, spectra, 1, prepared, error), error);
+  DetectionModelBackend adapted(modelRoot);
+  check(adapted.load(varied, error), error);
+  DetectionModelOutput observed;
+  check(adapted.infer(spectra, 1, observed, error), error);
+  auto identity = request("scn-max-psd-v1");
+  identity.profile.modelFrames = 1;
+  DetectionModelBackend control(modelRoot);
+  check(control.load(identity, error), error);
+  DetectionModelOutput expected;
+  check(control.infer(prepared, 1, expected, error), error);
+  check(observed.hm == expected.hm && observed.bw == expected.bw &&
+            observed.off == expected.off && observed.inputBins == 32768 &&
+            observed.actualFrames == 3 &&
+            adapted.evidence()["meanSpectrumInferenceCalls"].toInt() == 0,
+        "SCN adapted real-frame maxima must execute exactly the mapped model "
+        "input");
+  std::cout << "SCN N65536/T3 versus mapped N32768/T1 PASS\n";
+  for (const auto* profile : {"ffscn-gui-iq-v1", "scn-max-psd-v1"}) {
+    for (const auto mode :
+         {DetectionSpectrumMode::Current, DetectionSpectrumMode::Mean,
+          DetectionSpectrumMode::Maximum, DetectionSpectrumMode::Minimum}) {
+      auto selected = request(profile);
+      if (selected.profile.backend != DetectionBackendKind::Scn)
+        selected.modelSha256 =
+            manifest["engine"].toObject()["sha256"].toString().toStdString();
+      selected.profile.fftSize = 3001;
+      selected.profile.modelFrames = 3;
+      selected.spectrumMode = mode;
+      std::vector<float> input(3 * 3001, -100);
+      input[100] = -20;
+      input[3001 + 101] = -40;
+      input[6002 + 102] = -60;
+      DetectionModelBackend backend(modelRoot);
+      check(backend.load(selected, error), error);
+      DetectionModelOutput output;
+      check(backend.infer(input, 1, output, error), error);
+      check(output.actualFrames == 3 &&
+                output.inputBins == detectionModelInputBins(selected) &&
+                backend.evidence()["lastTensorFrames"].toInt() == 1 &&
+                backend.evidence()["meanSpectrumInferenceCalls"].toInt() ==
+                    (mode == DetectionSpectrumMode::Mean ? 1 : 0),
+            "Selected spectrum must reach the real model with actual support");
+      for (const auto* head : {&output.hm, &output.bw, &output.off})
+        check(head->size() == output.width &&
+                  std::all_of(head->begin(), head->end(),
+                              [](float value) { return std::isfinite(value); }),
+              "Selected-spectrum real forward must return finite raw heads");
+      std::cout << profile << " irregular-N3001 mode=" << static_cast<int>(mode)
+                << " PASS "
+                << QJsonDocument(backend.evidence())
+                       .toJson(QJsonDocument::Compact)
+                       .toStdString()
+                << '\n';
+    }
+  }
+}
+
 void liveParity(const QString& modelRoot, const QString& referenceRoot) {
   auto snapshot = request("ffscn-gui-iq-v1");
   DetectionModelBackend backend(modelRoot);
@@ -380,14 +581,19 @@ int main(int argc, char** argv) {
   try {
     maximumOnlyInput();
     shapeFiniteAndBudget();
+    adaptableInputGrids();
+    selectedSpectrumInputs();
     separateMemoryBudgets();
     packageRejections();
     if (argc == 4 && QString::fromLocal8Bit(argv[1]) == "--live")
       liveParity(QString::fromLocal8Bit(argv[2]),
                  QString::fromLocal8Bit(argv[3]));
+    else if (argc == 4 && QString::fromLocal8Bit(argv[1]) == "--adapted")
+      adaptedLiveParity(QString::fromLocal8Bit(argv[2]),
+                        QString::fromLocal8Bit(argv[3]));
     else
       check(argc == 1,
-            "Usage: detection-model-backend-tests [--live model-root "
+            "Usage: detection-model-backend-tests [--live|--adapted model-root "
             "golden-root]");
     std::cout << "Detection model backend checks passed\n";
     return 0;

@@ -217,6 +217,31 @@ void invalidHeadsAndCancellationAreAtomic() {
         "Decoder input resource bound must be enforced");
 }
 void uniqueWindowStatisticsAndStableScope() {
+  {
+    Heads padded(2048);
+    padded.hm[7] = .9f;
+    padded.hm[8] = .95f;
+    auto configuration = decoder();
+    configuration.inputBins = 2048;
+    configuration.validInputBins = 32;
+    configuration.topK = 1;
+    const auto found = decode(padded, configuration);
+    check(found.size() == 1 && found.front().peakIndex == 7,
+          "Padding must not suppress a physical peak before TopK/local maxima");
+  }
+  {
+    auto mapped = trackerConfig(1);
+    mapped.inputBins = 3001;
+    mapped.peakIndexLimit = 8192;
+    mapped.firstBinHz = 0;
+    auto subject = tracker(mapped);
+    auto observation = window(0);
+    observation.candidates = {{1.25, 1.5, .8, 100}, {1.51, 1.75, .9, 101}};
+    consume(subject, observation);
+    check(!finish(subject).empty(),
+          "Distinct model peaks survive an irregular analysis grid and shared "
+          "integer bins");
+  }
   auto config = trackerConfig(3);
   auto first = tracker(config);
   consume(first, window(0, {candidate(0, 20, .75)}));

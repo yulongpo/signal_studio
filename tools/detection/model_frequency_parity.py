@@ -1271,11 +1271,15 @@ def verify_profile(pipeline_root, profile, wav_path, source_oracle) -> dict:
                 "Per-window model/runtime identity differs from immutable request"
             )
         if scn and (
-            model["modelInputKind"] != "maximum-of-16-psd-minmax"
+            model["modelInputKind"] not in (
+                "maximum-of-16-psd-minmax", "selected-psd-minmax"
+            )
+            or model.get("spectrumMode", 0) != 0
             or model["meanSpectrumInferenceCalls"] != 0
         ):
             raise ValueError(
-                "SCN production evidence is not maximum-spectrum-only"
+                "This historical reference requires ModelDefault preprocessing; "
+                "explicit spectrum modes need their corresponding reference"
             )
         decoded = decode_heads(heads, request["parameters"], width, scn)
         double_geometry = decode_heads(

@@ -11,6 +11,7 @@
 #include <QtEndian>
 #include <algorithm>
 #include <bit>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 
@@ -96,6 +97,44 @@ void projectionRoundtrip() {
   check(tracks.size() == 2 && tracks[0].hits == 3 &&
             tracks[0].windowDenominator == 3,
         "Association must count unique window evidence");
+  for (const auto* profile : {"ffscn-gui-iq-v1", "scn-max-psd-v1"}) {
+    auto odd = request;
+    odd.profile = *findDetectionProfile(profile);
+    odd.profile.fftSize = 3001;
+    auto oddResults = results, oddMappings = mappings;
+    const double scale = 3001.0 / 65536;
+    for (qsizetype index = 0; index < results.size(); ++index) {
+      auto result = results[index].toObject();
+      auto candidates = result["candidates"].toArray();
+      for (qsizetype item = 0; item < candidates.size(); ++item) {
+        auto candidate = candidates[item].toObject();
+        candidate["lowerBin"] = candidate["lowerBin"].toDouble() * scale;
+        candidate["upperBin"] = candidate["upperBin"].toDouble() * scale;
+        candidate["peakIndex"] =
+            QString::number(candidate["peakIndex"].toString().toUInt() *
+                            detectionModelInputBins(odd) / 65536);
+        candidates[item] = candidate;
+      }
+      result["candidates"] = candidates;
+      oddResults[index] = result;
+      auto mapped = mappings[index].toObject();
+      mapped["frequencyStepHz"] = 65536.0 / 3001;
+      oddMappings[index] = mapped;
+    }
+    DetectionResultProjector adapted;
+    std::vector<FrequencyTrack> physical;
+    check(adapted.reset(odd, 3, 32 * 1024 * 1024, error) &&
+              adapted.consume(oddResults, oddMappings, error) &&
+              adapted.finish(physical, error),
+          error);
+    check(physical.size() == tracks.size() && physical[0].hits == 3 &&
+              std::abs(physical[0].frequency.lowerHz -
+                       tracks[0].frequency.lowerHz) < 1e-8 &&
+              std::abs(physical[0].frequency.upperHz -
+                       tracks[0].frequency.upperHz) < 1e-8,
+          "An odd analysis grid must preserve physical frequency through "
+          "projection with separate model peak identities");
+  }
   auto wrongGrid = mappings;
   auto badMapping = wrongGrid[0].toObject();
   badMapping["frequencyStepHz"] = 2.0;
@@ -161,6 +200,32 @@ void scnOrderAndOccupancy() {
                               [] { return true; }) &&
             result.candidates == prior,
         "Cancelled SCN postprocessing must retain prior complete output");
+}
+
+void scnSelectedSpectrumConsistency() {
+  std::vector<float> values(2 * 64, -100);
+  values[19] = values[30] = -20;
+  for (std::size_t bin = 20; bin < 30; ++bin) values[64 + bin] = -60;
+  const std::vector<DecodedCandidate> raw{{20, 30, .9, 5}};
+  for (const auto mode :
+       {DetectionSpectrumMode::Current, DetectionSpectrumMode::Mean,
+        DetectionSpectrumMode::Maximum, DetectionSpectrumMode::Minimum}) {
+    ScnWindowPostprocess output;
+    std::string error;
+    check(postprocessScnWindow(values, 2, 64, raw, 0, 1, output, error, {},
+                               8192, mode),
+          QString::fromStdString(error));
+    const bool current = mode == DetectionSpectrumMode::Current;
+    const double cnr =
+        current ? 40 : (mode == DetectionSpectrumMode::Minimum ? 0 : -40);
+    check(
+        output.measurements.size() == 1 &&
+            std::abs(output.measurements[0].cnrDb - cnr) < .001 &&
+            output.measurements[0].accepted == current &&
+            output.candidates.empty() != current,
+        "SCN filtering/refinement must follow the selected physical spectrum; "
+        "an old neighboring transient cannot replace the current input");
+  }
 }
 
 void publicationByteBudgetRoundtrip() {
@@ -443,6 +508,7 @@ int main(int argc, char** argv) {
   try {
     projectionRoundtrip();
     scnOrderAndOccupancy();
+    scnSelectedSpectrumConsistency();
     publicationByteBudgetRoundtrip();
     if (argc == 4 && QString::fromLocal8Bit(argv[1]) == "--live")
       livePipeline(QString::fromLocal8Bit(argv[2]),

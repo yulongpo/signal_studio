@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "domain/detection.h"
 #include "domain/detection_postprocess.h"
 
 namespace signalstudio {
@@ -22,10 +23,11 @@ struct ScnWindowPostprocess {
 
 // The frozen SCN comparison order is CNR -> frequency fusion -> inward
 // bandwidth correction -> tracking. Every unfiltered fused band masks noise.
-bool postprocessScnWindow(std::span<const float> physicalDbFrames,
-                          std::size_t frames, std::size_t bins,
-                          std::span<const DecodedCandidate> candidates,
-                          double firstBinHz, double binWidthHz,
-                          ScnWindowPostprocess&, std::string& error,
-                          const PostprocessCancellation& cancelled = {});
+bool postprocessScnWindow(
+    std::span<const float> physicalDbFrames, std::size_t frames,
+    std::size_t bins, std::span<const DecodedCandidate> candidates,
+    double firstBinHz, double binWidthHz, ScnWindowPostprocess&,
+    std::string& error, const PostprocessCancellation& cancelled = {},
+    std::size_t modelPeakCount = 0,
+    DetectionSpectrumMode = DetectionSpectrumMode::ModelDefault);
 }  // namespace signalstudio

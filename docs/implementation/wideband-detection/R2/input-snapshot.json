@@ -1,0 +1,102 @@
+{
+  "schema": "signalstudio-r2-input-snapshot-v1",
+  "parentCommit": "5df99badff2ffe17334c57abb7da89d1d61d5e62",
+  "branch": "rebuild/a143-native",
+  "files": [
+    {
+      "path": "domain/detection_postprocess.cpp",
+      "bytes": 30712,
+      "sha256": "1550a4548c807aaa3fc38ed3b77972c1a053a3f6c346ee5e801002a62ab030ce"
+    },
+    {
+      "path": "domain/detection_postprocess.h",
+      "bytes": 5991,
+      "sha256": "bbd577ed9f72684d642e4c04ebfb67e62a1b70b6ab4f0964b9c75ae19de061be"
+    },
+    {
+      "path": "domain/detection.cpp",
+      "bytes": 12950,
+      "sha256": "d2fe48662e0dd0a365fba25a5d902de653a776362ee9b68df79f286b868a4230"
+    },
+    {
+      "path": "domain/detection.h",
+      "bytes": 4949,
+      "sha256": "e068a5d3dcc747c5e01a8caaaca43327ef37c9c4d74b8a2ddfab229584d8b905"
+    },
+    {
+      "path": "domain/scn_detection_postprocess.cpp",
+      "bytes": 7040,
+      "sha256": "c27d97a5d54d707b244a16aedc5cf7da6821f218e5712fd934f5aeb19c498a66"
+    },
+    {
+      "path": "domain/scn_detection_postprocess.h",
+      "bytes": 1165,
+      "sha256": "cab1d01dac9a56493fc6ab3e5bdcbb9cc6c7f3fedbdad3ccfbe01cb67c0e858c"
+    },
+    {
+      "path": "infrastructure/detection_model_backend.cpp",
+      "bytes": 41893,
+      "sha256": "8ab77cb7ff88f1f9a9ddad7ab818abeeebdc4f32d7ca38ef568fe5b21ce554eb"
+    },
+    {
+      "path": "infrastructure/detection_model_backend.h",
+      "bytes": 3245,
+      "sha256": "60471ce1b6a4beaf5203aa2ea15dbedad49b6673374126e6d0a1d4739d745938"
+    },
+    {
+      "path": "infrastructure/detection_model_snapshot.cpp",
+      "bytes": 2327,
+      "sha256": "fcf21ead6bc80f90d03ec2415fae02093b61ad388c741b9acc89efaef1e4cefe"
+    },
+    {
+      "path": "infrastructure/detection_projection.cpp",
+      "bytes": 20835,
+      "sha256": "5ed2db1d909130406762c6c1db0c79b0f157d7d119dbbacc37fb18209adf0fa3"
+    },
+    {
+      "path": "infrastructure/detection_store.cpp",
+      "bytes": 49337,
+      "sha256": "272c0c468f4e349ece287925d8314341e514348941c819a0ea5b7191ae0f04e6"
+    },
+    {
+      "path": "infrastructure/detection_task.cpp",
+      "bytes": 55218,
+      "sha256": "5f20bedcd51d06779d92445d7c0f36776879853b4785aa210e051bd383a4d114"
+    },
+    {
+      "path": "tests/detection_model_backend_tests.cpp",
+      "bytes": 27833,
+      "sha256": "c62a3c4afafaf967df0b0eac608ec2c7eb31823204031c7e3b8d39466bfaa237"
+    },
+    {
+      "path": "tests/detection_pipeline_tests.cpp",
+      "bytes": 24045,
+      "sha256": "66f790bd7f3c4a3ac856b6d1bb219010ac04da5854915cc7a403a83e449419ca"
+    },
+    {
+      "path": "tests/detection_postprocess_tests.cpp",
+      "bytes": 22357,
+      "sha256": "b7c3304318c57f0c684c870a2801e8fe9562c7733ed7306bedea390fbba6f58c"
+    },
+    {
+      "path": "tests/detection_store_tests.cpp",
+      "bytes": 22759,
+      "sha256": "4cab449c88d24e44ca38b2a8e2d42f865f2897cdea399ddbc9ac0bd3577678bc"
+    },
+    {
+      "path": "tools/detection_worker/main.cpp",
+      "bytes": 12785,
+      "sha256": "3adbabc2856ca5ff0451dba259af7cb68122197b279217790dfbdb556a89efe2"
+    },
+    {
+      "path": "tools/detection/model_dynamic_package.py",
+      "bytes": 19409,
+      "sha256": "8cf3889f5fa13f36c3a23e7ac1472cfeb1509b143cfebf4fa1932e3e0b5403bc"
+    },
+    {
+      "path": "tools/detection/model_frequency_parity.py",
+      "bytes": 54593,
+      "sha256": "41dc09e58ab90b1fcc6b64f2441403fac50f4721709fc4e67a72e405dd667c0c"
+    }
+  ]
+}

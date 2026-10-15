@@ -73,7 +73,8 @@ bool fixtureBatch(const DetectionWorkerPacket& packet,
   const auto shape = packet.envelope["binary"].toObject()["shape"].toArray();
   if (windows.isEmpty() || windows.size() > 2 || shape.size() != 4 ||
       shape[0].toInt() != windows.size() || shape[1] != 1 ||
-      shape[2].toInt() != static_cast<int>(request.profile.modelFrames) ||
+      shape[2].toInt() < 1 ||
+      shape[2].toInt() > static_cast<int>(request.profile.modelFrames) ||
       shape[3].toInt() != static_cast<int>(request.profile.fftSize)) {
     error = "Fixture tensor shape does not match the frozen request";
     return false;
@@ -82,7 +83,7 @@ bool fixtureBatch(const DetectionWorkerPacket& packet,
   if (!decodeFloat32Payload(packet, input, error)) return false;
   QJsonArray results;
   const auto bins = request.profile.fftSize;
-  const auto frames = request.profile.modelFrames;
+  const auto frames = static_cast<std::uint32_t>(shape[2].toInt());
   for (qsizetype batch = 0; batch < windows.size(); ++batch) {
     quint64 windowId = 0;
     if (!workerUnsigned(windows[batch].toObject()["windowId"], windowId, error))
@@ -125,8 +126,8 @@ bool modelBatch(const DetectionWorkerPacket& packet,
   const auto shape = packet.envelope["binary"].toObject()["shape"].toArray();
   if (windows.isEmpty() || windows.size() > request.parameters.batchSize ||
       shape.size() != 4 || shape[0].toInt() != windows.size() ||
-      shape[1] != 1 ||
-      shape[2].toInt() != static_cast<int>(request.profile.modelFrames) ||
+      shape[1] != 1 || shape[2].toInt() < 1 ||
+      shape[2].toInt() > static_cast<int>(request.profile.modelFrames) ||
       shape[3].toInt() != static_cast<int>(request.profile.fftSize)) {
     error = "Production tensor shape does not match the immutable request";
     return false;
@@ -145,13 +146,13 @@ bool modelBatch(const DetectionWorkerPacket& packet,
   DetectionModelOutput output;
   if (!decodeFloat32Payload(packet, input, error) ||
       !backend.infer(input, static_cast<std::uint32_t>(windows.size()), output,
-                     error))
+                     error, shape[2].toInt()))
     return false;
   const bool scn = request.profile.backend == DetectionBackendKind::Scn;
   DetectionDecoderConfig config;
   config.kind = scn ? DetectionDecoderKind::ScnThreeBin
                     : DetectionDecoderKind::FfscnSevenBin;
-  config.inputBins = request.profile.fftSize;
+  config.inputBins = output.inputBins;
   config.scoreThreshold = request.parameters.scoreThreshold;
   config.nmsIou = request.parameters.nmsIou;
   config.topK = request.parameters.topK;

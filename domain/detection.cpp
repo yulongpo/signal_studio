@@ -1,9 +1,11 @@
 #include "domain/detection.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <limits>
 #include <unordered_set>
+#include <utility>
 
 namespace signalstudio {
 namespace {
@@ -136,14 +138,25 @@ bool detectionTransitionAllowed(DetectionLifecycle from,
 DetectionValidation validateDetectionRequest(const DetectionRequest& request) {
   const auto* profile = findDetectionProfile(request.profile.id);
   if (!profile || request.profile.version != profile->version ||
-      request.profile.fftSize != profile->fftSize ||
-      request.profile.modelFrames != profile->modelFrames ||
-      request.profile.modelHopFrames != profile->modelHopFrames ||
       request.profile.backend != profile->backend ||
-      request.profile.hopSeconds != profile->hopSeconds ||
       request.profile.maximumPsdOnly != profile->maximumPsdOnly ||
       request.profile.supportsReal != profile->supportsReal)
     return {false, "Detection profile identity/shape is not registered"};
+  if (request.inputAdaptationVersion == 1 &&
+      (request.profile.fftSize != profile->fftSize ||
+       request.profile.modelFrames != profile->modelFrames ||
+       request.profile.modelHopFrames != profile->modelHopFrames ||
+       request.profile.hopSeconds != profile->hopSeconds ||
+       request.spectrumMode != DetectionSpectrumMode::ModelDefault))
+    return {false, "Historical detection grid identity changed"};
+  const auto& grid = request.profile;
+  if ((request.inputAdaptationVersion != 1 &&
+       request.inputAdaptationVersion != 2) ||
+      static_cast<int>(request.spectrumMode) < 0 ||
+      static_cast<int>(request.spectrumMode) > 4 || grid.fftSize < 32 ||
+      grid.fftSize > 262144 || !grid.modelFrames || !grid.modelHopFrames ||
+      !std::isfinite(grid.hopSeconds) || grid.hopSeconds <= 0)
+    return {false, "Detection analysis grid is invalid"};
   const auto& source = request.sourceIdentity;
   if (request.runId.empty() || request.runId.size() > 128 ||
       source.fileId.empty() || source.path.empty() ||
@@ -184,6 +197,71 @@ DetectionValidation validateDetectionRequest(const DetectionRequest& request) {
       request.evidenceBudgetBytes > 256 * 1024 * 1024)
     return {false, "Detection resource budget is invalid"};
   return {};
+}
+std::uint32_t detectionModelMinimumBins(const DetectionRequest& request) {
+  if (request.profile.backend == DetectionBackendKind::Fixture) return 1;
+  // FFSCN GUI and SCN use down_nums=11. The separate experimental FFSCN-17
+  // architecture declares thirteen stages in its frozen model contract.
+  const auto downNums =
+      request.profile.backend == DetectionBackendKind::Experimental17 ? 13 : 11;
+  return 1U << downNums;
+}
+std::uint32_t detectionModelInputBins(const DetectionRequest& request) {
+  if (request.inputAdaptationVersion == 1 ||
+      request.profile.backend == DetectionBackendKind::Fixture)
+    return request.profile.fftSize;
+  // The installed SCN artifact has one fixed tensor grid. This is a deployment
+  // specification, separate from the architecture's 2048-bin minimum.
+  if (request.profile.backend == DetectionBackendKind::Scn) return 32768;
+  return std::bit_ceil(
+      std::max(request.profile.fftSize, detectionModelMinimumBins(request)));
+}
+double detectionModelBinScale(const DetectionRequest& request) {
+  return static_cast<double>(request.profile.fftSize) /
+         detectionModelInputBins(request);
+}
+std::uint32_t detectionModelTensorFrames(const DetectionRequest& request,
+                                         std::uint32_t actualFrames) {
+  return request.profile.backend == DetectionBackendKind::Scn ||
+                 request.spectrumMode != DetectionSpectrumMode::ModelDefault
+             ? 1
+             : actualFrames;
+}
+bool selectDetectionSpectrum(std::span<const float> values, std::size_t bins,
+                             DetectionSpectrumMode mode,
+                             std::vector<float>& target, std::string& error) {
+  if (!bins || values.empty() || values.size() % bins ||
+      static_cast<int>(mode) < 0 || static_cast<int>(mode) > 4 ||
+      !std::all_of(values.begin(), values.end(),
+                   [](float value) { return std::isfinite(value); })) {
+    error = "invalid-detection-spectrum-selection";
+    return false;
+  }
+  const auto frames = values.size() / bins;
+  std::vector<float> selected(bins);
+  for (std::size_t bin = 0; bin < bins; ++bin) {
+    float maximum = values[bin], minimum = maximum;
+    for (std::size_t frame = 1; frame < frames; ++frame) {
+      maximum = std::max(maximum, values[frame * bins + bin]);
+      minimum = std::min(minimum, values[frame * bins + bin]);
+    }
+    if (mode == DetectionSpectrumMode::Mean) {
+      double power = 0;
+      for (std::size_t frame = 0; frame < frames; ++frame)
+        power +=
+            std::pow(10.0, (values[frame * bins + bin] - double(maximum)) / 10);
+      selected[bin] =
+          static_cast<float>(maximum + 10 * std::log10(power / frames));
+    } else if (mode == DetectionSpectrumMode::Minimum)
+      selected[bin] = minimum;
+    else if (mode == DetectionSpectrumMode::Current)
+      selected[bin] = values[(frames - 1) * bins + bin];
+    else
+      selected[bin] = maximum;
+  }
+  target = std::move(selected);
+  error.clear();
+  return true;
 }
 DetectionValidation validateDetectionRun(const DetectionRun& run) {
   if (const auto valid = validateDetectionRequest(run.request); !valid)

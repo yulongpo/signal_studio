@@ -219,7 +219,7 @@ DetectionProfile profileValue(const QJsonValue& value) {
   p.name = string(o, "name", 1024);
   p.status = string(o, "status", 1024);
   p.backend = enumeration<DetectionBackendKind>(o, "backend", kBackend);
-  p.fftSize = smallInteger(o, "fftSize", 131072);
+  p.fftSize = smallInteger(o, "fftSize", 262144);
   p.modelFrames = smallInteger(o, "modelFrames", 10000);
   p.modelHopFrames = smallInteger(o, "modelHopFrames", 10000);
   p.hopSeconds = number(o, "hopSeconds");
@@ -252,7 +252,9 @@ void validateRequest(const DetectionRequest& request) {
           "Detection source path contains a null character");
   const auto* profile = findDetectionProfile(request.profile.id);
   require(
-      profile && request.profile.hopSeconds == profile->hopSeconds &&
+      profile &&
+          (request.inputAdaptationVersion != 1 ||
+           request.profile.hopSeconds == profile->hopSeconds) &&
           request.profile.maximumPsdOnly == profile->maximumPsdOnly &&
           request.profile.supportsReal == profile->supportsReal,
       "Detection profile preprocessing differs from the registered version");
@@ -486,15 +488,16 @@ quint64 verifyHeadEvidence(const QDir& root, const DetectionRequest& request,
     const auto path = string(reference, "path", 32768, true);
     const auto size = integer(reference["bytes"], "headEvidence.bytes");
     const auto shape = reference["shape"].toArray();
-    require(hashValid(text(hash)) &&
-                text(path) == runDirectory(request.runId) + "/heads-" +
-                                  text(hash) + ".f32" &&
-                shape ==
-                    QJsonArray{1, 3, 1,
-                               static_cast<int>(request.profile.fftSize / 4)} &&
-                reference["headOrder"] == QJsonArray{"hm", "bw", "off"} &&
-                size == 3ULL * request.profile.fftSize / 4 * sizeof(float),
-            "Stored model head reference has invalid scope/layout");
+    require(
+        hashValid(text(hash)) &&
+            text(path) ==
+                runDirectory(request.runId) + "/heads-" + text(hash) + ".f32" &&
+            shape == QJsonArray{1, 3, 1,
+                                static_cast<int>(
+                                    detectionModelInputBins(request) / 4)} &&
+            reference["headOrder"] == QJsonArray{"hm", "bw", "off"} &&
+            size == 3ULL * detectionModelInputBins(request) / 4 * sizeof(float),
+        "Stored model head reference has invalid scope/layout");
     const auto raw = readBounded(root, text(path));
     require(
         static_cast<quint64>(raw.size()) == size && digest(raw) == text(hash),
@@ -547,24 +550,28 @@ void verifyChunks(const QDir& root, const DetectionRun& run) {
 }  // namespace
 
 QJsonObject encodeDetectionRequest(const DetectionRequest& r) {
-  return {{"schemaVersion", 1},
-          {"runId", text(r.runId)},
-          {"parentRunId", r.parentRunId ? QJsonValue(text(*r.parentRunId))
-                                        : QJsonValue(QJsonValue::Null)},
-          {"sourceIdentity", encodeSourceIdentity(r.sourceIdentity)},
-          {"profile", profileJson(r.profile)},
-          {"parameters", parametersJson(r.parameters)},
-          {"requestedRange", rangeJson(r.requestedRange)},
-          {"contextRange", emptyRange(r.contextRange)
-                               ? QJsonValue(QJsonValue::Null)
-                               : QJsonValue(rangeJson(r.contextRange))},
-          {"rangeOrigin", text(r.rangeOrigin)},
-          {"sourceAnnotationId", text(r.sourceAnnotationId)},
-          {"sourceRevisionId", text(r.sourceRevisionId)},
-          {"modelManifestPath", text(r.modelManifestPath)},
-          {"modelSha256", text(r.modelSha256)},
-          {"workingSetBudgetBytes", decimal(r.workingSetBudgetBytes)},
-          {"evidenceBudgetBytes", decimal(r.evidenceBudgetBytes)}};
+  QJsonObject value{
+      {"schemaVersion", static_cast<int>(r.inputAdaptationVersion)},
+      {"runId", text(r.runId)},
+      {"parentRunId", r.parentRunId ? QJsonValue(text(*r.parentRunId))
+                                    : QJsonValue(QJsonValue::Null)},
+      {"sourceIdentity", encodeSourceIdentity(r.sourceIdentity)},
+      {"profile", profileJson(r.profile)},
+      {"parameters", parametersJson(r.parameters)},
+      {"requestedRange", rangeJson(r.requestedRange)},
+      {"contextRange", emptyRange(r.contextRange)
+                           ? QJsonValue(QJsonValue::Null)
+                           : QJsonValue(rangeJson(r.contextRange))},
+      {"rangeOrigin", text(r.rangeOrigin)},
+      {"sourceAnnotationId", text(r.sourceAnnotationId)},
+      {"sourceRevisionId", text(r.sourceRevisionId)},
+      {"modelManifestPath", text(r.modelManifestPath)},
+      {"modelSha256", text(r.modelSha256)},
+      {"workingSetBudgetBytes", decimal(r.workingSetBudgetBytes)},
+      {"evidenceBudgetBytes", decimal(r.evidenceBudgetBytes)}};
+  if (r.inputAdaptationVersion >= 2)
+    value["spectrumMode"] = static_cast<int>(r.spectrumMode);
+  return value;
 }
 bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
                             QString& error) {
@@ -573,9 +580,14 @@ bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
                  "profile", "parameters", "requestedRange", "contextRange",
                  "rangeOrigin", "sourceAnnotationId", "sourceRevisionId",
                  "modelManifestPath", "modelSha256", "workingSetBudgetBytes",
-                 "evidenceBudgetBytes"});
-    require(o["schemaVersion"] == 1, "Unsupported detection request version");
+                 "evidenceBudgetBytes", "spectrumMode"});
+    require(o["schemaVersion"] == 1 || o["schemaVersion"] == 2,
+            "Unsupported detection request version");
     DetectionRequest r;
+    r.inputAdaptationVersion = o["schemaVersion"].toInt();
+    if (o.contains("spectrumMode"))
+      r.spectrumMode = static_cast<DetectionSpectrumMode>(
+          smallInteger(o, "spectrumMode", 4));
     r.runId = string(o, "runId", 128, true);
     require(!o["parentRunId"].isUndefined(),
             "Detection parentRunId is missing");
@@ -858,7 +870,7 @@ bool storeDetectionHeadEvidence(const QString& directory,
   try {
     const auto shape = packet.envelope["binary"].toObject()["shape"].toArray();
     const auto count = target.size();
-    const auto width = request.profile.fftSize / 4;
+    const auto width = detectionModelInputBins(request) / 4;
     const auto payload = packet.envelope["payload"].toObject();
     require(count >= 1 && count <= 2 &&
                 shape == QJsonArray{static_cast<int>(count), 3, 1,

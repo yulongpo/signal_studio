@@ -1,0 +1,830 @@
+{
+  "schema": "signalstudio-dynamic-ffscn-probe-v1",
+  "identity": {
+    "checkpointSha256": "acd997957dd85b7fc560897874b575d4776e80270d7e377d1de7559e513e40e0",
+    "graphSourceSha256": "0405ccdab139f03e496b307495c71624d91cf182427eadd4374d5552b687d583",
+    "minShape": [
+      1,
+      1,
+      1,
+      2048
+    ],
+    "optShape": [
+      2,
+      1,
+      10,
+      65536
+    ],
+    "maxShape": [
+      2,
+      1,
+      64,
+      262144
+    ],
+    "tf32": false,
+    "profiles": [
+      {
+        "index": 0,
+        "minShape": [
+          1,
+          1,
+          1,
+          2048
+        ],
+        "optShape": [
+          2,
+          1,
+          10,
+          65536
+        ],
+        "maxShape": [
+          2,
+          1,
+          64,
+          65536
+        ]
+      },
+      {
+        "index": 1,
+        "minShape": [
+          1,
+          1,
+          1,
+          2048
+        ],
+        "optShape": [
+          1,
+          1,
+          10,
+          65536
+        ],
+        "maxShape": [
+          2,
+          1,
+          16,
+          262144
+        ]
+      }
+    ],
+    "precision": "FP32",
+    "opset": 18
+  },
+  "tolerance": {
+    "atol": 0.0001,
+    "rtol": 0.001
+  },
+  "assetRoot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\R2\\assets\\dynamic-ffscn",
+  "scriptSha256": "8cf3889f5fa13f36c3a23e7ac1472cfeb1509b143cfebf4fa1932e3e0b5403bc",
+  "claim": "Structure and raw head parity, not accuracy",
+  "timingScope": "Single synchronized forward, not cold/hot timing",
+  "memoryScope": "Torch allocations, not total process VRAM",
+  "engineReused": true,
+  "passed": true,
+  "build": {
+    "identity": {
+      "checkpointSha256": "acd997957dd85b7fc560897874b575d4776e80270d7e377d1de7559e513e40e0",
+      "graphSourceSha256": "0405ccdab139f03e496b307495c71624d91cf182427eadd4374d5552b687d583",
+      "minShape": [
+        1,
+        1,
+        1,
+        2048
+      ],
+      "optShape": [
+        2,
+        1,
+        10,
+        65536
+      ],
+      "maxShape": [
+        2,
+        1,
+        64,
+        262144
+      ],
+      "tf32": false,
+      "profiles": [
+        {
+          "index": 0,
+          "minShape": [
+            1,
+            1,
+            1,
+            2048
+          ],
+          "optShape": [
+            2,
+            1,
+            10,
+            65536
+          ],
+          "maxShape": [
+            2,
+            1,
+            64,
+            65536
+          ]
+        },
+        {
+          "index": 1,
+          "minShape": [
+            1,
+            1,
+            1,
+            2048
+          ],
+          "optShape": [
+            1,
+            1,
+            10,
+            65536
+          ],
+          "maxShape": [
+            2,
+            1,
+            16,
+            262144
+          ]
+        }
+      ],
+      "precision": "FP32",
+      "opset": 18
+    },
+    "onnx": {
+      "path": "ffscn_epoch1200_dynamic.onnx",
+      "sha256": "694ca095574d80e182c2095e9ef38853c08e107e688afe1dec2db5718baf68d8",
+      "bytes": 10819407,
+      "seconds": 0.7962879000001521,
+      "inputDimensions": [
+        "batch",
+        1,
+        "time",
+        "frequency"
+      ],
+      "opset": 18
+    },
+    "engine": {
+      "path": "ffscn_epoch1200_dynamic_fp32.engine",
+      "sha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03",
+      "bytes": 23722236,
+      "seconds": 462.6692458000002,
+      "tf32": false,
+      "fp16": false,
+      "workspaceMiB": 1024,
+      "profiles": [
+        {
+          "index": 0,
+          "minShape": [
+            1,
+            1,
+            1,
+            2048
+          ],
+          "optShape": [
+            2,
+            1,
+            10,
+            65536
+          ],
+          "maxShape": [
+            2,
+            1,
+            64,
+            65536
+          ]
+        },
+        {
+          "index": 1,
+          "minShape": [
+            1,
+            1,
+            1,
+            2048
+          ],
+          "optShape": [
+            1,
+            1,
+            10,
+            65536
+          ],
+          "maxShape": [
+            2,
+            1,
+            16,
+            262144
+          ]
+        }
+      ]
+    }
+  },
+  "manifestSha256": "776ebd3261c063567e443f5b96d5c93a8e50449d9d491bb1242f8c7bf2575786",
+  "runtime": {
+    "pytorch": "2.12.0+cu132",
+    "tensorRt": "10.11.0.33",
+    "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+    "computeCapability": [
+      12,
+      0
+    ]
+  },
+  "probes": [
+    {
+      "shape": [
+        1,
+        1,
+        1,
+        2048
+      ],
+      "seed": 20261015,
+      "inputSha256": "c6ba90408e403756960f41ec3d4149fe6e46e89d4e65d4f312c34e11e2c1bb1e",
+      "heads": {
+        "hm": {
+          "shape": [
+            1,
+            1,
+            1,
+            512
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 2.0554580260068178e-10,
+          "meanAbsolute": 1.1703110702754316e-11,
+          "maxRelative": 1.0752096386568155e-05,
+          "outsideTolerance": 0,
+          "elements": 512,
+          "passed": true
+        },
+        "bw": {
+          "shape": [
+            1,
+            1,
+            1,
+            512
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 0.00146484375,
+          "meanAbsolute": 0.0003886222839355469,
+          "maxRelative": 5.117275918564701e-07,
+          "outsideTolerance": 0,
+          "elements": 512,
+          "passed": true
+        },
+        "off": {
+          "shape": [
+            1,
+            1,
+            1,
+            512
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 3.7550926208496094e-06,
+          "meanAbsolute": 1.589374733157456e-06,
+          "maxRelative": 1.3321499864105135e-05,
+          "outsideTolerance": 0,
+          "elements": 512,
+          "passed": true
+        }
+      },
+      "tensors": {
+        "input": {
+          "path": "shape-b1-t1-f2048.input.f32",
+          "sha256": "c6ba90408e403756960f41ec3d4149fe6e46e89d4e65d4f312c34e11e2c1bb1e",
+          "bytes": 8192,
+          "shape": [
+            1,
+            1,
+            1,
+            2048
+          ],
+          "dtype": "<f4"
+        },
+        "hm": {
+          "path": "shape-b1-t1-f2048.hm.reference.f32",
+          "sha256": "2180e9ea59607beff8d25d5ca7afe17e4edc690e535ca0a0ae83ac4ee7ad300b",
+          "bytes": 2048,
+          "shape": [
+            1,
+            1,
+            1,
+            512
+          ],
+          "dtype": "<f4"
+        },
+        "bw": {
+          "path": "shape-b1-t1-f2048.bw.reference.f32",
+          "sha256": "ae4cadcb16debe7ba0bf8cd4998b63d4617ae0018a0e325226e7d9ce7db169da",
+          "bytes": 2048,
+          "shape": [
+            1,
+            1,
+            1,
+            512
+          ],
+          "dtype": "<f4"
+        },
+        "off": {
+          "path": "shape-b1-t1-f2048.off.reference.f32",
+          "sha256": "344bddf125edf91cf52e96e0aec8475e5903d767d97811ab7a47fc136a2289b3",
+          "bytes": 2048,
+          "shape": [
+            1,
+            1,
+            1,
+            512
+          ],
+          "dtype": "<f4"
+        }
+      },
+      "inference": {
+        "milliseconds": 32.76260000075126,
+        "activationBytes": 4154368,
+        "profileIndex": 0,
+        "maximumProfileActivationBytes": 6028265472
+      },
+      "torchPeakAllocatedBytes": 26973184,
+      "passed": true
+    },
+    {
+      "shape": [
+        1,
+        1,
+        3,
+        8192
+      ],
+      "seed": 20261015,
+      "inputSha256": "4f18d4490985b5a4828bb9601c1e5b1fd2f0bf5bb26f391366d2105a4c2d69a9",
+      "heads": {
+        "hm": {
+          "shape": [
+            1,
+            1,
+            1,
+            2048
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 2.644956111907959e-07,
+          "meanAbsolute": 2.0251768262369296e-08,
+          "maxRelative": 6.324386049527675e-05,
+          "outsideTolerance": 0,
+          "elements": 2048,
+          "passed": true
+        },
+        "bw": {
+          "shape": [
+            1,
+            1,
+            1,
+            2048
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 0.00390625,
+          "meanAbsolute": 0.0009624958038330078,
+          "maxRelative": 5.601365273832926e-07,
+          "outsideTolerance": 0,
+          "elements": 2048,
+          "passed": true
+        },
+        "off": {
+          "shape": [
+            1,
+            1,
+            1,
+            2048
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 6.198883056640625e-06,
+          "meanAbsolute": 9.146532420345466e-09,
+          "maxRelative": 1.700191387499217e-05,
+          "outsideTolerance": 0,
+          "elements": 2048,
+          "passed": true
+        }
+      },
+      "tensors": {
+        "input": {
+          "path": "shape-b1-t3-f8192.input.f32",
+          "sha256": "4f18d4490985b5a4828bb9601c1e5b1fd2f0bf5bb26f391366d2105a4c2d69a9",
+          "bytes": 98304,
+          "shape": [
+            1,
+            1,
+            3,
+            8192
+          ],
+          "dtype": "<f4"
+        },
+        "hm": {
+          "path": "shape-b1-t3-f8192.hm.reference.f32",
+          "sha256": "b4d0085b337da80c541eefd8810df325c9040d5c2194a3a4985ed3c160a5aadc",
+          "bytes": 8192,
+          "shape": [
+            1,
+            1,
+            1,
+            2048
+          ],
+          "dtype": "<f4"
+        },
+        "bw": {
+          "path": "shape-b1-t3-f8192.bw.reference.f32",
+          "sha256": "abb97f5acbebbc74244565290e1aedddd7ba953e711f03470d38857913e57da1",
+          "bytes": 8192,
+          "shape": [
+            1,
+            1,
+            1,
+            2048
+          ],
+          "dtype": "<f4"
+        },
+        "off": {
+          "path": "shape-b1-t3-f8192.off.reference.f32",
+          "sha256": "313f64eb699f649e1b0400ff052e6d23747a7142092a24b0c6dbbed4e2c77136",
+          "bytes": 8192,
+          "shape": [
+            1,
+            1,
+            1,
+            2048
+          ],
+          "dtype": "<f4"
+        }
+      },
+      "inference": {
+        "milliseconds": 3.401099999791768,
+        "activationBytes": 19306496,
+        "profileIndex": 0,
+        "maximumProfileActivationBytes": 6028265472
+      },
+      "torchPeakAllocatedBytes": 32470016,
+      "passed": true
+    },
+    {
+      "shape": [
+        2,
+        1,
+        10,
+        65536
+      ],
+      "seed": 20261015,
+      "inputSha256": "a160401375f14260547723a3da8e2fd20d8aecd9aa0cc769fc57b5945f07e7ec",
+      "heads": {
+        "hm": {
+          "shape": [
+            2,
+            1,
+            1,
+            16384
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 1.0803341865539551e-07,
+          "meanAbsolute": 5.83119330599402e-09,
+          "maxRelative": 2.1838839529664256e-05,
+          "outsideTolerance": 0,
+          "elements": 32768,
+          "passed": true
+        },
+        "bw": {
+          "shape": [
+            2,
+            1,
+            1,
+            16384
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 0.0050048828125,
+          "meanAbsolute": 0.0019418415613472462,
+          "maxRelative": 0.00012590740516316146,
+          "outsideTolerance": 0,
+          "elements": 32768,
+          "passed": true
+        },
+        "off": {
+          "shape": [
+            2,
+            1,
+            1,
+            16384
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 2.7418136596679688e-06,
+          "meanAbsolute": 2.391343514318578e-07,
+          "maxRelative": 6.0029769883840345e-06,
+          "outsideTolerance": 0,
+          "elements": 32768,
+          "passed": true
+        }
+      },
+      "tensors": {
+        "input": {
+          "path": "shape-b2-t10-f65536.input.f32",
+          "sha256": "a160401375f14260547723a3da8e2fd20d8aecd9aa0cc769fc57b5945f07e7ec",
+          "bytes": 5242880,
+          "shape": [
+            2,
+            1,
+            10,
+            65536
+          ],
+          "dtype": "<f4"
+        },
+        "hm": {
+          "path": "shape-b2-t10-f65536.hm.reference.f32",
+          "sha256": "c22262e2df2ba75cd6f78467e0c0b4f2b5a0d6182cfd9c54b2c30c739b299f58",
+          "bytes": 131072,
+          "shape": [
+            2,
+            1,
+            1,
+            16384
+          ],
+          "dtype": "<f4"
+        },
+        "bw": {
+          "path": "shape-b2-t10-f65536.bw.reference.f32",
+          "sha256": "4bcf4727aa196839063db8039d706016d7747ba1b8fca02accc7d5a32f4649d3",
+          "bytes": 131072,
+          "shape": [
+            2,
+            1,
+            1,
+            16384
+          ],
+          "dtype": "<f4"
+        },
+        "off": {
+          "path": "shape-b2-t10-f65536.off.reference.f32",
+          "sha256": "84ba361041c44bb84dedc06f5d53061e7c7207831145e96f169e12e43267e6d4",
+          "bytes": 131072,
+          "shape": [
+            2,
+            1,
+            1,
+            16384
+          ],
+          "dtype": "<f4"
+        }
+      },
+      "inference": {
+        "milliseconds": 83.01100000062434,
+        "activationBytes": 932087808,
+        "profileIndex": 0,
+        "maximumProfileActivationBytes": 6028265472
+      },
+      "torchPeakAllocatedBytes": 948725248,
+      "passed": true
+    },
+    {
+      "shape": [
+        1,
+        1,
+        32,
+        2048
+      ],
+      "seed": 20261015,
+      "inputSha256": "dbf3ac2c231419a03931129f93fc2d800a871781bdcbffdb65a2c4995bd71efd",
+      "heads": {
+        "hm": {
+          "shape": [
+            1,
+            1,
+            1,
+            512
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 3.67872416973114e-08,
+          "meanAbsolute": 1.3079171079510843e-09,
+          "maxRelative": 3.286309220129624e-05,
+          "outsideTolerance": 0,
+          "elements": 512,
+          "passed": true
+        },
+        "bw": {
+          "shape": [
+            1,
+            1,
+            1,
+            512
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 0.0009632110595703125,
+          "meanAbsolute": 9.855511598289013e-05,
+          "maxRelative": 0.0006977015291340649,
+          "outsideTolerance": 0,
+          "elements": 512,
+          "passed": true
+        },
+        "off": {
+          "shape": [
+            1,
+            1,
+            1,
+            512
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 5.5730342864990234e-06,
+          "meanAbsolute": 2.2852327674627304e-07,
+          "maxRelative": 1.3552485143009108e-05,
+          "outsideTolerance": 0,
+          "elements": 512,
+          "passed": true
+        }
+      },
+      "tensors": {
+        "input": {
+          "path": "shape-b1-t32-f2048.input.f32",
+          "sha256": "dbf3ac2c231419a03931129f93fc2d800a871781bdcbffdb65a2c4995bd71efd",
+          "bytes": 262144,
+          "shape": [
+            1,
+            1,
+            32,
+            2048
+          ],
+          "dtype": "<f4"
+        },
+        "hm": {
+          "path": "shape-b1-t32-f2048.hm.reference.f32",
+          "sha256": "42fc84688712861c522b74deac2551e4436306a92207167fa10877c1b64120de",
+          "bytes": 2048,
+          "shape": [
+            1,
+            1,
+            1,
+            512
+          ],
+          "dtype": "<f4"
+        },
+        "bw": {
+          "path": "shape-b1-t32-f2048.bw.reference.f32",
+          "sha256": "65d70e2c5c21bb0819c6c1e5b15898a16abf25143ca6548909a87777f820802f",
+          "bytes": 2048,
+          "shape": [
+            1,
+            1,
+            1,
+            512
+          ],
+          "dtype": "<f4"
+        },
+        "off": {
+          "path": "shape-b1-t32-f2048.off.reference.f32",
+          "sha256": "f095bf5c99c98955e88af4be51755e4f984b9358793bec1c0f20fd7f46396921",
+          "bytes": 2048,
+          "shape": [
+            1,
+            1,
+            1,
+            512
+          ],
+          "dtype": "<f4"
+        }
+      },
+      "inference": {
+        "milliseconds": 4.513900000347348,
+        "activationBytes": 48203776,
+        "profileIndex": 0,
+        "maximumProfileActivationBytes": 6028265472
+      },
+      "torchPeakAllocatedBytes": 59473408,
+      "passed": true
+    },
+    {
+      "shape": [
+        1,
+        1,
+        1,
+        131072
+      ],
+      "seed": 20261015,
+      "inputSha256": "79f9e8753a0698c5f08628db8d27f80dc44d0cc990a925837e7c94c9ed18be07",
+      "heads": {
+        "hm": {
+          "shape": [
+            1,
+            1,
+            1,
+            32768
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 4.511093720793724e-10,
+          "meanAbsolute": 4.859563272618939e-12,
+          "maxRelative": 1.5765801435918547e-05,
+          "outsideTolerance": 0,
+          "elements": 32768,
+          "passed": true
+        },
+        "bw": {
+          "shape": [
+            1,
+            1,
+            1,
+            32768
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 0.001953125,
+          "meanAbsolute": 0.0002692863345146179,
+          "maxRelative": 5.920240937484778e-07,
+          "outsideTolerance": 0,
+          "elements": 32768,
+          "passed": true
+        },
+        "off": {
+          "shape": [
+            1,
+            1,
+            1,
+            32768
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 4.589557647705078e-06,
+          "meanAbsolute": 1.1063057172577828e-06,
+          "maxRelative": 8.933916433306877e-06,
+          "outsideTolerance": 0,
+          "elements": 32768,
+          "passed": true
+        }
+      },
+      "tensors": {
+        "input": {
+          "path": "shape-b1-t1-f131072.input.f32",
+          "sha256": "79f9e8753a0698c5f08628db8d27f80dc44d0cc990a925837e7c94c9ed18be07",
+          "bytes": 524288,
+          "shape": [
+            1,
+            1,
+            1,
+            131072
+          ],
+          "dtype": "<f4"
+        },
+        "hm": {
+          "path": "shape-b1-t1-f131072.hm.reference.f32",
+          "sha256": "b9870c89f078cb6577fcf9f0a8534837ba4cf6c4dd021e8549758b7026c5a532",
+          "bytes": 131072,
+          "shape": [
+            1,
+            1,
+            1,
+            32768
+          ],
+          "dtype": "<f4"
+        },
+        "bw": {
+          "path": "shape-b1-t1-f131072.bw.reference.f32",
+          "sha256": "0a0940d25d67f1ebda4a8e05f8e9f4a26eca2d51c48d2746e38e59f8071b0958",
+          "bytes": 131072,
+          "shape": [
+            1,
+            1,
+            1,
+            32768
+          ],
+          "dtype": "<f4"
+        },
+        "off": {
+          "path": "shape-b1-t1-f131072.off.reference.f32",
+          "sha256": "c74b499d2f3a573aa6a3a241a078182c63714a6d6ce32638db44629b730721c9",
+          "bytes": 131072,
+          "shape": [
+            1,
+            1,
+            1,
+            32768
+          ],
+          "dtype": "<f4"
+        }
+      },
+      "inference": {
+        "milliseconds": 12.384799999381357,
+        "activationBytes": 103635456,
+        "profileIndex": 1,
+        "maximumProfileActivationBytes": 6028265472
+      },
+      "torchPeakAllocatedBytes": 115554304,
+      "passed": true
+    }
+  ],
+  "seconds": 1.385181100000409,
+  "staging": {
+    "outputBin": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\R2\\local-builds\\dynamic-package",
+    "manifest": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\R2\\local-builds\\dynamic-package\\detection-models\\ffscn-gui-iq-v1\\manifest.json",
+    "manifestSha256": "776ebd3261c063567e443f5b96d5c93a8e50449d9d491bb1242f8c7bf2575786",
+    "engineSha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03",
+    "scope": "FFSCN engine and manifest only; SCN and DLLs untouched"
+  }
+}

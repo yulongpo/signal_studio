@@ -252,7 +252,7 @@ bool decodeProductionResults(const DetectionRequest& request,
                              QJsonArray& target, QString& error) {
   const auto payload = response.envelope["payload"].toObject();
   const auto windows = payload["windows"].toArray();
-  const auto width = request.profile.fftSize / 4;
+  const auto width = detectionModelInputBins(request) / 4;
   const auto shape = response.envelope["binary"].toObject()["shape"].toArray();
   if (payload["candidateEncoding"] != "raw-heads-v1" || windows.isEmpty() ||
       windows.size() > 2 ||
@@ -267,7 +267,7 @@ bool decodeProductionResults(const DetectionRequest& request,
   config.kind = request.profile.backend == DetectionBackendKind::Scn
                     ? DetectionDecoderKind::ScnThreeBin
                     : DetectionDecoderKind::FfscnSevenBin;
-  config.inputBins = request.profile.fftSize;
+  config.inputBins = detectionModelInputBins(request);
   config.scoreThreshold = request.parameters.scoreThreshold;
   config.nmsIou = request.parameters.nmsIou;
   config.topK = request.parameters.topK;
@@ -295,12 +295,21 @@ bool decodeProductionResults(const DetectionRequest& request,
       return false;
     }
     QJsonArray encoded;
-    for (const auto& candidate : candidates)
+    for (const auto& candidate : candidates) {
+      const auto scale = detectionModelBinScale(request);
+      const auto lower = std::clamp(candidate.lowerBin * scale, 0.0,
+                                    double(request.profile.fftSize - 1));
+      const auto upper = std::clamp(candidate.upperBin * scale, 0.0,
+                                    double(request.profile.fftSize - 1));
+      if (upper <= lower ||
+          candidate.peakIndex * scale >= request.profile.fftSize / 4.0)
+        continue;
       encoded.append(
-          QJsonObject{{"lowerBin", candidate.lowerBin},
-                      {"upperBin", candidate.upperBin},
+          QJsonObject{{"lowerBin", lower},
+                      {"upperBin", upper},
                       {"score", candidate.score},
                       {"peakIndex", QString::number(candidate.peakIndex)}});
+    }
     results.append(
         QJsonObject{{"windowId", window["windowId"]}, {"candidates", encoded}});
   }
@@ -321,7 +330,8 @@ QJsonArray encodeCandidates(const std::vector<DecodedCandidate>& values) {
   return result;
 }
 bool postprocessScnResults(const std::vector<DetectionModelWindow>& windows,
-                           const DetectionSourcePlan& plan, QJsonArray& results,
+                           const DetectionSourcePlan& plan,
+                           const DetectionRequest& request, QJsonArray& results,
                            QJsonArray& mappings, QString& error,
                            const PostprocessCancellation& cancelled) {
   if (results.size() != static_cast<qsizetype>(windows.size())) {
@@ -345,7 +355,8 @@ bool postprocessScnResults(const std::vector<DetectionModelWindow>& windows,
             windows[static_cast<std::size_t>(index)].densityDb,
             plan.config.modelFrames, plan.config.fftSize, raw,
             plan.frequencyFirstBinHz, plan.frequencyStepHz, processed, issue,
-            cancelled)) {
+            cancelled, detectionModelInputBins(request) / 4,
+            request.spectrumMode)) {
       error = QString::fromStdString(issue);
       return false;
     }
@@ -382,7 +393,9 @@ bool postprocessScnResults(const std::vector<DetectionModelWindow>& windows,
         {"fusionOverlapRatio", .5},
         {"fusionGapHz", 0},
         {"candidateCap", 150},
-        {"meanSpectrumInferenceCalls", 0},
+        {"meanSpectrumInferenceCalls",
+         request.spectrumMode == DetectionSpectrumMode::Mean ? 1 : 0},
+        {"inputSpectrumMode", static_cast<int>(request.spectrumMode)},
         {"rawCandidates", encodeCandidates(raw)},
         {"measurements", measurements},
         {"unfilteredFused", encodeCandidates(processed.unfilteredFused)},
@@ -999,9 +1012,11 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         return;
       }
       mappings.append(mapping(window, plan));
-      const auto& input = request.profile.maximumPsdOnly
-                              ? window.densityDb
-                              : window.normalizedTensor;
+      const auto& input =
+          request.profile.maximumPsdOnly ||
+                  request.spectrumMode != DetectionSpectrumMode::ModelDefault
+              ? window.densityDb
+              : window.normalizedTensor;
       tensor.insert(tensor.end(), input.begin(), input.end());
       windows.push_back(std::move(window));
     }
@@ -1068,8 +1083,8 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     if (!fixture &&
         (!decodeProductionResults(request, response, results, error) ||
          (request.profile.backend == DetectionBackendKind::Scn &&
-          !postprocessScnResults(windows, plan, results, mappings, error,
-                                 cancelled)) ||
+          !postprocessScnResults(windows, plan, request, results, mappings,
+                                 error, cancelled)) ||
          !storeDetectionHeadEvidence(job->directory, request, response,
                                      mappings, error) ||
          !projector.consume(results, mappings, error, cancelled))) {

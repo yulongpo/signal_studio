@@ -119,6 +119,7 @@ bool DetectionResultProjector::consume(
       config.runId = request_.runId;
       config.fileId = request_.sourceIdentity.fileId;
       config.inputBins = request_.profile.fftSize;
+      config.peakIndexLimit = detectionModelInputBins(request_) / 4;
       config.firstBinHz = first;
       config.binWidthHz = step;
       config.minHits = request_.parameters.minHits;
@@ -174,7 +175,7 @@ bool DetectionResultProjector::consume(
       if (candidate.size() != 4 || !candidate["lowerBin"].isDouble() ||
           !candidate["upperBin"].isDouble() || !candidate["score"].isDouble() ||
           !workerUnsigned(candidate["peakIndex"], peakIndex, error) ||
-          peakIndex >= request_.profile.fftSize / 4) {
+          peakIndex >= detectionModelInputBins(request_) / 4) {
         error = "Unsupported production candidate fields";
         return false;
       }

@@ -31,7 +31,8 @@ bool freezeDetectionModelSnapshot(DetectionRequest& request, QString& error) {
   const auto hash = engine["sha256"].toString();
   const auto engineName = engine["path"].toString();
   if (parseError.error != QJsonParseError::NoError || !document.isObject() ||
-      manifest["schema"] != "signalstudio-detection-model-package-v1" ||
+      (manifest["schema"] != "signalstudio-detection-model-package-v1" &&
+       manifest["schema"] != "signalstudio-detection-model-package-v2") ||
       manifest["profileId"] != QString::fromStdString(request.profile.id) ||
       manifest["profileVersion"].toInt() !=
           static_cast<int>(request.profile.version) ||

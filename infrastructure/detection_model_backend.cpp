@@ -68,6 +68,23 @@ bool sameShape(const QJsonArray& array, const std::array<int, 4>& shape) {
       return false;
   return true;
 }
+
+void interpolateFrequency(const float* source, std::size_t bins, float* target,
+                          std::size_t modelBins) {
+  if (bins == modelBins) {
+    std::copy_n(source, bins, target);
+    return;
+  }
+  const double scale = static_cast<double>(bins) / modelBins;
+  for (std::size_t bin = 0; bin < modelBins; ++bin) {
+    const double position = std::min(bin * scale, double(bins - 1));
+    const auto left = static_cast<std::size_t>(position);
+    const auto right = std::min(left + 1, bins - 1);
+    target[bin] = static_cast<float>(source[left] +
+                                     (source[right] - double(source[left])) *
+                                         (position - left));
+  }
+}
 }  // namespace
 
 bool validateDetectionModelMemory(const DetectionModelMemoryUsage& usage,
@@ -105,7 +122,7 @@ bool validateDetectionModelMemory(const DetectionModelMemoryUsage& usage,
 bool prepareDetectionModelInput(const DetectionRequest& request,
                                 const std::vector<float>& sourceFrames,
                                 std::uint32_t batch, std::vector<float>& input,
-                                QString& error) {
+                                QString& error, std::uint32_t actualFrames) {
   const bool scn = request.profile.backend == DetectionBackendKind::Scn;
   if ((request.profile.id != "ffscn-gui-iq-v1" &&
        request.profile.id != "scn-max-psd-v1") ||
@@ -114,44 +131,99 @@ bool prepareDetectionModelInput(const DetectionRequest& request,
   const auto* registered = findDetectionProfile(request.profile.id);
   if (!registered || request.profile.version != registered->version ||
       request.profile.backend != registered->backend ||
-      request.profile.fftSize != registered->fftSize ||
-      request.profile.modelFrames != registered->modelFrames ||
       request.profile.maximumPsdOnly != registered->maximumPsdOnly)
     return fail(error,
                 "Model tensor profile differs from the registered shape");
   const std::size_t bins = request.profile.fftSize;
-  const std::size_t frames = request.profile.modelFrames;
+  const std::size_t frames =
+      actualFrames ? actualFrames : request.profile.modelFrames;
+  const std::size_t modelBins = detectionModelInputBins(request);
+  if (!bins || bins > 262144 || !frames ||
+      frames > request.profile.modelFrames || modelBins > 262144 ||
+      modelBins < detectionModelMinimumBins(request) ||
+      (modelBins & (modelBins - 1)) != 0)
+    return fail(error, "Analysis input dimensions are invalid");
   const auto expected = static_cast<std::size_t>(batch) * bins * frames;
-  const auto outputElements = scn ? batch * bins : expected;
+  const auto outputElements = static_cast<std::size_t>(batch) * modelBins *
+                              detectionModelTensorFrames(request, frames);
+  const auto temporaryElements =
+      scn || request.spectrumMode != DetectionSpectrumMode::ModelDefault ? bins
+                                                                         : 0;
   if (sourceFrames.size() != expected ||
-      (expected + outputElements) * sizeof(float) >
+      (expected + outputElements + temporaryElements) * sizeof(float) >
           request.workingSetBudgetBytes)
     return fail(error, "Model input shape or working-set budget is invalid");
   if (!std::all_of(sourceFrames.begin(), sourceFrames.end(),
                    [](float value) { return std::isfinite(value); }))
     return fail(error, "Model input contains a non-finite spectrum value");
-  std::vector<float> prepared(outputElements);
-  if (!scn) {
-    prepared = sourceFrames;
+  std::vector<float> prepared(outputElements, 0);
+  if (!scn && request.spectrumMode == DetectionSpectrumMode::ModelDefault) {
+    // Interpolation covers the original physical band. It does not add real
+    // frequency resolution or fabricate temporal observations.
+    for (std::size_t row = 0; row < batch * frames; ++row)
+      interpolateFrequency(sourceFrames.data() + row * bins, bins,
+                           prepared.data() + row * modelBins, modelBins);
   } else {
     for (std::size_t item = 0; item < batch; ++item) {
       const auto source = item * frames * bins;
-      const auto target = item * bins;
-      for (std::size_t bin = 0; bin < bins; ++bin) {
-        float maximum = sourceFrames[source + bin];
-        for (std::size_t frame = 1; frame < frames; ++frame)
-          maximum =
-              std::max(maximum, sourceFrames[source + frame * bins + bin]);
-        prepared[target + bin] = maximum;
+      const auto target = item * modelBins;
+      std::vector<float> selected;
+      std::string issue;
+      if (!selectDetectionSpectrum(std::span<const float>(sourceFrames)
+                                       .subspan(source, frames * bins),
+                                   bins, request.spectrumMode, selected, issue))
+        return fail(error, QString::fromStdString(issue));
+      if (!scn) {
+        double mean = 0, square = 0;
+        std::size_t count = 0;
+        for (const auto value : selected) {
+          const double delta = value - mean;
+          mean += delta / ++count;
+          square += delta * (value - mean);
+        }
+        const double deviation =
+            std::max(std::sqrt(std::max(
+                         0.0, square / std::max<std::size_t>(1, count - 1))),
+                     double(std::numeric_limits<float>::epsilon()));
+        for (auto& value : selected)
+          value = static_cast<float>((value - mean) / deviation);
+        interpolateFrequency(selected.data(), bins, prepared.data() + target,
+                             modelBins);
+        continue;
+      }
+      if (modelBins == bins) {
+        std::copy(selected.begin(), selected.end(), prepared.begin() + target);
+      } else {
+        // Integrate linear power over each destination cell. Subtracting a
+        // common dB reference prevents overflow without changing normalization.
+        const double reference =
+            *std::max_element(selected.begin(), selected.end());
+        const double scale = static_cast<double>(bins) / modelBins;
+        for (std::size_t bin = 0; bin < modelBins; ++bin) {
+          const double left = bin * scale, right = (bin + 1) * scale;
+          double power = 0;
+          for (auto index = static_cast<std::size_t>(left);
+               index <
+               std::min(bins, static_cast<std::size_t>(std::ceil(right)));
+               ++index) {
+            const double overlap =
+                std::max(0.0, std::min(right, double(index + 1)) -
+                                  std::max(left, double(index)));
+            power +=
+                overlap * std::pow(10.0, (selected[index] - reference) / 10);
+          }
+          prepared[target + bin] = static_cast<float>(
+              reference + 10 * std::log10(std::max(power / scale, 1e-300)));
+        }
       }
       const auto begin = prepared.begin() + target;
-      const auto [lower, upper] = std::minmax_element(begin, begin + bins);
+      const auto [lower, upper] = std::minmax_element(begin, begin + modelBins);
       const float minimum = *lower;
       const float span =
           std::max(*upper - minimum, std::numeric_limits<float>::epsilon());
       if (!std::isfinite(span))
-        return fail(error, "SCN maximum-spectrum minmax span is not finite");
-      for (std::size_t bin = 0; bin < bins; ++bin)
+        return fail(error, "SCN selected-spectrum minmax span is not finite");
+      for (std::size_t bin = 0; bin < modelBins; ++bin)
         prepared[target + bin] = (prepared[target + bin] - minimum) / span;
     }
   }
@@ -172,8 +244,6 @@ bool validateDetectionModelPackage(const DetectionRequest& request,
   const auto* registered = findDetectionProfile(request.profile.id);
   if (!registered || request.profile.version != registered->version ||
       request.profile.backend != registered->backend ||
-      request.profile.fftSize != registered->fftSize ||
-      request.profile.modelFrames != registered->modelFrames ||
       request.profile.maximumPsdOnly != registered->maximumPsdOnly ||
       request.parameters.batchSize < 1 || request.parameters.batchSize > 2)
     return fail(error, "Production model request shape is not registered");
@@ -198,7 +268,21 @@ bool validateDetectionModelPackage(const DetectionRequest& request,
                                          : std::array<int, 4>{1, 1, 10, 65536};
   auto maximum = minimum;
   maximum[0] = scn ? 1 : 2;
-  if (object["schema"] != "signalstudio-detection-model-package-v1" ||
+  const bool dynamic =
+      !scn && object["schema"] == "signalstudio-detection-model-package-v2" &&
+      object["adaptationVersion"] == 2 &&
+      object["checkpointSha256"] ==
+          "acd997957dd85b7fc560897874b575d4776e80270d7e377d1de7559e513e40e0";
+  const auto declaredMin = input["minShape"].toArray();
+  const auto declaredMax = input["maxShape"].toArray();
+  const bool dynamicShape =
+      dynamic && declaredMin == QJsonArray{1, 1, 1, 2048} &&
+      input["downNums"] == 11 && input["frequencyPowerOfTwo"] == true &&
+      declaredMax.size() == 4 && declaredMax[0].toInt() >= 1 &&
+      declaredMax[1] == 1 && declaredMax[2].toInt() >= 1 &&
+      declaredMax[3].toInt() >= 2048;
+  if ((!dynamic &&
+       object["schema"] != "signalstudio-detection-model-package-v1") ||
       object["profileId"] != QString::fromStdString(request.profile.id) ||
       object["profileVersion"].toDouble() != request.profile.version ||
       object["precision"] != "FP32" || runtime["tensorRt"] != "10.11.0.33" ||
@@ -209,10 +293,11 @@ bool validateDetectionModelPackage(const DetectionRequest& request,
       runtime["gpu"] != "NVIDIA GeForce RTX 5060 Laptop GPU" ||
       input["dtype"] != "float32" || input["layout"] != "contiguous-NCHW" ||
       input["name"] != (scn ? "resnet_32_input:0" : "spectrum") ||
-      !sameShape(input["minShape"].toArray(), minimum) ||
-      !sameShape(input["maxShape"].toArray(), maximum) || heads.size() != 3 ||
-      !plainFileName(engine["path"].toString()) ||
-      engine["sha256"] != (scn ? kScnSha : kFfscnSha))
+      (dynamic ? !dynamicShape
+               : (!sameShape(declaredMin, minimum) ||
+                  !sameShape(declaredMax, maximum))) ||
+      heads.size() != 3 || !plainFileName(engine["path"].toString()) ||
+      (!dynamic && engine["sha256"] != (scn ? kScnSha : kFfscnSha)))
     return fail(error,
                 "Model manifest identity/runtime/precision/shape differs "
                 "from the frozen production contract");
@@ -225,7 +310,9 @@ bool validateDetectionModelPackage(const DetectionRequest& request,
                            : std::array<int, 4>{0, 1, 1, 16384};
     if (head["semantic"] != QStringList{"hm", "bw", "off"}[index] ||
         head["name"] != names[index] || head["dtype"] != "float32" ||
-        !sameShape(head["shape"].toArray(), shape))
+        (dynamic
+             ? (head["shape"] != QJsonArray{0, 1, 1, 0} || head["stride"] != 4)
+             : !sameShape(head["shape"].toArray(), shape)))
       return fail(error, "Model output head contract is invalid");
   }
   if (request.modelSha256.empty() ||
@@ -296,6 +383,7 @@ class DetectionModelBackend::Impl {
   std::array<QString, 3> headNames;
   QString inputName;
   std::uint32_t maximumBatch = 2;
+  std::uint32_t modelBins = 0, maximumFrames = 0;
   std::size_t workspaceBytes = 0;
   std::uint64_t streamDrainCount = 0;
 
@@ -443,10 +531,23 @@ class DetectionModelBackend::Impl {
     if (!checkCuda(setDevice(selected), "cudaSetDevice", error)) return false;
     const bool scn = request.profile.backend == DetectionBackendKind::Scn;
     const auto physicalBatch = scn ? 1 : request.parameters.batchSize;
+    modelBins = detectionModelInputBins(request);
+    const auto hop =
+        std::max(1.0, std::floor(request.sourceIdentity.sampleRateHz *
+                                 request.profile.hopSeconds));
+    const auto availableFrames = static_cast<std::uint64_t>(
+        std::ceil(request.sourceIdentity.availableSamples / hop));
+    maximumFrames = request.sourceIdentity.availableSamples &&
+                            request.sourceIdentity.sampleRateHz > 0
+                        ? static_cast<std::uint32_t>(std::min<std::uint64_t>(
+                              request.profile.modelFrames,
+                              std::max<std::uint64_t>(1, availableFrames)))
+                        : request.profile.modelFrames;
     const auto minimumDeviceBytes =
         static_cast<std::uint64_t>(physicalBatch) *
-        (request.profile.fftSize * (scn ? 1 : request.profile.modelFrames) +
-         3 * (request.profile.fftSize / 4)) *
+        (static_cast<std::uint64_t>(modelBins) *
+             detectionModelTensorFrames(request, maximumFrames) +
+         3ULL * (modelBins / 4)) *
         sizeof(float);
     if (minimumDeviceBytes > limits.maximumDeviceBytes)
       return fail(error,
@@ -495,34 +596,72 @@ class DetectionModelBackend::Impl {
                   "Engine input is not the frozen contiguous float32 tensor");
     maximumBatch = scn ? 1 : request.parameters.batchSize;
     const auto shape = scn ? nvinfer1::Dims4(maximumBatch, 32768, 1, 1)
-                           : nvinfer1::Dims4(maximumBatch, 1, 10, 65536);
+                           : nvinfer1::Dims4(maximumBatch, 1,
+                                             detectionModelTensorFrames(
+                                                 request, maximumFrames),
+                                             modelBins);
+    int selectedProfile = -1;
+    for (int profile = 0; profile < engine->getNbOptimizationProfiles();
+         ++profile) {
+      const auto minimum = engine->getProfileShape(
+          inputUtf8.constData(), profile, nvinfer1::OptProfileSelector::kMIN);
+      const auto maximum = engine->getProfileShape(
+          inputUtf8.constData(), profile, nvinfer1::OptProfileSelector::kMAX);
+      bool fits = minimum.nbDims == 4 && maximum.nbDims == 4;
+      for (int dimension = 0; fits && dimension < 4; ++dimension)
+        fits = shape.d[dimension] >= minimum.d[dimension] &&
+               shape.d[dimension] <= maximum.d[dimension];
+      if (fits) {
+        selectedProfile = profile;
+        break;
+      }
+    }
+    if (selectedProfile < 0)
+      return fail(error,
+                  QString("Installed model package cannot execute the actual "
+                          "tensor [%1,%2,%3,%4]; rebuild its resource profiles")
+                      .arg(shape.d[0])
+                      .arg(shape.d[1])
+                      .arg(shape.d[2])
+                      .arg(shape.d[3]));
+    if (!checkCuda(createStream(&stream), "cudaStreamCreate", error) ||
+        !context->setOptimizationProfileAsync(selectedProfile, stream) ||
+        !checkCuda(synchronize(stream), "profile initialization", error))
+      return fail(error,
+                  "Cannot select the actual model resource profile: " + error);
     if (!context->setInputShape(inputUtf8.constData(), shape))
       return fail(error,
                   "Engine does not accept the frozen maximum batch shape");
     const auto workspace = context->updateDeviceMemorySizeForShapes();
+    if (workspace < 0) return fail(error, "Cannot size actual model workspace");
     if (!contiguousTensor(inputUtf8, shape, nvinfer1::TensorIOMode::kINPUT,
                           error))
       return false;
     workspaceBytes = workspace;
-    const std::size_t inputBytes = static_cast<std::size_t>(maximumBatch) *
-                                   request.profile.fftSize * (scn ? 1 : 10) *
-                                   sizeof(float);
+    const std::size_t inputBytes =
+        static_cast<std::size_t>(maximumBatch) * modelBins *
+        detectionModelTensorFrames(request, maximumFrames) * sizeof(float);
     const std::size_t headBytes = static_cast<std::size_t>(maximumBatch) *
-                                  (request.profile.fftSize / 4) * sizeof(float);
+                                  (modelBins / 4) * sizeof(float);
     const std::size_t allocationBytes = inputBytes + 3 * headBytes + workspace;
     const auto logicalBatch =
         static_cast<std::size_t>(request.parameters.batchSize);
-    const auto sourceBytes = logicalBatch * request.profile.fftSize *
-                             request.profile.modelFrames * sizeof(float);
-    const auto preparedBytes = logicalBatch * request.profile.fftSize *
-                               (scn ? 1 : request.profile.modelFrames) *
-                               sizeof(float);
+    const auto sourceBytes =
+        logicalBatch * request.profile.fftSize * maximumFrames * sizeof(float);
+    const auto preparedBytes =
+        logicalBatch * modelBins *
+        detectionModelTensorFrames(request, maximumFrames) * sizeof(float);
     const auto logicalHeadBytes =
-        logicalBatch * (request.profile.fftSize / 4) * sizeof(float);
+        logicalBatch * (modelBins / 4) * sizeof(float);
     // Source, prepared input and four complete hm/bw/off host copies cover
     // output, packed heads, binary payload and framed response in the worker.
+    const auto temporaryBytes =
+        scn || request.spectrumMode != DetectionSpectrumMode::ModelDefault
+            ? request.profile.fftSize * sizeof(float)
+            : 0;
     const auto hostWorkingSet =
-        sourceBytes + preparedBytes + 12 * logicalHeadBytes;
+        sourceBytes + preparedBytes +
+        std::max<std::size_t>(12 * logicalHeadBytes, temporaryBytes);
     std::size_t freeBytes = 0;
     std::size_t totalBytes = 0;
     if (!checkCuda(memoryInfo(&freeBytes, &totalBytes), "cudaMemGetInfo",
@@ -551,18 +690,17 @@ class DetectionModelBackend::Impl {
     for (int index = 0; index < 3; ++index) {
       headNames[index] = heads[index].toObject()["name"].toString();
       const auto name = headNames[index].toUtf8();
-      const auto expected = scn ? nvinfer1::Dims4(maximumBatch, 8192, 1, 1)
-                                : nvinfer1::Dims4(maximumBatch, 1, 1, 16384);
+      const auto expected =
+          scn ? nvinfer1::Dims4(maximumBatch, 8192, 1, 1)
+              : nvinfer1::Dims4(maximumBatch, 1, 1, modelBins / 4);
       if (!contiguousTensor(name, expected, nvinfer1::TensorIOMode::kOUTPUT,
                             error))
         return false;
       if (!context->setTensorAddress(name.constData(), memory[index + 1]))
         return fail(error, "Cannot bind model output head");
     }
-    if (!checkCuda(createStream(&stream), "cudaStreamCreate", error))
-      return false;
     evidence = {
-        {"backend", scn ? "scn-maximum-tensorrt" : "ffscn-tensorrt"},
+        {"backend", scn ? "scn-tensorrt" : "ffscn-tensorrt"},
         {"modelSha256", manifest["engine"].toObject()["sha256"]},
         {"manifestSha256", manifest["manifestSha256"]},
         {"profileId", QString::fromStdString(request.profile.id)},
@@ -575,10 +713,24 @@ class DetectionModelBackend::Impl {
         {"deviceIndex", selected},
         {"computeCapability", QJsonArray{12, 0}},
         {"engineMaximumBatch", static_cast<int>(maximumBatch)},
+        {"optimizationProfile", selectedProfile},
         {"logicalMaximumBatch", static_cast<int>(request.parameters.batchSize)},
         {"modelInputKind",
-         scn ? "maximum-of-16-psd-minmax" : "10-psd-global-zscore"},
+         scn ? "selected-psd-minmax" : "selected-psd-global-zscore"},
+        {"inputAdaptationVersion",
+         static_cast<int>(request.inputAdaptationVersion)},
+        {"analysisBins", static_cast<int>(request.profile.fftSize)},
+        {"modelBins", static_cast<int>(modelBins)},
+        {"minimumModelBins",
+         static_cast<int>(detectionModelMinimumBins(request))},
+        {"frequencyBinScale", detectionModelBinScale(request)},
+        {"frequencyAdaptation", request.profile.fftSize == modelBins
+                                    ? "identity"
+                                    : (scn ? "linear-power-cell-rebin"
+                                           : "linear-frequency-interpolation")},
+        {"actualMaximumFrames", static_cast<int>(maximumFrames)},
         {"meanSpectrumInferenceCalls", 0},
+        {"spectrumMode", static_cast<int>(request.spectrumMode)},
         {"boundedDeviceBytes", QString::number(allocationBytes)},
         {"deviceWorkspaceBytes", QString::number(workspace)},
         {"deviceInputBytes", QString::number(inputBytes)},
@@ -598,13 +750,22 @@ class DetectionModelBackend::Impl {
   }
 
   bool forward(const std::vector<float>& sourceFrames, std::uint32_t batch,
-               DetectionModelOutput& result, QString& error) {
+               DetectionModelOutput& result, QString& error,
+               std::uint32_t actualFrames) {
+    const auto frames =
+        actualFrames ? actualFrames : request.profile.modelFrames;
+    if (!frames || frames > maximumFrames)
+      return fail(error, "Actual model window exceeds its planned allocation");
     std::vector<float> input;
-    if (!prepareDetectionModelInput(request, sourceFrames, batch, input, error))
+    if (!prepareDetectionModelInput(request, sourceFrames, batch, input, error,
+                                    frames))
       return false;
     const bool scn = request.profile.backend == DetectionBackendKind::Scn;
-    const auto shape = scn ? nvinfer1::Dims4(1, 32768, 1, 1)
-                           : nvinfer1::Dims4(batch, 1, 10, 65536);
+    const auto shape =
+        scn ? nvinfer1::Dims4(1, 32768, 1, 1)
+            : nvinfer1::Dims4(batch, 1,
+                              detectionModelTensorFrames(request, frames),
+                              modelBins);
     if (!context->setInputShape(inputName.toUtf8().constData(), shape))
       return fail(error, "Cannot prepare the requested model batch shape");
     if (context->updateDeviceMemorySizeForShapes() > workspaceBytes)
@@ -612,14 +773,16 @@ class DetectionModelBackend::Impl {
                   "Model batch workspace exceeds the bounded allocation");
     DetectionModelOutput output;
     output.batch = batch;
-    output.width = request.profile.fftSize / 4;
+    output.inputBins = modelBins;
+    output.actualFrames = frames;
+    output.width = modelBins / 4;
     const auto elements = static_cast<std::size_t>(batch) * output.width;
     output.hm.resize(elements);
     output.bw.resize(elements);
     output.off.resize(elements);
     StreamDrain drain(*this);
     const std::uint32_t calls = scn ? batch : 1;
-    const auto inputElements = scn ? request.profile.fftSize : input.size();
+    const auto inputElements = scn ? modelBins : input.size();
     const auto outputElements = scn ? output.width : elements;
     for (std::uint32_t call = 0; call < calls; ++call) {
       if (!checkCuda(copy(memory[0], input.data() + call * inputElements,
@@ -650,6 +813,13 @@ class DetectionModelBackend::Impl {
                        [](float value) { return std::isfinite(value); }))
         return fail(error, "Model returned a non-finite output head");
     result = std::move(output);
+    evidence["lastActualFrames"] = static_cast<int>(frames);
+    evidence["lastTensorFrames"] =
+        static_cast<int>(detectionModelTensorFrames(request, frames));
+    if (request.spectrumMode == DetectionSpectrumMode::Mean)
+      evidence["meanSpectrumInferenceCalls"] =
+          evidence["meanSpectrumInferenceCalls"].toInt() +
+          static_cast<int>(calls);
     return true;
   }
 #endif
@@ -697,15 +867,16 @@ bool DetectionModelBackend::load(const DetectionRequest& request,
 }
 bool DetectionModelBackend::infer(const std::vector<float>& sourceFrames,
                                   std::uint32_t batch,
-                                  DetectionModelOutput& output,
-                                  QString& error) {
+                                  DetectionModelOutput& output, QString& error,
+                                  std::uint32_t actualFrames) {
   if (!impl_) return fail(error, "Production model has not passed preflight");
 #ifdef SS_DETECTION_TENSORRT
-  return impl_->forward(sourceFrames, batch, output, error);
+  return impl_->forward(sourceFrames, batch, output, error, actualFrames);
 #else
   Q_UNUSED(sourceFrames);
   Q_UNUSED(batch);
   Q_UNUSED(output);
+  Q_UNUSED(actualFrames);
   return fail(error, "TensorRT production backend is unavailable");
 #endif
 }

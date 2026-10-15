@@ -27,6 +27,7 @@ struct HeadView {
 struct DetectionDecoderConfig {
   DetectionDecoderKind kind = DetectionDecoderKind::FfscnSevenBin;
   std::size_t inputBins = 65536;
+  std::size_t validInputBins = 0;  // Zero means all model bins are physical.
   double scoreThreshold = .7;
   double nmsIou = .3;
   std::size_t topK = 512;
@@ -106,6 +107,9 @@ struct FrequencyTrackerLimits {
 struct FrequencyTrackerConfig {
   std::string runId, fileId;
   std::size_t inputBins = 65536;
+  // Peak identity belongs to the model grid, independently of source-bin
+  // coordinates. Zero retains the historical inputBins/4 convention.
+  std::size_t peakIndexLimit = 0;
   double firstBinHz = 0, binWidthHz = 0;
   double matchIou = .3;
   std::uint32_t minHits = 2, maxMiss = 1;

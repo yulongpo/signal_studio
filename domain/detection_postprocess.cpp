@@ -154,8 +154,7 @@ bool validateConfig(const FrequencyTrackerConfig& config, std::string& error) {
       config.fileId.size() > limits.maximumIdBytes)
     return fail(error, "invalid-tracker-identity");
   if (config.inputBins < 4 || config.inputBins > 262144 ||
-      config.inputBins % 4 != 0 || !std::isfinite(config.binWidthHz) ||
-      config.binWidthHz <= 0 ||
+      !std::isfinite(config.binWidthHz) || config.binWidthHz <= 0 ||
       !validFrequency(
           {config.firstBinHz,
            config.firstBinHz + (config.inputBins - 1) * config.binWidthHz}) ||
@@ -217,6 +216,11 @@ bool decodeDetectionHeads(const HeadView& heads,
     return fail(error, "invalid-decoder-configuration");
   const bool scn = config.kind == DetectionDecoderKind::ScnThreeBin;
   const auto width = config.inputBins / 4;
+  const auto validBins =
+      config.validInputBins ? config.validInputBins : config.inputBins;
+  if (validBins < 4 || validBins > config.inputBins || validBins % 4)
+    return fail(error, "invalid-decoder-physical-bin-range");
+  const auto validWidth = validBins / 4;
   const auto expected = scn ? std::array<std::size_t, 3>{width, 1, 1}
                             : std::array<std::size_t, 3>{1, 1, width};
   if (heads.sampleShape != expected || heads.heatmap.size() != width ||
@@ -232,12 +236,12 @@ bool decodeDetectionHeads(const HeadView& heads,
         !std::isfinite(heads.bandwidth[i]) || heads.bandwidth[i] < 0)
       return fail(error, "invalid-activated-head-values");
   }
-  for (std::size_t i = 0; i < width; ++i) {
+  for (std::size_t i = 0; i < validWidth; ++i) {
     if (stop(cancelled, error)) return false;
     const float score = heads.heatmap[i];
     if (scn ? score < threshold : score <= threshold) continue;
     const auto begin = i - std::min(i, radius);
-    const auto end = i + std::min(width - i - 1, radius) + 1;
+    const auto end = i + std::min(validWidth - i - 1, radius) + 1;
     const float local = *std::max_element(heads.heatmap.begin() + begin,
                                           heads.heatmap.begin() + end);
     if (scn ? std::abs(score - local) >= 1e-6f : score != local) continue;
@@ -268,10 +272,8 @@ bool decodeDetectionHeads(const HeadView& heads,
                              : double(float(center) - float(bandwidth) * .5f);
     const double upper = scn ? center + bandwidth * .5
                              : double(float(center) + float(bandwidth) * .5f);
-    const double clippedLower =
-        std::clamp(lower, 0.0, double(config.inputBins - 1));
-    const double clippedUpper =
-        std::clamp(upper, 0.0, double(config.inputBins - 1));
+    const double clippedLower = std::clamp(lower, 0.0, double(validBins - 1));
+    const double clippedUpper = std::clamp(upper, 0.0, double(validBins - 1));
     if (!std::isfinite(lower) || !std::isfinite(upper))
       return fail(error, "decoded-bandwidth-arithmetic-overflow");
     if (clippedUpper <= clippedLower) {
@@ -362,7 +364,8 @@ bool FrequencyTracker::consume(const WindowObservation& window,
         !std::isfinite(candidate.upperBin) || candidate.lowerBin < 0 ||
         candidate.upperBin > config.inputBins - 1 ||
         candidate.upperBin <= candidate.lowerBin || !unit(candidate.score) ||
-        candidate.peakIndex >= config.inputBins / 4 ||
+        candidate.peakIndex >= (config.peakIndexLimit ? config.peakIndexLimit
+                                                      : config.inputBins / 4) ||
         !validFrequency(frequency) ||
         !peakIndices.insert(candidate.peakIndex).second)
       return fail(error, "invalid-window-frequency-candidate");

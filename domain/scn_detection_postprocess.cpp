@@ -53,12 +53,22 @@ bool postprocessScnWindow(std::span<const float> values, std::size_t frames,
                           std::span<const DecodedCandidate> candidates,
                           double firstBinHz, double binWidthHz,
                           ScnWindowPostprocess& target, std::string& error,
-                          const PostprocessCancellation& cancelled) {
-  if (!frames || frames > 16 || bins < 4 || bins > 32768 ||
-      values.size() != frames * bins || candidates.size() > 512 ||
-      !std::isfinite(firstBinHz) || !std::isfinite(binWidthHz) ||
-      binWidthHz <= 0)
+                          const PostprocessCancellation& cancelled,
+                          std::size_t modelPeakCount,
+                          DetectionSpectrumMode spectrumMode) {
+  const auto peakLimit = modelPeakCount ? modelPeakCount : bins / 4;
+  if (!frames || bins < 4 || bins > 262144 || values.size() != frames * bins ||
+      candidates.size() > 512 || !std::isfinite(firstBinHz) ||
+      !std::isfinite(binWidthHz) || binWidthHz <= 0)
     return fail(error, "invalid-scn-window-shape");
+  std::vector<float> selected;
+  if (spectrumMode != DetectionSpectrumMode::ModelDefault) {
+    if (stop(cancelled, error) ||
+        !selectDetectionSpectrum(values, bins, spectrumMode, selected, error))
+      return false;
+    values = selected;
+    frames = 1;
+  }
   std::vector<float> maximum(bins, -std::numeric_limits<float>::infinity());
   std::vector<float> average(bins, 0);
   std::vector<double> sums(bins, 0), prefix(bins + 1, 0);
@@ -85,7 +95,7 @@ bool postprocessScnWindow(std::span<const float> values, std::size_t frames,
         candidate.upperBin >= bins ||
         candidate.upperBin <= candidate.lowerBin ||
         !std::isfinite(candidate.score) || candidate.score < 0 ||
-        candidate.score > 1 || candidate.peakIndex >= bins / 4)
+        candidate.score > 1 || candidate.peakIndex >= peakLimit)
       return fail(error, "invalid-scn-raw-candidate");
     const auto begin = static_cast<std::size_t>(candidate.lowerBin);
     const auto end = static_cast<std::size_t>(candidate.upperBin);

@@ -14,6 +14,7 @@ namespace signalstudio {
 struct DetectionModelOutput {
   std::uint32_t batch = 0;
   std::uint32_t width = 0;
+  std::uint32_t inputBins = 0, actualFrames = 0;
   std::vector<float> hm;
   std::vector<float> bw;
   std::vector<float> off;
@@ -43,12 +44,13 @@ bool validateDetectionModelMemory(const DetectionModelMemoryUsage& usage,
                                   const DetectionModelResourceLimits& limits,
                                   QString& error);
 
-// These checks do not load any model/runtime. SCN uses the maximum of sixteen
-// spectra and per-window minmax normalization; the mean is never forwarded.
+// These checks do not load a model/runtime. All spectrum statistics are valid
+// inputs. ModelDefault retains the historical preprocessing; an explicit mode
+// selects the actual statistic before backend normalization and interpolation.
 bool prepareDetectionModelInput(const DetectionRequest& request,
                                 const std::vector<float>& sourceFrames,
                                 std::uint32_t batch, std::vector<float>& input,
-                                QString& error);
+                                QString& error, std::uint32_t actualFrames = 0);
 bool validateDetectionModelPackage(const DetectionRequest& request,
                                    const QString& modelRoot,
                                    QJsonObject& manifest, QString& error);
@@ -66,7 +68,8 @@ class DetectionModelBackend {
 
   bool load(const DetectionRequest& request, QString& error);
   bool infer(const std::vector<float>& sourceFrames, std::uint32_t batch,
-             DetectionModelOutput& output, QString& error);
+             DetectionModelOutput& output, QString& error,
+             std::uint32_t actualFrames = 0);
   QJsonObject evidence() const;
   void reset();
 

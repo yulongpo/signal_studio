@@ -1,0 +1,26 @@
+{
+  "schema": "signalstudio-r2-native-adaptation-v1",
+  "passed": true,
+  "caseCount": 14,
+  "cases": [
+    "shape-b1-t1-f2048 PASS maxAbsolute=0.00146484",
+    "shape-b1-t3-f8192 PASS maxAbsolute=0.00390625",
+    "shape-b2-t10-f65536 PASS maxAbsolute=0.00500488",
+    "shape-b1-t32-f2048 PASS maxAbsolute=0.000963211",
+    "shape-b1-t1-f131072 PASS maxAbsolute=0.00195312",
+    "SCN N65536/T3 versus mapped N32768/T1 PASS",
+    "ffscn-gui-iq-v1 irregular-N3001 mode=1 PASS",
+    "ffscn-gui-iq-v1 irregular-N3001 mode=2 PASS",
+    "ffscn-gui-iq-v1 irregular-N3001 mode=3 PASS",
+    "ffscn-gui-iq-v1 irregular-N3001 mode=4 PASS",
+    "scn-max-psd-v1 irregular-N3001 mode=1 PASS",
+    "scn-max-psd-v1 irregular-N3001 mode=2 PASS",
+    "scn-max-psd-v1 irregular-N3001 mode=3 PASS",
+    "scn-max-psd-v1 irregular-N3001 mode=4 PASS"
+  ],
+  "absoluteTolerance": 0.0001,
+  "relativeTolerance": 0.001,
+  "engineSha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03",
+  "manifestSha256": "776ebd3261c063567e443f5b96d5c93a8e50449d9d491bb1242f8c7bf2575786",
+  "claim": "Input adaptation and finite raw-head forward parity; no label accuracy claim"
+}

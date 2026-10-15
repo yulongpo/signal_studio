@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,13 @@ enum class DetectionCoverageKind {
   Unread
 };
 enum class DetectionBackendKind { TensorRt, Scn, Experimental17, Fixture };
+enum class DetectionSpectrumMode {
+  ModelDefault,
+  Current,
+  Mean,
+  Maximum,
+  Minimum
+};
 
 struct DetectionParameters {
   double scoreThreshold = .7;
@@ -65,6 +73,10 @@ struct DetectionProfile {
 };
 
 struct DetectionRequest {
+  // Version 1 preserves historical fixed-grid runs. Version 2 separates the
+  // user analysis grid from the backend tensor grid.
+  std::uint32_t inputAdaptationVersion = 2;
+  DetectionSpectrumMode spectrumMode = DetectionSpectrumMode::ModelDefault;
   std::string runId;
   std::optional<std::string> parentRunId;
   SourceIdentity sourceIdentity;
@@ -80,6 +92,17 @@ struct DetectionRequest {
   std::uint64_t workingSetBudgetBytes = 256 * 1024 * 1024;
   std::uint64_t evidenceBudgetBytes = 32 * 1024 * 1024;
 };
+
+std::uint32_t detectionModelMinimumBins(const DetectionRequest&);
+std::uint32_t detectionModelInputBins(const DetectionRequest&);
+double detectionModelBinScale(const DetectionRequest&);
+std::uint32_t detectionModelTensorFrames(const DetectionRequest&,
+                                         std::uint32_t actualFrames);
+// ModelDefault selects the historical maximum for a single-spectrum backend.
+// FFSCN's default temporal tensor bypasses this reduction.
+bool selectDetectionSpectrum(std::span<const float> frames, std::size_t bins,
+                             DetectionSpectrumMode, std::vector<float>&,
+                             std::string& error);
 
 struct DetectionCoverage {
   DetectionCoverageKind kind = DetectionCoverageKind::Unread;

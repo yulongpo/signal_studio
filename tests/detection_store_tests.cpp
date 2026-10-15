@@ -304,8 +304,34 @@ void budgetsAndMalformedRequests() {
   auto profile = object["profile"].toObject();
   profile["hopSeconds"] = .002;
   object["profile"] = profile;
+  check(decodeDetectionRequest(object, sentinel, error) &&
+            sentinel.profile.hopSeconds == .002,
+        "Adapted analysis hops are saved independently of reference defaults");
+  object["schemaVersion"] = 1;
   check(!decodeDetectionRequest(object, sentinel, error),
-        "Changing preprocessing requires a new profile identity");
+        "Historical v1 preprocessing identity remains frozen");
+  for (auto mode :
+       {DetectionSpectrumMode::Current, DetectionSpectrumMode::Mean,
+        DetectionSpectrumMode::Maximum, DetectionSpectrumMode::Minimum}) {
+    auto selected = run.request;
+    selected.spectrumMode = mode;
+    selected.profile.fftSize = 3001;
+    selected.profile.modelFrames = 3;
+    object = encodeDetectionRequest(selected);
+    check(
+        decodeDetectionRequest(object, sentinel, error) &&
+            sentinel.spectrumMode == mode && sentinel.profile.fftSize == 3001 &&
+            sentinel.profile.modelFrames == 3,
+        "Selected detection spectrum and irregular analysis grid must survive "
+        "save/reopen");
+    object["schemaVersion"] = 1;
+    check(!decodeDetectionRequest(object, sentinel, error),
+          "Adapted spectrum/grid cannot be mislabelled as historical v1");
+  }
+  object = encodeDetectionRequest(run.request);
+  object["spectrumMode"] = 5;
+  check(!decodeDetectionRequest(object, sentinel, error),
+        "An unknown spectrum selection must fail without inventing a fallback");
   auto mapping = mappings()[0].toObject();
   mapping["endSample"] = "400001";
   check(
@@ -372,6 +398,61 @@ void unpublishedChunksAndLargeIndices() {
   check(error.isEmpty() && discovered.size() == 1,
         "Orphan-only directories are not recoverable runs");
 }
+void adaptedHeadsSurviveReopen() {
+  QTemporaryDir directory;
+  for (const auto* profile : {"ffscn-gui-iq-v1", "scn-max-psd-v1"}) {
+    auto run = fixture(directory.path(), profile);
+    run.request.profile = *findDetectionProfile(profile);
+    run.request.profile.fftSize = 3001;
+    run.request.profile.modelFrames = 3;
+    run.request.spectrumMode = DetectionSpectrumMode::Mean;
+    const auto width = detectionModelInputBins(run.request) / 4;
+    DetectionWorkerPacket packet;
+    packet.envelope = workerEnvelope(
+        "batch", "head-store-fixture", 0,
+        {{"headOrder", QJsonArray{"hm", "bw", "off"}},
+         {"modelEvidence", QJsonObject{{"fixture", true}}}},
+        QString::fromStdString(run.request.runId),
+        run.request.sourceIdentity.projectGeneration,
+        QString::fromStdString(run.request.sourceIdentity.fileId));
+    attachFloat32Payload(packet, std::vector<float>(3 * width, .25f),
+                         {1, 3, 1, static_cast<int>(width)});
+    auto evidence = mappings();
+    auto mapped = evidence[0].toObject();
+    mapped["frequencyStepHz"] = 20e6 / 3001;
+    evidence[0] = mapped;
+    QString error;
+    check(storeDetectionHeadEvidence(directory.path(), run.request, packet,
+                                     evidence, error) &&
+              appendDetectionChunk(directory.path(), run, results(), evidence,
+                                   error),
+          error);
+    DetectionRun restored;
+    QJsonArray chunks;
+    check(loadDetectionRun(directory.path(),
+                           QString::fromStdString(run.request.runId), restored,
+                           error) &&
+              readDetectionChunks(directory.path(), restored, chunks, error),
+          error);
+    const auto reference = chunks[0]
+                               .toObject()["mappings"]
+                               .toArray()[0]
+                               .toObject()["headEvidence"]
+                               .toObject();
+    check(reference["shape"] == QJsonArray{1, 3, 1, static_cast<int>(width)} &&
+              restored.request.spectrumMode == DetectionSpectrumMode::Mean &&
+              restored.request.profile.fftSize == 3001,
+          "Reopened raw heads use model width, independent of analysis bins");
+    const auto path = directory.filePath(reference["path"].toString());
+    auto bytes = readFile(path);
+    bytes[0] = char(bytes[0] ^ 1);
+    writeFile(path, bytes);
+    check(!loadDetectionRun(directory.path(),
+                            QString::fromStdString(run.request.runId), restored,
+                            error),
+          "Reopening adapted heads must detect changed immutable bytes");
+  }
+}
 void accumulatedReadsAndStreamingBudget() {
   QTemporaryDir directory;
   auto run = fixture(directory.path(), "streaming-budget");
@@ -411,6 +492,7 @@ int main(int argc, char** argv) {
     failedManifestReplacementPreservesDataAndCause();
     budgetsAndMalformedRequests();
     unpublishedChunksAndLargeIndices();
+    adaptedHeadsSurviveReopen();
     accumulatedReadsAndStreamingBudget();
     std::cout << "Detection store boundary tests passed\n";
     return 0;
