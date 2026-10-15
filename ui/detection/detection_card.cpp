@@ -19,7 +19,9 @@
 #include <QUuid>
 #include <QVBoxLayout>
 #include <algorithm>
+#include <bit>
 #include <cmath>
+#include <limits>
 #include <utility>
 
 #include "infrastructure/detection_model_snapshot.h"
@@ -35,6 +37,13 @@ QString text(const std::string& value) { return QString::fromUtf8(value); }
 
 QString number(double value) { return QString::number(value, 'g', 9); }
 
+std::string configurationKey(const DetectionRequest& value) {
+  return value.profile.id +
+         (value.spectrumMode == DetectionSpectrumMode::ModelDefault
+              ? ""
+              : ":" + std::to_string(static_cast<int>(value.spectrumMode)));
+}
+
 void refreshStyle(QWidget* widget) {
   widget->style()->unpolish(widget);
   widget->style()->polish(widget);
@@ -43,6 +52,7 @@ void refreshStyle(QWidget* widget) {
 
 DetectionSourceConfig sourceConfig(const DetectionRequest& request) {
   DetectionSourceConfig config;
+  config.inputAdaptationVersion = request.inputAdaptationVersion;
   config.profileId = request.profile.id;
   config.profileVersion = request.profile.version;
   config.fftSize = request.profile.fftSize;
@@ -50,6 +60,8 @@ DetectionSourceConfig sourceConfig(const DetectionRequest& request) {
   config.modelHopFrames = request.profile.modelHopFrames;
   config.hopSeconds = request.profile.hopSeconds;
   config.workingSetBudgetBytes = request.workingSetBudgetBytes;
+  config.evidenceBudgetBytes = request.evidenceBudgetBytes;
+  config.maximumCandidates = request.parameters.topK;
   return config;
 }
 
@@ -159,6 +171,15 @@ DetectionCard::DetectionCard(Session& session,
     if (profile.backend == DetectionBackendKind::Scn)
       initial.parameters.timeStrategy = DetectionTimeStrategy::Coarse;
     profileConfigurations_.emplace(profile.id, std::move(initial));
+    if (profile.backend == DetectionBackendKind::TensorRt ||
+        profile.backend == DetectionBackendKind::Scn) {
+      for (int mode = 1; mode <= 4; ++mode) {
+        auto selected = profileConfigurations_.at(profile.id);
+        selected.spectrumMode = static_cast<DetectionSpectrumMode>(mode);
+        profileConfigurations_.emplace(configurationKey(selected),
+                                       std::move(selected));
+      }
+    }
   }
   configuration_ = profileConfigurations_.at(detectionProfiles().front().id);
   auto* layout = new QVBoxLayout(this);
@@ -215,6 +236,15 @@ void DetectionCard::setupProfile(QVBoxLayout* layout) {
   profile_->addItem("FFSCN-17 · 实验", "ffscn-17-experimental-v1");
   if (qApp->property("enableDetectionTestFixture").toBool())
     profile_->addItem("系统链路夹具 · 非模型", "pipeline-fixture-v1");
+  for (const auto* id : {"ffscn-gui-iq-v1", "scn-max-psd-v1"}) {
+    const QString model =
+        QString::fromLatin1(id).startsWith("scn") ? "SCN" : "FFSCN";
+    for (int mode = 1; mode <= 4; ++mode)
+      profile_->addItem(model + " · " +
+                            QStringList{"瞬时谱（窗末帧）", "平均谱", "最大谱",
+                                        "最小谱"}[mode - 1],
+                        QString::fromLatin1(id) + ":" + QString::number(mode));
+  }
   layout->addWidget(profile_);
   profileHelp_ = wrappingLabel("detectionProfileDescription", this);
   layout->addWidget(profileHelp_);
@@ -248,7 +278,7 @@ void DetectionCard::setupRange(QVBoxLayout* layout) {
     if (updating_) return;
     configuration_.rangeOrigin =
         rangeKind_->currentData().toString().toStdString();
-    profileConfigurations_[configuration_.profile.id] = configuration_;
+    profileConfigurations_[configurationKey(configuration_)] = configuration_;
     refresh();
   });
   connect(activeSegment_, &QComboBox::currentIndexChanged, this, [this] {
@@ -342,7 +372,7 @@ AdaptiveValueEdit* DetectionCard::addParameter(
 
 void DetectionCard::setupTiming(QVBoxLayout* layout) {
   auto* fft = addUnsigned(
-      "detectionFftSize", "FFT N", 1048576, 1,
+      "detectionFftSize", "FFT N", 262144, 32,
       [](const auto& value) { return value.profile.fftSize; },
       [](auto& value, auto number) {
         value.profile.fftSize = static_cast<std::uint32_t>(number);
@@ -374,13 +404,15 @@ void DetectionCard::setupTiming(QVBoxLayout* layout) {
   layout->addWidget(
       pairedFields("FFT N", fft, "谱步长 / ms", hopMilliseconds_));
   auto* frames = addUnsigned(
-      "detectionModelFrames", "模型帧数", 1048576, 1,
+      "detectionModelFrames", "模型帧数",
+      std::numeric_limits<std::uint32_t>::max(), 1,
       [](const auto& value) { return value.profile.modelFrames; },
       [](auto& value, auto number) {
         value.profile.modelFrames = static_cast<std::uint32_t>(number);
       });
   auto* slide = addUnsigned(
-      "detectionModelHopFrames", "滑动帧数", 1048576, 1,
+      "detectionModelHopFrames", "滑动帧数",
+      std::numeric_limits<std::uint32_t>::max(), 1,
       [](const auto& value) { return value.profile.modelHopFrames; },
       [](auto& value, auto number) {
         value.profile.modelHopFrames = static_cast<std::uint32_t>(number);
@@ -578,7 +610,7 @@ void DetectionCard::rejectControl(QLineEdit* edit, const QString& error,
 
 void DetectionCard::saveConfiguration(DetectionRequest value) {
   configuration_ = std::move(value);
-  profileConfigurations_[configuration_.profile.id] = configuration_;
+  profileConfigurations_[configurationKey(configuration_)] = configuration_;
   refreshTiming();
   refreshBranchState();
   refreshStatus();
@@ -588,7 +620,7 @@ void DetectionCard::switchProfile() {
   const auto id = profile_->currentData().toString().toStdString();
   const auto found = profileConfigurations_.find(id);
   if (found == profileConfigurations_.end()) return;
-  profileConfigurations_[configuration_.profile.id] = configuration_;
+  profileConfigurations_[configurationKey(configuration_)] = configuration_;
   for (auto* widget : findChildren<QWidget*>())
     if (auto* draft = dynamic_cast<ParameterDraft*>(widget)) draft->discard();
   configuration_ = found->second;
@@ -601,7 +633,7 @@ void DetectionCard::loadControls() {
   const QSignalBlocker profileBlock(profile_), rangeBlock(rangeKind_),
       splitBlock(splitBursts_);
   profile_->setCurrentIndex(
-      profile_->findData(text(configuration_.profile.id)));
+      profile_->findData(text(configurationKey(configuration_))));
   rangeKind_->setCurrentIndex(
       rangeKind_->findData(text(configuration_.rangeOrigin)));
   for (const auto& parameter : parameters_) {
@@ -760,7 +792,7 @@ void DetectionCard::refreshTiming() {
   const auto& profile = configuration_.profile;
   if (profile.backend == DetectionBackendKind::Scn)
     profileHelp_->setText(
-        "SCN：16 帧最大积累，网络单行 32768 · 频率对照。"
+        "SCN：默认最大谱；积累使用实际帧，网络单行32768点，内部频率适配。"
         "CNR / 频率收边固定 3 dB；Coarse / 粗回退固定 6 dB。"
         "噪底裕量不可调，已保存的配置值保留。");
   else if (profile.backend == DetectionBackendKind::Experimental17)
@@ -772,23 +804,31 @@ void DetectionCard::refreshTiming() {
         "文件系统任务；不执行真实模型，不证明检测效果");
   else
     profileHelp_->setText(
-        "10 帧全阵列 Z-score · epoch-1200 IQ 能力配置；模型与资产预检独立");
+        "默认逐帧Z-score；时间帧可变，模型输入为至少2048点的2次幂，内部适配。");
+  if (configuration_.spectrumMode != DetectionSpectrumMode::ModelDefault)
+    profileHelp_->setText(
+        profileHelp_->text() + " 当前输入：" +
+        QStringList{"", "瞬时谱（窗末帧）", "平均谱（线性功率）", "最大谱",
+                    "最小谱"}[static_cast<int>(configuration_.spectrumMode)] +
+        "。");
   if (source_.sampleRateHz <= 0 || !std::isfinite(source_.sampleRateHz)) {
     physicalTimes_->setText("FFT 窗 / 谱步长 / 模型上下文 / 窗口滑动：—");
     return;
   }
-  const double fftMs = profile.fftSize / source_.sampleRateHz * 1000;
+  const double fftMs =
+      std::bit_ceil(profile.fftSize) / source_.sampleRateHz * 1000;
   const double hopMs = std::floor(source_.sampleRateHz * profile.hopSeconds) /
                        source_.sampleRateHz * 1000;
   const double contextMs = fftMs + (profile.modelFrames - 1) * hopMs;
   physicalTimes_->setText(
-      QString("<table width='100%' cellspacing='5'><tr><td>FFT 窗<br><b>%1 "
-              "ms</b></td>"
-              "<td>谱步长<br><b>%2 ms</b></td></tr><tr><td>模型上下文<br>"
-              "<b>%3 帧 / %4 ms</b></td><td>窗口滑动<br><b>%5 帧 / %6 "
-              "ms</b></td></tr></table>"
-              "上下文标称 %7 ms，观测支持含 FFT 窗。hop "
-              "是相邻谱帧间隔，不是独立时间分辨率。")
+      QString(
+          "<table width='100%' cellspacing='5'><tr><td>FFT 窗<br><b>%1 "
+          "ms</b></td>"
+          "<td>谱步长<br><b>%2 ms</b></td></tr><tr><td>模型上下文（请求）<br>"
+          "<b>%3 帧 / %4 ms</b></td><td>窗口滑动<br><b>%5 帧 / %6 "
+          "ms</b></td></tr></table>"
+          "上下文标称 %7 ms，观测支持含 FFT 窗。hop "
+          "是相邻谱帧间隔，不是独立时间分辨率。")
           .arg(number(fftMs))
           .arg(number(hopMs))
           .arg(profile.modelFrames)
@@ -796,6 +836,21 @@ void DetectionCard::refreshTiming() {
           .arg(profile.modelHopFrames)
           .arg(number(profile.modelHopFrames * hopMs))
           .arg(number(profile.modelFrames * hopMs)));
+  if (metadata_) {
+    DetectionSourcePlan plan;
+    QString issue;
+    const auto snapshot = request();
+    if (makeDetectionSourcePlan(*metadata_, snapshot.requestedRange,
+                                sourceConfig(snapshot), plan, issue,
+                                source_.projectGeneration))
+      physicalTimes_->setText(
+          physicalTimes_->text() +
+          QString("<br>实际窗口 %1 帧 · 计算FFT %2 点 · 模型输入 %3 点。"
+                  "边缘补零按实际支持记录；插值不增加真实分辨率。")
+              .arg(plan.actualWindowFrames)
+              .arg(plan.transformBins)
+              .arg(detectionModelInputBins(snapshot)));
+  }
 }
 
 void DetectionCard::refreshBranchState() {
@@ -938,28 +993,15 @@ void DetectionCard::refresh() {
 QString DetectionCard::configurationError(const DetectionRequest& value) const {
   const auto& profile = value.profile;
   if (!findDetectionProfile(profile.id)) return "请选择有效能力方案";
-  if (!profile.fftSize || profile.fftSize > 1048576 || !profile.modelFrames ||
-      profile.modelFrames > 1048576 || !profile.modelHopFrames ||
-      profile.modelHopFrames > profile.modelFrames)
-    return "FFT N / 模型帧须为有效整数，窗口滑动帧数不能超过模型帧数";
+  if (profile.fftSize < 32 || profile.fftSize > 262144 ||
+      !profile.modelFrames || !profile.modelHopFrames)
+    return "分析N须为32–262144，窗口帧数和滑动帧数须为正整数";
   if (!std::isfinite(profile.hopSeconds) || profile.hopSeconds <= 0 ||
       profile.hopSeconds > 100)
     return "谱步长须为大于 0 且不超过 100000 ms 的有限数";
   if (source_.sampleRateHz > 0 &&
       std::floor(source_.sampleRateHz * profile.hopSeconds) < 1)
     return "谱步长必须至少包含 1 个源样本";
-  if ((profile.backend == DetectionBackendKind::TensorRt ||
-       profile.backend == DetectionBackendKind::Fixture) &&
-      (profile.fftSize != 65536 || profile.modelFrames != 10))
-    return "FFSCN GUI IQ 固定 10 × 65536；非法形状未提交";
-  if (profile.backend == DetectionBackendKind::Scn &&
-      (profile.fftSize != 32768 || profile.modelFrames != 16))
-    return "SCN 固定 16 帧最大积累 / 32768；非法形状未提交";
-  if (profile.backend == DetectionBackendKind::Experimental17 &&
-      (profile.modelFrames != 10 || profile.fftSize < 8192 ||
-       profile.fftSize > 131072 ||
-       (profile.fftSize & (profile.fftSize - 1)) != 0))
-    return "FFSCN-17 固定 10 帧 / N 8192–131072 的 2 次幂；非法形状未提交";
   for (const auto& parameter : parameters_) {
     const double number = value.parameters.*parameter.member;
     if (!std::isfinite(number) || number < 0 || number > parameter.maximum)
@@ -1034,28 +1076,14 @@ QString DetectionCard::sourceValidationError() const {
 QString DetectionCard::profileValidationError(
     const DetectionRequest& value) const {
   const auto* registered = findDetectionProfile(value.profile.id);
-  if (!registered || value.profile.fftSize != registered->fftSize ||
-      value.profile.modelFrames != registered->modelFrames ||
-      value.profile.modelHopFrames != registered->modelHopFrames ||
-      value.profile.hopSeconds != registered->hopSeconds)
-    return "当前形状 / "
-           "谱步长与本节点注册能力配置不符，不能启动；请恢复该方案已验证配置";
+  if (!registered || value.profile.version != registered->version ||
+      value.profile.backend != registered->backend)
+    return "能力方案身份无效";
   return {};
 }
 
 QString DetectionCard::contextValidationError(
     const DetectionRequest& value) const {
-  const auto hop = std::floor(source_.sampleRateHz * value.profile.hopSeconds);
-  const long double support =
-      value.profile.fftSize +
-      static_cast<long double>(value.profile.modelFrames - 1) * hop;
-  if (static_cast<long double>(source_.availableSamples) < support)
-    return QString(
-               "上下文不足：可用文件 %1 ms < %2 ms 观测支持；不重复谱帧补齐")
-        .arg(number(static_cast<double>(source_.availableSamples) /
-                    source_.sampleRateHz * 1000))
-        .arg(
-            number(static_cast<double>(support) / source_.sampleRateHz * 1000));
   if (value.profile.backend != DetectionBackendKind::Fixture) {
     auto snapshot = value;
     QString issue;
@@ -1068,15 +1096,10 @@ QString DetectionCard::contextValidationError(
                                sourceConfig(value), plan, planError,
                                source_.projectGeneration))
     return "来源预检失败：" + planError;
-  if (!plan.eligibleWindowCount)
-    return "请求范围没有完整真实模型窗口，不能重复谱帧补齐";
-  const auto payloadBytes =
-      static_cast<std::uint64_t>(value.parameters.batchSize) *
-      value.profile.modelFrames * value.profile.fftSize * sizeof(float);
-  if (plan.estimatedPeakBytes + 6 * payloadBytes + 2 * 33554432ULL +
-          2 * 65536ULL >
-      value.workingSetBudgetBytes)
-    return "工作集预算不足以容纳真实 DSP、批量输入和 worker 传输";
+  if (!plan.eligibleWindowCount) return "请求范围没有可用的真实观测";
+  std::uint64_t reserve = 0;
+  if (!detectionExecutionBatchSize(plan, value.parameters.batchSize, reserve))
+    return "减少批量后，单窗口仍超出DSP、输入报文或观测证据分片预算";
   return {};
 }
 
@@ -1103,20 +1126,22 @@ void DetectionCard::configure(const DetectionRun* parentRun) {
     emit message("派生运行需要先打开其源文件；当前配置草稿保持");
     return;
   }
-  const auto found = profileConfigurations_.find(parentRun->request.profile.id);
+  const auto found =
+      profileConfigurations_.find(configurationKey(parentRun->request));
   if (found == profileConfigurations_.end() ||
-      profile_->findData(text(parentRun->request.profile.id)) < 0) {
+      profile_->findData(text(configurationKey(parentRun->request))) < 0) {
     emit message("派生快照的方案当前不可用，已保留配置草稿");
     return;
   }
   configuration_ = parentRun->request;
+  configuration_.inputAdaptationVersion = 2;
   configuration_.parentRunId = parentRun->request.runId;
   configuration_.runId.clear();
   // Explicit derivation copies the original range, independently of a later
   // view or annotation revision. Merely opening the card never does this.
   requestedRoi_ = parentRun->request.requestedRange;
   configuration_.rangeOrigin = "custom";
-  profileConfigurations_[configuration_.profile.id] = configuration_;
+  profileConfigurations_[configurationKey(configuration_)] = configuration_;
   loadControls();
   refresh();
 }
@@ -1125,7 +1150,7 @@ void DetectionCard::setRequestedRoi(ViewRange range) {
   refreshSource();
   requestedRoi_ = range;
   configuration_.rangeOrigin = "custom";
-  profileConfigurations_[configuration_.profile.id] = configuration_;
+  profileConfigurations_[configurationKey(configuration_)] = configuration_;
   const QSignalBlocker block(rangeKind_);
   rangeKind_->setCurrentIndex(rangeKind_->findData("custom"));
   refresh();

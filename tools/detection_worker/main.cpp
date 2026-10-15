@@ -74,7 +74,8 @@ bool fixtureBatch(const DetectionWorkerPacket& packet,
   if (windows.isEmpty() || windows.size() > 2 || shape.size() != 4 ||
       shape[0].toInt() != windows.size() || shape[1] != 1 ||
       shape[2].toInt() < 1 ||
-      shape[2].toInt() > static_cast<int>(request.profile.modelFrames) ||
+      static_cast<std::uint64_t>(shape[2].toInt()) >
+          request.profile.modelFrames ||
       shape[3].toInt() != static_cast<int>(request.profile.fftSize)) {
     error = "Fixture tensor shape does not match the frozen request";
     return false;
@@ -127,7 +128,8 @@ bool modelBatch(const DetectionWorkerPacket& packet,
   if (windows.isEmpty() || windows.size() > request.parameters.batchSize ||
       shape.size() != 4 || shape[0].toInt() != windows.size() ||
       shape[1] != 1 || shape[2].toInt() < 1 ||
-      shape[2].toInt() > static_cast<int>(request.profile.modelFrames) ||
+      static_cast<std::uint64_t>(shape[2].toInt()) >
+          request.profile.modelFrames ||
       shape[3].toInt() != static_cast<int>(request.profile.fftSize)) {
     error = "Production tensor shape does not match the immutable request";
     return false;

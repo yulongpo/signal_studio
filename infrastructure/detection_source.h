@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QJsonObject>
 #include <QString>
 #include <functional>
 #include <memory>
@@ -12,12 +13,15 @@ namespace signalstudio {
 using DetectionSourceCancel = std::function<bool()>;
 
 struct DetectionSourceConfig {
+  std::uint32_t inputAdaptationVersion = 1;
   std::string profileId = "ffscn-gui-iq-v1";
   std::uint32_t profileVersion = 1;
   std::uint32_t fftSize = 65536, modelFrames = 10, modelHopFrames = 5;
   double hopSeconds = .001;
   std::uint64_t readBlockBytes = 4 * 1024 * 1024;
   std::uint64_t workingSetBudgetBytes = 256 * 1024 * 1024;
+  std::uint64_t evidenceBudgetBytes = 32 * 1024 * 1024;
+  std::uint32_t maximumCandidates = 512;
 };
 
 struct DetectionFftSupport {
@@ -54,12 +58,16 @@ struct DetectionSourcePlan {
   TimeRange contextRange;
   std::uint64_t frameOriginSample = 0, hopSamples = 0;
   std::uint64_t realFrameCount = 0, globalWindowCount = 0;
+  std::uint32_t transformBins = 0, actualWindowFrames = 0;
+  std::uint64_t windowOriginFrame = 0, tailWindowFirstFrame = 0;
   std::uint64_t eligibleWindowCount = 0, firstRegularWindow = 0;
   std::uint64_t eligibleRegularWindows = 0;
   std::uint64_t regularWindowCount = 0;
   std::uint64_t sourceLeadingPadding = 0, sourceTrailingPadding = 0;
   std::uint64_t slotLeadingPadding = 0, slotTrailingPadding = 0;
   std::uint64_t availableTailSamples = 0, estimatedPeakBytes = 0;
+  std::uint64_t estimatedWindowEvidenceBytes = 0;
+  std::uint64_t modelHeadBytesPerWindow = 0, outputJsonReserveBytes = 65536;
   double frequencyFirstBinHz = 0, frequencyStepHz = 0;
   bool anchoredTailWindow = false, eligibleTailWindow = false;
   bool referenceConfigCompatible = false;
@@ -80,7 +88,7 @@ struct DetectionModelWindow {
   ViewRange reportRange;
   TimeRange actualContextRange;
   std::vector<DetectionFrameMapping> frames;
-  // Row-major [10, fftSize]; full Fs frequency input even for a frequency ROI.
+  // Row-major [actual frames, analysis bins]; full Fs even for a frequency ROI.
   std::vector<float> densityDb, normalizedTensor;
   double meanDb = 0, sampleStdDb = 0, normalizationStdDb = 0;
   bool epsilonGuardApplied = false;
@@ -95,6 +103,10 @@ bool makeDetectionSourcePlan(const FileMetadata&, ViewRange requested,
                              DetectionSourceConfig, DetectionSourcePlan&,
                              QString& error,
                              std::uint64_t projectGeneration = 0);
+QJsonObject encodeDetectionFrameMapping(const DetectionFrameMapping&);
+std::uint32_t detectionExecutionBatchSize(const DetectionSourcePlan&,
+                                          std::uint32_t requestedBatch,
+                                          std::uint64_t& reservedBytes);
 
 // Full-band source DSP, independent of display-frame reduction and model
 // runtime.

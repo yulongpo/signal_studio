@@ -11,6 +11,7 @@
 #include <QStringList>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 #include "infrastructure/annotation_json.h"
@@ -202,8 +203,8 @@ QJsonObject profileJson(const DetectionProfile& p) {
           {"status", text(p.status)},
           {"backend", enumText(static_cast<int>(p.backend), kBackend)},
           {"fftSize", static_cast<int>(p.fftSize)},
-          {"modelFrames", static_cast<int>(p.modelFrames)},
-          {"modelHopFrames", static_cast<int>(p.modelHopFrames)},
+          {"modelFrames", static_cast<double>(p.modelFrames)},
+          {"modelHopFrames", static_cast<double>(p.modelHopFrames)},
           {"hopSeconds", p.hopSeconds},
           {"maximumPsdOnly", p.maximumPsdOnly},
           {"supportsReal", p.supportsReal}};
@@ -220,8 +221,10 @@ DetectionProfile profileValue(const QJsonValue& value) {
   p.status = string(o, "status", 1024);
   p.backend = enumeration<DetectionBackendKind>(o, "backend", kBackend);
   p.fftSize = smallInteger(o, "fftSize", 262144);
-  p.modelFrames = smallInteger(o, "modelFrames", 10000);
-  p.modelHopFrames = smallInteger(o, "modelHopFrames", 10000);
+  p.modelFrames =
+      smallInteger(o, "modelFrames", std::numeric_limits<std::uint32_t>::max());
+  p.modelHopFrames = smallInteger(o, "modelHopFrames",
+                                  std::numeric_limits<std::uint32_t>::max());
   p.hopSeconds = number(o, "hopSeconds");
   p.maximumPsdOnly = boolean(o, "maximumPsdOnly");
   p.supportsReal = boolean(o, "supportsReal");
@@ -453,7 +456,7 @@ void validateRecords(const QJsonArray& values, const DetectionRequest& request,
       if (object.contains("epsilonGuardApplied"))
         boolean(object, "epsilonGuardApplied");
       if (object.contains("frames")) {
-        const auto frames = arrayValue(object, "frames", kChunkRecords);
+        const auto frames = arrayValue(object, "frames", kChunkBytes / 128);
         for (const auto& frame : frames) {
           const auto f = objectValue(frame, "frame");
           finiteJson(f);

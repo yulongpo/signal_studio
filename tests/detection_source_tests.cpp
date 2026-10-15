@@ -81,6 +81,72 @@ double integratedPower(const DetectionSpectrumFrame& frame) {
 class DetectionSourceTests : public QObject {
   Q_OBJECT
  private slots:
+  void adaptiveShortRoiTailAndIrregularGrid() {
+    QTemporaryDir directory;
+    auto metadata = source(directory, 100000, 17, [](std::uint64_t) {
+      return std::complex<float>{1, 0};
+    });
+    auto config = fixtureConfig(3001);
+    config.inputAdaptationVersion = 2;
+    FixedDetectionSource provider;
+    QString error;
+    auto roi = physicalRequest(metadata);
+    roi.time = {16, 17};
+    roi.frequency = {-1000, 1000};
+    QVERIFY2(provider.open(metadata, roi, config, error), qPrintable(error));
+    QCOMPARE(provider.plan().transformBins, 4096U);
+    QCOMPARE(provider.plan().actualWindowFrames, 1U);
+    QCOMPARE(provider.plan().eligibleWindowCount, quint64{1});
+    DetectionModelWindow window;
+    QVERIFY2(provider.readModelWindow(0, window, error), qPrintable(error));
+    QCOMPARE(window.reportRange, roi);
+    QCOMPARE(window.frames.size(), std::size_t{1});
+    QCOMPARE(window.densityDb.size(), std::size_t{3001});
+    QCOMPARE(window.frames[0].validSamples, quint64{17});
+    QCOMPARE(window.frames[0].paddedSamples, quint64{4079});
+    QVERIFY(std::all_of(window.densityDb.begin(), window.densityDb.end(),
+                        [](float value) { return std::isfinite(value); }));
+    auto scn = config;
+    scn.profileId = "scn-max-psd-v1";
+    DetectionSourcePlan budgetPlan;
+    QVERIFY2(makeDetectionSourcePlan(metadata, roi, scn, budgetPlan, error),
+             qPrintable(error));
+    QCOMPARE(budgetPlan.modelHeadBytesPerWindow, quint64{98304});
+    scn.evidenceBudgetBytes = 5000;
+    QVERIFY(!makeDetectionSourcePlan(metadata, roi, scn, budgetPlan, error));
+    QVERIFY(error.contains("模型原始输出"));
+    metadata = source(
+        directory, 100000, 2500,
+        [](std::uint64_t) { return std::complex<float>{1, 0}; },
+        "partial-adapted.raw");
+    metadata.availability.status = LoadStatus::Partial;
+    metadata.availability.availableSamples = 1234;
+    QVERIFY2(provider.open(metadata, physicalRequest(metadata), config, error),
+             qPrintable(error));
+    QCOMPARE(provider.plan().realFrameCount, quint64{13});
+    QVERIFY(excluded(provider.plan(), "unread-available-prefix"));
+    QVERIFY(!excluded(provider.plan(), "incomplete-time-slot-tail"));
+    QVERIFY(provider.readModelWindow(provider.plan().eligibleWindowCount - 1,
+                                     window, error));
+    QCOMPARE(window.reportRange.time.end, SampleIndex{1234});
+    QCOMPARE(window.frames.back().slotSamples, (TimeRange{1200, 1234}));
+    for (const auto& frame : window.frames)
+      QVERIFY(frame.actualSamples.end <= 1234);
+    QCOMPARE(provider.plan().frequencyStepHz, 100000.0 / 3001);
+    metadata.sampleRateHz = 10000000;
+    metadata.sampleCount = 10000000;
+    metadata.effectiveBandwidthHz = metadata.sampleRateHz;
+    metadata.availability.status = LoadStatus::Ready;
+    metadata.availability.availableSamples = metadata.sampleCount;
+    config.fftSize = 32;
+    config.modelFrames = 1;
+    config.hopSeconds = 1;
+    DetectionSourcePlan oversized;
+    QVERIFY(!makeDetectionSourcePlan(metadata, physicalRequest(metadata),
+                                     config, oversized, error));
+    QVERIFY(error.contains("8MiB"));
+  }
+
   void frozenProfileDeclarationMatchesProviderConfig() {
     QFile file(sourceRoot().filePath(
         "contracts/wideband-detection/profiles/ffscn-gui-iq-v1.json"));

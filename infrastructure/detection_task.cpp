@@ -77,34 +77,17 @@ AnnotationSourceSet sourceSetForRequest(const DetectionRequest& request) {
 QJsonObject mapping(const DetectionModelWindow& window,
                     const DetectionSourcePlan& plan) {
   QJsonArray frames;
-  for (const auto& frame : window.frames) {
-    QJsonArray supports;
-    for (const auto& support : frame.fftSupports)
-      supports.append(QJsonObject{
-          {"startSample", QString::number(support.actualSamples.begin)},
-          {"endSample", QString::number(support.actualSamples.end)},
-          {"leadingPadding", QString::number(support.leadingPadding)},
-          {"trailingPadding", QString::number(support.trailingPadding)}});
-    frames.append(
-        QJsonObject{{"frameIndex", QString::number(frame.frameIndex)},
-                    {"startSample", QString::number(frame.actualSamples.begin)},
-                    {"endSample", QString::number(frame.actualSamples.end)},
-                    {"validSamples", QString::number(frame.validSamples)},
-                    {"paddedSamples", QString::number(frame.paddedSamples)},
-                    {"powerFloorBins", QString::number(frame.powerFloorBins)},
-                    {"densityUnderflowGuardBins",
-                     QString::number(frame.densityUnderflowGuardBins)},
-                    {"fftSupports", supports},
-                    {"inputHash", QString::fromStdString(frame.inputHash)}});
-  }
+  for (const auto& frame : window.frames)
+    frames.append(encodeDetectionFrameMapping(frame));
   return {
       {"windowId", QString::number(window.globalWindowIndex)},
       {"firstFrameIndex", QString::number(window.firstFrameIndex)},
       {"nominalStartSample",
        QString::number(window.firstFrameIndex * plan.hopSamples)},
       {"nominalEndSample",
-       QString::number((window.firstFrameIndex + plan.config.modelFrames) *
-                       plan.hopSamples)},
+       QString::number(std::min(
+           plan.sourceIdentity.availableSamples,
+           (window.firstFrameIndex + window.frames.size()) * plan.hopSamples))},
       {"startSample", QString::number(window.reportRange.time.begin)},
       {"endSample", QString::number(window.reportRange.time.end)},
       {"contextStartSample", QString::number(window.actualContextRange.begin)},
@@ -119,6 +102,10 @@ QJsonObject mapping(const DetectionModelWindow& window,
       {"densityUnderflowGuardApplied", window.densityUnderflowGuardApplied},
       {"gridVersion", QString::fromStdString(plan.gridVersion)},
       {"numericalVersion", QString::fromStdString(plan.numericalVersion)},
+      {"analysisBins", static_cast<int>(plan.config.fftSize)},
+      {"transformBins", static_cast<int>(plan.transformBins)},
+      {"requestedFrames", static_cast<double>(plan.config.modelFrames)},
+      {"actualFrames", static_cast<int>(window.frames.size())},
       {"numericalPolicy", QString::fromStdString(plan.numericalPolicy)},
       {"frames", frames}};
 }
@@ -353,10 +340,10 @@ bool postprocessScnResults(const std::vector<DetectionModelWindow>& windows,
     std::string issue;
     if (!postprocessScnWindow(
             windows[static_cast<std::size_t>(index)].densityDb,
-            plan.config.modelFrames, plan.config.fftSize, raw,
-            plan.frequencyFirstBinHz, plan.frequencyStepHz, processed, issue,
-            cancelled, detectionModelInputBins(request) / 4,
-            request.spectrumMode)) {
+            windows[static_cast<std::size_t>(index)].frames.size(),
+            plan.config.fftSize, raw, plan.frequencyFirstBinHz,
+            plan.frequencyStepHz, processed, issue, cancelled,
+            detectionModelInputBins(request) / 4, request.spectrumMode)) {
       error = QString::fromStdString(issue);
       return false;
     }
@@ -674,6 +661,7 @@ bool DetectionTaskManager::enqueue(const QString& directory,
     return false;
   }
   DetectionSourceConfig config;
+  config.inputAdaptationVersion = request.inputAdaptationVersion;
   config.profileId = request.profile.id;
   config.profileVersion = request.profile.version;
   config.fftSize = request.profile.fftSize;
@@ -681,19 +669,19 @@ bool DetectionTaskManager::enqueue(const QString& directory,
   config.modelHopFrames = request.profile.modelHopFrames;
   config.hopSeconds = request.profile.hopSeconds;
   config.workingSetBudgetBytes = request.workingSetBudgetBytes;
+  config.evidenceBudgetBytes = request.evidenceBudgetBytes;
+  config.maximumCandidates = request.parameters.topK;
   DetectionSourcePlan plan;
   if (!makeDetectionSourcePlan(metadata, request.requestedRange, config, plan,
                                error, request.sourceIdentity.projectGeneration))
     return false;
-  const std::uint64_t payloadBytes =
-      static_cast<std::uint64_t>(request.parameters.batchSize) *
-      request.profile.modelFrames * request.profile.fftSize * sizeof(float);
-  const auto pipelineReserve = plan.estimatedPeakBytes + 6 * payloadBytes +
-                               2 * 33554432ULL + 2 * 65536ULL;
-  if (pipelineReserve + 65536 > request.workingSetBudgetBytes) {
+  std::uint64_t pipelineReserve = 0;
+  const auto executionBatch = detectionExecutionBatchSize(
+      plan, request.parameters.batchSize, pipelineReserve);
+  if (!executionBatch) {
     error =
-        "Working set budget cannot hold the bounded DSP, batch and worker "
-        "transport";
+        "A single window exceeds the DSP, binary transport or evidence shard "
+        "budget after reducing the execution batch";
     return false;
   }
   request.contextRange = {
@@ -717,6 +705,7 @@ bool DetectionTaskManager::enqueue(const QString& directory,
   auto job = std::make_shared<Job>();
   job->directory = directory;
   job->metadata = metadata;
+  job->executionBatchSize = executionBatch;
   job->publicationBudgetBytes = request.workingSetBudgetBytes - pipelineReserve;
   if (request.sourceIdentity.quickFingerprint.empty()) {
     request.sourceIdentity.quickFingerprint =
@@ -922,6 +911,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   }
   FixedDetectionSource source;
   DetectionSourceConfig config;
+  config.inputAdaptationVersion = request.inputAdaptationVersion;
   config.profileId = request.profile.id;
   config.profileVersion = request.profile.version;
   config.fftSize = request.profile.fftSize;
@@ -929,6 +919,8 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   config.modelHopFrames = request.profile.modelHopFrames;
   config.hopSeconds = request.profile.hopSeconds;
   config.workingSetBudgetBytes = request.workingSetBudgetBytes;
+  config.evidenceBudgetBytes = request.evidenceBudgetBytes;
+  config.maximumCandidates = request.parameters.topK;
   if (cancelled() ||
       !source.open(job->metadata, request.requestedRange, config, error,
                    request.sourceIdentity.projectGeneration)) {
@@ -994,8 +986,8 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     }
     std::vector<float> tensor;
     QJsonArray mappings;
-    for (std::uint32_t batch = 0; batch < request.parameters.batchSize &&
-                                  index < plan.eligibleWindowCount;
+    for (std::uint32_t batch = 0;
+         batch < job->executionBatchSize && index < plan.eligibleWindowCount;
          ++batch, ++index) {
       DetectionModelWindow window;
       if (!source.readModelWindow(index, window, error, cancelled)) {
@@ -1023,7 +1015,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     {
       std::lock_guard lock(mutex_);
       for (const auto& window : windows) {
-        const auto end = window.firstFrameIndex + config.modelFrames;
+        const auto end = window.firstFrameIndex + window.frames.size();
         job->run.readFrames +=
             end - std::max(window.firstFrameIndex,
                            readFrameEnd.value_or(window.firstFrameIndex));
@@ -1039,16 +1031,20 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
     }
+    QJsonArray windowIds;
+    for (const auto& mapped : mappings)
+      windowIds.append(
+          QJsonObject{{"windowId", mapped.toObject()["windowId"]}});
     DetectionWorkerPacket packet{
         workerEnvelope("batch", "batch:" + QString::number(index), index,
-                       {{"windows", mappings}},
+                       {{"windows", windowIds}},
                        QString::fromStdString(request.runId),
                        request.sourceIdentity.projectGeneration,
                        QString::fromStdString(set.fileId)),
         {}};
     attachFloat32Payload(packet, tensor,
                          {static_cast<int>(windows.size()), 1,
-                          static_cast<int>(config.modelFrames),
+                          static_cast<int>(plan.actualWindowFrames),
                           static_cast<int>(config.fftSize)});
     DetectionWorkerPacket response;
     {

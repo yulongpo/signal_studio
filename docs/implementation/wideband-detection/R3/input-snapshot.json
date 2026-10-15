@@ -1,0 +1,67 @@
+{
+  "schema": "signalstudio-r3-input-snapshot-v1",
+  "parentCommit": "e4db9c8ef79792193b24f490f666cc9025d7f49f",
+  "branch": "rebuild/a143-native",
+  "files": [
+    {
+      "path": "domain/detection.cpp",
+      "bytes": 12932,
+      "sha256": "e79761621972a35a5194cd20375abadf7befc7e902847a9c8ef4597b525b92fc"
+    },
+    {
+      "path": "infrastructure/detection_source.cpp",
+      "bytes": 36633,
+      "sha256": "a58c36fa103a42d513f320ac5d28d507537259da188f7b0b9ccec8ca99da4855"
+    },
+    {
+      "path": "infrastructure/detection_source.h",
+      "bytes": 5578,
+      "sha256": "05d2530e065415b1358d9cdf3c6209207d9a305802c9014cfcf8d87c56f8fec4"
+    },
+    {
+      "path": "infrastructure/detection_store.cpp",
+      "bytes": 49477,
+      "sha256": "54670a34592c43267ffd07a3f8e3a672792376c3a6938a409c9baa17d658279e"
+    },
+    {
+      "path": "infrastructure/detection_task.cpp",
+      "bytes": 54856,
+      "sha256": "6a1d6ddfe20bd49d178126b4e4ed1b2187fd32103a898be20832865c246781cd"
+    },
+    {
+      "path": "infrastructure/detection_task.h",
+      "bytes": 2270,
+      "sha256": "09fed1c8a8f5544e93403b796dbc1a0dc7c68b5fa6e178693a5645894997feb8"
+    },
+    {
+      "path": "tests/detection_source_tests.cpp",
+      "bytes": 34051,
+      "sha256": "9d43dd8bf716ac597a86c5180377a987c6e0162f9eb2d1f5142c2c45db5b23f4"
+    },
+    {
+      "path": "tests/detection_store_tests.cpp",
+      "bytes": 23383,
+      "sha256": "f7c0166ea83929ba875edfab67473c7364e88b93eddfa4c7091c650b4444f255"
+    },
+    {
+      "path": "tests/detection_task_tests.cpp",
+      "bytes": 32704,
+      "sha256": "6983181df420530c050bcd71d864f72a168bddf71d714baba3a8714fecbb9827"
+    },
+    {
+      "path": "tests/ui_tests.cpp",
+      "bytes": 201452,
+      "sha256": "ab8a7a7b28966795374f2230f7754a556c17e89669462329ef33676e699f477d"
+    },
+    {
+      "path": "tools/detection_worker/main.cpp",
+      "bytes": 12825,
+      "sha256": "b782cdd29a577ea035e51fc0d71fab66db7b4db6f660e03a10f57e9ffb2cf2e0"
+    },
+    {
+      "path": "ui/detection/detection_card.cpp",
+      "bytes": 51184,
+      "sha256": "a8ef652d9cadc388b46277fea6495fc9ee1e7c8ba0072b531eacc23d8ae1408c"
+    }
+  ]
+}

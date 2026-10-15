@@ -51,6 +51,7 @@ class DetectionTaskManager {
     bool terminalPersisted = false;
     bool publicationTaken = false;
     DetectionPublication publication;
+    std::uint32_t executionBatchSize = 1;
     std::uint64_t publicationBytes = 65536, publicationBudgetBytes = 0;
   };
   void execute(const std::shared_ptr<Job>&);

@@ -332,6 +332,17 @@ void budgetsAndMalformedRequests() {
   object["spectrumMode"] = 5;
   check(!decodeDetectionRequest(object, sentinel, error),
         "An unknown spectrum selection must fail without inventing a fallback");
+  auto largeWindow = run.request;
+  largeWindow.profile.modelFrames = std::numeric_limits<std::uint32_t>::max();
+  largeWindow.profile.modelHopFrames =
+      std::numeric_limits<std::uint32_t>::max();
+  check(
+      decodeDetectionRequest(encodeDetectionRequest(largeWindow), sentinel,
+                             error) &&
+          sentinel.profile.modelFrames == largeWindow.profile.modelFrames &&
+          sentinel.profile.modelHopFrames == largeWindow.profile.modelHopFrames,
+      "Analysis frame counts are uint32; actual observation and byte budgets "
+      "decide executability, not the old 10000 parsing cap");
   auto mapping = mappings()[0].toObject();
   mapping["endSample"] = "400001";
   check(

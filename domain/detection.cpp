@@ -31,10 +31,10 @@ bool validRange(ViewRange range, const SourceIdentity& source,
 
 const std::vector<DetectionProfile>& detectionProfiles() {
   static const std::vector<DetectionProfile> profiles{
-      {"ffscn-gui-iq-v1", 1, "FFSCN GUI IQ · 10帧", "主线候选 / 需资产预检",
+      {"ffscn-gui-iq-v1", 1, "FFSCN GUI IQ", "主线候选 / 需资产预检",
        DetectionBackendKind::TensorRt, 65536, 10, 5, .001, false, false},
-      {"scn-max-psd-v1", 1, "SCN 最大谱 · 16帧", "频率对照",
-       DetectionBackendKind::Scn, 32768, 16, 5, .001, true, false},
+      {"scn-max-psd-v1", 1, "SCN 频率谱", "频率对照", DetectionBackendKind::Scn,
+       32768, 16, 5, .001, true, false},
       {"ffscn-17-experimental-v1", 1, "FFSCN 17阶 · 10帧", "实验 / 未正式验证",
        DetectionBackendKind::Experimental17, 131072, 10, 5, .001, false, false},
       {"pipeline-fixture-v1", 1, "系统链路夹具 · 不是真实模型", "仅工程测试",

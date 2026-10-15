@@ -1,0 +1,22 @@
+[
+  {
+    "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionTaskTests.exe",
+    "sha256": "4945113224530d09e2ff511bf6fd2956944fc0fd59ed53042a39d4a52d4e518a",
+    "bytes": 1022976
+  },
+  {
+    "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionWorker.exe",
+    "sha256": "1b585ccd560631bd4c4c844a1a2f62127b1ccd3b13164e59bf2280b509f149d1",
+    "bytes": 217600
+  },
+  {
+    "path": "out/vs2026-qt611-release_bin/SignalStudio.exe",
+    "sha256": "8acf7b6c8a84a4e2b45ab6b6424c035f6a548a71de4b617f5ccf5dd5648e9558",
+    "bytes": 4370432
+  },
+  {
+    "path": "out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+    "sha256": "776ebd3261c063567e443f5b96d5c93a8e50449d9d491bb1242f8c7bf2575786",
+    "bytes": 2617
+  }
+]

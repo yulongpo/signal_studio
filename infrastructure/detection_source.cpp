@@ -14,6 +14,7 @@
 #include <stdexcept>
 
 #include "application/annotation_service.h"
+#include "domain/detection.h"
 #include "infrastructure/source_loader.h"
 #include "infrastructure/wav_metadata.h"
 
@@ -50,28 +51,40 @@ void validateConfig(const DetectionSourceConfig& config,
   require(!config.profileId.empty() && config.profileId.size() <= 128 &&
               config.profileVersion > 0,
           "检测 profile 身份无效");
+  require(
+      config.inputAdaptationVersion == 1 || config.inputAdaptationVersion == 2,
+      "未知的检测输入适配版本");
   require(config.fftSize >= 32 && config.fftSize <= 262144 &&
-              (config.fftSize & (config.fftSize - 1)) == 0,
-          "检测 FFT 长度须为 32–262144 的 2 次幂");
+              (config.inputAdaptationVersion == 2 ||
+               (config.fftSize & (config.fftSize - 1)) == 0),
+          "检测分析长度须为32–262144；不规则长度由适配层重算FFT");
   const bool scn = config.profileId == "scn-max-psd-v1";
-  require(config.modelFrames == (scn ? 16U : 10U) && config.modelHopFrames == 5,
-          "模型上下文须使用已注册的真实时间槽与 5 帧滑窗");
+  require(config.modelFrames > 0 && config.modelHopFrames > 0,
+          "检测窗口与滑动帧数须为正整数");
   require(std::isfinite(config.hopSeconds) && config.hopSeconds > 0 &&
-              config.hopSeconds <= 1,
+              config.hopSeconds <= 100,
           "检测 hop 时间无效");
-  if (config.profileId == "ffscn-gui-iq-v1")
-    require(config.profileVersion == 1 && config.fftSize == 65536 &&
-                config.hopSeconds == .001,
-            "ffscn-gui-iq-v1 的 FFT/hop/version 已冻结");
-  if (scn)
-    require(config.profileVersion == 1 && config.fftSize == 32768 &&
-                config.hopSeconds == .001,
-            "scn-max-psd-v1 的 FFT/hop/version 已冻结");
+  if (config.inputAdaptationVersion == 1) {
+    require(
+        config.modelFrames == (scn ? 16U : 10U) && config.modelHopFrames == 5,
+        "历史v1模型上下文和滑窗身份发生变化");
+    if (config.profileId == "ffscn-gui-iq-v1")
+      require(config.profileVersion == 1 && config.fftSize == 65536 &&
+                  config.hopSeconds == .001,
+              "ffscn-gui-iq-v1 的 FFT/hop/version 已冻结");
+    if (scn)
+      require(config.profileVersion == 1 && config.fftSize == 32768 &&
+                  config.hopSeconds == .001,
+              "scn-max-psd-v1 的 FFT/hop/version 已冻结");
+  }
   require(config.readBlockBytes >= bytesPerFrame(source.sampleFormat) &&
               config.readBlockBytes <= 32 * 1024 * 1024,
           "检测单次读取预算须包含完整帧且不超过 32 MiB");
-  require(config.workingSetBudgetBytes <= 256 * 1024 * 1024,
-          "检测 CPU 工作集预算不得超过本期 256 MiB 上限");
+  require(config.workingSetBudgetBytes > 0 &&
+              config.workingSetBudgetBytes <= 1024ULL * 1024 * 1024,
+          "检测CPU工作集预算无效");
+  require(config.maximumCandidates > 0 && config.maximumCandidates <= 512,
+          "检测候选数预算须为1–512");
 }
 void validateSource(const FileMetadata& source, ViewRange request,
                     RawSampleReader& reader, QString& error,
@@ -164,7 +177,13 @@ void buildGrid(DetectionSourcePlan& plan) {
   require(hop >= 1 && hop < 18446744073709551616.0,
           "floor(Fs*hopSeconds) 必须至少为 1 个样本");
   plan.hopSamples = static_cast<std::uint64_t>(hop);
-  plan.realFrameCount = available / plan.hopSamples;
+  const bool adapted = config.inputAdaptationVersion == 2;
+  plan.transformBins = adapted ? std::bit_ceil(config.fftSize) : config.fftSize;
+  plan.realFrameCount = adapted ? ceilDivide(available, plan.hopSamples)
+                                : available / plan.hopSamples;
+  plan.actualWindowFrames = static_cast<std::uint32_t>(
+      adapted ? std::min<std::uint64_t>(config.modelFrames, plan.realFrameCount)
+              : config.modelFrames);
   plan.availableTailSamples = available % plan.hopSamples;
   if (plan.hopSamples < config.fftSize) {
     const auto halo = config.fftSize - plan.hopSamples;
@@ -178,30 +197,43 @@ void buildGrid(DetectionSourcePlan& plan) {
     plan.slotLeadingPadding = padding / 2;
     plan.slotTrailingPadding = padding - plan.slotLeadingPadding;
   }
-  const auto records = ceilDivide(plan.hopSamples, config.fftSize);
-  require(records <= 4096, "单个时间槽的 FFT 记录数量超过 4096 预算");
+  const auto records = ceilDivide(
+      adapted ? std::min(plan.hopSamples, available) : plan.hopSamples,
+      plan.transformBins);
+  const auto windowFrames = std::max(1U, plan.actualWindowFrames);
+  require(records <= config.workingSetBudgetBytes /
+                         (sizeof(DetectionFftSupport) * windowFrames),
+          "真实FFT支持记录超过CPU工作集预算");
   const auto chunkSamples = std::min<std::uint64_t>(
-      config.fftSize,
+      plan.transformBins,
       config.readBlockBytes / bytesPerFrame(plan.sourceIdentity.sampleFormat));
   const auto tensorBytes =
-      std::uint64_t{config.fftSize} * config.modelFrames * sizeof(float);
+      std::uint64_t{config.fftSize} * windowFrames * sizeof(float);
   plan.estimatedPeakBytes =
       2 * tensorBytes +
-      config.fftSize *
+      plan.transformBins *
           (sizeof(std::complex<double>) + 2 * sizeof(double) + sizeof(float)) +
+      (plan.transformBins == config.fftSize ? 0
+                                            : config.fftSize * sizeof(double)) +
       chunkSamples * sizeof(std::complex<float>) +
       chunkSamples * bytesPerFrame(plan.sourceIdentity.sampleFormat) +
-      records * config.modelFrames * sizeof(DetectionFftSupport);
+      records * windowFrames * sizeof(DetectionFftSupport);
   require(plan.estimatedPeakBytes <= config.workingSetBudgetBytes,
           "FFT/模型输入工作集超过配置预算");
   plan.frequencyFirstBinHz = plan.sourceIdentity.centerFrequencyHz -
                              plan.sourceIdentity.sampleRateHz / 2;
   plan.frequencyStepHz = plan.sourceIdentity.sampleRateHz / config.fftSize;
   plan.referenceConfigCompatible =
-      config.profileId == "ffscn-gui-iq-v1" && config.profileVersion == 1;
+      config.profileId == "ffscn-gui-iq-v1" && config.profileVersion == 1 &&
+      config.fftSize == 65536 && config.modelFrames == 10 &&
+      config.modelHopFrames == 5 && config.hopSeconds == .001;
+  if (adapted) {
+    plan.gridVersion = "origin0-ceil-hop-real-prefix-v2";
+    plan.numericalVersion = "cpu-f64-radix2-power-regrid-ddof1-v2";
+  }
 }
 void buildWindows(DetectionSourcePlan& plan) {
-  const auto length = plan.config.modelFrames;
+  const auto length = plan.actualWindowFrames;
   const auto step = plan.config.modelHopFrames;
   const auto available = plan.sourceIdentity.availableSamples;
   const auto requested = plan.requestedRange.time;
@@ -209,12 +241,32 @@ void buildWindows(DetectionSourcePlan& plan) {
       plan,
       intersection(requested, {available, plan.sourceIdentity.physicalSamples}),
       "unread-available-prefix");
+  if (plan.config.inputAdaptationVersion == 2) {
+    const auto eligible = intersection(requested, {0, available});
+    if (!length || eligible.begin == eligible.end) return;
+    const auto lastPossible = plan.realFrameCount - length;
+    plan.windowOriginFrame =
+        std::min(eligible.begin / plan.hopSamples, lastPossible);
+    const auto endFrame = ceilDivide(eligible.end, plan.hopSamples);
+    const auto lastStart = std::max(
+        plan.windowOriginFrame,
+        std::min(lastPossible, endFrame > length ? endFrame - length : 0));
+    plan.tailWindowFirstFrame = lastStart;
+    plan.regularWindowCount = (lastStart - plan.windowOriginFrame) / step + 1;
+    plan.anchoredTailWindow = (lastStart - plan.windowOriginFrame) % step != 0;
+    plan.eligibleRegularWindows = plan.regularWindowCount;
+    plan.eligibleTailWindow = plan.anchoredTailWindow;
+    plan.globalWindowCount = plan.regularWindowCount + plan.anchoredTailWindow;
+    plan.eligibleWindowCount = plan.globalWindowCount;
+    return;
+  }
   if (plan.realFrameCount < length) {
     exclude(plan, intersection(requested, {0, available}),
             "insufficient-real-model-frames");
     return;
   }
   const auto lastStart = plan.realFrameCount - length;
+  plan.tailWindowFirstFrame = lastStart;
   plan.regularWindowCount = lastStart / step + 1;
   plan.anchoredTailWindow = lastStart % step != 0;
   plan.globalWindowCount = plan.regularWindowCount + plan.anchoredTailWindow;
@@ -333,9 +385,14 @@ DetectionFrameMapping frameMappingForPlan(const DetectionSourcePlan& plan,
   DetectionFrameMapping mapping;
   mapping.frameIndex = index;
   const auto anchor = index * plan.hopSamples;
-  mapping.slotSamples = {anchor, anchor + plan.hopSamples};
+  const bool adapted = plan.config.inputAdaptationVersion == 2;
+  mapping.slotSamples = {
+      anchor,
+      adapted ? anchor + std::min(plan.hopSamples,
+                                  plan.sourceIdentity.availableSamples - anchor)
+              : anchor + plan.hopSamples};
   const auto addSupport = [&](qint64 virtualBegin, TimeRange bounds) {
-    const auto virtualEnd = virtualBegin + plan.config.fftSize;
+    const auto virtualEnd = virtualBegin + plan.transformBins;
     const auto first =
         std::max<qint64>(virtualBegin, static_cast<qint64>(bounds.begin));
     const auto last =
@@ -349,7 +406,22 @@ DetectionFrameMapping frameMappingForPlan(const DetectionSourcePlan& plan,
         support.actualSamples.end - support.actualSamples.begin;
     mapping.paddedSamples += support.leadingPadding + support.trailingPadding;
   };
-  if (plan.hopSamples < plan.config.fftSize) {
+  if (adapted) {
+    const auto slotLength = mapping.slotSamples.end - mapping.slotSamples.begin;
+    const auto records = ceilDivide(slotLength, plan.transformBins);
+    const auto padding =
+        (plan.transformBins - slotLength % plan.transformBins) %
+        plan.transformBins;
+    if (slotLength < plan.transformBins) {
+      addSupport(static_cast<qint64>(anchor) - static_cast<qint64>(padding / 2),
+                 {0, plan.sourceIdentity.availableSamples});
+    } else {
+      for (std::uint64_t record = 0; record < records; ++record)
+        addSupport(static_cast<qint64>(anchor + record * plan.transformBins) -
+                       static_cast<qint64>(padding / 2),
+                   mapping.slotSamples);
+    }
+  } else if (plan.hopSamples < plan.config.fftSize) {
     addSupport(static_cast<qint64>(anchor) -
                    static_cast<qint64>(plan.sourceLeadingPadding),
                {0, plan.sourceIdentity.availableSamples});
@@ -367,10 +439,52 @@ DetectionFrameMapping frameMappingForPlan(const DetectionSourcePlan& plan,
 std::uint64_t windowStartForPlan(const DetectionSourcePlan& plan,
                                  std::uint64_t eligible) {
   return eligible < plan.eligibleRegularWindows
-             ? (plan.firstRegularWindow + eligible) * plan.config.modelHopFrames
-             : plan.realFrameCount - plan.config.modelFrames;
+             ? plan.windowOriginFrame + (plan.firstRegularWindow + eligible) *
+                                            plan.config.modelHopFrames
+             : plan.tailWindowFirstFrame;
 }
 }  // namespace
+
+QJsonObject encodeDetectionFrameMapping(const DetectionFrameMapping& frame) {
+  QJsonArray supports;
+  for (const auto& support : frame.fftSupports)
+    supports.append(QJsonObject{
+        {"startSample", QString::number(support.actualSamples.begin)},
+        {"endSample", QString::number(support.actualSamples.end)},
+        {"leadingPadding", QString::number(support.leadingPadding)},
+        {"trailingPadding", QString::number(support.trailingPadding)}});
+  return {{"frameIndex", QString::number(frame.frameIndex)},
+          {"startSample", QString::number(frame.actualSamples.begin)},
+          {"endSample", QString::number(frame.actualSamples.end)},
+          {"validSamples", QString::number(frame.validSamples)},
+          {"paddedSamples", QString::number(frame.paddedSamples)},
+          {"powerFloorBins", QString::number(frame.powerFloorBins)},
+          {"densityUnderflowGuardBins",
+           QString::number(frame.densityUnderflowGuardBins)},
+          {"fftSupports", supports},
+          {"inputHash", QString::fromStdString(frame.inputHash)}};
+}
+
+std::uint32_t detectionExecutionBatchSize(const DetectionSourcePlan& plan,
+                                          std::uint32_t requestedBatch,
+                                          std::uint64_t& reservedBytes) {
+  for (auto batch = requestedBatch; batch > 0; --batch) {
+    const auto payload = std::uint64_t{batch} * plan.actualWindowFrames *
+                         plan.config.fftSize * sizeof(float);
+    const auto reserve =
+        plan.estimatedPeakBytes + 6 * payload + 2 * 33554432ULL + 2 * 65536ULL;
+    if (payload <= 32 * 1024 * 1024 &&
+        batch * (plan.estimatedWindowEvidenceBytes +
+                 plan.outputJsonReserveBytes) <
+            8 * 1024 * 1024 &&
+        reserve + 65536 <= plan.config.workingSetBudgetBytes) {
+      reservedBytes = reserve;
+      return batch;
+    }
+  }
+  reservedBytes = 0;
+  return 0;
+}
 
 bool makeDetectionSourcePlan(const FileMetadata& source, ViewRange requested,
                              DetectionSourceConfig config,
@@ -384,11 +498,79 @@ bool makeDetectionSourcePlan(const FileMetadata& source, ViewRange requested,
     plan.sourceIdentity = annotationSourceIdentity(source, generation);
     plan.requestedRange = requested;
     buildGrid(plan);
+    if (plan.config.inputAdaptationVersion == 2 && plan.realFrameCount) {
+      const auto firstLength =
+          std::min(plan.hopSamples, plan.sourceIdentity.availableSamples);
+      const auto lastLength = plan.sourceIdentity.availableSamples -
+                              (plan.realFrameCount - 1) * plan.hopSamples;
+      const auto firstPad =
+          (plan.transformBins - firstLength % plan.transformBins) %
+          plan.transformBins;
+      const auto lastPad =
+          (plan.transformBins - lastLength % plan.transformBins) %
+          plan.transformBins;
+      plan.sourceLeadingPadding = firstPad / 2;
+      plan.sourceTrailingPadding = lastPad - lastPad / 2;
+    }
     buildWindows(plan);
+    if (const auto* profile = findDetectionProfile(plan.config.profileId)) {
+      if (profile->backend != DetectionBackendKind::Fixture) {
+        DetectionRequest request;
+        request.inputAdaptationVersion = plan.config.inputAdaptationVersion;
+        request.profile = *profile;
+        request.profile.fftSize = plan.config.fftSize;
+        plan.modelHeadBytesPerWindow =
+            3ULL * (detectionModelInputBins(request) / 4) * sizeof(float);
+      }
+      // The SCN DTO has at most six objects per raw candidate, including
+      // measurements, two fusion sets, refinement and the final candidate.
+      // Finite JSON doubles need at most 32 bytes; 1536 bytes covers all keys,
+      // values and bounded skip reasons. This is a storage bound, not a model
+      // input-shape restriction. Other backends retain one candidate object.
+      plan.outputJsonReserveBytes +=
+          1024 +
+          std::uint64_t{plan.config.maximumCandidates} *
+              (profile->backend == DetectionBackendKind::Scn ? 1536 : 192);
+    }
     if (plan.eligibleWindowCount) {
       const auto first = windowStartForPlan(plan, 0);
       const auto last = windowStartForPlan(plan, plan.eligibleWindowCount - 1) +
-                        plan.config.modelFrames - 1;
+                        plan.actualWindowFrames - 1;
+      for (const auto window :
+           {std::uint64_t{0}, plan.eligibleWindowCount - 1}) {
+        std::uint64_t bytes = 4096;
+        const auto start = windowStartForPlan(plan, window);
+        for (std::uint32_t row = 0; row < plan.actualWindowFrames; ++row) {
+          const auto anchor = (start + row) * plan.hopSamples;
+          const auto slotLength =
+              plan.config.inputAdaptationVersion == 2
+                  ? std::min(plan.hopSamples,
+                             plan.sourceIdentity.availableSamples - anchor)
+                  : plan.hopSamples;
+          const auto supportCount = ceilDivide(slotLength, plan.transformBins);
+          require(
+              supportCount <
+                  (8 * 1024 * 1024 - plan.outputJsonReserveBytes - bytes) / 96,
+              "单帧FFT观测证据超过8MiB分片，无法按当前证据格式保存");
+          auto frame = frameMappingForPlan(plan, start + row);
+          frame.inputHash.assign(64, '0');
+          frame.powerFloorBins = frame.densityUnderflowGuardBins =
+              plan.config.fftSize;
+          bytes += QJsonDocument(encodeDetectionFrameMapping(frame))
+                       .toJson(QJsonDocument::Compact)
+                       .size() +
+                   1;
+          require(
+              bytes + plan.outputJsonReserveBytes < 8 * 1024 * 1024,
+              "单窗口真实观测证据超过当前8MiB分片或证据预算，无法保存该窗口");
+        }
+        plan.estimatedWindowEvidenceBytes =
+            std::max(plan.estimatedWindowEvidenceBytes, bytes);
+      }
+      require(plan.estimatedWindowEvidenceBytes + plan.modelHeadBytesPerWindow +
+                      plan.outputJsonReserveBytes <=
+                  plan.config.evidenceBudgetBytes,
+              "单窗口观测、模型原始输出与候选证据超过当前保存预算");
       plan.contextRange = {frameMappingForPlan(plan, first).actualSamples.begin,
                            frameMappingForPlan(plan, last).actualSamples.end};
     }
@@ -416,7 +598,7 @@ bool FixedDetectionSource::open(const FileMetadata& source, ViewRange requested,
     path_ = canonicalPath(source.path);
     plan_.sourceIdentity.quickFingerprint = fingerprint_.toStdString();
     reader_ = std::move(reader);
-    hann_.resize(plan_.config.fftSize);
+    hann_.resize(plan_.transformBins);
     hannEnergy_ = 0;
     for (std::size_t i = 0; i < hann_.size(); ++i) {
       hann_[i] = .5 - .5 * std::cos(2 * std::numbers::pi * i / hann_.size());
@@ -462,8 +644,8 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
                         ComponentEncoding::Float32
                     ? "dBFS/Hz"
                     : "dB(unit^2/Hz)";
-  std::vector<std::complex<double>> work(plan_.config.fftSize);
-  std::vector<double> power(plan_.config.fftSize, 0);
+  std::vector<std::complex<double>> work(plan_.transformBins);
+  std::vector<double> power(plan_.transformBins, 0);
   QCryptographicHash inputHash(QCryptographicHash::Sha256);
   inputHash.addData(QByteArray::fromStdString(
       sampleFormatKey(plan_.sourceIdentity.sampleFormat)));
@@ -480,6 +662,22 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
       const auto bin = (i + work.size() / 2) % work.size();
       power[bin] += std::norm(work[i]);
     }
+  }
+  if (power.size() != plan_.config.fftSize) {
+    std::vector<double> resampled(plan_.config.fftSize, 0);
+    const double scale = double(power.size()) / resampled.size();
+    for (std::size_t bin = 0; bin < resampled.size(); ++bin) {
+      const double left = bin * scale, right = (bin + 1) * scale;
+      for (auto source = static_cast<std::size_t>(left);
+           source <
+           std::min(power.size(), static_cast<std::size_t>(std::ceil(right)));
+           ++source)
+        resampled[bin] += power[source] *
+                          std::max(0.0, std::min(right, double(source + 1)) -
+                                            std::max(left, double(source))) /
+                          scale;
+    }
+    power = std::move(resampled);
   }
   frame.densityDb.resize(power.size());
   const double records = frame.mapping.fftSupports.size();
@@ -519,17 +717,19 @@ bool FixedDetectionSource::readModelWindow(
                                  ? plan_.firstRegularWindow + eligible
                                  : plan_.regularWindowCount;
   window.reportRange = {
-      intersection(plan_.requestedRange.time,
-                   {window.firstFrameIndex * plan_.hopSamples,
-                    (window.firstFrameIndex + plan_.config.modelFrames) *
-                        plan_.hopSamples}),
+      intersection(
+          plan_.requestedRange.time,
+          {window.firstFrameIndex * plan_.hopSamples,
+           std::min(plan_.sourceIdentity.availableSamples,
+                    (window.firstFrameIndex + plan_.actualWindowFrames) *
+                        plan_.hopSamples)}),
       plan_.requestedRange.frequency};
   const auto values =
-      std::size_t{plan_.config.fftSize} * plan_.config.modelFrames;
+      std::size_t{plan_.config.fftSize} * plan_.actualWindowFrames;
   window.densityDb.reserve(values);
   double mean = 0, squareDeviation = 0;
   std::uint64_t count = 0;
-  for (std::uint32_t row = 0; row < plan_.config.modelFrames; ++row) {
+  for (std::uint32_t row = 0; row < plan_.actualWindowFrames; ++row) {
     DetectionSpectrumFrame frame;
     if (!readFrame(window.firstFrameIndex + row, frame, error, cancel))
       return false;
