@@ -1,0 +1,55 @@
+{
+    "platform": "windows",
+    "screens": [
+        {
+            "availableLogicalGeometry": {
+                "height": 1019,
+                "width": 1707,
+                "x": 0,
+                "y": 0
+            },
+            "connectedIndex": 1,
+            "deviceName": "\\\\.\\DISPLAY1",
+            "devicePixelRatio": 1.5,
+            "logicalDpi": 96,
+            "logicalGeometry": {
+                "height": 1067,
+                "width": 1707,
+                "x": 0,
+                "y": 0
+            },
+            "name": "TL160ADMP36",
+            "physicalDpi": 125.86483316481294,
+            "pixelSize": {
+                "height": 1600,
+                "width": 2560
+            },
+            "primary": true
+        },
+        {
+            "availableLogicalGeometry": {
+                "height": 1392,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+            },
+            "connectedIndex": 2,
+            "deviceName": "\\\\.\\DISPLAY6",
+            "devicePixelRatio": 1.5,
+            "logicalDpi": 96,
+            "logicalGeometry": {
+                "height": 1440,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+            },
+            "name": "Redmi 27 NU",
+            "physicalDpi": 109.05000625015624,
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "primary": false
+        }
+    ]
+}

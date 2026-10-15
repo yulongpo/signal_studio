@@ -257,10 +257,17 @@ bool Session::activateFile(const std::string& id) {
           project_.files.begin(), project_.files.end(),
           [&](const FileState& file) { return file.metadata.id == id; }))
     return false;
-  if (auto* previous = activeFile()) annotations_.endRevision(*previous);
+  if (auto* previous = activeFile()) {
+    annotations_.endRevision(*previous);
+    annotations_.hover(*previous);
+  }
   project_.activeFileId = id;
   project_.activeChannelId.clear();
   project_.narrowbandWorkspaceOpen = false;
+  if (auto* current = activeFile()) {
+    annotations_.reconcileSelection(*current);
+    annotations_.hover(*current);
+  }
   return true;
 }
 
@@ -367,7 +374,14 @@ bool Session::focusMark(const std::string& id) {
       (range.frequency.upperHz - range.frequency.lowerHz) * .2;
   range.frequency.lowerHz -= frequencyMargin;
   range.frequency.upperHz += frequencyMargin;
-  selectMarks({id}, id);
+  const bool selected =
+      std::find(file->selectedMarkIds.begin(), file->selectedMarkIds.end(),
+                id) != file->selectedMarkIds.end();
+  const auto anchor = file->selectionAnchorId;
+  annotations_.select(
+      *file, selected ? file->selectedMarkIds : std::vector<std::string>{id},
+      id, segment ? segment->id : std::string{});
+  if (selected) file->selectionAnchorId = anchor;
   setView(range);
   return true;
 }

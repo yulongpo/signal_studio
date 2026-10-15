@@ -12,18 +12,22 @@
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QKeyEvent>
+#include <QKeySequence>
 #include <QLabel>
 #include <QMouseEvent>
+#include <QPainter>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSaveFile>
 #include <QSignalBlocker>
+#include <QStyledItemDelegate>
 #include <QTableView>
 #include <QTableWidget>
 #include <QVBoxLayout>
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "infrastructure/annotation_json.h"
@@ -44,21 +48,6 @@ QString reviewName(ReviewStatus s) {
   return s == ReviewStatus::Accepted   ? "已接受"
          : s == ReviewStatus::Rejected ? "已拒绝"
                                        : "待复核";
-}
-QString refineName(RefineMethod method) {
-  switch (method) {
-    case RefineMethod::Coarse:
-      return "coarse";
-    case RefineMethod::Sample:
-      return "sample";
-    case RefineMethod::Roi:
-      return "ROI";
-    case RefineMethod::None:
-      return "none";
-    case RefineMethod::Manual:
-      return "manual";
-  }
-  return "unknown";
 }
 QString timeQualityName(TimeQuality quality) {
   switch (quality) {
@@ -85,19 +74,20 @@ QString physicalRangeText(const ViewRange& range, double sampleRate) {
       .arg(range.frequency.lowerHz / 1e6, 0, 'g', 12)
       .arg(range.frequency.upperHz / 1e6, 0, 'g', 12);
 }
-std::optional<FrequencyRange> frequencyEnvelope(const Annotation& value) {
-  if (value.segments.empty())
-    return value.observation
-               ? std::optional<FrequencyRange>{value.observation->frequency}
-               : std::nullopt;
-  auto frequency = value.segments.front().range.frequency;
-  for (const auto& segment : value.segments) {
-    frequency.lowerHz =
-        std::min(frequency.lowerHz, segment.range.frequency.lowerHz);
-    frequency.upperHz =
-        std::max(frequency.upperHz, segment.range.frequency.upperHz);
-  }
-  return frequency;
+std::optional<FrequencyRange> rowFrequency(const Annotation& value) {
+  if (const auto* segment = activeSegment(value))
+    return segment->range.frequency;
+  return value.observation
+             ? std::optional<FrequencyRange>{value.observation->frequency}
+             : std::nullopt;
+}
+AnnotationSelectionMode selectionMode(Qt::KeyboardModifiers modifiers) {
+  if (modifiers & Qt::ShiftModifier)
+    return modifiers & Qt::ControlModifier
+               ? AnnotationSelectionMode::ExtendRange
+               : AnnotationSelectionMode::Range;
+  return modifiers & Qt::ControlModifier ? AnnotationSelectionMode::Toggle
+                                         : AnnotationSelectionMode::Replace;
 }
 QPushButton* button(QHBoxLayout* l, QString title, QString id,
                     std::function<void()> fn) {
@@ -113,9 +103,11 @@ class AnnotationTableModel final : public QAbstractTableModel {
   Session& session;
   std::vector<const Annotation*> rows;
   std::vector<std::string> filteredIds;
+  std::unordered_map<std::string, int> channelCounts;
+  std::unordered_set<std::string> selectedIds;
   std::function<void()> selectionChanged;
   std::size_t total = 0;
-  int order = 0;
+  int order = 1;
   Qt::SortOrder direction = Qt::AscendingOrder;
   explicit AnnotationTableModel(Session& s, QObject* parent)
       : QAbstractTableModel(parent), session(s) {}
@@ -123,182 +115,200 @@ class AnnotationTableModel final : public QAbstractTableModel {
     return p.isValid() ? 0 : static_cast<int>(rows.size());
   }
   int columnCount(const QModelIndex& p = {}) const override {
-    return p.isValid() ? 0 : 9;
+    return p.isValid() ? 0 : 11;
   }
-  QVariant headerData(int c, Qt::Orientation o, int role) const override {
-    if (o != Qt::Horizontal || role != Qt::DisplayRole) return {};
-    return QStringList{"",
-                       "名称 / annotationId",
-                       "来源",
-                       "起止时间 / ms",
-                       "中心 / MHz",
-                       "带宽 / kHz",
-                       "mean 分数",
-                       "复核",
-                       "精修 / revision"}
-        .value(c);
+  QVariant headerData(int column, Qt::Orientation orientation,
+                      int role) const override {
+    if (orientation != Qt::Horizontal || role != Qt::DisplayRole) return {};
+    return QStringList{
+        "",          "名称 / annotationId", "来源",       "当前段", "起始 / ms",
+        "结束 / ms", "中心 / MHz",          "带宽 / kHz", "mean",   "复核",
+        "通道"}
+        .value(column);
   }
   QVariant data(const QModelIndex& i, int role) const override {
     if (!i.isValid() || i.row() >= rowCount()) return {};
     const auto& a = *rows[static_cast<std::size_t>(i.row())];
+    const auto* file = session.activeFile();
+    if (!file) return {};
+    const bool selected = selectedIds.contains(a.id);
+    const bool current = file->activeMarkId == a.id;
+    const bool hovered = file->hoveredMarkId == a.id;
     if (role == Qt::UserRole) return q(a.id);
-    if (role == Qt::CheckStateRole && i.column() == 0) {
-      const auto* file = session.activeFile();
-      return file && std::find(file->selectedMarkIds.begin(),
-                               file->selectedMarkIds.end(),
-                               a.id) != file->selectedMarkIds.end()
-                 ? Qt::Checked
-                 : Qt::Unchecked;
-    }
+    if (role == Qt::UserRole + 1)
+      return (selected ? 1 : 0) | (current ? 2 : 0) | (hovered ? 4 : 0);
+    if (role == Qt::CheckStateRole && i.column() == 0)
+      return selected ? Qt::Checked : Qt::Unchecked;
     if (role == Qt::ToolTipRole)
       return q(a.id) + "\n" + q(a.sourceSetId) + "\n" +
-             (a.classLabel ? q(*a.classLabel) : "类别未知");
+             (a.classLabel ? q(*a.classLabel) : "类别未知") + "\n" +
+             (activeSegment(a) ? "几何列仅显示当前活动段；其它段不计入范围"
+                               : "时间未定位；观察窗口不作为活动段");
     if (role == Qt::ForegroundRole)
-      return QColor(a.reviewStatus == ReviewStatus::Rejected ? "#81929c"
-                    : a.sourceKind == AnnotationSource::ImportedLabel
-                        ? "#65d2bd"
-                    : a.sourceKind == AnnotationSource::Manual ? "#edc56d"
+      return QColor(a.sourceKind == AnnotationSource::ImportedLabel ? "#65d2bd"
+                    : a.sourceKind == AnnotationSource::Manual      ? "#edc56d"
                                                                : "#51c4e9");
+    if (role == Qt::BackgroundRole) {
+      if (current) return QColor("#205d7c");
+      if (selected) return QColor("#183f59");
+      if (hovered) return QColor("#22425a");
+      return {};
+    }
+    if (role == Qt::FontRole && current) {
+      QFont font;
+      font.setBold(true);
+      return font;
+    }
     if (role != Qt::DisplayRole) return {};
-    const auto* f = session.activeFile();
-    const auto frequency = frequencyEnvelope(a);
-    const auto* e = a.originEvidence.get();
-    switch (i.column() - 1) {
-      case 0:
-        return q(a.name) + "\n" + q(a.id).left(24);
+    const auto* segment = activeSegment(a);
+    const auto frequency = rowFrequency(a);
+    const auto channel = channelCounts.find(a.id);
+    switch (i.column()) {
       case 1:
+        return q(a.name) + "\n" + q(a.id).left(24) + " · r" +
+               QString::number(a.revisions.size());
+      case 2:
         return sourceName(a.sourceKind);
-      case 2: {
-        if (a.segments.empty()) return "— / 时间未定位";
-        auto lo = a.segments.front().range.time.begin,
-             hi = a.segments.front().range.time.end;
-        for (const auto& seg : a.segments) {
-          lo = std::min(lo, seg.range.time.begin);
-          hi = std::max(hi, seg.range.time.end);
-        }
-        return QString("%1段 · %2–%3")
-            .arg(a.segments.size())
-            .arg(static_cast<double>(lo) / f->metadata.sampleRateHz * 1000, 0,
-                 'g', 10)
-            .arg(static_cast<double>(hi) / f->metadata.sampleRateHz * 1000, 0,
-                 'g', 10);
-      }
       case 3:
+        return segment ? QString("第 %1/%2 段")
+                             .arg(segment - a.segments.data() + 1)
+                             .arg(a.segments.size())
+                       : QString("时间未定位");
+      case 4:
+      case 5:
+        return segment
+                   ? QString::number(
+                         static_cast<double>(i.column() == 4
+                                                 ? segment->range.time.begin
+                                                 : segment->range.time.end) /
+                             file->metadata.sampleRateHz * 1000,
+                         'g', 10)
+                   : QString("—");
+      case 6:
         return frequency ? QString::number(
                                (frequency->lowerHz + frequency->upperHz) / 2e6,
                                'g', 12)
-                         : "—";
-      case 4:
+                         : QString("—");
+      case 7:
         return frequency ? QString::number(
                                (frequency->upperHz - frequency->lowerHz) / 1000,
                                'g', 9)
-                         : "—";
-      case 5:
-        return e && e->scoreMean ? QString::number(*e->scoreMean, 'g', 4) : "—";
-      case 6:
+                         : QString("—");
+      case 8:
+        return a.originEvidence && a.originEvidence->scoreMean
+                   ? QString::number(*a.originEvidence->scoreMean, 'g', 4)
+                   : QString("—");
+      case 9:
         return reviewName(a.reviewStatus);
-      case 7:
-        return (e ? refineName(e->refineMethod) : "manual") + " / r" +
-               QString::number(a.revisions.size());
+      case 10:
+        return channel != channelCounts.end()
+                   ? QString("%1 个快照").arg(channel->second)
+                   : QString("—");
+      default:
+        return {};
     }
-    return {};
   }
   Qt::ItemFlags flags(const QModelIndex& index) const override {
     return QAbstractTableModel::flags(index) |
            (index.column() == 0 ? Qt::ItemIsUserCheckable : Qt::NoItemFlags);
   }
-  bool setData(const QModelIndex& index, const QVariant& value,
-               int role) override {
+  bool setData(const QModelIndex& i, const QVariant& value, int role) override {
     auto* file = session.activeFile();
-    if (!file || !index.isValid() || index.row() >= rowCount() ||
-        index.column() != 0 || role != Qt::CheckStateRole)
+    if (!file || !i.isValid() || i.row() >= rowCount() || i.column() != 0 ||
+        role != Qt::CheckStateRole)
       return false;
-    const auto& id = rows[static_cast<std::size_t>(index.row())]->id;
-    auto selected = file->selectedMarkIds;
-    std::erase(selected, id);
-    if (value.toInt() == Qt::Checked) selected.push_back(id);
-    const auto preferred =
-        value.toInt() == Qt::Checked ? id : file->activeMarkId;
-    const auto active =
-        std::find(selected.begin(), selected.end(), preferred) != selected.end()
-            ? preferred
-        : selected.empty() ? std::string{}
-                           : selected.back();
-    session.selectMarks(std::move(selected), active);
-    emit dataChanged(index, index, {Qt::CheckStateRole});
+    if (data(i, Qt::CheckStateRole).toInt() == value.toInt()) return true;
+    const auto result = session.annotations().chooseSelection(
+        *file, rows[static_cast<std::size_t>(i.row())]->id,
+        AnnotationSelectionMode::Toggle, filteredIds);
+    if (!result.ok) return false;
     if (selectionChanged) selectionChanged();
     return true;
   }
-  void update(int source, int status, std::size_t page, const QString& runId,
-              double minimumScore) {
+  void update(std::size_t& page, bool revealActive) {
     beginResetModel();
     rows.clear();
-    if (const auto* f = session.activeFile())
-      for (const auto& a : f->marks)
-        if (!a.deleted && f->annotationLayers[static_cast<int>(a.sourceKind)] &&
-            (source == 0 || static_cast<int>(a.sourceKind) == source - 1) &&
-            (status == 0 || static_cast<int>(a.reviewStatus) == status - 1) &&
-            (runId.isEmpty() ||
-             (runId == "__no_run__" &&
-              (!a.originEvidence || a.originEvidence->runId.empty())) ||
-             (a.originEvidence && q(a.originEvidence->runId) == runId)) &&
-            (minimumScore <= 0 ||
-             (a.originEvidence && a.originEvidence->scoreMean &&
-              *a.originEvidence->scoreMean >= minimumScore)))
-          rows.push_back(&a);
+    channelCounts.clear();
+    selectedIds.clear();
+    if (const auto* file = session.activeFile()) {
+      selectedIds.insert(file->selectedMarkIds.begin(),
+                         file->selectedMarkIds.end());
+      for (const auto& a : file->marks)
+        if (annotationVisible(*file, a)) rows.push_back(&a);
+      for (const auto& channel : file->channels)
+        ++channelCounts[channel.annotationId.empty() ? channel.sourceMarkId
+                                                     : channel.annotationId];
+    }
     std::stable_sort(rows.begin(), rows.end(), [&](auto* a, auto* b) {
-      const auto firstSample = [](const Annotation& value) {
-        auto first = std::numeric_limits<SampleIndex>::max();
-        for (const auto& segment : value.segments)
-          first = std::min(first, segment.range.time.begin);
-        return first;
-      };
-      int cmp = 0;
-      switch (order) {
-        case 1:
-          cmp =
-              static_cast<int>(a->sourceKind) - static_cast<int>(b->sourceKind);
-          break;
-        case 2:
-          cmp = firstSample(*a) < firstSample(*b)   ? -1
-                : firstSample(*a) > firstSample(*b) ? 1
+      const auto number =
+          [&](const Annotation& value) -> std::optional<double> {
+        const auto* segment = activeSegment(value);
+        const auto frequency = rowFrequency(value);
+        switch (order) {
+          case 2:
+            return static_cast<int>(value.sourceKind);
+          case 3:
+            return static_cast<double>(value.segments.size());
+          case 4:
+          case 5:
+            return segment ? std::optional<double>{static_cast<double>(
+                                 order == 4 ? segment->range.time.begin
+                                            : segment->range.time.end)}
+                           : std::nullopt;
+          case 6:
+          case 7:
+            if (!frequency) return std::nullopt;
+            return order == 6 ? (frequency->lowerHz + frequency->upperHz) / 2
+                              : frequency->upperHz - frequency->lowerHz;
+          case 8:
+            return value.originEvidence ? value.originEvidence->scoreMean
+                                        : std::nullopt;
+          case 9:
+            return static_cast<int>(value.reviewStatus);
+          case 10:
+            return channelCounts.contains(value.id) ? channelCounts.at(value.id)
                                                     : 0;
-          break;
-        case 3:
-        case 4: {
-          const auto v = [&](const Annotation* value) {
-            const auto frequency = frequencyEnvelope(*value);
-            return !frequency   ? -std::numeric_limits<double>::infinity()
-                   : order == 3 ? (frequency->lowerHz + frequency->upperHz) / 2
-                                : frequency->upperHz - frequency->lowerHz;
-          };
-          cmp = v(a) < v(b) ? -1 : v(a) > v(b) ? 1 : 0;
-          break;
+          default:
+            return std::nullopt;
         }
-        case 5: {
-          const auto v = [](auto* n) {
-            return n->originEvidence ? n->originEvidence->scoreMean.value_or(-1)
-                                     : -1;
-          };
-          cmp = v(a) < v(b) ? -1 : v(a) > v(b) ? 1 : 0;
-          break;
+      };
+      int comparison = 0;
+      if (order == 4 || order == 5) {
+        const auto* left = activeSegment(*a);
+        const auto* right = activeSegment(*b);
+        if (static_cast<bool>(left) != static_cast<bool>(right))
+          return static_cast<bool>(left);
+        if (left) {
+          const auto first =
+              order == 4 ? left->range.time.begin : left->range.time.end;
+          const auto second =
+              order == 4 ? right->range.time.begin : right->range.time.end;
+          comparison = first < second ? -1 : first > second ? 1 : 0;
         }
-        case 6:
-          cmp = static_cast<int>(a->reviewStatus) -
-                static_cast<int>(b->reviewStatus);
-          break;
-        default:
-          cmp = a->name.compare(b->name);
-          break;
+      } else if (order == 1) {
+        comparison = a->name.compare(b->name);
+      } else {
+        const auto left = number(*a), right = number(*b);
+        if (left.has_value() != right.has_value()) return left.has_value();
+        if (left) comparison = *left < *right ? -1 : *left > *right ? 1 : 0;
       }
-      return direction == Qt::AscendingOrder ? cmp < 0 : cmp > 0;
+      if (comparison == 0) return a->id < b->id;
+      return direction == Qt::AscendingOrder ? comparison < 0 : comparison > 0;
     });
     total = rows.size();
     filteredIds.clear();
     filteredIds.reserve(total);
     for (const auto* annotation : rows) filteredIds.push_back(annotation->id);
+    if (revealActive)
+      if (const auto* file = session.activeFile()) {
+        const auto active = std::find(filteredIds.begin(), filteredIds.end(),
+                                      file->activeMarkId);
+        if (active != filteredIds.end())
+          page = static_cast<std::size_t>(active - filteredIds.begin()) / 200;
+      }
+    page = std::min(page, total == 0 ? std::size_t{0} : (total - 1) / 200);
     const auto offset = std::min(page * 200, total);
-    auto finish = std::min(offset + 200, total);
+    const auto finish = std::min(offset + 200, total);
     rows = std::vector<const Annotation*>(
         rows.begin() + static_cast<std::ptrdiff_t>(offset),
         rows.begin() + static_cast<std::ptrdiff_t>(finish));
@@ -306,34 +316,74 @@ class AnnotationTableModel final : public QAbstractTableModel {
   }
 };
 
+class AnnotationSelectionDelegate final : public QStyledItemDelegate {
+ public:
+  using QStyledItemDelegate::QStyledItemDelegate;
+  void paint(QPainter* painter, const QStyleOptionViewItem& option,
+             const QModelIndex& index) const override {
+    auto style = option;
+    style.state &= ~(QStyle::State_Selected | QStyle::State_HasFocus |
+                     QStyle::State_MouseOver);
+    QStyledItemDelegate::paint(painter, style, index);
+    const auto state = index.data(Qt::UserRole + 1).toInt();
+    if (!(state & 7)) return;
+    painter->save();
+    QPen pen(state & 2   ? QColor("#a7ecff")
+             : state & 1 ? QColor("#6ab1d5")
+                         : QColor("#c0ecff"),
+             state & 2 ? 2 : 1);
+    if (!(state & 3)) pen.setStyle(Qt::DotLine);
+    painter->setPen(pen);
+    const auto box = option.rect.adjusted(0, 1, -1, -2);
+    painter->drawLine(box.topLeft(), box.topRight());
+    painter->drawLine(box.bottomLeft(), box.bottomRight());
+    if (index.column() == 0) painter->drawLine(box.topLeft(), box.bottomLeft());
+    if (index.column() == index.model()->columnCount() - 1)
+      painter->drawLine(box.topRight(), box.bottomRight());
+    if ((state & 4) && (state & 3)) {
+      painter->setPen(QPen(QColor("#d4f2ff"), 1, Qt::DotLine));
+      painter->drawLine(box.topLeft() + QPoint(0, 2),
+                        box.topRight() + QPoint(0, 2));
+    }
+    painter->restore();
+  }
+};
+
 class AnnotationTableView final : public QTableView {
  public:
   using QTableView::QTableView;
+  std::function<void(const QModelIndex&, Qt::KeyboardModifiers, bool)> choose;
+  std::function<void(const QModelIndex&)> locate;
 
  protected:
   void mousePressEvent(QMouseEvent* event) override {
     const auto index = indexAt(event->position().toPoint());
-    if (event->button() == Qt::LeftButton && index.isValid() &&
-        index.column() == 0) {
-      const auto state = model()->data(index, Qt::CheckStateRole).toInt();
-      model()->setData(index,
-                       state == Qt::Checked ? Qt::Unchecked : Qt::Checked,
-                       Qt::CheckStateRole);
+    if (event->button() == Qt::LeftButton && index.isValid()) {
+      setFocus(Qt::MouseFocusReason);
+      if (choose) choose(index, event->modifiers(), index.column() == 0);
       event->accept();
       return;
     }
     QTableView::mousePressEvent(event);
   }
   void mouseReleaseEvent(QMouseEvent* event) override {
-    const auto index = indexAt(event->position().toPoint());
-    if (event->button() == Qt::LeftButton && index.isValid() &&
-        index.column() == 0) {
+    if (event->button() == Qt::LeftButton) {
       event->accept();
       return;
     }
     QTableView::mouseReleaseEvent(event);
   }
+  void mouseDoubleClickEvent(QMouseEvent* event) override {
+    const auto index = indexAt(event->position().toPoint());
+    if (event->button() == Qt::LeftButton && index.isValid()) {
+      if (locate) locate(index);
+      event->accept();
+      return;
+    }
+    QTableView::mouseDoubleClickEvent(event);
+  }
 };
+
 AnnotationPanel::AnnotationPanel(Session& s, QWidget* parent)
     : QWidget(parent), session_(s) {
   setObjectName("annotationPanel");
@@ -387,6 +437,7 @@ void AnnotationPanel::buildFilters(QVBoxLayout* outer) {
       if (refreshing_) return;
       if (auto* f = session_.activeFile()) {
         f->annotationLayers[i] = on;
+        session_.annotations().reconcileSelection(*f);
         emit changed();
       }
     });
@@ -447,12 +498,25 @@ void AnnotationPanel::buildReviewBar(QVBoxLayout* outer) {
 }
 
 void AnnotationPanel::buildTable(QVBoxLayout* outer) {
-  table_ = new AnnotationTableView;
+  auto* view = new AnnotationTableView;
+  table_ = view;
+  view->choose = [this](const QModelIndex& index,
+                        Qt::KeyboardModifiers modifiers,
+                        bool toggle) { chooseRow(index, modifiers, toggle); };
+  view->locate = [this](const QModelIndex& index) {
+    session_.focusMark(
+        model_->data(index, Qt::UserRole).toString().toStdString());
+    revealActive();
+    emit changed();
+  };
   table_->setObjectName("annotationTable");
   table_->installEventFilter(this);
   table_->viewport()->installEventFilter(this);
   model_ = new AnnotationTableModel(session_, table_);
   table_->setModel(model_);
+  table_->setItemDelegate(new AnnotationSelectionDelegate(table_));
+  table_->setMouseTracking(true);
+  table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
   table_->setSelectionBehavior(QAbstractItemView::SelectRows);
   table_->setSelectionMode(QAbstractItemView::ExtendedSelection);
   table_->verticalHeader()->hide();
@@ -460,27 +524,32 @@ void AnnotationPanel::buildTable(QVBoxLayout* outer) {
   table_->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
   table_->horizontalHeader()->setStretchLastSection(true);
   table_->setColumnWidth(0, 30);
-  table_->setColumnWidth(1, 245);
+  table_->setColumnWidth(1, 205);
   table_->setColumnWidth(2, 85);
-  table_->setColumnWidth(3, 220);
-  for (int column : {4, 5, 6, 7}) table_->setColumnWidth(column, 115);
+  table_->setColumnWidth(3, 110);
+  for (int column : {4, 5, 6, 7}) table_->setColumnWidth(column, 110);
+  table_->setColumnWidth(8, 65);
+  table_->setColumnWidth(9, 85);
   selectAll_ = new QCheckBox(table_->horizontalHeader()->viewport());
   selectAll_->setObjectName("selectAllVisibleAnnotations");
   selectAll_->setToolTip("选择全部符合筛选条件的可见标记");
   selectAll_->setTristate(true);
   selectAll_->move(7, 6);
-  model_->selectionChanged = [this] { emit changed(); };
+  model_->selectionChanged = [this] {
+    revealActive();
+    emit changed();
+  };
   connect(selectAll_, &QCheckBox::clicked, this, [this](bool selected) {
     auto* file = session_.activeFile();
     if (!file) return;
-    auto ids = file->selectedMarkIds;
-    const std::unordered_set<std::string> visible(model_->filteredIds.begin(),
-                                                  model_->filteredIds.end());
-    std::erase_if(ids, [&](const auto& id) { return visible.contains(id); });
-    if (selected)
-      ids.insert(ids.end(), model_->filteredIds.begin(),
-                 model_->filteredIds.end());
-    session_.selectMarks(std::move(ids));
+    const auto ids =
+        selected ? model_->filteredIds : std::vector<std::string>{};
+    const auto active =
+        std::find(ids.begin(), ids.end(), file->activeMarkId) != ids.end()
+            ? file->activeMarkId
+        : ids.empty() ? std::string{}
+                      : ids.front();
+    session_.selectMarks(ids, active);
     emit changed();
   });
   table_->setSortingEnabled(false);
@@ -489,20 +558,12 @@ void AnnotationPanel::buildTable(QVBoxLayout* outer) {
   connect(table_->horizontalHeader(), &QHeaderView::sectionClicked, this,
           [this](int c) {
             if (c == 0) return;
-            --c;
             model_->direction =
                 model_->order == c && model_->direction == Qt::AscendingOrder
                     ? Qt::DescendingOrder
                     : Qt::AscendingOrder;
             model_->order = c;
-            refresh();
-          });
-  connect(table_->selectionModel(), &QItemSelectionModel::selectionChanged,
-          this, [this] { selectRows(); });
-  connect(table_, &QTableView::doubleClicked, this,
-          [this](const QModelIndex& i) {
-            session_.focusMark(
-                model_->data(i, Qt::UserRole).toString().toStdString());
+            revealActive();
             emit changed();
           });
   connect(source_, &QComboBox::currentIndexChanged, this,
@@ -679,30 +740,104 @@ void AnnotationPanel::action(const AnnotationResult& r) {
   error_->clear();
   emit changed();
 }
-void AnnotationPanel::selectRows() {
-  if (refreshing_) return;
-  auto* f = session_.activeFile();
-  if (!f) return;
-  auto ids = selectionModifiers_ & (Qt::ControlModifier | Qt::ShiftModifier)
-                 ? f->selectedMarkIds
-                 : std::vector<std::string>{};
-  std::unordered_set<std::string> page;
-  for (auto* a : model_->rows) page.insert(a->id);
-  std::erase_if(ids, [&](const auto& id) { return page.contains(id); });
-  std::string active;
-  for (const auto& i : table_->selectionModel()->selectedRows()) {
-    active = model_->data(i, Qt::UserRole).toString().toStdString();
-    ids.push_back(active);
-  }
-  session_.selectMarks(std::move(ids), active);
-  emit changed();
+void AnnotationPanel::revealActive() { revealActive_ = true; }
+void AnnotationPanel::refreshHover() {
+  const auto* file = session_.activeFile();
+  table_->setProperty("hoveredAnnotationId",
+                      file ? q(file->hoveredMarkId) : QString{});
+  if (model_->rowCount())
+    emit model_->dataChanged(model_->index(0, 0),
+                             model_->index(model_->rowCount() - 1, 10),
+                             {Qt::BackgroundRole, Qt::UserRole + 1});
+  table_->viewport()->update();
+}
+void AnnotationPanel::chooseRow(const QModelIndex& index,
+                                Qt::KeyboardModifiers modifiers, bool toggle) {
+  if (refreshing_ || !index.isValid()) return;
+  auto* file = session_.activeFile();
+  if (!file) return;
+  const auto result = session_.annotations().chooseSelection(
+      *file, model_->data(index, Qt::UserRole).toString().toStdString(),
+      selectionMode(toggle ? modifiers | Qt::ControlModifier : modifiers),
+      model_->filteredIds);
+  revealActive();
+  action(result);
 }
 bool AnnotationPanel::eventFilter(QObject* watched, QEvent* event) {
-  if (watched == table_ || watched == table_->viewport()) {
-    if (event->type() == QEvent::MouseButtonPress)
-      selectionModifiers_ = static_cast<QMouseEvent*>(event)->modifiers();
-    else if (event->type() == QEvent::KeyPress)
-      selectionModifiers_ = static_cast<QKeyEvent*>(event)->modifiers();
+  if (watched == table_->viewport()) {
+    if (event->type() == QEvent::MouseMove) {
+      const auto index = table_->indexAt(
+          static_cast<QMouseEvent*>(event)->position().toPoint());
+      const auto id = model_->data(index, Qt::UserRole).toString();
+      const auto* file = session_.activeFile();
+      const auto* annotation =
+          file ? findAnnotation(*file, id.toStdString()) : nullptr;
+      emit hoverChanged(
+          id, annotation ? q(annotation->activeSegmentId) : QString{});
+    } else if (event->type() == QEvent::Leave) {
+      emit hoverChanged({}, {});
+    }
+  }
+  if (watched == table_ && event->type() == QEvent::KeyPress) {
+    auto* key = static_cast<QKeyEvent*>(event);
+    auto* file = session_.activeFile();
+    if (!file) return QWidget::eventFilter(watched, event);
+    if (key->matches(QKeySequence::SelectAll)) {
+      session_.selectMarks(
+          model_->filteredIds,
+          std::find(model_->filteredIds.begin(), model_->filteredIds.end(),
+                    file->activeMarkId) != model_->filteredIds.end()
+              ? file->activeMarkId
+          : model_->filteredIds.empty() ? std::string{}
+                                        : model_->filteredIds.front());
+      emit changed();
+      return true;
+    }
+    const auto current =
+        std::find(model_->filteredIds.begin(), model_->filteredIds.end(),
+                  file->activeMarkId);
+    auto row = current == model_->filteredIds.end()
+                   ? std::ptrdiff_t{0}
+                   : current - model_->filteredIds.begin();
+    bool navigate = true;
+    switch (key->key()) {
+      case Qt::Key_Up:
+        --row;
+        break;
+      case Qt::Key_Down:
+        ++row;
+        break;
+      case Qt::Key_PageUp:
+        row -= 200;
+        break;
+      case Qt::Key_PageDown:
+        row += 200;
+        break;
+      case Qt::Key_Home:
+        row = 0;
+        break;
+      case Qt::Key_End:
+        row = static_cast<std::ptrdiff_t>(model_->filteredIds.size()) - 1;
+        break;
+      case Qt::Key_Space:
+        break;
+      default:
+        navigate = false;
+        break;
+    }
+    if (navigate && !model_->filteredIds.empty()) {
+      row = std::clamp(
+          row, std::ptrdiff_t{0},
+          static_cast<std::ptrdiff_t>(model_->filteredIds.size()) - 1);
+      const auto result = session_.annotations().chooseSelection(
+          *file, model_->filteredIds[static_cast<std::size_t>(row)],
+          key->key() == Qt::Key_Space ? AnnotationSelectionMode::Toggle
+                                      : selectionMode(key->modifiers()),
+          model_->filteredIds);
+      revealActive();
+      action(result);
+      return true;
+    }
   }
   return QWidget::eventFilter(watched, event);
 }
@@ -746,8 +881,12 @@ void AnnotationPanel::geometry(int field) {
 void AnnotationPanel::refresh() {
   refreshing_ = true;
   auto* f = session_.activeFile();
-  const auto context = std::to_string(session_.projectGeneration()) + ":" +
-                       (f ? f->metadata.id : "");
+  if (f) session_.annotations().reconcileSelection(*f);
+  const auto context =
+      std::to_string(session_.projectGeneration()) + ":" +
+      (f ? f->metadata.id + ":" +
+               std::to_string(f->metadata.sampleFormat.selectedChannel)
+         : "");
   if (filterContext_ != context) {
     const QSignalBlocker sourceBlock(source_), statusBlock(status_),
         scoreBlock(minimumScore_);
@@ -758,7 +897,6 @@ void AnnotationPanel::refresh() {
     filterContext_ = context;
     page_ = 0;
   }
-  if (page_ * 200 > model_->total) page_ = 0;
   const auto runId = f ? q(f->annotationFilter.runId) : QString{};
   {
     const QSignalBlocker block(run_);
@@ -771,8 +909,14 @@ void AnnotationPanel::refresh() {
           run_->addItem(q(sourceSet.runId), q(sourceSet.runId));
     run_->setCurrentIndex(std::max(0, run_->findData(runId)));
   }
-  model_->update(source_->currentIndex(), status_->currentIndex(), page_,
-                 run_->currentData().toString(), minimumScore_->value());
+  model_->update(
+      page_, revealActive_ ||
+                 (f ? f->activeMarkId : std::string{}) != displayedActiveId_);
+  displayedActiveId_ = f ? f->activeMarkId : std::string{};
+  revealActive_ = false;
+  table_->setProperty("annotationPage", static_cast<qulonglong>(page_ + 1));
+  table_->setProperty("matchingAnnotationCount",
+                      static_cast<qulonglong>(model_->total));
   refreshTableSelection(f);
   refreshInspector(f);
   refreshing_ = false;
@@ -784,60 +928,68 @@ void AnnotationPanel::filterChanged() {
     file->annotationFilter.review = status_->currentIndex() - 1;
     file->annotationFilter.runId = run_->currentData().toString().toStdString();
     file->annotationFilter.minimumMean = minimumScore_->value();
+    session_.annotations().reconcileSelection(*file);
   }
   page_ = 0;
   emit changed();
 }
-void AnnotationPanel::refreshTableSelection(const FileState* f) {
+void AnnotationPanel::refreshTableSelection(const FileState* file) {
+  const QSignalBlocker selectionBlock(table_->selectionModel());
+  table_->selectionModel()->clearSelection();
+  table_->selectionModel()->setCurrentIndex({}, QItemSelectionModel::NoUpdate);
   std::unordered_set<std::string> selected;
-  if (f) selected.insert(f->selectedMarkIds.begin(), f->selectedMarkIds.end());
-  if (f) {
-    for (int i = 0; i < 3; ++i) layers_[i]->setChecked(f->annotationLayers[i]);
-    for (int i = 0; i < model_->rowCount(); ++i)
-      if (selected.contains(model_->rows[static_cast<std::size_t>(i)]->id))
+  if (file) {
+    selected.insert(file->selectedMarkIds.begin(), file->selectedMarkIds.end());
+    for (int i = 0; i < 3; ++i)
+      layers_[i]->setChecked(file->annotationLayers[i]);
+    for (int row = 0; row < model_->rowCount(); ++row) {
+      const auto& id = model_->rows[static_cast<std::size_t>(row)]->id;
+      if (selected.contains(id))
         table_->selectionModel()->select(
-            model_->index(i, 0),
+            model_->index(row, 0),
             QItemSelectionModel::Select | QItemSelectionModel::Rows);
+      if (file->activeMarkId == id) {
+        table_->selectionModel()->setCurrentIndex(
+            model_->index(row, 1), QItemSelectionModel::NoUpdate);
+        table_->scrollTo(model_->index(row, 1),
+                         QAbstractItemView::EnsureVisible);
+      }
+    }
   }
-  const auto visibleSelected =
-      std::count_if(model_->filteredIds.begin(), model_->filteredIds.end(),
-                    [&](const auto& id) { return selected.contains(id); });
   selectAll_->setEnabled(!model_->filteredIds.empty());
-  selectAll_->setCheckState(visibleSelected == 0 ? Qt::Unchecked
-                            : visibleSelected == static_cast<std::ptrdiff_t>(
-                                                     model_->filteredIds.size())
+  selectAll_->setCheckState(selected.empty() ? Qt::Unchecked
+                            : selected.size() == model_->filteredIds.size()
                                 ? Qt::Checked
                                 : Qt::PartiallyChecked);
-  const auto selectedCount = f ? f->selectedMarkIds.size() : 0;
+  const auto counts = file ? annotationCounts(*file) : AnnotationCounts{};
   if (auto* accept = findChild<QPushButton*>("acceptAnnotations")) {
-    accept->setText(QString("✓ 接受所选 %1").arg(selectedCount));
-    accept->setEnabled(selectedCount != 0);
+    accept->setText(QString("✓ 接受所选 %1").arg(counts.selected));
+    accept->setEnabled(counts.selected != 0);
   }
   if (auto* reject = findChild<QPushButton*>("rejectAnnotations")) {
-    reject->setText(QString("× 拒绝所选 %1").arg(selectedCount));
-    reject->setEnabled(selectedCount != 0);
+    reject->setText(QString("× 拒绝所选 %1").arg(counts.selected));
+    reject->setEnabled(counts.selected != 0);
   }
-  count_->setText(QString("可见 %1 / 页 %2 · 已选 %3")
-                      .arg(model_->total)
-                      .arg(page_ + 1)
-                      .arg(f ? f->selectedMarkIds.size() : 0));
-  if (f) {
-    const auto stored =
-        std::count_if(f->marks.begin(), f->marks.end(),
-                      [](const auto& value) { return !value.deleted; });
-    count_->setText(QString("总数 %1 / 可见 %2 / 已选 %3 · 页 %4")
-                        .arg(stored)
-                        .arg(model_->total)
-                        .arg(selectedCount)
-                        .arg(page_ + 1));
-  }
+  count_->setText(
+      QString("匹配 %1 / 总数 %2 / 已选 %3 · 页 %4/%5")
+          .arg(counts.matching)
+          .arg(counts.total)
+          .arg(counts.selected)
+          .arg(page_ + 1)
+          .arg(std::max<std::size_t>(1, (model_->total + 199) / 200)));
+  findChild<QPushButton*>("annotationsPreviousPage")->setEnabled(page_ != 0);
+  findChild<QPushButton*>("annotationsNextPage")
+      ->setEnabled((page_ + 1) * 200 < model_->total);
+  refreshHover();
 }
 void AnnotationPanel::refreshInspector(const FileState* f) {
   const auto* a = f ? findMark(*f, f->activeMarkId) : nullptr;
   const auto next =
       std::to_string(session_.projectGeneration()) + ":" +
-      (f ? f->metadata.id : "") + ":" +
-      (a ? a->id + ":" + a->activeSegmentId + ":" + a->revisionId : "");
+      (f ? f->metadata.id + ":" +
+               std::to_string(f->metadata.sampleFormat.selectedChannel)
+         : "") +
+      ":" + (a ? a->id + ":" + a->activeSegmentId + ":" + a->revisionId : "");
   if (context_ != next) {
     discardDrafts();
     context_ = next;
@@ -907,7 +1059,10 @@ void AnnotationPanel::refreshInspector(const FileState* f) {
               reviewName(a->reviewStatus) + "\n" + q(a->id) + " / " +
               q(a->revisionId) + "\n" +
               (a->classLabel ? "原始类别 " + q(*a->classLabel) : "类别未知") +
-              (a->segments.empty() ? "\n时间未定位；不可直接创建通道" : "")
+              (seg ? QString("\n当前第 %1/%2 段")
+                         .arg(seg - a->segments.data() + 1)
+                         .arg(a->segments.size())
+                   : QString("\n时间未定位；没有活动段"))
         : "选择标记查看来源 / 段 / 修订");
   refreshEvidence(a);
 }

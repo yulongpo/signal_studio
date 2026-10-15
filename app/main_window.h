@@ -5,6 +5,7 @@
 #include <QStringList>
 #include <array>
 #include <map>
+#include <unordered_set>
 
 #include "application/session.h"
 
@@ -42,6 +43,9 @@ class MainWindow : public QMainWindow {
   ~MainWindow() override;
   Session& session() { return session_; }
   void refresh();
+  // Repaints only annotation projections, without requesting DSP or changing
+  // the selected set, active object/segment, page, or visible range.
+  void refreshAnnotationHover();
   bool importLabels(const QString& path, QString* error = nullptr,
                     bool preview = false);
   bool createProject(const QString& parentDirectory, const QString& projectName,
@@ -106,9 +110,13 @@ class MainWindow : public QMainWindow {
   void rebuildTree();
   void updateTree();
   void syncTreeState();
+  void syncTreeAnnotationStyles();
+  void resizeTreeToContents();
+  void revealTreeAnnotation();
+  std::vector<std::string> treeSelectionOrder() const;
   QStringList treeStructure() const;
   void selectMark(const QString& id, Qt::KeyboardModifiers modifiers,
-                  const QString& segmentId = {});
+                  const QString& segmentId = {}, bool fromTree = false);
   void selectAllMarks();
   void locateMark();
   void deleteMarks();
@@ -148,8 +156,14 @@ class MainWindow : public QMainWindow {
   QPushButton* evidenceMode_ = nullptr;
   bool auxiliaryEvidenceVisible_ = false;
   QString projectPath_;
-  std::string selectionAnchor_;
-  Qt::KeyboardModifiers treeSelectionModifiers_ = Qt::NoModifier;
+  static constexpr std::size_t kTreeAnnotationBatchSize = 40;
+  QString treeAnnotationContext_;
+  std::array<std::size_t, 3> treeAnnotationLimits_{kTreeAnnotationBatchSize,
+                                                   kTreeAnnotationBatchSize,
+                                                   kTreeAnnotationBatchSize};
+  std::unordered_set<std::string> treeRevealedAnnotationIds_;
+  std::string treeActiveAnnotationId_;
+  bool treeRevealPending_ = false;
   bool refreshing_ = false, treeRebuildPending_ = false, layoutBusy_ = false,
        destroying_ = false;
   bool resourcesCollapsed_ = false, propertiesCollapsed_ = false;

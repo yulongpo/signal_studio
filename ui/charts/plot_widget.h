@@ -53,7 +53,8 @@ class PlotWidget : public QWidget {
   void cancelGesture(bool exitCreating = false);
   void syncState();
   void setCursorCoordinates(SampleIndex sample, double frequencyHz);
-  void setHoveredMark(const QString& id);
+  void setHoveredMark(const QString& id, const QString& segmentId = {});
+  void refreshAnnotationOverlay();
   QString statusText() const;
   QString tipText() const;
   QMenu* createContextMenu(const QPoint& position);
@@ -80,6 +81,7 @@ class PlotWidget : public QWidget {
   void statusMessage(const QString& text);
   void markSelectionRequested(const QString& id,
                               Qt::KeyboardModifiers modifiers);
+  void annotationHoverChanged();
   void markSegmentSelectionRequested(const QString& id,
                                      const QString& segmentId,
                                      Qt::KeyboardModifiers modifiers);
@@ -227,7 +229,6 @@ class PlotWidget : public QWidget {
   bool softwareFallback_ = false;
   quint64 powerGenerations_ = 0, colorTransformGenerations_ = 0;
   Zone hoverZone_ = Zone::None;
-  std::string hoveredMark_;
   SampleIndex cursorSample_ = 0;
   double cursorFrequency_ = 0;
   std::string displayedFile_;

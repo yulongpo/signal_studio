@@ -29,6 +29,7 @@
 #include <mutex>
 #include <numbers>
 #include <thread>
+#include <unordered_set>
 
 #include "infrastructure/int16_iq_file.h"
 #include "infrastructure/spectral_analysis.h"
@@ -797,7 +798,7 @@ QString PlotWidget::tipText() const {
                 session_.linkedCursor(file->metadata.id).framePsd
                     ? "驻留帧谱 · 与 STFT 帧逐 bin 一致"
                 : file->display.psd.scope == PsdScope::SourceMark ? "来源标记"
-                : file->display.psd.scope == PsdScope::Whole      ? "整个文件"
+                : file->display.psd.scope == PsdScope::Whole ? "整个文件"
                                                              : "当前时间窗") +
                 " · N=" +
                 QString::number(
@@ -830,16 +831,27 @@ void PlotWidget::setCursorCoordinates(SampleIndex sample, double frequency) {
   cursorFrequency_ = frequency;
   repaintChart();
 }
-void PlotWidget::setHoveredMark(const QString& id) {
-  const auto markId = id.toStdString();
-  if (hoveredMark_ == markId) return;
-  hoveredMark_ = markId;
+void PlotWidget::setHoveredMark(const QString& id, const QString& segmentId) {
+  if (auto* file = session_.activeFile())
+    if (session_.annotations().hover(*file, id.toStdString(),
+                                     segmentId.toStdString())) {
+      refreshAnnotationOverlay();
+      emit annotationHoverChanged();
+    }
+}
+void PlotWidget::refreshAnnotationOverlay() {
+  const auto* file = session_.activeFile();
+  setProperty("hoveredAnnotationId",
+              file ? QString::fromStdString(file->hoveredMarkId) : QString{});
+  setProperty(
+      "hoveredAnnotationSegmentId",
+      file ? QString::fromStdString(file->hoveredSegmentId) : QString{});
   repaintChart();
 }
 void PlotWidget::setCreating(bool enabled) {
   cancelGesture();
   creating_ = enabled && session_.activeFile() && kind_ == Kind::Main;
-  hoveredMark_.clear();
+  setHoveredMark({});
   setCursor(creating_ ? Qt::CrossCursor : Qt::ArrowCursor);
   repaintChart();
   emit stateChanged();
@@ -883,7 +895,7 @@ void PlotWidget::beginDetectionRoi() {
   draft.previousCreating = creating_;
   detectionRoi_ = draft;
   creating_ = false;
-  hoveredMark_.clear();
+  setHoveredMark({});
   setFocus(Qt::OtherFocusReason);
   setCursor(Qt::CrossCursor);
   repaintChart();
@@ -926,7 +938,7 @@ void PlotWidget::syncState() {
       displayedProjectGeneration_ = session_.projectGeneration();
     }
     cancelGesture(true);
-    hoveredMark_.clear();
+    setHoveredMark({});
     hoverZone_ = Zone::None;
     requestedPowerKey_.clear();
     renderedPower_.reset();
@@ -1006,7 +1018,7 @@ void PlotWidget::cancelGesture(bool exitCreating) {
   }
   if (exitCreating) creating_ = false;
   hoverZone_ = Zone::None;
-  hoveredMark_.clear();
+  setHoveredMark({});
   setProperty("interactionZone", static_cast<int>(hoverZone_));
   setCursor(creating_ ? Qt::CrossCursor : Qt::ArrowCursor);
   repaintChart();
@@ -2267,9 +2279,9 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
   painter.translate(15, plot.center().y());
   painter.rotate(-90);
   const QString verticalTitle = sourceUnits(
-      kind_ == Kind::Main                             ? y.label
-      : psd                                           ? "功率谱密度（dBFS/Hz）"
-      : file->metadata.demo                           ? "幅值（演示单位）"
+      kind_ == Kind::Main   ? y.label
+      : psd                 ? "功率谱密度（dBFS/Hz）"
+      : file->metadata.demo ? "幅值（演示单位）"
       : file->display.waveformMode == WaveformMode::I ? "I 分量（ADC 计数）"
       : file->display.waveformMode == WaveformMode::Q ? "Q 分量（ADC 计数）"
       : file->display.waveformMode == WaveformMode::Envelope
@@ -2306,8 +2318,8 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
         fm.elidedText(tip, Qt::ElideRight, static_cast<int>(width - 12)));
     if (curvePending_ || !curveError_.isEmpty()) {
       const QString status = !curveError_.isEmpty() ? "IQ 错误 · " + curveError_
-                             : psd                  ? "正在计算真实 IQ PSD…"
-                                                    : "正在计算真实 IQ 波形…";
+                             : psd ? "正在计算真实 IQ PSD…"
+                                   : "正在计算真实 IQ 波形…";
       const double statusWidth =
           std::min(static_cast<double>(this->width() - 24),
                    std::ceil(fm.horizontalAdvance(status)) + 12);
@@ -2344,21 +2356,35 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
   painter.save();
   painter.setClipRect(plot);
   painter.setFont(canvasFont(11, true));
+  const std::unordered_set<std::string> selectedIds(
+      file->selectedMarkIds.begin(), file->selectedMarkIds.end());
+  int handleCount = 0;
   for (const auto& mark : file->marks) {
     if (!annotationVisible(*file, mark)) continue;
-    std::vector<ViewRange> ranges;
-    for (const auto& segment : mark.segments)
-      ranges.push_back(segment.id == mark.activeSegmentId ? mark.range
-                                                          : segment.range);
-    if (ranges.empty() && mark.observation) ranges.push_back(*mark.observation);
-    for (const auto& range : ranges) {
+    const bool selected = selectedIds.contains(mark.id);
+    const bool current = file->activeMarkId == mark.id;
+    const bool objectHovered =
+        file->hoveredMarkId == mark.id && !creating_ && !detectionRoi_;
+    const QColor sourceColor =
+        mark.sourceKind == AnnotationSource::ImportedLabel ? QColor("#65d2bd")
+        : mark.sourceKind == AnnotationSource::Manual      ? QColor("#edc56d")
+                                                           : QColor("#51c4e9");
+    for (std::size_t index = 0;
+         index < std::max<std::size_t>(1, mark.segments.size()); ++index) {
+      const auto* segment =
+          mark.segments.empty() ? nullptr : &mark.segments[index];
+      if (!segment && !mark.observation) continue;
+      const bool hovered =
+          objectHovered && (file->hoveredSegmentId.empty() ||
+                            (segment && segment->id == file->hoveredSegmentId));
+      const auto& range = segment ? segment->id == mark.activeSegmentId
+                                        ? mark.range
+                                        : segment->range
+                                  : *mark.observation;
+      const bool currentSegment =
+          current && segment && segment->id == file->activeSegmentId;
       const auto box = markRect(range);
       if (box.isEmpty() || !box.intersects(plot)) continue;
-      const bool selected =
-          std::find(file->selectedMarkIds.begin(), file->selectedMarkIds.end(),
-                    mark.id) != file->selectedMarkIds.end();
-      const bool hovered =
-          hoveredMark_ == mark.id && !creating_ && !detectionRoi_;
       if (hovered) {
         painter.setBrush(Qt::NoBrush);
         for (const int thickness : {10, 6}) {
@@ -2367,31 +2393,30 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
           painter.drawRect(box);
         }
       }
-      const QColor sourceColor =
-          mark.reviewStatus == ReviewStatus::Rejected ? QColor("#81929c")
-          : mark.sourceKind == AnnotationSource::ImportedLabel
-              ? QColor("#65d2bd")
-          : mark.sourceKind == AnnotationSource::Manual ? QColor("#edc56d")
-                                                        : QColor("#51c4e9");
-      painter.setBrush(hovered    ? cssColor("#58dbff43")
-                       : selected ? cssColor("#f3ce4c26")
-                                  : cssColor("#b4c5d015"));
-      QPen pen(QColor(hovered    ? "#b8f5ff"
-                      : selected ? "#f5d86c"
-                                 : sourceColor.name()),
-               hovered    ? 2.6
-               : selected ? 1.6
-                          : 1);
-      if (!selected && !hovered) pen.setDashPattern({5, 3});
-      painter.setPen(pen);
-      if (mark.segments.empty()) {
+      auto fill = sourceColor;
+      fill.setAlpha(currentSegment ? 61 : selected ? 46 : 23);
+      painter.setBrush(fill);
+      QPen sourcePen(sourceColor, currentSegment ? 3 : selected ? 2 : 1);
+      if (!selected) sourcePen.setDashPattern({5, 3});
+      painter.setPen(sourcePen);
+      if (!segment) {
         painter.setBrush(QBrush(sourceColor, Qt::BDiagPattern));
         painter.drawRect(box);
         painter.drawText(box.adjusted(5, 5, -5, -5),
                          Qt::AlignTop | Qt::AlignLeft, "时间未定位 / 观察窗口");
-      } else
+      } else {
         painter.drawRect(box);
+      }
+      // Neutral outlines communicate state while the inner source stroke keeps
+      // the three provenance colors visible in every selection state.
+      painter.setBrush(Qt::NoBrush);
+      if (currentSegment || (current && !segment)) {
+        painter.setPen(QPen(QColor("#e1f8ff"), 1));
+        painter.drawRect(box.adjusted(-3, -3, 3, 3));
+      }
       if (hovered) {
+        painter.setPen(QPen(QColor("#c4f7ff"), 1, Qt::DotLine));
+        painter.drawRect(box.adjusted(2, 2, -2, -2));
         const auto label = QString::fromStdString(mark.name) + " · 点击选中";
         const double labelWidth =
             std::ceil(QFontMetricsF(painter.font()).horizontalAdvance(label)) +
@@ -2404,26 +2429,28 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
                        std::max(plot.top() + 3, plot.bottom() - 21));
         painter.fillRect(QRectF(left, top, labelWidth, 19), QColor("#10374f"));
         painter.setPen(QColor("#95e3ff"));
-        painter.setBrush(Qt::NoBrush);
         painter.drawRect(QRectF(left + .5, top + .5, labelWidth - 1, 18));
         painter.setPen(QColor("#e2f9ff"));
         painter.drawText(QPointF(left + 8, top + 13), label);
       }
-      if (selected && !creating_ && !detectionRoi_ && range == mark.range &&
+      if (currentSegment && !creating_ && !detectionRoi_ &&
           session_.annotations().canEdit(*file, mark.id))
         for (const auto& [point, edge] : handles(box)) {
           Q_UNUSED(edge);
           if (!plot.contains(point)) continue;
+          ++handleCount;
           const QRectF handle(point - QPointF(3, 3), QSizeF(6, 6));
-          painter.fillRect(
-              handle,
-              QColor(mark.id == file->activeMarkId ? "#f7df7f" : "#b6dce9"));
+          painter.fillRect(handle, QColor("#d9f8ff"));
           painter.setPen(QColor("#344653"));
           painter.setBrush(Qt::NoBrush);
           painter.drawRect(handle);
         }
     }
   }
+  setProperty("annotationHandleCount", handleCount);
+  setProperty("activeAnnotationId", QString::fromStdString(file->activeMarkId));
+  setProperty("activeAnnotationSegmentId",
+              QString::fromStdString(file->activeSegmentId));
   if (gesture_ &&
       (gesture_->tool == Tool::ZoomBox || gesture_->tool == Tool::CreateMark)) {
     const bool creatingMark = gesture_->tool == Tool::CreateMark;
@@ -2576,10 +2603,9 @@ PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
       zoneAt(point) != Zone::Plot)
     return {};
   std::vector<const Mark*> selected;
-  for (auto it = file->marks.rbegin(); it != file->marks.rend(); ++it)
-    if (std::find(file->selectedMarkIds.begin(), file->selectedMarkIds.end(),
-                  it->id) != file->selectedMarkIds.end())
-      selected.push_back(&*it);
+  if (const auto* current = findMark(*file, file->activeMarkId);
+      current && activeSegment(*current))
+    selected.push_back(current);
   for (const auto* mark : selected) {
     if (!annotationVisible(*file, *mark) ||
         !session_.annotations().canEdit(*file, mark->id))
@@ -2624,6 +2650,19 @@ PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
     if (clip.contains(point))
       return {mark->id, Move, true, mark->activeSegmentId};
   }
+  // Other selected objects retain their existing body-drag gesture. Their
+  // resize handles are displayed only after the drag makes them current.
+  const std::unordered_set<std::string> selectedIds(
+      file->selectedMarkIds.begin(), file->selectedMarkIds.end());
+  for (auto it = file->marks.rbegin(); it != file->marks.rend(); ++it) {
+    if (!selectedIds.contains(it->id) || it->id == file->activeMarkId ||
+        !annotationVisible(*file, *it))
+      continue;
+    if (activeSegment(*it) &&
+        markRect(it->range).intersected(plot).contains(point) &&
+        session_.annotations().canEdit(*file, it->id))
+      return {it->id, Move, true, it->activeSegmentId};
+  }
   const auto hits = markChoicesAt(point);
   return hits.empty() ? Hit{} : hits.front();
 }
@@ -2645,8 +2684,13 @@ void PlotWidget::updateHover(QPointF point) {
   }
   const auto hit = gesture_ ? Hit{} : hitMark(point);
   const auto underPointer =
-      gesture_ ? std::vector<std::string>{} : marksAt(point);
-  hoveredMark_ = underPointer.empty() ? std::string{} : underPointer.front();
+      gesture_ ? std::vector<Hit>{} : markChoicesAt(point);
+  setHoveredMark(underPointer.empty()
+                     ? QString{}
+                     : QString::fromStdString(underPointer.front().id),
+                 underPointer.empty()
+                     ? QString{}
+                     : QString::fromStdString(underPointer.front().segmentId));
   if (gesture_)
     setCursor(gesture_->tool == Tool::MarkEdit
                   ? gesture_->edges == Move ? Qt::ClosedHandCursor
@@ -2690,8 +2734,8 @@ void PlotWidget::updateHover(QPointF point) {
   } else
     hint = hoverZone_ == Zone::YAxis ? "辅助图谱 Y 轴：滚轮缩放幅度 · 拖动平移"
            : hoverZone_ == Zone::XAxis ? "辅助图谱 X 轴：滚轮缩放 · 拖动平移"
-           : hoverZone_ == Zone::Plot  ? "辅助图谱：滚轮缩放 X · 拖动范围放大"
-                                       : "辅助图谱：移至图谱或坐标轴进行交互";
+           : hoverZone_ == Zone::Plot ? "辅助图谱：滚轮缩放 X · 拖动范围放大"
+                                      : "辅助图谱：移至图谱或坐标轴进行交互";
   emit interactionHint(hint);
 }
 
@@ -2762,12 +2806,15 @@ void PlotWidget::mousePressEvent(QMouseEvent* event) {
                                                        : zone == Zone::YAxis)
             ? Tool::PanFrequency
             : Tool::PanTime;
-  else if (hit.selected) {
+  else if (hit.selected &&
+           !(event->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier))) {
+    if (hit.id != file->activeMarkId)
+      session_.annotations().select(*file, file->selectedMarkIds, hit.id,
+                                    hit.segmentId);
     gesture.tool = Tool::MarkEdit;
     gesture.markId = hit.id;
     gesture.edges = hit.edges;
     gesture.mark = findMark(*file, hit.id)->range;
-    file->activeMarkId = hit.id;
   } else
     gesture.tool = Tool::ZoomBox;
   gesture_ = gesture;
@@ -3304,8 +3351,14 @@ void PlotWidget::keyPressEvent(QKeyEvent* event) {
   } else if (event->matches(QKeySequence::SelectAll) && kind_ == Kind::Main) {
     if (const auto* file = session_.activeFile()) {
       std::vector<std::string> ids;
-      for (const auto& mark : file->marks) ids.push_back(mark.id);
-      session_.selectMarks(ids, ids.empty() ? std::string{} : ids.back());
+      for (const auto& mark : file->marks)
+        if (annotationVisible(*file, mark)) ids.push_back(mark.id);
+      const auto active =
+          std::find(ids.begin(), ids.end(), file->activeMarkId) != ids.end()
+              ? file->activeMarkId
+          : ids.empty() ? std::string{}
+                        : ids.front();
+      session_.selectMarks(ids, active);
       emit stateChanged();
     }
     event->accept();
@@ -3332,7 +3385,7 @@ bool PlotWidget::event(QEvent* event) {
     hoverPosition_.reset();
     QToolTip::hideText();
     hoverZone_ = Zone::None;
-    hoveredMark_.clear();
+    setHoveredMark({});
     setProperty("interactionZone", static_cast<int>(hoverZone_));
     setCursor(Qt::ArrowCursor);
     emit interactionHint("鼠标指向图谱查看操作提示");

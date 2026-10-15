@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -738,6 +739,100 @@ void testSegmentsAndSelection() {
         "Merge must reject another object's segment");
 }
 
+void testUnifiedSelectionOrderFilterAndHover() {
+  auto file = fileFixture();
+  AnnotationService service;
+  const auto set =
+      sourceFixture(file, "selection", AnnotationSource::Algorithm);
+  std::vector<Annotation> values;
+  std::vector<std::string> order;
+  for (int i = 0; i < 268; ++i) {
+    const auto id = "selection:" + std::to_string(i);
+    values.push_back(annotationFixture(set, id));
+    order.push_back(id);
+  }
+  checkResult(service.publishSourceSet(file, set, std::move(values)),
+              "Selection fixture publication failed");
+  checkResult(service.chooseSelection(file, order[5],
+                                      AnnotationSelectionMode::Replace, order),
+              "Plain selection failed");
+  const auto anchor = file.selectionAnchorId;
+  checkResult(service.chooseSelection(file, order[210],
+                                      AnnotationSelectionMode::Range, order),
+              "Cross-page range failed");
+  check(file.selectedMarkIds.size() == 206 && file.activeMarkId == order[210] &&
+            file.selectionAnchorId == anchor,
+        "Shift must use the complete initiating order and preserve its anchor");
+  checkResult(service.chooseSelection(file, order[5],
+                                      AnnotationSelectionMode::Toggle, order),
+              "Toggle failed");
+  check(file.selectedMarkIds.size() == 205 && file.activeMarkId == order[210] &&
+            file.selectionAnchorId == order[5],
+        "Removing a noncurrent object must retain the current object");
+  auto reversed = order;
+  std::reverse(reversed.begin(), reversed.end());
+  checkResult(service.chooseSelection(file, order[2],
+                                      AnnotationSelectionMode::Range, reversed),
+              "Reverse-view range failed");
+  check(
+      file.selectedMarkIds == std::vector<std::string>(reversed.begin() + 262,
+                                                       reversed.begin() + 266),
+      "Range selection must follow the initiating view, including direction");
+  const auto ids = file.selectedMarkIds;
+  const auto active = file.activeMarkId;
+  const auto history = service.historySize(file);
+  const auto* target = findAnnotation(file, order[100]);
+  check(service.hover(file, target->id, target->activeSegmentId),
+        "Hover must publish a separate transient identity");
+  check(
+      file.selectedMarkIds == ids && file.activeMarkId == active &&
+          service.historySize(file) == history &&
+          file.hoveredSegmentId == target->activeSegmentId,
+      "Hover must not alter selection, current segment, geometry, or history");
+  checkResult(service.select(file, order, order[267]),
+              "All-matching selection failed");
+  check(file.selectedMarkIds.size() == 268,
+        "Selection must not have a table page or tree preview cap");
+  file.annotationFilter.minimumMean = .9;
+  service.reconcileSelection(file);
+  check(file.selectedMarkIds.empty() && file.activeMarkId.empty() &&
+            file.activeSegmentId.empty() && file.selectionAnchorId.empty() &&
+            file.hoveredMarkId.empty() &&
+            annotationCounts(file).matching == 0 &&
+            annotationCounts(file).total == 268,
+        "A filter must prune selected, current, anchor, and hover identities");
+  file.annotationFilter.minimumMean = 0;
+  service.reconcileSelection(file);
+  check(file.selectedMarkIds.empty(),
+        "Restoring a filter must not resurrect hidden selection");
+  checkResult(service.select(file, order), "Select before hiding layer failed");
+  file.annotationLayers[2] = false;
+  service.reconcileSelection(file);
+  check(file.selectedMarkIds.empty() && file.activeMarkId.empty(),
+        "A closed source layer must prune its entire selection");
+  file.annotationLayers[2] = true;
+  checkResult(service.select(file, {order[0]}, order[0]),
+              "Select before sample-channel change failed");
+  service.hover(file, order[1]);
+  file.metadata.sampleFormat.channels = 2;
+  file.metadata.sampleFormat.selectedChannel = 1;
+  service.reconcileSelection(file);
+  check(file.selectedMarkIds.empty() && file.selectionAnchorId.empty() &&
+            file.hoveredMarkId.empty() &&
+            annotationCounts(file).matching == 0 &&
+            annotationCounts(file).total == 0,
+        "Selection and matching counts must be confined to one sample channel");
+  const auto other = manual(service, file);
+  checkResult(service.select(file, {other}, other),
+              "New-channel selection failed");
+  check(annotationCounts(file).total == 1 && file.activeMarkId == other,
+        "The new channel must select only its own objects");
+  file.metadata.sampleFormat.selectedChannel = 0;
+  service.reconcileSelection(file);
+  check(file.selectedMarkIds.empty() && annotationCounts(file).total == 268,
+        "Changing sample channel back must not revive a stale selection");
+}
+
 void testAtomicBatchAndConcurrentUndo() {
   auto file = fileFixture();
   AnnotationService service;
@@ -1002,6 +1097,8 @@ int main() {
        testConfirmationCurrentSourceAndRevision},
       {"physical and available bounds", testPhysicalAndAvailableBounds},
       {"multi-segment editing and selection", testSegmentsAndSelection},
+      {"unified selection, order, filter, and hover",
+       testUnifiedSelectionOrderFilterAndHover},
       {"atomic batch and concurrent undo", testAtomicBatchAndConcurrentUndo},
       {"channel snapshots and source changes",
        testChannelSnapshotsAndSourceChanges},

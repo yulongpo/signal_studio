@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -190,6 +191,10 @@ struct FileState {
   std::vector<Channel> channels;
   std::vector<std::string> selectedMarkIds;
   std::string activeMarkId;
+  // Session-only selection context. Views project these values; their native
+  // item selection models never own a separate annotation selection.
+  std::string selectionAnchorId, hoveredMarkId, hoveredSegmentId;
+  std::optional<std::uint32_t> selectionSampleChannel;
   std::vector<EnvelopePoint>
       navigationEnvelope;  // Session-only; rebuilt by actual source scanning.
   std::vector<AnnotationSourceSet> sourceSets;
@@ -199,9 +204,20 @@ struct FileState {
   std::array<bool, 3> annotationLayers{true, true, true};
   AnnotationViewFilter annotationFilter;
 };
+inline bool annotationInContext(const FileState& file,
+                                const Annotation& value) {
+  if (value.deleted ||
+      (!value.fileId.empty() && value.fileId != file.metadata.id))
+    return false;
+  for (const auto& source : file.sourceSets)
+    if (source.id == value.sourceSetId)
+      return !source.deleted &&
+             source.sampleChannel == file.metadata.sampleFormat.selectedChannel;
+  return value.sourceSetId.empty();  // Unmigrated legacy projection.
+}
 inline bool annotationVisible(const FileState& file, const Annotation& value) {
   const auto& filter = file.annotationFilter;
-  return !value.deleted &&
+  return annotationInContext(file, value) &&
          file.annotationLayers[static_cast<int>(value.sourceKind)] &&
          (filter.source < 0 ||
           filter.source == static_cast<int>(value.sourceKind)) &&
@@ -215,6 +231,18 @@ inline bool annotationVisible(const FileState& file, const Annotation& value) {
          (filter.minimumMean <= 0 ||
           (value.originEvidence && value.originEvidence->scoreMean &&
            *value.originEvidence->scoreMean >= filter.minimumMean));
+}
+struct AnnotationCounts {
+  std::size_t total = 0, matching = 0, selected = 0;
+};
+inline AnnotationCounts annotationCounts(const FileState& file) {
+  AnnotationCounts counts;
+  for (const auto& value : file.marks) {
+    if (annotationInContext(file, value)) ++counts.total;
+    if (annotationVisible(file, value)) ++counts.matching;
+  }
+  counts.selected = file.selectedMarkIds.size();
+  return counts;
 }
 struct Project {
   std::string name = "未命名工程";

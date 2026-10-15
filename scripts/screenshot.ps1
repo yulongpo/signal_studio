@@ -9,9 +9,52 @@ param(
     [switch]$SoftwareRenderer,
     [switch]$WidebandDetection,
     [switch]$ProductionModel,
-    [switch]$FinalAcceptance
+    [switch]$FinalAcceptance,
+    [ValidateSet('U1')]
+    [string]$AnnotationInteractions
 )
 $ErrorActionPreference = 'Stop'
+function Assert-AnnotationInteractionsCapture($Report, [int]$CaptureExitCode, [string]$Node) {
+    if ($CaptureExitCode -ne 0 -or $Report.pass -ne $true -or
+        $Report.mode -ne 'annotation-interactions' -or $Report.node -ne $Node) {
+        throw "Native annotation interaction capture failed: $($Report.error)"
+    }
+    if ($Report.platform -ne 'windows' -or $Report.fullScreen -ne $true -or
+        $Report.screen.connectedIndex -ne 2 -or $Report.screen.friendlyName -notmatch '^Redmi\s*27\s*NU$' -or
+        $Report.screen.devicePath -notmatch 'DISPLAY6$' -or
+        $Report.screen.pixelSize.width -ne 3840 -or $Report.screen.pixelSize.height -ne 2160 -or
+        [Math]::Abs($Report.screen.devicePixelRatio - 1.5) -gt 0.001 -or
+        $Report.logicalWindowSize.width -ne 2560 -or $Report.logicalWindowSize.height -ne 1440) {
+        throw 'Annotation acceptance requires connected screen 2, Redmi 27 NU / DISPLAY6, native 4K/150% fullscreen.'
+    }
+    $scenes = @($Report.scenes)
+    if ($scenes.Count -ne 8 -or $Report.sceneCount -ne 8 -or @($scenes.scene | Select-Object -Unique).Count -ne 8) {
+        throw 'U1 capture must contain all eight unique planned interaction scenes.'
+    }
+    foreach ($scene in $scenes) {
+        if ($scene.pass -ne $true -or $scene.windowFullScreen -ne $true -or
+            $scene.windowScreen.connectedIndex -ne 2 -or $scene.capturedScreen.connectedIndex -ne 2 -or
+            $scene.capturedPixelSize.width -ne 3840 -or $scene.capturedPixelSize.height -ne 2160 -or
+            [Math]::Abs($scene.capturedDevicePixelRatio - 1.5) -gt 0.001 -or
+            $scene.logicalWindowSize.width -ne 2560 -or $scene.logicalWindowSize.height -ne 1440 -or
+            @($scene.annotationLayers).Count -ne 3 -or
+            -not (Test-Path -LiteralPath $scene.png -PathType Leaf) -or (Get-Item -LiteralPath $scene.png).Length -eq 0) {
+            throw "Native interaction scene/DPI validation failed: $($scene.scene)"
+        }
+    }
+    $charts = @($Report.renderEvidence.charts)
+    if ($charts.Count -ne 3 -or @($charts | Where-Object {
+                $_.gpuReady -ne $true -or $_.completedFrames -le 0 -or $_.backend -match 'CPU|Software'
+            }).Count -ne 0 -or @($charts | Where-Object { $_.name -eq 'mainPlot' -and $_.textureUploads -gt 0 }).Count -ne 1) {
+        throw 'Interaction capture requires actual hardware QRhi frames and a main-chart data texture.'
+    }
+    if ($Report.syntheticAnnotations -ne $true -or $Report.modelInferenceVerified -ne $false -or
+        $Report.cpuDdcVerified -ne $false -or
+        $Report.source.iqSha256 -ne '3a47e55b5f02851d702d5c5782998bf3e374f67cde592c35689acf9ec5399254' -or
+        (Get-FileHash -LiteralPath $Report.source.dataPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $Report.source.iqSha256) {
+        throw 'Actual IQ identity or the synthetic-annotation evidence boundary is inconsistent.'
+    }
+}
 function Assert-WidebandDetectionCapture($Report, [int]$CaptureExitCode, [string]$OutputDirectory) {
     if ($CaptureExitCode -ne 0 -or $Report.pass -ne $true) {
         throw "Native wideband capture failed: $($Report.error)"
@@ -104,12 +147,15 @@ $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 if ($Project) { $Project = [IO.Path]::GetFullPath($Project) }
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $outputDir = Join-Path $repoRoot "out/vs2026-qt611-$($Configuration.ToLowerInvariant())_bin"
-$executableName = if ($WidebandDetection) { 'SignalStudioUiCapture.exe' } else { 'SignalStudio.exe' }
+$executableName = if ($WidebandDetection -or $AnnotationInteractions) { 'SignalStudioUiCapture.exe' } else { 'SignalStudio.exe' }
 $executable = Join-Path $outputDir $executableName
 if (-not (Test-Path -LiteralPath $executable)) { throw "Executable does not exist: $executable" }
 if ($Narrowband -and $Project) { throw 'The packaged narrowband demo cannot be combined with -Project.' }
 if ($WidebandDetection -and ($Narrowband -or $SoftwareRenderer -or $Project)) {
     throw 'The wideband native scenario uses its actual IQ project and hardware renderer.'
+}
+if ($AnnotationInteractions -and ($WidebandDetection -or $Narrowband -or $SoftwareRenderer -or $Project -or $ProductionModel -or $FinalAcceptance)) {
+    throw 'The annotation capture uses its own actual IQ source, explicit UI fixtures and hardware renderer.'
 }
 $environmentNames = @(
     'PATH', 'QT_QPA_PLATFORM', 'QT_PLUGIN_PATH', 'QT_QPA_PLATFORM_PLUGIN_PATH',
@@ -133,6 +179,31 @@ try {
     }
     $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot;$env:SystemRoot\System32\Wbem"
     $env:QT_QPA_PLATFORM = 'windows'
+    if ($AnnotationInteractions) {
+        $reportPath = Join-Path $OutputDirectory 'annotation-interactions-report.json'
+        if (Test-Path -LiteralPath $reportPath -PathType Leaf) { Remove-Item -LiteralPath $reportPath }
+        $timer = [Diagnostics.Stopwatch]::StartNew()
+        & $executable '--annotation-interactions' $AnnotationInteractions $OutputDirectory | Out-Host
+        $captureExitCode = $LASTEXITCODE
+        if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
+            throw "Native interaction capture produced no report; exit code $captureExitCode."
+        }
+        $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+        $report | Add-Member -NotePropertyName process -NotePropertyValue ([ordered]@{
+            executable = $executable
+            configuration = $Configuration
+            systemOnlyPath = $true
+            dpiOverridesCleared = $true
+            exitCode = $captureExitCode
+            elapsedSeconds = $timer.Elapsed.TotalSeconds
+            screenshotEntry = "scripts/screenshot.ps1 -AnnotationInteractions $AnnotationInteractions"
+        }) -Force
+        $report | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $reportPath -Encoding utf8
+        Assert-AnnotationInteractionsCapture $report $captureExitCode $AnnotationInteractions
+        Write-Host "$Configuration $AnnotationInteractions native interaction capture passed on screen 2, Redmi 27 NU / DISPLAY6, 4K / 150%."
+        Write-Host "Report: $reportPath"
+        return
+    }
     if ($WidebandDetection) {
         $captureReportPath = Join-Path $OutputDirectory 'wideband-detection-report.json'
         if (Test-Path -LiteralPath $captureReportPath -PathType Leaf) {

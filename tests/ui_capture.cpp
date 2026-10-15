@@ -955,6 +955,9 @@ void diagnoseMainHover(Capture& capture, QPoint target,
 #include "tests/spectral_loading_capture.h"
 #include "tests/wideband_detection_capture.h"
 
+// This runner reuses the actual-source and monitor helpers above.
+#include "tests/annotation_interactions_capture.h"
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -964,6 +967,8 @@ int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   QApplication::setApplicationName("SignalStudioNativeCapture");
   const auto arguments = app.arguments();
+  if (arguments.size() == 4 && arguments.at(1) == "--annotation-interactions")
+    return runAnnotationInteractionsCapture(arguments.at(2), arguments.at(3));
   if (arguments.size() == 5 && arguments.at(1) == "--wideband-unavailable")
     return runWidebandUnavailableCapture(arguments.at(2), arguments.at(3),
                                          arguments.at(4));

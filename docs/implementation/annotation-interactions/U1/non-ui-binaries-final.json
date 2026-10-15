@@ -1,0 +1,140 @@
+{
+  "node": "U1",
+  "phase": "after-tree-color-fix",
+  "compared": 22,
+  "allUnchanged": true,
+  "binaries": [
+    {
+      "name": "SignalStudioAnnotationStoreTests.exe",
+      "before": "00a318b65ca0fb30aadf6c2c881c0612b2fe769c5c48d28c08a3e181f6c1ba94",
+      "after": "00a318b65ca0fb30aadf6c2c881c0612b2fe769c5c48d28c08a3e181f6c1ba94",
+      "same": true
+    },
+    {
+      "name": "SignalStudioAnnotationTests.exe",
+      "before": "eddde706b09d3ed633037f644234b8d9e9603089a39d8c31ecf4f47fb9a3d4be",
+      "after": "eddde706b09d3ed633037f644234b8d9e9603089a39d8c31ecf4f47fb9a3d4be",
+      "same": true
+    },
+    {
+      "name": "SignalStudioChannelProcessorTests.exe",
+      "before": "ecd7927dd20f6f5a4132d5d7c79bfeeb2af19dcc8a60477323169daac5d86b88",
+      "after": "ecd7927dd20f6f5a4132d5d7c79bfeeb2af19dcc8a60477323169daac5d86b88",
+      "same": true
+    },
+    {
+      "name": "SignalStudioCoreTests.exe",
+      "before": "106579cfcbe9bf849a19d289a118aebd27f31a2c42d3178d22bfd57678dcbdc2",
+      "after": "106579cfcbe9bf849a19d289a118aebd27f31a2c42d3178d22bfd57678dcbdc2",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDetectionFrequencyAnalysisTests.exe",
+      "before": "0656add0110f48bfc4bf8cc37f4e611f4cdf0785d4ed15c1a9a1f55d0674a928",
+      "after": "0656add0110f48bfc4bf8cc37f4e611f4cdf0785d4ed15c1a9a1f55d0674a928",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDetectionModelBackendTests.exe",
+      "before": "6ba25cf80ad87ce387c8861bb0bdbf4e1bc4ca351b2ba2c0401afd03b1cc4701",
+      "after": "6ba25cf80ad87ce387c8861bb0bdbf4e1bc4ca351b2ba2c0401afd03b1cc4701",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDetectionPipelineTests.exe",
+      "before": "6eb1f39dd45fcff97dda729aea8be2bdb1029f7c144c5a6f2701530cff49c65f",
+      "after": "6eb1f39dd45fcff97dda729aea8be2bdb1029f7c144c5a6f2701530cff49c65f",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDetectionPostprocessTests.exe",
+      "before": "06ace155e8f51c9d95d2e26dd09d079327e63300bed34f42c53e54c1d6628f84",
+      "after": "06ace155e8f51c9d95d2e26dd09d079327e63300bed34f42c53e54c1d6628f84",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDetectionProtocolTests.exe",
+      "before": "06adc66e49d810469d72d748dbb8ef12cbdd895d7272a460ab93f00366955abf",
+      "after": "06adc66e49d810469d72d748dbb8ef12cbdd895d7272a460ab93f00366955abf",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDetectionRefinedFusionTests.exe",
+      "before": "df0fde3936bbd771cf641ffe662991862bd1ab8037aab201c410f3c8c8feaf61",
+      "after": "df0fde3936bbd771cf641ffe662991862bd1ab8037aab201c410f3c8c8feaf61",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDetectionRefinementTests.exe",
+      "before": "be8f8e10d5c7a1aed5957aa7da1c9baf423f175faeef2057498a41e9eb20a4ee",
+      "after": "be8f8e10d5c7a1aed5957aa7da1c9baf423f175faeef2057498a41e9eb20a4ee",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDetectionSampleEnergyTests.exe",
+      "before": "31bc5a83998f7a18b387eed1c456f9333d5f180e301080c2bc8944e47f4c2e9c",
+      "after": "31bc5a83998f7a18b387eed1c456f9333d5f180e301080c2bc8944e47f4c2e9c",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDetectionSourceTests.exe",
+      "before": "8a0aad5c70b1238245764ac0a28dcf449b5a12ab7e27b27c54362830a9c98a2c",
+      "after": "8a0aad5c70b1238245764ac0a28dcf449b5a12ab7e27b27c54362830a9c98a2c",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDetectionStoreTests.exe",
+      "before": "b698f6ddc354ca47d7a7526bfdbe8417b5ee8b433f5b70d4bc3e28962d801b9d",
+      "after": "b698f6ddc354ca47d7a7526bfdbe8417b5ee8b433f5b70d4bc3e28962d801b9d",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDetectionTaskTests.exe",
+      "before": "5f6964a50a5756cfed5c7b90bb2e14a2b057bbe0de4297d861e5bbe0669aa45f",
+      "after": "5f6964a50a5756cfed5c7b90bb2e14a2b057bbe0de4297d861e5bbe0669aa45f",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDetectionTimePipelineTests.exe",
+      "before": "3ff7e9eb3dc0743c5a11f58de6955ac823ac956fb17b32964b3f442b8072f34b",
+      "after": "3ff7e9eb3dc0743c5a11f58de6955ac823ac956fb17b32964b3f442b8072f34b",
+      "same": true
+    },
+    {
+      "name": "SignalStudioDisplaySamplingTests.exe",
+      "before": "0673dd785ca245f73c82010ba3e5c191346811d47e6024f63273ec0d71dad716",
+      "after": "0673dd785ca245f73c82010ba3e5c191346811d47e6024f63273ec0d71dad716",
+      "same": true
+    },
+    {
+      "name": "SignalStudioImportTests.exe",
+      "before": "24a9cb629c1214ca6b7dea246ccacf14444927f1e13c9b544226834a21044404",
+      "after": "24a9cb629c1214ca6b7dea246ccacf14444927f1e13c9b544226834a21044404",
+      "same": true
+    },
+    {
+      "name": "SignalStudioLabelImportTests.exe",
+      "before": "858a1ebf9ef6d9347d5f70f0833ce4c1ad6f0f2187487090a6b5b3fee7e91523",
+      "after": "858a1ebf9ef6d9347d5f70f0833ce4c1ad6f0f2187487090a6b5b3fee7e91523",
+      "same": true
+    },
+    {
+      "name": "SignalStudioSampleFormatTests.exe",
+      "before": "1ddf397445e98d14547a335f686fb1e436134863cb7422fa1afce94b5c4d877a",
+      "after": "1ddf397445e98d14547a335f686fb1e436134863cb7422fa1afce94b5c4d877a",
+      "same": true
+    },
+    {
+      "name": "SignalStudioSpectralAnalysisTests.exe",
+      "before": "e0954457dd2ddce1173987189c4b282439a1b99ce7aca72c001225c4e7a773a9",
+      "after": "e0954457dd2ddce1173987189c4b282439a1b99ce7aca72c001225c4e7a773a9",
+      "same": true
+    },
+    {
+      "name": "SignalStudioWavTests.exe",
+      "before": "08f6f3602ce1f61986688284e4da2587921f46c7eb416ea9bdf9b2e9de6f790e",
+      "after": "08f6f3602ce1f61986688284e4da2587921f46c7eb416ea9bdf9b2e9de6f790e",
+      "same": true
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "pass": true,
+  "image": "out\\tasks\\wideband-detection\\U1\\assets\\native-debug-verified\\01-three-sources-unknown-time.png",
+  "sha256": "aa305b9421dfa44ea14d9df29d7769f94aa4bdb6bc4b8735d66b01275cce29ec",
+  "physicalSize": [
+    3840,
+    2160
+  ],
+  "physicalTreeTextRegion": [
+    80,
+    440,
+    405,
+    900
+  ],
+  "exactSourceColorPixels": {
+    "ImportedLabel": 358,
+    "Manual": 368,
+    "Algorithm": 2058
+  },
+  "evidenceScope": "native visible UI source colors; no model or DSP claim"
+}

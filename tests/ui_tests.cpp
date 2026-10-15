@@ -363,6 +363,16 @@ class UiTests : public QObject {
   void widebandConfigurationCommittedDrafts();
   void widebandRoiPreservesManualTool();
   void widebandAnnotationSelectionAndOverlap();
+  void annotationSelectionAcrossPagesAndViews();
+  void annotationHoverProjectionAndNoCalculation();
+  void annotationCurrentSegmentGeometryAndHandles();
+  void annotationSelectionContextAndPublication();
+  void annotationTreeDemandLoadingAndViewOrder();
+  void annotationModifiedPlotClicksPreserveAnchorAndCurrent();
+  void annotationCheckboxShiftExtendsSelection();
+  void annotationHoverTargetsOnlyOneSegment();
+  void annotationTreeStructuralNavigationAndLocate();
+  void annotationTreeSourceColorsSurviveInteractionStates();
 };
 
 void UiTests::workspaceLayout() {
@@ -4446,5 +4456,6 @@ void UiTests::widebandRoiPreservesManualTool() {
           card->request().requestedRange.time.end);
   QCOMPARE(window.session().activeFile()->detectionRuns.size(), std::size_t{0});
 }
+#include "tests/annotation_interactions_tests.h"
 QTEST_MAIN(UiTests)
 #include "ui_tests.moc"

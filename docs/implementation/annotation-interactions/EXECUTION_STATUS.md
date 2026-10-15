@@ -4,12 +4,12 @@
 
 | 节点 | 状态 | 证据 / 下一步 |
 |---|---|---|
-| U0 | 原型、自检及复审完成，待用户确认 | 状态行为 61/61、浏览器 59/59、0 页面异常；SPEC_PASS / QUALITY_PASS；[验证记录](U0/VALIDATION.md) |
-| U1 | 未开始 | 等待 U0 原型用户确认 |
+| U0 | 已获用户确认 | 本地提交 `6615b33`；状态行为 61/61、浏览器 59/59、0 页面异常；SPEC_PASS / QUALITY_PASS；[验证记录](U0/VALIDATION.md) |
+| U1 | 已完成自检与本地提交 | [验证记录](U1/VALIDATION.md)：23/23 全量；最终 UI 104/104；原生 8/8；SPEC_PASS / QUALITY_PASS |
 | U2 | 未开始 | 等待 U1 自检及本地提交 |
 | U3 | 未开始 | 等待 U2 自检及本地提交；原生工程仍为 v5 |
 | U4 | 未开始 | 等待 U3 自检及本地提交；最后统一推送 |
 
 U0 所有图谱、算法框、分数、通道均为浏览器合成演示，不读取 IQ、不运行模型或 CPU DDC。没有将浏览器截图声明为指定第二屏 Qt 原生验收。此前 R1–R6 证据仍是其各自版本的证据，不证明本轮交互已在 Qt 实现。
 
-审核入口：[本机 U0 页面](http://127.0.0.1:8785/docs/prototype/annotation-interactions-u0/index.html)、[M0-P 修订对照](U0/M0P_DELTA.md)、[独立复审](U0/REVIEW.md)。按用户方案 U0“用户审核确认”退出条件，确认后才进入 U1；当前未推送。
+审核基线：[本机 U0 页面](http://127.0.0.1:8785/docs/prototype/annotation-interactions-u0/index.html)、[M0-P 修订对照](U0/M0P_DELTA.md)、[独立复审](U0/REVIEW.md)。2026-10-15 用户明确回复“确认 U0 原型，继续 U1–U4（推荐）”，U0 退出条件已满足；继续按节点完成自检、本地提交，全部完成后统一推送。

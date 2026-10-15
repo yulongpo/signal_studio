@@ -1,4 +1,5 @@
 #pragma once
+#include <QModelIndex>
 #include <QWidget>
 
 #include "application/session.h"
@@ -21,11 +22,14 @@ class AnnotationPanel final : public QWidget {
   QWidget* layerWidget() const { return layerBar_; }
   const std::vector<std::string>& sortedVisibleIds() const;
   void refresh();
+  void revealActive();
+  void refreshHover();
   void discardDrafts();
   bool importLabels(const QString&, QString* error = nullptr,
                     bool preview = true);
  signals:
   void changed();
+  void hoverChanged(const QString& id, const QString& segmentId);
   void message(const QString&);
 
  protected:
@@ -41,7 +45,7 @@ class AnnotationPanel final : public QWidget {
   void refreshEvidence(const Annotation*);
   void selectAdjacentSegment(int offset);
   void action(const AnnotationResult&);
-  void selectRows();
+  void chooseRow(const QModelIndex&, Qt::KeyboardModifiers, bool toggle);
   void filterChanged();
   void geometry(int);
   void exportFile(bool csv);
@@ -66,8 +70,8 @@ class AnnotationPanel final : public QWidget {
   AdaptiveValueEdit* low_ = nullptr;
   AdaptiveValueEdit* high_ = nullptr;
   std::size_t page_ = 0;
-  bool refreshing_ = false;
-  Qt::KeyboardModifiers selectionModifiers_ = Qt::NoModifier;
+  bool refreshing_ = false, revealActive_ = false;
+  std::string displayedActiveId_;
   std::string context_;
   std::string filterContext_;
 };

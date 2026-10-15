@@ -42,6 +42,7 @@
 #include <QStandardItemModel>
 #include <QStandardPaths>
 #include <QStatusBar>
+#include <QStyledItemDelegate>
 #include <QTimer>
 #include <QToolButton>
 #include <QTreeWidget>
@@ -52,6 +53,7 @@
 #include <cmath>
 #include <functional>
 #include <limits>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "infrastructure/channel_processor.h"
@@ -77,6 +79,68 @@
 namespace signalstudio {
 namespace {
 QString q(const std::string& text) { return QString::fromStdString(text); }
+QString annotationCountText(const FileState& file) {
+  const auto counts = annotationCounts(file);
+  return QString("匹配 %1 / 总数 %2 / 已选 %3")
+      .arg(counts.matching)
+      .arg(counts.total)
+      .arg(counts.selected);
+}
+QColor annotationSourceColor(AnnotationSource source) {
+  return source == AnnotationSource::ImportedLabel ? QColor("#65d2bd")
+         : source == AnnotationSource::Manual      ? QColor("#edc56d")
+                                                   : QColor("#51c4e9");
+}
+class AnnotationTreeDelegate final : public QStyledItemDelegate {
+ public:
+  using QStyledItemDelegate::QStyledItemDelegate;
+  void paint(QPainter* painter, const QStyleOptionViewItem& option,
+             const QModelIndex& index) const override {
+    if (index.data(Qt::UserRole).toString() != "mark") {
+      QStyledItemDelegate::paint(painter, option, index);
+      return;
+    }
+    auto style = option;
+    initStyleOption(&style, index);
+    style.state &= ~(QStyle::State_Selected | QStyle::State_HasFocus |
+                     QStyle::State_MouseOver);
+    const auto* widgetStyle =
+        style.widget ? style.widget->style() : QApplication::style();
+    const auto textRect = widgetStyle->subElementRect(
+        QStyle::SE_ItemViewItemText, &style, style.widget);
+    const auto text = style.fontMetrics.elidedText(
+        style.text, style.textElideMode, textRect.width());
+    style.text.clear();
+    widgetStyle->drawControl(QStyle::CE_ItemViewItem, &style, painter,
+                             style.widget);
+    // The application item QSS overrides ForegroundRole during styled text
+    // painting. Draw mark text explicitly so every state keeps its source
+    // color.
+    painter->save();
+    painter->setFont(style.font);
+    painter->setPen(index.data(Qt::ForegroundRole).value<QBrush>().color());
+    painter->drawText(
+        textRect, static_cast<int>(style.displayAlignment) | Qt::TextSingleLine,
+        text);
+    painter->restore();
+    const auto state = index.data(Qt::UserRole + 3).toInt();
+    if (!(state & 7)) return;
+    painter->save();
+    QPen pen(state & 2   ? QColor("#84daf5")
+             : state & 1 ? QColor("#37647d")
+                         : QColor("#c0ecff"),
+             state & 2 ? 2 : 1);
+    if (!(state & 3)) pen.setStyle(Qt::DotLine);
+    painter->setPen(pen);
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRect(option.rect.adjusted(1, 1, -2, -2));
+    if ((state & 4) && (state & 3)) {
+      painter->setPen(QPen(QColor("#d4f2ff"), 1, Qt::DotLine));
+      painter->drawRect(option.rect.adjusted(3, 3, -4, -4));
+    }
+    painter->restore();
+  }
+};
 bool hasActiveSegment(const FileState& file) {
   const auto* annotation = findMark(file, file.activeMarkId);
   return annotation && !annotation->deleted && activeSegment(*annotation);
@@ -566,7 +630,6 @@ void MainWindow::buildMenus() {
     session_.removeActiveFile();
     if (!session_.activeFile() && maximizedPanel_ >= 0)
       toggleMaximized(maximizedPanel_);
-    selectionAnchor_.clear();
     refresh();
     log("已从工程移除 IQ 文件");
   });
@@ -582,7 +645,6 @@ void MainWindow::buildMenus() {
         active ? active->display : DisplaySettings{};
     session_.addDemoFile();
     applyGlobalRightSidebarSettings(fallback);
-    selectionAnchor_.clear();
     refresh();
     scheduleRightSidebarSettingsSave();
   });
@@ -745,6 +807,11 @@ void MainWindow::buildWorkspace() {
   tree_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   tree_->setContextMenuPolicy(Qt::CustomContextMenu);
   tree_->setMouseTracking(true);
+  tree_->setItemDelegate(new AnnotationTreeDelegate(tree_));
+  connect(tree_, &QTreeWidget::itemExpanded, this,
+          [this] { resizeTreeToContents(); });
+  connect(tree_, &QTreeWidget::itemCollapsed, this,
+          [this] { resizeTreeToContents(); });
   resourceContent->addWidget(tree_);
   resourceContent->addStretch();
   left->addWidget(resourceBody_, 1);
@@ -1102,6 +1169,13 @@ void MainWindow::buildWorkspace() {
   layerRow->addWidget(annotations_->layerWidget());
   connect(annotations_, &AnnotationPanel::changed, this, [this] { refresh(); });
   connect(annotations_, &AnnotationPanel::message, this, &MainWindow::log);
+  connect(annotations_, &AnnotationPanel::hoverChanged, this,
+          [this](const QString& id, const QString& segment) {
+            if (auto* file = session_.activeFile())
+              if (session_.annotations().hover(*file, id.toStdString(),
+                                               segment.toStdString()))
+                refreshAnnotationHover();
+          });
   resultSummary_->setParent(annotations_);
   resultSummary_->hide();
   bottomContent_->addWidget(annotations_);
@@ -1480,51 +1554,25 @@ void MainWindow::buildWorkspace() {
               activateTreeChannel(item->data(0, Qt::UserRole + 1).toString());
               return;
             }
-            if (item->data(0, Qt::UserRole).toString() == "mark") {
-              if (!(treeSelectionModifiers_ & Qt::ShiftModifier))
-                selectionAnchor_ =
-                    item->data(0, Qt::UserRole + 1).toString().toStdString();
+            if (item->data(0, Qt::UserRole).toString() == "annotationMore") {
+              const auto kind = item->data(0, Qt::UserRole + 1).toInt();
+              QTimer::singleShot(0, this, [this, kind] {
+                treeAnnotationLimits_[kind] += kTreeAnnotationBatchSize;
+                updateTree();
+              });
               return;
             }
+            if (item->data(0, Qt::UserRole).toString() == "mark") return;
             if (item->data(0, Qt::UserRole).toString() != "file") return;
             const auto id =
                 item->data(0, Qt::UserRole + 1).toString().toStdString();
             QTimer::singleShot(0, this, [this, id] {
               cancelInteractions();
               if (session_.activateFile(id)) {
-                selectionAnchor_.clear();
                 refresh();
               }
             });
           });
-  connect(tree_, &QTreeWidget::itemSelectionChanged, this, [this] {
-    if (refreshing_) return;
-    const auto* current = tree_->currentItem();
-    if (!current || current->data(0, Qt::UserRole).toString() != "mark") return;
-    auto ids = session_.activeFile() ? session_.activeFile()->selectedMarkIds
-                                     : std::vector<std::string>{};
-    std::unordered_set<std::string> visibleIds;
-    const auto collect = [&](auto&& self, QTreeWidgetItem* node) -> void {
-      if (node->data(0, Qt::UserRole).toString() == "mark")
-        visibleIds.insert(
-            node->data(0, Qt::UserRole + 1).toString().toStdString());
-      for (int i = 0; i < node->childCount(); ++i) self(self, node->child(i));
-    };
-    if (tree_->topLevelItemCount()) collect(collect, tree_->topLevelItem(0));
-    std::erase_if(ids, [&](const auto& id) { return visibleIds.contains(id); });
-    for (auto* item : tree_->selectedItems())
-      if (item->data(0, Qt::UserRole).toString() == "mark")
-        ids.push_back(item->data(0, Qt::UserRole + 1).toString().toStdString());
-    session_.selectMarks(
-        std::move(ids),
-        current->data(0, Qt::UserRole + 1).toString().toStdString());
-    if (auto* active = session_.activeFile())
-      active->display.psdFromSelection =
-          sharedPsdFromSelectionPreference_ && hasActiveSegment(*active);
-    propagateGlobalRightSidebarSettings();
-    refresh();
-    scheduleRightSidebarSettingsSave();
-  });
   connect(tree_, &QTreeWidget::itemDoubleClicked, this,
           [this](QTreeWidgetItem* item, int) {
             if (item->data(0, Qt::UserRole).toString() == "mark") {
@@ -1537,13 +1585,19 @@ void MainWindow::buildWorkspace() {
             } else if (item->data(0, Qt::UserRole).toString() == "channel")
               activateTreeChannel(item->data(0, Qt::UserRole + 1).toString());
           });
-  connect(
-      tree_, &QTreeWidget::itemEntered, this,
-      [this](QTreeWidgetItem* item, int) {
-        main_->setHoveredMark(item->data(0, Qt::UserRole).toString() == "mark"
+  connect(tree_, &QTreeWidget::itemEntered, this,
+          [this](QTreeWidgetItem* item, int) {
+            if (auto* file = session_.activeFile()) {
+              const auto id = item->data(0, Qt::UserRole).toString() == "mark"
                                   ? item->data(0, Qt::UserRole + 1).toString()
-                                  : QString{});
-      });
+                                  : QString{};
+              const auto* annotation = findAnnotation(*file, id.toStdString());
+              if (session_.annotations().hover(
+                      *file, id.toStdString(),
+                      annotation ? annotation->activeSegmentId : std::string{}))
+                refreshAnnotationHover();
+            }
+          });
   tree_->viewport()->installEventFilter(this);
   connect(
       tree_, &QTreeWidget::customContextMenuRequested, this,
@@ -1662,6 +1716,8 @@ void MainWindow::buildWorkspace() {
                    Qt::KeyboardModifiers modifiers) {
               selectMark(id, modifiers, segment);
             });
+    connect(plot, &PlotWidget::annotationHoverChanged, this,
+            &MainWindow::refreshAnnotationHover);
     connect(plot, &PlotWidget::cursorChanged, this, &MainWindow::updateCursor);
     connect(
         plot, &PlotWidget::interactionHint, this,
@@ -1868,6 +1924,18 @@ void MainWindow::buildWorkspace() {
 
 void MainWindow::rebuildTree() {
   QSignalBlocker block(tree_);
+  std::map<QString, bool> expanded;
+  const auto itemKey = [](QTreeWidgetItem* item) {
+    QString key;
+    for (auto* part = item; part; part = part->parent())
+      key.prepend("/" + part->data(0, Qt::UserRole).toString() + ":" +
+                  part->data(0, Qt::UserRole + 1).toString());
+    return key;
+  };
+  const auto focusedKey =
+      tree_->currentItem() ? itemKey(tree_->currentItem()) : QString{};
+  for (QTreeWidgetItemIterator it(tree_); *it; ++it)
+    expanded.emplace(itemKey(*it), (*it)->isExpanded());
   tree_->clear();
   auto* root =
       new QTreeWidgetItem(tree_, {"▾ ◧ " + q(session_.project().name)});
@@ -1909,12 +1977,7 @@ void MainWindow::rebuildTree() {
     info->setFont(0, QFont("Consolas", 8));
     info->setSizeHint(0, QSize(0, 25));
     if (!active) continue;
-    auto* marks = new QTreeWidgetItem(
-        item, {QString("信号区域 (%1) · 已选 %2")
-                   .arg(std::count_if(
-                       file.marks.begin(), file.marks.end(),
-                       [](const auto& value) { return !value.deleted; }))
-                   .arg(file.selectedMarkIds.size())});
+    auto* marks = new QTreeWidgetItem(item, {"信号标记"});
     marks->setData(0, Qt::UserRole, "marks");
     marks->setFlags(Qt::ItemIsEnabled);
     marks->setExpanded(true);
@@ -1923,55 +1986,76 @@ void MainWindow::rebuildTree() {
     auto* actions = new QTreeWidgetItem(marks);
     actions->setFlags(Qt::ItemIsEnabled);
     actions->setData(0, Qt::UserRole, "treeActions");
-    actions->setSizeHint(0, QSize(0, 30));
+    actions->setSizeHint(0, QSize(0, 61));
     auto* controls = new QWidget;
-    auto* actionRow = new QHBoxLayout(controls);
-    actionRow->setContentsMargins(0, 1, 0, 1);
+    auto* controlColumn = new QVBoxLayout(controls);
+    controlColumn->setContentsMargins(0, 1, 0, 1);
+    controlColumn->setSpacing(3);
+    auto* counts = new QLabel(annotationCountText(file));
+    counts->setObjectName("treeAnnotationCounts");
+    counts->setWordWrap(true);
+    controlColumn->addWidget(counts);
+    auto* actionRow = new QHBoxLayout;
     actionRow->setSpacing(4);
-    auto* all = push("全选", "treeSelectAll", actionRow);
+    controlColumn->addLayout(actionRow);
+    auto* all = push("全选匹配", "treeSelectAll", actionRow);
     auto* remove = push("删除所选", "treeDeleteMarks", actionRow);
     all->setProperty("uiRole", "outline");
     remove->setProperty("uiRole", "outline");
-    all->setEnabled(!file.marks.empty());
+    all->setEnabled(annotationCounts(file).matching != 0);
     remove->setEnabled(!file.selectedMarkIds.empty());
     actionRow->addStretch();
     tree_->setItemWidget(actions, 0, controls);
     connect(all, &QPushButton::clicked, this, &MainWindow::selectAllMarks);
     connect(remove, &QPushButton::clicked, this, &MainWindow::deleteMarks);
-    constexpr std::size_t kTreeRowsPerSource = 100;
+    const auto order = treeSelectionOrder();
+    std::unordered_map<std::string, const Annotation*> byId;
+    for (const auto& annotation : file.marks)
+      byId.emplace(annotation.id, &annotation);
     for (int kind = 0; kind < 3; ++kind) {
       const auto source = static_cast<AnnotationSource>(kind);
       const QString title = kind == 0   ? "原始标签"
                             : kind == 1 ? "手动标记"
                                         : "算法结果";
-      const auto count = std::count_if(file.marks.begin(), file.marks.end(),
-                                       [&](const Annotation& annotation) {
-                                         return !annotation.deleted &&
-                                                annotation.sourceKind == source;
-                                       });
+      std::size_t total = 0, matching = 0, loaded = 0;
+      for (const auto& annotation : file.marks)
+        if (annotation.sourceKind == source &&
+            annotationInContext(file, annotation))
+          ++total;
+      for (const auto& id : order)
+        if (byId.at(id)->sourceKind == source) ++matching;
       auto* group = new QTreeWidgetItem(
-          marks, {QString("%1 (%2)").arg(title).arg(count)});
+          marks, {QString("%1 (%2/%3)").arg(title).arg(matching).arg(total)});
       group->setData(0, Qt::UserRole, "annotationSource");
+      group->setData(0, Qt::UserRole + 1, kind);
       group->setFlags(Qt::ItemIsEnabled);
       group->setExpanded(true);
-      std::size_t visible = 0;
-      for (const auto& mark : file.marks) {
-        if (mark.deleted || mark.sourceKind != source) continue;
-        if (visible++ == kTreeRowsPerSource) break;
+      std::size_t ordinal = 0;
+      for (const auto& id : order) {
+        const auto& mark = *byId.at(id);
+        if (mark.sourceKind != source) continue;
+        const bool include = ordinal++ < treeAnnotationLimits_[kind] ||
+                             treeRevealedAnnotationIds_.contains(mark.id);
+        if (!include) continue;
+        ++loaded;
         auto* node = new QTreeWidgetItem(group, {"▱ " + q(mark.name)});
         node->setData(0, Qt::UserRole, "mark");
         node->setData(0, Qt::UserRole + 1, q(mark.id));
         node->setSizeHint(0, QSize(0, 31));
-        node->setToolTip(0, "单击选择 · Ctrl 多选 · Shift 连选 · 双击定位");
-        node->setSelected(std::find(file.selectedMarkIds.begin(),
-                                    file.selectedMarkIds.end(),
-                                    mark.id) != file.selectedMarkIds.end());
-        if (mark.id == file.activeMarkId)
-          tree_->setCurrentItem(node, 0, QItemSelectionModel::NoUpdate);
+        node->setToolTip(
+            0, "单击选择 · Ctrl 多选 · Shift 连选 · 双击定位\n" + q(mark.id));
       }
-      if (count > static_cast<std::ptrdiff_t>(kTreeRowsPerSource)) {
-        auto* more = new QTreeWidgetItem(group, {"其余记录见下方统一标记表"});
+      if (loaded < matching) {
+        auto* more =
+            new QTreeWidgetItem(group, {QString("加载后 %1 条 · 已显示 %2/%3")
+                                            .arg(kTreeAnnotationBatchSize)
+                                            .arg(loaded)
+                                            .arg(matching)});
+        more->setData(0, Qt::UserRole, "annotationMore");
+        more->setData(0, Qt::UserRole + 1, kind);
         more->setFlags(Qt::ItemIsEnabled);
+        more->setForeground(0, QColor("#91cbe8"));
+        more->setSizeHint(0, QSize(0, 30));
       }
     }
     auto* runs = new QTreeWidgetItem(
@@ -2032,44 +2116,74 @@ void MainWindow::rebuildTree() {
     if (file.activeMarkId.empty())
       tree_->setCurrentItem(item, 0, QItemSelectionModel::NoUpdate);
   }
+  for (QTreeWidgetItemIterator it(tree_); *it; ++it) {
+    const auto key = itemKey(*it);
+    const auto found = expanded.find(key);
+    if (found != expanded.end()) (*it)->setExpanded(found->second);
+    if (!focusedKey.isEmpty() && key == focusedKey)
+      tree_->setCurrentItem(*it, 0, QItemSelectionModel::NoUpdate);
+  }
   treeStructure_ = treeStructure();
+  syncTreeState();
+  resizeTreeToContents();
+}
+
+void MainWindow::resizeTreeToContents() {
+  if (!tree_) return;
   int height = 0;
-  QTreeWidgetItemIterator visible(tree_);
-  for (; *visible; ++visible) {
-    bool shown = !(*visible)->isHidden();
-    for (auto* ancestor = (*visible)->parent(); ancestor;
+  for (QTreeWidgetItemIterator it(tree_); *it; ++it) {
+    bool shown = !(*it)->isHidden();
+    for (auto* ancestor = (*it)->parent(); ancestor;
          ancestor = ancestor->parent())
       shown = shown && ancestor->isExpanded() && !ancestor->isHidden();
     if (shown)
       height += std::max(tree_->fontMetrics().height() + 6,
-                         (*visible)->sizeHint(0).height());
+                         (*it)->sizeHint(0).height());
   }
   tree_->setFixedHeight(height + 2);
+}
+
+std::vector<std::string> MainWindow::treeSelectionOrder() const {
+  std::vector<std::string> result;
+  const auto* file = session_.activeFile();
+  if (!file || !annotations_) return result;
+  std::unordered_map<std::string, const Annotation*> byId;
+  for (const auto& annotation : file->marks)
+    byId.emplace(annotation.id, &annotation);
+  for (int kind = 0; kind < 3; ++kind)
+    for (const auto& id : annotations_->sortedVisibleIds()) {
+      const auto found = byId.find(id);
+      if (found != byId.end() &&
+          static_cast<int>(found->second->sourceKind) == kind &&
+          annotationVisible(*file, *found->second))
+        result.push_back(id);
+    }
+  return result;
 }
 
 QStringList MainWindow::treeStructure() const {
   QStringList structure{q(session_.project().activeFileId)};
   for (const auto& file : session_.project().files) {
     structure.append("file:" + q(file.metadata.id));
-    if (file.metadata.id == session_.project().activeFileId) {
-      std::array<std::size_t, 3> sourceCounts{};
-      for (const auto& mark : file.marks) {
-        if (mark.deleted) continue;
-        const auto kind = static_cast<int>(mark.sourceKind);
-        if (++sourceCounts[kind] <= 100)
-          structure.append("mark:" + QString::number(kind) + ":" + q(mark.id));
-      }
-      for (auto count : sourceCounts) structure.append(QString::number(count));
-      for (const auto& channel : file.channels)
-        structure.append("channel:" + q(channel.id));
-      for (const auto& run : file.detectionRuns)
-        structure.append("run:" + q(run.request.runId) + ":" +
-                         QString::number(static_cast<int>(run.lifecycle)));
+    if (file.metadata.id != session_.project().activeFileId) continue;
+    std::array<std::size_t, 3> sourceCounts{};
+    std::unordered_map<std::string, const Annotation*> byId;
+    for (const auto& mark : file.marks) byId.emplace(mark.id, &mark);
+    for (const auto& id : treeSelectionOrder()) {
+      const auto kind = static_cast<int>(byId.at(id)->sourceKind);
+      if (sourceCounts[kind]++ < treeAnnotationLimits_[kind] ||
+          treeRevealedAnnotationIds_.contains(id))
+        structure.append("mark:" + QString::number(kind) + ":" + q(id));
     }
+    for (auto count : sourceCounts) structure.append(QString::number(count));
+    for (const auto& channel : file.channels)
+      structure.append("channel:" + q(channel.id));
+    for (const auto& run : file.detectionRuns)
+      structure.append("run:" + q(run.request.runId) + ":" +
+                       QString::number(static_cast<int>(run.lifecycle)));
   }
   return structure;
 }
-
 void MainWindow::restoreUiState() {
   if (!qApp->property("uiStatePersistenceEnabled").toBool()) return;
   restoringUiState_ = true;
@@ -2441,6 +2555,26 @@ void MainWindow::rememberProject(const QString& path) {
 }
 
 void MainWindow::updateTree() {
+  const auto* file = session_.activeFile();
+  const auto context =
+      QString::number(session_.projectGeneration()) + ":" +
+      (file ? q(file->metadata.id) + ":" +
+                  QString::number(file->metadata.sampleFormat.selectedChannel)
+            : QString{});
+  if (treeAnnotationContext_ != context) {
+    treeAnnotationContext_ = context;
+    treeAnnotationLimits_.fill(kTreeAnnotationBatchSize);
+    treeRevealedAnnotationIds_.clear();
+    treeActiveAnnotationId_.clear();
+    treeStructure_.clear();
+    treeRevealPending_ = true;
+  }
+  const auto active = file ? file->activeMarkId : std::string{};
+  if (treeActiveAnnotationId_ != active) {
+    treeActiveAnnotationId_ = active;
+    treeRevealPending_ = true;
+  }
+  if (!active.empty()) treeRevealedAnnotationIds_.insert(active);
   if (tree_->topLevelItemCount() == 1 && treeStructure_ == treeStructure()) {
     syncTreeState();
     return;
@@ -2452,58 +2586,145 @@ void MainWindow::updateTree() {
     rebuildTree();
   });
 }
+
 void MainWindow::syncTreeState() {
-  QSignalBlocker block(tree_);
+  if (!tree_->topLevelItemCount()) return;
+  const QSignalBlocker block(tree_);
   auto* root = tree_->topLevelItem(0);
   root->setText(0, "▾ ◧ " + q(session_.project().name));
   for (std::size_t index = 0; index < session_.project().files.size();
        ++index) {
     const auto& file = session_.project().files[index];
     auto* item = root->child(static_cast<int>(index));
+    if (!item) continue;
     item->setText(0, "◈ " + q(file.metadata.name));
     if (file.metadata.id != session_.project().activeFileId) continue;
     auto* marks = childOfKind(item, "marks");
     auto* channels = childOfKind(item, "channels");
-    marks->setText(0, QString("信号区域 (%1) · 已选 %2")
-                          .arg(file.marks.size())
-                          .arg(file.selectedMarkIds.size()));
+    if (!marks || !channels) continue;
+    const auto counts = annotationCounts(file);
     if (auto* controls = tree_->itemWidget(marks->child(0), 0)) {
+      controls->findChild<QLabel*>("treeAnnotationCounts")
+          ->setText(annotationCountText(file));
       controls->findChild<QPushButton*>("treeSelectAll")
-          ->setEnabled(!file.marks.empty());
+          ->setEnabled(counts.matching != 0);
       controls->findChild<QPushButton*>("treeDeleteMarks")
-          ->setEnabled(!file.selectedMarkIds.empty());
+          ->setEnabled(counts.selected != 0);
     }
-    const auto syncNode = [&](auto&& self, QTreeWidgetItem* node) -> void {
-      if (node->data(0, Qt::UserRole).toString() == "mark") {
-        const auto* mark = findAnnotation(
-            file, node->data(0, Qt::UserRole + 1).toString().toStdString());
-        if (!mark) return;
-        node->setText(
-            0, "▱ " + q(mark->name) +
-                   (mark->range.time.end > availableSamples(file.metadata)
-                        ? " · 来源未读入"
-                        : ""));
-        const bool selected =
-            std::find(file.selectedMarkIds.begin(), file.selectedMarkIds.end(),
-                      mark->id) != file.selectedMarkIds.end();
-        if (node->isSelected() != selected) node->setSelected(selected);
-      }
-      for (int i = 0; i < node->childCount(); ++i) self(self, node->child(i));
-    };
-    syncNode(syncNode, marks);
+    std::array<std::size_t, 3> matching{}, total{};
+    for (const auto& annotation : file.marks) {
+      const auto kind = static_cast<int>(annotation.sourceKind);
+      if (annotationInContext(file, annotation)) ++total[kind];
+      if (annotationVisible(file, annotation)) ++matching[kind];
+    }
+    for (int group = 1; group < marks->childCount(); ++group) {
+      auto* node = marks->child(group);
+      if (node->data(0, Qt::UserRole).toString() != "annotationSource")
+        continue;
+      const auto kind = node->data(0, Qt::UserRole + 1).toInt();
+      const auto title = kind == 0   ? "原始标签"
+                         : kind == 1 ? "手动标记"
+                                     : "算法结果";
+      node->setText(0, QString("%1 (%2/%3)")
+                           .arg(title)
+                           .arg(matching[kind])
+                           .arg(total[kind]));
+    }
     channels->setText(0, QString("窄带通道 (%1)").arg(file.channels.size()));
     for (std::size_t i = 0; i < file.channels.size(); ++i) {
       const auto& channel = file.channels[i];
-      channels->child(static_cast<int>(i))
-          ->setText(
-              0, "◇ " + q(channel.name) + " · " +
-                     coordinate(channel.centerFrequencyHz, channel.bandwidthHz,
-                                false) +
-                     (channel.sourceTime.end > availableSamples(file.metadata)
-                          ? " · 来源未读入"
-                          : ""));
+      if (auto* node = channels->child(static_cast<int>(i)))
+        node->setText(
+            0, "◇ " + q(channel.name) + " · " +
+                   coordinate(channel.centerFrequencyHz, channel.bandwidthHz,
+                              false) +
+                   (channel.sourceTime.end > availableSamples(file.metadata)
+                        ? " · 来源未读入"
+                        : ""));
     }
   }
+  syncTreeAnnotationStyles();
+  revealTreeAnnotation();
+}
+
+void MainWindow::syncTreeAnnotationStyles() {
+  const auto* file = session_.activeFile();
+  if (!file) return;
+  const QSignalBlocker blocker(tree_);
+  std::unordered_map<std::string, const Annotation*> byId;
+  for (const auto& annotation : file->marks)
+    byId.emplace(annotation.id, &annotation);
+  const std::unordered_set<std::string> selected(file->selectedMarkIds.begin(),
+                                                 file->selectedMarkIds.end());
+  for (QTreeWidgetItemIterator it(tree_); *it; ++it) {
+    auto* node = *it;
+    if (node->data(0, Qt::UserRole).toString() != "mark") continue;
+    const auto id = node->data(0, Qt::UserRole + 1).toString().toStdString();
+    const auto found = byId.find(id);
+    if (found == byId.end()) continue;
+    const auto& annotation = *found->second;
+    const bool isSelected = selected.contains(id),
+               current = file->activeMarkId == id,
+               hovered = file->hoveredMarkId == id;
+    const auto* segment = activeSegment(annotation);
+    const auto segmentText =
+        segment ? current ? QString(" · 第 %1/%2 段")
+                                .arg(segment - annotation.segments.data() + 1)
+                                .arg(annotation.segments.size())
+                          : QString(" · %1段").arg(annotation.segments.size())
+                : QString(" · 时间未定位");
+    node->setText(0,
+                  (current ? "▣ " : "▱ ") + q(annotation.name) + segmentText);
+    node->setToolTip(0, "单击选择 · Ctrl 多选 · Shift 连选 · 双击定位\n" +
+                            q(annotation.id) + "\n" + segmentText.trimmed());
+    node->setForeground(0, annotationSourceColor(annotation.sourceKind));
+    node->setBackground(0, current      ? QBrush(QColor("#1a3f56"))
+                           : isSelected ? QBrush(QColor("#1a3f56"))
+                           : hovered    ? QBrush(QColor("#22425a"))
+                                        : QBrush{});
+    auto font = tree_->font();
+    font.setBold(current);
+    node->setFont(0, font);
+    node->setData(0, Qt::UserRole + 3,
+                  (isSelected ? 1 : 0) | (current ? 2 : 0) | (hovered ? 4 : 0));
+    node->setSelected(isSelected);
+  }
+  tree_->setProperty("hoveredAnnotationId", q(file->hoveredMarkId));
+  tree_->viewport()->update();
+}
+
+void MainWindow::revealTreeAnnotation() {
+  if (!treeRevealPending_) return;
+  const auto* file = session_.activeFile();
+  if (!file || file->activeMarkId.empty()) {
+    treeRevealPending_ = false;
+    return;
+  }
+  for (QTreeWidgetItemIterator it(tree_); *it; ++it) {
+    auto* node = *it;
+    if (node->data(0, Qt::UserRole).toString() != "mark" ||
+        node->data(0, Qt::UserRole + 1).toString() != q(file->activeMarkId))
+      continue;
+    for (auto* parent = node->parent(); parent; parent = parent->parent())
+      parent->setExpanded(true);
+    tree_->setCurrentItem(node, 0, QItemSelectionModel::NoUpdate);
+    resizeTreeToContents();
+    tree_->scrollToItem(node, QAbstractItemView::EnsureVisible);
+    if (auto* scroll = qobject_cast<QScrollArea*>(resourceBody_)) {
+      const auto point = tree_->viewport()->mapTo(
+          scroll->widget(), tree_->visualItemRect(node).center());
+      scroll->ensureVisible(point.x(), point.y(), 0, 40);
+    }
+    treeRevealPending_ = false;
+    return;
+  }
+}
+
+void MainWindow::refreshAnnotationHover() {
+  if (destroying_) return;
+  if (main_) main_->refreshAnnotationOverlay();
+  if (annotations_) annotations_->refreshHover();
+  syncTreeAnnotationStyles();
 }
 
 void MainWindow::refresh() {
@@ -2518,7 +2739,7 @@ void MainWindow::refresh() {
   if (refreshing_) return;
   refreshing_ = true;
   auto* file = session_.activeFile();
-  updateTree();
+  if (file) session_.annotations().reconcileSelection(*file);
   projectLabel_->setText(q(session_.project().name));
   const bool narrowOpen = session_.project().narrowbandWorkspaceOpen &&
                           session_.activeChannel() != nullptr;
@@ -2760,10 +2981,13 @@ void MainWindow::refresh() {
       for (auto* value : markValues_) value->setText("—");
       selectionData_->setText("| 无信号标记");
     }
-    selectedCount_->setText(
-        QString("已选中 %1 个标记。拖动选中框移动，边线和顶点调整；Esc "
-                "回滚当前编辑。")
-            .arg(file->selectedMarkIds.size()));
+    selectedCount_->setText(annotationCountText(*file) +
+                            (segment
+                                 ? QString(" · 当前第 %1/%2 段")
+                                       .arg(segment - mark->segments.data() + 1)
+                                       .arg(mark->segments.size())
+                             : mark ? QString(" · 时间未定位 / 0 段")
+                                    : QString{}));
     rename_->setEnabled(mark &&
                         session_.annotations().canEdit(*file, mark->id));
     locate_->setEnabled(mark != nullptr);
@@ -2796,6 +3020,7 @@ void MainWindow::refresh() {
   }
   updatePropertyContext();
   updateBottom();
+  updateTree();
   for (auto* plot : {navigation_, auxiliary_, main_}) plot->syncState();
   refreshing_ = false;
   updatePowerFit();
@@ -3622,15 +3847,93 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
   if (destroying_) return QMainWindow::eventFilter(watched, event);
   if (handleWindowChrome(watched, event)) return true;
-  if ((watched == tree_ || watched == tree_->viewport()) &&
-      (event->type() == QEvent::MouseButtonPress ||
-       event->type() == QEvent::KeyPress))
-    treeSelectionModifiers_ =
-        event->type() == QEvent::MouseButtonPress
-            ? static_cast<QMouseEvent*>(event)->modifiers()
-            : static_cast<QKeyEvent*>(event)->modifiers();
-  if (watched == tree_->viewport() && event->type() == QEvent::Leave)
-    main_->setHoveredMark({});
+  if (watched == tree_->viewport()) {
+    if (event->type() == QEvent::MouseButtonPress ||
+        event->type() == QEvent::MouseButtonRelease ||
+        event->type() == QEvent::MouseButtonDblClick) {
+      auto* mouse = static_cast<QMouseEvent*>(event);
+      auto* item = tree_->itemAt(mouse->position().toPoint());
+      if (item && mouse->button() == Qt::LeftButton &&
+          item->data(0, Qt::UserRole).toString() == "mark") {
+        const auto id = item->data(0, Qt::UserRole + 1).toString();
+        if (event->type() == QEvent::MouseButtonPress) {
+          tree_->setFocus(Qt::MouseFocusReason);
+          selectMark(id, mouse->modifiers(), {}, true);
+        } else if (event->type() == QEvent::MouseButtonDblClick) {
+          cancelInteractions(false);
+          session_.focusMark(id.toStdString());
+          session_.project().narrowbandWorkspaceOpen = false;
+          workspaceStack_->setCurrentIndex(0);
+          annotations_->revealActive();
+          treeRevealPending_ = true;
+          refresh();
+        }
+        return true;
+      }
+    } else if (event->type() == QEvent::Leave) {
+      if (auto* file = session_.activeFile())
+        if (session_.annotations().hover(*file)) refreshAnnotationHover();
+    } else if (event->type() == QEvent::MouseMove) {
+      auto* item =
+          tree_->itemAt(static_cast<QMouseEvent*>(event)->position().toPoint());
+      if (!item || item->data(0, Qt::UserRole).toString() != "mark")
+        if (auto* file = session_.activeFile())
+          if (session_.annotations().hover(*file)) refreshAnnotationHover();
+    }
+  }
+  if (watched == tree_ && event->type() == QEvent::KeyPress) {
+    auto* key = static_cast<QKeyEvent*>(event);
+    if (key->matches(QKeySequence::SelectAll)) {
+      selectAllMarks();
+      return true;
+    }
+    const auto* file = session_.activeFile();
+    const auto order = treeSelectionOrder();
+    const auto* currentItem = tree_->currentItem();
+    if (file && !order.empty() && currentItem &&
+        currentItem->data(0, Qt::UserRole).toString() == "mark") {
+      const auto focusedId =
+          currentItem->data(0, Qt::UserRole + 1).toString().toStdString();
+      const auto current = std::find(order.begin(), order.end(), focusedId);
+      auto row =
+          current == order.end() ? std::ptrdiff_t{0} : current - order.begin();
+      bool navigate = true;
+      switch (key->key()) {
+        case Qt::Key_Up:
+          --row;
+          break;
+        case Qt::Key_Down:
+          ++row;
+          break;
+        case Qt::Key_Home:
+          row = 0;
+          break;
+        case Qt::Key_End:
+          row = static_cast<std::ptrdiff_t>(order.size()) - 1;
+          break;
+        case Qt::Key_PageUp:
+          row -= static_cast<std::ptrdiff_t>(kTreeAnnotationBatchSize);
+          break;
+        case Qt::Key_PageDown:
+          row += static_cast<std::ptrdiff_t>(kTreeAnnotationBatchSize);
+          break;
+        case Qt::Key_Space:
+          break;
+        default:
+          navigate = false;
+          break;
+      }
+      if (navigate) {
+        row = std::clamp(row, std::ptrdiff_t{0},
+                         static_cast<std::ptrdiff_t>(order.size()) - 1);
+        selectMark(q(order[static_cast<std::size_t>(row)]),
+                   key->key() == Qt::Key_Space ? Qt::ControlModifier
+                                               : key->modifiers(),
+                   {}, true);
+        return true;
+      }
+    }
+  }
   if (watched->objectName() == "graphArea" && event->type() == QEvent::Resize &&
       empty_)
     empty_->setGeometry(
@@ -3675,40 +3978,28 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
 }
 
 void MainWindow::selectMark(const QString& id, Qt::KeyboardModifiers modifiers,
-                            const QString& segmentId) {
+                            const QString& segmentId, bool fromTree) {
   auto* file = session_.activeFile();
   if (!file) return;
-  const auto key = id.toStdString();
-  auto ids = file->selectedMarkIds;
-  if (modifiers & Qt::ShiftModifier) {
-    const auto& visible = annotations_->sortedVisibleIds();
-    auto first = std::find(visible.begin(), visible.end(), selectionAnchor_);
-    auto last = std::find(visible.begin(), visible.end(), key);
-    if (first == visible.end()) first = last;
-    if (first != visible.end() && last != visible.end()) {
-      if (!(modifiers & Qt::ControlModifier)) ids.clear();
-      if (first > last) std::swap(first, last);
-      ids.insert(ids.end(), first, last + 1);
-    }
-  } else if (modifiers & Qt::ControlModifier) {
-    const auto it = std::find(ids.begin(), ids.end(), key);
-    if (it == ids.end())
-      ids.push_back(key);
-    else
-      ids.erase(it);
-    selectionAnchor_ = key;
+  AnnotationResult result{true};
+  if (id.isEmpty()) {
+    session_.selectMarks({});
   } else {
-    ids = {key};
-    selectionAnchor_ = key;
+    const auto mode = modifiers & Qt::ShiftModifier
+                          ? modifiers & Qt::ControlModifier
+                                ? AnnotationSelectionMode::ExtendRange
+                                : AnnotationSelectionMode::Range
+                      : modifiers & Qt::ControlModifier
+                          ? AnnotationSelectionMode::Toggle
+                          : AnnotationSelectionMode::Replace;
+    result = session_.annotations().chooseSelection(
+        *file, id.toStdString(), mode,
+        fromTree ? treeSelectionOrder() : annotations_->sortedVisibleIds(),
+        segmentId.toStdString());
   }
-  const auto activeId = std::find(ids.begin(), ids.end(), key) != ids.end()
-                            ? key
-                        : ids.empty() ? std::string{}
-                                      : ids.back();
-  const auto result = session_.annotations().select(
-      *file, std::move(ids), activeId,
-      activeId == key ? segmentId.toStdString() : std::string{});
   if (!result.ok) log(q(result.error));
+  annotations_->revealActive();
+  treeRevealPending_ = true;
   if (auto* active = session_.activeFile())
     active->display.psdFromSelection =
         sharedPsdFromSelectionPreference_ && hasActiveSegment(*active);
@@ -3719,12 +4010,16 @@ void MainWindow::selectMark(const QString& id, Qt::KeyboardModifiers modifiers,
 void MainWindow::selectAllMarks() {
   cancelInteractions(false);
   if (const auto* file = session_.activeFile()) {
-    std::vector<std::string> ids;
-    for (const auto& mark : file->marks) ids.push_back(mark.id);
-    session_.selectMarks(std::move(ids));
-    if (auto* active = session_.activeFile())
-      active->display.psdFromSelection =
-          sharedPsdFromSelectionPreference_ && hasActiveSegment(*active);
+    const auto& ids = annotations_->sortedVisibleIds();
+    const auto active =
+        std::find(ids.begin(), ids.end(), file->activeMarkId) != ids.end()
+            ? file->activeMarkId
+        : ids.empty() ? std::string{}
+                      : ids.front();
+    session_.selectMarks(ids, active);
+    if (auto* current = session_.activeFile())
+      current->display.psdFromSelection =
+          sharedPsdFromSelectionPreference_ && hasActiveSegment(*current);
     propagateGlobalRightSidebarSettings();
     refresh();
     scheduleRightSidebarSettingsSave();
@@ -3953,7 +4248,6 @@ bool MainWindow::createProject(const QString& parentDirectory,
   if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
   session_.replaceProject(std::move(candidate));
   projectPath_ = QFileInfo(projectFile).absoluteFilePath();
-  selectionAnchor_.clear();
   rememberProject(projectPath_);
   refresh();
   log("已创建工程文件夹：" + folder);
@@ -3976,7 +4270,6 @@ void MainWindow::openDemoProject() {
   session_.addDemoFile();
   session_.activateFile(first);
   projectPath_.clear();
-  selectionAnchor_.clear();
   refresh();
   log("已打开演示工程");
 }
@@ -4040,7 +4333,6 @@ void MainWindow::openNarrowbandDemoProject() {
   }
   session_.project().narrowbandWorkspaceOpen = true;
   projectPath_.clear();
-  selectionAnchor_.clear();
   workspaceStack_->setCurrentIndex(1);
   refresh();
   log("已载入内置确定性 IQ 样例；此演示工程会运行真实 DDC、FIR、重采样、PSD 与 "
@@ -4075,7 +4367,6 @@ bool MainWindow::addImportedSource(FileState file, QString& error) {
   if (metadata.sampleFormat.structure == SampleStructure::Real)
     added->display.waveformMode = WaveformMode::I;
   cancelInteractions(false);
-  selectionAnchor_.clear();
   refresh();
   log(QString("已导入 %1 · %2 · %3 个可用样本")
           .arg(q(metadata.name),
@@ -4117,7 +4408,6 @@ bool MainWindow::addIqFile(const QString& path, QString* error) {
                                              ? imported->display
                                              : DisplaySettings{}));
   cancelInteractions(false);
-  selectionAnchor_.clear();
   if (imported) startSourceLoad(*imported, imported->metadata.sampleCount);
   refresh();
   log("正在读入真实 int16 IQ 文件：" + name);
@@ -4150,7 +4440,6 @@ bool MainWindow::openProject(const QString& path) {
   applyGlobalRightSidebarSettings(fallbackSettings);
   projectPath_ = QFileInfo(projectFile).absoluteFilePath();
   rememberProject(projectPath_);
-  selectionAnchor_.clear();
   refresh();
   scheduleRightSidebarSettingsSave();
   log("已打开工程：" + projectPath_);

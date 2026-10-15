@@ -1,0 +1,1821 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite name="UiTests" timestamp="2026&#x002D;10&#x002D;15T23:30:40" hostname="HH&#x002D;laptop" tests="103" failures="0" errors="0" skipped="0" time="450.501">
+  <properties>
+    <property name="QTestVersion" value="6.11.1"/>
+    <property name="QtVersion" value="6.11.1"/>
+    <property name="QtBuild" value="Qt 6.11.1 (x86_64&#x002D;little_endian&#x002D;llp64 shared (dynamic) debug build; by MSVC 2022)"/>
+  </properties>
+  <testcase name="initTestCase" classname="UiTests" time="0.000"/>
+  <testcase name="workspaceLayout" classname="UiTests" time="1.895">
+    <system-err>
+      <![CDATA[QFontDatabase: Cannot find font directory D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="globalDisplaySettingsApplyAcrossFiles" classname="UiTests" time="2.572">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="mainModeCoordinateDirection" classname="UiTests" time="3.015">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="continuousMarkCreation" classname="UiTests" time="3.882">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="escapeCancelsCreation" classname="UiTests" time="2.945">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="selectedMarkMovePreservesSpan" classname="UiTests" time="3.755">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="escapeRollsBackMarkMove" classname="UiTests" time="3.140">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="singleClickSelectsWithoutChangingView" classname="UiTests" time="3.111">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="boxZoomAndHistoryActions" classname="UiTests" time="3.384">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="emptyProjectAndFileActions" classname="UiTests" time="5.748">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+    </system-err>
+  </testcase>
+  <testcase name="treeSelectionPreservesNodesAndShiftAnchor" classname="UiTests" time="4.095">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="displayChangeSurvivesPendingWheelCommit" classname="UiTests" time="2.943">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="largeSampleCoordinatePrecision(time&#x002D;frequency&#x002D;beyond&#x002D;2pow53)" classname="UiTests" time="2.998">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="largeSampleCoordinatePrecision(waterfall&#x002D;beyond&#x002D;2pow53)" classname="UiTests" time="2.882">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="largeSampleCoordinatePrecision(time&#x002D;frequency&#x002D;uint64&#x002D;maximum)" classname="UiTests" time="2.867">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="largeSampleCoordinatePrecision(waterfall&#x002D;uint64&#x002D;maximum)" classname="UiTests" time="2.984">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="auxiliaryYAxisIsolationAndEscape(waveform&#x002D;amplitude)" classname="UiTests" time="3.147">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="auxiliaryYAxisIsolationAndEscape(psd&#x002D;power)" classname="UiTests" time="3.206">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="selectedMarkCornerAndEdgeResize(time&#x002D;frequency)" classname="UiTests" time="3.938">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="selectedMarkCornerAndEdgeResize(waterfall)" classname="UiTests" time="4.045">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="responsiveWorkspace(4k&#x002D;150&#x002D;percent)" classname="UiTests" time="2.937">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="propertyFieldsFitSidebar" classname="UiTests" time="2.702">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="prototypeDisplayDefaultsAndOptions" classname="UiTests" time="2.881">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="paletteControlsStaySynchronized" classname="UiTests" time="3.931">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="narrowbandPaletteSelectionUpdatesStftCharts" classname="UiTests" time="3.719">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+    </system-err>
+  </testcase>
+  <testcase name="widebandAuxiliaryRenderingAndGestures" classname="UiTests" time="8.465">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="narrowbandAuxiliaryRenderingAndGestures" classname="UiTests" time="10.474">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="widebandLinkedCursorsAndFrameSpectrum" classname="UiTests" time="6.599">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="narrowbandLinkedCursorsAndFrameSpectrum" classname="UiTests" time="9.296">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="powerInputsCommitAndFitReusesData" classname="UiTests" time="4.458">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+    </system-err>
+  </testcase>
+  <testcase name="parameterDraftsRequireExplicitCommit" classname="UiTests" time="4.555">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+      <![CDATA[QString::arg: Argument missing: "阈值 %.2f 只重判未知类别 · 合成分数不会重算", 0.75]]>
+    </system-err>
+  </testcase>
+  <testcase name="parameterInputsIgnoreWheel" classname="UiTests" time="4.091">
+    <system-out>
+      <![CDATA[Wheel protection checked 51 combos and 16 spin boxes, including dialogs and editors]]>
+    </system-out>
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+      <![CDATA[This plugin does not support raise()]]>
+      <![CDATA[This plugin does not support grabbing the keyboard]]>
+    </system-err>
+  </testcase>
+  <testcase name="pinnedAxisLabelsSurviveLeave" classname="UiTests" time="8.086">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="sharedInteractionFeedback" classname="UiTests" time="6.566">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="customWindowControls" classname="UiTests" time="4.217">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="initialFileViewShowsFirstFivePercentOrTenMilliseconds" classname="UiTests" time="0.001"/>
+  <testcase name="panelRailsAndBottomTabs" classname="UiTests" time="4.740">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="sectionContextAndManualExpansion" classname="UiTests" time="4.514">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="panelMaximizeAndRestore" classname="UiTests" time="6.199">
+    <system-out>
+      <![CDATA[navPanel original QSize(1872, 82) restored QSize(1872, 82) graph sizes QList(82, 205, 969)]]>
+      <![CDATA[auxPanel original QSize(1872, 205) restored QSize(1872, 205) graph sizes QList(82, 205, 969)]]>
+      <![CDATA[specPanel original QSize(1872, 969) restored QSize(1872, 969) graph sizes QList(82, 205, 969)]]>
+    </system-out>
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="mainAxisWheelIsolationAndHistory(tf&#x002D;time&#x002D;x)" classname="UiTests" time="3.188">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="mainAxisWheelIsolationAndHistory(tf&#x002D;frequency&#x002D;y)" classname="UiTests" time="3.111">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="mainAxisWheelIsolationAndHistory(waterfall&#x002D;frequency&#x002D;x)" classname="UiTests" time="3.158">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="mainAxisWheelIsolationAndHistory(waterfall&#x002D;time&#x002D;y)" classname="UiTests" time="3.215">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="navigationClickPreservesSpanAndCancelsDrag" classname="UiTests" time="2.739">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="independentSpectralSettingsAndCustomRows" classname="UiTests" time="4.818">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+    </system-err>
+  </testcase>
+  <testcase name="loadedPrefixStopAndRoundtrip" classname="UiTests" time="3.415">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="fileSwitchCancelsUnfinishedEdit" classname="UiTests" time="3.898">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(tf&#x002D;n)" classname="UiTests" time="3.468">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(tf&#x002D;ne)" classname="UiTests" time="3.499">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(tf&#x002D;e)" classname="UiTests" time="3.452">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(tf&#x002D;se)" classname="UiTests" time="3.614">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(tf&#x002D;s)" classname="UiTests" time="3.433">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(tf&#x002D;sw)" classname="UiTests" time="3.449">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(tf&#x002D;w)" classname="UiTests" time="3.738">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(tf&#x002D;nw)" classname="UiTests" time="3.636">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(waterfall&#x002D;n)" classname="UiTests" time="3.408">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(waterfall&#x002D;ne)" classname="UiTests" time="3.685">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(waterfall&#x002D;e)" classname="UiTests" time="3.579">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(waterfall&#x002D;se)" classname="UiTests" time="3.412">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(waterfall&#x002D;s)" classname="UiTests" time="3.631">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(waterfall&#x002D;sw)" classname="UiTests" time="3.488">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(waterfall&#x002D;w)" classname="UiTests" time="3.572">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="allResizeHandlesStayBounded(waterfall&#x002D;nw)" classname="UiTests" time="3.542">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="nativeProjectRoundtripAndInvalidImport" classname="UiTests" time="3.858">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+    </system-err>
+  </testcase>
+  <testcase name="contextMenuActionsAndCoveredMarkSelection" classname="UiTests" time="3.105">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="unselectedMarkClickAndSubthresholdGesture" classname="UiTests" time="3.925">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="clippedMarkBorderMovesWithoutInventingHandle" classname="UiTests" time="3.474">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="captureLossAndDeactivationRollback" classname="UiTests" time="2.873">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="resetRestoresCompleteViewSnapshot" classname="UiTests" time="2.948">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="displayOnlyChangesPreserveBusinessViewAndPowerCache" classname="UiTests" time="4.401">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="renameUsesPlainTextAndEightyCharacterLimit" classname="UiTests" time="4.000">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+    </system-err>
+  </testcase>
+  <testcase name="splitterKeyboardResetAndEscapeRollback" classname="UiTests" time="3.115">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="treeToPlotShiftSelectionPreservesAnchor" classname="UiTests" time="3.684">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY" classname="UiTests" time="3.192">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="creationModeSurvivesMaximize" classname="UiTests" time="5.241">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="escapeCancelsGestureBeforeLeavingMaximize" classname="UiTests" time="4.287">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="addIqFileDialogCancelsAndImportsRealInt16Iq" classname="UiTests" time="6.054">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="importFormatAndAdaptiveDraft" classname="UiTests" time="3.068">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="importFloatingUnitsAndFailureRecovery" classname="UiTests" time="4.380">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="importTemplatesBatchAndSigmf" classname="UiTests" time="6.901">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="brandResourcesAndAbout" classname="UiTests" time="2.448">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+    </system-err>
+  </testcase>
+  <testcase name="importRealFilesAndCancelPrefix" classname="UiTests" time="6.927">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="narrowbandDemoResourceAndFourPages" classname="UiTests" time="16.818">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QString::arg: Argument missing: "阈值 %.2f 只重判未知类别 · 合成分数不会重算", 0.95]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="waveformBandwidthAndVisiblePaneStftSettings" classname="UiTests" time="7.389">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="uiStatePersistenceAndRecentProjects" classname="UiTests" time="7.406">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="unifiedAnnotationDraftsAndSegmentSwitch" classname="UiTests" time="3.010">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+    </system-err>
+  </testcase>
+  <testcase name="torchSigLabelsNativeRoundtrip" classname="UiTests" time="3.500">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="annotationTableBoundsAndIndependentSelection" classname="UiTests" time="3.636">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="widebandFixtureTaskNativeRoundtrip" classname="UiTests" time="7.247">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="widebandConfigurationCommittedDrafts" classname="UiTests" time="5.578">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="widebandRoiPreservesManualTool" classname="UiTests" time="3.901">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="widebandAnnotationSelectionAndOverlap" classname="UiTests" time="3.720">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support raise()]]>
+      <![CDATA[This plugin does not support grabbing the keyboard]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="annotationSelectionAcrossPagesAndViews" classname="UiTests" time="4.901">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="annotationHoverProjectionAndNoCalculation" classname="UiTests" time="4.523">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="annotationCurrentSegmentGeometryAndHandles" classname="UiTests" time="3.737">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="annotationSelectionContextAndPublication" classname="UiTests" time="3.309">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="annotationTreeDemandLoadingAndViewOrder" classname="UiTests" time="11.139">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="annotationModifiedPlotClicksPreserveAnchorAndCurrent" classname="UiTests" time="3.184">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="annotationCheckboxShiftExtendsSelection" classname="UiTests" time="3.120">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="annotationHoverTargetsOnlyOneSegment" classname="UiTests" time="3.966">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="annotationTreeStructuralNavigationAndLocate" classname="UiTests" time="23.389">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+    </system-err>
+  </testcase>
+  <testcase name="cleanupTestCase" classname="UiTests" time="0.000"/>
+</testsuite>

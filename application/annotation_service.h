@@ -14,6 +14,7 @@ struct AnnotationResult {
   std::string id, error;
   explicit operator bool() const { return ok; }
 };
+enum class AnnotationSelectionMode { Replace, Toggle, Range, ExtendRange };
 
 AnnotationBounds annotationBounds(const FileMetadata&);
 SourceIdentity annotationSourceIdentity(const FileMetadata&,
@@ -83,6 +84,14 @@ class AnnotationService {
   AnnotationResult select(FileState&, std::vector<std::string> ids,
                           std::string activeId = {},
                           std::string segmentId = {});
+  // The complete order of the initiating view includes unloaded/page-external
+  // objects. Selection is always intersected with the current context/filter.
+  AnnotationResult chooseSelection(FileState&, const std::string& id,
+                                   AnnotationSelectionMode,
+                                   const std::vector<std::string>& orderedIds,
+                                   const std::string& segmentId = {});
+  void reconcileSelection(FileState&);
+  bool hover(FileState&, std::string id = {}, std::string segmentId = {});
   AnnotationResult bindChannelSource(FileState&, Channel&,
                                      const std::string& annotationId,
                                      const std::string& segmentId) const;

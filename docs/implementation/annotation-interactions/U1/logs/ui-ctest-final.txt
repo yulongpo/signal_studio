@@ -1,0 +1,7 @@
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+    Start 23: signal_studio_ui
+1/1 Test #23: signal_studio_ui .................   Passed  456.14 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) = 456.16 sec
