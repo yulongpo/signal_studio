@@ -1,0 +1,161 @@
+{
+  "baseline": "a69a68e5b3b7994ebfada013397e58ae154a41da",
+  "scope": "No U0 mutation of the 22 original M0-P files and evidence. Compare Git-clean content to this task baseline (Windows checkout uses CRLF); R4 historical hashes are not the later approved adaptation baseline.",
+  "passed": true,
+  "files": [
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/browser-checks.json",
+      "baselineGitBlob": "ad821867eb3232c49e68d00fbb45c404bba7f918",
+      "actualGitBlob": "ad821867eb3232c49e68d00fbb45c404bba7f918",
+      "worktreeSha256": "a391e23b784c7fb559d63b629800879c2a656920636c7cd2b6f53271e34ff175",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/demo-export.json",
+      "baselineGitBlob": "61dc43e491c41aa31ba07b5a8f408fb108f5cc46",
+      "actualGitBlob": "61dc43e491c41aa31ba07b5a8f408fb108f5cc46",
+      "worktreeSha256": "82fc752c9a56fda8be9958f56a5e89b03ae029bd7c1d6ff7965a318ed6220d7e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/REVIEW.md",
+      "baselineGitBlob": "884ba6154f914042dd9828406b5647c5dc3f2a7c",
+      "actualGitBlob": "884ba6154f914042dd9828406b5647c5dc3f2a7c",
+      "worktreeSha256": "f9fb247d8b8594f631b48c4574f9b24a1bc76df94ad7734d0e1120dddb795a5d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/adjusted-layout.png",
+      "baselineGitBlob": "6cc1c62cecf08d59f9fbcbf0076355e1647f7a73",
+      "actualGitBlob": "6cc1c62cecf08d59f9fbcbf0076355e1647f7a73",
+      "worktreeSha256": "0a6d7e52c06bca591bf4ef7466f414f0b6debee00896a35c3ed9f102943e2728",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/background-task-other-file.png",
+      "baselineGitBlob": "2271d170e1d028d521fb62c1a92da25c3b37320f",
+      "actualGitBlob": "2271d170e1d028d521fb62c1a92da25c3b37320f",
+      "worktreeSha256": "fca9565dc70155d976cdcf217cae68d018459871da17c015538dafc493b4a07a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/cancelled-partial.png",
+      "baselineGitBlob": "e58b0a415e795a2985a075e1de08c70625e8c4dd",
+      "actualGitBlob": "e58b0a415e795a2985a075e1de08c70625e8c4dd",
+      "worktreeSha256": "e0a9139bc9d74aa416959edc25a1ca46ac9969d6a1fd6513f5dfadfd52540f0a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/channel-source-changed.png",
+      "baselineGitBlob": "cf3daac5d1bd1c13ddbf9bc20fd2d565c34d7b00",
+      "actualGitBlob": "cf3daac5d1bd1c13ddbf9bc20fd2d565c34d7b00",
+      "worktreeSha256": "527ba58153ccfcdcaabcb0e2d550244d91c505139d2e6a181475f04b60b5f5fe",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/channel-source.png",
+      "baselineGitBlob": "f8e1f2d4448ab3a591675acbcffbb09360195031",
+      "actualGitBlob": "f8e1f2d4448ab3a591675acbcffbb09360195031",
+      "worktreeSha256": "d1d91f1f4682dde2a16a258c9f1b168394f0bea091e5206fe614fe2dc074e863",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/import-conflict.png",
+      "baselineGitBlob": "f2fc966a397f6593a9c78d6de7f24b7cce6d2cd0",
+      "actualGitBlob": "f2fc966a397f6593a9c78d6de7f24b7cce6d2cd0",
+      "worktreeSha256": "d19b68d6e04a7db78e0a45a1da6683dbfd1a802b8a4eac4cdbb27b825057c400",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/ready.png",
+      "baselineGitBlob": "56240529a7e69c2d2b4a4c9a5d9ed220b3908339",
+      "actualGitBlob": "56240529a7e69c2d2b4a4c9a5d9ed220b3908339",
+      "worktreeSha256": "ef4ef799679efe99cac9cc1eb83eeb37e99ac7d59ca5e55d1b0e8f33c4803846",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/review-evidence.png",
+      "baselineGitBlob": "98d6511a955d0ad663bfdbb061ca5fd8062106d6",
+      "actualGitBlob": "98d6511a955d0ad663bfdbb061ca5fd8062106d6",
+      "worktreeSha256": "4b4ed8456cce92336f23e6987634ff46e8db3c7fcdf64d98166bfc9017a3af53",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/roi-confirm.png",
+      "baselineGitBlob": "0bc84dddd1b91ebb41518c09d4e0d4bc58932f27",
+      "actualGitBlob": "0bc84dddd1b91ebb41518c09d4e0d4bc58932f27",
+      "worktreeSha256": "a204dc7e5ff058dab811f2af3ecb307b767542e4e987ccef2d5697f248bbede9",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/running-frozen.png",
+      "baselineGitBlob": "0a39f8509d5054c3dbd8b73ac80d9e0bd6864fb2",
+      "actualGitBlob": "0a39f8509d5054c3dbd8b73ac80d9e0bd6864fb2",
+      "worktreeSha256": "e698127fa0a72008d2e959cd4e353356be1f0fbe6125f9f38ca3af82caae43af",
+      "unchanged": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/VALIDATION.md",
+      "baselineGitBlob": "c291888c3e867a11d44c9d6fad49320528936b28",
+      "actualGitBlob": "c291888c3e867a11d44c9d6fad49320528936b28",
+      "worktreeSha256": "f37af8618f35084d02d180170ad8a0d0a534a30c55e25b34d64cdf1ff643dbe4",
+      "unchanged": true
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/app.js",
+      "baselineGitBlob": "7836f7c05347e37455a2b3c4a057c7b29c439587",
+      "actualGitBlob": "7836f7c05347e37455a2b3c4a057c7b29c439587",
+      "worktreeSha256": "ac70d603831b5bbc6e52c93a23286ee600c302635e893bfbad634e56dfa2b0e3",
+      "unchanged": true
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/data.js",
+      "baselineGitBlob": "9dda542c9277c28f1c6f6e631887f49406fbc9d2",
+      "actualGitBlob": "9dda542c9277c28f1c6f6e631887f49406fbc9d2",
+      "worktreeSha256": "5497f1598acb3de588fef55e3fb9a127dbee7e43bb859e0629763a4d6e2abcff",
+      "unchanged": true
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/index.html",
+      "baselineGitBlob": "3297cab68fdafec88e4ea620ca887e20cbffc23e",
+      "actualGitBlob": "3297cab68fdafec88e4ea620ca887e20cbffc23e",
+      "worktreeSha256": "828dc7eb876c35352275af20065994ee8dc71dc55477ee8c642d0f8ba019d1fd",
+      "unchanged": true
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/README.md",
+      "baselineGitBlob": "849730ddc6aeafc32ef3cf656307253593f66c27",
+      "actualGitBlob": "849730ddc6aeafc32ef3cf656307253593f66c27",
+      "worktreeSha256": "534b100f599cfdecc86b1959f4eaab5d8caf9ae11f830b4d18b2a63b68295928",
+      "unchanged": true
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/styles.css",
+      "baselineGitBlob": "6652dc83f98c83b431480ce36fb4285c4ad35ab8",
+      "actualGitBlob": "6652dc83f98c83b431480ce36fb4285c4ad35ab8",
+      "worktreeSha256": "1d6dbc66fc01a7a46289e146455fdca0159601904fcfb08a0af04a56ca0aefe9",
+      "unchanged": true
+    },
+    {
+      "path": "resources/branding/svg/icon-dark.svg",
+      "baselineGitBlob": "6eb036d37c8043d29801da1018ddbded21cff96a",
+      "actualGitBlob": "6eb036d37c8043d29801da1018ddbded21cff96a",
+      "worktreeSha256": "2c1aa47d626a60a380c5e152ccd1298efbace9d6023ac8bf8b61688e98ebd256",
+      "unchanged": true
+    },
+    {
+      "path": "resources/branding/svg/wordmark-dark.svg",
+      "baselineGitBlob": "c55871d55d96dcc30688dcc31304abb701c99ce7",
+      "actualGitBlob": "c55871d55d96dcc30688dcc31304abb701c99ce7",
+      "worktreeSha256": "e8f180ec6f5c28c0fa00d7845787a6ac6023026b403ccee9f6863bdfea846e31",
+      "unchanged": true
+    },
+    {
+      "path": "scripts/verify_wideband_prototype.mjs",
+      "baselineGitBlob": "ed1dcb2463716af697411532a1553c2cb09be9b2",
+      "actualGitBlob": "ed1dcb2463716af697411532a1553c2cb09be9b2",
+      "worktreeSha256": "5f9b9e71d1e05100f61958a0a87ee26cd093ccc383734ded92795ec6af6cf8f7",
+      "unchanged": true
+    }
+  ]
+}

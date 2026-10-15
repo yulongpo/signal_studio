@@ -17,7 +17,7 @@
 | `out/archive/builds/`、`out/archive/temp/` | 历史非公共构建树、部署快照与临时文件 |
 | `out/tasks/output-organization/<date>/` | 迁移计划、逐项迁移索引和整理自检日志 |
 
-`<node>`使用M0、M0-P、M1–M5。直接调用现有`scripts/build.ps1`、`screenshot.ps1`、`gpu_smoke.ps1`和`verify-package.ps1`，把控制台输出定向到节点`logs/`。各脚本自己的正式构建/捕获结果继续使用其规定路径；测试程序在CMake构建树内的自动日志属于构建结果。退出节点时将最终报告/必要截图归档到`docs/implementation/wideband-detection/<node>/`，中间失败或旧报告留在本地节点目录。本机Python任务优先使用用户指定的`D:/profiles/anaconda/python.exe`；M0冻结的schema依赖保留在工具目录，必要时显式配置该目录。
+`<node>`使用M0、M0-P、M1–M5，后续检测适配节点R1–R6、标记交互节点U0–U4沿用同一中间产物规则。直接调用现有`scripts/build.ps1`、`screenshot.ps1`、`gpu_smoke.ps1`和`verify-package.ps1`，把控制台输出定向到节点`logs/`。各脚本自己的正式构建/捕获结果继续使用其规定路径；测试程序在CMake构建树内的自动日志属于构建结果。退出节点时将最终报告/必要截图归档到`docs/implementation/wideband-detection/<node>/`；标记交互节点归档到`docs/implementation/annotation-interactions/<node>/`。中间失败或旧报告留在本地节点目录。本机Python任务优先使用用户指定的`D:/profiles/anaconda/python.exe`；M0冻结的schema依赖保留在工具目录，必要时显式配置该目录。
 
 示例：
 

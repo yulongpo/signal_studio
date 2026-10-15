@@ -1,0 +1,253 @@
+{
+  "schema": "signalstudio-annotation-u0-browser-checks-v1",
+  "demoOnly": true,
+  "url": "http://127.0.0.1:8785/docs/prototype/annotation-interactions-u0/index.html",
+  "browser": "155.0.4283.45",
+  "viewport": {
+    "width": 2560,
+    "height": 1440,
+    "deviceScaleFactor": 1
+  },
+  "scope": "Browser interaction only; no native Qt, real IQ, model, DDC or monitor acceptance.",
+  "passed": 59,
+  "failed": 0,
+  "pageErrors": [],
+  "checks": [
+    {
+      "name": "U0-01 layout and explicit demo boundary",
+      "status": "passed"
+    },
+    {
+      "name": "U0 selection table to tree and plot: label-1",
+      "status": "passed"
+    },
+    {
+      "name": "U0 selection tree to table and plot: label-1",
+      "status": "passed"
+    },
+    {
+      "name": "U0 direct table name edit with immutable origin: label-1",
+      "status": "passed"
+    },
+    {
+      "name": "U0 selection table to tree and plot: manual-1",
+      "status": "passed"
+    },
+    {
+      "name": "U0 selection tree to table and plot: manual-1",
+      "status": "passed"
+    },
+    {
+      "name": "U0 direct table name edit with immutable origin: manual-1",
+      "status": "passed"
+    },
+    {
+      "name": "U0 selection table to tree and plot: algo-ignored",
+      "status": "passed"
+    },
+    {
+      "name": "U0 selection tree to table and plot: algo-ignored",
+      "status": "passed"
+    },
+    {
+      "name": "U0 direct table name edit with immutable origin: algo-ignored",
+      "status": "passed"
+    },
+    {
+      "name": "U0-11 actual clicked row is current during Ctrl and Shift selection",
+      "status": "passed"
+    },
+    {
+      "name": "U0-12 hover links three surfaces without selection mutation",
+      "status": "passed"
+    },
+    {
+      "name": "U0-13 multiple segments expose only current edit handles",
+      "status": "passed"
+    },
+    {
+      "name": "U0 direct graphic drag is one revision and one undo: label-4",
+      "status": "passed"
+    },
+    {
+      "name": "U0 direct graphic drag is one revision and one undo: manual-1",
+      "status": "passed"
+    },
+    {
+      "name": "U0 direct graphic drag is one revision and one undo: algo-ignored",
+      "status": "passed"
+    },
+    {
+      "name": "U0-17 graphic Esc cancels preview without command",
+      "status": "passed"
+    },
+    {
+      "name": "U0-18 unknown time allows frequency editing without inventing segments",
+      "status": "passed"
+    },
+    {
+      "name": "U0-19 complete range edit validates atomically",
+      "status": "passed"
+    },
+    {
+      "name": "U0-20 table input commits only Enter and Esc preserves value",
+      "status": "passed"
+    },
+    {
+      "name": "U0-21 Tab continues editing and Delete inside input does not delete object",
+      "status": "passed"
+    },
+    {
+      "name": "U0-22 background publish preserves draft and selection",
+      "status": "passed"
+    },
+    {
+      "name": "U0-23 context switch cancels draft instead of committing",
+      "status": "passed"
+    },
+    {
+      "name": "U0-24 >200 cross-page selection and full matching select-all",
+      "status": "passed"
+    },
+    {
+      "name": "U0-25 plot selection loads tree item beyond 100 and jumps to correct table page",
+      "status": "passed"
+    },
+    {
+      "name": "U0-26 filters and layers prune hidden selections before batch deletion",
+      "status": "passed"
+    },
+    {
+      "name": "U0-27 sorting preserves actual current object and page",
+      "status": "passed"
+    },
+    {
+      "name": "U0-28 optional quality never gates channel and does not alter current snapshot",
+      "status": "passed"
+    },
+    {
+      "name": "U0-29 name and note preserve channel relation, geometry changes relation",
+      "status": "passed"
+    },
+    {
+      "name": "U0-30 unknown-time Pending result creates UserRange without algorithm segments",
+      "status": "passed"
+    },
+    {
+      "name": "U0-31 located time trimming binds only active segment",
+      "status": "passed"
+    },
+    {
+      "name": "U0-32 Partial and empty intersection require explicit user range",
+      "status": "passed"
+    },
+    {
+      "name": "U0-33 physical source changes and unreadable source show specific diagnostic",
+      "status": "passed"
+    },
+    {
+      "name": "U0-34 invalid DSP parameters identify field and do not create channel",
+      "status": "passed"
+    },
+    {
+      "name": "U0-35 batch delete preview and one undo preserve channels",
+      "status": "passed"
+    },
+    {
+      "name": "U0-36 delete current segment and last-segment warning are distinct",
+      "status": "passed"
+    },
+    {
+      "name": "U0-37 multi-selection channel entry explicitly chooses one object",
+      "status": "passed"
+    },
+    {
+      "name": "U0-38 zoom and mode preserve selection and physical source",
+      "status": "passed"
+    },
+    {
+      "name": "U0-39 save and reopen preserves UserRange, Missing channel and quality",
+      "status": "passed"
+    },
+    {
+      "name": "U0 graph click selects source with no implicit zoom: label-4",
+      "status": "passed"
+    },
+    {
+      "name": "U0 graph click selects source with no implicit zoom: manual-1",
+      "status": "passed"
+    },
+    {
+      "name": "U0 graph click selects source with no implicit zoom: algo-ignored",
+      "status": "passed"
+    },
+    {
+      "name": "U0-43 undo preserves background publication and current view",
+      "status": "passed"
+    },
+    {
+      "name": "U0-44 unknown time graphic editing retains observation times",
+      "status": "passed"
+    },
+    {
+      "name": "U0-45 handle resize only affects current segment",
+      "status": "passed"
+    },
+    {
+      "name": "U0-46 F2 and application blur preserve uncommitted draft",
+      "status": "passed"
+    },
+    {
+      "name": "U0-47 old background box zoom and axis pan remain",
+      "status": "passed"
+    },
+    {
+      "name": "U0-48 axis wheel only zooms its physical coordinate",
+      "status": "passed"
+    },
+    {
+      "name": "U0-49 parameter wheel preserves value and score applies only on submit",
+      "status": "passed"
+    },
+    {
+      "name": "U0-50 split and merge retain ID and evidence with one-step undo",
+      "status": "passed"
+    },
+    {
+      "name": "U0-51 same context actions from table, tree and plot",
+      "status": "passed"
+    },
+    {
+      "name": "U0-52 gesture interruption rolls back drag without a revision",
+      "status": "passed"
+    },
+    {
+      "name": "U0-53 active segment sorting matches displayed values and keeps unknown times last",
+      "status": "passed"
+    },
+    {
+      "name": "U0-54 save reload publish preserves unique IDs and reopen validity",
+      "status": "passed"
+    },
+    {
+      "name": "U0-55 Cancel and Close keep their Enter semantics",
+      "status": "passed"
+    },
+    {
+      "name": "U0-56 application click commits once and performs requested next action",
+      "status": "passed"
+    },
+    {
+      "name": "U0-57 unchanged numeric fields are exact no-ops and do not stale a channel",
+      "status": "passed"
+    },
+    {
+      "name": "U0-58 active row is revealed below the sticky header",
+      "status": "passed"
+    },
+    {
+      "name": "U0-40 no console exceptions across all interactions",
+      "status": "passed"
+    }
+  ]
+}

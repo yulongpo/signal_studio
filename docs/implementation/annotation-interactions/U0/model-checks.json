@@ -1,0 +1,319 @@
+{
+  "schema": "signal-studio-u0-model-behavior-report",
+  "version": 1,
+  "demoOnly": true,
+  "evidenceBoundary": "仅独立纯状态/命令行为；没有读取 IQ、执行 DSP/模型、Qt 或 GPU 验证。",
+  "startedAt": "2026-10-15T12:48:54.287Z",
+  "completedAt": "2026-10-15T12:48:54.445Z",
+  "node": "v26.3.0",
+  "passed": 61,
+  "failed": 0,
+  "total": 61,
+  "tests": [
+    {
+      "name": "standard 夹具独立包含四条标签与三来源八个对象",
+      "passed": true,
+      "durationMs": 8.313
+    },
+    {
+      "name": "各次 createState 夹具、origin 与选择互不共享",
+      "passed": true,
+      "durationMs": 2.207
+    },
+    {
+      "name": "毫秒/MHz 显示换算保留物理整数样本和小数 Hz",
+      "passed": true,
+      "durationMs": 1.099
+    },
+    {
+      "name": "单选与多段活动项保持对象/文件段 ID 同步",
+      "passed": true,
+      "durationMs": 1.704
+    },
+    {
+      "name": "Ctrl 点击切换选择并维护有效 active/anchor",
+      "passed": true,
+      "durationMs": 1.433
+    },
+    {
+      "name": "Shift 采用指定可见顺序连续选择，Ctrl+Shift 取并集",
+      "passed": true,
+      "durationMs": 1.443
+    },
+    {
+      "name": "large 跨 200 行分页定位对象，全选覆盖全部匹配项",
+      "passed": true,
+      "durationMs": 16.166
+    },
+    {
+      "name": "评分大于 0 时排除无评分对象；来源/质量/图层组合正确",
+      "passed": true,
+      "durationMs": 0.775
+    },
+    {
+      "name": "非法图层补丁具体报错且不覆盖已提交筛选",
+      "passed": true,
+      "durationMs": 0.54
+    },
+    {
+      "name": "筛选、隐藏图层和外部删除后协调选择，隐藏对象不可直接选择",
+      "passed": true,
+      "durationMs": 0.693
+    },
+    {
+      "name": "排序只改变展示顺序，保持选择并按 active 重新定位分页",
+      "passed": true,
+      "durationMs": 16.057
+    },
+    {
+      "name": "多段切换后起止排序立即使用当前段，不使用全对象包围范围",
+      "passed": true,
+      "durationMs": 0.904
+    },
+    {
+      "name": "未知时间的起止值在升序降序均置尾，不把观察支持当活动时间",
+      "passed": true,
+      "durationMs": 0.792
+    },
+    {
+      "name": "中心频率和带宽按当前段排序，未知时间对象仍使用观察带频率",
+      "passed": true,
+      "durationMs": 1.285
+    },
+    {
+      "name": "文件之间选择、段 ID 与 20/60 Msps 换算隔离",
+      "passed": true,
+      "durationMs": 1.535
+    },
+    {
+      "name": "名称和备注自动生成修订但保持质量、来源与通道 Current",
+      "passed": true,
+      "durationMs": 1.27
+    },
+    {
+      "name": "空编辑不写撤销项，非法编辑保持数据和 undo 原子性",
+      "passed": true,
+      "durationMs": 1.268
+    },
+    {
+      "name": "名称/备注的 undo 和 redo 均保留质量与 Current 几何关联",
+      "passed": true,
+      "durationMs": 1.43
+    },
+    {
+      "name": "修改已绑定几何使质量 Pending、通道 Changed，undo/redo 恢复关联",
+      "passed": true,
+      "durationMs": 1.332
+    },
+    {
+      "name": "未绑定段的几何和新增独立段不改变第一段通道的关系",
+      "passed": true,
+      "durationMs": 1.164
+    },
+    {
+      "name": "无段频率编辑保持观察时间，不产生算法段；已有段禁止伪装观察带",
+      "passed": true,
+      "durationMs": 1.005
+    },
+    {
+      "name": "split 只在整数样本中点划分，保留左段 ID 和原始证据",
+      "passed": true,
+      "durationMs": 1.665
+    },
+    {
+      "name": "单样本段不能拆分，极大安全整数样本仍使用精确中点",
+      "passed": true,
+      "durationMs": 1.37
+    },
+    {
+      "name": "merge 合并相邻物理包围范围并使被移除段绑定为 Missing",
+      "passed": true,
+      "durationMs": 1.431
+    },
+    {
+      "name": "删除已绑定段保留 Missing 通道，删除最后一段软删整个对象且一次撤销",
+      "passed": true,
+      "durationMs": 1.288
+    },
+    {
+      "name": "恢复原始范围仅恢复几何，保留当前名称及来源，通道按实际几何恢复",
+      "passed": true,
+      "durationMs": 1.56
+    },
+    {
+      "name": "新建人工标记记录独立 origin、Pending 与单次 undo，非法范围不改状态",
+      "passed": true,
+      "durationMs": 1.266
+    },
+    {
+      "name": "批量复核是一个 undo，不改修订 ID、不改变几何通道关系",
+      "passed": true,
+      "durationMs": 1.224
+    },
+    {
+      "name": "批量软删除统计对象/段/关联通道，仅一次 undo 并保留 Missing 通道",
+      "passed": true,
+      "durationMs": 1.369
+    },
+    {
+      "name": "跨页批量删除覆盖所有匹配对象，undo 后按当前筛选协调选择",
+      "passed": true,
+      "durationMs": 19.689
+    },
+    {
+      "name": "质量筛选下复核移出选择，undo/redo 不复活隐藏选择",
+      "passed": true,
+      "durationMs": 1.09
+    },
+    {
+      "name": "撤销后新分支清空 redo 且修订 ID 不复用，旧草稿仍被拒绝",
+      "passed": true,
+      "durationMs": 1.571
+    },
+    {
+      "name": "ID 级 undo/redo 保留命令后后台发布的独立对象及通道",
+      "passed": true,
+      "durationMs": 2.229
+    },
+    {
+      "name": "命令后选中新发布对象，undo/redo 保留当前选择",
+      "passed": true,
+      "durationMs": 1.638
+    },
+    {
+      "name": "几何 undo/redo 保留当前图谱 view、源 metadata 与文件对象本身",
+      "passed": true,
+      "durationMs": 1.136
+    },
+    {
+      "name": "跨文件 undo/redo 仅应用命令所触及记录，不切换当前文件或回滚其它文件",
+      "passed": true,
+      "durationMs": 1.782
+    },
+    {
+      "name": "创建通道的 ID 级 undo/redo 保留后来发布通道，不回滚标记或视图",
+      "passed": true,
+      "durationMs": 1.775
+    },
+    {
+      "name": "批量软删除一条 ID 差异命令保留后续发布，undo/redo 不删除新对象",
+      "passed": true,
+      "durationMs": 1.802
+    },
+    {
+      "name": "默认未知时间请求使用视图与可读前缀，不补算法段或改变复核",
+      "passed": true,
+      "durationMs": 0.64
+    },
+    {
+      "name": "Pending/Rejected 与 confirmed:false 均可创建通道，未额外强制确认",
+      "passed": true,
+      "durationMs": 3.424
+    },
+    {
+      "name": "无选择/多选择不生成默认请求；默认请求不改状态",
+      "passed": true,
+      "durationMs": 1.66
+    },
+    {
+      "name": "明确段可裁剪，保留完整绑定几何与实际提取范围，越段被拒绝",
+      "passed": true,
+      "durationMs": 0.878
+    },
+    {
+      "name": "未知时间手工范围可超出原观察支持，保存 UserRange 不伪造 segment",
+      "passed": true,
+      "durationMs": 0.618
+    },
+    {
+      "name": "partial 默认未知时间只到 12ms，明确段越可读前缀不会静默裁剪",
+      "passed": true,
+      "durationMs": 0.692
+    },
+    {
+      "name": "outside 保持空请求可打开对话框，create 拒绝空提取且不回退其它范围",
+      "passed": true,
+      "durationMs": 0.643
+    },
+    {
+      "name": "缺失/变化物理源保留请求并显示具体错误，创建失败为原子操作",
+      "passed": true,
+      "durationMs": 1.267
+    },
+    {
+      "name": "通道校验覆盖样本整数、非空、物理边界及可读前缀",
+      "passed": true,
+      "durationMs": 0.493
+    },
+    {
+      "name": "频率和 15% 保护带校验不悄改输入，不添加算法限制",
+      "passed": true,
+      "durationMs": 0.509
+    },
+    {
+      "name": "输出率边界允许 1.3BW 精确值，拒绝低于它或高于输入 Fs",
+      "passed": true,
+      "durationMs": 0.554
+    },
+    {
+      "name": "通道默认输出率遵守 max(4MHz,1.3BW) 并保留无法满足的几何错误",
+      "passed": true,
+      "durationMs": 0.938
+    },
+    {
+      "name": "通道请求绑定几何过期会拒绝；只改 metadata 不造成伪 Changed",
+      "passed": true,
+      "durationMs": 1.213
+    },
+    {
+      "name": "UserRange 观察带频率/结构变更为 Changed，恢复原始范围可回到 Current",
+      "passed": true,
+      "durationMs": 1.734
+    },
+    {
+      "name": "四种通道关联互斥：Current/Changed/Missing/Unavailable",
+      "passed": true,
+      "durationMs": 1.091
+    },
+    {
+      "name": "保存去除历史栈和 hover，加载恢复演示状态并清空 undo/redo",
+      "passed": true,
+      "durationMs": 3.103
+    },
+    {
+      "name": "保存加载支持未确认 UserRange 通道与软删对象保留的 Missing 通道",
+      "passed": true,
+      "durationMs": 1.868
+    },
+    {
+      "name": "保存加载允许段已删除的 Missing 绑定和源变化/缺失的 Unavailable 绑定",
+      "passed": true,
+      "durationMs": 3.301
+    },
+    {
+      "name": "加载验证 schema/version/demoOnly、物理长度及重复 ID，拒绝伪造状态",
+      "passed": true,
+      "durationMs": 1.664
+    },
+    {
+      "name": "加载先验证完整数据，失败不触碰既有工作状态",
+      "passed": true,
+      "durationMs": 0.93
+    },
+    {
+      "name": "加载按全局筛选协调每个文件的选择，并保持有效 active/segment",
+      "passed": true,
+      "durationMs": 2.406
+    },
+    {
+      "name": "所有规定场景均可独立 JSON 往返",
+      "passed": true,
+      "durationMs": 19.61
+    },
+    {
+      "name": "瀑布显示模式可独立保存加载，不更改物理范围或通道关联",
+      "passed": true,
+      "durationMs": 0.911
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+U0 model: 61/61 passed, 0 failed.
+D:\project\signal_studio_rebuild\out\tasks\wideband-detection\U0\diagnostics\model-r1.json

@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Signal Studio · 标记交互 U0 审核原型</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="menubar">
+        <div class="brand">
+          <img src="../../../resources/branding/svg/icon-dark.svg" alt="" />
+          <img
+            class="wordmark"
+            src="../../../resources/branding/svg/wordmark-dark.svg"
+            alt="Signal Studio"
+          />
+        </div>
+        <details class="menu">
+          <summary>文件</summary>
+          <div>
+            <button data-action="save">保存演示状态 <kbd>Ctrl S</kbd></button>
+            <button data-action="reopen">重开已保存演示</button>
+            <button data-action="export">导出 demo JSON</button>
+          </div>
+        </details>
+        <details class="menu">
+          <summary>编辑</summary>
+          <div>
+            <button data-action="undo">撤销标记命令 <kbd>Ctrl Z</kbd></button>
+            <button data-action="redo">重做标记命令 <kbd>Ctrl Y</kbd></button>
+            <button data-action="manual">持续手动标记</button>
+          </div>
+        </details>
+        <details class="menu">
+          <summary>视图</summary>
+          <div>
+            <button data-action="fit">适应可用数据</button>
+            <button data-action="locate">定位当前活动段</button>
+          </div>
+        </details>
+        <details class="menu">
+          <summary>分析</summary>
+          <div>
+            <button data-action="channel">创建窄带通道…</button>
+            <a
+              href="../wideband-detection-r1/index.html"
+              target="_blank"
+              rel="noopener"
+              >查看原 M0-P 检测流程</a
+            >
+          </div>
+        </details>
+        <button data-action="help">帮助</button>
+        <span class="spacer"></span>
+        <span class="demo-badge">交互原型 · 合成演示 · 无模型 / 无 DDC</span>
+        <span class="version">U0 / 待审核</span>
+      </header>
+      <section class="reviewbar" aria-label="原型评审工具">
+        <span class="status-dot"></span><strong>可重复评审场景</strong>
+        <select id="scenario" aria-label="评审场景">
+          <option value="standard">三来源 · 多段与时间未定位</option>
+          <option value="large">260+ 对象 · 跨页与树定位</option>
+          <option value="partial">Partial · 12 ms 可用前缀</option>
+          <option value="outside">视区位于未读尾部</option>
+          <option value="changed-source">物理来源已变化</option>
+          <option value="missing-source">物理来源不可读取</option>
+        </select>
+        <button data-action="reset">重置场景</button>
+        <button
+          data-action="publish"
+          title="仅追加合成记录，用于评审后台更新时草稿和选择是否保持"
+        >
+          追加结果演示
+        </button>
+        <span class="spacer"></span>
+        <span id="scopeSummary" class="mono"></span>
+        <button data-action="save">保存演示</button>
+        <button data-action="reopen">重开演示</button>
+      </section>
+      <main class="workspace">
+        <aside class="left-panel">
+          <h2>工程管理 <span class="caption">按需加载 · 同一选择</span></h2>
+          <div class="project-title">▾ RF Bench · 标记交互评审</div>
+          <div id="fileList"></div>
+          <div class="left-heading">
+            <strong>信号标记</strong><span id="treeCounts"></span>
+          </div>
+          <div class="left-actions">
+            <button data-action="select-all" id="treeSelectAll">
+              全选匹配
+            </button>
+            <button data-action="delete" id="treeDelete">删除所选</button>
+            <button data-action="clear-selection">清选</button>
+          </div>
+          <div
+            id="treePanel"
+            class="tree-panel"
+            role="tree"
+            aria-label="三来源标记预览"
+          ></div>
+          <div class="left-heading">
+            <strong>窄带通道</strong><span id="channelCount"></span>
+          </div>
+          <div id="treeChannels" class="tree-channels"></div>
+          <p class="left-note">
+            单击选择 · Ctrl 多选 · Shift 连选<br />双击定位 · 右键操作
+          </p>
+        </aside>
+        <section class="center-panel">
+          <div class="workspace-title">
+            <strong>宽带时频研判</strong><span id="contextSummary"></span
+            ><span class="spacer"></span
+            ><span class="pill">原型审核 · 当前范围</span>
+          </div>
+          <section class="chart navigation-chart">
+            <div class="chart-heading">
+              <strong>全局时间导航</strong
+              ><span class="caption">物理时间 · 可用前缀</span
+              ><span class="spacer"></span
+              ><span id="prefixSummary" class="mono"></span>
+            </div>
+            <canvas id="navCanvas" aria-label="合成导航波形"></canvas>
+          </section>
+          <section class="chart auxiliary-chart">
+            <div class="chart-heading">
+              <strong>辅助分析</strong
+              ><button data-action="aux-wave" class="tab active" id="auxWave">
+                时域波形</button
+              ><button data-action="aux-psd" class="tab" id="auxPsd">
+                功率谱 PSD</button
+              ><span class="spacer"></span
+              ><span class="caption">合成图谱，仅评审选择关系</span>
+            </div>
+            <canvas id="auxCanvas" aria-label="合成辅助图"></canvas>
+          </section>
+          <section class="chart main-chart">
+            <div class="chart-heading">
+              <strong>宽带图谱</strong>
+              <button
+                data-action="spectrogram"
+                class="tab active"
+                id="spectrogramMode"
+              >
+                时频图
+              </button>
+              <button data-action="waterfall" class="tab" id="waterfallMode">
+                瀑布图
+              </button>
+              <span class="spacer"></span>
+              <button data-action="manual" id="manualTool">
+                ＋ 持续手动标记
+              </button>
+              <button data-action="zoom">缩小视区</button>
+              <button data-action="fit">适应可用数据</button>
+            </div>
+            <div
+              id="plotArea"
+              class="plot-area"
+              tabindex="0"
+              aria-label="时频图标记交互区域"
+            >
+              <canvas id="specCanvas"></canvas>
+              <svg id="marksSvg" role="group" aria-label="三来源标记图形"></svg>
+            </div>
+            <div class="plot-footer">
+              <span id="viewSummary" class="mono"></span
+              ><span class="spacer"></span
+              ><button
+                data-action="channel"
+                id="plotCreateChannel"
+                class="primary"
+              >
+                创建窄带通道…
+              </button>
+            </div>
+          </section>
+          <section class="records">
+            <div class="record-heading">
+              <strong>统一标记记录</strong
+              ><span class="caption">一行一个对象 · 几何列为当前活动段</span
+              ><span class="spacer"></span
+              ><button data-action="export">JSON</button>
+            </div>
+            <div class="filters">
+              <select id="sourceFilter" aria-label="来源筛选">
+                <option value="all">全部来源</option>
+                <option value="ImportedLabel">原始标签</option>
+                <option value="Manual">手动标记</option>
+                <option value="Algorithm">算法结果</option>
+              </select>
+              <select id="qualityFilter" aria-label="质量筛选">
+                <option value="all">全部质量</option>
+                <option value="Pending">待判断</option>
+                <option value="Accepted">已采纳</option>
+                <option value="Rejected">已忽略</option>
+              </select>
+              <label class="score-filter"
+                >mean ≥
+                <input
+                  id="scoreFilter"
+                  type="text"
+                  value="0"
+                  inputmode="decimal"
+                  aria-label="最低分数"
+              /></label>
+              <label class="layer"
+                ><input
+                  type="checkbox"
+                  data-layer="ImportedLabel"
+                  checked
+                /><span class="source-dot label-source"></span>原始标签</label
+              >
+              <label class="layer"
+                ><input type="checkbox" data-layer="Manual" checked /><span
+                  class="source-dot manual-source"
+                ></span
+                >手动</label
+              >
+              <label class="layer"
+                ><input type="checkbox" data-layer="Algorithm" checked /><span
+                  class="source-dot algorithm-source"
+                ></span
+                >算法</label
+              >
+              <span id="recordCounts" class="counts"></span>
+            </div>
+            <div class="record-actions">
+              <button data-action="select-all" id="tableSelectAll">
+                全选匹配
+              </button>
+              <button data-action="clear-selection">清选</button>
+              <button
+                data-action="delete"
+                id="tableDelete"
+                class="danger-quiet"
+              >
+                删除所选
+              </button>
+              <button data-action="locate">定位</button>
+              <button
+                data-action="channel"
+                id="tableCreateChannel"
+                class="primary"
+              >
+                创建窄带通道…
+              </button>
+              <details class="menu quality-menu">
+                <summary>质量标记 ▾</summary>
+                <div>
+                  <button data-quality="Accepted">已采纳</button
+                  ><button data-quality="Rejected">已忽略</button
+                  ><button data-quality="Pending">待判断</button>
+                </div>
+              </details>
+              <button data-action="undo" id="undoButton">撤销</button
+              ><button data-action="redo" id="redoButton">重做</button>
+              <span class="spacer"></span
+              ><span id="pageSummary" class="mono"></span>
+              <button data-action="previous-page" id="previousPage">
+                上一页</button
+              ><button data-action="next-page" id="nextPage">下一页</button>
+            </div>
+            <div id="tableScroll" class="table-scroll">
+              <table id="annotationTable" aria-label="统一标记记录">
+                <thead>
+                  <tr>
+                    <th class="check-column">
+                      <input
+                        id="selectAllCheckbox"
+                        type="checkbox"
+                        aria-label="全选全部匹配页"
+                      />
+                    </th>
+                    <th data-sort="name">名称 <span>↕</span></th>
+                    <th data-sort="sourceKind">来源</th>
+                    <th>当前段</th>
+                    <th data-sort="start">起始 / ms</th>
+                    <th>结束 / ms</th>
+                    <th data-sort="center">中心 / MHz</th>
+                    <th>带宽 / kHz</th>
+                    <th data-sort="score">mean</th>
+                    <th>质量</th>
+                    <th>通道</th>
+                  </tr>
+                </thead>
+                <tbody id="annotationRows"></tbody>
+              </table>
+            </div>
+            <div class="table-note">
+              <span id="draftNotice"
+                >双击 / F2 编辑 · Enter / Tab 提交 · Esc 取消 ·
+                来源原文始终保留</span
+              ><span class="spacer"></span
+              ><span>跨页保留选择 · 筛选外不参与批量操作</span>
+            </div>
+          </section>
+        </section>
+        <aside class="right-panel">
+          <h2>
+            当前对象 / 活动段 <span class="caption">与图表、左树联动</span>
+          </h2>
+          <div class="inspector-scroll">
+            <details class="section detection-unchanged">
+              <summary>宽带信号检测参数</summary>
+              <div class="parameter-preview">
+                <span>FFSCN / SCN</span><span>分析参数沿用已获批方案</span
+                ><span>FFT / hop / T / 滑动</span><span>模型输入适配不变</span>
+              </div>
+              <a
+                href="../wideband-detection-r1/index.html"
+                target="_blank"
+                rel="noopener"
+                >打开原 M0-P 检测流程 →</a
+              >
+            </details>
+            <section id="annotationInspector" class="section"></section>
+            <section class="section">
+              <h3>关联窄带通道 <span class="caption">演示快照</span></h3>
+              <div id="channelList"></div>
+            </section>
+            <section class="section">
+              <h3>操作记录</h3>
+              <div id="operationLog" class="operation-log"></div>
+            </section>
+          </div>
+        </aside>
+      </main>
+      <footer class="statusbar">
+        <span id="statusText">原型就绪</span><span class="spacer"></span
+        ><span>浏览器合成演示 · 不读取 IQ · 不执行真实 DDC</span
+        ><span>2560 × 1440 逻辑工作区</span>
+      </footer>
+    </div>
+    <div id="contextMenu" class="context-menu hidden" role="menu"></div>
+    <div id="modalBackdrop" class="modal-backdrop hidden">
+      <section
+        id="modal"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <div class="modal-heading">
+          <h2 id="modalTitle"></h2>
+          <button data-action="close-modal" aria-label="关闭">×</button>
+        </div>
+        <div id="modalContent" class="modal-content"></div>
+        <div id="modalActions" class="modal-actions"></div>
+      </section>
+    </div>
+    <div id="toast" role="status"></div>
+    <script type="module" src="app.mjs"></script>
+  </body>
+</html>

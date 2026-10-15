@@ -1,0 +1,146 @@
+{
+  "schema": "signalstudio-annotation-u0-artifacts-v1",
+  "createdAt": "2026-10-15T13:10:42.813173+00:00",
+  "baseline": "a69a68e5b3b7994ebfada013397e58ae154a41da",
+  "demoOnly": true,
+  "nativeImplementation": false,
+  "approvalStatus": "AwaitingUserPrototypeConfirmation",
+  "node": "v26.3.0",
+  "playwright": "1.62.1",
+  "browser": "155.0.4283.45",
+  "viewport": {
+    "width": 2560,
+    "height": 1440,
+    "deviceScaleFactor": 1
+  },
+  "checks": {
+    "modelPassed": 61,
+    "modelFailed": 0,
+    "browserPassed": 59,
+    "browserFailed": 0,
+    "pageErrors": []
+  },
+  "files": [
+    {
+      "path": "docs/prototype/annotation-interactions-u0/app.mjs",
+      "bytes": 82334,
+      "sha256": "a3af0fe47f409934870ab739f5b4b11c352a74b4897eeb72a1adf4d4e85d859c"
+    },
+    {
+      "path": "docs/prototype/annotation-interactions-u0/index.html",
+      "bytes": 14737,
+      "sha256": "416f220affe9e20cee0e48de8a6bd86f2a7db1e6efac841f3b1dc2cbdacc11bf"
+    },
+    {
+      "path": "docs/prototype/annotation-interactions-u0/model.mjs",
+      "bytes": 58970,
+      "sha256": "18c66aa09e8bde716dc75b72c533c51ead0f0f562f13e2b869b0dd36b227d139"
+    },
+    {
+      "path": "docs/prototype/annotation-interactions-u0/README.md",
+      "bytes": 3418,
+      "sha256": "3febaaeb222cc770132f18695a990b12ab98f8c00af5ba0a0c1b3e260b50cdd7"
+    },
+    {
+      "path": "docs/prototype/annotation-interactions-u0/styles.css",
+      "bytes": 18271,
+      "sha256": "6f1bfb69721d2e43ba4bd9bce04247bf0188347d6541eddd434432710e5da1ba"
+    },
+    {
+      "path": "scripts/verify_annotation_interaction_model.mjs",
+      "bytes": 53796,
+      "sha256": "8a1d517c9e4689dc2b84a8e13a833b388fbe7aab3df35c0f548a7d25d8ad4197"
+    },
+    {
+      "path": "scripts/verify_annotation_interaction_prototype.mjs",
+      "bytes": 41924,
+      "sha256": "30fab3ca3d7956cc39b7a7c42a2d39f7079d3eeca06fe66917fa52a62f3d62a5"
+    },
+    {
+      "path": "resources/branding/svg/icon-dark.svg",
+      "bytes": 1357,
+      "sha256": "2c1aa47d626a60a380c5e152ccd1298efbace9d6023ac8bf8b61688e98ebd256"
+    },
+    {
+      "path": "resources/branding/svg/wordmark-dark.svg",
+      "bytes": 7428,
+      "sha256": "e8f180ec6f5c28c0fa00d7845787a6ac6023026b403ccee9f6863bdfea846e31"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/screenshots/01-ready.png",
+      "bytes": 762065,
+      "sha256": "fb383c3b193be518da44d734a53ee23fda400bdd3f16777a4df87ef0531e9cdc"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/screenshots/02-multisegment.png",
+      "bytes": 769531,
+      "sha256": "29bf6fa68bcffe283910fff1d651fa4f042a9f5ffbd0b2c3b641ced0a84e9125"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/screenshots/03-direct-revision.png",
+      "bytes": 773078,
+      "sha256": "da03a6160c9e7c5d3b2d5c8cda80c4310111b088f48502790a2eccce1cb94571"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/screenshots/04-background-draft.png",
+      "bytes": 763026,
+      "sha256": "4af2e0301cc1468bfdc976aea216c9c87f39cb7827138c53e62684187345e84c"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/screenshots/05-cross-page.png",
+      "bytes": 947682,
+      "sha256": "0a359ed6ccf6e36d5a4d4074622590edc7b572eabea3985fbd2b524e962f917d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/screenshots/06-user-range.png",
+      "bytes": 500872,
+      "sha256": "a97b89e2ad7a8282f5fb33275f76da3c5fde8275ea5da7ea81903af2364c81c7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/screenshots/07-empty-intersection.png",
+      "bytes": 308996,
+      "sha256": "cb9250ec36ac1fb6df1875412f1cc86b2e6b80c2e6184784f29ddf894d0f702d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/screenshots/08-delete-preview.png",
+      "bytes": 503881,
+      "sha256": "ec25d3d04f62692b7f1d35971f63bc372f4bdc0796f90990a8ee27e7cb56af5b"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/screenshots/09-waterfall.png",
+      "bytes": 840401,
+      "sha256": "0dd35645ccea5eaf722dd186552bc9a4e39279f8300c71b69a23059b0314f126"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/screenshots/10-reopen.png",
+      "bytes": 724147,
+      "sha256": "18d95b5e10ea6275ac42221a3908d885770fc59c20ff812bab58171918a924c5"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/model-checks.json",
+      "bytes": 9771,
+      "sha256": "06994e80bcc01939d830ca327bdf3e791ca5a6a9cb9be13b7b0fcab231b2ddaa"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/browser-checks.json",
+      "bytes": 7292,
+      "sha256": "3b20edf75a54ba9f96ce89582247ed7b40d15981d4c77f743e85bcfc7684ec22"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/m0p-frozen-check.json",
+      "bytes": 8028,
+      "sha256": "a673b3d042dabe897eecc744d1d05dbc607033994cf35611eb6dae15cb6a1331"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/logs/model.txt",
+      "bytes": 127,
+      "sha256": "a5d716733cee40452c622b965758d45d4b2b0ab33e33295645b00a4d61b89113"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U0/logs/browser.txt",
+      "bytes": 3990,
+      "sha256": "56c934d17c403712639cc56265118bc5741af04739be61b8d7b893ce9b02ff74"
+    }
+  ],
+  "hashScope": "SHA-256 of worktree bytes at U0 validation; Git autocrlf can change text bytes after checkout, Git history remains authoritative."
+}
