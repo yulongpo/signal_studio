@@ -12,7 +12,8 @@ class DetectionWorkerClient {
  public:
   ~DetectionWorkerClient();
   bool start(const QString& executable, const DetectionRequest&, QString&,
-             const std::function<bool()>& cancelled);
+             const std::function<bool()>& cancelled,
+             std::uint32_t maximumExecutionBatch = 0);
   bool exchange(DetectionWorkerPacket, DetectionWorkerPacket&, QString&,
                 const std::function<bool()>& cancelled);
   void stop();

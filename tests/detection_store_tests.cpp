@@ -8,6 +8,7 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <thread>
 
 #include "infrastructure/detection_store.h"
 
@@ -248,11 +249,28 @@ void failedManifestReplacementPreservesDataAndCause() {
   check(!published && readFile(path) == original,
         "A denied atomic replacement must preserve the previous manifest");
   check(error.contains("commit") && error.contains("manifest.json") &&
-            !error.contains("Unknown error"),
+            error.contains("attempt=3/3") && !error.contains("Unknown error"),
         "Failed replacement must retain its operation, path and Qt cause: " +
             error);
   check(writeDetectionRun(directory.path(), run, error),
         "The unchanged snapshot must publish after releasing the test lock");
+  const auto temporary = CreateFileW(
+      reinterpret_cast<const wchar_t*>(path.utf16()), GENERIC_READ,
+      FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  check(temporary != INVALID_HANDLE_VALUE, "Cannot establish temporary reader");
+  std::jthread reader([temporary] {
+    std::this_thread::sleep_for(std::chrono::milliseconds(15));
+    CloseHandle(temporary);
+  });
+  run.startedAtMilliseconds = 1234;
+  check(writeDetectionRun(directory.path(), run, error),
+        "A temporary replacement denial must recover with the same snapshot");
+  DetectionRun restored;
+  check(loadDetectionRun(directory.path(),
+                         QString::fromStdString(run.request.runId), restored,
+                         error) &&
+            restored.startedAtMilliseconds == 1234,
+        "Retry must publish exactly the requested new snapshot");
 #endif
 }
 void budgetsAndMalformedRequests() {

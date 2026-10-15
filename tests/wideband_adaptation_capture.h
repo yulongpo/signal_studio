@@ -121,3 +121,125 @@ QJsonObject widebandAdaptationClosure(Capture& capture, QScreen* screen,
           {"generatorObjects", 10},
           {"generatorIdempotentAndReopened", true}};
 }
+
+QJsonObject widebandCancellationFeedback(Capture& capture, QScreen* screen,
+                                         const QString& project) {
+  auto& window = capture.window;
+  const auto originalId = window.session().activeFile()->metadata.id;
+  std::string generatorId;
+  for (const auto& file : window.session().project().files)
+    if (file.metadata.path.ends_with(".wav")) generatorId = file.metadata.id;
+  require(!generatorId.empty() && window.session().activateFile(generatorId),
+          "Real cancellation needs the already imported generator WAV");
+  window.refresh();
+  require(widebandDisplayReady(window),
+          "Cancellation source display not ready");
+  auto* card = child<DetectionCard>(window, "detectionCard");
+  auto* profile = child<QComboBox>(*card, "detectionProfile");
+  profile->setCurrentIndex(profile->findData("ffscn-gui-iq-v1"));
+  child<QComboBox>(*card, "detectionRangeOrigin")->setCurrentIndex(1);
+  const auto commit = [&](const char* name, const char* value) {
+    auto* edit = child<QLineEdit>(*card, name);
+    widebandScrollTo(edit);
+    edit->setFocus();
+    edit->selectAll();
+    QTest::keyClicks(edit, value);
+    QTest::keyClick(edit, Qt::Key_Return);
+  };
+  commit("detectionFftSize", "8192");
+  commit("detectionModelFrames", "3");
+  commit("detectionModelHopFrames", "2");
+  commit("detectionHopMilliseconds", "2");
+  widebandScrollTo(child<QPushButton>(*card, "detectionStrategyCoarse"));
+  click(window, "detectionStrategyCoarse");
+  require(card->validationError().isEmpty(), card->validationError());
+  auto* runButton = child<QPushButton>(window, "runWidebandDetection");
+  auto* cancel = child<QPushButton>(window, "cancelDetectionCardRun");
+  const auto previous = window.session().activeFile()->detectionRuns.size();
+  WidebandFeedbackPaint startPaint(*cancel, [&] {
+    const auto* file = window.session().activeFile();
+    return file->detectionRuns.size() == previous + 1 && cancel->isEnabled() &&
+           !runButton->isEnabled() &&
+           cancel->toolTip().contains(QString::fromStdString(
+               file->detectionRuns.back().request.runId));
+  });
+  QElapsedTimer timer;
+  timer.start();
+  QTest::mouseClick(runButton, Qt::LeftButton);
+  require(waitUntil([&] {
+            return window.session().activeFile()->detectionRuns.size() ==
+                   previous + 1;
+          }),
+          "Real task launch did not reach visible state");
+  require(waitUntil([&] { return startPaint.count() > 0; }),
+          "Visible fixed controls did not paint the new task state");
+  const auto startMs = timer.nsecsElapsed() / 1000000.0;
+  require(waitUntil(
+              [&] {
+                const auto& run =
+                    window.session().activeFile()->detectionRuns.back();
+                return run.lifecycle == DetectionLifecycle::Running &&
+                       run.completedWindows > 0 && cancel->isEnabled();
+              },
+              60'000),
+          "Real task did not expose a cancellable persisted prefix");
+  WidebandFeedbackPaint cancelPaint(*cancel, [&] {
+    const auto& run = window.session().activeFile()->detectionRuns.back();
+    return !cancel->isEnabled() &&
+           (run.lifecycle == DetectionLifecycle::Cancelling ||
+            run.lifecycle == DetectionLifecycle::Cancelled);
+  });
+  timer.restart();
+  QTest::mouseClick(cancel, Qt::LeftButton);
+  require(waitUntil([&] {
+            const auto state =
+                window.session().activeFile()->detectionRuns.back().lifecycle;
+            return state == DetectionLifecycle::Cancelling ||
+                   state == DetectionLifecycle::Cancelled;
+          }),
+          "Real cancel did not reach visible Cancelling/Cancelled state");
+  require(waitUntil([&] { return cancelPaint.count() > 0; }),
+          "Visible cancel control did not paint the cancellation state");
+  const auto cancelFeedbackMs = timer.nsecsElapsed() / 1000000.0;
+  require(
+      waitUntil(
+          [&] {
+            return detectionIsTerminal(
+                window.session().activeFile()->detectionRuns.back().lifecycle);
+          },
+          60'000),
+      "Real cancellation did not reach a terminal state");
+  const auto cancelCompletionMs = timer.nsecsElapsed() / 1000000.0;
+  const auto run = window.session().activeFile()->detectionRuns.back();
+  require(run.lifecycle == DetectionLifecycle::Cancelled &&
+              !run.chunks.empty() && run.completedWindows > 0 &&
+              run.completedWindows < run.eligibleWindows &&
+              run.device.find("RTX 5060 Laptop") != std::string::npos,
+          "Cancellation lost the real model prefix or claimed full coverage");
+  QString error;
+  DetectionRun durable;
+  require(loadDetectionRun(QFileInfo(project).absolutePath(),
+                           QString::fromStdString(run.request.runId), durable,
+                           error) &&
+              encodeDetectionRun(durable) == encodeDetectionRun(run),
+          error);
+  widebandScene(capture, "44-real-model-cancelled-prefix", screen);
+  require(window.saveProject(project), "Cancelled run project did not save");
+  require(window.session().activateFile(originalId),
+          "Cannot restore original source after cancellation");
+  window.refresh();
+  require(widebandDisplayReady(window) && window.saveProject(project),
+          "Original source did not restore after cancellation");
+  return {{"startFeedbackMilliseconds", startMs},
+          {"cancelFeedbackMilliseconds", cancelFeedbackMs},
+          {"cancelCompletionMilliseconds", cancelCompletionMs},
+          {"feedbackIncludesFirstPaint", true},
+          {"feedbackTarget", "visible fixed Run/Cancel enabled state"},
+          {"startFeedbackPaints", startPaint.count()},
+          {"cancelFeedbackPaints", cancelPaint.count()},
+          {"targetMilliseconds", 200},
+          {"startTargetMet", startMs <= 200},
+          {"cancelTargetMet", cancelFeedbackMs <= 200},
+          {"run", encodeDetectionRun(run)},
+          {"durablePrefixExact", true}};
+}

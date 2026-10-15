@@ -64,13 +64,18 @@ bool DetectionWorkerClient::readPacket(DetectionWorkerPacket& packet,
 bool DetectionWorkerClient::start(const QString& executable,
                                   const DetectionRequest& request,
                                   QString& error,
-                                  const std::function<bool()>& cancelled) {
+                                  const std::function<bool()>& cancelled,
+                                  std::uint32_t maximumExecutionBatch) {
   if (!QFileInfo(executable).isFile()) {
     error = "Detection worker executable is missing";
     return false;
   }
   request_ = request;
   process_.setProgram(executable);
+  process_.setArguments(
+      {"--maximum-execution-batch",
+       QString::number(maximumExecutionBatch ? maximumExecutionBatch
+                                             : request.parameters.batchSize)});
   process_.setProcessChannelMode(QProcess::SeparateChannels);
   process_.start();
   if (!process_.waitForStarted(3000)) {

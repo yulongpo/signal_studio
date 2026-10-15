@@ -444,6 +444,50 @@ void adaptedLiveParity(const QString& modelRoot, const QString& goldenRoot) {
                 << '\n';
     }
   }
+  auto resourceRequest = request("ffscn-gui-iq-v1");
+  resourceRequest.modelSha256 =
+      manifest["engine"].toObject()["sha256"].toString().toStdString();
+  const auto source =
+      readFloats(QDir(goldenRoot).filePath("shape-b2-t10-f65536.input.f32"));
+  std::vector<float> single(source.begin(), source.begin() + 10 * 65536);
+  std::array<std::uint64_t, 2> required{};
+  for (std::uint32_t batch = 1; batch <= 2; ++batch) {
+    DetectionModelResourceLimits limits;
+    limits.maximumExecutionBatch = batch;
+    DetectionModelBackend backend(modelRoot, limits);
+    check(backend.load(resourceRequest, error), error);
+    const auto evidence = backend.evidence();
+    required[batch - 1] =
+        evidence["runtimeDeviceBytes"].toString().toULongLong() +
+        evidence["boundedDeviceBytes"].toString().toULongLong();
+    if (batch == 1) {
+      DetectionModelOutput output;
+      check(backend.infer(single, 1, output, error) && output.batch == 1,
+            "Reduced execution batch must still execute the real model");
+      output.hm = {42};
+      check(!backend.infer(source, 2, output, error) &&
+                output.hm == std::vector<float>{42} &&
+                evidence["requestedMaximumBatch"] == 2 &&
+                evidence["logicalMaximumBatch"] == 1,
+            "Execution allocation cannot alter the request or accept B2 into "
+            "B1 memory");
+    }
+  }
+  check(required[1] > required[0], "B2 must reserve more memory than B1");
+  DetectionModelResourceLimits constrained;
+  constrained.maximumDeviceBytes = (required[0] + required[1]) / 2;
+  DetectionModelBackend reduced(modelRoot, constrained);
+  check(reduced.load(resourceRequest, error), error);
+  DetectionModelOutput output;
+  check(reduced.evidence()["logicalMaximumBatch"] == 1 &&
+            !reduced.evidence()["batchAdaptationReason"].toString().isEmpty() &&
+            reduced.infer(single, 1, output, error),
+        "A real GPU budget between B1 and B2 must reduce batch before failing");
+  std::cout << "Resource batch reduction PASS "
+            << QJsonDocument(reduced.evidence())
+                   .toJson(QJsonDocument::Compact)
+                   .toStdString()
+            << '\n';
 }
 
 void liveParity(const QString& modelRoot, const QString& referenceRoot) {

@@ -340,6 +340,7 @@ class DetectionModelBackend::Impl {
   QJsonObject evidence;
   DetectionModelResourceLimits limits;
   DetectionModelRuntimeHooks hooks;
+  bool retryableResourceFailure = false;
 #ifdef SS_DETECTION_TENSORRT
   class Logger final : public nvinfer1::ILogger {
    public:
@@ -383,6 +384,7 @@ class DetectionModelBackend::Impl {
   std::array<QString, 3> headNames;
   QString inputName;
   std::uint32_t maximumBatch = 2;
+  std::uint32_t logicalMaximumBatch = 2;
   std::uint32_t modelBins = 0, maximumFrames = 0;
   std::size_t workspaceBytes = 0;
   std::uint64_t streamDrainCount = 0;
@@ -422,6 +424,7 @@ class DetectionModelBackend::Impl {
 
   bool checkCuda(cudaError_t status, const char* operation, QString& error) {
     if (status == cudaSuccess) return true;
+    if (status == cudaErrorMemoryAllocation) retryableResourceFailure = true;
     return fail(error, QString::fromLatin1(operation) + ": " +
                            QString::fromUtf8(errorString(status)));
   }
@@ -530,7 +533,9 @@ class DetectionModelBackend::Impl {
                   "SM 12.0; no automatic model/runtime fallback exists");
     if (!checkCuda(setDevice(selected), "cudaSetDevice", error)) return false;
     const bool scn = request.profile.backend == DetectionBackendKind::Scn;
-    const auto physicalBatch = scn ? 1 : request.parameters.batchSize;
+    logicalMaximumBatch =
+        std::min(request.parameters.batchSize, limits.maximumExecutionBatch);
+    const auto physicalBatch = scn ? 1 : logicalMaximumBatch;
     modelBins = detectionModelInputBins(request);
     const auto hop =
         std::max(1.0, std::floor(request.sourceIdentity.sampleRateHz *
@@ -549,10 +554,12 @@ class DetectionModelBackend::Impl {
              detectionModelTensorFrames(request, maximumFrames) +
          3ULL * (modelBins / 4)) *
         sizeof(float);
-    if (minimumDeviceBytes > limits.maximumDeviceBytes)
+    if (minimumDeviceBytes > limits.maximumDeviceBytes) {
+      retryableResourceFailure = true;
       return fail(error,
                   "Model GPU input/output exceeds its independent device "
                   "budget before engine loading");
+    }
     std::size_t initialFreeBytes = 0;
     std::size_t initialTotalBytes = 0;
     if (!checkCuda(memoryInfo(&initialFreeBytes, &initialTotalBytes),
@@ -594,7 +601,7 @@ class DetectionModelBackend::Impl {
             nvinfer1::TensorFormat::kLINEAR)
       return fail(error,
                   "Engine input is not the frozen contiguous float32 tensor");
-    maximumBatch = scn ? 1 : request.parameters.batchSize;
+    maximumBatch = scn ? 1 : logicalMaximumBatch;
     const auto shape = scn ? nvinfer1::Dims4(maximumBatch, 32768, 1, 1)
                            : nvinfer1::Dims4(maximumBatch, 1,
                                              detectionModelTensorFrames(
@@ -616,7 +623,8 @@ class DetectionModelBackend::Impl {
         break;
       }
     }
-    if (selectedProfile < 0)
+    if (selectedProfile < 0) {
+      retryableResourceFailure = true;
       return fail(error,
                   QString("Installed model package cannot execute the actual "
                           "tensor [%1,%2,%3,%4]; rebuild its resource profiles")
@@ -624,6 +632,7 @@ class DetectionModelBackend::Impl {
                       .arg(shape.d[1])
                       .arg(shape.d[2])
                       .arg(shape.d[3]));
+    }
     if (!checkCuda(createStream(&stream), "cudaStreamCreate", error) ||
         !context->setOptimizationProfileAsync(selectedProfile, stream) ||
         !checkCuda(synchronize(stream), "profile initialization", error))
@@ -644,8 +653,7 @@ class DetectionModelBackend::Impl {
     const std::size_t headBytes = static_cast<std::size_t>(maximumBatch) *
                                   (modelBins / 4) * sizeof(float);
     const std::size_t allocationBytes = inputBytes + 3 * headBytes + workspace;
-    const auto logicalBatch =
-        static_cast<std::size_t>(request.parameters.batchSize);
+    const auto logicalBatch = static_cast<std::size_t>(logicalMaximumBatch);
     const auto sourceBytes =
         logicalBatch * request.profile.fftSize * maximumFrames * sizeof(float);
     const auto preparedBytes =
@@ -674,8 +682,19 @@ class DetectionModelBackend::Impl {
         runtimeDeviceBytes, allocationBytes,
         freeBytes,          totalBytes};
     if (!validateDetectionModelMemory(usage, request.workingSetBudgetBytes,
-                                      limits, error))
+                                      limits, error)) {
+      retryableResourceFailure =
+          usage.totalDeviceBytes &&
+          usage.freeDeviceBytes <= usage.totalDeviceBytes &&
+          (hostWorkingSet > request.workingSetBudgetBytes ||
+           allocationBytes > freeBytes ||
+           runtimeDeviceBytes > limits.maximumDeviceBytes ||
+           allocationBytes >
+               limits.maximumDeviceBytes -
+                   std::min<std::uint64_t>(runtimeDeviceBytes,
+                                           limits.maximumDeviceBytes));
       return false;
+    }
     const std::array<std::size_t, 5> sizes{inputBytes, headBytes, headBytes,
                                            headBytes,
                                            static_cast<std::size_t>(workspace)};
@@ -714,7 +733,9 @@ class DetectionModelBackend::Impl {
         {"computeCapability", QJsonArray{12, 0}},
         {"engineMaximumBatch", static_cast<int>(maximumBatch)},
         {"optimizationProfile", selectedProfile},
-        {"logicalMaximumBatch", static_cast<int>(request.parameters.batchSize)},
+        {"logicalMaximumBatch", static_cast<int>(logicalMaximumBatch)},
+        {"requestedMaximumBatch",
+         static_cast<int>(request.parameters.batchSize)},
         {"modelInputKind",
          scn ? "selected-psd-minmax" : "selected-psd-global-zscore"},
         {"inputAdaptationVersion",
@@ -754,7 +775,8 @@ class DetectionModelBackend::Impl {
                std::uint32_t actualFrames) {
     const auto frames =
         actualFrames ? actualFrames : request.profile.modelFrames;
-    if (!frames || frames > maximumFrames)
+    if (!batch || batch > logicalMaximumBatch || !frames ||
+        frames > maximumFrames)
       return fail(error, "Actual model window exceeds its planned allocation");
     std::vector<float> input;
     if (!prepareDetectionModelInput(request, sourceFrames, batch, input, error,
@@ -847,23 +869,40 @@ QJsonObject DetectionModelBackend::evidence() const {
 bool DetectionModelBackend::load(const DetectionRequest& request,
                                  QString& error) {
   reset();
-  auto candidate = std::make_unique<Impl>();
-  candidate->request = request;
-  candidate->limits = limits_;
-  candidate->hooks = hooks_;
-  if (!validateDetectionModelPackage(request, modelRoot_, candidate->manifest,
-                                     error))
-    return false;
+  if (!limits_.maximumExecutionBatch || limits_.maximumExecutionBatch > 2)
+    return fail(error, "Execution batch resource limit must be one or two");
+  QString batchFallbackReason;
+  for (auto batch = std::min(request.parameters.batchSize,
+                             limits_.maximumExecutionBatch);
+       batch > 0; --batch) {
+    auto candidate = std::make_unique<Impl>();
+    candidate->request = request;
+    candidate->limits = limits_;
+    candidate->limits.maximumExecutionBatch = batch;
+    candidate->hooks = hooks_;
+    if (!validateDetectionModelPackage(request, modelRoot_, candidate->manifest,
+                                       error))
+      return false;
 #ifdef SS_DETECTION_TENSORRT
-  if (!candidate->initialize(QFileInfo(modelRoot_).absolutePath(), error))
-    return false;
-  impl_ = std::move(candidate);
-  return true;
+    if (!candidate->initialize(QFileInfo(modelRoot_).absolutePath(), error)) {
+      if (batch > 1 && candidate->retryableResourceFailure) {
+        batchFallbackReason = error;
+        continue;
+      }
+      return false;
+    }
+    if (!batchFallbackReason.isEmpty())
+      candidate->evidence["batchAdaptationReason"] = batchFallbackReason;
+    impl_ = std::move(candidate);
+    error.clear();
+    return true;
 #else
-  return fail(error,
-              "This worker was built without the exact TensorRT 10.11 SDK; "
-              "production inference is unavailable");
+    return fail(error,
+                "This worker was built without the exact TensorRT 10.11 SDK; "
+                "production inference is unavailable");
 #endif
+  }
+  return fail(error, "No execution batch fits the installed model resources");
 }
 bool DetectionModelBackend::infer(const std::vector<float>& sourceFrames,
                                   std::uint32_t batch,

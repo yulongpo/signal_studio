@@ -1,0 +1,122 @@
+[
+  {
+    "configuration": "debug",
+    "displayMode": "gpu",
+    "pass": true,
+    "screen": {
+      "connectedIndex": 2,
+      "deviceName": "\\\\.\\DISPLAY6",
+      "devicePixelRatio": 1.5,
+      "logicalDpi": 96,
+      "logicalGeometry": [
+        2560,
+        0,
+        2560,
+        1440
+      ],
+      "name": "Redmi 27 NU",
+      "pixelSize": [
+        3840,
+        2160
+      ],
+      "primary": false
+    },
+    "hardwareRenderer": true,
+    "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+    "textureUploads": 1,
+    "vertexUploads": 5,
+    "gpuDataDrawCalls": 22,
+    "systemOnlyPath": true,
+    "script": "scripts/verify-package.ps1"
+  },
+  {
+    "configuration": "debug",
+    "displayMode": "software",
+    "pass": true,
+    "screen": {
+      "connectedIndex": 2,
+      "deviceName": "\\\\.\\DISPLAY6",
+      "devicePixelRatio": 1.5,
+      "logicalDpi": 96,
+      "logicalGeometry": [
+        2560,
+        0,
+        2560,
+        1440
+      ],
+      "name": "Redmi 27 NU",
+      "pixelSize": [
+        3840,
+        2160
+      ],
+      "primary": false
+    },
+    "hardwareRenderer": false,
+    "backend": "QPainter 软件绘制",
+    "textureUploads": 0,
+    "vertexUploads": 0,
+    "gpuDataDrawCalls": 0,
+    "systemOnlyPath": true,
+    "script": "scripts/verify-package.ps1"
+  },
+  {
+    "configuration": "release",
+    "displayMode": "gpu",
+    "pass": true,
+    "screen": {
+      "connectedIndex": 2,
+      "deviceName": "\\\\.\\DISPLAY6",
+      "devicePixelRatio": 1.5,
+      "logicalDpi": 96,
+      "logicalGeometry": [
+        2560,
+        0,
+        2560,
+        1440
+      ],
+      "name": "Redmi 27 NU",
+      "pixelSize": [
+        3840,
+        2160
+      ],
+      "primary": false
+    },
+    "hardwareRenderer": true,
+    "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+    "textureUploads": 1,
+    "vertexUploads": 5,
+    "gpuDataDrawCalls": 22,
+    "systemOnlyPath": true,
+    "script": "scripts/verify-package.ps1"
+  },
+  {
+    "configuration": "release",
+    "displayMode": "software",
+    "pass": true,
+    "screen": {
+      "connectedIndex": 2,
+      "deviceName": "\\\\.\\DISPLAY6",
+      "devicePixelRatio": 1.5,
+      "logicalDpi": 96,
+      "logicalGeometry": [
+        2560,
+        0,
+        2560,
+        1440
+      ],
+      "name": "Redmi 27 NU",
+      "pixelSize": [
+        3840,
+        2160
+      ],
+      "primary": false
+    },
+    "hardwareRenderer": false,
+    "backend": "QPainter 软件绘制",
+    "textureUploads": 0,
+    "vertexUploads": 0,
+    "gpuDataDrawCalls": 0,
+    "systemOnlyPath": true,
+    "script": "scripts/verify-package.ps1"
+  }
+]

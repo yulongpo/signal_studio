@@ -216,7 +216,17 @@ int main(int argc, char** argv) {
 #endif
   using namespace signalstudio;
   DetectionRequest request;
-  DetectionModelBackend modelBackend;
+  DetectionModelResourceLimits limits;
+  if (argc != 1) {
+    bool valid = false;
+    const auto args = app.arguments();
+    const auto batch = args.value(2).toUInt(&valid);
+    if (argc != 3 || args.value(1) != "--maximum-execution-batch" || !valid ||
+        batch < 1 || batch > 2)
+      return 4;
+    limits.maximumExecutionBatch = batch;
+  }
+  DetectionModelBackend modelBackend({}, limits);
   bool begun = false;
   quint64 lastSequence = 0;
   for (;;) {

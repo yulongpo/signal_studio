@@ -1,0 +1,324 @@
+[
+  {
+    "scene": "00-no-project-workflow",
+    "path": "docs/implementation/wideband-detection/R5/release-native/00-no-project-workflow.png",
+    "sha256": "1f3a79dd1c199b05a0a74690c0bf413b06f37fde7fbadda3f81269fb8018a749",
+    "bytes": 210997,
+    "passed": true
+  },
+  {
+    "scene": "01-imported-manual-resident-card",
+    "path": "docs/implementation/wideband-detection/R5/release-native/01-imported-manual-resident-card.png",
+    "sha256": "54feae59abbb523afccbcc03e1f394a350c58e455d814bb1d65d4356c77b0336",
+    "bytes": 1273900,
+    "passed": true
+  },
+  {
+    "scene": "02-config-main-window",
+    "path": "docs/implementation/wideband-detection/R5/release-native/02-config-main-window.png",
+    "sha256": "8dac4c4a8bfcc2191f8204eea80ae6370ba30f461574a40416d4167a021c86d6",
+    "bytes": 1270476,
+    "passed": true
+  },
+  {
+    "scene": "02-config-card-visible-crop",
+    "path": "docs/implementation/wideband-detection/R5/release-native/02-config-card-visible-crop.png",
+    "sha256": "a85a77e907be3278f0550cacdb02d3271c5e971d340c4d8cd33d04cba5fb737f",
+    "bytes": 88467,
+    "passed": true
+  },
+  {
+    "scene": "03-completed-task-cards",
+    "path": "docs/implementation/wideband-detection/R5/release-native/03-completed-task-cards.png",
+    "sha256": "6deecc6d13b42f8fc459a949124774c1e909020a2de536068e855e00e9d1961a",
+    "bytes": 923939,
+    "passed": true
+  },
+  {
+    "scene": "04-task-readable-details",
+    "path": "docs/implementation/wideband-detection/R5/release-native/04-task-readable-details.png",
+    "sha256": "1b6e73c8608509d8f215abae153dfdf93050486a8e26205f8125e47a39e155bb",
+    "bytes": 106662,
+    "passed": true
+  },
+  {
+    "scene": "05-three-layers-revision-pending",
+    "path": "docs/implementation/wideband-detection/R5/release-native/05-three-layers-revision-pending.png",
+    "sha256": "6837df07280ed026d73bbb38672fb9bb7a9ef3485a203e947f98093b57412832",
+    "bytes": 1060724,
+    "passed": true
+  },
+  {
+    "scene": "06-saved-reopened",
+    "path": "docs/implementation/wideband-detection/R5/release-native/06-saved-reopened.png",
+    "sha256": "09d9cf64355a5f8778750a3012179a91763a94d9fdfd55e64f20c2f0087cd9f9",
+    "bytes": 1062036,
+    "passed": true
+  },
+  {
+    "scene": "07-roi-preview-before-esc",
+    "path": "docs/implementation/wideband-detection/R5/release-native/07-roi-preview-before-esc.png",
+    "sha256": "5f47479ba2e1a00530ef21ac441d58fb89508a70430923ae1b79b6f60e17135f",
+    "bytes": 1014470,
+    "passed": true
+  },
+  {
+    "scene": "08-roi-esc-manual-restored",
+    "path": "docs/implementation/wideband-detection/R5/release-native/08-roi-esc-manual-restored.png",
+    "sha256": "39160670c88139e6bae920381c7b298b59de128f55b2524c453f486c9b0b30d0",
+    "bytes": 1041403,
+    "passed": true
+  },
+  {
+    "scene": "09-roi-preview-before-enter",
+    "path": "docs/implementation/wideband-detection/R5/release-native/09-roi-preview-before-enter.png",
+    "sha256": "5f47479ba2e1a00530ef21ac441d58fb89508a70430923ae1b79b6f60e17135f",
+    "bytes": 1014470,
+    "passed": true
+  },
+  {
+    "scene": "10-roi-enter-confirmed",
+    "path": "docs/implementation/wideband-detection/R5/release-native/10-roi-enter-confirmed.png",
+    "sha256": "4f2cb5d343d76bdcc5b41fd62981a9a8f589c7255e8e8e543e416fabeeadef7b",
+    "bytes": 1037901,
+    "passed": true
+  },
+  {
+    "scene": "11-layout-left-committed",
+    "path": "docs/implementation/wideband-detection/R5/release-native/11-layout-left-committed.png",
+    "sha256": "e5f19cfeca432ffd07b449633941d9b45ab59cb3ece32c84440bc8275cfe1395",
+    "bytes": 1005121,
+    "passed": true
+  },
+  {
+    "scene": "12-layout-left-esc-restored",
+    "path": "docs/implementation/wideband-detection/R5/release-native/12-layout-left-esc-restored.png",
+    "sha256": "e5f19cfeca432ffd07b449633941d9b45ab59cb3ece32c84440bc8275cfe1395",
+    "bytes": 1005121,
+    "passed": true
+  },
+  {
+    "scene": "13-layout-right-committed",
+    "path": "docs/implementation/wideband-detection/R5/release-native/13-layout-right-committed.png",
+    "sha256": "190edca7bf423b2a2a09926fd37af9e6d25b1ffe4d545cd380bca685d0bd1aa6",
+    "bytes": 980973,
+    "passed": true
+  },
+  {
+    "scene": "14-layout-right-esc-restored",
+    "path": "docs/implementation/wideband-detection/R5/release-native/14-layout-right-esc-restored.png",
+    "sha256": "190edca7bf423b2a2a09926fd37af9e6d25b1ffe4d545cd380bca685d0bd1aa6",
+    "bytes": 980973,
+    "passed": true
+  },
+  {
+    "scene": "15-layout-bottom-committed",
+    "path": "docs/implementation/wideband-detection/R5/release-native/15-layout-bottom-committed.png",
+    "sha256": "ad819d2a98864546797b1a950ea73b09581a3a558a7e9cc01f2c891c0d488532",
+    "bytes": 1101219,
+    "passed": true
+  },
+  {
+    "scene": "16-layout-bottom-esc-restored",
+    "path": "docs/implementation/wideband-detection/R5/release-native/16-layout-bottom-esc-restored.png",
+    "sha256": "ad819d2a98864546797b1a950ea73b09581a3a558a7e9cc01f2c891c0d488532",
+    "bytes": 1101219,
+    "passed": true
+  },
+  {
+    "scene": "17-auxiliary-evidence-facts",
+    "path": "docs/implementation/wideband-detection/R5/release-native/17-auxiliary-evidence-facts.png",
+    "sha256": "eb38bf50ecdcae35356909fc7385b16dc5826e29fab203fd57f6d6a350390b5c",
+    "bytes": 1207371,
+    "passed": true
+  },
+  {
+    "scene": "18-auxiliary-original-fields-collapsed",
+    "path": "docs/implementation/wideband-detection/R5/release-native/18-auxiliary-original-fields-collapsed.png",
+    "sha256": "cc086d942a856ba840a486039c0bcb0acdec39ffa69254c6f53fb94dae33bf11",
+    "bytes": 1202885,
+    "passed": true
+  },
+  {
+    "scene": "19-auxiliary-original-fields-visible",
+    "path": "docs/implementation/wideband-detection/R5/release-native/19-auxiliary-original-fields-visible.png",
+    "sha256": "9086910b1fb4e6c2d5363625c2277ef8803de47822c244d0fd4926c7e8068a66",
+    "bytes": 1204212,
+    "passed": true
+  },
+  {
+    "scene": "20-single-original-segment-confirmed-pending",
+    "path": "docs/implementation/wideband-detection/R5/release-native/20-single-original-segment-confirmed-pending.png",
+    "sha256": "02e3ec6b5a20dc9d7d57f2e1eb4336f03480ef5c2676bb55e2b1c7b4c6709f3b",
+    "bytes": 1181900,
+    "passed": true
+  },
+  {
+    "scene": "21-pending-confirmed-segment-channel-dialog",
+    "path": "docs/implementation/wideband-detection/R5/release-native/21-pending-confirmed-segment-channel-dialog.png",
+    "sha256": "29a3a1e64f34889a1da2ce5197f99c150c55aab12defdfcb8492433fd51a50e8",
+    "bytes": 56035,
+    "passed": true
+  },
+  {
+    "scene": "22-single-segment-confirmation-saved-reopened",
+    "path": "docs/implementation/wideband-detection/R5/release-native/22-single-segment-confirmation-saved-reopened.png",
+    "sha256": "c01eca55431ff47df7274a73cf6870958dd1b2aaf0f31900ad7076e948e2a909",
+    "bytes": 1181433,
+    "passed": true
+  },
+  {
+    "scene": "23-production-model-running",
+    "path": "docs/implementation/wideband-detection/R5/release-native/23-production-model-running.png",
+    "sha256": "2360d72dbc7244429958ac35292539104a8cf2d0e8255b55d90444dffa14f52e",
+    "bytes": 1129177,
+    "passed": true
+  },
+  {
+    "scene": "24-production-model-time-refinement",
+    "path": "docs/implementation/wideband-detection/R5/release-native/24-production-model-time-refinement.png",
+    "sha256": "7f2887ee24e9b219364bdb3dab788151767d6f9362a903d8872e793518a95ecb",
+    "bytes": 1214030,
+    "passed": true
+  },
+  {
+    "scene": "25-real-algorithm-object-accepted",
+    "path": "docs/implementation/wideband-detection/R5/release-native/25-real-algorithm-object-accepted.png",
+    "sha256": "f8ff97617e631f20f0c793395f73611f8bb7cd77aa9c18f90c4ff3a9378dec9b",
+    "bytes": 1213898,
+    "passed": true
+  },
+  {
+    "scene": "26-real-algorithm-channel-parameters",
+    "path": "docs/implementation/wideband-detection/R5/release-native/26-real-algorithm-channel-parameters.png",
+    "sha256": "efbbc32f3f13bad2bb2edc936692ddc874dd325f0a04173ac62c27c17feca9d7",
+    "bytes": 56695,
+    "passed": true
+  },
+  {
+    "scene": "27-real-algorithm-cpu-ddc",
+    "path": "docs/implementation/wideband-detection/R5/release-native/27-real-algorithm-cpu-ddc.png",
+    "sha256": "8844af168a05459205b4df65fd2ec9c2bf9729ae0e5d852885ddbfcf69f047ba",
+    "bytes": 458611,
+    "passed": true
+  },
+  {
+    "scene": "28-real-algorithm-ddc-saved-reopened",
+    "path": "docs/implementation/wideband-detection/R5/release-native/28-real-algorithm-ddc-saved-reopened.png",
+    "sha256": "1a57af1e531a75e9fee6df42552e193bb3316259abb26acd67af14981eb1f666",
+    "bytes": 1219029,
+    "passed": true
+  },
+  {
+    "scene": "29-real-algorithm-revision-preserves-ddc",
+    "path": "docs/implementation/wideband-detection/R5/release-native/29-real-algorithm-revision-preserves-ddc.png",
+    "sha256": "012359dba04a6021bb7395bce7025e2cf1ad8f98126136401ff3591c2df2eaee",
+    "bytes": 1227526,
+    "passed": true
+  },
+  {
+    "scene": "30-real-algorithm-changed-source-reopened",
+    "path": "docs/implementation/wideband-detection/R5/release-native/30-real-algorithm-changed-source-reopened.png",
+    "sha256": "09d760598a94c248565347026eab4a952f3451f0e4db7505c407765412d2201d",
+    "bytes": 1226305,
+    "passed": true
+  },
+  {
+    "scene": "31-real-roi-approved-parameter-matrix",
+    "path": "docs/implementation/wideband-detection/R5/release-native/31-real-roi-approved-parameter-matrix.png",
+    "sha256": "027c4eda700ab0036a100fc7beb568962742912ed2eb7607d10adc8d470c3ad1",
+    "bytes": 1147740,
+    "passed": true
+  },
+  {
+    "scene": "32-real-roi-time-result",
+    "path": "docs/implementation/wideband-detection/R5/release-native/32-real-roi-time-result.png",
+    "sha256": "6020f367d33a35a5203743551d4c6931ef74e99b61012d0024cb74f2731a285d",
+    "bytes": 1236984,
+    "passed": true
+  },
+  {
+    "scene": "33-real-roi-saved-reopened",
+    "path": "docs/implementation/wideband-detection/R5/release-native/33-real-roi-saved-reopened.png",
+    "sha256": "1db661dc7ce95513a61f6b1c1443b051fa9b6f384b8d4ef9631f7a8b56f8a8db",
+    "bytes": 1238588,
+    "passed": true
+  },
+  {
+    "scene": "42-adapted-mean-spectrum-configuration",
+    "path": "docs/implementation/wideband-detection/R5/release-native/42-adapted-mean-spectrum-configuration.png",
+    "sha256": "0a1ef995fbd8f077e72ebd7726e6bca1a6102fc5189481f09028109a1502125e",
+    "bytes": 1139501,
+    "passed": true
+  },
+  {
+    "scene": "43-generator-labels-real-wav",
+    "path": "docs/implementation/wideband-detection/R5/release-native/43-generator-labels-real-wav.png",
+    "sha256": "2d0955505daeb551b00078961817b7ded5c7a7f6dca901a2684bc93b245f7e8b",
+    "bytes": 872539,
+    "passed": true
+  },
+  {
+    "scene": "34-same-id-repeat-review",
+    "path": "docs/implementation/wideband-detection/R5/release-native/34-same-id-repeat-review.png",
+    "sha256": "a7314228ef212181217fd37b765977a7bc231fb5d94a0ad75d4f4b6f46362b8e",
+    "bytes": 1247209,
+    "passed": true
+  },
+  {
+    "scene": "35-score-sort-filter-batch-review",
+    "path": "docs/implementation/wideband-detection/R5/release-native/35-score-sort-filter-batch-review.png",
+    "sha256": "c0794757e450029e00e1575e77198bb564f20ab329ca18e920d74e4ca954b4d8",
+    "bytes": 1241270,
+    "passed": true
+  },
+  {
+    "scene": "36-waterfall-same-active-segment",
+    "path": "docs/implementation/wideband-detection/R5/release-native/36-waterfall-same-active-segment.png",
+    "sha256": "1583eac21e9a2d2871bf6bf899194767682f0b77f0fdcd6d3a4ceab9c93abbcb",
+    "bytes": 1809706,
+    "passed": true
+  },
+  {
+    "scene": "37-original-label-manual-split",
+    "path": "docs/implementation/wideband-detection/R5/release-native/37-original-label-manual-split.png",
+    "sha256": "286d131dbffc20960fe51be3c58021802e4bf5cb0b1a1e22f0a228b867bdc039",
+    "bytes": 1237463,
+    "passed": true
+  },
+  {
+    "scene": "38-merge-and-restore-origin",
+    "path": "docs/implementation/wideband-detection/R5/release-native/38-merge-and-restore-origin.png",
+    "sha256": "92881ae40a4efcd84b5d24281428062a9bffd1b0800c4ecab57659db031ea64c",
+    "bytes": 1242023,
+    "passed": true
+  },
+  {
+    "scene": "39-visible-json-csv-export",
+    "path": "docs/implementation/wideband-detection/R5/release-native/39-visible-json-csv-export.png",
+    "sha256": "1a733648bd6facd0f4f925e6d75a2130cf25228b6accb3686d2ded3d908fbda3",
+    "bytes": 1241420,
+    "passed": true
+  },
+  {
+    "scene": "40-native-branch-enable-matrix",
+    "path": "docs/implementation/wideband-detection/R5/release-native/40-native-branch-enable-matrix.png",
+    "sha256": "fa751849d6ab524b2bb7c6022625679ca8ddae8456233e7595fa3d29f9140f3c",
+    "bytes": 1180012,
+    "passed": true
+  },
+  {
+    "scene": "41-synthetic-100000-activity-pressure",
+    "path": "docs/implementation/wideband-detection/R5/release-native/41-synthetic-100000-activity-pressure.png",
+    "sha256": "f222e93f7ad1749169e8fc1bed9cae3698858be61f22913d39ffc93b0c8e6c6f",
+    "bytes": 588947,
+    "passed": true
+  },
+  {
+    "scene": "44-real-model-cancelled-prefix",
+    "path": "docs/implementation/wideband-detection/R5/release-native/44-real-model-cancelled-prefix.png",
+    "sha256": "fbb65c1d680334b397cabd76cbae57c9993708d7ffe692e412f32b69852a0971",
+    "bytes": 823913,
+    "passed": true
+  }
+]

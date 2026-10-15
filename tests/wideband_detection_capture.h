@@ -170,6 +170,32 @@ QJsonArray widebandAnnotations(const FileState& file) {
   return result;
 }
 
+class WidebandFeedbackPaint final : public QObject {
+ public:
+  WidebandFeedbackPaint(QWidget& widget, std::function<bool()> ready)
+      : widget_(&widget), ready_(std::move(ready)) {
+    widget.installEventFilter(this);
+  }
+  ~WidebandFeedbackPaint() override {
+    if (widget_) widget_->removeEventFilter(this);
+  }
+  int count() const { return count_; }
+
+ protected:
+  bool eventFilter(QObject* watched, QEvent* event) override {
+    if (watched == widget_ && event->type() == QEvent::Paint &&
+        widget_->isVisible() &&
+        !widebandVisibleRect(widget_, *widget_->window()).isEmpty() && ready_())
+      ++count_;
+    return false;
+  }
+
+ private:
+  QPointer<QWidget> widget_;
+  std::function<bool()> ready_;
+  int count_ = 0;
+};
+
 QJsonArray widebandSources(const FileState& file) {
   QJsonArray result;
   for (const auto& source : file.sourceSets)
@@ -1242,6 +1268,16 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
           "Production asset preflight did not enable the approved resident run "
           "action");
   const auto previous = window.session().activeFile()->detectionRuns.size();
+  auto* cancelFeedback = child<QPushButton>(window, "cancelDetectionCardRun");
+  WidebandFeedbackPaint firstPaint(*cancelFeedback, [&] {
+    const auto* file = window.session().activeFile();
+    return file->detectionRuns.size() == previous + 1 &&
+           cancelFeedback->isEnabled() && !button->isEnabled() &&
+           cancelFeedback->toolTip().contains(QString::fromStdString(
+               file->detectionRuns.back().request.runId));
+  });
+  QElapsedTimer startFeedback;
+  startFeedback.start();
   QTest::mouseClick(button, Qt::LeftButton);
   require(waitUntil(
               [&] {
@@ -1250,6 +1286,9 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
               },
               5000),
           "The resident action did not freeze the production model request");
+  require(waitUntil([&] { return firstPaint.count() > 0; }),
+          "The visible Run/Cancel state did not paint the submitted task");
+  const auto startFeedbackMs = startFeedback.nsecsElapsed() / 1000000.0;
   widebandScene(capture, "23-production-model-running", screen);
   require(
       waitUntil(
@@ -1539,6 +1578,9 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
   widebandScene(capture, "33-real-roi-saved-reopened", screen);
   return {
       {"pass", true},
+      {"startFeedbackMilliseconds", startFeedbackMs},
+      {"startFeedbackPaints", firstPaint.count()},
+      {"startFeedbackTarget", "visible fixed Run/Cancel enabled state"},
       {"run", encodeDetectionRun(run)},
       {"annotationCount", static_cast<int>(ids.size())},
       {"sourceCounts", widebandSourceCounts(*window.session().activeFile())},
@@ -1781,11 +1823,14 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
           widebandAdaptationClosure(capture, screen, project);
       report["reviewClosure"] =
           widebandFinalAcceptance(capture, screen, project, finalAcceptance);
+      if (finalAcceptance)
+        report["realTaskFeedback"] =
+            widebandCancellationFeedback(capture, screen, project);
     }
     report["renderEvidence"] = capture.evidence();
     report["fullScreen"] = window.isFullScreen();
     report["logicalWindowSize"] = sizeJson(window.size());
-    const int kExpectedScenes = finalAcceptance   ? 45
+    const int kExpectedScenes = finalAcceptance   ? 46
                                 : productionModel ? 43
                                                   : 23;
     QStringList uniqueScenes;

@@ -950,10 +950,15 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     return;
   }
   DetectionWorkerClient worker;
-  if (!worker.start(workerExecutable_, request, error, cancelled)) {
+  if (!worker.start(workerExecutable_, request, error, cancelled,
+                    job->executionBatchSize)) {
     finish(job, DetectionLifecycle::Failed, error);
     return;
   }
+  const auto runtimeBatch = worker.evidence()["logicalMaximumBatch"].toInt();
+  if (runtimeBatch > 0)
+    job->executionBatchSize = std::min(
+        job->executionBatchSize, static_cast<std::uint32_t>(runtimeBatch));
   DetectionPublication publication;
   publication.sourceSet = sourceSetForRequest(request);
   auto& set = publication.sourceSet;

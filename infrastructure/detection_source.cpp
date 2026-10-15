@@ -468,7 +468,9 @@ QJsonObject encodeDetectionFrameMapping(const DetectionFrameMapping& frame) {
 std::uint32_t detectionExecutionBatchSize(const DetectionSourcePlan& plan,
                                           std::uint32_t requestedBatch,
                                           std::uint64_t& reservedBytes) {
-  for (auto batch = requestedBatch; batch > 0; --batch) {
+  for (auto batch = static_cast<std::uint32_t>(
+           std::min<std::uint64_t>(requestedBatch, plan.eligibleWindowCount));
+       batch > 0; --batch) {
     const auto payload = std::uint64_t{batch} * plan.actualWindowFrames *
                          plan.config.fftSize * sizeof(float);
     const auto reserve =

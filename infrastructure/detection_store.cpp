@@ -9,6 +9,7 @@
 #include <QSaveFile>
 #include <QSet>
 #include <QStringList>
+#include <QThread>
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -402,21 +403,30 @@ void atomicWrite(const QDir& root, const QString& relative,
   require(!info.isSymLink() &&
               (!info.exists() || inside(info.canonicalFilePath(), root.path())),
           "Detection write path escapes its project");
-  QSaveFile file(root.filePath(relative));
-  file.setDirectWriteFallback(false);
-  const auto failureMessage = [&](const char* operation) {
-    return QString("Cannot atomically publish detection data (%1): %2: %3")
-        .arg(QString::fromLatin1(operation), relative,
-             file.errorString().left(1024));
-  };
-  // Capture each error after the operation; argument evaluation can otherwise
-  // read errorString() before QSaveFile has reported the real failure.
-  const bool opened = file.open(QIODevice::WriteOnly);
-  require(opened, failureMessage("open"));
-  const auto written = file.write(bytes);
-  require(written == bytes.size(), failureMessage("write"));
-  const bool committed = file.commit();
-  require(committed, failureMessage("commit"));
+  QString lastFailure;
+  for (int attempt = 1; attempt <= 3; ++attempt) {
+    QSaveFile file(root.filePath(relative));
+    file.setDirectWriteFallback(false);
+    const auto failureMessage = [&](const char* operation) {
+      return QString(
+                 "Cannot atomically publish detection data (%1): %2: %3 "
+                 "[Qt error=%4, attempt=%5/3]")
+          .arg(QString::fromLatin1(operation), relative,
+               file.errorString().left(1024))
+          .arg(static_cast<int>(file.error()))
+          .arg(attempt);
+    };
+    const bool opened = file.open(QIODevice::WriteOnly);
+    require(opened, failureMessage("open"));
+    const auto written = file.write(bytes);
+    require(written == bytes.size(), failureMessage("write"));
+    if (file.commit()) return;
+    // A temporary reader can deny Windows replacement. Retry the same bytes
+    // through a fresh atomic file; never overwrite the previous manifest.
+    lastFailure = failureMessage("commit");
+    if (attempt < 3) QThread::msleep(20 * attempt);
+  }
+  require(false, lastFailure);
 }
 void validateRecords(const QJsonArray& values, const DetectionRequest& request,
                      bool mappings) {
