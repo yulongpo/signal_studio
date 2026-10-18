@@ -61,6 +61,7 @@
 #include "ui/charts/cursor_overlay.h"
 #include "ui/charts/plot_widget.h"
 #include "ui/controls/adaptive_value_edit.h"
+#include "ui/controls/sample_time_edit.h"
 #include "ui/controls/unsigned_value_edit.h"
 #include "ui/detection/detection_card.h"
 #include "ui/detection/detection_panel.h"
@@ -83,20 +84,19 @@ void showWindow(MainWindow& window) {
   window.resize(2560, 1440);
   QScreen* targetScreen = nullptr;
   if (QGuiApplication::platformName() == "windows") {
-    for (auto* screen : QGuiApplication::screens()) {
-      if (isDisplayNumber(screen, 2)) targetScreen = screen;
-    }
-    if (!targetScreen || !isDisplayNumber(targetScreen, 2) ||
-        displayPixelSize(targetScreen) != QSize(3840, 2160) ||
+    targetScreen = nativeAcceptanceScreen();
+    if (!targetScreen || displayPixelSize(targetScreen) != QSize(3840, 2160) ||
         targetScreen->geometry().size() != QSize(2560, 1440) ||
         std::abs(targetScreen->devicePixelRatio() - 1.5) > .001) {
       qFatal(
-          "Windows UI validation requires connected monitor 2 at 3840x2160 "
-          "pixels and 150%% DPI.");
+          "Windows UI validation requires one unambiguous actual 4K screen "
+          "at 3840x2160 pixels and 150%% DPI.");
     }
     showFullScreenOnScreen(window, targetScreen);
     if (!QTest::qWaitForWindowExposed(&window, 5000))
-      qFatal("Monitor 2 full-screen window was not exposed.");
+      qFatal(
+          "The actual 4K acceptance screen did not expose its full-screen "
+          "window.");
     QTest::qWait(250);
   } else {
     window.show();
@@ -108,8 +108,8 @@ void showWindow(MainWindow& window) {
        window.size() != QSize(2560, 1440) ||
        std::abs(window.devicePixelRatioF() - 1.5) > .001)) {
     qFatal(
-        "Windows UI window did not enter connected monitor 2 at native 4K / "
-        "150%% full screen.");
+        "Windows UI window did not enter the actual 4K acceptance screen "
+        "at native 4K / 150%% full screen.");
   }
 }
 
@@ -3476,7 +3476,7 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
   showWindow(window);
   window.openNarrowbandDemoProject();
 
-  const auto* file = window.session().activeFile();
+  auto* file = window.session().activeFile();
   const auto* channel = window.session().activeChannel();
   QVERIFY(file && channel);
   QCOMPARE(file->metadata.path,
@@ -3488,7 +3488,8 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
   QCOMPARE(channel->sourceTime, expectedSourceTime);
   QCOMPARE(file->marks.size(), std::size_t{2});
 
-  auto* workspace = window.findChild<QWidget*>("narrowbandWorkspace");
+  auto* workspace =
+      window.findChild<NarrowbandWorkspace*>("narrowbandWorkspace");
   auto* stack = window.findChild<QStackedWidget*>("narrowbandPageStack");
   auto* status = window.findChild<QLabel*>("narrowbandDataStatus");
   auto* eyeComponent = window.findChild<QComboBox*>("eyeComponent");
@@ -3514,8 +3515,54 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
   QCOMPARE(waveformMode->itemText(3), QStringLiteral("幅度包络"));
   QCOMPARE(window.findChild<QLabel*>("narrowbandCenter")->text(),
            QStringLiteral("2511.2 MHz"));
-  QTRY_VERIFY_WITH_TIMEOUT(status->text().contains(QStringLiteral("真实 DDC")),
-                           15'000);
+  // Exercise the native workspace on real bundled IQ with a controlled frozen
+  // readable prefix. The processor test separately stops an actual file loader.
+  const auto originalAvailability = file->metadata.availability;
+  const auto frozenTime = channel->sourceTime;
+  const auto initialTime = channel->visibleSourceTime;
+  const TimeRange loadingView{initialTime.begin + 512, initialTime.end - 512};
+  file->metadata.availability.status = LoadStatus::Loading;
+  file->metadata.availability.availableSamples = frozenTime.end;
+  QVERIFY(window.session().setChannelView(
+      loadingView, channel->visibleBasebandFrequency, false));
+  window.refresh();
+  auto* analysisStatus = window.findChild<QLabel*>("recognitionStatus");
+  QVERIFY(analysisStatus);
+  QTRY_VERIFY2_WITH_TIMEOUT(
+      status->text().contains(QStringLiteral("真实 DDC")),
+      qPrintable(status->text() + " / " + analysisStatus->text()), 15'000);
+  const auto loadingSpectrum = window.session().spectrogram(channel->id);
+  QVERIFY(loadingSpectrum && !loadingSpectrum->frames.empty());
+  QCOMPARE(loadingSpectrum->sourceView, loadingView);
+  QCOMPARE(file->metadata.availability.status, LoadStatus::Loading);
+  QCOMPARE(channel->sourceTime, frozenTime);
+  QVERIFY(waveformChart->property("fitDataVerticalFraction").toDouble() > 0);
+  file->metadata.availability.availableSamples = frozenTime.end - 1;
+  window.refresh();
+  QVERIFY(status->text().contains("已读可用前缀"));
+  QVERIFY(!window.session().spectrogram(channel->id));
+  QVERIFY(!workspace->powerSnapshot().ready);
+  QVERIFY(!window.findChild<QWidget*>("narrowbandPsdPanelChart")
+               ->property("psdComplete")
+               .toBool());
+  QVERIFY(waveformChart->property("fitDataVerticalFraction").toDouble() < 0);
+  file->metadata.availability.status = LoadStatus::Failed;
+  file->metadata.availability.error = "workspace fixture I/O failure";
+  window.refresh();
+  QVERIFY(status->text().contains("workspace fixture I/O failure"));
+  QVERIFY(!window.session().spectrogram(channel->id));
+  file->metadata.availability = originalAvailability;
+  file->metadata.availability.status = LoadStatus::Loading;
+  file->metadata.availability.availableSamples = frozenTime.end;
+  window.refresh();
+  QTRY_VERIFY2_WITH_TIMEOUT(
+      status->text().contains(QStringLiteral("真实 DDC")) &&
+          window.session().spectrogram(channel->id) &&
+          !window.session().spectrogram(channel->id)->frames.empty(),
+      qPrintable(status->text() + " / " + analysisStatus->text()), 15'000);
+  QCOMPARE(channel->sourceTime, frozenTime);
+  file->metadata.availability = originalAvailability;
+  window.refresh();
   const int originalPalette = palette->currentIndex();
   QCOMPARE(stftChart->property("paletteIndex").toInt(), originalPalette);
   const int nextPalette = originalPalette == static_cast<int>(Palette::Gray)
@@ -4023,39 +4070,315 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   QTest::keyClick(low, Qt::Key_Return);
   QCOMPARE(annotation->segments[1].range.frequency.lowerHz, -190000.0);
   QCOMPARE(annotation->reviewStatus, ReviewStatus::Pending);
-  QVERIFY(!segmentCanCreateChannel(*annotation, annotation->activeSegmentId));
+  QVERIFY(segmentCanCreateChannel(*annotation, annotation->activeSegmentId));
   auto* extract = window.findChild<QPushButton*>("extract");
   QVERIFY(extract->isEnabled());
   extract->click();
   auto* channelDialog = window.findChild<QDialog*>("channelConfigDialog");
   QVERIFY(channelDialog && channelDialog->isVisible());
-  auto* confirmed =
-      channelDialog->findChild<QCheckBox*>("channelConfirmedSegment");
   auto* create = channelDialog->findChild<QPushButton*>("confirmChannelConfig");
-  QVERIFY(confirmed && !confirmed->isChecked() && create &&
-          !create->isEnabled());
-  confirmed->setChecked(true);
+  QVERIFY(!channelDialog->findChild<QCheckBox*>("channelConfirmedSegment"));
+  QVERIFY(!window.findChild<QPushButton*>("confirmAnnotationSegment"));
+  QVERIFY(create && create->isEnabled());
+  auto* channelCenter =
+      channelDialog->findChild<QDoubleSpinBox*>("channelCenterMHz");
+  auto* validation = channelDialog->findChild<QLabel*>("channelValidation");
+  QVERIFY(channelCenter && validation);
+  const auto boundCenter = channelCenter->value();
+  channelCenter->setValue(boundCenter + .05);
+  QVERIFY(!create->isEnabled());
+  QCOMPARE(validation->property("field").toString(), QString("frequency"));
+  QVERIFY(validation->text().contains("所选活动段"));
+  channelCenter->setValue(boundCenter);
   QVERIFY(create->isEnabled());
+  QCOMPARE(channelDialog->findChild<QComboBox*>("channelSourceSegment")
+               ->currentData()
+               .toString(),
+           QString::fromStdString(annotation->activeSegmentId));
+  auto* channelBegin = static_cast<SampleTimeEdit*>(
+      channelDialog->findChild<QLineEdit*>("channelRangeStartMilliseconds"));
+  QVERIFY(channelBegin && validation);
+  constexpr SampleIndex exact = (SampleIndex{1} << 53) + 17;
+  channelBegin->setSampleValue(exact);
+  channelBegin->setFocus();
+  const auto exactText = channelBegin->text();
+  channelBegin->selectAll();
+  QTest::keyClicks(channelBegin, exactText);
+  QTest::keyClick(channelBegin, Qt::Key_Return);
+  QCOMPARE(channelBegin->sampleValue(), exact);
+  channelBegin->setSampleValue(std::numeric_limits<SampleIndex>::max());
+  QTest::keyClick(channelBegin, Qt::Key_Return);
+  QCOMPARE(channelBegin->sampleValue(),
+           std::numeric_limits<SampleIndex>::max());
+  channelBegin->setSampleValue(600);
+  for (const auto* invalid : {"-0.000001", "nan", "inf", "1e300"}) {
+    channelBegin->selectAll();
+    QTest::keyClicks(channelBegin, invalid);
+    QTest::keyClick(channelBegin, Qt::Key_Return);
+    QCOMPARE(channelBegin->sampleValue(), SampleIndex{600});
+    QVERIFY(!channelBegin->error().isEmpty());
+    QVERIFY(!create->isEnabled());
+    QVERIFY(validation->property("field").toString().startsWith("sourceTime"));
+    QTest::keyClick(channelBegin, Qt::Key_Escape);
+    QVERIFY(channelDialog->isVisible() && create->isEnabled());
+  }
+  channelBegin->selectAll();
+  QTest::keyClicks(channelBegin, "0.65");
+  window.refresh();
+  QEvent deactivate(QEvent::WindowDeactivate);
+  QCoreApplication::sendEvent(channelDialog, &deactivate);
+  QCOMPARE(channelBegin->sampleValue(), SampleIndex{600});
+  QCOMPARE(channelBegin->text(), QString("0.65"));
+  QTest::keyClick(channelBegin, Qt::Key_Tab);
+  QCOMPARE(channelBegin->sampleValue(), SampleIndex{650});
+  channelBegin->setFocus();
+  channelBegin->selectAll();
+  QTest::keyClicks(channelBegin, "0.7");
+  QTest::mouseClick(validation, Qt::LeftButton);
+  QCOMPARE(channelBegin->sampleValue(), SampleIndex{700});
+  wheelAt(channelBegin, channelBegin->rect().center());
+  QCOMPARE(channelBegin->sampleValue(), SampleIndex{700});
   channelDialog->reject();
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
   QCOMPARE(annotation->reviewStatus, ReviewStatus::Pending);
   QVERIFY(!annotation->segments[1].confirmed && file->channels.empty());
-  window.findChild<QPushButton*>("confirmAnnotationSegment")->click();
-  QCOMPARE(annotation->reviewStatus, ReviewStatus::Pending);
-  QVERIFY(segmentCanCreateChannel(*annotation, annotation->activeSegmentId));
-  QVERIFY(annotation->segments[0].confirmed);
+  auto* quality = window.findChild<QPushButton*>("annotationQualityMenu");
+  auto* qualityMenu = window.findChild<QMenu*>("annotationQualityActions");
+  QVERIFY(quality && quality->menu() == qualityMenu);
+  auto* ignored = qualityMenu->findChild<QAction*>("rejectAnnotations");
+  auto* accepted = qualityMenu->findChild<QAction*>("acceptAnnotations");
+  auto* pending = qualityMenu->findChild<QAction*>("clearAnnotationReview");
+  QVERIFY(ignored && accepted && pending);
+  QCOMPARE(ignored->text(), QString("已忽略"));
+  QCOMPARE(accepted->text(), QString("已采纳"));
+  QCOMPARE(pending->text(), QString("待判断"));
+  ignored->trigger();
+  QCOMPARE(annotation->reviewStatus, ReviewStatus::Rejected);
+  extract->click();
+  channelDialog = window.findChild<QDialog*>("channelConfigDialog");
+  QVERIFY(channelDialog && channelDialog->isVisible());
+  create = channelDialog->findChild<QPushButton*>("confirmChannelConfig");
+  QVERIFY(create->isEnabled());
+  channelDialog->findChild<QCheckBox*>("channelAutoOpen")->setChecked(false);
+  create->click();
+  QCOMPARE(file->channels.size(), std::size_t{1});
+  QCOMPARE(file->channels.front().sourceSnapshot->bindingKind,
+           ChannelBindingKind::LocatedSegment);
+  QCOMPARE(annotation->reviewStatus, ReviewStatus::Rejected);
+  QCOMPARE(file->channels.front().sourceRelation,
+           ChannelSourceRelation::Current);
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
   window.findChild<QPushButton*>("undoAnnotations")->click();
-  QVERIFY(!segmentCanCreateChannel(*annotation, annotation->activeSegmentId));
-  window.findChild<QPushButton*>("acceptAnnotations")->click();
+  QCOMPARE(annotation->reviewStatus, ReviewStatus::Pending);
+  accepted->trigger();
   QVERIFY(segmentCanCreateChannel(*annotation, annotation->activeSegmentId));
   window.findChild<QPushButton*>("undoAnnotations")->click();
   QCOMPARE(annotation->reviewStatus, ReviewStatus::Pending);
   window.findChild<QPushButton*>("redoAnnotations")->click();
   QCOMPARE(annotation->reviewStatus, ReviewStatus::Accepted);
+  QCOMPARE(file->channels.front().sourceRelation,
+           ChannelSourceRelation::Current);
+
+  AnnotationSourceSet set;
+  set.id = "ui-unknown-set";
+  set.fileId = file->metadata.id;
+  set.sourceKind = AnnotationSource::Algorithm;
+  set.sourceIdentity = annotationSourceIdentity(file->metadata);
+  set.formatId = "detection-v1";
+  Annotation unknown;
+  unknown.id = "ui-unknown";
+  unknown.name = "time unknown";
+  unknown.fileId = file->metadata.id;
+  unknown.sourceSetId = set.id;
+  unknown.originRecordId = "ui-record";
+  unknown.sourceKind = set.sourceKind;
+  unknown.observation = ViewRange{{100, 500}, {-80000, 80000}};
+  auto evidence = std::make_shared<OriginEvidence>();
+  evidence->formatId = set.formatId;
+  evidence->originalObservation = unknown.observation;
+  unknown.originEvidence = evidence;
+  const auto publication =
+      window.session().annotations().publishSourceSet(*file, set, {unknown});
+  QVERIFY2(publication.ok, publication.error.c_str());
+  QVERIFY(window.session()
+              .annotations()
+              .reviewBatch(*file, {unknown.id}, ReviewStatus::Rejected)
+              .ok);
+  QVERIFY(window.session()
+              .annotations()
+              .select(*file, {annotationId, unknown.id}, unknown.id)
+              .ok);
+  file->metadata.availability.status = LoadStatus::Partial;
+  file->metadata.availability.availableSamples = 1000;
+  file->view.time = {1200, 1800};
+  window.refresh();
+  extract->click();
+  channelDialog = window.findChild<QDialog*>("channelConfigDialog");
+  QVERIFY(channelDialog && channelDialog->isVisible());
+  auto* source = channelDialog->findChild<QComboBox*>("channelSourceMark");
+  create = channelDialog->findChild<QPushButton*>("confirmChannelConfig");
+  validation = channelDialog->findChild<QLabel*>("channelValidation");
+  QVERIFY(source->currentData().toString().isEmpty() && !create->isEnabled());
+  QCOMPARE(validation->property("field").toString(), QString("annotationId"));
+  source->setCurrentIndex(source->findData(QString::fromStdString(unknown.id)));
+  QCOMPARE(validation->property("field").toString(), QString("sourceTime"));
+  QVERIFY(!create->isEnabled());
+  channelBegin = static_cast<SampleTimeEdit*>(
+      channelDialog->findChild<QLineEdit*>("channelRangeStartMilliseconds"));
+  auto* channelEnd = static_cast<SampleTimeEdit*>(
+      channelDialog->findChild<QLineEdit*>("channelRangeEndMilliseconds"));
+  QVERIFY(channelBegin && channelEnd);
+  QCOMPARE(channelBegin->sampleValue(), SampleIndex{1000});
+  QCOMPARE(channelEnd->sampleValue(), SampleIndex{1000});
+  channelDialog->findChild<QPushButton*>("channelUseAvailablePrefix")->click();
+  QCOMPARE(channelBegin->sampleValue(), SampleIndex{0});
+  QCOMPARE(channelEnd->sampleValue(), SampleIndex{1000});
+  QVERIFY(create->isEnabled());
+  channelDialog->findChild<QCheckBox*>("channelAutoOpen")->setChecked(false);
+  create->click();
+  QCOMPARE(file->channels.size(), std::size_t{2});
+  QCOMPARE(file->channels.back().sourceSnapshot->bindingKind,
+           ChannelBindingKind::UserRange);
+  QCOMPARE(file->channels.back().sourceTime, (TimeRange{0, 1000}));
+  QVERIFY(findAnnotation(*file, unknown.id)->segments.empty());
+  QCOMPARE(findAnnotation(*file, unknown.id)->observation, unknown.observation);
+  QCOMPARE(findAnnotation(*file, unknown.id)->reviewStatus,
+           ReviewStatus::Rejected);
+
+  // Nine displayed MHz decimals cannot represent these physical edges. Default
+  // validation, unrelated edits and an uncommitted draft must keep exact Hz.
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(
+      !window.session().addDemoFile("fractional.iq", 1e6, 100e6, .01).empty());
+  const FrequencyRange exactFrequency{99'900'390.625, 100'100'097.65625};
+  const auto fractionalId =
+      window.session().addMark({{100, 500}, exactFrequency});
+  QVERIFY(!fractionalId.empty());
+  file = window.session().activeFile();
+  window.refresh();
+  extract->click();
+  channelDialog = window.findChild<QDialog*>("channelConfigDialog");
+  QVERIFY(channelDialog && channelDialog->isVisible());
+  create = channelDialog->findChild<QPushButton*>("confirmChannelConfig");
+  channelCenter = channelDialog->findChild<QDoubleSpinBox*>("channelCenterMHz");
+  auto* channelBandwidth =
+      channelDialog->findChild<QDoubleSpinBox*>("channelBandwidthMHz");
+  auto* actualRange =
+      channelDialog->findChild<QLabel*>("channelActualSourceRange");
+  auto* channelName = channelDialog->findChild<QLineEdit*>("channelName");
+  validation = channelDialog->findChild<QLabel*>("channelValidation");
+  QVERIFY(create && channelCenter && channelBandwidth && actualRange &&
+          channelName && validation);
+  QVERIFY2(create->isEnabled(), qPrintable(validation->text()));
+  QCOMPARE(actualRange->property("lowerHz").toDouble(), exactFrequency.lowerHz);
+  QCOMPARE(actualRange->property("upperHz").toDouble(), exactFrequency.upperHz);
+  channelName->setText("fractional crop");
+  auto* bandwidthEditor = channelBandwidth->findChild<QLineEdit*>();
+  QVERIFY(bandwidthEditor);
+  bandwidthEditor->setFocus();
+  bandwidthEditor->selectAll();
+  QTest::keyClicks(bandwidthEditor, "0.18");
+  window.refresh();
+  QCoreApplication::sendEvent(channelDialog, &deactivate);
+  QCOMPARE(actualRange->property("lowerHz").toDouble(), exactFrequency.lowerHz);
+  QCOMPARE(actualRange->property("upperHz").toDouble(), exactFrequency.upperHz);
+  QVERIFY(create->isEnabled());
+  QTest::keyClick(bandwidthEditor, Qt::Key_Return);
+  const auto exactCenter =
+      exactFrequency.lowerHz +
+      (exactFrequency.upperHz - exactFrequency.lowerHz) / 2;
+  QCOMPARE(actualRange->property("lowerHz").toDouble(), exactCenter - 90'000);
+  QCOMPARE(actualRange->property("upperHz").toDouble(), exactCenter + 90'000);
+  auto* centerEditor = channelCenter->findChild<QLineEdit*>();
+  QVERIFY(centerEditor);
+  centerEditor->setFocus();
+  centerEditor->selectAll();
+  QTest::keyClicks(centerEditor, "100.01");
+  QCOMPARE(actualRange->property("lowerHz").toDouble(), exactCenter - 90'000);
+  QTest::keyClick(centerEditor, Qt::Key_Tab);
+  const FrequencyRange croppedFrequency{99'920'000, 100'100'000};
+  QCOMPARE(actualRange->property("lowerHz").toDouble(),
+           croppedFrequency.lowerHz);
+  QCOMPARE(actualRange->property("upperHz").toDouble(),
+           croppedFrequency.upperHz);
+  QVERIFY2(create->isEnabled(), qPrintable(validation->text()));
+  channelDialog->findChild<QCheckBox*>("channelAutoOpen")->setChecked(false);
+  create->click();
+  QCOMPARE(file->channels.size(), std::size_t{1});
+  QCOMPARE(file->channels.back().sourceSnapshot->range.frequency,
+           croppedFrequency);
+  QCOMPARE(file->channels.back().sourceSnapshot->boundRange->frequency,
+           exactFrequency);
+  QCOMPARE(file->channels.back().centerFrequencyHz, 100'010'000.0);
+  QCOMPARE(file->channels.back().bandwidthHz, 180'000.0);
+
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  extract->click();
+  channelDialog = window.findChild<QDialog*>("channelConfigDialog");
+  QVERIFY(channelDialog && channelDialog->isVisible());
+  create = channelDialog->findChild<QPushButton*>("confirmChannelConfig");
+  channelCenter = channelDialog->findChild<QDoubleSpinBox*>("channelCenterMHz");
+  QVERIFY(create && channelCenter && create->isEnabled());
+  centerEditor = channelCenter->findChild<QLineEdit*>();
+  QVERIFY(centerEditor);
+  centerEditor->setFocus();
+  QTest::keyClick(centerEditor, Qt::Key_Return);
+  QVERIFY(create->isEnabled());
+  channelDialog->findChild<QCheckBox*>("channelAutoOpen")->setChecked(false);
+  create->click();
+  QCOMPARE(file->channels.size(), std::size_t{2});
+  QCOMPARE(file->channels.back().sourceSnapshot->range.frequency,
+           exactFrequency);
+  QCOMPARE(file->channels.back().sourceSnapshot->boundRange->frequency,
+           exactFrequency);
+  QCOMPARE(file->channels.back().centerFrequencyHz, exactCenter);
+  QCOMPARE(file->channels.back().bandwidthHz,
+           exactFrequency.upperHz - exactFrequency.lowerHz);
+
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  const auto nameSnapshot = file->channels.back().sourceSnapshot;
+  const auto originalChannelName = file->channels.back().name;
+  QVERIFY(window.session().activateChannel(file->channels.back().id));
+  window.refresh();
+  auto* editChannel = window.findChild<QPushButton*>("propertyEditChannel");
+  QVERIFY(editChannel && editChannel->isVisible());
+  editChannel->click();
+  channelDialog = window.findChild<QDialog*>("channelConfigDialog");
+  QVERIFY(channelDialog && channelDialog->isVisible());
+  create = channelDialog->findChild<QPushButton*>("confirmChannelConfig");
+  channelName = channelDialog->findChild<QLineEdit*>("channelName");
+  validation = channelDialog->findChild<QLabel*>("channelValidation");
+  QVERIFY(create && channelName && validation);
+  for (const auto& character : {QStringLiteral("a"), QStringLiteral("通")}) {
+    channelName->setText(character.repeated(80));
+    QVERIFY2(create->isEnabled(), qPrintable(validation->text()));
+    channelName->setText(character.repeated(81));
+    QVERIFY(!create->isEnabled());
+    QCOMPARE(validation->property("field").toString(), QString("name"));
+    QCOMPARE(file->channels.back().name, originalChannelName);
+  }
+  const auto supplementaryName =
+      QString::fromUtf8("\xf0\x9f\x93\xbb").repeated(40);
+  channelName->setText(supplementaryName);
+  QVERIFY2(create->isEnabled(), qPrintable(validation->text()));
+  channelName->setText(supplementaryName + "a");
+  QVERIFY(!create->isEnabled());
+  QCOMPARE(validation->property("field").toString(), QString("name"));
+  channelName->setText(QStringLiteral("通").repeated(80));
+  QVERIFY(create->isEnabled());
+  create->click();
+  QCOMPARE(QString::fromStdString(file->channels.back().name),
+           QStringLiteral("通").repeated(80));
+  QVERIFY(file->channels.back().sourceSnapshot == nameSnapshot);
 }
 
 void UiTests::torchSigLabelsNativeRoundtrip() {
+  const auto localMeta = QStringLiteral(
+      SS_SOURCE_DIR "/resources/sigmf_data_demo/0000000.sigmf-meta");
   const QString meta =
-      "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta";
+      QFileInfo::exists(localMeta)
+          ? localMeta
+          : "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta";
   const auto suggestions = readSigmfMetadata(meta);
   QVERIFY2(suggestions.error.isEmpty() && suggestions.format &&
                suggestions.sampleRateHz,
@@ -4199,9 +4522,8 @@ void UiTests::widebandAnnotationSelectionAndOverlap() {
   QCOMPARE(file->selectedMarkIds.size(), std::size_t{2});
   QVERIFY(std::find(file->selectedMarkIds.begin(), file->selectedMarkIds.end(),
                     hiddenId) == file->selectedMarkIds.end());
-  QVERIFY(window.findChild<QPushButton*>("acceptAnnotations")
-              ->text()
-              .endsWith("接受所选 2"));
+  QVERIFY(window.findChild<QPushButton*>("annotationQualityMenu")->isEnabled());
+  QVERIFY(window.findChild<QAction*>("acceptAnnotations")->isEnabled());
   // Checkbox toggles preserve the other selected row; ordinary clicks replace.
   const auto firstCell = table->model()->index(0, 0);
   QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier,

@@ -591,6 +591,10 @@ QJsonObject encodeAnnotationChannelSnapshot(
       {"revisionId", q(s.revisionId)},
       {"name", q(s.name)},
       {"range", rangeJson(s.range)},
+      {"bindingKind", s.bindingKind == ChannelBindingKind::LocatedSegment
+                          ? "LocatedSegment"
+                          : "UserRange"},
+      {"boundRange", rangeJson(s.boundRange.value_or(s.range))},
       {"sourceKind", enumText(static_cast<int>(s.sourceKind), sourceNames)},
       {"reviewStatus", enumText(static_cast<int>(s.reviewStatus), reviewNames)},
       {"sourceIdentity", encodeSourceIdentity(s.sourceIdentity)}};
@@ -598,7 +602,7 @@ QJsonObject encodeAnnotationChannelSnapshot(
 bool decodeAnnotationChannelSnapshot(const QJsonObject& o,
                                      const FileMetadata& metadata,
                                      AnnotationChannelSnapshot& target,
-                                     QString& error) {
+                                     QString& error, int projectVersion) {
   return decodeSafely(o, target, error, [&] {
     AnnotationChannelSnapshot s;
     s.annotationId = string(o, "annotationId", 128);
@@ -606,13 +610,26 @@ bool decodeAnnotationChannelSnapshot(const QJsonObject& o,
     s.revisionId = string(o, "revisionId", 128);
     s.name = string(o, "name", 256);
     s.range = rangeValue(o["range"]);
+    if (projectVersion >= 6) {
+      const auto kind = string(o, "bindingKind", 32);
+      require(kind == "LocatedSegment" || kind == "UserRange",
+              "通道绑定类型无效");
+      s.bindingKind = kind == "UserRange" ? ChannelBindingKind::UserRange
+                                          : ChannelBindingKind::LocatedSegment;
+      s.boundRange = rangeValue(o["boundRange"]);
+    } else {
+      s.boundRange = s.range;
+    }
     s.sourceKind =
         static_cast<AnnotationSource>(choice(o, "sourceKind", sourceNames));
     s.reviewStatus =
         static_cast<ReviewStatus>(choice(o, "reviewStatus", reviewNames));
     s.sourceIdentity =
         identityValue(object(o["sourceIdentity"], "sourceIdentity"));
-    require(!s.annotationId.empty() && !s.segmentId.empty() &&
+    require(!s.annotationId.empty() &&
+                (s.bindingKind == ChannelBindingKind::LocatedSegment
+                     ? !s.segmentId.empty()
+                     : s.segmentId.empty()) &&
                 !s.revisionId.empty() && s.sourceIdentity.fileId == metadata.id,
             "通道快照身份无效");
     FileMetadata original = metadata;
@@ -637,6 +654,12 @@ bool decodeAnnotationChannelSnapshot(const QJsonObject& o,
                         : FrequencyFrame::RF};
     const auto checked = validateSegment(segment, bounds, false);
     require(checked.ok, q(checked.error));
+    segment.range = *s.boundRange;
+    const auto bindingChecked = validateSegment(segment, bounds, false);
+    require(bindingChecked.ok, q(bindingChecked.error));
+    if (s.bindingKind == ChannelBindingKind::LocatedSegment)
+      require(rangeInside(s.range, *s.boundRange),
+              "通道快照的提取时间或频带超出创建时绑定段");
     return s;
   });
 }

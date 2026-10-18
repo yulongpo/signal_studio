@@ -38,10 +38,24 @@ public:
         raw_.reset();if(mapped_&&ownedBytes_.isEmpty())file_.unmap(mapped_);mapped_=nullptr;
         ownedBytes_.clear();file_.close();sampleCount_=0;
         const auto path=QString::fromStdString(metadata.path);
-        if(metadata.availability.status==LoadStatus::Loading||metadata.availability.status==LoadStatus::Failed){error="来源未读入或已失效";return false;}
+        if (metadata.availability.status == LoadStatus::Failed) {
+          error = metadata.availability.error.empty()
+                      ? QStringLiteral("来源读取失败，请重新读入或核对文件。")
+                      : QStringLiteral("来源读取失败：") +
+                            QString::fromStdString(metadata.availability.error);
+          return false;
+        }
+        if (path.startsWith(":/") && metadata.sampleFormat != SampleFormat{}) {
+          error = "内置 IQ 资源只支持固定的 CI16/LE/IQ 单通道格式";
+          return false;
+        }
+        const auto prefix = availableSamples(metadata);
+        if (!prefix) {
+          error = "来源没有可读的完整样本前缀。";
+          return false;
+        }
         if(!metadata.availability.fingerprint.empty()&&iqSourceFingerprint(path).toStdString()!=metadata.availability.fingerprint){error="源文件指纹已改变，请重新读入";return false;}
         if(path.startsWith(":/")){
-            if(metadata.sampleFormat!=SampleFormat{}){error="内置 IQ 资源只支持固定的 CI16/LE/IQ 单通道格式";return false;}
             if(!open(path,error))return false;
         }
         else {
@@ -49,7 +63,12 @@ public:
             if(!raw_->open(path,metadata.sampleFormat,error)){raw_.reset();return false;}
             sampleCount_=raw_->sampleCount();format_=metadata.sampleFormat;
         }
-        limitTo(availableSamples(metadata));return true;
+        if (prefix > sampleCount_) {
+          error = "已读可用前缀超出文件实际完整帧范围。";
+          return false;
+        }
+        limitTo(prefix);
+        return true;
     }
     bool isOpen() const { return mapped_ != nullptr || (raw_ && raw_->isOpen()); }
     std::uint64_t sampleCount() const { return sampleCount_; }

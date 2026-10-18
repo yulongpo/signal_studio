@@ -67,6 +67,7 @@
 #include "app/main_window.h"
 #include "infrastructure/annotation_json.h"
 #include "infrastructure/detection_store.h"
+#include "infrastructure/project_store.h"
 #include "infrastructure/raw_sample_reader.h"
 #include "infrastructure/source_metadata.h"
 #include "ui/annotations/annotation_panel.h"
@@ -440,8 +441,8 @@ struct Capture {
       failure += "Could not save PNG screenshot";
     }
     if (captured == &window &&
-        (!isDisplayNumber(window.screen(), 2) || !window.isFullScreen() ||
-         window.size() != QSize(2560, 1440) ||
+        (window.screen() != nativeAcceptanceScreen() ||
+         !window.isFullScreen() || window.size() != QSize(2560, 1440) ||
          pixmap.size() != QSize(3840, 2160) ||
          std::abs(pixmap.devicePixelRatioF() - 1.5) > 0.001)) {
       if (!failure.isEmpty()) failure += "; ";
@@ -961,6 +962,9 @@ void diagnoseMainHover(Capture& capture, QPoint target,
 // U2 adds editing scenarios without a second screenshot engine.
 #include "tests/annotation_editing_capture.h"
 
+// U3 reuses the same monitor, editing and real-IQ capture helpers.
+#include "tests/annotation_channels_capture.h"
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -970,6 +974,9 @@ int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   QApplication::setApplicationName("SignalStudioNativeCapture");
   const auto arguments = app.arguments();
+  if (arguments.size() == 4 && arguments.at(1) == "--annotation-interactions" &&
+      arguments.at(2) == "U3")
+    return runAnnotationChannelsCapture(arguments.at(3));
   if (arguments.size() == 4 && arguments.at(1) == "--annotation-interactions" &&
       arguments.at(2) == "U2")
     return runAnnotationEditingCapture(arguments.at(3));
@@ -1008,16 +1015,11 @@ int main(int argc, char* argv[]) {
     QTextStream(stderr) << "Could not create capture directory\n";
     return 2;
   }
-  QScreen* screen = nullptr;
-  for (auto* candidate : QGuiApplication::screens())
-    if (isDisplayNumber(candidate, 2)) {
-      screen = candidate;
-      break;
-    }
+  QScreen* screen = nativeAcceptanceScreen();
   QJsonObject report{
       {"platform", QGuiApplication::platformName()},
       {"screens", screensJson()},
-      {"requiredConnectedScreenNumber", 2},
+      {"selectionPolicy", "unique actual 4K / 150% monitor"},
       {"requestedLogicalWindowSize", sizeJson(QSize(2560, 1440))},
       {"requiredPixelSize", sizeJson(QSize(3840, 2160))},
       {"requiredDevicePixelRatio", 1.5},
@@ -1029,7 +1031,8 @@ int main(int argc, char* argv[]) {
   if (!screen) {
     report["pass"] = false;
     report["error"] =
-        "Connected display2 is unavailable; capture did not use another screen";
+        "Selected native 4K monitor is unavailable; capture did not use "
+        "another screen";
     if (!writeReport(output, report))
       QTextStream(stderr) << "Could not write native capture report\n";
     QTextStream(stderr) << report["error"].toString() << '\n';
@@ -1056,7 +1059,8 @@ int main(int argc, char* argv[]) {
     require(std::abs(screen->devicePixelRatio() - 1.5) < 0.001 &&
                 screen->geometry().size() == QSize(2560, 1440) &&
                 displayPixelSize(screen) == QSize(3840, 2160),
-            "Connected display2 must actually be 3840x2160 at system DPR 1.5; "
+            "Selected native 4K monitor must actually be 3840x2160 at system "
+            "DPR 1.5; "
             "no system settings were changed");
     showFullScreenOnScreen(window, screen);
     window.raise();
@@ -1067,11 +1071,11 @@ int main(int argc, char* argv[]) {
                      window.size() == QSize(2560, 1440);
             }),
             "Full-screen client did not cover logical 2560x1440 on connected "
-            "display2");
+            "selected native 4K monitor");
     require(window.screen() == screen &&
                 std::abs(screen->devicePixelRatio() - 1.5) < 0.001 &&
                 std::abs(window.devicePixelRatioF() - 1.5) < 0.001,
-            "Actual connected display2/window DPR is not 1.5; no scale "
+            "Actual selected native 4K monitor/window DPR is not 1.5; no scale "
             "override was applied");
     capture.waitForGpu();
     capture.scene("01_default_4k_150");

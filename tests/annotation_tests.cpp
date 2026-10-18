@@ -224,7 +224,7 @@ void testUnknownObservation() {
               "Unknown object can be reviewed");
   Channel channel;
   check(!service.bindChannelSource(file, channel, "unknown", "missing"),
-        "Unknown time must not permit DDC creation");
+        "Unknown time cannot bind a nonexistent located segment");
   checkResult(service.beginRevision(file, "unknown"),
               "Observation revision session failed");
   checkResult(service.adoptObservation(file, "unknown"),
@@ -300,8 +300,9 @@ void testPendingSingleSegmentConfirmation() {
         "Confirmation must record the actor and exact segment in review "
         "history without a geometry revision");
   check(segmentCanCreateChannel(*annotation, firstId) &&
-            !segmentCanCreateChannel(*annotation, secondId),
-        "Only the explicitly confirmed Pending segment can create a channel");
+            segmentCanCreateChannel(*annotation, secondId),
+        "Quality and legacy confirmation do not restrict a located channel "
+        "source");
   Channel confirmedChannel;
   confirmedChannel.id = "pending-channel";
   checkResult(service.bindChannelSource(file, confirmedChannel, annotation->id,
@@ -313,10 +314,12 @@ void testPendingSingleSegmentConfirmation() {
           confirmedChannel.sourceSnapshot->range == before.segments[0].range,
       "Pending channel snapshot must retain its unchanged source revision");
   Channel unconfirmedChannel;
-  check(!service.bindChannelSource(file, unconfirmedChannel, annotation->id,
-                                   secondId) &&
-            !unconfirmedChannel.sourceSnapshot,
-        "An unconfirmed sibling must not bind a channel");
+  check(service.bindChannelSource(file, unconfirmedChannel, annotation->id,
+                                  secondId)
+                .ok &&
+            unconfirmedChannel.sourceSnapshot &&
+            unconfirmedChannel.segmentId == secondId,
+        "An unconfirmed sibling can be explicitly chosen without acceptance");
   const auto auditCount = annotation->reviewHistory.size();
   const auto commandCount = service.historySize(file);
   const auto repeated =
@@ -368,7 +371,7 @@ void testConfirmationUndoRedoAndRejection() {
             annotation->originEvidence == origin &&
             file.channels.front().sourceSnapshot == snapshot &&
             file.channels.front().sourceRelation ==
-                ChannelSourceRelation::Unconfirmed,
+                ChannelSourceRelation::Current,
         "Undo must restore only confirmation state while retaining immutable "
         "review history and channel snapshot");
   checkResult(service.redo(file), "Segment confirmation redo failed");
@@ -386,9 +389,9 @@ void testConfirmationUndoRedoAndRejection() {
       annotation->reviewStatus == ReviewStatus::Rejected &&
           !annotation->segments.front().confirmed &&
           !annotation->segments.back().confirmed &&
-          !segmentCanCreateChannel(*annotation, segmentId) &&
+          segmentCanCreateChannel(*annotation, segmentId) &&
           file.channels.front().sourceRelation ==
-              ChannelSourceRelation::Rejected,
+              ChannelSourceRelation::Current,
       "Rejection must clear confirmation and preserve the referenced channel");
   const auto rejectionReviews = annotation->reviewHistory;
   const auto rejectionHistory = service.historySize(file);
@@ -462,7 +465,7 @@ void testConfirmationGeometryInvalidation() {
             annotation->segments.front().range == geometry() &&
             annotation->originEvidence == origin &&
             file.channels.front().sourceRelation ==
-                ChannelSourceRelation::Changed,
+                ChannelSourceRelation::Current,
         "Editing one Accepted segment must preserve the confirmed sibling "
         "byte-for-byte and make only the changed segment Pending");
   checkResult(service.undo(file), "Confirmed geometry revision undo failed");
@@ -489,9 +492,9 @@ void testConfirmationGeometryInvalidation() {
   check(annotation->revisionId == revised &&
             annotation->reviewHistory.back().revisionId == revised &&
             segmentCanCreateChannel(*annotation, firstId) &&
-            !segmentCanCreateChannel(*annotation, secondId) &&
+            segmentCanCreateChannel(*annotation, secondId) &&
             file.channels.front().sourceRelation ==
-                ChannelSourceRelation::Changed,
+                ChannelSourceRelation::Current,
         "New-revision confirmation must not relabel an existing old DDC "
         "snapshot");
   check(validateFileAnnotations(file).ok,
@@ -916,7 +919,7 @@ void testChannelSnapshotsAndSourceChanges() {
   checkResult(service.reviewBatch(file, {id}, ReviewStatus::Rejected),
               "Rejection failed");
   check(
-      file.channels.front().sourceRelation == ChannelSourceRelation::Rejected &&
+      file.channels.front().sourceRelation == ChannelSourceRelation::Current &&
           file.channels.size() == 1,
       "Rejected source must retain DDC and its snapshot");
   checkResult(service.undo(file), "Rejection undo failed");
@@ -1303,6 +1306,299 @@ void testRestoreOriginPreservesConfirmedSibling() {
             annotation->revisionId == beforeRevision,
         "One undo must restore exactly the geometry before restoration");
 }
+
+void testLocatedChannelRequestsAndRelations() {
+  auto file = fileFixture();
+  file.metadata.availability = {
+      1000, LoadStatus::Loading, 0, "source-hash", {}};
+  AnnotationService service;
+  const auto set =
+      sourceFixture(file, "channel-requests", AnnotationSource::Algorithm);
+  const auto event = annotationFixture(set, "request-event",
+                                       {geometry(), geometry(800, 1400)});
+  checkResult(service.publishSourceSet(file, set, {event}),
+              "Channel request fixture failed");
+  auto* annotation = findAnnotation(file, event.id);
+  const auto first = annotation->segments.front().id;
+  const auto second = annotation->segments.back().id;
+  auto request = annotationChannelRequest(file, event.id, {0, 1000}, 7, second);
+  Channel candidate;
+  check(request.range.time == TimeRange{800, 1400} &&
+            !prepareAnnotationChannel(file, request, candidate) &&
+            prepareAnnotationChannel(file, request, candidate).field ==
+                "sourceTime",
+        "Located defaults must retain the exact segment, including its unread "
+        "tail");
+
+  request = annotationChannelRequest(file, event.id, {0, 1000}, 7, first);
+  request.range.time = {150, 450};
+  request.range.frequency = {99.95e6, 100.05e6};
+  const auto before = *annotation;
+  const auto history = service.historySize(file);
+  checkResult(service.bindChannelSource(file, candidate, request),
+              "A Pending segment in the frozen Loading prefix must bind");
+  check(candidate.sourceTime == request.range.time &&
+            candidate.sourceSnapshot &&
+            candidate.sourceSnapshot->range == request.range &&
+            candidate.sourceSnapshot->boundRange == geometry() &&
+            candidate.sourceSnapshot->bindingKind ==
+                ChannelBindingKind::LocatedSegment &&
+            annotation->revisionId == before.revisionId &&
+            annotation->reviewStatus == before.reviewStatus &&
+            annotation->reviewHistory == before.reviewHistory &&
+            annotation->originEvidence == before.originEvidence &&
+            service.historySize(file) == history,
+        "Creation must save crop and complete binding without changing review "
+        "or evidence");
+  file.channels.push_back(candidate);
+  const auto snapshot = file.channels.front().sourceSnapshot;
+  for (const auto band :
+       {FrequencyRange{99.89e6, 100.05e6}, FrequencyRange{99.95e6, 100.11e6},
+        FrequencyRange{100.15e6, 100.20e6}}) {
+    auto outside = request;
+    outside.range.frequency = band;
+    const auto rejected = prepareAnnotationChannel(file, outside, candidate);
+    check(!rejected && rejected.field == "frequency" &&
+              rejected.error.find("所选活动段") != std::string::npos,
+          "A physically valid band outside either binding edge must not create "
+          "a LocatedSegment channel");
+    auto malformed = file;
+    auto altered = std::make_shared<AnnotationChannelSnapshot>(*snapshot);
+    altered->range.frequency = band;
+    malformed.channels.front().sourceSnapshot = altered;
+    check(!validateFileAnnotations(malformed),
+          "Canonical snapshot validation must reject the same frequency "
+          "escape as channel preparation");
+  }
+  checkResult(service.rename(file, event.id, "renamed", "new note"),
+              "Rename failed");
+  check(file.channels.front().sourceRelation == ChannelSourceRelation::Current,
+        "Name and note revisions must not stale the channel binding");
+  for (const auto quality : {ReviewStatus::Accepted, ReviewStatus::Rejected,
+                             ReviewStatus::Pending}) {
+    checkResult(service.reviewBatch(file, {event.id}, quality),
+                "Quality failed");
+    check(
+        file.channels.front().sourceRelation == ChannelSourceRelation::Current,
+        "Quality changes must not stale a channel");
+    Channel other;
+    checkResult(service.bindChannelSource(file, other, request),
+                "Every valid quality state must permit configured extraction");
+    check(annotation->reviewStatus == quality,
+          "Channel creation must preserve the selected quality state");
+  }
+  checkResult(
+      service.commitGeometry(file, event.id, second, geometry(810, 990)),
+      "Sibling geometry failed");
+  check(file.channels.front().sourceRelation == ChannelSourceRelation::Current,
+        "An unrelated sibling revision must not stale the bound first segment");
+  checkResult(service.commitGeometry(file, event.id, first, geometry(120, 500)),
+              "Bound geometry failed");
+  check(
+      file.channels.front().sourceRelation == ChannelSourceRelation::Changed &&
+          file.channels.front().sourceSnapshot == snapshot,
+      "Only bound geometry changes must mark the immutable channel Changed");
+  const auto stale = prepareAnnotationChannel(file, request, candidate);
+  check(!stale && stale.field == "segmentId",
+        "A stale request must report its bound-segment field");
+  checkResult(service.undo(file), "Bound geometry undo failed");
+  check(file.channels.front().sourceRelation == ChannelSourceRelation::Current,
+        "Undo must restore the exact bound relation");
+  checkResult(service.deleteSegment(file, event.id, first),
+              "Bound deletion failed");
+  check(file.channels.front().sourceRelation == ChannelSourceRelation::Missing,
+        "Deleting the bound segment must retain a Missing channel");
+  checkResult(service.undo(file), "Bound deletion undo failed");
+  check(
+      file.channels.front().sourceRelation == ChannelSourceRelation::Current &&
+          file.channels.front().sourceSnapshot == snapshot,
+      "Deletion undo must restore Current without replacing the creation "
+      "snapshot");
+  auto invalid = request;
+  invalid.range.time = {100, 1001};
+  check(
+      prepareAnnotationChannel(file, invalid, candidate).field == "sourceTime",
+      "Unread extraction must identify its time field");
+  invalid = request;
+  invalid.range.frequency = {99'800'000, 100'200'000};
+  check(prepareAnnotationChannel(file, invalid, candidate).field == "frequency",
+        "Expanding a bound segment must identify its frequency field");
+  invalid = request;
+  invalid.outputSampleRateHz = 100000;
+  check(prepareAnnotationChannel(file, invalid, candidate).field ==
+            "outputSampleRateHz",
+        "Insufficient output rate must identify its rate field");
+  file.metadata.availability.status = LoadStatus::Failed;
+  file.metadata.availability.error = "fixture read failure";
+  const auto failed = prepareAnnotationChannel(file, request, candidate);
+  check(!failed && failed.field == "source" &&
+            failed.error.find("fixture read failure") != std::string::npos,
+        "A failed source must expose its saved I/O cause");
+}
+
+void testLegacyChannelBindingFrequencyBounds() {
+  for (const auto frame : {FrequencyFrame::RF, FrequencyFrame::Baseband}) {
+    auto file = fileFixture();
+    file.metadata.effectiveBandwidthHz = file.metadata.sampleRateHz;
+    AnnotationService service;
+    const auto set = sourceFixture(file, "legacy-binding");
+    auto event = annotationFixture(set, "legacy-event");
+    if (frame == FrequencyFrame::Baseband) {
+      event.segments.front().range.frequency = {-100'000, 100'000};
+      event.segments.front().frequencyFrame = frame;
+      auto evidence = std::make_shared<OriginEvidence>(*event.originEvidence);
+      evidence->originalSegments = event.segments;
+      event.originEvidence = std::move(evidence);
+    }
+    checkResult(service.publishSourceSet(file, set, {event}),
+                "Legacy binding fixture failed");
+    const auto* annotation = findAnnotation(file, event.id);
+    const auto segmentId = annotation->segments.front().id;
+    for (const auto frequency : {FrequencyRange{99.875e6, 100.075e6},
+                                 FrequencyRange{99.925e6, 100.125e6},
+                                 FrequencyRange{100.125e6, 100.225e6}}) {
+      Channel outside;
+      outside.sourceTime = {150, 450};
+      outside.centerFrequencyHz =
+          frequency.lowerHz + (frequency.upperHz - frequency.lowerHz) / 2;
+      outside.bandwidthHz = frequency.upperHz - frequency.lowerHz;
+      const auto rejected =
+          service.bindChannelSource(file, outside, event.id, segmentId);
+      check(!rejected && rejected.field == "frequency" &&
+                !outside.sourceSnapshot && outside.annotationId.empty(),
+            "The legacy overload must reject RF extraction escaping either "
+            "edge of an RF or Baseband binding without publishing a snapshot");
+    }
+    Channel crop;
+    crop.id = "legacy-crop";
+    crop.sourceTime = {150, 450};
+    crop.centerFrequencyHz = 100e6;
+    crop.bandwidthHz = 100'000;
+    checkResult(service.bindChannelSource(file, crop, event.id, segmentId),
+                "An RF crop inside either coordinate frame must bind");
+    file.channels.push_back(crop);
+    check(crop.sourceSnapshot->range ==
+                  ViewRange{{150, 450}, {99.95e6, 100.05e6}} &&
+              crop.sourceSnapshot->boundRange == geometry() &&
+              crop.sourceRelation == ChannelSourceRelation::Current &&
+              validateFileAnnotations(file).ok,
+          "An accepted legacy binding must satisfy canonical full-range "
+          "validation after physical-frequency conversion");
+  }
+}
+
+void testChannelNamesUsePersistentUnicodeLimit() {
+  auto file = fileFixture();
+  AnnotationService service;
+  const auto id = manual(service, file);
+  auto request = annotationChannelRequest(file, id, file.view.time);
+  std::string chinese, supplementary;
+  for (int index = 0; index < 80; ++index) chinese += "通";
+  for (int index = 0; index < 40; ++index) supplementary += "\xf0\x9f\x93\xbb";
+  const std::vector<std::pair<std::string, bool>> cases{
+      {std::string(80, 'a'), true},
+      {std::string(81, 'a'), false},
+      {chinese, true},
+      {chinese + "通", false},
+      {supplementary, true},
+      {supplementary + "a", false},
+      {std::string(79, 'a') + "\xf0\x9f\x93\xbb", false},
+      {"", false},
+      {" \t\xe3\x80\x80", false},
+      {"\xe4\xb8", false},
+      {"\xc0\xaf", false},
+      {"\xed\xa0\x80", false},
+      {"\xf4\x90\x80\x80", false}};
+  for (const auto& [name, accepted] : cases) {
+    request.name = name;
+    Channel candidate;
+    candidate.name = "unchanged";
+    const auto prepared = prepareAnnotationChannel(file, request, candidate);
+    check(bool(prepared) == accepted &&
+              bool(validateChannelName(name)) == accepted &&
+              (accepted
+                   ? candidate.name == name
+                   : prepared.field == "name" && candidate.name == "unchanged"),
+          "Creation must use the persisted UTF-16 length limit, reject "
+          "malformed UTF-8 and preserve the candidate on name failure");
+  }
+}
+
+void testUserRangeChannelsPreserveUnknownTime() {
+  auto file = fileFixture();
+  file.metadata.availability = {1000, LoadStatus::Partial, 0, {}, {}};
+  AnnotationService service;
+  const auto set =
+      sourceFixture(file, "user-range", AnnotationSource::Algorithm);
+  auto observation = annotationFixture(set, "unknown-channel", {});
+  observation.observation = geometry(700, 900);
+  auto evidence = std::make_shared<OriginEvidence>(*observation.originEvidence);
+  evidence->originalObservation = observation.observation;
+  observation.originEvidence = evidence;
+  checkResult(service.publishSourceSet(file, set, {observation}),
+              "Unknown-time fixture failed");
+  auto request = annotationChannelRequest(file, observation.id, {800, 1200}, 7);
+  check(request.bindingKind == ChannelBindingKind::UserRange &&
+            request.segmentId.empty() &&
+            request.range.time == TimeRange{800, 1000},
+        "Unknown-time defaults must use visible time intersected with the "
+        "readable prefix");
+  request = annotationChannelRequest(file, observation.id, {1200, 1800}, 7);
+  Channel candidate;
+  const auto empty = prepareAnnotationChannel(file, request, candidate);
+  check(!empty && empty.field == "sourceTime" &&
+            request.range.time == TimeRange{1000, 1000},
+        "An empty intersection must remain empty with a specific field reason");
+  request.range.time = {
+      0, 1000};  // An explicit choice may extend beyond observation support.
+  checkResult(
+      service.reviewBatch(file, {observation.id}, ReviewStatus::Rejected),
+      "Ignored unknown-time setup failed");
+  const auto before = *findAnnotation(file, observation.id);
+  file.metadata.availability.availableSamples = 1200;
+  checkResult(service.bindChannelSource(file, candidate, request),
+              "UserRange binding failed");
+  check(
+      candidate.sourceSnapshot->bindingKind == ChannelBindingKind::UserRange &&
+          candidate.sourceSnapshot->boundRange == before.observation &&
+          candidate.sourceSnapshot->sourceIdentity.availableSamples == 1200 &&
+          candidate.sourceSnapshot->range.time == TimeRange{0, 1000} &&
+          findAnnotation(file, observation.id)->segments.empty() &&
+          findAnnotation(file, observation.id)->observation ==
+              before.observation &&
+          findAnnotation(file, observation.id)->reviewStatus ==
+              ReviewStatus::Rejected &&
+          findAnnotation(file, observation.id)->originEvidence ==
+              before.originEvidence,
+      "UserRange must capture actual support without inventing algorithm "
+      "activity or changing quality");
+  file.channels.push_back(candidate);
+  checkResult(service.commitObservationFrequency(file, observation.id,
+                                                 {99'910'000, 100'090'000}),
+              "Observation frequency revision failed");
+  check(file.channels.front().sourceRelation == ChannelSourceRelation::Changed,
+        "A changed observation band must mark UserRange Changed");
+  checkResult(service.undo(file), "Observation frequency undo failed");
+  check(file.channels.front().sourceRelation == ChannelSourceRelation::Current,
+        "Undo must restore the original UserRange binding");
+  checkResult(service.adoptObservation(file, observation.id),
+              "Explicit adoption failed");
+  check(file.channels.front().sourceRelation == ChannelSourceRelation::Changed,
+        "Changing an observation into located activity must stale the "
+        "UserRange binding");
+  checkResult(service.undo(file), "Adoption undo failed");
+  check(file.channels.front().sourceRelation == ChannelSourceRelation::Current,
+        "Structure undo must restore Current");
+  checkResult(service.deleteBatch(file, {observation.id}),
+              "UserRange deletion failed");
+  check(file.channels.front().sourceRelation == ChannelSourceRelation::Missing,
+        "Deleting an observation must retain its Missing UserRange channel");
+  checkResult(service.undo(file), "UserRange deletion undo failed");
+  check(validateFileAnnotations(file).ok &&
+            file.channels.front().sourceRelation ==
+                ChannelSourceRelation::Current,
+        "Unknown-time channels and undo must retain valid physical snapshots");
+}
 }  // namespace
 
 int main() {
@@ -1317,6 +1613,14 @@ int main() {
        testSegmentDeletionSnapshotAndConcurrentUndo},
       {"restore origin preserves confirmed sibling",
        testRestoreOriginPreservesConfirmedSibling},
+      {"located channel requests and relations",
+       testLocatedChannelRequestsAndRelations},
+      {"legacy channel binding full frequency bounds",
+       testLegacyChannelBindingFrequencyBounds},
+      {"channel names use persistent Unicode limit",
+       testChannelNamesUsePersistentUnicodeLimit},
+      {"UserRange channels preserve unknown time",
+       testUserRangeChannelsPreserveUnknownTime},
       {"unknown-time observation", testUnknownObservation},
       {"Pending single-segment confirmation",
        testPendingSingleSegmentConfirmation},

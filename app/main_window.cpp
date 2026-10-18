@@ -62,12 +62,14 @@
 #include "infrastructure/project_store.h"
 #include "infrastructure/source_loader.h"
 #include "infrastructure/spectral_settings_json.h"
+#include "infrastructure/wav_metadata.h"
 #include "ui/annotations/annotation_evidence_widget.h"
 #include "ui/annotations/annotation_panel.h"
 #include "ui/brand/brand_assets.h"
 #include "ui/charts/plot_widget.h"
 #include "ui/checkbox_style.h"
 #include "ui/controls/panel_resize_handle.h"
+#include "ui/controls/sample_time_edit.h"
 #include "ui/custom_combo.h"
 #include "ui/detection/detection_card.h"
 #include "ui/detection/detection_panel.h"
@@ -199,9 +201,9 @@ QString channelRelationLabel(ChannelSourceRelation relation) {
     case ChannelSourceRelation::Missing:
       return "来源已删除或缺失";
     case ChannelSourceRelation::Rejected:
-      return "来源已拒绝";
+      return "来源质量：已忽略";
     case ChannelSourceRelation::Unconfirmed:
-      return "活动段尚未确认";
+      return "旧版段确认记录；保留创建快照";
     case ChannelSourceRelation::LegacyNeedsReview:
       return "旧版来源待复核";
   }
@@ -1085,9 +1087,9 @@ void MainWindow::buildWorkspace() {
   metaRow->addStretch();
   extract_ = push("基于所选标记创建窄带通道 →", "extract", metaRow);
   extract_->setProperty("uiRole", "primary");
+  extract_->setProperty("preserveParameterDrafts", true);
   extract_->setFixedHeight(24);
   connect(extract_, &QPushButton::clicked, this, [this] {
-    cancelInteractions(false);
     showChannelDialog();
   });
   static_cast<QVBoxLayout*>(panels_[2]->layout())->addWidget(meta);
@@ -1172,6 +1174,8 @@ void MainWindow::buildWorkspace() {
   layerRow->addWidget(annotations_->layerWidget());
   connect(annotations_, &AnnotationPanel::changed, this, [this] { refresh(); });
   connect(annotations_, &AnnotationPanel::message, this, &MainWindow::log);
+  connect(annotations_, &AnnotationPanel::createChannelRequested, this,
+          [this] { showChannelDialog(); });
   connect(annotations_, &AnnotationPanel::hoverChanged, this,
           [this](const QString& id, const QString& segment) {
             if (auto* file = session_.activeFile())
@@ -1681,6 +1685,9 @@ void MainWindow::buildWorkspace() {
                       id.toStdString()) == f->selectedMarkIds.end())
           selectMark(id, Qt::NoModifier);
         QMenu menu(this);
+        auto* create = menu.addAction("创建窄带通道…", this,
+                                      [this] { showChannelDialog(); });
+        create->setObjectName("annotationTreeCreateChannelAction");
         menu.addAction("重命名当前标记", this, &MainWindow::renameMark);
         menu.addAction("定位当前标记", this, &MainWindow::locateMark);
         menu.addAction(QString("删除所选标记 (%1)")
@@ -1727,6 +1734,8 @@ void MainWindow::buildWorkspace() {
         [this](const QString& text) { statusBar()->showMessage(text, 2500); });
     connect(plot, &PlotWidget::markRenameRequested, this,
             &MainWindow::renameMark);
+    connect(plot, &PlotWidget::annotationChannelRequested, this,
+            [this] { showChannelDialog(); });
     connect(plot, &PlotWidget::markDeleteRequested, this,
             &MainWindow::deleteMarks);
     connect(plot, &PlotWidget::widebandDetectionRequested, this,
@@ -2954,22 +2963,11 @@ void MainWindow::refresh() {
                    0, false));
     const auto* mark = findMark(*file, file->activeMarkId);
     const auto* segment = mark ? activeSegment(*mark) : nullptr;
-    Channel sourceProbe;
-    const auto binding =
-        segment ? session_.annotations().bindChannelSource(
-                      *file, sourceProbe, mark->id, segment->id)
-                : AnnotationResult{false, false, {}, "请选择已确认的活动段"};
-    const bool confirmable =
-        mark && segment && mark->reviewStatus != ReviewStatus::Rejected &&
-        annotationSourceCurrent(*file, *mark) &&
-        validateSegment(*segment, annotationBounds(file->metadata), true).ok;
-    extract_->setEnabled(confirmable && file->metadata.sampleFormat.structure !=
-                                            SampleStructure::Real);
+    extract_->setEnabled(!file->selectedMarkIds.empty());
     extract_->setToolTip(
-        file->metadata.sampleFormat.structure == SampleStructure::Real
-            ? "实数 ADC 尚未实现解析信号转换，不能创建复数 DDC 通道"
-        : confirmable ? "打开通道参数；创建前须确认当前活动段有效"
-                      : q(binding.error));
+        file->selectedMarkIds.size() > 1
+            ? "打开配置后明确选择一个来源对象；不会合并所选对象。"
+            : "打开通道配置；质量标记为可选，按实际来源与 DSP 条件校验。");
     if (mark) {
       const auto geometry =
           segment ? segment->range : mark->observation.value_or(file->view);
@@ -3067,7 +3065,9 @@ void MainWindow::locateActiveChannelSource() {
 }
 
 void MainWindow::showChannelDialog(const QString& channelId) {
-  cancelInteractions(false);
+  // Opening a modal operation must leave a parent-window annotation draft
+  // intact. Only chart gestures need to end here.
+  if (main_) main_->cancelGesture(false);
   auto* file = session_.activeFile();
   const bool editing = !channelId.isEmpty();
   Channel original;
@@ -3082,139 +3082,165 @@ void MainWindow::showChannelDialog(const QString& channelId) {
     if (found == file->channels.end()) return;
     original = *found;
   }
-  if (!file || file->marks.empty()) {
-    QMessageBox::information(this, "创建窄带通道",
-                             "请先为 IQ 源添加至少一个信号标记。");
-    return;
-  }
+  if (!file) return;
+  const auto fileId = file->metadata.id;
+  const auto generation = session_.projectGeneration();
+  const auto sampleChannel = file->metadata.sampleFormat.selectedChannel;
+  const auto resolveFile = [this, fileId, generation,
+                            sampleChannel]() -> FileState* {
+    if (generation != session_.projectGeneration()) return nullptr;
+    for (auto& current : session_.project().files)
+      if (current.metadata.id == fileId &&
+          current.metadata.sampleFormat.selectedChannel == sampleChannel)
+        return &current;
+    return nullptr;
+  };
 
   auto* dialog = new QDialog(this);
   dialog->setObjectName("channelConfigDialog");
-  dialog->setWindowTitle(editing ? "修改窄带通道" : "从源标记创建窄带通道");
+  dialog->setWindowTitle(editing ? "修改窄带通道" : "创建窄带通道");
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->setModal(true);
-  dialog->setMinimumWidth(560);
+  dialog->setMinimumWidth(620);
   auto* outer = new QVBoxLayout(dialog);
   outer->setContentsMargins(20, 17, 20, 16);
-  outer->setSpacing(10);
+  outer->setSpacing(9);
   auto* intro = label(
-      editing
-          ? "修改将作为一个配置事务提交；取消不会改变现有通道。"
-          : "选择一个来源标记并设置真实 DDC 参数。预览和校验通过后才创建通道。",
+      editing ? "保留创建时不可变来源快照；参数作为一次配置事务应用。"
+              : "三类来源使用同一通道配置；质量标记可选，不作为创建前置条件。",
       {}, "help");
   intro->setWordWrap(true);
   outer->addWidget(intro);
   auto* form = new QFormLayout;
-  form->setSpacing(9);
+  form->setSpacing(7);
   form->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
   auto* name = new QLineEdit(
       editing ? q(original.name)
-              : QStringLiteral("窄带通道 %1").arg(file->channels.size() + 1));
+              : QString("窄带通道 %1").arg(file->channels.size() + 1));
   name->setObjectName("channelName");
   auto* sourceMark = new QComboBox;
   sourceMark->setObjectName("channelSourceMark");
-  const auto addSource = [&](const Annotation& mark) {
-    if (sourceMark->findData(q(mark.id)) >= 0) return;
-    if (!editing) {
-      const auto* segment = activeSegment(mark);
-      if (mark.deleted || mark.reviewStatus == ReviewStatus::Rejected ||
-          !segment ||
-          !validateSegment(*segment, annotationBounds(file->metadata), true))
-        return;
-    }
+  sourceMark->setProperty("preserveParameterDrafts", true);
+  sourceMark->setMinimumContentsLength(22);
+  sourceMark->setSizeAdjustPolicy(
+      QComboBox::AdjustToMinimumContentsLengthWithIcon);
+  const bool multiple = !editing && file->selectedMarkIds.size() > 1;
+  sourceMark->addItem(
+      multiple ? "当前多选；请明确选择一个来源对象" : "请选择一个来源对象",
+      QString{});
+  const auto addSource = [&](const Annotation& annotation) {
+    if (!annotationInContext(*file, annotation) ||
+        sourceMark->findData(q(annotation.id)) >= 0)
+      return;
+    const auto kind = annotation.sourceKind == AnnotationSource::Manual ? "手动"
+                      : annotation.sourceKind == AnnotationSource::Algorithm
+                          ? "算法"
+                          : "原始标签";
     sourceMark->addItem(
-        q(mark.name) + " · " +
-            timeRange(mark.range.time, file->metadata.sampleRateHz) + " · " +
-            frequencyRange(mark.range.frequency),
-        q(mark.id));
+        QString("%1 · %2 · %3").arg(q(annotation.name), kind, q(annotation.id)),
+        q(annotation.id));
   };
-  const auto preferredId = editing ? original.sourceMarkId : file->activeMarkId;
-  if (const auto* preferred = findAnnotation(*file, preferredId))
-    addSource(*preferred);
-  if (!editing)
-    for (const auto& mark : file->marks) {
-      if (sourceMark->count() >= 200) break;
-      addSource(mark);
+  if (editing) {
+    if (const auto* annotation = findAnnotation(*file, original.sourceMarkId))
+      addSource(*annotation);
+    if (sourceMark->findData(q(original.sourceMarkId)) < 0)
+      sourceMark->addItem(original.sourceSnapshot
+                              ? q(original.sourceSnapshot->name)
+                              : q(original.sourceMarkId),
+                          q(original.sourceMarkId));
+  } else {
+    if (!multiple)
+      if (const auto* preferred = findAnnotation(*file, file->activeMarkId))
+        addSource(*preferred);
+    for (const auto& id : file->selectedMarkIds) {
+      if (sourceMark->count() > 200) break;
+      if (const auto* annotation = findAnnotation(*file, id))
+        addSource(*annotation);
     }
+    if (!multiple)
+      for (const auto& annotation : file->marks) {
+        if (sourceMark->count() > 200) break;
+        addSource(annotation);
+      }
+  }
   sourceMark->setEnabled(!editing);
   sourceMark->setToolTip(
-      editing ? "保留创建时的来源修订和提取时段"
-              : "优先显示当前活动段；其余记录可先在标记表中选择，再创建通道");
-  if (editing)
-    sourceMark->setCurrentIndex(
-        std::max(0, sourceMark->findData(q(original.sourceMarkId))));
-  else if (!file->activeMarkId.empty())
-    sourceMark->setCurrentIndex(sourceMark->findData(q(file->activeMarkId)));
-  const auto sampled = fullRange(file->metadata).frequency;
+      "一次明确选择一个来源；多选不会自动合并或取最后一行。来源列表最多显示 "
+      "200 个对象，可从标记表重新选择。");
+  sourceMark->setCurrentIndex(
+      editing    ? sourceMark->findData(q(original.sourceMarkId))
+      : multiple ? 0
+                 : std::max(0, sourceMark->findData(q(file->activeMarkId))));
+  auto* sourceSegment = new QComboBox;
+  sourceSegment->setObjectName("channelSourceSegment");
+  sourceSegment->setProperty("preserveParameterDrafts", true);
+  auto* bindingKind = label({}, "channelBindingKind", "help");
+  bindingKind->setWordWrap(true);
+  auto* sourceSummary = label({}, "channelSourceSummary", "help");
+  sourceSummary->setWordWrap(true);
+  auto* begin = new SampleTimeEdit(0, file->metadata.sampleRateHz);
+  auto* end = new SampleTimeEdit(0, file->metadata.sampleRateHz);
+  begin->setObjectName("channelRangeStartMilliseconds");
+  end->setObjectName("channelRangeEndMilliseconds");
+  begin->setEnabled(!editing);
+  end->setEnabled(!editing);
+  auto* actualRange = label({}, "channelActualSourceRange", "help");
+  actualRange->setWordWrap(true);
   auto* center = new ParameterDoubleSpinBox;
   center->setObjectName("channelCenterMHz");
-  center->setRange(sampled.lowerHz / 1e6, sampled.upperHz / 1e6);
-  center->setDecimals(6);
+  center->setRange(-1e6, 1e6);
+  center->setDecimals(9);
   center->setSingleStep(.1);
   center->setSuffix(" MHz");
   auto* bandwidth = new ParameterDoubleSpinBox;
   bandwidth->setObjectName("channelBandwidthMHz");
-  bandwidth->setRange(.000001, file->metadata.sampleRateHz / 1e6);
-  bandwidth->setDecimals(6);
+  bandwidth->setRange(0, 1e6);
+  bandwidth->setDecimals(9);
   bandwidth->setSingleStep(.1);
   bandwidth->setSuffix(" MHz");
   auto* outputRate = new ParameterDoubleSpinBox;
   outputRate->setObjectName("channelOutputRateMSps");
-  outputRate->setRange(.000001,
-                       std::max(.000002, file->metadata.sampleRateHz / 1e6));
-  outputRate->setDecimals(6);
+  outputRate->setRange(0, 4e9 / 1e6);
+  outputRate->setDecimals(9);
   outputRate->setSingleStep(1);
   outputRate->setSuffix(" MS/s");
   auto* timeMode = new QComboBox;
   timeMode->setObjectName("channelTimeScope");
-  timeMode->addItems({"已确认的活动段", "完整源文件（旧通道）"});
   timeMode->setEnabled(false);
+  auto* usePrefix = new QPushButton("显式使用可用前缀");
+  usePrefix->setObjectName("channelUseAvailablePrefix");
+  usePrefix->setProperty("preserveParameterDrafts", true);
+  usePrefix->setEnabled(!editing);
   auto* filter = new QComboBox;
   filter->setObjectName("channelFilter");
   filter->addItems({"快速预览 · 40 dB", "标准 · 60 dB", "高抑制 · 80 dB"});
+  filter->setCurrentIndex(editing ? static_cast<int>(original.filter)
+                                  : static_cast<int>(ChannelFilter::Standard));
   auto* preserveTime = new QCheckBox("保持源文件绝对时间显示");
   preserveTime->setObjectName("channelPreserveSourceTime");
   preserveTime->setChecked(!editing || original.preserveSourceTime);
-  auto* autoOpen = new QCheckBox("确认后打开窄带工作区");
+  auto* autoOpen = new QCheckBox("创建后打开窄带工作区");
   autoOpen->setObjectName("channelAutoOpen");
   autoOpen->setChecked(true);
-  auto* sourceConfirmed = new QCheckBox("已确认当前活动段有效");
-  sourceConfirmed->setObjectName("channelConfirmedSegment");
-  const auto* initialMark =
-      findMark(*file, sourceMark->currentData().toString().toStdString());
-  const auto* initialSegment =
-      initialMark ? activeSegment(*initialMark) : nullptr;
-  sourceConfirmed->setChecked(editing ||
-                              (initialSegment && initialSegment->confirmed));
-  sourceConfirmed->setEnabled(!editing);
-  if (editing) {
-    center->setValue(original.centerFrequencyHz / 1e6);
-    bandwidth->setValue(original.bandwidthHz / 1e6);
-    outputRate->setValue(original.outputSampleRateHz / 1e6);
-    timeMode->setCurrentIndex(original.wholeSource ? 1 : 0);
-    filter->setCurrentIndex(static_cast<int>(original.filter));
-  } else if (const auto* mark = findMark(
-                 *file, sourceMark->currentData().toString().toStdString())) {
-    center->setValue(
-        (mark->range.frequency.lowerHz + mark->range.frequency.upperHz) / 2e6);
-    bandwidth->setValue(std::max(
-        .001,
-        (mark->range.frequency.upperHz - mark->range.frequency.lowerHz) / 1e6));
-    outputRate->setValue(std::max(4.0, bandwidth->value() * 1.3));
-  }
   form->addRow("通道名称", name);
-  form->addRow("来源标记（单选）", sourceMark);
+  form->addRow("来源对象（单选）", sourceMark);
+  form->addRow("来源当前段", sourceSegment);
+  form->addRow("绑定方式", bindingKind);
+  form->addRow("来源说明", sourceSummary);
+  form->addRow("提取起始 / ms", begin);
+  form->addRow("提取结束 / ms", end);
+  form->addRow("实际提取范围", actualRange);
   form->addRow("射频中心", center);
   form->addRow("有效带宽", bandwidth);
   form->addRow("输出采样率", outputRate);
   form->addRow("提取时段", timeMode);
-  form->addRow("活动段确认", sourceConfirmed);
+  form->addRow(usePrefix);
   form->addRow("FIR 滤波", filter);
   form->addRow("时间坐标", preserveTime);
   outer->addLayout(form);
   auto* preview = label({}, "channelDspPlanPreview", "help");
   preview->setWordWrap(true);
-  preview->setMinimumHeight(58);
+  preview->setMinimumHeight(52);
   preview->setStyleSheet(
       "background:#0c1a2a;border:1px solid #29445e;padding:8px;color:#95c9dc;");
   outer->addWidget(preview);
@@ -3222,160 +3248,293 @@ void MainWindow::showChannelDialog(const QString& channelId) {
   validation->setWordWrap(true);
   validation->setStyleSheet("color:#ff9b8d;");
   outer->addWidget(validation);
+  outer->addWidget(autoOpen);
   auto* buttons = new QDialogButtonBox(
       QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
-  buttons->button(QDialogButtonBox::Ok)
-      ->setText(editing ? "应用通道参数" : "创建通道");
-  buttons->button(QDialogButtonBox::Ok)->setObjectName("confirmChannelConfig");
-  buttons->button(QDialogButtonBox::Cancel)->setText("取消");
-  outer->addWidget(buttons);
   auto* confirm = buttons->button(QDialogButtonBox::Ok);
-  auto validate = [this, file, editing, original, name, sourceMark, center,
-                   bandwidth, outputRate, timeMode, filter, preview, validation,
-                   confirm, sourceConfirmed] {
-    QString reason;
-    if (name->text().trimmed().isEmpty() || name->text().trimmed().size() > 80)
-      reason = "通道名称长度必须为 1–80 个字符。";
-    const auto markId = sourceMark->currentData().toString().toStdString();
-    const auto* mark = findMark(*file, markId);
-    if (!mark && reason.isEmpty()) reason = "来源标记已失效，请重新选择。";
-    if (!editing && !sourceConfirmed->isChecked() && reason.isEmpty())
-      reason = "必须先确认当前活动段有效；确认只作用于此段。";
-    const double fc = center->value() * 1e6, bw = bandwidth->value() * 1e6,
-                 fs = outputRate->value() * 1e6;
+  confirm->setText(editing ? "应用通道参数" : "创建通道");
+  confirm->setObjectName("confirmChannelConfig");
+  confirm->setAutoDefault(false);
+  buttons->button(QDialogButtonBox::Cancel)->setText("取消");
+  buttons->button(QDialogButtonBox::Cancel)->setAutoDefault(false);
+  outer->addWidget(buttons);
+  auto request = std::make_shared<AnnotationChannelRequest>();
+  // MHz controls are a rounded presentation. Keep the exact physical edges
+  // until a committed control change explicitly replaces them.
+  auto frequency = std::make_shared<FrequencyRange>();
+  const auto readRequest = [request, frequency, name, begin, end, outputRate,
+                            filter, preserveTime] {
+    auto current = *request;
+    current.name = name->text().trimmed().toStdString();
+    current.range = {{begin->sampleValue(), end->sampleValue()}, *frequency};
+    current.outputSampleRateHz = outputRate->value() * 1e6;
+    current.filter = static_cast<ChannelFilter>(filter->currentIndex());
+    current.preserveSourceTime = preserveTime->isChecked();
+    return current;
+  };
+  const auto validate = [resolveFile, editing, original, begin, end,
+                         readRequest, actualRange, preview, validation,
+                         confirm]() -> bool {
+    QString reason, field;
+    auto* currentFile = resolveFile();
+    const auto current = readRequest();
     Channel candidate = editing ? original : Channel{};
-    candidate.centerFrequencyHz = fc;
-    candidate.bandwidthHz = bw;
-    candidate.outputSampleRateHz = fs;
-    candidate.filter = static_cast<ChannelFilter>(filter->currentIndex());
-    if (mark) {
-      candidate.sourceMarkId = mark->id;
-      candidate.sourceTime = editing ? original.sourceTime : mark->range.time;
+    if (!currentFile) {
+      field = "source";
+      reason = "工程、文件或样本通道已切换，请重新打开配置。";
+    } else if (!begin->error().isEmpty() || !end->error().isEmpty()) {
+      field = !begin->error().isEmpty() ? "sourceTime.begin" : "sourceTime.end";
+      reason = !begin->error().isEmpty() ? begin->error() : end->error();
+    } else if (editing) {
+      if (const auto checked = validateChannelName(current.name); !checked) {
+        field = "name";
+        reason = q(checked.error);
+      }
+      candidate.name = current.name;
+      candidate.centerFrequencyHz =
+          (current.range.frequency.lowerHz + current.range.frequency.upperHz) /
+          2;
+      candidate.bandwidthHz =
+          current.range.frequency.upperHz - current.range.frequency.lowerHz;
+      candidate.outputSampleRateHz = current.outputSampleRateHz;
+      candidate.filter = current.filter;
+      candidate.preserveSourceTime = current.preserveSourceTime;
+    } else {
+      const auto checked =
+          prepareAnnotationChannel(*currentFile, current, candidate);
+      if (!checked) {
+        field = q(checked.field);
+        reason = q(checked.error);
+      }
     }
+    actualRange->setProperty("lowerHz", current.range.frequency.lowerHz);
+    actualRange->setProperty("upperHz", current.range.frequency.upperHz);
+    actualRange->setText(
+        QString("[%1, %2) samples · RF %3–%4 MHz")
+            .arg(current.range.time.begin)
+            .arg(current.range.time.end)
+            .arg(current.range.frequency.lowerHz / 1e6, 0, 'g', 12)
+            .arg(current.range.frequency.upperHz / 1e6, 0, 'g', 12));
     ChannelDspPlan plan;
     const bool planned =
-        reason.isEmpty() &&
-        makeChannelDspPlan(file->metadata, candidate, plan, reason);
-    if (reason.isEmpty() && !planned) reason = "DSP 参数校验未通过。";
+        reason.isEmpty() && makeChannelDspPlan(currentFile->metadata, candidate,
+                                               plan, reason, &field);
     if (planned) {
       std::size_t taps = 0;
-      for (const auto& stage : plan.stageCoefficients) taps += stage.size();
+      for (const auto& coefficients : plan.stageCoefficients)
+        taps += coefficients.size();
       preview->setText(
-          QString("DspPlan：过渡带 ±%1 kHz · 截止 %2 kHz · FIR %3 阶 / %4 taps "
-                  "· 有理重采样 L/M=%5/%6 · %7 dB 目标\n采样率约束：Fs′ ≥ BW + "
-                  "2Δf = %8 MS/s；窗口按需提取，不预扫描全时段。")
-              .arg(plan.transitionHz / 1e3, 0, 'f', 3)
-              .arg(plan.cutoffHz / 1e3, 0, 'f', 3)
-              .arg(taps ? taps - 1 : 0)
+          QString("来源 IQ → CPU DDC / FIR → 有理重采样\nFs %1 → %2 MS/s · "
+                  "过渡带 %3 kHz · FIR %4 taps · L/M=%5/%6 · %7 dB 目标")
+              .arg(plan.sourceRateHz / 1e6, 0, 'g', 12)
+              .arg(plan.outputRateHz / 1e6, 0, 'g', 12)
+              .arg(plan.transitionHz / 1e3, 0, 'g', 8)
               .arg(taps)
               .arg(plan.interpolation)
               .arg(plan.decimation)
-              .arg(plan.stopbandAttenuationDb, 0, 'f', 0)
-              .arg((bw + 2 * plan.transitionHz) / 1e6, 0, 'f', 3));
+              .arg(plan.stopbandAttenuationDb, 0, 'f', 0));
     } else {
       preview->setText(
-          QString("默认优先 4 MS/s；FIR、通带/过渡带和 L/M 约束均按实际 "
-                  "DspPlan 校验。"));
-      if (reason.isEmpty())
-        reason = QStringLiteral("当前设置不满足窄带处理要求。");
+          "DSP 计划尚不可执行；请根据字段原因调整配置。FIR 保护带 "
+          "15%，有理重采样 L、M ≤ 4096。");
     }
-    validation->setText(reason);
-    confirm->setEnabled(reason.isEmpty() && planned);
+    validation->setProperty("field", field);
+    validation->setText(reason.isEmpty() ? QString{} : field + "：" + reason);
+    confirm->setEnabled(planned && reason.isEmpty());
+    return planned && reason.isEmpty();
   };
-  connect(name, &QLineEdit::textChanged, dialog, [validate] { validate(); });
+  const auto loadSource = [resolveFile, generation, editing, original, request,
+                           frequency, sourceMark, sourceSegment, bindingKind,
+                           sourceSummary, begin, end, center, bandwidth,
+                           outputRate, timeMode,
+                           validate](const std::string& segmentId = {}) {
+    auto* currentFile = resolveFile();
+    if (!currentFile) {
+      validate();
+      return;
+    }
+    const auto id = sourceMark->currentData().toString().toStdString();
+    const auto* annotation = findAnnotation(*currentFile, id);
+    *request = annotationChannelRequest(
+        *currentFile, id, currentFile->view.time, generation, segmentId);
+    if (editing) {
+      request->annotationId = original.annotationId;
+      request->segmentId = original.segmentId;
+      request->sourceIdentity = original.sourceIdentity;
+      request->range = {
+          original.sourceTime,
+          {original.centerFrequencyHz - original.bandwidthHz / 2,
+           original.centerFrequencyHz + original.bandwidthHz / 2}};
+      request->outputSampleRateHz = original.outputSampleRateHz;
+      if (original.sourceSnapshot) {
+        request->bindingKind = original.sourceSnapshot->bindingKind;
+        request->boundRange = original.sourceSnapshot->boundRange.value_or(
+            original.sourceSnapshot->range);
+      }
+    }
+    {
+      const QSignalBlocker block(sourceSegment);
+      sourceSegment->clear();
+      if (annotation && !annotation->segments.empty()) {
+        const auto addSegment = [&](const Segment& segment) {
+          if (sourceSegment->findData(q(segment.id)) < 0)
+            sourceSegment->addItem(QString("%1 · %2–%3 samples")
+                                       .arg(q(segment.id))
+                                       .arg(segment.range.time.begin)
+                                       .arg(segment.range.time.end),
+                                   q(segment.id));
+        };
+        if (const auto* selected = findSegment(*annotation, request->segmentId))
+          addSegment(*selected);
+        for (const auto& segment : annotation->segments) {
+          if (sourceSegment->count() >= 200) break;
+          addSegment(segment);
+        }
+        sourceSegment->setCurrentIndex(
+            sourceSegment->findData(q(request->segmentId)));
+      } else {
+        sourceSegment->addItem("时间未定位；无算法活动段", QString{});
+      }
+      sourceSegment->setEnabled(!editing && annotation &&
+                                annotation->segments.size() > 1);
+    }
+    const bool userRange =
+        request->bindingKind == ChannelBindingKind::UserRange;
+    bindingKind->setText(
+        userRange ? "UserRange · 人工提取范围；不修改算法活动段或检测证据。"
+                  : "LocatedSegment · 明确当前段；可裁剪提取时段。");
+    QString sourceText =
+        annotation
+            ? QString("%1 · %2 · Fs %3 MS/s · 可用前缀 [0, %4) samples")
+                  .arg(q(annotation->name),
+                       annotation->sourceKind == AnnotationSource::Manual
+                           ? "手动"
+                       : annotation->sourceKind == AnnotationSource::Algorithm
+                           ? "算法"
+                           : "原始标签")
+                  .arg(currentFile->metadata.sampleRateHz / 1e6, 0, 'g', 12)
+                  .arg(availableSamples(currentFile->metadata))
+            : "请明确选择一个来源对象。";
+    if (annotation)
+      sourceText +=
+          QString(" · 质量：%1（可选）")
+              .arg(annotation->reviewStatus == ReviewStatus::Accepted ? "已采纳"
+                   : annotation->reviewStatus == ReviewStatus::Rejected
+                       ? "已忽略"
+                       : "待判断");
+    sourceSummary->setText(sourceText);
+    *frequency = request->range.frequency;
+    begin->setSampleValue(request->range.time.begin);
+    end->setSampleValue(request->range.time.end);
+    for (auto* control : {center, bandwidth, outputRate})
+      control->setProperty("parameterDraft", false);
+    {
+      const QSignalBlocker blockCenter(center), blockBandwidth(bandwidth),
+          blockRate(outputRate);
+      center->setValue((request->range.frequency.lowerHz +
+                        request->range.frequency.upperHz) /
+                       2e6);
+      bandwidth->setValue((request->range.frequency.upperHz -
+                           request->range.frequency.lowerHz) /
+                          1e6);
+      outputRate->setValue(request->outputSampleRateHz / 1e6);
+    }
+    timeMode->clear();
+    timeMode->addItem(userRange ? "人工指定时间；默认当前视区 ∩ 可用前缀"
+                                : "当前段内的实际裁剪时段");
+    validate();
+  };
+  // Keep the name separate from loadSource so switching a source never replaces
+  // a user-entered channel name.
+  loadSource();
+  begin->applied = validate;
+  end->applied = validate;
+  connect(sourceMark, &QComboBox::currentIndexChanged, dialog,
+          [loadSource] { loadSource(); });
+  connect(sourceSegment, &QComboBox::currentIndexChanged, dialog,
+          [sourceSegment, loadSource] {
+            loadSource(sourceSegment->currentData().toString().toStdString());
+          });
   connect(
-      sourceMark, &QComboBox::currentIndexChanged, dialog,
-      [this, editing, original, file, sourceMark, center, bandwidth,
-       sourceConfirmed, validate] {
-        if (!editing && sourceMark->currentIndex() >= 0)
-          if (const auto* mark = findMark(
-                  *file, sourceMark->currentData().toString().toStdString())) {
-            const auto* segment = activeSegment(*mark);
-            sourceConfirmed->setChecked(segment && segment->confirmed);
-            center->setValue((mark->range.frequency.lowerHz +
-                              mark->range.frequency.upperHz) /
-                             2e6);
-            bandwidth->setValue(std::max(.001, (mark->range.frequency.upperHz -
-                                                mark->range.frequency.lowerHz) /
-                                                   1e6));
-          }
+      usePrefix, &QPushButton::clicked, dialog,
+      [resolveFile, request, begin, end, validate] {
+        auto* currentFile = resolveFile();
+        if (!currentFile) {
+          validate();
+          return;
+        }
+        const auto prefix = availableSamples(currentFile->metadata);
+        const auto range =
+            request->bindingKind == ChannelBindingKind::LocatedSegment
+                ? TimeRange{std::min(request->boundRange.time.begin, prefix),
+                            std::min(request->boundRange.time.end, prefix)}
+                : TimeRange{0, prefix};
+        begin->setSampleValue(range.begin);
+        end->setSampleValue(range.end);
         validate();
       });
-  for (auto* control :
-       {static_cast<QWidget*>(center), static_cast<QWidget*>(bandwidth),
-        static_cast<QWidget*>(outputRate), static_cast<QWidget*>(timeMode),
-        static_cast<QWidget*>(filter)}) {
-    if (auto* spin = qobject_cast<QDoubleSpinBox*>(control))
-      connect(spin, &QDoubleSpinBox::valueChanged, dialog,
-              [validate] { validate(); });
-    else if (auto* combo = qobject_cast<QComboBox*>(control))
-      connect(combo, &QComboBox::currentIndexChanged, dialog,
-              [validate] { validate(); });
-  }
-  connect(sourceConfirmed, &QCheckBox::toggled, dialog,
+  connect(name, &QLineEdit::textChanged, dialog, [validate] { validate(); });
+  connect(center, &QDoubleSpinBox::valueChanged, dialog,
+          [frequency, validate](double value) {
+            const auto halfBandwidth =
+                (frequency->upperHz - frequency->lowerHz) / 2;
+            *frequency = {value * 1e6 - halfBandwidth,
+                          value * 1e6 + halfBandwidth};
+            validate();
+          });
+  connect(bandwidth, &QDoubleSpinBox::valueChanged, dialog,
+          [frequency, validate](double value) {
+            const auto centerHz = frequency->lowerHz +
+                                  (frequency->upperHz - frequency->lowerHz) / 2;
+            *frequency = {centerHz - value * 5e5, centerHz + value * 5e5};
+            validate();
+          });
+  connect(outputRate, &QDoubleSpinBox::valueChanged, dialog,
           [validate] { validate(); });
-  validate();
+  connect(filter, &QComboBox::currentIndexChanged, dialog,
+          [validate] { validate(); });
   connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
   connect(
       buttons, &QDialogButtonBox::accepted, dialog,
-      [this, dialog, editing, channelId, original, file, name, sourceMark,
-       center, bandwidth, outputRate, timeMode, filter, preserveTime, autoOpen,
-       sourceConfirmed, validation] {
-        const auto* mark =
-            findMark(*file, sourceMark->currentData().toString().toStdString());
-        if (!mark) return;
-        const auto range = editing ? original.sourceTime : mark->range.time;
-        bool ok = false;
+      [this, dialog, editing, channelId, original, resolveFile, readRequest,
+       validate, validation, autoOpen] {
+        if (!validate()) return;
+        auto* currentFile = resolveFile();
+        if (!currentFile) return;
+        const auto current = readRequest();
         if (editing) {
           auto updated = original;
-          updated.name = name->text().trimmed().toStdString();
-          updated.sourceMarkId = mark->id;
-          updated.centerFrequencyHz = center->value() * 1e6;
-          updated.bandwidthHz = bandwidth->value() * 1e6;
-          updated.outputSampleRateHz = outputRate->value() * 1e6;
-          updated.filter = static_cast<ChannelFilter>(filter->currentIndex());
-          updated.wholeSource = timeMode->currentIndex() == 1;
-          updated.preserveSourceTime = preserveTime->isChecked();
-          updated.sourceTime = range;
-          if (updated.visibleSourceTime.begin < range.begin ||
-              updated.visibleSourceTime.end > range.end) {
-            const auto preview = static_cast<SampleIndex>(std::max(
-                1.0,
-                std::min(4'000'000'000.0, file->metadata.sampleRateHz * .25)));
-            updated.visibleSourceTime = {
-                range.begin,
-                range.begin + std::min(range.end - range.begin, preview)};
-          }
+          updated.name = current.name;
+          updated.centerFrequencyHz = (current.range.frequency.lowerHz +
+                                       current.range.frequency.upperHz) /
+                                      2;
+          updated.bandwidthHz =
+              current.range.frequency.upperHz - current.range.frequency.lowerHz;
+          updated.outputSampleRateHz = current.outputSampleRateHz;
+          updated.filter = current.filter;
+          updated.preserveSourceTime = current.preserveSourceTime;
           updated.visibleBasebandFrequency = {-updated.outputSampleRateHz / 2,
                                               updated.outputSampleRateHz / 2};
-          ok = session_.updateChannel(channelId.toStdString(), updated);
-        } else {
-          if (!sourceConfirmed->isChecked()) return;
-          const auto confirmed = session_.annotations().confirmSegment(
-              *file, mark->id, mark->activeSegmentId);
-          if (!confirmed.ok) {
-            validation->setText(q(confirmed.error));
+          if (!session_.updateChannel(channelId.toStdString(), updated)) {
+            validation->setProperty("field", "channel");
+            validation->setText(
+                "channel：通道身份、创建时段或快照已变化，请重新打开配置。");
             return;
           }
-          const auto id = session_.createChannel(
-              name->text().trimmed().toStdString(), mark->id,
-              center->value() * 1e6, bandwidth->value() * 1e6,
-              outputRate->value() * 1e6, range,
-              static_cast<ChannelFilter>(filter->currentIndex()),
-              timeMode->currentIndex() == 1, preserveTime->isChecked());
-          ok = !id.empty();
-        }
-        if (!ok) {
-          QMessageBox::warning(dialog, "通道参数未应用",
-                               "配置未能提交；当前通道仍保持原状态。");
-          return;
+        } else {
+          const auto created = session_.createAnnotationChannel(current);
+          if (!created) {
+            validation->setProperty("field", q(created.field));
+            validation->setText(q(created.field) + "：" + q(created.error));
+            return;
+          }
         }
         session_.project().narrowbandWorkspaceOpen = autoOpen->isChecked();
         workspaceStack_->setCurrentIndex(autoOpen->isChecked() ? 1 : 0);
         refresh();
         dialog->accept();
-        log(editing ? "窄带通道参数已更新，旧计算缓存将按配置版本失效"
-                    : "窄带通道已创建；真实 DDC 将按可见时段按需计算");
+        log(editing ? "窄带通道参数已更新；创建来源快照保持不变。"
+                    : "窄带通道已创建；真实 CPU DDC 按可见时段按需计算。");
       });
   dialog->open();
 }
@@ -4404,6 +4563,23 @@ bool MainWindow::addImportedSource(FileState file, QString& error) {
     error = "没有可用的完整样本帧";
     return false;
   }
+  const auto path = q(file.metadata.path);
+  if (path.endsWith(".wav", Qt::CaseInsensitive)) {
+    WavDescriptor descriptor;
+    if (!readWavDescriptor(path, descriptor, error)) return false;
+    if (file.metadata.sampleRateHz != descriptor.sampleRateHz ||
+        file.metadata.sampleFormat != descriptor.format ||
+        file.metadata.sampleCount != descriptor.sampleCount) {
+      error = QString(
+                  "WAV 导入元数据与容器冲突：Fs %1 / %2 Hz，物理样本数 %3 / "
+                  "%4；格式和数据边界须来自容器，请重新导入。")
+                  .arg(file.metadata.sampleRateHz, 0, 'g', 17)
+                  .arg(descriptor.sampleRateHz)
+                  .arg(file.metadata.sampleCount)
+                  .arg(descriptor.sampleCount);
+      return false;
+    }
+  }
   const auto metadata = file.metadata;
   const auto id = session_.addDemoFile(metadata);
   if (id.empty()) {
@@ -4426,6 +4602,13 @@ bool MainWindow::addImportedSource(FileState file, QString& error) {
 }
 
 bool MainWindow::addIqFile(const QString& path, QString* error) {
+  if (path.endsWith(".wav", Qt::CaseInsensitive)) {
+    if (error)
+      *error =
+          "WAV 请使用信号导入配置：Fs、格式与数据边界来自容器，RF "
+          "中心频率需人工确认。";
+    return false;
+  }
   QString message;
   const auto descriptor = describeInt16IqFile(path, message);
   if (!descriptor) {

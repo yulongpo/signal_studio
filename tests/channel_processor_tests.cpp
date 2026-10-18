@@ -1,18 +1,22 @@
-#include "infrastructure/channel_processor.h"
-
 #include <QCoreApplication>
 #include <QFile>
 #include <QTemporaryDir>
 #include <QtEndian>
-
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <complex>
 #include <iostream>
 #include <stdexcept>
+#include <thread>
 #include <utility>
 #include <vector>
+
+#include "infrastructure/channel_processor.h"
+#include "infrastructure/int16_iq_file.h"
+#include "infrastructure/source_loader.h"
+#include "infrastructure/wav_metadata.h"
 
 using namespace signalstudio;
 
@@ -205,12 +209,204 @@ void testDspPlanAndRealIqChain() {
     check(!makeChannelDspPlan(source, invalid, plan, error) && !error.isEmpty(),
           "A rate below bandwidth plus both transition bands must be rejected with a reason");
 }
+
+void testActuallyStoppedPrefixAndDdcBoundaries() {
+  QTemporaryDir directory;
+  const auto path = directory.filePath("stopped-prefix.iq");
+  constexpr SampleIndex total = 4 * 1024 * 1024;
+  QByteArray bytes(static_cast<qsizetype>(total * 4), '\0');
+  for (SampleIndex index = 0; index < total; ++index)
+    qToLittleEndian<qint16>(10000, bytes.data() + index * 4);
+  QFile file(path);
+  check(file.open(QIODevice::WriteOnly) && file.write(bytes) == bytes.size(),
+        "Could not write actual multi-block IQ source");
+  file.close();
+  SourceLoader loader(path, total);
+  SourceLoadSnapshot snapshot;
+  bool stopRequested = false;
+  const auto deadline =
+      std::chrono::steady_clock::now() + std::chrono::seconds(15);
+  do {
+    snapshot = loader.snapshot();
+    if (!stopRequested && snapshot.loaded > 0 && snapshot.loaded < total) {
+      loader.stop();
+      stopRequested = true;
+    }
+    if (snapshot.finished) break;
+    std::this_thread::yield();
+  } while (std::chrono::steady_clock::now() < deadline);
+  check(stopRequested && snapshot.finished && snapshot.error.isEmpty() &&
+            snapshot.loaded >= 1024 * 1024 && snapshot.loaded < total,
+        "Stopping an actual 4 MiB block loader must publish a nonempty Partial "
+        "prefix");
+
+  FileMetadata source;
+  source.id = "actually-stopped-source";
+  source.path = path.toStdString();
+  source.sampleRateHz = 1e6;
+  source.centerFrequencyHz = 100e6;
+  source.sampleCount = total;
+  source.demo = false;
+  source.availability = {snapshot.loaded,
+                         LoadStatus::Partial,
+                         0,
+                         snapshot.fingerprint.toStdString(),
+                         {}};
+  Channel channel;
+  channel.id = "partial-tail";
+  channel.centerFrequencyHz = 100e6;
+  channel.bandwidthHz = 100000;
+  channel.outputSampleRateHz = 1e6;
+  channel.sourceTime = {snapshot.loaded - 4096, snapshot.loaded};
+  ChannelDspPlan plan;
+  QString error, field;
+  check(makeChannelDspPlan(source, channel, plan, error, &field) &&
+            field.isEmpty(),
+        "A valid channel at the tail of an actually stopped prefix must plan");
+  ChannelSampleData tail;
+  check(processChannelSamples(source, channel, plan, {3000, 4096}, tail) &&
+            tail.samples.size() == 1096 && tail.rightPadded &&
+            tail.samples[100].real() > .25 && tail.samples[100].real() < .35,
+        "Real prefix-tail DDC must read actual IQ and preserve its right "
+        "padding");
+  ChannelSampleCache cache;
+  check(cache.process(source, channel, plan, {3000, 4096}, tail),
+        "The actual Partial tail must be cacheable");
+  auto beyond = channel;
+  ++beyond.sourceTime.end;
+  ChannelDspPlan invalidPlan;
+  check(
+      !makeChannelDspPlan(source, beyond, invalidPlan, error, &field) &&
+          field == "sourceTime" && !error.isEmpty(),
+      "The first unread sample must fail planning with its time-field reason");
+  check(!processChannelSamples(source, beyond, plan, {0, 1}, tail) &&
+            !cache.process(source, beyond, plan, {0, 1}, tail),
+        "Neither direct processing nor a populated cache may reuse a plan "
+        "beyond the readable prefix");
+  source.availability.status = LoadStatus::Loading;
+  const bool loadingPlanReady =
+      makeChannelDspPlan(source, channel, invalidPlan, error, &field);
+  check(loadingPlanReady,
+        qPrintable("Loading prefix planning failed: " + error));
+  Int16IqFile prefixReader;
+  const bool loadingReaderReady = prefixReader.open(source, error);
+  check(loadingReaderReady,
+        qPrintable("Loading prefix reader failed: " + error));
+  check(prefixReader.sampleCount() == snapshot.loaded &&
+            prefixReader.sampleAt(snapshot.loaded - 1).real() > .25 &&
+            prefixReader.sampleAt(snapshot.loaded) == std::complex<double>{},
+        "A Loading reader must expose the last available sample and refuse "
+        "the first unread physical sample");
+  std::vector<std::complex<float>> boundary;
+  const auto readableSource = prefixReader.spectralSource();
+  check(readableSource.read({snapshot.loaded - 1, snapshot.loaded}, boundary,
+                            {}) &&
+            boundary.size() == 1 && boundary.front().real() > .25 &&
+            !readableSource.read({snapshot.loaded, snapshot.loaded + 1},
+                                 boundary, {}),
+        "Loading spectral reads must enforce the same exact prefix boundary");
+  check(
+      processChannelSamples(source, channel, invalidPlan, {3000, 4096}, tail) &&
+          tail.samples.size() == 1096 && tail.rightPadded &&
+          tail.samples[100].real() > .25 && tail.samples[100].real() < .35,
+      "Loading status alone must not disable an already readable frozen "
+      "prefix");
+  source.availability.availableSamples = 0;
+  check(!prefixReader.open(source, error) && error.contains("前缀") &&
+            !processChannelSamples(source, channel, plan, {0, 1}, tail),
+        "Permitting a readable Loading prefix must not permit an empty one");
+  source.availability.availableSamples = snapshot.loaded;
+  source.availability.status = LoadStatus::Failed;
+  source.availability.error = "fixture storage read failure";
+  check(!prefixReader.open(source, error) &&
+            error.contains("fixture storage read failure"),
+        "The sample reader must retain the concrete failed-source reason");
+  check(!makeChannelDspPlan(source, channel, invalidPlan, error, &field) &&
+            field == "source" &&
+            error.contains("fixture storage read failure") &&
+            !processChannelSamples(source, channel, plan, {0, 1}, tail),
+        "Failed sources must retain their concrete I/O cause and stop "
+        "processing");
+}
+
+void testWavContainerAndRateFieldDiagnostics() {
+  QTemporaryDir directory;
+  const auto path = directory.filePath("source.wav");
+  constexpr int frames = 4096;
+  QByteArray bytes(44 + frames * 4, '\0');
+  const auto putText = [&](int offset, const char* text) {
+    std::copy_n(text, 4, bytes.data() + offset);
+  };
+  putText(0, "RIFF");
+  qToLittleEndian<quint32>(bytes.size() - 8, bytes.data() + 4);
+  putText(8, "WAVE");
+  putText(12, "fmt ");
+  qToLittleEndian<quint32>(16, bytes.data() + 16);
+  qToLittleEndian<quint16>(1, bytes.data() + 20);
+  qToLittleEndian<quint16>(2, bytes.data() + 22);
+  qToLittleEndian<quint32>(1'000'000, bytes.data() + 24);
+  qToLittleEndian<quint32>(4'000'000, bytes.data() + 28);
+  qToLittleEndian<quint16>(4, bytes.data() + 32);
+  qToLittleEndian<quint16>(16, bytes.data() + 34);
+  putText(36, "data");
+  qToLittleEndian<quint32>(frames * 4, bytes.data() + 40);
+  QFile file(path);
+  check(file.open(QIODevice::WriteOnly) && file.write(bytes) == bytes.size(),
+        "Could not write actual WAV diagnostic fixture");
+  file.close();
+  WavDescriptor descriptor;
+  QString error, field;
+  check(readWavDescriptor(path, descriptor, error), "WAV fixture must parse");
+  FileMetadata source;
+  source.id = "wav-source";
+  source.path = path.toStdString();
+  source.sampleRateHz = descriptor.sampleRateHz;
+  source.centerFrequencyHz = 100e6;
+  source.sampleCount = descriptor.sampleCount;
+  source.sampleFormat = descriptor.format;
+  source.demo = false;
+  Channel channel;
+  channel.centerFrequencyHz = source.centerFrequencyHz;
+  channel.bandwidthHz = 100000;
+  channel.outputSampleRateHz = 1e6;
+  channel.sourceTime = {0, frames};
+  ChannelDspPlan plan;
+  check(makeChannelDspPlan(source, channel, plan, error, &field),
+        "Container-derived metadata must produce a real WAV DSP plan");
+  const auto correctSource = source;
+  source.sampleRateHz = 2e6;
+  check(!makeChannelDspPlan(source, channel, plan, error, &field) &&
+            field == "source" && error.contains("WAV") &&
+            error.contains("2000000") && error.contains("1000000") &&
+            source.sampleRateHz == 2e6,
+        "Legacy conflicting Fs must report both values without silently "
+        "repairing coordinates");
+  source = correctSource;
+  source.sampleFormat.headerBytes = 0;
+  check(!makeChannelDspPlan(source, channel, plan, error, &field) &&
+            field == "source" && error.contains("格式"),
+        "Conflicting WAV format/data boundaries must identify the physical "
+        "source");
+  source = correctSource;
+  channel.outputSampleRateHz = 1'000'003;
+  check(
+      !makeChannelDspPlan(source, channel, plan, error, &field) &&
+          field == "outputSampleRateHz" && error.contains("4096"),
+      "Unsupported real rational-resampling ratios must identify output rate");
+  channel.outputSampleRateHz = 1e6;
+  channel.centerFrequencyHz = 100.45e6;
+  check(!makeChannelDspPlan(source, channel, plan, error, &field) &&
+            field == "frequency" && error.contains("过渡带"),
+        "FIR protection-band overflow must identify frequency");
+}
 } // namespace
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
     try {
         testDspPlanAndRealIqChain();
+        testActuallyStoppedPrefixAndDdcBoundaries();
+        testWavContainerAndRateFieldDiagnostics();
         std::cout << "PASS DDC/FIR/resampling, source mapping, chunk invariance, PSD and STFT\n";
     } catch (const std::exception& exception) {
         std::cerr << "FAIL " << exception.what() << '\n';

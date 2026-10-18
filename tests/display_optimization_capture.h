@@ -45,7 +45,10 @@ QJsonObject verifyWindowChrome(MainWindow& window, QScreen* screen) {
         QTest::qWait(1000); input.join(); QCoreApplication::processEvents();
     };
     const auto beforeMove=window.geometry(); nativeDrag(window.menuBar(),blank,54,36);
-    require(window.geometry().topLeft()!=beforeMove.topLeft() && window.screen()==screen,"System title drag did not move the window on screen 2");
+    require(window.geometry().topLeft() != beforeMove.topLeft() &&
+                window.screen() == screen,
+            "System title drag did not move the window on the selected native "
+            "monitor");
     result["moved"]=rectJson(window.geometry()); result["systemMove"]=true;
     const auto beforeResize=window.geometry(); nativeDrag(&window,QPoint(window.width()-2,window.height()/2),60,0);
     require(window.width()>beforeResize.width() && window.screen()==screen,QString("System edge resize failed: before=%1 after=%2 edges=%3 started=%4").arg(beforeResize.width()).arg(window.width()).arg(window.property("windowResizeEdges").toInt()).arg(window.property("windowSystemResizeStarted").toBool()));

@@ -71,6 +71,53 @@ AnnotationValidation validateRange(ViewRange range, FrequencyFrame frame,
 }
 }  // namespace
 
+AnnotationValidation validateChannelName(std::string_view name) {
+  std::size_t units = 0;
+  bool hasText = false;
+  for (std::size_t offset = 0; offset < name.size();) {
+    const auto lead = static_cast<unsigned char>(name[offset++]);
+    std::uint32_t codepoint = lead;
+    std::size_t trailing = 0;
+    if (lead >= 0xc2 && lead <= 0xdf) {
+      codepoint &= 0x1f;
+      trailing = 1;
+    } else if (lead >= 0xe0 && lead <= 0xef) {
+      codepoint &= 0x0f;
+      trailing = 2;
+    } else if (lead >= 0xf0 && lead <= 0xf4) {
+      codepoint &= 0x07;
+      trailing = 3;
+    } else if (lead > 0x7f) {
+      return invalid("通道名称不是有效的 UTF-8 文本。");
+    }
+    if (trailing > name.size() - offset)
+      return invalid("通道名称不是有效的 UTF-8 文本。");
+    for (std::size_t index = 0; index < trailing; ++index) {
+      const auto next = static_cast<unsigned char>(name[offset++]);
+      if ((next & 0xc0) != 0x80)
+        return invalid("通道名称不是有效的 UTF-8 文本。");
+      codepoint = (codepoint << 6) | (next & 0x3f);
+    }
+    if ((trailing == 2 && codepoint < 0x800) ||
+        (trailing == 3 && codepoint < 0x10000) || codepoint > 0x10ffff ||
+        (codepoint >= 0xd800 && codepoint <= 0xdfff))
+      return invalid("通道名称不是有效的 UTF-8 文本。");
+    units += codepoint >= 0x10000 ? 2 : 1;
+    if (units > channelNameUtf16Limit)
+      return invalid("通道名称最多 80 个字符（补充平面字符计为 2 个）。");
+    // Unicode White_Space, matching QString::trimmed() for valid scalar text.
+    const bool whitespace =
+        (codepoint >= 0x09 && codepoint <= 0x0d) || codepoint == 0x20 ||
+        codepoint == 0x85 || codepoint == 0xa0 || codepoint == 0x1680 ||
+        (codepoint >= 0x2000 && codepoint <= 0x200a) || codepoint == 0x2028 ||
+        codepoint == 0x2029 || codepoint == 0x202f || codepoint == 0x205f ||
+        codepoint == 0x3000;
+    hasText = hasText || !whitespace;
+  }
+  return hasText ? AnnotationValidation{}
+                 : invalid("通道名称必须包含有效文本。");
+}
+
 Annotation::Annotation(std::string identifier, std::string displayName,
                        ViewRange initialRange)
     : id(std::move(identifier)),
@@ -268,9 +315,9 @@ bool segmentCanCreateChannel(const Annotation& annotation,
                   });
   return !annotation.deleted &&
          (annotation.reviewStatus == ReviewStatus::Pending ||
-          annotation.reviewStatus == ReviewStatus::Accepted) &&
-         currentRevision && segment && segment->confirmed &&
-         knownTime(segment->timeQuality) &&
+          annotation.reviewStatus == ReviewStatus::Accepted ||
+          annotation.reviewStatus == ReviewStatus::Rejected) &&
+         currentRevision && segment && knownTime(segment->timeQuality) &&
          knownFrequency(segment->frequencyQuality);
 }
 }  // namespace signalstudio

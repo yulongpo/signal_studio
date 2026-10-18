@@ -47,9 +47,9 @@ QString sourceName(AnnotationSource s) {
                                               : "算法";
 }
 QString reviewName(ReviewStatus s) {
-  return s == ReviewStatus::Accepted   ? "已接受"
-         : s == ReviewStatus::Rejected ? "已拒绝"
-                                       : "待复核";
+  return s == ReviewStatus::Accepted   ? "已采纳"
+         : s == ReviewStatus::Rejected ? "已忽略"
+                                       : "待判断";
 }
 QString timeQualityName(TimeQuality quality) {
   switch (quality) {
@@ -476,7 +476,7 @@ void AnnotationPanel::buildFilters(QVBoxLayout* outer) {
   bar->addWidget(source_);
   status_ = new QComboBox;
   status_->setObjectName("annotationReviewFilter");
-  status_->addItems({"全部复核", "待复核", "已接受", "已拒绝"});
+  status_->addItems({"全部质量", "待判断", "已采纳", "已忽略"});
   bar->addWidget(status_);
   run_ = new QComboBox;
   run_->setObjectName("annotationRunFilter");
@@ -537,21 +537,25 @@ void AnnotationPanel::buildReviewBar(QVBoxLayout* outer) {
   button(review, "删除所选标记", "deleteSelectedAnnotations", [this] {
     deleteSelected();
   })->setProperty("preserveParameterDrafts", true);
-  button(review, "接受所选", "acceptAnnotations", [this] {
-    if (auto* f = session_.activeFile())
-      action(session_.annotations().reviewBatch(*f, f->selectedMarkIds,
-                                                ReviewStatus::Accepted));
-  });
-  button(review, "拒绝所选", "rejectAnnotations", [this] {
-    if (auto* f = session_.activeFile())
-      action(session_.annotations().reviewBatch(*f, f->selectedMarkIds,
-                                                ReviewStatus::Rejected));
-  });
-  button(review, "撤回复核", "clearAnnotationReview", [this] {
-    if (auto* file = session_.activeFile())
-      action(session_.annotations().reviewBatch(*file, file->selectedMarkIds,
-                                                ReviewStatus::Pending));
-  });
+  auto* quality = button(review, "质量标记", "annotationQualityMenu", [] {});
+  quality->setProperty("preserveParameterDrafts", true);
+  quality->setToolTip("可选；仅用于筛选、导出和复查，不限制编辑或创建通道");
+  auto* qualityMenu = new QMenu(quality);
+  qualityMenu->setObjectName("annotationQualityActions");
+  quality->setMenu(qualityMenu);
+  const auto addQuality = [&](const QString& text, const char* name,
+                              ReviewStatus status) {
+    auto* choice = qualityMenu->addAction(text, this, [this, status] {
+      if (auto* file = session_.activeFile())
+        action(session_.annotations().reviewBatch(*file, file->selectedMarkIds,
+                                                  status));
+    });
+    choice->setObjectName(QString::fromLatin1(name));
+    choice->setProperty("preserveParameterDrafts", true);
+  };
+  addQuality("已采纳", "acceptAnnotations", ReviewStatus::Accepted);
+  addQuality("已忽略", "rejectAnnotations", ReviewStatus::Rejected);
+  addQuality("待判断", "clearAnnotationReview", ReviewStatus::Pending);
   button(review, "撤销标记", "undoAnnotations", [this] {
     if (auto* f = session_.activeFile())
       action(session_.annotations().undo(*f));
@@ -617,6 +621,10 @@ void AnnotationPanel::buildTable(QVBoxLayout* outer) {
               }
             });
             menu.addAction("编辑当前范围…", this, &AnnotationPanel::editRange);
+            auto* channel =
+                menu.addAction("创建窄带通道…", this,
+                               &AnnotationPanel::createChannelRequested);
+            channel->setObjectName("annotationTableCreateChannelAction");
             auto* remove = menu.addAction("删除所选标记…", this,
                                           [this] { deleteSelected(); });
             remove->setObjectName("annotationTableDeleteAction");
@@ -703,13 +711,6 @@ void AnnotationPanel::buildInspector() {
   button(segmentNavigation, "下一段", "annotationNextSegment",
          [this] { selectAdjacentSegment(1); });
   details->addLayout(segmentNavigation);
-  auto* confirmation = new QHBoxLayout;
-  button(confirmation, "确认此段有效", "confirmAnnotationSegment", [this] {
-    if (auto* file = session_.activeFile())
-      action(session_.annotations().confirmSegment(*file, file->activeMarkId,
-                                                   file->activeSegmentId));
-  });
-  details->addLayout(confirmation);
   auto* form = new QGridLayout;
   begin_ = new AdaptiveValueEdit(UnitKind::Scalar, 0);
   end_ = new AdaptiveValueEdit(UnitKind::Scalar, 1);
@@ -1487,14 +1488,11 @@ void AnnotationPanel::refreshTableSelection(const FileState* file) {
                                 ? Qt::Checked
                                 : Qt::PartiallyChecked);
   const auto counts = file ? annotationCounts(*file) : AnnotationCounts{};
-  if (auto* accept = findChild<QPushButton*>("acceptAnnotations")) {
-    accept->setText(QString("✓ 接受所选 %1").arg(counts.selected));
-    accept->setEnabled(counts.selected != 0);
-  }
-  if (auto* reject = findChild<QPushButton*>("rejectAnnotations")) {
-    reject->setText(QString("× 拒绝所选 %1").arg(counts.selected));
-    reject->setEnabled(counts.selected != 0);
-  }
+  findChild<QPushButton*>("annotationQualityMenu")
+      ->setEnabled(counts.selected != 0);
+  for (const auto* name :
+       {"acceptAnnotations", "rejectAnnotations", "clearAnnotationReview"})
+    findChild<QAction*>(name)->setEnabled(counts.selected != 0);
   count_->setText(
       QString("匹配 %1 / 总数 %2 / 已选 %3 · 页 %4/%5")
           .arg(counts.matching)
@@ -1533,21 +1531,14 @@ void AnnotationPanel::refreshInspector(const FileState* f) {
                   200;
     for (std::size_t i = offset; i < std::min(offset + 200, a->segments.size());
          ++i)
-      segments_->addItem(
-          QString("段 %1 · %2–%3 samples · %4")
-              .arg(i + 1)
-              .arg(a->segments[i].range.time.begin)
-              .arg(a->segments[i].range.time.end)
-              .arg(a->segments[i].confirmed ? "已确认" : "未确认"),
-          q(a->segments[i].id));
+      segments_->addItem(QString("段 %1 · %2–%3 samples")
+                             .arg(i + 1)
+                             .arg(a->segments[i].range.time.begin)
+                             .arg(a->segments[i].range.time.end),
+                         q(a->segments[i].id));
     segments_->setCurrentIndex(segments_->findData(q(a->activeSegmentId)));
   }
   const bool editable = a && session_.annotations().canEdit(*f, a->id);
-  inspector_->findChild<QPushButton*>("confirmAnnotationSegment")
-      ->setEnabled(
-          a && seg && !a->deleted &&
-          a->reviewStatus != ReviewStatus::Rejected && !seg->confirmed &&
-          validateSegment(*seg, annotationBounds(f->metadata), true).ok);
   begin_->setEnabled(editable && seg);
   end_->setEnabled(editable && seg);
   low_->setEnabled(editable && (seg || a->observation));

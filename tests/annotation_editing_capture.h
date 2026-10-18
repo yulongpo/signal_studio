@@ -25,8 +25,8 @@ void editingSelect(MainWindow& window, const std::string& id,
 }
 
 void editingScene(Capture& capture, const QString& name, QScreen* screen,
-                  QWidget* target = nullptr) {
-  widebandScene(capture, name, screen, target);
+                  QWidget* target = nullptr, bool requiresRenderedData = true) {
+  widebandScene(capture, name, screen, target, requiresRenderedData);
   auto record = capture.scenes.last().toObject();
   const auto& file = *capture.window.session().activeFile();
   record["activeAnnotationId"] = QString::fromStdString(file.activeMarkId);

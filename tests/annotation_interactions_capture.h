@@ -315,7 +315,7 @@ int runAnnotationInteractionsCapture(
     const QString& node, const QString& outputDirectory,
     const std::function<void(Capture&, QScreen*)>& captureScenes = {},
     int expectedScenes = 8) {
-  if ((node != "U1" && node != "U2") ||
+  if ((node != "U1" && node != "U2" && node != "U3") ||
       !QFileInfo(outputDirectory).isAbsolute() ||
       !QDir().mkpath(outputDirectory))
     return 2;
@@ -337,7 +337,7 @@ int runAnnotationInteractionsCapture(
                   {child<PlotWidget>(window, "navigationPlot"),
                    child<PlotWidget>(window, "auxPlot"),
                    child<PlotWidget>(window, "mainPlot")}};
-  auto* screen = QGuiApplication::screens().value(1);
+  auto* screen = nativeAcceptanceScreen();
   try {
     report["screen"] = widebandScreenJson(screen);
     require(
@@ -345,11 +345,9 @@ int runAnnotationInteractionsCapture(
             displayPixelSize(screen) == QSize(3840, 2160) &&
             screen->geometry().size() == QSize(2560, 1440) &&
             std::abs(screen->devicePixelRatio() - 1.5) < .001 &&
-            report["screen"].toObject()["friendlyName"].toString().compare(
-                "Redmi 27 NU", Qt::CaseInsensitive) == 0 &&
-            displayDeviceName(screen).endsWith("DISPLAY6", Qt::CaseInsensitive),
-        "Native acceptance requires connected display 2, Redmi 27 NU / "
-        "DISPLAY6, actual 3840x2160 / 150%");
+            !report["screen"].toObject()["friendlyName"].toString().isEmpty() &&
+            !displayDeviceName(screen).isEmpty(),
+        "Native acceptance requires the current actual 4K / 150% monitor");
     for (const auto* name :
          {"QT_SCALE_FACTOR", "QT_SCREEN_SCALE_FACTORS", "QT_FONT_DPI",
           "QT_DEVICE_PIXEL_RATIO", "QT_AUTO_SCREEN_SCALE_FACTOR",
@@ -365,13 +363,12 @@ int runAnnotationInteractionsCapture(
                              window.size() == QSize(2560, 1440);
                     },
                     5000),
-            "Native window did not fill the specified second screen");
+            "Native window did not fill the selected actual 4K monitor");
     QString error;
     const auto projectName = node.toLower() + "-native-project-" +
                              QUuid::createUuid().toString(QUuid::WithoutBraces);
     require(window.createProject(outputDirectory, projectName, &error), error);
-    const QString data =
-        "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-data";
+    const QString data = widebandRepresentativeDataPath();
     const auto meta = data.chopped(11) + ".sigmf-meta";
     require(
         widebandFileHash(data) ==
@@ -404,6 +401,21 @@ int runAnnotationInteractionsCapture(
       captureScenes(capture, screen);
     else
       interactionSelectionScenes(capture, screen);
+    if (node == "U3") {
+      const auto final = capture.scenes.last().toObject();
+      require(final["cpuDdcVerified"].toBool() &&
+                  final["ddcRuns"].toArray().size() == 3 &&
+                  final["v6Verified"].toBool() &&
+                  final["legacyV5BackupVerified"].toBool() &&
+                  final["originalEvidenceUnchanged"].toBool() &&
+                  final["unknownStillUnlocated"].toBool(),
+              "U3 lacks real DDC, migration or original-evidence checks");
+      for (const auto* key :
+           {"cpuDdcVerified", "ddcRuns", "v6Verified", "legacyV5BackupVerified",
+            "legacyBackupPath", "originalEvidenceUnchanged",
+            "unknownStillUnlocated", "projectPath"})
+        report[key] = final[key];
+    }
     report["renderEvidence"] = capture.evidence();
     report["fullScreen"] = window.isFullScreen();
     report["logicalWindowSize"] = sizeJson(window.size());

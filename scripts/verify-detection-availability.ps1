@@ -58,8 +58,11 @@ try {
         }
         $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
         if ($report.pass -ne $true -or $report.labelsManualHistoryUsable -ne $true -or
-            $report.modelInferenceVerified -ne $false -or $report.screen.connectedIndex -ne 2 -or
-            $report.screen.friendlyName -ne 'Redmi 27 NU' -or $report.screen.devicePath -notmatch 'DISPLAY6$') {
+            $report.modelInferenceVerified -ne $false -or $report.screen.connectedIndex -lt 1 -or
+            [string]::IsNullOrWhiteSpace($report.screen.friendlyName) -or
+            [string]::IsNullOrWhiteSpace($report.screen.devicePath) -or
+            $report.screen.pixelSize.width -ne 3840 -or $report.screen.pixelSize.height -ne 2160 -or
+            [Math]::Abs($report.screen.devicePixelRatio - 1.5) -gt 0.001) {
             throw "Availability evidence did not meet the required boundary: $mode"
         }
         Write-Host "Availability passed ($mode): $reportPath"

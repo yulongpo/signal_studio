@@ -28,13 +28,13 @@ try {
     $softwareSuffix = if ($SoftwareRenderer) { '-software' } else { '' }
     $mode = if ($Narrowband) { 'narrowband-' } else { '' }
     if (-not $ReportPath) {
-        $ReportPath = Join-Path $repoRoot "docs/acceptance/$($Configuration.ToLowerInvariant())-${mode}4k-display2${softwareSuffix}-package.json"
+        $ReportPath = Join-Path $repoRoot "docs/acceptance/$($Configuration.ToLowerInvariant())-${mode}4k-native${softwareSuffix}-package.json"
     }
     $reportPath = [IO.Path]::GetFullPath($ReportPath)
     New-Item -ItemType Directory -Path (Split-Path -Parent $reportPath) -Force | Out-Null
     $arguments = @()
     if ($Narrowband) { $arguments += @('--narrowband-demo', '--verify-narrowband-pages') } else { $arguments += '--demo-data' }
-    $arguments += @('--smoke-test', '--size', '2560x1440', '--screen', '2', '--full-screen', '--verify-4k-150', '--render-report', $reportPath, $renderOption)
+    $arguments += @('--smoke-test', '--size', '2560x1440', '--screen', '4k', '--full-screen', '--verify-4k-150', '--render-report', $reportPath, $renderOption)
     & $executable @arguments | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Standalone smoke test failed with exit code $LASTEXITCODE" }
     if (-not (Test-Path -LiteralPath $reportPath)) { throw "Renderer report was not produced: $reportPath" }

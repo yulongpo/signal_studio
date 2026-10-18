@@ -3254,6 +3254,10 @@ QMenu* PlotWidget::createContextMenu(const QPoint& point) {
       addMarkChoices(menu, overlaps, Qt::NoModifier);
     }
     if (file && findMark(*file, file->activeMarkId)) {
+      auto* channel = menu->addAction("创建窄带通道…");
+      channel->setObjectName("contextCreateChannelAction");
+      connect(channel, &QAction::triggered, this,
+              &PlotWidget::annotationChannelRequested);
       auto* rename = menu->addAction("重命名当前标记");
       rename->setObjectName("contextRenameAction");
       connect(rename, &QAction::triggered, this,

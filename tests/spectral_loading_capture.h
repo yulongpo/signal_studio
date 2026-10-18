@@ -3,14 +3,42 @@ int runSpectralLoadingCapture(const QString& directory,const QString& largeIq) {
     QDir output(directory);QDir().mkpath(output.absolutePath());
     QJsonObject report{{"pass",false},{"screens",screensJson()}};QJsonArray scenes;
     MainWindow window;
-    const auto save=[&](QString name){require(window.isFullScreen()&&isDisplayNumber(window.screen(),2),"Must capture display 2 fullscreen");const auto image=window.grab();require(image.size()==QSize(3840,2160),"Native 4K screenshot required");require(image.save(output.filePath(name+".png")),"Screenshot write failed");scenes.append(name+".png");};
+    const auto save = [&](QString name) {
+      require(
+          window.isFullScreen() && window.screen() == nativeAcceptanceScreen(),
+          "Must capture selected 4K display fullscreen");
+      const auto image = window.grab();
+      require(image.size() == QSize(3840, 2160),
+              "Native 4K screenshot required");
+      require(image.save(output.filePath(name + ".png")),
+              "Screenshot write failed");
+      scenes.append(name + ".png");
+    };
     const auto wideReady=[&]{return waitUntil([&]{for(const auto* p:window.findChildren<PlotWidget*>())if(p->isVisible()&&(!p->isDisplaySettled()||!p->gpuReady()))return false;return true;},30000);};
     const auto narrowReady=[&]{return waitUntil([&]{auto* w=window.findChild<NarrowbandWorkspace*>();return w&&w->visibleChartsSettled()&&w->visibleChartsGpuReady()&&window.findChild<QWidget*>("narrowbandPsdPanelChart")->property("psdComplete").toBool();},30000);};
     try {
-        auto* screen=QGuiApplication::screens().value(1);require(screen&&displayPixelSize(screen)==QSize(3840,2160)&&std::abs(screen->devicePixelRatio()-1.5)<.001,"Display 2 must be native 4K / 150%");
-        showFullScreenOnScreen(window,screen);require(QTest::qWaitForWindowExposed(&window,5000),"Native window not exposed");require(waitUntil([&]{return window.isFullScreen()&&window.screen()==screen&&window.size()==QSize(2560,1440);},5000),"Fullscreen placement failed");report["screen"]=screenJson(screen);
-        QString path=largeIq;
-        if(path.isEmpty()){path=output.filePath("loading_FS1Msps_BW800kHz_FC10MHz.dat");QFile f(path);require(f.open(QIODevice::WriteOnly)&&f.resize(256LL*1024*1024),"Loading fixture creation failed");}
+      auto* screen = nativeAcceptanceScreen();
+      require(screen && displayPixelSize(screen) == QSize(3840, 2160) &&
+                  std::abs(screen->devicePixelRatio() - 1.5) < .001,
+              "Selected 4K display must be native 4K / 150%");
+      showFullScreenOnScreen(window, screen);
+      require(QTest::qWaitForWindowExposed(&window, 5000),
+              "Native window not exposed");
+      require(waitUntil(
+                  [&] {
+                    return window.isFullScreen() && window.screen() == screen &&
+                           window.size() == QSize(2560, 1440);
+                  },
+                  5000),
+              "Fullscreen placement failed");
+      report["screen"] = screenJson(screen);
+      QString path = largeIq;
+      if (path.isEmpty()) {
+        path = output.filePath("loading_FS1Msps_BW800kHz_FC10MHz.dat");
+        QFile f(path);
+        require(f.open(QIODevice::WriteOnly) && f.resize(256LL * 1024 * 1024),
+                "Loading fixture creation failed");
+      }
         QString error;require(window.addIqFile(path,&error),error);auto* file=window.session().activeFile();
         require(waitUntil([&]{return file->metadata.availability.availableSamples>0;},10000),"No actual loading progress");
         require(file->metadata.availability.status==LoadStatus::Loading,"Loading completed before stop acceptance");
@@ -45,7 +73,9 @@ int runSpectralLoadingCapture(const QString& directory,const QString& largeIq) {
         dialog->windowHandle()->setScreen(window.screen());dialog->move(window.screen()->geometry().center()-dialog->rect().center());
         child<QCheckBox>(*dialog,"channelPreserveSourceTime")->setChecked(false);
         QTest::qWait(100);const auto dialogImage=dialog->grab();
-        require(dialog->screen()==window.screen()&&std::abs(dialogImage.devicePixelRatioF()-1.5)<.001,"Channel dialog must use display 2 native DPI");
+        require(dialog->screen() == window.screen() &&
+                    std::abs(dialogImage.devicePixelRatioF() - 1.5) < .001,
+                "Channel dialog must use selected 4K display native DPI");
         require(dialogImage.save(output.filePath("06-channel-config-checkboxes.png")),"Channel dialog screenshot write failed");
         report["channelDialog"]=QJsonObject{{"screen",screenJson(dialog->screen())},{"pixelSize",sizeJson(dialogImage.size())},{"devicePixelRatio",dialogImage.devicePixelRatioF()},{"parentFullScreen",window.isFullScreen()}};
         scenes.append("06-channel-config-checkboxes.png");dialog->reject();QTest::qWait(50);

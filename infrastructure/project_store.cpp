@@ -1,5 +1,6 @@
 #include "infrastructure/project_store.h"
 
+#include <QCryptographicHash>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -554,7 +555,7 @@ QJsonObject encodeProject(const Project& project, const QString& path) {
   }
   return {{QStringLiteral("schema"),
            QStringLiteral("signal-studio-native-project")},
-          {QStringLiteral("version"), 5},
+          {QStringLiteral("version"), 6},
           {QStringLiteral("name"), text(project.name)},
           {QStringLiteral("activeFileId"), text(project.activeFileId)},
           {QStringLiteral("activeChannelId"), text(project.activeChannelId)},
@@ -569,7 +570,7 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
           QStringLiteral("不支持的工程格式；需要 Signal Studio 原生工程"));
   const auto versionValue = number(root, "version");
   require(versionValue == 1 || versionValue == 2 || versionValue == 3 ||
-              versionValue == 4 || versionValue == 5,
+              versionValue == 4 || versionValue == 5 || versionValue == 6,
           QStringLiteral("不支持的原生工程版本"));
   const auto version = static_cast<int>(versionValue);
   Project project;
@@ -732,7 +733,13 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
       channelIds.insert(id);
       Channel channel;
       channel.id = utf8(id);
-      channel.name = utf8(string(channelData, "name", 80));
+      const auto channelName =
+          string(channelData, "name", static_cast<int>(channelNameUtf16Limit));
+      channel.name = utf8(channelName);
+      const auto validName = validateChannelName(channel.name);
+      require(validName.ok, text(validName.error));
+      require(text(channel.name) == channelName,
+              "通道名称包含无效的 Unicode 字符。");
       channel.sourceMarkId = utf8(sourceId);
       channel.centerFrequencyHz = number(channelData, "centerFrequencyHz");
       channel.bandwidthHz = number(channelData, "bandwidthHz");
@@ -916,8 +923,12 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
         QString why;
         const bool decoded = decodeAnnotationChannelSnapshot(
             channelData["annotationSource"].toObject(), file.metadata, snapshot,
-            why);
+            why, version);
         require(decoded, why);
+        // Pre-v6 snapshots retain their original binding range byte-for-value.
+        // Their saved DSP parameters independently preserve the extraction;
+        // neither range is regenerated from the current annotation or the
+        // other.
         require(snapshot.annotationId == channel.sourceMarkId,
                 "通道旧ID与新来源ID不一致");
         channel.annotationId = snapshot.annotationId;
@@ -995,6 +1006,71 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
   return project;
 }
 
+bool preserveUpgradeSnapshot(const QString& path, QString& error) {
+  QFile previous(path);
+  if (!previous.exists()) return true;
+  if (!previous.open(QIODevice::ReadOnly)) {
+    error = "无法读取升级前工程：" + previous.errorString();
+    return false;
+  }
+  if (previous.size() > maximumDocumentBytes) {
+    error = "升级前工程超过 32 MiB，不能安全保存快照。";
+    return false;
+  }
+  const auto bytes = previous.readAll();
+  if (previous.error() != QFileDevice::NoError) {
+    error = "读取升级前工程失败：" + previous.errorString();
+    return false;
+  }
+  previous.close();
+  const auto document = QJsonDocument::fromJson(bytes);
+  const auto root = document.object();
+  const auto version = root["version"].toDouble();
+  if (!document.isObject() ||
+      root["schema"] != "signal-studio-native-project" || version < 1 ||
+      version > 5 || std::floor(version) != version)
+    return true;
+
+  const auto hash = QString::fromLatin1(
+      QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex());
+  const auto base = path + ".pre-v6-v" +
+                    QString::number(static_cast<int>(version)) + "-" + hash;
+  for (int suffix = 0; suffix < 1000; ++suffix) {
+    const auto backupPath =
+        base + (suffix ? "-" + QString::number(suffix) : "") + ".bak";
+    QFile backup(backupPath);
+    if (backup.exists()) {
+      if (backup.open(QIODevice::ReadOnly) && backup.size() == bytes.size() &&
+          backup.readAll() == bytes)
+        return true;
+      // A pre-existing different file is never overwritten, even when its
+      // name happens to claim the same digest.
+      continue;
+    }
+    if (!backup.open(QIODevice::WriteOnly | QIODevice::NewOnly)) {
+      if (QFileInfo::exists(backupPath)) continue;
+      error = "升级前工程快照创建失败：" + backup.errorString();
+      return false;
+    }
+    const bool written = backup.write(bytes) == bytes.size() && backup.flush();
+    const auto why = backup.errorString();
+    backup.close();
+    if (!written) {
+      backup.remove();
+      error = "升级前工程快照写入失败：" + why;
+      return false;
+    }
+    QFile verified(backupPath);
+    if (!verified.open(QIODevice::ReadOnly) || verified.readAll() != bytes) {
+      error = "升级前工程快照校验失败，原工程保持不变。";
+      return false;
+    }
+    return true;
+  }
+  error = "升级前工程快照没有可用文件名，原工程保持不变。";
+  return false;
+}
+
 }  // namespace
 
 bool ProjectStore::save(const QString& path, const Project& project,
@@ -1002,6 +1078,12 @@ bool ProjectStore::save(const QString& path, const Project& project,
   error.clear();
   Project normalized = project;
   for (auto& source : normalized.files) {
+    for (const auto& channel : source.channels) {
+      if (const auto checked = validateChannelName(channel.name); !checked) {
+        error = text(checked.error);
+        return false;
+      }
+    }
     const auto migrated = attachLegacyAnnotations(source);
     if (!migrated.ok) {
       error = text(migrated.error);
@@ -1027,6 +1109,7 @@ bool ProjectStore::save(const QString& path, const Project& project,
     error = QStringLiteral("工程文件超过 32 MiB 上限");
     return false;
   }
+  if (!preserveUpgradeSnapshot(path, error)) return false;
   QSaveFile file(path);
   if (!file.open(QIODevice::WriteOnly)) {
     error = file.errorString();

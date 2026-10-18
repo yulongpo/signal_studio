@@ -45,14 +45,30 @@ int main(int argc,char* argv[]) {
     QApplication app(argc,argv);QApplication::setOrganizationName("Signal Studio");QApplication::setApplicationName("SignalStudio");QApplication::setApplicationVersion("0.1.0");
     app.setWindowIcon(signalstudio::BrandAssets::windowIcon());
     QCommandLineParser parser;parser.setApplicationDescription("A1.4.3 native UI with explicit demo charts");parser.addHelpOption();parser.addVersionOption();
-    parser.addOption({"smoke-test","Render the workspace, validate the three charts and exit."});
-    parser.addOption({"screenshot","Save a Qt-rendered workspace PNG and exit.","path"});
-    parser.addOption({"size","Logical workspace dimensions (2560x1440 at 150% produces a 4K capture).","WxH","2560x1440"});
-    parser.addOption({"verify-4k-150","Require a 2560x1440 logical workspace at device pixel ratio 1.5."});
-    parser.addOption({"screen","Select the 1-based connected screen number from --list-screens (validation uses 2).","number"});
-    parser.addOption({"full-screen","Display the workspace full screen on the selected monitor."});
-    parser.addOption({"list-screens","Print monitor names, dimensions and DPI, then exit."});
-    parser.addOption({"project","Open a native project folder or JSON at startup.","path"});
+    parser.addOption(
+        {"smoke-test",
+         "Render the workspace, validate the three charts and exit."});
+    parser.addOption(
+        {"screenshot", "Save a Qt-rendered workspace PNG and exit.", "path"});
+    parser.addOption({"size",
+                      "Logical workspace dimensions (2560x1440 at 150% "
+                      "produces a 4K capture).",
+                      "WxH", "2560x1440"});
+    parser.addOption(
+        {"verify-4k-150",
+         "Require a 2560x1440 logical workspace at device pixel ratio 1.5."});
+    parser.addOption({"screen",
+                      "Select a 1-based connected screen number or '4k' for "
+                      "the unique native 4K/150% monitor.",
+                      "number|4k"});
+    parser.addOption(
+        {"full-screen",
+         "Display the workspace full screen on the selected monitor."});
+    parser.addOption({"list-screens",
+                      "Print monitor names, dimensions and DPI, then exit."});
+    parser.addOption({"project",
+                      "Open a native project folder or JSON at startup.",
+                      "path"});
     parser.addOption({"demo-data","Load the three prototype demo files; normal startup is an empty project."});
     parser.addOption({"narrowband-demo","Open the packaged NB-A1.1 project with a real deterministic IQ source."});
     parser.addOption({"iq-file","Open an interleaved int16 IQ file at startup; FS/FC/BW are read from its filename.","path"});
@@ -72,29 +88,64 @@ int main(int argc,char* argv[]) {
             const auto path=parser.value("render-report");QDir().mkpath(QFileInfo(path).absolutePath());QFile file(path);
             if (!file.open(QIODevice::WriteOnly)||file.write(bytes)!=bytes.size())return 1;
         }
-        QTextStream(stdout)<<bytes;return 0;
+        QTextStream(stdout) << bytes;
+        return 0;
     }
     QScreen* targetScreen = nullptr;
     const auto targetNumber = parser.value("screen");
-    if (parser.isSet("screen")) {
-        bool valid = false; const auto number = targetNumber.toInt(&valid);
-        if (!valid || number < 1) {QTextStream(stderr)<<"Invalid --screen\n";return 2;}
-        for (auto* screen : QGuiApplication::screens())
-            if (signalstudio::isDisplayNumber(screen,number)) targetScreen=screen;
-        if (!targetScreen) {QTextStream(stderr)<<"Requested connected screen "<<number<<" is unavailable\n";return 2;}
+    if (parser.isSet("screen") && parser.value("screen") == "4k") {
+      targetScreen = signalstudio::nativeAcceptanceScreen();
+      if (!targetScreen) {
+        QTextStream(stderr)
+            << "A unique native 4K / 150% screen is required for --screen 4k\n";
+        return 2;
+      }
+    } else if (parser.isSet("screen")) {
+      bool valid = false;
+      const auto number = targetNumber.toInt(&valid);
+      if (!valid || number < 1) {
+        QTextStream(stderr) << "Invalid --screen\n";
+        return 2;
+      }
+      for (auto* screen : QGuiApplication::screens())
+        if (signalstudio::isDisplayNumber(screen, number))
+          targetScreen = screen;
+      if (!targetScreen) {
+        QTextStream(stderr)
+            << "Requested connected screen " << number << " is unavailable\n";
+        return 2;
+      }
     }
     if (parser.isSet("verify-4k-150")) {
-        if (!targetScreen || !signalstudio::isDisplayNumber(targetScreen,2) ||
-            targetScreen->geometry().size()!=QSize(2560,1440) || signalstudio::displayPixelSize(targetScreen)!=QSize(3840,2160) || qAbs(targetScreen->devicePixelRatio()-1.5)>.001) {
-            QTextStream(stderr)<<"4K/150% validation requires --screen 2 at native 3840x2160 / 150%\n";return 2;
-        }
+      if (!targetScreen ||
+          targetScreen->geometry().size() != QSize(2560, 1440) ||
+          signalstudio::displayPixelSize(targetScreen) != QSize(3840, 2160) ||
+          qAbs(targetScreen->devicePixelRatio() - 1.5) > .001) {
+        QTextStream(stderr) << "4K/150% validation requires a selected native "
+                               "3840x2160 / 150% screen\n";
+        return 2;
+      }
     }
     // All QRhi widgets in a window share one graphics API.
-    const auto renderer=parser.value("renderer");
-    if(renderer!="auto"&&renderer!="d3d11"&&renderer!="opengl"){QTextStream(stderr)<<"Unsupported --renderer\n";return 2;}
-    if(parser.isSet("require-gpu")&&parser.isSet("software-renderer")){QTextStream(stderr)<<"Conflicting renderer options\n";return 2;}
-    if(parser.isSet("iq-interaction-test")&&!parser.isSet("iq-file")){QTextStream(stderr)<<"--iq-interaction-test requires --iq-file\n";return 2;}
-    if(parser.isSet("narrowband-demo")&&(parser.isSet("demo-data")||parser.isSet("project"))){QTextStream(stderr)<<"--narrowband-demo cannot be combined with --demo-data or --project\n";return 2;}
+    const auto renderer = parser.value("renderer");
+    if (renderer != "auto" && renderer != "d3d11" && renderer != "opengl") {
+      QTextStream(stderr) << "Unsupported --renderer\n";
+      return 2;
+    }
+    if (parser.isSet("require-gpu") && parser.isSet("software-renderer")) {
+      QTextStream(stderr) << "Conflicting renderer options\n";
+      return 2;
+    }
+    if (parser.isSet("iq-interaction-test") && !parser.isSet("iq-file")) {
+      QTextStream(stderr) << "--iq-interaction-test requires --iq-file\n";
+      return 2;
+    }
+    if (parser.isSet("narrowband-demo") &&
+        (parser.isSet("demo-data") || parser.isSet("project"))) {
+      QTextStream(stderr) << "--narrowband-demo cannot be combined with "
+                             "--demo-data or --project\n";
+      return 2;
+    }
     if(parser.isSet("verify-narrowband-pages")&&!parser.isSet("narrowband-demo")){QTextStream(stderr)<<"--verify-narrowband-pages requires --narrowband-demo\n";return 2;}
     app.setProperty("softwareRenderer",parser.isSet("software-renderer"));app.setProperty("renderApi",renderer);
     signalstudio::MainWindow window;
@@ -217,26 +268,64 @@ int main(int argc,char* argv[]) {
                 quint64 visibleCaptureSamples=0, sampledCapturePixels=0;
                 if(!captureImage.isNull()){
                     const int stepX=std::max(1,captureImage.width()/128),stepY=std::max(1,captureImage.height()/128);
-                    for(int y=stepY/2;y<captureImage.height();y+=stepY)for(int x=stepX/2;x<captureImage.width();x+=stepX){
+                    for (int y = stepY / 2; y < captureImage.height();
+                         y += stepY)
+                      for (int x = stepX / 2; x < captureImage.width();
+                           x += stepX) {
                         ++sampledCapturePixels;
-                        if(qGray(captureImage.pixel(x,y))>8)++visibleCaptureSamples;
-                    }
+                        if (qGray(captureImage.pixel(x, y)) > 8)
+                          ++visibleCaptureSamples;
+                      }
                 }
-                const bool captureHasVisibleContent=sampledCapturePixels>0&&visibleCaptureSamples>=8;
-                const bool fourK=window.screen()==targetScreen&&targetScreen&&signalstudio::isDisplayNumber(targetScreen,2)&&
-                    targetScreen->geometry().size()==QSize(2560,1440)&&signalstudio::displayPixelSize(targetScreen)==QSize(3840,2160)&&window.isFullScreen()&&window.size()==QSize(2560,1440)&&
-                    qAbs(window.devicePixelRatioF()-1.5)<.001&&capture.size()==QSize(3840,2160)&&captureHasVisibleContent;
-                if(parser.isSet("verify-4k-150"))ok=ok&&fourK;
-                if(parser.isSet("screenshot")) {const auto path=parser.value("screenshot");QDir().mkpath(QFileInfo(path).absolutePath());ok=capture.save(path)&&ok;}
-                const auto* activeFile=window.session().activeFile();
+                const bool captureHasVisibleContent =
+                    sampledCapturePixels > 0 && visibleCaptureSamples >= 8;
+                const bool fourK =
+                    window.screen() == targetScreen && targetScreen &&
+                    targetScreen->geometry().size() == QSize(2560, 1440) &&
+                    signalstudio::displayPixelSize(targetScreen) ==
+                        QSize(3840, 2160) &&
+                    window.isFullScreen() &&
+                    window.size() == QSize(2560, 1440) &&
+                    qAbs(window.devicePixelRatioF() - 1.5) < .001 &&
+                    capture.size() == QSize(3840, 2160) &&
+                    captureHasVisibleContent;
+                if (parser.isSet("verify-4k-150")) ok = ok && fourK;
+                if (parser.isSet("screenshot")) {
+                  const auto path = parser.value("screenshot");
+                  QDir().mkpath(QFileInfo(path).absolutePath());
+                  ok = capture.save(path) && ok;
+                }
+                const auto* activeFile = window.session().activeFile();
                 QJsonObject activeFileEvidence;
-                if(activeFile) activeFileEvidence={{"name",QString::fromUtf8(activeFile->metadata.name.data(),static_cast<qsizetype>(activeFile->metadata.name.size()))},
-                    {"path",QString::fromUtf8(activeFile->metadata.path.data(),static_cast<qsizetype>(activeFile->metadata.path.size()))},
-                    {"sampleRateHz",activeFile->metadata.sampleRateHz},{"centerFrequencyHz",activeFile->metadata.centerFrequencyHz},
-                    {"declaredBandwidthHz",activeFile->metadata.declaredBandwidthHz},{"sampleCount",QString::number(activeFile->metadata.sampleCount)},
-                    {"durationSeconds",static_cast<double>(activeFile->metadata.sampleCount)/activeFile->metadata.sampleRateHz},
-                    {"realIq",!activeFile->metadata.demo},{"mainMode",activeFile->display.mainMode==signalstudio::MainMode::Waterfall?"waterfall":"timeFrequency"},
-                    {"auxiliaryMode",activeFile->display.auxiliaryMode==signalstudio::AuxiliaryMode::Psd?"psd":"waveform"}};
+                if (activeFile)
+                  activeFileEvidence = {
+                      {"name", QString::fromUtf8(
+                                   activeFile->metadata.name.data(),
+                                   static_cast<qsizetype>(
+                                       activeFile->metadata.name.size()))},
+                      {"path", QString::fromUtf8(
+                                   activeFile->metadata.path.data(),
+                                   static_cast<qsizetype>(
+                                       activeFile->metadata.path.size()))},
+                      {"sampleRateHz", activeFile->metadata.sampleRateHz},
+                      {"centerFrequencyHz",
+                       activeFile->metadata.centerFrequencyHz},
+                      {"declaredBandwidthHz",
+                       activeFile->metadata.declaredBandwidthHz},
+                      {"sampleCount",
+                       QString::number(activeFile->metadata.sampleCount)},
+                      {"durationSeconds",
+                       static_cast<double>(activeFile->metadata.sampleCount) /
+                           activeFile->metadata.sampleRateHz},
+                      {"realIq", !activeFile->metadata.demo},
+                      {"mainMode", activeFile->display.mainMode ==
+                                           signalstudio::MainMode::Waterfall
+                                       ? "waterfall"
+                                       : "timeFrequency"},
+                      {"auxiliaryMode", activeFile->display.auxiliaryMode ==
+                                                signalstudio::AuxiliaryMode::Psd
+                                            ? "psd"
+                                            : "waveform"}};
                 QJsonObject activeChannelEvidence;
                 if(const auto* channel=window.session().activeChannel())activeChannelEvidence={{"id",QString::fromUtf8(channel->id.data(),static_cast<qsizetype>(channel->id.size()))},
                     {"name",QString::fromUtf8(channel->name.data(),static_cast<qsizetype>(channel->name.size()))},{"centerFrequencyHz",channel->centerFrequencyHz},

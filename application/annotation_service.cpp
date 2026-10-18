@@ -9,8 +9,8 @@
 
 namespace signalstudio {
 namespace {
-AnnotationResult fail(std::string error) {
-  return {false, false, {}, std::move(error)};
+AnnotationResult fail(std::string error, std::string field = {}) {
+  return {false, false, {}, std::move(error), std::move(field)};
 }
 AnnotationResult success(std::string id = {}, bool changed = false) {
   return {true, changed, std::move(id), {}};
@@ -60,6 +60,13 @@ std::string defaultManualSourceId(const FileState& file) {
          std::to_string(file.metadata.sampleFormat.selectedChannel);
 }
 bool validId(const std::string& id) { return !id.empty() && id.size() <= 128; }
+ViewRange physicalRange(ViewRange range, FrequencyFrame frame, double center) {
+  if (frame == FrequencyFrame::Baseband) {
+    range.frequency.lowerHz += center;
+    range.frequency.upperHz += center;
+  }
+  return range;
+}
 auto annotationIndex(FileState& file) {
   std::unordered_map<std::string, Annotation*> index;
   index.reserve(file.marks.size());
@@ -149,22 +156,35 @@ const AnnotationSourceSet* findSourceSet(const FileState& file,
 ChannelSourceRelation channelSourceRelation(const FileState& file,
                                             const Channel& channel) {
   if (!channel.sourceSnapshot || channel.annotationId.empty() ||
-      channel.segmentId.empty() || channel.revisionId.empty())
+      channel.revisionId.empty())
     return ChannelSourceRelation::LegacyNeedsReview;
+  const auto& snapshot = *channel.sourceSnapshot;
   const auto* annotation = findAnnotation(file, channel.annotationId);
   if (!annotation || annotation->deleted) return ChannelSourceRelation::Missing;
   const auto* sourceSet = findSourceSet(file, annotation->sourceSetId);
   if (!sourceSet || sourceSet->deleted) return ChannelSourceRelation::Missing;
-  if (annotation->reviewStatus == ReviewStatus::Rejected)
-    return ChannelSourceRelation::Rejected;
-  const auto* segment = findSegment(*annotation, channel.segmentId);
-  if (!segment) return ChannelSourceRelation::Missing;
-  if (annotation->revisionId != channel.revisionId ||
-      segment->range != channel.sourceSnapshot->range ||
-      sourceChanged(channel.sourceSnapshot->sourceIdentity, file.metadata))
+  const auto binding = snapshot.boundRange.value_or(snapshot.range);
+  if (snapshot.bindingKind == ChannelBindingKind::LocatedSegment) {
+    const auto* segment = findSegment(*annotation, channel.segmentId);
+    if (!segment) return ChannelSourceRelation::Missing;
+    if (physicalRange(segment->range, segment->frequencyFrame,
+                      file.metadata.centerFrequencyHz) != binding)
+      return ChannelSourceRelation::Changed;
+  } else if (snapshot.bindingKind == ChannelBindingKind::UserRange) {
+    if (!annotation->segments.empty() || !annotation->observation)
+      return ChannelSourceRelation::Changed;
+    if (physicalRange(*annotation->observation,
+                      annotation->observationFrequencyFrame,
+                      file.metadata.centerFrequencyHz)
+            .frequency != binding.frequency)
+      return ChannelSourceRelation::Changed;
+  } else {
     return ChannelSourceRelation::Changed;
-  if (!segmentCanCreateChannel(*annotation, channel.segmentId))
-    return ChannelSourceRelation::Unconfirmed;
+  }
+  if (annotation->sourceKind != snapshot.sourceKind ||
+      !annotationSourceCurrent(file, *annotation) ||
+      sourceChanged(snapshot.sourceIdentity, file.metadata))
+    return ChannelSourceRelation::Changed;
   return ChannelSourceRelation::Current;
 }
 bool annotationSourceCurrent(const FileState& file,
@@ -176,6 +196,147 @@ bool annotationSourceCurrent(const FileState& file,
          set->sourceKind == annotation.sourceKind &&
          set->sampleChannel == file.metadata.sampleFormat.selectedChannel &&
          !sourceChanged(set->sourceIdentity, file.metadata);
+}
+
+AnnotationChannelRequest annotationChannelRequest(
+    const FileState& file, const std::string& id, TimeRange visibleTime,
+    std::uint64_t generation, const std::string& segmentId) {
+  AnnotationChannelRequest request;
+  request.annotationId = id;
+  request.sourceIdentity = annotationSourceIdentity(file.metadata, generation);
+  const auto* annotation = findAnnotation(file, id);
+  if (!annotation || annotation->deleted) return request;
+  request.name = annotation->name;
+  const auto* segment = segmentId.empty() ? activeSegment(*annotation)
+                                          : findSegment(*annotation, segmentId);
+  if (segment) {
+    request.segmentId = segment->id;
+    request.boundRange = physicalRange(segment->range, segment->frequencyFrame,
+                                       file.metadata.centerFrequencyHz);
+    request.range = request.boundRange;
+  } else if (annotation->segments.empty() && annotation->observation) {
+    request.bindingKind = ChannelBindingKind::UserRange;
+    request.boundRange = physicalRange(*annotation->observation,
+                                       annotation->observationFrequencyFrame,
+                                       file.metadata.centerFrequencyHz);
+    request.range = {visibleTime, request.boundRange.frequency};
+  }
+  if (request.bindingKind == ChannelBindingKind::UserRange) {
+    const auto prefix = availableSamples(file.metadata);
+    request.range.time.begin = std::min(request.range.time.begin, prefix);
+    request.range.time.end = std::min(request.range.time.end, prefix);
+  }
+  const double bandwidth =
+      request.range.frequency.upperHz - request.range.frequency.lowerHz;
+  request.outputSampleRateHz =
+      std::min(file.metadata.sampleRateHz, std::max(4e6, bandwidth * 1.3));
+  return request;
+}
+
+AnnotationResult prepareAnnotationChannel(
+    const FileState& file, const AnnotationChannelRequest& request,
+    Channel& candidate) {
+  const auto* annotation = findAnnotation(file, request.annotationId);
+  if (!annotation || annotation->deleted)
+    return fail("来源标记已删除或不存在，请选择一个来源对象。", "annotationId");
+  if (!annotationSourceCurrent(file, *annotation) ||
+      request.sourceIdentity.fileId.empty() ||
+      sourceChanged(request.sourceIdentity, file.metadata))
+    return fail("来源文件、样本通道或物理解释已变化，请重新选择来源。",
+                "source");
+  if (file.metadata.sampleFormat.structure != SampleStructure::ComplexIQ)
+    return fail("实数 ADC 尚未实现解析信号转换，不能创建复数 DDC 通道。",
+                "source");
+  if (file.metadata.availability.status == LoadStatus::Failed)
+    return fail(file.metadata.availability.error.empty()
+                    ? "来源读取失败，请重新读入或核对文件。"
+                    : "来源读取失败：" + file.metadata.availability.error,
+                "source");
+  std::string formatError;
+  if (!validateSampleFormat(file.metadata.sampleFormat, formatError))
+    return fail("来源样本格式无效：" + formatError, "source");
+  const auto bounds = annotationBounds(file.metadata);
+  if (!std::isfinite(file.metadata.sampleRateHz) ||
+      file.metadata.sampleRateHz <= 0 ||
+      !std::isfinite(file.metadata.centerFrequencyHz) ||
+      file.metadata.sampleCount == 0 ||
+      !std::isfinite(bounds.effectiveFrequency.lowerHz) ||
+      !std::isfinite(bounds.effectiveFrequency.upperHz) ||
+      bounds.effectiveFrequency.lowerHz >= bounds.effectiveFrequency.upperHz)
+    return fail("来源采样率、中心频率、物理样本数或有效频带无效。", "source");
+  if (const auto checked = validateChannelName(request.name); !checked)
+    return fail(checked.error, "name");
+
+  if (request.bindingKind == ChannelBindingKind::LocatedSegment) {
+    const auto* segment = findSegment(*annotation, request.segmentId);
+    if (!segment || !segmentCanCreateChannel(*annotation, request.segmentId))
+      return fail("请选择来源对象中的一个明确活动段。", "segmentId");
+    if (physicalRange(segment->range, segment->frequencyFrame,
+                      file.metadata.centerFrequencyHz) != request.boundRange)
+      return fail("所选活动段几何已变化，请重新选择当前段。", "segmentId");
+    if (const auto checked = validateSegment(*segment, bounds, false); !checked)
+      return fail("来源活动段坐标无效：" + checked.error, "segmentId");
+    if (request.range.time.begin < request.boundRange.time.begin ||
+        request.range.time.end > request.boundRange.time.end)
+      return fail("提取时段必须位于所选活动段内；可裁剪，不能自动扩大。",
+                  "sourceTime");
+    if (!rangeInside(request.range, request.boundRange))
+      return fail("提取频带必须位于所选活动段内；可裁剪，不能扩大或移出。",
+                  "frequency");
+  } else if (request.bindingKind == ChannelBindingKind::UserRange) {
+    if (!request.segmentId.empty() || !annotation->segments.empty() ||
+        !annotation->observation)
+      return fail("人工提取范围只能绑定时间未定位的频率观察对象。",
+                  "segmentId");
+    if (physicalRange(*annotation->observation,
+                      annotation->observationFrequencyFrame,
+                      file.metadata.centerFrequencyHz)
+            .frequency != request.boundRange.frequency)
+      return fail("来源观察频带已变化，请重新选择来源。", "frequency");
+    if (const auto checked = validateAnnotation(*annotation, bounds); !checked)
+      return fail("来源观察坐标无效：" + checked.error, "source");
+  } else {
+    return fail("不支持的通道绑定类型。", "bindingKind");
+  }
+
+  const auto& range = request.range;
+  if (range.time.begin >= range.time.end)
+    return fail("提取时段没有可读样本；请修改时段或显式使用可用前缀。",
+                "sourceTime");
+  if (range.time.end > availableSamples(file.metadata) ||
+      range.time.end > file.metadata.sampleCount)
+    return fail("提取结束时间超出已读可用前缀。", "sourceTime");
+  const auto sourceBand = fullRange(file.metadata).frequency;
+  const auto bandwidth = range.frequency.upperHz - range.frequency.lowerHz;
+  if (!std::isfinite(range.frequency.lowerHz) ||
+      !std::isfinite(range.frequency.upperHz) || !(bandwidth > 0) ||
+      range.frequency.lowerHz < sourceBand.lowerHz ||
+      range.frequency.upperHz > sourceBand.upperHz)
+    return fail("提取频率必须为有效物理频率，且位于来源有效频带内。",
+                "frequency");
+  const auto transition = bandwidth * .15;
+  if (range.frequency.lowerHz - transition < sourceBand.lowerHz ||
+      range.frequency.upperHz + transition > sourceBand.upperHz)
+    return fail("提取频带的 FIR 保护带超出来源有效频带。", "frequency");
+  if (!std::isfinite(request.outputSampleRateHz) ||
+      request.outputSampleRateHz < bandwidth + 2 * transition ||
+      request.outputSampleRateHz > file.metadata.sampleRateHz * 4096)
+    return fail("输出采样率必须覆盖通带和抗混叠过渡带。", "outputSampleRateHz");
+  if (request.filter != ChannelFilter::FastPreview &&
+      request.filter != ChannelFilter::Standard &&
+      request.filter != ChannelFilter::HighRejection)
+    return fail("FIR 滤波配置无效。", "filter");
+
+  candidate.name = request.name;
+  candidate.sourceMarkId = request.annotationId;
+  candidate.centerFrequencyHz = range.frequency.lowerHz + bandwidth / 2;
+  candidate.bandwidthHz = bandwidth;
+  candidate.sourceTime = range.time;
+  candidate.outputSampleRateHz = request.outputSampleRateHz;
+  candidate.filter = request.filter;
+  candidate.wholeSource = false;
+  candidate.preserveSourceTime = request.preserveSourceTime;
+  return success(request.annotationId);
 }
 void refreshChannelSourceRelations(FileState& file) {
   for (auto& channel : file.channels)
@@ -218,6 +379,43 @@ AnnotationValidation validateFileAnnotations(const FileState& file) {
       return {false, "Channel source snapshot IDs disagree"};
     const auto* annotation = findAnnotation(file, channel.annotationId);
     if (!annotation) return {false, "Channel references a missing annotation"};
+    if (snapshot.sourceKind != annotation->sourceKind ||
+        (snapshot.bindingKind == ChannelBindingKind::LocatedSegment
+             ? snapshot.segmentId.empty()
+             : snapshot.bindingKind != ChannelBindingKind::UserRange ||
+                   !snapshot.segmentId.empty()))
+      return {false, "Channel binding identity or kind is invalid"};
+    auto original = file.metadata;
+    original.sampleFormat = snapshot.sourceIdentity.sampleFormat;
+    original.sampleRateHz = snapshot.sourceIdentity.sampleRateHz;
+    original.centerFrequencyHz = snapshot.sourceIdentity.centerFrequencyHz;
+    original.sampleCount = snapshot.sourceIdentity.physicalSamples;
+    original.effectiveBandwidthHz =
+        snapshot.sourceIdentity.effectiveFrequency.upperHz -
+        snapshot.sourceIdentity.effectiveFrequency.lowerHz;
+    original.availability.status = LoadStatus::Partial;
+    original.availability.availableSamples =
+        snapshot.sourceIdentity.availableSamples;
+    const auto originalBounds = annotationBounds(original);
+    Segment captured{"snapshot",
+                     snapshot.range,
+                     TimeQuality::Manual,
+                     FrequencyQuality::Manual,
+                     false,
+                     0,
+                     original.sampleFormat.structure == SampleStructure::Real
+                         ? FrequencyFrame::RealOneSided
+                         : FrequencyFrame::RF};
+    if (const auto checked = validateSegment(captured, originalBounds, false);
+        !checked)
+      return checked;
+    captured.range = snapshot.boundRange.value_or(snapshot.range);
+    if (const auto checked = validateSegment(captured, originalBounds, false);
+        !checked)
+      return checked;
+    if (snapshot.bindingKind == ChannelBindingKind::LocatedSegment &&
+        !rangeInside(snapshot.range, captured.range))
+      return {false, "Channel extraction is outside its captured binding"};
     if (std::none_of(annotation->revisions.begin(), annotation->revisions.end(),
                      [&](const auto& revision) {
                        return revision.id == channel.revisionId;
@@ -291,6 +489,7 @@ AnnotationValidation attachLegacyAnnotations(FileState& file) {
     snapshot->sourceKind = annotation->sourceKind;
     snapshot->reviewStatus = annotation->reviewStatus;
     snapshot->sourceIdentity = annotationSourceIdentity(file.metadata);
+    snapshot->boundRange = snapshot->range;
     channel.annotationId = snapshot->annotationId;
     channel.segmentId = snapshot->segmentId;
     channel.revisionId = snapshot->revisionId;
@@ -1237,19 +1436,39 @@ AnnotationResult AnnotationService::bindChannelSource(
     const std::string& segmentId) const {
   const auto* annotation = findAnnotation(file, id);
   if (!annotation || !segmentCanCreateChannel(*annotation, segmentId))
-    return fail("Channel creation requires a confirmed explicit segment");
-  const auto* set = findSourceSet(file, annotation->sourceSetId);
-  if (!set || set->deleted ||
-      set->sampleChannel != file.metadata.sampleFormat.selectedChannel ||
-      sourceChanged(set->sourceIdentity, file.metadata))
+    return fail("Channel creation requires an explicit located segment");
+  if (!annotationSourceCurrent(file, *annotation))
     return fail(
         "Annotation source is unavailable, changed, or belongs to another "
         "sample channel");
   if (file.metadata.sampleFormat.structure == SampleStructure::Real)
     return fail("Real ADC sources do not support complex DDC channels");
+  if (file.metadata.availability.status == LoadStatus::Failed)
+    return fail("Channel source failed to load");
   const auto* segment = findSegment(*annotation, segmentId);
+  auto extraction = *segment;
+  if (channel.sourceTime.begin < channel.sourceTime.end)
+    extraction.range.time = channel.sourceTime;
+  if (channel.bandwidthHz > 0 && std::isfinite(channel.centerFrequencyHz) &&
+      std::isfinite(channel.bandwidthHz)) {
+    extraction.range.frequency = {
+        channel.centerFrequencyHz - channel.bandwidthHz / 2,
+        channel.centerFrequencyHz + channel.bandwidthHz / 2};
+    extraction.frequencyFrame = FrequencyFrame::RF;
+  }
+  const auto extractionRange =
+      physicalRange(extraction.range, extraction.frequencyFrame,
+                    file.metadata.centerFrequencyHz);
+  const auto bindingRange = physicalRange(
+      segment->range, segment->frequencyFrame, file.metadata.centerFrequencyHz);
+  if (!rangeInside(extractionRange, bindingRange))
+    return fail("Channel extraction must remain inside the bound segment",
+                extractionRange.time.begin < bindingRange.time.begin ||
+                        extractionRange.time.end > bindingRange.time.end
+                    ? "sourceTime"
+                    : "frequency");
   if (const auto result =
-          validateSegment(*segment, annotationBounds(file.metadata), true);
+          validateSegment(extraction, annotationBounds(file.metadata), true);
       !result)
     return fail(result.error);
   auto snapshot = std::make_shared<AnnotationChannelSnapshot>();
@@ -1257,7 +1476,8 @@ AnnotationResult AnnotationService::bindChannelSource(
   snapshot->segmentId = segmentId;
   snapshot->revisionId = annotation->revisionId;
   snapshot->name = annotation->name;
-  snapshot->range = segment->range;
+  snapshot->range = extractionRange;
+  snapshot->boundRange = bindingRange;
   snapshot->sourceKind = annotation->sourceKind;
   snapshot->reviewStatus = annotation->reviewStatus;
   snapshot->sourceIdentity = annotationSourceIdentity(file.metadata);
@@ -1269,6 +1489,36 @@ AnnotationResult AnnotationService::bindChannelSource(
   channel.sourceSnapshot = std::move(snapshot);
   channel.sourceRelation = ChannelSourceRelation::Current;
   return success(id, true);
+}
+
+AnnotationResult AnnotationService::bindChannelSource(
+    FileState& file, Channel& channel,
+    const AnnotationChannelRequest& request) const {
+  Channel prepared = channel;
+  if (const auto checked = prepareAnnotationChannel(file, request, prepared);
+      !checked)
+    return checked;
+  const auto* annotation = findAnnotation(file, request.annotationId);
+  auto snapshot = std::make_shared<AnnotationChannelSnapshot>();
+  snapshot->annotationId = request.annotationId;
+  snapshot->segmentId = request.segmentId;
+  snapshot->revisionId = annotation->revisionId;
+  snapshot->name = annotation->name;
+  snapshot->range = request.range;
+  snapshot->bindingKind = request.bindingKind;
+  snapshot->boundRange = request.boundRange;
+  snapshot->sourceKind = annotation->sourceKind;
+  snapshot->reviewStatus = annotation->reviewStatus;
+  snapshot->sourceIdentity = annotationSourceIdentity(
+      file.metadata, request.sourceIdentity.projectGeneration);
+  prepared.annotationId = snapshot->annotationId;
+  prepared.segmentId = snapshot->segmentId;
+  prepared.revisionId = snapshot->revisionId;
+  prepared.sourceIdentity = snapshot->sourceIdentity;
+  prepared.sourceSnapshot = std::move(snapshot);
+  prepared.sourceRelation = ChannelSourceRelation::Current;
+  channel = std::move(prepared);
+  return success(request.annotationId, true);
 }
 
 AnnotationResult AnnotationService::applyCommand(FileState& file,

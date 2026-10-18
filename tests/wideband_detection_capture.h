@@ -55,6 +55,15 @@ QString widebandFileHash(const QString& path) {
   return QString::fromLatin1(hash.result().toHex());
 }
 
+QString widebandRepresentativeDataPath() {
+  const auto local = QDir(QCoreApplication::applicationDirPath())
+                         .filePath(
+                             "../../resources/sigmf_data_demo/"
+                             "0000000.sigmf-data");
+  if (QFileInfo::exists(local)) return QFileInfo(local).canonicalFilePath();
+  return "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-data";
+}
+
 QJsonObject widebandSourceCounts(const FileState& file) {
   int imported = 0, manual = 0, algorithm = 0;
   for (const auto& annotation : file.marks) {
@@ -125,8 +134,9 @@ void widebandScrollTo(QWidget* widget) {
 }
 
 void widebandScene(Capture& capture, const QString& name, QScreen* screen,
-                   QWidget* target = nullptr) {
-  capture.scene(name, target);
+                   QWidget* target = nullptr,
+                   bool requiresRenderedData = true) {
+  capture.scene(name, target, {}, requiresRenderedData);
   auto record = capture.scenes.last().toObject();
   record["screen"] = widebandScreenJson(screen);
   record["captureKind"] = target ? (target->isWindow() ? "native-dialog-crop"
@@ -148,7 +158,41 @@ void widebandScene(Capture& capture, const QString& name, QScreen* screen,
   capture.scenes[capture.scenes.size() - 1] = record;
   require(record["pass"].toBool(), record["error"].toString());
   require((target ? target->screen() : capture.window.screen()) == screen,
-          "Native scene moved away from the required second screen");
+          "Native scene moved away from the selected native 4K monitor");
+}
+
+// Exercise the actual optional quality menu rather than triggering an action
+// directly. The timer also supports QPushButton::showMenu's nested event loop.
+void widebandChooseQuality(MainWindow& window, const char* actionName,
+                           Capture* capture = nullptr,
+                           QScreen* screen = nullptr,
+                           const QString& sceneName = {}) {
+  auto* button = child<QPushButton>(window, "annotationQualityMenu");
+  widebandScrollTo(button);
+  bool handled = false;
+  QString failure;
+  QTimer::singleShot(100, &window, [&] {
+    auto* menu = qobject_cast<QMenu*>(QApplication::activePopupWidget());
+    try {
+      require(menu && menu->objectName() == "annotationQualityActions",
+              "The optional quality menu did not open");
+      QAction* action = nullptr;
+      for (auto* candidate : menu->actions())
+        if (candidate->objectName() == actionName) action = candidate;
+      require(action && action->isEnabled(),
+              "The quality action is unavailable");
+      if (capture && screen && !sceneName.isEmpty())
+        widebandScene(*capture, sceneName, screen, menu);
+      QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier,
+                        menu->actionGeometry(action).center());
+    } catch (const std::exception& error) {
+      failure = QString::fromUtf8(error.what());
+      if (menu) menu->close();
+    }
+    handled = true;
+  });
+  QTest::mouseClick(button, Qt::LeftButton);
+  require(waitUntil([&] { return handled; }) && failure.isEmpty(), failure);
 }
 
 QRect widebandVisibleRect(QWidget* widget, QWidget& window) {
@@ -632,7 +676,7 @@ QJsonObject widebandReviseImported(Capture& capture, QScreen* screen,
                                    const std::string& id) {
   auto& window = capture.window;
   widebandSelectAnnotation(window, id);
-  click(window, "acceptAnnotations");
+  widebandChooseQuality(window, "acceptAnnotations");
   auto* accepted = findAnnotation(*window.session().activeFile(), id);
   require(accepted && accepted->reviewStatus == ReviewStatus::Accepted,
           "Native review did not accept the selected original label");
@@ -1067,7 +1111,7 @@ QJsonObject widebandCaptureAuxiliaryEvidence(Capture& capture, QScreen* screen,
           {"modelInferenceVerified", false}};
 }
 
-QJsonObject widebandCaptureSingleSegmentConfirmation(
+QJsonObject widebandCapturePendingSegmentChannel(
     Capture& capture, QScreen* screen, const std::string& id,
     const QString& projectPath, const QString& dataPath,
     const QString& expectedIqHash) {
@@ -1079,8 +1123,7 @@ QJsonObject widebandCaptureSingleSegmentConfirmation(
       annotation && annotation->sourceKind == AnnotationSource::ImportedLabel &&
           annotation->reviewStatus == ReviewStatus::Pending &&
           activeSegment(*annotation) && !activeSegment(*annotation)->confirmed,
-      "Single-segment acceptance requires a pending unconfirmed actual "
-      "original-label segment");
+      "The source must be an actual pending, unconfirmed original label");
   const Annotation before = *annotation;
   const auto segmentId = activeSegment(before)->id;
   const auto annotationsBefore = widebandAnnotations(*file);
@@ -1090,57 +1133,8 @@ QJsonObject widebandCaptureSingleSegmentConfirmation(
   const auto channelsBefore = file->channels.size();
   const auto* source = findSourceSet(*file, annotation->sourceSetId);
   require(source && !source->sourceHash.empty(),
-          "Single-segment confirmation lacks immutable source identity");
+          "The pending source lacks its immutable identity");
   const auto sourceHash = QString::fromStdString(source->sourceHash);
-  auto* confirm = child<QPushButton>(window, "confirmAnnotationSegment");
-  widebandScrollTo(confirm);
-  require(
-      confirm->isVisible() && confirm->isEnabled() &&
-          widebandVisibleRect(confirm, window).height() == confirm->height(),
-      "Pending activity segment has no visible enabled confirmation UI");
-  QTest::mouseClick(confirm, Qt::LeftButton);
-  require(waitUntil([&] {
-            const auto* current =
-                findAnnotation(*window.session().activeFile(), id);
-            const auto* segment =
-                current ? findSegment(*current, segmentId) : nullptr;
-            return segment && segment->confirmed;
-          }),
-          "Actual confirmation button did not confirm the selected segment");
-  annotation = findAnnotation(*window.session().activeFile(), id);
-  require(
-      annotation->reviewStatus == ReviewStatus::Pending &&
-          annotation->revisionId == before.revisionId &&
-          annotation->reviewRevisionId == before.reviewRevisionId &&
-          annotation->reviewHistory.size() == before.reviewHistory.size() + 1 &&
-          annotation->reviewHistory.back().status == ReviewStatus::Pending &&
-          annotation->reviewHistory.back().revisionId == before.revisionId,
-      "Activity confirmation changed object review status or geometry "
-      "revision instead of recording a segment confirmation");
-  Annotation normalized = *annotation;
-  normalized.reviewHistory = before.reviewHistory;
-  findSegment(normalized, segmentId)->confirmed = false;
-  require(encodeAnnotation(normalized) == encodeAnnotation(before),
-          "Single activity confirmation changed original evidence, geometry, "
-          "class, source, or revision history");
-  QJsonArray unchangedObjects;
-  int confirmedImportedSegments = 0;
-  for (const auto& current : window.session().activeFile()->marks) {
-    unchangedObjects.append(
-        encodeAnnotation(current.id == id ? normalized : current));
-    if (current.sourceKind == AnnotationSource::ImportedLabel)
-      for (const auto& segment : current.segments) {
-        if (segment.confirmed) ++confirmedImportedSegments;
-        require(
-            !segment.confirmed || (current.id == id && segment.id == segmentId),
-            "Single-segment action confirmed another imported label");
-      }
-  }
-  require(
-      unchangedObjects == annotationsBefore && confirmedImportedSegments == 1,
-      "Confirmation must affect exactly one of the four imported labels");
-  const auto confirmedAnnotations =
-      widebandAnnotations(*window.session().activeFile());
   const auto verify = [&] {
     const auto* current = window.session().activeFile();
     const auto* selected = findAnnotation(*current, id);
@@ -1148,8 +1142,8 @@ QJsonObject widebandCaptureSingleSegmentConfirmation(
         selected && selected->reviewStatus == ReviewStatus::Pending &&
             selected->revisionId == before.revisionId &&
             findSegment(*selected, segmentId) &&
-            findSegment(*selected, segmentId)->confirmed &&
-            widebandAnnotations(*current) == confirmedAnnotations &&
+            !findSegment(*selected, segmentId)->confirmed &&
+            widebandAnnotations(*current) == annotationsBefore &&
             widebandSources(*current) == sourcesBefore &&
             current->view == viewBefore &&
             current->channels.size() == channelsBefore &&
@@ -1159,57 +1153,38 @@ QJsonObject widebandCaptureSingleSegmentConfirmation(
                                                           {"manual", 1},
                                                           {"algorithm", 3},
                                                           {"total", 8}},
-        "Single-segment UI, dialog or save/reopen changed the eight "
-        "objects, pending review, source hashes or completed task");
+        "Channel preview changed original objects, quality, sources or task");
   };
-  widebandScrollTo(confirm);
   verify();
   widebandRequireVisibleActions(window);
-  widebandScene(capture, "20-single-original-segment-confirmed-pending",
-                screen);
+  require(!window.findChild<QPushButton*>("confirmAnnotationSegment"),
+          "The obsolete activity confirmation prerequisite remains visible");
+  widebandScene(capture, "20-original-pending-segment-direct-channel", screen);
   auto* extract = child<QPushButton>(window, "extract");
   require(extract->isVisible() && extract->isEnabled() &&
               !widebandVisibleRect(extract, window).isEmpty(),
-          "A confirmed pending activity segment cannot open channel UI");
+          "Pending unconfirmed activity cannot open channel configuration");
   QTest::mouseClick(extract, Qt::LeftButton);
   QPointer<QDialog> dialog = window.findChild<QDialog*>("channelConfigDialog");
   require(dialog && waitUntil([&] {
             return dialog && dialog->isVisible() && dialog->windowHandle();
           }),
-          "Native channel dialog did not open from the confirmed segment");
+          "The pending activity did not open native channel configuration");
   dialog->windowHandle()->setScreen(screen);
   dialog->move(screen->geometry().center() - dialog->rect().center());
+  require(waitUntil([&] {
+            return dialog->screen() == screen &&
+                   std::abs(dialog->devicePixelRatioF() - 1.5) < .001 &&
+                   screen->geometry().contains(dialog->frameGeometry());
+          }),
+          "Channel configuration left selected 4K monitor or actual 150% DPI");
   require(
-      waitUntil([&] {
-        return dialog->screen() == screen &&
-               std::abs(dialog->devicePixelRatioF() - 1.5) < .001 &&
-               screen->geometry().contains(dialog->frameGeometry());
-      }),
-      "Native channel confirmation dialog left screen 2 or actual 150% DPI");
-  auto* checked = child<QCheckBox>(*dialog, "channelConfirmedSegment");
-  auto* create = child<QPushButton>(*dialog, "confirmChannelConfig");
-  auto* validation = child<QLabel>(*dialog, "channelValidation");
-  require(checked->isVisible() && checked->isEnabled() &&
-              checked->isChecked() &&
-              !widebandVisibleRect(checked, *dialog).isEmpty(),
-          "Channel dialog did not expose the actual segment confirmation");
-  // The form gives this checkbox the entire field width. Click its visible
-  // indicator, since the empty space past the label is not a checkbox hit.
-  click(*dialog, "channelConfirmedSegment");
-  require(waitUntil([&] {
-            return !checked->isChecked() && !create->isEnabled() &&
-                   validation->text().contains("确认");
-          }),
-          "Unchecking activity confirmation did not block channel creation");
-  click(*dialog, "channelConfirmedSegment");
-  require(waitUntil([&] {
-            return checked->isChecked() && create->isEnabled() &&
-                   validation->text().isEmpty();
-          }),
-          "Rechecking the confirmed segment did not restore valid channel "
-          "parameter submission");
+      !dialog->findChild<QCheckBox*>("channelConfirmedSegment") &&
+          child<QPushButton>(*dialog, "confirmChannelConfig")->isEnabled() &&
+          child<QLabel>(*dialog, "channelValidation")->text().isEmpty(),
+      "Valid pending activity is still gated by confirmation or quality");
   verify();
-  widebandScene(capture, "21-pending-confirmed-segment-channel-dialog", screen,
+  widebandScene(capture, "21-pending-unconfirmed-channel-configuration", screen,
                 dialog.data());
   auto* buttons = dialog->findChild<QDialogButtonBox*>();
   require(buttons && buttons->button(QDialogButtonBox::Cancel) &&
@@ -1217,33 +1192,28 @@ QJsonObject widebandCaptureSingleSegmentConfirmation(
           "Native channel preview has no visible cancel control");
   QTest::mouseClick(buttons->button(QDialogButtonBox::Cancel), Qt::LeftButton);
   require(waitUntil([&] { return !dialog || !dialog->isVisible(); }),
-          "Cancelling the channel dialog did not close it");
+          "Cancelling channel configuration did not close it");
   verify();
-  require(window.saveProject(projectPath),
-          "Saving a pending object with one confirmed segment failed");
-  require(window.openProject(projectPath) && widebandDisplayReady(window),
-          "A pending object's saved segment confirmation did not reopen on "
-          "the actual IQ hardware display");
+  require(window.saveProject(projectPath) && window.openProject(projectPath) &&
+              widebandDisplayReady(window),
+          "The unchanged pending source did not save and reopen on actual IQ");
   verify();
   require(widebandFileHash(dataPath) == expectedIqHash,
-          "Single-segment confirmation changed the original IQ data");
+          "Channel configuration changed the original IQ data");
   widebandSelectAnnotation(window, id);
-  widebandScrollTo(child<QPushButton>(window, "confirmAnnotationSegment"));
   widebandRequireVisibleActions(window);
-  widebandScene(capture, "22-single-segment-confirmation-saved-reopened",
-                screen);
+  widebandScene(capture, "22-pending-source-unchanged-after-reopen", screen);
   return {{"pass", true},
           {"annotationId", QString::fromStdString(id)},
           {"segmentId", QString::fromStdString(segmentId)},
           {"reviewStatus", "Pending"},
           {"geometryRevisionId", QString::fromStdString(before.revisionId)},
           {"sourceHash", sourceHash},
-          {"confirmedImportedSegments", confirmedImportedSegments},
-          {"otherSevenObjectsUnchanged", true},
+          {"allEightObjectsUnchanged", true},
           {"sourceTextHashGeometryRevisionAndRunPreserved", true},
-          {"channelCheckboxEnforcedVisibly", true},
+          {"noQualityOrConfirmationGate", true},
           {"channelDialogCancelledWithoutCreation", true},
-          {"confirmationPreservedAfterSaveReopen", true},
+          {"pendingUnconfirmedPreservedAfterSaveReopen", true},
           {"iqSha256Unchanged", true},
           {"ddcExecutionVerified", false},
           {"modelInferenceVerified", false}};
@@ -1364,27 +1334,28 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
           "Saved sample evidence lacks its measured, bounded energy trace");
   widebandScene(capture, "24-production-model-time-refinement", screen);
   const auto countBeforeReview = window.session().activeFile()->marks.size();
-  click(window, "acceptAnnotations");
+  widebandChooseQuality(window, "acceptAnnotations");
+  widebandChooseQuality(window, "clearAnnotationReview");
   selected = findAnnotation(*window.session().activeFile(), selectedId);
   require(
-      selected->reviewStatus == ReviewStatus::Accepted &&
-          activeSegment(*selected)->confirmed &&
+      selected->reviewStatus == ReviewStatus::Pending &&
+          !activeSegment(*selected)->confirmed &&
           window.session().activeFile()->marks.size() == countBeforeReview &&
           selected->originEvidence->originalFieldsJson == originalFields,
-      "Accept must confirm the same measured object without copying it");
-  widebandScene(capture, "25-real-algorithm-object-accepted", screen);
+      "Optional quality changed measured activity, origin or object count");
+  widebandScene(capture, "25-real-algorithm-quality-is-optional", screen);
   auto* extract = child<QPushButton>(window, "extract");
   require(extract->isEnabled(),
-          "Confirmed algorithm activity cannot create a channel");
+          "Pending algorithm activity cannot create a channel");
   QTest::mouseClick(extract, Qt::LeftButton);
   auto* dialog = window.findChild<QDialog*>("channelConfigDialog");
   require(dialog && dialog->isVisible(),
           "Algorithm channel dialog did not open");
   dialog->windowHandle()->setScreen(screen);
   dialog->move(screen->geometry().center() - dialog->rect().center());
-  require(child<QCheckBox>(*dialog, "channelConfirmedSegment")->isChecked() &&
+  require(!dialog->findChild<QCheckBox*>("channelConfirmedSegment") &&
               child<QPushButton>(*dialog, "confirmChannelConfig")->isEnabled(),
-          "Actual channel parameters rejected confirmed model activity");
+          "Actual channel parameters rejected pending unconfirmed activity");
   widebandScene(capture, "26-real-algorithm-channel-parameters", screen,
                 dialog);
   const auto channelCount = window.session().activeFile()->channels.size();
@@ -1393,7 +1364,7 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
             return window.session().activeFile()->channels.size() ==
                    channelCount + 1;
           }),
-          "Confirmed algorithm channel was not created");
+          "Pending algorithm channel was not created");
   const auto channel = window.session().activeFile()->channels.back();
   require(
       channel.sourceSnapshot &&
@@ -1626,20 +1597,20 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
                   {child<PlotWidget>(window, "navigationPlot"),
                    child<PlotWidget>(window, "auxPlot"),
                    child<PlotWidget>(window, "mainPlot")}};
-  QScreen* screen = QGuiApplication::screens().value(1);
+  QScreen* screen = nativeAcceptanceScreen();
   try {
     require(QGuiApplication::platformName() == "windows",
             "Native Windows capture is required");
     require(screen && displayPixelSize(screen) == QSize(3840, 2160) &&
                 screen->geometry().size() == QSize(2560, 1440) &&
                 std::abs(screen->devicePixelRatio() - 1.5) < .001,
-            "Connected screen 2 must use its actual 4K / 150% system scale");
+            "Connected selected 4K monitor must use its actual 4K / 150% "
+            "system scale");
     report["screen"] = widebandScreenJson(screen);
     require(
-        report["screen"].toObject()["friendlyName"].toString().compare(
-            "Redmi 27 NU", Qt::CaseInsensitive) == 0 &&
-            displayDeviceName(screen).endsWith("DISPLAY6", Qt::CaseInsensitive),
-        "Native screen 2 must be Redmi 27 NU at device path DISPLAY6");
+        !report["screen"].toObject()["friendlyName"].toString().isEmpty() &&
+            !displayDeviceName(screen).isEmpty(),
+        "Native acceptance must record the current physical monitor identity");
     for (const auto* name :
          {"QT_SCALE_FACTOR", "QT_SCREEN_SCALE_FACTORS", "QT_FONT_DPI",
           "QT_DEVICE_PIXEL_RATIO", "QT_AUTO_SCREEN_SCALE_FACTOR",
@@ -1648,16 +1619,16 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
       require(qgetenv(name).isEmpty(),
               QString("DPI override must be absent: %1").arg(name));
     showFullScreenOnScreen(window, screen);
-    require(QTest::qWaitForWindowExposed(&window, 5000) &&
-                waitUntil(
-                    [&] {
-                      return window.isFullScreen() &&
-                             window.screen() == screen &&
-                             window.size() == QSize(2560, 1440);
-                    },
-                    5000),
-            "The native main window did not occupy the required second screen "
-            "fullscreen");
+    require(
+        QTest::qWaitForWindowExposed(&window, 5000) &&
+            waitUntil(
+                [&] {
+                  return window.isFullScreen() && window.screen() == screen &&
+                         window.size() == QSize(2560, 1440);
+                },
+                5000),
+        "The native main window did not occupy the selected native 4K monitor "
+        "fullscreen");
     if (finalAcceptance) {
       require(productionModel,
               "Final acceptance requires the real model journey");
@@ -1682,8 +1653,7 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
     require(created, error);
     const auto project = output.filePath(projectName + "/project.json");
     report["projectPath"] = project;
-    const QString data =
-        "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-data";
+    const QString data = widebandRepresentativeDataPath();
     const auto meta = data.chopped(11) + ".sigmf-meta";
     const auto iqHash = widebandFileHash(data);
     require(
@@ -1804,9 +1774,8 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
         widebandCapturePanelLayouts(capture, screen);
     report["auxiliaryEvidenceInteraction"] =
         widebandCaptureAuxiliaryEvidence(capture, screen, originalId);
-    report["singleSegmentConfirmation"] =
-        widebandCaptureSingleSegmentConfirmation(capture, screen, originalId,
-                                                 project, data, iqHash);
+    report["pendingSegmentChannel"] = widebandCapturePendingSegmentChannel(
+        capture, screen, originalId, project, data, iqHash);
     if (productionModel) {
       report["productionModel"] =
           widebandCaptureProductionModel(capture, screen, project);

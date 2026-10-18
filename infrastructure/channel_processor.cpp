@@ -1,16 +1,17 @@
 #include "infrastructure/channel_processor.h"
 
-#include "infrastructure/int16_iq_file.h"
-
 #include <QCryptographicHash>
 #include <QFileInfo>
 #include <QtEndian>
-
 #include <algorithm>
 #include <cmath>
 #include <complex>
 #include <limits>
 #include <numbers>
+
+#include "infrastructure/int16_iq_file.h"
+#include "infrastructure/raw_sample_reader.h"
+#include "infrastructure/wav_metadata.h"
 
 namespace signalstudio {
 namespace {
@@ -45,8 +46,8 @@ bool multiplyDivideFloor(std::uint64_t value, std::uint64_t numerator,
 }
 
 std::uint64_t roundHz(double value) {
-    if (!std::isfinite(value) || value <= 0 || value > static_cast<double>(std::numeric_limits<std::uint64_t>::max())) return 0;
-    return static_cast<std::uint64_t>(std::llround(value));
+  if (!std::isfinite(value) || value <= 0 || value > 4'000'000'000.0) return 0;
+  return static_cast<std::uint64_t>(std::llround(value));
 }
 
 double kaiserBeta(double attenuation) {
@@ -140,15 +141,80 @@ bool outputGrid(std::uint64_t outputIndex, const ChannelDspPlan& plan,
 
 bool sourceCountFor(const FileMetadata& source, const Channel& channel,
                     const ChannelDspPlan& plan, std::uint64_t& outputCount) {
-    const auto inputSamples = channel.sourceTime.end - channel.sourceTime.begin;
-    if (channel.sourceTime.end > source.sampleCount || !plan.sourceRateHz || !plan.outputRateHz ||
-        !multiplyDivideFloor(inputSamples, plan.outputRateHz, plan.sourceRateHz, outputCount)) return false;
-    const auto remainder = (inputSamples % plan.sourceRateHz) * plan.outputRateHz % plan.sourceRateHz;
-    if (remainder) {
-        if (outputCount == std::numeric_limits<std::uint64_t>::max()) return false;
-        ++outputCount;
-    }
+  if (source.availability.status == LoadStatus::Failed ||
+      channel.sourceTime.begin >= channel.sourceTime.end ||
+      channel.sourceTime.end > availableSamples(source))
+    return false;
+  const auto inputSamples = channel.sourceTime.end - channel.sourceTime.begin;
+  if (channel.sourceTime.end > source.sampleCount || !plan.sourceRateHz ||
+      !plan.outputRateHz ||
+      !multiplyDivideFloor(inputSamples, plan.outputRateHz, plan.sourceRateHz,
+                           outputCount))
+    return false;
+  const auto remainder = (inputSamples % plan.sourceRateHz) *
+                         plan.outputRateHz % plan.sourceRateHz;
+  if (remainder) {
+    if (outputCount == std::numeric_limits<std::uint64_t>::max()) return false;
+    ++outputCount;
+  }
     return true;
+}
+
+bool validateChannelPhysicalSource(const FileMetadata& source,
+                                   const Channel& channel, QString& error) {
+  if (channel.sourceSnapshot) {
+    const auto& identity = channel.sourceSnapshot->sourceIdentity;
+    if (identity.fileId != source.id ||
+        identity.sampleFormat != source.sampleFormat ||
+        identity.sampleRateHz != source.sampleRateHz ||
+        identity.centerFrequencyHz != source.centerFrequencyHz ||
+        identity.physicalSamples != source.sampleCount ||
+        (!identity.path.empty() && identity.path != source.path) ||
+        (!identity.quickFingerprint.empty() &&
+         identity.quickFingerprint != source.availability.fingerprint)) {
+      error = "通道创建时的物理来源已变化；保留原快照，请显式创建新通道。";
+      return false;
+    }
+  }
+  if (source.demo) return true;
+  const auto path = QString::fromStdString(source.path);
+  const auto fingerprint = iqSourceFingerprint(path);
+  if (!source.availability.fingerprint.empty() &&
+      fingerprint.toStdString() != source.availability.fingerprint) {
+    error = "来源文件指纹已改变，请重新读入。";
+    return false;
+  }
+  if (path.endsWith(".wav", Qt::CaseInsensitive)) {
+    WavDescriptor descriptor;
+    if (!readWavDescriptor(path, descriptor, error)) return false;
+    if (descriptor.sampleRateHz != source.sampleRateHz) {
+      error = QString(
+                  "来源采样率与 WAV 容器冲突：工程 %1 Hz，容器 %2 "
+                  "Hz；请重新导入并核对。")
+                  .arg(source.sampleRateHz, 0, 'g', 17)
+                  .arg(descriptor.sampleRateHz);
+      return false;
+    }
+    if (descriptor.format != source.sampleFormat ||
+        descriptor.sampleCount != source.sampleCount) {
+      error = "来源格式或物理样本数与 WAV 容器冲突，请重新导入并核对。";
+      return false;
+    }
+  }
+  RawSampleReader reader;
+  if (!reader.open(path, source.sampleFormat, error)) return false;
+  if (reader.sampleCount() != source.sampleCount) {
+    error = "来源物理样本数与文件数据边界不一致。";
+    return false;
+  }
+  std::complex<double> first;
+  if (!reader.sampleAt(channel.sourceTime.begin, first, &error)) return false;
+  if (!reader.sampleAt(channel.sourceTime.end - 1, first, &error)) return false;
+  if (iqSourceFingerprint(path) != fingerprint) {
+    error = "来源文件在通道校验期间发生变化，请重新读入。";
+    return false;
+  }
+  return true;
 }
 
 } // namespace
@@ -159,85 +225,134 @@ bool designChannelLowpass(double sampleRateHz, double passEdgeHz, double stopEdg
 }
 
 bool makeChannelDspPlan(const FileMetadata& source, const Channel& channel,
-                        ChannelDspPlan& plan, QString& error) {
-    error.clear();
-    plan = {};
-    if(source.sampleFormat.structure==SampleStructure::Real){error="实数 ADC 尚未实现解析信号转换，不能创建复数 DDC 通道";return false;}
-    if(!source.availability.fingerprint.empty()&&iqSourceFingerprint(QString::fromStdString(source.path)).toStdString()!=source.availability.fingerprint){error="通道源文件指纹已改变，请重新读入";return false;}
-    if(source.availability.status==LoadStatus::Loading||channel.sourceTime.end>availableSamples(source)){error="通道来源未读入";return false;}
-    const auto sourceRate = roundHz(source.sampleRateHz);
-    const auto outputRate = roundHz(channel.outputSampleRateHz);
-    if (!sourceRate || !outputRate || sourceRate > 4'000'000'000ULL || outputRate > 4'000'000'000ULL ||
-        std::abs(source.sampleRateHz - sourceRate) > .01 ||
-        std::abs(channel.outputSampleRateHz - outputRate) > .01) {
-        error = QStringLiteral("当前采样率必须可精确表示到 0.01 Hz");
-        return false;
-    }
-    if (channel.sourceTime.begin >= channel.sourceTime.end ||
-        channel.sourceTime.end > source.sampleCount || !(channel.bandwidthHz > 0) ||
-        !std::isfinite(channel.centerFrequencyHz) || !std::isfinite(channel.bandwidthHz)) {
-        error = QStringLiteral("通道的源时段或频率参数无效");
-        return false;
-    }
-    const double transition = channel.bandwidthHz * .15;
-    const double passEdge = channel.bandwidthHz / 2;
-    const double stopEdge = passEdge + transition;
-    const auto sourceBand = fullRange(source).frequency;
-    if (channel.centerFrequencyHz - stopEdge < sourceBand.lowerHz ||
-        channel.centerFrequencyHz + stopEdge > sourceBand.upperHz) {
-        error = QStringLiteral("通道滤波过渡带超出源文件有效频带");
-        return false;
-    }
-    if (outputRate < stopEdge * 2 || outputRate > sourceRate * 4096.0) {
-        error = QStringLiteral("输出采样率必须覆盖通带与抗混叠过渡带");
-        return false;
-    }
+                        ChannelDspPlan& plan, QString& error, QString* field) {
+  error.clear();
+  plan = {};
+  if (field) *field = "source";
+  std::string formatError;
+  if (!validateSampleFormat(source.sampleFormat, formatError)) {
+    error = "来源样本格式无效：" + QString::fromStdString(formatError);
+    return false;
+  }
+  if (source.sampleFormat.structure != SampleStructure::ComplexIQ) {
+    error = "实数 ADC 尚未实现解析信号转换，不能创建复数 DDC 通道。";
+    return false;
+  }
+  if (source.availability.status == LoadStatus::Failed) {
+    error = source.availability.error.empty()
+                ? QString("来源读取失败，请重新读入或核对文件。")
+                : "来源读取失败：" +
+                      QString::fromStdString(source.availability.error);
+    return false;
+  }
+  const auto sourceRate = roundHz(source.sampleRateHz);
+  const auto outputRate = roundHz(channel.outputSampleRateHz);
+  if (!sourceRate || std::abs(source.sampleRateHz - sourceRate) > .01 ||
+      !std::isfinite(source.centerFrequencyHz) || source.sampleCount == 0) {
+    error =
+        "来源 Fs 必须为 0–4 GHz 内的正数且距整数 Hz 不超过 0.01 Hz；Fc "
+        "和物理样本数必须有效。";
+    return false;
+  }
+  if (!outputRate || std::abs(channel.outputSampleRateHz - outputRate) > .01) {
+    error = "输出 Fs 必须为 0–4 GHz 内的正数且距整数 Hz 不超过 0.01 Hz。";
+    if (field) *field = "outputSampleRateHz";
+    return false;
+  }
+  if (channel.sourceTime.begin >= channel.sourceTime.end ||
+      channel.sourceTime.end > availableSamples(source)) {
+    error = "提取时段必须非空，且结束样本不能超出已读可用前缀。";
+    if (field) *field = "sourceTime";
+    return false;
+  }
+  if (!(channel.bandwidthHz > 0) || !std::isfinite(channel.bandwidthHz) ||
+      !std::isfinite(channel.centerFrequencyHz)) {
+    error = "提取中心频率必须有限，带宽必须为有限正数。";
+    if (field) *field = "frequency";
+    return false;
+  }
+  if (!validateChannelPhysicalSource(source, channel, error)) {
+    if (field) *field = "source";
+    return false;
+  }
+  const double transition = channel.bandwidthHz * .15;
+  const double passEdge = channel.bandwidthHz / 2;
+  const double stopEdge = passEdge + transition;
+  const auto sourceBand = fullRange(source).frequency;
+  if (channel.centerFrequencyHz - stopEdge < sourceBand.lowerHz ||
+      channel.centerFrequencyHz + stopEdge > sourceBand.upperHz) {
+    error = QStringLiteral("通道滤波过渡带超出源文件有效频带");
+    if (field) *field = "frequency";
+    return false;
+  }
+  if (outputRate < stopEdge * 2 || outputRate > sourceRate * 4096.0) {
+    error = QStringLiteral("输出采样率必须覆盖通带与抗混叠过渡带");
+    if (field) *field = "outputSampleRateHz";
+    return false;
+  }
+  if (channel.filter != ChannelFilter::FastPreview &&
+      channel.filter != ChannelFilter::Standard &&
+      channel.filter != ChannelFilter::HighRejection) {
+    error = "FIR 滤波配置无效。";
+    if (field) *field = "filter";
+    return false;
+  }
 
-    const double targetDb = channel.filter == ChannelFilter::FastPreview ? 40 :
-        channel.filter == ChannelFilter::HighRejection ? 80 : 60;
-    std::uint64_t stageRate = sourceRate;
-    std::vector<std::vector<double>> stages;
-    const auto minimumIntermediateRate = static_cast<std::uint64_t>(std::ceil(stopEdge * 4));
-    while (stageRate / 2 >= minimumIntermediateRate && stageRate / 2 >= 2) {
-        const auto nextRate = stageRate / 2;
-        const double aliasStop = static_cast<double>(nextRate) - stopEdge;
-        std::vector<double> coefficients;
-        const double stageAttenuation = targetDb + 6 + 20 * std::log10(static_cast<double>(stages.size() + 2));
-        if (!lowpass(static_cast<double>(stageRate), passEdge, aliasStop,
-                     stageAttenuation, coefficients)) break;
-        stages.push_back(std::move(coefficients));
-        stageRate = nextRate;
-    }
-    const auto common = gcd(outputRate, stageRate);
-    const auto interpolation = outputRate / common;
-    const auto decimation = stageRate / common;
-    if (!interpolation || !decimation || interpolation > 4096 || decimation > 4096) {
-        error = QStringLiteral("有理重采样比例超出 L、M ≤ 4096 的支持范围");
-        return false;
-    }
-    const double expandedRate = static_cast<double>(stageRate) * interpolation;
-    const double rationalStop = std::min(expandedRate / 2,
-        passEdge + transition);
-    std::vector<double> finalCoefficients;
-    const double finalAttenuation = targetDb + 6 + 20 * std::log10(static_cast<double>(stages.size() + 1));
-    if (!lowpass(expandedRate, passEdge, rationalStop, finalAttenuation, finalCoefficients)) {
-        error = QStringLiteral("FIR 阶数超出当前资源预算；请增加过渡带或更换输出采样率");
-        return false;
-    }
-    stages.push_back(std::move(finalCoefficients));
-    plan.sourceRateHz = sourceRate;
-    plan.outputRateHz = outputRate;
-    plan.interpolation = static_cast<std::uint32_t>(interpolation);
-    plan.decimation = static_cast<std::uint32_t>(decimation);
-    plan.sourceDecimationStages = static_cast<int>(stages.size()) - 1;
-    plan.transitionHz = transition;
-    plan.cutoffHz = passEdge + transition / 2;
-    plan.stopbandAttenuationDb = targetDb;
-    plan.stageCoefficients = std::move(stages);
-    for (const auto& coefficients : plan.stageCoefficients)
-        plan.estimatedWorkingBytes += coefficients.size() * sizeof(double);
-    error.clear();
-    return true;
+  const double targetDb = channel.filter == ChannelFilter::FastPreview     ? 40
+                          : channel.filter == ChannelFilter::HighRejection ? 80
+                                                                           : 60;
+  std::uint64_t stageRate = sourceRate;
+  std::vector<std::vector<double>> stages;
+  const auto minimumIntermediateRate =
+      static_cast<std::uint64_t>(std::ceil(stopEdge * 4));
+  while (stageRate / 2 >= minimumIntermediateRate && stageRate / 2 >= 2) {
+    const auto nextRate = stageRate / 2;
+    const double aliasStop = static_cast<double>(nextRate) - stopEdge;
+    std::vector<double> coefficients;
+    const double stageAttenuation =
+        targetDb + 6 + 20 * std::log10(static_cast<double>(stages.size() + 2));
+    if (!lowpass(static_cast<double>(stageRate), passEdge, aliasStop,
+                 stageAttenuation, coefficients))
+      break;
+    stages.push_back(std::move(coefficients));
+    stageRate = nextRate;
+  }
+  const auto common = gcd(outputRate, stageRate);
+  const auto interpolation = outputRate / common;
+  const auto decimation = stageRate / common;
+  if (!interpolation || !decimation || interpolation > 4096 ||
+      decimation > 4096) {
+    error = QStringLiteral("有理重采样比例超出 L、M ≤ 4096 的支持范围");
+    if (field) *field = "outputSampleRateHz";
+    return false;
+  }
+  const double expandedRate = static_cast<double>(stageRate) * interpolation;
+  const double rationalStop = std::min(expandedRate / 2, passEdge + transition);
+  std::vector<double> finalCoefficients;
+  const double finalAttenuation =
+      targetDb + 6 + 20 * std::log10(static_cast<double>(stages.size() + 1));
+  if (!lowpass(expandedRate, passEdge, rationalStop, finalAttenuation,
+               finalCoefficients)) {
+    error = QStringLiteral(
+        "FIR 阶数超出当前资源预算；请增加过渡带或更换输出采样率");
+    if (field) *field = "filter";
+    return false;
+  }
+  stages.push_back(std::move(finalCoefficients));
+  plan.sourceRateHz = sourceRate;
+  plan.outputRateHz = outputRate;
+  plan.interpolation = static_cast<std::uint32_t>(interpolation);
+  plan.decimation = static_cast<std::uint32_t>(decimation);
+  plan.sourceDecimationStages = static_cast<int>(stages.size()) - 1;
+  plan.transitionHz = transition;
+  plan.cutoffHz = passEdge + transition / 2;
+  plan.stopbandAttenuationDb = targetDb;
+  plan.stageCoefficients = std::move(stages);
+  for (const auto& coefficients : plan.stageCoefficients)
+    plan.estimatedWorkingBytes += coefficients.size() * sizeof(double);
+  error.clear();
+  if (field) field->clear();
+  return true;
 }
 
 bool processChannelSamples(const FileMetadata& source, const Channel& channel,
@@ -246,7 +361,14 @@ bool processChannelSamples(const FileMetadata& source, const Channel& channel,
                            const std::function<bool()>& cancelled,
                            const std::function<void(std::uint64_t, std::uint64_t)>& progress) {
     result = {};
-    if(source.sampleFormat.structure==SampleStructure::Real)return false;
+    if (source.sampleFormat.structure != SampleStructure::ComplexIQ ||
+        source.availability.status == LoadStatus::Failed ||
+        channel.sourceTime.begin >= channel.sourceTime.end ||
+        channel.sourceTime.end > availableSamples(source))
+      return false;
+    QString sourceError;
+    if (!validateChannelPhysicalSource(source, channel, sourceError))
+      return false;
     result.waveformScale=adcScale(source.sampleFormat);
     if (plan.stageCoefficients.empty() || outputSamples.begin >= outputSamples.end ||
         outputSamples.end - outputSamples.begin > 8'000'000) return false;

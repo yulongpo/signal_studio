@@ -5,11 +5,15 @@ int runLinkedCursorCapture(const QString& directory, const QString& largeIq) {
     QJsonArray scenes;
     MainWindow window;
     auto save = [&](const QString& name) {
-        require(window.isFullScreen() && isDisplayNumber(window.screen(), 2), "Capture must use display 2 fullscreen");
-        const auto image = window.grab();
-        require(image.size() == QSize(3840, 2160), "Capture must have native 4K pixels");
-        require(image.save(output.filePath(name + ".png")), "Could not save cursor screenshot");
-        scenes.append(name + ".png");
+      require(
+          window.isFullScreen() && window.screen() == nativeAcceptanceScreen(),
+          "Capture must use selected 4K display fullscreen");
+      const auto image = window.grab();
+      require(image.size() == QSize(3840, 2160),
+              "Capture must have native 4K pixels");
+      require(image.save(output.filePath(name + ".png")),
+              "Could not save cursor screenshot");
+      scenes.append(name + ".png");
     };
     auto readyWide = [&] {
         return waitUntil([&] {
@@ -26,26 +30,43 @@ int runLinkedCursorCapture(const QString& directory, const QString& largeIq) {
         }, 90'000);
     };
     try {
-        auto* screen = QGuiApplication::screens().value(1);
-        require(screen && displayPixelSize(screen) == QSize(3840, 2160) && std::abs(screen->devicePixelRatio() - 1.5) < .001,
-            "Linked cursor acceptance requires connected display 2 at 4K / 150%");
-        showFullScreenOnScreen(window, screen);
-        require(QTest::qWaitForWindowExposed(&window, 5000), "Window did not expose on display 2");
-        require(waitUntil([&] { return window.isFullScreen() && window.screen() == screen && window.size() == QSize(2560, 1440); }, 5000), "Fullscreen placement failed");
-        report["screen"] = screenJson(screen); report["fullScreen"] = window.isFullScreen();
-        report["logicalWindowSize"] = sizeJson(window.size());
-        const auto fixture = output.filePath("IQ0_FS1Msps_BW1MHz_FC100MHz.dat");
-        QFile file(fixture); require(file.open(QIODevice::WriteOnly), "Could not create deterministic IQ fixture");
-        QByteArray samples(524288 * 4, Qt::Uninitialized);
-        for (int n = 0; n < 524288; ++n) {
-            const auto value = .3 * std::polar(1.0, 2 * std::numbers::pi * 8040 * n / 1e6) +
-                .2 * std::polar(1.0, 2 * std::numbers::pi * 8080 * n / 1e6) +
-                .1 * std::polar(1.0, 2 * std::numbers::pi * 26000 * n / 1e6);
-            const auto real = static_cast<qint16>(std::lround(value.real() * 32768));
-            const auto imag = static_cast<qint16>(std::lround(value.imag() * 32768));
-            samples[n * 4] = static_cast<char>(real & 255); samples[n * 4 + 1] = static_cast<char>((real >> 8) & 255);
-            samples[n * 4 + 2] = static_cast<char>(imag & 255); samples[n * 4 + 3] = static_cast<char>((imag >> 8) & 255);
-        }
+      auto* screen = nativeAcceptanceScreen();
+      require(screen && displayPixelSize(screen) == QSize(3840, 2160) &&
+                  std::abs(screen->devicePixelRatio() - 1.5) < .001,
+              "Linked cursor acceptance requires connected selected 4K display "
+              "at 4K / 150%");
+      showFullScreenOnScreen(window, screen);
+      require(QTest::qWaitForWindowExposed(&window, 5000),
+              "Window did not expose on selected 4K display");
+      require(waitUntil(
+                  [&] {
+                    return window.isFullScreen() && window.screen() == screen &&
+                           window.size() == QSize(2560, 1440);
+                  },
+                  5000),
+              "Fullscreen placement failed");
+      report["screen"] = screenJson(screen);
+      report["fullScreen"] = window.isFullScreen();
+      report["logicalWindowSize"] = sizeJson(window.size());
+      const auto fixture = output.filePath("IQ0_FS1Msps_BW1MHz_FC100MHz.dat");
+      QFile file(fixture);
+      require(file.open(QIODevice::WriteOnly),
+              "Could not create deterministic IQ fixture");
+      QByteArray samples(524288 * 4, Qt::Uninitialized);
+      for (int n = 0; n < 524288; ++n) {
+        const auto value =
+            .3 * std::polar(1.0, 2 * std::numbers::pi * 8040 * n / 1e6) +
+            .2 * std::polar(1.0, 2 * std::numbers::pi * 8080 * n / 1e6) +
+            .1 * std::polar(1.0, 2 * std::numbers::pi * 26000 * n / 1e6);
+        const auto real =
+            static_cast<qint16>(std::lround(value.real() * 32768));
+        const auto imag =
+            static_cast<qint16>(std::lround(value.imag() * 32768));
+        samples[n * 4] = static_cast<char>(real & 255);
+        samples[n * 4 + 1] = static_cast<char>((real >> 8) & 255);
+        samples[n * 4 + 2] = static_cast<char>(imag & 255);
+        samples[n * 4 + 3] = static_cast<char>((imag >> 8) & 255);
+      }
         file.write(samples); file.close();
         QString error; require(window.addIqFile(fixture, &error), error);
         require(waitUntil([&]{return window.session().activeFile()->metadata.availability.status!=LoadStatus::Loading;},30000),"Fixture loading did not complete");

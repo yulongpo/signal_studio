@@ -562,29 +562,47 @@ void Session::resetView() {
 
 bool Session::createChannelFromActiveMark() {
   auto* file = activeFile();
-  if (!file) return false;
+  if (!file || file->selectedMarkIds.size() != 1) return false;
   if (std::any_of(file->marks.begin(), file->marks.end(),
                   [](const Annotation& mark) { return mark.fileId.empty(); }) &&
       !attachLegacyAnnotations(*file).ok)
     return false;
-  const auto* mark = findMark(*file, file->activeMarkId);
-  if (!mark || !segmentCanCreateChannel(*mark, mark->activeSegmentId))
-    return false;
-  const auto range = mark->range.frequency;
-  file->channels.push_back(
-      {nextId("channel-"), numbered("Channel ", file->channels.size() + 1),
-       mark->id, range.lowerHz + (range.upperHz - range.lowerHz) / 2,
-       range.upperHz - range.lowerHz});
-  auto& channel = file->channels.back();
-  channel.sourceTime = mark->range.time;
-  channel.visibleSourceTime = mark->range.time;
-  const auto result = annotations_.bindChannelSource(*file, channel, mark->id,
-                                                     mark->activeSegmentId);
-  if (!result.ok) {
-    file->channels.pop_back();
-    return false;
-  }
-  return true;
+  auto request = annotationChannelRequest(*file, file->activeMarkId,
+                                          file->view.time, projectGeneration_);
+  request.name = numbered("Channel ", file->channels.size() + 1);
+  return createAnnotationChannel(request).ok;
+}
+
+AnnotationResult Session::createAnnotationChannel(
+    const AnnotationChannelRequest& request) {
+  auto* file = activeFile();
+  if (!file) return {false, false, {}, "请先打开来源文件。", "source"};
+  if (request.sourceIdentity.projectGeneration &&
+      request.sourceIdentity.projectGeneration != projectGeneration_)
+    return {false, false, {}, "工程已切换，请重新打开通道配置。", "source"};
+  Channel channel;
+  if (const auto bound =
+          annotations_.bindChannelSource(*file, channel, request);
+      !bound)
+    return bound;
+  channel.id = nextId("channel-");
+  channel.processingState = ChannelProcessingState::Ready;
+  channel.configVersion = 1;
+  const auto previewSamples = static_cast<SampleIndex>(
+      std::max(1.0, std::min(4'000'000'000.0,
+                             std::floor(file->metadata.sampleRateHz * .25))));
+  const auto begin = channel.sourceTime.begin;
+  const auto initialSpan =
+      std::min(channel.sourceTime.end - begin, previewSamples);
+  channel.visibleSourceTime = {begin, begin + initialSpan};
+  channel.visibleBasebandFrequency = {-channel.outputSampleRateHz / 2,
+                                      channel.outputSampleRateHz / 2};
+  const auto id = channel.id;
+  file->channels.push_back(std::move(channel));
+  project_.activeChannelId = id;
+  project_.activeFileId = file->metadata.id;
+  project_.narrowbandWorkspaceOpen = true;
+  return {true, true, id, {}};
 }
 
 std::string Session::createChannel(const std::string& name,
@@ -594,70 +612,31 @@ std::string Session::createChannel(const std::string& name,
                                    TimeRange sourceTime, ChannelFilter filter,
                                    bool wholeSource, bool preserveSourceTime) {
   auto* file = activeFile();
-  if (wholeSource || !file || name.empty() || name.size() > 320 ||
-      !std::isfinite(centerFrequencyHz) || !std::isfinite(bandwidthHz) ||
-      !std::isfinite(outputSampleRateHz) || bandwidthHz <= 0 ||
-      outputSampleRateHz <= 0)
+  if (!file || wholeSource || !std::isfinite(centerFrequencyHz) ||
+      !std::isfinite(bandwidthHz) || bandwidthHz <= 0)
     return {};
-  if (file->metadata.sampleFormat.structure == SampleStructure::Real) return {};
   if (std::any_of(file->marks.begin(), file->marks.end(),
                   [](const Annotation& mark) { return mark.fileId.empty(); }) &&
       !attachLegacyAnnotations(*file).ok)
     return {};
-  const auto* mark = findMark(*file, sourceMarkId);
-  if (!mark || !segmentCanCreateChannel(*mark, mark->activeSegmentId))
-    return {};
-  const auto transition = bandwidthHz * .15;
-  const auto input = fullRange(file->metadata).frequency;
-  const auto guardBand = bandwidthHz / 2 + transition;
-  const auto sourceBegin = wholeSource ? SampleIndex{0} : sourceTime.begin;
-  const auto sourceEnd =
-      wholeSource ? file->metadata.sampleCount : sourceTime.end;
-  if (sourceBegin >= sourceEnd ||
-      sourceEnd > availableSamples(file->metadata) ||
-      (!wholeSource && (sourceBegin < mark->range.time.begin ||
-                        sourceEnd > mark->range.time.end)) ||
-      centerFrequencyHz - guardBand < input.lowerHz ||
-      centerFrequencyHz + guardBand > input.upperHz ||
-      outputSampleRateHz + 1e-9 < bandwidthHz + 2 * transition)
-    return {};
-
-  Channel channel;
-  channel.id = nextId("channel-");
-  channel.name = name;
-  channel.sourceMarkId = sourceMarkId;
-  channel.centerFrequencyHz = centerFrequencyHz;
-  channel.bandwidthHz = bandwidthHz;
-  channel.sourceTime = {sourceBegin, sourceEnd};
-  channel.outputSampleRateHz = outputSampleRateHz;
-  channel.filter = filter;
-  channel.processingState = ChannelProcessingState::Ready;
-  channel.configVersion = 1;
-  channel.wholeSource = wholeSource;
-  channel.preserveSourceTime = preserveSourceTime;
-  const auto previewSamples = static_cast<SampleIndex>(
-      std::max(1.0, std::min(4'000'000'000.0,
-                             std::floor(file->metadata.sampleRateHz * .25))));
-  const auto initialSourceSpan =
-      std::min(sourceEnd - sourceBegin, previewSamples);
-  channel.visibleSourceTime = {sourceBegin, sourceBegin + initialSourceSpan};
-  channel.visibleBasebandFrequency = {-outputSampleRateHz / 2,
-                                      outputSampleRateHz / 2};
-  if (!annotations_
-           .bindChannelSource(*file, channel, mark->id, mark->activeSegmentId)
-           .ok)
-    return {};
-  file->channels.push_back(channel);
-  project_.activeChannelId = channel.id;
-  project_.activeFileId = file->metadata.id;
-  project_.narrowbandWorkspaceOpen = true;
-  return channel.id;
+  auto request = annotationChannelRequest(*file, sourceMarkId, file->view.time,
+                                          projectGeneration_);
+  request.name = name;
+  request.range = {sourceTime,
+                   {centerFrequencyHz - bandwidthHz / 2,
+                    centerFrequencyHz + bandwidthHz / 2}};
+  request.outputSampleRateHz = outputSampleRateHz;
+  request.filter = filter;
+  request.preserveSourceTime = preserveSourceTime;
+  const auto created = createAnnotationChannel(request);
+  return created.ok ? created.id : std::string{};
 }
 
 bool Session::updateChannel(const std::string& channelId,
                             const Channel& replacement) {
   auto* file = fileForChannel(channelId);
   if (!file || replacement.id != channelId ||
+      !validateChannelName(replacement.name) ||
       !findMark(*file, replacement.sourceMarkId) ||
       !std::isfinite(replacement.centerFrequencyHz) ||
       !std::isfinite(replacement.bandwidthHz) ||
@@ -666,6 +645,8 @@ bool Session::updateChannel(const std::string& channelId,
       replacement.outputSampleRateHz + 1e-9 < replacement.bandwidthHz * 1.3 ||
       replacement.sourceTime.begin >= replacement.sourceTime.end ||
       replacement.sourceTime.end > file->metadata.sampleCount ||
+      replacement.sourceTime.end > availableSamples(file->metadata) ||
+      file->metadata.availability.status == LoadStatus::Failed ||
       replacement.centerFrequencyHz - replacement.bandwidthHz * .65 <
           fullRange(file->metadata).frequency.lowerHz ||
       replacement.centerFrequencyHz + replacement.bandwidthHz * .65 >

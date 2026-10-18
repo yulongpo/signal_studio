@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "domain/sample_format.h"
@@ -24,6 +25,12 @@ struct ViewRange {
   FrequencyRange frequency;
   bool operator==(const ViewRange&) const = default;
 };
+inline bool rangeInside(const ViewRange& inner, const ViewRange& outer) {
+  return inner.time.begin >= outer.time.begin &&
+         inner.time.end <= outer.time.end &&
+         inner.frequency.lowerHz >= outer.frequency.lowerHz &&
+         inner.frequency.upperHz <= outer.frequency.upperHz;
+}
 
 inline constexpr std::size_t annotationSegmentBudget = 100'000;
 inline constexpr std::size_t annotationCommandBudget = 40;
@@ -50,6 +57,7 @@ enum class FrequencyQuality {
 enum class RefineMethod { Coarse, Sample, Roi, None, Manual };
 enum class RefineStatus { Applied, Fallback, Skipped, Unknown };
 enum class DiagnosticSeverity { Info, Warning, Error };
+enum class ChannelBindingKind { LocatedSegment, UserRange };
 enum class ChannelSourceRelation {
   Current,
   Changed,
@@ -173,7 +181,21 @@ struct AnnotationChannelSnapshot {
   AnnotationSource sourceKind = AnnotationSource::Manual;
   ReviewStatus reviewStatus = ReviewStatus::Accepted;
   SourceIdentity sourceIdentity;
-  bool operator==(const AnnotationChannelSnapshot&) const = default;
+  ChannelBindingKind bindingKind = ChannelBindingKind::LocatedSegment;
+  // The complete binding geometry at creation. New snapshots store the actual
+  // time/frequency crop in `range`; pre-v6 snapshots retain their original
+  // range unchanged, with the actual extraction kept in the channel's DSP
+  // parameters.
+  std::optional<ViewRange> boundRange;
+  bool operator==(const AnnotationChannelSnapshot& other) const {
+    return annotationId == other.annotationId && segmentId == other.segmentId &&
+           revisionId == other.revisionId && name == other.name &&
+           range == other.range && sourceKind == other.sourceKind &&
+           reviewStatus == other.reviewStatus &&
+           sourceIdentity == other.sourceIdentity &&
+           bindingKind == other.bindingKind &&
+           boundRange.value_or(range) == other.boundRange.value_or(other.range);
+  }
 };
 
 struct AnnotationBounds {
@@ -188,6 +210,11 @@ struct AnnotationValidation {
   std::string error;
   explicit operator bool() const { return ok; }
 };
+
+inline constexpr std::size_t channelNameUtf16Limit = 80;
+// Channel names persist as Unicode text with a QString-compatible UTF-16 unit
+// limit. Reject malformed UTF-8 before any replacement-character conversion.
+AnnotationValidation validateChannelName(std::string_view);
 
 const Segment* findSegment(const Annotation&, const std::string& id);
 Segment* findSegment(Annotation&, const std::string& id);

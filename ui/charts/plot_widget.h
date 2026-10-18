@@ -89,6 +89,7 @@ class PlotWidget : public QWidget {
   void cursorChanged(SampleIndex sample, double frequencyHz);
   void interactionHint(const QString& text);
   void markRenameRequested();
+  void annotationChannelRequested();
   void widebandDetectionRequested();
   void detectionRoiRequested();
   void detectionRoiConfirmed(const ViewRange& range);

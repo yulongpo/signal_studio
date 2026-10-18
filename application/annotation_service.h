@@ -12,8 +12,29 @@ namespace signalstudio {
 struct AnnotationResult {
   bool ok = false, changed = false;
   std::string id, error;
+  std::string field;
   explicit operator bool() const { return ok; }
 };
+
+struct AnnotationChannelRequest {
+  std::string annotationId, segmentId, name;
+  ChannelBindingKind bindingKind = ChannelBindingKind::LocatedSegment;
+  SourceIdentity sourceIdentity;
+  ViewRange boundRange, range;
+  double outputSampleRateHz = 0;
+  ChannelFilter filter = ChannelFilter::Standard;
+  bool preserveSourceTime = true;
+};
+
+// An observation supplies frequency only. Its extraction time comes from the
+// caller's visible range intersected with the available prefix; an empty
+// intersection remains empty until the user chooses another range.
+AnnotationChannelRequest annotationChannelRequest(
+    const FileState&, const std::string& annotationId, TimeRange visibleTime,
+    std::uint64_t projectGeneration = 0, const std::string& segmentId = {});
+AnnotationResult prepareAnnotationChannel(const FileState&,
+                                          const AnnotationChannelRequest&,
+                                          Channel&);
 enum class AnnotationSelectionMode { Replace, Toggle, Range, ExtendRange };
 
 // A UI draft is tied to the exact object and segment it started from. Worker
@@ -116,6 +137,8 @@ class AnnotationService {
   AnnotationResult bindChannelSource(FileState&, Channel&,
                                      const std::string& annotationId,
                                      const std::string& segmentId) const;
+  AnnotationResult bindChannelSource(FileState&, Channel&,
+                                     const AnnotationChannelRequest&) const;
   AnnotationResult undo(FileState&);
   AnnotationResult redo(FileState&);
   bool canUndo(const FileState&) const;

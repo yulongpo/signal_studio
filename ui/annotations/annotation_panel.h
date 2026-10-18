@@ -38,6 +38,7 @@ class AnnotationPanel final : public QWidget {
   void changed();
   void hoverChanged(const QString& id, const QString& segmentId);
   void message(const QString&);
+  void createChannelRequested();
 
  protected:
   bool eventFilter(QObject*, QEvent*) override;

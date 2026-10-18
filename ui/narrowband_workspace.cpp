@@ -1558,10 +1558,43 @@ void NarrowbandWorkspace::cancelChartWheel() {
 void NarrowbandWorkspace::requestDisplay(bool settled) {
     const auto* active = session_.activeChannel(); const auto* file = session_.activeFile();
     if (!active || !file || !waveform_ || !psd_ || !stft_) return;
-    if(file->metadata.availability.status==LoadStatus::Loading||active->sourceTime.end>availableSamples(file->metadata)) {
-        cancelPsd();cancelWork();dataStatus_->setText("来源未读入 / 等待读入完成或停止");
-        for(auto* chart:{waveform_,psd_})chart->setSeries({},dataStatus_->text());
-        for(auto* chart:{stft_,modulationStft_,recognitionStft_})if(chart)chart->setRaster({},dataStatus_->text());return;
+    const auto prefix = availableSamples(file->metadata);
+    if (file->metadata.availability.status == LoadStatus::Failed || !prefix ||
+        active->sourceTime.begin >= active->sourceTime.end ||
+        active->sourceTime.end > prefix) {
+      cancelPsd();
+      cancelWork();
+      hasDisplayRequest_ = false;
+      averagePower_.reset();
+      averagePsd_.clear();
+      linkedPsdKey_.clear();
+      rasterPower_.clear();
+      powerColorKey_.clear();
+      session_.installSpectrogram(active->id, {});
+      QString reason;
+      if (file->metadata.availability.status == LoadStatus::Failed)
+        reason = file->metadata.availability.error.empty()
+                     ? QStringLiteral("来源读取失败，请重新读入或核对文件。")
+                     : QStringLiteral("来源读取失败：") +
+                           str(file->metadata.availability.error);
+      else
+        reason = QStringLiteral(
+                     "通道时段 [%1, %2) 没有完整位于已读可用前缀 [0, %3) 内。")
+                     .arg(active->sourceTime.begin)
+                     .arg(active->sourceTime.end)
+                     .arg(prefix);
+      dataStatus_->setText(reason);
+      analysisStatus_->setText(reason);
+      psdStatus_ = reason;
+      psd_->setProperty("psdComplete", false);
+      waveform_->setSamplePointsVisible(false);
+      for (auto* chart : {waveform_, psd_}) chart->setSeries({}, reason);
+      for (auto* chart : {stft_, modulationStft_, recognitionStft_})
+        if (chart) chart->setRaster({}, reason);
+      for (auto* chart :
+           {waveform_, psd_, stft_, modulationStft_, recognitionStft_})
+        if (chart) chart->setSpectralData({});
+      return;
     }
     if(!file->metadata.demo&&active->processingState==ChannelProcessingState::Ready)requestPsd();
     updateFrequencyAxisLabels();

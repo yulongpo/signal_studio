@@ -10,7 +10,7 @@ param(
     [switch]$WidebandDetection,
     [switch]$ProductionModel,
     [switch]$FinalAcceptance,
-    [ValidateSet('U1', 'U2')]
+    [ValidateSet('U1', 'U2', 'U3')]
     [string]$AnnotationInteractions
 )
 $ErrorActionPreference = 'Stop'
@@ -20,22 +20,23 @@ function Assert-AnnotationInteractionsCapture($Report, [int]$CaptureExitCode, [s
         throw "Native annotation interaction capture failed: $($Report.error)"
     }
     if ($Report.platform -ne 'windows' -or $Report.fullScreen -ne $true -or
-        $Report.screen.connectedIndex -ne 2 -or $Report.screen.friendlyName -notmatch '^Redmi\s*27\s*NU$' -or
-        $Report.screen.devicePath -notmatch 'DISPLAY6$' -or
+        $Report.screen.connectedIndex -lt 1 -or [string]::IsNullOrWhiteSpace($Report.screen.friendlyName) -or
+        [string]::IsNullOrWhiteSpace($Report.screen.devicePath) -or
         $Report.screen.pixelSize.width -ne 3840 -or $Report.screen.pixelSize.height -ne 2160 -or
         [Math]::Abs($Report.screen.devicePixelRatio - 1.5) -gt 0.001 -or
         $Report.logicalWindowSize.width -ne 2560 -or $Report.logicalWindowSize.height -ne 1440) {
-        throw 'Annotation acceptance requires connected screen 2, Redmi 27 NU / DISPLAY6, native 4K/150% fullscreen.'
+        throw 'Annotation acceptance requires the selected native 4K monitor, native 4K/150% fullscreen.'
     }
     $scenes = @($Report.scenes)
-    $expectedScenes = if ($Node -eq 'U2') { 10 } else { 8 }
+    $expectedScenes = if ($Node -eq 'U3') { 12 } elseif ($Node -eq 'U2') { 10 } else { 8 }
     if ($scenes.Count -ne $expectedScenes -or $Report.sceneCount -ne $expectedScenes -or
         @($scenes.scene | Select-Object -Unique).Count -ne $expectedScenes) {
         throw "$Node capture must contain all $expectedScenes unique planned interaction scenes."
     }
     foreach ($scene in $scenes) {
         if ($scene.pass -ne $true -or $scene.windowFullScreen -ne $true -or
-            $scene.windowScreen.connectedIndex -ne 2 -or $scene.capturedScreen.connectedIndex -ne 2 -or
+            $scene.windowScreen.connectedIndex -ne $Report.screen.connectedIndex -or
+            $scene.capturedScreen.connectedIndex -ne $Report.screen.connectedIndex -or
             [Math]::Abs($scene.capturedDevicePixelRatio - 1.5) -gt 0.001 -or
             $scene.logicalWindowSize.width -ne 2560 -or $scene.logicalWindowSize.height -ne 1440 -or
             @($scene.annotationLayers).Count -ne 3 -or
@@ -46,7 +47,7 @@ function Assert-AnnotationInteractionsCapture($Report, [int]$CaptureExitCode, [s
             if ($scene.capturedPixelSize.width -ne 3840 -or $scene.capturedPixelSize.height -ne 2160) {
                 throw "The actual main-window PNG is not 4K: $($scene.scene)"
             }
-        } elseif ($Node -ne 'U2' -or $scene.captureKind -ne 'native-dialog-crop') {
+        } elseif ($Node -notin @('U2', 'U3') -or $scene.captureKind -ne 'native-dialog-crop') {
             throw "Unexpected native capture type: $($scene.scene)"
         }
         if ([Math]::Abs($scene.capturedLogicalWidgetSize.width * 1.5 - $scene.capturedPixelSize.width) -gt 1 -or
@@ -61,10 +62,26 @@ function Assert-AnnotationInteractionsCapture($Report, [int]$CaptureExitCode, [s
         throw 'Interaction capture requires actual hardware QRhi frames and a main-chart data texture.'
     }
     if ($Report.syntheticAnnotations -ne $true -or $Report.modelInferenceVerified -ne $false -or
-        $Report.cpuDdcVerified -ne $false -or
+        ($Node -ne 'U3' -and $Report.cpuDdcVerified -ne $false) -or
         $Report.source.iqSha256 -ne '3a47e55b5f02851d702d5c5782998bf3e374f67cde592c35689acf9ec5399254' -or
         (Get-FileHash -LiteralPath $Report.source.dataPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $Report.source.iqSha256) {
         throw 'Actual IQ identity or the synthetic-annotation evidence boundary is inconsistent.'
+    }
+    if ($Node -eq 'U3') {
+        if ($Report.cpuDdcVerified -ne $true -or @($Report.ddcRuns).Count -ne 3 -or
+            $Report.v6Verified -ne $true -or $Report.legacyV5BackupVerified -ne $true -or
+            $Report.originalEvidenceUnchanged -ne $true -or $Report.unknownStillUnlocated -ne $true) {
+            throw 'U3 requires actual CPU DDC, v6 migration and preserved unknown-time evidence.'
+        }
+        foreach ($run in @($Report.ddcRuns)) {
+            if ($run.realIq -ne $true -or $run.cpuDdcVerified -ne $true -or
+                $run.modelInferenceVerified -ne $false -or $run.outputSamples -le 0 -or
+                $run.energy -le 0 -or $run.outputSha256 -notmatch '^[0-9a-f]{64}$' -or
+                [decimal]$run.sourceBegin -ge [decimal]$run.sourceEnd -or
+                [decimal]$run.sourceEnd -gt [decimal]$run.availableSamples) {
+                throw 'U3 DDC evidence lacks real finite output or exceeds the readable prefix.'
+            }
+        }
     }
     if ($Node -eq 'U2') {
         $last = @($scenes | Where-Object { $_.scene -eq '10-origin-and-edits-preserved-after-reopen' })
@@ -79,13 +96,13 @@ function Assert-WidebandDetectionCapture($Report, [int]$CaptureExitCode, [string
         throw "Native wideband capture failed: $($Report.error)"
     }
     if ($Report.mode -ne 'wideband-detection' -or $Report.platform -ne 'windows' -or
-        $Report.fullScreen -ne $true -or $Report.screen.connectedIndex -ne 2 -or
-        $Report.screen.friendlyName -notmatch '^Redmi\s*27\s*NU$' -or
-        $Report.screen.devicePath -notmatch 'DISPLAY6$' -or
+        $Report.fullScreen -ne $true -or $Report.screen.connectedIndex -lt 1 -or
+        [string]::IsNullOrWhiteSpace($Report.screen.friendlyName) -or
+        [string]::IsNullOrWhiteSpace($Report.screen.devicePath) -or
         $Report.screen.pixelSize.width -ne 3840 -or $Report.screen.pixelSize.height -ne 2160 -or
         [Math]::Abs($Report.screen.devicePixelRatio - 1.5) -gt 0.001 -or
         $Report.logicalWindowSize.width -ne 2560 -or $Report.logicalWindowSize.height -ne 1440) {
-        throw 'Acceptance requires actual connected screen 2, Redmi 27 NU, DISPLAY6, native 4K/150% fullscreen.'
+        throw 'Acceptance requires the selected actual 4K monitor, native 4K/150% fullscreen.'
     }
     $captureScenes = @($Report.scenes)
     $expectedScenes = if ($Report.finalAcceptanceRequested -eq $true) { 46 } elseif ($Report.productionModelRequested -eq $true) { 43 } else { 23 }
@@ -95,7 +112,8 @@ function Assert-WidebandDetectionCapture($Report, [int]$CaptureExitCode, [string
     }
     foreach ($scene in $captureScenes) {
         if ($scene.pass -ne $true -or $scene.windowFullScreen -ne $true -or
-            $scene.windowScreen.connectedIndex -ne 2 -or $scene.capturedScreen.connectedIndex -ne 2 -or
+            $scene.windowScreen.connectedIndex -ne $Report.screen.connectedIndex -or
+            $scene.capturedScreen.connectedIndex -ne $Report.screen.connectedIndex -or
             [Math]::Abs($scene.capturedDevicePixelRatio - 1.5) -gt 0.001 -or
             $scene.logicalWindowSize.width -ne 2560 -or $scene.logicalWindowSize.height -ne 1440) {
             throw "Native scene screen/DPI validation failed: $($scene.scene)"
@@ -133,6 +151,12 @@ function Assert-WidebandDetectionCapture($Report, [int]$CaptureExitCode, [string
         [ulong]$Report.source.physicalSamples -ne 400000 -or
         [ulong]$Report.source.decodedCompleteFrames -ne 400000 -or $Report.source.format -ne 'CF32') {
         throw 'Actual IQ identity, complete frames or SigMF Fs/Fc/format binding was not preserved.'
+    }
+    if ($Report.pendingSegmentChannel.pass -ne $true -or
+        $Report.pendingSegmentChannel.noQualityOrConfirmationGate -ne $true -or
+        $Report.pendingSegmentChannel.pendingUnconfirmedPreservedAfterSaveReopen -ne $true -or
+        $Report.pendingSegmentChannel.channelDialogCancelledWithoutCreation -ne $true) {
+        throw 'Pending original activity must preview a channel without quality or confirmation prerequisites.'
     }
     if ($Report.sourceCounts.importedLabels -ne 4 -or $Report.sourceCounts.manual -ne 1 -or
         $Report.sourceCounts.algorithm -ne $Report.algorithmObservationCount -or
@@ -219,7 +243,7 @@ try {
         }) -Force
         $report | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $reportPath -Encoding utf8
         Assert-AnnotationInteractionsCapture $report $captureExitCode $AnnotationInteractions
-        Write-Host "$Configuration $AnnotationInteractions native interaction capture passed on screen 2, Redmi 27 NU / DISPLAY6, 4K / 150%."
+        Write-Host "$Configuration $AnnotationInteractions native interaction capture passed on $($report.screen.friendlyName) / $($report.screen.devicePath), connection $($report.screen.connectedIndex), 4K / 150%."
         Write-Host "Report: $reportPath"
         return
     }
@@ -249,7 +273,7 @@ try {
         }) -Force
         $report | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $captureReportPath -Encoding utf8
         Assert-WidebandDetectionCapture $report $captureExitCode $OutputDirectory
-        Write-Host "$Configuration native wideband capture passed on screen 2 (Redmi 27 NU / DISPLAY6), 4K / 150%."
+        Write-Host "$Configuration native wideband capture passed on $($report.screen.friendlyName) / $($report.screen.devicePath), connection $($report.screen.connectedIndex), 4K / 150%."
         Write-Host "Report: $captureReportPath"
         return
     }
@@ -260,7 +284,7 @@ try {
         $reportPath = Join-Path $OutputDirectory "$prefix-$($Configuration.ToLowerInvariant())-$renderMode-$size.json"
         $appArguments = @()
         if ($Narrowband) { $appArguments += @('--narrowband-demo', '--verify-narrowband-pages') } else { $appArguments += '--demo-data' }
-        $appArguments += @('--screenshot', $screenshotPath, '--size', $size, '--screen', '2', '--full-screen', '--render-report', $reportPath, $renderOption)
+        $appArguments += @('--screenshot', $screenshotPath, '--size', $size, '--screen', '4k', '--full-screen', '--render-report', $reportPath, $renderOption)
         if ($size -eq '2560x1440') { $appArguments += '--verify-4k-150' }
         if ($Project) { $appArguments += @('--project', $Project) }
         & $executable @appArguments | Out-Host

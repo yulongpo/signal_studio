@@ -4,6 +4,12 @@
 // deliberately separate from the real IQ/model evidence collected before it.
 
 void finalClick(MainWindow& window, const char* name) {
+  const auto action = QString::fromLatin1(name);
+  if (action == "acceptAnnotations" || action == "rejectAnnotations" ||
+      action == "clearAnnotationReview") {
+    widebandChooseQuality(window, name);
+    return;
+  }
   widebandScrollTo(child<QWidget>(window, name));
   click(window, name);
 }
@@ -195,15 +201,16 @@ int runWidebandUnavailableCapture(const QString& outputDirectory,
                      {"mode", "wideband-unavailable"},
                      {"expectedFailure", expectedFailure},
                      {"modelInferenceVerified", false}};
-  auto* screen = QGuiApplication::screens().value(1);
+  auto* screen = nativeAcceptanceScreen();
   try {
     require(screen && displayPixelSize(screen) == QSize(3840, 2160) &&
                 std::abs(screen->devicePixelRatio() - 1.5) < .001,
-            "Availability acceptance requires native screen 2 / 4K / 150%");
+            "Availability acceptance requires native selected 4K monitor / 4K "
+            "/ 150%");
     report["screen"] = widebandScreenJson(screen);
-    require(report["screen"].toObject()["friendlyName"] == "Redmi 27 NU" &&
-                displayDeviceName(screen).endsWith("DISPLAY6"),
-            "Availability capture must use Redmi 27 NU / DISPLAY6");
+    require(!report["screen"].toObject()["friendlyName"].toString().isEmpty() &&
+                !displayDeviceName(screen).isEmpty(),
+            "Availability capture must record the actual monitor identity");
     showFullScreenOnScreen(window, screen);
     require(window.openProject(project) && widebandDisplayReady(window),
             "Historical real-source project could not open without inference");
@@ -215,9 +222,11 @@ int runWidebandUnavailableCapture(const QString& outputDirectory,
     require(originalCount == 4 && historicalCount > 0,
             "Availability project must retain real imported/history records");
     QString error;
-    require(window.importLabels(
-                "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta",
-                &error, false),
+    const auto actualData = QString::fromStdString(file->metadata.path);
+    require(actualData.endsWith(".sigmf-data"),
+            "Availability replay requires the project's actual SigMF source");
+    require(window.importLabels(actualData.chopped(11) + ".sigmf-meta", &error,
+                                false),
             error);
     require(widebandSourceCounts(*file)["importedLabels"].toInt() == 4,
             "Unavailable inference broke idempotent label import");
@@ -428,7 +437,8 @@ QJsonObject widebandFinalAcceptance(Capture& capture, QScreen* screen,
 
   const auto originalId = hiddenId;
   widebandSelectAnnotation(window, originalId);
-  finalClick(window, "beginAnnotationRevision");
+  require(!window.findChild<QPushButton*>("beginAnnotationRevision"),
+          "Direct editing still requires the obsolete revision prerequisite");
   const auto countBefore = findAnnotation(*file, originalId)->segments.size();
   finalClick(window, "splitAnnotationSegment");
   require(findAnnotation(*file, originalId)->segments.size() == countBefore + 1,

@@ -238,8 +238,12 @@ void testSelectionAndChannels() {
       "mark");
   check(first->view == originalView && !session.canBack(),
         "Selection must not navigate");
+  check(
+      !session.createChannelFromActiveMark(),
+      "Multiple sources require an explicit choice before creating a channel");
+  session.selectMarks({secondMarkId}, secondMarkId);
   check(session.createChannelFromActiveMark(),
-        "Active mark must create a demo channel");
+        "An explicitly selected single source must create a demo channel");
   auto replacement = first->channels[0];
   replacement.name = "Renamed channel";
   replacement.outputSampleRateHz = replacement.bandwidthHz * 1.5;
@@ -301,9 +305,9 @@ void testSelectionAndChannels() {
   check(session.focusMark(tinyId) && first->view.time.begin <= 1000000 &&
             first->view.time.end >= 2000000 &&
             !session.setPsdFromSelection(true) &&
-            !session.createChannelFromActiveMark(),
-        "Unknown-time observations may be focused without precise PSD or "
-        "channel geometry");
+            session.createChannelFromActiveMark(),
+        "Unknown-time observations may use the visible range for UserRange "
+        "without claiming precise activity or selection PSD");
 }
 
 void testAuxiliarySnapshotsAndPsdScope() {
@@ -591,12 +595,12 @@ void testSerialization() {
   edgeProject.files.push_back(edgeFile);
   Session edgeSession;
   edgeSession.replaceProject(edgeProject);
-  check(edgeSession.createChannelFromActiveMark() &&
+  check(!edgeSession.createChannelFromActiveMark() &&
             ProjectStore::save(
                 directory.filePath(QStringLiteral("frequency-edge.json")),
                 edgeSession.project(), error),
-        "Derived channel edge rounding must not reject a valid file-boundary "
-        "mark");
+        "A file-boundary mark must remain saveable while new extraction "
+        "reports its missing FIR protection band");
 
   const auto validRoot = QJsonDocument::fromJson(sourceBytes).object();
   auto legacyRoot = validRoot;
@@ -701,7 +705,7 @@ void testSerialization() {
       QStringLiteral("signal-studio-a1.4.3-prototype");
   reject(root);
   root = validRoot;
-  root[QStringLiteral("version")] = 6;
+  root[QStringLiteral("version")] = 7;
   reject(root);
   root = validRoot;
   root[QStringLiteral("activeFileId")] = QStringLiteral("missing");

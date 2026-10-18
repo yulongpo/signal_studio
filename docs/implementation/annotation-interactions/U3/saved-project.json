@@ -1,0 +1,505 @@
+{
+    "activeChannelId": "channel-4",
+    "activeFileId": "file-1",
+    "files": [
+        {
+            "activeMarkId": "",
+            "activeSegmentId": "",
+            "annotationLayers": [
+                true,
+                true,
+                true
+            ],
+            "annotationStore": {
+                "annotationCount": "8",
+                "schema": "signal-studio-annotation-index",
+                "segmentCount": "9",
+                "shards": [
+                    {
+                        "bytes": "27847",
+                        "count": "8",
+                        "path": "annotations/c2bb3ccfff6a5dec63bfc98b/8d70d49f0b3624d8812c4159f06c3a4581a754f7bccd9e1b93eab37b2fe8097f.json",
+                        "sha256": "8d70d49f0b3624d8812c4159f06c3a4581a754f7bccd9e1b93eab37b2fe8097f"
+                    }
+                ],
+                "sourceSets": [
+                    {
+                        "bytes": "6401",
+                        "path": "annotations/c2bb3ccfff6a5dec63bfc98b/source-a0ee6eaadb609aaac18807795b7419351711880468e65ee6df0c8f7208378672.json",
+                        "sha256": "a0ee6eaadb609aaac18807795b7419351711880468e65ee6df0c8f7208378672"
+                    },
+                    {
+                        "bytes": "1282",
+                        "path": "annotations/c2bb3ccfff6a5dec63bfc98b/source-526eebcf605647e4bd3b573ed6ed1856e642225a49a0e80e4f5a93b4e8c7436d.json",
+                        "sha256": "526eebcf605647e4bd3b573ed6ed1856e642225a49a0e80e4f5a93b4e8c7436d"
+                    },
+                    {
+                        "bytes": "1294",
+                        "path": "annotations/c2bb3ccfff6a5dec63bfc98b/source-77325c31bd17aff2e7a8bd53530bf3338cb288c71f9b10a2262eaa3a30176099.json",
+                        "sha256": "77325c31bd17aff2e7a8bd53530bf3338cb288c71f9b10a2262eaa3a30176099"
+                    }
+                ],
+                "version": 2
+            },
+            "annotationView": {
+                "minimumMean": 0,
+                "review": -1,
+                "runId": "",
+                "source": -1
+            },
+            "channels": [
+                {
+                    "absoluteFrequencyLabels": false,
+                    "annotationSource": {
+                        "annotationId": "algo-located",
+                        "bindingKind": "LocatedSegment",
+                        "boundRange": {
+                            "end": "332000",
+                            "lowerHz": 2502000000,
+                            "start": "188000",
+                            "upperHz": 2502340000
+                        },
+                        "name": "ALG 01 · 交互夹具双活动段",
+                        "range": {
+                            "end": "260000",
+                            "lowerHz": 2502000000,
+                            "start": "220000",
+                            "upperHz": 2502340000
+                        },
+                        "reviewStatus": "Pending",
+                        "revisionId": "algo-located:r0",
+                        "segmentId": "algo-located-s2",
+                        "sourceIdentity": {
+                            "availableSamples": "400000",
+                            "centerFrequencyHz": 2500000000,
+                            "contentHash": "",
+                            "effectiveFrequency": {
+                                "lowerHz": 2490000000,
+                                "upperHz": 2510000000
+                            },
+                            "fileId": "file-1",
+                            "formatRevision": "1",
+                            "hashedRange": null,
+                            "path": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-data",
+                            "physicalSamples": "400000",
+                            "projectGeneration": "3",
+                            "quickFingerprint": "3200000/1791646403000",
+                            "sampleFormat": {
+                                "byteOrder": "le",
+                                "channelLayout": "interleaved",
+                                "channels": 1,
+                                "encoding": "F32",
+                                "headerBytes": "0",
+                                "iqLayout": "iq",
+                                "normalizeIntegerAdc": false,
+                                "selectedChannel": 0,
+                                "structure": "complex",
+                                "trailerBytes": "0"
+                            },
+                            "sampleRateHz": 20000000,
+                            "selectedSampleChannel": "0"
+                        },
+                        "sourceKind": "Algorithm"
+                    },
+                    "bandwidthHz": 340000,
+                    "centerFrequencyHz": 2502170000,
+                    "configVersion": "1",
+                    "constellationMaximum": 1,
+                    "constellationMinimum": -1,
+                    "eyeComponent": 0,
+                    "eyePeriods": 2,
+                    "eyeTraces": 64,
+                    "filter": "standard",
+                    "id": "channel-2",
+                    "name": "窄带通道 1",
+                    "outputSampleRateHz": 4000000,
+                    "page": "observe",
+                    "preserveSourceTime": true,
+                    "processingState": "ready",
+                    "psdAxisMaximum": 0,
+                    "psdAxisMinimum": -120,
+                    "psdFftSize": 4096,
+                    "psdSettings": {
+                        "parameters": {
+                            "burgOrder": 16,
+                            "kaiserBeta": 8.6,
+                            "method": 2,
+                            "overlap": 0.5,
+                            "removeMean": false,
+                            "segmentMilliseconds": 0,
+                            "tapers": 6,
+                            "timeBandwidth": 3.5,
+                            "window": 1
+                        },
+                        "scope": 2,
+                        "statistic": 0
+                    },
+                    "relativeTime": false,
+                    "selectedBit": -1,
+                    "sourceMarkId": "algo-located",
+                    "sourceTime": {
+                        "begin": "220000",
+                        "end": "260000"
+                    },
+                    "spectrogramSettings": {
+                        "burgOrder": 16,
+                        "kaiserBeta": 8.6,
+                        "method": 2,
+                        "overlap": 0.5,
+                        "removeMean": false,
+                        "segmentMilliseconds": 0,
+                        "tapers": 6,
+                        "timeBandwidth": 3.5,
+                        "window": 1
+                    },
+                    "stftFftSize": 2048,
+                    "symbolRate": 250000,
+                    "visibleBasebandFrequency": {
+                        "lowerHz": -2000000,
+                        "upperHz": 2000000
+                    },
+                    "visibleSourceTime": {
+                        "begin": "220000",
+                        "end": "260000"
+                    },
+                    "waveform": "iq",
+                    "waveformAutoScale": true,
+                    "waveformAxisMaximum": 32768,
+                    "waveformAxisMinimum": -32768,
+                    "wholeSource": false
+                },
+                {
+                    "absoluteFrequencyLabels": false,
+                    "annotationSource": {
+                        "annotationId": "algo-observation",
+                        "bindingKind": "UserRange",
+                        "boundRange": {
+                            "end": "265536",
+                            "lowerHz": 2499380000,
+                            "start": "0",
+                            "upperHz": 2500120000
+                        },
+                        "name": "ALG 02 · 交互夹具时间未定位",
+                        "range": {
+                            "end": "160000",
+                            "lowerHz": 2499380000,
+                            "start": "80000",
+                            "upperHz": 2500120000
+                        },
+                        "reviewStatus": "Rejected",
+                        "revisionId": "algo-observation:r0",
+                        "segmentId": "",
+                        "sourceIdentity": {
+                            "availableSamples": "400000",
+                            "centerFrequencyHz": 2500000000,
+                            "contentHash": "",
+                            "effectiveFrequency": {
+                                "lowerHz": 2490000000,
+                                "upperHz": 2510000000
+                            },
+                            "fileId": "file-1",
+                            "formatRevision": "1",
+                            "hashedRange": null,
+                            "path": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-data",
+                            "physicalSamples": "400000",
+                            "projectGeneration": "3",
+                            "quickFingerprint": "3200000/1791646403000",
+                            "sampleFormat": {
+                                "byteOrder": "le",
+                                "channelLayout": "interleaved",
+                                "channels": 1,
+                                "encoding": "F32",
+                                "headerBytes": "0",
+                                "iqLayout": "iq",
+                                "normalizeIntegerAdc": false,
+                                "selectedChannel": 0,
+                                "structure": "complex",
+                                "trailerBytes": "0"
+                            },
+                            "sampleRateHz": 20000000,
+                            "selectedSampleChannel": "0"
+                        },
+                        "sourceKind": "Algorithm"
+                    },
+                    "bandwidthHz": 740000,
+                    "centerFrequencyHz": 2499750000,
+                    "configVersion": "1",
+                    "constellationMaximum": 1,
+                    "constellationMinimum": -1,
+                    "eyeComponent": 0,
+                    "eyePeriods": 2,
+                    "eyeTraces": 64,
+                    "filter": "standard",
+                    "id": "channel-3",
+                    "name": "窄带通道 2",
+                    "outputSampleRateHz": 4000000,
+                    "page": "observe",
+                    "preserveSourceTime": true,
+                    "processingState": "ready",
+                    "psdAxisMaximum": 0,
+                    "psdAxisMinimum": -120,
+                    "psdFftSize": 4096,
+                    "psdSettings": {
+                        "parameters": {
+                            "burgOrder": 16,
+                            "kaiserBeta": 8.6,
+                            "method": 2,
+                            "overlap": 0.5,
+                            "removeMean": false,
+                            "segmentMilliseconds": 0,
+                            "tapers": 6,
+                            "timeBandwidth": 3.5,
+                            "window": 1
+                        },
+                        "scope": 2,
+                        "statistic": 0
+                    },
+                    "relativeTime": false,
+                    "selectedBit": -1,
+                    "sourceMarkId": "algo-observation",
+                    "sourceTime": {
+                        "begin": "80000",
+                        "end": "160000"
+                    },
+                    "spectrogramSettings": {
+                        "burgOrder": 16,
+                        "kaiserBeta": 8.6,
+                        "method": 2,
+                        "overlap": 0.5,
+                        "removeMean": false,
+                        "segmentMilliseconds": 0,
+                        "tapers": 6,
+                        "timeBandwidth": 3.5,
+                        "window": 1
+                    },
+                    "stftFftSize": 2048,
+                    "symbolRate": 250000,
+                    "visibleBasebandFrequency": {
+                        "lowerHz": -2000000,
+                        "upperHz": 2000000
+                    },
+                    "visibleSourceTime": {
+                        "begin": "80000",
+                        "end": "160000"
+                    },
+                    "waveform": "iq",
+                    "waveformAutoScale": true,
+                    "waveformAxisMaximum": 0.6949446896711985,
+                    "waveformAxisMinimum": -0.7829129795233408,
+                    "wholeSource": false
+                },
+                {
+                    "absoluteFrequencyLabels": false,
+                    "annotationSource": {
+                        "annotationId": "algo-observation",
+                        "bindingKind": "UserRange",
+                        "boundRange": {
+                            "end": "265536",
+                            "lowerHz": 2499380000,
+                            "start": "0",
+                            "upperHz": 2500120000
+                        },
+                        "name": "ALG 02 · 交互夹具时间未定位",
+                        "range": {
+                            "end": "200000",
+                            "lowerHz": 2499380000,
+                            "start": "0",
+                            "upperHz": 2500120000
+                        },
+                        "reviewStatus": "Rejected",
+                        "revisionId": "algo-observation:r0",
+                        "segmentId": "",
+                        "sourceIdentity": {
+                            "availableSamples": "200000",
+                            "centerFrequencyHz": 2500000000,
+                            "contentHash": "",
+                            "effectiveFrequency": {
+                                "lowerHz": 2490000000,
+                                "upperHz": 2510000000
+                            },
+                            "fileId": "file-1",
+                            "formatRevision": "1",
+                            "hashedRange": null,
+                            "path": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-data",
+                            "physicalSamples": "400000",
+                            "projectGeneration": "3",
+                            "quickFingerprint": "3200000/1791646403000",
+                            "sampleFormat": {
+                                "byteOrder": "le",
+                                "channelLayout": "interleaved",
+                                "channels": 1,
+                                "encoding": "F32",
+                                "headerBytes": "0",
+                                "iqLayout": "iq",
+                                "normalizeIntegerAdc": false,
+                                "selectedChannel": 0,
+                                "structure": "complex",
+                                "trailerBytes": "0"
+                            },
+                            "sampleRateHz": 20000000,
+                            "selectedSampleChannel": "0"
+                        },
+                        "sourceKind": "Algorithm"
+                    },
+                    "bandwidthHz": 740000,
+                    "centerFrequencyHz": 2499750000,
+                    "configVersion": "1",
+                    "constellationMaximum": 1,
+                    "constellationMinimum": -1,
+                    "eyeComponent": 0,
+                    "eyePeriods": 2,
+                    "eyeTraces": 64,
+                    "filter": "standard",
+                    "id": "channel-4",
+                    "name": "窄带通道 3",
+                    "outputSampleRateHz": 4000000,
+                    "page": "observe",
+                    "preserveSourceTime": true,
+                    "processingState": "ready",
+                    "psdAxisMaximum": 0,
+                    "psdAxisMinimum": -120,
+                    "psdFftSize": 4096,
+                    "psdSettings": {
+                        "parameters": {
+                            "burgOrder": 16,
+                            "kaiserBeta": 8.6,
+                            "method": 2,
+                            "overlap": 0.5,
+                            "removeMean": false,
+                            "segmentMilliseconds": 0,
+                            "tapers": 6,
+                            "timeBandwidth": 3.5,
+                            "window": 1
+                        },
+                        "scope": 2,
+                        "statistic": 0
+                    },
+                    "relativeTime": false,
+                    "selectedBit": -1,
+                    "sourceMarkId": "algo-observation",
+                    "sourceTime": {
+                        "begin": "0",
+                        "end": "200000"
+                    },
+                    "spectrogramSettings": {
+                        "burgOrder": 16,
+                        "kaiserBeta": 8.6,
+                        "method": 2,
+                        "overlap": 0.5,
+                        "removeMean": false,
+                        "segmentMilliseconds": 0,
+                        "tapers": 6,
+                        "timeBandwidth": 3.5,
+                        "window": 1
+                    },
+                    "stftFftSize": 2048,
+                    "symbolRate": 250000,
+                    "visibleBasebandFrequency": {
+                        "lowerHz": -2000000,
+                        "upperHz": 2000000
+                    },
+                    "visibleSourceTime": {
+                        "begin": "0",
+                        "end": "200000"
+                    },
+                    "waveform": "iq",
+                    "waveformAutoScale": true,
+                    "waveformAxisMaximum": 32768,
+                    "waveformAxisMinimum": -32768,
+                    "wholeSource": false
+                }
+            ],
+            "detectionRuns": [
+            ],
+            "display": {
+                "absoluteFrequency": true,
+                "auxiliaryMax": 2.5281308591365814,
+                "auxiliaryMin": 0.5281308591365814,
+                "auxiliaryMode": "waveform",
+                "colorScale": true,
+                "dynamicRangeDb": 80,
+                "grid": true,
+                "mainMode": "timeFrequency",
+                "palette": "coolEditClassic",
+                "psdFromSelection": false,
+                "psdMax": 0,
+                "psdMin": -100,
+                "psdSettings": {
+                    "parameters": {
+                        "burgOrder": 16,
+                        "kaiserBeta": 8.6,
+                        "method": 2,
+                        "overlap": 0.5,
+                        "removeMean": false,
+                        "segmentMilliseconds": 0,
+                        "tapers": 6,
+                        "timeBandwidth": 3.5,
+                        "window": 1
+                    },
+                    "scope": 0,
+                    "statistic": 0
+                },
+                "psdSize": 4096,
+                "referenceLevelDb": 0,
+                "spectrogramSettings": {
+                    "burgOrder": 16,
+                    "kaiserBeta": 8.6,
+                    "method": 2,
+                    "overlap": 0.5,
+                    "removeMean": false,
+                    "segmentMilliseconds": 0,
+                    "tapers": 6,
+                    "timeBandwidth": 3.5,
+                    "window": 1
+                },
+                "stftSize": 2048,
+                "waveformAutoFit": true,
+                "waveformMax": 2.5281308591365814,
+                "waveformMin": 0.5281308591365814,
+                "waveformMode": "iqRms"
+            },
+            "metadata": {
+                "availableSamples": "400000",
+                "centerFrequencyHz": 2500000000,
+                "declaredBandwidthHz": 0,
+                "demo": false,
+                "demoSeed": 1,
+                "effectiveBandwidthHz": 20000000,
+                "id": "file-1",
+                "name": "0000000.sigmf-data",
+                "path": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-data",
+                "sampleCount": "400000",
+                "sampleFormat": {
+                    "byteOrder": "le",
+                    "channelLayout": "interleaved",
+                    "channels": 1,
+                    "encoding": "F32",
+                    "headerBytes": "0",
+                    "iqLayout": "iq",
+                    "normalizeIntegerAdc": false,
+                    "selectedChannel": 0,
+                    "structure": "complex",
+                    "trailerBytes": "0"
+                },
+                "sampleRateHz": 20000000,
+                "sourceFingerprint": "3200000/1791646403000"
+            },
+            "selectedMarkIds": [
+            ],
+            "view": {
+                "frequency": {
+                    "lowerHz": 2490000000,
+                    "upperHz": 2510000000
+                },
+                "time": {
+                    "begin": "0",
+                    "end": "400000"
+                }
+            }
+        }
+    ],
+    "name": "u3-native-project-ee5a7e57-915d-4578-ba98-f49e5b1fa04a",
+    "narrowbandWorkspaceOpen": false,
+    "schema": "signal-studio-native-project",
+    "version": 6
+}

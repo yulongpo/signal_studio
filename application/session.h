@@ -57,6 +57,7 @@ class Session {
   bool canForward() const;
   void resetView();
   bool createChannelFromActiveMark();
+  AnnotationResult createAnnotationChannel(const AnnotationChannelRequest&);
   std::string createChannel(const std::string& name,
                             const std::string& sourceMarkId,
                             double centerFrequencyHz, double bandwidthHz,
