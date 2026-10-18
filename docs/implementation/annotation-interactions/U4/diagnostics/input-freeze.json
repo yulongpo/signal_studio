@@ -1,0 +1,1943 @@
+{
+  "node": "U4",
+  "recordedUtc": "2026-10-18T17:52:26.848575+00:00",
+  "branch": "rebuild/a143-native",
+  "implementationCommit": "c182b3ebb34632daa246ddfd41903915dd648554",
+  "inputs": [
+    {
+      "path": ".clang-format",
+      "bytes": 161,
+      "sha256": "003fcfe94418e9d1d6c0c7e6ebab4086672264dd96aa9d5c09d6ca24a4930723"
+    },
+    {
+      "path": "app/main.cpp",
+      "bytes": 24906,
+      "sha256": "d92034b092f9e0c900206fb81451a71ba9be87856a0ccb5db9865628b1b5c442"
+    },
+    {
+      "path": "app/main_window.cpp",
+      "bytes": 209933,
+      "sha256": "e893a1f94178a15f503841d96f2c6449fa5b7199a5369ae655f5d3b016a3767d"
+    },
+    {
+      "path": "app/main_window.h",
+      "bytes": 9419,
+      "sha256": "d5740467c2071afcaa28eb32b0310a56d0e39ddb9dd82d747f8220da7ac4720c"
+    },
+    {
+      "path": "application/annotation_service.cpp",
+      "bytes": 76111,
+      "sha256": "540a066bb79511b9c5b2e006b5873174acce6b5a4188cbd8f57fb6e13a30dd95"
+    },
+    {
+      "path": "application/annotation_service.h",
+      "bytes": 9454,
+      "sha256": "3b3a24ad0a5d5aa08d0932f3d06748109d1f5198f591b8204c8cec6cc06aa299"
+    },
+    {
+      "path": "application/session.cpp",
+      "bytes": 39212,
+      "sha256": "d206995457b309ab4fccf49b3b9b2c843b0c15070eedf3542c8e0f5cdb3dfdc7"
+    },
+    {
+      "path": "application/session.h",
+      "bytes": 4992,
+      "sha256": "d33620084e34347b0645ea2389d7be7408905f42ad1cfe1eb4f9de39098201a4"
+    },
+    {
+      "path": "cmake/deploy_msvc_runtime.cmake",
+      "bytes": 4070,
+      "sha256": "9ab203bd006f7f6b3e1b9663025cd49971740b82fc50334229c6e05f43c6f494"
+    },
+    {
+      "path": "cmake/deploy_runtime.cmake",
+      "bytes": 1319,
+      "sha256": "b1a6fd1682a7997a35c2d9a32d0f49d4abb0981499f2e9715badf20c6e383cc3"
+    },
+    {
+      "path": "cmake/detection_model_runtime.cmake",
+      "bytes": 2343,
+      "sha256": "9d29ca651aef2a988d331bde2d801ce07d47b977628811bc8ee0e3a1e68434f8"
+    },
+    {
+      "path": "cmake/run_ui_test.cmake",
+      "bytes": 758,
+      "sha256": "865f41e4d9ec988d2645f4547253888e49dda28de291dc33cc42547fa7762eb9"
+    },
+    {
+      "path": "CMakeLists.txt",
+      "bytes": 21141,
+      "sha256": "d37722d664c4c2c7518257c378071cce3272535b61c6d70cf9a3f112aac036cc"
+    },
+    {
+      "path": "CMakePresets.json",
+      "bytes": 2265,
+      "sha256": "d101fbb8c21f65b6c45d3f629d48ffbac476e567e0a7c5baff87090034a473aa"
+    },
+    {
+      "path": "domain/annotation.cpp",
+      "bytes": 15115,
+      "sha256": "9826f9b4c41a4566f5af02337ef375f8279a0fddb946cf41184459fda2d33bf3"
+    },
+    {
+      "path": "domain/annotation.h",
+      "bytes": 8399,
+      "sha256": "7545b2a0c167985d1053b169329349e9b4b29ffe0e6a983e4c0baee51a1c16e3"
+    },
+    {
+      "path": "domain/detection.cpp",
+      "bytes": 12932,
+      "sha256": "e79761621972a35a5194cd20375abadf7befc7e902847a9c8ef4597b525b92fc"
+    },
+    {
+      "path": "domain/detection.h",
+      "bytes": 4949,
+      "sha256": "e068a5d3dcc747c5e01a8caaaca43327ef37c9c4d74b8a2ddfab229584d8b905"
+    },
+    {
+      "path": "domain/detection_postprocess.cpp",
+      "bytes": 30712,
+      "sha256": "1550a4548c807aaa3fc38ed3b77972c1a053a3f6c346ee5e801002a62ab030ce"
+    },
+    {
+      "path": "domain/detection_postprocess.h",
+      "bytes": 5991,
+      "sha256": "bbd577ed9f72684d642e4c04ebfb67e62a1b70b6ab4f0964b9c75ae19de061be"
+    },
+    {
+      "path": "domain/detection_refined_fusion.cpp",
+      "bytes": 11741,
+      "sha256": "5ae74cf49f9ea4a337c7267857361aeb9a81b22c0b2b288683658149096cc4d8"
+    },
+    {
+      "path": "domain/detection_refined_fusion.h",
+      "bytes": 2154,
+      "sha256": "6821530bcc2427a882b2fcae3047a32a8fe941aab934e96777d437823081e626"
+    },
+    {
+      "path": "domain/detection_refinement.cpp",
+      "bytes": 49686,
+      "sha256": "86fa33d603276d9c3c62a5115c48c4bb91413772c2dc7dfb060e03d37a05d131"
+    },
+    {
+      "path": "domain/detection_refinement.h",
+      "bytes": 8529,
+      "sha256": "d137990069a730bb8f2dadbb4ffa8fedaccc88d245b0705662d4d91f62e2316b"
+    },
+    {
+      "path": "domain/power_display.h",
+      "bytes": 2302,
+      "sha256": "b69976658fdaac8ca9fa9595bc08c3f1aabccf4976a5fa544f98c7d277f9e984"
+    },
+    {
+      "path": "domain/project.cpp",
+      "bytes": 4044,
+      "sha256": "36961f69b2b0cf3d006e8023642e10535f350e1a11f639f7a9a166b73f4f2d3d"
+    },
+    {
+      "path": "domain/project.h",
+      "bytes": 9161,
+      "sha256": "0ecb838406f8296eeea2fee81d3b5f1f9e2ad454e12e6df11767ba5ecdca74ab"
+    },
+    {
+      "path": "domain/sample_format.cpp",
+      "bytes": 3005,
+      "sha256": "0c3ffaeb90ad66fc2eb35996266f2fc6c30a7d1f4eb27ff22f472b2a4281d26a"
+    },
+    {
+      "path": "domain/sample_format.h",
+      "bytes": 1407,
+      "sha256": "1d47018d4332ef08a2806c906c3409754fba90da3db35be786fa216898a073e7"
+    },
+    {
+      "path": "domain/scn_detection_postprocess.cpp",
+      "bytes": 7040,
+      "sha256": "c27d97a5d54d707b244a16aedc5cf7da6821f218e5712fd934f5aeb19c498a66"
+    },
+    {
+      "path": "domain/scn_detection_postprocess.h",
+      "bytes": 1165,
+      "sha256": "cab1d01dac9a56493fc6ab3e5bdcbb9cc6c7f3fedbdad3ccfbe01cb67c0e858c"
+    },
+    {
+      "path": "domain/spectral_data.h",
+      "bytes": 3626,
+      "sha256": "c48f9831cfe7dfcf1d3a144d6fa8f4f8725d8f944b15a60fbc0c4f0a7c54ffae"
+    },
+    {
+      "path": "infrastructure/annotation_json.cpp",
+      "bytes": 31989,
+      "sha256": "ecb414757c4668d68e88503334de4e4bcddffcb6235f3dd17b3108399ea438d4"
+    },
+    {
+      "path": "infrastructure/annotation_json.h",
+      "bytes": 1044,
+      "sha256": "69b4ac5ae3d5706fa2c9f7fd6f119888c91f6fd7041e8b59c298e64dad9e968f"
+    },
+    {
+      "path": "infrastructure/annotation_store.cpp",
+      "bytes": 14994,
+      "sha256": "a30e70654cf73538eab2f72b96ac85e899aa75cefaa81d49a9c47052ba80f85e"
+    },
+    {
+      "path": "infrastructure/annotation_store.h",
+      "bytes": 485,
+      "sha256": "cbb66f170fe9ea0c45939840f5f5f6bca2bc28d371af6750931d71f261c086b0"
+    },
+    {
+      "path": "infrastructure/channel_processor.cpp",
+      "bytes": 40654,
+      "sha256": "2483da2ef88d21664ff01ac00ec39f0948493fece1bc9e825586882ab6b07e35"
+    },
+    {
+      "path": "infrastructure/channel_processor.h",
+      "bytes": 3837,
+      "sha256": "86a76655fc8fa943dbbbf7bcca10bb60c9f0cdcd493d4c1019312d927655279b"
+    },
+    {
+      "path": "infrastructure/detection_frequency_analysis.cpp",
+      "bytes": 23175,
+      "sha256": "13d2c93249595b33dc6bbb4ffb2372968d62fb248797526a5197afd457aa5b3a"
+    },
+    {
+      "path": "infrastructure/detection_frequency_analysis.h",
+      "bytes": 2496,
+      "sha256": "1186b47b3b5c4fc709337d6eaa6c12d73e96da349192e727e37598f9adb8c78c"
+    },
+    {
+      "path": "infrastructure/detection_model_backend.cpp",
+      "bytes": 43619,
+      "sha256": "ad9f4b04deb9ee8572f7a6786ee3246b0d16592abedc448479243319926024f2"
+    },
+    {
+      "path": "infrastructure/detection_model_backend.h",
+      "bytes": 3288,
+      "sha256": "ed28df7801ab4b2a98f5906558c7814053758b458464637d9f6a735232041d57"
+    },
+    {
+      "path": "infrastructure/detection_model_snapshot.cpp",
+      "bytes": 2327,
+      "sha256": "fcf21ead6bc80f90d03ec2415fae02093b61ad388c741b9acc89efaef1e4cefe"
+    },
+    {
+      "path": "infrastructure/detection_model_snapshot.h",
+      "bytes": 333,
+      "sha256": "ceec5bd06da855732f894e400393454c6ed1a55a6efa79a76c9935873831a306"
+    },
+    {
+      "path": "infrastructure/detection_projection.cpp",
+      "bytes": 20835,
+      "sha256": "5ed2db1d909130406762c6c1db0c79b0f157d7d119dbbacc37fb18209adf0fa3"
+    },
+    {
+      "path": "infrastructure/detection_projection.h",
+      "bytes": 2159,
+      "sha256": "82b9e49d4c866b7bb0674b7caf65a01dd2ea998592a14e91b2443e0f5731279f"
+    },
+    {
+      "path": "infrastructure/detection_protocol.cpp",
+      "bytes": 10919,
+      "sha256": "a0229d89342220156aea73a10a78a9d5cacb5ae44949ee47b64b622a2639b704"
+    },
+    {
+      "path": "infrastructure/detection_protocol.h",
+      "bytes": 1464,
+      "sha256": "b75b8114bf6a526787a99a77c3626163b9b1732e63beff05e71b89c43186d0bc"
+    },
+    {
+      "path": "infrastructure/detection_refined_publication.cpp",
+      "bytes": 10621,
+      "sha256": "1ecbad4537280210e464e8437a26b6a1cbfe021e4fa8a76cdd4572fdcfefa2bf"
+    },
+    {
+      "path": "infrastructure/detection_refined_publication.h",
+      "bytes": 363,
+      "sha256": "4a3b055ce778c08313579e5308b41a8583e2fe5377aed3b618bc0fd646dba979"
+    },
+    {
+      "path": "infrastructure/detection_sample_energy.cpp",
+      "bytes": 8896,
+      "sha256": "35a3e2fc40a34938493f79a04243080f7fc73a98a659e445429d891f7b7947ee"
+    },
+    {
+      "path": "infrastructure/detection_sample_energy.h",
+      "bytes": 1122,
+      "sha256": "105466ca77c2e82c340c8c4b93dc20a6139e6aaf4f60d8335b0fb5d77793a1e1"
+    },
+    {
+      "path": "infrastructure/detection_source.cpp",
+      "bytes": 36731,
+      "sha256": "988e78781ae5e9fe28633ad5e3948abbfda8b6360dcf06ce01465be48ef52ba0"
+    },
+    {
+      "path": "infrastructure/detection_source.h",
+      "bytes": 5578,
+      "sha256": "05d2530e065415b1358d9cdf3c6209207d9a305802c9014cfcf8d87c56f8fec4"
+    },
+    {
+      "path": "infrastructure/detection_store.cpp",
+      "bytes": 49804,
+      "sha256": "2bdd9b5c77758337c76e7870005d0ddeec54ac57273d5d0c8b629b16f732b622"
+    },
+    {
+      "path": "infrastructure/detection_store.h",
+      "bytes": 2183,
+      "sha256": "009c451a64c421cd1d958844c2f0dfc261259c4535a1b4f24b711d6ea32430a7"
+    },
+    {
+      "path": "infrastructure/detection_task.cpp",
+      "bytes": 55119,
+      "sha256": "1a1637eb39d5e3927483113d895503dbd869a7380a2b865608180bc98b92f5da"
+    },
+    {
+      "path": "infrastructure/detection_task.h",
+      "bytes": 2270,
+      "sha256": "09fed1c8a8f5544e93403b796dbc1a0dc7c68b5fa6e178693a5645894997feb8"
+    },
+    {
+      "path": "infrastructure/detection_time_analysis.cpp",
+      "bytes": 16692,
+      "sha256": "2559dd69a79cccee6e839e9da677ed2fc3c0b25776d6d310f0d42a422971df3a"
+    },
+    {
+      "path": "infrastructure/detection_time_analysis.h",
+      "bytes": 710,
+      "sha256": "cc3b7f4aeb803c1377d7e5dddb629b895db3b6ca7962389ae3a56572019ea7fe"
+    },
+    {
+      "path": "infrastructure/detection_worker_client.cpp",
+      "bytes": 5130,
+      "sha256": "c8ddc1520761d1af46b4cd5b4b3f6818442cb5031a0a644d95bb789b34fad4e5"
+    },
+    {
+      "path": "infrastructure/detection_worker_client.h",
+      "bytes": 966,
+      "sha256": "e812db61691be8f5f7cbf7d5c001851c351d0858cff00b4622f52bdf4d4f3f2e"
+    },
+    {
+      "path": "infrastructure/format_template_store.cpp",
+      "bytes": 4915,
+      "sha256": "dcc3b1cf70ff80ccb45cd1e07895764da6e3f243dedfdb3662b7d0984f0ae63f"
+    },
+    {
+      "path": "infrastructure/format_template_store.h",
+      "bytes": 977,
+      "sha256": "5bd8b83c9a8419ba30f5289207219142204d00a775253752070fb39135dc60c8"
+    },
+    {
+      "path": "infrastructure/import_controller.cpp",
+      "bytes": 5437,
+      "sha256": "5f43f0e3f01796de253478c44c4be5aacaa0f65991cd49a57b47ff83093991b6"
+    },
+    {
+      "path": "infrastructure/import_controller.h",
+      "bytes": 1465,
+      "sha256": "1722e73093567b0073765ec0587ed907f094816ff1e31506006231e426638eb0"
+    },
+    {
+      "path": "infrastructure/int16_iq_file.cpp",
+      "bytes": 10255,
+      "sha256": "88ffdab92c98473e7f65035b05b9a5df0219e5c485f94dd29062a9da9372e37e"
+    },
+    {
+      "path": "infrastructure/int16_iq_file.h",
+      "bytes": 4142,
+      "sha256": "f3a8a151a708469f669b384051e2636984ede14187798ac67f5af122995fa51e"
+    },
+    {
+      "path": "infrastructure/label_import.cpp",
+      "bytes": 39716,
+      "sha256": "045e25fc753236aa30a46ff28b30bca5433d7429608d9c9f668586a4772decb1"
+    },
+    {
+      "path": "infrastructure/label_import.h",
+      "bytes": 976,
+      "sha256": "fe7fda86088edca1b14b8152d461e68ad9be6f7556dfed31028cb2ed593423fc"
+    },
+    {
+      "path": "infrastructure/project_store.cpp",
+      "bytes": 55211,
+      "sha256": "1b7dd22839a66d05d149b88773eb9dddeef353b5e9fef7b43c61054800a1976b"
+    },
+    {
+      "path": "infrastructure/project_store.h",
+      "bytes": 410,
+      "sha256": "29b591ea00731d723910f68020d62df93ab32fb53a87e6f8501a5fc2c7c60628"
+    },
+    {
+      "path": "infrastructure/raw_sample_reader.cpp",
+      "bytes": 7271,
+      "sha256": "28b2b842954fe8c4f11f7f8ee28ec8f175d95ceb31e2f25bbefb9a176f1e2f64"
+    },
+    {
+      "path": "infrastructure/raw_sample_reader.h",
+      "bytes": 1004,
+      "sha256": "ec647b4a2b78f1aeeeb0e9ece8d9d94dad1e361282f48724c9fc04c5b1039c74"
+    },
+    {
+      "path": "infrastructure/sample_format_json.h",
+      "bytes": 2658,
+      "sha256": "fac2f832ddb082d990e34c6c0c1715941bfd1064bd10b5ff02272432b9026901"
+    },
+    {
+      "path": "infrastructure/sigmf_metadata.cpp",
+      "bytes": 6819,
+      "sha256": "c34f9b1f1ff8696a2c75b18e41cdb8de26c2972a52839492cf985655e8a25caa"
+    },
+    {
+      "path": "infrastructure/source_loader.cpp",
+      "bytes": 3473,
+      "sha256": "272113d25c68e3b1776d543ae96ec8ba82b81cfcc4f37f532ed1888b98b4f72b"
+    },
+    {
+      "path": "infrastructure/source_loader.h",
+      "bytes": 849,
+      "sha256": "f7e4aa754d9d2c6ab1d0dea1033af9a40e346faf30fff57525af0d65a0eae8c8"
+    },
+    {
+      "path": "infrastructure/source_metadata.cpp",
+      "bytes": 5000,
+      "sha256": "8b2eeb4e13b9d7e5270a2761314be69db24712e5868ee8528723aeb5b773f406"
+    },
+    {
+      "path": "infrastructure/source_metadata.h",
+      "bytes": 609,
+      "sha256": "a1d5653dc3e6521ae22619c0d1844bf2fdccd9db35e1c41ab856f6e77258d4c7"
+    },
+    {
+      "path": "infrastructure/spectral_analysis.cpp",
+      "bytes": 26345,
+      "sha256": "69832120a17284732149f4824dc5d02bdce6477a5f10d4880a07045329abb84b"
+    },
+    {
+      "path": "infrastructure/spectral_analysis.h",
+      "bytes": 2292,
+      "sha256": "d9471df178a5cc0317a3ef417e56cd9296f284b751aea3eff3226ec79f3c435b"
+    },
+    {
+      "path": "infrastructure/spectral_settings_json.h",
+      "bytes": 2481,
+      "sha256": "d3506363b588737f53810e2d431b46adca7398513c03dac94200a3c953127769"
+    },
+    {
+      "path": "infrastructure/spectral_windows.cpp",
+      "bytes": 5418,
+      "sha256": "c203c2cfad1683b276decc8d74a6189defcf2ca14fae64971ce843f23a974e95"
+    },
+    {
+      "path": "infrastructure/wav_metadata.cpp",
+      "bytes": 5304,
+      "sha256": "dcb16c9b1f619cb8ea8751a9a87c7e64267d5e378f9020f4c5bb2ea026875a9b"
+    },
+    {
+      "path": "infrastructure/wav_metadata.h",
+      "bytes": 755,
+      "sha256": "f750688ec0fdde51cb82900601e7d7bc401ad8b54d92812882c2985d66c6990c"
+    },
+    {
+      "path": "resources/branding/manifest.json",
+      "bytes": 1450,
+      "sha256": "5a5166b5caf31e1249d463c910d31f50e68a38f11344785e47c726264084ffaf"
+    },
+    {
+      "path": "resources/branding/png/icon/signal_studio_icon_1024.png",
+      "bytes": 152049,
+      "sha256": "236998a46c1b6684b7f0f27e393c4a40792adf91c0535910370fd247355247b9"
+    },
+    {
+      "path": "resources/branding/png/icon/signal_studio_icon_128.png",
+      "bytes": 13000,
+      "sha256": "33af5f4691a9a3ad323a14629e9e1e9ff33dd564da24ebd7d51ddc64f9cc6b05"
+    },
+    {
+      "path": "resources/branding/png/icon/signal_studio_icon_16.png",
+      "bytes": 745,
+      "sha256": "9c053770210e57ebbc78d98f45248f0779ca8724e541fbd2b6ff25530007f448"
+    },
+    {
+      "path": "resources/branding/png/icon/signal_studio_icon_24.png",
+      "bytes": 1295,
+      "sha256": "4a53fcf533e215e3c65754d8bf0f3ea01ce0b364204d80197eaf21b96190436b"
+    },
+    {
+      "path": "resources/branding/png/icon/signal_studio_icon_256.png",
+      "bytes": 29137,
+      "sha256": "8b6153da522d68f81bca16d2fee2e7ad0ffe6da4eef0d35be916ae9430d36fc2"
+    },
+    {
+      "path": "resources/branding/png/icon/signal_studio_icon_32.png",
+      "bytes": 1877,
+      "sha256": "b401dba9b4e2ce2c1d9838dffca84b85f9c77a9a57d02235dd9c009a28ad311c"
+    },
+    {
+      "path": "resources/branding/png/icon/signal_studio_icon_48.png",
+      "bytes": 3332,
+      "sha256": "55eecc27529d2d8983aaa972b0da58bffe7679672a683d378f1405bd3cdfa7a7"
+    },
+    {
+      "path": "resources/branding/png/icon/signal_studio_icon_512.png",
+      "bytes": 63920,
+      "sha256": "342481bbb6a067e7c9f2fd729e7980c873de9eabf35304dd81532391c4134d42"
+    },
+    {
+      "path": "resources/branding/png/icon/signal_studio_icon_64.png",
+      "bytes": 5033,
+      "sha256": "4fb2a940c1216a9ccedf0ed340f328cd7cd64cfd66903a5c3b59fc3f071bdec7"
+    },
+    {
+      "path": "resources/branding/png/lockup/signal_studio_lockup_1024.png",
+      "bytes": 38432,
+      "sha256": "0198291cc7884f9033e366e152a3ab71e6dc0aea7e26eacc05e5a4bb96983390"
+    },
+    {
+      "path": "resources/branding/png/lockup/signal_studio_lockup_2048.png",
+      "bytes": 86476,
+      "sha256": "470b775d8b9539f354aa0ce8525356a5ae39a2483c5cdca9f96758d2fc6bb63b"
+    },
+    {
+      "path": "resources/branding/png/lockup/signal_studio_lockup_360.png",
+      "bytes": 11105,
+      "sha256": "85510d5ae8a463069e1780c862e17727b92c96a4441940676745bdea5a2749e1"
+    },
+    {
+      "path": "resources/branding/png/lockup/signal_studio_lockup_720.png",
+      "bytes": 25812,
+      "sha256": "dc1596d02ea82b229d3bf49927bea8f3c325ee197c78733ca43a575f76169b15"
+    },
+    {
+      "path": "resources/branding/png/wordmark/signal_studio_wordmark_1024.png",
+      "bytes": 24435,
+      "sha256": "926518efe99bba650fb0dfb54283e7c724758ab6cfccc390194d97b042aae958"
+    },
+    {
+      "path": "resources/branding/png/wordmark/signal_studio_wordmark_2048.png",
+      "bytes": 51374,
+      "sha256": "f64f715cc7f894893ea88b8f79f5424bb552850dc02986f456c8272e6ad92bd1"
+    },
+    {
+      "path": "resources/branding/png/wordmark/signal_studio_wordmark_360.png",
+      "bytes": 8178,
+      "sha256": "052b12fabcd51a0b40ed148790beabfb6051c6551de1b3f2a8ad870b3fdd82c3"
+    },
+    {
+      "path": "resources/branding/png/wordmark/signal_studio_wordmark_720.png",
+      "bytes": 16546,
+      "sha256": "5a5b38384bc4940f31cb063f16c8e57043341bdff1a2b18652c4e12461ce574a"
+    },
+    {
+      "path": "resources/branding/previews/brand_preview_dark_light.png",
+      "bytes": 147557,
+      "sha256": "a83c08ce39b3ec57992839ac4840850eb2e6b16e29f27330210f764ef646bb62"
+    },
+    {
+      "path": "resources/branding/previews/icon-primary.svg.png",
+      "bytes": 106050,
+      "sha256": "f11d17afad83a522f09f81fce39221e9b7809c79a0df1883bd023cb693be1c94"
+    },
+    {
+      "path": "resources/branding/previews/lockup-primary.svg.png",
+      "bytes": 27759,
+      "sha256": "907576a0333949d43c47e7dd944c1889248b588c1eba767d22daffad5d039d6b"
+    },
+    {
+      "path": "resources/branding/previews/wordmark-primary.svg.png",
+      "bytes": 18180,
+      "sha256": "d7c6409f492c5f02ea1eb4121124059ddcd994b41d90082b614a599ddc406fab"
+    },
+    {
+      "path": "resources/branding/qt/resources/branding.qrc",
+      "bytes": 2281,
+      "sha256": "21c131c3c93728fc9ac22ccbe8edced71d4192989c2a57d94483a2dcc889a576"
+    },
+    {
+      "path": "resources/branding/qt/windows/app_icon.rc",
+      "bytes": 38,
+      "sha256": "956da0a7f4bbf9e129f5371337c6683dcdb929b31f797aee4fa814ef8baa9a02"
+    },
+    {
+      "path": "resources/branding/qt/windows/signal_studio.ico",
+      "bytes": 54537,
+      "sha256": "5bdbb5149635ce47cce128b5111af06aa37e615d318f0f039123eadd4ad714c6"
+    },
+    {
+      "path": "resources/branding/README.md",
+      "bytes": 3506,
+      "sha256": "ab653d02c1a968b9d9a0668797fc35723bb029bfd403a7b1eb05114c01865a05"
+    },
+    {
+      "path": "resources/branding/svg/icon-dark.svg",
+      "bytes": 1357,
+      "sha256": "2c1aa47d626a60a380c5e152ccd1298efbace9d6023ac8bf8b61688e98ebd256"
+    },
+    {
+      "path": "resources/branding/svg/icon-light.svg",
+      "bytes": 1358,
+      "sha256": "b000ecf98304090b091a24b439126f8fa3b7dd4b6f21a5c955872ae17248a485"
+    },
+    {
+      "path": "resources/branding/svg/icon-mono-dark.svg",
+      "bytes": 1362,
+      "sha256": "a1d9272f5ed1ad4a46bed197c315b05a0092432d6ec6822333af2dc5886ebc18"
+    },
+    {
+      "path": "resources/branding/svg/icon-mono-light.svg",
+      "bytes": 1363,
+      "sha256": "862fc3befa579b27a83b28477996f52955deb3932e78c84a16770775b4700d4a"
+    },
+    {
+      "path": "resources/branding/svg/icon-primary.svg",
+      "bytes": 3251,
+      "sha256": "607f697511cd9d3653a6607f8d12c79d55f156222bb94b558d2825bdab70efaf"
+    },
+    {
+      "path": "resources/branding/svg/lockup-dark.svg",
+      "bytes": 8755,
+      "sha256": "dd490ed73bdcee72b5a19d5724fe027611c970b8f17d301584ba7881e83c325e"
+    },
+    {
+      "path": "resources/branding/svg/lockup-light.svg",
+      "bytes": 8758,
+      "sha256": "cedda78724b619b3de5a1a9697d04df37f9e05a45c6bc8d9079101a8c3a6165f"
+    },
+    {
+      "path": "resources/branding/svg/lockup-mono-dark.svg",
+      "bytes": 8544,
+      "sha256": "59365b12aafb0eb0fbb032178895f0e85e965bf91228a7385a5bf5cc7bb22ce1"
+    },
+    {
+      "path": "resources/branding/svg/lockup-mono-light.svg",
+      "bytes": 8545,
+      "sha256": "fbe80c8736110c9ed5504664876db09a1ddf9a4705ef225e323a354e27b8c8d8"
+    },
+    {
+      "path": "resources/branding/svg/lockup-primary.svg",
+      "bytes": 10655,
+      "sha256": "40bb9b01f7a6b6e6165120a9250dc0db37121c83eab83e7662b5e958637e78e4"
+    },
+    {
+      "path": "resources/branding/svg/wordmark-dark.svg",
+      "bytes": 7428,
+      "sha256": "e8f180ec6f5c28c0fa00d7845787a6ac6023026b403ccee9f6863bdfea846e31"
+    },
+    {
+      "path": "resources/branding/svg/wordmark-light.svg",
+      "bytes": 7431,
+      "sha256": "63662a6d7cf3528346b9f4e1fec46b067d64df5298383eb45b92beb4770433c3"
+    },
+    {
+      "path": "resources/branding/svg/wordmark-mono-dark.svg",
+      "bytes": 7217,
+      "sha256": "bacb714d0c0f398662f6df9d70e171b1f69b5dec4c746f80c4d9aff15aae50e9"
+    },
+    {
+      "path": "resources/branding/svg/wordmark-mono-light.svg",
+      "bytes": 7218,
+      "sha256": "dfa688c10c4ad8ff530f8edf2c32b28e987ab572e573f786733bce03266ccb8a"
+    },
+    {
+      "path": "resources/branding/svg/wordmark-primary.svg",
+      "bytes": 7437,
+      "sha256": "bf51b1774c2579ac692c78388c3147c3616fdd4df77be0388f4dfbe0727e826d"
+    },
+    {
+      "path": "resources/narrowband_demo.iq",
+      "bytes": 1048576,
+      "sha256": "b96662b25382a3bb606ae5bfe3bf5805cb1de26d1de3f5007e33a9f570d7025c"
+    },
+    {
+      "path": "resources/ui/check-partial.svg",
+      "bytes": 183,
+      "sha256": "26b9300e3ee45beb8350d01e9a09fd7b1dc8de853edae4695d0e7e7e499045e1"
+    },
+    {
+      "path": "resources/ui/check.svg",
+      "bytes": 219,
+      "sha256": "2406e4814c4f6473997bac0a9e5dd80a5b8d6314faed01d0577b1e97971fc1b2"
+    },
+    {
+      "path": "scripts/build.ps1",
+      "bytes": 2053,
+      "sha256": "df834ec4ae4f56840201774a5464dd15530d68bbdc889c15011d43ddda4d541f"
+    },
+    {
+      "path": "scripts/gpu_smoke.ps1",
+      "bytes": 5945,
+      "sha256": "3bbff3383346da8972e0f7f3c859ab4f47e4770507dbc98e49892b2d7db468e9"
+    },
+    {
+      "path": "scripts/measure-import-load.ps1",
+      "bytes": 1824,
+      "sha256": "f9ee7df2e184c44d0ce96f2a1125a1cbc795a8e915fdd89f1260b0613f86a73d"
+    },
+    {
+      "path": "scripts/organize-output.ps1",
+      "bytes": 7561,
+      "sha256": "a74dca132c81efe166f82dc2f6a4081e75b74b5f1c29bbfc4194d34939f843b1"
+    },
+    {
+      "path": "scripts/pack-brand-icon.ps1",
+      "bytes": 1131,
+      "sha256": "ddec9653c6a192651d98e8fdb9348076f911823e9a98cca81e1337f61d3d16e6"
+    },
+    {
+      "path": "scripts/requirements-wideband-tools.txt",
+      "bytes": 19,
+      "sha256": "756cc9e506ae4ee1a6f6c0507088b5cfc0dc8ba350fb2d2d46f1ffa72033adb6"
+    },
+    {
+      "path": "scripts/run.ps1",
+      "bytes": 782,
+      "sha256": "9fb02f9575eeb0c47f4e3fc4ea2541ef7e0a47a14076631ee54d8e4f9a9892ad"
+    },
+    {
+      "path": "scripts/screenshot.ps1",
+      "bytes": 19164,
+      "sha256": "aea585a9855f34fb59cf08fd0b1a05d190d01e118c1a0533ef5af41ad8328016"
+    },
+    {
+      "path": "scripts/validate_wideband_contracts.py",
+      "bytes": 12855,
+      "sha256": "0631528ff5e3b72c15eaa1de31ab8fbc29f0f156a496988bd227bafa820a6bac"
+    },
+    {
+      "path": "scripts/verify-brand.ps1",
+      "bytes": 2559,
+      "sha256": "992293b345f9f2a7d03b8529636a0e338d362642d9fb8bf9aa68b91bc658e6ac"
+    },
+    {
+      "path": "scripts/verify-detection-availability.ps1",
+      "bytes": 3713,
+      "sha256": "c6756246e31c457ef7f7d133bd02cfa624547d5707dab3d20942a69571bdbfad"
+    },
+    {
+      "path": "scripts/verify-linked-cursors.ps1",
+      "bytes": 3698,
+      "sha256": "6062125d1e84c055829091a0abacce128fd4fce41644eba025bcf997befa4d25"
+    },
+    {
+      "path": "scripts/verify-package.ps1",
+      "bytes": 3706,
+      "sha256": "27175a021e34d58f65d2080832c8d51698b2304eac7923709f9ea1683db3da01"
+    },
+    {
+      "path": "scripts/verify-spectral-loading.ps1",
+      "bytes": 3586,
+      "sha256": "075b44e1f5473a45b11a74ee2f994bcec5f80e4fd78448e71174bbd706b27bf5"
+    },
+    {
+      "path": "scripts/verify-spectral-reference.py",
+      "bytes": 6019,
+      "sha256": "bfe12dacd4a0fc9b3c484dfae97e2a3c10060304624f3ff1a261f40e05315079"
+    },
+    {
+      "path": "scripts/verify_annotation_interaction_model.mjs",
+      "bytes": 53796,
+      "sha256": "8a1d517c9e4689dc2b84a8e13a833b388fbe7aab3df35c0f548a7d25d8ad4197"
+    },
+    {
+      "path": "scripts/verify_annotation_interaction_prototype.mjs",
+      "bytes": 41924,
+      "sha256": "30fab3ca3d7956cc39b7a7c42a2d39f7079d3eeca06fe66917fa52a62f3d62a5"
+    },
+    {
+      "path": "scripts/verify_wideband_prototype.mjs",
+      "bytes": 40731,
+      "sha256": "5f9b9e71d1e05100f61958a0a87ee26cd093ccc383734ded92795ec6af6cf8f7"
+    },
+    {
+      "path": "tests/annotation_channels_capture.h",
+      "bytes": 26736,
+      "sha256": "af3801ee5c6d15d709e8ff943271109d54d3cfea4371dfe0494787d6cb366685"
+    },
+    {
+      "path": "tests/annotation_editing_capture.h",
+      "bytes": 16898,
+      "sha256": "e2418c8ad0f367c5fee5a800391c8bd6ffa2894be8238813ea9f2913901a81a9"
+    },
+    {
+      "path": "tests/annotation_editing_tests.h",
+      "bytes": 23501,
+      "sha256": "de39a25dc626d62bfb2ac5a7d9c5bd3b39fb97ce9e083d707e2bddeee110f389"
+    },
+    {
+      "path": "tests/annotation_interactions_capture.h",
+      "bytes": 21231,
+      "sha256": "8e9ee9730a258574a70e09d77544457bae6c93097d28f50b93c311f80ff50005"
+    },
+    {
+      "path": "tests/annotation_interactions_tests.h",
+      "bytes": 43120,
+      "sha256": "b57a49aa5e68b4a0fb69847176aea11ff312f361882fad435ad1f7978b9ca62c"
+    },
+    {
+      "path": "tests/annotation_store_tests.cpp",
+      "bytes": 26840,
+      "sha256": "dcef34330631d22fd646e04a0ddf0cdf093302c019ad1ae9e3a4d2bc6dc26dab"
+    },
+    {
+      "path": "tests/annotation_tests.cpp",
+      "bytes": 86631,
+      "sha256": "73a40fa26901f769129a91b39371edf086fc044117d99d39db4e48e32b034dc1"
+    },
+    {
+      "path": "tests/channel_processor_tests.cpp",
+      "bytes": 21556,
+      "sha256": "44c0d44724cf68cc120bb463ca3bcce584a3914655cacc0ce2e6138d70121881"
+    },
+    {
+      "path": "tests/core_tests.cpp",
+      "bytes": 46936,
+      "sha256": "069c3409ce01f1513f6bb548068dcf4ee0e6967fe45876458a653109a489cd5c"
+    },
+    {
+      "path": "tests/detection_frequency_analysis_tests.cpp",
+      "bytes": 15446,
+      "sha256": "9a5655581e75731fa4e062239d87b717693aedfe532e21e536a622a4b14e73bd"
+    },
+    {
+      "path": "tests/detection_model_backend_tests.cpp",
+      "bytes": 30678,
+      "sha256": "3014e473f64baa4b7123063f9f4726d298a37d38e4a25900fab5f5037307c955"
+    },
+    {
+      "path": "tests/detection_pipeline_tests.cpp",
+      "bytes": 24045,
+      "sha256": "66f790bd7f3c4a3ac856b6d1bb219010ac04da5854915cc7a403a83e449419ca"
+    },
+    {
+      "path": "tests/detection_postprocess_tests.cpp",
+      "bytes": 22357,
+      "sha256": "b7c3304318c57f0c684c870a2801e8fe9562c7733ed7306bedea390fbba6f58c"
+    },
+    {
+      "path": "tests/detection_protocol_tests.cpp",
+      "bytes": 8407,
+      "sha256": "8763ef6953523be99fe257d06f0b4f429363ad5f9f2fb338c17341bcfa720613"
+    },
+    {
+      "path": "tests/detection_refined_fusion_tests.cpp",
+      "bytes": 12426,
+      "sha256": "aff911fdebb1371d118cfa3541044388a800722d02e8d343f7a9aaec8e4d4ad3"
+    },
+    {
+      "path": "tests/detection_refinement_tests.cpp",
+      "bytes": 27192,
+      "sha256": "62aacf3aff831bb86a0b73e083d08e72b516a25ab795fadda14aa0061b673ec8"
+    },
+    {
+      "path": "tests/detection_sample_energy_tests.cpp",
+      "bytes": 14796,
+      "sha256": "9f01f8482fe8303c8102f66edd14db25868533926938d3d6047385938307f243"
+    },
+    {
+      "path": "tests/detection_source_tests.cpp",
+      "bytes": 34051,
+      "sha256": "9d43dd8bf716ac597a86c5180377a987c6e0162f9eb2d1f5142c2c45db5b23f4"
+    },
+    {
+      "path": "tests/detection_store_tests.cpp",
+      "bytes": 24306,
+      "sha256": "c64a328fb798dac954b4396c06a554fc77144e1b04b0602418bce96785136ca5"
+    },
+    {
+      "path": "tests/detection_task_tests.cpp",
+      "bytes": 32704,
+      "sha256": "6983181df420530c050bcd71d864f72a168bddf71d714baba3a8714fecbb9827"
+    },
+    {
+      "path": "tests/detection_time_pipeline_tests.cpp",
+      "bytes": 26164,
+      "sha256": "13c14ac7d04d1d025ed82f077e78541396d91c495c4ea525d904e1d2f9cdee5c"
+    },
+    {
+      "path": "tests/display_optimization_capture.h",
+      "bytes": 15482,
+      "sha256": "2f1f93adc5fb7ac54819645a0e7f5312865b7cf67ec04cb94480712a5e697de3"
+    },
+    {
+      "path": "tests/display_sampling_tests.cpp",
+      "bytes": 7932,
+      "sha256": "d85507462bb1c8b4b4bca5c0ff351aeec46bf661014f42bceb4b0861b6510703"
+    },
+    {
+      "path": "tests/fixtures/generate_import_fixtures.py",
+      "bytes": 3149,
+      "sha256": "a9ec6b2169abc6200941f21dadea5778a283cef7ffdc889b26809982e2261eca"
+    },
+    {
+      "path": "tests/fixtures/IQ0_FS1Msps_BW800kHz_FC100MHz.dat",
+      "bytes": 65536,
+      "sha256": "d026f616efed3379afe8a2bb31839caac7a7ff2f7cd0aa11f5469664aed198cc"
+    },
+    {
+      "path": "tests/fixtures/raw_fixture.h",
+      "bytes": 2409,
+      "sha256": "36300b7f66cb025770a1dde9f2d3200e9e4bdd41fcaa58e539a481b93bf9ed85"
+    },
+    {
+      "path": "tests/fixtures/README-import.md",
+      "bytes": 1635,
+      "sha256": "828b645cf7d2dcaeffa76587d2198919d53217415ebc39542c615e2ad469d968"
+    },
+    {
+      "path": "tests/fixtures/real_ADC_FS1Msps_FC0Hz_RI16.raw",
+      "bytes": 32768,
+      "sha256": "b1652b5ac1c066cf1a80b88bf34b32e9a8e38735e2f51f1c03766493f3ac81c6"
+    },
+    {
+      "path": "tests/fixtures/wideband/detection-source-20m-golden.json",
+      "bytes": 40248,
+      "sha256": "e8af28410e796700a6d5c4d8ce0de5ba9c16a0f7dd60c0c77f7a3625a537b03a"
+    },
+    {
+      "path": "tests/fixtures/wideband/generate_detection_source_golden.py",
+      "bytes": 5191,
+      "sha256": "b916aafe742949af9ec09ccf86a6596ddcea28ff14596f992efce92f8e851c8b"
+    },
+    {
+      "path": "tests/fixtures/wideband/generator-60m-10ms.txt",
+      "bytes": 1989,
+      "sha256": "4f57fea14a0fbcb209945f96a89034f808925f544d204db5260b363d25072d0f"
+    },
+    {
+      "path": "tests/fixtures/wideband/README.md",
+      "bytes": 1289,
+      "sha256": "8230f4d007dae66090961048400718583ff751ff050cba8482ade968ac527838"
+    },
+    {
+      "path": "tests/fixtures/wideband/torchsig-0000000.json",
+      "bytes": 2728,
+      "sha256": "3a8f4cc11248a72508bf837ca55ee82ead36e99ba9eaa636c1789595ff206438"
+    },
+    {
+      "path": "tests/fixtures/wideband/torchsig-0000000.sigmf-meta",
+      "bytes": 1677,
+      "sha256": "5efd03dae0f53002c8400ddc2ba65e367d7dde315b232a24cd77a2b1bd982a29"
+    },
+    {
+      "path": "tests/import_brand_capture.h",
+      "bytes": 7630,
+      "sha256": "5eb1f461c9c25a0ea8420a6fbfdc72be544ba8a2c94c93da2db283b47dc8f8da"
+    },
+    {
+      "path": "tests/import_controller_tests.cpp",
+      "bytes": 8990,
+      "sha256": "173239d24ec2c2f393b736317ac43fc6c8f6e10f760e784cb605e071c142d0a1"
+    },
+    {
+      "path": "tests/label_import_tests.cpp",
+      "bytes": 27827,
+      "sha256": "461ae86341f561453422036c650956617ec6c6123ec2d7352dae2355f6600205"
+    },
+    {
+      "path": "tests/linked_cursor_capture.h",
+      "bytes": 14472,
+      "sha256": "9342c760f7b7ac1db63b45bfcbd0a8acc872ef1dd4c3e6ca7386b5627dd05096"
+    },
+    {
+      "path": "tests/sample_format_tests.cpp",
+      "bytes": 26598,
+      "sha256": "fb47e690bc7476a42d13324523c9c77aab38a50f4fe11b55a24f33542389200e"
+    },
+    {
+      "path": "tests/spectral_analysis_tests.cpp",
+      "bytes": 18198,
+      "sha256": "fda9e7964efb373fd66853bfe4ec373a174b018499ae8e75dd7ddfeccd233309"
+    },
+    {
+      "path": "tests/spectral_loading_capture.h",
+      "bytes": 8886,
+      "sha256": "4c2fcdf54e603f53b086dcf20581086ba40dadb64277e3461503898d5e6b84e2"
+    },
+    {
+      "path": "tests/ui_capture.cpp",
+      "bytes": 55925,
+      "sha256": "0177cfa0cbc066763b7f8acd78a475188f496cf76ccd8faf004cbc6b89dc67f1"
+    },
+    {
+      "path": "tests/ui_tests.cpp",
+      "bytes": 222661,
+      "sha256": "8504b9bfe3a9fa5585726c80341ede6ce2c88fe973dfcf58dec1e08a906fdbc0"
+    },
+    {
+      "path": "tests/wav_input_tests.cpp",
+      "bytes": 12877,
+      "sha256": "fa43e12236cd7247b5272a71a706a347e6ccba16107e7218d829b8662f5e4196"
+    },
+    {
+      "path": "tests/wideband_adaptation_capture.h",
+      "bytes": 12210,
+      "sha256": "fdb30f88fe1852525c0bc4e6029adabe8e396f60242476b9603da8f91d7bd2f8"
+    },
+    {
+      "path": "tests/wideband_detection_capture.h",
+      "bytes": 89200,
+      "sha256": "b3702621a8e933bed5a0ff7f226f31ac9a401372e4569befa454b4854bbc6917"
+    },
+    {
+      "path": "tests/wideband_final_capture.h",
+      "bytes": 24647,
+      "sha256": "925d373bb501b13afc4e34d989faef1ffd4dcbbf3ad6089c485dac84e9da8564"
+    },
+    {
+      "path": "ui/annotations/annotation_evidence_widget.cpp",
+      "bytes": 37998,
+      "sha256": "9bb3b37b9115849ac93256775459130b98c6473a98e6bd4f911e0ef1703b3d1b"
+    },
+    {
+      "path": "ui/annotations/annotation_evidence_widget.h",
+      "bytes": 2160,
+      "sha256": "ea0c7c34a3e533804806f4cb0f16b286b518716dc7fb803194b82678253d1ce0"
+    },
+    {
+      "path": "ui/annotations/annotation_panel.cpp",
+      "bytes": 75392,
+      "sha256": "66d7daa88dbe59394a12cf80cbc556bdf417ee80837c78b9a6cd3a90ecd333c1"
+    },
+    {
+      "path": "ui/annotations/annotation_panel.h",
+      "bytes": 3156,
+      "sha256": "6a2d4a4e5ae919588ea16c0c7b61b7d7db1038795312ff0d866e93fcf42db40c"
+    },
+    {
+      "path": "ui/brand/brand_assets.cpp",
+      "bytes": 4513,
+      "sha256": "abeace4ffb535a39a7eace68689684e5d4861d301b7c6bf24c614ebc3eb27a49"
+    },
+    {
+      "path": "ui/brand/brand_assets.h",
+      "bytes": 577,
+      "sha256": "6c6fc24bd34fd96517840d2aaf4e6ec6340171e7b1ec2ad86462acc93662b540"
+    },
+    {
+      "path": "ui/charts/accelerated_surface.cpp",
+      "bytes": 42159,
+      "sha256": "76cfa960fa62b66f9a650e02894aa870b40150374fb0adc1016aac202f39d091"
+    },
+    {
+      "path": "ui/charts/accelerated_surface.h",
+      "bytes": 5619,
+      "sha256": "7b1c4ff04299cb6c1cc52531eb62ca0e6cba40b4fff28aa5681c588196ec57b4"
+    },
+    {
+      "path": "ui/charts/chart_interaction.h",
+      "bytes": 1684,
+      "sha256": "1dccf149e771c4f2aaac8983fae9680a045c602e2b9172d0187e5b669a3c60de"
+    },
+    {
+      "path": "ui/charts/cursor_overlay.h",
+      "bytes": 7246,
+      "sha256": "60e4ed5981b37f7f93125194b7e7f27b8b836a3f11dd0e7c3aa4f9810f81cd9a"
+    },
+    {
+      "path": "ui/charts/display_sampling.cpp",
+      "bytes": 3183,
+      "sha256": "859c974451a2f2d3fa051981b2b0c30c4d7f03b7d3869496deb687f5701dbfc1"
+    },
+    {
+      "path": "ui/charts/display_sampling.h",
+      "bytes": 829,
+      "sha256": "dc29a89cf88ecbbbd7c44d98103e61bb83291934b77d5310c8a9d3ab2403736f"
+    },
+    {
+      "path": "ui/charts/interaction_feedback.h",
+      "bytes": 1435,
+      "sha256": "f8ec713e4115f2371176269286731a8d947039288c7d2ffeec37373652cf434b"
+    },
+    {
+      "path": "ui/charts/palette.h",
+      "bytes": 3982,
+      "sha256": "c49e33ee0d638566cc70c84bbbaa675f0fb3fc39a583f2921743a9999729e904"
+    },
+    {
+      "path": "ui/charts/plot_widget.cpp",
+      "bytes": 155183,
+      "sha256": "039d0881cf9f956d5b1e792ac70771f86c07474d40931d9ae9f7267eaa0c9382"
+    },
+    {
+      "path": "ui/charts/plot_widget.h",
+      "bytes": 9037,
+      "sha256": "402c437d467ecf2fcff23c4c914e53a110e02c1451a8870628ec800bca8ffdd5"
+    },
+    {
+      "path": "ui/charts/shaders/heatmap.frag",
+      "bytes": 339,
+      "sha256": "ed3265a6d27ab1ed9c3168345974541a3fa11a042523822197fd0600dc65785b"
+    },
+    {
+      "path": "ui/charts/shaders/texture.frag",
+      "bytes": 220,
+      "sha256": "7d128425e3b8ed9507e677afa674e20e99c4d14616138b8536c8c955063652b1"
+    },
+    {
+      "path": "ui/charts/shaders/texture.vert",
+      "bytes": 217,
+      "sha256": "1ac6327d420800c6a4e70204266b495a3844136a42896230af693fa662d691dd"
+    },
+    {
+      "path": "ui/checkbox_style.h",
+      "bytes": 1415,
+      "sha256": "0384be95ec62b4282b5ac19bbac2abedf5436b0e0c0991ed7abd246a302694ca"
+    },
+    {
+      "path": "ui/controls/adaptive_value_edit.cpp",
+      "bytes": 5785,
+      "sha256": "733ab0962f3bf5e281ac1b4f6efb3a0e3c3968c0fb2933c4ed423640022ac60c"
+    },
+    {
+      "path": "ui/controls/adaptive_value_edit.h",
+      "bytes": 1050,
+      "sha256": "5ea4cd7bd994590fe43eb72b7da1f9f1d38cfa271b5c03912125b8d05d44ed03"
+    },
+    {
+      "path": "ui/controls/panel_resize_handle.h",
+      "bytes": 4550,
+      "sha256": "ed5b7e6a0fc522fc3fd5ab786c67b5d58a72411b386f13adc54a1794f5bbbaa4"
+    },
+    {
+      "path": "ui/controls/sample_time_edit.h",
+      "bytes": 3133,
+      "sha256": "e5a56ba635388411f672a5bf4d9c5c738728e650ca0c258c4e3b566e704aaf5d"
+    },
+    {
+      "path": "ui/controls/unsigned_value_edit.h",
+      "bytes": 1828,
+      "sha256": "7e54cf99e2bbc20dea8369898f54065950c2f1cb43c49854c6099f4bc260e9b9"
+    },
+    {
+      "path": "ui/custom_combo.h",
+      "bytes": 1934,
+      "sha256": "5664e04f16c6cf82a0434b45719a54640f69a628ece36ede12d1eced2b15c5ea"
+    },
+    {
+      "path": "ui/detection/detection_card.cpp",
+      "bytes": 51184,
+      "sha256": "a8ef652d9cadc388b46277fea6495fc9ee1e7c8ba0072b531eacc23d8ae1408c"
+    },
+    {
+      "path": "ui/detection/detection_card.h",
+      "bytes": 4857,
+      "sha256": "39fbf54f0c34721f9cef2cf280947e0a73d7b623bdaa62d0f017fae987a3d159"
+    },
+    {
+      "path": "ui/detection/detection_panel.cpp",
+      "bytes": 33794,
+      "sha256": "2ba4f76ae83e46ad8f049ae70890ae78c2cb5fbc729611057a69a8a4834eae33"
+    },
+    {
+      "path": "ui/detection/detection_panel.h",
+      "bytes": 2061,
+      "sha256": "44604e97a671e297e5d71c8504565531a06e72256f292c1aa7a631ad8a5bce03"
+    },
+    {
+      "path": "ui/detection/detection_phase.h",
+      "bytes": 521,
+      "sha256": "55681bcfcf37fcc82846e8091995ca8f4a8f8e76cc961762afdde41e4a48c9c2"
+    },
+    {
+      "path": "ui/display_target.h",
+      "bytes": 3153,
+      "sha256": "69b9985099839f5b32fdf99bb8f1a2936b7452b182396c0ada34861ad2093c94"
+    },
+    {
+      "path": "ui/import/signal_import_dialog.cpp",
+      "bytes": 62263,
+      "sha256": "2161b870b0f027db2996c37ad83e57a8ffcb70193deca490ca9b866c054daf92"
+    },
+    {
+      "path": "ui/import/signal_import_dialog.h",
+      "bytes": 3436,
+      "sha256": "c99b3c4a13005710c648550f4262ed7fb2dea38b9e0deeb1176673db9f89ae78"
+    },
+    {
+      "path": "ui/import/source_preview_widget.cpp",
+      "bytes": 7767,
+      "sha256": "a2d0dc30a0e1e1ec6a9e583dc8c62dc51383d28c7c4d92cec94ad3faf03a2352"
+    },
+    {
+      "path": "ui/import/source_preview_widget.h",
+      "bytes": 1221,
+      "sha256": "fdcd910006bc684a219624c197d8e7e5b9bbb6fd075dd4714ea7bd1f8b7f7130"
+    },
+    {
+      "path": "ui/narrowband_workspace.cpp",
+      "bytes": 144543,
+      "sha256": "a67d5dcaaf41093b296e2ca4d87a355c193da37928ff58b08651a8eb909b42e8"
+    },
+    {
+      "path": "ui/narrowband_workspace.h",
+      "bytes": 6673,
+      "sha256": "3af2dfc10f17e9df9718fad9862b85013f310e614c03454591da494f422b33a2"
+    },
+    {
+      "path": "ui/parameter_input.h",
+      "bytes": 11942,
+      "sha256": "48145f0d230320f08f14d49d3e5ffc60a534cee3c65ee6648de72b4b59785948"
+    },
+    {
+      "path": "ui/source_units.h",
+      "bytes": 729,
+      "sha256": "8c48b483b65ab6f49d187f12e4f4e4e3408052a24f5a91b0ca0254154c4bf884"
+    },
+    {
+      "path": "ui/spectral_settings_widget.cpp",
+      "bytes": 6244,
+      "sha256": "c607609bfacfad956162144ffc50ec1d448e2b3637a2fde2a9b714226e8e5c15"
+    },
+    {
+      "path": "ui/spectral_settings_widget.h",
+      "bytes": 713,
+      "sha256": "e7dc5e8088ee9cf6411a4ee705fa21f00f75f0b750fbf20a86356a7bfdb691a3"
+    }
+  ],
+  "configurations": {
+    "debug": {
+      "programs": [
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudio.exe",
+          "bytes": 11556864,
+          "sha256": "93f8a076ee7d5faf1d5e448423d2a2819769b8558bd9e0f7aaeb00a68dc24d8a"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioAnnotationStoreTests.exe",
+          "bytes": 2877952,
+          "sha256": "2b942d15d962b9b85fe9fcc6f98ee9436381a26f25fb0cf73fc2c46085cb0b8e"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioAnnotationTests.exe",
+          "bytes": 1804288,
+          "sha256": "59bfec4a93fb2bea029d951a88e9d5fd29f712530f49f9bb04df9e83c6ac9401"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioChannelProcessorTests.exe",
+          "bytes": 1381376,
+          "sha256": "7ca85c7312d6894f361d0b5f3173393c6ccc2d8a58c63b99b0ceb28f25162838"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioCoreTests.exe",
+          "bytes": 3316736,
+          "sha256": "3c0452499810f0da33c253c62835fce3cfedd1486e515beb92f9b89c17668835"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionFrequencyAnalysisTests.exe",
+          "bytes": 2205184,
+          "sha256": "2018777a835324ab01814cdbcdfbfb2fd4e51f38880ca6d759dd2c657d914130"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionModelBackendTests.exe",
+          "bytes": 1220608,
+          "sha256": "9398b37745b3144e1b55587cb4e63528df0bec654b94b952545f0479db8b2c8c"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionPipelineTests.exe",
+          "bytes": 3724288,
+          "sha256": "918c688d8e1d58f3e80ccf87db595de1a75060b0b5d20d7e14e8304a42cb717c"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionPostprocessTests.exe",
+          "bytes": 1262080,
+          "sha256": "6fbf5f4577bc294cc044951d63e52818cb8da3c930afc04f4a19dfe4867b5412"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionProtocolTests.exe",
+          "bytes": 243200,
+          "sha256": "2875f9aad2aa083fa4b14d918364e079a37b8aeb89f5a11463beb42f5ff598ec"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionRefinedFusionTests.exe",
+          "bytes": 923136,
+          "sha256": "659901551e990f16f80ad9d182d92abe811dbb895a4e55d7e9a9a3809df4806d"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionRefinementTests.exe",
+          "bytes": 1285632,
+          "sha256": "6399378d90469d436108033a4ea7ffeb1a95da88e45edc3dec50256a84692585"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionSampleEnergyTests.exe",
+          "bytes": 1370624,
+          "sha256": "8c1fdeb47b2979327c9f1705ec7f4c1a47b423835cbf398a9476d1bd494944f4"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionSourceTests.exe",
+          "bytes": 1342976,
+          "sha256": "946e8739305c7df20c536e81335479d8c3cb49acf868c628da416279519c2960"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionStoreTests.exe",
+          "bytes": 1550336,
+          "sha256": "a2ef7044e59f0e0a660fb9e05e0ea5a715fce1225aa3307ef35fe76a0ffd1a7d"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionTaskTests.exe",
+          "bytes": 4157952,
+          "sha256": "6b2918480f594aea71d648a8f26ab93c24d393863d26b4a9ae642b30cb43086f"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionTimePipelineTests.exe",
+          "bytes": 3749888,
+          "sha256": "aae951a7977f4bd53652ee76c4badd2ed2e208c705131022d91cf66c71f65716"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionWorker.exe",
+          "bytes": 2618368,
+          "sha256": "7b64ea88b219e12da1e1c9a31d974886d88e928982d487c66128e4967214d8e2"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioDisplaySamplingTests.exe",
+          "bytes": 127488,
+          "sha256": "0673dd785ca245f73c82010ba3e5c191346811d47e6024f63273ec0d71dad716"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioImportTests.exe",
+          "bytes": 1288192,
+          "sha256": "28dd5ade7aef7d84cfc516558a7574e98767cfcc544259c8e4d39a787f87d098"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioLabelImportTests.exe",
+          "bytes": 1630720,
+          "sha256": "77d1b352158da1b5f41630dbad12a6f1fc1e18c0658ec694c20696287f84b1d2"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioSampleFormatTests.exe",
+          "bytes": 3230720,
+          "sha256": "73921146f32869da66c4cce9a7e0069e35db9d0af19845ff82c808e070260e7d"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioSpectralAnalysisTests.exe",
+          "bytes": 2337792,
+          "sha256": "3229f07ae0c35c6df8a98fc0274a135dad52666ef146f94da8e889336245b9cc"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioUiCapture.exe",
+          "bytes": 12884480,
+          "sha256": "ef0145193205b431883e4cd967df13b72360776040fc2c549cad588def964bc1"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioUiTests.exe",
+          "bytes": 13525504,
+          "sha256": "0ee3668e4105623342214cec70ee2574bac547ab025d6e9de0f03b763d80dca2"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/SignalStudioWavTests.exe",
+          "bytes": 433664,
+          "sha256": "af6cc9ee73eeac149783e0b4b0ecbbf79432086ee606cffde0bf2e5d9a04ed3d"
+        }
+      ],
+      "runtimeAndModels": [
+        {
+          "path": "out/vs2026-qt611-debug_bin/concrt140d.dll",
+          "bytes": 724408,
+          "sha256": "806e5313397d012a84f9b97399445b143a8fb5b738e8f9b7afafbea1bcbfde14"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/cudart64_12.dll",
+          "bytes": 583680,
+          "sha256": "760c38928bbe5759f7b31ed6692599eb7ec83cedd5702e84c2b72028a89837e1"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/d3dcompiler_47.dll",
+          "bytes": 4741568,
+          "sha256": "e407b9ffadef47e87994dc488214f75405cf04ee99589f2315fc7ab99fd1dfe2"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/detection-models/ffscn-gui-iq-v1/ffscn_epoch1200_dynamic_fp32.engine",
+          "bytes": 23722236,
+          "sha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/detection-models/ffscn-gui-iq-v1/ffscn_epoch1200_fp32.engine",
+          "bytes": 21011788,
+          "sha256": "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+          "bytes": 2617,
+          "sha256": "776ebd3261c063567e443f5b96d5c93a8e50449d9d491bb1242f8c7bf2575786"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/detection-models/LICENSE.CUDA.txt",
+          "bytes": 59262,
+          "sha256": "ad6f5853fba0ca0d159d0f58d49ae49830c2f8c93f7a92648b9ce90adb4c6ccd"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/detection-models/LICENSE.TensorRT.txt",
+          "bytes": 23413,
+          "sha256": "0f219bd1fa873d902c77fb971c0d0319c382aacbeb36c226b8b0b44ece2cd732"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/detection-models/scn-max-psd-v1/manifest.json",
+          "bytes": 1355,
+          "sha256": "689ca063995ef7f77dc8f8ec9189cdf55e616250b4278873b0edadee0a46192a"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/detection-models/scn-max-psd-v1/scn_model.engine",
+          "bytes": 87263588,
+          "sha256": "ae89d04332758d466846b71afc849c446500a82a8bd74fd8c671927247746627"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/dxcompiler.dll",
+          "bytes": 14317000,
+          "sha256": "97abd3b3083607dc29cc3f8eae56c39c349b76ee3c20deeb2f66258708e55bd8"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/dxil.dll",
+          "bytes": 1509800,
+          "sha256": "fda4dde92222ddb8564c3173ce48faa56f7e1c7b46b0b67dada1182ee07a4123"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/generic/qtuiotouchplugind.dll",
+          "bytes": 390456,
+          "sha256": "c11300e5f102706bcfd5d392f078273a7d0618c01add8895491c4dddd6d32924"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/iconengines/qsvgicond.dll",
+          "bytes": 209208,
+          "sha256": "cb0e81fbfcc25a7e7b9ebc02f9576540e7c0c551f9ebd5baabae1f171a23cc32"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/imageformats/qgifd.dll",
+          "bytes": 143672,
+          "sha256": "0e9c7029091fe1e15bcb60dce4c4d05b7bb263fc29e00f6a83635fee37e6b82c"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/imageformats/qicnsd.dll",
+          "bytes": 179512,
+          "sha256": "c495ad8259ad654d9bb7b828803a54b4a6a1e997f8161f1e030935325e7b536b"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/imageformats/qicod.dll",
+          "bytes": 150328,
+          "sha256": "0f18852ea0bd5df515f4d996f5464d439cc42042d8db2e16747507de5b10af13"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/imageformats/qjpegd.dll",
+          "bytes": 1430840,
+          "sha256": "06841e812e52b5cc6f25a7e387bd33a59737f993d95c005d6604d402a68a82a5"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/imageformats/qsvgd.dll",
+          "bytes": 112440,
+          "sha256": "11add8435f14b5b6e53a791c458492f6559b663c3ff4cfc61caf20205f46d899"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/imageformats/qtgad.dll",
+          "bytes": 109880,
+          "sha256": "bf686b300f057a1680972cab6c06b1022bed168f6ff0251aded64db5922449e3"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/imageformats/qtiffd.dll",
+          "bytes": 1095480,
+          "sha256": "e144623583b2a471872502b43a9b1373aebc89bf88d045eab8d8613633688f68"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/imageformats/qwbmpd.dll",
+          "bytes": 105784,
+          "sha256": "c02bb360c5cd70df16e5cbc566ea849cb409a6e7d92e1b02e312d062f932ef6c"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/imageformats/qwebpd.dll",
+          "bytes": 1442104,
+          "sha256": "5d8eb3945462ed09c48542fe95b3ea67bbbd9428bb07b38edda6c84ed13403a1"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/msvcp140_1d.dll",
+          "bytes": 40888,
+          "sha256": "4807f9a46aed66e9fa030a5dbfa7559e7dab714722c67b16297a853c4d3d115d"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/msvcp140_2d.dll",
+          "bytes": 462264,
+          "sha256": "8f2648053c6c7153c201e1dfc2febe2afe2a36692686b7be1ea999aea6753c27"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/msvcp140d.dll",
+          "bytes": 891832,
+          "sha256": "7de55061770829e3958576f4c737b9805f7153a0e5933bb2ecd9ab9adc61b3e3"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/msvcp140d_atomic_wait.dll",
+          "bytes": 102328,
+          "sha256": "0c5c194078138548fea061c560c41f3008c285f7b79873f34fc461c7446a06de"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/msvcp140d_codecvt_ids.dll",
+          "bytes": 35256,
+          "sha256": "ba9cc18222a2371d3f5782da26ff48f75e196a08e75a450d41384a9c7137375e"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/networkinformation/qnetworklistmanagerd.dll",
+          "bytes": 274232,
+          "sha256": "fc189f794e6b6aa331d8ddece3f2e8a5667cd18984dae96717ad730c04541976"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/nvinfer_10.dll",
+          "bytes": 476635680,
+          "sha256": "d100ec93e5abf56f8d2dafb69cde536c4f9fbb4748a5746a74b7009f6894ce67"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/opengl32sw.dll",
+          "bytes": 20639888,
+          "sha256": "b04de4541863bc7d8879040a78889c4849c1b1da2784c4630f734c146c2998ce"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/platforms/qminimald.dll",
+          "bytes": 135992,
+          "sha256": "1d080d681ea420ed980696446561d8b18ec9f32d3182ac1c6a30b45da7b3f242"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/platforms/qoffscreend.dll",
+          "bytes": 338744,
+          "sha256": "c4b4540bea061e5b7fa6b69d056fe2883a016f4471370716a256f0aae8e821b6"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/platforms/qwindowsd.dll",
+          "bytes": 4121400,
+          "sha256": "ca92a980b6bce23d485a2a9e0a54d3de77719b9e3b60a302a2c47a9df3736a10"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/Qt6Cored.dll",
+          "bytes": 24207672,
+          "sha256": "81601506e0453ebf5677409d24b705449a5f835f88401608186df55f77f60124"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/Qt6Guid.dll",
+          "bytes": 28156728,
+          "sha256": "c78f44486805c88696f5663a22c866ccd74cf1f59d578b6c0ee05ac22bc1e5f5"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/Qt6Networkd.dll",
+          "bytes": 5402936,
+          "sha256": "9cf80c7b7a612b3e40ad8279e82dfac3e6ba1a5a0ba317bb7dc93d5e72d2b1c5"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/Qt6Svgd.dll",
+          "bytes": 1862968,
+          "sha256": "096676af4471b2697d6cb2cc424909826418e6947c86561d87c7b0dd4d36f253"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/Qt6Testd.dll",
+          "bytes": 1314616,
+          "sha256": "6c86a2d9913ce01e4e3a6f9ed19a474fa467ca4d87182d8ad0286705a9b16e37"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/Qt6Widgetsd.dll",
+          "bytes": 17222968,
+          "sha256": "cedd440a5fd50aa7155708431e792d25af70a11870c0801209594ab65636e0f5"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/styles/qmodernwindowsstyled.dll",
+          "bytes": 744248,
+          "sha256": "34f58c82c2dab899ec0a2269d4f27462d187f782a6136e7753929c67db26da05"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/tls/qcertonlybackendd.dll",
+          "bytes": 420152,
+          "sha256": "0d72d40d575d1f05ef917b9f04ba5a4b02d33bd95d482bef70c496b97b868f61"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/tls/qschannelbackendd.dll",
+          "bytes": 952632,
+          "sha256": "5d846610d6ee722a616242395a61e77bd3bfaee5b02a7197964107107aca3b48"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/ucrtbased.dll",
+          "bytes": 2120120,
+          "sha256": "aef135320664466ff613e63551584ed1b2717c02d6e1783c8e610174eb84deca"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/vccorlib140d.dll",
+          "bytes": 1509824,
+          "sha256": "c6341ab944e9e7f6b922214d9c1a40963db86f274f7b1d33d7bd1d1f6c8b6d76"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/vcruntime140_1d.dll",
+          "bytes": 61368,
+          "sha256": "b8316d415d4cfab42cdfa6f59e3f5d7dac5b998ae681a1d83368342f07ffea6a"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/vcruntime140_threadsd.dll",
+          "bytes": 50616,
+          "sha256": "cef5fe7055e83b065dcfdad3a86a715abc27eb61eed591d1ad7389bd4a741f9c"
+        },
+        {
+          "path": "out/vs2026-qt611-debug_bin/vcruntime140d.dll",
+          "bytes": 200120,
+          "sha256": "ab6d0cc02fa70bb739fbae00e5de7544cb2dad33a563731a91fb692158d21160"
+        }
+      ]
+    },
+    "release": {
+      "programs": [
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudio.exe",
+          "bytes": 4495360,
+          "sha256": "7071bd04413d8ed10f613bf3065e6461252c65c0c1195c40ad53ea3a0a816871"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioAnnotationStoreTests.exe",
+          "bytes": 625664,
+          "sha256": "c17cd889e677e968362cec2b0206b29e00fbe313df245ae27a90410f0adf218e"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioAnnotationTests.exe",
+          "bytes": 404992,
+          "sha256": "6b64909ac5b0a6d4a55c2dfcfa8c07c657153fd17af025b58a6747e7cf2a0dc9"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioChannelProcessorTests.exe",
+          "bytes": 150528,
+          "sha256": "3aea8fa069db66b8024a0bcb647cdbb3ca5f3d2553752ac4ea4f71607aca571f"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioCoreTests.exe",
+          "bytes": 692736,
+          "sha256": "2d965e736f9987a7c78df3c9ddf3c71d7b92457a113f38b63e7fa9d4fa552a7e"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionFrequencyAnalysisTests.exe",
+          "bytes": 174080,
+          "sha256": "8b2c20fce1a9c9420ac53e8eb9bc28837999e5e085cd1cd3a85a3da5205e1a56"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionModelBackendTests.exe",
+          "bytes": 176128,
+          "sha256": "45646461f10df393f0eec7f7e44e5ff9858da97b1adf45ffca04df64310b9ede"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionPipelineTests.exe",
+          "bytes": 791040,
+          "sha256": "9fdd4fcc51b3674be74744184021c1b2adf0230a9bae795be64cdd3bb2a1f24c"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionPostprocessTests.exe",
+          "bytes": 160256,
+          "sha256": "7a0e92bbb6d36993f2e8f7841bd517d8da0cd5ce4a665774c1e110d942385e12"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionProtocolTests.exe",
+          "bytes": 69120,
+          "sha256": "12cb530588ac9c5f7c242c8ffc715f4ec14c6a1278c59a60c4bb2bb95a063e47"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionRefinedFusionTests.exe",
+          "bytes": 79360,
+          "sha256": "826fbdc6e8859eb34fff9844c133b34dda67a4bcc53ccbeec3571674addc1250"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionRefinementTests.exe",
+          "bytes": 163840,
+          "sha256": "c422b98e3d64b9f6495a45a29df7d0ddc31a8e78ae98d776f6f19278fd728fd5"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionSampleEnergyTests.exe",
+          "bytes": 130560,
+          "sha256": "acb8dd00338cf6a76a0f8d9cd4d17449118b8521e6452db6dc09bbec8fce8a76"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionSourceTests.exe",
+          "bytes": 189952,
+          "sha256": "f19a380ea9c56f43b2c5867dbc5aba7d685fe2cdf20d65db3e167ecda48de4af"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionStoreTests.exe",
+          "bytes": 262144,
+          "sha256": "573cc3244ced8695fa833995487ce8f6e6eec331925c8a25a887fe647a96c332"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionTaskTests.exe",
+          "bytes": 1035264,
+          "sha256": "21242a9a2bdf94e0bc3ababf228b5bd6c8e91ff049702d79037dafdf09368bff"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionTimePipelineTests.exe",
+          "bytes": 795648,
+          "sha256": "fa309b0c37e1d2d2dba5a754eaed41932823ef12888930c5cef5d59b8645a307"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDetectionWorker.exe",
+          "bytes": 219136,
+          "sha256": "74fa531ff4b519edc9dc4ae31c633e0d2c1124a55709e99efe5d325560ab9d15"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioDisplaySamplingTests.exe",
+          "bytes": 30208,
+          "sha256": "87216eb10a092a7755ddccf72b266d606825a608254837becee07d5acf78d4e0"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioImportTests.exe",
+          "bytes": 178688,
+          "sha256": "002690ee1eba23df602f5bd088c85b17e75fa85729f9911898b65b13fd873570"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioLabelImportTests.exe",
+          "bytes": 404992,
+          "sha256": "1e8d7030df285c76edce3fff5dc9276272f710bceae804490d3a0034b48f8254"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioSampleFormatTests.exe",
+          "bytes": 601088,
+          "sha256": "27523929c7cac35bf66cdc8685768455427b08d04b8836d7d7789a7599482196"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioSpectralAnalysisTests.exe",
+          "bytes": 160768,
+          "sha256": "d3c194950479eda8967554f307c34a29525250e9f23e1fa8c2386108ddd355ac"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioUiCapture.exe",
+          "bytes": 4986368,
+          "sha256": "205a52d91470569a5c73d77576a43d187ce27dfa6e52b971c817a7c3b25c6373"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioUiTests.exe",
+          "bytes": 5063680,
+          "sha256": "b835fbc5743029ddd2b7ab39af4bd13fa7324f3e5c1106ace0e1185be0201372"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/SignalStudioWavTests.exe",
+          "bytes": 118272,
+          "sha256": "f4b860bc00acb14f11af14ec5f36a417a22a4ee55fcb1c1fd5608eb169106b85"
+        }
+      ],
+      "runtimeAndModels": [
+        {
+          "path": "out/vs2026-qt611-release_bin/concrt140.dll",
+          "bytes": 374200,
+          "sha256": "54716f0738af891f283d213b5c8d11b25896bb8ee3097d301eae718560cf974e"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/cudart64_12.dll",
+          "bytes": 583680,
+          "sha256": "760c38928bbe5759f7b31ed6692599eb7ec83cedd5702e84c2b72028a89837e1"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/D3Dcompiler_47.dll",
+          "bytes": 4173928,
+          "sha256": "e994847e01a6f1e4cbdc5a864616ac262f67ee4f14db194984661a8d927ab7f4"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/ffscn_epoch1200_dynamic_fp32.engine",
+          "bytes": 23722236,
+          "sha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/ffscn_epoch1200_fp32.engine",
+          "bytes": 21011788,
+          "sha256": "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+          "bytes": 2617,
+          "sha256": "776ebd3261c063567e443f5b96d5c93a8e50449d9d491bb1242f8c7bf2575786"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/detection-models/LICENSE.CUDA.txt",
+          "bytes": 59262,
+          "sha256": "ad6f5853fba0ca0d159d0f58d49ae49830c2f8c93f7a92648b9ce90adb4c6ccd"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/detection-models/LICENSE.TensorRT.txt",
+          "bytes": 23413,
+          "sha256": "0f219bd1fa873d902c77fb971c0d0319c382aacbeb36c226b8b0b44ece2cd732"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/detection-models/scn-max-psd-v1/manifest.json",
+          "bytes": 1355,
+          "sha256": "689ca063995ef7f77dc8f8ec9189cdf55e616250b4278873b0edadee0a46192a"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/detection-models/scn-max-psd-v1/scn_model.engine",
+          "bytes": 87263588,
+          "sha256": "ae89d04332758d466846b71afc849c446500a82a8bd74fd8c671927247746627"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/dxcompiler.dll",
+          "bytes": 14317000,
+          "sha256": "97abd3b3083607dc29cc3f8eae56c39c349b76ee3c20deeb2f66258708e55bd8"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/dxil.dll",
+          "bytes": 1509800,
+          "sha256": "fda4dde92222ddb8564c3173ce48faa56f7e1c7b46b0b67dada1182ee07a4123"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/generic/qtuiotouchplugin.dll",
+          "bytes": 101176,
+          "sha256": "0a517e732bd6a12889e0708d6c464db1c07cfad9bb80831815d85505378d54ba"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/iconengines/qsvgicon.dll",
+          "bytes": 72504,
+          "sha256": "dcfe12e028e1fd694a99fbc18f6aebf08d36223f5fd99c1bc1e7bc85eee11281"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/imageformats/qgif.dll",
+          "bytes": 47928,
+          "sha256": "1ac71f48e08ee0aa405d55041f8340d56ed827fb94260bceda46ac0a50dfb7a5"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/imageformats/qicns.dll",
+          "bytes": 55608,
+          "sha256": "c20ad45b3c2891d9f7a501d7e9f6354e1734244bc455d185ffd45ec08fb3e43d"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/imageformats/qico.dll",
+          "bytes": 45880,
+          "sha256": "0eb08bc9d8f6c1ab05f3a837629eb10e41eb6aa72240d23e291056b801894794"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/imageformats/qjpeg.dll",
+          "bytes": 577848,
+          "sha256": "bc3815c58443a01f43417ecac74bbf182c245d433ea82af0b3dc669c2cb064ab"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/imageformats/qsvg.dll",
+          "bytes": 39224,
+          "sha256": "8a4db91d1cb7689554794e93a9b0811fdffecfa43fc8c703049092ca27097ab7"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/imageformats/qtga.dll",
+          "bytes": 38200,
+          "sha256": "307ba8cb4aff7626d081d8f1a9ddd0581069e4fba845735ed236ec386e19a20c"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/imageformats/qtiff.dll",
+          "bytes": 441656,
+          "sha256": "88cff8f7084ee2b02657922cbbcb17a24c58c9fdcf30ec4a20196fc28e2a7973"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/imageformats/qwbmp.dll",
+          "bytes": 36664,
+          "sha256": "a4a6f28f2be50a9698c44d39db865124c143ac8260a32925ef0f99ad542326d8"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/imageformats/qwebp.dll",
+          "bytes": 562488,
+          "sha256": "5b3412d4df198847fa8953d7af857bbddc46e58d0cab53725821d245b65d802c"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/msvcp140.dll",
+          "bytes": 643512,
+          "sha256": "7c26614e1d733892c2deac7e245ce115504b1d80592dd0a01b08e3e5a55f89ca"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/msvcp140_1.dll",
+          "bytes": 35768,
+          "sha256": "206c931bf90fdad8816de3b5e2ef80b2bcaa9406c89ecc05fe6fddffe251e982"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/msvcp140_2.dll",
+          "bytes": 274872,
+          "sha256": "d50d7883f20d1dc6191768d3746f52dd9cac89c346ffaed5be1f110c2f34a838"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/msvcp140_atomic_wait.dll",
+          "bytes": 57792,
+          "sha256": "3d0cbfaa1bf3eecf5a3f4491d2960ee803cb994f30292c6adc4a07c498f60e2b"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/msvcp140_codecvt_ids.dll",
+          "bytes": 31160,
+          "sha256": "8a65c7596ef2e6938731f5a1058e7e40145b6d97967cc649231a076b9a608d78"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/networkinformation/qnetworklistmanager.dll",
+          "bytes": 70968,
+          "sha256": "8de339b75f82efac6381ca01e3dd3482c500a9115c49b53fbccafe0d933eef64"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/nvinfer_10.dll",
+          "bytes": 476635680,
+          "sha256": "d100ec93e5abf56f8d2dafb69cde536c4f9fbb4748a5746a74b7009f6894ce67"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/opengl32sw.dll",
+          "bytes": 20639888,
+          "sha256": "b04de4541863bc7d8879040a78889c4849c1b1da2784c4630f734c146c2998ce"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/platforms/qminimal.dll",
+          "bytes": 61752,
+          "sha256": "c4f03a873f96edd8ab9c3016883f1705669743ba48d1ecbc5132704db48319c7"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/platforms/qoffscreen.dll",
+          "bytes": 113976,
+          "sha256": "7a3f14ab1f373e96e706db6f3f2d88a4eb7132f3d03e139fdc84a303ca974e22"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/platforms/qwindows.dll",
+          "bytes": 1006904,
+          "sha256": "dd126e2a47f7f3d4a855981e9d4012076058b1440f6900b9a07aa950e4e4f20a"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/Qt6Core.dll",
+          "bytes": 10480440,
+          "sha256": "fae4778a42e93adc82b831c879c886a05147e9cc26760808d21116be5547259b"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/Qt6Gui.dll",
+          "bytes": 9589560,
+          "sha256": "8fceee959a670372aaa5763287c2ef7924cd9ecdbe2c29cf4b6c12a63079c503"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/Qt6Network.dll",
+          "bytes": 1771320,
+          "sha256": "0232076731e386b6cc353bdf743d5fb17e95a3493c2d02afac984db87ed47b96"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/Qt6Svg.dll",
+          "bytes": 642360,
+          "sha256": "a5866fa80cca10dd58e31f277b62f1a1060d3a495fabcea72e2f9ade0f9e45fe"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/Qt6Test.dll",
+          "bytes": 382776,
+          "sha256": "830b8bbee71c51b3f69eafa77e089b0824aaa84821e18c568984ce900d8a4cbc"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/Qt6Widgets.dll",
+          "bytes": 6594360,
+          "sha256": "4d603bff620ae0830d15c25a787f9f10ed3f972d998f1f17c9c4f83937280399"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/styles/qmodernwindowsstyle.dll",
+          "bytes": 230712,
+          "sha256": "093e3ac68dfdac52a2667a2f7ba00b336392f9d6bde08430494ef54dbd120541"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/tls/qcertonlybackend.dll",
+          "bytes": 103736,
+          "sha256": "c1fa08ef8f0ea33370ad8e1239d9147262b08d002edab4bc4e9812827381dbba"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/tls/qschannelbackend.dll",
+          "bytes": 263992,
+          "sha256": "b263e588f2a93955a3e42b2c0d893d203cbe5a0ac42d1af5840ddd3b9a16b183"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/vccorlib140.dll",
+          "bytes": 350648,
+          "sha256": "09f93d5ff96ae09767f3e1af3cdd43a5a58f2598654fc63089429bb6f9f4737f"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/vcruntime140.dll",
+          "bytes": 178616,
+          "sha256": "d1f4225df2cd877dbf130d5668a021dce3f94118455ff5ec952061c30afc9ce7"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/vcruntime140_1.dll",
+          "bytes": 50112,
+          "sha256": "a7146c08f89fe5b04541ab507cdb59ff7b44534d4ba3c668a426c6450a03434e"
+        },
+        {
+          "path": "out/vs2026-qt611-release_bin/vcruntime140_threads.dll",
+          "bytes": 38840,
+          "sha256": "40f39e8cee5f5a531b4010e18b807e8fe265b908dc58f959ecb7ebc6ea6cb11a"
+        }
+      ]
+    }
+  },
+  "testEntry": "scripts/build.ps1; unchanged cmake/run_ui_test.cmake"
+}

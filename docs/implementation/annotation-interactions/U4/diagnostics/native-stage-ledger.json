@@ -1,0 +1,156 @@
+[
+  {
+    "name": "native-debug-r1",
+    "startedUtc": "2026-10-18T18:02:54.2406963Z",
+    "finishedUtc": "2026-10-18T18:05:30.7237835Z",
+    "pass": true,
+    "elapsedSeconds": 156.4794679
+  },
+  {
+    "name": "native-release-r1",
+    "startedUtc": "2026-10-18T18:05:30.7321194Z",
+    "finishedUtc": "2026-10-18T18:06:42.4303147Z",
+    "pass": true,
+    "elapsedSeconds": 71.6981666
+  },
+  {
+    "name": "native-release-u1-r1",
+    "startedUtc": "2026-10-18T18:06:42.4327477Z",
+    "finishedUtc": "2026-10-18T18:06:51.5771574Z",
+    "pass": true,
+    "elapsedSeconds": 9.1443979
+  },
+  {
+    "name": "native-release-u2-r1",
+    "startedUtc": "2026-10-18T18:06:51.5863176Z",
+    "finishedUtc": "2026-10-18T18:07:02.1090760Z",
+    "pass": true,
+    "elapsedSeconds": 10.5227312
+  },
+  {
+    "name": "native-release-u3-r1",
+    "startedUtc": "2026-10-18T18:07:02.1109523Z",
+    "finishedUtc": "2026-10-18T18:07:12.4836297Z",
+    "pass": true,
+    "elapsedSeconds": 10.3726706
+  },
+  {
+    "name": "package-debug-wideband-gpu",
+    "startedUtc": "2026-10-18T18:07:12.4853322Z",
+    "finishedUtc": "2026-10-18T18:07:16.7232059Z",
+    "pass": true,
+    "elapsedSeconds": 4.2378649
+  },
+  {
+    "name": "smoke-debug-wideband-gpu",
+    "startedUtc": "2026-10-18T18:07:16.7252828Z",
+    "finishedUtc": "2026-10-18T18:07:21.7077121Z",
+    "pass": true,
+    "elapsedSeconds": 4.9824386
+  },
+  {
+    "name": "package-debug-narrowband-gpu",
+    "startedUtc": "2026-10-18T18:07:21.7112133Z",
+    "finishedUtc": "2026-10-18T18:07:26.1508461Z",
+    "pass": true,
+    "elapsedSeconds": 4.4395999
+  },
+  {
+    "name": "smoke-debug-narrowband-gpu",
+    "startedUtc": "2026-10-18T18:07:26.1527589Z",
+    "finishedUtc": "2026-10-18T18:07:31.2551574Z",
+    "pass": true,
+    "elapsedSeconds": 5.1023861
+  },
+  {
+    "name": "package-debug-wideband-software",
+    "startedUtc": "2026-10-18T18:07:31.2571099Z",
+    "finishedUtc": "2026-10-18T18:07:35.2420017Z",
+    "pass": true,
+    "elapsedSeconds": 3.9848888
+  },
+  {
+    "name": "smoke-debug-wideband-software",
+    "startedUtc": "2026-10-18T18:07:35.2445694Z",
+    "finishedUtc": "2026-10-18T18:07:40.1936301Z",
+    "pass": true,
+    "elapsedSeconds": 4.9490462
+  },
+  {
+    "name": "package-debug-narrowband-software",
+    "startedUtc": "2026-10-18T18:07:40.1961473Z",
+    "finishedUtc": "2026-10-18T18:07:45.4283450Z",
+    "pass": true,
+    "elapsedSeconds": 5.2321876
+  },
+  {
+    "name": "smoke-debug-narrowband-software",
+    "startedUtc": "2026-10-18T18:07:45.4314097Z",
+    "finishedUtc": "2026-10-18T18:07:52.7394701Z",
+    "pass": true,
+    "elapsedSeconds": 7.3080504
+  },
+  {
+    "name": "package-release-wideband-gpu",
+    "startedUtc": "2026-10-18T18:07:52.7410655Z",
+    "finishedUtc": "2026-10-18T18:07:54.9406623Z",
+    "pass": true,
+    "elapsedSeconds": 2.1995954
+  },
+  {
+    "name": "smoke-release-wideband-gpu",
+    "startedUtc": "2026-10-18T18:07:54.9439583Z",
+    "finishedUtc": "2026-10-18T18:07:57.1168383Z",
+    "pass": true,
+    "elapsedSeconds": 2.1728657
+  },
+  {
+    "name": "package-release-narrowband-gpu",
+    "startedUtc": "2026-10-18T18:07:57.1233037Z",
+    "finishedUtc": "2026-10-18T18:07:59.1129504Z",
+    "pass": true,
+    "elapsedSeconds": 1.9896285
+  },
+  {
+    "name": "smoke-release-narrowband-gpu",
+    "startedUtc": "2026-10-18T18:07:59.1151872Z",
+    "finishedUtc": "2026-10-18T18:08:01.5706183Z",
+    "pass": true,
+    "elapsedSeconds": 2.4554039
+  },
+  {
+    "name": "package-release-wideband-software",
+    "startedUtc": "2026-10-18T18:08:01.5723161Z",
+    "finishedUtc": "2026-10-18T18:08:03.3476252Z",
+    "pass": true,
+    "elapsedSeconds": 1.775304
+  },
+  {
+    "name": "smoke-release-wideband-software",
+    "startedUtc": "2026-10-18T18:08:03.3496842Z",
+    "finishedUtc": "2026-10-18T18:08:05.4620292Z",
+    "pass": true,
+    "elapsedSeconds": 2.1123308
+  },
+  {
+    "name": "package-release-narrowband-software",
+    "startedUtc": "2026-10-18T18:08:05.4634843Z",
+    "finishedUtc": "2026-10-18T18:08:07.9114717Z",
+    "pass": true,
+    "elapsedSeconds": 2.447991
+  },
+  {
+    "name": "smoke-release-narrowband-software",
+    "startedUtc": "2026-10-18T18:08:07.9154160Z",
+    "finishedUtc": "2026-10-18T18:08:10.7377692Z",
+    "pass": true,
+    "elapsedSeconds": 2.8223201
+  },
+  {
+    "name": "availability-r1",
+    "startedUtc": "2026-10-18T18:08:10.7830357Z",
+    "finishedUtc": "2026-10-18T18:08:19.4943444Z",
+    "pass": true,
+    "elapsedSeconds": 8.7112841
+  }
+]

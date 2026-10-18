@@ -1,0 +1,2 @@
+Debug native wideband capture passed on U27U2D / \\.\DISPLAY2, connection 1, 4K / 150%.
+Report: D:\project\signal_studio_rebuild\out\tasks\wideband-detection\U4\assets\native-debug-r1\wideband-detection-report.json

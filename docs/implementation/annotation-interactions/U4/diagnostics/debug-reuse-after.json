@@ -1,0 +1,438 @@
+{
+  "node": "U4",
+  "phase": "after",
+  "recordedUtc": "2026-10-18T17:50:38.838448+00:00",
+  "reference": "docs/implementation/annotation-interactions/U3/diagnostics/input-freeze-r7.json",
+  "referenceSha256": "f480fd24ea0dfeaef3c1bdf8d4e25ce0bd0c31f5417558a5d84cfe213b3de80b",
+  "inputs": [
+    {
+      "path": ".clang-format",
+      "bytes": 161,
+      "sha256": "003fcfe94418e9d1d6c0c7e6ebab4086672264dd96aa9d5c09d6ca24a4930723",
+      "unchanged": true
+    },
+    {
+      "path": "app/main.cpp",
+      "bytes": 24906,
+      "sha256": "d92034b092f9e0c900206fb81451a71ba9be87856a0ccb5db9865628b1b5c442",
+      "unchanged": true
+    },
+    {
+      "path": "app/main_window.cpp",
+      "bytes": 209933,
+      "sha256": "e893a1f94178a15f503841d96f2c6449fa5b7199a5369ae655f5d3b016a3767d",
+      "unchanged": true
+    },
+    {
+      "path": "application/annotation_service.cpp",
+      "bytes": 76111,
+      "sha256": "540a066bb79511b9c5b2e006b5873174acce6b5a4188cbd8f57fb6e13a30dd95",
+      "unchanged": true
+    },
+    {
+      "path": "application/annotation_service.h",
+      "bytes": 9454,
+      "sha256": "3b3a24ad0a5d5aa08d0932f3d06748109d1f5198f591b8204c8cec6cc06aa299",
+      "unchanged": true
+    },
+    {
+      "path": "application/session.cpp",
+      "bytes": 39212,
+      "sha256": "d206995457b309ab4fccf49b3b9b2c843b0c15070eedf3542c8e0f5cdb3dfdc7",
+      "unchanged": true
+    },
+    {
+      "path": "application/session.h",
+      "bytes": 4992,
+      "sha256": "d33620084e34347b0645ea2389d7be7408905f42ad1cfe1eb4f9de39098201a4",
+      "unchanged": true
+    },
+    {
+      "path": "cmake/run_ui_test.cmake",
+      "bytes": 758,
+      "sha256": "865f41e4d9ec988d2645f4547253888e49dda28de291dc33cc42547fa7762eb9",
+      "unchanged": true
+    },
+    {
+      "path": "CMakeLists.txt",
+      "bytes": 21141,
+      "sha256": "d37722d664c4c2c7518257c378071cce3272535b61c6d70cf9a3f112aac036cc",
+      "unchanged": true
+    },
+    {
+      "path": "CMakePresets.json",
+      "bytes": 2265,
+      "sha256": "d101fbb8c21f65b6c45d3f629d48ffbac476e567e0a7c5baff87090034a473aa",
+      "unchanged": true
+    },
+    {
+      "path": "domain/annotation.cpp",
+      "bytes": 15115,
+      "sha256": "9826f9b4c41a4566f5af02337ef375f8279a0fddb946cf41184459fda2d33bf3",
+      "unchanged": true
+    },
+    {
+      "path": "domain/annotation.h",
+      "bytes": 8399,
+      "sha256": "7545b2a0c167985d1053b169329349e9b4b29ffe0e6a983e4c0baee51a1c16e3",
+      "unchanged": true
+    },
+    {
+      "path": "infrastructure/annotation_json.cpp",
+      "bytes": 31989,
+      "sha256": "ecb414757c4668d68e88503334de4e4bcddffcb6235f3dd17b3108399ea438d4",
+      "unchanged": true
+    },
+    {
+      "path": "infrastructure/annotation_json.h",
+      "bytes": 1044,
+      "sha256": "69b4ac5ae3d5706fa2c9f7fd6f119888c91f6fd7041e8b59c298e64dad9e968f",
+      "unchanged": true
+    },
+    {
+      "path": "infrastructure/channel_processor.cpp",
+      "bytes": 40654,
+      "sha256": "2483da2ef88d21664ff01ac00ec39f0948493fece1bc9e825586882ab6b07e35",
+      "unchanged": true
+    },
+    {
+      "path": "infrastructure/channel_processor.h",
+      "bytes": 3837,
+      "sha256": "86a76655fc8fa943dbbbf7bcca10bb60c9f0cdcd493d4c1019312d927655279b",
+      "unchanged": true
+    },
+    {
+      "path": "infrastructure/int16_iq_file.h",
+      "bytes": 4142,
+      "sha256": "f3a8a151a708469f669b384051e2636984ede14187798ac67f5af122995fa51e",
+      "unchanged": true
+    },
+    {
+      "path": "infrastructure/project_store.cpp",
+      "bytes": 55211,
+      "sha256": "1b7dd22839a66d05d149b88773eb9dddeef353b5e9fef7b43c61054800a1976b",
+      "unchanged": true
+    },
+    {
+      "path": "scripts/build.ps1",
+      "bytes": 2053,
+      "sha256": "df834ec4ae4f56840201774a5464dd15530d68bbdc889c15011d43ddda4d541f",
+      "unchanged": true
+    },
+    {
+      "path": "scripts/gpu_smoke.ps1",
+      "bytes": 5945,
+      "sha256": "3bbff3383346da8972e0f7f3c859ab4f47e4770507dbc98e49892b2d7db468e9",
+      "unchanged": true
+    },
+    {
+      "path": "scripts/screenshot.ps1",
+      "bytes": 19164,
+      "sha256": "aea585a9855f34fb59cf08fd0b1a05d190d01e118c1a0533ef5af41ad8328016",
+      "unchanged": true
+    },
+    {
+      "path": "scripts/verify-detection-availability.ps1",
+      "bytes": 3713,
+      "sha256": "c6756246e31c457ef7f7d133bd02cfa624547d5707dab3d20942a69571bdbfad",
+      "unchanged": true
+    },
+    {
+      "path": "scripts/verify-package.ps1",
+      "bytes": 3706,
+      "sha256": "27175a021e34d58f65d2080832c8d51698b2304eac7923709f9ea1683db3da01",
+      "unchanged": true
+    },
+    {
+      "path": "tests/annotation_channels_capture.h",
+      "bytes": 26736,
+      "sha256": "af3801ee5c6d15d709e8ff943271109d54d3cfea4371dfe0494787d6cb366685",
+      "unchanged": true
+    },
+    {
+      "path": "tests/annotation_editing_capture.h",
+      "bytes": 16898,
+      "sha256": "e2418c8ad0f367c5fee5a800391c8bd6ffa2894be8238813ea9f2913901a81a9",
+      "unchanged": true
+    },
+    {
+      "path": "tests/annotation_interactions_capture.h",
+      "bytes": 21231,
+      "sha256": "8e9ee9730a258574a70e09d77544457bae6c93097d28f50b93c311f80ff50005",
+      "unchanged": true
+    },
+    {
+      "path": "tests/annotation_store_tests.cpp",
+      "bytes": 26840,
+      "sha256": "dcef34330631d22fd646e04a0ddf0cdf093302c019ad1ae9e3a4d2bc6dc26dab",
+      "unchanged": true
+    },
+    {
+      "path": "tests/annotation_tests.cpp",
+      "bytes": 86631,
+      "sha256": "73a40fa26901f769129a91b39371edf086fc044117d99d39db4e48e32b034dc1",
+      "unchanged": true
+    },
+    {
+      "path": "tests/channel_processor_tests.cpp",
+      "bytes": 21556,
+      "sha256": "44c0d44724cf68cc120bb463ca3bcce584a3914655cacc0ce2e6138d70121881",
+      "unchanged": true
+    },
+    {
+      "path": "tests/core_tests.cpp",
+      "bytes": 46936,
+      "sha256": "069c3409ce01f1513f6bb548068dcf4ee0e6967fe45876458a653109a489cd5c",
+      "unchanged": true
+    },
+    {
+      "path": "tests/display_optimization_capture.h",
+      "bytes": 15482,
+      "sha256": "2f1f93adc5fb7ac54819645a0e7f5312865b7cf67ec04cb94480712a5e697de3",
+      "unchanged": true
+    },
+    {
+      "path": "tests/import_brand_capture.h",
+      "bytes": 7630,
+      "sha256": "5eb1f461c9c25a0ea8420a6fbfdc72be544ba8a2c94c93da2db283b47dc8f8da",
+      "unchanged": true
+    },
+    {
+      "path": "tests/linked_cursor_capture.h",
+      "bytes": 14472,
+      "sha256": "9342c760f7b7ac1db63b45bfcbd0a8acc872ef1dd4c3e6ca7386b5627dd05096",
+      "unchanged": true
+    },
+    {
+      "path": "tests/spectral_loading_capture.h",
+      "bytes": 8886,
+      "sha256": "4c2fcdf54e603f53b086dcf20581086ba40dadb64277e3461503898d5e6b84e2",
+      "unchanged": true
+    },
+    {
+      "path": "tests/ui_capture.cpp",
+      "bytes": 55925,
+      "sha256": "0177cfa0cbc066763b7f8acd78a475188f496cf76ccd8faf004cbc6b89dc67f1",
+      "unchanged": true
+    },
+    {
+      "path": "tests/ui_tests.cpp",
+      "bytes": 222661,
+      "sha256": "8504b9bfe3a9fa5585726c80341ede6ce2c88fe973dfcf58dec1e08a906fdbc0",
+      "unchanged": true
+    },
+    {
+      "path": "tests/wideband_detection_capture.h",
+      "bytes": 89200,
+      "sha256": "b3702621a8e933bed5a0ff7f226f31ac9a401372e4569befa454b4854bbc6917",
+      "unchanged": true
+    },
+    {
+      "path": "tests/wideband_final_capture.h",
+      "bytes": 24647,
+      "sha256": "925d373bb501b13afc4e34d989faef1ffd4dcbbf3ad6089c485dac84e9da8564",
+      "unchanged": true
+    },
+    {
+      "path": "ui/annotations/annotation_panel.cpp",
+      "bytes": 75392,
+      "sha256": "66d7daa88dbe59394a12cf80cbc556bdf417ee80837c78b9a6cd3a90ecd333c1",
+      "unchanged": true
+    },
+    {
+      "path": "ui/annotations/annotation_panel.h",
+      "bytes": 3156,
+      "sha256": "6a2d4a4e5ae919588ea16c0c7b61b7d7db1038795312ff0d866e93fcf42db40c",
+      "unchanged": true
+    },
+    {
+      "path": "ui/charts/plot_widget.cpp",
+      "bytes": 155183,
+      "sha256": "039d0881cf9f956d5b1e792ac70771f86c07474d40931d9ae9f7267eaa0c9382",
+      "unchanged": true
+    },
+    {
+      "path": "ui/charts/plot_widget.h",
+      "bytes": 9037,
+      "sha256": "402c437d467ecf2fcff23c4c914e53a110e02c1451a8870628ec800bca8ffdd5",
+      "unchanged": true
+    },
+    {
+      "path": "ui/controls/sample_time_edit.h",
+      "bytes": 3133,
+      "sha256": "e5a56ba635388411f672a5bf4d9c5c738728e650ca0c258c4e3b566e704aaf5d",
+      "unchanged": true
+    },
+    {
+      "path": "ui/display_target.h",
+      "bytes": 3153,
+      "sha256": "69b9985099839f5b32fdf99bb8f1a2936b7452b182396c0ada34861ad2093c94",
+      "unchanged": true
+    },
+    {
+      "path": "ui/narrowband_workspace.cpp",
+      "bytes": 144543,
+      "sha256": "a67d5dcaaf41093b296e2ca4d87a355c193da37928ff58b08651a8eb909b42e8",
+      "unchanged": true
+    }
+  ],
+  "executables": [
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudio.exe",
+      "bytes": 11556864,
+      "sha256": "93f8a076ee7d5faf1d5e448423d2a2819769b8558bd9e0f7aaeb00a68dc24d8a",
+      "unchanged": false
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioAnnotationStoreTests.exe",
+      "bytes": 2877952,
+      "sha256": "2b942d15d962b9b85fe9fcc6f98ee9436381a26f25fb0cf73fc2c46085cb0b8e",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioAnnotationTests.exe",
+      "bytes": 1804288,
+      "sha256": "59bfec4a93fb2bea029d951a88e9d5fd29f712530f49f9bb04df9e83c6ac9401",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioChannelProcessorTests.exe",
+      "bytes": 1381376,
+      "sha256": "7ca85c7312d6894f361d0b5f3173393c6ccc2d8a58c63b99b0ceb28f25162838",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioCoreTests.exe",
+      "bytes": 3316736,
+      "sha256": "3c0452499810f0da33c253c62835fce3cfedd1486e515beb92f9b89c17668835",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionFrequencyAnalysisTests.exe",
+      "bytes": 2205184,
+      "sha256": "2018777a835324ab01814cdbcdfbfb2fd4e51f38880ca6d759dd2c657d914130",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionModelBackendTests.exe",
+      "bytes": 1220608,
+      "sha256": "9398b37745b3144e1b55587cb4e63528df0bec654b94b952545f0479db8b2c8c",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionPipelineTests.exe",
+      "bytes": 3724288,
+      "sha256": "918c688d8e1d58f3e80ccf87db595de1a75060b0b5d20d7e14e8304a42cb717c",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionPostprocessTests.exe",
+      "bytes": 1262080,
+      "sha256": "6fbf5f4577bc294cc044951d63e52818cb8da3c930afc04f4a19dfe4867b5412",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionProtocolTests.exe",
+      "bytes": 243200,
+      "sha256": "2875f9aad2aa083fa4b14d918364e079a37b8aeb89f5a11463beb42f5ff598ec",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionRefinedFusionTests.exe",
+      "bytes": 923136,
+      "sha256": "659901551e990f16f80ad9d182d92abe811dbb895a4e55d7e9a9a3809df4806d",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionRefinementTests.exe",
+      "bytes": 1285632,
+      "sha256": "6399378d90469d436108033a4ea7ffeb1a95da88e45edc3dec50256a84692585",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionSampleEnergyTests.exe",
+      "bytes": 1370624,
+      "sha256": "8c1fdeb47b2979327c9f1705ec7f4c1a47b423835cbf398a9476d1bd494944f4",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionSourceTests.exe",
+      "bytes": 1342976,
+      "sha256": "946e8739305c7df20c536e81335479d8c3cb49acf868c628da416279519c2960",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionStoreTests.exe",
+      "bytes": 1550336,
+      "sha256": "a2ef7044e59f0e0a660fb9e05e0ea5a715fce1225aa3307ef35fe76a0ffd1a7d",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionTaskTests.exe",
+      "bytes": 4157952,
+      "sha256": "6b2918480f594aea71d648a8f26ab93c24d393863d26b4a9ae642b30cb43086f",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionTimePipelineTests.exe",
+      "bytes": 3749888,
+      "sha256": "aae951a7977f4bd53652ee76c4badd2ed2e208c705131022d91cf66c71f65716",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDetectionWorker.exe",
+      "bytes": 2618368,
+      "sha256": "7b64ea88b219e12da1e1c9a31d974886d88e928982d487c66128e4967214d8e2",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioDisplaySamplingTests.exe",
+      "bytes": 127488,
+      "sha256": "0673dd785ca245f73c82010ba3e5c191346811d47e6024f63273ec0d71dad716",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioImportTests.exe",
+      "bytes": 1288192,
+      "sha256": "28dd5ade7aef7d84cfc516558a7574e98767cfcc544259c8e4d39a787f87d098",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioLabelImportTests.exe",
+      "bytes": 1630720,
+      "sha256": "77d1b352158da1b5f41630dbad12a6f1fc1e18c0658ec694c20696287f84b1d2",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioSampleFormatTests.exe",
+      "bytes": 3230720,
+      "sha256": "73921146f32869da66c4cce9a7e0069e35db9d0af19845ff82c808e070260e7d",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioSpectralAnalysisTests.exe",
+      "bytes": 2337792,
+      "sha256": "3229f07ae0c35c6df8a98fc0274a135dad52666ef146f94da8e889336245b9cc",
+      "unchanged": true
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioUiCapture.exe",
+      "bytes": 12884480,
+      "sha256": "ef0145193205b431883e4cd967df13b72360776040fc2c549cad588def964bc1",
+      "unchanged": false
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioUiTests.exe",
+      "bytes": 13525504,
+      "sha256": "0ee3668e4105623342214cec70ee2574bac547ab025d6e9de0f03b763d80dca2",
+      "unchanged": false
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioWavTests.exe",
+      "bytes": 433664,
+      "sha256": "af6cc9ee73eeac149783e0b4b0ecbbf79432086ee606cffde0bf2e5d9a04ed3d",
+      "unchanged": true
+    }
+  ],
+  "pass": false
+}

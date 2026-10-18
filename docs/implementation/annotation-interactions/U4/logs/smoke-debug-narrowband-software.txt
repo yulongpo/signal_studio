@@ -1,0 +1,3 @@
+Monitor 1 (U27U2D) native 4K / 150% full-screen smoke passed (software) with system-only PATH.
+Report: D:\project\signal_studio_rebuild\out\tasks\wideband-detection\U4\assets\debug-narrowband-software\signal-studio-narrowband-debug-software-native-4k-150-report.json
+Screenshot: D:\project\signal_studio_rebuild\out\tasks\wideband-detection\U4\assets\debug-narrowband-software\signal-studio-narrowband-debug-software-native-4k-150.png

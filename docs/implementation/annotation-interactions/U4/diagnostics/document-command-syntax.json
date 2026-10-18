@@ -1,0 +1,44 @@
+{
+  "node": "U4",
+  "recordedUtc": "2026-10-18T18:19:31.3080420Z",
+  "pass": true,
+  "count": 7,
+  "scope": "PowerShell syntax parsing only; no commands executed",
+  "blocks": [
+    {
+      "document": "README.md",
+      "block": 1,
+      "pass": true
+    },
+    {
+      "document": "README.md",
+      "block": 2,
+      "pass": true
+    },
+    {
+      "document": "docs/implementation/annotation-interactions/U4/MANUAL_VALIDATION.md",
+      "block": 1,
+      "pass": true
+    },
+    {
+      "document": "docs/implementation/annotation-interactions/U4/MANUAL_VALIDATION.md",
+      "block": 2,
+      "pass": true
+    },
+    {
+      "document": "docs/implementation/annotation-interactions/U4/MANUAL_VALIDATION.md",
+      "block": 3,
+      "pass": true
+    },
+    {
+      "document": "docs/implementation/annotation-interactions/U4/MANUAL_VALIDATION.md",
+      "block": 4,
+      "pass": true
+    },
+    {
+      "document": "docs/implementation/annotation-interactions/U4/MANUAL_VALIDATION.md",
+      "block": 5,
+      "pass": true
+    }
+  ]
+}

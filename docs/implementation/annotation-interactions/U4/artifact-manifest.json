@@ -1,0 +1,1549 @@
+{
+  "node": "U4",
+  "recordedUtc": "2026-10-18T18:34:38.060057+00:00",
+  "branch": "rebuild/a143-native",
+  "implementationCommit": "c182b3ebb34632daa246ddfd41903915dd648554",
+  "previousDeliveryCommit": "a69a68e5b3b7994ebfada013397e58ae154a41da",
+  "scope": "Every U4 archive file except this manifest; final document inputs recorded separately; implementation/runtime freeze in diagnostics/input-freeze.json",
+  "fileCount": 304,
+  "totalBytes": 151245817,
+  "files": [
+    {
+      "path": "docs/implementation/annotation-interactions/U4/availability/missing-models/01-label-manual-history-without-inference.png",
+      "bytes": 1597188,
+      "sha256": "7cc4c78d7ddc9b1cb97157f28512eaf40deda8651c851d21f215716bbdd75dca"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/availability/missing-models/wideband-availability-report.json",
+      "bytes": 54361,
+      "sha256": "cc16502c32773309dcf4ebfa7804680dfaa95212a7258a542361031634578199"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/availability/no-compatible-gpu/01-label-manual-history-without-inference.png",
+      "bytes": 1598264,
+      "sha256": "14f2fa109d66af9cd9c7b42d7a524f9cbef39cbcbb320cabc9583499f21892d6"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/availability/no-compatible-gpu/wideband-availability-report.json",
+      "bytes": 59353,
+      "sha256": "39800ba7152ca6b244f94baca5b71adb95f9a162f4d2c8e517d4d5fd0dd82f43"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/DELIVERY.md",
+      "bytes": 15479,
+      "sha256": "de8f60989e50a3c7aa922b89b09623344c6143e934a14470d6c86653f704fea5"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/diagnostics/archive-selfcheck.json",
+      "bytes": 437,
+      "sha256": "7ef068ce931c5b78df179b3661fe44cceda7a4154725cc42b49a198f047d3dd9"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/diagnostics/current-screens.json",
+      "bytes": 746,
+      "sha256": "1cf190aee7068e9f486c6d22f87bf5459745c0e0eed2f42774125b87815ab8c7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/diagnostics/debug-reuse-after.json",
+      "bytes": 15047,
+      "sha256": "f091afbb7d35e8e78a4486cc2fbab1c4b37616b169f13334282a9bfaf192f0e3"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/diagnostics/debug-reuse-before.json",
+      "bytes": 15044,
+      "sha256": "3f00da2ccc4a47443e9d7a49ba92d1a114846863416fcb72c8aea683deb345b0"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/diagnostics/document-command-syntax.json",
+      "bytes": 1084,
+      "sha256": "9a440754053835344499b4c5622ec6d9c04cbafc6e463e39ed6e0cbf22b9d214"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/diagnostics/frozen-contracts.json",
+      "bytes": 4747,
+      "sha256": "7a41e5147ccf9e6c8ed5dcc82b7fd3582e7c9e7abd899b7fa80a3fe75647e5d3"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/diagnostics/input-freeze-verified.json",
+      "bytes": 138,
+      "sha256": "e28c084b4abfed08b5fd4b39e4826d196a8f0ad8c532a904116f55ee948477d5"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/diagnostics/input-freeze.json",
+      "bytes": 73969,
+      "sha256": "b92c2fdf9f68673ea7de3c9d1433153b702dd6d0ae7f07089b77572b8d1f156e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/diagnostics/native-stage-ledger.json",
+      "bytes": 4613,
+      "sha256": "ecc192a3864fbe3338da3ed90d1821262a200e9ebadc3b922c7e11be64407a8a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/diagnostics/project-archive-map.json",
+      "bytes": 799,
+      "sha256": "12ccb8bba161afea1fb75b5291a1a606da142f6f446d0402b85870e31b18902e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/diagnostics/verify_archive.py",
+      "bytes": 6671,
+      "sha256": "51c087740fa9d43854b97e994a70f0d24b2ab0b63d7554677ab6038b084c6390"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/availability-r1.txt",
+      "bytes": 358,
+      "sha256": "2b2a60ecee17b62f66d98376b2040b911d1eed953a0e0f51f56814b3c910ed9b"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/debug-build-r1.txt",
+      "bytes": 10450,
+      "sha256": "03cc0baa2f8ac93935ad32c6dbbb8f3925905daeac60821421c6a4de0dcaf660"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/debug-configure-r1.txt",
+      "bytes": 2449,
+      "sha256": "ab21e37ecb0f5ebb86b4626a39d88d0a27b1868d25a56c3c7952dd50021b1228"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/debug-test-r1.txt",
+      "bytes": 3282,
+      "sha256": "7b13d7a78809da3430024f82e2511ad97a8f0a1ee2d2d5e8c3bb9b42305703bc"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/native-debug-r1.txt",
+      "bytes": 217,
+      "sha256": "22bb93497769dd948aad05f2a23651dded2145f58c381a5211165a56d6bf1923"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/native-release-r1.txt",
+      "bytes": 221,
+      "sha256": "a5d5909f8d658a45ae9178e59b5731d27c199a9608b7e21a6abcc0a21d6aa4df"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/native-release-u1-r1.txt",
+      "bytes": 235,
+      "sha256": "638a636c06e388acac55fbd6dc60f7c5fd4da58a3d40686cf6c19433bddbb874"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/native-release-u2-r1.txt",
+      "bytes": 235,
+      "sha256": "c29203399a01936f1d788ef3e7e8f2b3cafe95c49c010ee971934951020a2867"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/native-release-u3-r1.txt",
+      "bytes": 235,
+      "sha256": "2da692f632de8c38d4921fcfc0c9d3076c2d3ec2afbc58dfd9871384809ea34a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/package-debug-narrowband-gpu.txt",
+      "bytes": 149,
+      "sha256": "b16313376dcf38f8590eabba5142a5d3f045ef8116cbdb1ae5d6134b9829a28c"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/package-debug-narrowband-software.txt",
+      "bytes": 145,
+      "sha256": "070f3da1c88d766fb799dc47862de51a7b48eb68c7569bdadbd3ed2d75528dc4"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/package-debug-wideband-gpu.txt",
+      "bytes": 149,
+      "sha256": "b16313376dcf38f8590eabba5142a5d3f045ef8116cbdb1ae5d6134b9829a28c"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/package-debug-wideband-software.txt",
+      "bytes": 145,
+      "sha256": "070f3da1c88d766fb799dc47862de51a7b48eb68c7569bdadbd3ed2d75528dc4"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/package-release-narrowband-gpu.txt",
+      "bytes": 151,
+      "sha256": "5565d1e65967cb3d2bf19c96d82f0a51b44301f7e1dda477db23c2d6952828e6"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/package-release-narrowband-software.txt",
+      "bytes": 147,
+      "sha256": "1efcc4bd760ff9519a31bcc9bc1e36554c34d942300b20293e3a6121b520d8d1"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/package-release-wideband-gpu.txt",
+      "bytes": 151,
+      "sha256": "5565d1e65967cb3d2bf19c96d82f0a51b44301f7e1dda477db23c2d6952828e6"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/package-release-wideband-software.txt",
+      "bytes": 147,
+      "sha256": "1efcc4bd760ff9519a31bcc9bc1e36554c34d942300b20293e3a6121b520d8d1"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/release-all-r1.txt",
+      "bytes": 26007,
+      "sha256": "3eedebfca8c0499df1eb8df0a08ff1c7eceea302bd7889f12c0aa47799533fdb"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/smoke-debug-narrowband-gpu.txt",
+      "bytes": 413,
+      "sha256": "269b8e2b59fd59c36ac0ec3a1bdfe0608c9ad496a069e6ceaafb5fd0136ce4a6"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/smoke-debug-narrowband-software.txt",
+      "bytes": 438,
+      "sha256": "bb4cc6e26e506b24e564f99f8bb3634aea45165bcc07e66cd0a2b8422aa57e4a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/smoke-debug-wideband-gpu.txt",
+      "bytes": 387,
+      "sha256": "5b25327e5d292e5a91a899a92f9a620452092fdb5e4327fd890a5363910d7e2e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/smoke-debug-wideband-software.txt",
+      "bytes": 412,
+      "sha256": "00d75b5277f8be1dee9bc021f9e23242e314896beefe05dff538aebc5248b185"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/smoke-release-narrowband-gpu.txt",
+      "bytes": 421,
+      "sha256": "4a02142b60f4192c5e2e469ddb7e33546f9b2dce0a0c5275df914039f3b7ec4e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/smoke-release-narrowband-software.txt",
+      "bytes": 446,
+      "sha256": "75da3bc9479b9d38bdb7a1c1be79b3542b1f8bec088d54db578d82a69c53d857"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/smoke-release-wideband-gpu.txt",
+      "bytes": 395,
+      "sha256": "52c03183d221e3a4015857edced2482060f8bbfce357bc8620870dd04331f4c1"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/smoke-release-wideband-software.txt",
+      "bytes": 420,
+      "sha256": "24797581dd84fb13a3493951ff4082ff945f2501a7f40bef9d3e364c95f77aea"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/ui-debug.txt",
+      "bytes": 166975,
+      "sha256": "2f28d3e3ea879c6ed83f2d1ad984b5aa263672c36563ee11474fde587bde5478"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/ui-debug.txt.timing.jsonl",
+      "bytes": 13458,
+      "sha256": "5ab8b3390cd70b839ae7ca938f22ae12713f96cf7a2dcdf30129c41eb86fdfd9"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/ui-debug.txt.xml",
+      "bytes": 118274,
+      "sha256": "58f761c894eac680b747435fb8e021ef94069738c7349dde8d6e8d59f0cb632f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/ui-release.txt",
+      "bytes": 166978,
+      "sha256": "67ceaae007476c9cfeb73f0dce052b2f421acdfd3ef1273e237e653c011af05e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/ui-release.txt.timing.jsonl",
+      "bytes": 13363,
+      "sha256": "b547131cc7fc19d51e53892831ebd1cf85a9835b2af717b4f96d1ee481ba958c"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/logs/ui-release.txt.xml",
+      "bytes": 118275,
+      "sha256": "5af4903f2e60b2c3e8e5024b56b500ad3fa8f8755ba0fc35c4c286013e32f670"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/MANUAL_VALIDATION.md",
+      "bytes": 13096,
+      "sha256": "d3e1926a557f1414cbffc1d1d5f45ebac8478b538223d80618cb50333507430d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/01-imported-manual-resident-card.png",
+      "bytes": 1271901,
+      "sha256": "a2d504c2f6170c6a769594f62cd8ec4bfa20d1736c81a37852f21390fe7a4686"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/02-config-card-visible-crop.png",
+      "bytes": 88467,
+      "sha256": "a85a77e907be3278f0550cacdb02d3271c5e971d340c4d8cd33d04cba5fb737f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/02-config-main-window.png",
+      "bytes": 1268204,
+      "sha256": "5c9ca0e3889fc7d19b936785ee1cfefbc14a4e7f8d18ae09c4b0bd91120aa73f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/03-completed-task-cards.png",
+      "bytes": 927353,
+      "sha256": "3883a23177e65389fb3108d2f73bb8974b0c65f8409f328a2ef64a37349ed238"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/04-task-readable-details.png",
+      "bytes": 107358,
+      "sha256": "2297e680735a99a73593b082a47739287ee9abaa4877cde4cb04efb60a57c635"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/05-three-layers-revision-pending.png",
+      "bytes": 1065723,
+      "sha256": "2a51c369fc2375fa0c4dc4089de0f4ccc04c11fdc8544bb7d689fdbf6a590616"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/06-saved-reopened.png",
+      "bytes": 1064098,
+      "sha256": "6aee1a181f116888e29c4a365ecfdb866faf92812603ced32f70f11671fed974"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/07-roi-preview-before-esc.png",
+      "bytes": 1014074,
+      "sha256": "20645bd5a7492323fd4506981e7a2ee5ee70e8c60e0d7e49a5d630a119b7480d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/08-roi-esc-manual-restored.png",
+      "bytes": 1041919,
+      "sha256": "fc7a498ee63059d209816e7db9914aeceb4ccb9c50c3ee960f600c130e44e0cc"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/09-roi-preview-before-enter.png",
+      "bytes": 1014074,
+      "sha256": "20645bd5a7492323fd4506981e7a2ee5ee70e8c60e0d7e49a5d630a119b7480d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/10-roi-enter-confirmed.png",
+      "bytes": 1039422,
+      "sha256": "6656ca2038c71ec74313d871eb894c909e947fef2913f2567804c1a259f96dd9"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/11-layout-left-committed.png",
+      "bytes": 987735,
+      "sha256": "c119504a5751700894d08e6635c87991faa9273489fbc0741491dec0ae795f09"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/12-layout-left-esc-restored.png",
+      "bytes": 990292,
+      "sha256": "09d6f596e63b2e615063920de9a6ae0f9f8f349d09b1af773b90fd85c9bc5e2e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/13-layout-right-committed.png",
+      "bytes": 985934,
+      "sha256": "82ed52b88ff024a1d504637a92c57ecefe2f7b8a2d292ebac605c283aec50909"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/14-layout-right-esc-restored.png",
+      "bytes": 985934,
+      "sha256": "82ed52b88ff024a1d504637a92c57ecefe2f7b8a2d292ebac605c283aec50909"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/15-layout-bottom-committed.png",
+      "bytes": 1104721,
+      "sha256": "8dd46dd04a2a9e69626c8f3c4ebd4c70f13f17ae19057000724f4fe2e77c5f49"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/16-layout-bottom-esc-restored.png",
+      "bytes": 1104721,
+      "sha256": "8dd46dd04a2a9e69626c8f3c4ebd4c70f13f17ae19057000724f4fe2e77c5f49"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/17-auxiliary-evidence-facts.png",
+      "bytes": 1208725,
+      "sha256": "8b65cb98a798463a8a0ac7f2c47ddfee9608e10f20a0f2699fc419c23fd6e24e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/18-auxiliary-original-fields-collapsed.png",
+      "bytes": 1203778,
+      "sha256": "475d0489e4e28ef6e17c87688cbec58040694dd5cbdfd092a5c3ebb35a4eb307"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/19-auxiliary-original-fields-visible.png",
+      "bytes": 1207302,
+      "sha256": "de400e598c896a1ea2fd6e28d441481eb200e4299dbac8a370255f3149217c24"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/20-original-pending-segment-direct-channel.png",
+      "bytes": 1183437,
+      "sha256": "768add0402d0626ccde00f1d42b87993b72cfffb8e88655833351e926f5e5292"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/21-pending-unconfirmed-channel-configuration.png",
+      "bytes": 91525,
+      "sha256": "c6a571ce6f52e2fc7971fe54046e6d71f4a3543df0f2add42efca8453c020496"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/22-pending-source-unchanged-after-reopen.png",
+      "bytes": 1184477,
+      "sha256": "de2996208857c7b7623429e1cbd26d6de3850733332fa7354d732f140279dd10"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/23-production-model-running.png",
+      "bytes": 1128899,
+      "sha256": "90bc101f3cea8d1ce288ee92eb18181c1b48d443c4b535b88b5b744fa4ee1b30"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/24-production-model-time-refinement.png",
+      "bytes": 1214042,
+      "sha256": "75d185f414117a0034c469e7a1f382f9f5e936435a424c6e146ae5ba250839bb"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/25-real-algorithm-quality-is-optional.png",
+      "bytes": 1215375,
+      "sha256": "dc1706ced3d8d010cb4cecea9e7a8de812c2262a026e015645d3779847d02905"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/26-real-algorithm-channel-parameters.png",
+      "bytes": 92871,
+      "sha256": "8989f403c3e381c9118f3420fe2a96506c0fed00e6f73bef154c5644d6434cbf"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/27-real-algorithm-cpu-ddc.png",
+      "bytes": 467215,
+      "sha256": "bee9db6cdb6b7ccb8e58bb3b9b7f7841adb402c1a946cb2c06a063f60917dbad"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/28-real-algorithm-ddc-saved-reopened.png",
+      "bytes": 1219740,
+      "sha256": "a7fc718b173f99d18352f355464f7f9940b7f8f97f3ee811e9933568ff37d1e3"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/29-real-algorithm-revision-preserves-ddc.png",
+      "bytes": 1226721,
+      "sha256": "e11060debf3986e20042022fd6f03fa41954e6d798a49af4e118916ef9acfac8"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/30-real-algorithm-changed-source-reopened.png",
+      "bytes": 1226946,
+      "sha256": "051eac8fbefed8b0cb111922781ef05c7c59ab0c645ec18e5230b70016d5ed88"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/31-real-roi-approved-parameter-matrix.png",
+      "bytes": 1147716,
+      "sha256": "52727cf52a73fa2fd5512d7624596baf213f4397fe15754da763bb04159cb803"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/32-real-roi-time-result.png",
+      "bytes": 1241924,
+      "sha256": "da7d2b348391bd7aa159747f90e9fa2379afedb193d386f7a7da6553b0657617"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/33-real-roi-saved-reopened.png",
+      "bytes": 1243543,
+      "sha256": "12aad39b3faa3c71625fb5e2afc3a00082cdb07f18294e44bf72210c85ca4224"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/34-same-id-repeat-review.png",
+      "bytes": 1240556,
+      "sha256": "9ccb36a58ec52e43fd7571296d6c7038a7b53b898bf06821a2ca25d7615238b5"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/35-score-sort-filter-batch-review.png",
+      "bytes": 1232125,
+      "sha256": "8ed9bdd4a21169bdb4d7059c30976405412e293237d2d43d7d01e1e829a553f6"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/36-waterfall-same-active-segment.png",
+      "bytes": 1816254,
+      "sha256": "16291f37e413674af8117606f98953a53a74ad3ecbb61e49939d98f5673d53e8"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/37-original-label-manual-split.png",
+      "bytes": 1235151,
+      "sha256": "35079b8dfbbfb79bb05ab4efc37ec5806768e35b91d5b4ce0f4826e33352cf1d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/38-merge-and-restore-origin.png",
+      "bytes": 1237935,
+      "sha256": "01be1d8453a6b8a5cda3fdb88c52142e918bc59ca6d17f8a828c0de66003db4d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/39-visible-json-csv-export.png",
+      "bytes": 1237935,
+      "sha256": "01be1d8453a6b8a5cda3fdb88c52142e918bc59ca6d17f8a828c0de66003db4d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/40-native-branch-enable-matrix.png",
+      "bytes": 1179156,
+      "sha256": "3f1b84f3712394b564f7820a376b4d2f5164919653dc4e50e48ade1c6d627be9"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/42-adapted-mean-spectrum-configuration.png",
+      "bytes": 1142564,
+      "sha256": "9411dff69fd875bf049431e7769a0a67d30faaad7178d1b579742d98f3ee6694"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/43-generator-labels-real-wav.png",
+      "bytes": 887146,
+      "sha256": "a3eeb4cf3ad02c9a59bf02f96c2b26aabf14bbfe5f8fcdd30c2b1255b6af3595"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/annotations-export.csv",
+      "bytes": 4815,
+      "sha256": "9af26b122d5561fdc23877aaac76e3857993f0a71d115358d5b4ab85630aaf3d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/annotations-export.json",
+      "bytes": 199534,
+      "sha256": "64c0ab8199952267fadc7c7f129ad66b5a8031941f1c0a1bc5d30be8f5951177"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-debug-r1/wideband-detection-report.json",
+      "bytes": 991669,
+      "sha256": "d1306381582b782e91ab2888712030d55d641a553af3e873741fcd035e16a61a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/00-no-project-workflow.png",
+      "bytes": 210997,
+      "sha256": "1f3a79dd1c199b05a0a74690c0bf413b06f37fde7fbadda3f81269fb8018a749"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/01-imported-manual-resident-card.png",
+      "bytes": 1271922,
+      "sha256": "d55ad17f041d76072d10c1f6e8a49e2aa8a3b681a67360198ebf2da71db6c710"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/02-config-card-visible-crop.png",
+      "bytes": 88467,
+      "sha256": "a85a77e907be3278f0550cacdb02d3271c5e971d340c4d8cd33d04cba5fb737f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/02-config-main-window.png",
+      "bytes": 1268241,
+      "sha256": "8dd2574231e3262e500d5dcee10f4dc7cc7079fd4dafbea99a735c04e322f054"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/03-completed-task-cards.png",
+      "bytes": 927336,
+      "sha256": "979653870b96bbbffb40a2a176b163e77bbda6ce675c9bf4f58002b67977316f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/04-task-readable-details.png",
+      "bytes": 107235,
+      "sha256": "63240b13c4db0bbf5093bbddaed1c7f0fedc1c3c5f7b1da17ecaf28e09a0dacf"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/05-three-layers-revision-pending.png",
+      "bytes": 1065929,
+      "sha256": "ac90e532fdf54f4e66b3bb507de2c439514c28855a66c05285aa5176b4f15b77"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/06-saved-reopened.png",
+      "bytes": 1064311,
+      "sha256": "bc937d13e52bf3a01d2e4d7b7e7d828ae46ac9f39c5f2a2a1d5c3fec92b8706f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/07-roi-preview-before-esc.png",
+      "bytes": 1014128,
+      "sha256": "710c0bb8bcce027cf2ee3bc32810e6eb73bfaf3bfe1ba74309549d201a4221c5"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/08-roi-esc-manual-restored.png",
+      "bytes": 1042014,
+      "sha256": "f911d4592f0f5ca682352fb1ee066a904ef697d1c8f40feaf6a03f1241bd75c8"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/09-roi-preview-before-enter.png",
+      "bytes": 1014128,
+      "sha256": "710c0bb8bcce027cf2ee3bc32810e6eb73bfaf3bfe1ba74309549d201a4221c5"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/10-roi-enter-confirmed.png",
+      "bytes": 1039550,
+      "sha256": "dff7ef9b3923924639429fec7c34cd4adc511c4d949e231d385fdf7923cbe78b"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/11-layout-left-committed.png",
+      "bytes": 988068,
+      "sha256": "ab82794ab5e4321e9618da238ecc84ea8e6e949791089ca3c53f62b9d6305a8a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/12-layout-left-esc-restored.png",
+      "bytes": 988068,
+      "sha256": "ab82794ab5e4321e9618da238ecc84ea8e6e949791089ca3c53f62b9d6305a8a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/13-layout-right-committed.png",
+      "bytes": 983572,
+      "sha256": "02b363b3334c98d3d265da95337b047a86506af66c03a48ef2f2a85428c8263a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/14-layout-right-esc-restored.png",
+      "bytes": 983572,
+      "sha256": "02b363b3334c98d3d265da95337b047a86506af66c03a48ef2f2a85428c8263a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/15-layout-bottom-committed.png",
+      "bytes": 1102286,
+      "sha256": "91a718787b68b9ca9666d5c09a242376edc12612dc88206a9eb35d7f39426167"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/16-layout-bottom-esc-restored.png",
+      "bytes": 1102286,
+      "sha256": "91a718787b68b9ca9666d5c09a242376edc12612dc88206a9eb35d7f39426167"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/17-auxiliary-evidence-facts.png",
+      "bytes": 1208828,
+      "sha256": "c703a2e38bdbff9bd6c4375b934a7852be9539f116073db5c83b0b50af273c39"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/18-auxiliary-original-fields-collapsed.png",
+      "bytes": 1203923,
+      "sha256": "347c1db5506208e010dd5c4393b39036cecfca18d8005de251b99f352aa63a7d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/19-auxiliary-original-fields-visible.png",
+      "bytes": 1207531,
+      "sha256": "876005bd70f81367fc77b23742b144d8931c5d16d26285a0a64b6b8f7bab6bd6"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/20-original-pending-segment-direct-channel.png",
+      "bytes": 1183544,
+      "sha256": "70ebd124d49ae0e756652e95d809a143aca5a5be11bac6fc7956c61da0047f79"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/21-pending-unconfirmed-channel-configuration.png",
+      "bytes": 91525,
+      "sha256": "c6a571ce6f52e2fc7971fe54046e6d71f4a3543df0f2add42efca8453c020496"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/22-pending-source-unchanged-after-reopen.png",
+      "bytes": 1184513,
+      "sha256": "a2bf709dbec95742c9bd0624051c5be7fe51fe17f5b7d4c54db2d4929fddd723"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/23-production-model-running.png",
+      "bytes": 1129296,
+      "sha256": "53d805e82ca8a628b429ed5b485341c37e96893bba03af559acde37b6e7427b7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/24-production-model-time-refinement.png",
+      "bytes": 1216178,
+      "sha256": "8efdb02d0833fdd6fcfb2f72198757bb08f40dc0102b941e40a529cf83a59879"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/25-real-algorithm-quality-is-optional.png",
+      "bytes": 1217507,
+      "sha256": "f26fc316795b0d2104a06a85ed4b6ca0f54fa8bbaff0f3041e5a6cfe03b39adf"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/26-real-algorithm-channel-parameters.png",
+      "bytes": 93302,
+      "sha256": "9dbd3608f2304163fb438024f5b330559fd121facac555a2237789de50e38c1d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/27-real-algorithm-cpu-ddc.png",
+      "bytes": 468025,
+      "sha256": "259ed7af7db29a8f70499f08dcdaceae3a1b5d636f8cc38a30b2896242f3b379"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/28-real-algorithm-ddc-saved-reopened.png",
+      "bytes": 1221614,
+      "sha256": "fdd669ab900e3d364f8c750546419c4072e093ca8907d95b71931c5d51429450"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/29-real-algorithm-revision-preserves-ddc.png",
+      "bytes": 1228565,
+      "sha256": "e32dbb75903688bce8c09e51adc36eac3c0998a815105595a797b8c374f2fc23"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/30-real-algorithm-changed-source-reopened.png",
+      "bytes": 1228966,
+      "sha256": "26fa9e2ac2ffb64d060a543c2edef1283f75fc8f7ae25e2e5e3952d071319f71"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/31-real-roi-approved-parameter-matrix.png",
+      "bytes": 1149207,
+      "sha256": "cc9945bc4e6be401f7dc90542f33e0bb38a83fa5f50ffa55336c6898e6c46655"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/32-real-roi-time-result.png",
+      "bytes": 1245313,
+      "sha256": "fb7ab2ec834b6455aca98344a6ec3d3f90cde85c2e20857ee4f65897bc466dca"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/33-real-roi-saved-reopened.png",
+      "bytes": 1246919,
+      "sha256": "136f8ab59210e4e3d1fb507313b289b11fd6b8456db84fa3e39d308ad1c0e17e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/34-same-id-repeat-review.png",
+      "bytes": 1249894,
+      "sha256": "ab10ca635bd19facf3f5b19e1268737fb00cb4f26434b54c02c7753f397e8df5"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/35-score-sort-filter-batch-review.png",
+      "bytes": 1228845,
+      "sha256": "670e40c377e60822c3dc6da7010d34b74ed26e54191ac97a456c96454be44ffa"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/36-waterfall-same-active-segment.png",
+      "bytes": 1817614,
+      "sha256": "81ac188e1ca3781b4d2eba6e72b4ef8e67bd4ab2cbc988c685d7f12ba3763dbb"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/37-original-label-manual-split.png",
+      "bytes": 1235527,
+      "sha256": "dfe327380d13eb2e0de590ccfddc7f25fd34754d9fc87ffbfc42e3e3b006738f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/38-merge-and-restore-origin.png",
+      "bytes": 1238416,
+      "sha256": "5dede3c6fbbf21a1983ba8bd393b5894f17ce23a34fcc2aa5d5561af028b8dd9"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/39-visible-json-csv-export.png",
+      "bytes": 1238416,
+      "sha256": "5dede3c6fbbf21a1983ba8bd393b5894f17ce23a34fcc2aa5d5561af028b8dd9"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/40-native-branch-enable-matrix.png",
+      "bytes": 1179174,
+      "sha256": "01582818b220b51ec8fe72d36ccb85dc3d5f5b7b5a818756376d1fe8d899cb38"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/41-synthetic-100000-activity-pressure.png",
+      "bytes": 611868,
+      "sha256": "4b9debaafabf341f824338128c42d97b040201a4520fa49cab53b713c324a6d2"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/42-adapted-mean-spectrum-configuration.png",
+      "bytes": 1143020,
+      "sha256": "3ee5a1a237ef42a4575a1e65ace8e207cf6f96f3d173aaadda0d0aeea4a8b7fb"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/43-generator-labels-real-wav.png",
+      "bytes": 882620,
+      "sha256": "0d83550163b03752e1b6e09a6e7cce45f67ea29b6a2cf2d69577667a862689da"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/44-real-model-cancelled-prefix.png",
+      "bytes": 833175,
+      "sha256": "f27705c299965394f4fe52cb60929d0a7e7229644481a8ec33b91015ffd0ba58"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/annotations-export.csv",
+      "bytes": 4815,
+      "sha256": "6caacee1a4abfb149216a0e8ef35d3888053fae67456c1d4975def2d45d563ed"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/annotations-export.json",
+      "bytes": 199538,
+      "sha256": "b4d9ac7ece024438e6566078c36ec273fbb644c999acd018b3c12cfaf384b744"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-r1/wideband-detection-report.json",
+      "bytes": 1299807,
+      "sha256": "ec223cdf82cc14a12a58ffdea1df95efb59924da4dd15b3b240f3f737bbc6c0b"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u1-r1/01-three-sources-unknown-time.png",
+      "bytes": 2012354,
+      "sha256": "fa686cfef50b17b19441fab4813ddf18e8e75c09e7fdc60ffb6cccc77cc0507f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u1-r1/02-current-segment-controls.png",
+      "bytes": 1989467,
+      "sha256": "15765adbe6989831ccd2127b3cabfde3f76eb601d41fffeefa1a883f18957d85"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u1-r1/03-table-tree-plot-selection.png",
+      "bytes": 2024945,
+      "sha256": "6b04b3bddfa4a959796f709b749e487cc4e341ba52f870f7a8567694b5521e2d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u1-r1/04-linked-hover-preserves-spectrum.png",
+      "bytes": 2027609,
+      "sha256": "bfc4e832a292cc8cee460329f5fe2ea9bdfd8774b12931d09760414bc21f2cbc"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u1-r1/05-graph-loads-far-tree-and-page.png",
+      "bytes": 2192199,
+      "sha256": "2a9a651271002a32ad1a391567a9a9d54ab81262b17f31c0a0e4eb10c19a8e35"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u1-r1/06-matching-selection-across-pages.png",
+      "bytes": 1993196,
+      "sha256": "2ba4f517cbfac24de02d1460f2561ec2369169215c1a698c2f23bcbf87fe7135"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u1-r1/07-closed-layer-prunes-selection.png",
+      "bytes": 1860626,
+      "sha256": "87b460456bfa210ca8d15d2c89552950c8ac0ada567782911288643f2cefeecd"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u1-r1/08-filter-restored-without-old-selection.png",
+      "bytes": 2141019,
+      "sha256": "5db9a3e28244edb30be3478791308d1eb9709257dd4edf8317f1adcef603feb0"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u1-r1/annotation-interactions-report.json",
+      "bytes": 479021,
+      "sha256": "0d459242e0297b787a7c508a38a44308e2d391b0043e14780085f363f0ab4139"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u1-r1/u1-native-project-77577301-0374-4892-8d32-9701212f7fc1/project.json",
+      "bytes": 248,
+      "sha256": "0a724cd122d7e05e9027909dfdc8b6de73f5642c154d38ff54045a453c6d2365"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/01-direct-imported-graph-edit.png",
+      "bytes": 2009028,
+      "sha256": "a915a9b896ccd3368c5957a9c8d94bf7c9413c04b867caa1de5a2f83aa40ec73"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/02-table-f2-algorithm-edit.png",
+      "bytes": 2009565,
+      "sha256": "cad22de579386412a334e0f7256cc3160df92aa51ae338e1daaa7f1f4106424e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/03-name-draft-delete-edits-text.png",
+      "bytes": 1998221,
+      "sha256": "d9202b067af815159d8cc8547347964a701987a3618d25716e7ad578f075dc01"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/04-atomic-range-draft.png",
+      "bytes": 16419,
+      "sha256": "9e03b0baa19540acc2f1716eb173a07c76c8775a13774224849f22a875c1b381"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/05-unknown-time-frequency-only.png",
+      "bytes": 2021507,
+      "sha256": "4003de6ecde06c09cfc2e0b2e2ea9f57e7c739a8f4320ef5fe8a2675cf95c478"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/06-current-segment-single-command-undo.png",
+      "bytes": 2009820,
+      "sha256": "bc26496ca6057b1c37e9a4069fbb5815190d6da7fc6d6d7c8305cbd4a81da0b6"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/07-batch-delete-preview.png",
+      "bytes": 16656,
+      "sha256": "41c2f0882f31ef08dbbca9ef265e39f812582de4707965d933955b1d8e81517c"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/08-source-deleted-channel-snapshot-kept.png",
+      "bytes": 1943756,
+      "sha256": "50c71d5749c1fe7bb0961e7a3248662fb6576df6116c5f02adf7fe0420cd2535"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/09-undo-keeps-later-background-results.png",
+      "bytes": 1960633,
+      "sha256": "4044a9178f598bb7d5a739677185294939b22a519e8e5d00528b79e2e414faf0"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/10-origin-and-edits-preserved-after-reopen.png",
+      "bytes": 1984484,
+      "sha256": "b9de96b413d277261ca4099247339801da9ec3e8919ee922dcffd3fd21698720"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/annotation-interactions-report.json",
+      "bytes": 227586,
+      "sha256": "6138d51e62162abd535bdc76cbe7264d59a977ea68e5c02d7835ff6ad2a6fe15"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/annotations/c2bb3ccfff6a5dec63bfc98b/d61f066d2f40fe09c412f91ab8bd0859d14334ad492be1046a62513da1b9c852.json",
+      "bytes": 32766,
+      "sha256": "d61f066d2f40fe09c412f91ab8bd0859d14334ad492be1046a62513da1b9c852"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/annotations/c2bb3ccfff6a5dec63bfc98b/source-526eebcf605647e4bd3b573ed6ed1856e642225a49a0e80e4f5a93b4e8c7436d.json",
+      "bytes": 1282,
+      "sha256": "526eebcf605647e4bd3b573ed6ed1856e642225a49a0e80e4f5a93b4e8c7436d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/annotations/c2bb3ccfff6a5dec63bfc98b/source-77325c31bd17aff2e7a8bd53530bf3338cb288c71f9b10a2262eaa3a30176099.json",
+      "bytes": 1294,
+      "sha256": "77325c31bd17aff2e7a8bd53530bf3338cb288c71f9b10a2262eaa3a30176099"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/annotations/c2bb3ccfff6a5dec63bfc98b/source-a0ee6eaadb609aaac18807795b7419351711880468e65ee6df0c8f7208378672.json",
+      "bytes": 6401,
+      "sha256": "a0ee6eaadb609aaac18807795b7419351711880468e65ee6df0c8f7208378672"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/annotations/c2bb3ccfff6a5dec63bfc98b/source-cf65d210adc22d70930d4489bc3a61e4d7d0e53b80cbfa9864a8f5e983b88292.json",
+      "bytes": 1296,
+      "sha256": "cf65d210adc22d70930d4489bc3a61e4d7d0e53b80cbfa9864a8f5e983b88292"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/u2-edited-project.json",
+      "bytes": 11342,
+      "sha256": "83a6d052842f70e1b1e38484522c6dd9f3ea3716b35b04268ce0b418a4d4d2e4"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u2-r1/u2-native-project-bc4d5fe3-4a39-45a0-83d9-949b657e691c/project.json",
+      "bytes": 248,
+      "sha256": "756246849cb0ef6770940169c3c031dda2e0f0c9d1311df9198a471303b0cb68"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/01-v5-upgrade-preserves-backup-and-channel.png",
+      "bytes": 1958932,
+      "sha256": "14c65cd45128d32837759a4e12218448343e56fb524bf9fe4fca991fd79b81f0"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/02-optional-quality-menu.png",
+      "bytes": 3418,
+      "sha256": "47c61fcddc7cf12f5f877b8d4df13b6be34d1112e012692921b230c1887672a1"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/03-pending-located-channel-trim-form.png",
+      "bytes": 81944,
+      "sha256": "035ab5925e7d185558b999a1aadb2b7ed61579a82105fd1f6c4fbecf8dc232e5"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/04-pending-located-real-cpu-ddc.png",
+      "bytes": 1993154,
+      "sha256": "53ab4016eb299acc830a1a1e6217d31d5f42ede85029effa34e187589a76ce25"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/05-ignored-unknown-user-range-form.png",
+      "bytes": 83589,
+      "sha256": "bc273bccba74695331e040461e30b411b18c4d063f1aa540c4ce0d64174d06a4"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/06-unknown-user-range-real-ddc-narrowband.png",
+      "bytes": 369624,
+      "sha256": "d0a4ebac65e500dac2012906f958827fd015ba7a3a1d286464d71a8b95869fab"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/07-empty-visible-range-requires-explicit-prefix.png",
+      "bytes": 89216,
+      "sha256": "c985ba44e40c77c8a170079fccc4a4a9557a08cf3a32b51f1ed376a0f32a9e1e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/08-partial-prefix-tail-real-cpu-ddc.png",
+      "bytes": 1360205,
+      "sha256": "95200619806c38b65b7e0fc3dfbb4bed85f57197966c9f90e744ec418f6cc564"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/09-physical-source-diagnostic.png",
+      "bytes": 88783,
+      "sha256": "d536740461d87a9558848924583b3fb26bfa1ad44926a9564d4632db9461782e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/10-multiple-selection-explicit-one-source.png",
+      "bytes": 80273,
+      "sha256": "549dcd940f8d04b5486f803eb5820712ed4846bc485776ccea75ccee044b9a99"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/11-bound-geometry-relations-and-snapshot.png",
+      "bytes": 1964601,
+      "sha256": "dd06972c97c263efc51275ea77079e7c78936d17c4e72333ffed89f2b1f31c31"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/12-v6-reopen-preserves-user-range-and-real-ddc.png",
+      "bytes": 1999882,
+      "sha256": "43977b9d013070c0dcfbd42260714934506baf0a5eb004bb1283598ea655f003"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/annotation-interactions-report.json",
+      "bytes": 274420,
+      "sha256": "2e388d28dbca85bc1cd5a1fb6488f40140f90103793596ab2aad8b7002276455"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/annotations/c2bb3ccfff6a5dec63bfc98b/30cf927c65283ca34580285888510f6329c72b593aaa2d45646f23d690afd866.json",
+      "bytes": 32678,
+      "sha256": "30cf927c65283ca34580285888510f6329c72b593aaa2d45646f23d690afd866"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/annotations/c2bb3ccfff6a5dec63bfc98b/491a309f5642cb9fb93f0ee9aea156c9b978c738bfa0da5abb16c1e90afd6abd.json",
+      "bytes": 24821,
+      "sha256": "491a309f5642cb9fb93f0ee9aea156c9b978c738bfa0da5abb16c1e90afd6abd"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/annotations/c2bb3ccfff6a5dec63bfc98b/69a33a2f43496602e4e307936840996aded3f2ba47ac65cc7eb14009be345747.json",
+      "bytes": 27847,
+      "sha256": "69a33a2f43496602e4e307936840996aded3f2ba47ac65cc7eb14009be345747"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/annotations/c2bb3ccfff6a5dec63bfc98b/source-42c6d3546ddfbbf380d4218c0803cb175e0f0fdefd0b5928bddd87557b716c43.json",
+      "bytes": 6357,
+      "sha256": "42c6d3546ddfbbf380d4218c0803cb175e0f0fdefd0b5928bddd87557b716c43"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/annotations/c2bb3ccfff6a5dec63bfc98b/source-526eebcf605647e4bd3b573ed6ed1856e642225a49a0e80e4f5a93b4e8c7436d.json",
+      "bytes": 1282,
+      "sha256": "526eebcf605647e4bd3b573ed6ed1856e642225a49a0e80e4f5a93b4e8c7436d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/annotations/c2bb3ccfff6a5dec63bfc98b/source-6fe72a58fdc026f194ef25418007452fcd2de94f081775d3a68b358549283cc5.json",
+      "bytes": 1274,
+      "sha256": "6fe72a58fdc026f194ef25418007452fcd2de94f081775d3a68b358549283cc5"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/annotations/c2bb3ccfff6a5dec63bfc98b/source-77325c31bd17aff2e7a8bd53530bf3338cb288c71f9b10a2262eaa3a30176099.json",
+      "bytes": 1294,
+      "sha256": "77325c31bd17aff2e7a8bd53530bf3338cb288c71f9b10a2262eaa3a30176099"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/annotations/c2bb3ccfff6a5dec63bfc98b/source-833bd4f98dac1e1d15ab6359a8b929178fc063b5ebe1531f665e9e847e704e7b.json",
+      "bytes": 1260,
+      "sha256": "833bd4f98dac1e1d15ab6359a8b929178fc063b5ebe1531f665e9e847e704e7b"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/annotations/c2bb3ccfff6a5dec63bfc98b/source-a0ee6eaadb609aaac18807795b7419351711880468e65ee6df0c8f7208378672.json",
+      "bytes": 6401,
+      "sha256": "a0ee6eaadb609aaac18807795b7419351711880468e65ee6df0c8f7208378672"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/annotations/c2bb3ccfff6a5dec63bfc98b/source-ca18709a426a81cab2c35036254b3165403371ae937e52d3cae8e7be5b190b59.json",
+      "bytes": 1272,
+      "sha256": "ca18709a426a81cab2c35036254b3165403371ae937e52d3cae8e7be5b190b59"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/legacy-v5-project.json",
+      "bytes": 11298,
+      "sha256": "a4f4744521c78b1536a7dd906c599bd2609af8bc1948fe61da80373f72c8bba7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/legacy-v5-project.json.pre-v6-v5-3f97d5bbc2e3bb017c8c3f380a6e0ea89d5903b875b6d96a4ddc134da8ff7629.bak",
+      "bytes": 10982,
+      "sha256": "3f97d5bbc2e3bb017c8c3f380a6e0ea89d5903b875b6d96a4ddc134da8ff7629"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/u3-channel-project.json",
+      "bytes": 21816,
+      "sha256": "3aeb009329e1f0854be30793477db93996e6cacbc12a1a7610e9647a6d578019"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/native/native-release-u3-r1/u3-native-project-e7724de6-bd60-45a9-9537-138918c31f12/project.json",
+      "bytes": 248,
+      "sha256": "5d170d8e2c29afcb5b6fc4f700ef0156e95391e639acc4208cffe05e0915542f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/NATIVE_ACCEPTANCE.md",
+      "bytes": 7318,
+      "sha256": "956d9380ae389033b717c096bc976cb391bc880247c71a1758b541ebe3bbd744"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/annotations/97699a2532d13b683a17e446/979d971ef873005e75e7f0df76cec92f5ef310a8f63f308c8aa85bf09c24b41a.json",
+      "bytes": 79519,
+      "sha256": "979d971ef873005e75e7f0df76cec92f5ef310a8f63f308c8aa85bf09c24b41a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/annotations/97699a2532d13b683a17e446/source-3d6888bb84260fe68f0e39cd36a3963963d7d9b2e8476bb6ee60eba7131a6875.json",
+      "bytes": 4406,
+      "sha256": "3d6888bb84260fe68f0e39cd36a3963963d7d9b2e8476bb6ee60eba7131a6875"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/annotations/c2bb3ccfff6a5dec63bfc98b/009d492c7e2f29aae8e70e633c653fe2a41eb8766be2cc121ddfcdfe68a32268.json",
+      "bytes": 25790,
+      "sha256": "009d492c7e2f29aae8e70e633c653fe2a41eb8766be2cc121ddfcdfe68a32268"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/annotations/c2bb3ccfff6a5dec63bfc98b/4da9a6d1e86624d61f251388eae35ea38f869f2b155ef12c6b3a8cdee62cf357.json",
+      "bytes": 132768,
+      "sha256": "4da9a6d1e86624d61f251388eae35ea38f869f2b155ef12c6b3a8cdee62cf357"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/annotations/c2bb3ccfff6a5dec63bfc98b/5a809eec72ac84ca679cbfd7d43f1bf8f81b3662b9691b999e0c60f5ead5b8f2.json",
+      "bytes": 102824,
+      "sha256": "5a809eec72ac84ca679cbfd7d43f1bf8f81b3662b9691b999e0c60f5ead5b8f2"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/annotations/c2bb3ccfff6a5dec63bfc98b/b9fef5721cad5bbc7e115c25cd85b5925c12f67b5ba40972c36166b292559f50.json",
+      "bytes": 128012,
+      "sha256": "b9fef5721cad5bbc7e115c25cd85b5925c12f67b5ba40972c36166b292559f50"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/annotations/c2bb3ccfff6a5dec63bfc98b/dbcb2b384ff472653caa8640b566467eacf1f6e189ce40f3782579c7c0091d90.json",
+      "bytes": 101694,
+      "sha256": "dbcb2b384ff472653caa8640b566467eacf1f6e189ce40f3782579c7c0091d90"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/annotations/c2bb3ccfff6a5dec63bfc98b/source-74f13350a7436a2bc0442405d4d4a0eab051ea3a140ca87dad1067218109e8d6.json",
+      "bytes": 1131,
+      "sha256": "74f13350a7436a2bc0442405d4d4a0eab051ea3a140ca87dad1067218109e8d6"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/annotations/c2bb3ccfff6a5dec63bfc98b/source-a0ee6eaadb609aaac18807795b7419351711880468e65ee6df0c8f7208378672.json",
+      "bytes": 6401,
+      "sha256": "a0ee6eaadb609aaac18807795b7419351711880468e65ee6df0c8f7208378672"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/annotations/c2bb3ccfff6a5dec63bfc98b/source-a1ba35d03e3055a418093db776b8fa696035a6eab03e1f4d96a28f2c80f2503a.json",
+      "bytes": 5059,
+      "sha256": "a1ba35d03e3055a418093db776b8fa696035a6eab03e1f4d96a28f2c80f2503a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/annotations/c2bb3ccfff6a5dec63bfc98b/source-ce7e1bc47fab74fd6d91c16fbf64139093cdbe670c2ae7bedbbb70b09622bfca.json",
+      "bytes": 5058,
+      "sha256": "ce7e1bc47fab74fd6d91c16fbf64139093cdbe670c2ae7bedbbb70b09622bfca"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/annotations/c2bb3ccfff6a5dec63bfc98b/source-f39da61b70b0c6d74cc0d28ed6424255f5fc6ae0c4ac833ef49f786738e77f87.json",
+      "bytes": 3426,
+      "sha256": "f39da61b70b0c6d74cc0d28ed6424255f5fc6ae0c4ac833ef49f786738e77f87"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/0ce3872f697b433d564dafd98d00a23b71b77b447ddbf6bd09978748bc7b8d5f/chunk-507626113e9199f6cfd9062ce05d9813fc774533bd1a072fd5915693abd808c7.json",
+      "bytes": 6695,
+      "sha256": "507626113e9199f6cfd9062ce05d9813fc774533bd1a072fd5915693abd808c7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/0ce3872f697b433d564dafd98d00a23b71b77b447ddbf6bd09978748bc7b8d5f/chunk-6480f5a942d697b2fc179869372a2882fbe7ce3985318b175a401095d4575eca.json",
+      "bytes": 25648,
+      "sha256": "6480f5a942d697b2fc179869372a2882fbe7ce3985318b175a401095d4575eca"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/0ce3872f697b433d564dafd98d00a23b71b77b447ddbf6bd09978748bc7b8d5f/chunk-a2b7408378bf4d09942c511bc95274903e661326b007e31859c8e6c57d6d6491.json",
+      "bytes": 12933,
+      "sha256": "a2b7408378bf4d09942c511bc95274903e661326b007e31859c8e6c57d6d6491"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/0ce3872f697b433d564dafd98d00a23b71b77b447ddbf6bd09978748bc7b8d5f/heads-14719fd61ea771fb5af28d501ed1c20d2295e9df7dd97e856e45e421efe59633.f32",
+      "bytes": 196608,
+      "sha256": "14719fd61ea771fb5af28d501ed1c20d2295e9df7dd97e856e45e421efe59633"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/0ce3872f697b433d564dafd98d00a23b71b77b447ddbf6bd09978748bc7b8d5f/heads-8ec2ae13accc3e3b96bcae597b1f6f65e8c32be89e695225384af0f8a71af744.f32",
+      "bytes": 196608,
+      "sha256": "8ec2ae13accc3e3b96bcae597b1f6f65e8c32be89e695225384af0f8a71af744"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/0ce3872f697b433d564dafd98d00a23b71b77b447ddbf6bd09978748bc7b8d5f/heads-bcfe1b2a2d52b745c4105a02b54d05668d7ed7e4ed08135bad77173f577da04e.f32",
+      "bytes": 196608,
+      "sha256": "bcfe1b2a2d52b745c4105a02b54d05668d7ed7e4ed08135bad77173f577da04e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/0ce3872f697b433d564dafd98d00a23b71b77b447ddbf6bd09978748bc7b8d5f/manifest.json",
+      "bytes": 3909,
+      "sha256": "2bbf7f3ccd2028edfe4be7d4dbaafb2a65a567c9bae01646f3074cfd356a4df0"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/39e17a05c9563979c9a6d685501c65779567325869f2f15b06843478cf92b954/chunk-1ab09073c671aad3387d518c30cd7211b4d9aef23eabc8d1517d5fa68b8d7e15.json",
+      "bytes": 6695,
+      "sha256": "1ab09073c671aad3387d518c30cd7211b4d9aef23eabc8d1517d5fa68b8d7e15"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/39e17a05c9563979c9a6d685501c65779567325869f2f15b06843478cf92b954/chunk-7154f87efecfbff336dfdba63b21ee34d8e3e9481e3470948577b0fd29c818f9.json",
+      "bytes": 12933,
+      "sha256": "7154f87efecfbff336dfdba63b21ee34d8e3e9481e3470948577b0fd29c818f9"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/39e17a05c9563979c9a6d685501c65779567325869f2f15b06843478cf92b954/chunk-a59d09a3a16ee23525a3b2884750de53a90ddbe7426343d7e23490b67852af97.json",
+      "bytes": 76029,
+      "sha256": "a59d09a3a16ee23525a3b2884750de53a90ddbe7426343d7e23490b67852af97"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/39e17a05c9563979c9a6d685501c65779567325869f2f15b06843478cf92b954/heads-14719fd61ea771fb5af28d501ed1c20d2295e9df7dd97e856e45e421efe59633.f32",
+      "bytes": 196608,
+      "sha256": "14719fd61ea771fb5af28d501ed1c20d2295e9df7dd97e856e45e421efe59633"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/39e17a05c9563979c9a6d685501c65779567325869f2f15b06843478cf92b954/heads-8ec2ae13accc3e3b96bcae597b1f6f65e8c32be89e695225384af0f8a71af744.f32",
+      "bytes": 196608,
+      "sha256": "8ec2ae13accc3e3b96bcae597b1f6f65e8c32be89e695225384af0f8a71af744"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/39e17a05c9563979c9a6d685501c65779567325869f2f15b06843478cf92b954/heads-bcfe1b2a2d52b745c4105a02b54d05668d7ed7e4ed08135bad77173f577da04e.f32",
+      "bytes": 196608,
+      "sha256": "bcfe1b2a2d52b745c4105a02b54d05668d7ed7e4ed08135bad77173f577da04e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/39e17a05c9563979c9a6d685501c65779567325869f2f15b06843478cf92b954/manifest.json",
+      "bytes": 3910,
+      "sha256": "ad97bcd35b7fc33b79e4196f96f1e22912526c59b8c40bf9a7d3a4ce738f8c05"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/718ed7634781a79e9aad452f776091e190bfd6d9d5489134d273c7313e023cb0/chunk-1160372cab7263e425c59bc02a12d46194cde28e5247e6c44f1bc22f027ca37b.json",
+      "bytes": 8974,
+      "sha256": "1160372cab7263e425c59bc02a12d46194cde28e5247e6c44f1bc22f027ca37b"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/718ed7634781a79e9aad452f776091e190bfd6d9d5489134d273c7313e023cb0/chunk-4df1bec70ca958e572cef4e1a3364c432350abc9e85c5533a96acee8abcf0772.json",
+      "bytes": 4665,
+      "sha256": "4df1bec70ca958e572cef4e1a3364c432350abc9e85c5533a96acee8abcf0772"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/detections/718ed7634781a79e9aad452f776091e190bfd6d9d5489134d273c7313e023cb0/manifest.json",
+      "bytes": 3473,
+      "sha256": "ef2b44f80adc427d781015a915fdcf9c4005b652af7b3cbf5d84e37b184b0fa9"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/debug/project.json",
+      "bytes": 17394,
+      "sha256": "41689dd97bc5e66b6eaf95d83d21129ea10e215c853d5039e827d0342157a798"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/97699a2532d13b683a17e446/979d971ef873005e75e7f0df76cec92f5ef310a8f63f308c8aa85bf09c24b41a.json",
+      "bytes": 79519,
+      "sha256": "979d971ef873005e75e7f0df76cec92f5ef310a8f63f308c8aa85bf09c24b41a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/97699a2532d13b683a17e446/source-06d296bf004ec2c895529d610a40f436541266f952dc66d2accc125d36b8ece3.json",
+      "bytes": 5168,
+      "sha256": "06d296bf004ec2c895529d610a40f436541266f952dc66d2accc125d36b8ece3"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/97699a2532d13b683a17e446/source-3d6888bb84260fe68f0e39cd36a3963963d7d9b2e8476bb6ee60eba7131a6875.json",
+      "bytes": 4406,
+      "sha256": "3d6888bb84260fe68f0e39cd36a3963963d7d9b2e8476bb6ee60eba7131a6875"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/c2bb3ccfff6a5dec63bfc98b/77fd3e4b0dae0f0eeab6d6146f1b4dbf102673aafd4f40b74738375bb984d9b3.json",
+      "bytes": 128012,
+      "sha256": "77fd3e4b0dae0f0eeab6d6146f1b4dbf102673aafd4f40b74738375bb984d9b3"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/c2bb3ccfff6a5dec63bfc98b/ae729151476abde28f7fe4288e171a30cb1f5888f639920f47850c519f5114b5.json",
+      "bytes": 25790,
+      "sha256": "ae729151476abde28f7fe4288e171a30cb1f5888f639920f47850c519f5114b5"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/c2bb3ccfff6a5dec63bfc98b/b0008620867b32e0209854c89280e176a4fce4fe372c029a284cd5782bace3ed.json",
+      "bytes": 101694,
+      "sha256": "b0008620867b32e0209854c89280e176a4fce4fe372c029a284cd5782bace3ed"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/c2bb3ccfff6a5dec63bfc98b/bbb52415c7798d4e7afcb26bce16f39d1933fc2446d3cbc24b684ed82b767333.json",
+      "bytes": 102824,
+      "sha256": "bbb52415c7798d4e7afcb26bce16f39d1933fc2446d3cbc24b684ed82b767333"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/c2bb3ccfff6a5dec63bfc98b/f018fc2e4ebf5e2fc2adfa41b77d8205c9886b405592a101e1582acb546185ad.json",
+      "bytes": 132768,
+      "sha256": "f018fc2e4ebf5e2fc2adfa41b77d8205c9886b405592a101e1582acb546185ad"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/c2bb3ccfff6a5dec63bfc98b/source-4397eab12cdae2d8d51c8e28a1f198ff8fe4409145c9dcbb0e6e4b28c61bef5f.json",
+      "bytes": 5060,
+      "sha256": "4397eab12cdae2d8d51c8e28a1f198ff8fe4409145c9dcbb0e6e4b28c61bef5f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/c2bb3ccfff6a5dec63bfc98b/source-74f13350a7436a2bc0442405d4d4a0eab051ea3a140ca87dad1067218109e8d6.json",
+      "bytes": 1131,
+      "sha256": "74f13350a7436a2bc0442405d4d4a0eab051ea3a140ca87dad1067218109e8d6"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/c2bb3ccfff6a5dec63bfc98b/source-7f3a6af00a4dad43b910f0ad5471c532e26c920b16d0aae3e8cf7f7c67759a53.json",
+      "bytes": 5061,
+      "sha256": "7f3a6af00a4dad43b910f0ad5471c532e26c920b16d0aae3e8cf7f7c67759a53"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/c2bb3ccfff6a5dec63bfc98b/source-a0ee6eaadb609aaac18807795b7419351711880468e65ee6df0c8f7208378672.json",
+      "bytes": 6401,
+      "sha256": "a0ee6eaadb609aaac18807795b7419351711880468e65ee6df0c8f7208378672"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/annotations/c2bb3ccfff6a5dec63bfc98b/source-be7a0c5bc0dac0e63265f2f46c592d08d19ce8d653f5f9e45e4bd01cac1615ad.json",
+      "bytes": 3426,
+      "sha256": "be7a0c5bc0dac0e63265f2f46c592d08d19ce8d653f5f9e45e4bd01cac1615ad"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/2c4bed4347cfc3963d06fafad54a62c877580abbc863dfed083e7e3b8895c699/chunk-876a580b50584599187918e5e0dc8564b47d8acba36ec39a905433081cd02024.json",
+      "bytes": 12933,
+      "sha256": "876a580b50584599187918e5e0dc8564b47d8acba36ec39a905433081cd02024"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/2c4bed4347cfc3963d06fafad54a62c877580abbc863dfed083e7e3b8895c699/chunk-cb20c5b2d74c7375bf435030ea0b5c9242e32a39542637dbeb3b11bf49bbf423.json",
+      "bytes": 25648,
+      "sha256": "cb20c5b2d74c7375bf435030ea0b5c9242e32a39542637dbeb3b11bf49bbf423"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/2c4bed4347cfc3963d06fafad54a62c877580abbc863dfed083e7e3b8895c699/chunk-de2d911fce20ff2b6e52061f92d55b7eac99b14a8ae4c04144b29f4d8238cfc7.json",
+      "bytes": 6695,
+      "sha256": "de2d911fce20ff2b6e52061f92d55b7eac99b14a8ae4c04144b29f4d8238cfc7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/2c4bed4347cfc3963d06fafad54a62c877580abbc863dfed083e7e3b8895c699/heads-14719fd61ea771fb5af28d501ed1c20d2295e9df7dd97e856e45e421efe59633.f32",
+      "bytes": 196608,
+      "sha256": "14719fd61ea771fb5af28d501ed1c20d2295e9df7dd97e856e45e421efe59633"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/2c4bed4347cfc3963d06fafad54a62c877580abbc863dfed083e7e3b8895c699/heads-8ec2ae13accc3e3b96bcae597b1f6f65e8c32be89e695225384af0f8a71af744.f32",
+      "bytes": 196608,
+      "sha256": "8ec2ae13accc3e3b96bcae597b1f6f65e8c32be89e695225384af0f8a71af744"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/2c4bed4347cfc3963d06fafad54a62c877580abbc863dfed083e7e3b8895c699/heads-bcfe1b2a2d52b745c4105a02b54d05668d7ed7e4ed08135bad77173f577da04e.f32",
+      "bytes": 196608,
+      "sha256": "bcfe1b2a2d52b745c4105a02b54d05668d7ed7e4ed08135bad77173f577da04e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/2c4bed4347cfc3963d06fafad54a62c877580abbc863dfed083e7e3b8895c699/manifest.json",
+      "bytes": 3911,
+      "sha256": "700c67525a9def3605f5135e01c960bd5164ca318db3b43d4d06e095efd08dd3"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/7d10bd07201f3fe479069ea2a1ee98e79e26bec3f2f7af3eb337e80fbb6ee0a1/chunk-4768c80c35f3c12bfa18c37a501a6cb1315aaaa02d875acb06b757aa5d5b17f5.json",
+      "bytes": 4665,
+      "sha256": "4768c80c35f3c12bfa18c37a501a6cb1315aaaa02d875acb06b757aa5d5b17f5"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/7d10bd07201f3fe479069ea2a1ee98e79e26bec3f2f7af3eb337e80fbb6ee0a1/chunk-663ac52c00532928fc3ab906b517a0162e8a5b18f88fa5cad4b4098a51ebabf5.json",
+      "bytes": 8974,
+      "sha256": "663ac52c00532928fc3ab906b517a0162e8a5b18f88fa5cad4b4098a51ebabf5"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/7d10bd07201f3fe479069ea2a1ee98e79e26bec3f2f7af3eb337e80fbb6ee0a1/manifest.json",
+      "bytes": 3473,
+      "sha256": "639648cdd748eacb2bcfe71dc5624ca72bf624ffcf7038572e191c55781c3b58"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a6b258d37c55843b2f6fd49f91c26ebd2265cb4b604915a26d3e5dfa64fbdf28/chunk-9f302e40f1bd945b713bde2f998c3a3ac171739a9795cf2e37983265862895fc.json",
+      "bytes": 9747,
+      "sha256": "9f302e40f1bd945b713bde2f998c3a3ac171739a9795cf2e37983265862895fc"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a6b258d37c55843b2f6fd49f91c26ebd2265cb4b604915a26d3e5dfa64fbdf28/chunk-b80466210e3f69c04f5cd4fa13769f56bbd5b73b1f9092edd7bb2e4318557f2e.json",
+      "bytes": 9810,
+      "sha256": "b80466210e3f69c04f5cd4fa13769f56bbd5b73b1f9092edd7bb2e4318557f2e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a6b258d37c55843b2f6fd49f91c26ebd2265cb4b604915a26d3e5dfa64fbdf28/heads-08897a16afa6ec38e63e028e4d72c484e8812d2da85b9bca44feb6dc666060ac.f32",
+      "bytes": 24576,
+      "sha256": "08897a16afa6ec38e63e028e4d72c484e8812d2da85b9bca44feb6dc666060ac"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a6b258d37c55843b2f6fd49f91c26ebd2265cb4b604915a26d3e5dfa64fbdf28/heads-397f298fcf226407c5cf5465465af62b25cc6bf482a2f67b362118cfdfa05d1b.f32",
+      "bytes": 24576,
+      "sha256": "397f298fcf226407c5cf5465465af62b25cc6bf482a2f67b362118cfdfa05d1b"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a6b258d37c55843b2f6fd49f91c26ebd2265cb4b604915a26d3e5dfa64fbdf28/heads-75b0b5ed0f926fea1c62cc2ec0615e7fb2e69de88c1f84c8c65f2ad9855e2839.f32",
+      "bytes": 24576,
+      "sha256": "75b0b5ed0f926fea1c62cc2ec0615e7fb2e69de88c1f84c8c65f2ad9855e2839"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a6b258d37c55843b2f6fd49f91c26ebd2265cb4b604915a26d3e5dfa64fbdf28/heads-aa83682c3f68ace406d471d60e082d48a1e45bc4699c7788f10de3d8097c1f1e.f32",
+      "bytes": 24576,
+      "sha256": "aa83682c3f68ace406d471d60e082d48a1e45bc4699c7788f10de3d8097c1f1e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a6b258d37c55843b2f6fd49f91c26ebd2265cb4b604915a26d3e5dfa64fbdf28/manifest.json",
+      "bytes": 3920,
+      "sha256": "266672edb7faab29f3092f018b1b412866fbd0a49d36ba661dab7b718ee78441"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a797c9f3c282b3452b93b4e3895fdb8f5964b365e01073e4a8ff2db410ea4792/chunk-085bbcd3fd075e726c9c90dab66ed997c5111cd483a0acaaae7b4d20a4ce9af8.json",
+      "bytes": 76029,
+      "sha256": "085bbcd3fd075e726c9c90dab66ed997c5111cd483a0acaaae7b4d20a4ce9af8"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a797c9f3c282b3452b93b4e3895fdb8f5964b365e01073e4a8ff2db410ea4792/chunk-6b814561ac3a7b945af3a884e308c4f57c2a8630d49cf1a63f7c57a3146b0a30.json",
+      "bytes": 6695,
+      "sha256": "6b814561ac3a7b945af3a884e308c4f57c2a8630d49cf1a63f7c57a3146b0a30"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a797c9f3c282b3452b93b4e3895fdb8f5964b365e01073e4a8ff2db410ea4792/chunk-e75bf0de06e527810e39a00340ce9a83533ecf200fdc36cac203e58bc50e2ada.json",
+      "bytes": 12933,
+      "sha256": "e75bf0de06e527810e39a00340ce9a83533ecf200fdc36cac203e58bc50e2ada"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a797c9f3c282b3452b93b4e3895fdb8f5964b365e01073e4a8ff2db410ea4792/heads-14719fd61ea771fb5af28d501ed1c20d2295e9df7dd97e856e45e421efe59633.f32",
+      "bytes": 196608,
+      "sha256": "14719fd61ea771fb5af28d501ed1c20d2295e9df7dd97e856e45e421efe59633"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a797c9f3c282b3452b93b4e3895fdb8f5964b365e01073e4a8ff2db410ea4792/heads-8ec2ae13accc3e3b96bcae597b1f6f65e8c32be89e695225384af0f8a71af744.f32",
+      "bytes": 196608,
+      "sha256": "8ec2ae13accc3e3b96bcae597b1f6f65e8c32be89e695225384af0f8a71af744"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a797c9f3c282b3452b93b4e3895fdb8f5964b365e01073e4a8ff2db410ea4792/heads-bcfe1b2a2d52b745c4105a02b54d05668d7ed7e4ed08135bad77173f577da04e.f32",
+      "bytes": 196608,
+      "sha256": "bcfe1b2a2d52b745c4105a02b54d05668d7ed7e4ed08135bad77173f577da04e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/a797c9f3c282b3452b93b4e3895fdb8f5964b365e01073e4a8ff2db410ea4792/manifest.json",
+      "bytes": 3912,
+      "sha256": "fd00d88e646b177caf2a0af42f5a4734a13263f9ca0e7d83237dfc5daf8e7671"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/detections/e030b39be7216db27b3a33898a49e67a46f66b01ebec1332c8cc57c88552d32f/manifest.json",
+      "bytes": 2851,
+      "sha256": "a40700f74e6c6256359bc01ac36702d9dae49b4fb7ee418247a8cae75e411aeb"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/projects/release/project.json",
+      "bytes": 17787,
+      "sha256": "40feff4b28fb6859d5faaadc99323bc5ec8d96a59528df2a7e290bdb464aad7a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/debug-narrowband-gpu/signal-studio-narrowband-debug-gpu-native-4k-150-report.json",
+      "bytes": 15393,
+      "sha256": "15488e79b43def4032bed6bcb1f45fe95c3158729a9d79cb11f7edf8892eb780"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/debug-narrowband-gpu/signal-studio-narrowband-debug-gpu-native-4k-150-screens.json",
+      "bytes": 746,
+      "sha256": "1cf190aee7068e9f486c6d22f87bf5459745c0e0eed2f42774125b87815ab8c7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/debug-narrowband-gpu/signal-studio-narrowband-debug-gpu-native-4k-150.png",
+      "bytes": 277674,
+      "sha256": "dd861fc8dd52c3336710acb9449745635abf70a7c958599f4fdfb7e7e446ed6f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/debug-narrowband-software/signal-studio-narrowband-debug-software-native-4k-150-report.json",
+      "bytes": 9736,
+      "sha256": "05c6435f6618a2b03084a03b4e3f4efc5e51b495aa23840ec98501d928a221ab"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/debug-narrowband-software/signal-studio-narrowband-debug-software-native-4k-150-screens.json",
+      "bytes": 746,
+      "sha256": "1cf190aee7068e9f486c6d22f87bf5459745c0e0eed2f42774125b87815ab8c7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/debug-narrowband-software/signal-studio-narrowband-debug-software-native-4k-150.png",
+      "bytes": 475987,
+      "sha256": "bb719c0b8eb94f72d28d59cfc588cc31be372ccbe792ba55759863ffe2017360"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/debug-wideband-gpu/signal-studio-debug-gpu-native-4k-150-report.json",
+      "bytes": 13922,
+      "sha256": "be908f63689eab8c7ef7c1670238eebfd1331df332b17b83843ce6de17592bdd"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/debug-wideband-gpu/signal-studio-debug-gpu-native-4k-150-screens.json",
+      "bytes": 746,
+      "sha256": "1cf190aee7068e9f486c6d22f87bf5459745c0e0eed2f42774125b87815ab8c7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/debug-wideband-gpu/signal-studio-debug-gpu-native-4k-150.png",
+      "bytes": 944517,
+      "sha256": "6efdb52d570b8706945aaec4b8c37e7e03cb1844564da56661b558029b8c9405"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/debug-wideband-software/signal-studio-debug-software-native-4k-150-report.json",
+      "bytes": 8074,
+      "sha256": "eea17dfc50c7ccf3b2e7e3e65d5b39e66af6fa3b4d6951a7447d583623df05de"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/debug-wideband-software/signal-studio-debug-software-native-4k-150-screens.json",
+      "bytes": 746,
+      "sha256": "1cf190aee7068e9f486c6d22f87bf5459745c0e0eed2f42774125b87815ab8c7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/debug-wideband-software/signal-studio-debug-software-native-4k-150.png",
+      "bytes": 1044200,
+      "sha256": "557109c92936b7e3f9328f8117fbd21628eab5f4b85561d44f33349b67933ad2"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/package-debug-narrowband-gpu.json",
+      "bytes": 15393,
+      "sha256": "aeeaeb19202715a3f60af56feea94d8fec365626918084008eed8d65ca31c54b"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/package-debug-narrowband-software.json",
+      "bytes": 9736,
+      "sha256": "b0bfa951f31cc9516fc26d6859805568090fa74445a337463c4aed766292cf65"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/package-debug-wideband-gpu.json",
+      "bytes": 13892,
+      "sha256": "05b17ddfff74c657510f9051ee13ce099892264dc3baaa60cf085650b375454a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/package-debug-wideband-software.json",
+      "bytes": 8074,
+      "sha256": "c6e3006ca7b861b8d4287443f6905ff2f4240e2f8213a02a97a3a7e5d3ff7f31"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/package-release-narrowband-gpu.json",
+      "bytes": 15381,
+      "sha256": "5fafe0c7922cab77b447d8328b203c4f763614653cf82dafb25ba7d8b783ae76"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/package-release-narrowband-software.json",
+      "bytes": 9736,
+      "sha256": "4279c4f956f0693563e5b51ea0f734f2d16e58576659b225644130e7c29e9530"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/package-release-wideband-gpu.json",
+      "bytes": 13906,
+      "sha256": "e2695756f130e0f56b27b9190cd34aa23c33ab6c2baca5f4a880da5df5b8cc05"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/package-release-wideband-software.json",
+      "bytes": 8074,
+      "sha256": "defab10570f8b3df84a00907534a548ffe1fa51ef4742df7776035147ccefc03"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/release-narrowband-gpu/signal-studio-narrowband-release-gpu-native-4k-150-report.json",
+      "bytes": 15381,
+      "sha256": "997ddc51d3bc70e9b66e4ec8516f5c75f43a8c56f525b4bdfe4d6e8923490590"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/release-narrowband-gpu/signal-studio-narrowband-release-gpu-native-4k-150-screens.json",
+      "bytes": 746,
+      "sha256": "1cf190aee7068e9f486c6d22f87bf5459745c0e0eed2f42774125b87815ab8c7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/release-narrowband-gpu/signal-studio-narrowband-release-gpu-native-4k-150.png",
+      "bytes": 277674,
+      "sha256": "dd861fc8dd52c3336710acb9449745635abf70a7c958599f4fdfb7e7e446ed6f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/release-narrowband-software/signal-studio-narrowband-release-software-native-4k-150-report.json",
+      "bytes": 9736,
+      "sha256": "670e1c15052a93bcce2625111576244702accd025329f98d78ca81d67108b913"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/release-narrowband-software/signal-studio-narrowband-release-software-native-4k-150-screens.json",
+      "bytes": 746,
+      "sha256": "1cf190aee7068e9f486c6d22f87bf5459745c0e0eed2f42774125b87815ab8c7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/release-narrowband-software/signal-studio-narrowband-release-software-native-4k-150.png",
+      "bytes": 479160,
+      "sha256": "70a4c0aa5653d78c203cff7d51ee71e069648eeef33e03ea935a1057fdef97a6"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/release-wideband-gpu/signal-studio-release-gpu-native-4k-150-report.json",
+      "bytes": 13865,
+      "sha256": "ddbc8bc4014ca9ce783f3d7b477123c7598c203fd35d269ff6fa181254dd6700"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/release-wideband-gpu/signal-studio-release-gpu-native-4k-150-screens.json",
+      "bytes": 746,
+      "sha256": "1cf190aee7068e9f486c6d22f87bf5459745c0e0eed2f42774125b87815ab8c7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/release-wideband-gpu/signal-studio-release-gpu-native-4k-150.png",
+      "bytes": 944517,
+      "sha256": "6efdb52d570b8706945aaec4b8c37e7e03cb1844564da56661b558029b8c9405"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/release-wideband-software/signal-studio-release-software-native-4k-150-report.json",
+      "bytes": 8074,
+      "sha256": "b3a54f8bb58073170c12ff43e36ba88063753f3ca150e5d3165dcc444c618202"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/release-wideband-software/signal-studio-release-software-native-4k-150-screens.json",
+      "bytes": 746,
+      "sha256": "1cf190aee7068e9f486c6d22f87bf5459745c0e0eed2f42774125b87815ab8c7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/renderer/release-wideband-software/signal-studio-release-software-native-4k-150.png",
+      "bytes": 1044200,
+      "sha256": "557109c92936b7e3f9328f8117fbd21628eab5f4b85561d44f33349b67933ad2"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/REVIEW.md",
+      "bytes": 2553,
+      "sha256": "6a028bad863e8ef2cd9481afbc312685d1e9bf5fd59c89b6b17cf9eebf49e328"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/validation-summary.json",
+      "bytes": 1752,
+      "sha256": "942c8d17cdd4763e3fc6b25725fa98207f18e6cfa5a2c3201e4b20cab280855a"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U4/VALIDATION.md",
+      "bytes": 6711,
+      "sha256": "c59b36266db2518c6649a6a6fdc4e0b9914d609deb1bc2ff9d53d2aafe652447"
+    }
+  ],
+  "documentInputs": [
+    {
+      "path": "README.md",
+      "bytes": 14118,
+      "sha256": "44a46546827eb6af724d8eaafaf7e315d69ac1e8f733e7f93b6d0f6859ba4901"
+    },
+    {
+      "path": "docs/architecture/narrowband.md",
+      "bytes": 7390,
+      "sha256": "7522b1d09d906cb92b209625453019bc62b020af5045336c6e6a3b504e1b2f7b"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/EXECUTION_STATUS.md",
+      "bytes": 2193,
+      "sha256": "3f66758b1a6ca3379cdb4e7bc08ca890d9e7e3963088598058774487e5926cb2"
+    }
+  ]
+}
