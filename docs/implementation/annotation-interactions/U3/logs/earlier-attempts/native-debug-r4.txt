@@ -1,0 +1,1 @@
+The actual annotation context menu did not open

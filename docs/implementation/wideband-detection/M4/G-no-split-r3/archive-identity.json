@@ -1,0 +1,61 @@
+{
+  "executionFreezeSha256": "7e2d9fa220e766be60fd5ece80aed79c66749e09ae2821b22baff4269ab6ad8a",
+  "archivedFiles": [
+    {
+      "file": "scope-summary.json",
+      "sha256": "76f16eaae0c494eea8a4d1c80e954d0e19c3f3e94968f1455d4a4dd148e992cb"
+    },
+    {
+      "file": "scope-manifest.json",
+      "sha256": "7bd530d858f44ef2471949adab7a8b26614f023a65b5097966ea73c2aa499a18"
+    },
+    {
+      "file": "evaluation.json",
+      "sha256": "96df2318a14f8ba8d993796ef8623d05aa79f137d28dc10d5aa03b0096c1ef46"
+    },
+    {
+      "file": "evaluation-completion.json",
+      "sha256": "a023c33849a274fbe76933d17e4fe2f96dd39f90fce98e65db312f99bbd38231"
+    },
+    {
+      "file": "evaluation-identity.json",
+      "sha256": "13139a7fec904e8ba11ad60d6e6906e6eaf5bed00f4d31c9f1cce7be1b07097a"
+    },
+    {
+      "file": "paired-index.json",
+      "sha256": "6c131b89a80cddee27dfa22c88937b929bf3ea1c2f91115089fb885876cf2a52"
+    },
+    {
+      "file": "pair-run-records.json",
+      "sha256": "ef4a08903b81425d3a1f48d89ec46460496a817f441e39df42db45df03870cc9"
+    }
+  ],
+  "nativeFailures": [
+    {
+      "sampleId": "20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "completion": {
+        "schema": "signalstudio-m4-stage-completion-v1",
+        "stage": "native",
+        "finishedAtUtc": "2026-10-13T23:17:54.259103+00:00",
+        "returnCode": 1,
+        "timedOut": false,
+        "failed": true,
+        "reason": "result-not-complete",
+        "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-no-split\\20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "resultSha256": "364a3d860e2d3a586d9658f8c99102643add6b363a5b5ec01766a404a2216b96",
+        "wallSeconds": 29.385143399995286,
+        "mainProcessPeakRssBytes": 49061888,
+        "wholeDeviceGpuPeakMemoryUsedMiB": {
+          "0": 1969
+        },
+        "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+        "processTreeContainment": "Windows kill-on-close Job",
+        "resumed": false
+      },
+      "runError": "Cannot atomically publish detection data: Unknown error",
+      "completedWindows": "66"
+    }
+  ],
+  "failedNativeCountedAsZeroPredictions": true,
+  "noFileExcludedAfterOutcomes": true
+}

@@ -1,0 +1,16 @@
+usage: model_package.py [-h] --asset-root ASSET_ROOT
+                        --runtime-root RUNTIME_ROOT --output-bin OUTPUT_BIN
+                        --report REPORT
+
+Stage verified, relocatable model assets beside the standalone worker. This
+tool uses Python's standard library only. It neither exports a checkpoint nor
+builds an engine; every binary must already match its frozen SHA-256.
+
+options:
+  -h, --help            show this help message and exit
+  --asset-root ASSET_ROOT
+                        Current M3 assets root, containing epoch1200 and
+                        controls
+  --runtime-root RUNTIME_ROOT
+  --output-bin OUTPUT_BIN
+  --report REPORT

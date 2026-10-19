@@ -1,0 +1,148 @@
+{
+  "scope": "G-roi",
+  "executionFreezeSha256": "7e2d9fa220e766be60fd5ece80aed79c66749e09ae2821b22baff4269ab6ad8a",
+  "archivedFiles": [
+    {
+      "file": "scope-summary.json",
+      "sha256": "62987602ad4745110adfb598252c66db8420cab80200329f142e6c5c2efcfeff"
+    },
+    {
+      "file": "scope-manifest.json",
+      "sha256": "bd364af84015002569c7f1a0c3382d77505ee77fefdbc9be9b3cc5ce79799630"
+    },
+    {
+      "file": "evaluation.json",
+      "sha256": "b439c607e176e5efc229192a33c56e51704716a0214dfe7cf69a231761652982"
+    },
+    {
+      "file": "evaluation-completion.json",
+      "sha256": "9f701ca6659adfe84188c7e5ed5262d18e5c5abd8b18bce2d9fc28285781f343"
+    },
+    {
+      "file": "evaluation-identity.json",
+      "sha256": "2dc67345192544e88a8d73a68e9858a34a4bc3108861030866ce0734ae60b013"
+    },
+    {
+      "file": "paired-index.json",
+      "sha256": "6db20b281f7f2472e8d90b725a82e32495384d2ebb26eddd34f3c0288ddd028c"
+    },
+    {
+      "file": "pair-run-records.json",
+      "sha256": "ac6921dc380ba851ed77d3414c80c90adb2315b52859e873d7bb4e9c0da05312"
+    }
+  ],
+  "resultIdentities": [
+    {
+      "sampleId": "20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "sha256": "d868276c384de38b90952e130a395c2ca5dc14c7d859a27a6ff553ca59f43aa9"
+      },
+      "reference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "sha256": "f610943d3a3494916bf6ce17244fa6c5bd195f647971ce690d342fa69dfd6cd9"
+      }
+    },
+    {
+      "sampleId": "20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "sha256": "635f3f6b9b428258e265b3f8e4462b596f509cf19c07fd77b71cedf6a12a414c"
+      },
+      "reference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "sha256": "b1c52ffac397d84332399693e583cb1ee33ca3d590db18d11421c37c5c86a0ae"
+      }
+    },
+    {
+      "sampleId": "20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "sha256": "58ca90850f9a8ea54c03e9beebd7904e2d797adca70080e79c9337d43447f486"
+      },
+      "reference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "sha256": "495ff81de716378494bd9f07997cb280fbb67dc11ddc6f5c79fec35ecbc16a70"
+      }
+    },
+    {
+      "sampleId": "20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "sha256": "e2d579754f914052836317213dd4e837dc3680ab6d615a1719adfd62da2fbc98"
+      },
+      "reference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "sha256": "eed75a7c2c7b517d93750f360789da1b4bc63d186ef9cabdd9b870cc02c8c9d9"
+      }
+    },
+    {
+      "sampleId": "20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "sha256": "043d91a8c1e7fccfaa7c6e12c0b72fe75e6c0e74fd185a0bb88f99ab0c7df0c5"
+      },
+      "reference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "sha256": "417bd6f3cf51120d4fd683e154ff5cd1398da507daad1d7435b4f4dbcd15a456"
+      }
+    },
+    {
+      "sampleId": "20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "sha256": "b433236eb22465ecb8b1c0a22326fc98da8d153990c76d62077e3ee874ecf054"
+      },
+      "reference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "sha256": "ec08e24ef661541d5236abc96e2bd4d505f7f9550eef52761eaa06d7898f36dd"
+      }
+    },
+    {
+      "sampleId": "20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "sha256": "b826e317dad2115d1fa1451683e6092f738b8831d4b66bc77840b6605574a130"
+      },
+      "reference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "sha256": "892d0e3f38b71ac83f4e4fdc972ee036101bfea86117aaccdd0ef7f770c58d15"
+      }
+    },
+    {
+      "sampleId": "20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "sha256": "e1fdb5bdc5a05ffc277dc124e88828b2227b00d1192acd6a515940579c34556f"
+      },
+      "reference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "sha256": "5e961028e2627d61299bd768a761071a1651e91a50df9d2dc6288a3818240e3b"
+      }
+    },
+    {
+      "sampleId": "20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "sha256": "c801d0056d7ac4f8844fe65becebe50066dbc0ebe5da4acfeb737bfcc52fd3c3"
+      },
+      "reference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "sha256": "5e6bce6bdbf59c498479aabe4e23e6860ca9c9b0caa005b7c47c39bdbe2d650d"
+      }
+    },
+    {
+      "sampleId": "20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35",
+      "native": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35\\native\\result.json",
+        "sha256": "052299171227c589683457a9f5ad24ad5900965505dae696a1c20d65c32c1188"
+      },
+      "reference": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\G-roi\\20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35\\reference\\result.json",
+        "sha256": "52907df48457a5154e3d5ea05bf251697426c60a75955bfee2dcc5a97f23cf77"
+      }
+    }
+  ],
+  "nativeFallbackReasons": {},
+  "allNativePublicationsRecoveredExactly": true
+}

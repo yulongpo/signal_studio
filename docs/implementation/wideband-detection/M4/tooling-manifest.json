@@ -1,0 +1,104 @@
+{
+  "schema": "signalstudio-m4-tooling-manifest-v1",
+  "readyForInference": false,
+  "externalBusinessImported": false,
+  "formalOutcomeRead": false,
+  "formalHoldoutGenerated": false,
+  "files": [
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_reference.py",
+      "role": "standalone-reference",
+      "bytes": 37241,
+      "sha256": "40786c443efa4c9374f26d50a0ed869140402358e0d566932b67d7d2e9e461e3"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_evaluation.py",
+      "role": "evaluator",
+      "bytes": 30022,
+      "sha256": "90f03bb397f5e275003e8ddc33bd195c7e506dbd5f11deac03b27de4a67f6219"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\time_holdout.py",
+      "role": "generator",
+      "bytes": 22050,
+      "sha256": "16d0fefd0dd7a28c8a0ec261f69f861239352b3d93110951629740738df1ab30"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\model_ffscn.py",
+      "role": "independent-checkpoint-architecture",
+      "bytes": 10708,
+      "sha256": "0405ccdab139f03e496b307495c71624d91cf182427eadd4374d5552b687d583"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\tools\\detection\\model_frequency_parity.py",
+      "role": "independent-decode-track-frequency-math",
+      "bytes": 54397,
+      "sha256": "eff7a6849c70e11c6a5ef2caa5a754f7df5cbec7cf00b7438c84a6c284174681"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\contracts\\wideband-detection\\profiles\\ffscn-gui-iq-v1.json",
+      "role": "default-model-profile",
+      "bytes": 2519,
+      "sha256": "56e4b212ef0abc44753fcbd98f7ae85c1626c9fcd9097d3851282ae31c11bc12"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\VALIDATION_PROTOCOL.md",
+      "role": "protocol-prose",
+      "bytes": 22805,
+      "sha256": "762e9e8fdd37a5d37ac8359a989a90d7323e9f9f0b4af842d3d22b218b12824e"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\validation-protocol.json",
+      "role": "protocol-config",
+      "bytes": 7439,
+      "sha256": "8db8fd328d865f99ca3b30a1ee7fb39b50000b21d6a46f5d1d15a07ffc794a51"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\input-manifest.json",
+      "role": "input-identity",
+      "bytes": 42206,
+      "sha256": "0ce9a7cfc3d78c2c460e85a46fa7d547525194ea276ece639f076ab312037dab"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\protocol-freeze.json",
+      "role": "pre-results-protocol-freeze",
+      "bytes": 800,
+      "sha256": "3ba7c1697c9ce56f00dd213bddb2cf59268c8d84ea7bb4d9cf95881f600effd2"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\PARAMETER_DECISION.md",
+      "role": "approved-product-extension",
+      "bytes": 2862,
+      "sha256": "b92ab9b9fa1bbcb548a069224879027439b27cf4fd20c989eb98bee81b16061a"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\generator-freeze.json",
+      "role": "full-generation-grid-freeze",
+      "bytes": 276513,
+      "sha256": "6c6158119f11ec61b085ffd39b99cbc2c44feb03bf5371f4a38d5dc8ffec855c"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\wideband-detection\\M4\\REFERENCE.md",
+      "role": "tool-api-and-limitations",
+      "bytes": 10141,
+      "sha256": "cb98b7dc51b3a651994bae07ea7e73ca987a6b644501796769966af10f4dcadf"
+    }
+  ],
+  "environment": {
+    "numpy": "2.4.4",
+    "scipy": "1.17.1",
+    "torch": "2.12.0+cu132",
+    "torchvision": "0.27.0+cu132",
+    "black": "26.3.1"
+  },
+  "cpuChecks": {
+    "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\tool-cpu-checks.json",
+    "sha256": "f1663212955f5535c540f1a3d33f039860bda18f4acde4a39f2de6b2b159e584"
+  },
+  "pendingForRootExecutionFreeze": [
+    "latest C++ CLI/worker and runtime binary hashes",
+    "checkpoint and deployed model hashes",
+    "complete selected IQ/truth identities before inference",
+    "root explicit GPU run scheduling"
+  ]
+}

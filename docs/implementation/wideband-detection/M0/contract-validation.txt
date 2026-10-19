@@ -1,0 +1,30 @@
+{
+  "schemaChecks": 3,
+  "sourceDerivedAnnotations": 4,
+  "validRunAndHandshake": true,
+  "negativeCasesPassed": [
+    "uint64 overflow",
+    "reversed time",
+    "reversed frequency",
+    "duplicate segments",
+    "fake label model score",
+    "unknown source",
+    "unknown geometry",
+    "nonfinite frequency",
+    "nonfinite original field",
+    "sample trailing newline",
+    "request beyond prefix",
+    "prefix beyond source",
+    "outside result path",
+    "root-relative slash path",
+    "root-relative backslash path",
+    "nonfinite parameter",
+    "uncorrelated batch",
+    "binary size mismatch",
+    "oversize envelope",
+    "worker uint64 overflow",
+    "worker sequence newline",
+    "worker hash newline"
+  ],
+  "modelExecuted": false
+}

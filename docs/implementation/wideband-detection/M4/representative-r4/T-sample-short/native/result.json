@@ -1,0 +1,192 @@
+{
+    "activitySegments": 0,
+    "annotations": [
+    ],
+    "centerFrequencyHz": 2500000000,
+    "elapsedSeconds": 5.1903822,
+    "exactRecovery": true,
+    "pass": true,
+    "physicalSamples": "800000",
+    "refinementStates": [
+    ],
+    "run": {
+        "chunks": [
+            {
+                "relativePath": "detections/e8881b05ee3770dca44e73155e52d1f7ced941d4d9969e7157c9c2288038a46e/chunk-c9138dc21bb7325dea594bde63b2da479366607f10e293294d36eadae7023fcf.json",
+                "resultCount": 2,
+                "sequence": "0",
+                "sha256": "c9138dc21bb7325dea594bde63b2da479366607f10e293294d36eadae7023fcf"
+            },
+            {
+                "relativePath": "detections/e8881b05ee3770dca44e73155e52d1f7ced941d4d9969e7157c9c2288038a46e/chunk-a4653b794975a0b74386e73d428153c9850b83d0cbf1dd5bc050d1f400e8957f.json",
+                "resultCount": 2,
+                "sequence": "1",
+                "sha256": "a4653b794975a0b74386e73d428153c9850b83d0cbf1dd5bc050d1f400e8957f"
+            },
+            {
+                "relativePath": "detections/e8881b05ee3770dca44e73155e52d1f7ced941d4d9969e7157c9c2288038a46e/chunk-f71dd01a4d9570dd84ad91f8700f0b18998419996059cbe5c2ca7160f3144ba1.json",
+                "resultCount": 2,
+                "sequence": "2",
+                "sha256": "f71dd01a4d9570dd84ad91f8700f0b18998419996059cbe5c2ca7160f3144ba1"
+            },
+            {
+                "relativePath": "detections/e8881b05ee3770dca44e73155e52d1f7ced941d4d9969e7157c9c2288038a46e/chunk-75c2969af351d44e64986cad57e7fc286b0c59c6f892d8d48f8264ed2d4e802f.json",
+                "resultCount": 1,
+                "sequence": "3",
+                "sha256": "75c2969af351d44e64986cad57e7fc286b0c59c6f892d8d48f8264ed2d4e802f"
+            },
+            {
+                "relativePath": "detections/e8881b05ee3770dca44e73155e52d1f7ced941d4d9969e7157c9c2288038a46e/chunk-2a9e5d5a3dbfc28132b2a72a11d108b885c33f4af65c8cce48cf1771e2ae9b4a.json",
+                "resultCount": 1,
+                "sequence": "4",
+                "sha256": "2a9e5d5a3dbfc28132b2a72a11d108b885c33f4af65c8cce48cf1771e2ae9b4a"
+            }
+        ],
+        "completedWindows": "7",
+        "computationPhase": "completed",
+        "coverage": [
+            {
+                "kind": "read",
+                "range": {
+                    "endSample": "800000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": 2490000000,
+                    "frequencyUpperHz": 2510000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            },
+            {
+                "kind": "eligible",
+                "range": {
+                    "endSample": "800000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": 2490000000,
+                    "frequencyUpperHz": 2510000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            },
+            {
+                "kind": "completed",
+                "range": {
+                    "endSample": "800000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": 2490000000,
+                    "frequencyUpperHz": 2510000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            }
+        ],
+        "device": "NVIDIA GeForce RTX 5060 Laptop GPU",
+        "eligibleWindows": "7",
+        "error": "",
+        "finishedAtMilliseconds": "1791944935679",
+        "lifecycle": "Completed",
+        "manifestRelativePath": "detections/e8881b05ee3770dca44e73155e52d1f7ced941d4d9969e7157c9c2288038a46e/manifest.json",
+        "readFrames": "40",
+        "recoverable": false,
+        "refinedCandidates": "0",
+        "request": {
+            "contextRange": {
+                "endSample": "800000",
+                "frequencyFrame": "RF",
+                "frequencyLowerHz": 2490000000,
+                "frequencyUpperHz": 2510000000,
+                "startSample": "0"
+            },
+            "evidenceBudgetBytes": "134217728",
+            "modelManifestPath": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+            "modelSha256": "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81",
+            "parameters": {
+                "bandwidthMarginDb": 6,
+                "batchSize": 2,
+                "coarseMinBurstSeconds": 0.01,
+                "coarseSplitGapSeconds": 0.02,
+                "maxMiss": 1,
+                "mergeFrequencyHz": 100000,
+                "minHits": 2,
+                "minOffSeconds": 0.001,
+                "minOnSeconds": 5e-04,
+                "nmsIou": 0.3,
+                "sampleEdgeRatio": 0.6,
+                "scoreThreshold": 0.7,
+                "smoothSeconds": 1e-04,
+                "splitBursts": true,
+                "timeStrategy": "sample",
+                "topK": 512
+            },
+            "parentRunId": null,
+            "profile": {
+                "backend": "TensorRt",
+                "fftSize": 65536,
+                "hopSeconds": 0.001,
+                "id": "ffscn-gui-iq-v1",
+                "maximumPsdOnly": false,
+                "modelFrames": 10,
+                "modelHopFrames": 5,
+                "name": "FFSCN GUI IQ · 10帧",
+                "status": "主线候选 / 需资产预检",
+                "supportsReal": false,
+                "version": 1
+            },
+            "rangeOrigin": "m4-frozen-complete-file-validation",
+            "requestedRange": {
+                "endSample": "800000",
+                "frequencyFrame": "RF",
+                "frequencyLowerHz": 2490000000,
+                "frequencyUpperHz": 2510000000,
+                "startSample": "0"
+            },
+            "runId": "m4-sample-short-m4-source-T08-00",
+            "schemaVersion": 1,
+            "sourceAnnotationId": "",
+            "sourceIdentity": {
+                "availableSamples": "800000",
+                "centerFrequencyHz": 2500000000,
+                "contentHash": "",
+                "effectiveFrequency": {
+                    "lowerHz": 2490000000,
+                    "upperHz": 2510000000
+                },
+                "fileId": "m4-source-T08-00",
+                "formatRevision": "1",
+                "hashedRange": null,
+                "path": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/M4/assets/holdout/data/T08-00.wav",
+                "physicalSamples": "800000",
+                "projectGeneration": "940",
+                "quickFingerprint": "3200044/1791916600069",
+                "sampleFormat": {
+                    "byteOrder": "le",
+                    "channelLayout": "interleaved",
+                    "channels": 1,
+                    "encoding": "I16",
+                    "headerBytes": "44",
+                    "iqLayout": "iq",
+                    "normalizeIntegerAdc": true,
+                    "selectedChannel": 0,
+                    "structure": "complex",
+                    "trailerBytes": "0"
+                },
+                "sampleRateHz": 20000000,
+                "selectedSampleChannel": "0"
+            },
+            "sourceRevisionId": "",
+            "workingSetBudgetBytes": "268435456"
+        },
+        "resultCount": "8",
+        "runtime": "10.11.0.33",
+        "schema": "signal-studio-detection-run",
+        "sourceValidity": "Current",
+        "startedAtMilliseconds": "1791944930740",
+        "totalRefinementCandidates": "0",
+        "version": 2
+    },
+    "sampleRateHz": 20000000,
+    "schemaVersion": 1,
+    "shortProfile": true,
+    "sourceFingerprint": "3200044/1791916600069",
+    "sourcePath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-00.wav",
+    "strategy": "sample"
+}

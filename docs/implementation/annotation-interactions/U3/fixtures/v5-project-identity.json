@@ -1,0 +1,33 @@
+{
+  "source": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\annotation-interactions\\U2\\saved-project.json",
+  "sourceSha256": "3f97d5bbc2e3bb017c8c3f380a6e0ea89d5903b875b6d96a4ddc134da8ff7629",
+  "projectBytesUnchanged": true,
+  "sidecars": [
+    {
+      "bytes": "6357",
+      "path": "annotations/c2bb3ccfff6a5dec63bfc98b/source-42c6d3546ddfbbf380d4218c0803cb175e0f0fdefd0b5928bddd87557b716c43.json",
+      "sha256": "42c6d3546ddfbbf380d4218c0803cb175e0f0fdefd0b5928bddd87557b716c43"
+    },
+    {
+      "bytes": "1260",
+      "path": "annotations/c2bb3ccfff6a5dec63bfc98b/source-833bd4f98dac1e1d15ab6359a8b929178fc063b5ebe1531f665e9e847e704e7b.json",
+      "sha256": "833bd4f98dac1e1d15ab6359a8b929178fc063b5ebe1531f665e9e847e704e7b"
+    },
+    {
+      "bytes": "1272",
+      "path": "annotations/c2bb3ccfff6a5dec63bfc98b/source-ca18709a426a81cab2c35036254b3165403371ae937e52d3cae8e7be5b190b59.json",
+      "sha256": "ca18709a426a81cab2c35036254b3165403371ae937e52d3cae8e7be5b190b59"
+    },
+    {
+      "bytes": "1274",
+      "path": "annotations/c2bb3ccfff6a5dec63bfc98b/source-6fe72a58fdc026f194ef25418007452fcd2de94f081775d3a68b358549283cc5.json",
+      "sha256": "6fe72a58fdc026f194ef25418007452fcd2de94f081775d3a68b358549283cc5"
+    },
+    {
+      "bytes": "32678",
+      "count": "9",
+      "path": "annotations/c2bb3ccfff6a5dec63bfc98b/30cf927c65283ca34580285888510f6329c72b593aaa2d45646f23d690afd866.json",
+      "sha256": "30cf927c65283ca34580285888510f6329c72b593aaa2d45646f23d690afd866"
+    }
+  ]
+}

@@ -1,0 +1,316 @@
+D:\softwares\cmake\bin\cmake.exe --build --preset local-debug --parallel 8
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioBrand.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioBrand.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioDisplaySamplingTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDisplaySamplingTests.exe
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionRefinementTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionRefinementTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  channel_processor.cpp
+  SignalStudioAnnotationTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioAnnotationTests.exe
+  SignalStudioDetectionRefinedFusionTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionRefinedFusionTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionPostprocessTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionPostprocessTests.exe
+  正在编译...
+  channel_processor.cpp
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioInfrastructure.lib
+  Automatic MOC for target SignalStudioSampleFormatTests
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  detection_model_backend.cpp
+  detection_pipeline_tests.cpp
+  detection_frequency_analysis_tests.cpp
+  main.cpp
+  正在扫描源以查找模块依赖项...
+  channel_processor_tests.cpp
+  detection_sample_energy_tests.cpp
+  detection_time_pipeline_tests.cpp
+  正在扫描源以查找模块依赖项...
+  sample_format_tests.cpp
+  detection_store_tests.cpp
+  detection_model_backend.cpp
+  detection_model_backend_tests.cpp
+  正在编译...
+  正在编译...
+  正在编译...
+  SignalStudioDetectionProtocolTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionProtocolTests.exe
+  正在编译...
+  正在编译...
+  detection_frequency_analysis_tests.cpp
+  main.cpp
+  detection_model_backend.cpp
+  正在编译...
+  detection_pipeline_tests.cpp
+  正在编译...
+  正在扫描源以查找模块依赖项...
+  channel_processor_tests.cpp
+  sample_format_tests.cpp
+  正在编译...
+  detection_sample_energy_tests.cpp
+  detection_time_pipeline_tests.cpp
+  annotation_store_tests.cpp
+  正在编译...
+  detection_model_backend.cpp
+  detection_model_backend_tests.cpp
+  detection_store_tests.cpp
+  正在编译...
+  annotation_store_tests.cpp
+D:\project\signal_studio_rebuild\infrastructure\detection_model_backend.cpp(148,67): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioDetectionWorker.vcxproj]
+D:\project\signal_studio_rebuild\tests\detection_model_backend_tests.cpp(356,31): warning C4389: '==': 有符号/无符号不匹配 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioDetectionModelBackendTests.vcxproj]
+D:\project\signal_studio_rebuild\tests\detection_model_backend_tests.cpp(356,61): warning C4389: '==': 有符号/无符号不匹配 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioDetectionModelBackendTests.vcxproj]
+D:\project\signal_studio_rebuild\tests\detection_model_backend_tests.cpp(357,28): warning C4389: '==': 有符号/无符号不匹配 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioDetectionModelBackendTests.vcxproj]
+D:\project\signal_studio_rebuild\tests\sample_format_tests.cpp(231,28): warning C4456: “cache”的声明隐藏了上一个本地声明 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioSampleFormatTests.vcxproj]
+D:\project\signal_studio_rebuild\infrastructure\detection_model_backend.cpp(148,67): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioDetectionModelBackendTests.vcxproj]
+      D:\project\signal_studio_rebuild\tests\sample_format_tests.cpp(38,22):
+      参见“cache”的声明
+  
+D:\project\signal_studio_rebuild\tests\sample_format_tests.cpp(475,16): warning C4834: 放弃具有 [[nodiscard]] 属性的函数的返回值 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioSampleFormatTests.vcxproj]
+D:\project\signal_studio_rebuild\tests\sample_format_tests.cpp(513,28): warning C4389: '==': 有符号/无符号不匹配 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioSampleFormatTests.vcxproj]
+D:\project\signal_studio_rebuild\tests\sample_format_tests.cpp(527,16): warning C4834: 放弃具有 [[nodiscard]] 属性的函数的返回值 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioSampleFormatTests.vcxproj]
+D:\project\signal_studio_rebuild\tests\sample_format_tests.cpp(544,18): warning C4834: 放弃具有 [[nodiscard]] 属性的函数的返回值 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioSampleFormatTests.vcxproj]
+D:\project\signal_studio_rebuild\tests\sample_format_tests.cpp(560,16): warning C4834: 放弃具有 [[nodiscard]] 属性的函数的返回值 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioSampleFormatTests.vcxproj]
+  SignalStudioChannelProcessorTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioChannelProcessorTests.exe
+  SignalStudioDetectionSampleEnergyTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionSampleEnergyTests.exe
+  SignalStudioDetectionModelBackendTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionModelBackendTests.exe
+  SignalStudioDetectionWorker.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionWorker.exe
+  SignalStudioDetectionFrequencyAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionFrequencyAnalysisTests.exe
+  SignalStudioAnnotationStoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioAnnotationStoreTests.exe
+  SignalStudioDetectionPipelineTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionPipelineTests.exe
+  SignalStudioDetectionTimePipelineTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionTimePipelineTests.exe
+  Automatic MOC for target SignalStudio
+  正在扫描源以查找模块依赖项...
+  SignalStudioSampleFormatTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioSampleFormatTests.exe
+  main.cpp
+  detection_card.cpp
+  narrowband_workspace.cpp
+  detection_panel.cpp
+  main_window.cpp
+  plot_widget.cpp
+  source_preview_widget.cpp
+  spectral_settings_widget.cpp
+  signal_import_dialog.cpp
+  annotation_panel.cpp
+  annotation_evidence_widget.cpp
+  正在编译...
+  main.cpp
+  source_preview_widget.cpp
+  detection_card.cpp
+  main_window.cpp
+  signal_import_dialog.cpp
+  narrowband_workspace.cpp
+  detection_panel.cpp
+  annotation_evidence_widget.cpp
+  annotation_panel.cpp
+  plot_widget.cpp
+  spectral_settings_widget.cpp
+  SignalStudioDetectionStoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionStoreTests.exe
+D:\project\signal_studio_rebuild\ui\import\source_preview_widget.cpp(21,10): warning C4458: “data”的声明隐藏了类成员 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudio.vcxproj]
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtWidgets\qwidget.h(785,18):
+      参见“QWidget::data”的声明
+  
+  mocs_compilation_Debug.cpp
+  SignalStudio.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudio.exe
+  Deploying Qt and compiler runtime to the standalone output directory
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140D_ATOMIC_WAIT.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140_2D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/VCRUNTIME140D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/VCRUNTIME140_1D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/ucrtbased.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140_1D.dll
+  D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudio.exe 64 bit, debug executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugind.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+EXEC : warning : Cannot find any version of the dxcompiler.dll and dxil.dll. This is not a problem unless Direct3D 12 and certain features are used by the application. [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudio.vcxproj]
+  Adding Qt6Svg for qsvgicond.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugind.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugind.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Skipping system library C:/WINDOWS/system32/icuuc.dll
+  Qt6Cored.dll is up to date.
+  Qt6Guid.dll is up to date.
+  Qt6Networkd.dll is up to date.
+  Qt6Svgd.dll is up to date.
+  Qt6Widgetsd.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  concrt140d.dll is up to date.
+  msvcp140_1d.dll is up to date.
+  msvcp140_2d.dll is up to date.
+  msvcp140d.dll is up to date.
+  msvcp140d_atomic_wait.dll is up to date.
+  msvcp140d_codecvt_ids.dll is up to date.
+  vccorlib140d.dll is up to date.
+  vcruntime140_1d.dll is up to date.
+  vcruntime140_threadsd.dll is up to date.
+  vcruntime140d.dll is up to date.
+  qtuiotouchplugind.dll is up to date.
+  qsvgicond.dll is up to date.
+  qgifd.dll is up to date.
+  qicnsd.dll is up to date.
+  qicod.dll is up to date.
+  qjpegd.dll is up to date.
+  qsvgd.dll is up to date.
+  qtgad.dll is up to date.
+  qtiffd.dll is up to date.
+  qwbmpd.dll is up to date.
+  qwebpd.dll is up to date.
+  qnetworklistmanagerd.dll is up to date.
+  qminimald.dll is up to date.
+  qoffscreend.dll is up to date.
+  qwindowsd.dll is up to date.
+  qmodernwindowsstyled.dll is up to date.
+  qcertonlybackendd.dll is up to date.
+  qschannelbackendd.dll is up to date.
+  -- Staged 10 x64 Debug CRT DLLs from C:/Program Files/Microsoft Visual Studio/18/Community/VC/Redist/MSVC/14.51.36231/debug_nonredist/x64/Microsoft.VC145.DebugCRT
+  -- Staged debug UCRT from C:\Program Files (x86)\Windows Kits\10\/bin/10.0.26100.0/x64/ucrt/ucrtbased.dll
+  Automatic MOC for target SignalStudioDetectionSourceTests
+  Automatic MOC for target SignalStudioLabelImportTests
+  Automatic MOC for target SignalStudioUiTests
+  Automatic MOC for target SignalStudioUiCapture
+  Automatic MOC for target SignalStudioWavTests
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  Automatic MOC for target SignalStudioImportTests
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  spectral_analysis_tests.cpp
+  detection_source_tests.cpp
+  正在扫描源以查找模块依赖项...
+  detection_task_tests.cpp
+  label_import_tests.cpp
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  detection_card.cpp
+  ui_capture.cpp
+  detection_panel.cpp
+  spectral_settings_widget.cpp
+  source_preview_widget.cpp
+  main_window.cpp
+  annotation_panel.cpp
+  annotation_evidence_widget.cpp
+  plot_widget.cpp
+  narrowband_workspace.cpp
+  import_controller_tests.cpp
+  core_tests.cpp
+  signal_import_dialog.cpp
+  正在编译...
+  wav_input_tests.cpp
+  ui_tests.cpp
+  annotation_panel.cpp
+  plot_widget.cpp
+  detection_panel.cpp
+  detection_card.cpp
+  main_window.cpp
+  annotation_evidence_widget.cpp
+  signal_import_dialog.cpp
+  source_preview_widget.cpp
+  spectral_settings_widget.cpp
+  narrowband_workspace.cpp
+  正在编译...
+  spectral_analysis_tests.cpp
+  正在编译...
+  正在编译...
+  正在编译...
+  detection_source_tests.cpp
+  正在编译...
+  label_import_tests.cpp
+  正在编译...
+  detection_task_tests.cpp
+  core_tests.cpp
+  wav_input_tests.cpp
+  import_controller_tests.cpp
+  正在编译...
+  正在编译...
+  annotation_panel.cpp
+  narrowband_workspace.cpp
+  detection_card.cpp
+  detection_panel.cpp
+  signal_import_dialog.cpp
+  narrowband_workspace.cpp
+  main_window.cpp
+  ui_tests.cpp
+  signal_import_dialog.cpp
+  detection_panel.cpp
+  source_preview_widget.cpp
+  detection_card.cpp
+  annotation_evidence_widget.cpp
+  ui_capture.cpp
+  plot_widget.cpp
+  plot_widget.cpp
+  annotation_evidence_widget.cpp
+  source_preview_widget.cpp
+  spectral_settings_widget.cpp
+  spectral_settings_widget.cpp
+  annotation_panel.cpp
+  main_window.cpp
+D:\project\signal_studio_rebuild\tests\spectral_analysis_tests.cpp(201,32): warning C4456: “frame”的声明隐藏了上一个本地声明 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioSpectralAnalysisTests.vcxproj]
+      D:\project\signal_studio_rebuild\tests\spectral_analysis_tests.cpp(183,17):
+      参见“frame”的声明
+  
+D:\project\signal_studio_rebuild\tests\spectral_analysis_tests.cpp(202,26): warning C4456: “coefficients”的声明隐藏了上一个本地声明 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioSpectralAnalysisTests.vcxproj]
+      D:\project\signal_studio_rebuild\tests\spectral_analysis_tests.cpp(185,16):
+      参见“coefficients”的声明
+  
+D:\project\signal_studio_rebuild\ui\import\source_preview_widget.cpp(21,10): warning C4458: “data”的声明隐藏了类成员 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioUiCapture.vcxproj]
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtWidgets\qwidget.h(785,18):
+      参见“QWidget::data”的声明
+  
+  SignalStudioSpectralAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioSpectralAnalysisTests.exe
+D:\project\signal_studio_rebuild\ui\import\source_preview_widget.cpp(21,10): warning C4458: “data”的声明隐藏了类成员 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioUiTests.vcxproj]
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtWidgets\qwidget.h(785,18):
+      参见“QWidget::data”的声明
+  
+  SignalStudioWavTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioWavTests.exe
+  SignalStudioDetectionTaskTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionTaskTests.exe
+  SignalStudioImportTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioImportTests.exe
+  SignalStudioLabelImportTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioLabelImportTests.exe
+  SignalStudioDetectionSourceTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionSourceTests.exe
+D:\softwares\Qt\6.11.1\msvc2022_64\include\QtCore\qobject.h(163,23): error C2338: static assertion failed: 'No Q_OBJECT in the class passed to QObject::findChild' [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioUiTests.vcxproj]
+  (编译源文件“../../tests/ui_tests.cpp”)
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtCore\qobject.h(163,23):
+      模板实例化上下文(最早的实例化上下文)为
+          D:\project\signal_studio_rebuild\tests\ui_tests.cpp(4040,39):
+          查看对正在编译的函数 模板 实例化“T *QObject::findChild<signalstudio::SampleTimeEdit*>(QAnyStringView,Qt::FindChildOptions) const”的引用
+          with
+          [
+              T=signalstudio::SampleTimeEdit *
+          ]
+  
+  SignalStudioCoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioCoreTests.exe
+  mocs_compilation_Debug.cpp
+  SignalStudioUiCapture.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioUiCapture.exe

@@ -1,0 +1,411 @@
+{
+    "activeChannelId": "",
+    "activeFileId": "file-1",
+    "files": [
+        {
+            "activeMarkId": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:0",
+            "activeSegmentId": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:0:s0",
+            "annotationLayers": [
+                true,
+                true,
+                true
+            ],
+            "annotationStore": {
+                "annotationCount": "14",
+                "schema": "signal-studio-annotation-index",
+                "segmentCount": "11",
+                "shards": [
+                    {
+                        "bytes": "132768",
+                        "count": "14",
+                        "path": "annotations/c2bb3ccfff6a5dec63bfc98b/f018fc2e4ebf5e2fc2adfa41b77d8205c9886b405592a101e1582acb546185ad.json",
+                        "sha256": "f018fc2e4ebf5e2fc2adfa41b77d8205c9886b405592a101e1582acb546185ad"
+                    }
+                ],
+                "sourceSets": [
+                    {
+                        "bytes": "6401",
+                        "path": "annotations/c2bb3ccfff6a5dec63bfc98b/source-a0ee6eaadb609aaac18807795b7419351711880468e65ee6df0c8f7208378672.json",
+                        "sha256": "a0ee6eaadb609aaac18807795b7419351711880468e65ee6df0c8f7208378672"
+                    },
+                    {
+                        "bytes": "1131",
+                        "path": "annotations/c2bb3ccfff6a5dec63bfc98b/source-74f13350a7436a2bc0442405d4d4a0eab051ea3a140ca87dad1067218109e8d6.json",
+                        "sha256": "74f13350a7436a2bc0442405d4d4a0eab051ea3a140ca87dad1067218109e8d6"
+                    },
+                    {
+                        "bytes": "3426",
+                        "path": "annotations/c2bb3ccfff6a5dec63bfc98b/source-be7a0c5bc0dac0e63265f2f46c592d08d19ce8d653f5f9e45e4bd01cac1615ad.json",
+                        "sha256": "be7a0c5bc0dac0e63265f2f46c592d08d19ce8d653f5f9e45e4bd01cac1615ad"
+                    },
+                    {
+                        "bytes": "5061",
+                        "path": "annotations/c2bb3ccfff6a5dec63bfc98b/source-7f3a6af00a4dad43b910f0ad5471c532e26c920b16d0aae3e8cf7f7c67759a53.json",
+                        "sha256": "7f3a6af00a4dad43b910f0ad5471c532e26c920b16d0aae3e8cf7f7c67759a53"
+                    },
+                    {
+                        "bytes": "5060",
+                        "path": "annotations/c2bb3ccfff6a5dec63bfc98b/source-4397eab12cdae2d8d51c8e28a1f198ff8fe4409145c9dcbb0e6e4b28c61bef5f.json",
+                        "sha256": "4397eab12cdae2d8d51c8e28a1f198ff8fe4409145c9dcbb0e6e4b28c61bef5f"
+                    }
+                ],
+                "version": 2
+            },
+            "annotationView": {
+                "minimumMean": 0,
+                "review": -1,
+                "runId": "",
+                "source": -1
+            },
+            "channels": [
+                {
+                    "absoluteFrequencyLabels": false,
+                    "annotationSource": {
+                        "annotationId": "detection:28159369d719e068604fee18b489d5682a78f83b0058bddc50d4bc7938cfeaf0",
+                        "bindingKind": "LocatedSegment",
+                        "boundRange": {
+                            "end": "364498",
+                            "lowerHz": 2492001800.5371094,
+                            "start": "49053",
+                            "upperHz": 2492770843.5058594
+                        },
+                        "name": "FFSCN IQ 检测",
+                        "range": {
+                            "end": "364498",
+                            "lowerHz": 2492001800.5371094,
+                            "start": "49053",
+                            "upperHz": 2492770843.5058594
+                        },
+                        "reviewStatus": "Pending",
+                        "revisionId": "detection:28159369d719e068604fee18b489d5682a78f83b0058bddc50d4bc7938cfeaf0:r0",
+                        "segmentId": "detection:28159369d719e068604fee18b489d5682a78f83b0058bddc50d4bc7938cfeaf0/activity/0",
+                        "sourceIdentity": {
+                            "availableSamples": "400000",
+                            "centerFrequencyHz": 2500000000,
+                            "contentHash": "",
+                            "effectiveFrequency": {
+                                "lowerHz": 2490000000,
+                                "upperHz": 2510000000
+                            },
+                            "fileId": "file-1",
+                            "formatRevision": "1",
+                            "hashedRange": null,
+                            "path": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-data",
+                            "physicalSamples": "400000",
+                            "projectGeneration": "4",
+                            "quickFingerprint": "3200000/1791646403000",
+                            "sampleFormat": {
+                                "byteOrder": "le",
+                                "channelLayout": "interleaved",
+                                "channels": 1,
+                                "encoding": "F32",
+                                "headerBytes": "0",
+                                "iqLayout": "iq",
+                                "normalizeIntegerAdc": false,
+                                "selectedChannel": 0,
+                                "structure": "complex",
+                                "trailerBytes": "0"
+                            },
+                            "sampleRateHz": 20000000,
+                            "selectedSampleChannel": "0"
+                        },
+                        "sourceKind": "Algorithm"
+                    },
+                    "bandwidthHz": 769042.96875,
+                    "centerFrequencyHz": 2492386322.0214844,
+                    "configVersion": "1",
+                    "constellationMaximum": 1,
+                    "constellationMinimum": -1,
+                    "eyeComponent": 0,
+                    "eyePeriods": 2,
+                    "eyeTraces": 64,
+                    "filter": "standard",
+                    "id": "channel-2",
+                    "name": "窄带通道 1",
+                    "outputSampleRateHz": 4000000,
+                    "page": "observe",
+                    "preserveSourceTime": true,
+                    "processingState": "ready",
+                    "psdAxisMaximum": 0,
+                    "psdAxisMinimum": -120,
+                    "psdFftSize": 4096,
+                    "psdSettings": {
+                        "parameters": {
+                            "burgOrder": 16,
+                            "kaiserBeta": 8.6,
+                            "method": 2,
+                            "overlap": 0.5,
+                            "removeMean": false,
+                            "segmentMilliseconds": 0,
+                            "tapers": 6,
+                            "timeBandwidth": 3.5,
+                            "window": 1
+                        },
+                        "scope": 2,
+                        "statistic": 0
+                    },
+                    "relativeTime": false,
+                    "selectedBit": -1,
+                    "sourceMarkId": "detection:28159369d719e068604fee18b489d5682a78f83b0058bddc50d4bc7938cfeaf0",
+                    "sourceTime": {
+                        "begin": "49053",
+                        "end": "364498"
+                    },
+                    "spectrogramSettings": {
+                        "burgOrder": 16,
+                        "kaiserBeta": 8.6,
+                        "method": 2,
+                        "overlap": 0.5,
+                        "removeMean": false,
+                        "segmentMilliseconds": 0,
+                        "tapers": 6,
+                        "timeBandwidth": 3.5,
+                        "window": 1
+                    },
+                    "stftFftSize": 2048,
+                    "symbolRate": 250000,
+                    "visibleBasebandFrequency": {
+                        "lowerHz": -2000000,
+                        "upperHz": 2000000
+                    },
+                    "visibleSourceTime": {
+                        "begin": "49053",
+                        "end": "364498"
+                    },
+                    "waveform": "iq",
+                    "waveformAutoScale": true,
+                    "waveformAxisMaximum": 2.738593876361847,
+                    "waveformAxisMinimum": -2.6186949610710144,
+                    "wholeSource": false
+                }
+            ],
+            "detectionRuns": [
+                "run-c83d5851-b152-44fc-885e-c67eb25f6e79",
+                "run-f6bd9e48-2cef-4772-84d5-3cfba28e4c6c",
+                "run-3d43d089-fbed-4dc2-b1dd-cd16a272fd1e"
+            ],
+            "display": {
+                "absoluteFrequency": true,
+                "auxiliaryMax": 2.5362048745155334,
+                "auxiliaryMin": 0.5362048745155334,
+                "auxiliaryMode": "waveform",
+                "colorScale": false,
+                "dynamicRangeDb": 80,
+                "grid": true,
+                "mainMode": "timeFrequency",
+                "palette": "coolEditClassic",
+                "psdFromSelection": false,
+                "psdMax": 0,
+                "psdMin": -100,
+                "psdSettings": {
+                    "parameters": {
+                        "burgOrder": 16,
+                        "kaiserBeta": 8.6,
+                        "method": 2,
+                        "overlap": 0.5,
+                        "removeMean": false,
+                        "segmentMilliseconds": 0,
+                        "tapers": 6,
+                        "timeBandwidth": 3.5,
+                        "window": 1
+                    },
+                    "scope": 0,
+                    "statistic": 0
+                },
+                "psdSize": 4096,
+                "referenceLevelDb": 0,
+                "spectrogramSettings": {
+                    "burgOrder": 16,
+                    "kaiserBeta": 8.6,
+                    "method": 2,
+                    "overlap": 0.5,
+                    "removeMean": false,
+                    "segmentMilliseconds": 0,
+                    "tapers": 6,
+                    "timeBandwidth": 3.5,
+                    "window": 1
+                },
+                "stftSize": 2048,
+                "waveformAutoFit": true,
+                "waveformMax": 2.5362048745155334,
+                "waveformMin": 0.5362048745155334,
+                "waveformMode": "iqRms"
+            },
+            "metadata": {
+                "availableSamples": "400000",
+                "centerFrequencyHz": 2500000000,
+                "declaredBandwidthHz": 0,
+                "demo": false,
+                "demoSeed": 1,
+                "effectiveBandwidthHz": 20000000,
+                "id": "file-1",
+                "name": "0000000.sigmf-data",
+                "path": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-data",
+                "sampleCount": "400000",
+                "sampleFormat": {
+                    "byteOrder": "le",
+                    "channelLayout": "interleaved",
+                    "channels": 1,
+                    "encoding": "F32",
+                    "headerBytes": "0",
+                    "iqLayout": "iq",
+                    "normalizeIntegerAdc": false,
+                    "selectedChannel": 0,
+                    "structure": "complex",
+                    "trailerBytes": "0"
+                },
+                "sampleRateHz": 20000000,
+                "sourceFingerprint": "3200000/1791646403000"
+            },
+            "selectedMarkIds": [
+                "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:0"
+            ],
+            "view": {
+                "frequency": {
+                    "lowerHz": 2490000000,
+                    "upperHz": 2510000000
+                },
+                "time": {
+                    "begin": "0",
+                    "end": "200000"
+                }
+            }
+        },
+        {
+            "activeMarkId": "ann-c0b74a4c99f2f963d09d3ffed8fc432a2ce4f445e09845a21f57dd421dbcc3a0:1",
+            "activeSegmentId": "ann-c0b74a4c99f2f963d09d3ffed8fc432a2ce4f445e09845a21f57dd421dbcc3a0:1:s0",
+            "annotationLayers": [
+                true,
+                true,
+                true
+            ],
+            "annotationStore": {
+                "annotationCount": "10",
+                "schema": "signal-studio-annotation-index",
+                "segmentCount": "65",
+                "shards": [
+                    {
+                        "bytes": "79519",
+                        "count": "10",
+                        "path": "annotations/97699a2532d13b683a17e446/979d971ef873005e75e7f0df76cec92f5ef310a8f63f308c8aa85bf09c24b41a.json",
+                        "sha256": "979d971ef873005e75e7f0df76cec92f5ef310a8f63f308c8aa85bf09c24b41a"
+                    }
+                ],
+                "sourceSets": [
+                    {
+                        "bytes": "4406",
+                        "path": "annotations/97699a2532d13b683a17e446/source-3d6888bb84260fe68f0e39cd36a3963963d7d9b2e8476bb6ee60eba7131a6875.json",
+                        "sha256": "3d6888bb84260fe68f0e39cd36a3963963d7d9b2e8476bb6ee60eba7131a6875"
+                    },
+                    {
+                        "bytes": "5168",
+                        "path": "annotations/97699a2532d13b683a17e446/source-06d296bf004ec2c895529d610a40f436541266f952dc66d2accc125d36b8ece3.json",
+                        "sha256": "06d296bf004ec2c895529d610a40f436541266f952dc66d2accc125d36b8ece3"
+                    }
+                ],
+                "version": 2
+            },
+            "annotationView": {
+                "minimumMean": 0,
+                "review": -1,
+                "runId": "",
+                "source": -1
+            },
+            "channels": [
+            ],
+            "detectionRuns": [
+                "run-100d1d42-8dcc-403c-8c66-63f755b13e95"
+            ],
+            "display": {
+                "absoluteFrequency": true,
+                "auxiliaryMax": 11439.966227213541,
+                "auxiliaryMin": 5970.041097005209,
+                "auxiliaryMode": "waveform",
+                "colorScale": false,
+                "dynamicRangeDb": 80,
+                "grid": true,
+                "mainMode": "timeFrequency",
+                "palette": "coolEditClassic",
+                "psdFromSelection": false,
+                "psdMax": 0,
+                "psdMin": -100,
+                "psdSettings": {
+                    "parameters": {
+                        "burgOrder": 16,
+                        "kaiserBeta": 8.6,
+                        "method": 2,
+                        "overlap": 0.5,
+                        "removeMean": false,
+                        "segmentMilliseconds": 0,
+                        "tapers": 6,
+                        "timeBandwidth": 3.5,
+                        "window": 1
+                    },
+                    "scope": 0,
+                    "statistic": 0
+                },
+                "psdSize": 4096,
+                "referenceLevelDb": 0,
+                "spectrogramSettings": {
+                    "burgOrder": 16,
+                    "kaiserBeta": 8.6,
+                    "method": 2,
+                    "overlap": 0.5,
+                    "removeMean": false,
+                    "segmentMilliseconds": 0,
+                    "tapers": 6,
+                    "timeBandwidth": 3.5,
+                    "window": 1
+                },
+                "stftSize": 2048,
+                "waveformAutoFit": true,
+                "waveformMax": 11439.966227213541,
+                "waveformMin": 5970.041097005209,
+                "waveformMode": "iqRms"
+            },
+            "metadata": {
+                "availableSamples": "16000000",
+                "centerFrequencyHz": 2500000000,
+                "declaredBandwidthHz": 0,
+                "demo": false,
+                "demoSeed": 1,
+                "effectiveBandwidthHz": 20000000,
+                "id": "file-3",
+                "name": "20260728-025821-162_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+                "path": "D:/coding/FFSCN_train2/broadband_signal_generation/test_sig2/data/20260728-025821-162_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+                "sampleCount": "16000000",
+                "sampleFormat": {
+                    "byteOrder": "le",
+                    "channelLayout": "interleaved",
+                    "channels": 1,
+                    "encoding": "I16",
+                    "headerBytes": "44",
+                    "iqLayout": "iq",
+                    "normalizeIntegerAdc": true,
+                    "selectedChannel": 0,
+                    "structure": "complex",
+                    "trailerBytes": "0"
+                },
+                "sampleRateHz": 20000000,
+                "sourceFingerprint": "64000044/1785178701611"
+            },
+            "selectedMarkIds": [
+                "ann-c0b74a4c99f2f963d09d3ffed8fc432a2ce4f445e09845a21f57dd421dbcc3a0:1"
+            ],
+            "view": {
+                "frequency": {
+                    "lowerHz": 2490000000,
+                    "upperHz": 2510000000
+                },
+                "time": {
+                    "begin": "0",
+                    "end": "800000"
+                }
+            }
+        }
+    ],
+    "name": "wideband-project-48eab3b0-fa72-4436-9118-02d51e6d967c",
+    "narrowbandWorkspaceOpen": false,
+    "schema": "signal-studio-native-project",
+    "version": 6
+}

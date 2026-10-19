@@ -1,0 +1,118 @@
+{
+  "cpuDdcVerified": false,
+  "error": "来源快照缺失或路径越界",
+  "finishedUtc": "2026-10-18T16:45:49.923Z",
+  "mode": "annotation-interactions",
+  "modelInferenceVerified": false,
+  "node": "U3",
+  "pass": false,
+  "platform": "windows",
+  "sceneCount": 0,
+  "scenes": [],
+  "screen": {
+    "availableLogicalGeometry": {
+      "height": 1392,
+      "width": 2560,
+      "x": 0,
+      "y": 0
+    },
+    "connectedIndex": 1,
+    "deviceName": "\\\\.\\DISPLAY2",
+    "devicePath": "\\\\.\\DISPLAY2",
+    "devicePixelRatio": 1.5,
+    "friendlyName": "U27U2D",
+    "identityMethod": "Windows active DisplayConfig source/target",
+    "logicalDpi": 96,
+    "logicalGeometry": {
+      "height": 1440,
+      "width": 2560,
+      "x": 0,
+      "y": 0
+    },
+    "monitorDevicePath": "\\\\?\\DISPLAY#AOC2703#5&a55c4b7&0&UID517#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+    "name": "U27U2D",
+    "physicalDpi": 108.88753290260826,
+    "pixelSize": {
+      "height": 2160,
+      "width": 3840
+    },
+    "primary": true
+  },
+  "screens": [
+    {
+      "availableLogicalGeometry": {
+        "height": 1392,
+        "width": 2560,
+        "x": 0,
+        "y": 0
+      },
+      "connectedIndex": 1,
+      "deviceName": "\\\\.\\DISPLAY2",
+      "devicePixelRatio": 1.5,
+      "logicalDpi": 96,
+      "logicalGeometry": {
+        "height": 1440,
+        "width": 2560,
+        "x": 0,
+        "y": 0
+      },
+      "name": "U27U2D",
+      "physicalDpi": 108.88753290260826,
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "primary": true
+    },
+    {
+      "availableLogicalGeometry": {
+        "height": 1019,
+        "width": 1707,
+        "x": 3840,
+        "y": 196
+      },
+      "connectedIndex": 2,
+      "deviceName": "\\\\.\\DISPLAY1",
+      "devicePixelRatio": 1.5,
+      "logicalDpi": 96,
+      "logicalGeometry": {
+        "height": 1067,
+        "width": 1707,
+        "x": 3840,
+        "y": 196
+      },
+      "name": "TL160ADMP36",
+      "physicalDpi": 125.86483316481294,
+      "pixelSize": {
+        "height": 1600,
+        "width": 2560
+      },
+      "primary": false
+    }
+  ],
+  "source": {
+    "centerFrequencyHz": 2500000000,
+    "dataPath": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-data",
+    "decodedCompleteFrames": "400000",
+    "format": "CF32",
+    "formatKey": "CF32/1/1/1/0/0/0/0/0",
+    "iqSha256": "3a47e55b5f02851d702d5c5782998bf3e374f67cde592c35689acf9ec5399254",
+    "metaPath": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-meta",
+    "metaSha256": "5efd03dae0f53002c8400ddc2ba65e367d7dde315b232a24cd77a2b1bd982a29",
+    "metadataProvenance": "SigMF 1.0.0",
+    "navigationEnvelopePoints": 1563,
+    "physicalSamples": "400000",
+    "sampleRateHz": 20000000
+  },
+  "startedUtc": "2026-10-18T16:45:42.681Z",
+  "syntheticAnnotations": true,
+  "process": {
+    "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+    "configuration": "Debug",
+    "systemOnlyPath": true,
+    "dpiOverridesCleared": true,
+    "exitCode": 1,
+    "elapsedSeconds": 8.8037191,
+    "screenshotEntry": "scripts/screenshot.ps1 -AnnotationInteractions U3"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "draftAndCloneEqual": true,
+  "files": [
+    {
+      "path": "infrastructure\\detection_store.cpp",
+      "sha256": "e655e794ba424738bba267967896121fb118cd857f508ba75d42e3c9a947f709"
+    },
+    {
+      "path": "infrastructure\\detection_task.cpp",
+      "sha256": "fac6cbdcc423ccb48d06b5e7298f3e8204bec600b90056c2609ea98f3d151ebb"
+    },
+    {
+      "path": "tests\\detection_store_tests.cpp",
+      "sha256": "c3ed64f29a60a8aaba6390046d994e2a9ba5df2f8fab9be3e2901320aad32a05"
+    },
+    {
+      "path": "tests\\detection_task_tests.cpp",
+      "sha256": "8d29a60e8dfb5cb84dab2e88e57548957b1b3614d2e2b3618be84d97399dafed"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+    Start 1: signal_studio_core
+1/5 Test #1: signal_studio_core ................   Passed    0.23 sec
+    Start 2: signal_studio_channel_processor
+2/5 Test #2: signal_studio_channel_processor ...   Passed    0.13 sec
+    Start 3: signal_studio_spectral_analysis
+3/5 Test #3: signal_studio_spectral_analysis ...   Passed    0.15 sec
+    Start 4: signal_studio_display_sampling
+4/5 Test #4: signal_studio_display_sampling ....   Passed    0.01 sec
+    Start 5: signal_studio_ui
+5/5 Test #5: signal_studio_ui ..................   Passed   35.41 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =  35.96 sec

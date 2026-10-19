@@ -1,0 +1,36 @@
+{
+  "schema": "signalstudio-m4-paired-suite-index-v1",
+  "parameters": {
+    "strategy": "sample",
+    "shortProfile": true,
+    "semantics": "product-v2"
+  },
+  "scope": "T-sample-short",
+  "diagnosticPartial": true,
+  "plannedFileCount": 32,
+  "expectedTruthCount": 2,
+  "samples": [
+    {
+      "sampleId": "T08-00",
+      "group": "short-1-to-8ms",
+      "source": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T08-00.wav",
+        "sha256": "3ac2edc11dcdebcc9ed0ae02adba93eb1666021101c4196f1dc90d112750cac3"
+      },
+      "truth": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T08-00.json",
+        "sha256": "235a04b2b2e5677390c950708dd91f7184ae7383ddd063174dc1233893df687f"
+      },
+      "sampleRateHz": 20000000,
+      "physicalSamples": "800000",
+      "centerFrequencyHz": 2500000000.0,
+      "effectiveBandwidthHz": 20000000,
+      "nativeResult": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-short\\T-sample-short\\T08-00\\native\\result.json",
+      "referenceResult": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-short\\T-sample-short\\T08-00\\reference\\result.json",
+      "nativeOriginalResult": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-short\\T-sample-short\\T08-00\\native\\result.json",
+      "referenceOriginalResult": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-short\\T-sample-short\\T08-00\\reference\\result.json",
+      "nativeRunFailure": false,
+      "referenceRunFailure": false
+    }
+  ]
+}

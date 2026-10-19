@@ -1,0 +1,44 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+      Start  1: signal_studio_detection_pipeline
+ 1/19 Test  #1: signal_studio_detection_pipeline .............   Passed   19.82 sec
+      Start  2: signal_studio_detection_postprocess
+ 2/19 Test  #2: signal_studio_detection_postprocess ..........   Passed    0.02 sec
+      Start  3: signal_studio_detection_model_backend
+ 3/19 Test  #3: signal_studio_detection_model_backend ........   Passed    0.17 sec
+      Start  4: signal_studio_detection_frequency_analysis
+ 4/19 Test  #4: signal_studio_detection_frequency_analysis ...   Passed    0.25 sec
+      Start  5: signal_studio_detection_store
+ 5/19 Test  #5: signal_studio_detection_store ................   Passed    1.40 sec
+      Start  6: signal_studio_detection_protocol
+ 6/19 Test  #6: signal_studio_detection_protocol .............   Passed    0.67 sec
+      Start  7: signal_studio_detection_task
+ 7/19 Test  #7: signal_studio_detection_task .................   Passed   14.15 sec
+      Start  8: signal_studio_detection_source
+ 8/19 Test  #8: signal_studio_detection_source ...............   Passed    3.14 sec
+      Start  9: signal_studio_annotations
+ 9/19 Test  #9: signal_studio_annotations ....................   Passed    0.54 sec
+      Start 10: signal_studio_annotation_store
+10/19 Test #10: signal_studio_annotation_store ...............   Passed   40.07 sec
+      Start 11: signal_studio_label_import
+11/19 Test #11: signal_studio_label_import ...................   Passed   22.22 sec
+      Start 12: signal_studio_wav
+12/19 Test #12: signal_studio_wav ............................   Passed    0.97 sec
+      Start 13: signal_studio_import
+13/19 Test #13: signal_studio_import .........................   Passed    0.81 sec
+      Start 14: signal_studio_sample_format
+14/19 Test #14: signal_studio_sample_format ..................   Passed    4.71 sec
+      Start 15: signal_studio_core
+15/19 Test #15: signal_studio_core ...........................   Passed    0.92 sec
+      Start 16: signal_studio_channel_processor
+16/19 Test #16: signal_studio_channel_processor ..............   Passed    0.68 sec
+      Start 17: signal_studio_spectral_analysis
+17/19 Test #17: signal_studio_spectral_analysis ..............   Passed    1.02 sec
+      Start 18: signal_studio_display_sampling
+18/19 Test #18: signal_studio_display_sampling ...............   Passed    0.02 sec
+      Start 19: signal_studio_ui
+19/19 Test #19: signal_studio_ui .............................   Passed  249.89 sec
+
+100% tests passed, 0 tests failed out of 19
+
+Total Test time (real) = 361.51 sec

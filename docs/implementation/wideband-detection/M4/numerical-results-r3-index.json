@@ -1,0 +1,278 @@
+{
+  "executionFreezeSha256": "7e2d9fa220e766be60fd5ece80aed79c66749e09ae2821b22baff4269ab6ad8a",
+  "completedPairedFiles": 60,
+  "plannedPairedFiles": 220,
+  "completeMatrix": false,
+  "conclusions": [
+    {
+      "scope": "G-sample",
+      "gate": "paired F1 comparison",
+      "primaryGSampleDefault": true,
+      "passed": false,
+      "difference": -0.1159420289855072,
+      "ci95": [
+        -0.1674764396415735,
+        -0.08702884021801649
+      ]
+    },
+    {
+      "scope": "G-roi",
+      "gate": "paired F1 comparison",
+      "primaryGSampleDefault": false,
+      "passed": true,
+      "difference": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "scope": "G-coarse",
+      "gate": "paired F1 comparison",
+      "primaryGSampleDefault": false,
+      "passed": false,
+      "difference": -0.2839756592292089,
+      "ci95": [
+        -0.3407734920039001,
+        -0.24089031886285056
+      ]
+    },
+    {
+      "scope": "G-no-split",
+      "gate": "paired F1 comparison",
+      "primaryGSampleDefault": false,
+      "passed": false,
+      "difference": -0.11738805970149246,
+      "ci95": [
+        -0.1662005042123635,
+        -0.08870838671643068
+      ]
+    },
+    {
+      "scope": "G-roi-no-split",
+      "gate": "paired F1 comparison",
+      "primaryGSampleDefault": false,
+      "passed": true,
+      "difference": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "scope": "G-coarse-no-split",
+      "gate": "paired F1 comparison",
+      "primaryGSampleDefault": false,
+      "passed": false,
+      "difference": -0.586046511627907,
+      "ci95": [
+        -0.6424029685477239,
+        -0.5501001594385022
+      ]
+    }
+  ],
+  "archivedIdentities": [
+    {
+      "scope": "G-sample",
+      "files": [
+        {
+          "file": "scope-summary.json",
+          "sha256": "cb4e88fabbae270e1ec834e74d77133f013583a0d0635c47f7324f941c6ed9c5"
+        },
+        {
+          "file": "scope-manifest.json",
+          "sha256": "32bebeeb4a89f1491c7f0e6f26e60dc71b83d48ebefd266632368db32524217c"
+        },
+        {
+          "file": "evaluation.json",
+          "sha256": "74bf398bdde7a01ecd3838c9f061bc58aebe19fe782cef2bb9b6a999f4ccff08"
+        },
+        {
+          "file": "evaluation-completion.json",
+          "sha256": "c32aa2f02a00c4e2a728cbba439f95db692b7c0fbb1e797240dc9e77d3054c5c"
+        },
+        {
+          "file": "evaluation-identity.json",
+          "sha256": "e81299efedac22bd3a3c1378e582c670b64f7bd602ece551a0182ab6d975faff"
+        },
+        {
+          "file": "paired-index.json",
+          "sha256": "b62c1cb06d19e880e22c1fb76f17e5e6b452060f9032341f047440f3acb830ed"
+        },
+        {
+          "file": "pair-run-records.json",
+          "sha256": "2f62ae605350dd1a294d8e2f04dad12c46603aa6a03732b4365f2c4065ceb93f"
+        }
+      ]
+    },
+    {
+      "scope": "G-roi",
+      "files": [
+        {
+          "file": "scope-summary.json",
+          "sha256": "62987602ad4745110adfb598252c66db8420cab80200329f142e6c5c2efcfeff"
+        },
+        {
+          "file": "scope-manifest.json",
+          "sha256": "bd364af84015002569c7f1a0c3382d77505ee77fefdbc9be9b3cc5ce79799630"
+        },
+        {
+          "file": "evaluation.json",
+          "sha256": "b439c607e176e5efc229192a33c56e51704716a0214dfe7cf69a231761652982"
+        },
+        {
+          "file": "evaluation-completion.json",
+          "sha256": "9f701ca6659adfe84188c7e5ed5262d18e5c5abd8b18bce2d9fc28285781f343"
+        },
+        {
+          "file": "evaluation-identity.json",
+          "sha256": "2dc67345192544e88a8d73a68e9858a34a4bc3108861030866ce0734ae60b013"
+        },
+        {
+          "file": "paired-index.json",
+          "sha256": "6db20b281f7f2472e8d90b725a82e32495384d2ebb26eddd34f3c0288ddd028c"
+        },
+        {
+          "file": "pair-run-records.json",
+          "sha256": "ac6921dc380ba851ed77d3414c80c90adb2315b52859e873d7bb4e9c0da05312"
+        }
+      ]
+    },
+    {
+      "scope": "G-coarse",
+      "files": [
+        {
+          "file": "scope-summary.json",
+          "sha256": "27478627f726af94a874001f09045c7780451323a7d84e4607b289d985aa5059"
+        },
+        {
+          "file": "scope-manifest.json",
+          "sha256": "21c2448020ac9d4b0be0a9341dc2fe93c37a22ab45ffe26301ec7e8fbb8bce79"
+        },
+        {
+          "file": "evaluation.json",
+          "sha256": "bc0abf5fc961d0d0dace655ee004ae37a2998a673f6bb775e9447ef7797cefa7"
+        },
+        {
+          "file": "evaluation-completion.json",
+          "sha256": "dcbf76a160dc96cfb6d8107243ff581e2315690505b16773e3ca671e56bb90a3"
+        },
+        {
+          "file": "evaluation-identity.json",
+          "sha256": "fba5dac8b38d3088db2e1b183a32652f026fa3593a1ae510db10ada49f4f8014"
+        },
+        {
+          "file": "paired-index.json",
+          "sha256": "12102f780ae920ec736eb618a2e2a55b334a6cdebca5b1f3c3ed716024145f53"
+        },
+        {
+          "file": "pair-run-records.json",
+          "sha256": "e60829137c84587339ab0c7c7388b6f883c0f13bde9c91269af866866051b18d"
+        }
+      ]
+    },
+    {
+      "scope": "G-no-split",
+      "files": [
+        {
+          "file": "scope-summary.json",
+          "sha256": "76f16eaae0c494eea8a4d1c80e954d0e19c3f3e94968f1455d4a4dd148e992cb"
+        },
+        {
+          "file": "scope-manifest.json",
+          "sha256": "7bd530d858f44ef2471949adab7a8b26614f023a65b5097966ea73c2aa499a18"
+        },
+        {
+          "file": "evaluation.json",
+          "sha256": "96df2318a14f8ba8d993796ef8623d05aa79f137d28dc10d5aa03b0096c1ef46"
+        },
+        {
+          "file": "evaluation-completion.json",
+          "sha256": "a023c33849a274fbe76933d17e4fe2f96dd39f90fce98e65db312f99bbd38231"
+        },
+        {
+          "file": "evaluation-identity.json",
+          "sha256": "13139a7fec904e8ba11ad60d6e6906e6eaf5bed00f4d31c9f1cce7be1b07097a"
+        },
+        {
+          "file": "paired-index.json",
+          "sha256": "6c131b89a80cddee27dfa22c88937b929bf3ea1c2f91115089fb885876cf2a52"
+        },
+        {
+          "file": "pair-run-records.json",
+          "sha256": "ef4a08903b81425d3a1f48d89ec46460496a817f441e39df42db45df03870cc9"
+        }
+      ]
+    },
+    {
+      "scope": "G-roi-no-split",
+      "files": [
+        {
+          "file": "scope-summary.json",
+          "sha256": "95d68790f5e91c4d0bc8e0253e91e736196c117504cbad5e3fcd1583d5b3e465"
+        },
+        {
+          "file": "scope-manifest.json",
+          "sha256": "6fff14a69783ad1d767ffb65a72858e13cd72be1f717f6ce41113d72fc0b329b"
+        },
+        {
+          "file": "evaluation.json",
+          "sha256": "643c68f0898fc60c224f871991885a0180fece485addef2c415062cfe6431883"
+        },
+        {
+          "file": "evaluation-completion.json",
+          "sha256": "e1884b8e2c617e70f561335ca76d6d9f83a0a77bfc69e6fec4c0006ea543faba"
+        },
+        {
+          "file": "evaluation-identity.json",
+          "sha256": "6e3c494804ff0d60a80c9b170f09a070e3fe9a6aa7a347e99f4853ec0e3d037b"
+        },
+        {
+          "file": "paired-index.json",
+          "sha256": "edf15341a64cd6bd14725b305f8ac880d519032b0d902cf2cd7ecfc39e8a0a21"
+        },
+        {
+          "file": "pair-run-records.json",
+          "sha256": "48e4784d005971f7390afb5f7163a84ec60e524acf6ecaae940dfed59bd7582c"
+        }
+      ]
+    },
+    {
+      "scope": "G-coarse-no-split",
+      "files": [
+        {
+          "file": "scope-summary.json",
+          "sha256": "07cf429af2fbd44f7a2651b457479dc292f64cfe6978a204de15f5cb23d63668"
+        },
+        {
+          "file": "scope-manifest.json",
+          "sha256": "3504d506aad3d6ac763574637f9a6e6783cc92c95c2f6c3929e87eed3760c9a8"
+        },
+        {
+          "file": "evaluation.json",
+          "sha256": "c9b23390560e2927373eaf22c21d792cee243681e3759f31d7b022c38a93b5c2"
+        },
+        {
+          "file": "evaluation-completion.json",
+          "sha256": "dd7d3c3a5f75f11e2651d1413a8f783d71fd724db269c93ec366738b587fe1f1"
+        },
+        {
+          "file": "evaluation-identity.json",
+          "sha256": "4d65f9dd12bb39e67ddc8ea59ed4cbb4cb618dc8c30c9886008efc90fb67ad8d"
+        },
+        {
+          "file": "paired-index.json",
+          "sha256": "1f759dced17ab10bf9762abe1f0c7aea5958fc38c30e2a23031cf3b62a0d14d3"
+        },
+        {
+          "file": "pair-run-records.json",
+          "sha256": "8f03448f00bf56f0b090612ed3aa32164667f05c580e838302cc3b3ea78f42e4"
+        }
+      ]
+    }
+  ],
+  "numericResultsAreLatestCandidateBinaryClaims": false,
+  "executionState": "user-stopped-bulk-validation",
+  "completedPairStageRecords": 122,
+  "tPartialReportsAreFullGates": false
+}

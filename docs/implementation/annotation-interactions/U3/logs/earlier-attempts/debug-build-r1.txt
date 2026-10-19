@@ -1,0 +1,132 @@
+D:\softwares\cmake\bin\cmake.exe --build --preset local-debug --parallel 8
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioDisplaySamplingTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDisplaySamplingTests.exe
+  project.cpp
+  session.cpp
+  detection_postprocess.cpp
+  detection.cpp
+  scn_detection_postprocess.cpp
+  detection_refined_fusion.cpp
+  detection_refinement.cpp
+  annotation_service.cpp
+  annotation.cpp
+  brand_assets.cpp
+  正在编译...
+  正在编译...
+  brand_assets.cpp
+  annotation_service.cpp
+  detection_refinement.cpp
+  project.cpp
+  annotation.cpp
+  detection_refined_fusion.cpp
+  detection.cpp
+  detection_postprocess.cpp
+  session.cpp
+  scn_detection_postprocess.cpp
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioCore.lib
+  qrc_branding_Debug.cpp
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  detection_refinement_tests.cpp
+  正在扫描源以查找模块依赖项...
+  detection_refined_publication.cpp
+  detection_frequency_analysis.cpp
+  annotation_store.cpp
+  detection_time_analysis.cpp
+  detection_source.cpp
+  source_metadata.cpp
+  detection_worker_client.cpp
+  detection_sample_energy.cpp
+  detection_projection.cpp
+  label_import.cpp
+  annotation_json.cpp
+  channel_processor.cpp
+  detection_task.cpp
+  raw_sample_reader.cpp
+  sigmf_metadata.cpp
+  spectral_analysis.cpp
+  import_controller.cpp
+  detection_model_snapshot.cpp
+  spectral_windows.cpp
+  detection_store.cpp
+  detection_refined_fusion_tests.cpp
+  detection_postprocess_tests.cpp
+  annotation_tests.cpp
+  正在编译...
+  正在编译...
+  source_loader.cpp
+  project_store.cpp
+  int16_iq_file.cpp
+  detection_refinement_tests.cpp
+  正在编译...
+  SignalStudioBrand.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioBrand.lib
+  正在编译...
+  annotation_tests.cpp
+  detection_postprocess_tests.cpp
+  detection_refined_fusion_tests.cpp
+  正在编译...
+  detection_source.cpp
+  detection_projection.cpp
+  raw_sample_reader.cpp
+  annotation_json.cpp
+  detection_store.cpp
+  label_import.cpp
+  import_controller.cpp
+  sigmf_metadata.cpp
+  detection_time_analysis.cpp
+  annotation_store.cpp
+  spectral_analysis.cpp
+  detection_task.cpp
+  detection_refined_publication.cpp
+  detection_model_snapshot.cpp
+  spectral_windows.cpp
+  detection_worker_client.cpp
+  detection_frequency_analysis.cpp
+  detection_sample_energy.cpp
+  channel_processor.cpp
+  source_metadata.cpp
+D:\project\signal_studio_rebuild\infrastructure\raw_sample_reader.cpp(94,21): warning C4456: “n”的声明隐藏了上一个本地声明 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioInfrastructure.vcxproj]
+      D:\project\signal_studio_rebuild\infrastructure\raw_sample_reader.cpp(74,16):
+      参见“n”的声明
+  
+D:\project\signal_studio_rebuild\infrastructure\channel_processor.cpp(195,20): error C2672: “QString::arg”: 未找到匹配的重载函数 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioInfrastructure.vcxproj]
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtCore\qstring.h(400,5):
+      可能是“std::enable_if<sizeof...(Args)>=2&&std::conjunction_v<std::conjunction<std::negation<QtPrivate::treat_as_integral_arg<remove_cv<Args>::type>>,std::is_convertible<Args,QAnyStringView>>...>,QString>::type QString::arg(Args ...) const”
+          D:\project\signal_studio_rebuild\infrastructure\channel_processor.cpp(195,20):
+          未能使函数模板“std::enable_if<sizeof...(Args)>=2&&std::conjunction_v<std::conjunction<std::negation<QtPrivate::treat_as_integral_arg<remove_cv<Args>::type>>,std::is_convertible<Args,QAnyStringView>>...>,QString>::type QString::arg(Args ...) const”专用化
+              D:\project\signal_studio_rebuild\infrastructure\channel_processor.cpp(195,20):
+              用下列模板参数:
+                  D:\project\signal_studio_rebuild\infrastructure\channel_processor.cpp(195,20):
+                  “Args={uint32_t &, int, char, int}”
+              D:\project\signal_studio_rebuild\infrastructure\channel_processor.cpp(195,20):
+              “type”: 不是“std::enable_if<false,QString>”的任何直接或间接基类的成员
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtCore\qstring.h(380,27):
+      或    “QString QString::arg(const T &,int,QChar) const”
+          D:\project\signal_studio_rebuild\infrastructure\channel_processor.cpp(195,20):
+          “QString QString::arg(const T &,int,QChar) const”: 应输入 3 个参数，却提供了 4 个
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtCore\qstring.h(375,27):
+      或    “QString QString::arg(T,int,char,int,QChar) const”
+          D:\project\signal_studio_rebuild\infrastructure\channel_processor.cpp(195,20):
+          “QString QString::arg(T,int,char,int,QChar) const”: 无法推导“__formal”的 模板 参数
+              D:\softwares\Qt\6.11.1\msvc2022_64\include\QtCore\qstring.h(217,36):
+              “std::enable_if_t<false,bool>”: 未能使别名模板专用化
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtCore\qstring.h(360,27):
+      或    “QString QString::arg(T,int,int,QChar) const”
+          D:\project\signal_studio_rebuild\infrastructure\channel_processor.cpp(195,57):
+          “初始化”: 无法从“int”转换为“QChar”
+              D:\project\signal_studio_rebuild\infrastructure\channel_processor.cpp(195,57):
+              class“QChar”的构造函数声明为“explicit”
+  
+  int16_iq_file.cpp
+  project_store.cpp
+  source_loader.cpp
+  SignalStudioDetectionRefinedFusionTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionRefinedFusionTests.exe
+  SignalStudioDetectionRefinementTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionRefinementTests.exe
+  SignalStudioAnnotationTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioAnnotationTests.exe
+  SignalStudioDetectionPostprocessTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionPostprocessTests.exe

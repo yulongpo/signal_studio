@@ -1,0 +1,2 @@
+Availability passed (missing-models): D:\project\signal_studio_rebuild\out\tasks\wideband-detection\U4\assets\availability-r1\missing-models\wideband-availability-report.json
+Availability passed (no-compatible-gpu): D:\project\signal_studio_rebuild\out\tasks\wideband-detection\U4\assets\availability-r1\no-compatible-gpu\wideband-availability-report.json

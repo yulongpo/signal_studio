@@ -1,0 +1,2 @@
+Debug native wideband capture passed on screen 2 (Redmi 27 NU / DISPLAY6), 4K / 150%.
+Report: D:\project\signal_studio_rebuild\artifacts\wideband-detection\M2\debug\wideband-detection-report.json

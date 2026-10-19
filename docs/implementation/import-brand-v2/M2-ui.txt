@@ -1,0 +1,68 @@
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UiTests::initTestCase()
+QWARN  : UiTests::importFormatAndAdaptiveDraft() QFontDatabase: Cannot find font directory D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+QWARN  : UiTests::importFormatAndAdaptiveDraft() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importFormatAndAdaptiveDraft() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importFormatAndAdaptiveDraft() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importFormatAndAdaptiveDraft() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importFormatAndAdaptiveDraft() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importFormatAndAdaptiveDraft() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importFormatAndAdaptiveDraft() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importFormatAndAdaptiveDraft() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importFormatAndAdaptiveDraft() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importFormatAndAdaptiveDraft() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importFormatAndAdaptiveDraft() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::importFormatAndAdaptiveDraft()
+QWARN  : UiTests::importRealFilesAndCancelPrefix() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importRealFilesAndCancelPrefix() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importRealFilesAndCancelPrefix() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importRealFilesAndCancelPrefix() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importRealFilesAndCancelPrefix() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importRealFilesAndCancelPrefix() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importRealFilesAndCancelPrefix() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importRealFilesAndCancelPrefix() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importRealFilesAndCancelPrefix() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importRealFilesAndCancelPrefix() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::importRealFilesAndCancelPrefix() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::importRealFilesAndCancelPrefix()
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq() QRhiWidget: QRhi is not supported on this platform.
+PASS   : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq()
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: QRhi is not supported on this platform.
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() QRhiWidget: No QRhi
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support raise()
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support grabbing the keyboard
+QINFO  : UiTests::parameterInputsIgnoreWheel() Wheel protection checked 44 combos and 15 spin boxes, including dialogs and editors
+PASS   : UiTests::parameterInputsIgnoreWheel()
+PASS   : UiTests::cleanupTestCase()
+Totals: 6 passed, 0 failed, 0 skipped, 0 blacklisted, 13618ms
+********* Finished testing of UiTests *********

@@ -1,0 +1,187 @@
+{
+  "schema": "signalstudio-m4-suite-scope-v1",
+  "plan": {
+    "scope": "G-roi-no-split",
+    "strategy": "roi-no-split",
+    "shortProfile": false,
+    "semantics": "product-v2",
+    "plannedFileCount": 10,
+    "selectedFileCount": 10,
+    "diagnosticPartial": false,
+    "samples": [
+      {
+        "sampleId": "20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35",
+        "group": "G",
+        "source": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\data\\20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+          "sha256": "1757d92722e78776a6877b4fe5f29734fd2975989aaef1d52f8103aaa310b18b"
+        },
+        "truth": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\label\\20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+          "sha256": "1d52e763a047ee3220fd3d91f2fe7d48657c93acb99ef14516cd54de2314c3d3"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "16000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 97
+      },
+      {
+        "sampleId": "20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35",
+        "group": "G",
+        "source": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\data\\20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+          "sha256": "a6ca4dd3cb81ecc6d36452679c171076c7c3baa55f9b9bc512c1407def618d4e"
+        },
+        "truth": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\label\\20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+          "sha256": "bd03332c27ac33765eaf5093854e9811fe076506d01403024c984bcde1ddff67"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "16000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 106
+      },
+      {
+        "sampleId": "20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35",
+        "group": "G",
+        "source": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\data\\20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+          "sha256": "c23d13754218ede8e09781e7c6a66089413309ae83ebe6efa955a06eca11445f"
+        },
+        "truth": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\label\\20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+          "sha256": "2baf081721f283f15c38c03e861745033f39b9d9901b5007e040ee98243be38f"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "16000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 10
+      },
+      {
+        "sampleId": "20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35",
+        "group": "G",
+        "source": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\data\\20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+          "sha256": "2d144b3164580c43c7728d82d86fc0b2cd37f9aa4f85fcbeafbb2afcf9a84de8"
+        },
+        "truth": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\label\\20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+          "sha256": "d1ace14a553a2d0e2949612c6edb9ef0b81012fa91b3f7570c49996fac718a5c"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "16000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 123
+      },
+      {
+        "sampleId": "20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35",
+        "group": "G",
+        "source": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\data\\20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+          "sha256": "bd1fbe4366592e78944b986c4daf3c4b75f3e869dfb3d1c1745be5221bd206aa"
+        },
+        "truth": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\label\\20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+          "sha256": "5299b383df63e7082fe8eb5a8cd7c11b518c7d9c2e9fa4902cc48eabe72d50e0"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "16000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 65
+      },
+      {
+        "sampleId": "20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35",
+        "group": "G",
+        "source": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\data\\20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+          "sha256": "59e93e31c62c602c9ba108ce602f161a5dafa5c6f7da85690dad02eea68e9e72"
+        },
+        "truth": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\label\\20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+          "sha256": "874a4f7427c79e7130ef494b7a035c5fb766bc67bf21aa7af2a7103cd6a01ff9"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "16000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 71
+      },
+      {
+        "sampleId": "20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35",
+        "group": "G",
+        "source": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\data\\20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+          "sha256": "f5ad7ad15728e38cf967967012547ed8671e3caf05a0446ca6a012620fc533c1"
+        },
+        "truth": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\label\\20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+          "sha256": "c6966c349e7e7c617ac0f40bfc0d3cba5cf2aafc0e804803479b3c31c8b4fd0b"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "16000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 3
+      },
+      {
+        "sampleId": "20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35",
+        "group": "G",
+        "source": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\data\\20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+          "sha256": "ff23b1f3d1f631b0de5e2d63263655c9aa9bcdd19dfc3d47d9173050d3844b72"
+        },
+        "truth": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\label\\20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+          "sha256": "a61ca854a7945da28dea6524bd2e387844ec3f9989023f6c235b38b494c4e4d7"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "16000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 44
+      },
+      {
+        "sampleId": "20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35",
+        "group": "G",
+        "source": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\data\\20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+          "sha256": "a95a415e945a026e10079462733a2e47fdc861c4ec84e44a17e031bd9b0bce3d"
+        },
+        "truth": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\label\\20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+          "sha256": "99dc40f6c6cd20b0014dcaee50066c922839b2f8f3db1d930e28f2cecde0bb2e"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "16000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 41
+      },
+      {
+        "sampleId": "20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35",
+        "group": "G",
+        "source": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\data\\20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+          "sha256": "5f1f4b0e51650bd8e2369849e4d2b821133cbf0b24805feca47583d02f22ae10"
+        },
+        "truth": {
+          "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\label\\20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+          "sha256": "ba998f06dc400403d18a198ed71588e4ebcf7a477fc7dbdb6611ba02a2b28348"
+        },
+        "sampleRateHz": 20000000,
+        "physicalSamples": "16000000",
+        "centerFrequencyHz": 2500000000.0,
+        "effectiveBandwidthHz": 20000000,
+        "expectedTruthEvents": 34
+      }
+    ],
+    "expectedTruthCount": 594
+  },
+  "executionFreezeSha256": "7e2d9fa220e766be60fd5ece80aed79c66749e09ae2821b22baff4269ab6ad8a",
+  "configuration": "Release"
+}

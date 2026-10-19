@@ -1,0 +1,9 @@
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+    Start 18: signal_studio_sample_format
+1/2 Test #18: signal_studio_sample_format .......   Passed    5.96 sec
+    Start 20: signal_studio_channel_processor
+2/2 Test #20: signal_studio_channel_processor ...   Passed    1.11 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   7.09 sec

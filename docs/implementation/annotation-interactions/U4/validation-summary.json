@@ -1,0 +1,68 @@
+{
+  "node": "U4",
+  "recordedUtc": "2026-10-18T18:14:13.154184+00:00",
+  "branch": "rebuild/a143-native",
+  "implementationCommit": "c182b3ebb34632daa246ddfd41903915dd648554",
+  "regression": {
+    "debug": {
+      "ctestPassed": 23,
+      "uiPassed": 108,
+      "uiSkipped": 0,
+      "uiMilliseconds": 366142
+    },
+    "release": {
+      "ctestPassed": 23,
+      "uiPassed": 108,
+      "uiSkipped": 0,
+      "uiMilliseconds": 68338
+    }
+  },
+  "native": [
+    {
+      "name": "native-debug-r1",
+      "scenesPassed": 43,
+      "modelInferenceVerified": true,
+      "cpuDdcVerified": true
+    },
+    {
+      "name": "native-release-r1",
+      "scenesPassed": 46,
+      "modelInferenceVerified": true,
+      "cpuDdcVerified": true
+    },
+    {
+      "name": "native-release-u1-r1",
+      "scenesPassed": 8,
+      "modelInferenceVerified": false,
+      "cpuDdcVerified": false
+    },
+    {
+      "name": "native-release-u2-r1",
+      "scenesPassed": 10,
+      "modelInferenceVerified": false,
+      "cpuDdcVerified": false
+    },
+    {
+      "name": "native-release-u3-r1",
+      "scenesPassed": 12,
+      "modelInferenceVerified": false,
+      "cpuDdcVerified": true
+    }
+  ],
+  "standaloneModes": [
+    "debug-wideband-gpu",
+    "debug-narrowband-gpu",
+    "debug-wideband-software",
+    "debug-narrowband-software",
+    "release-wideband-gpu",
+    "release-narrowband-gpu",
+    "release-wideband-software",
+    "release-narrowband-software"
+  ],
+  "availability": [
+    "missing-models",
+    "no-compatible-gpu"
+  ],
+  "frozenEntries": 384,
+  "scope": "Small representative IQ, separate real model/CPU DDC/GPU display and synthetic UI pressure; no L3/L4 or RF precision claims"
+}

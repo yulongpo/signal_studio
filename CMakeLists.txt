@@ -44,12 +44,29 @@ function(ss_add_graphics_shaders target resource_name)
         PREFIX "/signalstudio/shaders"
         BASE "${CMAKE_SOURCE_DIR}/ui/charts/shaders"
         FILES
+            "${CMAKE_SOURCE_DIR}/ui/charts/shaders/heatmap.frag"
             "${CMAKE_SOURCE_DIR}/ui/charts/shaders/texture.vert"
             "${CMAKE_SOURCE_DIR}/ui/charts/shaders/texture.frag"
     )
 endfunction()
 
+function(ss_add_ui_assets target)
+    qt_add_resources(${target} "${target}_ui_assets"
+        PREFIX "/signalstudio/ui"
+        BASE "${CMAKE_SOURCE_DIR}/resources/ui"
+        FILES "${CMAKE_SOURCE_DIR}/resources/ui/check.svg"
+              "${CMAKE_SOURCE_DIR}/resources/ui/check-partial.svg")
+endfunction()
+
 add_library(SignalStudioCore STATIC
+    domain/annotation.cpp
+    domain/detection.cpp
+    domain/detection_postprocess.cpp
+    domain/scn_detection_postprocess.cpp
+    domain/detection_refinement.cpp
+    domain/detection_refined_fusion.cpp
+    application/annotation_service.cpp
+    domain/sample_format.cpp
     domain/project.cpp
     domain/project.h
     application/session.cpp
@@ -59,6 +76,32 @@ set_target_properties(SignalStudioCore PROPERTIES AUTOMOC OFF)
 ss_target_defaults(SignalStudioCore)
 
 add_library(SignalStudioInfrastructure STATIC
+    infrastructure/wav_metadata.cpp
+    infrastructure/label_import.cpp
+    infrastructure/annotation_json.cpp
+    infrastructure/annotation_store.cpp
+    infrastructure/detection_source.cpp
+    infrastructure/detection_protocol.cpp
+    infrastructure/detection_store.cpp
+    infrastructure/detection_task.cpp
+    infrastructure/detection_worker_client.cpp
+    infrastructure/detection_projection.cpp
+    infrastructure/detection_model_snapshot.cpp
+    infrastructure/detection_frequency_analysis.cpp
+    infrastructure/detection_sample_energy.cpp
+    infrastructure/detection_time_analysis.cpp
+    infrastructure/detection_refined_publication.cpp
+    infrastructure/import_controller.cpp
+    infrastructure/format_template_store.cpp
+    infrastructure/source_metadata.cpp
+    infrastructure/sigmf_metadata.cpp
+    infrastructure/raw_sample_reader.cpp
+    infrastructure/channel_processor.cpp
+    infrastructure/channel_processor.h
+    infrastructure/spectral_analysis.cpp
+    infrastructure/spectral_windows.cpp
+    infrastructure/source_loader.cpp
+    infrastructure/spectral_analysis.h
     infrastructure/int16_iq_file.cpp
     infrastructure/int16_iq_file.h
     infrastructure/project_store.cpp
@@ -68,9 +111,37 @@ set_target_properties(SignalStudioInfrastructure PROPERTIES AUTOMOC OFF)
 target_link_libraries(SignalStudioInfrastructure PUBLIC SignalStudioCore Qt6::Core)
 ss_target_defaults(SignalStudioInfrastructure)
 
+execute_process(COMMAND git rev-parse --short HEAD WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    OUTPUT_VARIABLE SS_BUILD_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
+add_library(SignalStudioBrand STATIC ui/brand/brand_assets.cpp ui/brand/brand_assets.h
+    resources/branding/qt/resources/branding.qrc)
+set_target_properties(SignalStudioBrand PROPERTIES AUTORCC ON AUTOMOC OFF)
+ss_target_defaults(SignalStudioBrand)
+target_link_libraries(SignalStudioBrand PUBLIC Qt6::Widgets)
+target_compile_definitions(SignalStudioBrand PRIVATE SS_PRODUCT_VERSION="${PROJECT_VERSION}" SS_BUILD_REVISION="${SS_BUILD_REVISION}")
+
 set(SS_UI_SOURCES
+    ui/detection/detection_card.cpp
+    ui/detection/detection_card.h
+    ui/detection/detection_panel.cpp
+    ui/detection/detection_panel.h
+    ui/annotations/annotation_panel.cpp
+    ui/annotations/annotation_panel.h
+    ui/annotations/annotation_evidence_widget.cpp
+    ui/annotations/annotation_evidence_widget.h
+    ui/controls/adaptive_value_edit.cpp
+    ui/controls/adaptive_value_edit.h
+    ui/import/source_preview_widget.cpp
+    ui/import/source_preview_widget.h
+    ui/import/signal_import_dialog.cpp
+    ui/import/signal_import_dialog.h
+    ui/parameter_input.h
+    ui/spectral_settings_widget.cpp
+    ui/spectral_settings_widget.h
     app/main_window.cpp
     app/main_window.h
+    ui/narrowband_workspace.cpp
+    ui/narrowband_workspace.h
     ui/charts/plot_widget.cpp
     ui/charts/plot_widget.h
     ui/charts/display_sampling.cpp
@@ -78,12 +149,30 @@ set(SS_UI_SOURCES
     ui/charts/accelerated_surface.cpp
     ui/charts/accelerated_surface.h
 )
+add_executable(SignalStudioDetectionWorker tools/detection_worker/main.cpp)
+ss_target_defaults(SignalStudioDetectionWorker)
+set_target_properties(SignalStudioDetectionWorker PROPERTIES AUTOMOC OFF)
+target_link_libraries(SignalStudioDetectionWorker PRIVATE SignalStudioInfrastructure)
+include(cmake/detection_model_runtime.cmake)
+signalstudio_configure_detection_model_backend(SignalStudioDetectionWorker)
 add_executable(SignalStudio WIN32 app/main.cpp ${SS_UI_SOURCES})
+add_dependencies(SignalStudio SignalStudioDetectionWorker)
+if(WIN32)
+    enable_language(RC)
+    target_sources(SignalStudio PRIVATE resources/branding/qt/windows/app_icon.rc)
+    target_include_directories(SignalStudio PRIVATE resources/branding/qt/windows)
+endif()
 target_link_libraries(SignalStudio PRIVATE
-    SignalStudioCore SignalStudioInfrastructure Qt6::Widgets
+    SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets
     Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
 ss_target_defaults(SignalStudio)
 ss_add_graphics_shaders(SignalStudio signalstudio_app_shaders)
+ss_add_ui_assets(SignalStudio)
+qt_add_resources(SignalStudio signalstudio_narrowband_demo
+    PREFIX "/signalstudio/demo"
+    BASE "${CMAKE_SOURCE_DIR}/resources"
+    FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq"
+)
 
 if(WIN32 AND SS_DEPLOY_RUNTIME)
     get_filename_component(_ss_qt_bin "${Qt6_DIR}/../../../bin" ABSOLUTE)
@@ -107,12 +196,119 @@ endif()
 
 if(SS_BUILD_TESTS)
     enable_testing()
+    add_executable(SignalStudioDetectionRefinedFusionTests tests/detection_refined_fusion_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionRefinedFusionTests)
+    set_target_properties(SignalStudioDetectionRefinedFusionTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionRefinedFusionTests PRIVATE SignalStudioCore)
+    add_test(NAME signal_studio_detection_refined_fusion COMMAND SignalStudioDetectionRefinedFusionTests)
+    add_executable(SignalStudioDetectionTimePipelineTests tests/detection_time_pipeline_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionTimePipelineTests)
+    set_target_properties(SignalStudioDetectionTimePipelineTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionTimePipelineTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_time_pipeline COMMAND SignalStudioDetectionTimePipelineTests)
+    add_executable(SignalStudioDetectionRefinementTests tests/detection_refinement_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionRefinementTests)
+    set_target_properties(SignalStudioDetectionRefinementTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionRefinementTests PRIVATE SignalStudioCore)
+    add_test(NAME signal_studio_detection_refinement COMMAND SignalStudioDetectionRefinementTests)
+    add_executable(SignalStudioDetectionSampleEnergyTests tests/detection_sample_energy_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionSampleEnergyTests)
+    set_target_properties(SignalStudioDetectionSampleEnergyTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionSampleEnergyTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_sample_energy COMMAND SignalStudioDetectionSampleEnergyTests)
+    add_executable(SignalStudioDetectionPipelineTests tests/detection_pipeline_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionPipelineTests)
+    set_target_properties(SignalStudioDetectionPipelineTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionPipelineTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_pipeline COMMAND SignalStudioDetectionPipelineTests)
+    add_executable(SignalStudioDetectionPostprocessTests tests/detection_postprocess_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionPostprocessTests)
+    set_target_properties(SignalStudioDetectionPostprocessTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionPostprocessTests PRIVATE SignalStudioCore)
+    add_test(NAME signal_studio_detection_postprocess COMMAND SignalStudioDetectionPostprocessTests)
+    add_executable(SignalStudioDetectionModelBackendTests tests/detection_model_backend_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionModelBackendTests)
+    set_target_properties(SignalStudioDetectionModelBackendTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionModelBackendTests PRIVATE SignalStudioInfrastructure)
+    signalstudio_configure_detection_model_backend(SignalStudioDetectionModelBackendTests)
+    add_test(NAME signal_studio_detection_model_backend COMMAND SignalStudioDetectionModelBackendTests)
+    add_executable(SignalStudioDetectionFrequencyAnalysisTests tests/detection_frequency_analysis_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionFrequencyAnalysisTests)
+    set_target_properties(SignalStudioDetectionFrequencyAnalysisTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionFrequencyAnalysisTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_frequency_analysis COMMAND SignalStudioDetectionFrequencyAnalysisTests)
+    foreach(test_kind IN ITEMS Store Protocol Task)
+        string(TOLOWER "${test_kind}" test_kind_lower)
+        set(test_target "SignalStudioDetection${test_kind}Tests")
+        add_executable(${test_target} "tests/detection_${test_kind_lower}_tests.cpp")
+        ss_target_defaults(${test_target})
+        set_target_properties(${test_target} PROPERTIES AUTOMOC OFF)
+        target_link_libraries(${test_target} PRIVATE SignalStudioInfrastructure)
+        add_test(NAME "signal_studio_detection_${test_kind_lower}" COMMAND ${test_target})
+    endforeach()
+    add_dependencies(SignalStudioDetectionTaskTests SignalStudio)
+    add_executable(SignalStudioDetectionSourceTests tests/detection_source_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionSourceTests)
+    target_link_libraries(SignalStudioDetectionSourceTests PRIVATE SignalStudioInfrastructure Qt6::Test)
+    target_compile_definitions(SignalStudioDetectionSourceTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    add_test(NAME signal_studio_detection_source COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioDetectionSourceTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/detection-source-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    add_executable(SignalStudioAnnotationTests tests/annotation_tests.cpp)
+    target_link_libraries(SignalStudioAnnotationTests PRIVATE SignalStudioCore)
+    set_target_properties(SignalStudioAnnotationTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioAnnotationTests)
+    add_test(NAME signal_studio_annotations COMMAND SignalStudioAnnotationTests)
+    add_executable(SignalStudioAnnotationStoreTests tests/annotation_store_tests.cpp)
+    target_link_libraries(SignalStudioAnnotationStoreTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    set_target_properties(SignalStudioAnnotationStoreTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioAnnotationStoreTests)
+    add_test(NAME signal_studio_annotation_store COMMAND SignalStudioAnnotationStoreTests)
+    add_executable(SignalStudioLabelImportTests tests/label_import_tests.cpp)
+    target_link_libraries(SignalStudioLabelImportTests PRIVATE SignalStudioInfrastructure Qt6::Test)
+    target_compile_definitions(SignalStudioLabelImportTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    ss_target_defaults(SignalStudioLabelImportTests)
+    add_test(NAME signal_studio_label_import COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioLabelImportTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/label-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    add_executable(SignalStudioWavTests tests/wav_input_tests.cpp)
+    target_link_libraries(SignalStudioWavTests PRIVATE SignalStudioInfrastructure Qt6::Test)
+    target_compile_definitions(SignalStudioWavTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    ss_target_defaults(SignalStudioWavTests)
+    add_test(NAME signal_studio_wav COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioWavTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/wav-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    add_executable(SignalStudioImportTests tests/import_controller_tests.cpp)
+    target_link_libraries(SignalStudioImportTests PRIVATE SignalStudioInfrastructure Qt6::Test)
+    ss_target_defaults(SignalStudioImportTests)
+    add_test(NAME signal_studio_import COMMAND SignalStudioImportTests)
+    set_tests_properties(signal_studio_import PROPERTIES TIMEOUT 120)
+    add_executable(SignalStudioSampleFormatTests tests/sample_format_tests.cpp)
+    target_link_libraries(SignalStudioSampleFormatTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    ss_target_defaults(SignalStudioSampleFormatTests)
+    add_test(NAME signal_studio_sample_format COMMAND SignalStudioSampleFormatTests)
     add_executable(SignalStudioCoreTests tests/core_tests.cpp)
     target_link_libraries(SignalStudioCoreTests PRIVATE
         SignalStudioCore SignalStudioInfrastructure Qt6::Core)
     set_target_properties(SignalStudioCoreTests PROPERTIES AUTOMOC OFF)
     ss_target_defaults(SignalStudioCoreTests)
     add_test(NAME signal_studio_core COMMAND SignalStudioCoreTests)
+    add_executable(SignalStudioChannelProcessorTests tests/channel_processor_tests.cpp)
+    target_link_libraries(SignalStudioChannelProcessorTests PRIVATE
+        SignalStudioInfrastructure SignalStudioCore Qt6::Core)
+    set_target_properties(SignalStudioChannelProcessorTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioChannelProcessorTests)
+    add_test(NAME signal_studio_channel_processor COMMAND SignalStudioChannelProcessorTests)
+    add_executable(SignalStudioSpectralAnalysisTests tests/spectral_analysis_tests.cpp)
+    target_link_libraries(SignalStudioSpectralAnalysisTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    set_target_properties(SignalStudioSpectralAnalysisTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioSpectralAnalysisTests)
+    add_test(NAME signal_studio_spectral_analysis COMMAND SignalStudioSpectralAnalysisTests)
+    set_tests_properties(signal_studio_spectral_analysis PROPERTIES TIMEOUT 120)
+    set_tests_properties(signal_studio_channel_processor PROPERTIES TIMEOUT 120)
     add_executable(SignalStudioDisplaySamplingTests
         tests/display_sampling_tests.cpp ui/charts/display_sampling.cpp)
     set_target_properties(SignalStudioDisplaySamplingTests PROPERTIES AUTOMOC OFF)
@@ -122,37 +318,51 @@ if(SS_BUILD_TESTS)
 
     add_executable(SignalStudioUiTests tests/ui_tests.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioUiTests PRIVATE
-        SignalStudioCore SignalStudioInfrastructure Qt6::Widgets Qt6::Test
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
     ss_target_defaults(SignalStudioUiTests)
+    target_compile_definitions(SignalStudioUiTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
     ss_add_graphics_shaders(SignalStudioUiTests signalstudio_ui_test_shaders)
+    ss_add_ui_assets(SignalStudioUiTests)
+    qt_add_resources(SignalStudioUiTests signalstudio_ui_test_narrowband_demo
+        PREFIX "/signalstudio/demo"
+        BASE "${CMAKE_SOURCE_DIR}/resources"
+        FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq"
+    )
     add_executable(SignalStudioUiCapture tests/ui_capture.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioUiCapture PRIVATE
-        SignalStudioCore SignalStudioInfrastructure Qt6::Widgets Qt6::Test
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
     ss_target_defaults(SignalStudioUiCapture)
+    target_compile_definitions(SignalStudioUiCapture PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
     ss_add_graphics_shaders(SignalStudioUiCapture signalstudio_ui_capture_shaders)
+    ss_add_ui_assets(SignalStudioUiCapture)
+    qt_add_resources(SignalStudioUiCapture signalstudio_ui_capture_narrowband_demo
+        PREFIX "/signalstudio/demo"
+        BASE "${CMAKE_SOURCE_DIR}/resources"
+        FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq"
+    )
     add_test(NAME signal_studio_ui COMMAND "${CMAKE_COMMAND}"
         "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUiTests>"
         "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ui-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
         -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     set_tests_properties(signal_studio_ui PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 180)
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480)
     set_tests_properties(signal_studio_core PROPERTIES TIMEOUT 60)
 
     if(WIN32 AND SS_DEPLOY_RUNTIME)
         # Stage the shared Qt runtime once, before either test binary is built.
         add_dependencies(SignalStudioCoreTests SignalStudio)
+        add_dependencies(SignalStudioSpectralAnalysisTests SignalStudio)
         add_dependencies(SignalStudioUiTests SignalStudio)
         add_dependencies(SignalStudioUiCapture SignalStudio)
-        add_custom_command(TARGET SignalStudioUiTests POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-                "$<TARGET_FILE:Qt6::Test>" "$<TARGET_FILE_DIR:SignalStudioUiTests>"
-            VERBATIM
-        )
-        add_custom_command(TARGET SignalStudioUiCapture POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-                "$<TARGET_FILE:Qt6::Test>" "$<TARGET_FILE_DIR:SignalStudioUiCapture>"
-            VERBATIM)
+        foreach(test_target IN ITEMS SignalStudioDetectionSourceTests SignalStudioLabelImportTests SignalStudioWavTests
+                SignalStudioImportTests SignalStudioUiTests SignalStudioUiCapture)
+            add_dependencies(${test_target} SignalStudio)
+            add_custom_command(TARGET ${test_target} POST_BUILD
+                COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                    "$<TARGET_FILE:Qt6::Test>" "$<TARGET_FILE_DIR:${test_target}>"
+                VERBATIM)
+        endforeach()
     endif()
 endif()

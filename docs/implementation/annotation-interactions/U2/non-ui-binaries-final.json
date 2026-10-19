@@ -1,0 +1,134 @@
+[
+  {
+    "name": "SignalStudioAnnotationStoreTests.exe",
+    "beforeSha256": "55fc6caa6d9f7bb70f606b99f9d8da27dc09b1bed0d961951f5f560aefc7feb5",
+    "afterSha256": "55fc6caa6d9f7bb70f606b99f9d8da27dc09b1bed0d961951f5f560aefc7feb5",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioAnnotationTests.exe",
+    "beforeSha256": "58af0d6b81088b28ec55756f74379adebf80dc2959bd7f350ca6f8523ec8b860",
+    "afterSha256": "58af0d6b81088b28ec55756f74379adebf80dc2959bd7f350ca6f8523ec8b860",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioChannelProcessorTests.exe",
+    "beforeSha256": "8f260f564e773d72f4958e4ef13744ae28d2390602242f1e1bbb5cd2953439df",
+    "afterSha256": "8f260f564e773d72f4958e4ef13744ae28d2390602242f1e1bbb5cd2953439df",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioCoreTests.exe",
+    "beforeSha256": "0c2e0be06f5d105fd839e7054b71a6508845cbe1d147d64dc9d5f566fd7bacb8",
+    "afterSha256": "0c2e0be06f5d105fd839e7054b71a6508845cbe1d147d64dc9d5f566fd7bacb8",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDetectionFrequencyAnalysisTests.exe",
+    "beforeSha256": "fab9b3d046e180a71a64072e30b49534c9fba1964184f30b766df20b7bb91a3d",
+    "afterSha256": "fab9b3d046e180a71a64072e30b49534c9fba1964184f30b766df20b7bb91a3d",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDetectionModelBackendTests.exe",
+    "beforeSha256": "cb265d3ae722161eb6c40de7f0446cd4c0dde50dc6e6579f62108bdca1831d8f",
+    "afterSha256": "cb265d3ae722161eb6c40de7f0446cd4c0dde50dc6e6579f62108bdca1831d8f",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDetectionPipelineTests.exe",
+    "beforeSha256": "45de5636bbce3ee0f9b646b7fe4c636c9883f56734cd759d28357f7e69d35fa4",
+    "afterSha256": "45de5636bbce3ee0f9b646b7fe4c636c9883f56734cd759d28357f7e69d35fa4",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDetectionPostprocessTests.exe",
+    "beforeSha256": "bfdc3c8dd99c6732eed4bd8ca14dc7938e22ca0be55fc1ae05761884df57110b",
+    "afterSha256": "bfdc3c8dd99c6732eed4bd8ca14dc7938e22ca0be55fc1ae05761884df57110b",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDetectionProtocolTests.exe",
+    "beforeSha256": "e4ec1ce38e42119a31850a6ca245d7584a0727279f766d7bc75430b1d4b5e85f",
+    "afterSha256": "e4ec1ce38e42119a31850a6ca245d7584a0727279f766d7bc75430b1d4b5e85f",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDetectionRefinedFusionTests.exe",
+    "beforeSha256": "1c1116969e4db73bb7f91a116bf8a1e54b3e765d0decb635b4cf241d31a15dee",
+    "afterSha256": "1c1116969e4db73bb7f91a116bf8a1e54b3e765d0decb635b4cf241d31a15dee",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDetectionRefinementTests.exe",
+    "beforeSha256": "8d0c622716c41530d9962a1146ffd9ca8fdc7741a8ac8cca7826c975251a250d",
+    "afterSha256": "8d0c622716c41530d9962a1146ffd9ca8fdc7741a8ac8cca7826c975251a250d",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDetectionSampleEnergyTests.exe",
+    "beforeSha256": "88767eb7500c740952b61974762ef27145566d95b0607dc6390a4f3a05434cc9",
+    "afterSha256": "88767eb7500c740952b61974762ef27145566d95b0607dc6390a4f3a05434cc9",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDetectionSourceTests.exe",
+    "beforeSha256": "44256d6f06f0508d0cde8d01a45767fc29cc5971fb2b7148369b4d33b265ff95",
+    "afterSha256": "44256d6f06f0508d0cde8d01a45767fc29cc5971fb2b7148369b4d33b265ff95",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDetectionStoreTests.exe",
+    "beforeSha256": "79f9fc4667ba9002a24d2fb4932ccb3ef94b184791339048d9cb3bfbb4dfdbe6",
+    "afterSha256": "79f9fc4667ba9002a24d2fb4932ccb3ef94b184791339048d9cb3bfbb4dfdbe6",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDetectionTaskTests.exe",
+    "beforeSha256": "efbcbbf02980c7a1a1b5c24c6dc52e793607ca43d1ba09074d4ca28247bf6271",
+    "afterSha256": "efbcbbf02980c7a1a1b5c24c6dc52e793607ca43d1ba09074d4ca28247bf6271",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDetectionTimePipelineTests.exe",
+    "beforeSha256": "50b4469940942fef35288c65cbd0c003035a6cd49b9c9567e80451dde8ed9551",
+    "afterSha256": "50b4469940942fef35288c65cbd0c003035a6cd49b9c9567e80451dde8ed9551",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioDisplaySamplingTests.exe",
+    "beforeSha256": "0673dd785ca245f73c82010ba3e5c191346811d47e6024f63273ec0d71dad716",
+    "afterSha256": "0673dd785ca245f73c82010ba3e5c191346811d47e6024f63273ec0d71dad716",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioImportTests.exe",
+    "beforeSha256": "7696531d2f87c3de587b34c81bc059d07406d45da02f15104b5dd7b40e6bfb1a",
+    "afterSha256": "7696531d2f87c3de587b34c81bc059d07406d45da02f15104b5dd7b40e6bfb1a",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioLabelImportTests.exe",
+    "beforeSha256": "92628b3f2e640f114e1f3f2a5318f5dc3ff7277552c96968969fd3876f6dcf30",
+    "afterSha256": "92628b3f2e640f114e1f3f2a5318f5dc3ff7277552c96968969fd3876f6dcf30",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioSampleFormatTests.exe",
+    "beforeSha256": "75f2abf6c31a251ceb4127a6b0bad1ed88d5ea59c45ccb0a2947878996c1b4a0",
+    "afterSha256": "75f2abf6c31a251ceb4127a6b0bad1ed88d5ea59c45ccb0a2947878996c1b4a0",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioSpectralAnalysisTests.exe",
+    "beforeSha256": "d7f0f5aada4cde426aea15bd1b62f71e68227b88eb9a40c761cbb52c9b06039f",
+    "afterSha256": "d7f0f5aada4cde426aea15bd1b62f71e68227b88eb9a40c761cbb52c9b06039f",
+    "unchanged": true
+  },
+  {
+    "name": "SignalStudioWavTests.exe",
+    "beforeSha256": "25636135cd81d57a28c00aa9ade2806c3d1ef0585af7bb210e083be263725a96",
+    "afterSha256": "25636135cd81d57a28c00aa9ade2806c3d1ef0585af7bb210e083be263725a96",
+    "unchanged": true
+  }
+]

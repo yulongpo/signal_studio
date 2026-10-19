@@ -1,0 +1,49 @@
+{
+  "schema": "signalstudio-r6-delivery-inputs-v1",
+  "branch": "rebuild/a143-native",
+  "parentCommit": "b5187e09778f525a5f30f1d91981b1bb4409e74b",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 11101,
+      "sha256": "24d41c937533efe78e942fe399c530fba8c2b5eb711f4573e25c6f49e82f4d6e"
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 9259,
+      "sha256": "7d855501a0cb88f4120493148278488ec733e4b00eec90a957bb05711e6a0dbd"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/EXECUTION_STATUS.md",
+      "bytes": 10982,
+      "sha256": "f35a70c236e9b410c7962bfb2939f4f77227ccf62caf3f895276c9fe0ea16d0a"
+    },
+    {
+      "path": "tools/detection/freeze_validation.py",
+      "bytes": 11646,
+      "sha256": "5c3a6957ac48f36c4db48da5911db551b1d250830c9695f6377f6e746dcdf974"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/R6/DELIVERY.md",
+      "bytes": 4852,
+      "sha256": "c50acf155333e1fd3e9b6add98abd9e9e26fafc631e6ce45068d7894409ca493"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/R6/MANUAL_VALIDATION.md",
+      "bytes": 6842,
+      "sha256": "8ac60c9b731af2c75e000e918076af6baf3bf02107b93f462699ee2fd0983269"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/R6/MODEL_DEPLOYMENT.md",
+      "bytes": 4912,
+      "sha256": "5aa3c66c3d98d79d6df61ec19dc33b84b61c6fff29bd6641532ce5ebeafcaa8d"
+    },
+    {
+      "path": "docs/implementation/wideband-detection/R6/SELF_REVIEW.md",
+      "bytes": 3240,
+      "sha256": "71531128477cfa33724274da9c6c54c04b751c673000122e4b061ff2e78bc18c"
+    }
+  ],
+  "productRebuilt": false,
+  "batchInferenceStarted": false
+}

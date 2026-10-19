@@ -1,0 +1,277 @@
+{
+  "pass": true,
+  "scipyVersion": "1.17.1",
+  "points": 256,
+  "maximumAbsolutePowerError": 8.610647611595468e-10,
+  "peakBinNative": 154,
+  "peakBinScipy": 154,
+  "sameCoefficients": true,
+  "realAcquisitionSamples": 41984,
+  "estimatorChecks": [
+    {
+      "method": 0,
+      "window": 0,
+      "pass": true,
+      "maximumAbsolutePowerError": 1.1112567289972564e-10,
+      "windowError": 0.0
+    },
+    {
+      "method": 0,
+      "window": 1,
+      "pass": true,
+      "maximumAbsolutePowerError": 9.470106209635842e-11,
+      "windowError": 4.440892098500626e-16
+    },
+    {
+      "method": 0,
+      "window": 2,
+      "pass": true,
+      "maximumAbsolutePowerError": 1.3950402204948587e-10,
+      "windowError": 3.3306690738754696e-16
+    },
+    {
+      "method": 0,
+      "window": 3,
+      "pass": true,
+      "maximumAbsolutePowerError": 1.869593776668288e-10,
+      "windowError": 4.996003610813204e-16
+    },
+    {
+      "method": 0,
+      "window": 4,
+      "pass": true,
+      "maximumAbsolutePowerError": 9.183425244210786e-11,
+      "windowError": 5.551115123125783e-16
+    },
+    {
+      "method": 0,
+      "window": 5,
+      "pass": true,
+      "maximumAbsolutePowerError": 4.1996464682572676e-11,
+      "windowError": 7.771561172376096e-16
+    },
+    {
+      "method": 0,
+      "window": 6,
+      "pass": true,
+      "maximumAbsolutePowerError": 7.48029186335708e-11,
+      "windowError": 8.881784197001252e-16
+    },
+    {
+      "method": 1,
+      "window": 0,
+      "pass": true,
+      "maximumAbsolutePowerError": 1.1112567289972564e-10,
+      "windowError": 0.0
+    },
+    {
+      "method": 1,
+      "window": 1,
+      "pass": true,
+      "maximumAbsolutePowerError": 9.470106209635842e-11,
+      "windowError": 4.440892098500626e-16
+    },
+    {
+      "method": 1,
+      "window": 2,
+      "pass": true,
+      "maximumAbsolutePowerError": 1.3950402204948587e-10,
+      "windowError": 3.3306690738754696e-16
+    },
+    {
+      "method": 1,
+      "window": 3,
+      "pass": true,
+      "maximumAbsolutePowerError": 1.869593776668288e-10,
+      "windowError": 4.996003610813204e-16
+    },
+    {
+      "method": 1,
+      "window": 4,
+      "pass": true,
+      "maximumAbsolutePowerError": 9.183425244210786e-11,
+      "windowError": 5.551115123125783e-16
+    },
+    {
+      "method": 1,
+      "window": 5,
+      "pass": true,
+      "maximumAbsolutePowerError": 4.1996464682572676e-11,
+      "windowError": 7.771561172376096e-16
+    },
+    {
+      "method": 1,
+      "window": 6,
+      "pass": true,
+      "maximumAbsolutePowerError": 7.48029186335708e-11,
+      "windowError": 8.881784197001252e-16
+    },
+    {
+      "method": 2,
+      "window": 0,
+      "pass": true,
+      "maximumAbsolutePowerError": 1.1112567289972564e-10,
+      "windowError": 0.0
+    },
+    {
+      "method": 2,
+      "window": 1,
+      "pass": true,
+      "maximumAbsolutePowerError": 9.470106209635842e-11,
+      "windowError": 4.440892098500626e-16
+    },
+    {
+      "method": 2,
+      "window": 2,
+      "pass": true,
+      "maximumAbsolutePowerError": 1.3950402204948587e-10,
+      "windowError": 3.3306690738754696e-16
+    },
+    {
+      "method": 2,
+      "window": 3,
+      "pass": true,
+      "maximumAbsolutePowerError": 1.869593776668288e-10,
+      "windowError": 4.996003610813204e-16
+    },
+    {
+      "method": 2,
+      "window": 4,
+      "pass": true,
+      "maximumAbsolutePowerError": 9.183425244210786e-11,
+      "windowError": 5.551115123125783e-16
+    },
+    {
+      "method": 2,
+      "window": 5,
+      "pass": true,
+      "maximumAbsolutePowerError": 4.1996464682572676e-11,
+      "windowError": 7.771561172376096e-16
+    },
+    {
+      "method": 2,
+      "window": 6,
+      "pass": true,
+      "maximumAbsolutePowerError": 7.48029186335708e-11,
+      "windowError": 8.881784197001252e-16
+    },
+    {
+      "method": 3,
+      "window": 0,
+      "pass": true,
+      "maximumAbsolutePowerError": 7.652700109890553e-11,
+      "windowError": 0.0
+    },
+    {
+      "method": 3,
+      "window": 1,
+      "pass": true,
+      "maximumAbsolutePowerError": 7.652700109890553e-11,
+      "windowError": 4.440892098500626e-16
+    },
+    {
+      "method": 3,
+      "window": 2,
+      "pass": true,
+      "maximumAbsolutePowerError": 7.652700109890553e-11,
+      "windowError": 3.3306690738754696e-16
+    },
+    {
+      "method": 3,
+      "window": 3,
+      "pass": true,
+      "maximumAbsolutePowerError": 7.652700109890553e-11,
+      "windowError": 4.996003610813204e-16
+    },
+    {
+      "method": 3,
+      "window": 4,
+      "pass": true,
+      "maximumAbsolutePowerError": 7.652700109890553e-11,
+      "windowError": 5.551115123125783e-16
+    },
+    {
+      "method": 3,
+      "window": 5,
+      "pass": true,
+      "maximumAbsolutePowerError": 7.652700109890553e-11,
+      "windowError": 7.771561172376096e-16
+    },
+    {
+      "method": 3,
+      "window": 6,
+      "pass": true,
+      "maximumAbsolutePowerError": 7.652700109890553e-11,
+      "windowError": 8.881784197001252e-16
+    },
+    {
+      "method": 4,
+      "window": 0,
+      "pass": true,
+      "maximumAbsolutePowerError": 2.5265574354893516e-11,
+      "windowError": 0.0
+    },
+    {
+      "method": 4,
+      "window": 1,
+      "pass": true,
+      "maximumAbsolutePowerError": 2.5265574354893516e-11,
+      "windowError": 4.440892098500626e-16
+    },
+    {
+      "method": 4,
+      "window": 2,
+      "pass": true,
+      "maximumAbsolutePowerError": 2.5265574354893516e-11,
+      "windowError": 3.3306690738754696e-16
+    },
+    {
+      "method": 4,
+      "window": 3,
+      "pass": true,
+      "maximumAbsolutePowerError": 2.5265574354893516e-11,
+      "windowError": 4.996003610813204e-16
+    },
+    {
+      "method": 4,
+      "window": 4,
+      "pass": true,
+      "maximumAbsolutePowerError": 2.5265574354893516e-11,
+      "windowError": 5.551115123125783e-16
+    },
+    {
+      "method": 4,
+      "window": 5,
+      "pass": true,
+      "maximumAbsolutePowerError": 2.5265574354893516e-11,
+      "windowError": 7.771561172376096e-16
+    },
+    {
+      "method": 4,
+      "window": 6,
+      "pass": true,
+      "maximumAbsolutePowerError": 2.5265574354893516e-11,
+      "windowError": 8.881784197001252e-16
+    }
+  ],
+  "dpssOrthonormalReferenceError": 4.820650620116409e-15,
+  "burgReference": "Independent complex Burg recurrence; MATLAB pburg was not executed",
+  "streamStatistics": [
+    {
+      "statistic": 0,
+      "pass": true,
+      "maximumAbsolutePowerError": 7.194935185833584e-12
+    },
+    {
+      "statistic": 1,
+      "pass": true,
+      "maximumAbsolutePowerError": 2.2798038196852888e-10
+    },
+    {
+      "statistic": 2,
+      "pass": true,
+      "maximumAbsolutePowerError": 6.472232146927104e-12
+    }
+  ],
+  "completeStatisticalFrames": 141
+}

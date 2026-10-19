@@ -1,89 +1,94 @@
-# Signal Studio · A1.4.3 原生界面
+# Signal Studio
 
-本工程从空仓库独立开发，以仓库内的 [A1.4.3 原型基线](docs/prototype/a1.4.3/BASELINE.md) 为依据，实现原型的布局、颜色、图谱方向、默认状态和交互。按用户要求只读参考 `ISA_算法中心重构开发` 的显示抽取、预览及缓存策略，并在本仓库独立实现。旧 Signal Studio 与 ISA 不参与源码、构建或运行。当前分支为 `rebuild/a143-native`。
+独立开发的 C++20 / Qt 6.11.1 Widgets 离线 IQ 分析应用，当前分支为 `rebuild/a143-native`。主工作区依据 [A1.4.3](docs/prototype/a1.4.3/BASELINE.md)，宽带检测及三来源标记依据已获批的 [M0-P](docs/prototype/wideband-detection-r1/index.html)。旧 Signal Studio、ISA 和训练仓库不参与应用的源码、构建或运行；经授权只读参考的算法能力、显示策略及模型资产另有记录。
 
-采用 C++20、Qt Widgets 和 QRhi。Windows 默认使用 Direct3D 11；同一渲染接口可选择 OpenGL，为 Ubuntu 原生支持保留路径。本轮实际构建环境为 Windows x64 / VS 2026 / Qt 6.11.1。QRhi 的底层接口依赖 `Qt6::GuiPrivate`，因此锁定 Qt 6.11.1；升级 Qt 时需要重新编译和验证。
+当前已完成宽带离线检测，以及获批 U0 方案的标记选择、直接编辑、软删除、通道和持久化改造；U4 的 Debug/Release 完整回归、原生流程、独立部署和规格/质量复审均已通过。当前交付入口为 [U4 交付说明](docs/implementation/annotation-interactions/U4/DELIVERY.md)和[手动验证](docs/implementation/annotation-interactions/U4/MANUAL_VALIDATION.md)，节点提交和复审记录见[标记交互状态](docs/implementation/annotation-interactions/EXECUTION_STATUS.md)。宽带模型部署及历史验证保留在 [R6 交付说明](docs/implementation/wideband-detection/R6/DELIVERY.md)。大量数据效果、完整 L3/L4 与真实 RF 精度仍待手动验证。
 
-## 当前能力
+## 工程、图谱与标记
 
-- 原型菜单、工程树、全局时间导航、波形/PSD 辅助图、时频/瀑布主图、右侧默认展开的参数组及底部三个结果标签；鼠标操作说明位于顶部“帮助”菜单。
-- 启动后先进入工程步骤；新建工程会创建独立文件夹并立即写入 `project.json`，打开工程可选工程文件夹，旧版单 JSON 也可导入。工程就绪后添加/打开信号，再进入宽带图谱操作。文件菜单保留“打开演示工程”，`--demo-data` 仍可用于显式载入三份原型演示数据。
-- 每文件保存视图、图谱模式、颜色、有效带宽、波形模式、STFT/PSD 参数、动态范围、参考电平、标记、多选及演示通道；工程 JSON 保存分析参数，用户界面几何、侧栏/分组展开状态、底部标签和最近工程由 `QSettings` 保存。
-- 主图右键开启持续选择；普通点击选择，框内移动，边线及控制点调整，Ctrl/Shift 多选、批量删除、定位与重命名。
-- 空白主图区框选缩放，物理轴滚轮缩放/拖动平移，导航定位，每文件最多 40 条视图历史；主图滚轮 220 ms 合并。Esc 取消拖动并回滚。
-- 原生工程 JSON 的完整校验、原子写入和状态往返。样本索引采用 `uint64_t`，JSON 用十进制字符串，频率采用 Hz。
-- QRhi 持久热力图纹理、独立覆盖层纹理与 GPU 合成。颜色变化复用功率矩阵；标记/游标变化复用热力图纹理；诊断报告和状态提示记录实际后端。
-- 波形数据按物理显示宽度抽取有限的连续样本块，PSD 经 Welch FFT 后映射到显示宽度；模拟曲线仍使用原型演示包络。源数据、抽取结果及曲线路径分别缓存，显示结果不替代原始样本索引或业务范围。
-- 主图预览与精细显示分级，停止交互 60 ms 后更新精细结果。单后台线程只保留最新请求，按代次取消和拒收旧结果；缓存旧视图按真实交集映射，更新中区域有提示。
-- 可导入小端交替 `int16 I/Q` `.iq/.dat/.raw/.bin` 文件；名称包含 `FS...sps` 与 `FC...Hz` 参数，`BW` 可选并作为默认有效带宽。文件以只读内存映射访问，不将全文件读入 RAM。时域波形可切换 I、Q 或 IQ RMS 包络；有效带宽可按 MHz 调整。STFT FFT 点数支持 `2^8` 至 `2^16`（默认 `2^11`），切换会确保可见时间窗至少包含所选 FFT 点数。动态范围与参考电平支持候选下拉值和自定义输入。PSD、STFT/瀑布由有界后台任务生成；图内缩放和平移沿用原始样本索引与 RF 频率。
+启动后新建或打开工程，再添加信号文件。新建工程立即创建独立目录和 `project.json`；演示工程通过文件菜单或 `--demo-data` 显式打开。原生格式 `signal-studio-native-project` 当前为 **v6**，兼容 v1–v5；样本索引使用 uint64、JSON 十进制字符串，频率使用 Hz。首次覆盖旧版工程前，保存带原版本和原始字节 SHA-256 的备份，再原子发布 v6。工程保存文件配置、独立 PSD/STFT 参数、可用前缀、统一标记、来源修订和通道快照，不复制原始样本；重开仍需原始文件与工程附属记录。布局、全局显示偏好和最近工程另由 QSettings 保存。
 
-真实 IQ 文件的工程 JSON 保存路径、元数据和每文件显示参数，重新打开时从路径重建图谱；样本数据本身不复制进工程。DDC、信号检测与设备采集未实现；演示通道只保存创建时的参数，修改源标记不会重新计算通道。
+RAW 导入可配置实数/复数、int8/uint8/int16/int32/float32/float64、字节序、IQ/QI/平面布局、多通道及头尾字节；导入预检确认后只读访问。支持 SigMF 元数据与配套数据，以及本任务生成器的 IQ WAV。文件级采样率、中心频率、有效带宽和物理长度参与坐标换算。顺序加载以 4 MiB 块扫描生成不超过 2048 点的导航包络；停止后只分析可用前缀，不把未读尾部当作噪声。
 
-## 构建与运行
+宽带与窄带具有导航、波形/PSD、时频/瀑布和物理轴交互。显示分析点数表示当前可见频带的分析点数；频带变窄时所需观测增长，观测不足则说明补零量，补零不提高真实分辨率。PSD/STFT 参数与缓存独立；PSD 支持周期图、Bartlett、Welch、DPSS 多窗、Burg 及平均/最大/最小统计。显示抽帧、缩放与已提交检测任务相互独立。
 
-本机已生成被 Git 忽略的 `CMakeUserPresets.json`，记录 Qt 路径。其他机器可设置 `SS_QT_ROOT` 为安装的 Qt 6.11.1 kit，然后使用公共 presets。
+原始样本标签、手动标记、算法检测结果共用记录、图层、选择、修订与质量判断。原始标签仅适配本任务生成器的 TXT，以及指定 TorchSig 数据的 SigMF annotations；保留原文、来源 hash、量化、原始与当前几何。图、表、左树共享所选对象和当前活动段；全选覆盖当前筛选的全部页，左树按需加载。单击选择不缩放，定位才调整视区。
 
-```powershell
-.\scripts\build.ps1 -Configuration Debug
-.\scripts\build.ps1 -Configuration Release
-.\scripts\run.ps1 -Configuration Release
-```
+三来源均可直接编辑：表格双击或 F2、完整范围表单及图形控制点都在同一对象上自动生成修订，原始证据不变。多 TIME 段仍属于同一对象，范围编辑只作用于当前段；时间未定位对象只修改频率。删除先预览对象、段及关联通道数量，再执行可撤销的软删除；一次撤销保留后来发布的后台结果。
 
-构建脚本默认依次执行配置、编译和 CTest。输出目录：
+质量“待判断 / 已采纳 / 已忽略”为可选判断，不限制编辑或创建通道。统一通道入口一次明确选择一个来源：`LocatedSegment` 绑定当前段并允许裁剪，`UserRange` 保存人工提取范围，不伪造算法活动段。无有效默认时段仍打开配置并给出字段原因，扩大到可用前缀须显式操作。有效配置执行真实 CPU DDC/FIR/有理重采样，只读取可用前缀。通道保留创建快照；名称、备注、质量及无关兄弟段变化不影响来源关系，绑定几何或物理来源变化显示 Changed，删除显示 Missing，撤销恢复后可回到 Current；已有通道不自动重算。
 
-```text
-out/vs2026-qt611-debug_bin/SignalStudio.exe
-out/vs2026-qt611-release_bin/SignalStudio.exe
-```
+参数只在 Enter、Tab/Shift+Tab 或应用内切换焦点后提交；输入中、后台刷新及窗口失焦不应用草稿。输入框、下拉框和弹出列表禁止滚轮改值，图谱缩放和侧栏滚动保留。原型对照及获准修订见 [R4 原型闭环](docs/implementation/wideband-detection/R4/PROTOTYPE_CLOSURE.md)。
 
-Windows 自动使用 `windeployqt` 部署运行库，`qt.conf` 指向本目录插件。可直接从对应目录启动。独立运行验证会清理 Qt 环境并将 PATH 限制为系统路径：
+## 宽带离线检测
 
-```powershell
-.\scripts\verify-package.ps1 -Configuration Release
-.\scripts\verify-package.ps1 -Configuration Release -SoftwareRenderer
-.\scripts\screenshot.ps1 -Configuration Release
-```
+FFSCN GUI IQ 与 SCN 通过独立 `SignalStudioDetectionWorker.exe` 执行真实 TensorRT 推理。完整文件、可见范围、ROI 和活动段按提交时的物理范围生成不可变任务；取消保留已发布前缀，失败与正常零结果分开，任务、候选、来源及证据可保存重开。Sample、ROI、Coarse 时间处理保留实际观测支持、未知区间及精修回退，不把频率观察直接宣称为精确活动段。
 
-命令行诊断：
+| 参数 | 实际作用 |
+|---|---|
+| 检测 FFT / N | 分析频率网格；不规则长度先匹配计算 FFT，再按物理频率适配模型网格 |
+| 谱步长 / hop | 真实谱帧的起始间隔，独立于 FFT 帧观测长度 |
+| 窗口帧数 / T | 请求积累的真实谱帧数；短文件、ROI、尾部使用实际可得帧，不复制帧补足默认值 |
+| 滑动帧数 | 相邻检测窗口在谱帧序列上的起始间隔 |
+| 谱类型 | 当前谱、线性功率平均谱、最大谱、最小谱均可检测；默认 FFSCN 使用逐帧输入，默认 SCN 最大保持 |
+| 模型规格 | 张量布局、结构对齐、head 步幅和优化 profile 由后端/模型包管理；不是用户恢复参考参数的门槛 |
+
+主 FFSCN 与 SCN 均采用 **`down_nums=11`，模型频率长度为 2 的整数次幂且至少 `2048`**。FFSCN 取不小于分析长度和 2048 的最小 2 次幂；显式统计谱合成为一行。SCN 当前可用 engine 固定输入 32768 点，内部按所选谱进行线性功率重分箱并将预测映射回原始 Hz；32768 不是算法的结构下限。平均谱在线性功率域积累后转回 dB，同样可用于检测和辅助分析。
+
+当前动态 FFSCN 包的两档资源范围是 `T=1–64,F=2048–65536` 和 `T=1–16,F=2048–262144`，批量最多 2；这是实际部署 profile 的覆盖范围，不是网络必须使用 10 帧的结论。后端记录所选 profile、实际帧数、模型网格、适配和预算；资源不足优先减小执行批量，确实不能执行时给出具体原因。没有训练数据效果依据支持所有参数组合的精度保证。详见 [输入适配](docs/implementation/wideband-detection/R2/INPUT_ADAPTATION.md)、[SCN 资产边界](docs/implementation/wideband-detection/R2/SCN_CAPABILITY.md) 和 [短数据流程](docs/implementation/wideband-detection/R3/FLOW_ADAPTATION.md)。
+
+## 构建、模型部署与运行
+
+Windows 要求 VS 2026 x64、CMake、Qt **6.11.1 EXACT**（含 ShaderTools/GuiPrivate）。其它机器设置 `SS_QT_ROOT`；本机路径仅保存在忽略的 `CMakeUserPresets.json`。正式推理构建还须在配置前设置 `SS_DETECTION_TRT_ROOT` 为完整的 TensorRT **10.11.0.33 / CUDA 12.9** SDK 根目录。未配置 SDK 的构建可用图谱和标记，但没有正式模型推理能力。
 
 ```powershell
-.\out\vs2026-qt611-release_bin\SignalStudio.exe --list-screens
-.\out\vs2026-qt611-release_bin\SignalStudio.exe --demo-data --screen 2 --full-screen --verify-4k-150 --smoke-test --require-gpu --render-report out/render-report.json
-.\out\vs2026-qt611-release_bin\SignalStudio.exe --iq-file "E:\数据集\扫频数据\ALaShan_051\20260805\xiawu\IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_154250.dat" --psd-view
-.\out\vs2026-qt611-debug_bin\SignalStudio.exe --iq-file "E:\数据集\扫频数据\ALaShan_051\20260805\xiawu\IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_154250.dat" --psd-view --iq-interaction-test --screen 2 --full-screen --verify-4k-150 --size 2560x1440 --screenshot docs/acceptance/screenshots/real-iq-debug-screen2-4k-150.png --render-report docs/acceptance/real-iq-debug-screen2-4k-150.json --require-gpu
-.\out\vs2026-qt611-release_bin\SignalStudioUiCapture.exe docs/acceptance/screenshots/4k-display2
-.\out\vs2026-qt611-release_bin\SignalStudio.exe --renderer opengl
-.\out\vs2026-qt611-release_bin\SignalStudio.exe --software-renderer
+$env:SS_QT_ROOT = 'D:/softwares/Qt/6.11.1/msvc2022_64'
+$env:SS_DETECTION_TRT_ROOT = 'D:/project/signal_studio_rebuild/out/tasks/wideband-detection/M3/assets/runtime/tensorrt-10.11'
+./scripts/build.ps1 -Configuration Debug
+./scripts/build.ps1 -Configuration Release
+./scripts/run.ps1 -Configuration Release
 ```
 
-`--require-gpu` 必须识别为硬件设备、成功上传热力图纹理，并通过覆盖层更新时复用纹理的检查。无界面的 Qt UI 测试走软件路径，用于验证事件和业务状态，不能作为 GPU 证据。
+构建脚本依次配置、编译、CTest；公共 presets 为 `vs2026-qt611-debug/release`。可执行目录为 `out/vs2026-qt611-debug_bin/` 和 `out/vs2026-qt611-release_bin/`。Windows 自动部署 Qt、插件和完整 CRT；**模型、TensorRT/CUDA DLL 及许可证须独立部署**。完成构建后从对应输出目录启动 `SignalStudio.exe`，独立运行身份与结果见 U4 交付记录。
 
-本轮显示适配验收仅在 **第二块连接显示器（Redmi 27 NU）** 使用系统实际 **3840×2160 / 150% DPI**，窗口全屏客户区为 2560×1440 逻辑像素。它的 Windows 内部设备路径为 DISPLAY6；设备路径后缀与当前连接序号分别记录。脚本不会修改显示器分辨率或缩放，屏幕条件不符直接失败。报告记录连接序号、屏幕名称、几何尺寸、DPR 和抓图像素尺寸；主屏超大窗口截图不作为该项验收。offscreen 的 150% 逻辑测试只验证布局和交互。
+运行时不需要 Python、训练仓库、Qt 安装路径或 TensorRT SDK 路径，但需要原始样本、工程附属文件、匹配的模型包和 NVIDIA 驱动。当前冻结模型包验证环境为 RTX 5060 Laptop / SM 12.0 / TensorRT 10.11；不承诺其它 GPU 可直接复用序列化引擎，缺少兼容设备或模型时有明确不可用原因。显示软件回退不提供 CPU 模型推理。模型与 CUDA/TensorRT 大资产在被忽略的 `out/`，**Git clone 不包含它们**；准确部署顺序、SHA 和重建入口见 [模型交付](docs/implementation/wideband-detection/R6/MODEL_DEPLOYMENT.md)。
 
-## 模块边界
+Python 工具优先使用 `D:/profiles/anaconda/python.exe`。节点中间文件写到 `out/tasks/wideband-detection/<node>/{logs,diagnostics,assets,local-builds,deferred}/`，可复用环境写到 `out/toolchains/`；不在 `out/` 根目录堆放任务产物。见 [目录约定](docs/architecture/output-layout.md)。
+
+## 验证与剩余限制
+
+U4 本轮 Debug/Release 均完成 **23/23 CTest、108/108 Qt UI，0 失败、0 跳过**。Debug CTest 合计 518.20 秒、UI 370.81 秒；Release 合计 126.36 秒、UI 69.06 秒，原 UI 480 秒保护不变。Debug 重新构建后 3 个 UI 程序身份变化，已完整重跑。正式模型原生 Debug **43/43**、Release **46/46**；Release 标记 U1/U2/U3 **8/8、10/10、12/12**，覆盖实际 IQ CPU DDC、来源快照、v6 重开及旧版备份。两配置宽/窄带 GPU/软件共 8 种模式的包验证和 smoke 各自全部通过；缺模型和受控无兼容推理设备两情景仍可使用标签、手动标记与历史。详见 [U4 验证](docs/implementation/annotation-interactions/U4/VALIDATION.md)和[原生验收](docs/implementation/annotation-interactions/U4/NATIVE_ACCEPTANCE.md)。
+
+当前指定外接屏为 U27U2D、连接序号 1、DISPLAY2，3840×2160 物理、150% DPI、2560×1440 逻辑全屏。验收按实际屏幕探针选择，不固定旧连接序号；U1/U2、R5 中的 Redmi 27 NU / DISPLAY6 是当时的历史证据。
+
+代表性样本是本机实际读取的 TorchSig 合成基准 SigMF 文件：400000 个 CF32 样本、20 MS/s、20 ms、Fc 2.5 GHz。四条原始标签来自其 meta；标记交互场景中的手动和算法对象为明确的 UI 夹具。正式模型场景另执行真实 FFSCN Sample/ROI 前向，AMD Radeon 880M 的 QRhi D3D11 显示与 NVIDIA RTX 5060 的 TensorRT 推理分开记录。本轮未新增 SCN 前向效果验证；实际 IQ/DDC、UI 夹具或少量模型前向都不表示 RF 实采精度通过。
+
+当前正式模型启动反馈 Debug **566.36 ms**，未达 200 ms 建议目标；Release **134.95 ms**。Release 最终真实任务启动/取消可见反馈约 **113.05/157.97 ms**，取消完成 **179.27 ms**，已发布前缀精确保留。十万合成活动段选择/筛选 P95 约 **84.22/70.47 ms**，两者各 20 次；选择含图表帧，筛选不含图表帧。Debug 未执行最终取消/压力，不宣称全部配置性能通过；准确字段及范围见 [U4 交付说明](docs/implementation/annotation-interactions/U4/DELIVERY.md)。
+
+Windows 显示为 QRhi D3D11：曲线顶点和标量功率纹理/LUT 由 GPU 绘制，坐标与交互覆盖层由 QPainter 合成。GPU 显示、软件显示、CPU DSP、TensorRT 模型分别记录；offscreen UI 测试与模拟图谱不证明模型效果。继续使用既有脚本，输出显式放入新的节点目录；`AnnotationInteractions` 复用 U1–U3 场景，没有 U4 模式：
+
+```powershell
+$manualRoot = [IO.Path]::GetFullPath('out/tasks/wideband-detection/U4/diagnostics/manual-v1')
+if (Test-Path -LiteralPath $manualRoot) { throw 'Use a new manual validation directory' }
+./scripts/verify-package.ps1 -Configuration Release -ReportPath "$manualRoot/package-gpu.json"
+./scripts/verify-package.ps1 -Configuration Release -SoftwareRenderer -ReportPath "$manualRoot/package-software.json"
+./scripts/gpu_smoke.ps1 -Configuration Release -OutputDirectory "$manualRoot/gpu"
+./scripts/screenshot.ps1 -Configuration Release -AnnotationInteractions U3 -OutputDirectory "$manualRoot/native-u3"
+```
+
+大量 G/T 配对矩阵和真实 RF 效果由用户交付后手动执行；[模型效果验证入口](docs/implementation/wideband-detection/R6/MANUAL_VALIDATION.md)提供新身份、新目录和结果解释。标记、通道及部署复核使用 [U4 手动验证](docs/implementation/annotation-interactions/U4/MANUAL_VALIDATION.md)。少量代表性功能/流程成功不替代 L3/L4，不覆盖所有统计谱的精度、跨硬件吞吐或受控冷/热启动基准。
+
+设备输入、持续采集、真实同步、Ubuntu 运行尚未完成；窄带识别/解调、星座和眼图仍为明确标示的合成演示。当前真实窄带能力为 CPU DDC/FIR/重采样、波形和谱分析。`portable-ninja` 与 OpenGL/Vulkan 接口保留后续跨平台路径，没有已通过的 Ubuntu 部署声明。
+
+## 代码边界
 
 | 目录 | 职责 |
 |---|---|
-| `domain/` | 元数据、样本/频率范围、标记、通道、显示状态；无 Qt 依赖 |
-| `application/` | 每文件会话、选择、业务命令和视图历史；无控件依赖 |
-| `infrastructure/` | 原生 JSON 读写、校验和交替 int16 IQ 文件访问 |
-| `app/` | 程序入口、菜单、工程树、参数面板与工作区编排 |
-| `ui/charts/` | 坐标映射、手势、IQ 显示抽取、演示绘图、QRhi 渲染及着色器 |
-| `tests/` | 状态/存储与 Qt 事件回归 |
-| `docs/` | 原型冻结副本、架构、验收与实际验证记录 |
+| `domain/`、`application/` | 物理坐标、来源/修订、检测契约、跟踪、会话与命令 |
+| `infrastructure/` | 样本读取、PSD/STFT、CPU DDC、JSON/分片持久化、worker 通信与模型后端 |
+| `app/`、`ui/` | 工程工作流、参数提交、记录/证据、图谱交互与 QRhi 渲染 |
+| `tools/detection_worker/` | 隔离运行的原生 TensorRT worker |
+| `tools/detection/`、`scripts/` | 模型打包、独立参考/评价、手动套件、构建/部署/截图 |
+| `tests/`、`docs/` | 行为/边界回归、冻结原型、架构与逐节点实际证据 |
 
-渲染器只接收图像、目标矩形和覆盖层，不读取工程存储或执行信号算法。IQ 文件访问和基础 PSD/STFT 计算位于基础设施侧，在工作线程生成有限尺寸显示矩阵后提交 UI；该链路不包含 DDC、检测或持续采集。
-
-## 工程格式与验收边界
-
-原生格式为 `signal-studio-native-project`、版本 1，与浏览器的 `signal-studio-a1.4.3-prototype` 分开。不能直接打开归档的原型演示 JSON；它是产品基线样例。原生工程不包含样本数据、视图历史或业务撤销栈；项目内容仍需显式保存，界面布局偏好与最近工程列表独立写入用户设置。
-
-本轮 Qt 自动测试覆盖原型默认状态、分隔条取消/复位、属性分组前置和手动展开、两套辅助 Y 范围与历史、三图最大化、标记选择/移动/八控制点/取消、重叠对象、2^53 以上坐标以及原生工程往返；对应关系见 [UI 与交互验收](docs/acceptance/ui-parity.md)。浏览器原型的 59 项结果不等于本仓库的测试结果。
-
-2026-10-09 基础 Debug / Release 构建及 CTest 均为 3/3 通过；本轮功能更新后的 Debug CTest 为 3/3，Qt UI 日志为 66 passed / 0 failed / 0 skipped。显示器 2 的本轮 4K/150% 硬件 QRhi smoke 通过，报告与截图位于 `artifacts/feature-update-debug-screen2-4k-150/`。此前显示器 2 的 12 个原生场景、三图最大化/还原回归、Debug/Release 独立包硬件启动和 Release 软件回退均已通过；原始报告与截图见上述验收记录。
-
-显示抽取、缓存与批量线段绘制减少了本机模拟图谱的绘制停顿；同一组普通滚轮观测中，完整事件循环从 198.88–216.64 ms 降到 47.94–62.08 ms。该值包括 GUI 绘制与排队处理，不能换算成 FPS 或真实 IQ 吞吐；测量范围和输入证据见 [显示性能记录](docs/acceptance/display-performance.md)。
-
-本机指定 3.27 GB IQ 文件的读取、图谱显示和第二显示器 4K 验证记录于 [真实 IQ 验收](docs/acceptance/iq-file-int16.md)；不能将该个例外推为不同磁盘、长时间录制或持续采集的吞吐保证。纹理新增行更新、GPU 曲线顶点缓冲和 Ubuntu 部署仍属后续阶段。当前覆盖层先由 QPainter 生成缓存图像，再由 QRhi 合成；字体字形、原生对话框及 hover 阴影与浏览器存在平台绘制差异。
-
-本轮实际结果见 [UI 与交互验收](docs/acceptance/ui-parity.md)，渲染策略见 [渲染架构](docs/architecture/rendering.md)。[基础骨架验证记录](docs/acceptance/verification.md) 和 [骨架验收清单](docs/acceptance/skeleton-checklist.md) 保留为此前阶段资料。
+代码遵循现有命名与 Google 格式。[显示架构](docs/architecture/rendering.md)、[谱参数与前缀加载](docs/architecture/spectral-settings-and-loading.md)、[窄带通道](docs/architecture/narrowband.md)说明当前边界；较早 [UI 基线验收](docs/acceptance/ui-parity.md)保留阶段事实。检测状态见 R1–R6，标记交互和 v6 通道状态见 U1–U4。

@@ -1,0 +1,9 @@
+{
+  "node": "U2",
+  "baseline": "3384e17",
+  "format": "PASS",
+  "diff": "PASS",
+  "screenshotScriptParse": "PASS",
+  "frozenPrototypes": "unchanged from baseline",
+  "recordedAt": "2026-10-16T01:09:51.2273064+08:00"
+}

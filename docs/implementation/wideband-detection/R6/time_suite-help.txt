@@ -1,0 +1,20 @@
+usage: time_suite.py [-h] [--freeze FREEZE] [--root ROOT]
+                     [--configuration {Debug,Release}]
+                     [--scope {all,G-sample,G-roi,G-coarse,G-no-split,G-roi-no-split,G-coarse-no-split,T-default,T-sample-short,T-roi-short}]
+                     [--checkpoint CHECKPOINT] [--max-files MAX_FILES]
+                     [--timeout-seconds TIMEOUT_SECONDS]
+                     [--no-resource-sampling] [--self-check]
+
+Run the frozen M4 paired matrix sequentially and preserve failed history.
+
+options:
+  -h, --help            show this help message and exit
+  --freeze FREEZE
+  --root ROOT
+  --configuration {Debug,Release}
+  --scope {all,G-sample,G-roi,G-coarse,G-no-split,G-roi-no-split,G-coarse-no-split,T-default,T-sample-short,T-roi-short}
+  --checkpoint CHECKPOINT
+  --max-files MAX_FILES
+  --timeout-seconds TIMEOUT_SECONDS
+  --no-resource-sampling
+  --self-check

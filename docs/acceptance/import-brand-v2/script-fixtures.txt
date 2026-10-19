@@ -1,0 +1,3 @@
+PASS 72 DDC format/layout/channel cases, actual prefix and cache equivalence; all encoding extrema and known tones
+PASS independent script fixtures, SHA-256 and 384 reference samples
+PASS 432 format/reader/project matrix cases; counts, overflow, nonfinite, cancellation, CI16 equality, real PSD, v1/v2/v3 migration, non4 frame prefix

@@ -1,7 +1,11 @@
 #pragma once
 
 #include "domain/project.h"
+#include "infrastructure/spectral_analysis.h"
+#include "infrastructure/source_loader.h"
+#include "infrastructure/raw_sample_reader.h"
 
+#include <QByteArray>
 #include <QFile>
 #include <QSize>
 
@@ -30,8 +34,47 @@ public:
     Int16IqFile& operator=(const Int16IqFile&) = delete;
 
     bool open(const QString& path, QString& error);
-    bool isOpen() const { return mapped_ != nullptr; }
+    bool open(const FileMetadata& metadata, QString& error) {
+        raw_.reset();if(mapped_&&ownedBytes_.isEmpty())file_.unmap(mapped_);mapped_=nullptr;
+        ownedBytes_.clear();file_.close();sampleCount_=0;
+        const auto path=QString::fromStdString(metadata.path);
+        if (metadata.availability.status == LoadStatus::Failed) {
+          error = metadata.availability.error.empty()
+                      ? QStringLiteral("来源读取失败，请重新读入或核对文件。")
+                      : QStringLiteral("来源读取失败：") +
+                            QString::fromStdString(metadata.availability.error);
+          return false;
+        }
+        if (path.startsWith(":/") && metadata.sampleFormat != SampleFormat{}) {
+          error = "内置 IQ 资源只支持固定的 CI16/LE/IQ 单通道格式";
+          return false;
+        }
+        const auto prefix = availableSamples(metadata);
+        if (!prefix) {
+          error = "来源没有可读的完整样本前缀。";
+          return false;
+        }
+        if(!metadata.availability.fingerprint.empty()&&iqSourceFingerprint(path).toStdString()!=metadata.availability.fingerprint){error="源文件指纹已改变，请重新读入";return false;}
+        if(path.startsWith(":/")){
+            if(!open(path,error))return false;
+        }
+        else {
+            raw_=std::make_unique<RawSampleReader>();
+            if(!raw_->open(path,metadata.sampleFormat,error)){raw_.reset();return false;}
+            sampleCount_=raw_->sampleCount();format_=metadata.sampleFormat;
+        }
+        if (prefix > sampleCount_) {
+          error = "已读可用前缀超出文件实际完整帧范围。";
+          return false;
+        }
+        limitTo(prefix);
+        return true;
+    }
+    bool isOpen() const { return mapped_ != nullptr || (raw_ && raw_->isOpen()); }
     std::uint64_t sampleCount() const { return sampleCount_; }
+    void limitTo(SampleIndex count) { sampleCount_ = std::min(sampleCount_, count); }
+    std::complex<double> sampleAt(std::uint64_t index) const;
+    SpectralSource spectralSource() const;
 
     bool waveform(const TimeRange& range, int points, WaveformMode mode, std::vector<float>& output,
                   const std::function<bool()>& cancelled = {}) const;
@@ -44,10 +87,12 @@ public:
 
 private:
     std::complex<double> sample(std::uint64_t index) const;
-    void spectrum(std::uint64_t first, int fftSize, std::vector<std::complex<double>>& output) const;
     double powerDensityDb(const std::complex<double>& value, double normalization) const;
 
     QFile file_;
+    std::unique_ptr<RawSampleReader> raw_;
+    SampleFormat format_;
+    QByteArray ownedBytes_;
     uchar* mapped_ = nullptr;
     std::uint64_t sampleCount_ = 0;
 };

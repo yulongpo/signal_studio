@@ -1,0 +1,1342 @@
+{
+  "schema": "signalstudio-model-parity-v1",
+  "profileId": "ffscn-gui-iq-v1",
+  "checkpointSha256": "acd997957dd85b7fc560897874b575d4776e80270d7e377d1de7559e513e40e0",
+  "modelImplementationSha256": "0405ccdab139f03e496b307495c71624d91cf182427eadd4374d5552b687d583",
+  "parameters": 2695992,
+  "onnxSha256": "40d666f5de70b6e119a93f23be234502dd6263136af6ff7a505904cbb43d2fb4",
+  "onnxOpset": 18,
+  "environment": {
+    "python": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:05:56) [MSC v.1942 64 bit (AMD64)]",
+    "os": "Windows-11-10.0.26300-SP0",
+    "torch": "2.12.0+cu132",
+    "onnx": "1.22.0",
+    "onnxRuntime": "1.27.0",
+    "tensorRt": "10.11.0.33",
+    "torchCuda": "13.2",
+    "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+    "computeCapability": [
+      12,
+      0
+    ]
+  },
+  "toleranceFrozenBeforeRun": {
+    "atol": 0.0001,
+    "rtol": 0.001
+  },
+  "realInput": {
+    "path": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\data\\20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+    "sha256": "1757d92722e78776a6877b4fe5f29734fd2975989aaef1d52f8103aaa310b18b",
+    "sampleRateHz": 20000000,
+    "prefixSamples": 400000,
+    "frameCount": 20,
+    "fft": 65536,
+    "stftHopSamples": 20000,
+    "paddingPolicy": "centered zero support at bounded prefix edges",
+    "dbFloor": "float32 power tiny, double density/log, cast to float32",
+    "numericalVersion": "reference-power-floor-double-log-v1",
+    "zeroInputBoundary": "Explicit double-log guard avoids reference underflow -inf",
+    "scope": "20 ms prefix used for deployment tensor parity only"
+  },
+  "engines": {
+    "fp32": {
+      "seconds": 252.73368359997403,
+      "sha256": "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81",
+      "bytes": 21011788,
+      "precision": "FP32",
+      "tf32": false,
+      "workspaceBytes": 1073741824,
+      "hardwareCompatibility": "none; build GPU specific",
+      "versionCompatible": false,
+      "reused": true
+    },
+    "fp16": {
+      "seconds": 464.541337200033,
+      "sha256": "8b27e3e484e9d7f9c8aa456d4a95d9f066a613c471bd2531f312bdcb50572899",
+      "bytes": 15002588,
+      "precision": "FP16 candidate",
+      "tf32": false,
+      "workspaceBytes": 1073741824,
+      "hardwareCompatibility": "none; build GPU specific",
+      "versionCompatible": false,
+      "reused": true
+    }
+  },
+  "probes": [
+    {
+      "kind": "synthetic",
+      "batch": 1,
+      "inputSha256": "1ec9128894f9f8c45cd503fc914e449e19878394267651782eb1a6c4c72dc8dd",
+      "torchMs": 206.44799998262897,
+      "runtimes": {
+        "onnx-cpu": {
+          "ms": 522.8438000194728,
+          "tensors": {
+            "hm": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 1.7642974853515625e-05,
+              "meanAbsolute": 5.5840423840436415e-08,
+              "maxRelative": 3.489121437072754,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            },
+            "bw": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.0150146484375,
+              "meanAbsolute": 0.00297642033547163,
+              "maxRelative": 0.000632815936114639,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            },
+            "off": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 3.11732292175293e-05,
+              "meanAbsolute": 5.087567842565477e-07,
+              "maxRelative": 5.930356201133691e-05,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              2
+            ],
+            "actualCounts": [
+              2
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.0017092227935791016,
+            "maxOrderedScore": 2.384185791015625e-07,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": true
+        },
+        "fp32": {
+          "ms": 62.98420001985505,
+          "tensors": {
+            "hm": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 3.7550926208496094e-06,
+              "meanAbsolute": 7.377846333866955e-09,
+              "maxRelative": 2.4446131646982394e-05,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            },
+            "bw": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.0028076171875,
+              "meanAbsolute": 0.0009372999193146825,
+              "maxRelative": 0.000346366228768602,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            },
+            "off": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 3.4868717193603516e-06,
+              "meanAbsolute": 1.7181764633278362e-07,
+              "maxRelative": 8.059641004365403e-06,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              2
+            ],
+            "actualCounts": [
+              2
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.0001227855682373047,
+            "maxOrderedScore": 5.960464477539063e-08,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": true
+        },
+        "fp16": {
+          "ms": 15.053800016175956,
+          "tensors": {
+            "hm": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.009584367275238037,
+              "meanAbsolute": 2.2335101675707847e-05,
+              "maxRelative": 1.0,
+              "outsideTolerance": 121,
+              "elements": 16384,
+              "passed": false
+            },
+            "bw": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 4.23193359375,
+              "meanAbsolute": 0.9118626117706299,
+              "maxRelative": 0.4694589674472809,
+              "outsideTolerance": 4304,
+              "elements": 16384,
+              "passed": false
+            },
+            "off": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.011538714170455933,
+              "meanAbsolute": 0.0005872529000043869,
+              "maxRelative": 0.027856212109327316,
+              "outsideTolerance": 4993,
+              "elements": 16384,
+              "passed": false
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              2
+            ],
+            "actualCounts": [
+              2
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.7921807765960693,
+            "maxOrderedScore": 0.0002541542053222656,
+            "passed": false,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": false
+        }
+      }
+    },
+    {
+      "kind": "synthetic",
+      "batch": 2,
+      "inputSha256": "7e99d8dfee37c976c904c6e61c892f4c8cad8aadd5221375b653a0547013adaa",
+      "torchMs": 128.57589998748153,
+      "runtimes": {
+        "onnx-cpu": {
+          "ms": 1036.2911999691278,
+          "tensors": {
+            "hm": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 1.7523765563964844e-05,
+              "meanAbsolute": 5.187692408981093e-08,
+              "maxRelative": 3.4891300201416016,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            },
+            "bw": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.0460205078125,
+              "meanAbsolute": 0.007194815203547478,
+              "maxRelative": 0.0007024127407930791,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            },
+            "off": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 2.9802322387695312e-05,
+              "meanAbsolute": 7.966852990648476e-07,
+              "maxRelative": 5.669541860697791e-05,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              2,
+              1
+            ],
+            "actualCounts": [
+              2,
+              1
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.0018310546875,
+            "maxOrderedScore": 5.364418029785156e-07,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": true
+        },
+        "fp32": {
+          "ms": 58.97400004323572,
+          "tensors": {
+            "hm": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 3.3676624298095703e-06,
+              "meanAbsolute": 5.412938541837775e-09,
+              "maxRelative": 2.2995949620963074e-05,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            },
+            "bw": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.0040283203125,
+              "meanAbsolute": 0.0012129833921790123,
+              "maxRelative": 0.00023660127772018313,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            },
+            "off": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 3.3676624298095703e-06,
+              "meanAbsolute": 1.931111910380423e-07,
+              "maxRelative": 7.0518653956241906e-06,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              2,
+              1
+            ],
+            "actualCounts": [
+              2,
+              1
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.00024509429931640625,
+            "maxOrderedScore": 5.960464477539063e-08,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": true
+        },
+        "fp16": {
+          "ms": 29.118400008883327,
+          "tensors": {
+            "hm": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.009582757949829102,
+              "meanAbsolute": 1.6845669961185195e-05,
+              "maxRelative": 1.0,
+              "outsideTolerance": 148,
+              "elements": 32768,
+              "passed": false
+            },
+            "bw": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 5.8541259765625,
+              "meanAbsolute": 1.092321515083313,
+              "maxRelative": 0.46951717138290405,
+              "outsideTolerance": 10526,
+              "elements": 32768,
+              "passed": false
+            },
+            "off": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.01175534725189209,
+              "meanAbsolute": 0.0006328943418338895,
+              "maxRelative": 0.027856212109327316,
+              "outsideTolerance": 11634,
+              "elements": 32768,
+              "passed": false
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              2,
+              1
+            ],
+            "actualCounts": [
+              2,
+              1
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.7923026084899902,
+            "maxOrderedScore": 0.0002541542053222656,
+            "passed": false,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": false
+        }
+      }
+    },
+    {
+      "kind": "real-wav",
+      "batch": 1,
+      "inputSha256": "50affb291de811403c14e2840ccbcfa310f9396c030aa6fc336a5a7aa3daf908",
+      "torchMs": 57.82430002000183,
+      "runtimes": {
+        "onnx-cpu": {
+          "ms": 505.86370000382885,
+          "tensors": {
+            "hm": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 2.314150333404541e-05,
+              "meanAbsolute": 2.1203780420364637e-07,
+              "maxRelative": 3.703686237335205,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            },
+            "bw": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.043212890625,
+              "meanAbsolute": 0.008433505892753601,
+              "maxRelative": 0.0011200179578736424,
+              "outsideTolerance": 1,
+              "elements": 16384,
+              "passed": false
+            },
+            "off": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 5.6296586990356445e-05,
+              "meanAbsolute": 9.943078111973591e-07,
+              "maxRelative": 0.00012871097715105861,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              11
+            ],
+            "actualCounts": [
+              11
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.005005359649658203,
+            "maxOrderedScore": 8.940696716308594e-07,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": false
+        },
+        "fp32": {
+          "ms": 30.375400034245104,
+          "tensors": {
+            "hm": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 1.4081597328186035e-05,
+              "meanAbsolute": 4.552340726604598e-08,
+              "maxRelative": 0.0002505365409888327,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            },
+            "bw": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.002685546875,
+              "meanAbsolute": 0.0006506629288196564,
+              "maxRelative": 5.78719045734033e-05,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            },
+            "off": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 2.6226043701171875e-06,
+              "meanAbsolute": 1.534890543553047e-07,
+              "maxRelative": 5.39015672984533e-06,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              11
+            ],
+            "actualCounts": [
+              11
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.0002448558807373047,
+            "maxOrderedScore": 1.1920928955078125e-07,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": true
+        },
+        "fp16": {
+          "ms": 14.502600010018796,
+          "tensors": {
+            "hm": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.038762956857681274,
+              "meanAbsolute": 0.00015982153126969934,
+              "maxRelative": 1.0,
+              "outsideTolerance": 905,
+              "elements": 16384,
+              "passed": false
+            },
+            "bw": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 5.017578125,
+              "meanAbsolute": 0.7790735960006714,
+              "maxRelative": 0.039206475019454956,
+              "outsideTolerance": 5032,
+              "elements": 16384,
+              "passed": false
+            },
+            "off": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.010119974613189697,
+              "meanAbsolute": 0.0005986876785755157,
+              "maxRelative": 0.026210995391011238,
+              "outsideTolerance": 5500,
+              "elements": 16384,
+              "passed": false
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              11
+            ],
+            "actualCounts": [
+              11
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 19033.626210689545,
+            "maxOrderedScore": 0.0008773207664489746,
+            "passed": false,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": false
+        }
+      }
+    },
+    {
+      "kind": "real-wav",
+      "batch": 2,
+      "inputSha256": "a387167392b3c6d730a931a4bcadfc5d099d3fa8c81d9063ff10a04eeed1c9da",
+      "torchMs": 116.43969995202497,
+      "runtimes": {
+        "onnx-cpu": {
+          "ms": 1031.097500002943,
+          "tensors": {
+            "hm": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 3.0338764190673828e-05,
+              "meanAbsolute": 2.171098856251774e-07,
+              "maxRelative": 3.703686237335205,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            },
+            "bw": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.04315185546875,
+              "meanAbsolute": 0.007923927158117294,
+              "maxRelative": 0.0011221554595977068,
+              "outsideTolerance": 1,
+              "elements": 32768,
+              "passed": false
+            },
+            "off": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 5.555152893066406e-05,
+              "meanAbsolute": 1.0404278327769134e-06,
+              "maxRelative": 0.00012700776278506964,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              11,
+              12
+            ],
+            "actualCounts": [
+              11,
+              12
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.005066394805908203,
+            "maxOrderedScore": 8.940696716308594e-07,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": false
+        },
+        "fp32": {
+          "ms": 58.990799996536225,
+          "tensors": {
+            "hm": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 1.6748905181884766e-05,
+              "meanAbsolute": 4.687948518267149e-08,
+              "maxRelative": 0.00022081959468778223,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            },
+            "bw": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.0030517578125,
+              "meanAbsolute": 0.0006857729749754071,
+              "maxRelative": 5.5736945796525106e-05,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            },
+            "off": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 4.76837158203125e-06,
+              "meanAbsolute": 1.493867785029579e-07,
+              "maxRelative": 7.868187822168693e-06,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              11,
+              12
+            ],
+            "actualCounts": [
+              11,
+              12
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.0009770393371582031,
+            "maxOrderedScore": 1.1920928955078125e-07,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": true
+        },
+        "fp16": {
+          "ms": 29.10020004492253,
+          "tensors": {
+            "hm": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.05862867832183838,
+              "meanAbsolute": 0.00016669777687638998,
+              "maxRelative": 1.1249457597732544,
+              "outsideTolerance": 1726,
+              "elements": 32768,
+              "passed": false
+            },
+            "bw": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 5.017822265625,
+              "meanAbsolute": 0.7411993145942688,
+              "maxRelative": 0.039213743060827255,
+              "outsideTolerance": 9665,
+              "elements": 32768,
+              "passed": false
+            },
+            "off": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.01012110710144043,
+              "meanAbsolute": 0.0005947283934801817,
+              "maxRelative": 0.02621385268867016,
+              "outsideTolerance": 11085,
+              "elements": 32768,
+              "passed": false
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              11,
+              12
+            ],
+            "actualCounts": [
+              11,
+              12
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 19033.62614917755,
+            "maxOrderedScore": 0.0008773207664489746,
+            "passed": false,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": false
+        }
+      }
+    },
+    {
+      "kind": "constant",
+      "batch": 1,
+      "inputSha256": "6de7493c5c90f643357c268fbaaf461c1567e0334e4948023ce17268403aa37a",
+      "torchMs": 57.37560003763065,
+      "runtimes": {
+        "onnx-cpu": {
+          "ms": 506.54580001719296,
+          "tensors": {
+            "hm": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 2.7746427804231644e-05,
+              "meanAbsolute": 4.679275633634461e-08,
+              "maxRelative": 1.5695562362670898,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            },
+            "bw": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.2138214111328125,
+              "meanAbsolute": 0.031080856919288635,
+              "maxRelative": 0.0089682312682271,
+              "outsideTolerance": 106,
+              "elements": 16384,
+              "passed": false
+            },
+            "off": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.0022123754024505615,
+              "meanAbsolute": 1.2571688785101287e-05,
+              "maxRelative": 0.004967986140400171,
+              "outsideTolerance": 17,
+              "elements": 16384,
+              "passed": false
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              0
+            ],
+            "actualCounts": [
+              0
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.0,
+            "maxOrderedScore": 0.0,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": false
+        },
+        "fp32": {
+          "ms": 30.413199972826988,
+          "tensors": {
+            "hm": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 5.182810127735138e-07,
+              "meanAbsolute": 1.467743149241585e-10,
+              "maxRelative": 0.00015742555842734873,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            },
+            "bw": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.00286865234375,
+              "meanAbsolute": 0.00017281871987506747,
+              "maxRelative": 4.913970406050794e-05,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            },
+            "off": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 2.658367156982422e-05,
+              "meanAbsolute": 1.106473064282909e-07,
+              "maxRelative": 3.51362323272042e-05,
+              "outsideTolerance": 0,
+              "elements": 16384,
+              "passed": true
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              0
+            ],
+            "actualCounts": [
+              0
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.0,
+            "maxOrderedScore": 0.0,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": true
+        },
+        "fp16": {
+          "ms": 14.475100033450872,
+          "tensors": {
+            "hm": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.00017345906235277653,
+              "meanAbsolute": 6.132908936251624e-08,
+              "maxRelative": 1.0,
+              "outsideTolerance": 5,
+              "elements": 16384,
+              "passed": false
+            },
+            "bw": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 15.1934814453125,
+              "meanAbsolute": 9.36859130859375,
+              "maxRelative": 0.06011560931801796,
+              "outsideTolerance": 16367,
+              "elements": 16384,
+              "passed": false
+            },
+            "off": {
+              "shape": [
+                1,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.011285871267318726,
+              "meanAbsolute": 0.0005437844665721059,
+              "maxRelative": 0.030960533767938614,
+              "outsideTolerance": 509,
+              "elements": 16384,
+              "passed": false
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              0
+            ],
+            "actualCounts": [
+              0
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.0,
+            "maxOrderedScore": 0.0,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": false
+        }
+      }
+    },
+    {
+      "kind": "constant",
+      "batch": 2,
+      "inputSha256": "c036cbb7553a909f8b8877d4461924307f27ecb66cff928eeeafd569c3887e29",
+      "torchMs": 116.13599996780977,
+      "runtimes": {
+        "onnx-cpu": {
+          "ms": 977.9176999581978,
+          "tensors": {
+            "hm": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 2.7766916900873184e-05,
+              "meanAbsolute": 4.680010334823237e-08,
+              "maxRelative": 1.5695858001708984,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            },
+            "bw": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.21372222900390625,
+              "meanAbsolute": 0.03187321126461029,
+              "maxRelative": 0.00897382851690054,
+              "outsideTolerance": 216,
+              "elements": 32768,
+              "passed": false
+            },
+            "off": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.002213388681411743,
+              "meanAbsolute": 1.273933048651088e-05,
+              "maxRelative": 0.0049702501855790615,
+              "outsideTolerance": 34,
+              "elements": 32768,
+              "passed": false
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              0,
+              0
+            ],
+            "actualCounts": [
+              0,
+              0
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.0,
+            "maxOrderedScore": 0.0,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": false
+        },
+        "fp32": {
+          "ms": 58.77229996258393,
+          "tensors": {
+            "hm": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 5.341134965419769e-07,
+              "meanAbsolute": 1.55134072254981e-10,
+              "maxRelative": 0.00016408157534897327,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            },
+            "bw": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.002716064453125,
+              "meanAbsolute": 0.0007146809948608279,
+              "maxRelative": 5.164857429917902e-05,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            },
+            "off": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 2.586841583251953e-05,
+              "meanAbsolute": 2.748333827184979e-07,
+              "maxRelative": 3.8223846786422655e-05,
+              "outsideTolerance": 0,
+              "elements": 32768,
+              "passed": true
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              0,
+              0
+            ],
+            "actualCounts": [
+              0,
+              0
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.0,
+            "maxOrderedScore": 0.0,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": true
+        },
+        "fp16": {
+          "ms": 29.205899976659566,
+          "tensors": {
+            "hm": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.00017341738566756248,
+              "meanAbsolute": 6.13218062994747e-08,
+              "maxRelative": 1.0,
+              "outsideTolerance": 10,
+              "elements": 32768,
+              "passed": false
+            },
+            "bw": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 15.192047119140625,
+              "meanAbsolute": 9.367799758911133,
+              "maxRelative": 0.06010962277650833,
+              "outsideTolerance": 32734,
+              "elements": 32768,
+              "passed": false
+            },
+            "off": {
+              "shape": [
+                2,
+                1,
+                1,
+                16384
+              ],
+              "dtype": "float32",
+              "finite": true,
+              "maxAbsolute": 0.011284470558166504,
+              "meanAbsolute": 0.0005436138017103076,
+              "maxRelative": 0.030960360541939735,
+              "outsideTolerance": 1018,
+              "elements": 32768,
+              "passed": false
+            }
+          },
+          "candidates": {
+            "referenceCounts": [
+              0,
+              0
+            ],
+            "actualCounts": [
+              0,
+              0
+            ],
+            "countsMatch": true,
+            "maxOrderedEdgeBins": 0.0,
+            "maxOrderedScore": 0.0,
+            "passed": true,
+            "note": "Ordered decoded candidates; not label-based accuracy"
+          },
+          "passed": false
+        }
+      }
+    }
+  ],
+  "boundary": "Runtime parity, not TF accuracy or native UI acceptance",
+  "fp32Passed": true,
+  "fp16Passed": false
+}

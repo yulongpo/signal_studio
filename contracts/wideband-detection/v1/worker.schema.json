@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:signalstudio:wideband:worker-message:1",
+  "title": "Signal Studio local worker control envelope v1",
+  "type": "object", "additionalProperties": false,
+  "required": ["protocolVersion", "type", "requestId", "sequence", "payload"],
+  "properties": {
+    "protocolVersion": {"const": 1},
+    "type": {"enum": ["hello", "ready", "begin", "batch", "result", "cancel", "completed", "error"]},
+    "requestId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "runId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "projectGeneration": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,19})(?![\\s\\S])"},
+    "fileId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "sequence": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,19})(?![\\s\\S])"},
+    "payload": {"type": "object"},
+    "binary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["byteLength", "dtype", "byteOrder", "shape", "sha256"],
+      "properties": {
+        "byteLength": {"type": "integer", "minimum": 0, "maximum": 33554432},
+        "dtype": {"enum": ["float32", "complex64", "uint8"]},
+        "byteOrder": {"const": "little"},
+        "shape": {"type": "array", "minItems": 1, "maxItems": 5, "items": {"type": "integer", "minimum": 1, "maximum": 4194304}},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}(?![\\s\\S])"}
+      }
+    }
+  },
+  "allOf": [{
+    "if": {"properties": {"type": {"enum": ["begin", "batch", "result", "cancel", "completed"]}}},
+    "then": {"required": ["runId", "projectGeneration", "fileId"]}
+  }],
+  "$comment": "Transport: uint32 little-endian JSON length (max 65536 bytes), UTF-8 envelope, followed by declared binary bytes. Validate shape*dtype size, all uint64 fields, correlation and monotonic sequence before use. No arbitrary executable payload. Payload schemas for stage-specific messages are versioned with the implementing backend."
+}

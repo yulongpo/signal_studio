@@ -1,0 +1,30 @@
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+    Start 13: signal_studio_annotations
+1/4 Test #13: signal_studio_annotations .........   Passed    3.08 sec
+    Start 14: signal_studio_annotation_store
+2/4 Test #14: signal_studio_annotation_store ....***Failed    0.81 sec
+FAIL UserRange fixture failed
+
+    Start 19: signal_studio_core
+3/4 Test #19: signal_studio_core ................***Failed    0.37 sec
+PASS boundary clamping and uint64 precision
+PASS shared wideband and narrowband chart interaction math
+PASS independent file state and 40-entry view history
+PASS selection, focus, linked deletion and fixed demo channels
+PASS independent auxiliary modes, combined snapshot history and PSD scope
+FAIL Malformed project must fail with an error
+
+    Start 20: signal_studio_channel_processor
+4/4 Test #20: signal_studio_channel_processor ...***Failed    0.97 sec
+FAIL Loading status alone must not disable an already readable frozen prefix
+
+
+25% tests passed, 3 tests failed out of 4
+
+Total Test time (real) =   5.25 sec
+
+The following tests FAILED:
+	 14 - signal_studio_annotation_store (Failed)
+	 19 - signal_studio_core (Failed)
+	 20 - signal_studio_channel_processor (Failed)
+Errors while running CTest

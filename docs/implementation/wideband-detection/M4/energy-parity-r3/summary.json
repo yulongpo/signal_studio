@@ -1,0 +1,23 @@
+[
+  {
+    "id": "G-carrier1",
+    "nativeExit": 0,
+    "parityExit": 0,
+    "native": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\G-carrier1\\native",
+    "reference": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\G-carrier1\\reference"
+  },
+  {
+    "id": "G-arbitrary",
+    "nativeExit": 0,
+    "parityExit": 0,
+    "native": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\G-arbitrary\\native",
+    "reference": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\G-arbitrary\\reference"
+  },
+  {
+    "id": "T-short",
+    "nativeExit": 0,
+    "parityExit": 1,
+    "native": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\native",
+    "reference": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\energy-release-r3\\T-short\\reference"
+  }
+]

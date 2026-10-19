@@ -1,0 +1,1383 @@
+{
+    "deviceIsolationMethod": "CUDA_VISIBLE_DEVICES=-1 for this process and its worker",
+    "diagnostic": "Required CUDA 12.9 runtime/driver/device is unavailable",
+    "expectedFailure": "no-compatible-gpu",
+    "failedRun": {
+        "chunks": [
+        ],
+        "completedWindows": "0",
+        "computationPhase": "none",
+        "coverage": [
+            {
+                "kind": "unread",
+                "range": {
+                    "endSample": "400000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": 2490000000,
+                    "frequencyUpperHz": 2510000000,
+                    "startSample": "0"
+                },
+                "reason": "No completed model response was persisted for this range"
+            }
+        ],
+        "device": "CPU spectrum / isolated worker",
+        "eligibleWindows": "3",
+        "error": "Required CUDA 12.9 runtime/driver/device is unavailable",
+        "finishedAtMilliseconds": "1792346898443",
+        "lifecycle": "Failed",
+        "manifestRelativePath": "detections/e030b39be7216db27b3a33898a49e67a46f66b01ebec1332c8cc57c88552d32f/manifest.json",
+        "readFrames": "0",
+        "recoverable": false,
+        "refinedCandidates": "0",
+        "request": {
+            "contextRange": {
+                "endSample": "400000",
+                "frequencyFrame": "RF",
+                "frequencyLowerHz": 2490000000,
+                "frequencyUpperHz": 2510000000,
+                "startSample": "0"
+            },
+            "evidenceBudgetBytes": "33554432",
+            "modelManifestPath": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+            "modelSha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03",
+            "parameters": {
+                "bandwidthMarginDb": 6,
+                "batchSize": 2,
+                "coarseMinBurstSeconds": 0.01,
+                "coarseSplitGapSeconds": 0.02,
+                "maxMiss": 1,
+                "mergeFrequencyHz": 100000,
+                "minHits": 2,
+                "minOffSeconds": 0.01,
+                "minOnSeconds": 0.005,
+                "nmsIou": 0.3,
+                "sampleEdgeRatio": 0.6,
+                "scoreThreshold": 0.7,
+                "smoothSeconds": 0.001,
+                "splitBursts": true,
+                "timeStrategy": "sample",
+                "topK": 512
+            },
+            "parentRunId": null,
+            "profile": {
+                "backend": "TensorRt",
+                "fftSize": 65536,
+                "hopSeconds": 0.001,
+                "id": "ffscn-gui-iq-v1",
+                "maximumPsdOnly": false,
+                "modelFrames": 10,
+                "modelHopFrames": 5,
+                "name": "FFSCN GUI IQ",
+                "status": "主线候选 / 需资产预检",
+                "supportsReal": false,
+                "version": 1
+            },
+            "rangeOrigin": "available-file",
+            "requestedRange": {
+                "endSample": "400000",
+                "frequencyFrame": "RF",
+                "frequencyLowerHz": 2490000000,
+                "frequencyUpperHz": 2510000000,
+                "startSample": "0"
+            },
+            "runId": "run-efb807e9-4a42-4322-ab4b-2b0a85d9401b",
+            "schemaVersion": 2,
+            "sourceAnnotationId": "",
+            "sourceIdentity": {
+                "availableSamples": "400000",
+                "centerFrequencyHz": 2500000000,
+                "contentHash": "",
+                "effectiveFrequency": {
+                    "lowerHz": 2490000000,
+                    "upperHz": 2510000000
+                },
+                "fileId": "file-1",
+                "formatRevision": "1",
+                "hashedRange": null,
+                "path": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-data",
+                "physicalSamples": "400000",
+                "projectGeneration": "2",
+                "quickFingerprint": "3200000/1791646403000",
+                "sampleFormat": {
+                    "byteOrder": "le",
+                    "channelLayout": "interleaved",
+                    "channels": 1,
+                    "encoding": "F32",
+                    "headerBytes": "0",
+                    "iqLayout": "iq",
+                    "normalizeIntegerAdc": false,
+                    "selectedChannel": 0,
+                    "structure": "complex",
+                    "trailerBytes": "0"
+                },
+                "sampleRateHz": 20000000,
+                "selectedSampleChannel": "0"
+            },
+            "sourceRevisionId": "",
+            "spectrumMode": 0,
+            "workingSetBudgetBytes": "268435456"
+        },
+        "resultCount": "0",
+        "runtime": "worker-v1",
+        "schema": "signal-studio-detection-run",
+        "sourceValidity": "Current",
+        "startedAtMilliseconds": "1792346895863",
+        "totalRefinementCandidates": "0",
+        "version": 2
+    },
+    "labelsManualHistoryUsable": true,
+    "mode": "wideband-unavailable",
+    "modelInferenceVerified": false,
+    "pass": true,
+    "renderEvidence": {
+        "absoluteFrequency": true,
+        "actualMainPlotHeight": 857,
+        "auxiliaryMode": "waveform",
+        "charts": [
+            {
+                "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+                "completedFrames": 20,
+                "gpuReady": true,
+                "heatmapTextureReusedFromPreviousScene": true,
+                "logicalWidgetSize": {
+                    "height": 48,
+                    "width": 1870
+                },
+                "name": "navigationPlot",
+                "newFramesSincePreviousScene": 0,
+                "newTextureUploadsSincePreviousScene": 0,
+                "plotRectHeight": 48,
+                "powerCacheReusedFromPreviousScene": true,
+                "powerGenerations": 0,
+                "renderStatistics": {
+                    "acceptedHeatmapPreview": false,
+                    "actualFrameInputSamples": "2048",
+                    "actualSpectralFrames": 194,
+                    "analysisError": "",
+                    "analysisPoints": 2048,
+                    "binHz": 9765.625,
+                    "colorTransformGenerations": 0,
+                    "committedGeneration": 3,
+                    "cpuWallTimings": {
+                        "chartDrawCalls": 8,
+                        "chartDrawCallsSkipped": 0,
+                        "chartPaletteUploads": 4,
+                        "chartVertexUploads": 1,
+                        "gpuTimestamps": false,
+                        "heatmapDrawCalls": 0,
+                        "heatmapUploadPreparation": {
+                            "lastMs": 0,
+                            "maxMs": 0,
+                            "samples": 0,
+                            "totalMs": 0
+                        },
+                        "lastChartDrawLoopIterations": 1,
+                        "lastChartDrawRecordCount": 1,
+                        "lastChartDrawStage": 6,
+                        "lastChartVertexCount": 15618,
+                        "lastRenderHeight": 48,
+                        "lastRenderWidth": 1870,
+                        "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                        "overlayImagePreparation": {
+                            "lastMs": 0.0695,
+                            "maxMs": 0.0812,
+                            "samples": 11,
+                            "totalMs": 0.4078
+                        },
+                        "overlayPainter": {
+                            "lastMs": 0.4361,
+                            "maxMs": 0.6974,
+                            "samples": 11,
+                            "totalMs": 3.132
+                        },
+                        "overlayUploadEnqueue": {
+                            "lastMs": 0.0045,
+                            "maxMs": 0.0776,
+                            "samples": 11,
+                            "totalMs": 0.15289999999999998
+                        },
+                        "paintEventIncludingQtSubmit": {
+                            "lastMs": 0.8588,
+                            "maxMs": 2.1965,
+                            "samples": 13,
+                            "totalMs": 10.372200000000001
+                        },
+                        "paletteUploads": 2,
+                        "prepareUploads": {
+                            "lastMs": 0.0015,
+                            "maxMs": 0.8916,
+                            "samples": 14,
+                            "totalMs": 3.9074999999999998
+                        },
+                        "render": {
+                            "lastMs": 0.0143,
+                            "maxMs": 0.9687,
+                            "samples": 14,
+                            "totalMs": 4.2933
+                        },
+                        "renderInvocations": 14,
+                        "unit": "ms"
+                    },
+                    "cursorPinned": false,
+                    "curveCacheHits": 6,
+                    "curvePathElements": 0,
+                    "curveRasterMethod": "QRhi dynamic vertex buffer",
+                    "curveReductions": 0,
+                    "curveSourceGenerations": 1,
+                    "drawnLineSegments": 1562,
+                    "drawnPoints": 3688,
+                    "effectiveOverlap": 0.5,
+                    "framePsd": false,
+                    "generation": 3,
+                    "gpuChartDrawCalls": 8,
+                    "gpuDataDrawCalls": 8,
+                    "gpuDataRenderer": "QRhi shader / vertex buffer",
+                    "gpuHeatmapDrawCalls": 0,
+                    "gpuPaletteUploads": 2,
+                    "gpuUploadsPending": false,
+                    "gpuVertexUploads": 1,
+                    "heatmapCacheHits": 0,
+                    "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                    "heatmapHeight": -1,
+                    "heatmapWidth": -1,
+                    "inverseCursorDrawCalls": 0,
+                    "lastMatrixMs": 0,
+                    "matrixReductions": 0,
+                    "noiseBandwidthHz": 14655.593551538814,
+                    "overlayUploads": 11,
+                    "paddedFrames": 0,
+                    "pinnedFrequencyHz": 0,
+                    "pinnedSourceSample": "0",
+                    "powerGenerations": 0,
+                    "quality": "settled",
+                    "requestedGeneration": 3,
+                    "requestedHeatmapHeight": -1,
+                    "requestedHeatmapWidth": -1,
+                    "requestedPixels": 1,
+                    "requiredSeconds": 0.0001024,
+                    "samplePointCount": 0,
+                    "samplePointsVisible": false,
+                    "settled": true,
+                    "sourcePoints": 3688,
+                    "staleDrops": 0,
+                    "textureUploads": 0,
+                    "workerIdle": true
+                },
+                "textureUploads": 0,
+                "visible": true
+            },
+            {
+                "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+                "completedFrames": 20,
+                "gpuReady": true,
+                "heatmapTextureReusedFromPreviousScene": true,
+                "logicalWidgetSize": {
+                    "height": 171,
+                    "width": 1870
+                },
+                "name": "auxPlot",
+                "newFramesSincePreviousScene": 0,
+                "newTextureUploadsSincePreviousScene": 0,
+                "plotRectHeight": 125,
+                "powerCacheReusedFromPreviousScene": true,
+                "powerGenerations": 0,
+                "renderStatistics": {
+                    "acceptedHeatmapPreview": false,
+                    "actualFrameInputSamples": "2048",
+                    "actualSpectralFrames": 194,
+                    "analysisError": "",
+                    "analysisPoints": 2048,
+                    "binHz": 9765.625,
+                    "colorTransformGenerations": 0,
+                    "committedGeneration": 5,
+                    "cpuWallTimings": {
+                        "chartDrawCalls": 8,
+                        "chartDrawCallsSkipped": 0,
+                        "chartPaletteUploads": 5,
+                        "chartVertexUploads": 1,
+                        "gpuTimestamps": false,
+                        "heatmapDrawCalls": 0,
+                        "heatmapUploadPreparation": {
+                            "lastMs": 0,
+                            "maxMs": 0,
+                            "samples": 0,
+                            "totalMs": 0
+                        },
+                        "lastChartDrawLoopIterations": 1,
+                        "lastChartDrawRecordCount": 1,
+                        "lastChartDrawStage": 6,
+                        "lastChartVertexCount": 35188,
+                        "lastRenderHeight": 171,
+                        "lastRenderWidth": 1870,
+                        "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                        "overlayImagePreparation": {
+                            "lastMs": 0.279,
+                            "maxMs": 0.4908,
+                            "samples": 11,
+                            "totalMs": 2.3034
+                        },
+                        "overlayPainter": {
+                            "lastMs": 1.4764,
+                            "maxMs": 3.302,
+                            "samples": 11,
+                            "totalMs": 13.1589
+                        },
+                        "overlayUploadEnqueue": {
+                            "lastMs": 0.0035,
+                            "maxMs": 0.5834,
+                            "samples": 11,
+                            "totalMs": 0.8183999999999999
+                        },
+                        "paintEventIncludingQtSubmit": {
+                            "lastMs": 2.7634,
+                            "maxMs": 5.8916,
+                            "samples": 14,
+                            "totalMs": 38.596999999999994
+                        },
+                        "paletteUploads": 2,
+                        "prepareUploads": {
+                            "lastMs": 0.0022,
+                            "maxMs": 3.6309,
+                            "samples": 15,
+                            "totalMs": 19.049599999999995
+                        },
+                        "render": {
+                            "lastMs": 0.0296,
+                            "maxMs": 3.6643,
+                            "samples": 15,
+                            "totalMs": 19.865299999999998
+                        },
+                        "renderInvocations": 15,
+                        "unit": "ms"
+                    },
+                    "cursorPinned": false,
+                    "curveCacheHits": 14,
+                    "curvePathElements": 3520,
+                    "curveRasterMethod": "QRhi dynamic vertex buffer",
+                    "curveReductions": 1,
+                    "curveSourceGenerations": 2,
+                    "drawnLineSegments": 3519,
+                    "drawnPoints": 3520,
+                    "effectiveOverlap": 0.5,
+                    "framePsd": false,
+                    "generation": 5,
+                    "gpuChartDrawCalls": 8,
+                    "gpuDataDrawCalls": 8,
+                    "gpuDataRenderer": "QRhi shader / vertex buffer",
+                    "gpuHeatmapDrawCalls": 0,
+                    "gpuPaletteUploads": 2,
+                    "gpuUploadsPending": false,
+                    "gpuVertexUploads": 1,
+                    "heatmapCacheHits": 0,
+                    "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                    "heatmapHeight": -1,
+                    "heatmapWidth": -1,
+                    "inverseCursorDrawCalls": 15,
+                    "lastMatrixMs": 0,
+                    "matrixReductions": 0,
+                    "noiseBandwidthHz": 14655.593551538814,
+                    "overlayUploads": 11,
+                    "paddedFrames": 0,
+                    "pinnedFrequencyHz": 0,
+                    "pinnedSourceSample": "0",
+                    "powerGenerations": 0,
+                    "quality": "settled",
+                    "requestedGeneration": 5,
+                    "requestedHeatmapHeight": -1,
+                    "requestedHeatmapWidth": -1,
+                    "requestedPixels": 1,
+                    "requiredSeconds": 0.0001024,
+                    "samplePointCount": 0,
+                    "samplePointsVisible": false,
+                    "settled": true,
+                    "sourcePoints": 3520,
+                    "staleDrops": 0,
+                    "textureUploads": 0,
+                    "workerIdle": true
+                },
+                "textureUploads": 0,
+                "visible": true
+            },
+            {
+                "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+                "completedFrames": 20,
+                "gpuReady": true,
+                "heatmapTextureReusedFromPreviousScene": true,
+                "logicalWidgetSize": {
+                    "height": 903,
+                    "width": 1870
+                },
+                "name": "mainPlot",
+                "newFramesSincePreviousScene": 0,
+                "newTextureUploadsSincePreviousScene": 0,
+                "plotRectHeight": 857,
+                "powerCacheReusedFromPreviousScene": true,
+                "powerGenerations": 2,
+                "renderStatistics": {
+                    "acceptedHeatmapPreview": false,
+                    "actualFrameInputSamples": "2048",
+                    "actualSpectralFrames": 194,
+                    "analysisError": "",
+                    "analysisPoints": 2048,
+                    "binHz": 9765.625,
+                    "colorTransformGenerations": 1,
+                    "committedGeneration": 4,
+                    "cpuWallTimings": {
+                        "chartDrawCalls": 0,
+                        "chartDrawCallsSkipped": 0,
+                        "chartPaletteUploads": 3,
+                        "chartVertexUploads": 0,
+                        "gpuTimestamps": false,
+                        "heatmapDrawCalls": 7,
+                        "heatmapUploadPreparation": {
+                            "lastMs": 1.1825,
+                            "maxMs": 1.1825,
+                            "samples": 1,
+                            "totalMs": 1.1825
+                        },
+                        "lastChartDrawLoopIterations": 0,
+                        "lastChartDrawRecordCount": 0,
+                        "lastChartDrawStage": 0,
+                        "lastChartVertexCount": 0,
+                        "lastRenderHeight": 903,
+                        "lastRenderWidth": 1870,
+                        "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                        "overlayImagePreparation": {
+                            "lastMs": 0.5527,
+                            "maxMs": 2.2401,
+                            "samples": 11,
+                            "totalMs": 7.784800000000001
+                        },
+                        "overlayPainter": {
+                            "lastMs": 13.9068,
+                            "maxMs": 16.1128,
+                            "samples": 11,
+                            "totalMs": 92.38860000000001
+                        },
+                        "overlayUploadEnqueue": {
+                            "lastMs": 0.0043,
+                            "maxMs": 0.2394,
+                            "samples": 11,
+                            "totalMs": 0.5162
+                        },
+                        "paintEventIncludingQtSubmit": {
+                            "lastMs": 18.456,
+                            "maxMs": 22.0891,
+                            "samples": 13,
+                            "totalMs": 171.8935
+                        },
+                        "paletteUploads": 2,
+                        "prepareUploads": {
+                            "lastMs": 0.0024,
+                            "maxMs": 17.1991,
+                            "samples": 14,
+                            "totalMs": 110.37169999999999
+                        },
+                        "render": {
+                            "lastMs": 0.0234,
+                            "maxMs": 17.2225,
+                            "samples": 14,
+                            "totalMs": 110.96519999999997
+                        },
+                        "renderInvocations": 14,
+                        "unit": "ms"
+                    },
+                    "cursorPinned": false,
+                    "curveCacheHits": 0,
+                    "curvePathElements": 0,
+                    "curveRasterMethod": "QRhi heatmap texture",
+                    "curveReductions": 0,
+                    "curveSourceGenerations": 0,
+                    "drawnLineSegments": 0,
+                    "drawnPoints": 322500,
+                    "effectiveOverlap": 0.5,
+                    "framePsd": false,
+                    "generation": 4,
+                    "gpuChartDrawCalls": 0,
+                    "gpuDataDrawCalls": 7,
+                    "gpuDataRenderer": "QRhi shader / vertex buffer",
+                    "gpuHeatmapDrawCalls": 7,
+                    "gpuPaletteUploads": 2,
+                    "gpuUploadsPending": false,
+                    "gpuVertexUploads": 0,
+                    "heatmapCacheHits": 0,
+                    "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                    "heatmapHeight": 430,
+                    "heatmapWidth": 750,
+                    "inverseCursorDrawCalls": 14,
+                    "lastMatrixMs": 49.942,
+                    "matrixReductions": 0,
+                    "noiseBandwidthHz": 14655.593551538814,
+                    "overlayUploads": 11,
+                    "paddedFrames": 0,
+                    "pinnedFrequencyHz": 0,
+                    "pinnedSourceSample": "0",
+                    "powerGenerations": 2,
+                    "quality": "settled",
+                    "requestedGeneration": 4,
+                    "requestedHeatmapHeight": 430,
+                    "requestedHeatmapWidth": 750,
+                    "requestedPixels": 322500,
+                    "requiredSeconds": 0.0001024,
+                    "samplePointCount": 0,
+                    "samplePointsVisible": false,
+                    "settled": true,
+                    "sourcePoints": 397312,
+                    "staleDrops": 1,
+                    "textureUploads": 1,
+                    "workerIdle": true
+                },
+                "textureUploads": 1,
+                "visible": true
+            }
+        ],
+        "colorScale": false,
+        "creating": false,
+        "devicePixelRatio": 1.5,
+        "files": 2,
+        "logicalWindowSize": {
+            "height": 1440,
+            "width": 2560
+        },
+        "mainMode": "time-frequency",
+        "mainWidgetHeight": 903,
+        "marks": [
+            {
+                "beginSample": "51107",
+                "endSample": "343277",
+                "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:0",
+                "lowerHz": 2502021605.9327126,
+                "name": "64qam",
+                "upperHz": 2502282009.1227803
+            },
+            {
+                "beginSample": "38498",
+                "endSample": "353824",
+                "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1",
+                "lowerHz": 2492059313.3481555,
+                "name": "2gmsk",
+                "upperHz": 2492749655.595414
+            },
+            {
+                "beginSample": "70248",
+                "endSample": "359981",
+                "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:2",
+                "lowerHz": 2491820030.553922,
+                "name": "bpsk",
+                "upperHz": 2492454138.891255
+            },
+            {
+                "beginSample": "173404",
+                "endSample": "345294",
+                "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:3",
+                "lowerHz": 2502885255.8388267,
+                "name": "64qam",
+                "upperHz": 2503155805.4215245
+            },
+            {
+                "beginSample": "39953",
+                "endSample": "89953",
+                "id": "annotation-2",
+                "lowerHz": 2501995332.555426,
+                "name": "Region 05",
+                "upperHz": 2505005834.3057175
+            },
+            {
+                "beginSample": "0",
+                "endSample": "0",
+                "id": "detection:15e94fad04542a9fef52b785ab47de372a98d011887087a81c19b43dd3db6c22",
+                "lowerHz": 0,
+                "name": "系统链路夹具（非模型）",
+                "upperHz": 0
+            },
+            {
+                "beginSample": "0",
+                "endSample": "0",
+                "id": "detection:5682ddc5e3764b2e053089ec3bde26aa8ccb337675d63f499f143d5ad8ca55ff",
+                "lowerHz": 0,
+                "name": "系统链路夹具（非模型）",
+                "upperHz": 0
+            },
+            {
+                "beginSample": "0",
+                "endSample": "0",
+                "id": "detection:b5a7699a26edb4faf093ceef29debf097a675cf90c9ebc75067c466459eb97e7",
+                "lowerHz": 0,
+                "name": "系统链路夹具（非模型）",
+                "upperHz": 0
+            },
+            {
+                "beginSample": "49053",
+                "endSample": "364497",
+                "id": "detection:28159369d719e068604fee18b489d5682a78f83b0058bddc50d4bc7938cfeaf0",
+                "lowerHz": 2492001800.5371094,
+                "name": "FFSCN IQ 检测",
+                "upperHz": 2492770843.5058594
+            },
+            {
+                "beginSample": "59313",
+                "endSample": "354511",
+                "id": "detection:30c26df368234d66caeb05947e956b183638bb5b34f9a1f45af4e6497f5a4397",
+                "lowerHz": 2502018280.029297,
+                "name": "FFSCN IQ 检测",
+                "upperHz": 2502284393.310547
+            },
+            {
+                "beginSample": "16155",
+                "endSample": "400000",
+                "id": "detection:9ae1802d564264a53139865e5733c956ebe1f59b54ad9c7a7e648972ef3ab49d",
+                "lowerHz": 2502884063.720703,
+                "name": "FFSCN IQ 检测",
+                "upperHz": 2503156280.517578
+            },
+            {
+                "beginSample": "20000",
+                "endSample": "360000",
+                "id": "detection:a2fa816c6f3ba2657c01f56a2011da508e25a998eae8004d346cfe33793c2954",
+                "lowerHz": 2492210540.7714844,
+                "name": "FFSCN IQ 检测",
+                "upperHz": 2492571563.720703
+            },
+            {
+                "beginSample": "40000",
+                "endSample": "360000",
+                "id": "detection:d61379b14f8b19467f40fc4aefb1bcbe8d1958fc69975199be479580230eb9c5",
+                "lowerHz": 2502044219.970703,
+                "name": "FFSCN IQ 检测",
+                "upperHz": 2502262420.654297
+            },
+            {
+                "beginSample": "160000",
+                "endSample": "360000",
+                "id": "detection:bd99dc517968938620a8eddc369d05f996efaf6299b35e866a2086d90562eaab",
+                "lowerHz": 2502902984.6191406,
+                "name": "FFSCN IQ 检测",
+                "upperHz": 2503134307.861328
+            },
+            {
+                "beginSample": "20000",
+                "endSample": "40000",
+                "id": "annotation-3",
+                "lowerHz": 2495997666.277713,
+                "name": "Region 15",
+                "upperHz": 2498004667.444574
+            }
+        ],
+        "selectedMarkIds": [
+            "annotation-3"
+        ],
+        "windowFullScreen": true,
+        "windowScreen": {
+            "availableLogicalGeometry": {
+                "height": 1392,
+                "width": 2560,
+                "x": 0,
+                "y": 0
+            },
+            "connectedIndex": 1,
+            "deviceName": "\\\\.\\DISPLAY2",
+            "devicePixelRatio": 1.5,
+            "logicalDpi": 96,
+            "logicalGeometry": {
+                "height": 1440,
+                "width": 2560,
+                "x": 0,
+                "y": 0
+            },
+            "name": "U27U2D",
+            "physicalDpi": 108.88753290260826,
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "primary": true
+        }
+    },
+    "scenes": [
+        {
+            "absoluteFrequency": true,
+            "actualMainPlotHeight": 857,
+            "annotationLayers": [
+                {
+                    "checked": true,
+                    "index": 0,
+                    "label": "原始标签"
+                },
+                {
+                    "checked": true,
+                    "index": 1,
+                    "label": "手动"
+                },
+                {
+                    "checked": true,
+                    "index": 2,
+                    "label": "算法"
+                }
+            ],
+            "auxiliaryMode": "waveform",
+            "captureKind": "native-main-window",
+            "capturedDevicePixelRatio": 1.5,
+            "capturedLogicalWidgetSize": {
+                "height": 1440,
+                "width": 2560
+            },
+            "capturedPixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "capturedScreen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 0,
+                    "y": 0
+                },
+                "connectedIndex": 1,
+                "deviceName": "\\\\.\\DISPLAY2",
+                "devicePixelRatio": 1.5,
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 0,
+                    "y": 0
+                },
+                "name": "U27U2D",
+                "physicalDpi": 108.88753290260826,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": true
+            },
+            "charts": [
+                {
+                    "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+                    "completedFrames": 20,
+                    "gpuReady": true,
+                    "heatmapTextureReusedFromPreviousScene": false,
+                    "logicalWidgetSize": {
+                        "height": 48,
+                        "width": 1870
+                    },
+                    "name": "navigationPlot",
+                    "newFramesSincePreviousScene": 20,
+                    "newTextureUploadsSincePreviousScene": 0,
+                    "plotRectHeight": 48,
+                    "powerCacheReusedFromPreviousScene": false,
+                    "powerGenerations": 0,
+                    "renderStatistics": {
+                        "acceptedHeatmapPreview": false,
+                        "actualFrameInputSamples": "2048",
+                        "actualSpectralFrames": 194,
+                        "analysisError": "",
+                        "analysisPoints": 2048,
+                        "binHz": 9765.625,
+                        "colorTransformGenerations": 0,
+                        "committedGeneration": 3,
+                        "cpuWallTimings": {
+                            "chartDrawCalls": 7,
+                            "chartDrawCallsSkipped": 0,
+                            "chartPaletteUploads": 4,
+                            "chartVertexUploads": 1,
+                            "gpuTimestamps": false,
+                            "heatmapDrawCalls": 0,
+                            "heatmapUploadPreparation": {
+                                "lastMs": 0,
+                                "maxMs": 0,
+                                "samples": 0,
+                                "totalMs": 0
+                            },
+                            "lastChartDrawLoopIterations": 1,
+                            "lastChartDrawRecordCount": 1,
+                            "lastChartDrawStage": 6,
+                            "lastChartVertexCount": 15618,
+                            "lastRenderHeight": 48,
+                            "lastRenderWidth": 1870,
+                            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                            "overlayImagePreparation": {
+                                "lastMs": 0.0695,
+                                "maxMs": 0.0812,
+                                "samples": 11,
+                                "totalMs": 0.4078
+                            },
+                            "overlayPainter": {
+                                "lastMs": 0.4361,
+                                "maxMs": 0.6974,
+                                "samples": 11,
+                                "totalMs": 3.132
+                            },
+                            "overlayUploadEnqueue": {
+                                "lastMs": 0.0045,
+                                "maxMs": 0.0776,
+                                "samples": 11,
+                                "totalMs": 0.15289999999999998
+                            },
+                            "paintEventIncludingQtSubmit": {
+                                "lastMs": 0.8588,
+                                "maxMs": 2.1965,
+                                "samples": 13,
+                                "totalMs": 10.372200000000001
+                            },
+                            "paletteUploads": 2,
+                            "prepareUploads": {
+                                "lastMs": 0.5138,
+                                "maxMs": 0.8916,
+                                "samples": 13,
+                                "totalMs": 3.9059999999999997
+                            },
+                            "render": {
+                                "lastMs": 0.5345,
+                                "maxMs": 0.9687,
+                                "samples": 13,
+                                "totalMs": 4.279
+                            },
+                            "renderInvocations": 13,
+                            "unit": "ms"
+                        },
+                        "cursorPinned": false,
+                        "curveCacheHits": 6,
+                        "curvePathElements": 0,
+                        "curveRasterMethod": "QRhi dynamic vertex buffer",
+                        "curveReductions": 0,
+                        "curveSourceGenerations": 1,
+                        "drawnLineSegments": 1562,
+                        "drawnPoints": 3688,
+                        "effectiveOverlap": 0.5,
+                        "framePsd": false,
+                        "generation": 3,
+                        "gpuChartDrawCalls": 7,
+                        "gpuDataDrawCalls": 7,
+                        "gpuDataRenderer": "QRhi shader / vertex buffer",
+                        "gpuHeatmapDrawCalls": 0,
+                        "gpuPaletteUploads": 2,
+                        "gpuUploadsPending": false,
+                        "gpuVertexUploads": 1,
+                        "heatmapCacheHits": 0,
+                        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                        "heatmapHeight": -1,
+                        "heatmapWidth": -1,
+                        "inverseCursorDrawCalls": 0,
+                        "lastMatrixMs": 0,
+                        "matrixReductions": 0,
+                        "noiseBandwidthHz": 14655.593551538814,
+                        "overlayUploads": 11,
+                        "paddedFrames": 0,
+                        "pinnedFrequencyHz": 0,
+                        "pinnedSourceSample": "0",
+                        "powerGenerations": 0,
+                        "quality": "settled",
+                        "requestedGeneration": 3,
+                        "requestedHeatmapHeight": -1,
+                        "requestedHeatmapWidth": -1,
+                        "requestedPixels": 1,
+                        "requiredSeconds": 0.0001024,
+                        "samplePointCount": 0,
+                        "samplePointsVisible": false,
+                        "settled": true,
+                        "sourcePoints": 3688,
+                        "staleDrops": 0,
+                        "textureUploads": 0,
+                        "workerIdle": true
+                    },
+                    "textureUploads": 0,
+                    "visible": true
+                },
+                {
+                    "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+                    "completedFrames": 20,
+                    "gpuReady": true,
+                    "heatmapTextureReusedFromPreviousScene": false,
+                    "logicalWidgetSize": {
+                        "height": 171,
+                        "width": 1870
+                    },
+                    "name": "auxPlot",
+                    "newFramesSincePreviousScene": 20,
+                    "newTextureUploadsSincePreviousScene": 0,
+                    "plotRectHeight": 125,
+                    "powerCacheReusedFromPreviousScene": false,
+                    "powerGenerations": 0,
+                    "renderStatistics": {
+                        "acceptedHeatmapPreview": false,
+                        "actualFrameInputSamples": "2048",
+                        "actualSpectralFrames": 194,
+                        "analysisError": "",
+                        "analysisPoints": 2048,
+                        "binHz": 9765.625,
+                        "colorTransformGenerations": 0,
+                        "committedGeneration": 5,
+                        "cpuWallTimings": {
+                            "chartDrawCalls": 7,
+                            "chartDrawCallsSkipped": 0,
+                            "chartPaletteUploads": 5,
+                            "chartVertexUploads": 1,
+                            "gpuTimestamps": false,
+                            "heatmapDrawCalls": 0,
+                            "heatmapUploadPreparation": {
+                                "lastMs": 0,
+                                "maxMs": 0,
+                                "samples": 0,
+                                "totalMs": 0
+                            },
+                            "lastChartDrawLoopIterations": 1,
+                            "lastChartDrawRecordCount": 1,
+                            "lastChartDrawStage": 6,
+                            "lastChartVertexCount": 35188,
+                            "lastRenderHeight": 171,
+                            "lastRenderWidth": 1870,
+                            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                            "overlayImagePreparation": {
+                                "lastMs": 0.279,
+                                "maxMs": 0.4908,
+                                "samples": 11,
+                                "totalMs": 2.3034
+                            },
+                            "overlayPainter": {
+                                "lastMs": 1.4764,
+                                "maxMs": 3.302,
+                                "samples": 11,
+                                "totalMs": 13.1589
+                            },
+                            "overlayUploadEnqueue": {
+                                "lastMs": 0.0035,
+                                "maxMs": 0.5834,
+                                "samples": 11,
+                                "totalMs": 0.8183999999999999
+                            },
+                            "paintEventIncludingQtSubmit": {
+                                "lastMs": 2.7634,
+                                "maxMs": 5.8916,
+                                "samples": 14,
+                                "totalMs": 38.596999999999994
+                            },
+                            "paletteUploads": 2,
+                            "prepareUploads": {
+                                "lastMs": 1.8738,
+                                "maxMs": 3.6309,
+                                "samples": 14,
+                                "totalMs": 19.047399999999996
+                            },
+                            "render": {
+                                "lastMs": 1.9005,
+                                "maxMs": 3.6643,
+                                "samples": 14,
+                                "totalMs": 19.8357
+                            },
+                            "renderInvocations": 14,
+                            "unit": "ms"
+                        },
+                        "cursorPinned": false,
+                        "curveCacheHits": 14,
+                        "curvePathElements": 3520,
+                        "curveRasterMethod": "QRhi dynamic vertex buffer",
+                        "curveReductions": 1,
+                        "curveSourceGenerations": 2,
+                        "drawnLineSegments": 3519,
+                        "drawnPoints": 3520,
+                        "effectiveOverlap": 0.5,
+                        "framePsd": false,
+                        "generation": 5,
+                        "gpuChartDrawCalls": 7,
+                        "gpuDataDrawCalls": 7,
+                        "gpuDataRenderer": "QRhi shader / vertex buffer",
+                        "gpuHeatmapDrawCalls": 0,
+                        "gpuPaletteUploads": 2,
+                        "gpuUploadsPending": false,
+                        "gpuVertexUploads": 1,
+                        "heatmapCacheHits": 0,
+                        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                        "heatmapHeight": -1,
+                        "heatmapWidth": -1,
+                        "inverseCursorDrawCalls": 14,
+                        "lastMatrixMs": 0,
+                        "matrixReductions": 0,
+                        "noiseBandwidthHz": 14655.593551538814,
+                        "overlayUploads": 11,
+                        "paddedFrames": 0,
+                        "pinnedFrequencyHz": 0,
+                        "pinnedSourceSample": "0",
+                        "powerGenerations": 0,
+                        "quality": "settled",
+                        "requestedGeneration": 5,
+                        "requestedHeatmapHeight": -1,
+                        "requestedHeatmapWidth": -1,
+                        "requestedPixels": 1,
+                        "requiredSeconds": 0.0001024,
+                        "samplePointCount": 0,
+                        "samplePointsVisible": false,
+                        "settled": true,
+                        "sourcePoints": 3520,
+                        "staleDrops": 0,
+                        "textureUploads": 0,
+                        "workerIdle": true
+                    },
+                    "textureUploads": 0,
+                    "visible": true
+                },
+                {
+                    "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+                    "completedFrames": 20,
+                    "gpuReady": true,
+                    "heatmapTextureReusedFromPreviousScene": false,
+                    "logicalWidgetSize": {
+                        "height": 903,
+                        "width": 1870
+                    },
+                    "name": "mainPlot",
+                    "newFramesSincePreviousScene": 20,
+                    "newTextureUploadsSincePreviousScene": 1,
+                    "plotRectHeight": 857,
+                    "powerCacheReusedFromPreviousScene": false,
+                    "powerGenerations": 2,
+                    "renderStatistics": {
+                        "acceptedHeatmapPreview": false,
+                        "actualFrameInputSamples": "2048",
+                        "actualSpectralFrames": 194,
+                        "analysisError": "",
+                        "analysisPoints": 2048,
+                        "binHz": 9765.625,
+                        "colorTransformGenerations": 1,
+                        "committedGeneration": 4,
+                        "cpuWallTimings": {
+                            "chartDrawCalls": 0,
+                            "chartDrawCallsSkipped": 0,
+                            "chartPaletteUploads": 3,
+                            "chartVertexUploads": 0,
+                            "gpuTimestamps": false,
+                            "heatmapDrawCalls": 6,
+                            "heatmapUploadPreparation": {
+                                "lastMs": 1.1825,
+                                "maxMs": 1.1825,
+                                "samples": 1,
+                                "totalMs": 1.1825
+                            },
+                            "lastChartDrawLoopIterations": 0,
+                            "lastChartDrawRecordCount": 0,
+                            "lastChartDrawStage": 0,
+                            "lastChartVertexCount": 0,
+                            "lastRenderHeight": 903,
+                            "lastRenderWidth": 1870,
+                            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                            "overlayImagePreparation": {
+                                "lastMs": 0.5527,
+                                "maxMs": 2.2401,
+                                "samples": 11,
+                                "totalMs": 7.784800000000001
+                            },
+                            "overlayPainter": {
+                                "lastMs": 13.9068,
+                                "maxMs": 16.1128,
+                                "samples": 11,
+                                "totalMs": 92.38860000000001
+                            },
+                            "overlayUploadEnqueue": {
+                                "lastMs": 0.0043,
+                                "maxMs": 0.2394,
+                                "samples": 11,
+                                "totalMs": 0.5162
+                            },
+                            "paintEventIncludingQtSubmit": {
+                                "lastMs": 18.456,
+                                "maxMs": 22.0891,
+                                "samples": 13,
+                                "totalMs": 171.8935
+                            },
+                            "paletteUploads": 2,
+                            "prepareUploads": {
+                                "lastMs": 15.3625,
+                                "maxMs": 17.1991,
+                                "samples": 13,
+                                "totalMs": 110.3693
+                            },
+                            "render": {
+                                "lastMs": 15.4016,
+                                "maxMs": 17.2225,
+                                "samples": 13,
+                                "totalMs": 110.94179999999997
+                            },
+                            "renderInvocations": 13,
+                            "unit": "ms"
+                        },
+                        "cursorPinned": false,
+                        "curveCacheHits": 0,
+                        "curvePathElements": 0,
+                        "curveRasterMethod": "QRhi heatmap texture",
+                        "curveReductions": 0,
+                        "curveSourceGenerations": 0,
+                        "drawnLineSegments": 0,
+                        "drawnPoints": 322500,
+                        "effectiveOverlap": 0.5,
+                        "framePsd": false,
+                        "generation": 4,
+                        "gpuChartDrawCalls": 0,
+                        "gpuDataDrawCalls": 6,
+                        "gpuDataRenderer": "QRhi shader / vertex buffer",
+                        "gpuHeatmapDrawCalls": 6,
+                        "gpuPaletteUploads": 2,
+                        "gpuUploadsPending": false,
+                        "gpuVertexUploads": 0,
+                        "heatmapCacheHits": 0,
+                        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                        "heatmapHeight": 430,
+                        "heatmapWidth": 750,
+                        "inverseCursorDrawCalls": 13,
+                        "lastMatrixMs": 49.942,
+                        "matrixReductions": 0,
+                        "noiseBandwidthHz": 14655.593551538814,
+                        "overlayUploads": 11,
+                        "paddedFrames": 0,
+                        "pinnedFrequencyHz": 0,
+                        "pinnedSourceSample": "0",
+                        "powerGenerations": 2,
+                        "quality": "settled",
+                        "requestedGeneration": 4,
+                        "requestedHeatmapHeight": 430,
+                        "requestedHeatmapWidth": 750,
+                        "requestedPixels": 322500,
+                        "requiredSeconds": 0.0001024,
+                        "samplePointCount": 0,
+                        "samplePointsVisible": false,
+                        "settled": true,
+                        "sourcePoints": 397312,
+                        "staleDrops": 1,
+                        "textureUploads": 1,
+                        "workerIdle": true
+                    },
+                    "textureUploads": 1,
+                    "visible": true
+                }
+            ],
+            "colorScale": false,
+            "creating": false,
+            "devicePixelRatio": 1.5,
+            "files": 2,
+            "logicalWindowSize": {
+                "height": 1440,
+                "width": 2560
+            },
+            "mainMode": "time-frequency",
+            "mainWidgetHeight": 903,
+            "marks": [
+                {
+                    "beginSample": "51107",
+                    "endSample": "343277",
+                    "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:0",
+                    "lowerHz": 2502021605.9327126,
+                    "name": "64qam",
+                    "upperHz": 2502282009.1227803
+                },
+                {
+                    "beginSample": "38498",
+                    "endSample": "353824",
+                    "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1",
+                    "lowerHz": 2492059313.3481555,
+                    "name": "2gmsk",
+                    "upperHz": 2492749655.595414
+                },
+                {
+                    "beginSample": "70248",
+                    "endSample": "359981",
+                    "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:2",
+                    "lowerHz": 2491820030.553922,
+                    "name": "bpsk",
+                    "upperHz": 2492454138.891255
+                },
+                {
+                    "beginSample": "173404",
+                    "endSample": "345294",
+                    "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:3",
+                    "lowerHz": 2502885255.8388267,
+                    "name": "64qam",
+                    "upperHz": 2503155805.4215245
+                },
+                {
+                    "beginSample": "39953",
+                    "endSample": "89953",
+                    "id": "annotation-2",
+                    "lowerHz": 2501995332.555426,
+                    "name": "Region 05",
+                    "upperHz": 2505005834.3057175
+                },
+                {
+                    "beginSample": "0",
+                    "endSample": "0",
+                    "id": "detection:15e94fad04542a9fef52b785ab47de372a98d011887087a81c19b43dd3db6c22",
+                    "lowerHz": 0,
+                    "name": "系统链路夹具（非模型）",
+                    "upperHz": 0
+                },
+                {
+                    "beginSample": "0",
+                    "endSample": "0",
+                    "id": "detection:5682ddc5e3764b2e053089ec3bde26aa8ccb337675d63f499f143d5ad8ca55ff",
+                    "lowerHz": 0,
+                    "name": "系统链路夹具（非模型）",
+                    "upperHz": 0
+                },
+                {
+                    "beginSample": "0",
+                    "endSample": "0",
+                    "id": "detection:b5a7699a26edb4faf093ceef29debf097a675cf90c9ebc75067c466459eb97e7",
+                    "lowerHz": 0,
+                    "name": "系统链路夹具（非模型）",
+                    "upperHz": 0
+                },
+                {
+                    "beginSample": "49053",
+                    "endSample": "364497",
+                    "id": "detection:28159369d719e068604fee18b489d5682a78f83b0058bddc50d4bc7938cfeaf0",
+                    "lowerHz": 2492001800.5371094,
+                    "name": "FFSCN IQ 检测",
+                    "upperHz": 2492770843.5058594
+                },
+                {
+                    "beginSample": "59313",
+                    "endSample": "354511",
+                    "id": "detection:30c26df368234d66caeb05947e956b183638bb5b34f9a1f45af4e6497f5a4397",
+                    "lowerHz": 2502018280.029297,
+                    "name": "FFSCN IQ 检测",
+                    "upperHz": 2502284393.310547
+                },
+                {
+                    "beginSample": "16155",
+                    "endSample": "400000",
+                    "id": "detection:9ae1802d564264a53139865e5733c956ebe1f59b54ad9c7a7e648972ef3ab49d",
+                    "lowerHz": 2502884063.720703,
+                    "name": "FFSCN IQ 检测",
+                    "upperHz": 2503156280.517578
+                },
+                {
+                    "beginSample": "20000",
+                    "endSample": "360000",
+                    "id": "detection:a2fa816c6f3ba2657c01f56a2011da508e25a998eae8004d346cfe33793c2954",
+                    "lowerHz": 2492210540.7714844,
+                    "name": "FFSCN IQ 检测",
+                    "upperHz": 2492571563.720703
+                },
+                {
+                    "beginSample": "40000",
+                    "endSample": "360000",
+                    "id": "detection:d61379b14f8b19467f40fc4aefb1bcbe8d1958fc69975199be479580230eb9c5",
+                    "lowerHz": 2502044219.970703,
+                    "name": "FFSCN IQ 检测",
+                    "upperHz": 2502262420.654297
+                },
+                {
+                    "beginSample": "160000",
+                    "endSample": "360000",
+                    "id": "detection:bd99dc517968938620a8eddc369d05f996efaf6299b35e866a2086d90562eaab",
+                    "lowerHz": 2502902984.6191406,
+                    "name": "FFSCN IQ 检测",
+                    "upperHz": 2503134307.861328
+                },
+                {
+                    "beginSample": "20000",
+                    "endSample": "40000",
+                    "id": "annotation-3",
+                    "lowerHz": 2495997666.277713,
+                    "name": "Region 15",
+                    "upperHz": 2498004667.444574
+                }
+            ],
+            "parentDevicePixelRatio": 1.5,
+            "pass": true,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/U4/assets/availability-r1/no-compatible-gpu/01-label-manual-history-without-inference.png",
+            "requiresRenderedData": true,
+            "scene": "01-label-manual-history-without-inference",
+            "screen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 0,
+                    "y": 0
+                },
+                "connectedIndex": 1,
+                "deviceName": "\\\\.\\DISPLAY2",
+                "devicePath": "\\\\.\\DISPLAY2",
+                "devicePixelRatio": 1.5,
+                "friendlyName": "U27U2D",
+                "identityMethod": "Windows active DisplayConfig source/target",
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 0,
+                    "y": 0
+                },
+                "monitorDevicePath": "\\\\?\\DISPLAY#AOC2703#5&a55c4b7&0&UID517#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+                "name": "U27U2D",
+                "physicalDpi": 108.88753290260826,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": true
+            },
+            "selectedMarkIds": [
+                "annotation-3"
+            ],
+            "sourceCounts": {
+                "algorithm": 9,
+                "importedLabels": 4,
+                "manual": 2,
+                "total": 15
+            },
+            "windowFullScreen": true,
+            "windowScreen": {
+                "availableLogicalGeometry": {
+                    "height": 1392,
+                    "width": 2560,
+                    "x": 0,
+                    "y": 0
+                },
+                "connectedIndex": 1,
+                "deviceName": "\\\\.\\DISPLAY2",
+                "devicePixelRatio": 1.5,
+                "logicalDpi": 96,
+                "logicalGeometry": {
+                    "height": 1440,
+                    "width": 2560,
+                    "x": 0,
+                    "y": 0
+                },
+                "name": "U27U2D",
+                "physicalDpi": 108.88753290260826,
+                "pixelSize": {
+                    "height": 2160,
+                    "width": 3840
+                },
+                "primary": true
+            }
+        }
+    ],
+    "screen": {
+        "availableLogicalGeometry": {
+            "height": 1392,
+            "width": 2560,
+            "x": 0,
+            "y": 0
+        },
+        "connectedIndex": 1,
+        "deviceName": "\\\\.\\DISPLAY2",
+        "devicePath": "\\\\.\\DISPLAY2",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "U27U2D",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+            "height": 1440,
+            "width": 2560,
+            "x": 0,
+            "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#AOC2703#5&a55c4b7&0&UID517#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "U27U2D",
+        "physicalDpi": 108.88753290260826,
+        "pixelSize": {
+            "height": 2160,
+            "width": 3840
+        },
+        "primary": true
+    }
+}

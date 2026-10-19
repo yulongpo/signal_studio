@@ -1,0 +1,22 @@
+{
+  "node": "U4",
+  "recordedUtc": "2026-10-18T18:33:19.097873+00:00",
+  "pass": true,
+  "projects": [
+    {
+      "originalArchiveDirectory": "native/native-debug-r1/wideband-project-d2239a67-7e07-4084-80b2-736c70e9cb1b",
+      "archiveDirectory": "projects/debug",
+      "files": 30,
+      "unchangedBytes": true,
+      "reason": "Shorter Windows archive paths; internal project references are unchanged"
+    },
+    {
+      "originalArchiveDirectory": "native/native-release-r1/wideband-project-48eab3b0-fa72-4436-9118-02d51e6d967c",
+      "archiveDirectory": "projects/release",
+      "files": 39,
+      "unchangedBytes": true,
+      "reason": "Shorter Windows archive paths; internal project references are unchanged"
+    }
+  ],
+  "reportsKeepOriginalRuntimePaths": true
+}

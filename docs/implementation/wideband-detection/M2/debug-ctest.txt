@@ -1,0 +1,36 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+      Start  1: signal_studio_detection_store
+ 1/15 Test  #1: signal_studio_detection_store ......   Passed    1.50 sec
+      Start  2: signal_studio_detection_protocol
+ 2/15 Test  #2: signal_studio_detection_protocol ...   Passed    0.79 sec
+      Start  3: signal_studio_detection_task
+ 3/15 Test  #3: signal_studio_detection_task .......   Passed   11.24 sec
+      Start  4: signal_studio_detection_source
+ 4/15 Test  #4: signal_studio_detection_source .....   Passed    3.35 sec
+      Start  5: signal_studio_annotations
+ 5/15 Test  #5: signal_studio_annotations ..........   Passed    0.55 sec
+      Start  6: signal_studio_annotation_store
+ 6/15 Test  #6: signal_studio_annotation_store .....   Passed   28.33 sec
+      Start  7: signal_studio_label_import
+ 7/15 Test  #7: signal_studio_label_import .........   Passed   20.94 sec
+      Start  8: signal_studio_wav
+ 8/15 Test  #8: signal_studio_wav ..................   Passed    1.01 sec
+      Start  9: signal_studio_import
+ 9/15 Test  #9: signal_studio_import ...............   Passed    0.72 sec
+      Start 10: signal_studio_sample_format
+10/15 Test #10: signal_studio_sample_format ........   Passed    4.89 sec
+      Start 11: signal_studio_core
+11/15 Test #11: signal_studio_core .................   Passed    1.29 sec
+      Start 12: signal_studio_channel_processor
+12/15 Test #12: signal_studio_channel_processor ....   Passed    0.78 sec
+      Start 13: signal_studio_spectral_analysis
+13/15 Test #13: signal_studio_spectral_analysis ....   Passed    1.12 sec
+      Start 14: signal_studio_display_sampling
+14/15 Test #14: signal_studio_display_sampling .....   Passed    0.03 sec
+      Start 15: signal_studio_ui
+15/15 Test #15: signal_studio_ui ...................   Passed  208.78 sec
+
+100% tests passed, 0 tests failed out of 15
+
+Total Test time (real) = 285.33 sec

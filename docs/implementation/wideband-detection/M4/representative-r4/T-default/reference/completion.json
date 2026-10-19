@@ -1,0 +1,19 @@
+{
+  "schema": "signalstudio-m4-stage-completion-v1",
+  "stage": "reference",
+  "finishedAtUtc": "2026-10-14T02:28:43.517427+00:00",
+  "returnCode": 0,
+  "timedOut": false,
+  "failed": false,
+  "reason": "",
+  "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-noise\\T-default\\T00-00\\reference\\result.json",
+  "resultSha256": "a072b54b4b136288c9c1a8d89f5b0f7f33a6dffb0cdb77552b60d02acc9eee1a",
+  "wallSeconds": 10.069040699978359,
+  "mainProcessPeakRssBytes": 1450618880,
+  "wholeDeviceGpuPeakMemoryUsedMiB": {
+    "0": 2797
+  },
+  "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+  "processTreeContainment": "Windows kill-on-close Job",
+  "resumed": false
+}

@@ -1,0 +1,66 @@
+{
+  "designId": "NB-A1.1 DL",
+  "sourceDirectory": "D:\\project\\signal_studio_原型设计\\Signal_Studio_Narrowband_Prototype_A1.1_DL_Package\\Signal_Studio_NB_A1.1_DL",
+  "files": [
+    {
+      "path": "README.md",
+      "sizeBytes": 2530,
+      "sha256": "8b8f5ea6c1d42a7b2e0fe12fa31f5b186248b8ca08e806feb3b2ecf0adb245bb"
+    },
+    {
+      "path": "Signal_Studio_Narrowband_Interaction_Spec_A1.1_DL.md",
+      "sizeBytes": 30385,
+      "sha256": "c37f7e5c0dbcc660eaf0faa044932fa992e5846958a27ea7482951faf65e8912"
+    },
+    {
+      "path": "Signal_Studio_Narrowband_Prototype_A1.1_DL.html",
+      "sizeBytes": 91939,
+      "sha256": "ac8cfc595bfb4e9d270bf1e003fc0bf67946a6e95b850359fd61ea1c6fe7b034"
+    },
+    {
+      "path": "model_manifest_example.json",
+      "sizeBytes": 683,
+      "sha256": "d2541d35c2decdd1765070cff184e6b7295d2bf2d5600cf944bdc5b9f7a102d8"
+    },
+    {
+      "path": "screenshots\\create_channel.png",
+      "sizeBytes": 208776,
+      "sha256": "30040ae58dd830e545a01678bfe463912ab195503abaaf08187808d1dbd97550"
+    },
+    {
+      "path": "screenshots\\dl_2560x1440_dpr1.5_browser.png",
+      "sizeBytes": 1589911,
+      "sha256": "de58c55f8d33f422413842579ed8826bcbf05d9b5b65bb56a62a2820c72afaf1"
+    },
+    {
+      "path": "screenshots\\dl_model_manager.png",
+      "sizeBytes": 283206,
+      "sha256": "cad91154628150c3207eebdade9917ff47215b9960ff7ba187abe2e78e750e60"
+    },
+    {
+      "path": "screenshots\\dl_pending.png",
+      "sizeBytes": 364035,
+      "sha256": "97ceeea20d40532237a5211fc89f1f6beac889577daa28b027e63b0b861ea01a"
+    },
+    {
+      "path": "screenshots\\dl_results.png",
+      "sizeBytes": 394280,
+      "sha256": "3655e63cd730cdd4e4d7bb6f1a93f1862fa3ad7dde25d6e8f9e5cd414d166485"
+    },
+    {
+      "path": "screenshots\\nb_modulation.png",
+      "sizeBytes": 389865,
+      "sha256": "9fc30fb109ea5662824eafd1bd1b18bbc62ddddac9f4ce99a07108d10cab59c9"
+    },
+    {
+      "path": "screenshots\\nb_observe.png",
+      "sizeBytes": 449247,
+      "sha256": "8e5891f08d9bb12e8b098063538782808bc3d624ea3a253b16419426219d4a96"
+    },
+    {
+      "path": "screenshots\\wideband_link.png",
+      "sizeBytes": 305083,
+      "sha256": "41a81f05ebd62ccef07bccd69988b017980c0b632865394ca2d2c65c15ddeab9"
+    }
+  ]
+}

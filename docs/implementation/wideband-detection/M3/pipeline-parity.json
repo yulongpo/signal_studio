@@ -1,0 +1,135 @@
+{
+  "schema": "signalstudio-native-pipeline-parity-v1",
+  "wavSha256": "88f96c6deab9e435db8f111463092fdae9b800aeb3cbccd82d7426551d52d9cd",
+  "checkpointSha256": "acd997957dd85b7fc560897874b575d4776e80270d7e377d1de7559e513e40e0",
+  "profiles": [
+    {
+      "profileId": "ffscn-gui-iq-v1",
+      "source": {
+        "oracle": "Torch CPU actual WAV independent DSP",
+        "densityMaxErrorDb": 0.00115966796875,
+        "inputMaxError": 0.0001583099365234375,
+        "densityToleranceDb": 0.02,
+        "normalizationTolerance": 0.002,
+        "allElementsCompared": true,
+        "passed": true
+      },
+      "modelOracle": "Independent PyTorch CUDA frozen epoch-1200 graph",
+      "sameInputSha256": "92e91d42ccb643f0a82d87a278140d61f91130c7fc1cec4a77b724ec6a15d107",
+      "heads": {
+        "hm": {
+          "shape": [
+            16384
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 9.059906005859375e-06,
+          "meanAbsolute": 3.616908728076851e-08,
+          "maxRelative": 0.0002904876309912652,
+          "outsideTolerance": 0,
+          "elements": 16384,
+          "passed": true
+        },
+        "bw": {
+          "shape": [
+            16384
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 0.0037841796875,
+          "meanAbsolute": 0.0012580459006130695,
+          "maxRelative": 3.6168279621051624e-05,
+          "outsideTolerance": 0,
+          "elements": 16384,
+          "passed": true
+        },
+        "off": {
+          "shape": [
+            16384
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 3.6656856536865234e-06,
+          "meanAbsolute": 1.4814486348768696e-07,
+          "maxRelative": 8.048325980780646e-06,
+          "outsideTolerance": 0,
+          "elements": 16384,
+          "passed": true
+        }
+      },
+      "candidates": {
+        "referenceCounts": [
+          6
+        ],
+        "actualCounts": [
+          6
+        ],
+        "countsMatch": true,
+        "maxOrderedEdgeBins": 0.0004887580871582031,
+        "maxOrderedScore": 2.384185791015625e-07,
+        "passed": true,
+        "note": "Ordered decoded candidates; not label-based accuracy"
+      },
+      "passed": true
+    },
+    {
+      "profileId": "scn-max-psd-v1",
+      "source": {
+        "oracle": "Torch CPU actual WAV independent DSP",
+        "densityMaxErrorDb": 0.0047760009765625,
+        "inputMaxError": 0.0047760009765625,
+        "densityToleranceDb": 0.02,
+        "normalizationTolerance": 0.02,
+        "allElementsCompared": true,
+        "passed": true
+      },
+      "modelOracle": "Python TensorRT same frozen engine; maximum-only",
+      "sameInputSha256": "c04074a3776218d593b321e21337d2a97a1a8eec4fd8b44234114523f81de8a3",
+      "heads": {
+        "hm": {
+          "shape": [
+            8192
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 0.0,
+          "meanAbsolute": 0.0,
+          "maxRelative": 0.0,
+          "outsideTolerance": 0,
+          "elements": 8192,
+          "passed": true
+        },
+        "bw": {
+          "shape": [
+            8192
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 0.0,
+          "meanAbsolute": 0.0,
+          "maxRelative": 0.0,
+          "outsideTolerance": 0,
+          "elements": 8192,
+          "passed": true
+        },
+        "off": {
+          "shape": [
+            8192
+          ],
+          "dtype": "float32",
+          "finite": true,
+          "maxAbsolute": 0.0,
+          "meanAbsolute": 0.0,
+          "maxRelative": 0.0,
+          "outsideTolerance": 0,
+          "elements": 8192,
+          "passed": true
+        }
+      },
+      "candidates": null,
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "boundary": "L1 full first-window tensors and L2 identical-input heads; no time-event accuracy claim"
+}

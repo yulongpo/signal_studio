@@ -1,0 +1,35 @@
+{
+  "files": [
+    {
+      "file": "result.json",
+      "sha256": "4304796fd078952dcd326d48f99702eca57b519a0114040e4fc09da3752511f1"
+    },
+    {
+      "file": "completion.json",
+      "sha256": "3c6e3217ecbac42528ea1fbe8fa32791bdcdc3685db4cf45052d032bd0437992"
+    },
+    {
+      "file": "process.log",
+      "sha256": "a93ce3f8159d11219e23795d536acbb1ce0e49b14e901da18e6b5d6cdaec73f8"
+    },
+    {
+      "file": "manifest.json",
+      "sha256": "fe285acf972ba339b88ecdabdc047abff3299c5ba56b95e26f6a09f1ada0fa5b"
+    }
+  ],
+  "retries": 0,
+  "scope": "T-default",
+  "chunks": 14,
+  "nativeReturnCode": 1,
+  "executionFreezeSha256": "7e2d9fa220e766be60fd5ece80aed79c66749e09ae2821b22baff4269ab6ad8a",
+  "completedWindows": "28",
+  "exactRecovery": true,
+  "computationPhase": "reading",
+  "error": "Cannot atomically publish detection data: Unknown error",
+  "eligibleWindows": "799",
+  "completeScope": false,
+  "sampleId": "T07-04",
+  "timedOut": false,
+  "evaluationPolicy": "failed file: zero predictions, all truth retained",
+  "failureCauseKnown": false
+}

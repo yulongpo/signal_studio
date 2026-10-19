@@ -1,0 +1,486 @@
+{
+  "schema": "signalstudio-control-model-probes-v1",
+  "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+  "tensorRt": "10.11.0.33",
+  "realWav": "D:\\project\\FFSCN_train2\\FFSCN_TEST_GUI\\test_data\\data\\20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+  "realWavSha256": "1757d92722e78776a6877b4fe5f29734fd2975989aaef1d52f8103aaa310b18b",
+  "assets": {
+    "scn_model.engine": "ae89d04332758d466846b71afc849c446500a82a8bd74fd8c671927247746627",
+    "ffscn_17.engine": "dd88ab057d5af35e412447428de1a0163f79d0d7ac6a5c1a86308b898d50fd81",
+    "ffscn_17.onnx": "113d9d64955695790647c26f0d426aa96216f2fc744423a12f21198720fd5867"
+  },
+  "scn": {
+    "status": "maximum-spectrum-forward-tested-no-accuracy-claim",
+    "io": [
+      {
+        "name": "resnet_32_input:0",
+        "shape": [
+          1,
+          32768,
+          1,
+          1
+        ],
+        "dtype": "DataType.FLOAT"
+      },
+      {
+        "name": "Identity:0",
+        "shape": [
+          1,
+          8192,
+          1,
+          1
+        ],
+        "dtype": "DataType.FLOAT"
+      },
+      {
+        "name": "Identity_1:0",
+        "shape": [
+          1,
+          8192,
+          1,
+          1
+        ],
+        "dtype": "DataType.FLOAT"
+      },
+      {
+        "name": "Identity_2:0",
+        "shape": [
+          1,
+          8192,
+          1,
+          1
+        ],
+        "dtype": "DataType.FLOAT"
+      }
+    ],
+    "accumulatedFrames": 16,
+    "normalization": "per-frequency-window minmax [0,1]",
+    "meanSpectrumInferenceCalls": 0,
+    "maximumSpectrumInferenceCalls": 3,
+    "sourceSpectrumUnit": "dBFS/Hz from actual IQ, not calibrated dBm",
+    "probes": [
+      {
+        "windowStartBin": 0,
+        "inputShape": [
+          1,
+          32768,
+          1,
+          1
+        ],
+        "finiteOutputs": true,
+        "outputRanges": [
+          [
+            0.0,
+            2363.916748046875
+          ],
+          [
+            0.0,
+            0.9999929666519165
+          ],
+          [
+            2.5636974160978497e-17,
+            0.9999699592590332
+          ]
+        ]
+      },
+      {
+        "windowStartBin": 16384,
+        "inputShape": [
+          1,
+          32768,
+          1,
+          1
+        ],
+        "finiteOutputs": true,
+        "outputRanges": [
+          [
+            0.0,
+            2553.306396484375
+          ],
+          [
+            0.0,
+            0.9998053312301636
+          ],
+          [
+            3.151831168052663e-20,
+            0.999974250793457
+          ]
+        ]
+      },
+      {
+        "windowStartBin": 32768,
+        "inputShape": [
+          1,
+          32768,
+          1,
+          1
+        ],
+        "finiteOutputs": true,
+        "outputRanges": [
+          [
+            0.0,
+            2539.900634765625
+          ],
+          [
+            0.0,
+            0.9998999834060669
+          ],
+          [
+            0.0,
+            0.9999822378158569
+          ]
+        ]
+      }
+    ]
+  },
+  "ffscn17": {
+    "status": "experimental",
+    "io": [
+      {
+        "name": "spectrum",
+        "shape": [
+          1,
+          1,
+          10,
+          -1
+        ],
+        "dtype": "DataType.FLOAT"
+      },
+      {
+        "name": "hm",
+        "shape": [
+          1,
+          1,
+          1,
+          -1
+        ],
+        "dtype": "DataType.FLOAT"
+      },
+      {
+        "name": "bw",
+        "shape": [
+          1,
+          1,
+          1,
+          -1
+        ],
+        "dtype": "DataType.FLOAT"
+      },
+      {
+        "name": "off",
+        "shape": [
+          1,
+          1,
+          1,
+          -1
+        ],
+        "dtype": "DataType.FLOAT"
+      }
+    ],
+    "comparison": "Frozen ONNX CPU vs original FP32 engine",
+    "pytorchCheckpointAvailable": false,
+    "probes": [
+      {
+        "width": 8192,
+        "inputShape": [
+          1,
+          1,
+          10,
+          8192
+        ],
+        "tensors": {
+          "hm": {
+            "shape": [
+              1,
+              1,
+              1,
+              2048
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 2.7060508728027344e-05,
+            "meanAbsolute": 7.274198878803873e-07,
+            "maxRelative": 58759.08984375,
+            "outsideTolerance": 0,
+            "elements": 2048,
+            "passed": true
+          },
+          "bw": {
+            "shape": [
+              1,
+              1,
+              1,
+              2048
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 0.00079345703125,
+            "meanAbsolute": 9.487150236964226e-05,
+            "maxRelative": 0.0014623361639678478,
+            "outsideTolerance": 0,
+            "elements": 2048,
+            "passed": true
+          },
+          "off": {
+            "shape": [
+              1,
+              1,
+              1,
+              2048
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 4.351139068603516e-06,
+            "meanAbsolute": 6.875561666674912e-07,
+            "maxRelative": 1.5137388800212648e-05,
+            "outsideTolerance": 0,
+            "elements": 2048,
+            "passed": true
+          }
+        },
+        "passed": true
+      },
+      {
+        "width": 16384,
+        "inputShape": [
+          1,
+          1,
+          10,
+          16384
+        ],
+        "tensors": {
+          "hm": {
+            "shape": [
+              1,
+              1,
+              1,
+              4096
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 4.4792890548706055e-05,
+            "meanAbsolute": 6.517515771520266e-07,
+            "maxRelative": 67301.09375,
+            "outsideTolerance": 0,
+            "elements": 4096,
+            "passed": true
+          },
+          "bw": {
+            "shape": [
+              1,
+              1,
+              1,
+              4096
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 0.00334930419921875,
+            "meanAbsolute": 0.0003105556243099272,
+            "maxRelative": 0.0013933670707046986,
+            "outsideTolerance": 0,
+            "elements": 4096,
+            "passed": true
+          },
+          "off": {
+            "shape": [
+              1,
+              1,
+              1,
+              4096
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 1.9103288650512695e-05,
+            "meanAbsolute": 1.1724469004548155e-06,
+            "maxRelative": 6.234749889699742e-05,
+            "outsideTolerance": 0,
+            "elements": 4096,
+            "passed": true
+          }
+        },
+        "passed": true
+      },
+      {
+        "width": 32768,
+        "inputShape": [
+          1,
+          1,
+          10,
+          32768
+        ],
+        "tensors": {
+          "hm": {
+            "shape": [
+              1,
+              1,
+              1,
+              8192
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 3.579258918762207e-05,
+            "meanAbsolute": 1.0544099495746195e-06,
+            "maxRelative": 93457.3671875,
+            "outsideTolerance": 0,
+            "elements": 8192,
+            "passed": true
+          },
+          "bw": {
+            "shape": [
+              1,
+              1,
+              1,
+              8192
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 0.010833740234375,
+            "meanAbsolute": 0.0006577657186426222,
+            "maxRelative": 0.018180616199970245,
+            "outsideTolerance": 5,
+            "elements": 8192,
+            "passed": false
+          },
+          "off": {
+            "shape": [
+              1,
+              1,
+              1,
+              8192
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 1.1086463928222656e-05,
+            "meanAbsolute": 9.505603202342172e-07,
+            "maxRelative": 2.1176841983105987e-05,
+            "outsideTolerance": 0,
+            "elements": 8192,
+            "passed": true
+          }
+        },
+        "passed": false
+      },
+      {
+        "width": 65536,
+        "inputShape": [
+          1,
+          1,
+          10,
+          65536
+        ],
+        "tensors": {
+          "hm": {
+            "shape": [
+              1,
+              1,
+              1,
+              16384
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 8.285045623779297e-05,
+            "meanAbsolute": 2.0500469872786198e-06,
+            "maxRelative": 78262.8125,
+            "outsideTolerance": 0,
+            "elements": 16384,
+            "passed": true
+          },
+          "bw": {
+            "shape": [
+              1,
+              1,
+              1,
+              16384
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 0.09747314453125,
+            "meanAbsolute": 0.008663080632686615,
+            "maxRelative": 0.11255164444446564,
+            "outsideTolerance": 51,
+            "elements": 16384,
+            "passed": false
+          },
+          "off": {
+            "shape": [
+              1,
+              1,
+              1,
+              16384
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 6.264448165893555e-05,
+            "meanAbsolute": 7.019696568022482e-06,
+            "maxRelative": 0.00016483981744386256,
+            "outsideTolerance": 0,
+            "elements": 16384,
+            "passed": true
+          }
+        },
+        "passed": false
+      },
+      {
+        "width": 131072,
+        "inputShape": [
+          1,
+          1,
+          10,
+          131072
+        ],
+        "tensors": {
+          "hm": {
+            "shape": [
+              1,
+              1,
+              1,
+              32768
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 6.35385513305664e-05,
+            "meanAbsolute": 8.745242325858271e-07,
+            "maxRelative": 135288.6875,
+            "outsideTolerance": 0,
+            "elements": 32768,
+            "passed": true
+          },
+          "bw": {
+            "shape": [
+              1,
+              1,
+              1,
+              32768
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 0.0435791015625,
+            "meanAbsolute": 0.0062707713805139065,
+            "maxRelative": 0.024728944525122643,
+            "outsideTolerance": 25,
+            "elements": 32768,
+            "passed": false
+          },
+          "off": {
+            "shape": [
+              1,
+              1,
+              1,
+              32768
+            ],
+            "dtype": "float32",
+            "finite": true,
+            "maxAbsolute": 4.044175148010254e-05,
+            "meanAbsolute": 2.2571425688511226e-06,
+            "maxRelative": 0.00014518281386699528,
+            "outsideTolerance": 0,
+            "elements": 32768,
+            "passed": true
+          }
+        },
+        "passed": false
+      }
+    ]
+  },
+  "boundary": "No label accuracy, instrument-domain validation or GUI acceptance"
+}

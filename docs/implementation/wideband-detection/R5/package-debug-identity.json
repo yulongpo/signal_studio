@@ -1,0 +1,511 @@
+{
+  "configuration": "debug",
+  "root": "out/vs2026-qt611-debug_bin",
+  "files": [
+    {
+      "path": "concrt140d.dll",
+      "bytes": 724408,
+      "sha256": "806e5313397d012a84f9b97399445b143a8fb5b738e8f9b7afafbea1bcbfde14"
+    },
+    {
+      "path": "cudart64_12.dll",
+      "bytes": 583680,
+      "sha256": "760c38928bbe5759f7b31ed6692599eb7ec83cedd5702e84c2b72028a89837e1"
+    },
+    {
+      "path": "d3dcompiler_47.dll",
+      "bytes": 4741568,
+      "sha256": "e407b9ffadef47e87994dc488214f75405cf04ee99589f2315fc7ab99fd1dfe2"
+    },
+    {
+      "path": "dxcompiler.dll",
+      "bytes": 14317000,
+      "sha256": "97abd3b3083607dc29cc3f8eae56c39c349b76ee3c20deeb2f66258708e55bd8"
+    },
+    {
+      "path": "dxil.dll",
+      "bytes": 1509800,
+      "sha256": "fda4dde92222ddb8564c3173ce48faa56f7e1c7b46b0b67dada1182ee07a4123"
+    },
+    {
+      "path": "msvcp140_1d.dll",
+      "bytes": 40888,
+      "sha256": "4807f9a46aed66e9fa030a5dbfa7559e7dab714722c67b16297a853c4d3d115d"
+    },
+    {
+      "path": "msvcp140_2d.dll",
+      "bytes": 462264,
+      "sha256": "8f2648053c6c7153c201e1dfc2febe2afe2a36692686b7be1ea999aea6753c27"
+    },
+    {
+      "path": "msvcp140d_atomic_wait.dll",
+      "bytes": 102328,
+      "sha256": "0c5c194078138548fea061c560c41f3008c285f7b79873f34fc461c7446a06de"
+    },
+    {
+      "path": "msvcp140d_codecvt_ids.dll",
+      "bytes": 35256,
+      "sha256": "ba9cc18222a2371d3f5782da26ff48f75e196a08e75a450d41384a9c7137375e"
+    },
+    {
+      "path": "msvcp140d.dll",
+      "bytes": 891832,
+      "sha256": "7de55061770829e3958576f4c737b9805f7153a0e5933bb2ecd9ab9adc61b3e3"
+    },
+    {
+      "path": "nvinfer_10.dll",
+      "bytes": 476635680,
+      "sha256": "d100ec93e5abf56f8d2dafb69cde536c4f9fbb4748a5746a74b7009f6894ce67"
+    },
+    {
+      "path": "opengl32sw.dll",
+      "bytes": 20639888,
+      "sha256": "b04de4541863bc7d8879040a78889c4849c1b1da2784c4630f734c146c2998ce"
+    },
+    {
+      "path": "qt.conf",
+      "bytes": 30,
+      "sha256": "e6047c864b52bc6648ecd2c44629751a10c148b05f743d425f97fb6305cc9640"
+    },
+    {
+      "path": "Qt6Cored.dll",
+      "bytes": 24207672,
+      "sha256": "81601506e0453ebf5677409d24b705449a5f835f88401608186df55f77f60124"
+    },
+    {
+      "path": "Qt6Guid.dll",
+      "bytes": 28156728,
+      "sha256": "c78f44486805c88696f5663a22c866ccd74cf1f59d578b6c0ee05ac22bc1e5f5"
+    },
+    {
+      "path": "Qt6Networkd.dll",
+      "bytes": 5402936,
+      "sha256": "9cf80c7b7a612b3e40ad8279e82dfac3e6ba1a5a0ba317bb7dc93d5e72d2b1c5"
+    },
+    {
+      "path": "Qt6Svgd.dll",
+      "bytes": 1862968,
+      "sha256": "096676af4471b2697d6cb2cc424909826418e6947c86561d87c7b0dd4d36f253"
+    },
+    {
+      "path": "Qt6Testd.dll",
+      "bytes": 1314616,
+      "sha256": "6c86a2d9913ce01e4e3a6f9ed19a474fa467ca4d87182d8ad0286705a9b16e37"
+    },
+    {
+      "path": "Qt6Widgetsd.dll",
+      "bytes": 17222968,
+      "sha256": "cedd440a5fd50aa7155708431e792d25af70a11870c0801209594ab65636e0f5"
+    },
+    {
+      "path": "SignalStudio.exe",
+      "bytes": 11183616,
+      "sha256": "eb8696aed067373f25bffc6fb2a0e83225c4fa130b00017bceccf53f47c9443d"
+    },
+    {
+      "path": "SignalStudio.pdb",
+      "bytes": 314724352,
+      "sha256": "7416efceb653e2d575b131d6ee8613fb4c0d86ed31ded0b43350714e9f6f1ee1"
+    },
+    {
+      "path": "SignalStudioAnnotationStoreTests.exe",
+      "bytes": 2449920,
+      "sha256": "53b0c333480db4b5162409e45d9849d073a9f6b2cd6e3116f86f2415ee673914"
+    },
+    {
+      "path": "SignalStudioAnnotationStoreTests.pdb",
+      "bytes": 27578368,
+      "sha256": "ba1c0a9d858fbd39925555d04feda19deb44450dcd0460bc5f5d6c9a53ad5ad9"
+    },
+    {
+      "path": "SignalStudioAnnotationTests.exe",
+      "bytes": 908800,
+      "sha256": "9c744297aeea004a508b702d554c0e3dc99744ab34a2bf1cbe2cb52dbb0c132a"
+    },
+    {
+      "path": "SignalStudioAnnotationTests.pdb",
+      "bytes": 13447168,
+      "sha256": "8d89df92dc3cdc45c68995f92c664e617ab3a7f73fc4cec4184a461fcd857427"
+    },
+    {
+      "path": "SignalStudioChannelProcessorTests.exe",
+      "bytes": 1322496,
+      "sha256": "8f379e06e67eb88d34f1b427414ecccf21ae88ed7a9e9218d4191b5f1f967f6a"
+    },
+    {
+      "path": "SignalStudioChannelProcessorTests.pdb",
+      "bytes": 27693056,
+      "sha256": "09d03c9a717ea53baf1e467c325001254b7be141c4f547f1302e3f4803eb2cbf"
+    },
+    {
+      "path": "SignalStudioCoreTests.exe",
+      "bytes": 3186688,
+      "sha256": "d8cb9921f26e1128ffec93ddd7a676406ca943ffac62dd6b98e113d8cf8ff9d5"
+    },
+    {
+      "path": "SignalStudioCoreTests.pdb",
+      "bytes": 62287872,
+      "sha256": "8599f934d6ea633a17c8ce172bef0815535ef1624f33b865b7653bb3dbf61ea9"
+    },
+    {
+      "path": "SignalStudioDetectionFrequencyAnalysisTests.exe",
+      "bytes": 2112512,
+      "sha256": "a3ea821f01e3b92c3eec1817027e600edf17e278283eb33f6a289a374f6e12cf"
+    },
+    {
+      "path": "SignalStudioDetectionFrequencyAnalysisTests.pdb",
+      "bytes": 17149952,
+      "sha256": "aed3d4fff0c0faea88764ef7d5bb8fb77c2a91e309dd2a0772dd2cc047cea776"
+    },
+    {
+      "path": "SignalStudioDetectionModelBackendTests.exe",
+      "bytes": 1220608,
+      "sha256": "c44f132178c95a761ef2e020719bba0e0b7dc4bab1889cb028a592e62fa0b1e0"
+    },
+    {
+      "path": "SignalStudioDetectionModelBackendTests.pdb",
+      "bytes": 8409088,
+      "sha256": "f7adaf0ad7dfab23ee3723444987e49ea41d092667af40fb3bddf8f4191a130f"
+    },
+    {
+      "path": "SignalStudioDetectionPipelineTests.exe",
+      "bytes": 3633152,
+      "sha256": "47ee41bd71222da4ef049584653f5a844abde00a7a1f5ab1eed22a0e02113701"
+    },
+    {
+      "path": "SignalStudioDetectionPipelineTests.pdb",
+      "bytes": 40407040,
+      "sha256": "702c18816ceb02ece3eda636277f7ff20467ab84934dacf070d35f5cdb9cf084"
+    },
+    {
+      "path": "SignalStudioDetectionPostprocessTests.exe",
+      "bytes": 1262080,
+      "sha256": "143d8004091f2630d4661704543e9fc708cc83bd27a066a6bdf90f9e504c9f38"
+    },
+    {
+      "path": "SignalStudioDetectionPostprocessTests.pdb",
+      "bytes": 6270976,
+      "sha256": "2037b08c46b4e244ae09e583073e808a541bb5aea6a8a37d87f91708e7ec5753"
+    },
+    {
+      "path": "SignalStudioDetectionProtocolTests.exe",
+      "bytes": 243200,
+      "sha256": "2a757882d14c8f5e2685d3508cb9b0930fd834984be16d4bc71e15a343dbb25d"
+    },
+    {
+      "path": "SignalStudioDetectionProtocolTests.pdb",
+      "bytes": 3846144,
+      "sha256": "4d5e399fd47e4c254e7517ffc7d3aed389070004645fb1988555230625ccd140"
+    },
+    {
+      "path": "SignalStudioDetectionRefinedFusionTests.exe",
+      "bytes": 923136,
+      "sha256": "a95da00c966fc30b17a1866431cd97d677886eb2677800a33bcafc5863826b63"
+    },
+    {
+      "path": "SignalStudioDetectionRefinedFusionTests.pdb",
+      "bytes": 4190208,
+      "sha256": "636f8da753e12f0dccdc19a53c645b6f14dc8f3feda01edf2e6d1602495fde11"
+    },
+    {
+      "path": "SignalStudioDetectionRefinementTests.exe",
+      "bytes": 1285632,
+      "sha256": "937669ba0a11b50b2cdbd4c37e885546a4587acaa35881d710b18af079e5cf21"
+    },
+    {
+      "path": "SignalStudioDetectionRefinementTests.pdb",
+      "bytes": 8777728,
+      "sha256": "d95c88e35f5a061fab25c4ba05f8113ea6635473fc2660277104cfc9ab91c373"
+    },
+    {
+      "path": "SignalStudioDetectionSampleEnergyTests.exe",
+      "bytes": 1370624,
+      "sha256": "99262880291f98e2da30b58602430bbe9336adc864614dd6852b4ac9e36a59a9"
+    },
+    {
+      "path": "SignalStudioDetectionSampleEnergyTests.pdb",
+      "bytes": 11612160,
+      "sha256": "578f48e2e671115cebf1bec672f30a591c74b7ad143393657cac3e0275459e70"
+    },
+    {
+      "path": "SignalStudioDetectionSourceTests.exe",
+      "bytes": 1249792,
+      "sha256": "e6c4977552c30b31b6529f492bc352880d7dda98bec3b92cd7cb6f694ad712ea"
+    },
+    {
+      "path": "SignalStudioDetectionSourceTests.pdb",
+      "bytes": 19263488,
+      "sha256": "7320ad6e7e56ce149250a487366d2169cbdd37eda2d333bd3555d4b332877ac4"
+    },
+    {
+      "path": "SignalStudioDetectionStoreTests.exe",
+      "bytes": 1454080,
+      "sha256": "7862e074ecfaa29a8f8e86a2f1b0a41e1410dc6a6f5d0cec73a8042e11149e9b"
+    },
+    {
+      "path": "SignalStudioDetectionStoreTests.pdb",
+      "bytes": 17133568,
+      "sha256": "0254aea97051732d427e5ace803adf9222440217b3cd80dd89fca24f9d3aa868"
+    },
+    {
+      "path": "SignalStudioDetectionTaskTests.exe",
+      "bytes": 4054528,
+      "sha256": "2bae8d0c3347ff0e286547da025fc17b7fb3fec4fb097f7c5cb60f21ac3d135f"
+    },
+    {
+      "path": "SignalStudioDetectionTaskTests.pdb",
+      "bytes": 53579776,
+      "sha256": "099a639876ceeb59dcc82965cae559a7ce9a641e0bc37676c57d93cc8d428c9f"
+    },
+    {
+      "path": "SignalStudioDetectionTimePipelineTests.exe",
+      "bytes": 3657728,
+      "sha256": "f6cdf2e112fd3867b1521afab8e8401018c483eb538d5a4875c0a48a03a830c5"
+    },
+    {
+      "path": "SignalStudioDetectionTimePipelineTests.pdb",
+      "bytes": 39653376,
+      "sha256": "2a8334e99f389b00bbe07da27af311e14c6de9323be8d6c9496184b51f4f7ebd"
+    },
+    {
+      "path": "SignalStudioDetectionWorker.exe",
+      "bytes": 2521600,
+      "sha256": "47ef8c267ef4873800eba62e1ad33450df6a962b1da2ba02aa26f621591d3357"
+    },
+    {
+      "path": "SignalStudioDetectionWorker.pdb",
+      "bytes": 22548480,
+      "sha256": "06b9f191ce300fb9ac774bf840f11ed42ba9a95d1b7b1d5f06ef334ff5f5c424"
+    },
+    {
+      "path": "SignalStudioDisplaySamplingTests.exe",
+      "bytes": 127488,
+      "sha256": "0673dd785ca245f73c82010ba3e5c191346811d47e6024f63273ec0d71dad716"
+    },
+    {
+      "path": "SignalStudioDisplaySamplingTests.pdb",
+      "bytes": 2068480,
+      "sha256": "64491436c017aea081a1a792f5fc1f0cde9bde6ef27b909ec8da6d4a5630c5d6"
+    },
+    {
+      "path": "SignalStudioImportTests.exe",
+      "bytes": 1288192,
+      "sha256": "25f8d0c759a3869f63bff3e02e6c2f20a499c43d427026ed01cf05ae7f1729ea"
+    },
+    {
+      "path": "SignalStudioImportTests.pdb",
+      "bytes": 19288064,
+      "sha256": "31c2e95dee9b7c8757b4014aad3807a0f3512dcdf5c13457219ff69f7446486a"
+    },
+    {
+      "path": "SignalStudioLabelImportTests.exe",
+      "bytes": 1537536,
+      "sha256": "d8e2ac56a69417cfa953d96677823baab88f1f785119235d87e5839a5bb23e30"
+    },
+    {
+      "path": "SignalStudioLabelImportTests.pdb",
+      "bytes": 26087424,
+      "sha256": "dfdea2aeec62edabd55c45716c430de8755ce957fe29eb4106cb3adaa7e5b048"
+    },
+    {
+      "path": "SignalStudioSampleFormatTests.exe",
+      "bytes": 3099648,
+      "sha256": "36a701983cb91b1a7493504f34d8ea8295b7fe5f673328ecb90814b8e7f09234"
+    },
+    {
+      "path": "SignalStudioSampleFormatTests.pdb",
+      "bytes": 51073024,
+      "sha256": "84c3d6a040e993d01aa772bd676e42c8ac15ccf7b4a4577ed02955105aeecfd8"
+    },
+    {
+      "path": "SignalStudioSpectralAnalysisTests.exe",
+      "bytes": 2221056,
+      "sha256": "e51ea00ed8079d4084b7c448ebcbefd070cca175400b6370daac816c49214647"
+    },
+    {
+      "path": "SignalStudioSpectralAnalysisTests.pdb",
+      "bytes": 44445696,
+      "sha256": "cce15f9f3500d71583b61dfd3b23a9977732af8c577df0967cf7dff6c5bd9542"
+    },
+    {
+      "path": "SignalStudioUiCapture.exe",
+      "bytes": 12187648,
+      "sha256": "4d339e7eab45889b707035bdf197d2cf1f3d3dab150e79c6edd46548670f65a6"
+    },
+    {
+      "path": "SignalStudioUiCapture.pdb",
+      "bytes": 368578560,
+      "sha256": "064bc2dd1cd7eb8ec95436cfaae1746f13acf7e9159b8381616f4b463f673728"
+    },
+    {
+      "path": "SignalStudioUiTests.exe",
+      "bytes": 12456960,
+      "sha256": "83ed06b9bd1b7b87171e7e73e2bfd5dc665cd3005aefcebe84ed2adcff1fed21"
+    },
+    {
+      "path": "SignalStudioUiTests.pdb",
+      "bytes": 345141248,
+      "sha256": "6ee65c8954422c25eee087a1deab2096b8963a7b36e33b6826b50bcd635e5d73"
+    },
+    {
+      "path": "SignalStudioWavTests.exe",
+      "bytes": 433664,
+      "sha256": "51044562873d929883a7d22b816c994101a5d3c73c3293cc6f0de28921318c6d"
+    },
+    {
+      "path": "SignalStudioWavTests.pdb",
+      "bytes": 12292096,
+      "sha256": "e1ccd6f4041d591dda69b5d70c27240d4767c3594242754822dc49f2fa9242c6"
+    },
+    {
+      "path": "ucrtbased.dll",
+      "bytes": 2120120,
+      "sha256": "aef135320664466ff613e63551584ed1b2717c02d6e1783c8e610174eb84deca"
+    },
+    {
+      "path": "vccorlib140d.dll",
+      "bytes": 1509824,
+      "sha256": "c6341ab944e9e7f6b922214d9c1a40963db86f274f7b1d33d7bd1d1f6c8b6d76"
+    },
+    {
+      "path": "vcruntime140_1d.dll",
+      "bytes": 61368,
+      "sha256": "b8316d415d4cfab42cdfa6f59e3f5d7dac5b998ae681a1d83368342f07ffea6a"
+    },
+    {
+      "path": "vcruntime140_threadsd.dll",
+      "bytes": 50616,
+      "sha256": "cef5fe7055e83b065dcfdad3a86a715abc27eb61eed591d1ad7389bd4a741f9c"
+    },
+    {
+      "path": "vcruntime140d.dll",
+      "bytes": 200120,
+      "sha256": "ab6d0cc02fa70bb739fbae00e5de7544cb2dad33a563731a91fb692158d21160"
+    },
+    {
+      "path": "detection-models/LICENSE.CUDA.txt",
+      "bytes": 59262,
+      "sha256": "ad6f5853fba0ca0d159d0f58d49ae49830c2f8c93f7a92648b9ce90adb4c6ccd"
+    },
+    {
+      "path": "detection-models/LICENSE.TensorRT.txt",
+      "bytes": 23413,
+      "sha256": "0f219bd1fa873d902c77fb971c0d0319c382aacbeb36c226b8b0b44ece2cd732"
+    },
+    {
+      "path": "detection-models/ffscn-gui-iq-v1/ffscn_epoch1200_dynamic_fp32.engine",
+      "bytes": 23722236,
+      "sha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03"
+    },
+    {
+      "path": "detection-models/ffscn-gui-iq-v1/ffscn_epoch1200_fp32.engine",
+      "bytes": 21011788,
+      "sha256": "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81"
+    },
+    {
+      "path": "detection-models/ffscn-gui-iq-v1/manifest.json",
+      "bytes": 2617,
+      "sha256": "776ebd3261c063567e443f5b96d5c93a8e50449d9d491bb1242f8c7bf2575786"
+    },
+    {
+      "path": "detection-models/scn-max-psd-v1/manifest.json",
+      "bytes": 1355,
+      "sha256": "689ca063995ef7f77dc8f8ec9189cdf55e616250b4278873b0edadee0a46192a"
+    },
+    {
+      "path": "detection-models/scn-max-psd-v1/scn_model.engine",
+      "bytes": 87263588,
+      "sha256": "ae89d04332758d466846b71afc849c446500a82a8bd74fd8c671927247746627"
+    },
+    {
+      "path": "generic/qtuiotouchplugind.dll",
+      "bytes": 390456,
+      "sha256": "c11300e5f102706bcfd5d392f078273a7d0618c01add8895491c4dddd6d32924"
+    },
+    {
+      "path": "iconengines/qsvgicond.dll",
+      "bytes": 209208,
+      "sha256": "cb0e81fbfcc25a7e7b9ebc02f9576540e7c0c551f9ebd5baabae1f171a23cc32"
+    },
+    {
+      "path": "imageformats/qgifd.dll",
+      "bytes": 143672,
+      "sha256": "0e9c7029091fe1e15bcb60dce4c4d05b7bb263fc29e00f6a83635fee37e6b82c"
+    },
+    {
+      "path": "imageformats/qicnsd.dll",
+      "bytes": 179512,
+      "sha256": "c495ad8259ad654d9bb7b828803a54b4a6a1e997f8161f1e030935325e7b536b"
+    },
+    {
+      "path": "imageformats/qicod.dll",
+      "bytes": 150328,
+      "sha256": "0f18852ea0bd5df515f4d996f5464d439cc42042d8db2e16747507de5b10af13"
+    },
+    {
+      "path": "imageformats/qjpegd.dll",
+      "bytes": 1430840,
+      "sha256": "06841e812e52b5cc6f25a7e387bd33a59737f993d95c005d6604d402a68a82a5"
+    },
+    {
+      "path": "imageformats/qsvgd.dll",
+      "bytes": 112440,
+      "sha256": "11add8435f14b5b6e53a791c458492f6559b663c3ff4cfc61caf20205f46d899"
+    },
+    {
+      "path": "imageformats/qtgad.dll",
+      "bytes": 109880,
+      "sha256": "bf686b300f057a1680972cab6c06b1022bed168f6ff0251aded64db5922449e3"
+    },
+    {
+      "path": "imageformats/qtiffd.dll",
+      "bytes": 1095480,
+      "sha256": "e144623583b2a471872502b43a9b1373aebc89bf88d045eab8d8613633688f68"
+    },
+    {
+      "path": "imageformats/qwbmpd.dll",
+      "bytes": 105784,
+      "sha256": "c02bb360c5cd70df16e5cbc566ea849cb409a6e7d92e1b02e312d062f932ef6c"
+    },
+    {
+      "path": "imageformats/qwebpd.dll",
+      "bytes": 1442104,
+      "sha256": "5d8eb3945462ed09c48542fe95b3ea67bbbd9428bb07b38edda6c84ed13403a1"
+    },
+    {
+      "path": "networkinformation/qnetworklistmanagerd.dll",
+      "bytes": 274232,
+      "sha256": "fc189f794e6b6aa331d8ddece3f2e8a5667cd18984dae96717ad730c04541976"
+    },
+    {
+      "path": "platforms/qminimald.dll",
+      "bytes": 135992,
+      "sha256": "1d080d681ea420ed980696446561d8b18ec9f32d3182ac1c6a30b45da7b3f242"
+    },
+    {
+      "path": "platforms/qoffscreend.dll",
+      "bytes": 338744,
+      "sha256": "c4b4540bea061e5b7fa6b69d056fe2883a016f4471370716a256f0aae8e821b6"
+    },
+    {
+      "path": "platforms/qwindowsd.dll",
+      "bytes": 4121400,
+      "sha256": "ca92a980b6bce23d485a2a9e0a54d3de77719b9e3b60a302a2c47a9df3736a10"
+    },
+    {
+      "path": "styles/qmodernwindowsstyled.dll",
+      "bytes": 744248,
+      "sha256": "34f58c82c2dab899ec0a2269d4f27462d187f782a6136e7753929c67db26da05"
+    },
+    {
+      "path": "tls/qcertonlybackendd.dll",
+      "bytes": 420152,
+      "sha256": "0d72d40d575d1f05ef917b9f04ba5a4b02d33bd95d482bef70c496b97b868f61"
+    },
+    {
+      "path": "tls/qschannelbackendd.dll",
+      "bytes": 952632,
+      "sha256": "5d846610d6ee722a616242395a61e77bd3bfaee5b02a7197964107107aca3b48"
+    }
+  ]
+}

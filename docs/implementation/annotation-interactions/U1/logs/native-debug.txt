@@ -1,0 +1,2 @@
+Debug U1 native interaction capture passed on screen 2, Redmi 27 NU / DISPLAY6, 4K / 150%.
+Report: D:\project\signal_studio_rebuild\out\tasks\wideband-detection\U1\assets\native-debug-verified\annotation-interactions-report.json

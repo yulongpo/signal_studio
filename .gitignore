@@ -1,7 +1,10 @@
 /out/
 /artifacts/
 /CMakeUserPresets.json
+/Signal_Studio_Codex_A1.2_BrandV2
 /.vs/
 *.user
 *.tmp
 *.log
+__pycache__/
+*.pyc

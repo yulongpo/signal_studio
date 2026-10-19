@@ -1,0 +1,22 @@
+[
+  {
+    "path": "scripts/screenshot.ps1",
+    "errorCount": 0,
+    "errors": []
+  },
+  {
+    "path": "scripts/gpu_smoke.ps1",
+    "errorCount": 0,
+    "errors": []
+  },
+  {
+    "path": "scripts/verify-package.ps1",
+    "errorCount": 0,
+    "errors": []
+  },
+  {
+    "path": "scripts/verify-detection-availability.ps1",
+    "errorCount": 0,
+    "errors": []
+  }
+]

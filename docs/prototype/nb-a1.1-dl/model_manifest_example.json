@@ -1,0 +1,39 @@
+{
+  "model_id": "my_rf_classifier",
+  "model_version": "1.0.0",
+  "framework": "onnx",
+  "model_uri": "models/my_rf_classifier/model.onnx",
+  "sha256": "<实际注册时填写 SHA-256>",
+  "input": {
+    "tensor_name": "iq",
+    "shape": [
+      null,
+      2,
+      2048
+    ],
+    "layout": "NCL",
+    "dtype": "float32",
+    "iq_mapping": [
+      "I",
+      "Q"
+    ],
+    "sample_rate_hz": 4000000,
+    "normalization": "rms"
+  },
+  "output": {
+    "tensor_name": "logits",
+    "type": "multiclass_logits",
+    "labels": [
+      "BPSK",
+      "QPSK",
+      "8PSK",
+      "16QAM",
+      "2FSK",
+      "GMSK",
+      "OFDM",
+      "AM",
+      "FM"
+    ]
+  },
+  "calibration": null
+}

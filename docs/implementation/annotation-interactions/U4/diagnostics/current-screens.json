@@ -1,0 +1,38 @@
+[
+    {
+        "connectedIndex": 1,
+        "deviceName": "\\\\.\\DISPLAY2",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": [
+            0,
+            0,
+            2560,
+            1440
+        ],
+        "name": "U27U2D",
+        "pixelSize": [
+            3840,
+            2160
+        ],
+        "primary": true
+    },
+    {
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY1",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": [
+            3840,
+            196,
+            1707,
+            1067
+        ],
+        "name": "TL160ADMP36",
+        "pixelSize": [
+            2560,
+            1600
+        ],
+        "primary": false
+    }
+]

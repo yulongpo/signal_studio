@@ -1,0 +1,890 @@
+{
+  "schemaVersion": 1,
+  "node": "M3",
+  "baseCommit": "9080162",
+  "prototypeCommit": "c638cb92d0ed56a127d49618934b45638d7ecd73",
+  "frozenPrototypeFilesVerified": 22,
+  "prototypeHashMismatches": 0,
+  "ctestPassed": 19,
+  "ctestFailed": 0,
+  "ctestSeconds": 361.51,
+  "qtUiPassed": 94,
+  "qtUiFailed": 0,
+  "qtUiSeconds": 249.184,
+  "nativeScenesPassed": 25,
+  "nativeScenesFailed": 0,
+  "cppGoogleStyleFilesChecked": 29,
+  "specReview": "SPEC_PASS",
+  "qualityReview": "QUALITY_PASS",
+  "screen": {
+    "availableLogicalGeometry": {
+      "height": 1392,
+      "width": 2560,
+      "x": 2560,
+      "y": 0
+    },
+    "connectedIndex": 2,
+    "deviceName": "\\\\.\\DISPLAY6",
+    "devicePath": "\\\\.\\DISPLAY6",
+    "devicePixelRatio": 1.5,
+    "friendlyName": "Redmi 27 NU",
+    "identityMethod": "Windows active DisplayConfig source/target",
+    "logicalDpi": 96,
+    "logicalGeometry": {
+      "height": 1440,
+      "width": 2560,
+      "x": 2560,
+      "y": 0
+    },
+    "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+    "name": "Redmi 27 NU",
+    "physicalDpi": 109.05000625015624,
+    "pixelSize": {
+      "height": 2160,
+      "width": 3840
+    },
+    "primary": false
+  },
+  "renderer": {
+    "absoluteFrequency": true,
+    "actualMainPlotHeight": 461,
+    "auxiliaryMode": "psd",
+    "charts": [
+      {
+        "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+        "completedFrames": 233,
+        "gpuReady": true,
+        "heatmapTextureReusedFromPreviousScene": true,
+        "logicalWidgetSize": {
+          "height": 48,
+          "width": 1790
+        },
+        "name": "navigationPlot",
+        "newFramesSincePreviousScene": 0,
+        "newTextureUploadsSincePreviousScene": 0,
+        "plotRectHeight": 48,
+        "powerCacheReusedFromPreviousScene": true,
+        "powerGenerations": 0,
+        "renderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "actualFrameInputSamples": "2048",
+          "actualSpectralFrames": 194,
+          "analysisError": "",
+          "analysisPoints": 2048,
+          "binHz": 9765.625,
+          "colorTransformGenerations": 0,
+          "committedGeneration": 0,
+          "cpuWallTimings": {
+            "chartDrawCalls": 158,
+            "chartDrawCallsSkipped": 0,
+            "chartPaletteUploads": 41,
+            "chartVertexUploads": 37,
+            "gpuTimestamps": false,
+            "heatmapDrawCalls": 0,
+            "heatmapUploadPreparation": {
+              "lastMs": 0,
+              "maxMs": 0,
+              "samples": 0,
+              "totalMs": 0
+            },
+            "lastChartDrawLoopIterations": 1,
+            "lastChartDrawRecordCount": 1,
+            "lastChartDrawStage": 6,
+            "lastChartVertexCount": 15618,
+            "lastRenderHeight": 48,
+            "lastRenderWidth": 1790,
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.0552,
+              "maxMs": 0.6109,
+              "samples": 143,
+              "totalMs": 7.886000000000001
+            },
+            "overlayPainter": {
+              "lastMs": 1.7271,
+              "maxMs": 13.6217,
+              "samples": 143,
+              "totalMs": 498.8539999999998
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0146,
+              "maxMs": 0.5047,
+              "samples": 143,
+              "totalMs": 10.846000000000005
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 2.1661,
+              "maxMs": 15.8506,
+              "samples": 147,
+              "totalMs": 611.9472000000003
+            },
+            "paletteUploads": 2,
+            "prepareUploads": {
+              "lastMs": 0.0117,
+              "maxMs": 14.3035,
+              "samples": 170,
+              "totalMs": 522.8801999999997
+            },
+            "render": {
+              "lastMs": 0.0837,
+              "maxMs": 14.8496,
+              "samples": 170,
+              "totalMs": 541.5081999999998
+            },
+            "renderInvocations": 170,
+            "unit": "ms"
+          },
+          "cursorPinned": false,
+          "curveCacheHits": 98,
+          "curvePathElements": 0,
+          "curveRasterMethod": "QRhi dynamic vertex buffer",
+          "curveReductions": 0,
+          "curveSourceGenerations": 35,
+          "drawnLineSegments": 1562,
+          "drawnPoints": 3528,
+          "effectiveOverlap": 0.5,
+          "framePsd": false,
+          "generation": 40,
+          "gpuChartDrawCalls": 158,
+          "gpuDataDrawCalls": 158,
+          "gpuDataRenderer": "QRhi shader / vertex buffer",
+          "gpuHeatmapDrawCalls": 0,
+          "gpuPaletteUploads": 2,
+          "gpuUploadsPending": false,
+          "gpuVertexUploads": 37,
+          "heatmapCacheHits": 0,
+          "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+          "heatmapHeight": -1,
+          "heatmapWidth": -1,
+          "inverseCursorDrawCalls": 0,
+          "lastMatrixMs": 0,
+          "matrixReductions": 0,
+          "noiseBandwidthHz": 14655.593551538814,
+          "overlayUploads": 143,
+          "paddedFrames": 0,
+          "pinnedFrequencyHz": 0,
+          "pinnedSourceSample": "0",
+          "powerGenerations": 0,
+          "quality": "settled",
+          "requestedGeneration": 40,
+          "requestedHeatmapHeight": -1,
+          "requestedHeatmapWidth": -1,
+          "requestedPixels": 1,
+          "requiredSeconds": 0.0001024,
+          "samplePointCount": 0,
+          "samplePointsVisible": false,
+          "settled": true,
+          "sourcePoints": 3528,
+          "staleDrops": 0,
+          "textureUploads": 0,
+          "workerIdle": true
+        },
+        "textureUploads": 0,
+        "visible": true
+      },
+      {
+        "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+        "completedFrames": 225,
+        "gpuReady": true,
+        "heatmapTextureReusedFromPreviousScene": true,
+        "logicalWidgetSize": {
+          "height": 171,
+          "width": 1790
+        },
+        "name": "auxPlot",
+        "newFramesSincePreviousScene": 0,
+        "newTextureUploadsSincePreviousScene": 0,
+        "plotRectHeight": 125,
+        "powerCacheReusedFromPreviousScene": true,
+        "powerGenerations": 0,
+        "renderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "actualFrameInputSamples": "2048",
+          "actualSpectralFrames": 194,
+          "analysisError": "",
+          "analysisPoints": 2048,
+          "binHz": 9765.625,
+          "colorTransformGenerations": 0,
+          "committedGeneration": 55,
+          "cpuWallTimings": {
+            "chartDrawCalls": 152,
+            "chartDrawCallsSkipped": 0,
+            "chartPaletteUploads": 50,
+            "chartVertexUploads": 43,
+            "gpuTimestamps": false,
+            "heatmapDrawCalls": 0,
+            "heatmapUploadPreparation": {
+              "lastMs": 0,
+              "maxMs": 0,
+              "samples": 0,
+              "totalMs": 0
+            },
+            "lastChartDrawLoopIterations": 1,
+            "lastChartDrawRecordCount": 1,
+            "lastChartDrawStage": 6,
+            "lastChartVertexCount": 40948,
+            "lastRenderHeight": 171,
+            "lastRenderWidth": 1790,
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.0754,
+              "maxMs": 1.0835,
+              "samples": 142,
+              "totalMs": 35.065799999999996
+            },
+            "overlayPainter": {
+              "lastMs": 5.8193,
+              "maxMs": 27.1535,
+              "samples": 142,
+              "totalMs": 1232.8811000000005
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.022,
+              "maxMs": 0.8008,
+              "samples": 142,
+              "totalMs": 13.915600000000003
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 7.3335,
+              "maxMs": 28.7634,
+              "samples": 153,
+              "totalMs": 1528.8274999999994
+            },
+            "paletteUploads": 2,
+            "prepareUploads": {
+              "lastMs": 0.0106,
+              "maxMs": 27.819,
+              "samples": 172,
+              "totalMs": 1345.2596
+            },
+            "render": {
+              "lastMs": 0.0673,
+              "maxMs": 28.0352,
+              "samples": 172,
+              "totalMs": 1369.0840999999994
+            },
+            "renderInvocations": 172,
+            "unit": "ms"
+          },
+          "cursorPinned": false,
+          "curveCacheHits": 177,
+          "curvePathElements": 4096,
+          "curveRasterMethod": "QRhi dynamic vertex buffer",
+          "curveReductions": 43,
+          "curveSourceGenerations": 7,
+          "drawnLineSegments": 4095,
+          "drawnPoints": 4096,
+          "effectiveOverlap": 0.5,
+          "framePsd": false,
+          "generation": 55,
+          "gpuChartDrawCalls": 152,
+          "gpuDataDrawCalls": 152,
+          "gpuDataRenderer": "QRhi shader / vertex buffer",
+          "gpuHeatmapDrawCalls": 0,
+          "gpuPaletteUploads": 2,
+          "gpuUploadsPending": false,
+          "gpuVertexUploads": 43,
+          "heatmapCacheHits": 0,
+          "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+          "heatmapHeight": -1,
+          "heatmapWidth": -1,
+          "inverseCursorDrawCalls": 172,
+          "lastMatrixMs": 0,
+          "matrixReductions": 0,
+          "noiseBandwidthHz": 14655.593551538814,
+          "overlayUploads": 142,
+          "paddedFrames": 0,
+          "pinnedFrequencyHz": 0,
+          "pinnedSourceSample": "0",
+          "powerGenerations": 0,
+          "psdNoiseBandwidthHz": 7326.007326007292,
+          "psdObservedSeconds": 0.01,
+          "psdPadding": "704",
+          "psdProcessedFrames": "97",
+          "quality": "settled",
+          "requestedGeneration": 55,
+          "requestedHeatmapHeight": -1,
+          "requestedHeatmapWidth": -1,
+          "requestedPixels": 1,
+          "requiredSeconds": 0.0001024,
+          "samplePointCount": 0,
+          "samplePointsVisible": false,
+          "settled": true,
+          "sourcePoints": 4096,
+          "staleDrops": 0,
+          "textureUploads": 0,
+          "workerIdle": true
+        },
+        "textureUploads": 0,
+        "visible": true
+      },
+      {
+        "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+        "completedFrames": 233,
+        "gpuReady": true,
+        "heatmapTextureReusedFromPreviousScene": true,
+        "logicalWidgetSize": {
+          "height": 507,
+          "width": 1790
+        },
+        "name": "mainPlot",
+        "newFramesSincePreviousScene": 0,
+        "newTextureUploadsSincePreviousScene": 0,
+        "plotRectHeight": 461,
+        "powerCacheReusedFromPreviousScene": true,
+        "powerGenerations": 25,
+        "renderStatistics": {
+          "acceptedHeatmapPreview": false,
+          "actualFrameInputSamples": "2048",
+          "actualSpectralFrames": 194,
+          "analysisError": "",
+          "analysisPoints": 2048,
+          "binHz": 9765.625,
+          "colorTransformGenerations": 90,
+          "committedGeneration": 115,
+          "cpuWallTimings": {
+            "chartDrawCalls": 0,
+            "chartDrawCallsSkipped": 0,
+            "chartPaletteUploads": 3,
+            "chartVertexUploads": 0,
+            "gpuTimestamps": false,
+            "heatmapDrawCalls": 186,
+            "heatmapUploadPreparation": {
+              "lastMs": 2.3472,
+              "maxMs": 3.355,
+              "samples": 56,
+              "totalMs": 37.9031
+            },
+            "lastChartDrawLoopIterations": 0,
+            "lastChartDrawRecordCount": 0,
+            "lastChartDrawStage": 0,
+            "lastChartVertexCount": 0,
+            "lastRenderHeight": 507,
+            "lastRenderWidth": 1790,
+            "measurement": "GUI-thread wall time measured with QElapsedTimer",
+            "overlayImagePreparation": {
+              "lastMs": 0.229,
+              "maxMs": 2.4509,
+              "samples": 179,
+              "totalMs": 117.0904
+            },
+            "overlayPainter": {
+              "lastMs": 28.9538,
+              "maxMs": 31.5189,
+              "samples": 179,
+              "totalMs": 3321.9126000000006
+            },
+            "overlayUploadEnqueue": {
+              "lastMs": 0.0253,
+              "maxMs": 0.6671,
+              "samples": 179,
+              "totalMs": 21.36899999999999
+            },
+            "paintEventIncludingQtSubmit": {
+              "lastMs": 31.3945,
+              "maxMs": 38.6237,
+              "samples": 181,
+              "totalMs": 4244.129099999999
+            },
+            "paletteUploads": 2,
+            "prepareUploads": {
+              "lastMs": 0.0123,
+              "maxMs": 35.9658,
+              "samples": 204,
+              "totalMs": 3794.6476000000002
+            },
+            "render": {
+              "lastMs": 0.0721,
+              "maxMs": 36.1511,
+              "samples": 204,
+              "totalMs": 3821.024700000002
+            },
+            "renderInvocations": 204,
+            "unit": "ms"
+          },
+          "cursorPinned": false,
+          "curveCacheHits": 0,
+          "curvePathElements": 0,
+          "curveRasterMethod": "QRhi heatmap texture",
+          "curveReductions": 0,
+          "curveSourceGenerations": 0,
+          "drawnLineSegments": 0,
+          "drawnPoints": 276750,
+          "effectiveOverlap": 0.5,
+          "framePsd": false,
+          "generation": 115,
+          "gpuChartDrawCalls": 0,
+          "gpuDataDrawCalls": 186,
+          "gpuDataRenderer": "QRhi shader / vertex buffer",
+          "gpuHeatmapDrawCalls": 186,
+          "gpuPaletteUploads": 2,
+          "gpuUploadsPending": false,
+          "gpuVertexUploads": 0,
+          "heatmapCacheHits": 75,
+          "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+          "heatmapHeight": 369,
+          "heatmapWidth": 750,
+          "inverseCursorDrawCalls": 204,
+          "lastMatrixMs": 1011.2872,
+          "matrixReductions": 10,
+          "noiseBandwidthHz": 14655.593551538814,
+          "overlayUploads": 179,
+          "paddedFrames": 0,
+          "pinnedFrequencyHz": 0,
+          "pinnedSourceSample": "0",
+          "powerGenerations": 25,
+          "quality": "settled",
+          "requestedGeneration": 115,
+          "requestedHeatmapHeight": 369,
+          "requestedHeatmapWidth": 750,
+          "requestedPixels": 276750,
+          "requiredSeconds": 0.0001024,
+          "samplePointCount": 0,
+          "samplePointsVisible": false,
+          "settled": true,
+          "sourcePoints": 397312,
+          "staleDrops": 20,
+          "textureUploads": 56,
+          "workerIdle": true
+        },
+        "textureUploads": 56,
+        "visible": true
+      }
+    ],
+    "colorScale": true,
+    "creating": false,
+    "devicePixelRatio": 1.5,
+    "files": 1,
+    "logicalWindowSize": {
+      "height": 1440,
+      "width": 2560
+    },
+    "mainMode": "time-frequency",
+    "mainWidgetHeight": 507,
+    "marks": [
+      {
+        "beginSample": "51107",
+        "endSample": "343276",
+        "id": "ann-685fcf6ac4a384e4ed5ae4907f480917bac14946e0684326a871a7d20c3b3179:0",
+        "lowerHz": 2502021605.9327126,
+        "name": "64qam",
+        "upperHz": 2502282009.1227803
+      },
+      {
+        "beginSample": "38498",
+        "endSample": "353824",
+        "id": "ann-685fcf6ac4a384e4ed5ae4907f480917bac14946e0684326a871a7d20c3b3179:1",
+        "lowerHz": 2492059313.3481555,
+        "name": "2gmsk",
+        "upperHz": 2492749655.595414
+      },
+      {
+        "beginSample": "70248",
+        "endSample": "359981",
+        "id": "ann-685fcf6ac4a384e4ed5ae4907f480917bac14946e0684326a871a7d20c3b3179:2",
+        "lowerHz": 2491820030.553922,
+        "name": "bpsk",
+        "upperHz": 2492454138.891255
+      },
+      {
+        "beginSample": "173404",
+        "endSample": "345294",
+        "id": "ann-685fcf6ac4a384e4ed5ae4907f480917bac14946e0684326a871a7d20c3b3179:3",
+        "lowerHz": 2502885255.8388267,
+        "name": "64qam",
+        "upperHz": 2503155805.4215245
+      },
+      {
+        "beginSample": "39953",
+        "endSample": "89953",
+        "id": "annotation-2",
+        "lowerHz": 2501995332.555426,
+        "name": "Region 05",
+        "upperHz": 2505005834.3057175
+      },
+      {
+        "beginSample": "0",
+        "endSample": "0",
+        "id": "detection:0ed5ca1ef6ee57170366dc96085ccaf71ac19ae2862ab4a3fe1d357eb4a115cb",
+        "lowerHz": 0,
+        "name": "系统链路夹具（非模型）",
+        "upperHz": 0
+      },
+      {
+        "beginSample": "0",
+        "endSample": "0",
+        "id": "detection:37e08bccf870f1d3538a78cc69c91f568bc1d361fda45beb541ef46f9c90dc77",
+        "lowerHz": 0,
+        "name": "系统链路夹具（非模型）",
+        "upperHz": 0
+      },
+      {
+        "beginSample": "0",
+        "endSample": "0",
+        "id": "detection:b7bea5ab0e3d9cc9324de30c518dc8f6d91a1b9417a1f69be5d2ae0ca334d31a",
+        "lowerHz": 0,
+        "name": "系统链路夹具（非模型）",
+        "upperHz": 0
+      },
+      {
+        "beginSample": "0",
+        "endSample": "0",
+        "id": "detection:ed25fb77d3ea183b2a3633f5635c97e6051a508b14971ec4cdfc3256cdc71928",
+        "lowerHz": 0,
+        "name": "FFSCN IQ 频率观察",
+        "upperHz": 0
+      },
+      {
+        "beginSample": "0",
+        "endSample": "0",
+        "id": "detection:78d76b042a910113a3d83b8c547ad17b7cef355152da9aadd1f7ce1c4247bde0",
+        "lowerHz": 0,
+        "name": "FFSCN IQ 频率观察",
+        "upperHz": 0
+      },
+      {
+        "beginSample": "0",
+        "endSample": "0",
+        "id": "detection:76786fb09eb88341fec406504f5ef97c9bf137fab7faf3c52360483c7400ab4e",
+        "lowerHz": 0,
+        "name": "FFSCN IQ 频率观察",
+        "upperHz": 0
+      }
+    ],
+    "selectedMarkIds": [
+      "detection:ed25fb77d3ea183b2a3633f5635c97e6051a508b14971ec4cdfc3256cdc71928"
+    ],
+    "windowFullScreen": true,
+    "windowScreen": {
+      "availableLogicalGeometry": {
+        "height": 1392,
+        "width": 2560,
+        "x": 2560,
+        "y": 0
+      },
+      "connectedIndex": 2,
+      "deviceName": "\\\\.\\DISPLAY6",
+      "devicePixelRatio": 1.5,
+      "logicalDpi": 96,
+      "logicalGeometry": {
+        "height": 1440,
+        "width": 2560,
+        "x": 2560,
+        "y": 0
+      },
+      "name": "Redmi 27 NU",
+      "physicalDpi": 109.05000625015624,
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "primary": false
+    }
+  },
+  "modelInferenceVerified": true,
+  "timeEventsVerified": false,
+  "finalA16Verified": false,
+  "finalTextOnlyChange": "Persistent-record total label corrected; script build and two related Qt cases passed after full regression. Archived native scene pixels precede this literal-only correction.",
+  "sourceDataSha256": "3a47e55b5f02851d702d5c5782998bf3e374f67cde592c35689acf9ec5399254",
+  "modelEngineSha256": {
+    "ffscn-gui-iq-v1": "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81",
+    "scn-max-psd-v1": "ae89d04332758d466846b71afc849c446500a82a8bd74fd8c671927247746627"
+  },
+  "files": [
+    {
+      "path": "control-model-probes.json",
+      "bytes": 11892,
+      "sha256": "77392c4429eb8aff2da43f8a54f2e452284a26a77a415dd233ef79e4159ef50a"
+    },
+    {
+      "path": "debug-ctest.txt",
+      "bytes": 2724,
+      "sha256": "d5557c703e92dee789439a3fa4f4139e9436c18fb6a3fafcbd5e270e3d131606"
+    },
+    {
+      "path": "debug-label-build.txt",
+      "bytes": 9873,
+      "sha256": "ad270f13f75495e65605f87de2f4d1c0b5bd955ad1bebc12952c460820f2a52a"
+    },
+    {
+      "path": "debug-ui-timing.jsonl",
+      "bytes": 11600,
+      "sha256": "a6dc23023926310e29660f7fe35a1754fba30d88da8d1f1be988f608fc720a12"
+    },
+    {
+      "path": "debug-ui.txt",
+      "bytes": 144164,
+      "sha256": "9159c4be8a8857d16fcec3dbbd92a0c65b5e213711a19cbb890bfa0f3a10bd75"
+    },
+    {
+      "path": "ffscn_epoch1200.manifest.json",
+      "bytes": 2313,
+      "sha256": "4f0ee312c5c020b2cce313f10083c347c08f04f784cbba4f493343a0e744f340"
+    },
+    {
+      "path": "frequency-parity.json",
+      "bytes": 65077,
+      "sha256": "951d1e3ddb9c527105599b2de59cde365189ccc696e91b2b7c356c1c01dad3c7"
+    },
+    {
+      "path": "FREQUENCY_EVIDENCE.md",
+      "bytes": 7763,
+      "sha256": "96668146e2937f4590bad2f5b1924368b14612eefed29a17965d3250edbe1368"
+    },
+    {
+      "path": "FREQUENCY_PARITY.md",
+      "bytes": 9728,
+      "sha256": "fe64ef7af99e3e428460034afe9a20b65ac53f2024a4c13b98a46f9fa22f7178"
+    },
+    {
+      "path": "IMPLEMENTATION.md",
+      "bytes": 5080,
+      "sha256": "34c72cd124d1a11ec739f2f6321b96c86a414321845856daa025dbcf25a73be6"
+    },
+    {
+      "path": "live-backend.txt",
+      "bytes": 2524,
+      "sha256": "d6f2aec7a7e5ac697affc91b9ec9865732e2b8712459d678c46631184056ec6a"
+    },
+    {
+      "path": "live-pipeline.txt",
+      "bytes": 45,
+      "sha256": "d3c11517db4f1e8445fd8144e7a1464314c3ca24e738a58d7ae3a070c7e61142"
+    },
+    {
+      "path": "model-deployment-debug.json",
+      "bytes": 1404,
+      "sha256": "ddc3269fb0c77f9aaa51bb630d068c37ef766429751045c4921644a00eeb09c0"
+    },
+    {
+      "path": "model-parity.json",
+      "bytes": 40426,
+      "sha256": "a875df12ec315cc33508a413d8c20254600e90c6791fd90e70901f354ed98bb2"
+    },
+    {
+      "path": "MODEL_ASSETS.md",
+      "bytes": 8433,
+      "sha256": "919ca4e7fb5b09cc382e311185d766382565c4853fec84d6dbc11a4ab190422d"
+    },
+    {
+      "path": "native-capture.txt",
+      "bytes": 226,
+      "sha256": "b64d2da9fcbeebea0f392c412b13a3bc8786eafc19a96d8c963a56d0568d448b"
+    },
+    {
+      "path": "native-constant-b1.json",
+      "bytes": 433,
+      "sha256": "54fae317fdafedc103bd6deba37dac4f7a9ec5843253b04c98e3fb224d720e24"
+    },
+    {
+      "path": "native-constant-b2.json",
+      "bytes": 433,
+      "sha256": "0ecfcdee20a755335895f6ebd94be34cf0c6f8deecbfc719978d67808104d062"
+    },
+    {
+      "path": "native-real-wav-b1.json",
+      "bytes": 432,
+      "sha256": "67b2386656889ed02555fde6722f61c417accae05eaf01e7af3f5480dbcb60f1"
+    },
+    {
+      "path": "native-real-wav-b2.json",
+      "bytes": 433,
+      "sha256": "49679466b448388127cc1b09316936c346463aa8e82ce5a13abfd0f04773b7a2"
+    },
+    {
+      "path": "native-report.json",
+      "bytes": 577335,
+      "sha256": "f78a1e0a879043e00f8d20a9438b76adb37d6e060b9803789dbc4af67ce3a1b5"
+    },
+    {
+      "path": "native-screenshots/01-imported-manual-resident-card.png",
+      "bytes": 1269283,
+      "sha256": "402f9182115d2585eda5e34530ec4bcfba4c1da6d7438e87252ceb98ffd3885c"
+    },
+    {
+      "path": "native-screenshots/02-config-card-visible-crop.png",
+      "bytes": 78493,
+      "sha256": "66f196b3564889564c5ea95aa259fcb801efabf97ec2c023ad3aa93e8a6be0ca"
+    },
+    {
+      "path": "native-screenshots/02-config-main-window.png",
+      "bytes": 1269435,
+      "sha256": "760dd9bcea776d2eb8b3d04d2aa6aa72ab29639db7df918a5aab423aa9a2b1c0"
+    },
+    {
+      "path": "native-screenshots/03-completed-task-cards.png",
+      "bytes": 919584,
+      "sha256": "ca410dbd63f41e235764d8a14964de03a087c6e7a634d6fa7f0abc3ff4e35db6"
+    },
+    {
+      "path": "native-screenshots/04-task-readable-details.png",
+      "bytes": 93073,
+      "sha256": "82954e6010b9bc90de37d542070ddfdd77dc720c5ef714368bafb3134874d6b2"
+    },
+    {
+      "path": "native-screenshots/05-three-layers-revision-pending.png",
+      "bytes": 1052311,
+      "sha256": "bb429940ff29daab31ca361fed5b7ab1ff318d6b9932f917ba359ffcb7b71a4d"
+    },
+    {
+      "path": "native-screenshots/06-saved-reopened.png",
+      "bytes": 1050814,
+      "sha256": "c2199a926fa33f51e9f26aae55e00e888bebd422a714ff1e9e8f5b4d9bf5af62"
+    },
+    {
+      "path": "native-screenshots/07-roi-preview-before-esc.png",
+      "bytes": 983676,
+      "sha256": "239d6c15280c58d7cdcf93bc6e49229a4f46582e281c7be34bdb94c2e2a9e377"
+    },
+    {
+      "path": "native-screenshots/08-roi-esc-manual-restored.png",
+      "bytes": 1010853,
+      "sha256": "47adc85896c45d3f0932b131618ecceb5e5a34defc0420825f49f5e91b588775"
+    },
+    {
+      "path": "native-screenshots/09-roi-preview-before-enter.png",
+      "bytes": 983676,
+      "sha256": "239d6c15280c58d7cdcf93bc6e49229a4f46582e281c7be34bdb94c2e2a9e377"
+    },
+    {
+      "path": "native-screenshots/10-roi-enter-confirmed.png",
+      "bytes": 1009327,
+      "sha256": "544835a69272308bbfad5512ad5f63fda0a08c796b4c920141177cc1b2c69298"
+    },
+    {
+      "path": "native-screenshots/11-layout-left-committed.png",
+      "bytes": 986852,
+      "sha256": "686e6757671f802de38c89c6806190ea27cf29ddbeaf91feeb1598e1cda3bf39"
+    },
+    {
+      "path": "native-screenshots/12-layout-left-esc-restored.png",
+      "bytes": 986852,
+      "sha256": "686e6757671f802de38c89c6806190ea27cf29ddbeaf91feeb1598e1cda3bf39"
+    },
+    {
+      "path": "native-screenshots/13-layout-right-committed.png",
+      "bytes": 959147,
+      "sha256": "5bca91dde86ddc59e6a9fb54381742e47d78bfe7919dba90643ca1a0dbd9e024"
+    },
+    {
+      "path": "native-screenshots/14-layout-right-esc-restored.png",
+      "bytes": 959147,
+      "sha256": "5bca91dde86ddc59e6a9fb54381742e47d78bfe7919dba90643ca1a0dbd9e024"
+    },
+    {
+      "path": "native-screenshots/15-layout-bottom-committed.png",
+      "bytes": 1077685,
+      "sha256": "8913a622069f3aba97f5fac9bc545e4fe5a41fe5d13261b8a1d9a242231674de"
+    },
+    {
+      "path": "native-screenshots/16-layout-bottom-esc-restored.png",
+      "bytes": 1077685,
+      "sha256": "8913a622069f3aba97f5fac9bc545e4fe5a41fe5d13261b8a1d9a242231674de"
+    },
+    {
+      "path": "native-screenshots/17-auxiliary-evidence-facts.png",
+      "bytes": 1180574,
+      "sha256": "789a67e6364cd3b8276a5f3be3621fe7ef0e9ce5f0c72f96341fb5a7e8d590d4"
+    },
+    {
+      "path": "native-screenshots/18-auxiliary-original-fields-collapsed.png",
+      "bytes": 1176233,
+      "sha256": "4c91626ab744a0a7bd890a942172255d4517b53754845c6be54b90e44106c442"
+    },
+    {
+      "path": "native-screenshots/19-auxiliary-original-fields-visible.png",
+      "bytes": 1178620,
+      "sha256": "260202c9c79657b30cc7cd1120237d79cbaa903b7ba2174d127f3788687c0bec"
+    },
+    {
+      "path": "native-screenshots/20-single-original-segment-confirmed-pending.png",
+      "bytes": 1157345,
+      "sha256": "cbf42359b6ae064a9f431a22675201edeebe61fc7e100ab80036b5da50bd3023"
+    },
+    {
+      "path": "native-screenshots/21-pending-confirmed-segment-channel-dialog.png",
+      "bytes": 52704,
+      "sha256": "b15107a07dd2c84798a85b5f84059bd6eeb6be2be01fcc0070f6ee24d78e6075"
+    },
+    {
+      "path": "native-screenshots/22-single-segment-confirmation-saved-reopened.png",
+      "bytes": 1153361,
+      "sha256": "b011197f872b524ffa51cc70965bc728bc550fbf0e0a7b3db48591c075758b56"
+    },
+    {
+      "path": "native-screenshots/23-production-model-running.png",
+      "bytes": 1096684,
+      "sha256": "9df99313ada9420bf9a8ad1d96b5f20659c0b579630e9be835d5ec1a32e3b373"
+    },
+    {
+      "path": "native-screenshots/24-production-model-frequency-observation.png",
+      "bytes": 1211804,
+      "sha256": "9e3be8fcdf36b11259148352f36a1f4ce69a986f756740662bb7a289a85b48fd"
+    },
+    {
+      "path": "native-synthetic-b1.json",
+      "bytes": 433,
+      "sha256": "1feb0bf47affb82be7fc4bb48dbb48134fb3308b3397d65eec6955fc5a4ef97a"
+    },
+    {
+      "path": "native-synthetic-b2.json",
+      "bytes": 433,
+      "sha256": "a209c321af0df15d2e69551890830f65ae4d9bc223b54b82938726142b509b91"
+    },
+    {
+      "path": "NATIVE_VALIDATION.md",
+      "bytes": 2368,
+      "sha256": "4f37bf4658999a308b7e0ef1b9dc9acde365007c3b61f51fac72873e6c6ad439"
+    },
+    {
+      "path": "pipeline-parity.json",
+      "bytes": 3948,
+      "sha256": "1e0a759a571d748adea6784c050c6554bfa15fbaedfc8ee42d006dcb98b6ca3a"
+    },
+    {
+      "path": "pipeline-report.json",
+      "bytes": 19652,
+      "sha256": "40bab862efc116a7a573d2f450675efe945fc9e9f44b90d4fad43b6076a9f09c"
+    },
+    {
+      "path": "POSTPROCESS.md",
+      "bytes": 8292,
+      "sha256": "499700f6bb1694404e35d352056653cbcb168c17db232382deee8f7b620a6928"
+    },
+    {
+      "path": "projection-unit.txt",
+      "bytes": 45,
+      "sha256": "d3c11517db4f1e8445fd8144e7a1464314c3ca24e738a58d7ae3a070c7e61142"
+    },
+    {
+      "path": "QUALITY_REVIEW.md",
+      "bytes": 10798,
+      "sha256": "8b19793d729133fb7d30437bfb1d35165eb13b5b72fb4ca64068e16d35db4218"
+    },
+    {
+      "path": "runtime-manifest.json",
+      "bytes": 24270,
+      "sha256": "78cbe17ecd703dd57f541139e0c5818ba75a67e13007029a47f0f763be5c8733"
+    },
+    {
+      "path": "RUNTIME.md",
+      "bytes": 6145,
+      "sha256": "2a3cfaaefaf664bd8a731f002b424df225478ef72cef2e51011a16b600c0ca2a"
+    },
+    {
+      "path": "SELF_REVIEW.md",
+      "bytes": 2348,
+      "sha256": "634d707013c69d377f968df47d3de918b8555885492155f105070e50048b6668"
+    },
+    {
+      "path": "SPEC_REVIEW.md",
+      "bytes": 14634,
+      "sha256": "f8bbac096ac5f26832a1a6507cce118eacfe4c70a50d8ca15bc11e1bb9af6633"
+    },
+    {
+      "path": "ui-label-focused.txt",
+      "bytes": 3166,
+      "sha256": "b86f693068834d09ebb67bf2c3b0d16d8022108f9836acc744ac0483c8d76205"
+    }
+  ]
+}

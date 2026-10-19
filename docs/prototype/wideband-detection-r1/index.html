@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Signal Studio · 宽带检测与统一标记 R1</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="menubar">
+    <div class="brand"><img src="../../../resources/branding/svg/icon-dark.svg" alt=""><img class="wordmark" src="../../../resources/branding/svg/wordmark-dark.svg" alt="Signal Studio"></div>
+    <div class="menu-wrap"><button data-menu="fileMenu">文件</button><div class="menu hidden" id="fileMenu"><button data-action="new-project">新建演示工程</button><button data-action="open-project">重开已保存演示</button><button data-action="save">保存浏览器演示</button><button data-action="export">导出 demo JSON</button><button data-action="import-labels">标签导入预览…</button></div></div>
+    <div class="menu-wrap"><button data-menu="editMenu">编辑</button><div class="menu hidden" id="editMenu"><button data-action="undo">撤销标记命令 <kbd>Ctrl Z</kbd></button><button data-action="redo">重做标记命令 <kbd>Ctrl Y</kbd></button><button data-action="manual">持续手动标记</button></div></div>
+    <div class="menu-wrap"><button data-menu="viewMenu">视图</button><div class="menu hidden" id="viewMenu"><button data-action="fit">适应可用数据</button><button data-action="view-back">视图后退</button><button data-action="view-forward">视图前进</button><button data-action="restore-layout">恢复布局</button></div></div>
+    <div class="menu-wrap"><button data-menu="analysisMenu">分析</button><div class="menu hidden" id="analysisMenu"><button id="menuDetect" data-action="detect">宽带信号检测…</button><button data-action="roi">选择检测 ROI…</button><button data-action="channel">基于有效段创建窄带通道…</button></div></div>
+    <button data-action="help">帮助</button>
+    <span class="spacer"></span><span class="prototype-badge">浏览器交互原型 · 合成演示 · 不执行真实模型</span>
+    <span class="version">R1 / Draft 4</span>
+  </header>
+  <div class="reviewbar">
+    <span class="status-dot"></span><span>可重复评审场景</span>
+    <select id="scenario" aria-label="评审场景">
+      <option value="S1">S1 · Ready / 三来源示例</option><option value="S0">S0 · 无工程</option><option value="S2Loading">S2 · Loading</option><option value="S2Partial">S2 · Partial / 12 ms 前缀</option><option value="S3">S3 · ROI 待确认</option><option value="S4Model">S4 · 模型缺失</option><option value="S4Short">S4 · 上下文不足</option><option value="S5">S5 · 排队 / 手动推进</option><option value="S6Cancel">S6 · 安全取消</option><option value="S6Failed">S6 · 失败 / 已有部分结果</option><option value="S6Partial">S6 · 部分覆盖</option><option value="S7">S7 · 完成</option><option value="S7Zero">S7 · 完成 / 零结果</option><option value="S8">S8 · 复核 / 六类证据</option><option value="S9">S9 · 通道 / revision</option><option value="Missing">源缺失演示</option><option value="Corrupt">保存文件损坏演示</option><option value="SaveError">保存错误演示</option>
+    </select>
+    <button id="resetScene" data-action="reset-scene">↺ 重置场景</button><span class="spacer"></span>
+    <span id="scopeSummary" class="mono"></span><button data-action="save">↓ 保存演示</button><button data-action="export">⇥ demo JSON</button>
+  </div>
+  <main class="main">
+    <aside class="tree-panel" id="treePanel">
+      <div class="panel-title">工程管理 <button data-action="toggle-tree" title="折叠工程树">☰</button></div>
+      <div class="tree-body"><div class="tree-actions"><button class="primary" data-action="new-project">＋ 新建演示</button><button data-action="import-labels">标签预览</button></div><div id="projectTree"></div><div class="tree-footer"><span class="eyebrow">数据边界</span><p>导航、波形、图谱及算法框均为合成绘制。4 条标签几何来自指定 TorchSig 元数据，不表示模型实测结果。</p><div id="sourceState"></div></div></div>
+    </aside>
+    <div class="resize-handle column" data-resize="left" title="调整工程树宽度"></div>
+    <section class="workspace">
+      <div class="scopebar"><button class="mode active" id="wideMode" data-action="wide-mode">▣ 宽带时频研判</button><span class="crumb" id="breadcrumb"></span><span class="spacer"></span><button id="scopeDetect" class="primary" data-action="detect">◇ 检测当前区域…</button></div>
+      <div class="graph-stack">
+        <section class="chart navigation"><div class="chart-title"><strong>全局时间导航</strong><span class="muted">单击定位 · 拖动蓝色窗口平移 · 滚轮时间缩放</span><span class="spacer"></span><span id="navRange" class="tag"></span></div><canvas id="navCanvas" aria-label="全局时间导航"></canvas></section>
+        <section class="chart auxiliary"><div class="chart-title"><strong>辅助分析</strong><div class="segmented"><button class="active" data-aux="wave">时域波形</button><button data-aux="psd">功率谱 PSD</button><button data-aux="evidence">检测证据</button></div><span class="spacer"></span><span class="muted">合成曲线 / 模拟证据</span></div><canvas id="auxCanvas" aria-label="辅助分析图"></canvas><div id="auxEvidence" class="aux-evidence hidden"></div></section>
+        <section class="chart spectral" id="spectralPanel"><div class="chart-title"><strong>宽带图谱</strong><div class="segmented"><button class="active" data-mode="spectrogram">时频图</button><button data-mode="waterfall">瀑布图</button></div><span class="tag">FFT 65536 · Δf 305.176 Hz</span><span class="spacer"></span><button id="manualTool" data-action="manual">▱ 持续标记</button><button id="roiTool" data-action="roi">▨ 检测 ROI</button><button data-action="maximize" title="最大化主图">⤢</button></div>
+          <div class="plot-wrap"><canvas id="specCanvas" aria-label="宽带主图" tabindex="0"></canvas><div class="plot-watermark">SYNTHETIC SPECTROGRAM · 所有算法框均非实测</div><div id="roiConfirm" class="roi-confirm hidden"><b>ROI 待确认</b><span id="roiPreviewText"></span><button class="primary" data-action="confirm-roi">确认 <kbd>Enter</kbd></button><button data-action="cancel-draft">取消 <kbd>Esc</kbd></button></div><div id="overlapMenu" class="overlap-menu hidden"></div><div id="welcome" class="welcome hidden"><img src="../../../resources/branding/svg/lockup-dark.svg" alt="Signal Studio"><h1>从工程开始宽带研判</h1><p>创建演示工程后，添加信号并打开宽带图谱。</p><button class="primary" data-action="new-project">创建合成演示工程</button><small>浏览器原型仅保存 localStorage，不创建真实工程目录。</small></div></div>
+          <div class="plot-footer"><span id="toolHint"></span><span class="spacer"></span><button data-action="view-back" id="viewBack">↶</button><button data-action="view-forward" id="viewForward">↷</button><button data-action="fit">适应全部</button><button class="primary" id="channelButton" data-action="channel">基于有效段创建窄带通道 →</button></div>
+        </section>
+        <div class="layerbar"><label><input type="checkbox" data-layer="ImportedLabel" checked><span class="swatch imported"></span>原始标签</label><label><input type="checkbox" data-layer="Manual" checked><span class="swatch manual"></span>手动</label><label><input type="checkbox" data-layer="Algorithm" checked><span class="swatch algorithm"></span>算法</label><span class="divider"></span><label>频率坐标 <select id="frequencyMode"><option value="RF">绝对 RF</option><option value="Baseband">基带偏移</option></select></label><span id="viewText" class="mono"></span></div>
+      </div>
+      <div class="resize-handle row" data-resize="bottom" title="调整底部区域高度"></div>
+      <section class="bottom" id="bottomPanel"><div class="bottom-tabs"><button class="active" data-tab="annotations">统一标记记录 <span id="annotationCount"></span></button><button data-tab="tasks">后台任务 <span id="taskCount"></span></button><button data-tab="logs">日志</button><span class="spacer"></span><button data-action="undo" id="undoButton" title="标记撤销 Ctrl+Z">↶ 标记</button><button data-action="redo" id="redoButton">↷ 标记</button><button data-action="toggle-bottom">⌄</button></div>
+        <div id="annotationTab" class="bottom-tab"><div class="filters"><label>来源 <select id="filterSource"><option value="all">全部来源</option><option value="ImportedLabel">ImportedLabel</option><option value="Manual">Manual</option><option value="Algorithm">Algorithm</option></select></label><label>运行 <select id="filterRun"><option value="all">全部 run</option><option value="none">非算法来源</option><option value="run-demo">run-demo</option></select></label><label>复核 <select id="filterStatus"><option value="all">全部状态</option><option value="Pending">待复核</option><option value="Accepted">已接受</option><option value="Rejected">已拒绝</option></select></label><label>mean ≥ <input id="filterScore" type="text" inputmode="decimal" value="0" aria-label="最低平均分数"></label><span class="spacer"></span><span id="selectionCount" class="mono"></span><button id="batchAccept" data-action="accept">✓ 接受所选 0</button><button id="batchReject" data-action="reject">× 拒绝所选 0</button><button data-action="clear-selection">清选</button></div>
+          <div class="table-wrap"><table><thead><tr><th><input id="selectAll" type="checkbox" aria-label="选择全部可见标记"></th><th data-sort="name">名称 / annotationId ↕</th><th data-sort="sourceKind">来源 ↕</th><th data-sort="t0">起止时间 / ms ↕</th><th data-sort="center">中心 / MHz ↕</th><th data-sort="bandwidth">带宽 / kHz ↕</th><th data-sort="score">mean 分数 ↕</th><th data-sort="reviewStatus">复核 ↕</th><th>精修 / revision</th></tr></thead><tbody id="annotationRows"></tbody></table></div></div>
+        <div id="taskTab" class="bottom-tab hidden"></div><div id="logTab" class="bottom-tab hidden"></div>
+      </section>
+    </section>
+    <div class="resize-handle column" data-resize="right" title="调整参数栏宽度"></div>
+    <aside class="inspector" id="inspector"><div class="panel-title">当前文件 / 分析参数 <button data-action="toggle-inspector">☷</button></div><div class="inspector-scroll"><section class="section"><h2>活动信号文件</h2><div id="fileDetails"></div></section>
+      <section class="section detection" id="detectionCard"><h2><button id="detectCollapse" data-action="toggle-detection">▾ 宽带信号检测</button><span class="small-badge">合成流程</span></h2><div id="detectBody">
+        <div class="field"><label for="profile">能力方案</label><select id="profile" data-param="profile"><option value="ffscn">FFSCN GUI IQ · 主方案</option><option value="scn">SCN · 频率对照</option><option value="ffscn17">FFSCN-17 · 实验</option></select><small id="profileHelp"></small></div>
+        <div class="field"><label for="rangeKind">检测范围</label><select id="rangeKind" data-param="rangeKind"><option value="view">当前可见区域</option><option value="full">全可用文件</option><option value="segment">活动标记的单段</option><option value="roi">自定义 ROI</option></select><select id="activeSegment" aria-label="活动段"></select><p id="requestRange" class="range-text"></p><button data-action="roi" class="wide-button">▨ 选择单个检测 ROI…</button></div>
+        <div class="field-pair"><label>FFT N<input id="nfft" data-param="nfft" value="65536" inputmode="numeric"></label><label>谱步长 / ms<input id="hopMs" data-param="hopMs" value="1" inputmode="decimal"></label></div>
+        <div class="field-pair"><label>模型帧数<input id="modelFrames" data-param="modelFrames" value="10" inputmode="numeric"></label><label>滑动 / 帧<input id="modelHopFrames" data-param="modelHopFrames" value="5" inputmode="numeric"></label></div>
+        <div class="physical-times" id="physicalTimes"></div>
+        <div class="field-pair"><label>score threshold<input id="score" data-param="score" value="0.7" inputmode="decimal"></label><label>NMS IoU<input id="nms" data-param="nms" value="0.3" inputmode="decimal"></label></div><div class="field-pair"><label>topK<input id="topK" data-param="topK" value="512" inputmode="numeric"></label><label>噪底裕量 / dB<input id="noiseMargin" data-param="noiseMargin" value="6" inputmode="decimal"></label></div>
+        <div class="field"><label>互斥时间策略</label><div class="segmented strategies"><button data-strategy="sample" class="active">sample</button><button data-strategy="roi">ROI</button><button data-strategy="coarse">coarse</button></div><label class="checkline"><input id="splitEnabled" data-param="splitEnabled" type="checkbox" checked>允许同对象多段拆分</label></div>
+        <details open><summary>分支有效参数</summary><div class="field-pair"><label>边缘比例<input id="edgeFraction" data-param="edgeFraction" value="0.6" inputmode="decimal"></label><label>平滑 / ms<input id="smoothMs" data-param="smoothMs" value="1" inputmode="decimal"></label></div><div class="field-pair"><label>min on / ms<input id="minOnMs" data-param="minOnMs" value="5" inputmode="decimal"></label><label>min off / ms<input id="minOffMs" data-param="minOffMs" value="10" inputmode="decimal"></label></div><div class="field-pair"><label>粗分段间隔 / ms<input id="splitGapMs" data-param="splitGapMs" value="20" inputmode="decimal"></label><label>最短粗事件 / ms<input id="minBurstMs" data-param="minBurstMs" value="10" inputmode="decimal"></label></div><p id="branchHelp" class="help-text"></p></details>
+        <p class="draft-note" id="parameterDraftNote">参数在 Enter、Tab 或应用内点击后提交；输入中刷新不覆盖草稿。</p>
+        <div id="preflight" class="notice"></div><div class="run-summary" id="runSummary"></div>
+      </div><div class="run-actions"><button class="primary" id="runButton" data-action="run">▶ 运行检测演示</button><button id="cancelRun" data-action="cancel-run">■ 取消任务</button><button id="advanceRun" data-action="advance-run">下一演示阶段 →</button></div><p class="help-text">阶段仅由显式按钮推进。计数是模拟值，不表示模型进度。</p></section>
+      <section class="section"><h2>标记详情 / 复核</h2><div id="annotationDetail"></div></section>
+      <section class="section"><h2>窄带通道 / revision 快照</h2><div id="channelList"></div></section>
+    </div></aside>
+  </main>
+  <footer class="statusbar"><span id="statusText"></span><span class="spacer"></span><span>Canvas 2D · 无 DSP / 无模型推理</span><span>设计目标 2560 × 1440 逻辑工作区</span></footer>
+</div>
+<div id="contextMenu" class="context-menu hidden"><div class="eyebrow">宽带图谱</div><button data-action="detect">宽带信号检测…</button><button data-action="roi">选择检测 ROI…</button><button data-action="manual">切换持续手动标记</button><hr><button data-action="fit">适应可用数据</button><button data-action="view-back">视图后退</button></div>
+<div id="modalBackdrop" class="modal-backdrop hidden"><section id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-heading"><h2 id="modalTitle"></h2><button data-action="close-modal" aria-label="关闭对话框">×</button></div><div id="modalContent"></div><div id="modalActions" class="modal-actions"></div></section></div>
+<div id="toast" role="status"></div>
+<script src="data.js"></script><script src="app.js"></script>
+</body></html>

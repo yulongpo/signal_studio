@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:signalstudio:wideband:annotation:1",
+  "title": "Signal Studio Annotation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "fileId", "sourceSetId", "sourceKind", "originRecordId", "revisionId", "reviewStatus", "name", "segments", "originEvidence"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "id": {"$ref": "#/$defs/id"},
+    "fileId": {"$ref": "#/$defs/id"},
+    "sourceSetId": {"$ref": "#/$defs/id"},
+    "sourceKind": {"enum": ["ImportedLabel", "Manual", "Algorithm"]},
+    "originRecordId": {"$ref": "#/$defs/id"},
+    "revisionId": {"$ref": "#/$defs/id"},
+    "reviewStatus": {"enum": ["Pending", "Accepted", "Rejected"]},
+    "name": {"type": "string", "maxLength": 256},
+    "classLabel": {"type": ["string", "null"], "maxLength": 256},
+    "note": {"type": "string", "maxLength": 4096},
+    "segments": {"type": "array", "maxItems": 100000, "items": {"$ref": "#/$defs/segment"}},
+    "observation": {"oneOf": [{"$ref": "#/$defs/range"}, {"type": "null"}]},
+    "originEvidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["formatId", "originRef"],
+      "properties": {
+        "formatId": {"enum": ["generator-txt-v1", "torchsig-rfbench-sigmf-v1", "manual-v1", "legacy-manual-v1", "detection-v1"]},
+        "originRef": {"type": "string", "maxLength": 1024},
+        "runId": {"type": ["string", "null"], "maxLength": 128},
+        "refineMethod": {"enum": ["coarse", "sample", "roi", "none", "manual"]},
+        "refineStatus": {"enum": ["applied", "fallback", "skipped", "unknown"]},
+        "fallbackReason": {"type": ["string", "null"], "maxLength": 1024},
+        "scoreMean": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "scoreMax": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "windowIds": {"type": "array", "uniqueItems": true, "maxItems": 100000, "items": {"$ref": "#/$defs/sample"}},
+        "windowCount": {"type": "integer", "minimum": 0},
+        "originalFields": {"type": "object"}
+      }
+    },
+    "derivedFrom": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/id"}},
+    "deleted": {"type": "boolean"}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "sample": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,19})(?![\\s\\S])"},
+    "range": {
+      "type": "object", "additionalProperties": false,
+      "required": ["startSample", "endSample", "frequencyLowerHz", "frequencyUpperHz", "frequencyFrame"],
+      "properties": {
+        "startSample": {"$ref": "#/$defs/sample"},
+        "endSample": {"$ref": "#/$defs/sample"},
+        "frequencyLowerHz": {"type": "number", "minimum": -1e12, "maximum": 1e12},
+        "frequencyUpperHz": {"type": "number", "minimum": -1e12, "maximum": 1e12},
+        "frequencyFrame": {"enum": ["RF", "Baseband", "RealOneSided"]}
+      }
+    },
+    "segment": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "range", "timeQuality", "frequencyQuality"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "range": {"$ref": "#/$defs/range"},
+        "timeQuality": {"enum": ["SampleLabel", "RoundedLabel", "AlgorithmEstimated", "Manual"]},
+        "frequencyQuality": {"enum": ["NominalLabel", "ModelEstimated", "Refined", "Manual"]},
+        "uncertaintySamples": {"$ref": "#/$defs/sample"},
+        "clippedAtRoi": {"type": "boolean"}
+      }
+    }
+  },
+  "$comment": "Additional semantic validation is required: uint64 bounds, start<end, lower<upper, finite numbers, physical source bounds, reference integrity, unknown-time observation without fabricated segments, scoreMax>=scoreMean and hits<=windowCount."
+}

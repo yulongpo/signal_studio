@@ -1,0 +1,288 @@
+{
+    "activitySegments": 0,
+    "annotations": [
+    ],
+    "centerFrequencyHz": 2500000000,
+    "elapsedSeconds": 15.4994427,
+    "exactRecovery": true,
+    "pass": true,
+    "physicalSamples": "4000000",
+    "refinementStates": [
+    ],
+    "run": {
+        "chunks": [
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-2d33ee56546a37086f0d314743f46a75ba91f55d662c90402abc8f049496d809.json",
+                "resultCount": 2,
+                "sequence": "0",
+                "sha256": "2d33ee56546a37086f0d314743f46a75ba91f55d662c90402abc8f049496d809"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-2b57bc6124623fd277161b89e197c2c669efe8d00ffb3d1dfbe5bf16e5323f87.json",
+                "resultCount": 2,
+                "sequence": "1",
+                "sha256": "2b57bc6124623fd277161b89e197c2c669efe8d00ffb3d1dfbe5bf16e5323f87"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-76d5b318ecfbb7caff6202415b13282776ab0916445e9c4f07cb2ba26896c43f.json",
+                "resultCount": 2,
+                "sequence": "2",
+                "sha256": "76d5b318ecfbb7caff6202415b13282776ab0916445e9c4f07cb2ba26896c43f"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-64074308347273efb6d1b64e885782d077d8359db775a754cf1ff78eb7957a24.json",
+                "resultCount": 2,
+                "sequence": "3",
+                "sha256": "64074308347273efb6d1b64e885782d077d8359db775a754cf1ff78eb7957a24"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-78514f3a992bf6a6dae7f6d572275d002ac62d7b1199202067dda46a34677eed.json",
+                "resultCount": 2,
+                "sequence": "4",
+                "sha256": "78514f3a992bf6a6dae7f6d572275d002ac62d7b1199202067dda46a34677eed"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-7d6797c76d3564ba98db7e2dfc296f0d0aa0892de635597a3d94da1043cb02b5.json",
+                "resultCount": 2,
+                "sequence": "5",
+                "sha256": "7d6797c76d3564ba98db7e2dfc296f0d0aa0892de635597a3d94da1043cb02b5"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-8aa184928f993a0a5c0578b5270e160bc0b330191a7bb1118857384179d731aa.json",
+                "resultCount": 2,
+                "sequence": "6",
+                "sha256": "8aa184928f993a0a5c0578b5270e160bc0b330191a7bb1118857384179d731aa"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-075bfa4f690ff30d98919b09d19c6f4333c023d0704cd54009082d0a5885d4a7.json",
+                "resultCount": 2,
+                "sequence": "7",
+                "sha256": "075bfa4f690ff30d98919b09d19c6f4333c023d0704cd54009082d0a5885d4a7"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-2ce398733c3571dd9394ae0256ffde27e4ec62ead5ac1bc1b47a5ffa38f6a6bd.json",
+                "resultCount": 2,
+                "sequence": "8",
+                "sha256": "2ce398733c3571dd9394ae0256ffde27e4ec62ead5ac1bc1b47a5ffa38f6a6bd"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-b1e1d19686b91dfa70d8e368eb0995c527ebfdce563291646ba00e172a29fcd3.json",
+                "resultCount": 2,
+                "sequence": "9",
+                "sha256": "b1e1d19686b91dfa70d8e368eb0995c527ebfdce563291646ba00e172a29fcd3"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-68001f4fd296334b2120f0d304948ca92f8c3ae8ac46ecb4d0d690ab8af8687a.json",
+                "resultCount": 2,
+                "sequence": "10",
+                "sha256": "68001f4fd296334b2120f0d304948ca92f8c3ae8ac46ecb4d0d690ab8af8687a"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-de2599aaa53cd54a6eeedf0bab26148bd03d349afba738ccd9b02848861b852d.json",
+                "resultCount": 2,
+                "sequence": "11",
+                "sha256": "de2599aaa53cd54a6eeedf0bab26148bd03d349afba738ccd9b02848861b852d"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-faca05439dab5fae1dd23541d891a806588f5582ff07083f968a6e4dd382d053.json",
+                "resultCount": 2,
+                "sequence": "12",
+                "sha256": "faca05439dab5fae1dd23541d891a806588f5582ff07083f968a6e4dd382d053"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-a1a6b513482686ef78e23d9e5035df2937c090bfa6507945836101bdad496c9b.json",
+                "resultCount": 2,
+                "sequence": "13",
+                "sha256": "a1a6b513482686ef78e23d9e5035df2937c090bfa6507945836101bdad496c9b"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-6282f8e905eb15be65bb28f04feedf0d74cfda8894b7a1ca2e71ad6efd30f70b.json",
+                "resultCount": 2,
+                "sequence": "14",
+                "sha256": "6282f8e905eb15be65bb28f04feedf0d74cfda8894b7a1ca2e71ad6efd30f70b"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-6e8e1d4d55e2ba5a1a225af715bd85d563760c261a60e9f289976865b52051c6.json",
+                "resultCount": 2,
+                "sequence": "15",
+                "sha256": "6e8e1d4d55e2ba5a1a225af715bd85d563760c261a60e9f289976865b52051c6"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-e3f940e081c7f8fe8e3557f8d1587965c19d87b3cd5be87443284d7b7a0f3aae.json",
+                "resultCount": 2,
+                "sequence": "16",
+                "sha256": "e3f940e081c7f8fe8e3557f8d1587965c19d87b3cd5be87443284d7b7a0f3aae"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-ee722a9261ce7eef7b24f732b7b6a3fefcd32b0929f3c458109d7ccb347fd0f6.json",
+                "resultCount": 2,
+                "sequence": "17",
+                "sha256": "ee722a9261ce7eef7b24f732b7b6a3fefcd32b0929f3c458109d7ccb347fd0f6"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-1bb22d6098ea8e42b5c3d06ce1e8924f71f2feb3a739ea1dc9baf6bc96dd88fa.json",
+                "resultCount": 2,
+                "sequence": "18",
+                "sha256": "1bb22d6098ea8e42b5c3d06ce1e8924f71f2feb3a739ea1dc9baf6bc96dd88fa"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-fb1667b86e6381822efcb8287b9582840e7e0d4d8a3ffb6f67ae62a65de67840.json",
+                "resultCount": 1,
+                "sequence": "19",
+                "sha256": "fb1667b86e6381822efcb8287b9582840e7e0d4d8a3ffb6f67ae62a65de67840"
+            },
+            {
+                "relativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/chunk-599b41dccff1ed2e2d4cbdd4d65dbf04159d4ecbd6e569b4ccba6c3406485d6c.json",
+                "resultCount": 1,
+                "sequence": "20",
+                "sha256": "599b41dccff1ed2e2d4cbdd4d65dbf04159d4ecbd6e569b4ccba6c3406485d6c"
+            }
+        ],
+        "completedWindows": "39",
+        "computationPhase": "completed",
+        "coverage": [
+            {
+                "kind": "read",
+                "range": {
+                    "endSample": "4000000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": 2490000000,
+                    "frequencyUpperHz": 2510000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            },
+            {
+                "kind": "eligible",
+                "range": {
+                    "endSample": "4000000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": 2490000000,
+                    "frequencyUpperHz": 2510000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            },
+            {
+                "kind": "completed",
+                "range": {
+                    "endSample": "4000000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": 2490000000,
+                    "frequencyUpperHz": 2510000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            }
+        ],
+        "device": "NVIDIA GeForce RTX 5060 Laptop GPU",
+        "eligibleWindows": "39",
+        "error": "",
+        "finishedAtMilliseconds": "1791944912889",
+        "lifecycle": "Completed",
+        "manifestRelativePath": "detections/93b10267c5f9ddd3fb5d1e0cb81288710e852edc15d24bbc3cb8f30581d2b4a5/manifest.json",
+        "readFrames": "200",
+        "recoverable": false,
+        "refinedCandidates": "0",
+        "request": {
+            "contextRange": {
+                "endSample": "4000000",
+                "frequencyFrame": "RF",
+                "frequencyLowerHz": 2490000000,
+                "frequencyUpperHz": 2510000000,
+                "startSample": "0"
+            },
+            "evidenceBudgetBytes": "134217728",
+            "modelManifestPath": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+            "modelSha256": "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81",
+            "parameters": {
+                "bandwidthMarginDb": 6,
+                "batchSize": 2,
+                "coarseMinBurstSeconds": 0.01,
+                "coarseSplitGapSeconds": 0.02,
+                "maxMiss": 1,
+                "mergeFrequencyHz": 100000,
+                "minHits": 2,
+                "minOffSeconds": 0.01,
+                "minOnSeconds": 0.005,
+                "nmsIou": 0.3,
+                "sampleEdgeRatio": 0.6,
+                "scoreThreshold": 0.7,
+                "smoothSeconds": 0.001,
+                "splitBursts": true,
+                "timeStrategy": "sample",
+                "topK": 512
+            },
+            "parentRunId": null,
+            "profile": {
+                "backend": "TensorRt",
+                "fftSize": 65536,
+                "hopSeconds": 0.001,
+                "id": "ffscn-gui-iq-v1",
+                "maximumPsdOnly": false,
+                "modelFrames": 10,
+                "modelHopFrames": 5,
+                "name": "FFSCN GUI IQ · 10帧",
+                "status": "主线候选 / 需资产预检",
+                "supportsReal": false,
+                "version": 1
+            },
+            "rangeOrigin": "m4-frozen-complete-file-validation",
+            "requestedRange": {
+                "endSample": "4000000",
+                "frequencyFrame": "RF",
+                "frequencyLowerHz": 2490000000,
+                "frequencyUpperHz": 2510000000,
+                "startSample": "0"
+            },
+            "runId": "m4-sample-default-m4-source-T00-00",
+            "schemaVersion": 1,
+            "sourceAnnotationId": "",
+            "sourceIdentity": {
+                "availableSamples": "4000000",
+                "centerFrequencyHz": 2500000000,
+                "contentHash": "",
+                "effectiveFrequency": {
+                    "lowerHz": 2490000000,
+                    "upperHz": 2510000000
+                },
+                "fileId": "m4-source-T00-00",
+                "formatRevision": "1",
+                "hashedRange": null,
+                "path": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/M4/assets/holdout/data/T00-00.wav",
+                "physicalSamples": "4000000",
+                "projectGeneration": "940",
+                "quickFingerprint": "16000044/1791916438223",
+                "sampleFormat": {
+                    "byteOrder": "le",
+                    "channelLayout": "interleaved",
+                    "channels": 1,
+                    "encoding": "I16",
+                    "headerBytes": "44",
+                    "iqLayout": "iq",
+                    "normalizeIntegerAdc": true,
+                    "selectedChannel": 0,
+                    "structure": "complex",
+                    "trailerBytes": "0"
+                },
+                "sampleRateHz": 20000000,
+                "selectedSampleChannel": "0"
+            },
+            "sourceRevisionId": "",
+            "workingSetBudgetBytes": "268435456"
+        },
+        "resultCount": "40",
+        "runtime": "10.11.0.33",
+        "schema": "signal-studio-detection-run",
+        "sourceValidity": "Current",
+        "startedAtMilliseconds": "1791944897897",
+        "totalRefinementCandidates": "0",
+        "version": 2
+    },
+    "sampleRateHz": 20000000,
+    "schemaVersion": 1,
+    "shortProfile": false,
+    "sourceFingerprint": "16000044/1791916438223",
+    "sourcePath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T00-00.wav",
+    "strategy": "sample"
+}

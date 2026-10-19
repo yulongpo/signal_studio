@@ -1,0 +1,83 @@
+#pragma once
+
+#include <QByteArray>
+#include <QWidget>
+#include <array>
+#include <cstddef>
+#include <memory>
+
+class QGridLayout;
+class QLabel;
+class QPlainTextEdit;
+class QToolButton;
+class QVBoxLayout;
+
+namespace signalstudio {
+
+struct Annotation;
+struct AnnotationSourceSet;
+struct FileState;
+struct OriginEvidence;
+
+// Displays saved evidence only. Selecting a result never starts analysis.
+class AnnotationEvidenceWidget final : public QWidget {
+  Q_OBJECT
+
+ public:
+  // Auxiliary places the review summary in three columns. Its containing
+  // viewport still owns scrolling; full saved facts remain expandable.
+  enum class Mode { Inspector, Auxiliary };
+
+  explicit AnnotationEvidenceWidget(QWidget* parent = nullptr);
+  explicit AnnotationEvidenceWidget(Mode mode, QWidget* parent = nullptr);
+  Mode mode() const { return mode_; }
+  void setAnnotation(const Annotation*, const FileState*);
+
+ private:
+  enum class Fact {
+    Method,
+    TimeBasis,
+    Uncertainty,
+    FrequencyBasis,
+    CurrentRange,
+    OriginalRange,
+    Observation,
+    Mean,
+    Maximum,
+    Windows,
+    WindowIds,
+    Noise,
+    Reason,
+    Class,
+    Format,
+    Origin,
+    Coordinates,
+    Count
+  };
+
+  void buildFacts(QVBoxLayout*);
+  void buildAuxiliary(QVBoxLayout*);
+  void addFact(QGridLayout*, Fact, const QString& caption,
+               const QString& objectName);
+  void setFact(Fact, const QString& value);
+  void clearEvidence();
+  void showTimeEvidence(const Annotation&, double currentSampleRate,
+                        double originalSampleRate);
+  void showOriginEvidence(const Annotation&, const AnnotationSourceSet*);
+  void showScores(const Annotation&, bool fixture);
+
+  Mode mode_ = Mode::Inspector;
+  QLabel* title_ = nullptr;
+  QLabel* context_ = nullptr;
+  QLabel* notice_ = nullptr;
+  QLabel* scoreDefinition_ = nullptr;
+  QToolButton* rawToggle_ = nullptr;
+  QPlainTextEdit* rawFields_ = nullptr;
+  QWidget* measuredTrace_ = nullptr;
+  std::array<QLabel*, static_cast<std::size_t>(Fact::Count)> values_{};
+  QByteArray displayKey_;
+  std::shared_ptr<const OriginEvidence> displayedOrigin_;
+  bool empty_ = false;
+};
+
+}  // namespace signalstudio

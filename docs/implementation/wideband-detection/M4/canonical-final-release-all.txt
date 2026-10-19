@@ -1,0 +1,258 @@
+D:\softwares\cmake\bin\cmake.exe --preset local-release
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26300.
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+CMake Warning at D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake:339 (message):
+  This project is using headers of the GuiPrivate module and will therefore
+  be tied to this specific Qt module build version.  Running this project
+  against other versions of the Qt modules may crash at any arbitrary point.
+  This is not a bug, but a result of using Qt internals.  You have been
+  warned!
+
+  You can disable this warning by setting QT_NO_PRIVATE_MODULE_WARNING to ON.
+Call Stack (most recent call first):
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6GuiPrivate/Qt6GuiPrivateConfig.cmake:48 (_qt_internal_show_private_module_warning)
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/Qt6Config.cmake:253 (find_package)
+  CMakeLists.txt:17 (find_package)
+
+
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+-- Configuring done (0.4s)
+-- Generating done (1.8s)
+-- Build files have been written to: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+D:\softwares\cmake\bin\cmake.exe --build --preset local-release --parallel 2
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioBrand.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioBrand.lib
+  detection_refinement.cpp
+  正在扫描源以查找模块依赖项...
+  SignalStudioDisplaySamplingTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDisplaySamplingTests.exe
+  正在编译...
+  detection_refinement.cpp
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  detection_refinement_tests.cpp
+  SignalStudioDetectionPostprocessTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionPostprocessTests.exe
+  SignalStudioDetectionRefinedFusionTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionRefinedFusionTests.exe
+  正在编译...
+  正在扫描源以查找模块依赖项...
+  detection_refinement_tests.cpp
+  SignalStudioAnnotationTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioAnnotationTests.exe
+  正在扫描源以查找模块依赖项...
+  detection_task.cpp
+  detection_time_analysis.cpp
+  detection_store.cpp
+  正在编译...
+  detection_task.cpp
+  detection_time_analysis.cpp
+  detection_store.cpp
+  SignalStudioDetectionRefinementTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionRefinementTests.exe
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioInfrastructure.lib
+  Automatic MOC for target SignalStudioSampleFormatTests
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioAnnotationStoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioAnnotationStoreTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioSampleFormatTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioSampleFormatTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionModelBackendTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionModelBackendTests.exe
+  SignalStudioDetectionPipelineTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionPipelineTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  detection_time_pipeline_tests.cpp
+  detection_store_tests.cpp
+  detection_sample_energy_tests.cpp
+  正在编译...
+  detection_time_pipeline_tests.cpp
+  正在编译...
+  正在编译...
+  detection_sample_energy_tests.cpp
+  detection_store_tests.cpp
+  SignalStudioDetectionSampleEnergyTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionSampleEnergyTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionProtocolTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionProtocolTests.exe
+  SignalStudioDetectionStoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionStoreTests.exe
+  SignalStudioDetectionTimePipelineTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionTimePipelineTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionFrequencyAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionFrequencyAnalysisTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioChannelProcessorTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioChannelProcessorTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionWorker.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionWorker.exe
+  Automatic MOC for target SignalStudio
+  正在扫描源以查找模块依赖项...
+  annotation_evidence_widget.cpp
+  detection_card.cpp
+  正在编译...
+  detection_card.cpp
+  annotation_evidence_widget.cpp
+  SignalStudio.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudio.exe
+  Deploying Qt and compiler runtime to the standalone output directory
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_ATOMIC_WAIT.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_2.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/VCRUNTIME140.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/VCRUNTIME140_1.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_1.dll
+  D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudio.exe 64 bit, release executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugin.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding Qt6Svg for qsvgicon.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+EXEC : warning : Cannot find any version of the dxcompiler.dll and dxil.dll. This is not a problem unless Direct3D 12 and certain features are used by the application. [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudio.vcxproj]
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Skipping system library C:/WINDOWS/system32/icuuc.dll
+  Qt6Core.dll is up to date.
+  Qt6Gui.dll is up to date.
+  Qt6Network.dll is up to date.
+  Qt6Svg.dll is up to date.
+  Qt6Widgets.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  vc_redist.x64.exe is up to date.
+  qtuiotouchplugin.dll is up to date.
+  qsvgicon.dll is up to date.
+  qgif.dll is up to date.
+  qicns.dll is up to date.
+  qico.dll is up to date.
+  qjpeg.dll is up to date.
+  qsvg.dll is up to date.
+  qtga.dll is up to date.
+  qtiff.dll is up to date.
+  qwbmp.dll is up to date.
+  qwebp.dll is up to date.
+  qnetworklistmanager.dll is up to date.
+  qminimal.dll is up to date.
+  qoffscreen.dll is up to date.
+  qwindows.dll is up to date.
+  qmodernwindowsstyle.dll is up to date.
+  qcertonlybackend.dll is up to date.
+  qschannelbackend.dll is up to date.
+  -- Staged 10 x64 Release CRT DLLs from C:/Program Files/Microsoft Visual Studio/18/Community/VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.CRT
+  Automatic MOC for target SignalStudioDetectionSourceTests
+  Automatic MOC for target SignalStudioImportTests
+  Automatic MOC for target SignalStudioLabelImportTests
+  Automatic MOC for target SignalStudioUiCapture
+  Automatic MOC for target SignalStudioUiTests
+  Automatic MOC for target SignalStudioWavTests
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioWavTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioWavTests.exe
+  SignalStudioSpectralAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioSpectralAnalysisTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  detection_card.cpp
+  ui_tests.cpp
+  annotation_evidence_widget.cpp
+  SignalStudioImportTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioImportTests.exe
+  annotation_evidence_widget.cpp
+  ui_capture.cpp
+  detection_card.cpp
+  正在扫描源以查找模块依赖项...
+  SignalStudioLabelImportTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioLabelImportTests.exe
+  正在扫描源以查找模块依赖项...
+  detection_task_tests.cpp
+  正在编译...
+  annotation_evidence_widget.cpp
+  ui_tests.cpp
+  detection_card.cpp
+  正在编译...
+  正在编译...
+  annotation_evidence_widget.cpp
+  detection_card.cpp
+  ui_capture.cpp
+  detection_task_tests.cpp
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionSourceTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionSourceTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioCoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioCoreTests.exe
+  SignalStudioDetectionTaskTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionTaskTests.exe
+  SignalStudioUiCapture.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUiCapture.exe
+  SignalStudioUiTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUiTests.exe
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+      Start  1: signal_studio_detection_refined_fusion
+ 1/23 Test  #1: signal_studio_detection_refined_fusion .......   Passed    0.01 sec
+      Start  2: signal_studio_detection_time_pipeline
+ 2/23 Test  #2: signal_studio_detection_time_pipeline ........   Passed    1.60 sec
+      Start  3: signal_studio_detection_refinement
+ 3/23 Test  #3: signal_studio_detection_refinement ...........   Passed    0.02 sec
+      Start  4: signal_studio_detection_sample_energy
+ 4/23 Test  #4: signal_studio_detection_sample_energy ........   Passed    0.15 sec
+      Start  5: signal_studio_detection_pipeline
+ 5/23 Test  #5: signal_studio_detection_pipeline .............   Passed    1.77 sec
+      Start  6: signal_studio_detection_postprocess
+ 6/23 Test  #6: signal_studio_detection_postprocess ..........   Passed    0.03 sec
+      Start  7: signal_studio_detection_model_backend
+ 7/23 Test  #7: signal_studio_detection_model_backend ........   Passed    0.16 sec
+      Start  8: signal_studio_detection_frequency_analysis
+ 8/23 Test  #8: signal_studio_detection_frequency_analysis ...   Passed    0.18 sec
+      Start  9: signal_studio_detection_store
+ 9/23 Test  #9: signal_studio_detection_store ................   Passed    0.76 sec
+      Start 10: signal_studio_detection_protocol
+10/23 Test #10: signal_studio_detection_protocol .............   Passed    0.43 sec
+      Start 11: signal_studio_detection_task
+11/23 Test #11: signal_studio_detection_task .................   Passed    3.14 sec
+      Start 12: signal_studio_detection_source
+12/23 Test #12: signal_studio_detection_source ...............   Passed    0.90 sec
+      Start 13: signal_studio_annotations
+13/23 Test #13: signal_studio_annotations ....................   Passed    0.07 sec
+      Start 14: signal_studio_annotation_store
+14/23 Test #14: signal_studio_annotation_store ...............   Passed    4.94 sec
+      Start 15: signal_studio_label_import
+15/23 Test #15: signal_studio_label_import ...................   Passed    5.53 sec
+      Start 16: signal_studio_wav
+16/23 Test #16: signal_studio_wav ............................   Passed    0.78 sec
+      Start 17: signal_studio_import
+17/23 Test #17: signal_studio_import .........................   Passed    0.47 sec
+      Start 18: signal_studio_sample_format
+18/23 Test #18: signal_studio_sample_format ..................   Passed    2.79 sec
+      Start 19: signal_studio_core
+19/23 Test #19: signal_studio_core ...........................   Passed    0.64 sec
+      Start 20: signal_studio_channel_processor
+20/23 Test #20: signal_studio_channel_processor ..............   Passed    0.27 sec
+      Start 21: signal_studio_spectral_analysis
+21/23 Test #21: signal_studio_spectral_analysis ..............   Passed    0.36 sec
+      Start 22: signal_studio_display_sampling
+22/23 Test #22: signal_studio_display_sampling ...............   Passed    0.13 sec
+      Start 23: signal_studio_ui
+23/23 Test #23: signal_studio_ui .............................   Passed   63.93 sec
+
+100% tests passed, 0 tests failed out of 23
+
+Total Test time (real) =  89.11 sec

@@ -1,0 +1,90 @@
+{
+    "activeChannelId": "",
+    "activeFileId": "file-1",
+    "files": [
+        {
+            "activeMarkId": "",
+            "channels": [
+            ],
+            "display": {
+                "absoluteFrequency": true,
+                "auxiliaryMax": 9542.253635406494,
+                "auxiliaryMin": -1307.279354095459,
+                "auxiliaryMode": "waveform",
+                "colorScale": false,
+                "dynamicRangeDb": 80,
+                "grid": true,
+                "mainMode": "timeFrequency",
+                "palette": "coolEditClassic",
+                "psdFromSelection": false,
+                "psdMax": 0,
+                "psdMin": -100,
+                "psdSettings": {
+                    "parameters": {
+                        "burgOrder": 16,
+                        "kaiserBeta": 8.6,
+                        "method": 2,
+                        "overlap": 0.5,
+                        "removeMean": false,
+                        "segmentMilliseconds": 0,
+                        "tapers": 6,
+                        "timeBandwidth": 3.5,
+                        "window": 1
+                    },
+                    "scope": 0,
+                    "statistic": 0
+                },
+                "psdSize": 4096,
+                "referenceLevelDb": 0,
+                "spectrogramSettings": {
+                    "burgOrder": 16,
+                    "kaiserBeta": 8.6,
+                    "method": 2,
+                    "overlap": 0.5,
+                    "removeMean": false,
+                    "segmentMilliseconds": 0,
+                    "tapers": 6,
+                    "timeBandwidth": 3.5,
+                    "window": 1
+                },
+                "stftSize": 2048,
+                "waveformAutoFit": true,
+                "waveformMax": 9542.253635406494,
+                "waveformMin": -1307.279354095459,
+                "waveformMode": "iqRms"
+            },
+            "marks": [
+            ],
+            "metadata": {
+                "availableSamples": "22020096",
+                "centerFrequencyHz": 830000000,
+                "declaredBandwidthHz": 80000000,
+                "demo": false,
+                "demoSeed": 1,
+                "effectiveBandwidthHz": 80000000,
+                "id": "file-1",
+                "name": "IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_155446.dat",
+                "path": "E:/数据集/扫频数据/ALaShan_051/20260805/xiawu/IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_155446.dat",
+                "sampleCount": "954368000",
+                "sampleRateHz": 102400000,
+                "sourceFingerprint": "3817472000/1785916495610"
+            },
+            "selectedMarkIds": [
+            ],
+            "view": {
+                "frequency": {
+                    "lowerHz": 790000000,
+                    "upperHz": 870000000
+                },
+                "time": {
+                    "begin": "0",
+                    "end": "1024000"
+                }
+            }
+        }
+    ],
+    "name": "射频信号分析工程",
+    "narrowbandWorkspaceOpen": false,
+    "schema": "signal-studio-native-project",
+    "version": 3
+}

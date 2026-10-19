@@ -1,0 +1,12 @@
+{
+  "decodedSamples": "16777216",
+  "elapsedMilliseconds": 300,
+  "envelopePoints": 1024,
+  "fixture": "Temporary 64 MiB zero-code RAW file; real QFile scan and decoding; deleted after run",
+  "format": "CI16",
+  "pass": true,
+  "physicalBytes": 67108864,
+  "peakWorkingSetBytes": 25415680,
+  "memoryObservations": 15,
+  "memoryMeasurement": "Windows process PeakWorkingSet64 sampled during real source scan; includes reader mapping and runtime, not the UI/GPU process"
+}

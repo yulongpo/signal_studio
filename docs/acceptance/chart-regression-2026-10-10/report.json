@@ -1,0 +1,330 @@
+{
+  "date": "2026-10-10",
+  "branch": "rebuild/a143-native",
+  "baseCommit": "088a89c27616a57078368749ea10f54ba6a47753",
+  "changes": [
+    "normalized widget coordinates converted to backend NDC",
+    "overlay vertex buffer restored",
+    "GPU data clipped to plot rectangle",
+    "narrowband pending gestures included in window cancellation"
+  ],
+  "configurations": [
+    {
+      "configuration": "debug",
+      "buildPass": true,
+      "applicationSha256": "DEE3CCC47F99FC41D9465874A1425A49BDF5F034A8A4A1A7BBE2951FA8AD9A0A",
+      "ctestPassed": 4,
+      "ctestFailed": 0,
+      "ctestEvidence": "ctest-debug.txt",
+      "qtUi": {
+        "skipped": 0,
+        "passed": 72,
+        "failed": 0
+      },
+      "nativeRegressionEvidence": "native-ui-debug.txt"
+    },
+    {
+      "configuration": "release",
+      "buildPass": true,
+      "applicationSha256": "D71AF7429CD6EC8A93BB5FC89F206FE9CF4B9011D24905D0117348F065CA7047",
+      "ctestPassed": 4,
+      "ctestFailed": 0,
+      "ctestEvidence": "ctest-release.txt",
+      "qtUi": {
+        "skipped": 0,
+        "passed": 72,
+        "failed": 0
+      },
+      "nativeRegressionEvidence": "native-ui-release.txt"
+    }
+  ],
+  "smokeRuns": [
+    {
+      "evidence": "signal-studio-debug-gpu-screen2-4k-150-report.json",
+      "mode": "wideband",
+      "pass": true,
+      "hardwareRenderer": true,
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "screen": {
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": [
+          2560,
+          0,
+          2560,
+          1440
+        ],
+        "name": "Redmi 27 NU",
+        "pixelSize": [
+          3840,
+          2160
+        ],
+        "primary": false
+      },
+      "logicalWindowSize": [
+        2560,
+        1440
+      ],
+      "capturePixelSize": [
+        3840,
+        2160
+      ],
+      "gpuDataDrawCalls": 28,
+      "gpuVertexUploads": 5,
+      "heatmapUploads": 1,
+      "completedFrames": 7,
+      "narrowbandPagesVerified": false
+    },
+    {
+      "evidence": "signal-studio-narrowband-debug-gpu-screen2-4k-150-report.json",
+      "mode": "narrowband",
+      "pass": true,
+      "hardwareRenderer": true,
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "screen": {
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": [
+          2560,
+          0,
+          2560,
+          1440
+        ],
+        "name": "Redmi 27 NU",
+        "pixelSize": [
+          3840,
+          2160
+        ],
+        "primary": false
+      },
+      "logicalWindowSize": [
+        2560,
+        1440
+      ],
+      "capturePixelSize": [
+        3840,
+        2160
+      ],
+      "gpuDataDrawCalls": 37,
+      "gpuVertexUploads": 6,
+      "heatmapUploads": 1,
+      "completedFrames": 28,
+      "narrowbandPagesVerified": true
+    },
+    {
+      "evidence": "signal-studio-narrowband-release-gpu-screen2-4k-150-report.json",
+      "mode": "narrowband",
+      "pass": true,
+      "hardwareRenderer": true,
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "screen": {
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": [
+          2560,
+          0,
+          2560,
+          1440
+        ],
+        "name": "Redmi 27 NU",
+        "pixelSize": [
+          3840,
+          2160
+        ],
+        "primary": false
+      },
+      "logicalWindowSize": [
+        2560,
+        1440
+      ],
+      "capturePixelSize": [
+        3840,
+        2160
+      ],
+      "gpuDataDrawCalls": 40,
+      "gpuVertexUploads": 6,
+      "heatmapUploads": 1,
+      "completedFrames": 28,
+      "narrowbandPagesVerified": true
+    },
+    {
+      "evidence": "signal-studio-narrowband-release-software-screen2-4k-150-report.json",
+      "mode": "narrowband",
+      "pass": true,
+      "hardwareRenderer": false,
+      "backend": "QPainter 软件绘制",
+      "screen": {
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": [
+          2560,
+          0,
+          2560,
+          1440
+        ],
+        "name": "Redmi 27 NU",
+        "pixelSize": [
+          3840,
+          2160
+        ],
+        "primary": false
+      },
+      "logicalWindowSize": [
+        2560,
+        1440
+      ],
+      "capturePixelSize": [
+        3840,
+        2160
+      ],
+      "gpuDataDrawCalls": 0,
+      "gpuVertexUploads": 0,
+      "heatmapUploads": 0,
+      "completedFrames": 0,
+      "narrowbandPagesVerified": true
+    },
+    {
+      "evidence": "signal-studio-release-gpu-screen2-4k-150-report.json",
+      "mode": "wideband",
+      "pass": true,
+      "hardwareRenderer": true,
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "screen": {
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": [
+          2560,
+          0,
+          2560,
+          1440
+        ],
+        "name": "Redmi 27 NU",
+        "pixelSize": [
+          3840,
+          2160
+        ],
+        "primary": false
+      },
+      "logicalWindowSize": [
+        2560,
+        1440
+      ],
+      "capturePixelSize": [
+        3840,
+        2160
+      ],
+      "gpuDataDrawCalls": 30,
+      "gpuVertexUploads": 5,
+      "heatmapUploads": 1,
+      "completedFrames": 7,
+      "narrowbandPagesVerified": false
+    },
+    {
+      "evidence": "signal-studio-release-software-screen2-4k-150-report.json",
+      "mode": "wideband",
+      "pass": true,
+      "hardwareRenderer": false,
+      "backend": "QPainter 软件绘制",
+      "screen": {
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "logicalDpi": 96,
+        "logicalGeometry": [
+          2560,
+          0,
+          2560,
+          1440
+        ],
+        "name": "Redmi 27 NU",
+        "pixelSize": [
+          3840,
+          2160
+        ],
+        "primary": false
+      },
+      "logicalWindowSize": [
+        2560,
+        1440
+      ],
+      "capturePixelSize": [
+        3840,
+        2160
+      ],
+      "gpuDataDrawCalls": 0,
+      "gpuVertexUploads": 0,
+      "heatmapUploads": 0,
+      "completedFrames": 0,
+      "narrowbandPagesVerified": false
+    }
+  ],
+  "realIqRuns": [
+    {
+      "mode": "waveform",
+      "pass": true,
+      "evidence": "real-iq-waveform.json",
+      "source": {
+        "auxiliaryMode": "waveform",
+        "centerFrequencyHz": 830000000,
+        "declaredBandwidthHz": 80000000,
+        "durationSeconds": 9.32,
+        "mainMode": "timeFrequency",
+        "name": "IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_155446.dat",
+        "path": "E:/数据集/扫频数据/ALaShan_051/20260805/xiawu/IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_155446.dat",
+        "realIq": true,
+        "sampleCount": "954368000",
+        "sampleRateHz": 102400000
+      },
+      "bytes": "3817472000",
+      "interaction": {
+        "interactionPending": true,
+        "timeRangeChanged": true,
+        "wheelEventSent": true
+      },
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "gpuDataDrawCalls": 14,
+      "gpuVertexUploads": 3
+    },
+    {
+      "mode": "psd",
+      "pass": true,
+      "evidence": "real-iq-psd.json",
+      "source": {
+        "auxiliaryMode": "psd",
+        "centerFrequencyHz": 830000000,
+        "declaredBandwidthHz": 80000000,
+        "durationSeconds": 9.32,
+        "mainMode": "timeFrequency",
+        "name": "IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_155446.dat",
+        "path": "E:/数据集/扫频数据/ALaShan_051/20260805/xiawu/IQ0_FS102.4Msps_BW80MHz_FC830MHz_20260805_155446.dat",
+        "realIq": true,
+        "sampleCount": "954368000",
+        "sampleRateHz": 102400000
+      },
+      "bytes": "3817472000",
+      "interaction": {
+        "interactionPending": true,
+        "timeRangeChanged": true,
+        "wheelEventSent": true
+      },
+      "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+      "gpuDataDrawCalls": 15,
+      "gpuVertexUploads": 4
+    }
+  ],
+  "limitations": [
+    "Native GPU evidence is D3D11 on this machine only",
+    "Real IQ run tests initial viewport and one main-chart wheel zoom, not full-duration DDC or throughput",
+    "Remaining NB-A1.1 limitations remain in narrowband.md"
+  ]
+}

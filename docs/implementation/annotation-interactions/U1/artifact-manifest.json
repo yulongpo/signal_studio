@@ -1,0 +1,327 @@
+{
+  "schema": "signalstudio-annotation-interactions-artifacts-v1",
+  "node": "U1",
+  "branch": "rebuild/a143-native",
+  "baseline": "6615b3325e14fde01e27d0402094504ca1df6acb",
+  "recordedUtc": "2026-10-15T16:06:42.628672+00:00",
+  "checks": {
+    "fullDebugCtestPassed": 23,
+    "unchangedNonUiBinaries": 22,
+    "finalUiPassed": 104,
+    "finalUiFailed": 0,
+    "finalUiCtestSeconds": 456.14,
+    "targetedBehaviorPassed": 10,
+    "nativeScenesPassed": 8,
+    "spec": "PASS",
+    "quality": "PASS"
+  },
+  "screen": {
+    "availableLogicalGeometry": {
+      "height": 1392,
+      "width": 2560,
+      "x": 2560,
+      "y": 0
+    },
+    "connectedIndex": 2,
+    "deviceName": "\\\\.\\DISPLAY6",
+    "devicePath": "\\\\.\\DISPLAY6",
+    "devicePixelRatio": 1.5,
+    "friendlyName": "Redmi 27 NU",
+    "identityMethod": "Windows active DisplayConfig source/target",
+    "logicalDpi": 96,
+    "logicalGeometry": {
+      "height": 1440,
+      "width": 2560,
+      "x": 2560,
+      "y": 0
+    },
+    "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+    "name": "Redmi 27 NU",
+    "physicalDpi": 109.05000625015624,
+    "pixelSize": {
+      "height": 2160,
+      "width": 3840
+    },
+    "primary": false
+  },
+  "source": {
+    "centerFrequencyHz": 2500000000,
+    "dataPath": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-data",
+    "decodedCompleteFrames": "400000",
+    "format": "CF32",
+    "formatKey": "CF32/1/1/1/0/0/0/0/0",
+    "iqSha256": "3a47e55b5f02851d702d5c5782998bf3e374f67cde592c35689acf9ec5399254",
+    "metaPath": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta",
+    "metaSha256": "5efd03dae0f53002c8400ddc2ba65e367d7dde315b232a24cd77a2b1bd982a29",
+    "metadataProvenance": "SigMF 1.0.0",
+    "navigationEnvelopePoints": 1563,
+    "physicalSamples": "400000",
+    "sampleRateHz": 20000000
+  },
+  "syntheticAnnotations": true,
+  "modelInferenceVerified": false,
+  "cpuDdcVerified": false,
+  "compilerPreset": "local-debug (inherits vs2026-qt611-debug)",
+  "formatTool": "clang-format 18.1.8",
+  "inputs": [
+    {
+      "path": ".clang-format",
+      "bytes": 161,
+      "sha256": "003fcfe94418e9d1d6c0c7e6ebab4086672264dd96aa9d5c09d6ca24a4930723"
+    },
+    {
+      "path": "CMakeLists.txt",
+      "bytes": 21141,
+      "sha256": "d37722d664c4c2c7518257c378071cce3272535b61c6d70cf9a3f112aac036cc"
+    },
+    {
+      "path": "CMakePresets.json",
+      "bytes": 2265,
+      "sha256": "d101fbb8c21f65b6c45d3f629d48ffbac476e567e0a7c5baff87090034a473aa"
+    },
+    {
+      "path": "app/main_window.cpp",
+      "bytes": 204405,
+      "sha256": "e76a659a05af340cf238c972b7e3b49b94be538013c644697fba953745ab9b20"
+    },
+    {
+      "path": "app/main_window.h",
+      "bytes": 9305,
+      "sha256": "9db8233c85ef70bdbec639e370971f110a91524a17a9dd880995b0c4b19eed68"
+    },
+    {
+      "path": "application/annotation_service.cpp",
+      "bytes": 58823,
+      "sha256": "22c04694210e070065155ce7ddd1d37692869d048eddaa224a0e21c9f63dabab"
+    },
+    {
+      "path": "application/annotation_service.h",
+      "bytes": 7135,
+      "sha256": "26f31cc88daf8f7eca593693140caf7db897a2bff89267f5c3a86c77293762fd"
+    },
+    {
+      "path": "application/session.cpp",
+      "bytes": 39730,
+      "sha256": "a89816b7c4ab6f1bfde98cfa24af67d92dbaae210a9c21d2dd6dac71447fe02a"
+    },
+    {
+      "path": "cmake/run_ui_test.cmake",
+      "bytes": 758,
+      "sha256": "865f41e4d9ec988d2645f4547253888e49dda28de291dc33cc42547fa7762eb9"
+    },
+    {
+      "path": "domain/project.h",
+      "bytes": 9161,
+      "sha256": "0ecb838406f8296eeea2fee81d3b5f1f9e2ad454e12e6df11767ba5ecdca74ab"
+    },
+    {
+      "path": "scripts/screenshot.ps1",
+      "bytes": 16450,
+      "sha256": "149ce15e4ec178798de5006e169f8e5e58e1555efdc575b50da51f3bb3d2e522"
+    },
+    {
+      "path": "tests/annotation_interactions_capture.h",
+      "bytes": 19957,
+      "sha256": "c0cd9d6d4f62a021b54da297ecb0ad1c36c4cab4c9069fd333668972a722a04f"
+    },
+    {
+      "path": "tests/annotation_interactions_tests.h",
+      "bytes": 42719,
+      "sha256": "3d64fe7b93ece1f591c09bd04bbc4ba04797205eefda6a4624e7fdb6f5f05186"
+    },
+    {
+      "path": "tests/annotation_tests.cpp",
+      "bytes": 58531,
+      "sha256": "928b439c8bb529e84c3f0af93a8dc018641911ec4098950fce5cddb125823670"
+    },
+    {
+      "path": "tests/ui_capture.cpp",
+      "bytes": 56593,
+      "sha256": "279b48ed18aeb480644060f6c8a99aae6047ea7f72e1449802748ad0c4272de9"
+    },
+    {
+      "path": "tests/ui_tests.cpp",
+      "bytes": 202042,
+      "sha256": "f5f1e5b41f1b09dddfdfbd9e511241effabda4ef4069673d7905a9fa1033cd89"
+    },
+    {
+      "path": "ui/annotations/annotation_panel.cpp",
+      "bytes": 51913,
+      "sha256": "6d39573a93c07426836b6cf9f17db70e62e8eaeeb6e6a68c11dda956f435ae38"
+    },
+    {
+      "path": "ui/annotations/annotation_panel.h",
+      "bytes": 2475,
+      "sha256": "95c2fa68ede2ec7bd1216965ea6fa81c4264f2c3e5c78e0e860e4bb6a53a95cb"
+    },
+    {
+      "path": "ui/charts/plot_widget.cpp",
+      "bytes": 153513,
+      "sha256": "97bbbe7ca02a17e0fdcc1d11340f0bf4ea0eb8dabfea133e20b684016f7b300b"
+    },
+    {
+      "path": "ui/charts/plot_widget.h",
+      "bytes": 8917,
+      "sha256": "61cbc51723b7b1a780f3d24acd3b83143390453fdf0794ded1301b19c423f03e"
+    },
+    {
+      "path": ".gitattributes",
+      "bytes": 877,
+      "sha256": "ec85b177eefc713811f7412a3aa1bc3ab26af232873f8093d4e2b654b53cf132"
+    }
+  ],
+  "binaries": [
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudio.exe",
+      "bytes": 11303424,
+      "sha256": "733ba916660cd91b04925892b60773bb5d0beca179083fcea82a80feb660c5bc"
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioUiTests.exe",
+      "bytes": 12942848,
+      "sha256": "1aa390c0442976952beebd98e67d13efc1c5fc21c18c9f3cf3845c834ad794f9"
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioUiCapture.exe",
+      "bytes": 12405248,
+      "sha256": "406067adf88cf2a7a15e5ae1a377a397468c6d49a904187dcc1d0ea7283d7e84"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "docs/implementation/annotation-interactions/U1/IMPLEMENTATION.md",
+      "bytes": 2403,
+      "sha256": "5929f1414c8fff63f4160728c44d2247bff7d89f6513bdfc07ee9a3f30020a69"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/logs/build-ctest-debug.txt",
+      "bytes": 16299,
+      "sha256": "0559bd656af98c8b38427f1367393c16f9e45baf1d7a7b6a6c7a4af635bad866"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/logs/build-final.txt",
+      "bytes": 10604,
+      "sha256": "f2944f023abd4fca9dec883c699838dc940171002f793928f8d09cc86a168bff"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/logs/native-debug.txt",
+      "bytes": 231,
+      "sha256": "6dc94d67c2b84850da4e6385861c205dbcca1513e333fddebd74fa9590efc2ff"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/logs/ui-ctest-final.txt",
+      "bytes": 258,
+      "sha256": "5b1d0ba720defba44221342fe288c6d4f943350771840f2448e816e16cbf3024"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/logs/ui-debug-before-color.timing.jsonl",
+      "bytes": 12783,
+      "sha256": "7ec1a01cc21e2923ba57e894908b65512e25f4168ec8e3e6d6f8581c86e039e1"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/logs/ui-debug-before-color.txt",
+      "bytes": 158365,
+      "sha256": "905d37ac893098e937273cb8096c1b5309112d01fa3a1aa78f3bc70c5a3c22e6"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/logs/ui-debug-before-color.xml",
+      "bytes": 112585,
+      "sha256": "a8b0b6ac82987df3fe473f95354a1cbacba6358ac567e347701bf0e7b2340b4c"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/logs/ui-debug-final.timing.jsonl",
+      "bytes": 12924,
+      "sha256": "e9a3be9b020db8f3fadc15034464cd134ecb16c51fe42e5ee2796a2135e6441d"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/logs/ui-debug-final.txt",
+      "bytes": 159801,
+      "sha256": "9dbd62619e284f83e48bc020c18fd4142ec3f9aa8acd3f5cc46b77fe1485ff5e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/logs/ui-debug-final.xml",
+      "bytes": 113524,
+      "sha256": "301c7855984cd2a3752a01a01a6a9a1ed90c80731a162ecf2c238f8c44f925fa"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/logs/ui-targeted-final.txt",
+      "bytes": 16308,
+      "sha256": "3553ca688adddaf4e3f80122cf9e814e4c33514b104d6fc9e3dad37b95549d68"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/native-report.json",
+      "bytes": 479346,
+      "sha256": "20b7acacd5a0165b0e58b2f8029f5e490ca6f7d98d970cb7084647fd0b39c0df"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/native-source-colors.json",
+      "bytes": 525,
+      "sha256": "fb029069e9677a1770478267f1814df50818a17b0a5920afbbdafae62dc6b992"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/non-ui-binaries-final.json",
+      "bytes": 5826,
+      "sha256": "af1a9d24675dea3b1443bde659994706ce7199060b34ceb85d45c6c83e424400"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/REVIEW.md",
+      "bytes": 1700,
+      "sha256": "186f74fda359ca6f3a1d1e57518e19be768d9c83b7287bf2cff87273a9faf29c"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/screens-restored.json",
+      "bytes": 1525,
+      "sha256": "9747c36a47563081f7644bb934b183a0e588991ae7cfc0f1133000da2d7e0bd7"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/screenshots/01-three-sources-unknown-time.png",
+      "bytes": 2016219,
+      "sha256": "aa305b9421dfa44ea14d9df29d7769f94aa4bdb6bc4b8735d66b01275cce29ec"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/screenshots/02-current-segment-controls.png",
+      "bytes": 1991676,
+      "sha256": "9722beb9e20e089c972b7d65cae27ccad35b57da0700ae80cb4a5725a3a079d2"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/screenshots/03-table-tree-plot-selection.png",
+      "bytes": 2031927,
+      "sha256": "c4c067af5b9b137836ca61a88eb6af85881480481b18a8d7206e89b7576c9c6e"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/screenshots/04-linked-hover-preserves-spectrum.png",
+      "bytes": 2034391,
+      "sha256": "5f9c84a28cd8e26186c31de286ecaaba7b5726c66164cb86f79a35acde6be29f"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/screenshots/05-graph-loads-far-tree-and-page.png",
+      "bytes": 2194259,
+      "sha256": "ca51fd70210ab866ddf5ad5f39ceda179437d37b7a51ff360f1b1ad7d5d4a0cc"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/screenshots/06-matching-selection-across-pages.png",
+      "bytes": 1995449,
+      "sha256": "d9acb1a4ecb7ab23493b9e71b354053cdccc533301e0781e712a54a71ac6d3dc"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/screenshots/07-closed-layer-prunes-selection.png",
+      "bytes": 1863654,
+      "sha256": "de8bd26815b1d3f8f6ded662f91ae79e643dbe8c810231a4100c13bd73016f87"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/screenshots/08-filter-restored-without-old-selection.png",
+      "bytes": 2141210,
+      "sha256": "d4b5242837487eabfb6065ea57a857b6a0b72071c35cde5b5bd5784ad41950b9"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/static-checks.json",
+      "bytes": 228,
+      "sha256": "45b19e6823129369b21a574659e8efce89dcbc29873cfe280ecd8e30acb1dc41"
+    },
+    {
+      "path": "docs/implementation/annotation-interactions/U1/VALIDATION.md",
+      "bytes": 6920,
+      "sha256": "b63b3bdf6f5d7373350fd9dd853f2085965133b440227b77795f0e81111ef6c6"
+    }
+  ]
+}

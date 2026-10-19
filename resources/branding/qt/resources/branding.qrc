@@ -1,0 +1,30 @@
+<RCC>
+  <qresource prefix="/branding">
+    <file alias="raster/signal_studio_lockup_1024.png">../../png/lockup/signal_studio_lockup_1024.png</file>
+    <file alias="raster/signal_studio_wordmark_1024.png">../../png/wordmark/signal_studio_wordmark_1024.png</file>
+    <file alias="icon-dark.svg">../../svg/icon-dark.svg</file>
+    <file alias="icon-light.svg">../../svg/icon-light.svg</file>
+    <file alias="icon-mono-dark.svg">../../svg/icon-mono-dark.svg</file>
+    <file alias="icon-mono-light.svg">../../svg/icon-mono-light.svg</file>
+    <file alias="icon-primary.svg">../../svg/icon-primary.svg</file>
+    <file alias="lockup-dark.svg">../../svg/lockup-dark.svg</file>
+    <file alias="lockup-light.svg">../../svg/lockup-light.svg</file>
+    <file alias="lockup-mono-dark.svg">../../svg/lockup-mono-dark.svg</file>
+    <file alias="lockup-mono-light.svg">../../svg/lockup-mono-light.svg</file>
+    <file alias="lockup-primary.svg">../../svg/lockup-primary.svg</file>
+    <file alias="wordmark-dark.svg">../../svg/wordmark-dark.svg</file>
+    <file alias="wordmark-light.svg">../../svg/wordmark-light.svg</file>
+    <file alias="wordmark-mono-dark.svg">../../svg/wordmark-mono-dark.svg</file>
+    <file alias="wordmark-mono-light.svg">../../svg/wordmark-mono-light.svg</file>
+    <file alias="wordmark-primary.svg">../../svg/wordmark-primary.svg</file>
+    <file alias="raster/signal_studio_icon_1024.png">../../png/icon/signal_studio_icon_1024.png</file>
+    <file alias="raster/signal_studio_icon_128.png">../../png/icon/signal_studio_icon_128.png</file>
+    <file alias="raster/signal_studio_icon_16.png">../../png/icon/signal_studio_icon_16.png</file>
+    <file alias="raster/signal_studio_icon_24.png">../../png/icon/signal_studio_icon_24.png</file>
+    <file alias="raster/signal_studio_icon_256.png">../../png/icon/signal_studio_icon_256.png</file>
+    <file alias="raster/signal_studio_icon_32.png">../../png/icon/signal_studio_icon_32.png</file>
+    <file alias="raster/signal_studio_icon_48.png">../../png/icon/signal_studio_icon_48.png</file>
+    <file alias="raster/signal_studio_icon_512.png">../../png/icon/signal_studio_icon_512.png</file>
+    <file alias="raster/signal_studio_icon_64.png">../../png/icon/signal_studio_icon_64.png</file>
+  </qresource>
+</RCC>

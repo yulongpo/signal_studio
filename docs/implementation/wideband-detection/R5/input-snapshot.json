@@ -1,0 +1,72 @@
+{
+  "schema": "signalstudio-r5-input-snapshot-v1",
+  "branch": "rebuild/a143-native",
+  "parentCommit": "949ec38fbe35828083f6326b899580364f60bdb5",
+  "files": [
+    {
+      "path": "infrastructure/detection_model_backend.cpp",
+      "bytes": 43619,
+      "sha256": "ad9f4b04deb9ee8572f7a6786ee3246b0d16592abedc448479243319926024f2"
+    },
+    {
+      "path": "infrastructure/detection_model_backend.h",
+      "bytes": 3288,
+      "sha256": "ed28df7801ab4b2a98f5906558c7814053758b458464637d9f6a735232041d57"
+    },
+    {
+      "path": "infrastructure/detection_source.cpp",
+      "bytes": 36731,
+      "sha256": "988e78781ae5e9fe28633ad5e3948abbfda8b6360dcf06ce01465be48ef52ba0"
+    },
+    {
+      "path": "infrastructure/detection_store.cpp",
+      "bytes": 49804,
+      "sha256": "2bdd9b5c77758337c76e7870005d0ddeec54ac57273d5d0c8b629b16f732b622"
+    },
+    {
+      "path": "infrastructure/detection_task.cpp",
+      "bytes": 55119,
+      "sha256": "1a1637eb39d5e3927483113d895503dbd869a7380a2b865608180bc98b92f5da"
+    },
+    {
+      "path": "infrastructure/detection_worker_client.cpp",
+      "bytes": 5130,
+      "sha256": "c8ddc1520761d1af46b4cd5b4b3f6818442cb5031a0a644d95bb789b34fad4e5"
+    },
+    {
+      "path": "infrastructure/detection_worker_client.h",
+      "bytes": 966,
+      "sha256": "e812db61691be8f5f7cbf7d5c001851c351d0858cff00b4622f52bdf4d4f3f2e"
+    },
+    {
+      "path": "scripts/screenshot.ps1",
+      "bytes": 11585,
+      "sha256": "0cace73953bf49a780a288ae25b55a8011f96a7ad25869dd7e7ef986a84fb6ae"
+    },
+    {
+      "path": "tests/detection_model_backend_tests.cpp",
+      "bytes": 30678,
+      "sha256": "3014e473f64baa4b7123063f9f4726d298a37d38e4a25900fab5f5037307c955"
+    },
+    {
+      "path": "tests/detection_store_tests.cpp",
+      "bytes": 24306,
+      "sha256": "c64a328fb798dac954b4396c06a554fc77144e1b04b0602418bce96785136ca5"
+    },
+    {
+      "path": "tests/wideband_adaptation_capture.h",
+      "bytes": 12210,
+      "sha256": "fdb30f88fe1852525c0bc4e6029adabe8e396f60242476b9603da8f91d7bd2f8"
+    },
+    {
+      "path": "tests/wideband_detection_capture.h",
+      "bytes": 93033,
+      "sha256": "5451dbf4742495bacd6e8dbc2ef580e1a523374cfed0f830730d18fb24d240e6"
+    },
+    {
+      "path": "tools/detection_worker/main.cpp",
+      "bytes": 13184,
+      "sha256": "7542d1b8932f04e92cfee39f6a12440e712f0e1f693d8f724d0dea0ac38fd145"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "schema": "signalstudio-m4-paired-suite-index-v1",
+  "parameters": {
+    "strategy": "sample",
+    "shortProfile": false,
+    "semantics": "product-v2"
+  },
+  "scope": "T-default",
+  "diagnosticPartial": true,
+  "plannedFileCount": 96,
+  "expectedTruthCount": 0,
+  "samples": [
+    {
+      "sampleId": "T00-00",
+      "group": "pure-noise",
+      "source": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T00-00.wav",
+        "sha256": "6a5d91565954af972f775997b0bdd4355436098b6bfea0b4a28a1766ebe5fbd9"
+      },
+      "truth": {
+        "path": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\truth\\T00-00.json",
+        "sha256": "f9984b017ca5d85ea930fdc02ac450fa713f1bbb4357f00b088ce6f4ad37ed33"
+      },
+      "sampleRateHz": 20000000,
+      "physicalSamples": "4000000",
+      "centerFrequencyHz": 2500000000.0,
+      "effectiveBandwidthHz": 20000000,
+      "nativeResult": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-noise\\T-default\\T00-00\\native\\result.json",
+      "referenceResult": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-noise\\T-default\\T00-00\\reference\\result.json",
+      "nativeOriginalResult": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-noise\\T-default\\T00-00\\native\\result.json",
+      "referenceOriginalResult": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\representative-r4-noise\\T-default\\T00-00\\reference\\result.json",
+      "nativeRunFailure": false,
+      "referenceRunFailure": false
+    }
+  ]
+}

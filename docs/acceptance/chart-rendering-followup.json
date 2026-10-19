@@ -1,0 +1,126 @@
+{
+  "date": "2026-10-09",
+  "branch": "rebuild/a143-native",
+  "scope": "wideband-narrowband chart consistency, ADC-count waveform, peak envelope, GPU data rendering",
+  "build": {
+    "debug": "passed",
+    "release": "passed"
+  },
+  "ctest": {
+    "debug": {
+      "passed": 4,
+      "failed": 0,
+      "seconds": 142.05
+    },
+    "release": {
+      "passed": 4,
+      "failed": 0,
+      "seconds": 21.02
+    }
+  },
+  "waveform": {
+    "unit": "ADC-count equivalent; no voltage calibration is implied",
+    "magnitudeMode": "per-bin RMS",
+    "envelopeMode": "per-bin peak of abs(complex IQ)",
+    "phaseUnit": "radian",
+    "autoFitFraction": 0.75,
+    "autoFitCentered": true,
+    "manualYRangePersistsUntilAutoFit": true,
+    "uiTested": true
+  },
+  "chartInteraction": {
+    "sharedMathUsedByWideAndNarrowband": true,
+    "covered": [
+      "pointer-anchored zoom",
+      "range pan",
+      "fraction selection",
+      "bounded history helpers",
+      "Escape cancellation"
+    ],
+    "perChannelTimeFrequencyAmplitudeAndPsdRanges": true
+  },
+  "gpu": {
+    "overallPass": true,
+    "targetScreen": {
+      "connectedIndex": 2,
+      "name": "Redmi 27 NU",
+      "deviceName": "\\\\.\\DISPLAY6",
+      "pixelSize": [
+        3840,
+        2160
+      ],
+      "devicePixelRatio": 1.5
+    },
+    "backendObserved": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics",
+    "captureMethod": "QWidget window grab after settled GPU frames",
+    "captureVisibleContentSamples": 17280,
+    "wideband": {
+      "debug": {
+        "pass": true,
+        "gpuDataDrawCalls": 25,
+        "gpuVertexUploads": 5,
+        "report": "wide-render-debug/signal-studio-debug-gpu-screen2-4k-150-report.json",
+        "screenshot": "wide-render-debug/signal-studio-debug-gpu-screen2-4k-150.png"
+      },
+      "release": {
+        "pass": true,
+        "gpuDataDrawCalls": 25,
+        "gpuVertexUploads": 5,
+        "report": "wide-render-release/signal-studio-release-gpu-screen2-4k-150-report.json",
+        "screenshot": "wide-render-release/signal-studio-release-gpu-screen2-4k-150.png"
+      }
+    },
+    "narrowband": {
+      "debug": {
+        "pass": true,
+        "fourPagesVerified": 4,
+        "pageGpuDataDrawCalls": [
+          22,
+          132,
+          2,
+          130
+        ],
+        "gpuVertexUploads": 6,
+        "report": "chart-render-debug/signal-studio-narrowband-debug-gpu-screen2-4k-150-report.json",
+        "screenshot": "chart-render-debug/signal-studio-narrowband-debug-gpu-screen2-4k-150.png"
+      },
+      "release": {
+        "pass": true,
+        "fourPagesVerified": 4,
+        "pageGpuDataDrawCalls": [
+          22,
+          132,
+          2,
+          130
+        ],
+        "gpuVertexUploads": 6,
+        "report": "chart-render-release/signal-studio-narrowband-release-gpu-screen2-4k-150-report.json",
+        "screenshot": "chart-render-release/signal-studio-narrowband-release-gpu-screen2-4k-150.png"
+      }
+    },
+    "curveRendering": "line strips expand to GPU triangle strips; chart color is sampled from a separately uploaded LUT",
+    "captureHasVisibleContent": true
+  },
+  "softwareFallback": {
+    "nativeScreenSmokePass": true,
+    "allFourPagesVerified": true,
+    "screenCaptureUsable": true,
+    "report": "chart-software-final/signal-studio-narrowband-debug-software-screen2-4k-150-report.json",
+    "screenshot": "chart-software-final/signal-studio-narrowband-debug-software-screen2-4k-150.png"
+  },
+  "remainingAcceptanceItems": [
+    "no separate 128-MiB analysis-matrix LRU or merged priority request scheduler",
+    "cancellation joins the single worker and can delay a rapidly changing view",
+    "constellation selection/autoscale and every chart maximize/restore workflow are not fully verified",
+    "no per-sample SciPy numerical comparison has been run",
+    "the local 3.27-GB IQ stress and memory run has not been performed",
+    "prototype modal workflows have not all received native, step-by-step interaction capture",
+    "classification and demodulation remain synthetic demonstrations"
+  ],
+  "commitCreated": false,
+  "pushPerformed": false,
+  "finalBuildRecheck": {
+    "debug": "blocked by MSPDB140.dll version mismatch during relink after shader-resource cleanup",
+    "release": "passed"
+  }
+}

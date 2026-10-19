@@ -1,0 +1,1525 @@
+{
+  "schema": "signalstudio-wideband-asset-audit-v1",
+  "milestone": "M0",
+  "checkedAt": "2026-10-13T04:05:52.822080+00:00",
+  "timezone": "Asia/Shanghai",
+  "scope": "Read-only model/data/device/tool queries and these two audit documents; no model load, forward pass, export, training, build, test, commit, push or external repository mutation.",
+  "statusDefinitions": {
+    "verified": "This audit checked the stated identity or metadata; does not imply numerical or performance validation.",
+    "available": "Present or runnable for the explicitly stated purpose; full behavior remains untested.",
+    "needs_conversion": "Source asset exists; required deployment representation or verification is pending.",
+    "unavailable": "Not present in the audited path/environment; do not silently substitute another asset."
+  },
+  "environment": {
+    "operatingSystem": {
+      "status": "verified",
+      "name": "Microsoft Windows 11 Pro",
+      "version": "10.0.26300",
+      "architecture": "x64",
+      "probe": "Win32_OperatingSystem"
+    },
+    "cpu": {
+      "status": "verified",
+      "name": "AMD Ryzen AI 9 H 365 w/ Radeon 880M",
+      "physicalCores": 10,
+      "logicalProcessors": 20,
+      "probe": "Win32_Processor"
+    },
+    "nvidia": {
+      "status": "verified",
+      "index": 0,
+      "name": "NVIDIA GeForce RTX 5060 Laptop GPU",
+      "uuid": "GPU-dfc88db6-1727-3d42-2457-1f5ad4f5c528",
+      "driverVersion": "591.84",
+      "memoryMiB": 8151,
+      "computeCapability": "12.0",
+      "probe": "nvidia-smi --query-gpu=index,name,uuid,driver_version,memory.total,compute_cap --format=csv,noheader",
+      "validationBoundary": "Device metadata only; no workload, throughput or memory benchmark."
+    },
+    "qt": {
+      "status": "verified",
+      "root": "D:/softwares/Qt/6.11.1/msvc2022_64",
+      "version": "6.11.1",
+      "components": [
+        "Core",
+        "Gui",
+        "Widgets",
+        "ShaderTools/qsb",
+        "windeployqt"
+      ],
+      "probe": "qmake -query QT_VERSION and installed DLL/executable version metadata",
+      "applicationRuntimeTested": false
+    },
+    "msvc": {
+      "status": "verified",
+      "visualStudioVersion": "18.10.12224.181",
+      "visualStudioRoot": "C:/Program Files/Microsoft Visual Studio/18/Community",
+      "toolsetDirectory": "14.51.36231",
+      "compilerVersion": "19.51.36260.0",
+      "architecture": "x64",
+      "probe": "vswhere JSON; cl /Bv; compiler file metadata",
+      "note": "cl /Bv prints version then D8003 because no source is passed; no compile was attempted."
+    },
+    "cmake": {
+      "status": "verified",
+      "version": "4.3.1",
+      "path": "D:/softwares/cmake/bin/cmake.exe"
+    },
+    "cudaToolkit": {
+      "status": "verified",
+      "root": "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.4",
+      "nvccVersion": "12.4.131",
+      "onlyInstalledToolkitDirectoryObserved": "v12.4",
+      "note": "Separate from PyTorch wheel CUDA 13.2 and TensorRT bundle cudart 12.9; no CUDA source compilation was tested."
+    },
+    "pythonEnvironments": [
+      {
+        "path": "D:/profiles/anaconda/python.exe",
+        "status": "verified",
+        "python": "3.13.12",
+        "packages": {
+          "torch": "2.12.0+cu132",
+          "torchvision": "0.27.0+cu132",
+          "numpy": "2.4.4",
+          "scipy": "1.17.1",
+          "onnx": "1.22.0",
+          "onnxscript": "0.7.1"
+        },
+        "importsVerified": [
+          "torch",
+          "onnx"
+        ],
+        "cudaAvailable": true,
+        "cudaDevice": "NVIDIA GeForce RTX 5060 Laptop GPU",
+        "compiledCuda": "13.2",
+        "torchArchList": [
+          "sm_75",
+          "sm_80",
+          "sm_86",
+          "sm_90",
+          "sm_100",
+          "sm_120"
+        ],
+        "missingPackages": [
+          "onnxruntime",
+          "tensorrt"
+        ],
+        "note": "onnxscript version checked through installed package metadata; its import/export was not tested."
+      },
+      {
+        "path": "D:/profiles/anaconda/envs/ffscn_torch/python.exe",
+        "status": "verified",
+        "python": "3.13.14",
+        "packages": {
+          "torch": "2.12.0+cu132",
+          "torchvision": "0.27.0+cu132",
+          "numpy": "2.4.4",
+          "scipy": "1.17.1",
+          "onnx": "1.22.0"
+        },
+        "importsVerified": [
+          "torch",
+          "onnx"
+        ],
+        "cudaAvailable": true,
+        "compiledCuda": "13.2",
+        "torchArchList": [
+          "sm_75",
+          "sm_80",
+          "sm_86",
+          "sm_90",
+          "sm_100",
+          "sm_120"
+        ],
+        "missingPackages": [
+          "torchaudio",
+          "onnxruntime",
+          "tensorrt",
+          "onnxscript"
+        ]
+      },
+      {
+        "path": "D:/coding/FFSCN_train2/env/python.exe",
+        "status": "available",
+        "python": "3.13.14",
+        "packages": {
+          "torch": "2.12.0+cu132",
+          "torchvision": "0.27.0+cu132",
+          "numpy": "2.4.4",
+          "scipy": "1.17.1",
+          "onnx": "1.22.0"
+        },
+        "missingPackages": [
+          "onnxruntime",
+          "tensorrt",
+          "onnxscript"
+        ],
+        "validationBoundary": "Interpreter and package metadata only; libraries/device not imported here."
+      }
+    ],
+    "tensorRt": {
+      "status": "available",
+      "referenceSdkRoot": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt",
+      "version": "10.11.0.33",
+      "headerIdentities": [
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt/include/NvInferVersion.h",
+          "status": "verified",
+          "bytes": 1885,
+          "sha256": "2b11cd2013891f5416ae6bd6b657f8404d6c0109eabc2da55fb5fbac387bfae1",
+          "modifiedUtc": "2025-05-09T02:13:52+00:00"
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt/include/NvInfer.h",
+          "status": "verified",
+          "bytes": 373305,
+          "sha256": "6dc36bf40cdc84a0459f4d542814622bb3ff828580b7ed770c238efba45650b5",
+          "modifiedUtc": "2025-05-09T02:13:52+00:00"
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt/include/NvOnnxParser.h",
+          "status": "verified",
+          "bytes": 20028,
+          "sha256": "6f43f457d2d3f97bb001605607abb72de9060a301c7d0f5212c8496b14eed1b3",
+          "modifiedUtc": "2025-05-09T02:13:52+00:00"
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt/lib/nvinfer.lib",
+          "status": "verified",
+          "bytes": 4382252,
+          "sha256": "feb5114083b45e60ff0c4e39ce9a25e02da7201472b46ee4d33a79691b6c710f",
+          "modifiedUtc": "2025-05-09T02:13:56+00:00"
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt/lib/nvonnxparser.lib",
+          "status": "verified",
+          "bytes": 2524,
+          "sha256": "9641836c844b4904c6500c315bbf6198ea270cc53f683e9188e167e723278c1c",
+          "modifiedUtc": "2025-05-09T02:14:16+00:00"
+        }
+      ],
+      "runtimeFiles": [
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt/bin/cublas64_12.dll",
+          "status": "available",
+          "bytes": 102518784
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt/bin/cublasLt64_12.dll",
+          "status": "available",
+          "bytes": 667338752
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt/bin/cudart64_12.dll",
+          "status": "available",
+          "bytes": 580608
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt/bin/nvinfer_10.dll",
+          "status": "available",
+          "bytes": 476635680
+        }
+      ],
+      "runtimeDllLoadOk": true,
+      "getInferLibVersion": 101100,
+      "engineDeserialized": false,
+      "missingConversionFiles": [
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt/bin/trtexec.exe",
+          "status": "unavailable",
+          "exists": false
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt/bin/nvonnxparser_10.dll",
+          "status": "unavailable",
+          "exists": false
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/third_party/tensorrt/bin/nvinfer_plugin_10.dll",
+          "status": "unavailable",
+          "exists": false
+        }
+      ],
+      "trtexecOnPath": false,
+      "pythonBindingsInstalled": false,
+      "nativeEngineBuildStatus": "unavailable",
+      "validationBoundary": "ctypes loaded nvinfer_10.dll and queried its version only. This is a reference repository dependency inventory, not a configured Signal Studio build input or native inference test."
+    },
+    "onnx": {
+      "status": "available",
+      "version": "1.22.0",
+      "importVerified": true,
+      "onnxRuntimeStatus": "unavailable",
+      "exportStatus": "needs_conversion",
+      "validationBoundary": "No ONNX graph loaded/checked/executed and no export attempted."
+    }
+  },
+  "referenceRepositories": [
+    {
+      "path": "D:/project/FFSCN_train2",
+      "branch": "feat/ffscn-gui-optimization",
+      "head": "d2d9dd947c58314d09406cf9fd0bfbe89a57c465",
+      "dirty": true,
+      "dirtyEntries": [
+        "M FFSCN_TEST_GUI/README.md",
+        " M FFSCN_TEST_GUI/algorithm/data_loader.py",
+        " M FFSCN_TEST_GUI/algorithm/nms.py",
+        " M FFSCN_TEST_GUI/algorithm/refine_roi.py",
+        " M FFSCN_TEST_GUI/algorithm/refine_sample.py",
+        " M FFSCN_TEST_GUI/algorithm/stft.py",
+        " M FFSCN_TEST_GUI/business/config.py",
+        " M FFSCN_TEST_GUI/business/detection.py",
+        " M FFSCN_TEST_GUI/business/result_export.py",
+        " M FFSCN_TEST_GUI/business/tracker.py",
+        " M FFSCN_TEST_GUI/cli.py",
+        " M FFSCN_TEST_GUI/config/wav_inference_gui.ini",
+        " M FFSCN_TEST_GUI/gui.py",
+        " M FFSCN_TEST_GUI/infrastructure/file_io.py",
+        " M FFSCN_TEST_GUI/infrastructure/paths.py",
+        " M FFSCN_TEST_GUI/run_gui.bat",
+        " M FFSCN_TEST_GUI/test_split_refine.py",
+        " M FFSCN_TEST_GUI/tests/test_analysis_config.py",
+        " M FFSCN_TEST_GUI/tests/test_detection_correctness.py",
+        " M FFSCN_TEST_GUI/tests/test_gui_analysis_state.py",
+        " M FFSCN_TEST_GUI/tests/test_offscreen_smoke.py",
+        " M FFSCN_TEST_GUI/tests/test_result_export.py",
+        " M FFSCN_TEST_GUI/tests/test_split_disable.py",
+        " M FFSCN_TEST_GUI/ui/main_window.py",
+        " M FFSCN_TEST_GUI/ui/workers.py",
+        " M monitor/server.py",
+        " M monitor/static/app.js",
+        " M monitor/static/index.html",
+        " M monitor/static/styles.css",
+        " M tests/test_monitor_server.py",
+        "?? FFSCN_TEST_GUI/business/evaluation.py",
+        "?? FFSCN_TEST_GUI/test_visualization.py",
+        "?? FFSCN_TEST_GUI/tests/test_review_fixes.py",
+        "?? TEST_REPORT_EPOCH210.md",
+        "?? broadband_platform_optimization/",
+        "?? deliverables/",
+        "?? docs/",
+        "?? evaluation_1d.py",
+        "?? multiscale_1d.py",
+        "?? reports/",
+        "?? scripts/run_multiscale_retest.sh",
+        "?? scripts/test_1d.sh",
+        "?? spectral_band_refine.py",
+        "?? test_1d.py",
+        "?? test_visualization.py",
+        "?? tests/test_1d_runner.py",
+        "?? tests/test_cnr_z_whole_eval.py",
+        "?? tests/test_multiscale_1d.py",
+        "?? tests/test_multiscale_eval.py",
+        "?? tests/test_spectral_band_refine.py",
+        "?? tests/test_test_visualization.py",
+        "?? tests/test_z_test_whole.py",
+        "?? tests/test_z_test_whole_loading.py",
+        "?? tests/test_z_test_whole_stft.py",
+        "?? tests/test_z_whole_broad_nffts.py",
+        "?? tools/build_delivery_package.py",
+        "?? tools/build_training_test_docx.py",
+        "?? tools/check_spectral_refine.py",
+        "?? tools/check_stft_timefps.py",
+        "?? tools/check_z_whole_eval.py",
+        "?? tools/cnr_z_whole_eval.py",
+        "?? tools/evaluate_z_whole.py",
+        "?? tools/finalize_delivery_package.py",
+        "?? tools/inspect_1d_dataset.py",
+        "?? tools/multiscale_eval.py",
+        "?? tools/multiscale_report.py",
+        "?? tools/render_docx_with_word.ps1",
+        "?? tools/report_multiscale_1d.py",
+        "?? tools/report_z_whole_eval.py",
+        "?? visualization_1d.py",
+        "?? z_test_whole.py",
+        "?? z_test_whole_multiscale_backup.py"
+      ],
+      "identityScope": "Observed working tree; HEAD alone does not describe modified or untracked files."
+    },
+    {
+      "path": "D:/project/SCN_based_PSD_Detection",
+      "branch": "scn_dev",
+      "head": "be95399aa17409a45380bdf46f3e42e75bfc647b",
+      "dirty": true,
+      "dirtyEntries": [
+        "M CMakeLists.txt",
+        " M CMakePresets.json",
+        " M Readme.md",
+        " M algorithm/CMakeLists.txt",
+        " M algorithm/DetectionConfig.cpp",
+        " M algorithm/DetectionConfig.h",
+        " M algorithm/DetectionEngine/DetectionEngine.cpp",
+        " M algorithm/types/DetectionTypes.h",
+        " M app/HaiAISpecMonitor/CMakeLists.txt",
+        " M app/HaiAISpecMonitor/ui/DetectionConfigWidget.cpp",
+        " M app/HaiAISpecMonitor/ui/DetectionConfigWidget.h",
+        " M app/HaiAISpecMonitor/ui/SettingsPage.cpp",
+        " M app/HaiAISpecMonitor/ui/SpectrumWidget.cpp",
+        " M app/HaiAISpecMonitor/ui/SpectrumWidget.h",
+        " M app/HaiAISpecMonitor/ui/WaterfallWidget.cpp",
+        " M app/HaiAISpecMonitor/ui/WaterfallWidget.h",
+        " M cmake/ScnTensorRT.cmake",
+        " M docs/scn_detection.md",
+        " M tests/CMakeLists.txt",
+        " M tests/DetectionLabTests.cpp",
+        " M tests/ScnTests.cpp",
+        " M tools/DetectionLab/CMakeLists.txt",
+        " M tools/DetectionLab/DetectionLabWindow.cpp",
+        " M tools/DetectionLab/DetectionLabWindow.h",
+        " M tools/DetectionLab/DetectionLabWorker.cpp",
+        " M tools/DetectionLab/DetectionLabWorker.h",
+        " M tools/DetectionLab/LabIO.cpp",
+        " M tools/DetectionLab/LabSession.cpp",
+        " M tools/DetectionLab/LabSession.h",
+        " M tools/DetectionLab/README.md",
+        " M tools/package_release.ps1",
+        "?? algorithm/refine/BandwidthRefiner.cpp",
+        "?? algorithm/refine/BandwidthRefiner.h",
+        "?? app/HaiAISpecMonitor/ui/SpectrumViewBounds.h",
+        "?? cmake/ScnRuntimeOutput.cmake",
+        "?? tools/DetectionLab/PlaybackTiming.h"
+      ],
+      "identityScope": "Observed working tree; HEAD alone does not describe modified or untracked files."
+    }
+  ],
+  "primaryModel": {
+    "profileId": "ffscn-gui-iq-v1",
+    "checkpoint": {
+      "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/config/epoch_1200.pth",
+      "status": "verified",
+      "bytes": 11145701,
+      "sha256": "acd997957dd85b7fc560897874b575d4776e80270d7e377d1de7559e513e40e0",
+      "modifiedUtc": "2024-01-17T23:21:16.983346+00:00",
+      "planningSha256": "acd997957dd85b7fc560897874b575d4776e80270d7e377d1de7559e513e40e0",
+      "matchesPlanningSha256": true,
+      "expectedSha256": "acd997957dd85b7fc560897874b575d4776e80270d7e377d1de7559e513e40e0",
+      "matchesExpectedSha256": true
+    },
+    "deploymentStatus": "needs_conversion",
+    "referenceArchitectureSource": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/network.py",
+    "referenceSourceFiles": [
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/README.md",
+        "status": "verified",
+        "bytes": 9350,
+        "sha256": "cab2161d73b96d263b5207997f3d3f7329065c0cafca41274cd29f9e2e67e582",
+        "modifiedUtc": "2026-08-31T04:10:57.009130+00:00",
+        "planningSha256": "cab2161d73b96d263b5207997f3d3f7329065c0cafca41274cd29f9e2e67e582",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": "910d779632114c7355f417571d4a84b9da6f1cb7",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/README.md"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/config.py",
+        "status": "verified",
+        "bytes": 8130,
+        "sha256": "8aad0115a7962230870395035d13e6e8cdcd0051784f5e34b7d1d5c4da1fd51d",
+        "modifiedUtc": "2026-08-30T14:43:02.043845+00:00",
+        "planningSha256": "8aad0115a7962230870395035d13e6e8cdcd0051784f5e34b7d1d5c4da1fd51d",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": "f0c290760cf6a56764643b92cbed5187a2889291",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/business/config.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/detection.py",
+        "status": "verified",
+        "bytes": 33725,
+        "sha256": "f825313f692b13813624b5adef2db8fa46099b6a11978cf7a088817160503c75",
+        "modifiedUtc": "2026-08-30T14:16:41.808792+00:00",
+        "planningSha256": "f825313f692b13813624b5adef2db8fa46099b6a11978cf7a088817160503c75",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": "a588a4b24f111f40bbde81a132953d73cb99b53f",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/business/detection.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/tracker.py",
+        "status": "verified",
+        "bytes": 11564,
+        "sha256": "77c36a2b7f584c560e2109c97a78ff1688b527ace9765b736941657f0e862ed1",
+        "modifiedUtc": "2026-08-30T13:43:23.993439+00:00",
+        "planningSha256": "77c36a2b7f584c560e2109c97a78ff1688b527ace9765b736941657f0e862ed1",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": "0abad6cc2e9633978cd43bbf54744a5909c5f2e2",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/business/tracker.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/evaluation.py",
+        "status": "verified",
+        "bytes": 3030,
+        "sha256": "e460dd0f3b85c233bde0247df9b5634502b2dd1bc03d27677db211b1148667e9",
+        "modifiedUtc": "2026-08-30T14:09:16.158368+00:00",
+        "planningSha256": "e460dd0f3b85c233bde0247df9b5634502b2dd1bc03d27677db211b1148667e9",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": null,
+        "workingTreeGitStatus": "?? FFSCN_TEST_GUI/business/evaluation.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/result_export.py",
+        "status": "verified",
+        "bytes": 6393,
+        "sha256": "c468a40aaef100ed0ddbafe098ba57e3ed08844ad29203d0cb94e29ff2b9c5e5",
+        "modifiedUtc": "2026-08-30T14:10:48.164490+00:00",
+        "planningSha256": "c468a40aaef100ed0ddbafe098ba57e3ed08844ad29203d0cb94e29ff2b9c5e5",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": "2e5a897e279a0fc7d270b9bb9db0727fcbf63314",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/business/result_export.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/network.py",
+        "status": "verified",
+        "bytes": 9398,
+        "sha256": "e35f9258b9f17164f5a4574769e8a1e635116bee5c9fc96aedea5547982831d1",
+        "modifiedUtc": "2026-08-27T10:40:21.324338+00:00",
+        "gitHeadBlob": "af5bb521de66511ac78ec998a48e980933028c00",
+        "workingTreeGitStatus": "clean"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/backbone.py",
+        "status": "verified",
+        "bytes": 14163,
+        "sha256": "2ebda46eb9ca05bb7f85541187aaff1ece891877a3c8cd18a82983684c515dd8",
+        "modifiedUtc": "2026-07-31T07:13:38.001393+00:00",
+        "gitHeadBlob": "d203abdbffdb48737be60f3c01b9b7e21ec386d9",
+        "workingTreeGitStatus": "clean"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/decoders.py",
+        "status": "verified",
+        "bytes": 4922,
+        "sha256": "7480c56d56d1f8f39c496f72e23892309166954cf2c6f008c3abaad26dddd26b",
+        "modifiedUtc": "2026-07-31T06:35:40.076325+00:00",
+        "gitHeadBlob": "333d63d11e3de7cb72bfd4d9cca05b8ed5dcb9bb",
+        "workingTreeGitStatus": "clean"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/data_loader.py",
+        "status": "verified",
+        "bytes": 27065,
+        "sha256": "c5f26c44760c4550a3950208cb40d267656b60e6c281804d6ef254c76795ae65",
+        "modifiedUtc": "2026-08-30T13:43:55.072872+00:00",
+        "gitHeadBlob": "3955b0ac8dab7bc58823b947fec88fa181cec351",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/algorithm/data_loader.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/stft.py",
+        "status": "verified",
+        "bytes": 4845,
+        "sha256": "2195f4db1c51c93f6206bc8b6ae03c5c2b4392c54500a2f7fd98bd03a34e550b",
+        "modifiedUtc": "2026-08-30T13:47:41.231961+00:00",
+        "planningSha256": "2195f4db1c51c93f6206bc8b6ae03c5c2b4392c54500a2f7fd98bd03a34e550b",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": "b9001c2e589cd32d1cf6318db97047324a09cf99",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/algorithm/stft.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/nms.py",
+        "status": "verified",
+        "bytes": 6695,
+        "sha256": "5da650118b1fb8e4ee4805cb6bbc0bc53aa235d220c3c35901dd41d2aa0a6cb0",
+        "modifiedUtc": "2026-08-30T14:25:53.424922+00:00",
+        "planningSha256": "5da650118b1fb8e4ee4805cb6bbc0bc53aa235d220c3c35901dd41d2aa0a6cb0",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": "53ad28267c0570bd02db2d4d816c38e97832ec9f",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/algorithm/nms.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/refine_sample.py",
+        "status": "verified",
+        "bytes": 9218,
+        "sha256": "0ec2916095eab0686db47b6169926ac6c4e61ed768a6752b82ab59415844edad",
+        "modifiedUtc": "2026-08-30T13:43:29.318060+00:00",
+        "planningSha256": "0ec2916095eab0686db47b6169926ac6c4e61ed768a6752b82ab59415844edad",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": "f6300c8e54d2132a8e2e47623f0dddee598fa46b",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/algorithm/refine_sample.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/refine_roi.py",
+        "status": "verified",
+        "bytes": 7222,
+        "sha256": "c6d06e2a681a6e2e2c86a8c782e57cc83da0d777b8181d9e85f56fac56543a99",
+        "modifiedUtc": "2026-08-30T13:43:43.149059+00:00",
+        "planningSha256": "c6d06e2a681a6e2e2c86a8c782e57cc83da0d777b8181d9e85f56fac56543a99",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": "4e1c278033bd80442344f6edb3c343ce9c5d3818",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/algorithm/refine_roi.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/label_parser.py",
+        "status": "verified",
+        "bytes": 1823,
+        "sha256": "52468a9dbc3d23a728912c4a6f6de088d0678347593a0139eab9c4e86c90fa7f",
+        "modifiedUtc": "2026-07-31T06:38:42.488114+00:00",
+        "gitHeadBlob": "01c3a02aff6b4f009c113cc5694c00d942a3165a",
+        "workingTreeGitStatus": "clean"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/infrastructure/file_io.py",
+        "status": "verified",
+        "bytes": 4550,
+        "sha256": "cbf0dc28629fe7fc6d1d1f6e587430ea4c70195f0cd33814252b3c18a251dc35",
+        "modifiedUtc": "2026-08-30T14:07:37.097577+00:00",
+        "planningSha256": "cbf0dc28629fe7fc6d1d1f6e587430ea4c70195f0cd33814252b3c18a251dc35",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": "45f3dea7ffa01a8977b07bacc39222038beda3de",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/infrastructure/file_io.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/infrastructure/paths.py",
+        "status": "verified",
+        "bytes": 3536,
+        "sha256": "30583b3354d006611f7996357ef1b55c88cb748ceb857b4cb5e788b1bde4d939",
+        "modifiedUtc": "2026-08-30T13:50:34.247348+00:00",
+        "gitHeadBlob": "c46845a5f6e5993f3f015c5e8b55c9de007deedb",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/infrastructure/paths.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/cli.py",
+        "status": "verified",
+        "bytes": 12278,
+        "sha256": "edf4277c29fb8e83708544c4fc4e59fbbc1795d619c6d42c3b89e3b75f8208fb",
+        "modifiedUtc": "2026-08-30T14:27:07.442059+00:00",
+        "gitHeadBlob": "edb3881d779b29887584bef72bab9753256c448f",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/cli.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/config/wav_inference_gui.ini",
+        "status": "verified",
+        "bytes": 649,
+        "sha256": "858da516aec524f8287d0f9c43dd264d8c10ec5c76670632ce92c532de027ceb",
+        "modifiedUtc": "2026-08-30T14:43:02.043845+00:00",
+        "gitHeadBlob": "3898d1f3b0d377f7bcffde1544e6f979f0f9b0d3",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/config/wav_inference_gui.ini"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/tests/test_review_fixes.py",
+        "status": "verified",
+        "bytes": 4698,
+        "sha256": "8c8a8f4b04211d7fca5790815e3a32f353b51cc9a890aa8b599e52c9fe74babb",
+        "modifiedUtc": "2026-08-30T14:12:50.235620+00:00",
+        "planningSha256": "8c8a8f4b04211d7fca5790815e3a32f353b51cc9a890aa8b599e52c9fe74babb",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": null,
+        "workingTreeGitStatus": "?? FFSCN_TEST_GUI/tests/test_review_fixes.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/tests/test_gui_analysis_state.py",
+        "status": "verified",
+        "bytes": 15910,
+        "sha256": "e790d1a482ecfa59f73fd3ccb52c0a4520c568e42ace3443eefc5c3ddcf4f1a2",
+        "modifiedUtc": "2026-08-31T04:08:17.128621+00:00",
+        "planningSha256": "e790d1a482ecfa59f73fd3ccb52c0a4520c568e42ace3443eefc5c3ddcf4f1a2",
+        "matchesPlanningSha256": true,
+        "gitHeadBlob": "f62d12664dab5b6acb30d97f724ee462a32ebea6",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/tests/test_gui_analysis_state.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/tests/test_detection_correctness.py",
+        "status": "verified",
+        "bytes": 11637,
+        "sha256": "1a349a494de637af1abdadc720f0a2abb698a0363fad8b17c29f8aac6727a2a3",
+        "modifiedUtc": "2026-08-30T13:51:17.073387+00:00",
+        "gitHeadBlob": "b7afc9aecae09ef985eb9574a16989cb395d2662",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/tests/test_detection_correctness.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/ui/workers.py",
+        "status": "verified",
+        "bytes": 10283,
+        "sha256": "9dce9acea9aecfae094a8cb20cfc1e7fcaf52993c3ca5698d783c95eb06427a0",
+        "modifiedUtc": "2026-08-30T14:10:48.166131+00:00",
+        "gitHeadBlob": "b4fe3bdf6e72bfcb95946bd30afc766f9be9cc01",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/ui/workers.py"
+      },
+      {
+        "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/ui/main_window.py",
+        "status": "verified",
+        "bytes": 185358,
+        "sha256": "53c57206be5b5ff0a2d5b0959cf210c89925093ad4825eadddd5c385b26f521a",
+        "modifiedUtc": "2026-08-31T04:07:33.225951+00:00",
+        "gitHeadBlob": "6742e4f96dd525766a2cb1193a1a0da68b189ae6",
+        "workingTreeGitStatus": "M FFSCN_TEST_GUI/ui/main_window.py"
+      }
+    ],
+    "referenceDefaults": {
+      "weights": "config/epoch_1200.pth",
+      "nfft": 65536,
+      "time_fps": 1.0,
+      "window": 10,
+      "hop": 5,
+      "batch_size": 2,
+      "topk": 512,
+      "score_threshold": 0.7,
+      "iou_threshold": 0.3,
+      "match_iou": 0.3,
+      "gpu_index": 0
+    },
+    "defaultsMatchExpected": true,
+    "configurationSemantics": {
+      "timeFpsUnit": "ms",
+      "timeFpsMeaning": "STFT frame hop, not FFT window duration",
+      "modelWindowFrames": 10,
+      "analysisWindowHopFrames": 5
+    },
+    "exportedOnnx": {
+      "status": "unavailable",
+      "auditedPaths": []
+    },
+    "exportedEngine": {
+      "status": "unavailable",
+      "auditedPaths": []
+    },
+    "validationBoundary": "Checkpoint bytes/hash and literal config only; checkpoint was not unpickled or executed.",
+    "architectureStaticAudit": {
+      "status": "verified",
+      "validationBoundary": "Read-only source statements; no checkpoint load, model construction or model execution. Actual output tensor shapes and numerical equivalence remain unverified.",
+      "modelClass": "CarrierDetectionNet",
+      "downNums": 11,
+      "inputShape": [
+        "batch",
+        1,
+        10,
+        65536
+      ],
+      "inputShapeMeaning": "Load-time per-sample (1,10,nfft); batching stacks 10xnfft matrices and inserts channel dimension.",
+      "backbone": "mobilenet_v3_large",
+      "reducedTail": true,
+      "neck": "FPN",
+      "neckChannels": 64,
+      "neckNums": 1,
+      "outputs": [
+        "hm",
+        "bw",
+        "off"
+      ],
+      "rawOutputMode": "CarrierDetectionNet is_training defaults to True; load_model does not override it.",
+      "sourceLineEvidence": [
+        {
+          "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/ui/main_window.py",
+          "lines": [
+            2041,
+            2042
+          ],
+          "fact": "GUI model-load request uses down_nums 11."
+        },
+        {
+          "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/cli.py",
+          "lines": [
+            43,
+            46,
+            220
+          ],
+          "fact": "CLI nfft 65536 and down_nums 11 default; values passed to load_model."
+        },
+        {
+          "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/detection.py",
+          "lines": [
+            93,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99,
+            100
+          ],
+          "fact": "Per-sample input shape, reduced-tail MobileNetV3 Large and single FPN with 64 channels."
+        },
+        {
+          "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/business/detection.py",
+          "lines": [
+            347,
+            348,
+            349
+          ],
+          "fact": "Batch stacking and unsqueeze(1) create channel dimension before model call."
+        },
+        {
+          "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/algorithm/network.py",
+          "lines": [
+            106,
+            174,
+            175,
+            176,
+            178,
+            180
+          ],
+          "fact": "Default raw-output mode and hm/bw/off output dictionary."
+        }
+      ],
+      "profilePath": "contracts/wideband-detection/profiles/ffscn-gui-iq-v1.json",
+      "profileSha256": "56e4b212ef0abc44753fcbd98f7ae85c1626c9fcd9097d3851282ae31c11bc12",
+      "profileModelFieldsMatchStaticReference": true
+    }
+  },
+  "datasets": {
+    "matlabGenerator": {
+      "status": "verified",
+      "root": "D:/coding/FFSCN_train2/broadband_signal_generation",
+      "format": "TXT plus stereo PCM16 WAV (I then Q, little endian)",
+      "goldenPair": {
+        "wav": {
+          "path": "D:/coding/FFSCN_train2/broadband_signal_generation/test_sig2/data/20260728-025821-162_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+          "status": "verified",
+          "bytes": 64000044,
+          "sha256": "88f96c6deab9e435db8f111463092fdae9b800aeb3cbccd82d7426551d52d9cd",
+          "modifiedUtc": "2026-07-27T18:58:21.611972+00:00"
+        },
+        "txtLabel": {
+          "path": "D:/coding/FFSCN_train2/broadband_signal_generation/test_sig2/label/20260728-025821-162_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+          "status": "verified",
+          "bytes": 2482,
+          "sha256": "dcef967000723aff575aa98eb413f0aad3a14575f92c55a3cc6199484f793b83",
+          "modifiedUtc": "2026-07-27T18:58:21.647128+00:00"
+        },
+        "header": {
+          "format": "PCM",
+          "channels": 2,
+          "bitsPerSample": 16,
+          "sampleRateHz": 20000000,
+          "sampleCount": 16000000,
+          "durationSeconds": 0.8,
+          "compression": "NONE"
+        }
+      },
+      "writerFiles": [
+        {
+          "path": "D:/coding/FFSCN_train2/broadband_signal_generation/write_test_record.m",
+          "status": "verified",
+          "bytes": 1531,
+          "sha256": "d3df0b9b629bf47830b699243058cb5d0fa382eb60b438d9816c5bed08c75a11",
+          "modifiedUtc": "2026-09-08T14:53:50.052028+00:00",
+          "planningSha256": "d3df0b9b629bf47830b699243058cb5d0fa382eb60b438d9816c5bed08c75a11",
+          "matchesPlanningSha256": true
+        },
+        {
+          "path": "D:/coding/FFSCN_train2/broadband_signal_generation/base_function/save_signal_wav.m",
+          "status": "verified",
+          "bytes": 2198,
+          "sha256": "529baaa05b8d7a7281d194f837c36a8f57d442695b4eccdad5bba59cee27ca12",
+          "modifiedUtc": "2026-07-27T18:55:48.247696+00:00",
+          "planningSha256": "529baaa05b8d7a7281d194f837c36a8f57d442695b4eccdad5bba59cee27ca12",
+          "matchesPlanningSha256": true
+        }
+      ],
+      "inventoryBoundary": "A named golden pair and provenance of GUI local10 only; no complete dataset or holdout validation."
+    },
+    "guiLocal10": {
+      "status": "verified",
+      "baselineId": "gui-local10-m0-20261013",
+      "dataRoot": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/data",
+      "labelRoot": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label",
+      "wavCount": 10,
+      "txtCount": 10,
+      "jpgCount": 10,
+      "uniqueSampleNames": true,
+      "uniqueWavHashes": true,
+      "uniqueTxtHashes": true,
+      "allSameNameLabelsPresent": true,
+      "totalCarrierRows": 117,
+      "totalTimePairs": 594,
+      "allHeadersStereoPcm16_20Msps_0p8s": true,
+      "files": [
+        {
+          "sampleId": "20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35",
+          "wav": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "status": "verified",
+            "bytes": 64000044,
+            "sha256": "1757d92722e78776a6877b4fe5f29734fd2975989aaef1d52f8103aaa310b18b",
+            "modifiedUtc": "2026-07-27T20:49:06.752381+00:00"
+          },
+          "txtLabel": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+            "status": "verified",
+            "bytes": 4244,
+            "sha256": "1d52e763a047ee3220fd3d91f2fe7d48657c93acb99ef14516cd54de2314c3d3",
+            "modifiedUtc": "2026-07-27T20:49:06.789892+00:00"
+          },
+          "jpgPreview": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-044906-196_bw_20000000_sampleTime_0.8_rollOff_0.35.jpg",
+            "status": "verified",
+            "bytes": 339181,
+            "sha256": "a7db8e32650b20635fd61daa71cdbeac59589e0385e9ac47298343fb66de8a6b",
+            "modifiedUtc": "2026-07-27T20:49:13.466908+00:00"
+          },
+          "wavHeader": {
+            "format": "PCM",
+            "channels": 2,
+            "bitsPerSample": 16,
+            "sampleRateHz": 20000000,
+            "sampleCount": 16000000,
+            "durationSeconds": 0.8,
+            "compression": "NONE"
+          },
+          "carrierRows": 19,
+          "timePairCount": 97,
+          "rowsWithoutTime": 0,
+          "sourceGeneratorCopies": []
+        },
+        {
+          "sampleId": "20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35",
+          "wav": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "status": "verified",
+            "bytes": 64000044,
+            "sha256": "a6ca4dd3cb81ecc6d36452679c171076c7c3baa55f9b9bc512c1407def618d4e",
+            "modifiedUtc": "2026-07-27T20:49:27.567561+00:00"
+          },
+          "txtLabel": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+            "status": "verified",
+            "bytes": 4249,
+            "sha256": "bd03332c27ac33765eaf5093854e9811fe076506d01403024c984bcde1ddff67",
+            "modifiedUtc": "2026-07-27T20:49:27.613413+00:00"
+          },
+          "jpgPreview": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-044926-842_bw_20000000_sampleTime_0.8_rollOff_0.35.jpg",
+            "status": "verified",
+            "bytes": 348428,
+            "sha256": "d0d6db79240781fcf9afdfcebdac39e92bca75fada7cec0ebac0ac750916af88",
+            "modifiedUtc": "2026-07-27T20:49:32.428552+00:00"
+          },
+          "wavHeader": {
+            "format": "PCM",
+            "channels": 2,
+            "bitsPerSample": 16,
+            "sampleRateHz": 20000000,
+            "sampleCount": 16000000,
+            "durationSeconds": 0.8,
+            "compression": "NONE"
+          },
+          "carrierRows": 18,
+          "timePairCount": 106,
+          "rowsWithoutTime": 0,
+          "sourceGeneratorCopies": []
+        },
+        {
+          "sampleId": "20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35",
+          "wav": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "status": "verified",
+            "bytes": 64000044,
+            "sha256": "c23d13754218ede8e09781e7c6a66089413309ae83ebe6efa955a06eca11445f",
+            "modifiedUtc": "2026-07-27T20:49:37.288007+00:00"
+          },
+          "txtLabel": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+            "status": "verified",
+            "bytes": 639,
+            "sha256": "2baf081721f283f15c38c03e861745033f39b9d9901b5007e040ee98243be38f",
+            "modifiedUtc": "2026-07-27T20:49:37.328008+00:00"
+          },
+          "jpgPreview": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-044936-468_bw_20000000_sampleTime_0.8_rollOff_0.35.jpg",
+            "status": "verified",
+            "bytes": 285735,
+            "sha256": "66700817940ebd4e8a2cf4260c9790ce1c4d4056dce7032efa03895d7ad1be32",
+            "modifiedUtc": "2026-07-27T20:49:41.315147+00:00"
+          },
+          "wavHeader": {
+            "format": "PCM",
+            "channels": 2,
+            "bitsPerSample": 16,
+            "sampleRateHz": 20000000,
+            "sampleCount": 16000000,
+            "durationSeconds": 0.8,
+            "compression": "NONE"
+          },
+          "carrierRows": 3,
+          "timePairCount": 10,
+          "rowsWithoutTime": 0,
+          "sourceGeneratorCopies": []
+        },
+        {
+          "sampleId": "20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35",
+          "wav": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "status": "verified",
+            "bytes": 64000044,
+            "sha256": "2d144b3164580c43c7728d82d86fc0b2cd37f9aa4f85fcbeafbb2afcf9a84de8",
+            "modifiedUtc": "2026-07-27T20:49:57.524650+00:00"
+          },
+          "txtLabel": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+            "status": "verified",
+            "bytes": 4509,
+            "sha256": "d1ace14a553a2d0e2949612c6edb9ef0b81012fa91b3f7570c49996fac718a5c",
+            "modifiedUtc": "2026-07-27T20:49:57.561649+00:00"
+          },
+          "jpgPreview": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-044956-845_bw_20000000_sampleTime_0.8_rollOff_0.35.jpg",
+            "status": "verified",
+            "bytes": 354930,
+            "sha256": "ff523d175d01148955a92dc20f7e9fa24adf541ec3c7f1c0b0e249f99c423cfd",
+            "modifiedUtc": "2026-07-27T20:50:00.155011+00:00"
+          },
+          "wavHeader": {
+            "format": "PCM",
+            "channels": 2,
+            "bitsPerSample": 16,
+            "sampleRateHz": 20000000,
+            "sampleCount": 16000000,
+            "durationSeconds": 0.8,
+            "compression": "NONE"
+          },
+          "carrierRows": 18,
+          "timePairCount": 123,
+          "rowsWithoutTime": 0,
+          "sourceGeneratorCopies": []
+        },
+        {
+          "sampleId": "20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35",
+          "wav": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "status": "verified",
+            "bytes": 64000044,
+            "sha256": "bd1fbe4366592e78944b986c4daf3c4b75f3e869dfb3d1c1745be5221bd206aa",
+            "modifiedUtc": "2026-07-27T20:50:12.793703+00:00"
+          },
+          "txtLabel": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+            "status": "verified",
+            "bytes": 3034,
+            "sha256": "5299b383df63e7082fe8eb5a8cd7c11b518c7d9c2e9fa4902cc48eabe72d50e0",
+            "modifiedUtc": "2026-07-27T20:50:12.841835+00:00"
+          },
+          "jpgPreview": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-045012-147_bw_20000000_sampleTime_0.8_rollOff_0.35.jpg",
+            "status": "verified",
+            "bytes": 348171,
+            "sha256": "96cb96b8ae844bc703a6e66e37306888c66d28e9f25271e7df882e07afb3cfd3",
+            "modifiedUtc": "2026-07-27T20:50:15.626439+00:00"
+          },
+          "wavHeader": {
+            "format": "PCM",
+            "channels": 2,
+            "bitsPerSample": 16,
+            "sampleRateHz": 20000000,
+            "sampleCount": 16000000,
+            "durationSeconds": 0.8,
+            "compression": "NONE"
+          },
+          "carrierRows": 14,
+          "timePairCount": 65,
+          "rowsWithoutTime": 0,
+          "sourceGeneratorCopies": []
+        },
+        {
+          "sampleId": "20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35",
+          "wav": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "status": "verified",
+            "bytes": 64000044,
+            "sha256": "59e93e31c62c602c9ba108ce602f161a5dafa5c6f7da85690dad02eea68e9e72",
+            "modifiedUtc": "2026-07-27T20:50:26.861392+00:00"
+          },
+          "txtLabel": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+            "status": "verified",
+            "bytes": 2853,
+            "sha256": "874a4f7427c79e7130ef494b7a035c5fb766bc67bf21aa7af2a7103cd6a01ff9",
+            "modifiedUtc": "2026-07-27T20:50:26.903388+00:00"
+          },
+          "jpgPreview": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-045026-193_bw_20000000_sampleTime_0.8_rollOff_0.35.jpg",
+            "status": "verified",
+            "bytes": 315261,
+            "sha256": "f1dbafd21576c69ab2aeecd63447c164c090f84a606073762e66dd50f9ac4478",
+            "modifiedUtc": "2026-07-27T20:50:29.521084+00:00"
+          },
+          "wavHeader": {
+            "format": "PCM",
+            "channels": 2,
+            "bitsPerSample": 16,
+            "sampleRateHz": 20000000,
+            "sampleCount": 16000000,
+            "durationSeconds": 0.8,
+            "compression": "NONE"
+          },
+          "carrierRows": 12,
+          "timePairCount": 71,
+          "rowsWithoutTime": 0,
+          "sourceGeneratorCopies": []
+        },
+        {
+          "sampleId": "20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35",
+          "wav": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "status": "verified",
+            "bytes": 64000044,
+            "sha256": "f5ad7ad15728e38cf967967012547ed8671e3caf05a0446ca6a012620fc533c1",
+            "modifiedUtc": "2026-07-27T20:50:33.671147+00:00"
+          },
+          "txtLabel": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+            "status": "verified",
+            "bytes": 527,
+            "sha256": "c6966c349e7e7c617ac0f40bfc0d3cba5cf2aafc0e804803479b3c31c8b4fd0b",
+            "modifiedUtc": "2026-07-27T20:50:33.710147+00:00"
+          },
+          "jpgPreview": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-045032-983_bw_20000000_sampleTime_0.8_rollOff_0.35.jpg",
+            "status": "verified",
+            "bytes": 289934,
+            "sha256": "68a197f2c04736015ee43838f7a1ac97737add6636b18505fc01aa218cc4ec34",
+            "modifiedUtc": "2026-07-27T20:50:36.180497+00:00"
+          },
+          "wavHeader": {
+            "format": "PCM",
+            "channels": 2,
+            "bitsPerSample": 16,
+            "sampleRateHz": 20000000,
+            "sampleCount": 16000000,
+            "durationSeconds": 0.8,
+            "compression": "NONE"
+          },
+          "carrierRows": 3,
+          "timePairCount": 3,
+          "rowsWithoutTime": 0,
+          "sourceGeneratorCopies": []
+        },
+        {
+          "sampleId": "20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35",
+          "wav": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "status": "verified",
+            "bytes": 64000044,
+            "sha256": "ff23b1f3d1f631b0de5e2d63263655c9aa9bcdd19dfc3d47d9173050d3844b72",
+            "modifiedUtc": "2026-07-27T20:50:47.051984+00:00"
+          },
+          "txtLabel": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+            "status": "verified",
+            "bytes": 2292,
+            "sha256": "a61ca854a7945da28dea6524bd2e387844ec3f9989023f6c235b38b494c4e4d7",
+            "modifiedUtc": "2026-07-27T20:50:47.095938+00:00"
+          },
+          "jpgPreview": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-045046-348_bw_20000000_sampleTime_0.8_rollOff_0.35.jpg",
+            "status": "verified",
+            "bytes": 317787,
+            "sha256": "8f4af4cf1ff5fc57dd558898659309fb980124f26f4f53c3dc3354f2159eab1e",
+            "modifiedUtc": "2026-07-27T20:50:49.549633+00:00"
+          },
+          "wavHeader": {
+            "format": "PCM",
+            "channels": 2,
+            "bitsPerSample": 16,
+            "sampleRateHz": 20000000,
+            "sampleCount": 16000000,
+            "durationSeconds": 0.8,
+            "compression": "NONE"
+          },
+          "carrierRows": 11,
+          "timePairCount": 44,
+          "rowsWithoutTime": 0,
+          "sourceGeneratorCopies": []
+        },
+        {
+          "sampleId": "20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35",
+          "wav": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "status": "verified",
+            "bytes": 64000044,
+            "sha256": "a95a415e945a026e10079462733a2e47fdc861c4ec84e44a17e031bd9b0bce3d",
+            "modifiedUtc": "2026-07-27T20:51:02.346313+00:00"
+          },
+          "txtLabel": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+            "status": "verified",
+            "bytes": 2515,
+            "sha256": "99dc40f6c6cd20b0014dcaee50066c922839b2f8f3db1d930e28f2cecde0bb2e",
+            "modifiedUtc": "2026-07-27T20:51:02.393197+00:00"
+          },
+          "jpgPreview": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.jpg",
+            "status": "verified",
+            "bytes": 313765,
+            "sha256": "cbabfb88ef5f90a973abd146be4de1cdaf36814b35da4ad6b95ba0fd49a5e1fc",
+            "modifiedUtc": "2026-07-27T20:51:04.901858+00:00"
+          },
+          "wavHeader": {
+            "format": "PCM",
+            "channels": 2,
+            "bitsPerSample": 16,
+            "sampleRateHz": 20000000,
+            "sampleCount": 16000000,
+            "durationSeconds": 0.8,
+            "compression": "NONE"
+          },
+          "carrierRows": 13,
+          "timePairCount": 41,
+          "rowsWithoutTime": 0,
+          "sourceGeneratorCopies": []
+        },
+        {
+          "sampleId": "20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35",
+          "wav": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "status": "verified",
+            "bytes": 64000044,
+            "sha256": "5f1f4b0e51650bd8e2369849e4d2b821133cbf0b24805feca47583d02f22ae10",
+            "modifiedUtc": "2026-07-27T20:51:11.143486+00:00"
+          },
+          "txtLabel": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+            "status": "verified",
+            "bytes": 1438,
+            "sha256": "ba998f06dc400403d18a198ed71588e4ebcf7a477fc7dbdb6611ba02a2b28348",
+            "modifiedUtc": "2026-07-27T20:51:11.189646+00:00"
+          },
+          "jpgPreview": {
+            "path": "D:/project/FFSCN_train2/FFSCN_TEST_GUI/test_data/label/20260728-045110-462_bw_20000000_sampleTime_0.8_rollOff_0.35.jpg",
+            "status": "verified",
+            "bytes": 308014,
+            "sha256": "5c962bacbc465ba50636e62abc38f5e99a6a7b98f6025d0ae151947ff5874613",
+            "modifiedUtc": "2026-07-27T20:51:13.580670+00:00"
+          },
+          "wavHeader": {
+            "format": "PCM",
+            "channels": 2,
+            "bitsPerSample": 16,
+            "sampleRateHz": 20000000,
+            "sampleCount": 16000000,
+            "durationSeconds": 0.8,
+            "compression": "NONE"
+          },
+          "carrierRows": 6,
+          "timePairCount": 34,
+          "rowsWithoutTime": 0,
+          "sourceGeneratorCopies": []
+        }
+      ],
+      "validationBoundary": "Metadata/hash/label-text inventory only; no truth parser imported, no signal processing or inference.",
+      "generatorOriginalCopiesFound": false,
+      "provenanceNote": "No exact same-name WAV/TXT paths were found under the currently enumerated generator outputs. The GUI files are frozen independently; matching the historical count of 594 segments is insufficient to prove the historical prediction manifest."
+    },
+    "rfbenchSigmf": {
+      "status": "verified",
+      "files": [
+        {
+          "path": "W:/wbSig53_rfbench20m/train/baseline/0000000.json",
+          "status": "verified",
+          "bytes": 2728,
+          "sha256": "3a8f4cc11248a72508bf837ca55ee82ead36e99ba9eaa636c1789595ff206438",
+          "modifiedUtc": "2026-10-10T15:33:23.140031+00:00",
+          "planningSha256": "3a8f4cc11248a72508bf837ca55ee82ead36e99ba9eaa636c1789595ff206438",
+          "matchesPlanningSha256": true
+        },
+        {
+          "path": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-meta",
+          "status": "verified",
+          "bytes": 1677,
+          "sha256": "5efd03dae0f53002c8400ddc2ba65e367d7dde315b232a24cd77a2b1bd982a29",
+          "modifiedUtc": "2026-10-10T15:33:23.138110+00:00",
+          "planningSha256": "5efd03dae0f53002c8400ddc2ba65e367d7dde315b232a24cd77a2b1bd982a29",
+          "matchesPlanningSha256": true
+        },
+        {
+          "path": "W:/wbSig53_rfbench20m/train/baseline/0000000.sigmf-data",
+          "status": "verified",
+          "bytes": 3200000,
+          "sha256": "3a47e55b5f02851d702d5c5782998bf3e374f67cde592c35689acf9ec5399254",
+          "modifiedUtc": "2026-10-10T15:33:23.125340+00:00",
+          "planningSha256": "3a47e55b5f02851d702d5c5782998bf3e374f67cde592c35689acf9ec5399254",
+          "matchesPlanningSha256": true
+        }
+      ],
+      "schema": "rfbench-v1",
+      "datatype": "cf32_le",
+      "sampleRateHz": 20000000.0,
+      "sampleCount": 400000,
+      "dataBytes": 3200000,
+      "centerFrequencyHz": 2500000000.0,
+      "durationSeconds": 0.02,
+      "events": 4,
+      "annotations": 4,
+      "eventTimeAndClassPairsEqual": true,
+      "maximumFrequencyDifferenceHz": 0.0,
+      "byteCountMatchesMetadata": true,
+      "bandwidthSemantics": "nominal generator parameter, not measured occupied bandwidth",
+      "validationBoundary": "One rfbench-v1 sample; no inference and no general TorchSig compatibility claim."
+    }
+  },
+  "historicalGuiEvidence": {
+    "status": "unavailable",
+    "missingResultPath": "D:/project/FFSCN_train2/.codex_ffscn_verify_20260830/selftest.json",
+    "pathExists": false,
+    "historicalFiles": 10,
+    "historicalTruthBlocks": 594,
+    "originalPredictionAndLabelHashManifestRestored": false,
+    "replacementBaselineId": "gui-local10-m0-20261013",
+    "note": "Present ten-file manifest does not establish byte identity with historical evaluated files or restore predictions/metrics; keep historical TF-IoU metrics separately named."
+  },
+  "supplementaryModels": {
+    "hyEpoch210FrequencyBaseline": {
+      "status": "verified",
+      "role": "Historical frequency-only baseline, outside primary GUI TF acceptance",
+      "checkpoint": {
+        "path": "D:/project/FFSCN_train2/weights/model_epoch_0210.pth",
+        "status": "verified",
+        "bytes": 11079751,
+        "sha256": "b6cd6aaf28e695b4bcae94db25dd527d2b717269b1562cf47e0840d09d8a253a",
+        "modifiedUtc": "2026-09-03T10:09:44.043237+00:00",
+        "expectedSha256": "b6cd6aaf28e695b4bcae94db25dd527d2b717269b1562cf47e0840d09d8a253a",
+        "matchesExpectedSha256": true
+      },
+      "deliveryCheckpoint": {
+        "path": "D:/project/FFSCN_train2/deliverables/ffscn_release_20260908/FFSCN_60MHz_package/weights/model_epoch_0210.pth",
+        "status": "verified",
+        "bytes": 11079751,
+        "sha256": "b6cd6aaf28e695b4bcae94db25dd527d2b717269b1562cf47e0840d09d8a253a",
+        "modifiedUtc": "2026-09-03T10:09:44.043237+00:00",
+        "expectedSha256": "b6cd6aaf28e695b4bcae94db25dd527d2b717269b1562cf47e0840d09d8a253a",
+        "matchesExpectedSha256": true
+      },
+      "reports": [
+        {
+          "path": "D:/project/FFSCN_train2/reports/eval1000_timefps1ms_20260908/REPORT_1000.md",
+          "status": "verified",
+          "bytes": 7525,
+          "sha256": "fb8d6345f59e1c0be65a7d75c7a59db45325b74fa552f449e5e45e8ca4936724",
+          "modifiedUtc": "2026-09-07T17:51:47.220047+00:00",
+          "planningSha256": "fb8d6345f59e1c0be65a7d75c7a59db45325b74fa552f449e5e45e8ca4936724",
+          "matchesPlanningSha256": true
+        },
+        {
+          "path": "D:/project/FFSCN_train2/reports/eval1000_timefps1ms_20260908/summary_1000.json",
+          "status": "verified",
+          "bytes": 330003,
+          "sha256": "8025902ed01395b71c869ac443cb9d430ee6b3cb277bea195cbb4ffebaf19ed2",
+          "modifiedUtc": "2026-09-07T17:51:46.860428+00:00",
+          "planningSha256": "8025902ed01395b71c869ac443cb9d430ee6b3cb277bea195cbb4ffebaf19ed2",
+          "matchesPlanningSha256": true
+        },
+        {
+          "path": "D:/project/FFSCN_train2/reports/eval1000_timefps1ms_20260908/manifest.json",
+          "status": "verified",
+          "bytes": 276458,
+          "sha256": "38fb4be20c7b042f62d3d27ee91e6d62da4285c4add1097b11fdc9122835ce3c",
+          "modifiedUtc": "2026-09-07T16:58:52.340252+00:00"
+        },
+        {
+          "path": "D:/project/FFSCN_train2/reports/eval1000_timefps1ms_20260908/source/z_test_whole.py",
+          "status": "verified",
+          "bytes": 27700,
+          "sha256": "593ff4a6653678c33a5a2c673f13a5693de95597277ba303c749fa3f7c1bb1de",
+          "modifiedUtc": "2026-09-07T17:27:58.686279+00:00",
+          "planningSha256": "593ff4a6653678c33a5a2c673f13a5693de95597277ba303c749fa3f7c1bb1de",
+          "matchesPlanningSha256": true
+        }
+      ],
+      "historicalDatasetRoot": "/fast_data/HY_60MHz_merged",
+      "historicalFileCount": 1000,
+      "historicalManifestEntryCount": 1000,
+      "historicalDataStatus": "unavailable",
+      "note": "Manifest uses /fast_data server paths; local report/checkpoint present but exact 1000-file server dataset was not mounted or rehashed in this audit. No frequency evaluation rerun.",
+      "historicalManifestArrayKeys": [
+        "samples"
+      ]
+    },
+    "scnMaximumSpectrumControl": {
+      "status": "available",
+      "role": "SCN maximum-only comparison; not primary IQ TF detector",
+      "engine": {
+        "path": "D:/project/SCN_based_PSD_Detection/models/scn_model.engine",
+        "status": "verified",
+        "bytes": 87263588,
+        "sha256": "ae89d04332758d466846b71afc849c446500a82a8bd74fd8c671927247746627",
+        "modifiedUtc": "2026-08-24T07:13:07.310456+00:00"
+      },
+      "sourceFiles": [
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/algorithm/DetectionEngine/DetectionEngine.cpp",
+          "status": "verified",
+          "bytes": 19443,
+          "sha256": "523b14164155768e5dc342c58726215e5ce5b981df9e139e5158be79e72cc1d2",
+          "modifiedUtc": "2026-09-24T04:37:08.975414+00:00",
+          "planningSha256": "523b14164155768e5dc342c58726215e5ce5b981df9e139e5158be79e72cc1d2",
+          "matchesPlanningSha256": true
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/algorithm/refine/BandwidthRefiner.cpp",
+          "status": "verified",
+          "bytes": 6393,
+          "sha256": "979bf8d0e2152cc50be3769a9e4bc956746080c5226b7592ec4ba95c1ebe0cfb",
+          "modifiedUtc": "2026-09-24T04:45:41.408597+00:00",
+          "planningSha256": "979bf8d0e2152cc50be3769a9e4bc956746080c5226b7592ec4ba95c1ebe0cfb",
+          "matchesPlanningSha256": true
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/algorithm/DetectionConfig.h",
+          "status": "verified",
+          "bytes": 2614,
+          "sha256": "001d6edcbf58da2313766e16ba676fb007db1afd1d1d202b8dc6e393cf781ddf",
+          "modifiedUtc": "2026-09-24T04:36:54.285120+00:00",
+          "planningSha256": "001d6edcbf58da2313766e16ba676fb007db1afd1d1d202b8dc6e393cf781ddf",
+          "matchesPlanningSha256": true
+        }
+      ],
+      "validationBoundary": "Local source/engine identity only; no engine deserialization, maximum-spectrum numerical comparison or accuracy validation."
+    },
+    "ffscn17Experimental": {
+      "status": "available",
+      "role": "Experimental 10 instrument-spectrum-frame profile, not epoch1200/epoch210 replacement",
+      "artifacts": [
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/models/ffscn_17.engine",
+          "status": "verified",
+          "bytes": 20860372,
+          "sha256": "dd88ab057d5af35e412447428de1a0163f79d0d7ac6a5c1a86308b898d50fd81",
+          "modifiedUtc": "2026-09-23T11:41:19.204356+00:00",
+          "expectedSha256": "dd88ab057d5af35e412447428de1a0163f79d0d7ac6a5c1a86308b898d50fd81",
+          "matchesExpectedSha256": true
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/models/ffscn_17_fp32.engine",
+          "status": "verified",
+          "bytes": 20860372,
+          "sha256": "dd88ab057d5af35e412447428de1a0163f79d0d7ac6a5c1a86308b898d50fd81",
+          "modifiedUtc": "2026-09-23T11:41:19.204356+00:00",
+          "expectedSha256": "dd88ab057d5af35e412447428de1a0163f79d0d7ac6a5c1a86308b898d50fd81",
+          "matchesExpectedSha256": true
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/models/ffscn_17_fp16_candidate.engine",
+          "status": "verified",
+          "bytes": 13970980,
+          "sha256": "f74a4283bc51cc7c80cbcbb54c576316dc9858082a9e056ac175baed3cf4022c",
+          "modifiedUtc": "2026-09-23T11:53:19.504137+00:00",
+          "expectedSha256": "f74a4283bc51cc7c80cbcbb54c576316dc9858082a9e056ac175baed3cf4022c",
+          "matchesExpectedSha256": true
+        },
+        {
+          "path": "D:/project/SCN_based_PSD_Detection/models/ffscn_17.onnx",
+          "status": "verified",
+          "bytes": 12543958,
+          "sha256": "113d9d64955695790647c26f0d426aa96216f2fc744423a12f21198720fd5867",
+          "modifiedUtc": "2026-09-23T11:34:16.281481+00:00",
+          "expectedSha256": "113d9d64955695790647c26f0d426aa96216f2fc744423a12f21198720fd5867",
+          "matchesExpectedSha256": true
+        }
+      ],
+      "historicalManifestGitObject": {
+        "repository": "D:/project/SCN_based_PSD_Detection",
+        "commit": "649cc247f948d8ef71975c9ae1ed4675e12bb68a",
+        "path": "models/ffscn_17.manifest.json",
+        "gitBlob": "0e7952fe11f71972acc3de49a66e3322f78cc573",
+        "currentWorkingTreeFilePresent": false
+      },
+      "historicalManifestMetadata": {
+        "model": "FFSCN 17th-order",
+        "checkpointSha256": "7ec171094decd4557abaaf3e295b0fd7397196c67a9249d5593aef00db885da6",
+        "onnxSha256": "113d9d64955695790647c26f0d426aa96216f2fc744423a12f21198720fd5867",
+        "architecture": {
+          "downNums": 13,
+          "backbone": "MobileNetV3 Large",
+          "neck": "FPN",
+          "neckChannels": 64
+        },
+        "io": {
+          "inputName": "spectrum",
+          "inputShape": "[1,1,10,N]",
+          "inputType": "float32",
+          "outputNames": [
+            "hm",
+            "bw",
+            "off"
+          ],
+          "outputShape": "[1,1,1,N/4]",
+          "outputType": "float32"
+        },
+        "profile": {
+          "min": "[1,1,10,8192]",
+          "opt": "[1,1,10,131072]",
+          "max": "[1,1,10,131072]",
+          "allowedWidths": [
+            8192,
+            16384,
+            32768,
+            65536,
+            131072
+          ]
+        },
+        "tensorRt": "10.11.0",
+        "cudaSdk": "12.9",
+        "gpu": "RTX 5060 Laptop",
+        "note": "FP32 is the deployment engine. FP16 candidate did not match the fixed synthetic test decoded candidates (3 vs 2), so it is not selected.",
+        "deployment": {
+          "precision": "FP32",
+          "path": "ffscn_17.engine",
+          "bytes": 20860372,
+          "sha256": "dd88ab057d5af35e412447428de1a0163f79d0d7ac6a5c1a86308b898d50fd81"
+        },
+        "buildCandidates": [
+          {
+            "precision": "FP32",
+            "path": "ffscn_17_fp32.engine",
+            "bytes": 20860372,
+            "sha256": "dd88ab057d5af35e412447428de1a0163f79d0d7ac6a5c1a86308b898d50fd81"
+          },
+          {
+            "precision": "FP16",
+            "path": "ffscn_17_fp16_candidate.engine",
+            "bytes": 13970980,
+            "sha256": "f74a4283bc51cc7c80cbcbb54c576316dc9858082a9e056ac175baed3cf4022c"
+          }
+        ],
+        "artifactScope": "The deployment package contains deployment.path and this manifest; buildCandidates are conversion outputs."
+      },
+      "localCheckpointStatus": "unavailable",
+      "validationBoundary": "Artifact hashes matched historical manifest when stated; remote checkpoint not probed, no engine loaded or forward tested. FP16 is candidate only."
+    }
+  },
+  "nextActions": [
+    {
+      "id": "A1",
+      "status": "needs_conversion",
+      "action": "Create independent epoch1200 architecture/export code in this repository; first CPU/PyTorch reference tensor comparison, then export fixed/declared dynamic shapes to ONNX; record checkpoint/architecture/ONNX hashes and named hm/bw/off outputs."
+    },
+    {
+      "id": "A2",
+      "status": "needs_conversion",
+      "action": "Use a complete separately installed or explicitly staged TensorRT 10.11 SDK including ONNX parser and builder tools; configure this repository without linking external business sources; build epoch1200 FP32 engine on the target environment and validate tensor/candidate parity before selecting deployment."
+    },
+    {
+      "id": "A3",
+      "status": "available",
+      "action": "Use explicitly pinned Anaconda interpreter for development export; default environment has onnxscript metadata, ffscn_torch lacks it. If ONNX Runtime is part of parity validation, provide it in the selected isolated environment first."
+    },
+    {
+      "id": "A4",
+      "status": "available",
+      "action": "Adopt gui-local10-m0-20261013 as newly frozen dataset identity until historical prediction/label hashes are recovered; recompute results under the frozen current evaluator instead of claiming historical metrics were reproduced."
+    },
+    {
+      "id": "A5",
+      "status": "unavailable",
+      "action": "For exact HY 1000-file replay, mount the reported server dataset or restore the manifest-selected WAV/TXT files and hash each pair; do not substitute local generator samples under the historical result name."
+    }
+  ],
+  "actionsNotPerformed": [
+    "Reference module import",
+    "Checkpoint/model load or deserialization",
+    "Model forward/inference",
+    "ONNX export/graph execution",
+    "TensorRT engine build or engine deserialization",
+    "Training",
+    "CMake build/CTest/GUI validation",
+    "External repository mutation",
+    "Git commit/push"
+  ],
+  "auditMethods": [
+    "Get-CimInstance CPU/OS",
+    "nvidia-smi device query",
+    "nvcc/cmake/qmake/vswhere/MSVC version metadata",
+    "Python importlib.metadata; torch/onnx import and CUDA device query",
+    "ctypes nvinfer library version query only",
+    "SHA-256 streaming file read",
+    "wave header read",
+    "Literal DEFAULTS AST parse without execution",
+    "JSON metadata and sample byte-count consistency",
+    "Git read-only HEAD/status/blob queries"
+  ]
+}

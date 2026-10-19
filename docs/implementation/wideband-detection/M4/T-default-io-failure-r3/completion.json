@@ -1,0 +1,19 @@
+{
+  "schema": "signalstudio-m4-stage-completion-v1",
+  "stage": "native",
+  "finishedAtUtc": "2026-10-14T01:42:16.291648+00:00",
+  "returnCode": 1,
+  "timedOut": false,
+  "failed": true,
+  "reason": "result-not-complete",
+  "resultPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\diagnostics\\suite-release-r3\\T-default\\T07-04\\native\\result.json",
+  "resultSha256": "4304796fd078952dcd326d48f99702eca57b519a0114040e4fc09da3752511f1",
+  "wallSeconds": 12.945350499998312,
+  "mainProcessPeakRssBytes": 36741120,
+  "wholeDeviceGpuPeakMemoryUsedMiB": {
+    "0": 1938
+  },
+  "resourceScope": "RSS is main PID; GPU memory is whole device, not attributable allocation",
+  "processTreeContainment": "Windows kill-on-close Job",
+  "resumed": false
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "path": "scripts/screenshot.ps1",
+    "bytes": 11585,
+    "sha256": "2160c1b10539a9e9fbbd8b9b555c0d5cf0269d7f095b2a497e9131dcab611318"
+  },
+  {
+    "path": "scripts/verify-detection-availability.ps1",
+    "bytes": 3503,
+    "sha256": "bf309947b861f4f5edb0829cbeea87de7a859feca8fa6f41051d885204babc53"
+  },
+  {
+    "path": "tests/wideband_adaptation_capture.h",
+    "bytes": 6208,
+    "sha256": "60ba6b28e356d7871a87b8cb0bce50c283f4d799dd5aefd78b931a0319f4c3c0"
+  },
+  {
+    "path": "tests/wideband_detection_capture.h",
+    "bytes": 91220,
+    "sha256": "3e5fca70030b6828485a4b9d913a2484c98897f3189fa7960332c834a1379d4a"
+  },
+  {
+    "path": "tests/wideband_final_capture.h",
+    "bytes": 24635,
+    "sha256": "fac9349bd1c69e856428c71ee4b14f132a98be6880ae069ad2c8a4c43da9438d"
+  },
+  {
+    "path": "ui/annotations/annotation_evidence_widget.cpp",
+    "bytes": 37998,
+    "sha256": "9bb3b37b9115849ac93256775459130b98c6473a98e6bd4f911e0ef1703b3d1b"
+  }
+]

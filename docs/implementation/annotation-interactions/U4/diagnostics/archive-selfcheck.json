@@ -1,0 +1,13 @@
+{
+  "node": "U4",
+  "recordedUtc": "2026-10-18T18:34:37.854384+00:00",
+  "pass": true,
+  "frozenIdentities": 384,
+  "projects": 8,
+  "annotationReferences": 31,
+  "detectionManifests": 7,
+  "detectionChunks": 18,
+  "rawModelHeads": 16,
+  "localMarkdownLinks": 152,
+  "scope": "Archive references, paths, byte counts, SHA-256, tensor sizes, frozen runtime and local document links; external IQ is intentionally not copied"
+}

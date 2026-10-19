@@ -1,0 +1,1487 @@
+[
+  {
+    "source": "build-capture-debug.log",
+    "destination": "tasks/history/general/logs/build-capture-debug.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 5209,
+    "sha256": "44ec923e347c8bed8dee8a9c4b2fdba4328922c0ed5be65e05ce2b29744b62c2",
+    "verified": true
+  },
+  {
+    "source": "build-capture-release.log",
+    "destination": "tasks/history/general/logs/build-capture-release.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 4637,
+    "sha256": "a905e3a7c3a5faf92379a0bdc8f24e1b0ea206b19f7f2331896e655a0425aaca",
+    "verified": true
+  },
+  {
+    "source": "build-linked-debug.log",
+    "destination": "tasks/history/linked-analysis/logs/build-linked-debug.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 6515,
+    "sha256": "33a6a6dcf1aaa7c2a2629326a7684efb0de7f7e314eb0d6ccd148cb69db8b6fc",
+    "verified": true
+  },
+  {
+    "source": "build-linked-release.log",
+    "destination": "tasks/history/linked-analysis/logs/build-linked-release.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 5953,
+    "sha256": "77e0eecbf456327cf60c3a5603d020402b9e556f4362d444b0adc6ddee750262",
+    "verified": true
+  },
+  {
+    "source": "chart-regression-debug-build.txt",
+    "destination": "tasks/history/chart-regression/logs/chart-regression-debug-build.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 5199,
+    "sha256": "759626a1dc918482f61c43790f81109f6416fd1560fdf358c3339a66c2313a33",
+    "verified": true
+  },
+  {
+    "source": "chart-regression-nb-smoke.txt",
+    "destination": "tasks/history/chart-regression/logs/chart-regression-nb-smoke.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 358,
+    "sha256": "5803edd9fd116a1015725a01b8fe4374b99aad96bf147a318ea102764cb6df2a",
+    "verified": true
+  },
+  {
+    "source": "chart-regression-release-build.txt",
+    "destination": "tasks/history/chart-regression/logs/chart-regression-release-build.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 4627,
+    "sha256": "a522fbd419bba3c5f6b6074c93798a897fd5694432c8e7d54cfe0369d11571a5",
+    "verified": true
+  },
+  {
+    "source": "chart-smoke-Debug-narrowband.txt",
+    "destination": "tasks/history/chart-regression/logs/chart-smoke-Debug-narrowband.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 10109,
+    "sha256": "1f7ae927f9f842d9e12c6d67c9fa3c2ba5202898c084ce815aaa9f5057dcf431",
+    "verified": true
+  },
+  {
+    "source": "chart-smoke-Debug-wideband.txt",
+    "destination": "tasks/history/chart-regression/logs/chart-smoke-Debug-wideband.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 9376,
+    "sha256": "3797390922a7b5a7cebecbe9388461f9f7c63d9e7cacd233756c95a032fb3e46",
+    "verified": true
+  },
+  {
+    "source": "chart-smoke-Release-narrowband.txt",
+    "destination": "tasks/history/chart-regression/logs/chart-smoke-Release-narrowband.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 10101,
+    "sha256": "445951a5ff7e5414e475a5c4ef59ed350e079c00a4010e126434d82bdd810466",
+    "verified": true
+  },
+  {
+    "source": "chart-smoke-Release-wideband.txt",
+    "destination": "tasks/history/chart-regression/logs/chart-smoke-Release-wideband.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 9342,
+    "sha256": "c33230d587acb327bc2e5187f3df9e84137613ea63fa9faffd018847aac6251c",
+    "verified": true
+  },
+  {
+    "source": "chart-software-narrowband.txt",
+    "destination": "tasks/history/chart-regression/logs/chart-software-narrowband.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 7221,
+    "sha256": "f04a54ccd9863375d0b0fdfdf94a65ef3795a4856db8c5ad19cd53b6f676213b",
+    "verified": true
+  },
+  {
+    "source": "chart-software-wideband.txt",
+    "destination": "tasks/history/chart-regression/logs/chart-software-wideband.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 6289,
+    "sha256": "02f192aca1e36df25479c09bc44027f0b5a413fa5acbad61c5618c3cc99db0ae",
+    "verified": true
+  },
+  {
+    "source": "configure-linked-release.log",
+    "destination": "tasks/history/linked-analysis/logs/configure-linked-release.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 2396,
+    "sha256": "8140f53fdbbe855de67b6893cdeb15a643b258414369ddf484382a4f9e2806d5",
+    "verified": true
+  },
+  {
+    "source": "ctest-linked-debug.log",
+    "destination": "tasks/history/linked-analysis/logs/ctest-linked-debug.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 711,
+    "sha256": "2bbf5ad11e547eaa92fe70d2237feea020be13aeb92afef08b2c7c2e980e49df",
+    "verified": true
+  },
+  {
+    "source": "ctest-linked-release.log",
+    "destination": "tasks/history/linked-analysis/logs/ctest-linked-release.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 713,
+    "sha256": "d0c99d6fd28bcfdcf557de940edf59daab76c5774e59d51bf0a37038f7d85179",
+    "verified": true
+  },
+  {
+    "source": "display-debug-build.log",
+    "destination": "tasks/history/display/logs/display-debug-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 6235,
+    "sha256": "49c6e70dc2a860a516d1e9ba331cb470e0fed3d9c5cbe2ead78185b09baea3ba",
+    "verified": true
+  },
+  {
+    "source": "display-debug-ctest.log",
+    "destination": "tasks/history/display/logs/display-debug-ctest.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 786,
+    "sha256": "2a886ba6eed79e9e0e866b98d244a5c1720ff37e880906f953185accc53e0b4b",
+    "verified": true
+  },
+  {
+    "source": "display-debug-narrowband-gpu-smoke.log",
+    "destination": "tasks/history/display/logs/display-debug-narrowband-gpu-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 374,
+    "sha256": "2702abc1b8925a8a38a10027b374622d61f701906d5df52c604587bd2924fdeb",
+    "verified": true
+  },
+  {
+    "source": "display-debug-narrowband-software-smoke.log",
+    "destination": "tasks/history/display/logs/display-debug-narrowband-software-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 389,
+    "sha256": "06b15db72012a694a38ffa41142a5bafd475c55a53016dcac078595e506d5d85",
+    "verified": true
+  },
+  {
+    "source": "display-debug-native.log",
+    "destination": "tasks/history/display/logs/display-debug-native.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 190,
+    "sha256": "8a5e27c5cfd475eb606607023a035548e1911bfa64740302fb23346115b69cf0",
+    "verified": true
+  },
+  {
+    "source": "display-debug-wideband-gpu-smoke.log",
+    "destination": "tasks/history/display/logs/display-debug-wideband-gpu-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 352,
+    "sha256": "97b43c159393d1168b11082e889484efb72a3d69af58544a37fbc49377b93c49",
+    "verified": true
+  },
+  {
+    "source": "display-debug-wideband-software-smoke.log",
+    "destination": "tasks/history/display/logs/display-debug-wideband-software-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 367,
+    "sha256": "e166bc515d7cdcc3fdcab1bf41edcdbeb199960681511cc3a54540e2e091150e",
+    "verified": true
+  },
+  {
+    "source": "display-diff-warnings.log",
+    "destination": "tasks/history/display/logs/display-diff-warnings.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 2349,
+    "sha256": "f81b7c8576099ca46e670ebe644ed05145cd9f9cb2ed59f8a9e7755397354edc",
+    "verified": true
+  },
+  {
+    "source": "display-release-build.log",
+    "destination": "tasks/history/display/logs/display-release-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 5675,
+    "sha256": "f080bb73dc6e28a2e1725e27c677129d12abd8543c438c8b58fae84addfa9a99",
+    "verified": true
+  },
+  {
+    "source": "display-release-ctest.log",
+    "destination": "tasks/history/display/logs/display-release-ctest.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 790,
+    "sha256": "74ebb8174554607316ad73673ff65d888d33c83e8bdeeb3bf5f51b365a721be7",
+    "verified": true
+  },
+  {
+    "source": "display-release-narrowband-gpu-smoke.log",
+    "destination": "tasks/history/display/logs/display-release-narrowband-gpu-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 378,
+    "sha256": "e404bdc703f6854dec8d8de505c693f2050d9dae8f998c3718f4a3625239fcf1",
+    "verified": true
+  },
+  {
+    "source": "display-release-narrowband-software-smoke.log",
+    "destination": "tasks/history/display/logs/display-release-narrowband-software-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 393,
+    "sha256": "e691303a12c5d97184527c1c66e68770da62493f88cdd4c22c3b43f000ea984b",
+    "verified": true
+  },
+  {
+    "source": "display-release-native.log",
+    "destination": "tasks/history/display/logs/display-release-native.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 194,
+    "sha256": "bb1c2fba9ec6b9c819214b85239040339095c37faf4b355c25e97b5a92c45867",
+    "verified": true
+  },
+  {
+    "source": "display-release-wideband-gpu-smoke.log",
+    "destination": "tasks/history/display/logs/display-release-wideband-gpu-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 356,
+    "sha256": "fa7b673b97135fb328851a3f8c73a0e280a50a93aeb5f0ed0e94cdc08cf38535",
+    "verified": true
+  },
+  {
+    "source": "display-release-wideband-software-smoke.log",
+    "destination": "tasks/history/display/logs/display-release-wideband-software-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 371,
+    "sha256": "031508fb348deb648b08050b4c4384b3e39be51f538c6ceeca0a0a95ba90e96c",
+    "verified": true
+  },
+  {
+    "source": "display-targeted-ui.txt",
+    "destination": "tasks/history/display/logs/display-targeted-ui.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 4836,
+    "sha256": "7364e970742d190561fccce27c11c0bb6bced9f8e61b8b4ae7e7f9a9598a2b83",
+    "verified": true
+  },
+  {
+    "source": "display-window-ui.txt",
+    "destination": "tasks/history/display/logs/display-window-ui.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 1716,
+    "sha256": "191e5659cde977ebc0ca42b30a8bd413fac459415cd9e3c30a2a34bc8daf0d2a",
+    "verified": true
+  },
+  {
+    "source": "focused-power-ui.txt",
+    "destination": "tasks/history/linked-analysis/logs/focused-power-ui.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 2611,
+    "sha256": "9c343bd59ad7d047033e5f44a1631101b457d0d9b622fddd203b027c2065dcd8",
+    "verified": true
+  },
+  {
+    "source": "focused-regression-ui.txt",
+    "destination": "tasks/history/linked-analysis/logs/focused-regression-ui.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 6888,
+    "sha256": "4173af42cb5e05e857f110a1e8f987b4dbd5631ca7241396669ee5819bc3339c",
+    "verified": true
+  },
+  {
+    "source": "focused-spectral-ui.txt",
+    "destination": "tasks/history/linked-analysis/logs/focused-spectral-ui.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 6400,
+    "sha256": "2e0c3bbddaeea068ac4012ca907aeb7e33bf5766f3be86ba418f8ef30c9a6971",
+    "verified": true
+  },
+  {
+    "source": "linked-ui-debug.txt",
+    "destination": "tasks/history/linked-analysis/logs/linked-ui-debug.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 4899,
+    "sha256": "33866239cd4135175c43e3bbda8367d441630f12a2a8498c59c22c821eef3fa9",
+    "verified": true
+  },
+  {
+    "source": "m1-annotation-final-build.log",
+    "destination": "tasks/wideband-detection/M1/logs/m1-annotation-final-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 415,
+    "sha256": "d1ef058d4069d2381d8f40d3d27c18e0d08d6dc01549ef5277164b58a0115167",
+    "verified": true
+  },
+  {
+    "source": "m1-annotation-final-ctest.log",
+    "destination": "tasks/wideband-detection/M1/logs/m1-annotation-final-ctest.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 265,
+    "sha256": "ab4f046e036c0280f5cc5d6196b4fc69df5c52d9b9d4d1a79dd326ae929471b5",
+    "verified": true
+  },
+  {
+    "source": "m1-final-build.log",
+    "destination": "tasks/wideband-detection/M1/logs/m1-final-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 7753,
+    "sha256": "86723ab289da7f76f77891063a861901f8cdcdda11f97b8826f82ba67cb5772c",
+    "verified": true
+  },
+  {
+    "source": "m1-final-ctest.log",
+    "destination": "tasks/wideband-detection/M1/logs/m1-final-ctest.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 1514,
+    "sha256": "474716bcaf37d9ec096d3a53ebdea872e66d8da6543e8ac747c0fcae46c0d8ce",
+    "verified": true
+  },
+  {
+    "source": "m1-label-budget-build.log",
+    "destination": "tasks/wideband-detection/M1/logs/m1-label-budget-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 774,
+    "sha256": "302657fc94177c26842c76d08d7503e729162654cc196c016d44eaaffa60e6ff",
+    "verified": true
+  },
+  {
+    "source": "m1-label-budget-ctest.log",
+    "destination": "tasks/wideband-detection/M1/logs/m1-label-budget-ctest.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 266,
+    "sha256": "dba5a295b754e41fba16f4be3817fbd7aee0a5d21ac0e2144533b95309edbca8",
+    "verified": true
+  },
+  {
+    "source": "m1-label-budget-test.txt",
+    "destination": "tasks/wideband-detection/M1/logs/m1-label-budget-test.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 1332,
+    "sha256": "1eccbb4a1494c4144c8155a06002405f91b6912cd73c871f049861c84b2a3664",
+    "verified": true
+  },
+  {
+    "source": "m1-ui-selected.txt",
+    "destination": "tasks/wideband-detection/M1/logs/m1-ui-selected.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 6208,
+    "sha256": "7067aa09ba6d69c904a3cd8880e58403084652d0224b43146efeffc4901ef45e",
+    "verified": true
+  },
+  {
+    "source": "m2-alignment-build-final-candidate.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-alignment-build-final-candidate.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8802,
+    "sha256": "9219ff4a57e385526afb29e15f77b3c95460e3074c7a675f5f91ee841b792ba6",
+    "verified": true
+  },
+  {
+    "source": "m2-alignment-build-final.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-alignment-build-final.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 12993,
+    "sha256": "492286efc4f9f22aeb5e4526b72066f43c36f4c9757d12af5c7318d28c5e1b34",
+    "verified": true
+  },
+  {
+    "source": "m2-alignment-build-fix.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-alignment-build-fix.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 9019,
+    "sha256": "41fe8c3a70dec365b8d9fea202ea5401431ed1e110a3e8d654338bd5aee67101",
+    "verified": true
+  },
+  {
+    "source": "m2-alignment-build-next.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-alignment-build-next.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8806,
+    "sha256": "6018affd9de65d89dc86005f9ac2abfba084c8d56c7eafb2dbafcec965bdb3eb",
+    "verified": true
+  },
+  {
+    "source": "m2-alignment-build-verified.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-alignment-build-verified.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 1969,
+    "sha256": "35980aefbb19ae8ea23fae80cdc560bd506d2733a86ecb4324290983624f8a34",
+    "verified": true
+  },
+  {
+    "source": "m2-alignment-capture-next.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-alignment-capture-next.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 198,
+    "sha256": "c51e2d60ed2c493be501534666df966eb996a25b29342ea99d19d814af734632",
+    "verified": true
+  },
+  {
+    "source": "m2-alignment-full-ctest.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-alignment-full-ctest.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 147347,
+    "sha256": "0ee90838b6410c95bce81f6d0d2f67cbc66c8a46dabcc6fe7374f0f8fb7d3ece",
+    "verified": true
+  },
+  {
+    "source": "m2-alignment-ui-targeted.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-alignment-ui-targeted.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 5663,
+    "sha256": "bb9deac6789525b2ca57b174a0ee56fbb31bf82ba59b2a977b15d2e75b94d54d",
+    "verified": true
+  },
+  {
+    "source": "m2-configure.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-configure.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 2394,
+    "sha256": "1c071080667cae755766be8b7e909009ad3229d356beb020d455e70a0730ef75",
+    "verified": true
+  },
+  {
+    "source": "m2-current-screens.json",
+    "destination": "tasks/wideband-detection/M2/diagnostics/m2-current-screens.json",
+    "directory": false,
+    "files": 1,
+    "bytes": 786,
+    "sha256": "8c815d78c114c09b76af298db684f981b9ef4fba5a330960393af83c76413170",
+    "verified": true
+  },
+  {
+    "source": "m2-dialog-targeted.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-dialog-targeted.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 3873,
+    "sha256": "f03fce9bfad3e603f3155747cbc55ff3780c1e421861176d7277db7dfaba3208",
+    "verified": true
+  },
+  {
+    "source": "m2-final-annotation-targeted.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-final-annotation-targeted.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 562,
+    "sha256": "d36e43393b01d18659ca342b9f5a01a3677427456b755a5e6f21a583aca05a25",
+    "verified": true
+  },
+  {
+    "source": "m2-final-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-final-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 16335,
+    "sha256": "895e3d8dd888db652ed8288aa14d5cf02814dc0073aa0879b793799b2d007227",
+    "verified": true
+  },
+  {
+    "source": "m2-final-ctest.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-final-ctest.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 2016,
+    "sha256": "c4554440eef0ca4ab5b37937318321765aec9212b2041bfaa3eb92ab86384237",
+    "verified": true
+  },
+  {
+    "source": "m2-final-debug-ctest.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-final-debug-ctest.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 2016,
+    "sha256": "074b6c8f38eae53d5a0c4ae8b64724acb429bdb57e5cc6574749e357e7b9b09b",
+    "verified": true
+  },
+  {
+    "source": "m2-final-native-capture.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-final-native-capture.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 198,
+    "sha256": "c51e2d60ed2c493be501534666df966eb996a25b29342ea99d19d814af734632",
+    "verified": true
+  },
+  {
+    "source": "m2-final-store-targeted.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-final-store-targeted.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 39,
+    "sha256": "42bc4d6671ac53af86b5af8420330ff6a050f66b5bbe06a458e04583b08ec589",
+    "verified": true
+  },
+  {
+    "source": "m2-final-task-targeted.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-final-task-targeted.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 81,
+    "sha256": "fd5c9d989fc0414030b55efc9b953e44f2b92f2993560bc072f05646509f6f15",
+    "verified": true
+  },
+  {
+    "source": "m2-final-ui-targeted.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-final-ui-targeted.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 10048,
+    "sha256": "30d05f7090e522d716c9d645e0fe22c4d68b872480367398e0b525ff38a9d2f1",
+    "verified": true
+  },
+  {
+    "source": "m2-format-check.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-format-check.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verified": true
+  },
+  {
+    "source": "m2-initial-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-initial-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 7556,
+    "sha256": "ae9640865ac0c864e0d474ea292c31184e31d5e5f18d9ec868c009436ef08e6f",
+    "verified": true
+  },
+  {
+    "source": "m2-initial-ctest.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-initial-ctest.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 507,
+    "sha256": "229dd9c0c1018d80ef77ae47191ba4451e4dbee46fae5d3b8a01e0a82894cc00",
+    "verified": true
+  },
+  {
+    "source": "m2-layout-regression-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-layout-regression-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8789,
+    "sha256": "4891d59a3b7a84ecfef2ee4e996debf8eae7520f0e1b884b475a6491ed9d2fac",
+    "verified": true
+  },
+  {
+    "source": "m2-layout-targeted.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-layout-targeted.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 6507,
+    "sha256": "b28be9bf202eca94d759137a82f6d652a89c8cd9675a883bb201a98997e9ea90",
+    "verified": true
+  },
+  {
+    "source": "m2-native-active-window-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-native-active-window-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8793,
+    "sha256": "7403a94dcc4509742c3705ff857468bdfba702017ffdfe4d6585365d6a7fa481",
+    "verified": true
+  },
+  {
+    "source": "m2-native-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-native-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8957,
+    "sha256": "f5e25e1064fafaf6828a6444e3286a6c79d70222c632b210f44030ed9392a3da",
+    "verified": true
+  },
+  {
+    "source": "m2-native-capture.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-native-capture.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verified": true
+  },
+  {
+    "source": "m2-native-checkbox-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-native-checkbox-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8793,
+    "sha256": "7403a94dcc4509742c3705ff857468bdfba702017ffdfe4d6585365d6a7fa481",
+    "verified": true
+  },
+  {
+    "source": "m2-native-final-controls-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-native-final-controls-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8793,
+    "sha256": "7403a94dcc4509742c3705ff857468bdfba702017ffdfe4d6585365d6a7fa481",
+    "verified": true
+  },
+  {
+    "source": "m2-native-settle-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-native-settle-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8793,
+    "sha256": "7403a94dcc4509742c3705ff857468bdfba702017ffdfe4d6585365d6a7fa481",
+    "verified": true
+  },
+  {
+    "source": "m2-native-viewport-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-native-viewport-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8793,
+    "sha256": "7403a94dcc4509742c3705ff857468bdfba702017ffdfe4d6585365d6a7fa481",
+    "verified": true
+  },
+  {
+    "source": "m2-post-review-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-post-review-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 9229,
+    "sha256": "db0f1e1d4adf5a6458c37650842c6400f284c87a3871615bb41c8d3587849b5d",
+    "verified": true
+  },
+  {
+    "source": "m2-prototype-alignment-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-prototype-alignment-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 11192,
+    "sha256": "511561cfbc31b672ebd57b76ccac19acd58488e5276a9e5db1af82ef69136dd9",
+    "verified": true
+  },
+  {
+    "source": "m2-prototype-alignment-capture.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-prototype-alignment-capture.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verified": true
+  },
+  {
+    "source": "m2-prototype-visual-final-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-prototype-visual-final-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8941,
+    "sha256": "eaa6cd1a968ca4ae50a0efd9cfff08a79625b4f2980d4cc3cc80af5ab643bc67",
+    "verified": true
+  },
+  {
+    "source": "m2-prototype-visual-targeted.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-prototype-visual-targeted.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 6173,
+    "sha256": "9650baa84394db71c3be347a7481d9f8eaef0f0005f677c0d795e9a2e54324f0",
+    "verified": true
+  },
+  {
+    "source": "m2-provider-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-provider-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 4189,
+    "sha256": "913251f5f4cde73a079cd4e7cc5a6c2f2220b1009e6c818bf51d16dcbd46733c",
+    "verified": true
+  },
+  {
+    "source": "m2-provider-golden-regeneration.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-provider-golden-regeneration.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 306,
+    "sha256": "8ebbd4a8af6e386469b2e0f0e5c610e92ee3d1970be6b49d494356e07b761459",
+    "verified": true
+  },
+  {
+    "source": "m2-provider-test.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-provider-test.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 1393,
+    "sha256": "914e50a6229140d170b830ade98fa5a3e1c1b566997345d87e6023fd0cc68a80",
+    "verified": true
+  },
+  {
+    "source": "m2-selection-targeted.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-selection-targeted.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 3213,
+    "sha256": "c02a6155bdb9985c705662838b3fe18ba385be2df80e1a06419610c0056f5972",
+    "verified": true
+  },
+  {
+    "source": "m2-task-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-task-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 5698,
+    "sha256": "67842b5cc7951c4c39fb9ff7500205a5235b462ddcdfea5e2b89a713520dca40",
+    "verified": true
+  },
+  {
+    "source": "m2-task-ctest.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-task-ctest.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 268,
+    "sha256": "ee4c5721a1a83b2007a3d30520dc1f01feaffb5eef88edff1f5fb7a3a3de276e",
+    "verified": true
+  },
+  {
+    "source": "m2-ui-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-ui-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 6847,
+    "sha256": "3b804397896690e53f6c6374b6300e88fecfa68235d84b5603f3b1aa0d4e1edd",
+    "verified": true
+  },
+  {
+    "source": "m2-ui-performance-fix-build.log",
+    "destination": "tasks/wideband-detection/M2/logs/m2-ui-performance-fix-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 11469,
+    "sha256": "a68fb77947223e740f190b84bb71fc85a64d9a1d8970c4d783726f2a80236a45",
+    "verified": true
+  },
+  {
+    "source": "m2-ui-performance-fixed.jsonl",
+    "destination": "tasks/wideband-detection/M2/diagnostics/m2-ui-performance-fixed.jsonl",
+    "directory": false,
+    "files": 1,
+    "bytes": 2779,
+    "sha256": "e52a574a8a585016599bcfaeea4b75106d90c868049cda23c53e2c1425328084",
+    "verified": true
+  },
+  {
+    "source": "m2-ui-performance-fixed.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-ui-performance-fixed.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 34750,
+    "sha256": "f33466752f4a5373d84b891c4f6fa4041022d9117f69db68a873963631cc8582",
+    "verified": true
+  },
+  {
+    "source": "m2-ui-performance-targeted.jsonl",
+    "destination": "tasks/wideband-detection/M2/diagnostics/m2-ui-performance-targeted.jsonl",
+    "directory": false,
+    "files": 1,
+    "bytes": 2397,
+    "sha256": "5edccb46bfd28b1ed7c6e1fee29c2444d6b99699e1defa7b5674307afb3f9c23",
+    "verified": true
+  },
+  {
+    "source": "m2-ui-performance-targeted.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-ui-performance-targeted.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 29511,
+    "sha256": "c15d9ef5742512ec75b8ee735f11bf7592d547c11444be1cfa135755b62cfab5",
+    "verified": true
+  },
+  {
+    "source": "m2-ui-targeted.txt",
+    "destination": "tasks/wideband-detection/M2/logs/m2-ui-targeted.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 1898,
+    "sha256": "2b821f22337bf820fd27f1534ae98751335f87379b0ff183ddb5417961c71a68",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-debug-build.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-debug-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 6671,
+    "sha256": "b19a96a624c99d4a844720b226cface9ba57b385f76093e1b153c555bd3a67b1",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-debug-ctest.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-debug-ctest.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 711,
+    "sha256": "0a46bf4b125192ea4073c47d25cf7e809200cfdeb9dc38867ace547f1bd8b513",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-debug-narrowband-gpu-smoke.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-debug-narrowband-gpu-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 366,
+    "sha256": "c046b6948749c4ab24278fd1249cf72c9d8e447c474e8e0d70008a7bf99bc64c",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-debug-narrowband-software-smoke.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-debug-narrowband-software-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 381,
+    "sha256": "15f442bd425b913f7d912ddbe87993ae7a0e3b5cf9de1faee18b74e6d6c05d7f",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-debug-native.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-debug-native.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 186,
+    "sha256": "08da11e9635e05e010a386588bf61c2c3158095f0eecf05a475b1b2a80b87cb3",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-debug-wideband-gpu-smoke.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-debug-wideband-gpu-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 344,
+    "sha256": "b0248e6afebfe7e817ae137e12f8bc1278726e569dc17b868133be923a0042dc",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-debug-wideband-software-smoke.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-debug-wideband-software-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 359,
+    "sha256": "0b7efc404b2f2530c4131ceef0cb8d9e458b55cb915e679ac301c2b28253ff3c",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-release-build.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-release-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 6109,
+    "sha256": "23db656a3ad0971a821199b8fc16e8bba160de409134a238d8a5393520c942c6",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-release-ctest.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-release-ctest.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 713,
+    "sha256": "1f1b8807b23894a625b8b976529106a3f73a4003f7003e50a8a5ec0e276e1338",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-release-narrowband-gpu-smoke.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-release-narrowband-gpu-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 370,
+    "sha256": "c981b0ee0579538c8c8131c4d1ab9ae09ebf21459deaed9e8b64637b0c65bc30",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-release-narrowband-software-smoke.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-release-narrowband-software-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 385,
+    "sha256": "def3b94de7c5224fed16aeed3b52032e19001c591c89238ea4acbd1db660e45f",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-release-native.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-release-native.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 190,
+    "sha256": "1027c0308c1a9cc6717a0af1cdbe90644d50cc4853cfc700275656c9842f349d",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-release-wideband-gpu-smoke.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-release-wideband-gpu-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 348,
+    "sha256": "2cdf856d19d743d7682a93b1fcf44444dff6c00856e840683f7299d98807025d",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-release-wideband-software-smoke.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-release-wideband-software-smoke.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 363,
+    "sha256": "2280c0bc6574b67028afa320783a2b4e2945d6f8747aac3725936910c5ea064d",
+    "verified": true
+  },
+  {
+    "source": "parameter-input-targeted.log",
+    "destination": "tasks/history/parameter-input/logs/parameter-input-targeted.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 11260,
+    "sha256": "3fb7f9fdf730a442531557e52dc520f0dfc170b2d05a9e631acce684bfcdd555",
+    "verified": true
+  },
+  {
+    "source": "screen-inventory.json",
+    "destination": "tasks/history/display/diagnostics/screen-inventory.json",
+    "directory": false,
+    "files": 1,
+    "bytes": 609,
+    "sha256": "125309a373ad0ffa96ad3bffe21f59d28a602f1c9a4e392a18213406015723a5",
+    "verified": true
+  },
+  {
+    "source": "smoke-linked.log",
+    "destination": "tasks/history/linked-analysis/logs/smoke-linked.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 2884,
+    "sha256": "767385c71196991b0bbf234c69d176f6b88bcdf653024388ef798cb15cb7e3cb",
+    "verified": true
+  },
+  {
+    "source": "spectral-build-debug.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-build-debug.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 6767,
+    "sha256": "b856adbe556a0950bb03f79193b1df08458be4d08701ae4799396733a1214714",
+    "verified": true
+  },
+  {
+    "source": "spectral-build-release.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-build-release.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 6211,
+    "sha256": "25785ed4620349fcd479f012140fc387795671aa1eb8ab97e7a46a51ad6dfa47",
+    "verified": true
+  },
+  {
+    "source": "spectral-capture-build-debug.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-capture-build-debug.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 5209,
+    "sha256": "44ec923e347c8bed8dee8a9c4b2fdba4328922c0ed5be65e05ce2b29744b62c2",
+    "verified": true
+  },
+  {
+    "source": "spectral-capture-build-release.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-capture-build-release.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 4637,
+    "sha256": "ac5d3a6516bffce9c6278743cfcaec752b85be58a0c88471379eeae5127ee704",
+    "verified": true
+  },
+  {
+    "source": "spectral-capture-build.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-capture-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 10515,
+    "sha256": "7756a62420cb44318ad5945139ca60ff7a1556d06bb89dc005ffd09da186d130",
+    "verified": true
+  },
+  {
+    "source": "spectral-capture-final-debug.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-capture-final-debug.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 5209,
+    "sha256": "44ec923e347c8bed8dee8a9c4b2fdba4328922c0ed5be65e05ce2b29744b62c2",
+    "verified": true
+  },
+  {
+    "source": "spectral-capture-final-release.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-capture-final-release.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 4637,
+    "sha256": "ac5d3a6516bffce9c6278743cfcaec752b85be58a0c88471379eeae5127ee704",
+    "verified": true
+  },
+  {
+    "source": "spectral-configure-release.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-configure-release.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 2396,
+    "sha256": "468d2c52e04927bbbbcdc9c1ef5da70fdb6d3ac8cbfcb0e2319ef5295ed34f48",
+    "verified": true
+  },
+  {
+    "source": "spectral-ctest-debug.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-ctest-debug.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 711,
+    "sha256": "82559d211850c91cb52743dbc6ec6d49d138a38ef82e7942ac76e40ac2ea740a",
+    "verified": true
+  },
+  {
+    "source": "spectral-ctest-release.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-ctest-release.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 713,
+    "sha256": "fb58a42a901dc5577f89d14eabe6511d0cae13cb5b981cfe282e5be3e36df54d",
+    "verified": true
+  },
+  {
+    "source": "spectral-diff-check.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-diff-check.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verified": true
+  },
+  {
+    "source": "spectral-git-commit.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-git-commit.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8782,
+    "sha256": "f352814a2e6295bd4ff783f973293fcfbea1c0d5b8c3455ddb0529e401d2ac4d",
+    "verified": true
+  },
+  {
+    "source": "spectral-reference-debug.json",
+    "destination": "tasks/history/spectral-analysis/diagnostics/spectral-reference-debug.json",
+    "directory": false,
+    "files": 1,
+    "bytes": 10644,
+    "sha256": "472ffd3b7f4d869932a9b5f429a532701be4a006d3dcb8a39cf272cc5117382d",
+    "verified": true
+  },
+  {
+    "source": "spectral-reference-release.json",
+    "destination": "tasks/history/spectral-analysis/diagnostics/spectral-reference-release.json",
+    "directory": false,
+    "files": 1,
+    "bytes": 10644,
+    "sha256": "472ffd3b7f4d869932a9b5f429a532701be4a006d3dcb8a39cf272cc5117382d",
+    "verified": true
+  },
+  {
+    "source": "spectral-reference-result.txt",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-reference-result.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 7028,
+    "sha256": "510bd94bc9893e3848028de6c473181ca9bbc25926eef2a95e682a1106cbb6d9",
+    "verified": true
+  },
+  {
+    "source": "spectral-reference.json",
+    "destination": "tasks/history/spectral-analysis/diagnostics/spectral-reference.json",
+    "directory": false,
+    "files": 1,
+    "bytes": 495354,
+    "sha256": "5349ceee0601972df1aafb46f97afd69eae7d8a0173b5abc6dbc72923774c29f",
+    "verified": true
+  },
+  {
+    "source": "spectral-reference.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-reference.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 7028,
+    "sha256": "510bd94bc9893e3848028de6c473181ca9bbc25926eef2a95e682a1106cbb6d9",
+    "verified": true
+  },
+  {
+    "source": "spectral-scipy-debug-report.json",
+    "destination": "tasks/history/spectral-analysis/diagnostics/spectral-scipy-debug-report.json",
+    "directory": false,
+    "files": 1,
+    "bytes": 236,
+    "sha256": "c777eee13941047258483af17bb0a776834010e01b3e20f42d74213dccd56ac9",
+    "verified": true
+  },
+  {
+    "source": "spectral-scipy-release-report.json",
+    "destination": "tasks/history/spectral-analysis/diagnostics/spectral-scipy-release-report.json",
+    "directory": false,
+    "files": 1,
+    "bytes": 236,
+    "sha256": "c777eee13941047258483af17bb0a776834010e01b3e20f42d74213dccd56ac9",
+    "verified": true
+  },
+  {
+    "source": "spectral-smoke-Debug-False-False.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-smoke-Debug-False-False.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 10410,
+    "sha256": "0e65bd0a4432677e610cc19339e9f89556aba6181cc52106531af89a4c9788b0",
+    "verified": true
+  },
+  {
+    "source": "spectral-smoke-Debug-False-True.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-smoke-Debug-False-True.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 7338,
+    "sha256": "0c10cdb7441dabcb9500568bd2f4dfc9e0e7943e1f44839fff9bc354fe1d9197",
+    "verified": true
+  },
+  {
+    "source": "spectral-smoke-Debug-True-False.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-smoke-Debug-True-False.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 11316,
+    "sha256": "ca78e43949d7768ab4f774cbe038ffca2e9c4f5e7b4d02253adf963dc38b5517",
+    "verified": true
+  },
+  {
+    "source": "spectral-smoke-Debug-True-True.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-smoke-Debug-True-True.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8422,
+    "sha256": "3646f08f51f5016695909aba031525c5772ae518ae1cd06e6744c70107d63e89",
+    "verified": true
+  },
+  {
+    "source": "spectral-smoke-debug.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-smoke-debug.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 1586,
+    "sha256": "1ea29e831859c5b3d1fb31a19d5986ca01aaa6e7a3e726423533d7390821265b",
+    "verified": true
+  },
+  {
+    "source": "spectral-smoke-Release-False-False.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-smoke-Release-False-False.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 10394,
+    "sha256": "b3b7d51dd07260fc96bac3bc7c5f3cf1d91b55cb79ab8a464e0ac2a3f716b244",
+    "verified": true
+  },
+  {
+    "source": "spectral-smoke-Release-False-True.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-smoke-Release-False-True.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 7342,
+    "sha256": "50e172fda90601ac91fabcd2749c6906d080ab1bcfb66d25d8c666d895e87d50",
+    "verified": true
+  },
+  {
+    "source": "spectral-smoke-Release-True-False.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-smoke-Release-True-False.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 11292,
+    "sha256": "aab4315b48a57b3a98e1f15ec1419f19dc23e5ecbd18fdd911209165cbe2c9bf",
+    "verified": true
+  },
+  {
+    "source": "spectral-smoke-Release-True-True.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-smoke-Release-True-True.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 8426,
+    "sha256": "9714cfe39eed99c9035ab1e729975e366af10280e063274e35e68a60f3cac6d4",
+    "verified": true
+  },
+  {
+    "source": "spectral-smoke-release.log",
+    "destination": "tasks/history/spectral-analysis/logs/spectral-smoke-release.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 1602,
+    "sha256": "0070126aa4743f26200c7c72f4e6712d906c349d38400c7e9b515b14e82b7537",
+    "verified": true
+  },
+  {
+    "source": "ui-parity-debug-results.txt",
+    "destination": "tasks/history/ui-parity/logs/ui-parity-debug-results.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 13977,
+    "sha256": "079649540f2f427add0c57907ae2238b0960d93fd0c61ff8faaaba017c5e7c28",
+    "verified": true
+  },
+  {
+    "source": "ui-parity-focused.txt",
+    "destination": "tasks/history/ui-parity/logs/ui-parity-focused.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 1950,
+    "sha256": "61bc62cfc94e1ee5149730bf14400b62df965d030363444636d164ecff9badc2",
+    "verified": true
+  },
+  {
+    "source": "ui-parity-maximize.txt",
+    "destination": "tasks/history/ui-parity/logs/ui-parity-maximize.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 1095,
+    "sha256": "1da81eca782729eeeb8fbb165b47161e5b77acdb7883122bf28aa1d7121e8f07",
+    "verified": true
+  },
+  {
+    "source": "annotation-core-local",
+    "destination": "tasks/wideband-detection/M1/local-builds/annotation-core",
+    "directory": true,
+    "files": 6,
+    "bytes": 5359645.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "parameter-input-native",
+    "destination": "tasks/history/parameter-input/native",
+    "directory": true,
+    "files": 47,
+    "bytes": 17845658.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "wideband-tools",
+    "destination": "toolchains/wideband-python",
+    "directory": true,
+    "files": 1096,
+    "bytes": 13497853.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "build",
+    "destination": "archive/builds/build",
+    "directory": true,
+    "files": 25,
+    "bytes": 772621.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "chart-fixes-release-verify",
+    "destination": "archive/builds/chart-fixes-release-verify",
+    "directory": true,
+    "files": 23,
+    "bytes": 168198.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "chart-fixes-release-verify-bin",
+    "destination": "archive/builds/chart-fixes-release-verify-bin",
+    "directory": true,
+    "files": 14,
+    "bytes": 8849605.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "nb-color-fix-verify-release_bin",
+    "destination": "archive/builds/nb-color-fix-verify-release_bin",
+    "directory": true,
+    "files": 2,
+    "bytes": 4143104.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "nb-v143",
+    "destination": "archive/builds/nb-v143",
+    "directory": true,
+    "files": 23,
+    "bytes": 212779.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "test-temp",
+    "destination": "archive/temp/20261013/test-temp",
+    "directory": true,
+    "files": 1,
+    "bytes": 262144.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "test-tmp",
+    "destination": "archive/temp/20261013/test-tmp",
+    "directory": true,
+    "files": 0,
+    "bytes": 0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "deferred-wideband/20261013/M2",
+    "destination": "tasks/wideband-detection/M2/deferred/20261013",
+    "directory": true,
+    "files": 0,
+    "bytes": 0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "deferred-wideband/20261013/M3",
+    "destination": "tasks/wideband-detection/M3/deferred/20261013",
+    "directory": true,
+    "files": 21,
+    "bytes": 214864.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "deferred-wideband/20261013/M4",
+    "destination": "tasks/wideband-detection/M4/deferred/20261013",
+    "directory": true,
+    "files": 1,
+    "bytes": 6958.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "models/controls",
+    "destination": "tasks/wideband-detection/M3/assets/controls",
+    "directory": true,
+    "files": 3,
+    "bytes": 120667918.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "models/epoch1200",
+    "destination": "tasks/wideband-detection/M3/assets/epoch1200",
+    "directory": true,
+    "files": 28,
+    "bytes": 72198520.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "models/runtime",
+    "destination": "tasks/wideband-detection/M3/assets/runtime",
+    "directory": true,
+    "files": 238,
+    "bytes": 2431217579.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "models/native-probe",
+    "destination": "tasks/wideband-detection/M3/local-builds/native-probe",
+    "directory": true,
+    "files": 4,
+    "bytes": 478029249.0,
+    "sha256": null,
+    "verified": true
+  },
+  {
+    "source": "models/control-probe.log",
+    "destination": "tasks/wideband-detection/M3/logs/control-probe.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 612,
+    "sha256": "0af1f0024304c0a2e8058b18416f2e082c210b23eeef506a6c49e3557c5a8cf9",
+    "verified": true
+  },
+  {
+    "source": "models/model-probe.log",
+    "destination": "tasks/wideband-detection/M3/logs/model-probe.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 3239,
+    "sha256": "f4bc5fe393937407cc48e24ef6168b0f365ca004eeb31a13994dcb2407d42a13",
+    "verified": true
+  },
+  {
+    "source": "models/model-recheck.log",
+    "destination": "tasks/wideband-detection/M3/logs/model-recheck.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 1520,
+    "sha256": "b6a1341d4d5b2b7e27f03ecb0ec819f89e78e78b0e2a17520d290698c3bc41d0",
+    "verified": true
+  },
+  {
+    "source": "models/native-build.log",
+    "destination": "tasks/wideband-detection/M3/logs/native-build.log",
+    "directory": false,
+    "files": 1,
+    "bytes": 103,
+    "sha256": "d91c5507805b171b8cb37f59f9799259ab6a620d8e29dc3f24346bee7802fc93",
+    "verified": true
+  },
+  {
+    "source": "deferred-wideband/20261013/README.txt",
+    "destination": "tasks/output-organization/20261013/deferred-note.txt",
+    "directory": false,
+    "files": 1,
+    "bytes": 403,
+    "sha256": "044bc92bc4a9e157c4f67eafa034fb683515a146adee45750c5f3a8e74f95217",
+    "verified": true
+  }
+]

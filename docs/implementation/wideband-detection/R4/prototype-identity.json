@@ -1,0 +1,116 @@
+{
+  "schema": "signalstudio-r4-frozen-prototype-check-v1",
+  "files": [
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/browser-checks.json",
+      "sha256": "a391e23b784c7fb559d63b629800879c2a656920636c7cd2b6f53271e34ff175",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/demo-export.json",
+      "sha256": "82fc752c9a56fda8be9958f56a5e89b03ae029bd7c1d6ff7965a318ed6220d7e",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/REVIEW.md",
+      "sha256": "f9fb247d8b8594f631b48c4574f9b24a1bc76df94ad7734d0e1120dddb795a5d",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/adjusted-layout.png",
+      "sha256": "0a6d7e52c06bca591bf4ef7466f414f0b6debee00896a35c3ed9f102943e2728",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/background-task-other-file.png",
+      "sha256": "fca9565dc70155d976cdcf217cae68d018459871da17c015538dafc493b4a07a",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/cancelled-partial.png",
+      "sha256": "e0a9139bc9d74aa416959edc25a1ca46ac9969d6a1fd6513f5dfadfd52540f0a",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/channel-source-changed.png",
+      "sha256": "527ba58153ccfcdcaabcb0e2d550244d91c505139d2e6a181475f04b60b5f5fe",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/channel-source.png",
+      "sha256": "d1d91f1f4682dde2a16a258c9f1b168394f0bea091e5206fe614fe2dc074e863",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/import-conflict.png",
+      "sha256": "d19b68d6e04a7db78e0a45a1da6683dbfd1a802b8a4eac4cdbb27b825057c400",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/ready.png",
+      "sha256": "ef4ef799679efe99cac9cc1eb83eeb37e99ac7d59ca5e55d1b0e8f33c4803846",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/review-evidence.png",
+      "sha256": "4b4ed8456cce92336f23e6987634ff46e8db3c7fcdf64d98166bfc9017a3af53",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/roi-confirm.png",
+      "sha256": "a204dc7e5ff058dab811f2af3ecb307b767542e4e987ccef2d5697f248bbede9",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/screenshots/running-frozen.png",
+      "sha256": "e698127fa0a72008d2e959cd4e353356be1f0fbe6125f9f38ca3af82caae43af",
+      "passed": true
+    },
+    {
+      "path": "docs/implementation/wideband-detection/M0-P/VALIDATION.md",
+      "sha256": "f37af8618f35084d02d180170ad8a0d0a534a30c55e25b34d64cdf1ff643dbe4",
+      "passed": true
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/app.js",
+      "sha256": "33430853b553bfa188c3e148796549fb9b79d9546650a02d1f549970a39825f4",
+      "passed": true
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/data.js",
+      "sha256": "b33e53f66b6e5a5b7b7a9c834980f02ec9bacdf7d06645fe5acfde327aa0bdf1",
+      "passed": true
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/index.html",
+      "sha256": "828dc7eb876c35352275af20065994ee8dc71dc55477ee8c642d0f8ba019d1fd",
+      "passed": true
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/README.md",
+      "sha256": "82d98b865d5a76838ceafb5f095bdf85bb877fb2376fa579646f1e84db1a0a99",
+      "passed": true
+    },
+    {
+      "path": "docs/prototype/wideband-detection-r1/styles.css",
+      "sha256": "40f16b69b140dd0e3cf1bdba7a85107abc989689e2083e0ff0cd7462051a4103",
+      "passed": true
+    },
+    {
+      "path": "resources/branding/svg/icon-dark.svg",
+      "sha256": "2c1aa47d626a60a380c5e152ccd1298efbace9d6023ac8bf8b61688e98ebd256",
+      "passed": true
+    },
+    {
+      "path": "resources/branding/svg/wordmark-dark.svg",
+      "sha256": "e8f180ec6f5c28c0fa00d7845787a6ac6023026b403ccee9f6863bdfea846e31",
+      "passed": true
+    },
+    {
+      "path": "scripts/verify_wideband_prototype.mjs",
+      "sha256": "5f9b9e71d1e05100f61958a0a87ee26cd093ccc383734ded92795ec6af6cf8f7",
+      "passed": true
+    }
+  ],
+  "passed": true
+}

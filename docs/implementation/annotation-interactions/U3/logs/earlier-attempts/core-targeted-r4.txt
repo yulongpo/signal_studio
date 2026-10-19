@@ -1,0 +1,13 @@
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+    Start 13: signal_studio_annotations
+1/4 Test #13: signal_studio_annotations .........   Passed    0.66 sec
+    Start 14: signal_studio_annotation_store
+2/4 Test #14: signal_studio_annotation_store ....   Passed   68.28 sec
+    Start 19: signal_studio_core
+3/4 Test #19: signal_studio_core ................   Passed    1.27 sec
+    Start 20: signal_studio_channel_processor
+4/4 Test #20: signal_studio_channel_processor ...   Passed    1.01 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =  71.24 sec

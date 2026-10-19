@@ -1,0 +1,14 @@
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+INFO   : UiTests::initTestCase() entering
+PASS   : UiTests::initTestCase()
+INFO   : UiTests::widebandAuxiliaryRenderingAndGestures() entering
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWindowsWindow::setGeometry: Unable to set geometry 3840x2160+2560+0 (frame: 3862x2216+2549-45) on QWidgetWindow/"SignalStudioWindowWindow" on "Redmi 27 NU". Resulting geometry: 3840x2130+2560+0 (frame: 3862x2186+2549-45) margins: 11, 45, 11, 11 minimum size: 720x520 MINMAXINFO(maxSize=POINT(x=0, y=0), maxpos=POINT(x=0, y=0), maxtrack=POINT(x=0, y=0), mintrack=POINT(x=1102, y=836)))
+PASS   : UiTests::widebandAuxiliaryRenderingAndGestures()
+INFO   : UiTests::narrowbandAuxiliaryRenderingAndGestures() entering
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWindowsWindow::setGeometry: Unable to set geometry 3840x2160+2560+0 (frame: 3862x2216+2549-45) on QWidgetWindow/"SignalStudioWindowWindow" on "Redmi 27 NU". Resulting geometry: 3840x2130+2560+0 (frame: 3862x2186+2549-45) margins: 11, 45, 11, 11 minimum size: 720x520 MINMAXINFO(maxSize=POINT(x=0, y=0), maxpos=POINT(x=0, y=0), maxtrack=POINT(x=0, y=0), mintrack=POINT(x=1102, y=836)))
+PASS   : UiTests::narrowbandAuxiliaryRenderingAndGestures()
+INFO   : UiTests::cleanupTestCase() entering
+PASS   : UiTests::cleanupTestCase()
+Totals: 4 passed, 0 failed, 0 skipped, 0 blacklisted, 7699ms
+********* Finished testing of UiTests *********

@@ -1,0 +1,406 @@
+{
+    "activitySegments": 0,
+    "annotations": [
+        {
+            "annotation": {
+                "activeSegmentId": "",
+                "classLabel": null,
+                "deleted": false,
+                "derivedFrom": [
+                ],
+                "fileId": "m4-source-T07-04",
+                "id": "detection:08f61fd4983514b7f7c4feaf95ab6e877a0f8ffc52137eda246fb14852082274",
+                "name": "FFSCN IQ 频率观察",
+                "note": "",
+                "observation": {
+                    "end": "2900000",
+                    "lowerHz": 2498289188.9555116,
+                    "start": "0",
+                    "upperHz": 2498434298.634529
+                },
+                "observationFrequencyFrame": "RF",
+                "observationTimeQuality": "WindowObservation",
+                "originEvidence": {
+                    "coordinateInterpretation": "Physical RF; nominal/FFT contexts are observations, not transmission intervals",
+                    "estimatedCnrDb": null,
+                    "evidenceRefs": [
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-026e84d83cad2d34aa520535478aa2a505d838c967787a84ad73788b23b9a45a.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-3c0d2a4d7c8a14ca46d27feafc63fa83039faffcfb3ffa99157db59a4db3d421.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-0ad2c11940272aed50b584d57a3660d26bbc279f88cb47b2eb9b169cf31ff24f.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-75dbad597894873d1c374e03ccd045cc3c140099fd897023db49fa28066380d5.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-aee461a1110896b7a723924964678959586774f6727998fec701f723b35cb4fe.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-30a17a8ba4d5dcbad7b97576bc39fd89123aa4173b55bba0b767096505580944.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-ad275321f6f2924b3137055a06f8fadeefa817a2a79bff92b51aba1ecf4fa5cb.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-8d2869e2c1233a0310937d84e0fa356aaa83132e2776e8409c4e3852d4c69e31.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-6175e664505099337cfc60e4b8e7bfdf68564bdc1393142c64ec60a126bd3c26.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-c6824496e479c9369d24363c5d06904b341eabe3a9c28dd05687f1777ea8dd11.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-ab1fe4cef95866505650f7b55620c063aa8ee197c8e0e5e2a9e224e90c65cc71.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-8364ede46538f58a43102f6a17101963e9f42aea8b2ee608c2d7b83801e49c62.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-c8411aeae015e24291c12f153458e43f9aaf914cd340e825153e1f73221f3fc2.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-786418ddf466cab05095ad377a9358373b54ea6569623d852ad2fcab6c5a2f91.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-80693be5c3c89d8968efb169531f415e6ddcc00937d1b73172f7a1f4666e3ab8.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-bd93695ea8b9ef7d461275cc3af9b98f839d4b01ce06d83696900f73bfc512ac.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-450d97953c78fecac90842e9c984eb40d6e60a80f9fc81a4f58a1642b17ecc1e.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-c0337d17d30f6dd8e728aa9dfcf7328d71dfd4f3f173614bd23a193c87a0bbdd.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-05d31d9860789cdf6b0baebb681804acbe58fae12f2e72b966c1e84a32d63c7a.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-ebc6204a2df118f4b3949cf5c2f8f37a47210fc6724565c1d372cdca6f07add8.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-23720267533c2b60dd4f1dd6a76ea4ba510dabaaf985378bfdb5b1d2a047ac77.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-ceea452e905e6ecc3fdaaba5f888486c138eb1e5dad9e7f8d61e601a0962053d.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-554b5d8754b0c969ec1fab676f5f0282a9cc4ee1b60e38a5701580088ad72737.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-b6a1a85ef80d1c1f6182c73057848ba6225f385cc6ffef43ac61e45032009e9d.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-51eff155dfa86f9e45e122cece4d4eb1e798b3d98e8d0bda62ac62772b21e94a.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-d241ee8506d054255fa66cefe19e4e918b728a40bd41a879f4aed2182bb7472f.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-c00ceaa125f9293e3a9aa38c6275cd1f27743a52d369c3f61fc7b7f21fd2cbd3.f32",
+                        "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-91900c89391df28a3ff577108c6d5183183a382ada97541dafc4e0f625d00210.f32"
+                    ],
+                    "fallbackReason": "Time localization is pending; model predicts frequency within observation contexts",
+                    "formatId": "detection-v1",
+                    "observationFrequencyFrame": "RF",
+                    "originRef": "track:frequency-track:34:m4-sample-default-m4-source-T07-0416:m4-source-T07-041:0:6830",
+                    "originalFieldsJson": "{\"eligibleWindowDenominator\":\"799\",\"fusedLowerHz\":2498289188.9555116,\"fusedUpperHz\":2498434298.634529,\"originalLowerHz\":2498292684.9062953,\"originalUpperHz\":2498430562.2002907,\"seedId\":\"frequency-track:34:m4-sample-default-m4-source-T07-0416:m4-source-T07-041:0:6830\",\"uniqueHits\":\"28\",\"version\":\"frequency-association-unique-window-v1\",\"windowCoverage\":0.03504380475594493,\"windowPostprocess\":[{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-026e84d83cad2d34aa520535478aa2a505d838c967787a84ad73788b23b9a45a.f32\",\"sha256\":\"026e84d83cad2d34aa520535478aa2a505d838c967787a84ad73788b23b9a45a\",\"shape\":[1,3,1,16384]},\"windowId\":\"0\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-3c0d2a4d7c8a14ca46d27feafc63fa83039faffcfb3ffa99157db59a4db3d421.f32\",\"sha256\":\"3c0d2a4d7c8a14ca46d27feafc63fa83039faffcfb3ffa99157db59a4db3d421\",\"shape\":[1,3,1,16384]},\"windowId\":\"1\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-0ad2c11940272aed50b584d57a3660d26bbc279f88cb47b2eb9b169cf31ff24f.f32\",\"sha256\":\"0ad2c11940272aed50b584d57a3660d26bbc279f88cb47b2eb9b169cf31ff24f\",\"shape\":[1,3,1,16384]},\"windowId\":\"2\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-75dbad597894873d1c374e03ccd045cc3c140099fd897023db49fa28066380d5.f32\",\"sha256\":\"75dbad597894873d1c374e03ccd045cc3c140099fd897023db49fa28066380d5\",\"shape\":[1,3,1,16384]},\"windowId\":\"3\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-aee461a1110896b7a723924964678959586774f6727998fec701f723b35cb4fe.f32\",\"sha256\":\"aee461a1110896b7a723924964678959586774f6727998fec701f723b35cb4fe\",\"shape\":[1,3,1,16384]},\"windowId\":\"4\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-30a17a8ba4d5dcbad7b97576bc39fd89123aa4173b55bba0b767096505580944.f32\",\"sha256\":\"30a17a8ba4d5dcbad7b97576bc39fd89123aa4173b55bba0b767096505580944\",\"shape\":[1,3,1,16384]},\"windowId\":\"5\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-ad275321f6f2924b3137055a06f8fadeefa817a2a79bff92b51aba1ecf4fa5cb.f32\",\"sha256\":\"ad275321f6f2924b3137055a06f8fadeefa817a2a79bff92b51aba1ecf4fa5cb\",\"shape\":[1,3,1,16384]},\"windowId\":\"6\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-8d2869e2c1233a0310937d84e0fa356aaa83132e2776e8409c4e3852d4c69e31.f32\",\"sha256\":\"8d2869e2c1233a0310937d84e0fa356aaa83132e2776e8409c4e3852d4c69e31\",\"shape\":[1,3,1,16384]},\"windowId\":\"7\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-6175e664505099337cfc60e4b8e7bfdf68564bdc1393142c64ec60a126bd3c26.f32\",\"sha256\":\"6175e664505099337cfc60e4b8e7bfdf68564bdc1393142c64ec60a126bd3c26\",\"shape\":[1,3,1,16384]},\"windowId\":\"8\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-c6824496e479c9369d24363c5d06904b341eabe3a9c28dd05687f1777ea8dd11.f32\",\"sha256\":\"c6824496e479c9369d24363c5d06904b341eabe3a9c28dd05687f1777ea8dd11\",\"shape\":[1,3,1,16384]},\"windowId\":\"9\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-ab1fe4cef95866505650f7b55620c063aa8ee197c8e0e5e2a9e224e90c65cc71.f32\",\"sha256\":\"ab1fe4cef95866505650f7b55620c063aa8ee197c8e0e5e2a9e224e90c65cc71\",\"shape\":[1,3,1,16384]},\"windowId\":\"10\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-8364ede46538f58a43102f6a17101963e9f42aea8b2ee608c2d7b83801e49c62.f32\",\"sha256\":\"8364ede46538f58a43102f6a17101963e9f42aea8b2ee608c2d7b83801e49c62\",\"shape\":[1,3,1,16384]},\"windowId\":\"11\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-c8411aeae015e24291c12f153458e43f9aaf914cd340e825153e1f73221f3fc2.f32\",\"sha256\":\"c8411aeae015e24291c12f153458e43f9aaf914cd340e825153e1f73221f3fc2\",\"shape\":[1,3,1,16384]},\"windowId\":\"12\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-786418ddf466cab05095ad377a9358373b54ea6569623d852ad2fcab6c5a2f91.f32\",\"sha256\":\"786418ddf466cab05095ad377a9358373b54ea6569623d852ad2fcab6c5a2f91\",\"shape\":[1,3,1,16384]},\"windowId\":\"13\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-80693be5c3c89d8968efb169531f415e6ddcc00937d1b73172f7a1f4666e3ab8.f32\",\"sha256\":\"80693be5c3c89d8968efb169531f415e6ddcc00937d1b73172f7a1f4666e3ab8\",\"shape\":[1,3,1,16384]},\"windowId\":\"14\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-bd93695ea8b9ef7d461275cc3af9b98f839d4b01ce06d83696900f73bfc512ac.f32\",\"sha256\":\"bd93695ea8b9ef7d461275cc3af9b98f839d4b01ce06d83696900f73bfc512ac\",\"shape\":[1,3,1,16384]},\"windowId\":\"15\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-450d97953c78fecac90842e9c984eb40d6e60a80f9fc81a4f58a1642b17ecc1e.f32\",\"sha256\":\"450d97953c78fecac90842e9c984eb40d6e60a80f9fc81a4f58a1642b17ecc1e\",\"shape\":[1,3,1,16384]},\"windowId\":\"16\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-c0337d17d30f6dd8e728aa9dfcf7328d71dfd4f3f173614bd23a193c87a0bbdd.f32\",\"sha256\":\"c0337d17d30f6dd8e728aa9dfcf7328d71dfd4f3f173614bd23a193c87a0bbdd\",\"shape\":[1,3,1,16384]},\"windowId\":\"17\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-05d31d9860789cdf6b0baebb681804acbe58fae12f2e72b966c1e84a32d63c7a.f32\",\"sha256\":\"05d31d9860789cdf6b0baebb681804acbe58fae12f2e72b966c1e84a32d63c7a\",\"shape\":[1,3,1,16384]},\"windowId\":\"18\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-ebc6204a2df118f4b3949cf5c2f8f37a47210fc6724565c1d372cdca6f07add8.f32\",\"sha256\":\"ebc6204a2df118f4b3949cf5c2f8f37a47210fc6724565c1d372cdca6f07add8\",\"shape\":[1,3,1,16384]},\"windowId\":\"19\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-23720267533c2b60dd4f1dd6a76ea4ba510dabaaf985378bfdb5b1d2a047ac77.f32\",\"sha256\":\"23720267533c2b60dd4f1dd6a76ea4ba510dabaaf985378bfdb5b1d2a047ac77\",\"shape\":[1,3,1,16384]},\"windowId\":\"20\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-ceea452e905e6ecc3fdaaba5f888486c138eb1e5dad9e7f8d61e601a0962053d.f32\",\"sha256\":\"ceea452e905e6ecc3fdaaba5f888486c138eb1e5dad9e7f8d61e601a0962053d\",\"shape\":[1,3,1,16384]},\"windowId\":\"21\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-554b5d8754b0c969ec1fab676f5f0282a9cc4ee1b60e38a5701580088ad72737.f32\",\"sha256\":\"554b5d8754b0c969ec1fab676f5f0282a9cc4ee1b60e38a5701580088ad72737\",\"shape\":[1,3,1,16384]},\"windowId\":\"22\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-b6a1a85ef80d1c1f6182c73057848ba6225f385cc6ffef43ac61e45032009e9d.f32\",\"sha256\":\"b6a1a85ef80d1c1f6182c73057848ba6225f385cc6ffef43ac61e45032009e9d\",\"shape\":[1,3,1,16384]},\"windowId\":\"23\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-51eff155dfa86f9e45e122cece4d4eb1e798b3d98e8d0bda62ac62772b21e94a.f32\",\"sha256\":\"51eff155dfa86f9e45e122cece4d4eb1e798b3d98e8d0bda62ac62772b21e94a\",\"shape\":[1,3,1,16384]},\"windowId\":\"24\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-d241ee8506d054255fa66cefe19e4e918b728a40bd41a879f4aed2182bb7472f.f32\",\"sha256\":\"d241ee8506d054255fa66cefe19e4e918b728a40bd41a879f4aed2182bb7472f\",\"shape\":[1,3,1,16384]},\"windowId\":\"25\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-c00ceaa125f9293e3a9aa38c6275cd1f27743a52d369c3f61fc7b7f21fd2cbd3.f32\",\"sha256\":\"c00ceaa125f9293e3a9aa38c6275cd1f27743a52d369c3f61fc7b7f21fd2cbd3\",\"shape\":[1,3,1,16384]},\"windowId\":\"26\"},{\"headEvidence\":{\"bytes\":\"196608\",\"headOrder\":[\"hm\",\"bw\",\"off\"],\"path\":\"detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/heads-91900c89391df28a3ff577108c6d5183183a382ada97541dafc4e0f625d00210.f32\",\"sha256\":\"91900c89391df28a3ff577108c6d5183183a382ada97541dafc4e0f625d00210\",\"shape\":[1,3,1,16384]},\"windowId\":\"27\"}],\"windows\":[{\"bands\":[{\"lowerBin\":27089.15234375,\"lowerHz\":2498266953.229904,\"peakIndex\":\"6830\",\"score\":0.7361064553260803,\"upperBin\":27555.26171875,\"upperHz\":2498409198.5225677}],\"contextEndSample\":\"222768\",\"contextStartSample\":\"0\",\"nominalEndSample\":\"200000\",\"nominalStartSample\":\"0\",\"ordinal\":\"0\",\"score\":0.7361064553260803,\"windowId\":\"0\"},{\"bands\":[{\"lowerBin\":27208.7734375,\"lowerHz\":2498303458.6906433,\"peakIndex\":\"6854\",\"score\":0.8742318749427795,\"upperBin\":27627.61328125,\"upperHz\":2498431278.4671783}],\"contextEndSample\":\"322768\",\"contextStartSample\":\"77232\",\"nominalEndSample\":\"300000\",\"nominalStartSample\":\"100000\",\"ordinal\":\"1\",\"score\":0.8742318749427795,\"windowId\":\"1\"},{\"bands\":[{\"lowerBin\":27181.36328125,\"lowerHz\":2498295093.7747955,\"peakIndex\":\"6854\",\"score\":0.8786660432815552,\"upperBin\":27655.0390625,\"upperHz\":2498439648.1513977}],\"contextEndSample\":\"422768\",\"contextStartSample\":\"177232\",\"nominalEndSample\":\"400000\",\"nominalStartSample\":\"200000\",\"ordinal\":\"2\",\"score\":0.8786660432815552,\"windowId\":\"2\"},{\"bands\":[{\"lowerBin\":27148.669921875,\"lowerHz\":2498285116.5533066,\"peakIndex\":\"6854\",\"score\":0.8113530278205872,\"upperBin\":27687.755859375,\"upperHz\":2498449632.525444}],\"contextEndSample\":\"522768\",\"contextStartSample\":\"277232\",\"nominalEndSample\":\"500000\",\"nominalStartSample\":\"300000\",\"ordinal\":\"3\",\"score\":0.8113530278205872,\"windowId\":\"3\"},{\"bands\":[{\"lowerBin\":27132.701171875,\"lowerHz\":2498280243.2775497,\"peakIndex\":\"6854\",\"score\":0.7876349687576294,\"upperBin\":27704.146484375,\"upperHz\":2498454634.5472336}],\"contextEndSample\":\"622768\",\"contextStartSample\":\"377232\",\"nominalEndSample\":\"600000\",\"nominalStartSample\":\"400000\",\"ordinal\":\"4\",\"score\":0.7876349687576294,\"windowId\":\"4\"},{\"bands\":[{\"lowerBin\":27037.048828125,\"lowerHz\":2498251052.4988174,\"peakIndex\":\"6814\",\"score\":0.801697313785553,\"upperBin\":27479.373046875,\"upperHz\":2498386039.1378403},{\"lowerBin\":27367.98828125,\"lowerHz\":2498352047.2049713,\"peakIndex\":\"6874\",\"score\":0.8483801484107971,\"upperBin\":27628.0703125,\"upperHz\":2498431417.942047}],\"contextEndSample\":\"722768\",\"contextStartSample\":\"477232\",\"nominalEndSample\":\"700000\",\"nominalStartSample\":\"500000\",\"ordinal\":\"5\",\"score\":0.8483801484107971,\"windowId\":\"5\"},{\"bands\":[{\"lowerBin\":27038.515625,\"lowerHz\":2498251500.1296997,\"peakIndex\":\"6814\",\"score\":0.7392955422401428,\"upperBin\":27477.86328125,\"upperHz\":2498385578.393936},{\"lowerBin\":27349.0859375,\"lowerHz\":2498346278.66745,\"peakIndex\":\"6874\",\"score\":0.7993450164794922,\"upperBin\":27646.94921875,\"upperHz\":2498437179.327011}],\"contextEndSample\":\"822768\",\"contextStartSample\":\"577232\",\"nominalEndSample\":\"800000\",\"nominalStartSample\":\"600000\",\"ordinal\":\"6\",\"score\":0.7993450164794922,\"windowId\":\"6\"},{\"bands\":[{\"lowerBin\":27179.5625,\"lowerHz\":2498294544.2199707,\"peakIndex\":\"6846\",\"score\":0.8696169853210449,\"upperBin\":27592.859375,\"upperHz\":2498420672.416687}],\"contextEndSample\":\"922768\",\"contextStartSample\":\"677232\",\"nominalEndSample\":\"900000\",\"nominalStartSample\":\"700000\",\"ordinal\":\"7\",\"score\":0.8696169853210449,\"windowId\":\"7\"},{\"bands\":[{\"lowerBin\":27153.515625,\"lowerHz\":2498286595.3445435,\"peakIndex\":\"6846\",\"score\":0.8827852606773376,\"upperBin\":27619.04296875,\"upperHz\":2498428663.0153656}],\"contextEndSample\":\"1022768\",\"contextStartSample\":\"777232\",\"nominalEndSample\":\"1000000\",\"nominalStartSample\":\"800000\",\"ordinal\":\"8\",\"score\":0.8827852606773376,\"windowId\":\"8\"},{\"bands\":[{\"lowerBin\":27172.2265625,\"lowerHz\":2498292305.469513,\"peakIndex\":\"6854\",\"score\":0.8793060779571533,\"upperBin\":27664.18359375,\"upperHz\":2498442438.840866}],\"contextEndSample\":\"1122768\",\"contextStartSample\":\"877232\",\"nominalEndSample\":\"1100000\",\"nominalStartSample\":\"900000\",\"ordinal\":\"9\",\"score\":0.8793060779571533,\"windowId\":\"9\"},{\"bands\":[{\"lowerBin\":27273.1015625,\"lowerHz\":2498323090.0764465,\"peakIndex\":\"6866\",\"score\":0.8293887972831726,\"upperBin\":27659.32421875,\"upperHz\":2498440955.877304}],\"contextEndSample\":\"1222768\",\"contextStartSample\":\"977232\",\"nominalEndSample\":\"1200000\",\"nominalStartSample\":\"1000000\",\"ordinal\":\"10\",\"score\":0.8293887972831726,\"windowId\":\"10\"},{\"bands\":[{\"lowerBin\":27156.73828125,\"lowerHz\":2498287578.8211823,\"peakIndex\":\"6850\",\"score\":0.832633376121521,\"upperBin\":27648.28125,\"upperHz\":2498437585.8306885}],\"contextEndSample\":\"1322768\",\"contextStartSample\":\"1077232\",\"nominalEndSample\":\"1300000\",\"nominalStartSample\":\"1100000\",\"ordinal\":\"11\",\"score\":0.832633376121521,\"windowId\":\"11\"},{\"bands\":[{\"lowerBin\":27170.685546875,\"lowerHz\":2498291835.1888657,\"peakIndex\":\"6850\",\"score\":0.876160740852356,\"upperBin\":27633.787109375,\"upperHz\":2498433162.5699997}],\"contextEndSample\":\"1422768\",\"contextStartSample\":\"1177232\",\"nominalEndSample\":\"1400000\",\"nominalStartSample\":\"1200000\",\"ordinal\":\"12\",\"score\":0.876160740852356,\"windowId\":\"12\"},{\"bands\":[{\"lowerBin\":27206.3671875,\"lowerHz\":2498302724.3614197,\"peakIndex\":\"6858\",\"score\":0.8462586998939514,\"upperBin\":27662.01171875,\"upperHz\":2498441776.037216}],\"contextEndSample\":\"1522768\",\"contextStartSample\":\"1277232\",\"nominalEndSample\":\"1500000\",\"nominalStartSample\":\"1300000\",\"ordinal\":\"13\",\"score\":0.8462586998939514,\"windowId\":\"13\"},{\"bands\":[{\"lowerBin\":27149.8359375,\"lowerHz\":2498285472.393036,\"peakIndex\":\"6858\",\"score\":0.8887355923652649,\"upperBin\":27718.515625,\"upperHz\":2498459019.6609497}],\"contextEndSample\":\"1622768\",\"contextStartSample\":\"1377232\",\"nominalEndSample\":\"1600000\",\"nominalStartSample\":\"1400000\",\"ordinal\":\"14\",\"score\":0.8887355923652649,\"windowId\":\"14\"},{\"bands\":[{\"lowerBin\":27184.703125,\"lowerHz\":2498296113.014221,\"peakIndex\":\"6858\",\"score\":0.8498411774635315,\"upperBin\":27683.640625,\"upperHz\":2498448376.6555786}],\"contextEndSample\":\"1722768\",\"contextStartSample\":\"1477232\",\"nominalEndSample\":\"1700000\",\"nominalStartSample\":\"1500000\",\"ordinal\":\"15\",\"score\":0.8498411774635315,\"windowId\":\"15\"},{\"bands\":[{\"lowerBin\":27203.615234375,\"lowerHz\":2498301884.531975,\"peakIndex\":\"6854\",\"score\":0.8356440663337708,\"upperBin\":27632.818359375,\"upperHz\":2498432866.9309616}],\"contextEndSample\":\"1822768\",\"contextStartSample\":\"1577232\",\"nominalEndSample\":\"1800000\",\"nominalStartSample\":\"1600000\",\"ordinal\":\"16\",\"score\":0.8356440663337708,\"windowId\":\"16\"},{\"bands\":[{\"lowerBin\":27165.998046875,\"lowerHz\":2498290404.677391,\"peakIndex\":\"6854\",\"score\":0.8890777826309204,\"upperBin\":27670.494140625,\"upperHz\":2498444364.666939}],\"contextEndSample\":\"1922768\",\"contextStartSample\":\"1677232\",\"nominalEndSample\":\"1900000\",\"nominalStartSample\":\"1700000\",\"ordinal\":\"17\",\"score\":0.8890777826309204,\"windowId\":\"17\"},{\"bands\":[{\"lowerBin\":27218.90234375,\"lowerHz\":2498306549.7875214,\"peakIndex\":\"6858\",\"score\":0.8581486344337463,\"upperBin\":27649.5390625,\"upperHz\":2498437969.684601}],\"contextEndSample\":\"2022768\",\"contextStartSample\":\"1777232\",\"nominalEndSample\":\"2000000\",\"nominalStartSample\":\"1800000\",\"ordinal\":\"18\",\"score\":0.8581486344337463,\"windowId\":\"18\"},{\"bands\":[{\"lowerBin\":27187.46875,\"lowerHz\":2498296957.015991,\"peakIndex\":\"6850\",\"score\":0.8461865782737732,\"upperBin\":27616.92578125,\"upperHz\":2498428016.901016}],\"contextEndSample\":\"2122768\",\"contextStartSample\":\"1877232\",\"nominalEndSample\":\"2100000\",\"nominalStartSample\":\"1900000\",\"ordinal\":\"19\",\"score\":0.8461865782737732,\"windowId\":\"19\"},{\"bands\":[{\"lowerBin\":27182.56640625,\"lowerHz\":2498295460.9394073,\"peakIndex\":\"6850\",\"score\":0.8643999099731445,\"upperBin\":27621.84375,\"upperHz\":2498429517.7459717}],\"contextEndSample\":\"2222768\",\"contextStartSample\":\"1977232\",\"nominalEndSample\":\"2200000\",\"nominalStartSample\":\"2000000\",\"ordinal\":\"20\",\"score\":0.8643999099731445,\"windowId\":\"20\"},{\"bands\":[{\"lowerBin\":27201.859375,\"lowerHz\":2498301348.6862183,\"peakIndex\":\"6858\",\"score\":0.8764787316322327,\"upperBin\":27666.8125,\"upperHz\":2498443241.119385}],\"contextEndSample\":\"2322768\",\"contextStartSample\":\"2077232\",\"nominalEndSample\":\"2300000\",\"nominalStartSample\":\"2100000\",\"ordinal\":\"21\",\"score\":0.8764787316322327,\"windowId\":\"21\"},{\"bands\":[{\"lowerBin\":27123.27734375,\"lowerHz\":2498277367.3534393,\"peakIndex\":\"6830\",\"score\":0.8440843820571899,\"upperBin\":27521.0703125,\"upperHz\":2498398764.1334534}],\"contextEndSample\":\"2422768\",\"contextStartSample\":\"2177232\",\"nominalEndSample\":\"2400000\",\"nominalStartSample\":\"2200000\",\"ordinal\":\"22\",\"score\":0.8440843820571899,\"windowId\":\"22\"},{\"bands\":[{\"lowerBin\":27215.55078125,\"lowerHz\":2498305526.971817,\"peakIndex\":\"6850\",\"score\":0.8057296872138977,\"upperBin\":27588.86328125,\"upperHz\":2498419452.905655}],\"contextEndSample\":\"2522768\",\"contextStartSample\":\"2277232\",\"nominalEndSample\":\"2500000\",\"nominalStartSample\":\"2300000\",\"ordinal\":\"23\",\"score\":0.8057296872138977,\"windowId\":\"23\"},{\"bands\":[{\"lowerBin\":27191.939453125,\"lowerHz\":2498298321.36631,\"peakIndex\":\"6850\",\"score\":0.8545870184898376,\"upperBin\":27612.474609375,\"upperHz\":2498426658.511162}],\"contextEndSample\":\"2622768\",\"contextStartSample\":\"2377232\",\"nominalEndSample\":\"2600000\",\"nominalStartSample\":\"2400000\",\"ordinal\":\"24\",\"score\":0.8545870184898376,\"windowId\":\"24\"},{\"bands\":[{\"lowerBin\":27024.05859375,\"lowerHz\":2498247088.1938934,\"peakIndex\":\"6810\",\"score\":0.7329491972923279,\"upperBin\":27460.375,\"upperHz\":2498380241.394043}],\"contextEndSample\":\"2722768\",\"contextStartSample\":\"2477232\",\"nominalEndSample\":\"2700000\",\"nominalStartSample\":\"2500000\",\"ordinal\":\"25\",\"score\":0.7329491972923279,\"windowId\":\"25\"},{\"bands\":[{\"lowerBin\":27159.927734375,\"lowerHz\":2498288552.1650314,\"peakIndex\":\"6842\",\"score\":0.8419715166091919,\"upperBin\":27580.486328125,\"upperHz\":2498416896.4624405}],\"contextEndSample\":\"2822768\",\"contextStartSample\":\"2577232\",\"nominalEndSample\":\"2800000\",\"nominalStartSample\":\"2600000\",\"ordinal\":\"26\",\"score\":0.8419715166091919,\"windowId\":\"26\"},{\"bands\":[{\"lowerBin\":27178.27734375,\"lowerHz\":2498294152.021408,\"peakIndex\":\"6854\",\"score\":0.8382726311683655,\"upperBin\":27658.16015625,\"upperHz\":2498440600.633621}],\"contextEndSample\":\"2922768\",\"contextStartSample\":\"2677232\",\"nominalEndSample\":\"2900000\",\"nominalStartSample\":\"2700000\",\"ordinal\":\"27\",\"score\":0.8382726311683655,\"windowId\":\"27\"}]}",
+                    "originalObservation": {
+                        "end": "2900000",
+                        "lowerHz": 2498292684.9062953,
+                        "start": "0",
+                        "upperHz": 2498430562.2002907
+                    },
+                    "originalSegments": [
+                    ],
+                    "parentCandidateId": "",
+                    "refineMethod": "None",
+                    "refineStatus": "Skipped",
+                    "runId": "m4-sample-default-m4-source-T07-04",
+                    "scoreMax": 0.8890777826309204,
+                    "scoreMean": 0.8420705135379519,
+                    "windowCount": "799",
+                    "windowIds": [
+                        "0",
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6",
+                        "7",
+                        "8",
+                        "9",
+                        "10",
+                        "11",
+                        "12",
+                        "13",
+                        "14",
+                        "15",
+                        "16",
+                        "17",
+                        "18",
+                        "19",
+                        "20",
+                        "21",
+                        "22",
+                        "23",
+                        "24",
+                        "25",
+                        "26",
+                        "27"
+                    ]
+                },
+                "originRecordId": "frequency-track:34:m4-sample-default-m4-source-T07-0416:m4-source-T07-041:0:6830",
+                "reviewHistory": [
+                    {
+                        "actor": "model",
+                        "note": "Frequency observation requires activity review",
+                        "revisionId": "detection:08f61fd4983514b7f7c4feaf95ab6e877a0f8ffc52137eda246fb14852082274:r0",
+                        "status": "Pending",
+                        "timestamp": ""
+                    }
+                ],
+                "reviewRevisionId": "detection:08f61fd4983514b7f7c4feaf95ab6e877a0f8ffc52137eda246fb14852082274:r0",
+                "reviewStatus": "Pending",
+                "revisionId": "detection:08f61fd4983514b7f7c4feaf95ab6e877a0f8ffc52137eda246fb14852082274:r0",
+                "revisions": [
+                    {
+                        "action": "algorithm-origin",
+                        "actor": "model",
+                        "id": "detection:08f61fd4983514b7f7c4feaf95ab6e877a0f8ffc52137eda246fb14852082274:r0",
+                        "nameAfter": null,
+                        "nameBefore": null,
+                        "note": "",
+                        "noteAfter": null,
+                        "noteBefore": null,
+                        "observationAfter": null,
+                        "observationBefore": null,
+                        "observationChanged": false,
+                        "parentRevisionId": "",
+                        "segmentChanges": [
+                        ],
+                        "timestamp": ""
+                    }
+                ],
+                "segments": [
+                ],
+                "sourceKind": "Algorithm",
+                "sourceSetId": "run:2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4"
+            },
+            "kind": "frequency-annotation-v1"
+        }
+    ],
+    "centerFrequencyHz": 2500000000,
+    "elapsedSeconds": 12.7235915,
+    "exactRecovery": true,
+    "pass": false,
+    "physicalSamples": "80000000",
+    "refinementStates": [
+        {
+            "id": "detection:08f61fd4983514b7f7c4feaf95ab6e877a0f8ffc52137eda246fb14852082274",
+            "method": 3,
+            "reason": "Time localization is pending; model predicts frequency within observation contexts",
+            "segments": 0,
+            "status": 2
+        }
+    ],
+    "run": {
+        "chunks": [
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-fd04c16d48c57a44797c74af9025e0542b59463da914ee6d6cb73ab101dbc544.json",
+                "resultCount": 2,
+                "sequence": "0",
+                "sha256": "fd04c16d48c57a44797c74af9025e0542b59463da914ee6d6cb73ab101dbc544"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-2369dddfadee26ad1e621af6108bc297195dee46ead91472b5745438ffa12eeb.json",
+                "resultCount": 2,
+                "sequence": "1",
+                "sha256": "2369dddfadee26ad1e621af6108bc297195dee46ead91472b5745438ffa12eeb"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-291f6b6396e3f2876ae05f0cdabe0a5910602840162b286059a2239ffcb7a21d.json",
+                "resultCount": 2,
+                "sequence": "2",
+                "sha256": "291f6b6396e3f2876ae05f0cdabe0a5910602840162b286059a2239ffcb7a21d"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-472e7c4fff257a778054800195073d82bdd121fdd52bac5517672304b6a4b0e9.json",
+                "resultCount": 2,
+                "sequence": "3",
+                "sha256": "472e7c4fff257a778054800195073d82bdd121fdd52bac5517672304b6a4b0e9"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-0130281fe2bc5f94e91a20db3ea10c1ed41a7fa4c61c06aa65ce6d1f8b9f454b.json",
+                "resultCount": 2,
+                "sequence": "4",
+                "sha256": "0130281fe2bc5f94e91a20db3ea10c1ed41a7fa4c61c06aa65ce6d1f8b9f454b"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-00fbf945ed4343fd51e3bd53a835250113f5776bc1be2db191208b0062767a7e.json",
+                "resultCount": 2,
+                "sequence": "5",
+                "sha256": "00fbf945ed4343fd51e3bd53a835250113f5776bc1be2db191208b0062767a7e"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-b94dada317670dbecee3f298a731fed0319b74f8d98b7eae865529a103c9b642.json",
+                "resultCount": 2,
+                "sequence": "6",
+                "sha256": "b94dada317670dbecee3f298a731fed0319b74f8d98b7eae865529a103c9b642"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-a0e1cbc743de80a1cfd89c277085262ed098a9b2e371d22611008831f31d3aea.json",
+                "resultCount": 2,
+                "sequence": "7",
+                "sha256": "a0e1cbc743de80a1cfd89c277085262ed098a9b2e371d22611008831f31d3aea"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-e813697413fa5a00942a2c14378ff4f6e6a9de32b1311fdfb7f3709a8564c503.json",
+                "resultCount": 2,
+                "sequence": "8",
+                "sha256": "e813697413fa5a00942a2c14378ff4f6e6a9de32b1311fdfb7f3709a8564c503"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-6a0c3dc7a9adc407ee5c01194b723267b1435004818b572bfcbc48cd4cfc3bf8.json",
+                "resultCount": 2,
+                "sequence": "9",
+                "sha256": "6a0c3dc7a9adc407ee5c01194b723267b1435004818b572bfcbc48cd4cfc3bf8"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-7e88c157dbcc41d289fe722dfba8bac2e4238b516400cdf74155290d08663306.json",
+                "resultCount": 2,
+                "sequence": "10",
+                "sha256": "7e88c157dbcc41d289fe722dfba8bac2e4238b516400cdf74155290d08663306"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-08e2b9dc70c5917683b151f9370be459a0b921ff4dbbc22cc44e88e620c65704.json",
+                "resultCount": 2,
+                "sequence": "11",
+                "sha256": "08e2b9dc70c5917683b151f9370be459a0b921ff4dbbc22cc44e88e620c65704"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-ffba18b434f0a7eaf5b1367af98efe502945481a7ae302711dff084c2c1dfe6e.json",
+                "resultCount": 2,
+                "sequence": "12",
+                "sha256": "ffba18b434f0a7eaf5b1367af98efe502945481a7ae302711dff084c2c1dfe6e"
+            },
+            {
+                "relativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/chunk-43d7afc042f852b36701b4beea3eb71eb4f653af306787262532c2bb057b87ed.json",
+                "resultCount": 2,
+                "sequence": "13",
+                "sha256": "43d7afc042f852b36701b4beea3eb71eb4f653af306787262532c2bb057b87ed"
+            }
+        ],
+        "completedWindows": "28",
+        "computationPhase": "reading",
+        "coverage": [
+            {
+                "kind": "read",
+                "range": {
+                    "endSample": "3122768",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": 2490000000,
+                    "frequencyUpperHz": 2510000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            },
+            {
+                "kind": "eligible",
+                "range": {
+                    "endSample": "3100000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": 2490000000,
+                    "frequencyUpperHz": 2510000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            },
+            {
+                "kind": "completed",
+                "range": {
+                    "endSample": "2900000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": 2490000000,
+                    "frequencyUpperHz": 2510000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            },
+            {
+                "kind": "unread",
+                "range": {
+                    "endSample": "80000000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": 2490000000,
+                    "frequencyUpperHz": 2510000000,
+                    "startSample": "2900000"
+                },
+                "reason": "No completed model response was persisted for this range"
+            }
+        ],
+        "device": "NVIDIA GeForce RTX 5060 Laptop GPU",
+        "eligibleWindows": "799",
+        "error": "Cannot atomically publish detection data: Unknown error",
+        "finishedAtMilliseconds": "1791942135512",
+        "lifecycle": "Failed",
+        "manifestRelativePath": "detections/2a26a9875260b5fdd6e3da011412b7e39ec4f994a2aa8a58102b43a9d01906e4/manifest.json",
+        "readFrames": "155",
+        "recoverable": false,
+        "refinedCandidates": "0",
+        "request": {
+            "contextRange": {
+                "endSample": "80000000",
+                "frequencyFrame": "RF",
+                "frequencyLowerHz": 2490000000,
+                "frequencyUpperHz": 2510000000,
+                "startSample": "0"
+            },
+            "evidenceBudgetBytes": "134217728",
+            "modelManifestPath": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+            "modelSha256": "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81",
+            "parameters": {
+                "bandwidthMarginDb": 6,
+                "batchSize": 2,
+                "coarseMinBurstSeconds": 0.01,
+                "coarseSplitGapSeconds": 0.02,
+                "maxMiss": 1,
+                "mergeFrequencyHz": 100000,
+                "minHits": 2,
+                "minOffSeconds": 0.01,
+                "minOnSeconds": 0.005,
+                "nmsIou": 0.3,
+                "sampleEdgeRatio": 0.6,
+                "scoreThreshold": 0.7,
+                "smoothSeconds": 0.001,
+                "splitBursts": true,
+                "timeStrategy": "sample",
+                "topK": 512
+            },
+            "parentRunId": null,
+            "profile": {
+                "backend": "TensorRt",
+                "fftSize": 65536,
+                "hopSeconds": 0.001,
+                "id": "ffscn-gui-iq-v1",
+                "maximumPsdOnly": false,
+                "modelFrames": 10,
+                "modelHopFrames": 5,
+                "name": "FFSCN GUI IQ · 10帧",
+                "status": "主线候选 / 需资产预检",
+                "supportsReal": false,
+                "version": 1
+            },
+            "rangeOrigin": "m4-frozen-complete-file-validation",
+            "requestedRange": {
+                "endSample": "80000000",
+                "frequencyFrame": "RF",
+                "frequencyLowerHz": 2490000000,
+                "frequencyUpperHz": 2510000000,
+                "startSample": "0"
+            },
+            "runId": "m4-sample-default-m4-source-T07-04",
+            "schemaVersion": 1,
+            "sourceAnnotationId": "",
+            "sourceIdentity": {
+                "availableSamples": "80000000",
+                "centerFrequencyHz": 2500000000,
+                "contentHash": "",
+                "effectiveFrequency": {
+                    "lowerHz": 2490000000,
+                    "upperHz": 2510000000
+                },
+                "fileId": "m4-source-T07-04",
+                "formatRevision": "1",
+                "hashedRange": null,
+                "path": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/M4/assets/holdout/data/T07-04.wav",
+                "physicalSamples": "80000000",
+                "projectGeneration": "940",
+                "quickFingerprint": "320000044/1791916551383",
+                "sampleFormat": {
+                    "byteOrder": "le",
+                    "channelLayout": "interleaved",
+                    "channels": 1,
+                    "encoding": "I16",
+                    "headerBytes": "44",
+                    "iqLayout": "iq",
+                    "normalizeIntegerAdc": true,
+                    "selectedChannel": 0,
+                    "structure": "complex",
+                    "trailerBytes": "0"
+                },
+                "sampleRateHz": 20000000,
+                "selectedSampleChannel": "0"
+            },
+            "sourceRevisionId": "",
+            "workingSetBudgetBytes": "268435456"
+        },
+        "resultCount": "28",
+        "runtime": "10.11.0.33",
+        "schema": "signal-studio-detection-run",
+        "sourceValidity": "Current",
+        "startedAtMilliseconds": "1791942123463",
+        "totalRefinementCandidates": "0",
+        "version": 2
+    },
+    "sampleRateHz": 20000000,
+    "schemaVersion": 1,
+    "shortProfile": false,
+    "sourceFingerprint": "320000044/1791916551383",
+    "sourcePath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\M4\\assets\\holdout\\data\\T07-04.wav",
+    "strategy": "sample"
+}
