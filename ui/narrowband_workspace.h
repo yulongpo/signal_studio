@@ -44,6 +44,7 @@ public:
     void cancelInteractions();
     void cancelWork();
     QString dataStatusText() const;
+    QString displayDiagnosticsText() const;
     int currentPageIndex() const;
     void activatePageForAcceptance(int index);
     bool visibleChartsSettled() const;
@@ -67,6 +68,7 @@ private:
     void updateFrequencyAxisLabels();
     void updateLinkedCursors();
     void updatePowerColors();
+    void fitWaveformAmplitude();
     void expandAnalysisTime();
     void finishChartWheel();
     void cancelChartWheel();
@@ -94,8 +96,10 @@ private:
     void exportBitstream();
     void copyBitstream();
     void updateCaption();
+    void setDataStatus(const QString& summary, const QString& details = {});
     void markRecognitionStale(const QString& reason);
     void updateRecognitionDetail();
+    void updateRecognitionSummary();
 
     struct RecognitionSegment {
         std::uint64_t sourceBegin = 0;
@@ -112,10 +116,12 @@ private:
     NarrowbandChart* navigation_ = nullptr;
     NarrowbandChart *waveform_ = nullptr, *psd_ = nullptr, *stft_ = nullptr;
     NarrowbandChart *modulationStft_ = nullptr, *recognitionStft_ = nullptr;
-    NarrowbandChart *constellationSmall_ = nullptr, *constellationLarge_ = nullptr, *constellationDemod_ = nullptr;
+    NarrowbandChart *constellationLarge_ = nullptr, *constellationDemod_ = nullptr;
     NarrowbandChart *eyeSmall_ = nullptr, *eyeLarge_ = nullptr, *eyeDemod_ = nullptr, *timeline_ = nullptr;
     QLabel *caption_ = nullptr, *dataStatus_ = nullptr, *analysisStatus_ = nullptr;
     QLabel *recognitionTop5_ = nullptr;
+    std::array<QLabel*, 4> recognitionStats_{};
+    QString displayDiagnostics_;
     QProgressBar* recognitionProgress_ = nullptr;
     QPushButton *runRecognition_ = nullptr, *stopRecognition_ = nullptr;
     QComboBox *model_ = nullptr, *fftSize_ = nullptr, *waveformMode_ = nullptr;

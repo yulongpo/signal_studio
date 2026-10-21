@@ -1,3 +1,5 @@
+#include <QMouseEvent>
+#include "ui/source_units.h"
 #include "chart_settings_helpers.h"
 #include <QAbstractButton>
 #include <QAbstractItemView>
@@ -112,6 +114,15 @@ void showWindow(MainWindow& window) {
         "Windows UI window did not enter the actual 4K acceptance screen "
         "at native 4K / 150%% full screen.");
   }
+}
+
+// The offscreen plugin has a small virtual screen; a taller plot's centre
+// can lie outside its cursor bounds. Deliver a public move event there.
+// Windows acceptance continues to move the real cursor in its actual window.
+void movePlotMouse(QWidget* plot,const QPoint& point) {
+  if(QGuiApplication::platformName()=="windows"){QTest::mouseMove(plot,point);return;}
+  QMouseEvent event(QEvent::MouseMove,QPointF(point),QPointF(plot->mapTo(plot->window(),point)),QPointF(plot->mapToGlobal(point)),Qt::NoButton,Qt::NoButton,Qt::NoModifier);
+  QCoreApplication::sendEvent(plot,&event);
 }
 
 // Use the visible chart entry (or its narrowband/overflow command), never
@@ -2378,9 +2389,9 @@ void UiTests::narrowbandLinkedCursorsAndFrameSpectrum() {
   const auto matrix = window.session().spectrogram(context);
   QVERIFY(matrix && !matrix->frames.empty());
   const QRectF plot(66, 14, heat->width() - 82, heat->height() - 55);
-  QTest::mouseMove(heat, plot.center().toPoint());
+  movePlotMouse(heat, plot.center().toPoint());
   QTest::qWait(40);
-  QVERIFY(heat->property("cursorReadout").toString().contains("dBFS/Hz"));
+  QTRY_VERIFY2_WITH_TIMEOUT(heat->property("cursorReadout").toString().contains(powerUnit(window.session().activeFile()->metadata)),qPrintable(QString("readout=%1 visible=%2 hover=%3 frames=%4").arg(heat->property("cursorReadout").toString()).arg(heat->isVisible()).arg(heat->property("hoverCursorVisible").toBool()).arg(matrix->frames.size())),3000);
   QVERIFY(plot.contains(heat->property("cursorReadoutRect").toRectF()));
   const auto hoveredSample = heat->property("cursorSourceSample").toULongLong();
   const double hoveredSeconds =
@@ -2392,7 +2403,7 @@ void UiTests::narrowbandLinkedCursorsAndFrameSpectrum() {
               .contains(QString::number(hoveredSeconds / .001, 'g', 10)));
   const auto uploads = workspace->visibleTextureUploads(),
              vertices = workspace->visibleGpuVertexUploads();
-  QTest::mouseMove(heat, (plot.center() + QPointF(30, 20)).toPoint());
+  movePlotMouse(heat, (plot.center() + QPointF(30, 20)).toPoint());
   QTest::qWait(50);
   QCOMPARE(workspace->visibleTextureUploads(), uploads);
   QCOMPARE(workspace->visibleGpuVertexUploads(), vertices);
@@ -3874,7 +3885,9 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
           channelProperties->isVisible() && grid);
   QVERIFY(window.findChild<QPushButton*>("contextChannel")->isChecked());
   QVERIFY(!window.findChild<QWidget*>("narrowbandNavigation"));
-  QVERIFY(window.findChild<QWidget*>("narrowbandChartToolbar"));
+  QVERIFY(!window.findChild<QWidget*>("narrowbandChartToolbar"));
+  QVERIFY(window.findChild<QSplitter*>("narrowbandObserveSplitter"));
+  QVERIFY(!window.findChild<QWidget*>("narrowbandConstellationPreview"));
   QCOMPARE(waveformMode->count(), 4);
   QCOMPARE(waveformMode->itemText(3), QStringLiteral("幅度包络"));
   QCOMPARE(window.findChild<QLabel*>("narrowbandCenter")->text(),
@@ -3965,11 +3978,10 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
       "narrowbandWaveformPanelChart",
       "narrowbandPsdPanelChart",
       "narrowbandStftPanelChart",
-      "narrowbandConstellationPreviewChart",
       "narrowbandConstellationLargeChart",
       "narrowbandEyeLargeChart",
       "recognitionTimelinePanelChart",
-      "demodConstellationPanelChart"};
+      "demodConstellationPanelChart", "demodEyePanelChart"};
   for (const auto* name : chartNames) {
     auto* chart = window.findChild<QWidget*>(QString::fromLatin1(name));
     QVERIFY2(chart, name);
@@ -4049,16 +4061,22 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
   QVERIFY(window.session().activeChannel()->waveformAutoScale);
   QCOMPARE(window.session().activeChannel()->waveform,
            NarrowbandWaveform::Magnitude);
+  QTest::mouseClick(window.findChild<QAbstractButton*>("modulationPage"),Qt::LeftButton);
+  QVERIFY(revealParameter(eyeComponent));
   eyeComponent->setCurrentIndex(2);
   eyePeriods->setCurrentIndex(2);
   eyeTraces->setCurrentIndex(2);
   QVERIFY(openInspectorPage(window, "Channel"));
+  QTest::mouseClick(window.findChild<QAbstractButton*>("observePage"),Qt::LeftButton);
+  QVERIFY(openChartSettings(window,"displaySettings"));
   QVERIFY(revealParameter(frequencyMode));
   frequencyMode->setCurrentIndex(1);
   QVERIFY(window.session().activeChannel()->absoluteFrequencyLabels);
   QCOMPARE(window.session().activeChannel()->eyeComponent, 2);
   QCOMPARE(window.session().activeChannel()->eyePeriods, 3);
   QCOMPARE(window.session().activeChannel()->eyeTraces, 128);
+  QTest::keyClick(chartSettingsFrame(window,"displaySettings"),Qt::Key_Escape);
+  QTest::mouseClick(window.findChild<QAbstractButton*>("deepLearningPage"),Qt::LeftButton);
   auto* run = window.findChild<QPushButton*>("runRecognition");
   auto* stop = window.findChild<QPushButton*>("stopRecognition");
   auto* statusText = window.findChild<QLabel*>("recognitionStatus");
@@ -4078,6 +4096,7 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
   QVERIFY(projectDirectory.isValid());
   const auto projectPath =
       projectDirectory.filePath(QStringLiteral("narrowband-project.json"));
+  QTest::mouseClick(window.findChild<QAbstractButton*>("demodulationPage"),Qt::LeftButton);
   QVERIFY(window.saveProject(projectPath));
   MainWindow reopened;
   QVERIFY(reopened.openProject(projectPath));

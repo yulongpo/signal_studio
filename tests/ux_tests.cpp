@@ -107,6 +107,7 @@ class UxTests : public QObject {
   void uxD01_topDerivationDiscardsCrossFileDraft();
   void uxR01_lateRunFilterPopupAndRefresh();
   void roundTwoFlatResponsiveControls();
+  void roundTwoNarrowbandPsdAndPages();
   void initTestCase() {
     QCoreApplication::setOrganizationName("SignalStudioTests");
     QCoreApplication::setApplicationName("WidebandUx");

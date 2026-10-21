@@ -1965,6 +1965,7 @@ void MainWindow::buildChartControls() {
   powerSettingsButton_=displaySettingsButton_=stftSettingsButton_;
   const auto field=[](QWidget* control,int width){control->setFixedWidth(width);};
   field(waveformMode_,148);field(psd_,82);field(stft_,82);field(psdScope_,130);
+  grid_->setText("网格");colorScale_->setText("色阶");
   field(reference_,116);field(dynamic_,90);field(propertyPalette_,100);field(freqMode_,82);
   psd_->setAccessibleName("PSD N");stft_->setAccessibleName("STFT N");
   psdStatisticControl_=psdParameters_->takeStatisticControl();field(psdStatisticControl_,76);
