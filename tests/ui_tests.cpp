@@ -1276,7 +1276,9 @@ void UiTests::powerInputsCommitAndFitReusesData() {
   QTest::mouseClick(outside, Qt::LeftButton);
   QCOMPARE(window.session().activeFile()->display.referenceLevelDb,
            expected.range.referenceLevelDb);
-  QVERIFY(reference->currentText().endsWith("dBFS/Hz"));
+  QCOMPARE(reference->currentText(), QString("101"));
+  QVERIFY(reference->property("invalid").toBool());
+  QVERIFY(reference->property("parameterDraft").toBool());
 }
 
 void UiTests::parameterDraftsRequireExplicitCommit() {
@@ -1319,7 +1321,9 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   QTest::keyClicks(duration->lineEdit(), "-");
   QTest::keyClick(duration->lineEdit(), Qt::Key_Return);
   QCOMPARE(channel->psd.parameters.segmentMilliseconds, 0.0);
-  QCOMPARE(duration->currentText(), QString("0"));
+  QCOMPARE(duration->currentText(), QString("-"));
+  QVERIFY(duration->property("invalid").toBool());
+  QVERIFY(duration->property("parameterDraft").toBool());
   window.findChild<QComboBox*>("psdMethod")
       ->setCurrentIndex(static_cast<int>(SpectralMethod::Multitaper));
   // Imported parameters can have more precision than the editor displays.

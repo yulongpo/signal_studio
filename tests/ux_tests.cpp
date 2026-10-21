@@ -89,6 +89,11 @@ class UxTests : public QObject {
   void uxS06_popoverDraftPolicy();
   void uxR01_chartToolbarLayout();
   void uxR02_chartSettingsStayStable();
+  void uxS01_methodHistory();
+  void uxS02_conditionalRows();
+  void uxS03_spectralIndependence();
+  void uxS03_framePsdPreservesSettings();
+  void uxS06_invalidDraftRecovery();
   void initTestCase() {
     QCoreApplication::setOrganizationName("SignalStudioTests");
     QCoreApplication::setApplicationName("WidebandUx");
@@ -270,6 +275,8 @@ class UxTests : public QObject {
 
 #include "popover_tests.h"
 #include "toolbar_ux_tests.h"
+#include "spectral_ux_tests.h"
+#include "parameter_ux_tests.h"
 
 QTEST_MAIN(UxTests)
 #include "ux_tests.moc"

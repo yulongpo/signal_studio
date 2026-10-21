@@ -419,6 +419,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         QPushButton[uiRole="icon"] { color:#a4c1d8; font-size:15px; padding:0; }
         QComboBox,QDoubleSpinBox,QLineEdit { border:1px solid #314963; background:#0e1a2a; border-radius:4px; padding:5px 7px; font-size:11px; }
         QComboBox:disabled,QDoubleSpinBox:disabled { color:#627a91; }
+        QLineEdit[invalid="true"],QComboBox[invalid="true"],QAbstractSpinBox[invalid="true"] { border-color:#e2a05b; }
         QComboBox QAbstractItemView { background:#17263a; selection-background-color:#235476; }
         QTreeWidget { border:0; background:#101d2f; outline:0; }
         QTreeWidget::item { border-radius:4px; padding:0 3px; color:#b2cbe4; }
@@ -2050,6 +2051,8 @@ void MainWindow::updateChartControls(bool narrow) {
                          static_cast<QWidget*>(psdSettingsButton_)})
     auxiliaryControls_->requestVisible(control, !wave && !evidence);
   const bool ready = file && file->metadata.availability.status != LoadStatus::Loading;
+  waveformMode_->setEnabled(ready);
+  stft_->setEnabled(ready);
   for (auto* setting : {psdSettingsButton_, stftSettingsButton_, powerSettingsButton_, displaySettingsButton_})
     setting->setEnabled(ready);
   stftParameters_->setEnabled(ready);
@@ -2057,6 +2060,9 @@ void MainWindow::updateChartControls(bool narrow) {
   if (file) {
     const auto* channel = narrow ? session_.activeChannel() : nullptr;
     const auto& cursor = session_.linkedCursor(channel ? channel->id : file->metadata.id);
+    psd_->setEnabled(ready && !cursor.framePsd);
+    psdScope_->setEnabled(ready && !cursor.framePsd);
+    psdParameters_->setEnabled(ready && !cursor.framePsd);
     psdSourceControl_->setCurrentIndex(cursor.framePsd ? 1 : 0);
     if (auto* model = qobject_cast<QStandardItemModel*>(psdSourceControl_->model()))
       model->item(1)->setEnabled(cursor.pinned);
@@ -4057,12 +4063,14 @@ void MainWindow::applyPowerInput(QComboBox* control) {
     range.referenceLevelDb = value;
   const bool valid = ok && range.valid();
   control->setProperty("powerInputValid", valid);
-  control->lineEdit()->setStyleSheet(valid ? QString{} : "color:#ffbb68;");
-  control->setToolTip(valid ? QString{}
+  setParameterError(control, valid ? QString{}
                       : control == dynamic_
                           ? "请输入大于 0 且不超过 10000 的动态范围"
                           : "请输入 -200 至 100 的参考电平（dBFS/Hz）");
-  if (!valid) return;
+  if (!valid) {
+    control->setProperty("parameterDraft", true);
+    return;
+  }
   if (control->property("parameterCustomCommit").toBool())
     rememberCustomValue(control, value,
                         control == dynamic_
@@ -4075,6 +4083,7 @@ void MainWindow::applyPowerInput(QComboBox* control) {
 }
 void MainWindow::normalizePowerInput(QComboBox* control) {
   if (refreshing_ || !session_.activeFile()) return;
+  if (!control->property("powerInputValid").toBool()) return;
   const auto& display = session_.activeFile()->display;
   const QSignalBlocker blocker(control);
   const QSignalBlocker editBlocker(control->lineEdit());
