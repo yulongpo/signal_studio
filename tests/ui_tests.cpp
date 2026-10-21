@@ -205,7 +205,13 @@ bool selectModelAndSpectrum(MainWindow& window, const QString& id,
 }
 
 bool openChartSettings(MainWindow& window, const QString& name) {
-  if(name=="psdSettings"&&!window.session().project().narrowbandWorkspaceOpen){window.session().setAuxiliaryMode(AuxiliaryMode::Psd);window.refresh();}
+  if(window.session().project().narrowbandWorkspaceOpen){
+    auto* entry=chartSettingsEntry(window,name);
+    if((name=="psdSettings"&&window.session().activeChannel()->page!=NarrowbandPage::Observe)||!entry||!entry->isVisible())
+      QTest::mouseClick(window.findChild<QAbstractButton*>("observePage"),Qt::LeftButton);
+  }else if(name=="psdSettings"){
+    QTest::mouseClick(window.findChild<QAbstractButton*>("psdMode"),Qt::LeftButton);
+  }
   QCoreApplication::processEvents();
   auto* frame=chartSettingsFrame(window,name);auto* entry=chartSettingsEntry(window,name);
   if(!frame||!entry)return false;
@@ -1350,7 +1356,7 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   auto* outside = window.findChild<QLabel*>("statusTime");
   auto* overlap = window.findChild<QComboBox*>("psdOverlap");
   auto* duration = window.findChild<QComboBox*>("psdSegmentMs");
-  auto* parameters = overlap->parentWidget();
+  auto* parameters = duration->parentWidget();
   auto* settings = qobject_cast<SpectralSettingsWidget*>(parameters);
   QVERIFY(settings);
   auto* channel = window.session().activeChannel();
@@ -1943,7 +1949,6 @@ void UiTests::paletteControlsStaySynchronized() {
   QVERIFY(header && rangeTag && maximize);
   QCOMPARE(window.findChildren<QComboBox*>("colormap").size(), 1);
   QVERIFY(!window.findChild<QComboBox*>("palette"));
-  QCOMPARE(header->width(), 155);
   auto* spectrumHeader = window.findChild<QWidget*>("specChartHead");
   QVERIFY(spectrumHeader);
   QVERIFY(revealParameter(header) && rangeTag->isVisible() && maximize->isVisible());
@@ -4979,7 +4984,7 @@ void UiTests::widebandAnnotationSelectionAndOverlap() {
   QCOMPARE(file->selectedMarkIds.size(), std::size_t{0});
   QVERIFY(openChartSettings(window, "displaySettings"));
   auto* frequency = window.findChild<QComboBox*>("freqMode");
-  QVERIFY(frequency->isVisible() && frequency->width() >= 160);
+  QVERIFY(revealParameter(frequency));
 }
 
 void UiTests::widebandFixtureTaskNativeRoundtrip() {

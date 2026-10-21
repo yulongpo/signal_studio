@@ -55,6 +55,15 @@ inline void UxTests::roundTwoNarrowbandPsdAndPages() {
   source->setFocus();QTest::keyClick(source,Qt::Key_Home);
   QTRY_VERIFY(points->isEnabled());QCOMPARE(points->currentData().toInt(),8192);
   QCOMPARE(window.session().activeChannel()->psdFftSize,8192);
+  QVERIFY(!points->itemText(points->findData(stftN)).contains("STFT"));
+  points->setFocus();QTest::keyClick(points,Qt::Key_Home);
+  for(int i=0;i<16&&points->currentData().toInt()!=stftN;++i)QTest::keyClick(points,Qt::Key_Down);
+  QCOMPARE(points->currentData().toInt(),stftN);
+  QTest::mouseClick(heat,Qt::LeftButton,Qt::NoModifier,plot.center());
+  QTRY_COMPARE(source->currentIndex(),1);
+  source->setFocus();QTest::keyClick(source,Qt::Key_Home);
+  QTRY_VERIFY(points->isEnabled());QCOMPARE(points->currentData().toInt(),stftN);
+  QVERIFY(!points->currentText().contains("STFT"));
   window.session().activeChannel()->psdFftSize=16;window.refresh();
   QCOMPARE(points->currentData().toInt(),16);QVERIFY(!points->currentText().isEmpty());
   QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(),20000);

@@ -78,6 +78,10 @@ QPushButton* actionButton(const QString& value, const QString& id, QLayout* layo
 }
 void displayFftValue(QComboBox* combo, int points, const QString& prefix) {
     const QSignalBlocker blocker(combo);
+    for (int row = 0; row < combo->count(); ++row) {
+        const auto text = prefix + " " + QString::number(combo->itemData(row).toInt());
+        if (combo->itemText(row) != text) combo->setItemText(row, text);
+    }
     int index = combo->findData(points);
     if (index < 0 && points >= 16 && points <= 262144 && (points & (points - 1)) == 0) {
         combo->addItem(prefix + " " + QString::number(points), points);

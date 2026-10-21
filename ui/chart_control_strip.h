@@ -34,9 +34,8 @@ class ChartControlStrip final : public QWidget {
     overflowLayout_->setContentsMargins(2,2,2,2); overflowLayout_->setSpacing(7);
     frame_ = popovers_->add(more_,overflowContent_,name+"OverflowPopover");
     row_->addWidget(more_); more_->hide();
-    qApp->installEventFilter(this);
+    frame_->installEventFilter(this);
   }
-  ~ChartControlStrip() override { if(qApp) qApp->removeEventFilter(this); }
   QSize minimumSizeHint() const override { return {0,28}; }
   QSize sizeHint() const override { return {480,28}; }
 
@@ -51,6 +50,7 @@ class ChartControlStrip final : public QWidget {
     if(control->toolTip().isEmpty()) control->setToolTip(title);
     if(control->accessibleName().isEmpty()) control->setAccessibleName(title);
     control->setProperty("chartControlOwner",QVariant::fromValue(static_cast<QObject*>(this)));
+    watchControl(control,true);
     auto* holder=new QWidget(overflowContent_);
     holder->setObjectName(control->objectName()+"OverflowRow");
     auto* layout=new QHBoxLayout(holder); layout->setContentsMargins(0,0,0,0);
@@ -87,7 +87,15 @@ class ChartControlStrip final : public QWidget {
   }
   void reflow() {
     pending_=false;
-    if(!isVisible()||popovers_->activePopover()==frame_) return;
+    if(!isVisible()) return;
+    if(popovers_->activePopover()==frame_) {
+      for(auto& item:items_)if(item.control&&!item.external){
+        item.holder->setVisible(wanted(item)&&item.overflow);
+        item.control->setVisible(wanted(item));
+      }
+      for(const auto& panel:panels_)if(panel.heading)panel.heading->setVisible(panel.widget&&!panel.widget->isHidden());
+      return;
+    }
     std::vector<int> candidates; int required=0;bool advanced=false;
     for(const auto& panel:panels_){const bool shown=panel.widget&&!panel.widget->isHidden();advanced|=shown;if(panel.heading)panel.heading->setVisible(shown);}
     for(int i=0;i<static_cast<int>(items_.size());++i) {
@@ -129,21 +137,23 @@ class ChartControlStrip final : public QWidget {
   void resizeEvent(QResizeEvent* event) override {QWidget::resizeEvent(event);schedule();}
   void showEvent(QShowEvent* event) override {QWidget::showEvent(event);schedule();}
   bool eventFilter(QObject* watched,QEvent* event) override {
-    if(event->type()==QEvent::FocusOut||event->type()==QEvent::DynamicPropertyChange||
-       (watched==frame_&&event->type()==QEvent::Hide)) {
-      if(watched==frame_||std::any_of(items_.begin(),items_.end(),[watched](const Item& item){return item.control&&(watched==item.control||item.control->isAncestorOf(qobject_cast<QWidget*>(watched)));}))schedule();
-    }
+    if(event->type()==QEvent::FocusIn||event->type()==QEvent::FocusOut||
+       event->type()==QEvent::DynamicPropertyChange||event->type()==QEvent::Hide) schedule();
     return QWidget::eventFilter(watched,event);
   }
  private:
   struct Item {QPointer<QWidget> control;QWidget* holder;int priority;bool requested,overflow,external;};
   struct Panel {QPointer<QWidget> widget;QWidget* heading;};
+  void watchControl(QWidget* control,bool watch) {
+    const auto apply=[this,watch](QObject* object){if(watch)object->installEventFilter(this);else object->removeEventFilter(this);};
+    apply(control);for(auto* child:control->findChildren<QWidget*>())apply(child);
+  }
   bool wanted(const Item& item) const {return item.requested&&(!item.control->property("chartSettingRelevant").isValid()||item.control->property("chartSettingRelevant").toBool());}
   static int fieldWidth(QWidget* field) {return std::max({field->minimumWidth(),field->minimumSizeHint().width(),field->sizeHint().width()});}
   int inlinePosition(int index) const {int position=1;for(int i=0;i<index;++i)if(items_[i].control&&!items_[i].external&&!items_[i].overflow&&row_->indexOf(items_[i].control)>=0)++position;return position;}
   template<class F> void protect(QWidget* control,F action) {setProperty("parameterLayerHiding",true);overflowContent_->setProperty("parameterLayerHiding",true);control->setProperty("parameterLayerHiding",true);action();control->setProperty("parameterLayerHiding",false);overflowContent_->setProperty("parameterLayerHiding",false);setProperty("parameterLayerHiding",false);}
   void releaseControl(QWidget* control) {
-    for(auto it=items_.begin();it!=items_.end();++it)if(it->control==control){protect(control,[&]{row_->removeWidget(control);it->holder->layout()->removeWidget(control);control->setParent(window());control->hide();});delete it->holder;items_.erase(it);schedule();return;}
+    for(auto it=items_.begin();it!=items_.end();++it)if(it->control==control){watchControl(control,false);protect(control,[&]{row_->removeWidget(control);it->holder->layout()->removeWidget(control);control->setParent(window());control->hide();});delete it->holder;items_.erase(it);schedule();return;}
   }
   void releasePanel(QWidget* panel) {for(auto it=panels_.begin();it!=panels_.end();++it)if(it->widget==panel){overflowLayout_->removeWidget(panel);if(it->heading)delete it->heading;panel->setParent(window());panel->hide();panels_.erase(it);schedule();return;}}
   void schedule(){if(pending_)return;pending_=true;QTimer::singleShot(0,this,[this]{reflow();});}
