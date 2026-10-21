@@ -13,6 +13,7 @@ class QLabel;
 class QListView;
 class QTimer;
 class QPushButton;
+class QAction;
 
 namespace signalstudio {
 class DetectionRunListModel;
@@ -39,7 +40,9 @@ class DetectionPanel : public QWidget {
  private:
   void poll();
   void cancelSelected();
+  void cancelRun(const QString& runId);
   void showSelectedDetails();
+  void showRunDetails(const QString& runId);
   void discoverRecoverable();
   const DetectionRun* selectedRun() const;
   const DetectionRun* findRun(const QString& runId) const;
@@ -61,6 +64,10 @@ class DetectionPanel : public QWidget {
   QPushButton* details_ = nullptr;
   QPushButton* derive_ = nullptr;
   QPushButton* recover_ = nullptr;
+  QAction* taskViewSourceAction_ = nullptr;
+  QAction* taskDetailsAction_ = nullptr;
+  QAction* taskDeriveAction_ = nullptr;
+  QAction* taskCancelAction_ = nullptr;
   std::optional<DetectionRun> configurationParent_;
   std::unordered_map<std::string, PublishedCounts> publishedCounts_;
   std::uint64_t listGeneration_ = 0;

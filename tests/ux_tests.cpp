@@ -100,6 +100,9 @@ class UxTests : public QObject {
   void uxD04_modelSpectrumMapping();
   void uxD05_foldedParametersAndFirstScreen();
   void uxD08_preflightDetails();
+  void uxR03_taskKeyboardAndDetails();
+  void uxR03_taskRowActions();
+  void uxD03_activeTaskCancellationAndFrozenDisplay();
   void initTestCase() {
     QCoreApplication::setOrganizationName("SignalStudioTests");
     QCoreApplication::setApplicationName("WidebandUx");
@@ -285,6 +288,7 @@ class UxTests : public QObject {
 #include "parameter_ux_tests.h"
 #include "inspector_ux_tests.h"
 #include "detection_card_ux_tests.h"
+#include "task_ux_tests.h"
 
 QTEST_MAIN(UxTests)
 #include "ux_tests.moc"

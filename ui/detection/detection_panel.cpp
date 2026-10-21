@@ -1,15 +1,19 @@
 #include "ui/detection/detection_panel.h"
 
 #include <QAbstractListModel>
+#include <QAction>
 #include <QCoreApplication>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QHelpEvent>
 #include <QItemSelectionModel>
 #include <QJsonDocument>
+#include <QKeySequence>
 #include <QLabel>
 #include <QListView>
+#include <QMenu>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QPainter>
@@ -24,8 +28,10 @@
 #include <QTextDocument>
 #include <QTimer>
 #include <QToolButton>
+#include <QToolTip>
 #include <QVBoxLayout>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <deque>
 
@@ -160,33 +166,41 @@ RunCard makeCard(const FileState& file, const DetectionRun& run,
   card.signature = cardSignature(file, run, published);
   card.id = q(request.runId);
   card.title = stateName(run.lifecycle) + (run.recoverable ? " / 可恢复" : "") +
-               " · " + shortRunId(request.runId);
+               " · " + q(file.metadata.name);
   card.sourcePath = q(request.sourceIdentity.path);
   card.cancellable = !detectionIsTerminal(run.lifecycle);
   card.facts = {
-      QString("源文件：%1 · Fs %2 MS/s")
-          .arg(q(file.metadata.name),
-               number(request.sourceIdentity.sampleRateHz / 1e6)),
-      QString("冻结 %1 · %2 / %3")
-          .arg(rangeText(request.requestedRange,
-                         request.sourceIdentity.sampleRateHz),
-               q(request.profile.name),
-               QString::fromLatin1(
-                   detectionTimeStrategyName(request.parameters.timeStrategy))),
-      QString("已读谱帧 %1 · unique windows %2 / %3 · 工程已发布 %4 个对象")
+      QString("模型：%1 · 阶段：%2 · %3")
+          .arg(q(request.profile.name),
+               detectionPhaseText(run.computationPhase), shortRunId(request.runId)),
+      QString("已读谱帧 %1 · 窗口 %2 / %3 · 精修候选 %4 / %5")
           .arg(run.readFrames)
           .arg(run.completedWindows)
           .arg(run.eligibleWindows)
-          .arg(published),
-      "已覆盖：" + coverageSummary(run, DetectionCoverageKind::Completed),
-      "未覆盖：未读 " + coverageSummary(run, DetectionCoverageKind::Unread) +
-          "；排除 " + coverageSummary(run, DetectionCoverageKind::Excluded) +
-          "。已覆盖范围以外没有完整结论。"};
-  if (run.sourceValidity != DetectionSourceValidity::Current)
-    card.facts.push_back(sourceValidityText(run.sourceValidity));
+          .arg(run.refinedCandidates)
+          .arg(run.totalRefinementCandidates),
+      QString("结果 %1 · 已发布 %2 个对象")
+          .arg(run.resultCount)
+          .arg(published)};
+  QString reason;
   if (!run.error.empty()) {
-    const auto error = q(run.error).simplified();
-    card.error = "错误：" + error.left(180) + (error.size() > 180 ? "…" : "");
+    reason = q(run.error);
+  } else if (run.sourceValidity != DetectionSourceValidity::Current) {
+    reason = sourceValidityText(run.sourceValidity);
+  } else {
+    for (const auto& coverage : run.coverage) {
+      if ((coverage.kind == DetectionCoverageKind::Unread ||
+           coverage.kind == DetectionCoverageKind::Excluded) &&
+          !coverage.reason.empty()) {
+        reason = q(coverage.reason);
+        break;
+      }
+    }
+  }
+  if (!reason.isEmpty()) {
+    reason = reason.trimmed().section('\n', 0, 0).simplified();
+    card.error = "提示：" + reason.left(160) +
+                 (reason.size() > 160 ? "…（详情）" : "");
   }
   return card;
 }
@@ -289,7 +303,10 @@ class DetectionRunListModel : public QAbstractListModel {
     if (role == Qt::DisplayRole || role == Qt::AccessibleTextRole)
       return value->title + "\n" + value->facts.join("\n") +
              (value->error.isEmpty() ? "" : "\n" + value->error);
-    if (role == Qt::ToolTipRole) return value->id + "\n" + value->sourcePath;
+    if (role == Qt::ToolTipRole)
+      return value->id + "\n" + value->sourcePath +
+             "\nEnter 查看来源 · Alt+Return 详情 · Ctrl+Return 派生 · "
+             "Ctrl+Shift+X 取消";
     return {};
   }
   const RunCard* card(int row) const {
@@ -342,12 +359,14 @@ class DetectionRunListModel : public QAbstractListModel {
 namespace {
 class RunCardDelegate : public QStyledItemDelegate {
  public:
-  RunCardDelegate(QListView* view, std::function<void(const QString&)> open,
-                  std::function<void(const QString&)> cancel)
+  using Callbacks = std::array<std::function<void(const QString&)>, 4>;
+  RunCardDelegate(QListView* view, std::array<QAction*, 4> actions,
+                  Callbacks callbacks, std::function<bool()> canDerive)
       : QStyledItemDelegate(view),
         view_(view),
-        open_(std::move(open)),
-        cancel_(std::move(cancel)) {}
+        actions_(actions),
+        callbacks_(std::move(callbacks)),
+        canDerive_(std::move(canDerive)) {}
   QSize sizeHint(const QStyleOptionViewItem& option,
                  const QModelIndex& index) const override {
     const auto* card = value(index);
@@ -355,7 +374,8 @@ class RunCardDelegate : public QStyledItemDelegate {
     QTextDocument document;
     prepareDocument(document, *card, option.font, view_->viewport()->width());
     return {std::max(1, view_->viewport()->width()),
-            static_cast<int>(std::ceil(document.size().height())) + 66};
+            static_cast<int>(std::ceil(document.size().height())) +
+                actionHeight(view_->viewport()->width()) + 37};
   }
   void paint(QPainter* painter, const QStyleOptionViewItem& option,
              const QModelIndex& index) const override {
@@ -374,10 +394,28 @@ class RunCardDelegate : public QStyledItemDelegate {
     painter->translate(option.rect.left() + 12, option.rect.top() + 12);
     document.drawContents(painter);
     painter->restore();
-    const auto actions = actionRects(option.rect, card->cancellable);
-    paintButton(painter, actions.first, "打开源文件任务");
-    if (card->cancellable) paintButton(painter, actions.second, "取消此任务");
+    const auto rects = actionRects(option.rect);
+    for (int action = 0; action < 4; ++action)
+      paintButton(painter, rects[action], actions_[action]->text(),
+                  actionEnabled(action, *card));
     painter->restore();
+  }
+  bool helpEvent(QHelpEvent* event, QAbstractItemView* view,
+                 const QStyleOptionViewItem& option,
+                 const QModelIndex& index) override {
+    const auto* card = value(index);
+    if (card && event->type() == QEvent::ToolTip) {
+      const auto rects = actionRects(option.rect);
+      for (int action = 0; action < 4; ++action) {
+        if (!rects[action].contains(event->pos())) continue;
+        auto text = actions_[action]->toolTip();
+        if (action == 3 && !card->cancellable) text += "\n任务已结束，不能取消。";
+        QToolTip::showText(event->globalPos(), text, view_->viewport(),
+                           rects[action]);
+        return true;
+      }
+    }
+    return QStyledItemDelegate::helpEvent(event, view, option, index);
   }
   bool editorEvent(QEvent* event, QAbstractItemModel*,
                    const QStyleOptionViewItem& option,
@@ -388,27 +426,29 @@ class RunCardDelegate : public QStyledItemDelegate {
       return false;
     const auto* mouse = static_cast<QMouseEvent*>(event);
     if (mouse->button() != Qt::LeftButton) return false;
-    const auto actions = actionRects(option.rect, card->cancellable);
-    const int action = actions.first.contains(mouse->position().toPoint()) ? 0
-                       : card->cancellable && actions.second.contains(
-                                                  mouse->position().toPoint())
-                           ? 1
-                           : -1;
+    const auto rects = actionRects(option.rect);
+    int action = -1;
+    for (int candidate = 0; candidate < 4; ++candidate)
+      if (rects[candidate].contains(mouse->position().toPoint()) &&
+          actionEnabled(candidate, *card)) {
+        action = candidate;
+        break;
+      }
     if (event->type() == QEvent::MouseButtonPress) {
       pressed_ = index;
+      pressedRunId_ = card->id;
       pressedAction_ = action;
       return action >= 0;
     }
     const bool activate =
-        pressed_ == index && action >= 0 && action == pressedAction_;
+        pressed_ == index && pressedRunId_ == card->id && action >= 0 &&
+        action == pressedAction_;
     pressed_ = QPersistentModelIndex{};
+    pressedRunId_.clear();
     pressedAction_ = -1;
     if (!activate) return false;
     const auto id = card->id;
-    if (action == 0)
-      open_(id);
-    else
-      cancel_(id);
+    callbacks_[action](id);
     return true;
   }
 
@@ -425,27 +465,49 @@ class RunCardDelegate : public QStyledItemDelegate {
     document.setHtml(cardHtml(card));
     document.setTextWidth(std::max(1, width - 24));
   }
-  static std::pair<QRect, QRect> actionRects(const QRect& rect, bool cancel) {
+  int actionColumns(int width) const {
+    int minimum = 1;
+    for (const auto* action : actions_)
+      minimum = std::max(
+          minimum, view_->fontMetrics().horizontalAdvance(action->text()) + 24);
+    return std::clamp((std::max(1, width - 24) + 8) / (minimum + 8), 1, 4);
+  }
+  int actionHeight(int width) const {
+    const int rows = (4 + actionColumns(width) - 1) / actionColumns(width);
+    return rows * 29 + (rows - 1) * 6;
+  }
+  std::array<QRect, 4> actionRects(const QRect& rect) const {
     const int available = std::max(1, rect.width() - 24);
-    const int openWidth = std::min(160, cancel ? available / 2 : available);
-    const QRect open(rect.left() + 12, rect.bottom() - 41, openWidth, 29);
-    const QRect close(open.right() + 9, open.top(),
-                      std::min(140, std::max(1, available - openWidth - 8)),
-                      29);
-    return {open, close};
+    const int columns = actionColumns(rect.width());
+    const int width = std::min(160, std::max(1, (available - (columns - 1) * 8) /
+                                                 columns));
+    const int top = rect.bottom() - 11 - actionHeight(rect.width());
+    std::array<QRect, 4> rects;
+    for (int action = 0; action < 4; ++action)
+      rects[action] = {rect.left() + 12 + (action % columns) * (width + 8),
+                       top + (action / columns) * 35, width, 29};
+    return rects;
+  }
+  bool actionEnabled(int action, const RunCard& card) const {
+    if (action == 3) return card.cancellable;
+    if (action == 2) return canDerive_();
+    return true;
   }
   void paintButton(QPainter* painter, const QRect& rect,
-                   const QString& text) const {
+                   const QString& text, bool enabled) const {
     QStyleOptionButton button;
     button.initFrom(view_);
     button.rect = rect;
     button.text = text;
-    button.state |= QStyle::State_Enabled;
+    button.state.setFlag(QStyle::State_Enabled, enabled && view_->isEnabled());
     view_->style()->drawControl(QStyle::CE_PushButton, &button, painter, view_);
   }
   QListView* view_;
-  std::function<void(const QString&)> open_, cancel_;
+  std::array<QAction*, 4> actions_;
+  Callbacks callbacks_;
+  std::function<bool()> canDerive_;
   QPersistentModelIndex pressed_;
+  QString pressedRunId_;
   int pressedAction_ = -1;
 };
 }  // namespace
@@ -498,21 +560,85 @@ DetectionPanel::DetectionPanel(Session& session,
   list_->setLayoutMode(QListView::Batched);
   list_->setBatchSize(32);
   list_->setMouseTracking(true);
+  auto action = [this](const QString& name, const QString& text,
+                       const QList<QKeySequence>& shortcuts,
+                       const QString& tooltip) {
+    auto* result = new QAction(text, list_);
+    result->setObjectName(name);
+    result->setShortcuts(shortcuts);
+    result->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    result->setAutoRepeat(false);
+    result->setToolTip(tooltip);
+    result->setStatusTip(tooltip);
+    result->setProperty("preserveParameterDrafts", true);
+    result->setShortcutVisibleInContextMenu(true);
+    list_->addAction(result);
+    return result;
+  };
+  taskViewSourceAction_ = action(
+      "taskViewSourceAction", "查看来源",
+      {QKeySequence(Qt::Key_Return), QKeySequence(Qt::Key_Enter)},
+      "查看来源（Return / Enter）：定位源文件和此任务；同文件保留配置草稿。");
+  taskDetailsAction_ = action(
+      "taskDetailsAction", "详情",
+      {QKeySequence(Qt::ALT | Qt::Key_Return),
+       QKeySequence(Qt::ALT | Qt::Key_Enter)},
+      "详情（Alt+Return）：查看冻结范围、覆盖、请求与技术 JSON；保留配置草稿。");
+  taskDeriveAction_ = action(
+      "taskDeriveAction", "派生",
+      {QKeySequence(Qt::CTRL | Qt::Key_Return),
+       QKeySequence(Qt::CTRL | Qt::Key_Enter)},
+      "派生（Ctrl+Return）：复制选中任务的参数与冻结范围，不自动运行。");
+  taskCancelAction_ = action(
+      "taskCancelAction", "取消",
+      {QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_X)},
+      "取消（Ctrl+Shift+X）：只取消选中任务的 runId，保留已完成前缀。");
+  connect(taskViewSourceAction_, &QAction::triggered, this, [this] {
+    if (const auto* run = selectedRun()) openRunSource(q(run->request.runId));
+  });
+  connect(taskDetailsAction_, &QAction::triggered, this,
+          &DetectionPanel::showSelectedDetails);
+  connect(taskDeriveAction_, &QAction::triggered, this, [this] {
+    if (const auto* run = selectedRun()) deriveRun(q(run->request.runId));
+  });
+  connect(taskCancelAction_, &QAction::triggered, this,
+          &DetectionPanel::cancelSelected);
+  details_->setToolTip(taskDetailsAction_->toolTip() + "\n快捷键在任务列表内生效。");
+  derive_->setToolTip(taskDeriveAction_->toolTip() + "\n快捷键在任务列表内生效。");
+  list_->setToolTip("选择任务后：Enter 查看来源 · Alt+Return 详情 · "
+                    "Ctrl+Return 派生 · Ctrl+Shift+X 取消。右键打开同名操作。");
   model_ = new DetectionRunListModel(list_);
   list_->setModel(model_);
   list_->setItemDelegate(new RunCardDelegate(
-      list_, [this](const QString& id) { openRunSource(id); },
-      [this](const QString& id) {
-        const int row = model_->rowForId(id);
-        if (row < 0) return;
-        list_->setCurrentIndex(model_->index(row));
-        cancelSelected();
-      }));
+      list_, {taskViewSourceAction_, taskDetailsAction_, taskDeriveAction_,
+              taskCancelAction_},
+      {[this](const QString& id) { openRunSource(id); },
+       [this](const QString& id) { showRunDetails(id); },
+       [this](const QString& id) { deriveRun(id); },
+       [this](const QString& id) { cancelRun(id); }},
+      [this] { return !projectDirectory_().isEmpty(); }));
   connect(list_->selectionModel(), &QItemSelectionModel::currentChanged, this,
           [this] { updateSelectionActions(); });
-  connect(list_, &QListView::activated, this, [this](const QModelIndex& index) {
+  // QAction owns Return/Enter so modifier shortcuts never also activate a row.
+  connect(list_, &QListView::doubleClicked, this, [this](const QModelIndex& index) {
     openRunSource(index.data(Qt::UserRole).toString());
   });
+  list_->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(list_, &QWidget::customContextMenuRequested, this,
+          [this](const QPoint& position) {
+            const auto index = list_->indexAt(position);
+            if (index.isValid()) list_->setCurrentIndex(index);
+            updateSelectionActions();
+            QMenu menu(list_);
+            menu.setToolTipsVisible(true);
+            menu.addActions({taskViewSourceAction_, taskDetailsAction_,
+                             taskDeriveAction_, taskCancelAction_});
+            const auto anchor = position.x() >= 0 && position.y() >= 0
+                                    ? position
+                                    : list_->visualRect(list_->currentIndex())
+                                          .center();
+            menu.exec(list_->viewport()->mapToGlobal(anchor));
+          });
   layout->addWidget(list_, 1);
   updateSelectionActions();
   timer_ = new QTimer(this);
@@ -681,8 +807,14 @@ const DetectionRun* DetectionPanel::findRun(const QString& runId) const {
 }
 void DetectionPanel::updateSelectionActions() {
   const auto* run = selectedRun();
-  details_->setEnabled(run);
-  derive_->setEnabled(run && !projectDirectory_().isEmpty());
+  const bool present = run != nullptr;
+  const bool canDerive = present && !projectDirectory_().isEmpty();
+  details_->setEnabled(present);
+  derive_->setEnabled(canDerive);
+  taskViewSourceAction_->setEnabled(present);
+  taskDetailsAction_->setEnabled(present);
+  taskDeriveAction_->setEnabled(canDerive);
+  taskCancelAction_->setEnabled(present && !detectionIsTerminal(run->lifecycle));
   recover_->setEnabled(session_.activeFile() && !projectDirectory_().isEmpty());
 }
 std::uint64_t DetectionPanel::publishedCount(const FileState& file,
@@ -752,14 +884,21 @@ void DetectionPanel::deriveRun(const QString& runId) {
   emit runFocused(runId);
 }
 void DetectionPanel::cancelSelected() {
-  if (const auto* run = selectedRun();
-      run && !detectionIsTerminal(run->lifecycle)) {
-    tasks_->cancel(run->request.runId);
-    poll();
-  }
+  if (const auto* run = selectedRun()) cancelRun(q(run->request.runId));
+}
+void DetectionPanel::cancelRun(const QString& runId) {
+  const auto* run = findRun(runId);
+  if (!run || detectionIsTerminal(run->lifecycle)) return;
+  // Keep the target independent of current selection and active-file changes.
+  const auto id = run->request.runId;
+  tasks_->cancel(id);
+  poll();
 }
 void DetectionPanel::showSelectedDetails() {
-  const auto* run = selectedRun();
+  if (const auto* run = selectedRun()) showRunDetails(q(run->request.runId));
+}
+void DetectionPanel::showRunDetails(const QString& runId) {
+  const auto* run = findRun(runId);
   if (!run) return;
   QDialog dialog(this);
   dialog.setWindowTitle("检测运行快照 / 覆盖 / 分片");
