@@ -40,7 +40,7 @@
 cmake --build --preset vs2026-qt611-debug --parallel 4 -- /p:LinkIncremental=false
 ```
 
-曾有Debug增量链接产物在进入main之前的CRT初始化阶段发生访问异常；[实际调用栈](evidence/debug-startup-stack.txt)与[重链日志](evidence/debug-capture-relink.log)保留，源码未添加规避。完整重链后既有参数检查、最终24场景及独立启动通过。
+曾有Debug增量链接产物在进入main之前的CRT初始化阶段发生访问异常；[实际调用栈](evidence/debug-startup-stack.txt)与[重链日志](evidence/debug-capture-relink.txt)保留，源码未添加规避。完整重链后既有参数检查、最终24场景及独立启动通过。
 
 原生复用 `scripts/screenshot.ps1 -Configuration <Debug|Release> -UiRefinement -OutputDirectory <新目录>`；独立启动复用 `scripts/verify-package.ps1` 的GPU、`-Narrowband`、`-SoftwareRenderer`入口，均清除开发环境路径和DPI覆盖。该捕获器保留既有 `ui-refinement-round2` 模式名和24场景计数，本轮结果存入独立目录。
 
