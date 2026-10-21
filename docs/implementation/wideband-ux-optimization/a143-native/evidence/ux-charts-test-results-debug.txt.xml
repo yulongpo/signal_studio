@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite name="UxTests" timestamp="2026&#x002D;10&#x002D;21T16:00:19" hostname="HH&#x002D;laptop" tests="4" failures="0" errors="0" skipped="0" time="4.370">
+  <properties>
+    <property name="QTestVersion" value="6.11.1"/>
+    <property name="QtVersion" value="6.11.1"/>
+    <property name="QtBuild" value="Qt 6.11.1 (x86_64&#x002D;little_endian&#x002D;llp64 shared (dynamic) debug build; by MSVC 2022)"/>
+  </properties>
+  <testcase name="initTestCase" classname="UxTests" time="0.001"/>
+  <testcase name="uxR02_chartSettingsStayStable" classname="UxTests" time="1.915">
+    <system-err>
+      <![CDATA[QFontDatabase: Cannot find font directory D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxA01_roiConfirmationAndEscape" classname="UxTests" time="2.449">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="cleanupTestCase" classname="UxTests" time="0.000"/>
+</testsuite>

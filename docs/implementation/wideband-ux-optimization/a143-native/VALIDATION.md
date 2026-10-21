@@ -71,3 +71,63 @@
 - 新建实际IQ与显式pipeline-fixture任务，待已完成窗口和不可变分片落盘后修改图谱PSD/STFT N、色表、电平，再切到B。B的模糊取消禁用；列表选择B终态后按取消不影响A，明确选A后键盘取消为Cancelled，B仍Completed。核对冻结请求完整编码、首分片字节与SHA、已读/未读覆盖、取消前缀及重新加载的持久化记录。该用例验证真实系统链路，不代表正式模型推理。
 - 行内四操作真实点击及可访问文本通过；按下后删除原行再刷新，释放不会派生替代行。任务卡删去长范围/覆盖段落，保留真实计数与首条原因，完整技术证据仍可打开。Return统一由QAction处理，避免QListView activated重复执行。
 - 首轮失败保留在W5/diagnostics：测试误对不可编辑N下拉取lineEdit导致崩溃；修正为真实键盘选项选择。关闭模态详情后先恢复主窗口激活/列表焦点，再送快捷键；首轮立即送键没有激活派生。行文本断言按实际“完成”校正，保留状态、模型、阶段、结果四项语义检查。
+
+## W6 最终结果（2026-10-21）
+
+本节替代 W6 迭代期间的计数和耗时；W0–W5 表格仍表示各阶段当时结果。最终产品、测试及脚本源码提交为 `399b85e970f2f22432cd95277dc30e9075ca4cb4`。二进制在提交前由该工作区内容完成构建与验证，构建时嵌入的 Git 基线为 `afefd73`；不能把该版本字符串误作最终源码身份。[source-identity.json](evidence/source-identity.json) 记录 249 个构建/源码/资源/测试/脚本文件的 Git blob 和 SHA-256、10 个 Debug/Release 程序的 SHA-256、Qt 6.11.1 及 VS18 2026 x64。源文件清单摘要为 `b2dc55e9895061db20b8c4e3df7ad4a27ca4d083e652e1dab0f81b5ce637bbc7`。此后提交只归档文档和证据。
+
+表内 W6 路径相对 `out/tasks/wideband-ux-optimization/a143-native/W6/`。归档 JSON/TXT 是最终原始文件副本，不覆盖旧失败报告。
+
+| 验证 | 最终实测 | 原始日志 / 本目录归档 |
+|---|---|---|
+| Debug 构建及全量 CTest | 28/28；601.04 秒；UI CTest 416.02 秒 | `logs/build-debug-final-ui.log`、`logs/debug-ctest-published.txt`；[debug-ctest.txt](evidence/debug-ctest.txt) |
+| Release 构建及全量 CTest | 28/28；114.75 秒；UI CTest 71.58 秒 | `logs/build-release-final-ui.log`、`logs/release-ctest-published.txt`；[release-ctest.txt](evidence/release-ctest.txt) |
+| 基础 Qt UI | 两配置各 108 PASS，0 FAIL/SKIP；106 业务用例；原始 Qt 耗时 Debug 415.238 / Release 71.299 秒 | [debug-ui.txt](evidence/debug-ui.txt)、[release-ui.txt](evidence/release-ui.txt) 及对应逐项 timing.jsonl |
+| 独立 UX 五组 | 两配置各 26 业务用例；Qt 合计各 36 PASS，0 FAIL/SKIP | `evidence/ux-*-test-results-{debug,release}.txt` 及 JUnit XML；五组 CTest Debug 57.05 / Release 11.35 秒 |
+| Debug 原生 UX | 57/57，正式两模型、键盘取消、CPU DDC、v6 重开全部通过 | `assets/ux-debug-published/wideband-ux-report.json`；[native-debug.json](evidence/native-debug.json) |
+| Release 原生 UX | 57/57，同上 | `assets/ux-release-published/wideband-ux-report.json`；[native-release.json](evidence/native-release.json) |
+| Release 正式来源兼容旅程 | 43/43，真实 FFSCN Sample/ROI、三来源标记、编辑/批选/导出/拆分合并/关系/通道与重开 | `assets/production-release-published/wideband-detection-report.json`；[production-release.json](evidence/production-release.json) |
+| 两配置宽带 GPU 独立启动 | 2/2，硬件 QRhi、实际热图上传、4K/150% | `assets/gpu-{debug,release}-published/`；`evidence/gpu-{debug,release}.json` |
+| 两配置窄带独立部署 | 2/2，四页、硬件 QRhi、嵌入 IQ 与 CPU DDC | `assets/package-{debug,release}-narrowband-published.json`；同名去 published 的 evidence JSON |
+| 两配置软件回退独立启动 | 2/2，明确 QWidget，hardwareRenderer=false | `assets/package-{debug,release}-software-published.json`；同名去 published 的 evidence JSON |
+| Release 缺模型 / 受控无兼容设备 | 2/2，原因与详情可见，基本显示、标签、手动标记和历史仍可使用 | `local-builds/dependency-refusal-published/`；[missing-models.json](evidence/missing-models.json)、[no-compatible-gpu.json](evidence/no-compatible-gpu.json) |
+
+独立 UX 分组业务数为检测 9、谱设置 5、图谱 2、布局 7、设置层 3；每组另有初始化/清理，因此 Qt 数为 11、7、4、9、5。原生场景数与业务用例数分别计数。UI 480 秒终止保护保持不变，CTest 包装同时检查 Qt 原始 FAIL!/XPASS/QFATAL 和 Totals，退出码为零不能掩盖断言失败。
+
+### 原生屏幕、模型及数据身份
+
+最终报告均按执行时 Windows DisplayConfig 选择唯一实际 4K/150% 外接屏：Redmi 27 NU，连接序号 2，原生 GDI 路径 DISPLAY6，3840×2160、DPR 1.5、逻辑 2560×1440，全屏。完整 monitorDevicePath 保存在 JSON。没有执行 1366×768 工作；1920×1080 只用于离屏布局。
+
+三个显示图谱为 QRhi D3D11 / AMD Radeon 880M，报告包含硬件帧与主图实际纹理上传。正式模型由独立 TensorRT 10.11.0.33 worker 在 NVIDIA GeForce RTX 5060 Laptop GPU 前向：两配置均 FFSCN 3/3、SCN 2/2 窗口 Completed。数据为用户已有 TorchSig SigMF CF32 磁盘文件：400000 样本、20 Msps、中心 2.5 GHz；IQ SHA-256 `3a47e55b5f02851d702d5c5782998bf3e374f67cde592c35689acf9ec5399254`，元数据 SHA-256 `5efd03dae0f53002c8400ddc2ba65e367d7dde315b232a24cd77a2b1bd982a29`。
+
+正式长任务中通过可见图谱控件修改 N、色表、动态范围，随后向选中的任务行真正发送 Ctrl+Shift+X。Debug 保存 24/1998、Release 保存 30/1998 个完成窗口，状态 Cancelled；冻结请求、已有分片及前缀 SHA 保持。手动编辑标记经可见通道入口得到各 8192 个真实 CPU DDC 样本，输出 SHA 经文件菜单保存、完整路径输入 Qt JSON 选择器并重开后再次一致；v6ReopenVerified=true。
+
+缺模型检查使用完整部署包的独立复制件，仅复制时排除模型目录。无兼容设备检查在独立复制进程及 worker 中设置 CUDA_VISIBLE_DEVICES=-1；未改名或移除原部署资产。资产/配置预检与实际设备可用性分别处理：前者可能仍合法，worker 运行后明确报告 `Required CUDA 12.9 runtime/driver/device is unavailable`，任务失败且完成窗口为零。两场景均不声称模型推理成功。独立启动仅使用部署目录和系统 PATH，不依赖外部源码或 Qt 安装目录。
+
+### 命令与复跑入口
+
+构建对应公共 preset，最终分别运行以下 CTest；构建输出见上表，构建入口也可使用 `scripts/build.ps1 -Configuration Debug/Release -Action Build -Jobs 8`。原生命令分别指定 Debug 与 Release；这里列出 Release 的最终输出目录，复跑应选择新的目录以保留已归档结果。
+
+```powershell
+ctest --test-dir out/vs2026-qt611-debug -C Debug --output-on-failure
+ctest --test-dir out/vs2026-qt611-release -C Release --output-on-failure
+scripts/screenshot.ps1 -Configuration Release -WidebandUx -OutputDirectory out/tasks/wideband-ux-optimization/a143-native/W6/assets/ux-release-published
+scripts/screenshot.ps1 -Configuration Release -WidebandDetection -ProductionModel -OutputDirectory out/tasks/wideband-ux-optimization/a143-native/W6/assets/production-release-published
+scripts/gpu_smoke.ps1 -Configuration Release -OutputDirectory out/tasks/wideband-ux-optimization/a143-native/W6/assets/gpu-release-published
+scripts/verify-package.ps1 -Configuration Release -Narrowband -ReportPath out/tasks/wideband-ux-optimization/a143-native/W6/assets/package-release-narrowband-published.json
+scripts/verify-package.ps1 -Configuration Release -SoftwareRenderer -ReportPath out/tasks/wideband-ux-optimization/a143-native/W6/assets/package-release-software-published.json
+```
+
+受控依赖检查入口为 `scripts/verify-ux-unavailable.ps1 -Configuration Release -Project <本轮生产旅程工程的project.json> -OutputDirectory <新的W6/local-builds子目录>`。最终使用 `production-release-published/wideband-project-faedf6cc-18c4-402a-abdf-e7c125d6761b/project.json`，结果保存在上表 dependency-refusal-published 目录。该脚本拒绝已有输出目录，并恢复进程环境。
+
+### 失败迭代与修复归属
+
+- 首次全量两配置各有旧 UI 断言失败：旧文件属性区域已不形成原滚动容器，频率坐标控件已进入显示层。测试迁移到实际方法表单滚动区和显示层，保留滚轮不改值、容器实际滚动、多段选择等断言；没有删除业务用例降低门槛。
+- 审查发现右侧设置跳转在同入口再次点击时没有关闭，以及顶部跨文件派生把旧草稿提前提交。修正物理锚点判断和派生命令草稿策略，直接用例通过。
+- 原生长表单字段仅中心可见不足以证明完整可操作，捕获工具改为确保整个控件矩形可见，再检查边界、命中和实际输入。文件选择器的 programmatic selectFile 没有选择成功，旧中断保留；最终改用可见完整路径输入与 Enter，完整 Save/Reopen 通过。
+- 任务筛选器先显示空列表、后加入长 runId 时出现裁切。原菜单代理会重复计算边距，首次宽度补丁仍失败；最终使用标准列表代理、实际行/字体宽度与屏幕约束，后台刷新保留模型及键盘当前项。离屏使用可容纳的代表 ID 验证尺寸和刷新，真实全 UUID 由最终 4K 原生兼容旅程点击验证。
+- 正式任务冻结性比较改为完整按值快照而非共享指针地址；旧 fixture 的唯一谱型本来禁用，捕获明确断言其受限默认值，不向禁用控件发送伪操作。全部最终用例无隐藏旧控件或额外 trigger 兜底。
+
+旧失败/超时/中断日志和诊断都留在 W6/logs、diagnostics、assets、local-builds，不把这些中间结果宣称为通过。最终通过只对应上表 published 结果。
+
+本轮证明 UI/交互兼容、实际模型前向、显示硬件、CPU DDC 和保存重开；未执行批量 G/T 效果矩阵、真实 RF 精度评估、Ubuntu 运行或新的全配置压力/性能验收。窄带星座、识别和解调示例保持合成标识。

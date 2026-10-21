@@ -1,0 +1,69 @@
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+      Start  1: signal_studio_detection_refined_fusion
+ 1/28 Test  #1: signal_studio_detection_refined_fusion .......   Passed    0.02 sec
+      Start  2: signal_studio_detection_time_pipeline
+ 2/28 Test  #2: signal_studio_detection_time_pipeline ........   Passed   20.49 sec
+      Start  3: signal_studio_detection_refinement
+ 3/28 Test  #3: signal_studio_detection_refinement ...........   Passed    0.04 sec
+      Start  4: signal_studio_detection_sample_energy
+ 4/28 Test  #4: signal_studio_detection_sample_energy ........   Passed    0.16 sec
+      Start  5: signal_studio_detection_pipeline
+ 5/28 Test  #5: signal_studio_detection_pipeline .............   Passed   13.64 sec
+      Start  6: signal_studio_detection_postprocess
+ 6/28 Test  #6: signal_studio_detection_postprocess ..........   Passed    0.02 sec
+      Start  7: signal_studio_detection_model_backend
+ 7/28 Test  #7: signal_studio_detection_model_backend ........   Passed    0.23 sec
+      Start  8: signal_studio_detection_frequency_analysis
+ 8/28 Test  #8: signal_studio_detection_frequency_analysis ...   Passed    0.26 sec
+      Start  9: signal_studio_detection_store
+ 9/28 Test  #9: signal_studio_detection_store ................   Passed    1.93 sec
+      Start 10: signal_studio_detection_protocol
+10/28 Test #10: signal_studio_detection_protocol .............   Passed    0.73 sec
+      Start 11: signal_studio_detection_task
+11/28 Test #11: signal_studio_detection_task .................   Passed   19.02 sec
+      Start 12: signal_studio_detection_source
+12/28 Test #12: signal_studio_detection_source ...............   Passed    3.42 sec
+      Start 13: signal_studio_annotations
+13/28 Test #13: signal_studio_annotations ....................   Passed    0.67 sec
+      Start 14: signal_studio_annotation_store
+14/28 Test #14: signal_studio_annotation_store ...............   Passed   31.26 sec
+      Start 15: signal_studio_label_import
+15/28 Test #15: signal_studio_label_import ...................   Passed   24.45 sec
+      Start 16: signal_studio_wav
+16/28 Test #16: signal_studio_wav ............................   Passed    1.20 sec
+      Start 17: signal_studio_import
+17/28 Test #17: signal_studio_import .........................   Passed    0.80 sec
+      Start 18: signal_studio_sample_format
+18/28 Test #18: signal_studio_sample_format ..................   Passed    6.34 sec
+      Start 19: signal_studio_core
+19/28 Test #19: signal_studio_core ...........................   Passed    1.16 sec
+      Start 20: signal_studio_channel_processor
+20/28 Test #20: signal_studio_channel_processor ..............   Passed    0.95 sec
+      Start 21: signal_studio_spectral_analysis
+21/28 Test #21: signal_studio_spectral_analysis ..............   Passed    1.10 sec
+      Start 22: signal_studio_display_sampling
+22/28 Test #22: signal_studio_display_sampling ...............   Passed    0.02 sec
+      Start 23: signal_studio_ux_detection
+23/28 Test #23: signal_studio_ux_detection ...................   Passed   26.68 sec
+      Start 24: signal_studio_ux_spectral
+24/28 Test #24: signal_studio_ux_spectral ....................   Passed    2.43 sec
+      Start 25: signal_studio_ux_charts
+25/28 Test #25: signal_studio_ux_charts ......................   Passed    4.69 sec
+      Start 26: signal_studio_ux_layout
+26/28 Test #26: signal_studio_ux_layout ......................   Passed   22.43 sec
+      Start 27: signal_studio_ux_popovers
+27/28 Test #27: signal_studio_ux_popovers ....................   Passed    0.82 sec
+      Start 28: signal_studio_ui
+28/28 Test #28: signal_studio_ui .............................   Passed  416.02 sec
+
+100% tests passed, 0 tests failed out of 28
+
+Label Time Summary:
+charts         =   4.69 sec*proc (1 test)
+detection      =  26.68 sec*proc (1 test)
+layout         =  22.43 sec*proc (1 test)
+popovers       =   0.82 sec*proc (1 test)
+spectral       =   2.43 sec*proc (1 test)
+wideband-ux    =  57.05 sec*proc (5 tests)
+
+Total Test time (real) = 601.04 sec

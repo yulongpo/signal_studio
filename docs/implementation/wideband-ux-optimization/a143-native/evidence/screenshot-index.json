@@ -1,0 +1,61 @@
+{
+  "selectedScreenshots": [
+    {
+      "original": "D:/project/signal_studio_rebuild/out/tasks/wideband-ux-optimization/a143-native/W6/assets/ux-release-published/wideband-ux-a6d9b7b7-9288-4e7d-b5f1-a4feaca1bd18-scenes/w6-psd-welch-kaiser.png",
+      "archived": "screenshots/psd-settings.png",
+      "sha256": "0328208c049db6bfff1290bb8035c426d1c7239b90f3d4911e428f649ff52731",
+      "scene": "w6-psd-welch-kaiser",
+      "report": "evidence/native-release.json"
+    },
+    {
+      "original": "D:/project/signal_studio_rebuild/out/tasks/wideband-ux-optimization/a143-native/W6/assets/ux-release-published/wideband-ux-a6d9b7b7-9288-4e7d-b5f1-a4feaca1bd18-scenes/w4-detection-basic.png",
+      "archived": "screenshots/after-detection.png",
+      "sha256": "efde5667ab07de637f9f490b8033102d5564e55efa478ff5ad0b37ac9a3e6c1b",
+      "scene": "w4-detection-basic",
+      "report": "evidence/native-release.json"
+    },
+    {
+      "original": "D:/project/signal_studio_rebuild/out/tasks/wideband-ux-optimization/a143-native/W6/assets/ux-release-published/wideband-ux-a6d9b7b7-9288-4e7d-b5f1-a4feaca1bd18-scenes/w6-scn-max-psd-v1-task-details-keyboard.png",
+      "archived": "screenshots/task-details.png",
+      "sha256": "256698b260445b5c187b35f6c29f7a9f698d3206a08b1aab14399182704c59af",
+      "scene": "w6-scn-max-psd-v1-task-details-keyboard",
+      "report": "evidence/native-release.json"
+    },
+    {
+      "original": "D:/project/signal_studio_rebuild/out/tasks/wideband-ux-optimization/a143-native/W6/assets/ux-release-published/wideband-ux-a6d9b7b7-9288-4e7d-b5f1-a4feaca1bd18-scenes/w6-channel-page-real-cpu-ddc.png",
+      "archived": "screenshots/channel-ddc.png",
+      "sha256": "22e2b4d4994801ea377be7537eb769d7d651fefe38edf49175ba16a8324433d2",
+      "scene": "w6-channel-page-real-cpu-ddc",
+      "report": "evidence/native-release.json"
+    },
+    {
+      "original": "D:/project/signal_studio_rebuild/out/tasks/wideband-ux-optimization/a143-native/W6/assets/ux-release-published/wideband-ux-a6d9b7b7-9288-4e7d-b5f1-a4feaca1bd18-scenes/w6-saved-reopened-display-context.png",
+      "archived": "screenshots/saved-reopened.png",
+      "sha256": "34686b8911afadca4926c4e08c729aa29f1cab4317d6ecf6186aeb3057fb3ccc",
+      "scene": "w6-saved-reopened-display-context",
+      "report": "evidence/native-release.json"
+    },
+    {
+      "original": "D:/project/signal_studio_rebuild/out/tasks/wideband-ux-optimization/a143-native/W0/assets/baseline-wideband/signal-studio-debug-gpu-2560x1440.png",
+      "archived": "screenshots/before-layout.png",
+      "scene": "W0-baseline-demo-layout",
+      "report": "out/tasks/wideband-ux-optimization/a143-native/W0/assets/baseline-wideband/signal-studio-debug-gpu-2560x1440.json",
+      "sha256": "6efdb52d570b8706945aaec4b8c37e7e03cb1844564da56661b558029b8c9405"
+    },
+    {
+      "original": "D:/project/signal_studio_rebuild/out/tasks/wideband-ux-optimization/a143-native/W6/local-builds/dependency-refusal-published/missing-models/evidence/01-label-manual-history-without-inference.png",
+      "archived": "screenshots/missing-models.png",
+      "scene": "missing-models",
+      "report": "evidence/missing-models.json",
+      "sha256": "33d308a03738f702782917e2c2881a6bb00c53eb240320223ffaf9ee5968b73d"
+    },
+    {
+      "original": "D:/project/signal_studio_rebuild/out/tasks/wideband-ux-optimization/a143-native/W6/local-builds/dependency-refusal-published/no-compatible-gpu/evidence/01-label-manual-history-without-inference.png",
+      "archived": "screenshots/no-compatible-gpu.png",
+      "scene": "no-compatible-gpu",
+      "report": "evidence/no-compatible-gpu.json",
+      "sha256": "d5a653396a78b0d70233a2387bef2aa68ce82942a77029b51494d2bb6d2a545d"
+    }
+  ],
+  "report": "evidence/native-release.json"
+}

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite name="UxTests" timestamp="2026&#x002D;10&#x002D;21T15:58:26" hostname="HH&#x002D;laptop" tests="11" failures="0" errors="0" skipped="0" time="4.426">
+  <properties>
+    <property name="QTestVersion" value="6.11.1"/>
+    <property name="QtVersion" value="6.11.1"/>
+    <property name="QtBuild" value="Qt 6.11.1 (x86_64&#x002D;little_endian&#x002D;llp64 shared (dynamic) release build; by MSVC 2022)"/>
+  </properties>
+  <testcase name="initTestCase" classname="UxTests" time="0.000"/>
+  <testcase name="uxD01_historicalDerivation" classname="UxTests" time="0.470">
+    <system-err>
+      <![CDATA[QFontDatabase: Cannot find font directory D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxD02_viewSourceKeepsDraft" classname="UxTests" time="0.319">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxD01_topDerivationDiscardsCrossFileDraft" classname="UxTests" time="0.534">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxD03_crossFileCancellation" classname="UxTests" time="0.448">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxD03_activeTaskCancellationAndFrozenDisplay" classname="UxTests" time="1.025">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxD04_modelSpectrumMapping" classname="UxTests" time="0.139">
+    <system-err>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxD05_foldedParametersAndFirstScreen" classname="UxTests" time="0.667">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxD06_visibleRangeEntry" classname="UxTests" time="0.339">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxD08_preflightDetails" classname="UxTests" time="0.479">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="cleanupTestCase" classname="UxTests" time="0.000"/>
+</testsuite>
