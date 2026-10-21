@@ -3676,10 +3676,10 @@ void MainWindow::updatePropertyContext() {
     const bool frame = session_.linkedCursor(narrow ? channel->id : file->metadata.id).framePsd;
     const int stftN = narrow ? channel->stftFftSize : file->display.stftSize;
     const int psdN = frame ? stftN : narrow ? channel->psdFftSize : file->display.psdSize;
-    displaySummary_->setText(QString("PSD N %1 · %2\nSTFT N %3 · %4\n电平 %5 / %6 dB")
+    displaySummary_->setText(QString("PSD N %1 · %2\nSTFT N %3 · %4\n参考 %5 %6\n动态 %7 dB")
         .arg(psdN).arg(frame ? "驻留帧谱" : "统计谱").arg(stftN)
-        .arg(propertyPalette_->currentText()).arg(QString::number(file->display.referenceLevelDb, 'f', 1))
-        .arg(QString::number(file->display.dynamicRangeDb, 'f', 1)));
+        .arg(propertyPalette_->currentText()).arg(QString::number(file->display.referenceLevelDb, 'f', 2))
+        .arg(powerUnit(file->metadata)).arg(QString::number(file->display.dynamicRangeDb, 'f', 2)));
   } else {
     sourceSummary_->setText("请先新建或打开工程，再添加信号文件。");
     displaySummary_->clear();
