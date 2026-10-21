@@ -1,0 +1,10 @@
+PASS: data presentation
+PASS: active file and channel
+PASS: mark data and lazy group counts
+Combined mark cue pixels: current=92, hover=770, focus=251, selection=16
+PASS: independent mark painting states
+PASS: refresh preserves view state
+PASS: repeat refresh and old sync
+PASS: anomalies and boundary data
+PASS: clipped painting and readable rows
+Totals: 8 passed, 0 failed

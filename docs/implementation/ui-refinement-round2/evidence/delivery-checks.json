@@ -1,0 +1,136 @@
+[
+  {
+    "name": "delivery-native-debug",
+    "startedUtc": "2026-10-21T11:01:13.2878282Z",
+    "finishedUtc": "2026-10-21T11:02:21.4598332Z",
+    "exitCode": 0,
+    "elapsedSeconds": 68.1737494,
+    "script": "scripts/screenshot.ps1",
+    "arguments": [
+      "-Configuration",
+      "Debug",
+      "-UiRefinement",
+      "-OutputDirectory",
+      "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-native-debug"
+    ]
+  },
+  {
+    "name": "delivery-native-release",
+    "startedUtc": "2026-10-21T11:02:21.5044273Z",
+    "finishedUtc": "2026-10-21T11:02:52.0425921Z",
+    "exitCode": 0,
+    "elapsedSeconds": 30.5382059,
+    "script": "scripts/screenshot.ps1",
+    "arguments": [
+      "-Configuration",
+      "Release",
+      "-UiRefinement",
+      "-OutputDirectory",
+      "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-native-release"
+    ]
+  },
+  {
+    "name": "delivery-production-release",
+    "startedUtc": "2026-10-21T11:02:52.0474466Z",
+    "finishedUtc": "2026-10-21T11:04:36.9467321Z",
+    "exitCode": 0,
+    "elapsedSeconds": 104.8993242,
+    "script": "scripts/screenshot.ps1",
+    "arguments": [
+      "-Configuration",
+      "Release",
+      "-WidebandDetection",
+      "-ProductionModel",
+      "-OutputDirectory",
+      "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-production-release"
+    ]
+  },
+  {
+    "name": "delivery-debug-gpu",
+    "startedUtc": "2026-10-21T11:04:36.9590437Z",
+    "finishedUtc": "2026-10-21T11:04:48.5088725Z",
+    "exitCode": 0,
+    "elapsedSeconds": 11.549862,
+    "script": "scripts/gpu_smoke.ps1",
+    "arguments": [
+      "-Configuration",
+      "Debug",
+      "-OutputDirectory",
+      "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-deployment/debug-gpu"
+    ]
+  },
+  {
+    "name": "delivery-release-gpu",
+    "startedUtc": "2026-10-21T11:04:48.5129942Z",
+    "finishedUtc": "2026-10-21T11:04:53.2061345Z",
+    "exitCode": 0,
+    "elapsedSeconds": 4.6931757,
+    "script": "scripts/gpu_smoke.ps1",
+    "arguments": [
+      "-Configuration",
+      "Release",
+      "-OutputDirectory",
+      "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-deployment/release-gpu"
+    ]
+  },
+  {
+    "name": "delivery-debug-narrowband",
+    "startedUtc": "2026-10-21T11:04:53.2109605Z",
+    "finishedUtc": "2026-10-21T11:05:03.5820937Z",
+    "exitCode": 0,
+    "elapsedSeconds": 10.3711755,
+    "script": "scripts/verify-package.ps1",
+    "arguments": [
+      "-Configuration",
+      "Debug",
+      "-Narrowband",
+      "-ReportPath",
+      "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-deployment/debug-narrowband.json"
+    ]
+  },
+  {
+    "name": "delivery-release-narrowband",
+    "startedUtc": "2026-10-21T11:05:03.5865196Z",
+    "finishedUtc": "2026-10-21T11:05:07.4481634Z",
+    "exitCode": 0,
+    "elapsedSeconds": 3.8616781,
+    "script": "scripts/verify-package.ps1",
+    "arguments": [
+      "-Configuration",
+      "Release",
+      "-Narrowband",
+      "-ReportPath",
+      "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-deployment/release-narrowband.json"
+    ]
+  },
+  {
+    "name": "delivery-debug-software",
+    "startedUtc": "2026-10-21T11:05:07.4522146Z",
+    "finishedUtc": "2026-10-21T11:05:14.2632588Z",
+    "exitCode": 0,
+    "elapsedSeconds": 6.8110785,
+    "script": "scripts/verify-package.ps1",
+    "arguments": [
+      "-Configuration",
+      "Debug",
+      "-SoftwareRenderer",
+      "-ReportPath",
+      "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-deployment/debug-software.json"
+    ]
+  },
+  {
+    "name": "delivery-release-software",
+    "startedUtc": "2026-10-21T11:05:14.2817503Z",
+    "finishedUtc": "2026-10-21T11:05:17.1094229Z",
+    "exitCode": 0,
+    "elapsedSeconds": 2.8277048,
+    "script": "scripts/verify-package.ps1",
+    "arguments": [
+      "-Configuration",
+      "Release",
+      "-SoftwareRenderer",
+      "-ReportPath",
+      "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-deployment/release-software.json"
+    ]
+  }
+]
