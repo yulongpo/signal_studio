@@ -273,11 +273,13 @@ struct Capture {
               "Visible narrowband charts did not settle for capture");
       return;
     }
-    require(waitUntil([this] { return plots[2]->isDisplaySettled(); }),
-            "Main chart did not settle on the latest requested display");
-    QTest::qWait(80);
-    require(plots[2]->isDisplaySettled(),
-            "Main chart resumed preview before capture");
+    QElapsedTimer stable;
+    stable.start();
+    require(waitUntil([this,&stable] {
+              if (!plots[2]->isDisplaySettled()) { stable.restart(); return false; }
+              return stable.elapsed() >= 80;
+            }),
+            "Main chart did not settle on the latest display for capture");
   }
 
   void waitForGpu() {

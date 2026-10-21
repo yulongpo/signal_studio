@@ -76,15 +76,15 @@ QPushButton* actionButton(const QString& value, const QString& id, QLayout* layo
     auto* button = new QPushButton(value); button->setObjectName(id); button->setCursor(Qt::PointingHandCursor);
     layout->addWidget(button); return button;
 }
-void displayFftValue(QComboBox* combo, int points, const QString& prefix) {
+void displayFftValue(QComboBox* combo, int points) {
     const QSignalBlocker blocker(combo);
     for (int row = 0; row < combo->count(); ++row) {
-        const auto text = prefix + " " + QString::number(combo->itemData(row).toInt());
+        const auto text = QString::number(combo->itemData(row).toInt());
         if (combo->itemText(row) != text) combo->setItemText(row, text);
     }
     int index = combo->findData(points);
     if (index < 0 && points >= 16 && points <= 262144 && (points & (points - 1)) == 0) {
-        combo->addItem(prefix + " " + QString::number(points), points);
+        combo->addItem(QString::number(points), points);
         index = combo->count() - 1;
     }
     if (index >= 0) combo->setCurrentIndex(index);
@@ -980,9 +980,9 @@ void NarrowbandWorkspace::buildPages() {
     waveformMode_ = new QComboBox; waveformMode_->setObjectName("narrowbandWaveformMode");
     waveformMode_->addItems({"I / Q", "幅度 (RMS)", "相位", "幅度包络"});
     displayPsdFft_ = new QComboBox; displayPsdFft_->setObjectName("narrowbandPsdFft");
-    for(int order=5;order<=16;++order)displayPsdFft_->addItem("PSD "+QString::number(1<<order),1<<order); displayPsdFft_->setCurrentIndex(7);
+    for(int order=5;order<=16;++order)displayPsdFft_->addItem(QString::number(1<<order),1<<order); displayPsdFft_->setCurrentIndex(7);
     displayStftFft_ = new QComboBox; displayStftFft_->setObjectName("narrowbandStftFft");
-    for (int order = 5; order <= 16; ++order) displayStftFft_->addItem("STFT " + QString::number(1 << order), 1 << order);
+    for (int order = 5; order <= 16; ++order) displayStftFft_->addItem(QString::number(1 << order), 1 << order);
     displayStftFft_->setCurrentIndex(5);
     frequencyMode_ = new QComboBox; frequencyMode_->setObjectName("channelFrequencyMode");
     frequencyMode_->addItems({"基带", "RF"});
@@ -1048,12 +1048,12 @@ void NarrowbandWorkspace::buildPages() {
     modulationType->addItems({"未知 / 自动", "BPSK", "QPSK", "8PSK", "16QAM", "64QAM", "2FSK", "4FSK", "MSK", "GMSK", "OFDM"});
     auto* symbolRate = new ParameterDoubleSpinBox; symbolRate->setObjectName("symbolRate"); symbolRate->setRange(1, 20'000'000); symbolRate->setDecimals(0); symbolRate->setValue(250'000); symbolRate->setSuffix(" Sym/s");
     eyeComponent_ = new QComboBox; eyeComponent_->setObjectName("eyeComponent"); eyeComponent_->addItems({"I + Q", "I 分量", "Q 分量"});
-    eyePeriods_ = new QComboBox; eyePeriods_->setObjectName("eyePeriods"); eyePeriods_->addItems({"1 周期", "2 周期", "3 周期", "4 周期"});
+    eyePeriods_ = new QComboBox; eyePeriods_->setObjectName("eyePeriods"); eyePeriods_->addItems({"1", "2", "3", "4"});
     eyeTraces_ = new QComboBox; eyeTraces_->setObjectName("eyeTraces"); eyeTraces_->addItems({"32 条", "64 条", "128 条", "256 条"}); eyeTraces_->setCurrentIndex(1);
     auto* sync = new QCheckBox("演示同步选项"); sync->setObjectName("syncOptionsDemo");
     auto* identify = actionButton("运行识别演示", "modulationIdentify", modulationRow); identify->setProperty("uiRole", "primary");
     modulationRow->addWidget(textLabel("调制格式")); modulationRow->addWidget(modulationType); modulationRow->addWidget(textLabel("符号率"));
-    modulationRow->addWidget(symbolRate); modulationRow->addWidget(textLabel("眼图")); modulationRow->addWidget(eyeComponent_);
+    modulationRow->addWidget(symbolRate); modulationRow->addWidget(eyeComponent_);
     modulationRow->addWidget(eyePeriods_); modulationRow->addWidget(eyeTraces_); modulationRow->addWidget(sync); modulationRow->addStretch();
     modulationRow->addWidget(identify); modulationLayout->addWidget(modulationControls, 2, 0, 1, 2);
     modulationLayout->setRowStretch(0, 3); modulationLayout->setRowStretch(1, 2);
@@ -1496,7 +1496,7 @@ void NarrowbandWorkspace::refreshFromSession() {
     if (auto* rate = findChild<QDoubleSpinBox*>("symbolRate")) {
         const QSignalBlocker blocker(rate); displayParameterValue(rate, channel->symbolRate);
     }
-    displayFftValue(displayStftFft_, channel->stftFftSize, "STFT");
+    displayFftValue(displayStftFft_, channel->stftFftSize);
     { QSignalBlocker blocker(frequencyMode_); frequencyMode_->setCurrentIndex(channel->absoluteFrequencyLabels ? 1 : 0); }
     { QSignalBlocker blocker(eyePeriods_); eyePeriods_->setCurrentIndex(std::clamp(channel->eyePeriods - 1, 0, 3)); }
     const auto traceIndex = channel->eyeTraces <= 32 ? 0 : channel->eyeTraces <= 64 ? 1 : channel->eyeTraces <= 128 ? 2 : 3;
@@ -1579,9 +1579,8 @@ void NarrowbandWorkspace::updateLinkedCursors() {
     }
     if (displayPsdFft_) {
         displayFftValue(displayPsdFft_, cursor.framePsd && frame ? static_cast<int>(frame->linearPower.size()) :
-            cursor.framePsd ? channel->stftFftSize : channel->psdFftSize, "PSD");
-        displayPsdFft_->setFixedWidth(cursor.framePsd ? 146 : 94);
-        if(cursor.framePsd)displayPsdFft_->setItemText(displayPsdFft_->currentIndex(),QString("N %1（随STFT）").arg(displayPsdFft_->currentData().toInt()));
+            cursor.framePsd ? channel->stftFftSize : channel->psdFftSize);
+        if(cursor.framePsd)displayPsdFft_->setItemText(displayPsdFft_->currentIndex(),QString("%1（随 STFT）").arg(displayPsdFft_->currentData().toInt()));
         displayPsdFft_->setEnabled(!cursor.framePsd);
         displayPsdFft_->setToolTip(cursor.framePsd ? "N 随 STFT；选择统计谱可修改独立PSD N" : "当前可见频段内的分析点数");
     }

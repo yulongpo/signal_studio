@@ -947,9 +947,6 @@ void MainWindow::buildWorkspace() {
       specAxis_->setMinimumWidth(0);
       specAxis_->setMaximumWidth(150);
       header->addWidget(specAxis_);
-      rangeTag_ = label({}, "rangeTag", "tag");
-      rangeTag_->setMinimumWidth(0);
-      header->addWidget(rangeTag_);
       manualTool_ = push("▱ 持续标记", "manualTool", header);
       manualTool_->setCheckable(true);
       connect(manualTool_, &QPushButton::clicked, this, [this](bool enabled) {
@@ -1400,7 +1397,7 @@ void MainWindow::buildWorkspace() {
     control->setCompleter(nullptr);
     control->lineEdit()->setValidator(new QRegularExpressionValidator(
         QRegularExpression(QStringLiteral(
-            R"([-+]?(?:\d+(?:\.\d{0,3})?|\.\d{1,3})(?:\s*dB(?:FS(?:/Hz)?)?)?)")),
+            R"([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?(?:\s*dB(?:FS(?:/Hz)?|\((?:unit|ADC)\^2/Hz\))?)?)")),
         control));
   }
   freqMode_ = combo("freqMode", {"射频绝对频率", "基带相对频率"});
@@ -1915,6 +1912,8 @@ void MainWindow::buildChartControls() {
   };
   auxiliaryControls_=attach(findChild<QWidget*>("auxChartHead"),"auxChartControls");
   spectrumControls_=attach(findChild<QWidget*>("specChartHead"),"specChartControls");
+  auxiliaryControls_->setAuxiliaryStatus(auxStatus_);
+  spectrumControls_->setAuxiliaryStatus(specAxis_);
   psdSettingsButton_=auxiliaryControls_->overflowButton();
   stftSettingsButton_=spectrumControls_->overflowButton();
   psdSettingsButton_->setObjectName("psdSettings");
@@ -1922,10 +1921,11 @@ void MainWindow::buildChartControls() {
   findChild<QWidget*>("auxChartControlsOverflowPopover")->setObjectName("psdSettingsPopover");
   findChild<QWidget*>("specChartControlsOverflowPopover")->setObjectName("stftSettingsPopover");
   powerSettingsButton_=displaySettingsButton_=stftSettingsButton_;
-  const auto field=[](QWidget* control,int width){control->setFixedWidth(width);};
+  const auto field=[](QWidget* control,int width){control->setProperty("chartMinimumWidth",width);control->setFixedWidth(width);};
   field(waveformMode_,148);field(psd_,82);field(stft_,82);field(psdScope_,130);
   grid_->setText("网格");colorScale_->setText("色阶");
   field(reference_,116);field(dynamic_,90);field(propertyPalette_,100);field(freqMode_,82);
+  enableCompactNumericCombo(reference_);enableCompactNumericCombo(dynamic_);
   psd_->setAccessibleName("PSD N");stft_->setAccessibleName("STFT N");
   psdStatisticControl_=psdParameters_->takeStatisticControl();field(psdStatisticControl_,76);
   psdSourceControl_=combo("psdSource",{"统计谱","驻留帧谱"});field(psdSourceControl_,94);
@@ -1941,10 +1941,7 @@ void MainWindow::buildChartControls() {
     field(psdInline_[i],i==0?104:i==1?100:72);
     field(stftInline_[i],i==0?104:i==1?100:72);
   }
-  for(auto* mode:auxiliaryButtons_) auxiliaryControls_->addControl(mode,mode->text(),150);
-  auxiliaryControls_->addControl(evidenceMode_,"检测证据",130);
-  for(auto* mode:mainButtons_) spectrumControls_->addControl(mode,mode->text(),150);
-  auxiliaryControls_->addControl(waveformMode_,"波形分量",100);
+  auxiliaryControls_->addControl(waveformMode_,"分量",100);
   auto* fit=new QToolButton;fit->setObjectName("waveformAutoFit");fit->setText("自动幅度");
   auxiliaryControls_->addControl(fit,"自动幅度",80);
   connect(fit,&QToolButton::clicked,this,[this]{if(auto* f=session_.activeFile()){f->display.waveformAutoFit=true;propagateGlobalRightSidebarSettings();refresh();}});
@@ -1958,7 +1955,7 @@ void MainWindow::buildChartControls() {
     narrowbandControls_[i]=attach(head,panels[i]+"Controls");
   }
   auto* nbWave=narrowband_->findChild<QComboBox*>("narrowbandWaveformMode");field(nbWave,104);
-  narrowbandControls_[0]->addControl(nbWave,"波形分量",100);
+  narrowbandControls_[0]->addControl(nbWave,"分量",100);
   auto* nbFit=new QToolButton;nbFit->setObjectName("narrowbandWaveformAutoFit");nbFit->setText("自动幅度");
   narrowbandControls_[0]->addControl(nbFit,"自动幅度",90);
   connect(nbFit,&QToolButton::clicked,this,[this]{if(auto* c=session_.activeChannel()){c->waveformAutoScale=true;narrowband_->refreshFromSession();}});
@@ -1967,7 +1964,7 @@ void MainWindow::buildChartControls() {
   auto* nbStft=narrowband_->findChild<QComboBox*>("narrowbandStftFft");field(nbStft,100);
   narrowbandControls_[2]->addControl(nbStft,"STFT N",100);
   for(const auto* name:{"channelFrequencyMode","narrowbandGrid"})
-    narrowbandControls_[2]->addControl(narrowband_->findChild<QWidget*>(name),name==QString("narrowbandGrid")?"网格":"频率坐标",20);
+    narrowbandControls_[2]->addControl(narrowband_->findChild<QWidget*>(name),name==QString("narrowbandGrid")?"网格":"频率",name==QString("narrowbandGrid")?10:15);
   if(auto* bar=narrowband_->findChild<QWidget*>("narrowbandChartToolbar")){
     if(auto* status=bar->findChild<QLabel*>("narrowbandDataStatus")){
       status->setParent(narrowband_->findChild<QWidget*>("narrowbandHeader"));status->setMaximumWidth(150);
@@ -1978,7 +1975,9 @@ void MainWindow::buildChartControls() {
   if(auto* eye=narrowband_->findChild<QWidget*>("narrowbandEyeLarge")){
     auto* head=qobject_cast<QVBoxLayout*>(eye->layout())->itemAt(0)->widget();
     auto* strip=attach(head,"narrowbandEyeControls");
-    for(const auto* name:{"eyeComponent","eyePeriods","eyeTraces"})strip->addControl(narrowband_->findChild<QWidget*>(name),QString::fromLatin1(name),50);
+    strip->addControl(narrowband_->findChild<QWidget*>("eyeComponent"),"分量",70);
+    strip->addControl(narrowband_->findChild<QWidget*>("eyePeriods"),"周期",60);
+    strip->addControl(narrowband_->findChild<QWidget*>("eyeTraces"),"轨迹",50);
   }
   specMode_->setMaximumWidth(150);specAxis_->setMaximumWidth(100);
   for(const auto* name:{"observePage","modulationPage","deepLearningPage","demodulationPage"})
@@ -2001,25 +2000,25 @@ void MainWindow::updateChartControls(bool narrow) {
     auto* psdHost=narrow?narrowbandControls_[1]:auxiliaryControls_;
     auto* stftHost=narrow?heat:spectrumControls_;
     if(!narrow){psdHost->addControl(psd_,"PSD N",100);stftHost->addControl(stft_,"STFT N",100);}
-    psdHost->addControl(psdSourceControl_,"谱来源",110);
-    psdHost->addControl(psdScope_,"统计范围",65);
-    psdHost->addControl(psdStatisticControl_,"统计类型",75);
+    psdHost->addControl(psdSourceControl_,"谱源",110);
+    psdHost->addControl(psdScope_,"范围",65);
+    psdHost->addControl(psdStatisticControl_,"统计",75);
     for(int i=0;i<3;++i){
-      const QString title=i==0?"估计方法":i==1?"窗函数":"重叠 (%)";
+      const QString title=i==0?"方法":i==1?"窗":"重叠 (%)";
       psdHost->addControl(psdInline_[i],title,45-i*10);
       stftHost->addControl(stftInline_[i],title,40-i*10);
     }
     psdHost->addPanel(psdParameters_,"PSD 高级参数");
     stftHost->addPanel(stftParameters_,"STFT 高级参数");
     stftHost->addControl(propertyPalette_,"色表",95);
-    stftHost->addControl(reference_,"参考电平",85);
-    stftHost->addControl(dynamic_,"动态范围",80);
+    stftHost->addControl(reference_,"参考",85);
+    stftHost->addControl(dynamic_,"动态",80);
     stftHost->addControl(autoPowerFit_,"自动适配电平",70);
     stftHost->addControl(colorScale_,"色阶条",5);
-    if(!narrow){stftHost->addControl(freqMode_,"频率坐标",15);stftHost->addControl(grid_,"网格",10);}
+    if(!narrow){stftHost->addControl(freqMode_,"频率",15);stftHost->addControl(grid_,"网格",10);}
     else{
       heat->addControl(narrowband_->findChild<QComboBox*>("narrowbandStftFft"),"STFT N",100);
-      heat->addControl(narrowband_->findChild<QWidget*>("channelFrequencyMode"),"频率坐标",15);
+      heat->addControl(narrowband_->findChild<QWidget*>("channelFrequencyMode"),"频率",15);
       heat->addControl(narrowband_->findChild<QWidget*>("narrowbandGrid"),"网格",10);
     }
     chartControlsNarrow_=narrow;activeHeatmapControls_=heat;chartControlsInitialized_=true;
@@ -3047,7 +3046,6 @@ void MainWindow::refresh() {
                          file->metadata.sampleRateHz) +
                   " s");
     auxStatus_->setText(auxiliary_->statusText());
-    rangeTag_->setText("动态 " + number(display.dynamicRangeDb) + " dB");
     const bool waterfall = display.mainMode == MainMode::Waterfall;
     specMode_->setText("正在框选信号 · 右键或 Esc 退出");
     specMode_->setVisible(main_->isCreating() && width() > 990);
@@ -3806,8 +3804,6 @@ void MainWindow::enforceLayout(bool reset) {
   scope_->setVisible(w > 1330);
   projectLabel_->setVisible(w > 990);
   specMode_->setVisible(main_ && main_->isCreating() && w > 990);
-  specAxis_->setVisible(w > 1330);
-  rangeTag_->setVisible(w > 990);
   cursorData_->setVisible(w > 990);
   viewData_->setVisible(w > 1150);
   findChild<QLabel*>("navHint")->setVisible(w > 1150);
@@ -4041,7 +4037,8 @@ void MainWindow::applyPowerInput(QComboBox* control) {
   text.remove(QRegularExpression(
       QStringLiteral("\\s*dB(?:FS(?:/Hz)?|\\((?:unit|ADC)\\^2/Hz\\))?\\s*$")));
   bool ok = false;
-  const double value = text.toDouble(&ok);
+  const double value = !control->property("parameterCustomCommit").toBool()&&control->currentData().isValid()
+                           ? control->currentData().toDouble(&ok) : text.toDouble(&ok);
   const auto& display = session_.activeFile()->display;
   PowerDisplayRange range{display.referenceLevelDb, display.dynamicRangeDb};
   if (control == dynamic_)
@@ -4075,16 +4072,10 @@ void MainWindow::normalizePowerInput(QComboBox* control) {
   const QSignalBlocker blocker(control);
   const QSignalBlocker editBlocker(control->lineEdit());
   control->setProperty("parameterDraft", false);
-  const auto text =
-      number(control == dynamic_ ? display.dynamicRangeDb
-                                 : display.referenceLevelDb) +
-      (control == dynamic_ ? " dB"
-                           : " " + powerUnit(session_.activeFile()->metadata));
-  control->setProperty("parameterCommittedText", text);
-  control->setEditText(text);
+  displayComboValue(control,control == dynamic_ ? display.dynamicRangeDb : display.referenceLevelDb,
+                    control == dynamic_ ? " dB" : " " + powerUnit(session_.activeFile()->metadata));
   control->lineEdit()->setStyleSheet({});
   control->setProperty("powerInputValid", true);
-  control->setToolTip({});
 }
 void MainWindow::updatePowerFit() {
   if (!autoPowerFit_) return;

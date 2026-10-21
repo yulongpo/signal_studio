@@ -578,8 +578,8 @@ void UiTests::globalDisplaySettingsApplyAcrossFiles() {
   auxiliaryMode->setCurrentIndex(1);
   palette->setCurrentIndex(2);
   QVERIFY(openChartSettings(window, "powerSettings"));
-  dynamic->setCurrentIndex(dynamic->findText("60 dB"));
-  reference->setCurrentIndex(reference->findText("-40 dBFS/Hz"));
+  dynamic->setCurrentIndex(dynamic->findData(60));
+  reference->setCurrentIndex(reference->findData(-40));
   QCOMPARE(static_cast<int>(window.session().activeFile()->display.mainMode),
            static_cast<int>(MainMode::Waterfall));
   QCOMPARE(
@@ -616,8 +616,8 @@ void UiTests::globalDisplaySettingsApplyAcrossFiles() {
   QCOMPARE(mainMode->currentIndex(), 0);
   QCOMPARE(auxiliaryMode->currentIndex(), 0);
   QCOMPARE(palette->currentIndex(), 0);
-  QCOMPARE(dynamic->currentText(), QString("60 dB"));
-  QCOMPARE(reference->currentText(), QString("-40 dBFS/Hz"));
+  QCOMPARE(dynamic->currentText(), QString("60.00 dB"));
+  QCOMPARE(reference->currentText(), QString("-40.00 dBFS/Hz"));
   QVERIFY(window.session().activateFile(secondId));
   window.refresh();
   QCOMPARE(mainMode->currentIndex(), 0);
@@ -1231,11 +1231,11 @@ void UiTests::prototypeDisplayDefaultsAndOptions() {
     fftSizes << QString::number(1 << order);
   QCOMPARE(comboLabels(stft), fftSizes);
   QCOMPARE(comboLabels(psd), fftSizes);
-  QCOMPARE(comboLabels(dynamic), QStringList({"20 dB", "40 dB", "60 dB",
-                                              "80 dB", "100 dB", "120 dB"}));
+  QCOMPARE(comboLabels(dynamic), QStringList({"20.00 dB", "40.00 dB", "60.00 dB",
+                                              "80.00 dB", "100.00 dB", "120.00 dB"}));
   QCOMPARE(comboLabels(reference),
-           QStringList({"0 dBFS/Hz", "-20 dBFS/Hz", "-40 dBFS/Hz",
-                        "-60 dBFS/Hz", "-80 dBFS/Hz", "-100 dBFS/Hz"}));
+           QStringList({"0.00 dBFS/Hz", "-20.00 dBFS/Hz", "-40.00 dBFS/Hz",
+                        "-60.00 dBFS/Hz", "-80.00 dBFS/Hz", "-100.00 dBFS/Hz"}));
   QCOMPARE(stft->currentText(), QString("2048"));
   QCOMPARE(psd->currentText(), QString("4096"));
   QCOMPARE(dynamic->currentIndex(), 3);
@@ -1944,7 +1944,7 @@ void UiTests::paletteControlsStaySynchronized() {
   DemoMainWindow window;
   showWindow(window);
   auto* header = window.findChild<QComboBox*>("colormap");
-  auto* rangeTag = window.findChild<QWidget*>("rangeTag");
+  auto* rangeTag = window.findChild<QWidget*>("dynamicLabel");
   auto* maximize = window.findChild<QAbstractButton*>("specMaximize");
   QVERIFY(header && rangeTag && maximize);
   QCOMPARE(window.findChildren<QComboBox*>("colormap").size(), 1);
@@ -4352,9 +4352,9 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
     stft->setCurrentText(QStringLiteral("4096"));
     psd->setCurrentText(QStringLiteral("8192"));
     QVERIFY(openChartSettings(window, "powerSettings"));
-    dynamic->setCurrentIndex(dynamic->findText(QStringLiteral("60 dB")));
+    dynamic->setCurrentIndex(dynamic->findData(60));
     reference->setCurrentIndex(
-        reference->findText(QStringLiteral("-40 dBFS/Hz")));
+        reference->findData(-40));
     QVERIFY(openChartSettings(window, "displaySettings"));
     frequency->setCurrentIndex(1);
     grid->setChecked(false);

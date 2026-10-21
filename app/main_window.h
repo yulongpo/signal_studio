@@ -221,7 +221,7 @@ class MainWindow : public QMainWindow {
   std::array<QLabel*, 6> channelValues_{};
   QLabel *channelRevision_ = nullptr, *channelRelation_ = nullptr;
   QLabel *scope_ = nullptr, *projectLabel_ = nullptr, *navStatus_ = nullptr,
-         *auxStatus_ = nullptr, *rangeTag_ = nullptr,
+         *auxStatus_ = nullptr,
          *dataSourceStatus_ = nullptr;
   QLabel *specMode_ = nullptr, *specAxis_ = nullptr, *selectedCount_ = nullptr,
          *cursorData_ = nullptr, *viewData_ = nullptr,
