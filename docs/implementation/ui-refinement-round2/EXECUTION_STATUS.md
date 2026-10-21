@@ -30,4 +30,4 @@ Debug实际4K/150%窄带GPU截图与四页检查通过，证据03-narrowband/ass
 
 用户明确取消旧工程兼容并要求不再加入测试。仅接受当前v6；删除v1–v5读取分支、旧快照推导和升级备份。相应过期迁移用例移除，此后没有新增测试。当前格式的标记、来源快照、分片完整性、失败原子性和uint64/Partial检查保留。
 
-Release已完成当前格式重建，既有core、annotation_store、label_import及其余前28项均通过；最终综合UI结果及本轮验收在05归档。
+Release已完成当前格式重建，既有core、annotation_store、label_import通过。全量执行发现sample_format中仍有v1/v2/v3读取断言，已按新范围移除该旧块；其真实格式/DDC/读取边界检查保留。最终结果及本轮验收在05归档。
