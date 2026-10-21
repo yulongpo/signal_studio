@@ -32,10 +32,11 @@ class UnsignedValueEdit final : public QLineEdit, public ParameterDraft {
       discard();
       if (applied) applied();
     } else
-      discard();
+      setParameterError(this, QStringLiteral("请输入范围内的非负整数。"));
   }
   void discard() override {
     setProperty("parameterDraft", false);
+    setParameterError(this, {});
     setText(QString::number(value_));
   }
 
@@ -51,8 +52,9 @@ class UnsignedValueEdit final : public QLineEdit, public ParameterDraft {
       QLineEdit::keyPressEvent(e);
   }
   void focusOutEvent(QFocusEvent* e) override {
-    if (e->reason() == Qt::TabFocusReason ||
-        e->reason() == Qt::BacktabFocusReason)
+    if (!parameterLayerHiding(this) &&
+        (e->reason() == Qt::TabFocusReason ||
+         e->reason() == Qt::BacktabFocusReason))
       commit();
     QLineEdit::focusOutEvent(e);
   }

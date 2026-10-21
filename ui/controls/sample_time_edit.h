@@ -74,8 +74,9 @@ class SampleTimeEdit final : public QLineEdit, public ParameterDraft {
     }
   }
   void focusOutEvent(QFocusEvent* event) override {
-    if (event->reason() == Qt::TabFocusReason ||
-        event->reason() == Qt::BacktabFocusReason)
+    if (!parameterLayerHiding(this) &&
+        (event->reason() == Qt::TabFocusReason ||
+         event->reason() == Qt::BacktabFocusReason))
       commit();
     QLineEdit::focusOutEvent(event);
   }

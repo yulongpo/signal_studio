@@ -216,7 +216,9 @@ void UiTests::annotationSelectionAcrossPagesAndViews() {
   QVERIFY(table && tree && plot);
   QCOMPARE(table->model()->columnCount(), 11);
   QCOMPARE(table->model()->rowCount(), 200);
+  QVERIFY(window.findChild<QWidget*>("displayPage")->isVisible());
   annotationUiClickRow(table, annotationUiId(0));
+  QTRY_VERIFY(window.findChild<QWidget*>("annotationPage")->isVisible());
   QCOMPARE(file->selectedMarkIds, std::vector<std::string>{annotationUiId(0)});
   window.findChild<QPushButton*>("annotationsNextPage")->click();
   QCOMPARE(table->model()->rowCount(), 68);
@@ -231,7 +233,9 @@ void UiTests::annotationSelectionAcrossPagesAndViews() {
   window.findChild<QPushButton*>("annotationsPreviousPage")->click();
   annotationUiClickRow(table, annotationUiId(0));
   window.findChild<QPushButton*>("annotationsNextPage")->click();
+  QVERIFY(openInspectorPage(window, "Display"));
   annotationUiClickRow(table, annotationUiId(220), Qt::ControlModifier);
+  QVERIFY(window.findChild<QWidget*>("displayPage")->isVisible());
   QCOMPARE(file->selectedMarkIds.size(), std::size_t{2});
   QCOMPARE(file->activeMarkId, annotationUiId(220));
   QTRY_VERIFY(annotationUiTreeItem(tree, annotationUiId(220)));
@@ -243,6 +247,7 @@ void UiTests::annotationSelectionAcrossPagesAndViews() {
   QVERIFY(!annotationUiTableIndex(table, annotationUiId(267)).isValid());
   QTest::mouseClick(plot, Qt::LeftButton, Qt::NoModifier,
                     plot->toPixel(80000, 100.25e6).toPoint());
+  QVERIFY(window.findChild<QWidget*>("displayPage")->isVisible());
   QCOMPARE(file->selectedMarkIds,
            std::vector<std::string>{annotationUiId(267)});
   QVERIFY(annotationUiTableIndex(table, annotationUiId(267)).isValid());
@@ -386,6 +391,10 @@ void UiTests::annotationCurrentSegmentGeometryAndHandles() {
   QCOMPARE(table->model()->index(row, 6).data().toString().toDouble(), 100.15);
   QCOMPARE(table->model()->index(row, 7).data().toString().toDouble(), 100.0);
   QTRY_COMPARE(plot->property("annotationHandleCount").toInt(), 8);
+  // Domain fixture selection on the first refresh does not open Inspector.
+  QVERIFY(window.findChild<QWidget*>("displayPage")->isVisible());
+  QVERIFY(openInspectorPage(window, "Annotation"));
+  QVERIFY(revealParameter(selector));
   selector->setCurrentIndex(
       selector->findData(QString::fromStdString(firstSegment)));
   QCOMPARE(file->activeSegmentId, firstSegment);
@@ -430,8 +439,11 @@ void UiTests::annotationSelectionContextAndPublication() {
   window.session().selectMarks({annotationUiId(4)}, annotationUiId(4));
   showWindow(window);
   window.refresh();
+  QVERIFY(window.findChild<QWidget*>("displayPage")->isVisible());
+  QVERIFY(openInspectorPage(window, "Annotation"));
   auto* start = window.findChild<QLineEdit*>("annotationStartMilliseconds");
   QVERIFY(start && start->isEnabled());
+  QVERIFY(revealParameter(start));
   start->setFocus();
   start->selectAll();
   QTest::keyClicks(start, "12.345");
@@ -447,6 +459,7 @@ void UiTests::annotationSelectionContextAndPublication() {
               .publishSourceSet(*file, source, {added})
               .ok);
   window.refresh();
+  QVERIFY(window.findChild<QWidget*>("annotationPage")->isVisible());
   QCOMPARE(start->text(), QString("12.345"));
   QVERIFY(start->property("parameterDraft").toBool());
   QCOMPARE(findAnnotation(*file, annotationUiId(4))->range, originalRange);
@@ -474,9 +487,11 @@ void UiTests::annotationSelectionContextAndPublication() {
   const auto firstFile = file->metadata.id;
   window.session().addDemoFile("other.iq", 1e6, 100e6, .1);
   window.refresh();
+  QVERIFY(window.findChild<QWidget*>("annotationPage")->isVisible());
   QVERIFY(window.session().activeFile()->selectedMarkIds.empty());
   QVERIFY(window.session().activateFile(firstFile));
   window.refresh();
+  QVERIFY(window.findChild<QWidget*>("annotationPage")->isVisible());
   QCOMPARE(window.session().activeFile()->selectedMarkIds,
            std::vector<std::string>{annotationUiId(4)});
   window.session().newProject();

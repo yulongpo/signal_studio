@@ -17,8 +17,8 @@
 #include "ui/settings_popover.h"
 
 namespace signalstudio {
-// Widgets keep a stable owner. Overflow exposes commands/presets, never a
-// second editable copy, and refresh only changes requested visibility.
+// Overflow exposes commands/presets, never a second editable copy. Controls
+// keep their owner between physical workspace transitions.
 class ChartControlStrip final : public QWidget {
  public:
   ChartControlStrip(SettingsPopoverHost* popovers, const QString& name,
@@ -105,6 +105,21 @@ class ChartControlStrip final : public QWidget {
 
   QToolButton* overflowButton() const { return more_; }
 
+  void setExternalHost(QWidget* control, QWidget* host) {
+    auto* parent = host ? host : this;
+    if (control->parentWidget() == parent) return;
+    for (int index = 0; index < static_cast<int>(items_.size()); ++index) {
+      if (items_[index].control != control) continue;
+      row_->removeWidget(control);
+      control->setParent(parent);
+      if (host) host->layout()->addWidget(control);
+      else row_->insertWidget(index, control);
+      control->show();
+      schedule();
+      return;
+    }
+  }
+
   void reflow() {
     pending_ = false;
     std::vector<int> priority;
@@ -112,7 +127,7 @@ class ChartControlStrip final : public QWidget {
     for (int index = 0; index < static_cast<int>(items_.size()); ++index) {
       auto& item = items_[index];
       item.overflow = false;
-      if (!item.requested) continue;
+      if (!item.requested || item.control->parentWidget() != this) continue;
       required += std::max(item.control->minimumWidth(), item.control->sizeHint().width()) + 5;
       priority.push_back(index);
     }
@@ -129,6 +144,10 @@ class ChartControlStrip final : public QWidget {
     }
     bool overflow = false;
     for (auto& item : items_) {
+      if (item.control->parentWidget() != this) {
+        item.alternate->hide();
+        continue;
+      }
       item.control->setVisible(item.requested && !item.overflow);
       item.alternate->setVisible(item.requested && item.overflow);
       item.alternate->setEnabled(item.control->isEnabled());

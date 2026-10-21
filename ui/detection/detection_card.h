@@ -114,12 +114,14 @@ class DetectionCard : public QWidget {
   std::optional<ViewRange> requestedRoi_;
   std::string segmentAnnotationId_, segmentRevisionId_;
   bool updating_ = false;
-  QComboBox* profile_ = nullptr;
+  QComboBox* model_ = nullptr;
+  QComboBox* spectrumMode_ = nullptr;
   QComboBox* rangeKind_ = nullptr;
   QComboBox* activeSegment_ = nullptr;
-  QLabel* profileHelp_ = nullptr;
   QLabel* rangeSummary_ = nullptr;
   QLabel* physicalTimes_ = nullptr;
+  QLabel* calculationDetails_ = nullptr;
+  QLabel* diagnostics_ = nullptr;
   QLabel* branchHelp_ = nullptr;
   QLabel* draftNote_ = nullptr;
   QLabel* preflight_ = nullptr;
@@ -135,6 +137,10 @@ class DetectionCard : public QWidget {
   AdaptiveValueEdit* minOffMilliseconds_ = nullptr;
   AdaptiveValueEdit* splitGapMilliseconds_ = nullptr;
   AdaptiveValueEdit* minBurstMilliseconds_ = nullptr;
+  QWidget* fineFields_ = nullptr;
+  QWidget* fineSplitFields_ = nullptr;
+  QWidget* coarseSplitFields_ = nullptr;
+  QWidget* marginFields_ = nullptr;
   QButtonGroup* strategies_ = nullptr;
   QCheckBox* splitBursts_ = nullptr;
   QPushButton* selectRoi_ = nullptr;

@@ -124,6 +124,7 @@ set(SS_UI_SOURCES
     ui/settings_popover.cpp
     ui/settings_popover.h
     ui/chart_control_strip.h
+    ui/context_stack.h
     ui/detection/detection_card.cpp
     ui/detection/detection_card.h
     ui/detection/detection_panel.cpp

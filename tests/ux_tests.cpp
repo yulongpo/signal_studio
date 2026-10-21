@@ -94,6 +94,12 @@ class UxTests : public QObject {
   void uxS03_spectralIndependence();
   void uxS03_framePsdPreservesSettings();
   void uxS06_invalidDraftRecovery();
+  void uxR02_inspectorRouting();
+  void uxR02_fileProperties();
+  void uxR02_paletteWorkspaceOwnership();
+  void uxD04_modelSpectrumMapping();
+  void uxD05_foldedParametersAndFirstScreen();
+  void uxD08_preflightDetails();
   void initTestCase() {
     QCoreApplication::setOrganizationName("SignalStudioTests");
     QCoreApplication::setApplicationName("WidebandUx");
@@ -277,6 +283,8 @@ class UxTests : public QObject {
 #include "toolbar_ux_tests.h"
 #include "spectral_ux_tests.h"
 #include "parameter_ux_tests.h"
+#include "inspector_ux_tests.h"
+#include "detection_card_ux_tests.h"
 
 QTEST_MAIN(UxTests)
 #include "ux_tests.moc"

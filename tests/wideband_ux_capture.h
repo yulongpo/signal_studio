@@ -126,7 +126,7 @@ int runWidebandUxCapture(const QString& outputDirectory) {
     QVariant value;
     ~RestorePersistence() { qApp->setProperty("uiStatePersistenceEnabled", value); }
   } restorePersistence{previousPersistence};
-  QJsonObject report{{"mode", "wideband-ux"}, {"scope", "W2 chart controls"},
+  QJsonObject report{{"mode", "wideband-ux"}, {"scope", "W2 charts and W4 inspector"},
                      {"pass", false}, {"error", ""},
                      {"qtVersion", QString::fromLatin1(qVersion())},
                      {"platform", QGuiApplication::platformName()},
@@ -396,6 +396,71 @@ int runWidebandUxCapture(const QString& outputDirectory) {
     openSetting("psdSettings");
     scene("w2-collapsed-sidebars-psd-tools");
     escape();
+    currentScene = "w4-detection-basic";
+    clickControl("propRailOpen");
+    clickControl("contextDetection");
+    auto* card = child<DetectionCard>(window, "detectionCard");
+    auto* propScroll = child<QScrollArea>(window, "propScroll");
+    propScroll->verticalScrollBar()->setValue(0);
+    QCoreApplication::processEvents();
+    QJsonArray basicControls;
+    for (const auto* name : {"detectionModel", "detectionSpectrumMode", "detectionRangeOrigin",
+                             "detectionScoreThreshold", "detectionTimeStrategy", "detectionPreflight"})
+      basicControls.append(widebandUxReachable(control(name), window));
+    basicControls.append(widebandUxReachable(control("runWidebandDetection"), window, false));
+    require(!propScroll->isAncestorOf(card->actionsWidget()), "W4 run action is inside scrolling content");
+    scene(currentScene);
+    auto basicScene = capture.scenes.last().toObject();
+    basicScene["firstScreenControls"] = basicControls;
+    capture.scenes[capture.scenes.size() - 1] = basicScene;
+    for (const auto* name : {"detectionAnalysisParametersToggle", "detectionPostprocessParametersToggle",
+                             "detectionResourceParametersToggle", "detectionCalculationDetailsToggle",
+                             "detectionDiagnosticsToggle"}) {
+      auto* toggle = child<QAbstractButton>(window, name);
+      widebandScrollTo(toggle);
+      widebandUxClick(toggle, window);
+      require(toggle->isChecked(), "W4 detection fold did not open");
+      scene(QString("w4-%1").arg(name));
+    }
+    clickControl("contextDisplay");
+    scene("w4-display-summary");
+    clickControl("fileProperties");
+    require(control("effectiveBandwidthMHz")->isVisible(), "W4 file bandwidth editor is unreachable");
+    widebandUxReachable(control("effectiveBandwidthMHz"), window);
+    scene("w4-file-properties");
+    escape();
+    clickControl("contextAnnotation");
+    require(control("annotationEmptyGuide")->isVisible(), "W4 missing annotation guide");
+    require(!control("contextChannel")->isEnabled(), "W4 channel page should require a channel");
+    scene("w4-annotation-empty-guide");
+    // A real menu close must not deactivate and cancel the newly selected
+    // ROI tool. Escape restores the persistent tool captured by that menu.
+    clickControl("contextDisplay");
+    clickControl("manualTool");
+    auto* mainPlot = capture.plots[2];
+    require(mainPlot->isCreating(), "W4 persistent tool did not start");
+    const auto markCount = window.session().activeFile()->marks.size();
+    const auto runCount = window.session().activeFile()->detectionRuns.size();
+    std::unique_ptr<QMenu> roiMenu(mainPlot->createContextMenu(mainPlot->plotRect().center().toPoint()));
+    auto* roiAction = child<QAction>(*roiMenu, "contextDetectionRoiAction");
+    roiMenu->popup(mainPlot->mapToGlobal(mainPlot->plotRect().center().toPoint()));
+    require(waitUntil([&] { return roiMenu->isVisible(); }), "W4 ROI menu did not open");
+    require(roiAction->isEnabled(), "W4 ROI menu action is disabled");
+    QTest::mouseClick(roiMenu.get(), Qt::LeftButton, Qt::NoModifier,
+                      roiMenu->actionGeometry(roiAction).center());
+    require(waitUntil([&] { return mainPlot->isSelectingDetectionRoi() &&
+                                  control("detectionPage")->isVisible(); }),
+            "W4 actual menu selection did not retain its ROI tool");
+    scene("w4-menu-roi-retained");
+    QTest::keyClick(mainPlot, Qt::Key_Escape);
+    require(mainPlot->isCreating() && !mainPlot->isSelectingDetectionRoi(),
+            "W4 menu ROI Escape did not restore the previous persistent tool");
+    require(window.session().activeFile()->marks.size() == markCount &&
+                window.session().activeFile()->detectionRuns.size() == runCount,
+            "W4 menu ROI created an annotation or a run");
+    clickControl("manualTool");
+    scene("w4-menu-roi-escape");
+    clickControl("contextDisplay");
     QJsonArray overflow;
     for (const auto* stripName : {"auxChartControls", "specChartControls"}) {
       const auto moreName = QString::fromLatin1(stripName) + "Overflow";

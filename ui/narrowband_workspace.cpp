@@ -1082,7 +1082,7 @@ void NarrowbandWorkspace::buildPages() {
     deepLayout->addWidget(resultSide, 1);
     connect(recognitionThreshold_, &QDoubleSpinBox::valueChanged, this, [this](double value) {
         updateRecognitionDetail();
-        if (analysisStatus_) analysisStatus_->setText(QStringLiteral("阈值 %.2f 只重判未知类别 · 合成分数不会重算").arg(value));
+        if (analysisStatus_) analysisStatus_->setText(QStringLiteral("阈值 %1 只重判未知类别 · 合成分数不会重算").arg(value, 0, 'f', 2));
     });
     auto invalidateRecognition = [this] { markRecognitionStale("识别配置已变化"); };
     connect(model_, &QComboBox::currentIndexChanged, this, invalidateRecognition);

@@ -37,6 +37,33 @@ QString text(const std::string& value) { return QString::fromUtf8(value); }
 
 QString number(double value) { return QString::number(value, 'g', 9); }
 
+bool testFixturesEnabled() {
+  return qApp->property("enableDetectionTestFixture").toBool() ||
+         qEnvironmentVariableIntValue("SS_ENABLE_DETECTION_TEST_FIXTURES") == 1;
+}
+
+QString preflightAdvice(const QString& issue) {
+  if (issue.contains("Loading")) return "请等待数据加载完成";
+  if (issue.contains("无工程")) return "请创建工程并打开真实 IQ 文件";
+  if (issue.contains("演示")) return "请打开真实 IQ 文件";
+  if (issue.contains("缺失") || issue.contains("加载失败"))
+    return "请恢复源文件并重新加载";
+  if (issue.contains("预算") || issue.contains("批量") ||
+      issue.contains("分片") || issue.contains("报文"))
+    return "请减小批量、FFT 或窗口帧数";
+  if (issue.contains("切换")) return "请刷新来源后重新配置";
+  if (issue.contains("只接受复数 IQ")) return "请选择受支持的复数 IQ 来源";
+  if (issue.contains("模型包") || issue.contains("实验配置") ||
+      issue.contains("方案身份") || issue.contains("有效能力方案"))
+    return "请检查模型包或选择已验证模型";
+  if (issue.contains("ROI") || issue.contains("请求") || issue.contains("观测"))
+    return "请在可用前缀内重新选择有效范围";
+  if (issue.contains("前缀") || issue.contains("样本数"))
+    return "请重新加载并确认可用数据";
+  if (issue.contains("IQ")) return "请选择受支持的复数 IQ 来源";
+  return "请修正对应参数后提交";
+}
+
 std::string configurationKey(const DetectionRequest& value) {
   return value.profile.id +
          (value.spectrumMode == DetectionSpectrumMode::ModelDefault
@@ -128,6 +155,8 @@ QWidget* foldableFields(const QString& title, QWidget* body, bool expanded,
   toggle->setObjectName(QString::fromLatin1(name) + "Toggle");
   toggle->setText(title);
   toggle->setCheckable(true);
+  // Expanding a section must not apply a pending parameter draft.
+  toggle->setProperty("preserveParameterDrafts", true);
   toggle->setChecked(expanded);
   toggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
   toggle->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
@@ -153,12 +182,12 @@ DetectionCard::DetectionCard(Session& session,
   setMinimumWidth(0);
   setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
   setStyleSheet(
-      "#detectionPhysicalTimesBox, #detectionBranchParameters, "
-      "#detectionAdvancedParameters { border: 1px solid #2b4961; }"
-      "#detectionProfileDescription, #detectionBranchHelp, "
+      "#detectionAnalysisParameters, #detectionPostprocessParameters, "
+      "#detectionResourceParameters { border: 1px solid #2b4961; }"
+      "#detectionPhysicalTimes, "
       "#detectionParameterDraftNote { color: #86a4ba; font-size: 10px; }"
       "#detectionPreflight { border-left: 2px solid #e6ba65; "
-      "background: #262922; color: #dec99f; padding: 8px; }"
+      "background: #262922; color: #dec99f; padding: 4px; }"
       "#detectionPreflight[preflightOk=\"true\"] { border-color: #63d2be; "
       "background: #132f32; color: #94c6bd; }"
       "#detectionTimeStrategy QPushButton:checked { background: #245878; "
@@ -187,12 +216,29 @@ DetectionCard::DetectionCard(Session& session,
   layout->setSpacing(9);
   setupProfile(layout);
   setupRange(layout);
-  setupTiming(layout);
   setupThresholds(layout);
   setupStrategy(layout);
+  physicalTimes_ = wrappingLabel("detectionPhysicalTimes", this);
+  layout->addWidget(physicalTimes_);
+  setupStatus(layout);
+  setupTiming(layout);
   setupBranches(layout);
   setupAdvanced(layout);
-  setupStatus(layout);
+  calculationDetails_ = wrappingLabel("detectionCalculationDetailsText", this);
+  calculationDetails_->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  layout->addWidget(foldableFields("计算详情", calculationDetails_, false,
+                                   "detectionCalculationDetails", this));
+  diagnostics_ = wrappingLabel("detectionDiagnostics", this);
+  diagnostics_->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  // Keep the public diagnostics toggle name independent of the text label.
+  layout->addWidget(foldableFields("检测诊断详情", diagnostics_, false,
+                                   "detectionDiagnosticsSection", this));
+  auto* diagnosticsToggle =
+      findChild<QToolButton*>("detectionDiagnosticsSectionToggle");
+  diagnosticsToggle->setObjectName("detectionDiagnosticsToggle");
+  connect(diagnosticsToggle, &QToolButton::toggled, this, [this](bool open) {
+    if (open) refreshStatus();
+  });
   // MainWindow owns the application input filter. This local policy only
   // discards card drafts when its physical source context changes.
   inputPolicy_ = new ParameterInputPolicy(this, false);
@@ -227,28 +273,24 @@ QWidget* DetectionCard::pairedFields(const QString& firstLabel,
 }
 
 void DetectionCard::setupProfile(QVBoxLayout* layout) {
-  layout->addWidget(new QLabel("能力方案", this));
-  profile_ = new QComboBox(this);
-  profile_->setObjectName("detectionProfile");
-  profile_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-  profile_->addItem("FFSCN GUI IQ · 主方案", "ffscn-gui-iq-v1");
-  profile_->addItem("SCN · 频率对照", "scn-max-psd-v1");
-  profile_->addItem("FFSCN-17 · 实验", "ffscn-17-experimental-v1");
-  if (qApp->property("enableDetectionTestFixture").toBool())
-    profile_->addItem("系统链路夹具 · 非模型", "pipeline-fixture-v1");
-  for (const auto* id : {"ffscn-gui-iq-v1", "scn-max-psd-v1"}) {
-    const QString model =
-        QString::fromLatin1(id).startsWith("scn") ? "SCN" : "FFSCN";
-    for (int mode = 1; mode <= 4; ++mode)
-      profile_->addItem(model + " · " +
-                            QStringList{"瞬时谱（窗末帧）", "平均谱", "最大谱",
-                                        "最小谱"}[mode - 1],
-                        QString::fromLatin1(id) + ":" + QString::number(mode));
-  }
-  layout->addWidget(profile_);
-  profileHelp_ = wrappingLabel("detectionProfileDescription", this);
-  layout->addWidget(profileHelp_);
-  connect(profile_, &QComboBox::currentIndexChanged, this, [this] {
+  model_ = new QComboBox(this);
+  model_->setObjectName("detectionModel");
+  model_->setAccessibleName("检测模型");
+  model_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+  model_->addItem("FFSCN GUI IQ", "ffscn-gui-iq-v1");
+  model_->addItem("SCN", "scn-max-psd-v1");
+  model_->addItem("FFSCN-17 · 实验", "ffscn-17-experimental-v1");
+  if (testFixturesEnabled())
+    model_->addItem("系统链路夹具 · 测试 / 非模型", "pipeline-fixture-v1");
+  spectrumMode_ = new QComboBox(this);
+  spectrumMode_->setObjectName("detectionSpectrumMode");
+  spectrumMode_->setAccessibleName("检测输入谱");
+  spectrumMode_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+  layout->addWidget(pairedFields("模型", model_, "输入谱", spectrumMode_));
+  connect(model_, &QComboBox::currentIndexChanged, this, [this] {
+    if (!updating_) switchProfile();
+  });
+  connect(spectrumMode_, &QComboBox::currentIndexChanged, this, [this] {
     if (!updating_) switchProfile();
   });
 }
@@ -257,6 +299,7 @@ void DetectionCard::setupRange(QVBoxLayout* layout) {
   layout->addWidget(new QLabel("检测范围", this));
   rangeKind_ = new QComboBox(this);
   rangeKind_->setObjectName("detectionRangeOrigin");
+  rangeKind_->setAccessibleName("检测范围");
   rangeKind_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
   rangeKind_->addItem("当前可见区域", "visible");
   rangeKind_->addItem("全可用文件", "available-file");
@@ -302,6 +345,8 @@ UnsignedValueEdit* DetectionCard::addUnsigned(
     std::function<void(DetectionRequest&, std::uint64_t)> setter) {
   auto* edit = new UnsignedValueEdit(getter(configuration_), this);
   edit->setObjectName(name);
+  edit->setProperty("parameterLabel", label);
+  edit->setAccessibleName(label);
   edit->setToolTip(QString("%1：%2–%3；Enter / Tab / 应用内点击提交")
                        .arg(label)
                        .arg(minimum)
@@ -323,13 +368,20 @@ UnsignedValueEdit* DetectionCard::addUnsigned(
       });
     else {
       edit->setProperty("detectionCommitError", QString{});
-      edit->setProperty("invalid", false);
-      refreshStyle(edit);
+      setParameterError(edit, {});
       saveConfiguration(std::move(candidate));
     }
   };
-  connect(edit, &QLineEdit::textEdited, this, [this] { refreshStatus(); });
-  connect(edit, &QLineEdit::textChanged, this, [this] {
+  connect(edit, &QLineEdit::textEdited, this,
+          [this, edit](const QString& draft) {
+            edit->setProperty("detectionDraftText", draft);
+            refreshStatus();
+          });
+  connect(edit, &QLineEdit::textChanged, this, [this, edit] {
+    if (!edit->property("parameterDraft").toBool()) {
+      edit->setProperty("detectionCommitError", QString{});
+      setParameterError(edit, {});
+    }
     if (!updating_) refreshStatus();
   });
   return edit;
@@ -344,6 +396,8 @@ AdaptiveValueEdit* DetectionCard::addParameter(
   auto* edit = new AdaptiveValueEdit(
       kind, configuration_.parameters.*member * scale, this);
   edit->setObjectName(name);
+  edit->setProperty("parameterLabel", label);
+  edit->setAccessibleName(label);
   edit->setToolTip(QString("%1：0–%2；Enter / Tab / 应用内点击提交")
                        .arg(label)
                        .arg(maximum * scale));
@@ -363,7 +417,11 @@ AdaptiveValueEdit* DetectionCard::addParameter(
               saveConfiguration(std::move(candidate));
             }
           });
-  connect(edit, &QLineEdit::textEdited, this, [this] { refreshStatus(); });
+  connect(edit, &QLineEdit::textEdited, this,
+          [this, edit](const QString& draft) {
+            edit->setProperty("detectionDraftText", draft);
+            refreshStatus();
+          });
   connect(edit, &QLineEdit::textChanged, this, [this] {
     if (!updating_) refreshStatus();
   });
@@ -371,6 +429,10 @@ AdaptiveValueEdit* DetectionCard::addParameter(
 }
 
 void DetectionCard::setupTiming(QVBoxLayout* layout) {
+  auto* body = new QWidget(this);
+  auto* rows = new QVBoxLayout(body);
+  rows->setContentsMargins(0, 0, 0, 0);
+  rows->setSpacing(8);
   auto* fft = addUnsigned(
       "detectionFftSize", "FFT N", 262144, 32,
       [](const auto& value) { return value.profile.fftSize; },
@@ -379,6 +441,8 @@ void DetectionCard::setupTiming(QVBoxLayout* layout) {
       });
   hopMilliseconds_ = new AdaptiveValueEdit(UnitKind::Scalar, 1, this);
   hopMilliseconds_->setObjectName("detectionHopMilliseconds");
+  hopMilliseconds_->setProperty("parameterLabel", "谱步长");
+  hopMilliseconds_->setAccessibleName("检测谱步长");
   hopMilliseconds_->setToolTip("谱步长 / ms；按 floor(Fs × hop) 对齐源样本");
   connect(hopMilliseconds_, &AdaptiveValueEdit::valueCommitted, this,
           [this](double milliseconds) {
@@ -397,12 +461,14 @@ void DetectionCard::setupTiming(QVBoxLayout* layout) {
             }
           });
   connect(hopMilliseconds_, &QLineEdit::textEdited, this,
-          [this] { refreshStatus(); });
+          [this](const QString& draft) {
+            hopMilliseconds_->setProperty("detectionDraftText", draft);
+            refreshStatus();
+          });
   connect(hopMilliseconds_, &QLineEdit::textChanged, this, [this] {
     if (!updating_) refreshStatus();
   });
-  layout->addWidget(
-      pairedFields("FFT N", fft, "谱步长 / ms", hopMilliseconds_));
+  rows->addWidget(pairedFields("FFT N", fft, "谱步长 / ms", hopMilliseconds_));
   auto* frames = addUnsigned(
       "detectionModelFrames", "模型帧数",
       std::numeric_limits<std::uint32_t>::max(), 1,
@@ -417,36 +483,21 @@ void DetectionCard::setupTiming(QVBoxLayout* layout) {
       [](auto& value, auto number) {
         value.profile.modelHopFrames = static_cast<std::uint32_t>(number);
       });
-  layout->addWidget(pairedFields("模型帧数", frames, "滑动 / 帧", slide));
-  auto* box = new QFrame(this);
-  box->setObjectName("detectionPhysicalTimesBox");
-  auto* boxLayout = new QVBoxLayout(box);
-  boxLayout->setContentsMargins(9, 8, 9, 8);
-  physicalTimes_ = wrappingLabel("detectionPhysicalTimes", box);
-  physicalTimes_->setTextFormat(Qt::RichText);
-  boxLayout->addWidget(physicalTimes_);
-  layout->addWidget(box);
+  rows->addWidget(pairedFields("模型帧数 T", frames, "滑动 / 帧", slide));
+  layout->addWidget(foldableFields("专业分析参数", body, false,
+                                   "detectionAnalysisParameters", this));
 }
 
 void DetectionCard::setupThresholds(QVBoxLayout* layout) {
-  auto* score = addParameter("detectionScoreThreshold", "score threshold",
-                             &DetectionParameters::scoreThreshold, 1);
-  auto* nms = addParameter("detectionNmsIou", "NMS IoU",
-                           &DetectionParameters::nmsIou, 1);
-  layout->addWidget(pairedFields("score threshold", score, "NMS IoU", nms));
-  auto* topK = addUnsigned(
-      "detectionTopK", "topK", 512, 1,
-      [](const auto& value) { return value.parameters.topK; },
-      [](auto& value, auto number) {
-        value.parameters.topK = static_cast<std::uint32_t>(number);
-      });
-  noiseMargin_ = addParameter("detectionBandwidthMarginDb", "噪底裕量 / dB",
-                              &DetectionParameters::bandwidthMarginDb, 100);
-  layout->addWidget(pairedFields("topK", topK, "噪底裕量 / dB", noiseMargin_));
+  auto* score =
+      addParameter("detectionScoreThreshold", "置信阈值（score threshold）",
+                   &DetectionParameters::scoreThreshold, 1);
+  layout->addWidget(new QLabel("置信阈值", this));
+  layout->addWidget(score);
 }
 
 void DetectionCard::setupStrategy(QVBoxLayout* layout) {
-  layout->addWidget(new QLabel("互斥时间策略", this));
+  layout->addWidget(new QLabel("时间定位", this));
   auto* row = new QWidget(this);
   row->setObjectName("detectionTimeStrategy");
   auto* buttons = new QHBoxLayout(row);
@@ -458,22 +509,27 @@ void DetectionCard::setupStrategy(QVBoxLayout* layout) {
     DetectionTimeStrategy strategy;
     const char* label;
     const char* name;
+    const char* help;
   };
   const StrategyChoice choices[]{
-      {DetectionTimeStrategy::Sample, "sample", "detectionStrategySample"},
-      {DetectionTimeStrategy::Roi, "ROI", "detectionStrategyRoi"},
-      {DetectionTimeStrategy::Coarse, "coarse", "detectionStrategyCoarse"}};
-  for (const auto& [strategy, label, name] : choices) {
-    auto* button = new QPushButton(QString::fromLatin1(label), row);
+      {DetectionTimeStrategy::Sample, "样本能量", "detectionStrategySample",
+       "Sample：带限样本功率门控，按真实样本定位时间。"},
+      {DetectionTimeStrategy::Roi, "时频精修", "detectionStrategyRoi",
+       "ROI：候选区域 STFT 精修；与检测范围的自定义 ROI 独立。"},
+      {DetectionTimeStrategy::Coarse, "粗窗口", "detectionStrategyCoarse",
+       "Coarse：按窗口实际观测支持定位粗事件。"}};
+  for (const auto& [strategy, label, name, help] : choices) {
+    auto* button = new QPushButton(QString::fromUtf8(label), row);
     button->setObjectName(name);
     button->setCheckable(true);
+    button->setToolTip(QString::fromUtf8(help));
+    button->setProperty("detectionStrategyHelp", button->toolTip());
     strategies_->addButton(button, static_cast<int>(strategy));
     buttons->addWidget(button, 1);
   }
   layout->addWidget(row);
   splitBursts_ = new QCheckBox("允许同对象多段拆分", this);
   splitBursts_->setObjectName("detectionSplitBursts");
-  layout->addWidget(splitBursts_);
   connect(strategies_, &QButtonGroup::idClicked, this, [this](int strategy) {
     configuration_.parameters.timeStrategy =
         static_cast<DetectionTimeStrategy>(strategy);
@@ -491,33 +547,54 @@ void DetectionCard::setupBranches(QVBoxLayout* layout) {
   auto* rows = new QVBoxLayout(body);
   rows->setContentsMargins(0, 0, 0, 0);
   rows->setSpacing(8);
+  auto* nms = addParameter("detectionNmsIou", "重叠抑制（NMS IoU）",
+                           &DetectionParameters::nmsIou, 1);
+  auto* topK = addUnsigned(
+      "detectionTopK", "候选上限（topK）", 512, 1,
+      [](const auto& value) { return value.parameters.topK; },
+      [](auto& value, auto number) {
+        value.parameters.topK = static_cast<std::uint32_t>(number);
+      });
+  rows->addWidget(pairedFields("重叠抑制", nms, "候选上限", topK));
+  noiseMargin_ = addParameter("detectionBandwidthMarginDb", "噪底裕量 / dB",
+                              &DetectionParameters::bandwidthMarginDb, 100);
+  marginFields_ = new QWidget(body);
+  auto* marginLayout = new QVBoxLayout(marginFields_);
+  marginLayout->setContentsMargins(0, 0, 0, 0);
+  marginLayout->addWidget(new QLabel("噪底裕量 / dB", marginFields_));
+  marginLayout->addWidget(noiseMargin_);
+  rows->addWidget(marginFields_);
+  rows->addWidget(splitBursts_);
   edgeFraction_ = addParameter("detectionSampleEdgeRatio", "边缘比例",
                                &DetectionParameters::sampleEdgeRatio, 1);
   smoothMilliseconds_ =
       addParameter("detectionSmoothMilliseconds", "平滑 / ms",
                    &DetectionParameters::smoothSeconds, 60, 1000);
-  rows->addWidget(pairedFields("边缘比例", edgeFraction_, "平滑 / ms",
-                               smoothMilliseconds_));
+  fineFields_ =
+      pairedFields("边缘比例", edgeFraction_, "平滑 / ms", smoothMilliseconds_);
+  rows->addWidget(fineFields_);
   minOnMilliseconds_ =
       addParameter("detectionMinOnMilliseconds", "min on / ms",
                    &DetectionParameters::minOnSeconds, 60, 1000);
   minOffMilliseconds_ =
       addParameter("detectionMinOffMilliseconds", "min off / ms",
                    &DetectionParameters::minOffSeconds, 60, 1000);
-  rows->addWidget(pairedFields("min on / ms", minOnMilliseconds_,
-                               "min off / ms", minOffMilliseconds_));
+  fineSplitFields_ = pairedFields("最短持续 / ms", minOnMilliseconds_,
+                                  "最短间断 / ms", minOffMilliseconds_);
+  rows->addWidget(fineSplitFields_);
   splitGapMilliseconds_ =
       addParameter("detectionCoarseSplitGapMilliseconds", "粗分段间隔 / ms",
                    &DetectionParameters::coarseSplitGapSeconds, 60, 1000);
   minBurstMilliseconds_ =
       addParameter("detectionCoarseMinBurstMilliseconds", "最短粗事件 / ms",
                    &DetectionParameters::coarseMinBurstSeconds, 60, 1000);
-  rows->addWidget(pairedFields("粗分段间隔 / ms", splitGapMilliseconds_,
-                               "最短粗事件 / ms", minBurstMilliseconds_));
+  coarseSplitFields_ = pairedFields("粗分段间隔 / ms", splitGapMilliseconds_,
+                                    "最短粗事件 / ms", minBurstMilliseconds_);
+  rows->addWidget(coarseSplitFields_);
   branchHelp_ = wrappingLabel("detectionBranchHelp", body);
-  rows->addWidget(branchHelp_);
-  layout->addWidget(foldableFields("分支有效参数", body, true,
-                                   "detectionBranchParameters", this));
+  branchHelp_->hide();
+  layout->addWidget(foldableFields("时间精修与后处理", body, false,
+                                   "detectionPostprocessParameters", this));
 }
 
 void DetectionCard::setupAdvanced(QVBoxLayout* layout) {
@@ -537,7 +614,7 @@ void DetectionCard::setupAdvanced(QVBoxLayout* layout) {
       [](auto& value, auto number) {
         value.parameters.minHits = static_cast<std::uint32_t>(number);
       });
-  rows->addWidget(pairedFields("batch", batch, "minHits", hits));
+  rows->addWidget(pairedFields("推理批量", batch, "最少命中", hits));
   auto* miss = addUnsigned(
       "detectionMaxMiss", "maxMiss", 10000, 0,
       [](const auto& value) { return value.parameters.maxMiss; },
@@ -546,13 +623,16 @@ void DetectionCard::setupAdvanced(QVBoxLayout* layout) {
       });
   auto* merge = addParameter("detectionMergeFrequencyHz", "merge / Hz",
                              &DetectionParameters::mergeFrequencyHz, 1e12);
-  rows->addWidget(pairedFields("maxMiss", miss, "merge / Hz", merge));
-  layout->addWidget(foldableFields("高级参数", body, false,
-                                   "detectionAdvancedParameters", this));
+  rows->addWidget(pairedFields("最多漏检", miss, "合并频差 / Hz", merge));
+  layout->addWidget(foldableFields("高级资源参数", body, false,
+                                   "detectionResourceParameters", this));
 }
 
 void DetectionCard::setupStatus(QVBoxLayout* layout) {
   draftNote_ = wrappingLabel("detectionParameterDraftNote", this);
+  setToolTip(
+      "Enter / Tab / 应用内点击提交；窗口失焦不提交。刷新保留草稿，"
+      "切换工程、文件或通道撤销草稿；参数仅用于下一次任务。");
   layout->addWidget(draftNote_);
   preflight_ = wrappingLabel("detectionPreflight", this);
   layout->addWidget(preflight_);
@@ -596,7 +676,9 @@ void DetectionCard::setupStatus(QVBoxLayout* layout) {
   actions->addWidget(run_, 1);
   actions->addWidget(cancel_);
   actions->addWidget(viewRunning_);
-  layout->addWidget(actions_);
+  // MainWindow reparents this widget into the fixed area outside propScroll.
+  // Never insert it into the card's scrolling layout.
+  actions_->hide();
   connect(run_, &QPushButton::clicked, this, &DetectionCard::submit);
   connect(cancel_, &QPushButton::clicked, this, [this] {
     if (const auto* run = focusedUnfinished())
@@ -605,22 +687,23 @@ void DetectionCard::setupStatus(QVBoxLayout* layout) {
   connect(viewRunning_, &QPushButton::clicked, this, [this] {
     const auto* run = unfinishedRun();
     const auto* file = session_.activeFile();
-    if (run && (!file || run->request.sourceIdentity.fileId != file->metadata.id))
+    if (run &&
+        (!file || run->request.sourceIdentity.fileId != file->metadata.id))
       emit focusRunningRunRequested(text(run->request.runId));
   });
 }
 
 void DetectionCard::rejectControl(QLineEdit* edit, const QString& error,
                                   const std::function<void()>& restore) {
-  const auto draft = edit->text();
+  const auto draft = edit->property("detectionDraftText").isValid()
+                         ? edit->property("detectionDraftText").toString()
+                         : edit->text();
   const QSignalBlocker block(edit);
   restore();
   edit->setText(draft);
   edit->setProperty("parameterDraft", true);
   edit->setProperty("detectionCommitError", error);
-  edit->setProperty("invalid", true);
-  refreshStyle(edit);
-  edit->setToolTip(error);
+  setParameterError(edit, error);
   emit message(error);
   refreshStatus();
 }
@@ -634,8 +717,14 @@ void DetectionCard::saveConfiguration(DetectionRequest value) {
 }
 
 void DetectionCard::switchProfile() {
-  const auto id = profile_->currentData().toString().toStdString();
-  const auto found = profileConfigurations_.find(id);
+  const auto id = model_->currentData().toString().toStdString();
+  const auto* profile = findDetectionProfile(id);
+  if (!profile) return;
+  const bool selectable = profile->backend == DetectionBackendKind::TensorRt ||
+                          profile->backend == DetectionBackendKind::Scn;
+  const int mode = selectable ? spectrumMode_->currentData().toInt() : 0;
+  const auto key = id + (mode ? ":" + std::to_string(mode) : "");
+  const auto found = profileConfigurations_.find(key);
   if (found == profileConfigurations_.end()) return;
   profileConfigurations_[configurationKey(configuration_)] = configuration_;
   for (auto* widget : findChildren<QWidget*>())
@@ -647,10 +736,23 @@ void DetectionCard::switchProfile() {
 
 void DetectionCard::loadControls() {
   updating_ = true;
-  const QSignalBlocker profileBlock(profile_), rangeBlock(rangeKind_),
-      splitBlock(splitBursts_);
-  profile_->setCurrentIndex(
-      profile_->findData(text(configurationKey(configuration_))));
+  const QSignalBlocker modelBlock(model_), spectrumBlock(spectrumMode_),
+      rangeBlock(rangeKind_), splitBlock(splitBursts_);
+  model_->setCurrentIndex(model_->findData(text(configuration_.profile.id)));
+  spectrumMode_->clear();
+  const bool scn = configuration_.profile.backend == DetectionBackendKind::Scn;
+  const bool selectable =
+      scn || configuration_.profile.backend == DetectionBackendKind::TensorRt;
+  spectrumMode_->addItem(scn ? "模型默认（最大谱）" : "模型默认（逐帧）", 0);
+  if (selectable) {
+    const QStringList modes{"瞬时谱（窗末帧）", "平均谱", "最大谱", "最小谱"};
+    for (int mode = 1; mode <= 4; ++mode)
+      spectrumMode_->addItem(modes[mode - 1], mode);
+  } else
+    spectrumMode_->setItemText(0, "模型默认");
+  spectrumMode_->setEnabled(selectable);
+  spectrumMode_->setCurrentIndex(
+      spectrumMode_->findData(static_cast<int>(configuration_.spectrumMode)));
   rangeKind_->setCurrentIndex(
       rangeKind_->findData(text(configuration_.rangeOrigin)));
   for (const auto& parameter : parameters_) {
@@ -668,8 +770,7 @@ void DetectionCard::loadControls() {
   splitBursts_->setChecked(configuration_.parameters.splitBursts);
   for (auto* edit : findChildren<QLineEdit*>()) {
     edit->setProperty("detectionCommitError", QString{});
-    edit->setProperty("invalid", false);
-    refreshStyle(edit);
+    setParameterError(edit, {});
   }
   updating_ = false;
 }
@@ -807,29 +908,32 @@ DetectionRequest DetectionCard::request() const {
 
 void DetectionCard::refreshTiming() {
   const auto& profile = configuration_.profile;
+  QString help;
   if (profile.backend == DetectionBackendKind::Scn)
-    profileHelp_->setText(
+    help =
         "SCN：默认最大谱；积累使用实际帧，网络单行32768点，内部频率适配。"
         "CNR / 频率收边固定 3 dB；Coarse / 粗回退固定 6 dB。"
-        "噪底裕量不可调，已保存的配置值保留。");
+        "噪底裕量不可调，已保存的配置值保留。";
   else if (profile.backend == DetectionBackendKind::Experimental17)
-    profileHelp_->setText(
-        "17 是频率阶数，固定 10 真实帧 / N 8192–131072 · 实验");
+    help = "17 是频率阶数，固定 10 真实帧 / N 8192–131072 · 实验";
   else if (profile.backend == DetectionBackendKind::Fixture)
-    profileHelp_->setText(
-        "系统链路夹具：真实 IQ / DSP / "
-        "文件系统任务；不执行真实模型，不证明检测效果");
+    help =
+        "系统链路夹具：真实 IQ / DSP / 文件系统任务；"
+        "不执行真实模型，不证明检测效果";
   else
-    profileHelp_->setText(
-        "默认逐帧Z-score；时间帧可变，模型输入为至少2048点的2次幂，内部适配。");
+    help =
+        "默认逐帧Z-score；时间帧可变，模型输入为至少2048点的2次幂，内部适配。";
   if (configuration_.spectrumMode != DetectionSpectrumMode::ModelDefault)
-    profileHelp_->setText(
-        profileHelp_->text() + " 当前输入：" +
+    help +=
+        " 当前输入：" +
         QStringList{"", "瞬时谱（窗末帧）", "平均谱（线性功率）", "最大谱",
                     "最小谱"}[static_cast<int>(configuration_.spectrumMode)] +
-        "。");
+        "。";
+  model_->setToolTip(help);
+  spectrumMode_->setToolTip(help);
   if (source_.sampleRateHz <= 0 || !std::isfinite(source_.sampleRateHz)) {
-    physicalTimes_->setText("FFT 窗 / 谱步长 / 模型上下文 / 窗口滑动：—");
+    physicalTimes_->setText("观测时长：待载入真实 IQ");
+    calculationDetails_->setText("FFT 窗 / 谱步长 / 模型上下文 / 窗口滑动：—");
     return;
   }
   const double fftMs =
@@ -837,37 +941,56 @@ void DetectionCard::refreshTiming() {
   const double hopMs = std::floor(source_.sampleRateHz * profile.hopSeconds) /
                        source_.sampleRateHz * 1000;
   const double contextMs = fftMs + (profile.modelFrames - 1) * hopMs;
-  physicalTimes_->setText(
+  physicalTimes_->setText(QString("请求观测 %1 ms · 滑动 %2 ms")
+                              .arg(number(contextMs))
+                              .arg(number(profile.modelHopFrames * hopMs)));
+  QString details =
       QString(
-          "<table width='100%' cellspacing='5'><tr><td>FFT 窗<br><b>%1 "
-          "ms</b></td>"
-          "<td>谱步长<br><b>%2 ms</b></td></tr><tr><td>模型上下文（请求）<br>"
-          "<b>%3 帧 / %4 ms</b></td><td>窗口滑动<br><b>%5 帧 / %6 "
-          "ms</b></td></tr></table>"
-          "上下文标称 %7 ms，观测支持含 FFT 窗。hop "
-          "是相邻谱帧间隔，不是独立时间分辨率。")
+          "FFT 窗 %1 ms · 谱步长 %2 ms\n模型上下文（请求）%3 帧 / %4 ms\n"
+          "窗口滑动 %5 帧 / %6 ms\n上下文标称 %7 ms，观测支持含 FFT 窗。"
+          "hop 是相邻谱帧间隔，不是独立时间分辨率。")
           .arg(number(fftMs))
           .arg(number(hopMs))
           .arg(profile.modelFrames)
           .arg(number(contextMs))
           .arg(profile.modelHopFrames)
           .arg(number(profile.modelHopFrames * hopMs))
-          .arg(number(profile.modelFrames * hopMs)));
+          .arg(number(profile.modelFrames * hopMs));
   if (metadata_) {
     DetectionSourcePlan plan;
     QString issue;
     const auto snapshot = request();
     if (makeDetectionSourcePlan(*metadata_, snapshot.requestedRange,
                                 sourceConfig(snapshot), plan, issue,
-                                source_.projectGeneration))
+                                source_.projectGeneration)) {
+      const auto realSupport =
+          std::min(plan.contextRange.end, source_.availableSamples) -
+          std::min(plan.contextRange.begin, source_.availableSamples);
       physicalTimes_->setText(
-          physicalTimes_->text() +
-          QString("<br>实际窗口 %1 帧 · 计算FFT %2 点 · 模型输入 %3 点。"
-                  "边缘补零按实际支持记录；插值不增加真实分辨率。")
+          QString("实际窗口 %1 帧 · 上下文支持 %2 ms\n滑动 %3 ms")
               .arg(plan.actualWindowFrames)
-              .arg(plan.transformBins)
-              .arg(detectionModelInputBins(snapshot)));
+              .arg(number(realSupport / source_.sampleRateHz * 1000))
+              .arg(number(profile.modelHopFrames * hopMs)));
+      details += QString(
+                     "\n实际窗口 %1 帧 · 计算FFT %2 点 · 模型输入 %3 点。"
+                     "\n实际上下文样本 [%4, %5)，谱帧步长 %6 样本。"
+                     "\n源边缘补零 %7 / %8 样本；谱槽补零 %9 / %10 样本。"
+                     "边缘补零按实际支持记录；插值不增加真实分辨率。")
+                     .arg(plan.actualWindowFrames)
+                     .arg(plan.transformBins)
+                     .arg(detectionModelInputBins(snapshot))
+                     .arg(plan.contextRange.begin)
+                     .arg(plan.contextRange.end)
+                     .arg(plan.hopSamples)
+                     .arg(plan.sourceLeadingPadding)
+                     .arg(plan.sourceTrailingPadding)
+                     .arg(plan.slotLeadingPadding)
+                     .arg(plan.slotTrailingPadding);
+    } else
+      details += "\n来源计划：" + issue;
   }
+  calculationDetails_->setText(details);
+  physicalTimes_->setToolTip(details);
 }
 
 void DetectionCard::refreshBranchState() {
@@ -875,6 +998,22 @@ void DetectionCard::refreshBranchState() {
   const bool fine = strategy == DetectionTimeStrategy::Sample ||
                     strategy == DetectionTimeStrategy::Roi;
   const bool split = configuration_.parameters.splitBursts;
+  const auto discardInactive = [](QWidget* control, bool active) {
+    if (!active && control->property("parameterDraft").toBool())
+      if (auto* draft = dynamic_cast<ParameterDraft*>(control)) draft->discard();
+  };
+  // Changing the strategy is an explicit context change for these fields.
+  // Irrelevant hidden drafts must not block the new strategy's run action.
+  for (auto* edit : {edgeFraction_, smoothMilliseconds_}) discardInactive(edit, fine);
+  for (auto* edit : {minOnMilliseconds_, minOffMilliseconds_}) discardInactive(edit, fine && split);
+  for (auto* edit : {splitGapMilliseconds_, minBurstMilliseconds_})
+    discardInactive(edit, strategy == DetectionTimeStrategy::Coarse && split);
+  discardInactive(noiseMargin_, fine && configuration_.profile.backend != DetectionBackendKind::Scn);
+  fineFields_->setVisible(fine);
+  fineSplitFields_->setVisible(fine && split);
+  coarseSplitFields_->setVisible(strategy == DetectionTimeStrategy::Coarse &&
+                                 split);
+  splitBursts_->setVisible(fine || strategy == DetectionTimeStrategy::Coarse);
   edgeFraction_->setEnabled(fine);
   smoothMilliseconds_->setEnabled(fine);
   minOnMilliseconds_->setEnabled(fine && split);
@@ -884,7 +1023,17 @@ void DetectionCard::refreshBranchState() {
   minBurstMilliseconds_->setEnabled(strategy == DetectionTimeStrategy::Coarse &&
                                     split);
   const bool scn = configuration_.profile.backend == DetectionBackendKind::Scn;
+  // SCN keeps its explicitly approved disabled-margin explanation reachable.
+  marginFields_->setVisible(fine || scn);
   noiseMargin_->setEnabled(!scn && strategy != DetectionTimeStrategy::Coarse);
+  const QString marginHelp =
+      scn ? "SCN 裕量固定：CNR / 频率收边 3 dB，Coarse / 粗回退 6 "
+            "dB；保存值保留。"
+          : "噪底裕量 / dB；精修策略生效，0–100；Enter / Tab / 应用内点击提交";
+  if (noiseMargin_->property("invalid").toBool())
+    noiseMargin_->setProperty("parameterHelp", marginHelp);
+  else
+    noiseMargin_->setToolTip(marginHelp);
   if (strategy == DetectionTimeStrategy::Sample)
     branchHelp_->setText(
         "sample：带限功率门控；边缘比例 / 平滑生效。允许拆分时 min on/off "
@@ -899,6 +1048,11 @@ void DetectionCard::refreshBranchState() {
     branchHelp_->setText(
         "coarse：窗口支持 / 粗事件。精修参数不生效；允许拆分时粗分段间隔 / "
         "最短事件生效。");
+  for (auto* button : strategies_->buttons())
+    if (button->isChecked())
+      button->setToolTip(button->property("detectionStrategyHelp").toString() +
+                         "\n" + branchHelp_->text());
+  splitBursts_->setToolTip(branchHelp_->text());
 }
 
 bool DetectionCard::hasDraft() const {
@@ -937,42 +1091,117 @@ const DetectionRun* DetectionCard::focusedUnfinished() const {
 void DetectionCard::refreshStatus() {
   if (!preflight_) return;
   const auto* activeRun = unfinishedRun();
-  draftNote_->setText(
-      hasDraft()
-          ? QString("草稿待提交：Enter / Tab / 应用内点击提交。%1")
-                .arg(activeRun ? "用于下一次，本次运行快照不变。"
-                               : "输入中刷新不覆盖草稿。")
-          : QString("Enter / Tab / "
-                    "应用内点击提交。应用失焦不应用，刷新不覆盖草稿。%1")
-                .arg(activeRun ? "参数用于下一次，本次运行快照不变。" : ""));
+  const bool draft = hasDraft();
+  draftNote_->setVisible(draft);
+  draftNote_->setText(draft ? "草稿待提交 · Enter / Tab / 应用内点击" : "");
   const auto value = request();
-  rangeSummary_->setText(
-      value.requestedRange.time.begin < value.requestedRange.time.end
-          ? rangeText(value.requestedRange, source_.sampleRateHz)
-          : "尚未提交范围");
+  const auto requested = rangeText(value.requestedRange, source_.sampleRateHz);
+  rangeSummary_->setText(value.requestedRange.time.begin <
+                                 value.requestedRange.time.end
+                             ? requested.section('\n', 0, 0)
+                             : "尚未提交范围");
+  rangeSummary_->setToolTip(requested + QString("\n可用前缀 %1 / %2 样本")
+                                            .arg(source_.availableSamples)
+                                            .arg(source_.physicalSamples));
   const auto issue = validationError();
-  preflight_->setText(
+  const auto rawPreflight =
       issue.isEmpty()
           ? QString(
                 "配置预检可运行。只读必要上下文：%1\n输出限定：%2。频率 ROI "
                 "仅筛选输出，模型输入保持全 Fs 频带。来源指纹由任务预检核验。")
                 .arg(rangeText(value.contextRange, source_.sampleRateHz),
-                     rangeText(value.requestedRange, source_.sampleRateHz))
-          : issue);
+                     requested)
+          : issue;
+  const auto firstReason =
+      issue.section('\n', 0, 0).section(QStringLiteral("；"), 0, 0);
+  preflight_->setText(issue.isEmpty()
+                          ? "配置就绪 · 可运行"
+                          : firstReason + "；" + preflightAdvice(issue));
+  preflight_->setToolTip(rawPreflight);
+  QStringList details{"预检：" + rawPreflight};
+  const auto addIssue = [&details](const QString& category,
+                                   const QString& error) {
+    details.append(category + "：" + (error.isEmpty() ? "通过" : error));
+  };
+  addIssue("来源", sourceValidationError());
+  addIssue("配置", configurationError(value));
+  addIssue("范围", rangeError(value));
+  addIssue("模型身份", profileValidationError(value));
+  if (value.profile.backend != DetectionBackendKind::Fixture) {
+    auto snapshot = value;
+    QString error;
+    freezeDetectionModelSnapshot(snapshot, error);
+    addIssue("模型包", error);
+  } else
+    addIssue("测试夹具",
+             testFixturesEnabled() ? QString{} : QString("未显式启用测试夹具"));
+  if (metadata_) {
+    DetectionSourcePlan plan;
+    QString error;
+    if (!makeDetectionSourcePlan(*metadata_, value.requestedRange,
+                                 sourceConfig(value), plan, error,
+                                 source_.projectGeneration))
+      addIssue("来源计划", error);
+    else {
+      std::uint64_t reserve = 0;
+      addIssue("真实观测", plan.eligibleWindowCount
+                               ? QString{}
+                               : QString("请求范围没有可用的真实观测"));
+      addIssue("资源预算", detectionExecutionBatchSize(
+                               plan, value.parameters.batchSize, reserve)
+                               ? QString{}
+                               : QString("单窗口超出 DSP、报文或观测证据预算"));
+      details.append(QString("可处理窗口 %1 · 读取上下文样本 [%2, %3)")
+                         .arg(plan.eligibleWindowCount)
+                         .arg(plan.contextRange.begin)
+                         .arg(plan.contextRange.end));
+      for (const auto& exclusion : plan.exclusions)
+        details.append(QString("排除样本 [%1, %2)：%3")
+                           .arg(exclusion.samples.begin)
+                           .arg(exclusion.samples.end)
+                           .arg(text(exclusion.reason)));
+    }
+  }
+  if (const auto* run = latestRun()) {
+    details.append(
+        QString("运行 %1 · 来源状态 %2\n覆盖：%3")
+            .arg(text(run->request.runId),
+                 text(detectionSourceValidityName(run->sourceValidity)),
+                 run->coverage.empty()
+                     ? "尚未发布覆盖；请求范围尚无完整结论。"
+                     : "实际覆盖见底部任务详情；未读与排除区域没有检测结论。"));
+    // Large histories remain cheap while diagnostics are folded. Opening the
+    // section refreshes the full coverage text; task JSON stays in the panel.
+    if (diagnostics_->isVisible())
+      for (const auto& coverage : run->coverage)
+        details.append(
+            QString("%1：%2 · %3")
+                .arg(text(detectionCoverageKindName(coverage.kind)),
+                     rangeText(coverage.range,
+                               run->request.sourceIdentity.sampleRateHz),
+                     text(coverage.reason)));
+    if (!run->error.empty()) details.append("运行错误：" + text(run->error));
+    details.append(
+        QString("实际谱帧 %1 · 精修候选 %2/%3；不可变快照、设备、分片及技术 "
+                "JSON 见底部任务详情。")
+            .arg(run->readFrames)
+            .arg(run->refinedCandidates)
+            .arg(run->totalRefinementCandidates));
+  }
+  diagnostics_->setText(details.join('\n'));
   if (preflight_->property("preflightOk").toBool() != issue.isEmpty()) {
     preflight_->setProperty("preflightOk", issue.isEmpty());
     refreshStyle(preflight_);
   }
   const auto* focusedRun = focusedUnfinished();
   const bool otherFile =
-      activeRun &&
-      activeRun->request.sourceIdentity.fileId != source_.fileId;
+      activeRun && activeRun->request.sourceIdentity.fileId != source_.fileId;
   run_->setEnabled(issue.isEmpty() && !activeRun);
   cancel_->setEnabled(focusedRun &&
                       focusedRun->lifecycle != DetectionLifecycle::Cancelling);
   cancel_->setToolTip(focusedRun ? "取消运行 " + text(focusedRun->request.runId)
-                                 : otherFile ? "其他文件的任务需先定位后再取消"
-                                             : "没有未完成任务");
+                      : otherFile ? "其他文件的任务需先定位后再取消"
+                                  : "没有未完成任务");
   if (otherRun_ && viewRunning_) {
     if (otherFile) {
       QString name = text(activeRun->request.sourceIdentity.fileId);
@@ -1006,29 +1235,21 @@ void DetectionCard::refreshStatus() {
                                               ? "background: #61c3ca;"
                                               : "background: #26465d;");
     }
-    runSummary_->setText(
-        QString("%1 · %2\n冻结范围：%3\n实际谱帧 %4 · unique windows %5/%6 · "
-                "持久化记录 %7\n%8%9")
-            .arg(lifecycleText(run->lifecycle), text(run->request.runId),
-                 rangeText(run->request.requestedRange,
-                           run->request.sourceIdentity.sampleRateHz))
-            .arg(run->readFrames)
-            .arg(run->completedWindows)
-            .arg(run->eligibleWindows)
-            .arg(run->resultCount)
-            .arg(run->coverage.empty()
-                     ? "尚未发布覆盖；请求范围尚无完整结论。"
-                     : "实际覆盖见后台任务详情；未读与排除区域没有检测结论。")
-            .arg(run->error.empty() ? "" : "\n" + text(run->error)) +
-        QString("\n阶段 %1 · 精修候选处理 %2/%3")
-            .arg(detectionPhaseText(run->computationPhase))
-            .arg(run->refinedCandidates)
-            .arg(run->totalRefinementCandidates));
+    runSummary_->setText(QString("%1 · %2 · 窗口 %3/%4 · 结果 %5")
+                             .arg(lifecycleText(run->lifecycle),
+                                  detectionPhaseText(run->computationPhase))
+                             .arg(run->completedWindows)
+                             .arg(run->eligibleWindows)
+                             .arg(run->resultCount));
+    runSummary_->setToolTip(
+        QString("运行 %1；完整来源、覆盖及技术 JSON 请查看底部任务详情。")
+            .arg(text(run->request.runId)));
+    runSummary_->show();
   } else {
     phaseBar_->hide();
-    runSummary_->setText(
-        "尚无本次任务；三个检测入口只打开此配置卡。" +
-        QString(activeRun ? "本工程已有未完成运行，新参数用于下一次。" : ""));
+    runSummary_->setText(activeRun ? "已有未完成任务 · 当前配置用于下一次"
+                                   : "");
+    runSummary_->setVisible(activeRun != nullptr);
   }
 }
 
@@ -1138,7 +1359,7 @@ QString DetectionCard::contextValidationError(
     auto snapshot = value;
     QString issue;
     if (!freezeDetectionModelSnapshot(snapshot, issue)) return issue;
-  } else if (!qApp->property("enableDetectionTestFixture").toBool())
+  } else if (!testFixturesEnabled())
     return "系统链路夹具仅在显式测试模式开放，不能代替真实模型";
   DetectionSourcePlan plan;
   QString planError;
@@ -1156,8 +1377,10 @@ QString DetectionCard::contextValidationError(
 QString DetectionCard::validationError() const {
   for (auto* edit : findChildren<QLineEdit*>())
     if (edit->property("parameterDraft").toBool() &&
-        !edit->property("detectionCommitError").toString().isEmpty())
-      return edit->property("detectionCommitError").toString();
+        edit->property("invalid").toBool()) {
+      const auto label = edit->property("parameterLabel").toString();
+      return (label.isEmpty() ? QString{} : label + "：") + edit->property("parameterError").toString();
+    }
   if (const auto issue = sourceValidationError(); !issue.isEmpty())
     return issue;
   const auto value = request();
@@ -1179,7 +1402,7 @@ void DetectionCard::configure(const DetectionRun* parentRun) {
   const auto found =
       profileConfigurations_.find(configurationKey(parentRun->request));
   if (found == profileConfigurations_.end() ||
-      profile_->findData(text(configurationKey(parentRun->request))) < 0) {
+      model_->findData(text(parentRun->request.profile.id)) < 0) {
     emit message("派生快照的方案当前不可用，已保留配置草稿");
     return;
   }
