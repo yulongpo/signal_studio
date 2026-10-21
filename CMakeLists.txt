@@ -329,6 +329,20 @@ if(SS_BUILD_TESTS)
         BASE "${CMAKE_SOURCE_DIR}/resources"
         FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq"
     )
+    # W0 reproductions are run directly until W1 fixes their expected failures.
+    add_executable(SignalStudioUxTests tests/ux_tests.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioUxTests PRIVATE
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
+        Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioUxTests)
+    target_compile_definitions(SignalStudioUxTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    ss_add_graphics_shaders(SignalStudioUxTests signalstudio_ux_test_shaders)
+    ss_add_ui_assets(SignalStudioUxTests)
+    qt_add_resources(SignalStudioUxTests signalstudio_ux_test_narrowband_demo
+        PREFIX "/signalstudio/demo"
+        BASE "${CMAKE_SOURCE_DIR}/resources"
+        FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq")
+
     add_executable(SignalStudioUiCapture tests/ui_capture.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioUiCapture PRIVATE
         SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
@@ -357,7 +371,7 @@ if(SS_BUILD_TESTS)
         add_dependencies(SignalStudioUiTests SignalStudio)
         add_dependencies(SignalStudioUiCapture SignalStudio)
         foreach(test_target IN ITEMS SignalStudioDetectionSourceTests SignalStudioLabelImportTests SignalStudioWavTests
-                SignalStudioImportTests SignalStudioUiTests SignalStudioUiCapture)
+                SignalStudioImportTests SignalStudioUiTests SignalStudioUxTests SignalStudioUiCapture)
             add_dependencies(${test_target} SignalStudio)
             add_custom_command(TARGET ${test_target} POST_BUILD
                 COMMAND "${CMAKE_COMMAND}" -E copy_if_different

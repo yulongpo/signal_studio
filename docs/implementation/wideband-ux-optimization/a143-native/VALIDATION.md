@@ -1,0 +1,33 @@
+# 本轮验证记录
+
+## W0 稳定基线（2026-10-21）
+
+产品源码为 `4904740`，C++20 / Qt 6.11.1 / Visual Studio 18 2026。两个配置均重新构建，不能与之前 grok 的输出程序混用。W0 只有新增测试目标及文档，没有修改产品源码。二进制 SHA-256 记录在 `out/tasks/wideband-ux-optimization/a143-native/W0/diagnostics/baseline-identity.json`。
+
+| 验证 | 实测 | 命令 / 证据 |
+|---|---|---|
+| Debug 全部 CTest | 23/23，443.89 秒；UI 294.64 秒 | `scripts/build.ps1 -Configuration Debug -Jobs 8`；W0/logs/debug-build-test.txt |
+| Debug Qt UI | 108/108，0 失败、0 跳过 | W0/diagnostics/debug-ui-baseline.txt、.xml、.timing.jsonl |
+| Release 构建 | 成功 | `scripts/build.ps1 -Configuration Release -Action Build -Jobs 8`；W0/logs/release-build.txt |
+| Release 非 UI | 22/22，36.32 秒 | `ctest --test-dir out/vs2026-qt611-release -C Release -E signal_studio_ui$ --output-on-failure`；W0/logs/release-ctest-non-ui.txt |
+| Release UI CTest | 1/1，59.47 秒；与非 UI 合计覆盖全部 23 项 | `ctest --test-dir out/vs2026-qt611-release -C Release -R signal_studio_ui$ --output-on-failure`；W0/logs/release-ctest-ui.txt |
+| Release Qt UI | 108/108，0 失败、0 跳过 | W0/diagnostics/release-ui-baseline.txt、.xml、.timing.jsonl |
+| Debug 原生 GPU 演示 | 通过，D3D11、硬件驱动、至少一次热图上传 | `scripts/screenshot.ps1 -Configuration Debug`；W0/assets/baseline-wideband/ |
+| Release 基础检测原生旅程 | 23/23 | `scripts/screenshot.ps1 -Configuration Release -WidebandDetection`；W0/assets/baseline-interactions/wideband-detection-report.json |
+| 新增风险复现（修复前） | 两个业务用例均失败，符合缺陷预期 | `SignalStudioUxTests.exe`；W0/diagnostics/reproduction-before-fix.txt |
+
+表内 `W0/` 均相对 `out/tasks/wideband-ux-optimization/a143-native/`。两个 GUI 配置分开运行，未并发使用同一 UI 设置。离屏测试不证明 GPU 渲染。
+
+原生屏幕本次实探：Redmi 27 NU、连接序号 2、`\\.\DISPLAY6`、3840×2160、DPR 1.5、2560×1440 逻辑全屏。选择依据是当次唯一符合实际尺寸及 DPI 的连接屏，非设备路径后缀。未执行任何 1366×768 任务。
+
+基础检测旅程明确启用 `pipeline-fixture-v1`，不执行正式模型。Debug 原生演示为演示数据；两者均不证明真实 RF 精度、正式 TensorRT 前向或本轮优化效果。
+
+### 修复前缺陷证据
+
+- `uxD01_historicalDerivation`：点击真实“派生新运行”后 `parentRunId` 没有从历史请求带入，后续快照断言尚未执行。
+- `uxD03_crossFileCancellation`：文件 B 的卡片取消按钮仍为启用状态，目标实际为文件 A 的未结束任务。
+- 日志 Qt 总计 `2 passed, 2 failed`；其中两个通过是初始化、清理，实际业务为 `0/2`。没有设置 WILL_FAIL 或把失败伪装成正常回归通过。W1 修复后才注册正常 CTest。
+
+## W1–W6
+
+尚未实施/验收，后续按节点记录新的程序身份和实际结果。W0 基线通过不能充作新界面通过。
