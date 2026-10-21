@@ -1,0 +1,91 @@
+{
+  "recordedUtc": "2026-10-21T13:03:06.554282+00:00",
+  "sourceCommit": "696ce12d689afd2be849c9b72999e8f12778587e",
+  "sourceTree": "75b3a81082e32b5bd237650255d68e082ff089d0",
+  "qt": "6.11.1",
+  "debugLinkIncremental": false,
+  "binaries": [
+    {
+      "configuration": "debug",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudio.exe",
+      "sha256": "c37847250d519c62d9206ba90c9087198d43c1aafcda7714a081e3654957aae1",
+      "bytes": 9701376
+    },
+    {
+      "configuration": "debug",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+      "sha256": "a9a848a46c7bbb145883b0a164deb69fdfb27ab4e1a531959c8b616b46a90f1e",
+      "bytes": 11128320
+    },
+    {
+      "configuration": "debug",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiTests.exe",
+      "sha256": "bf2c43283d8820dd8611186f8614c2221e3a28a7fe26c48e78357b9b6bb78afe",
+      "bytes": 11449344
+    },
+    {
+      "configuration": "debug",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUxTests.exe",
+      "sha256": "7772e8a215e105594b5513be7cd2c64928147988dd20b14e7ebfc62d968ff7c5",
+      "bytes": 10162176
+    },
+    {
+      "configuration": "release",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe",
+      "sha256": "1c4c047fee35ed4010d81756a6234056fc003ce8c55b900fc4cf6a076765da01",
+      "bytes": 4653568
+    },
+    {
+      "configuration": "release",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+      "sha256": "de86cf2a8aa8822e7114c27dc7e6ad55aea5de45a97ec568216b7711eb84e2fb",
+      "bytes": 5307392
+    },
+    {
+      "configuration": "release",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiTests.exe",
+      "sha256": "1efefc88b488ae6441e0a63dc131329e7eb1cb02aba41c86f546daa866c4bb59",
+      "bytes": 5264384
+    },
+    {
+      "configuration": "release",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUxTests.exe",
+      "sha256": "7fa3ee27337b9dcf92b4fbf8496c9ccb680e5f77cf8aaa8c9c44087dec25874c",
+      "bytes": 4776960
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "app/main_window.cpp",
+      "sha256": "9e2eef8b881b0c0fefd7dae2a643d7f79735402a90576ccb09eeddc01bca7196"
+    },
+    {
+      "path": "app/main_window.h",
+      "sha256": "25ecf0054be2bc81cab3f6f185f0aaf953cde0c1c95ee4137071f907c6894700"
+    },
+    {
+      "path": "ui/chart_control_strip.h",
+      "sha256": "c21333f40282625b8828b87e023ec478086e0eb33112fa09ae39f75b54131c9c"
+    },
+    {
+      "path": "ui/custom_combo.h",
+      "sha256": "07e73eeedfd90f137e09d47665600c59bca4eaccbc40b9663a0a264271689cbb"
+    },
+    {
+      "path": "ui/narrowband_workspace.cpp",
+      "sha256": "8f8997cda0927a78471f99e15aa0dc74523a037ecb41b8798d8da4848353ca7f"
+    },
+    {
+      "path": "ui/narrowband_workspace.h",
+      "sha256": "13bc94f206fd674c5d604db86dd71bbfd5f48af90503e1bfba77635da736278f"
+    },
+    {
+      "path": "tests/ui_tests.cpp",
+      "sha256": "db747192de4d481a4e6c8adef0c1b7b4871f09338b4bff291049d4c4d6ee452b"
+    },
+    {
+      "path": "tests/ui_capture.cpp",
+      "sha256": "57ce81f4efc83842c9e038f1ac8a9c2b15a5b27bff688e694c459ac24a13aa83"
+    }
+  ]
+}

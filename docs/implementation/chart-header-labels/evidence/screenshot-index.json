@@ -1,0 +1,56 @@
+[
+  {
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\chart-header-labels\\02-acceptance\\diagnostics\\native-release-delivery\\01-narrowband-observe.png",
+    "archive": "screenshots/narrowband-observe.png",
+    "sha256": "3a57bbdb22dafa0eaf513b1a59723e10ff45b8c8db9cb42c110d7ac773d6e16e",
+    "originalBytes": true
+  },
+  {
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\chart-header-labels\\02-acceptance\\diagnostics\\native-release-delivery\\03-narrowband-psd-flat-more.png",
+    "archive": "screenshots/narrowband-psd-more.png",
+    "sha256": "e0b8ba80234bed19fc94387ac2929d8668f5479c72bf44eca83b24f40ac4edcd",
+    "originalBytes": true
+  },
+  {
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\chart-header-labels\\02-acceptance\\diagnostics\\native-release-delivery\\04-narrowband-frame-psd.png",
+    "archive": "screenshots/narrowband-frame-psd.png",
+    "sha256": "c8cdd7546b05cbaeb3e61b0440d56c12f9d2d20d9f34b7f385e5c893ee3d6aeb",
+    "originalBytes": true
+  },
+  {
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\chart-header-labels\\02-acceptance\\diagnostics\\native-release-delivery\\06-modulation-and-eye-settings.png",
+    "archive": "screenshots/eye-settings.png",
+    "sha256": "6ea59d3f2fd34ec7bfe50d059da4da3506f2b04b74218e0f34a803c8fa89a5b4",
+    "originalBytes": true
+  },
+  {
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\chart-header-labels\\02-acceptance\\diagnostics\\native-release-delivery\\16-wideband-psd-right-settings.png",
+    "archive": "screenshots/wideband-psd.png",
+    "sha256": "38b69120dfaa41a38038f5eca12011effad75bbc58d5b00afce7a572e2dade01",
+    "originalBytes": true
+  },
+  {
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\chart-header-labels\\02-acceptance\\diagnostics\\native-release-delivery\\18-wideband-stft-flat-more.png",
+    "archive": "screenshots/wideband-stft-more.png",
+    "sha256": "128a75e2c9bd99c1f9bdcbfcae5c2f477171992d525cb968a68e7dd857298aed",
+    "originalBytes": true
+  },
+  {
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\chart-header-labels\\02-acceptance\\diagnostics\\native-release-delivery\\20-wideband-main-maximized.png",
+    "archive": "screenshots/wideband-maximized.png",
+    "sha256": "958c4ab8eef39026237ebbc0fe32995e71094dd90bbb724f98f80b8e9865a1ab",
+    "originalBytes": true
+  },
+  {
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\chart-header-labels\\02-acceptance\\diagnostics\\native-release-delivery\\21-sidebar-collapsed-responsive.png",
+    "archive": "screenshots/sidebar-collapsed.png",
+    "sha256": "87b9de395db0c607af42e0c176094569992ccc8d1e9708c1ce41f2d7fc4303ee",
+    "originalBytes": true
+  },
+  {
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\chart-header-labels\\02-acceptance\\diagnostics\\precision-delivery\\signal-studio-release-gpu-2560x1440.png",
+    "archive": "screenshots/precision-and-labels.png",
+    "sha256": "25eed8d126faa9d35beb7a37c18ee78c7f92beffc89c135e953804eb5a5e4017",
+    "originalBytes": true
+  }
+]

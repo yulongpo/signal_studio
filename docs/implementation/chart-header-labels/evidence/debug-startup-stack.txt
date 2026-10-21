@@ -1,0 +1,7 @@
+access violation firstChance=1 pc=0 sp=61e89bf7e8
+0 0x7ff7da82846a __scrt_common_main_seh+0x6a D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:253
+1 0x7ff7da82846a __scrt_common_main_seh+0x6a D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:253
+2 0x7ff7da8283ee __scrt_common_main+0xe D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:331
+3 0x7ff7da8286de mainCRTStartup+0xe D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_main.cpp:17
+4 0x7ffd9258cdf7 BaseThreadInitThunk+0x17
+5 0x7ffd931fee4c RtlUserThreadStart+0x2c
