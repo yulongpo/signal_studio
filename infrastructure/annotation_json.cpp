@@ -602,7 +602,7 @@ QJsonObject encodeAnnotationChannelSnapshot(
 bool decodeAnnotationChannelSnapshot(const QJsonObject& o,
                                      const FileMetadata& metadata,
                                      AnnotationChannelSnapshot& target,
-                                     QString& error, int projectVersion) {
+                                     QString& error) {
   return decodeSafely(o, target, error, [&] {
     AnnotationChannelSnapshot s;
     s.annotationId = string(o, "annotationId", 128);
@@ -610,16 +610,12 @@ bool decodeAnnotationChannelSnapshot(const QJsonObject& o,
     s.revisionId = string(o, "revisionId", 128);
     s.name = string(o, "name", 256);
     s.range = rangeValue(o["range"]);
-    if (projectVersion >= 6) {
-      const auto kind = string(o, "bindingKind", 32);
-      require(kind == "LocatedSegment" || kind == "UserRange",
-              "通道绑定类型无效");
-      s.bindingKind = kind == "UserRange" ? ChannelBindingKind::UserRange
-                                          : ChannelBindingKind::LocatedSegment;
-      s.boundRange = rangeValue(o["boundRange"]);
-    } else {
-      s.boundRange = s.range;
-    }
+    const auto kind = string(o, "bindingKind", 32);
+    require(kind == "LocatedSegment" || kind == "UserRange",
+            "通道绑定类型无效");
+    s.bindingKind = kind == "UserRange" ? ChannelBindingKind::UserRange
+                                        : ChannelBindingKind::LocatedSegment;
+    s.boundRange = rangeValue(o["boundRange"]);
     s.sourceKind =
         static_cast<AnnotationSource>(choice(o, "sourceKind", sourceNames));
     s.reviewStatus =

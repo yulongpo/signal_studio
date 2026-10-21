@@ -1,5 +1,4 @@
 #include <QCoreApplication>
-#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QJsonArray>
@@ -32,13 +31,6 @@ void write(const QString& path, const QByteArray& bytes) {
   QFile file(path);
   check(file.open(QIODevice::WriteOnly), file.errorString());
   check(file.write(bytes) == bytes.size(), file.errorString());
-}
-QString backupPath(const QString& path, int version, const QByteArray& bytes) {
-  return path + ".pre-v6-v" + QString::number(version) + "-" +
-         QString::fromLatin1(
-             QCryptographicHash::hash(bytes, QCryptographicHash::Sha256)
-                 .toHex()) +
-         ".bak";
 }
 Project projectFixture() {
   Project project;
@@ -103,131 +95,6 @@ void testRevisionSnapshotsAndSoftDelete() {
   check(service.undo(file).ok && !file.marks.front().deleted,
         "Undo deletion must restore object without replacing channel");
 }
-void testLegacyVersions() {
-  QTemporaryDir directory;
-  const auto path = directory.filePath("project.json");
-  auto project = projectFixture();
-  auto& file = project.files.front();
-  file.marks.emplace_back("old-id", "legacy", geometry());
-  file.selectedMarkIds = {"old-id"};
-  file.activeMarkId = "old-id";
-  QString error;
-  check(ProjectStore::save(path, project, error), error);
-  const auto root = QJsonDocument::fromJson(read(path)).object();
-  for (int version = 1; version <= 5; ++version) {
-    auto legacy = root;
-    legacy["version"] = version;
-    auto files = legacy["files"].toArray();
-    auto old = files[0].toObject();
-    if (version < 5) {
-      old.remove("annotationStore");
-      old.remove("annotationLayers");
-      old.remove("activeSegmentId");
-      old["marks"] = QJsonArray{QJsonObject{
-          {"id", "old-id"},
-          {"name", "legacy"},
-          {"range",
-           QJsonObject{{"time", QJsonObject{{"begin", "100"}, {"end", "500"}}},
-                       {"frequency", QJsonObject{{"lowerHz", 99.9e6},
-                                                 {"upperHz", 100.1e6}}}}}}};
-    }
-    files[0] = old;
-    legacy["files"] = files;
-    const auto originalBytes = " \n" + QJsonDocument(legacy).toJson() + "\t\n";
-    write(path, originalBytes);
-    Project loaded;
-    check(ProjectStore::load(path, loaded, error), error);
-    check(loaded.files[0].marks[0].id == "old-id" &&
-              loaded.files[0].marks[0].segments[0].range == geometry() &&
-              loaded.files[0].activeMarkId == "old-id" &&
-              loaded.files[0].sourceSets.size() == 1,
-          "Legacy IDs, geometry and selection must migrate");
-    check(ProjectStore::save(path, loaded, error), error);
-    check(QJsonDocument::fromJson(read(path)).object()["version"] == 6 &&
-              read(backupPath(path, version, originalBytes)) == originalBytes,
-          "Migration must publish v6 only after preserving the exact original "
-          "bytes");
-  }
-  const auto backups = QDir(directory.path()).entryList({"*.bak"}, QDir::Files);
-  check(ProjectStore::save(path, project, error), error);
-  check(QDir(directory.path()).entryList({"*.bak"}, QDir::Files) == backups,
-        "Saving an already upgraded project must not duplicate migration "
-        "backups");
-}
-
-void testV5SnapshotMigrationDoesNotRecompute() {
-  QTemporaryDir directory;
-  const auto path = directory.filePath("project.json");
-  auto project = projectFixture();
-  auto& file = project.files.front();
-  AnnotationService service;
-  const auto created = service.createManual(file, "old source", geometry());
-  check(created.ok, "v5 source fixture failed");
-  auto request = annotationChannelRequest(file, created.id, file.view.time);
-  request.range.time = {150, 450};
-  request.range.frequency = {99.95e6, 100.05e6};
-  Channel channel;
-  channel.id = "old-channel";
-  check(service.bindChannelSource(file, channel, request).ok,
-        "v5 binding failed");
-  channel.visibleSourceTime = channel.sourceTime;
-  channel.visibleBasebandFrequency = {-channel.outputSampleRateHz / 2,
-                                      channel.outputSampleRateHz / 2};
-  file.channels.push_back(channel);
-  const auto segment = findAnnotation(file, created.id)->activeSegmentId;
-  check(
-      service.commitGeometry(file, created.id, segment, geometry(200, 600)).ok,
-      "v5 newer geometry fixture failed");
-  QString error;
-  check(ProjectStore::save(path, project, error), error);
-  auto root = QJsonDocument::fromJson(read(path)).object();
-  root["version"] = 5;
-  auto files = root["files"].toArray();
-  auto entry = files[0].toObject();
-  auto channels = entry["channels"].toArray();
-  auto old = channels[0].toObject();
-  auto snapshot = old["annotationSource"].toObject();
-  snapshot["range"] = snapshot["boundRange"];
-  snapshot.remove("bindingKind");
-  snapshot.remove("boundRange");
-  old["annotationSource"] = snapshot;
-  // v5 permitted a separately configured DSP band outside its captured segment.
-  // Upgrade must preserve both saved ranges without expanding either one.
-  old["centerFrequencyHz"] = 100.15e6;
-  channels[0] = old;
-  entry["channels"] = channels;
-  files[0] = entry;
-  root["files"] = files;
-  const auto originalBytes =
-      QJsonDocument(root).toJson(QJsonDocument::Compact) + "\n  ";
-  write(path, originalBytes);
-  Project loaded;
-  check(ProjectStore::load(path, loaded, error), error);
-  const auto& migrated = loaded.files.front().channels.front();
-  check(migrated.sourceTime == TimeRange{150, 450} &&
-            migrated.centerFrequencyHz == 100.15e6 &&
-            migrated.bandwidthHz == channel.bandwidthHz &&
-            migrated.sourceSnapshot->range == geometry() &&
-            migrated.sourceSnapshot->boundRange == geometry() &&
-            migrated.sourceSnapshot->revisionId == channel.revisionId &&
-            migrated.sourceRelation == ChannelSourceRelation::Changed,
-        "v5 must retain both its exact creation snapshot and independently "
-        "saved DSP extraction without recomputing either range");
-  check(ProjectStore::save(path, loaded, error), error);
-  check(read(backupPath(path, 5, originalBytes)) == originalBytes,
-        "v5 source snapshot migration must preserve raw v5 bytes");
-  Project reopened;
-  check(ProjectStore::load(path, reopened, error), error);
-  check(*reopened.files.front().channels.front().sourceSnapshot ==
-                *migrated.sourceSnapshot &&
-            reopened.files.front().channels.front().sourceTime ==
-                migrated.sourceTime &&
-            reopened.files.front().channels.front().centerFrequencyHz ==
-                migrated.centerFrequencyHz,
-        "The original snapshot and legacy DSP band must survive the v6 "
-        "roundtrip unchanged");
-}
-
 void testLocatedFrequencyBoundsAndAtomicLoad() {
   QTemporaryDir directory;
   const auto path = directory.filePath("project.json");
@@ -445,33 +312,6 @@ void testChannelNameCreationEditingAndPersistence() {
   }
 }
 
-void testUpgradeBackupCollisionAndFailureAtomicity() {
-  QTemporaryDir directory;
-  const auto path = directory.filePath("project.json");
-  const auto project = projectFixture();
-  QString error;
-  check(ProjectStore::save(path, project, error), error);
-  auto root = QJsonDocument::fromJson(read(path)).object();
-  root["version"] = 5;
-  const auto originalBytes = "\n" + QJsonDocument(root).toJson() + " \t";
-  const auto backup = backupPath(path, 5, originalBytes);
-  const auto base = backup.chopped(4);
-  write(path, originalBytes);
-  write(backup, "unrelated backup content");
-  check(ProjectStore::save(path, project, error), error);
-  check(read(backup) == "unrelated backup content" &&
-            read(base + "-1.bak") == originalBytes,
-        "An unrelated pre-existing backup must never be overwritten");
-  write(path, originalBytes);
-  write(base + "-1.bak", "second unrelated backup");
-  for (int index = 2; index < 1000; ++index)
-    write(base + "-" + QString::number(index) + ".bak", "occupied");
-  check(!ProjectStore::save(path, project, error) && error.contains("快照") &&
-            read(path) == originalBytes &&
-            read(backup) == "unrelated backup content",
-        "Failure to preserve an upgrade backup must leave the original project "
-        "bytes intact");
-}
 void testShardIntegrityAndAtomicLoad() {
   QTemporaryDir directory;
   const auto path = directory.filePath("project.json");
@@ -488,7 +328,7 @@ void testShardIntegrityAndAtomicLoad() {
   auto index = entry["annotationStore"].toObject();
   auto shards = index["shards"].toArray();
   check(shards.size() >= 2 && !entry.contains("marks"),
-        "v5 must shard canonical annotations without a second range store");
+        "v6 must shard canonical annotations without a second range store");
   Project loaded;
   check(ProjectStore::load(path, loaded, error), error);
   check(loaded.files.front().marks.size() == 4200,
@@ -574,16 +414,13 @@ int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   try {
     testRevisionSnapshotsAndSoftDelete();
-    testLegacyVersions();
-    testV5SnapshotMigrationDoesNotRecompute();
     testLocatedFrequencyBoundsAndAtomicLoad();
     testUserRangeRoundtripAndMalformedBinding();
     testChannelNameCreationEditingAndPersistence();
-    testUpgradeBackupCollisionAndFailureAtomicity();
     testShardIntegrityAndAtomicLoad();
     testUint64AndPartial();
     std::cout
-        << "PASS v6 bindings, v1-v5 raw-backup migration, failure atomicity, "
+        << "PASS v6 bindings, failure atomicity, "
            "shard integrity, uint64/Partial\n";
   } catch (const std::exception& error) {
     std::cerr << "FAIL " << error.what() << '\n';

@@ -563,7 +563,7 @@ void testSerialization() {
             availableSamples(loaded.files[0].metadata) == largeIndex + 10000 &&
             loaded.files[0].metadata.availability.fingerprint ==
                 "test-source-fingerprint",
-        "Version 3 must preserve the physical length and bounded prefix "
+        "Current projects must preserve the physical length and bounded prefix "
         "separately");
   check(
       loaded.files[1].display.psd.parameters ==
@@ -603,73 +603,6 @@ void testSerialization() {
         "reports its missing FIR protection band");
 
   const auto validRoot = QJsonDocument::fromJson(sourceBytes).object();
-  auto legacyRoot = validRoot;
-  legacyRoot[QStringLiteral("version")] = 1;
-  legacyRoot.remove(QStringLiteral("activeChannelId"));
-  legacyRoot.remove(QStringLiteral("narrowbandWorkspaceOpen"));
-  auto legacyFiles = legacyRoot[QStringLiteral("files")].toArray();
-  for (int i = 0; i < legacyFiles.size(); ++i) {
-    auto entry = legacyFiles[i].toObject();
-    QJsonArray marks;
-    for (const auto& mark : loaded.files[static_cast<std::size_t>(i)].marks)
-      marks.append(QJsonObject{
-          {"id", QString::fromStdString(mark.id)},
-          {"name", QString::fromStdString(mark.name)},
-          {"range",
-           QJsonObject{
-               {"time",
-                QJsonObject{{"begin", QString::number(mark.range.time.begin)},
-                            {"end", QString::number(mark.range.time.end)}}},
-               {"frequency",
-                QJsonObject{{"lowerHz", mark.range.frequency.lowerHz},
-                            {"upperHz", mark.range.frequency.upperHz}}}}}});
-    entry["marks"] = marks;
-    entry.remove("annotationStore");
-    entry.remove("annotationLayers");
-    entry.remove("activeSegmentId");
-    legacyFiles[i] = entry;
-  }
-  auto legacyFirst = legacyFiles[0].toObject();
-  auto legacyChannels = legacyFirst[QStringLiteral("channels")].toArray();
-  auto legacyChannel = legacyChannels[0].toObject();
-  for (const auto* key : {"outputSampleRateHz",
-                          "filter",
-                          "processingState",
-                          "configVersion",
-                          "sourceTime",
-                          "wholeSource",
-                          "preserveSourceTime",
-                          "page",
-                          "visibleSourceTime",
-                          "visibleBasebandFrequency",
-                          "psdFftSize",
-                          "stftFftSize",
-                          "waveform",
-                          "symbolRate",
-                          "eyePeriods",
-                          "eyeTraces",
-                          "eyeComponent",
-                          "selectedBit",
-                          "constellationMinimum",
-                          "constellationMaximum",
-                          "relativeTime",
-                          "absoluteFrequencyLabels"})
-    legacyChannel.remove(QString::fromLatin1(key));
-  legacyChannels[0] = legacyChannel;
-  legacyFirst[QStringLiteral("channels")] = legacyChannels;
-  legacyFiles[0] = legacyFirst;
-  legacyRoot[QStringLiteral("files")] = legacyFiles;
-  writeFile(badPath, QJsonDocument(legacyRoot).toJson());
-  Project migrated;
-  const bool migrationSucceeded = ProjectStore::load(badPath, migrated, error);
-  check(migrationSucceeded && !migrated.files.empty() &&
-            !migrated.files[0].channels.empty() &&
-            migrated.files[0].channels[0].processingState ==
-                ChannelProcessingState::LegacyNeedsReview &&
-            migrated.files[0].channels[0].sourceTime ==
-                migrated.files[0].marks[0].range.time,
-        "Version 1 channels must migrate from their source marks as "
-        "pending-review snapshots");
   auto reject = [&](QJsonObject malformed) {
     writeFile(badPath, QJsonDocument(malformed).toJson());
     check(!ProjectStore::load(badPath, loaded, error) && !error.isEmpty(),
@@ -679,7 +612,7 @@ void testSerialization() {
             availableSamples(loaded.files[0].metadata) == largeIndex + 10000 &&
             loaded.files[0].metadata.availability.fingerprint ==
                 "test-source-fingerprint",
-        "Version 3 must preserve the physical length and bounded prefix "
+        "Current projects must preserve the physical length and bounded prefix "
         "separately");
     check(loaded.files[1].display.psd.parameters ==
                   second->display.psd.parameters &&
@@ -807,7 +740,7 @@ void testSerialization() {
             availableSamples(loaded.files[0].metadata) == largeIndex + 10000 &&
             loaded.files[0].metadata.availability.fingerprint ==
                 "test-source-fingerprint",
-        "Version 3 must preserve the physical length and bounded prefix "
+        "Current projects must preserve the physical length and bounded prefix "
         "separately");
   check(
       loaded.files[1].display.psd.parameters ==
