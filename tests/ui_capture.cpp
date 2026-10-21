@@ -964,6 +964,7 @@ void diagnoseMainHover(Capture& capture, QPoint target,
 
 // U3 reuses the same monitor, editing and real-IQ capture helpers.
 #include "tests/annotation_channels_capture.h"
+#include "tests/wideband_ux_capture.h"
 
 }  // namespace
 
@@ -974,6 +975,8 @@ int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   QApplication::setApplicationName("SignalStudioNativeCapture");
   const auto arguments = app.arguments();
+  if (arguments.size() == 3 && arguments.at(1) == "--wideband-ux")
+    return runWidebandUxCapture(arguments.at(2));
   if (arguments.size() == 4 && arguments.at(1) == "--annotation-interactions" &&
       arguments.at(2) == "U3")
     return runAnnotationChannelsCapture(arguments.at(3));

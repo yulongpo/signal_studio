@@ -34,6 +34,8 @@ class PlotWidget;
 class NarrowbandWorkspace;
 class SourceLoader;
 class SpectralSettingsWidget;
+class SettingsPopoverHost;
+class ChartControlStrip;
 class ParameterInputPolicy;
 class PanelResizeHandle;
 class MainWindow : public QMainWindow {
@@ -98,6 +100,15 @@ class MainWindow : public QMainWindow {
   void autoFitPower();
   void buildMenus();
   void buildWorkspace();
+  void buildChartControls();
+  void updateChartControls(bool narrow);
+  SettingsPopoverHost* settingsPopovers_ = nullptr;
+  ChartControlStrip *auxiliaryControls_ = nullptr, *spectrumControls_ = nullptr;
+  QComboBox *psdStatisticControl_ = nullptr, *psdSourceControl_ = nullptr;
+  QToolButton *psdSettingsButton_ = nullptr, *stftSettingsButton_ = nullptr,
+              *powerSettingsButton_ = nullptr, *displaySettingsButton_ = nullptr;
+  QWidget* narrowbandSettingsLinks_ = nullptr;
+  QString settingsSourceContext_;
   void restoreUiState();
   void saveUiState();
   void restoreRightSidebarSettings(FileState& file);
@@ -190,7 +201,7 @@ class MainWindow : public QMainWindow {
           *markSection_ = nullptr, *psdSection_ = nullptr,
           *channelSection_ = nullptr;
   QComboBox *mainMode_ = nullptr, *auxMode_ = nullptr, *waveformMode_ = nullptr,
-            *palette_ = nullptr, *propertyPalette_ = nullptr;
+            *propertyPalette_ = nullptr;
   QComboBox *stft_ = nullptr, *psd_ = nullptr, *psdScope_ = nullptr,
             *dynamic_ = nullptr, *reference_ = nullptr, *freqMode_ = nullptr;
   QDoubleSpinBox* effectiveBandwidth_ = nullptr;

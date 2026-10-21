@@ -84,11 +84,17 @@ class UxTests : public QObject {
  private:
   QTemporaryDir settings_;
  private slots:
+  void uxP01_popupDismissal();
+  void uxP02_popupChildrenAndGeometry();
+  void uxS06_popoverDraftPolicy();
+  void uxR01_chartToolbarLayout();
+  void uxR02_chartSettingsStayStable();
   void initTestCase() {
     QCoreApplication::setOrganizationName("SignalStudioTests");
     QCoreApplication::setApplicationName("WidebandUx");
     QSettings::setDefaultFormat(QSettings::IniFormat);
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settings_.path());
+    QApplication::setFont(QFont("Microsoft YaHei UI", 10));
   }
   void init() { QSettings().clear(); }
 
@@ -261,6 +267,9 @@ class UxTests : public QObject {
     QVERIFY(window.session().activeFile()->detectionRuns.empty());
   }
 };
+
+#include "popover_tests.h"
+#include "toolbar_ux_tests.h"
 
 QTEST_MAIN(UxTests)
 #include "ux_tests.moc"

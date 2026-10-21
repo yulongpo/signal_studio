@@ -18,6 +18,11 @@
 #include <functional>
 
 namespace signalstudio {
+inline bool parameterLayerHiding(const QWidget* widget) {
+  for (auto* owner = widget; owner; owner = owner->parentWidget())
+    if (owner->property("parameterLayerHiding").toBool()) return true;
+  return false;
+}
 inline bool preservesParameterDrafts(QWidget* target, QMouseEvent* mouse) {
   if (mouse->button() != Qt::LeftButton) return true;
   for (auto* owner = target; owner; owner = owner->parentWidget()) {
@@ -68,6 +73,23 @@ class ParameterSpinBox : public Base, public ParameterDraft {
   }
 
  protected:
+  bool event(QEvent* event) override {
+    if ((event->type() != QEvent::Hide && event->type() != QEvent::Show) ||
+        !this->property("parameterDraft").toBool())
+      return Base::event(event);
+    // QAbstractSpinBox interprets pending text in its Hide handler, even
+    // when keyboard tracking is disabled. Closing a temporary layer must
+    // preserve the last accepted value and the recoverable draft.
+    auto* editor = this->template findChild<QLineEdit*>();
+    const auto accepted = this->value();
+    const auto text = editor->text();
+    const QSignalBlocker block(this), editBlock(editor);
+    const bool handled = Base::event(event);
+    this->setValue(accepted);
+    editor->setText(text);
+    this->setProperty("parameterDraft", true);
+    return handled;
+  }
   bool eventFilter(QObject* watched, QEvent* event) override {
     if (event->type() == QEvent::KeyPress) {
       const int key = static_cast<QKeyEvent*>(event)->key();
@@ -82,8 +104,9 @@ class ParameterSpinBox : public Base, public ParameterDraft {
   void focusOutEvent(QFocusEvent* event) override {
     // Mouse focus can move before the click's context is known. The shared
     // policy commits ordinary clicks and discards file/channel-switch drafts.
-    if (event->reason() == Qt::TabFocusReason ||
-        event->reason() == Qt::BacktabFocusReason) {
+    if (!parameterLayerHiding(this) &&
+        (event->reason() == Qt::TabFocusReason ||
+         event->reason() == Qt::BacktabFocusReason)) {
       commit();
       Base::focusOutEvent(event);
       return;
@@ -160,7 +183,8 @@ class ParameterComboCommit final : public QObject, public ParameterDraft {
     }
     if (event->type() == QEvent::FocusOut) {
       const auto reason = static_cast<QFocusEvent*>(event)->reason();
-      if (reason == Qt::TabFocusReason || reason == Qt::BacktabFocusReason)
+      if (!parameterLayerHiding(combo_) &&
+          (reason == Qt::TabFocusReason || reason == Qt::BacktabFocusReason))
         commit();
     }
     return false;
@@ -284,6 +308,7 @@ class ParameterInputPolicy final : public QObject {
       QList<QPointer<QWidget>> pending;
       for (auto* widget : root_->findChildren<QWidget*>())
         if (widget->property("parameterDraft").toBool() &&
+            widget->isVisible() &&
             // A modal dialog must not apply another window's pending values.
             widget->window() == target->window() && !contains(widget, target))
           pending.append(widget);

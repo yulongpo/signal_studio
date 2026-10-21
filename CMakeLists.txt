@@ -121,6 +121,9 @@ target_link_libraries(SignalStudioBrand PUBLIC Qt6::Widgets)
 target_compile_definitions(SignalStudioBrand PRIVATE SS_PRODUCT_VERSION="${PROJECT_VERSION}" SS_BUILD_REVISION="${SS_BUILD_REVISION}")
 
 set(SS_UI_SOURCES
+    ui/settings_popover.cpp
+    ui/settings_popover.h
+    ui/chart_control_strip.h
     ui/detection/detection_card.cpp
     ui/detection/detection_card.h
     ui/detection/detection_panel.cpp

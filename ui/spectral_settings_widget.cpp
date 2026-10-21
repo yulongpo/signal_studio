@@ -52,6 +52,16 @@ SpectralParameters SpectralSettingsWidget::parameters() const {
     p.kaiserBeta=beta_->value();p.timeBandwidth=nw_->value();p.tapers=tapers_->value();p.burgOrder=order_->value();p.removeMean=mean_->isChecked();return p;
 }
 SpectrumStatistic SpectralSettingsWidget::statistic() const{return statistic_?static_cast<SpectrumStatistic>(statistic_->currentIndex()):SpectrumStatistic::Mean;}
+QComboBox* SpectralSettingsWidget::takeStatisticControl() {
+    if (!statistic_) return nullptr;
+    auto* form = qobject_cast<QFormLayout*>(layout());
+    if (form && form->indexOf(statistic_) >= 0) {
+        const auto taken = form->takeRow(statistic_);
+        if (taken.labelItem) { delete taken.labelItem->widget(); delete taken.labelItem; }
+        delete taken.fieldItem;
+    }
+    return statistic_;
+}
 void SpectralSettingsWidget::setParameters(const SpectralParameters& p,SpectrumStatistic statistic) {
     updating_=true;method_->setCurrentIndex(psd_?static_cast<int>(p.method):p.method==SpectralMethod::Multitaper?1:0);window_->setCurrentIndex(static_cast<int>(p.window));
     overlap_->setProperty("lastValidValue",p.overlap*100);duration_->setProperty("lastValidValue",p.segmentMilliseconds);displayComboValue(overlap_,p.overlap*100,{});displayComboValue(duration_,p.segmentMilliseconds,{});

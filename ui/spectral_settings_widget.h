@@ -9,6 +9,7 @@ public:
     SpectralSettingsWidget(bool psd,QWidget* parent=nullptr);
     SpectralParameters parameters() const;
     SpectrumStatistic statistic() const;
+    QComboBox* takeStatisticControl();
     void setParameters(const SpectralParameters&,SpectrumStatistic=SpectrumStatistic::Mean);
 signals:
     void edited();

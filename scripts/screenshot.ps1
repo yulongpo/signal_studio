@@ -8,6 +8,7 @@ param(
     [switch]$Narrowband,
     [switch]$SoftwareRenderer,
     [switch]$WidebandDetection,
+    [switch]$WidebandUx,
     [switch]$ProductionModel,
     [switch]$FinalAcceptance,
     [ValidateSet('U1', 'U2', 'U3')]
@@ -190,10 +191,13 @@ $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 if ($Project) { $Project = [IO.Path]::GetFullPath($Project) }
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $outputDir = Join-Path $repoRoot "out/vs2026-qt611-$($Configuration.ToLowerInvariant())_bin"
-$executableName = if ($WidebandDetection -or $AnnotationInteractions) { 'SignalStudioUiCapture.exe' } else { 'SignalStudio.exe' }
+$executableName = if ($WidebandDetection -or $WidebandUx -or $AnnotationInteractions) { 'SignalStudioUiCapture.exe' } else { 'SignalStudio.exe' }
 $executable = Join-Path $outputDir $executableName
 if (-not (Test-Path -LiteralPath $executable)) { throw "Executable does not exist: $executable" }
 if ($Narrowband -and $Project) { throw 'The packaged narrowband demo cannot be combined with -Project.' }
+if ($WidebandUx -and ($WidebandDetection -or $Narrowband -or $SoftwareRenderer -or $Project -or $AnnotationInteractions -or $ProductionModel -or $FinalAcceptance)) {
+    throw 'Wideband UX uses its independent actual IQ journey and native hardware renderer.'
+}
 if ($WidebandDetection -and ($Narrowband -or $SoftwareRenderer -or $Project)) {
     throw 'The wideband native scenario uses its actual IQ project and hardware renderer.'
 }
@@ -244,6 +248,43 @@ try {
         $report | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $reportPath -Encoding utf8
         Assert-AnnotationInteractionsCapture $report $captureExitCode $AnnotationInteractions
         Write-Host "$Configuration $AnnotationInteractions native interaction capture passed on $($report.screen.friendlyName) / $($report.screen.devicePath), connection $($report.screen.connectedIndex), 4K / 150%."
+        Write-Host "Report: $reportPath"
+        return
+    }
+    if ($WidebandUx) {
+        $reportPath = Join-Path $OutputDirectory 'wideband-ux-report.json'
+        if (Test-Path -LiteralPath $reportPath) { throw 'Use a new UX capture directory to retain previous evidence.' }
+        $timer = [Diagnostics.Stopwatch]::StartNew()
+        & $executable '--wideband-ux' $OutputDirectory | Out-Host
+        $captureExitCode = $LASTEXITCODE
+        if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) { throw "No UX report; exit $captureExitCode" }
+        $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+        $report | Add-Member -NotePropertyName process -NotePropertyValue ([ordered]@{
+            executable = $executable; configuration = $Configuration
+            systemOnlyPath = $true; dpiOverridesCleared = $true
+            exitCode = $captureExitCode; elapsedSeconds = $timer.Elapsed.TotalSeconds
+            screenshotEntry = 'scripts/screenshot.ps1 -WidebandUx'
+        }) -Force
+        $report | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $reportPath -Encoding utf8
+        if ($captureExitCode -ne 0 -or $report.pass -ne $true) { throw "Native UX failed: $($report.failedScene): $($report.error)" }
+        if ($report.mode -ne 'wideband-ux' -or $report.platform -ne 'windows' -or $report.fullScreen -ne $true -or
+            $report.screen.connectedIndex -lt 1 -or [string]::IsNullOrWhiteSpace($report.screen.friendlyName) -or
+            [string]::IsNullOrWhiteSpace($report.screen.monitorDevicePath) -or
+            $report.screen.pixelSize.width -ne 3840 -or $report.screen.pixelSize.height -ne 2160 -or
+            [Math]::Abs($report.screen.devicePixelRatio - 1.5) -gt 0.001 -or
+            $report.logicalWindowSize.width -ne 2560 -or $report.logicalWindowSize.height -ne 1440) {
+            throw 'UX acceptance requires the actual unique native 4K/150% fullscreen monitor.'
+        }
+        if (@($report.scenes).Count -ne $report.sceneCount -or $report.sceneCount -lt 20) { throw 'Incomplete UX scene report.' }
+        foreach ($scene in @($report.scenes)) {
+            if ($scene.pass -ne $true -or -not (Test-Path -LiteralPath $scene.png -PathType Leaf) -or
+                $scene.windowScreen.connectedIndex -ne $report.screen.connectedIndex -or
+                [Math]::Abs($scene.capturedDevicePixelRatio - 1.5) -gt 0.001) { throw "UX scene failed: $($scene.scene)" }
+        }
+        $charts = @($report.renderEvidence.charts)
+        if ($charts.Count -ne 3 -or @($charts | Where-Object { $_.gpuReady -ne $true -or $_.completedFrames -le 0 -or $_.backend -match 'CPU|Software' }).Count -ne 0 -or
+            @($charts | Where-Object { $_.name -eq 'mainPlot' -and $_.textureUploads -gt 0 }).Count -ne 1) { throw 'UX capture lacks actual QRhi hardware texture evidence.' }
+        Write-Host "$Configuration UX passed $($report.sceneCount) native scenes: $($report.screen.friendlyName) / $($report.screen.devicePath), connection $($report.screen.connectedIndex)."
         Write-Host "Report: $reportPath"
         return
     }

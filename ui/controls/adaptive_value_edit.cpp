@@ -155,8 +155,9 @@ void AdaptiveValueEdit::keyPressEvent(QKeyEvent* event) {
     QLineEdit::keyPressEvent(event);
 }
 void AdaptiveValueEdit::focusOutEvent(QFocusEvent* event) {
-  if (event->reason() == Qt::TabFocusReason ||
-      event->reason() == Qt::BacktabFocusReason)
+  if (!parameterLayerHiding(this) &&
+      (event->reason() == Qt::TabFocusReason ||
+       event->reason() == Qt::BacktabFocusReason))
     commit();
   QLineEdit::focusOutEvent(event);
 }
