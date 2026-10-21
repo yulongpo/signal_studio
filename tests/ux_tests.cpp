@@ -4,6 +4,8 @@
 #include <QComboBox>
 #include <QFile>
 #include <QListView>
+#include <QLabel>
+#include <QScrollArea>
 #include <QPushButton>
 #include <QSettings>
 #include <QTemporaryDir>
@@ -14,6 +16,7 @@
 #include "ui/controls/adaptive_value_edit.h"
 #include "ui/detection/detection_card.h"
 #include "ui/detection/detection_panel.h"
+#include "ui/charts/plot_widget.h"
 
 using namespace signalstudio;
 
@@ -98,6 +101,9 @@ class UxTests : public QObject {
     QVERIFY2(issue.isEmpty(), qPrintable(issue));
     const auto history = historyFor(window);
     window.session().activeFile()->detectionRuns.push_back(history);
+    issue = addSource(window, directory.path(), "IQ_B_FS1Msps_FC200MHz.dat");
+    QVERIFY2(issue.isEmpty(), qPrintable(issue));
+    QVERIFY(window.session().activeFile()->metadata.id != history.request.sourceIdentity.fileId);
     expose(window);
     window.findChild<DetectionPanel*>("detectionPanel")->refresh();
     focusHistory(window, "ux-history");
@@ -152,6 +158,107 @@ class UxTests : public QObject {
     QTest::mouseClick(cancel, Qt::LeftButton);
     QCOMPARE(cancelled.count(), 1);
     QCOMPARE(cancelled.takeFirst().at(0).toString(), QString("ux-running-a"));
+    window.session().activeFile()->detectionRuns.front().lifecycle = DetectionLifecycle::Cancelled;
+    window.refresh();
+    QVERIFY(!cancel->isEnabled());
+    QTest::mouseClick(cancel, Qt::LeftButton);
+    QCOMPARE(cancelled.count(), 0);
+  }
+
+  void uxD02_viewSourceKeepsDraft() {
+    QTemporaryDir directory;
+    MainWindow window;
+    QString issue;
+    QVERIFY2(window.createProject(directory.path(), "source-view", &issue), qPrintable(issue));
+    issue = addSource(window, directory.path(), "IQ_A_FS1Msps_FC100MHz.dat");
+    QVERIFY2(issue.isEmpty(), qPrintable(issue));
+    window.session().activeFile()->detectionRuns.push_back(historyFor(window));
+    expose(window);
+    window.findChild<DetectionPanel*>("detectionPanel")->refresh();
+    focusHistory(window, "ux-history");
+    window.findChild<QAction*>("widebandDetectionAction")->trigger();
+    auto* card = window.findChild<DetectionCard*>("detectionCard");
+    auto* score = card->findChild<AdaptiveValueEdit*>("detectionScoreThreshold");
+    window.findChild<QScrollArea*>("propScroll")->ensureWidgetVisible(score);
+    const auto committed = card->request().parameters.scoreThreshold;
+    score->setFocus();
+    score->selectAll();
+    QTest::keyClicks(score, "0.83");
+    auto* list = window.findChild<QListView*>("detectionRunList");
+    const auto index = list->currentIndex();
+    QVERIFY(index.isValid());
+    QSignalSpy focused(window.findChild<DetectionPanel*>("detectionPanel"),
+                       &DetectionPanel::runFocused);
+    QTest::mouseClick(list->viewport(), Qt::LeftButton, Qt::NoModifier,
+                     list->visualRect(index).topLeft() + QPoint(24, 12));
+    QTest::keyClick(list, Qt::Key_Return);
+    QTRY_VERIFY(!focused.isEmpty());
+    QCOMPARE(score->text(), QString("0.83"));
+    QVERIFY(score->property("parameterDraft").toBool());
+    QCOMPARE(card->request().parameters.scoreThreshold, committed);
+    QVERIFY(!card->request().parentRunId);
+  }
+
+  void uxD06_visibleRangeEntry() {
+    QTemporaryDir directory;
+    MainWindow window;
+    QString issue;
+    QVERIFY2(window.createProject(directory.path(), "visible-range", &issue), qPrintable(issue));
+    issue = addSource(window, directory.path(), "IQ_A_FS1Msps_FC100MHz.dat");
+    QVERIFY2(issue.isEmpty(), qPrintable(issue));
+    expose(window);
+    auto* card = window.findChild<DetectionCard*>("detectionCard");
+    const ViewRange custom{{500, 1000}, {99.9e6, 100.1e6}};
+    card->setRequestedRoi(custom);
+    const auto score = card->request().parameters.scoreThreshold;
+    auto* button = window.findChild<QPushButton*>("widebandDetect");
+    QVERIFY(button && button->isVisible() && button->isEnabled());
+    QTest::mouseClick(button, Qt::LeftButton);
+    QCOMPARE(card->request().rangeOrigin, std::string("visible"));
+    QCOMPARE(card->request().requestedRange, window.session().activeFile()->view);
+    QCOMPARE(card->request().parameters.scoreThreshold, score);
+    QVERIFY(card->isVisible());
+    QVERIFY(window.session().activeFile()->detectionRuns.empty());
+  }
+
+  void uxA01_roiConfirmationAndEscape() {
+    QTemporaryDir directory;
+    MainWindow window;
+    QString issue;
+    QVERIFY2(window.createProject(directory.path(), "roi", &issue), qPrintable(issue));
+    issue = addSource(window, directory.path(), "IQ_A_FS1Msps_FC100MHz.dat");
+    QVERIFY2(issue.isEmpty(), qPrintable(issue));
+    expose(window);
+    auto* plot = window.findChild<PlotWidget*>("mainPlot");
+    auto* manual = window.findChild<QPushButton*>("manualTool");
+    auto* roi = window.findChild<QPushButton*>("detectionRoiTool");
+    QVERIFY(plot && manual && roi);
+    QTest::mouseClick(manual, Qt::LeftButton);
+    QVERIFY(plot->isCreating());
+    QTest::mouseClick(roi, Qt::LeftButton);
+    QVERIFY(plot->isSelectingDetectionRoi());
+    QTest::keyClick(plot, Qt::Key_Escape);
+    QVERIFY(!plot->isSelectingDetectionRoi());
+    QVERIFY(plot->isCreating());
+    const auto count = window.session().activeFile()->marks.size();
+    QTest::mouseClick(roi, Qt::LeftButton);
+    const auto start = plot->toPixel(2000, 99.8e6).toPoint();
+    const auto end = plot->toPixel(8000, 100.2e6).toPoint();
+    QTest::mousePress(plot, Qt::LeftButton, Qt::NoModifier, start);
+    QMouseEvent move(QEvent::MouseMove, end, plot->mapToGlobal(end),
+                     Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+    QCoreApplication::sendEvent(plot, &move);
+    QTest::mouseRelease(plot, Qt::LeftButton, Qt::NoModifier, end);
+    QVERIFY(plot->hasDetectionRoiPreview());
+    const auto exact = *plot->detectionRoiPreview();
+    QTest::keyClick(plot, Qt::Key_Return);
+    auto* card = window.findChild<DetectionCard*>("detectionCard");
+    QCOMPARE(card->request().rangeOrigin, std::string("custom"));
+    QCOMPARE(card->request().requestedRange, exact);
+    QVERIFY(card->isVisible());
+    QVERIFY(plot->isCreating());
+    QCOMPARE(window.session().activeFile()->marks.size(), count);
+    QVERIFY(window.session().activeFile()->detectionRuns.empty());
   }
 };
 

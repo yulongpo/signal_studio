@@ -583,13 +583,30 @@ void DetectionCard::setupStatus(QVBoxLayout* layout) {
   run_->setProperty("uiRole", "primary");
   cancel_ = new QPushButton("■ 取消任务", this);
   cancel_->setObjectName("cancelDetectionCardRun");
+  viewRunning_ = new QPushButton("查看正在运行任务", actions_);
+  viewRunning_->setObjectName("viewRunningDetection");
+  viewRunning_->setToolTip("定位到其他文件上的未完成任务，不会取消");
+  viewRunning_->setAccessibleName("查看正在运行任务");
+  viewRunning_->hide();
+  otherRun_ = new QLabel(this);
+  otherRun_->setObjectName("detectionOtherRun");
+  otherRun_->setWordWrap(true);
+  otherRun_->hide();
+  layout->addWidget(otherRun_);
   actions->addWidget(run_, 1);
   actions->addWidget(cancel_);
+  actions->addWidget(viewRunning_);
   layout->addWidget(actions_);
   connect(run_, &QPushButton::clicked, this, &DetectionCard::submit);
   connect(cancel_, &QPushButton::clicked, this, [this] {
-    if (const auto* run = unfinishedRun())
+    if (const auto* run = focusedUnfinished())
       emit cancelRunRequested(text(run->request.runId));
+  });
+  connect(viewRunning_, &QPushButton::clicked, this, [this] {
+    const auto* run = unfinishedRun();
+    const auto* file = session_.activeFile();
+    if (run && (!file || run->request.sourceIdentity.fileId != file->metadata.id))
+      emit focusRunningRunRequested(text(run->request.runId));
   });
 }
 
@@ -906,6 +923,17 @@ const DetectionRun* DetectionCard::unfinishedRun() const {
   return nullptr;
 }
 
+const DetectionRun* DetectionCard::focusedUnfinished() const {
+  if (displayRunId_.empty()) return nullptr;
+  const auto* file = session_.activeFile();
+  if (!file) return nullptr;
+  for (const auto& run : file->detectionRuns)
+    if (run.request.runId == displayRunId_ &&
+        !detectionIsTerminal(run.lifecycle))
+      return &run;
+  return nullptr;
+}
+
 void DetectionCard::refreshStatus() {
   if (!preflight_) return;
   const auto* activeRun = unfinishedRun();
@@ -935,11 +963,33 @@ void DetectionCard::refreshStatus() {
     preflight_->setProperty("preflightOk", issue.isEmpty());
     refreshStyle(preflight_);
   }
+  const auto* focusedRun = focusedUnfinished();
+  const bool otherFile =
+      activeRun &&
+      activeRun->request.sourceIdentity.fileId != source_.fileId;
   run_->setEnabled(issue.isEmpty() && !activeRun);
-  cancel_->setEnabled(activeRun &&
-                      activeRun->lifecycle != DetectionLifecycle::Cancelling);
-  cancel_->setToolTip(activeRun ? "取消运行 " + text(activeRun->request.runId)
-                                : "没有未完成任务");
+  cancel_->setEnabled(focusedRun &&
+                      focusedRun->lifecycle != DetectionLifecycle::Cancelling);
+  cancel_->setToolTip(focusedRun ? "取消运行 " + text(focusedRun->request.runId)
+                                 : otherFile ? "其他文件的任务需先定位后再取消"
+                                             : "没有未完成任务");
+  if (otherRun_ && viewRunning_) {
+    if (otherFile) {
+      QString name = text(activeRun->request.sourceIdentity.fileId);
+      for (const auto& file : session_.project().files)
+        if (file.metadata.id == activeRun->request.sourceIdentity.fileId) {
+          name = text(file.metadata.name);
+          break;
+        }
+      otherRun_->setText(QString("其他文件有运行任务：%1 / %2")
+                             .arg(name, lifecycleText(activeRun->lifecycle)));
+      otherRun_->show();
+      viewRunning_->show();
+    } else {
+      otherRun_->hide();
+      viewRunning_->hide();
+    }
+  }
   selectRoi_->setEnabled(metadata_ && availableSamples(*metadata_) > 0);
   if (const auto* run = latestRun()) {
     const auto phase = text(run->computationPhase);
@@ -1156,6 +1206,15 @@ void DetectionCard::setRequestedRoi(ViewRange range) {
   refresh();
 }
 
+void DetectionCard::useVisibleRange() {
+  refreshSource();
+  configuration_.rangeOrigin = "visible";
+  profileConfigurations_[configurationKey(configuration_)] = configuration_;
+  const QSignalBlocker block(rangeKind_);
+  rangeKind_->setCurrentIndex(rangeKind_->findData("visible"));
+  refresh();
+}
+
 void DetectionCard::focusRun(const QString& runId) {
   displayRunId_ = runId.toStdString();
   refreshStatus();
@@ -1179,6 +1238,7 @@ void DetectionCard::submit() {
   auto value = request();
   value.runId =
       "run-" + QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString();
+  displayRunId_ = value.runId;
   emit requestSubmitted(value);
   refreshStatus();
 }

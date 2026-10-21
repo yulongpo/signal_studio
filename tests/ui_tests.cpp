@@ -4690,7 +4690,9 @@ void UiTests::widebandConfigurationCommittedDrafts() {
   const auto requested = ViewRange{{100, 10000}, {2490000000, 2510000000}};
   card->setRequestedRoi(requested);
   QCOMPARE(card->request().requestedRange, requested);
-  window.findChild<QPushButton*>("widebandDetect")->click();
+  // Opening configuration preserves a custom range. The explicitly named
+  // current-region button selects the visible range (covered by UX-D06).
+  window.findChild<QAction*>("widebandDetectionAction")->trigger();
   QCOMPARE(card->request().requestedRange, requested);
   origin->setCurrentIndex(1);
   QCOMPARE(card->request().requestedRange.time, (TimeRange{0, 400000}));

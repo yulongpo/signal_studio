@@ -28,6 +28,11 @@
 - `uxD03_crossFileCancellation`：文件 B 的卡片取消按钮仍为启用状态，目标实际为文件 A 的未结束任务。
 - 日志 Qt 总计 `2 passed, 2 failed`；其中两个通过是初始化、清理，实际业务为 `0/2`。没有设置 WILL_FAIL 或把失败伪装成正常回归通过。W1 修复后才注册正常 CTest。
 
-## W1–W6
+## W1 检测操作（2026-10-21）
 
-尚未实施/验收，后续按节点记录新的程序身份和实际结果。W0 基线通过不能充作新界面通过。
+局部移植bed43b2：按值复制历史请求、核对文件、parentRunId及custom冻结范围；普通来源查看不configure历史。右侧取消只作用当前文件聚焦的未结束runId，终态禁用；其他文件任务提供定位。列表查看保留同文件输入草稿。顶部/图谱“检测当前区域”明确选择visible，普通检测入口保持已有范围。
+
+- Debug构建成功；独立UX CTest通过，5个业务用例、Qt7/7，0失败/跳过。最终版本覆盖跨文件派生、同文件未提交草稿、跨文件取消及终态、当前视区入口、真实ROI拖动确认/取消。日志W1/logs/ux-extended-ctest.txt和构建树ux-test-results-debug.txt。
+- 检测存储、协议、任务、core相关CTest 4/4，34.43秒，W1/logs/related-ctest.txt。
+- 已有widebandRoiPreservesManualTool、widebandFixtureTaskNativeRoundtrip通过。widebandConfigurationCommittedDrafts初测失败：旧测试把“检测当前区域”当成仅打开，期待保留custom范围。按获批入口分工，将原强断言绑定普通“宽带检测”入口，保留原requestedRange相等断言，另有独立用例证明当前区域确实选择visible。该用例重测通过（Qt3/3），旧失败和修正后日志均保留在W1/diagnostics。
+- 本节点不声称Release完整回归或新布局通过；W2–W6尚待实施。

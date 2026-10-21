@@ -1,6 +1,6 @@
 # a143-native 宽带 UI 优化执行状态
 
-用户已在 2026-10-21 批准 W0–W6 全部实施、逐阶段本地提交及验收后统一普通推送 origin/rebuild/a143-native。当前 W0 验证完成，整理提交。禁止整体合并 grok-ux-opt；不得覆盖既存未跟踪输入。
+用户已在 2026-10-21 批准 W0–W6 全部实施、逐阶段本地提交及验收后统一普通推送 origin/rebuild/a143-native。W0 已提交 `0f67455`；W1 实现、自检完成，整理提交。禁止整体合并 grok-ux-opt；不得覆盖既存未跟踪输入。
 
 ## 身份与目录
 
@@ -14,8 +14,9 @@
 - W0：Debug/Release 产品与原测试目标已重建。Debug 完整 23/23，UI 108/108，UI 294.64 秒 / CTest 443.89 秒；Release 非 UI 22/22（36.32 秒）+ UI 1/1（59.47 秒），Qt UI 108/108。零失败、零跳过。
 - W0：Debug GPU 原生演示截图通过；Release 官方基础检测旅程 23/23 原生场景通过，fixture 模式、无正式推理声明。
 - W0：独立 SignalStudioUxTests 已构建，暂未注册 CTest。uxD01_historicalDerivation / uxD03_crossFileCancellation 均如预期失败，日志 diagnostics/reproduction-before-fix.txt。Qt 2 passed 包含 init/cleanup，业务 0/2。
-- W0：文档子代理负责 PLAN/BASELINE_AUDIT/CONTROL_INVENTORY/UX_SPEC/OBJECTNAME_MAPPING/DECISIONS/ACCEPTANCE_MATRIX，主 Agent 填最终实测计数。
-- W1–W6 尚未实施，禁止提前宣称通过。
+- W0：文档子任务未产生文件，已停止；主 Agent 根据锁定源码与实际日志完成并审查全部文档。
+- W1：移植局部派生/取消逻辑，明确当前视区入口；5个独立UX业务用例通过，Qt总7/7含初始化/清理。已有配置/ROI/夹具重开用例最终分别通过，相关检测存储/协议/任务/core CTest 4/4。
+- W2–W6 尚未实施，禁止提前宣称通过。
 
 ## 后续顺序
 

@@ -329,7 +329,7 @@ if(SS_BUILD_TESTS)
         BASE "${CMAKE_SOURCE_DIR}/resources"
         FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq"
     )
-    # W0 reproductions are run directly until W1 fixes their expected failures.
+    # Dedicated behavioral coverage for the wideband UI reorganization.
     add_executable(SignalStudioUxTests tests/ux_tests.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioUxTests PRIVATE
         SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
@@ -342,6 +342,12 @@ if(SS_BUILD_TESTS)
         PREFIX "/signalstudio/demo"
         BASE "${CMAKE_SOURCE_DIR}/resources"
         FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq")
+    add_test(NAME signal_studio_ux COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUxTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ux-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_ux PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480)
 
     add_executable(SignalStudioUiCapture tests/ui_capture.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioUiCapture PRIVATE

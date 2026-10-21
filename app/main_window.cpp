@@ -852,7 +852,10 @@ void MainWindow::buildWorkspace() {
   widebandDetect_ = push("◇ 检测当前区域…", "widebandDetect", scopeRow);
   widebandDetect_->setProperty("uiRole", "primary");
   connect(widebandDetect_, &QPushButton::clicked, this,
-          [this] { openWidebandDetection(); });
+          [this] {
+            detectionCard_->useVisibleRange();
+            openWidebandDetection();
+          });
   center->addWidget(scopeBar);
   auto* graphArea = new QWidget;
   auto* graphLayout = new QVBoxLayout(graphArea);
@@ -1317,6 +1320,13 @@ void MainWindow::buildWorkspace() {
             detection_->refresh();
             detectionCard_->refresh();
           });
+  connect(detectionCard_, &DetectionCard::focusRunningRunRequested, this,
+          [this](const QString& runId) {
+            detection_->openRunSource(runId);
+            bottomTab_ = 1;
+            resultToggle_->setChecked(true);
+            updateBottom();
+          });
   auto view =
       section(propertyLayout_, "viewSection", "当前视图（仅显示状态）", true);
   viewSection_ = view.widget;
@@ -1739,7 +1749,10 @@ void MainWindow::buildWorkspace() {
     connect(plot, &PlotWidget::markDeleteRequested, this,
             &MainWindow::deleteMarks);
     connect(plot, &PlotWidget::widebandDetectionRequested, this,
-            [this] { openWidebandDetection(); });
+            [this] {
+              detectionCard_->useVisibleRange();
+              openWidebandDetection();
+            });
     connect(plot, &PlotWidget::detectionRoiRequested, this,
             &MainWindow::beginDetectionRoi);
   }

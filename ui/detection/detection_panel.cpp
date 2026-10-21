@@ -465,6 +465,7 @@ DetectionPanel::DetectionPanel(Session& session,
   auto* commands = new QHBoxLayout;
   details_ = new QPushButton("任务详情");
   details_->setObjectName("detectionRunDetails");
+  details_->setProperty("preserveParameterDrafts", true);
   commands->addWidget(details_);
   connect(details_, &QPushButton::clicked, this,
           &DetectionPanel::showSelectedDetails);
@@ -472,7 +473,7 @@ DetectionPanel::DetectionPanel(Session& session,
   derive_->setObjectName("deriveWidebandDetection");
   commands->addWidget(derive_);
   connect(derive_, &QPushButton::clicked, this, [this] {
-    if (const auto* run = selectedRun()) openRunSource(q(run->request.runId));
+    if (const auto* run = selectedRun()) deriveRun(q(run->request.runId));
   });
   recover_ = new QPushButton("查找未引用结果…");
   recover_->setObjectName("recoverWidebandDetection");
@@ -488,6 +489,7 @@ DetectionPanel::DetectionPanel(Session& session,
   layout->addWidget(summary_);
   list_ = new QListView;
   list_->setObjectName("detectionRunList");
+  list_->setProperty("preserveParameterDrafts", true);
   list_->setSelectionMode(QAbstractItemView::SingleSelection);
   list_->setEditTriggers(QAbstractItemView::NoEditTriggers);
   list_->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
@@ -719,7 +721,34 @@ void DetectionPanel::openRunSource(const QString& runId) {
   const int row = model_->rowForId(runId);
   if (row >= 0) list_->setCurrentIndex(model_->index(row));
   emit changed();
-  configure();
+  emit runFocused(runId);
+}
+void DetectionPanel::deriveRun(const QString& runId) {
+  const auto* run = findRun(runId);
+  if (!run) return;
+  const DetectionRun snapshot = *run;
+  if (!session_.activateFile(snapshot.request.sourceIdentity.fileId)) {
+    emit message("任务来源文件不在当前工程中");
+    return;
+  }
+  const auto* file = session_.activeFile();
+  if (!file || file->metadata.id != snapshot.request.sourceIdentity.fileId) {
+    emit message("派生运行需要先打开其源文件；当前配置草稿保持");
+    return;
+  }
+  const bool present = std::any_of(
+      file->detectionRuns.begin(), file->detectionRuns.end(),
+      [&](const DetectionRun& existing) {
+        return existing.request.runId == snapshot.request.runId;
+      });
+  if (!present) {
+    emit message("派生运行的来源任务已不在该文件中；当前配置草稿保持");
+    return;
+  }
+  const int row = model_->rowForId(runId);
+  if (row >= 0) list_->setCurrentIndex(model_->index(row));
+  emit changed();
+  configure(&snapshot);
   emit runFocused(runId);
 }
 void DetectionPanel::cancelSelected() {

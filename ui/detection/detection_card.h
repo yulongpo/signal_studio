@@ -35,6 +35,7 @@ class DetectionCard : public QWidget {
   void refresh();
   void configure(const DetectionRun* parentRun = nullptr);
   void setRequestedRoi(ViewRange);
+  void useVisibleRange();
   void focusRun(const QString& runId);
   DetectionRequest request() const;
   QString validationError() const;
@@ -45,6 +46,7 @@ class DetectionCard : public QWidget {
   void roiSelectionRequested();
   void selectionChanged();
   void cancelRunRequested(const QString& runId);
+  void focusRunningRunRequested(const QString& runId);
   void message(const QString&);
 
  private:
@@ -86,6 +88,7 @@ class DetectionCard : public QWidget {
   const Segment* selectedSegment() const;
   const DetectionRun* latestRun() const;
   const DetectionRun* unfinishedRun() const;
+  const DetectionRun* focusedUnfinished() const;
   ViewRange availableRange() const;
 
   struct ParameterControl {
@@ -138,6 +141,8 @@ class DetectionCard : public QWidget {
   QWidget* actions_ = nullptr;
   QPushButton* run_ = nullptr;
   QPushButton* cancel_ = nullptr;
+  QPushButton* viewRunning_ = nullptr;
+  QLabel* otherRun_ = nullptr;
   std::vector<ParameterControl> parameters_;
   std::vector<UnsignedControl> unsignedControls_;
 };

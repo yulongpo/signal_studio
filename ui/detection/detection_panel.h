@@ -25,6 +25,7 @@ class DetectionPanel : public QWidget {
   bool startRequest(DetectionRequest, QString& error);
   void configure(const DetectionRun* parentRun = nullptr);
   void openRunSource(const QString& runId);
+  void deriveRun(const QString& runId);
   void refresh();
   DetectionTaskManager& tasks() { return *tasks_; }
 
