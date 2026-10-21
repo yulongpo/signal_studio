@@ -59,6 +59,7 @@ public:
     void invalidateVisibleOverlays();
 
 signals:
+    void pageChanged(int index);
     void displayParametersChanged();
     void autoPowerFitRequested();
 

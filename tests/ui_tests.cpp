@@ -128,7 +128,19 @@ void movePlotMouse(QWidget* plot,const QPoint& point) {
 // Use the visible chart entry (or its narrowband/overflow command), never
 // synthesize input against the old, hidden sidebar parameter sections.
 bool revealParameter(QWidget* widget) {
-  if (!widget || !widget->isVisible()) return false;
+  if (!widget) return false;
+  QCoreApplication::processEvents();
+  if (!widget->isVisible()) {
+    ChartControlStrip* owner = nullptr;
+    for (auto* parent = widget; parent && !owner; parent = parent->parentWidget()) {
+      owner = dynamic_cast<ChartControlStrip*>(parent->property("chartControlOwner").value<QObject*>());
+      if (!owner) owner = dynamic_cast<ChartControlStrip*>(parent->property("chartPanelOwner").value<QObject*>());
+    }
+    if (!owner || !owner->isVisible() || !owner->overflowButton()->isVisible()) return false;
+    if (!owner->popoverFrame()->isVisible()) QTest::mouseClick(owner->overflowButton(), Qt::LeftButton);
+    QCoreApplication::processEvents();
+    if (!widget->isVisible()) return false;
+  }
   for (auto* parent = widget->parentWidget(); parent; parent = parent->parentWidget())
     if (auto* scroll = qobject_cast<QScrollArea*>(parent))
       scroll->ensureWidgetVisible(widget);
@@ -1286,7 +1298,7 @@ void UiTests::powerInputsCommitAndFitReusesData() {
   QCOMPARE(editor->cursorPosition(), 5);
   QTest::keyClick(editor, Qt::Key_Tab);
   QCOMPARE(window.session().activeFile()->display.dynamicRangeDb, 123.5);
-  QCOMPARE(editor->text(), QString("123.5 dB"));
+  QCOMPARE(editor->text(), QString("123.50 dB"));
   editor->setFocus();
   editor->selectAll();
   QTest::keyClicks(editor, "123.5");

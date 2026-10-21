@@ -1758,7 +1758,7 @@ void MainWindow::buildWorkspace() {
       return;
     }
     if (narrow && sender() == grid_) {
-      if (auto* grid = narrowband_->findChild<QCheckBox*>("narrowbandGrid"))
+      if (auto* grid = findChild<QCheckBox*>("narrowbandGrid"))
         grid->setChecked(grid_->isChecked());
       refresh();
       return;
@@ -1980,8 +1980,9 @@ void MainWindow::buildChartControls() {
     strip->addControl(narrowband_->findChild<QWidget*>("eyeTraces"),"轨迹",50);
   }
   specMode_->setMaximumWidth(150);specAxis_->setMaximumWidth(100);
-  for(const auto* name:{"observePage","modulationPage","deepLearningPage","demodulationPage"})
-    connect(narrowband_->findChild<QAbstractButton*>(name),&QAbstractButton::clicked,this,[this]{updateChartControls(true);});
+  connect(narrowband_,&NarrowbandWorkspace::pageChanged,this,[this]{
+    if(session_.project().narrowbandWorkspaceOpen)updateChartControls(true);
+  });
   chartControlsInitialized_=false;
 }
 
@@ -2017,9 +2018,11 @@ void MainWindow::updateChartControls(bool narrow) {
     stftHost->addControl(colorScale_,"色阶条",5);
     if(!narrow){stftHost->addControl(freqMode_,"频率",15);stftHost->addControl(grid_,"网格",10);}
     else{
-      heat->addControl(narrowband_->findChild<QComboBox*>("narrowbandStftFft"),"STFT N",100);
-      heat->addControl(narrowband_->findChild<QWidget*>("channelFrequencyMode"),"频率",15);
-      heat->addControl(narrowband_->findChild<QWidget*>("narrowbandGrid"),"网格",10);
+      // Overflow layers are owned by the main window, outside the workspace.
+      // Resolve these singleton editors from their stable root after a page change.
+      heat->addControl(findChild<QComboBox*>("narrowbandStftFft"),"STFT N",100);
+      heat->addControl(findChild<QWidget*>("channelFrequencyMode"),"频率",15);
+      heat->addControl(findChild<QWidget*>("narrowbandGrid"),"网格",10);
     }
     chartControlsNarrow_=narrow;activeHeatmapControls_=heat;chartControlsInitialized_=true;
   }
@@ -2984,7 +2987,7 @@ void MainWindow::refresh() {
             ? 0
             : 1);
     const auto* narrowGrid =
-        narrowOpen ? narrowband_->findChild<QCheckBox*>("narrowbandGrid")
+        narrowOpen ? findChild<QCheckBox*>("narrowbandGrid")
                    : nullptr;
     grid_->setChecked(narrowGrid ? narrowGrid->isChecked() : display.grid);
     colorScale_->setChecked(display.colorScale);

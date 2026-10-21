@@ -1013,6 +1013,7 @@ void NarrowbandWorkspace::buildPages() {
         updateFrequencyAxisLabels(); emit displayParametersChanged();
     });
     pages_ = new QStackedWidget; pages_->setObjectName("narrowbandPageStack"); root->addWidget(pages_, 1);
+    connect(pages_,&QStackedWidget::currentChanged,this,&NarrowbandWorkspace::pageChanged);
     auto makePage = [this](int index) {
         auto* page = new QWidget; page->setObjectName(QStringLiteral("nbPage%1").arg(index));
         pageWidgets_[static_cast<std::size_t>(index)] = page; pages_->addWidget(page); return page;
