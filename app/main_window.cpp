@@ -504,9 +504,9 @@ void MainWindow::buildMenus() {
   });
   action->setObjectName("openProjectAction");
   action->setShortcut(QKeySequence::Open);
-  action = file->addAction("打开旧版工程 JSON…", this, [this] {
+  action = file->addAction("打开工程 JSON…", this, [this] {
     const auto path = QFileDialog::getOpenFileName(
-        this, "打开旧版工程 JSON", {}, "Signal Studio 工程 (*.json)");
+        this, "打开工程 JSON", {}, "Signal Studio 工程 (*.json)");
     if (!path.isEmpty()) openProject(path);
   });
   action->setObjectName("openProjectJsonAction");

@@ -1,3 +1,4 @@
+#include <QProgressBar>
 #include "chart_settings_helpers.h"
 // Independent native UI acceptance diagnostics. This executable uses the real
 // Windows QRhi backend and visible controls. The linked-cursor mode drives
@@ -263,11 +264,13 @@ struct Capture {
   void waitForSettledDisplay() {
     const auto* narrow = window.findChild<NarrowbandWorkspace*>();
     if (narrow && narrow->isVisible()) {
-      require(waitUntil([narrow] { return narrow->visibleChartsSettled(); }),
+      QElapsedTimer stable;
+      stable.start();
+      require(waitUntil([narrow, &stable] {
+                if (!narrow->visibleChartsSettled()) { stable.restart(); return false; }
+                return stable.elapsed() >= 80;
+              }),
               "Visible narrowband charts did not settle for capture");
-      QTest::qWait(80);
-      require(narrow->visibleChartsSettled(),
-              "Narrowband resumed preview before capture");
       return;
     }
     require(waitUntil([this] { return plots[2]->isDisplaySettled(); }),
@@ -966,6 +969,7 @@ void diagnoseMainHover(Capture& capture, QPoint target,
 // U3 reuses the same monitor, editing and real-IQ capture helpers.
 #include "tests/annotation_channels_capture.h"
 #include "tests/wideband_ux_capture.h"
+#include "tests/ui_refinement_capture.h"
 
 }  // namespace
 
@@ -976,6 +980,8 @@ int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   QApplication::setApplicationName("SignalStudioNativeCapture");
   const auto arguments = app.arguments();
+  if (arguments.size() == 3 && arguments.at(1) == "--ui-refinement")
+    return runUiRefinementCapture(arguments.at(2));
   if (arguments.size() == 3 && arguments.at(1) == "--wideband-ux")
     return runWidebandUxCapture(arguments.at(2));
   if (arguments.size() == 4 && arguments.at(1) == "--wideband-ux-reopen")

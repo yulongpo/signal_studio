@@ -9,6 +9,7 @@ param(
     [switch]$SoftwareRenderer,
     [switch]$WidebandDetection,
     [switch]$WidebandUx,
+    [switch]$UiRefinement,
     [switch]$ProductionModel,
     [switch]$FinalAcceptance,
     [ValidateSet('U1', 'U2', 'U3')]
@@ -191,9 +192,10 @@ $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 if ($Project) { $Project = [IO.Path]::GetFullPath($Project) }
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $outputDir = Join-Path $repoRoot "out/vs2026-qt611-$($Configuration.ToLowerInvariant())_bin"
-$executableName = if ($WidebandDetection -or $WidebandUx -or $AnnotationInteractions) { 'SignalStudioUiCapture.exe' } else { 'SignalStudio.exe' }
+$executableName = if ($WidebandDetection -or $WidebandUx -or $UiRefinement -or $AnnotationInteractions) { 'SignalStudioUiCapture.exe' } else { 'SignalStudio.exe' }
 $executable = Join-Path $outputDir $executableName
 if (-not (Test-Path -LiteralPath $executable)) { throw "Executable does not exist: $executable" }
+if ($UiRefinement -and ($WidebandUx -or $WidebandDetection -or $Narrowband -or $SoftwareRenderer -or $Project -or $AnnotationInteractions -or $ProductionModel -or $FinalAcceptance)) { throw 'UI refinement has its own independent native journey.' }
 if ($Narrowband -and $Project) { throw 'The packaged narrowband demo cannot be combined with -Project.' }
 if ($WidebandUx -and ($WidebandDetection -or $Narrowband -or $SoftwareRenderer -or $Project -or $AnnotationInteractions -or $ProductionModel -or $FinalAcceptance)) {
     throw 'Wideband UX uses its independent actual IQ journey and native hardware renderer.'
@@ -249,6 +251,36 @@ try {
         Assert-AnnotationInteractionsCapture $report $captureExitCode $AnnotationInteractions
         Write-Host "$Configuration $AnnotationInteractions native interaction capture passed on $($report.screen.friendlyName) / $($report.screen.devicePath), connection $($report.screen.connectedIndex), 4K / 150%."
         Write-Host "Report: $reportPath"
+        return
+    }
+    if ($UiRefinement) {
+        $reportPath = Join-Path $OutputDirectory 'ui-refinement-report.json'
+        if (Test-Path -LiteralPath $reportPath) { throw 'Use a new refinement capture directory to retain earlier evidence.' }
+        $timer = [Diagnostics.Stopwatch]::StartNew()
+        & $executable '--ui-refinement' $OutputDirectory | Out-Host
+        $captureExitCode = $LASTEXITCODE
+        if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) { throw "No refinement report; exit $captureExitCode" }
+        $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+        $report | Add-Member -NotePropertyName process -NotePropertyValue ([ordered]@{
+            executable=$executable; binarySha256=(Get-FileHash -LiteralPath $executable -Algorithm SHA256).Hash.ToLowerInvariant()
+            configuration=$Configuration; systemOnlyPath=$true; dpiOverridesCleared=$true
+            exitCode=$captureExitCode; elapsedSeconds=$timer.Elapsed.TotalSeconds; screenshotEntry='scripts/screenshot.ps1 -UiRefinement'
+        }) -Force
+        $report | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $reportPath -Encoding utf8
+        if ($captureExitCode -ne 0 -or $report.pass -ne $true) { throw "Native refinement failed: $($report.error)" }
+        if ($report.mode -ne 'ui-refinement-round2' -or $report.platform -ne 'windows' -or $report.fullScreen -ne $true -or
+            $report.screen.pixelSize.width -ne 3840 -or $report.screen.pixelSize.height -ne 2160 -or
+            [Math]::Abs($report.screen.devicePixelRatio - 1.5) -gt 0.001 -or
+            $report.logicalWindowSize.width -ne 2560 -or $report.logicalWindowSize.height -ne 1440 -or
+            [string]::IsNullOrWhiteSpace($report.screen.monitorDevicePath)) { throw 'Refinement requires actual native 4K/150% fullscreen.' }
+        if ($report.sceneCount -ne 24 -or @($report.scenes).Count -ne 24 -or @($report.scenes.scene | Select-Object -Unique).Count -ne 24) { throw 'Refinement must cover all 24 independent scenes.' }
+        foreach ($scene in @($report.scenes)) {
+            if ($scene.pass -ne $true -or $scene.capturedPixelSize.width -ne 3840 -or $scene.capturedPixelSize.height -ne 2160 -or
+                [Math]::Abs($scene.capturedDevicePixelRatio - 1.5) -gt 0.001 -or
+                -not (Test-Path -LiteralPath $scene.png -PathType Leaf)) { throw "Refinement scene failed: $($scene.scene)" }
+        }
+        if ($report.cpuDdcVerified -ne $true -or $report.cpuDdc.outputSamples -le 0 -or $report.v6ReopenVerified -ne $true -or $report.modelInferenceVerified -ne $false) { throw 'Refinement lacks honest real-DDC/reopen evidence.' }
+        Write-Host "$Configuration refinement passed all 24 native scenes on $($report.screen.friendlyName)."
         return
     }
     if ($WidebandUx) {
