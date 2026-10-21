@@ -268,7 +268,8 @@ void UiTests::annotationSelectionAcrossPagesAndViews() {
   const auto counts = QString("匹配 268 / 总数 268 / 已选 1");
   QVERIFY(
       window.findChild<QLabel*>("annotationCounts")->text().startsWith(counts));
-  QCOMPARE(window.findChild<QLabel*>("treeAnnotationCounts")->text(), counts);
+  QCOMPARE(window.findChild<QLabel*>("treeAnnotationCounts")->toolTip(), counts);
+  QCOMPARE(window.findChild<QLabel*>("treeAnnotationCounts")->text(),QString("已选 1"));
   QVERIFY(
       window.findChild<QLabel*>("selectedCount")->text().startsWith(counts));
   window.findChild<QPushButton*>("treeSelectAll")->click();

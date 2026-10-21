@@ -89,7 +89,7 @@ class ChartControlStrip final : public QWidget {
     pending_=false;
     if(!isVisible()||popovers_->activePopover()==frame_) return;
     std::vector<int> candidates; int required=0;bool advanced=false;
-    for(const auto& panel:panels_) advanced|=panel.widget&&!panel.widget->isHidden();
+    for(const auto& panel:panels_){const bool shown=panel.widget&&!panel.widget->isHidden();advanced|=shown;if(panel.heading)panel.heading->setVisible(shown);}
     for(int i=0;i<static_cast<int>(items_.size());++i) {
       const auto& item=items_[i];
       if(!item.control||item.external||!wanted(item)) continue;

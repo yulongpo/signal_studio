@@ -179,7 +179,8 @@ void interactionScene(Capture& capture, const QString& name, QScreen* screen) {
   record["tableCounts"] =
       child<QLabel>(capture.window, "annotationCounts")->text();
   record["treeCounts"] =
-      child<QLabel>(capture.window, "treeAnnotationCounts")->text();
+      child<QLabel>(capture.window, "treeAnnotationCounts")->toolTip();
+  record["treeSummary"]=child<QLabel>(capture.window,"treeAnnotationCounts")->text();
   require(record["tableCounts"].toString().startsWith(
               record["treeCounts"].toString() + " · 页 "),
           "Tree and table annotation counts disagree");

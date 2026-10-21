@@ -1,3 +1,4 @@
+#include "ui/project_tree_presentation.h"
 #include "app/main_window.h"
 #include "ui/chart_control_strip.h"
 #include "ui/context_stack.h"
@@ -102,56 +103,6 @@ QColor annotationSourceColor(AnnotationSource source) {
          : source == AnnotationSource::Manual      ? QColor("#edc56d")
                                                    : QColor("#51c4e9");
 }
-class AnnotationTreeDelegate final : public QStyledItemDelegate {
- public:
-  using QStyledItemDelegate::QStyledItemDelegate;
-  void paint(QPainter* painter, const QStyleOptionViewItem& option,
-             const QModelIndex& index) const override {
-    if (index.data(Qt::UserRole).toString() != "mark") {
-      QStyledItemDelegate::paint(painter, option, index);
-      return;
-    }
-    auto style = option;
-    initStyleOption(&style, index);
-    style.state &= ~(QStyle::State_Selected | QStyle::State_HasFocus |
-                     QStyle::State_MouseOver);
-    const auto* widgetStyle =
-        style.widget ? style.widget->style() : QApplication::style();
-    const auto textRect = widgetStyle->subElementRect(
-        QStyle::SE_ItemViewItemText, &style, style.widget);
-    const auto text = style.fontMetrics.elidedText(
-        style.text, style.textElideMode, textRect.width());
-    style.text.clear();
-    widgetStyle->drawControl(QStyle::CE_ItemViewItem, &style, painter,
-                             style.widget);
-    // The application item QSS overrides ForegroundRole during styled text
-    // painting. Draw mark text explicitly so every state keeps its source
-    // color.
-    painter->save();
-    painter->setFont(style.font);
-    painter->setPen(index.data(Qt::ForegroundRole).value<QBrush>().color());
-    painter->drawText(
-        textRect, static_cast<int>(style.displayAlignment) | Qt::TextSingleLine,
-        text);
-    painter->restore();
-    const auto state = index.data(Qt::UserRole + 3).toInt();
-    if (!(state & 7)) return;
-    painter->save();
-    QPen pen(state & 2   ? QColor("#84daf5")
-             : state & 1 ? QColor("#37647d")
-                         : QColor("#c0ecff"),
-             state & 2 ? 2 : 1);
-    if (!(state & 3)) pen.setStyle(Qt::DotLine);
-    painter->setPen(pen);
-    painter->setBrush(Qt::NoBrush);
-    painter->drawRect(option.rect.adjusted(1, 1, -2, -2));
-    if ((state & 4) && (state & 3)) {
-      painter->setPen(QPen(QColor("#d4f2ff"), 1, Qt::DotLine));
-      painter->drawRect(option.rect.adjusted(3, 3, -4, -4));
-    }
-    painter->restore();
-  }
-};
 bool hasActiveSegment(const FileState& file) {
   const auto* annotation = findMark(file, file.activeMarkId);
   return annotation && !annotation->deleted && activeSegment(*annotation);
@@ -779,7 +730,8 @@ void MainWindow::buildWorkspace() {
   tree_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   tree_->setContextMenuPolicy(Qt::CustomContextMenu);
   tree_->setMouseTracking(true);
-  tree_->setItemDelegate(new AnnotationTreeDelegate(tree_));
+  tree_->setItemDelegate(new ProjectTreePresentationDelegate(tree_));
+  tree_->setUniformRowHeights(false);
   connect(tree_, &QTreeWidget::itemExpanded, this,
           [this] { resizeTreeToContents(); });
   connect(tree_, &QTreeWidget::itemCollapsed, this,
@@ -1395,7 +1347,14 @@ void MainWindow::buildWorkspace() {
   channelRelation_ = output("channelSourceRelation");
   channelRevision_->setWordWrap(true);
   channelRelation_->setWordWrap(true);
-  row(channelForm, "创建修订", channelRevision_);
+  auto* sourceDetails=new QWidget;sourceDetails->setObjectName("channelSourceDetails");
+  auto* sourceForm=new QFormLayout(sourceDetails);sourceForm->setContentsMargins(0,4,0,4);
+  row(sourceForm,"创建修订",channelRevision_);
+  auto* sourcePath=output("channelSourcePath");row(sourceForm,"完整来源",sourcePath);
+  auto* sourceToggle=new QToolButton;sourceToggle->setObjectName("channelSourceDetailsToggle");sourceToggle->setText("来源详情");sourceToggle->setCheckable(true);
+  sourceToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);sourceToggle->setArrowType(Qt::RightArrow);
+  channelForm->addRow(sourceToggle);channelForm->addRow(sourceDetails);sourceDetails->hide();
+  connect(sourceToggle,&QToolButton::toggled,this,[sourceDetails,sourceToggle](bool open){sourceDetails->setVisible(open);sourceToggle->setArrowType(open?Qt::DownArrow:Qt::RightArrow);});
   row(channelForm, "来源关系", channelRelation_);
   auto* channelActions = new QWidget;
   auto* channelRow = new QHBoxLayout(channelActions);
@@ -2126,7 +2085,7 @@ void MainWindow::rebuildTree() {
     item->setData(0, Qt::UserRole + 1, q(file.metadata.id));
     item->setFlags(Qt::ItemIsEnabled);
     item->setSizeHint(0, QSize(0, 32));
-    item->setExpanded(true);
+    item->setExpanded(file.metadata.id == session_.project().activeFileId);
     item->setToolTip(0, q(file.metadata.path));
     const bool active = file.metadata.id == session_.project().activeFileId;
     if (active) {
@@ -2159,26 +2118,20 @@ void MainWindow::rebuildTree() {
     auto* actions = new QTreeWidgetItem(marks);
     actions->setFlags(Qt::ItemIsEnabled);
     actions->setData(0, Qt::UserRole, "treeActions");
-    actions->setSizeHint(0, QSize(0, 61));
+    actions->setSizeHint(0, QSize(0, 30));
     auto* controls = new QWidget;
-    auto* controlColumn = new QVBoxLayout(controls);
-    controlColumn->setContentsMargins(0, 1, 0, 1);
-    controlColumn->setSpacing(3);
-    auto* counts = new QLabel(annotationCountText(file));
-    counts->setObjectName("treeAnnotationCounts");
-    counts->setWordWrap(true);
-    controlColumn->addWidget(counts);
-    auto* actionRow = new QHBoxLayout;
-    actionRow->setSpacing(4);
-    controlColumn->addLayout(actionRow);
-    auto* all = push("全选匹配", "treeSelectAll", actionRow);
-    auto* remove = push("删除所选标记", "treeDeleteMarks", actionRow);
-    remove->setProperty("preserveParameterDrafts", true);
-    all->setProperty("uiRole", "outline");
-    remove->setProperty("uiRole", "outline");
-    all->setEnabled(annotationCounts(file).matching != 0);
-    remove->setEnabled(!file.selectedMarkIds.empty());
-    actionRow->addStretch();
+    auto* actionRow = new QHBoxLayout(controls);
+    actionRow->setContentsMargins(0,1,0,1);actionRow->setSpacing(4);
+    const auto count=annotationCounts(file);
+    auto* counts = new QLabel(count.selected ? QString("已选 %1").arg(count.selected) : QString("%1 项").arg(count.matching));
+    counts->setObjectName("treeAnnotationCounts");counts->setToolTip(annotationCountText(file));
+    actionRow->addWidget(counts,1);
+    auto* all=push("全选","treeSelectAll",actionRow);
+    auto* remove=push("删除","treeDeleteMarks",actionRow);
+    all->setToolTip("全选当前筛选的全部匹配标记");remove->setToolTip("预览并删除所选标记");
+    remove->setProperty("preserveParameterDrafts",true);
+    all->setProperty("uiRole","outline");remove->setProperty("uiRole","outline");
+    all->setEnabled(count.matching!=0);remove->setEnabled(count.selected!=0);
     tree_->setItemWidget(actions, 0, controls);
     connect(all, &QPushButton::clicked, this, &MainWindow::selectAllMarks);
     connect(remove, &QPushButton::clicked, this, &MainWindow::deleteMarks);
@@ -2235,7 +2188,7 @@ void MainWindow::rebuildTree() {
     auto* runs = new QTreeWidgetItem(
         item, {QString("检测运行 (%1)").arg(file.detectionRuns.size())});
     runs->setData(0, Qt::UserRole, "detectionRuns");
-    runs->setExpanded(true);
+    runs->setExpanded(false);
     for (std::size_t index = file.detectionRuns.size() > 100
                                  ? file.detectionRuns.size() - 100
                                  : 0;
@@ -2778,8 +2731,9 @@ void MainWindow::syncTreeState() {
     if (!marks || !channels) continue;
     const auto counts = annotationCounts(file);
     if (auto* controls = tree_->itemWidget(marks->child(0), 0)) {
-      controls->findChild<QLabel*>("treeAnnotationCounts")
-          ->setText(annotationCountText(file));
+      auto* summary=controls->findChild<QLabel*>("treeAnnotationCounts");
+      summary->setText(counts.selected?QString("已选 %1").arg(counts.selected):QString("%1 项").arg(counts.matching));
+      summary->setToolTip(annotationCountText(file));
       controls->findChild<QPushButton*>("treeSelectAll")
           ->setEnabled(counts.matching != 0);
       controls->findChild<QPushButton*>("treeDeleteMarks")
@@ -2818,6 +2772,8 @@ void MainWindow::syncTreeState() {
     }
   }
   syncTreeAnnotationStyles();
+  refreshProjectTreePresentation(tree_,session_.project());
+  resizeTreeToContents();
   revealTreeAnnotation();
 }
 
@@ -3729,6 +3685,8 @@ void MainWindow::updatePropertyContext() {
   }
   if (file && channel) {
     channelValues_[0]->setText(q(file->metadata.name));
+    channelValues_[0]->setToolTip(q(file->metadata.path));
+    findChild<QLabel*>("channelSourcePath")->setText(q(file->metadata.path));
     const auto* sourceMark = findMark(*file, channel->sourceMarkId);
     channelValues_[1]->setText(sourceMark ? q(sourceMark->name)
                                           : "来源标记丢失");

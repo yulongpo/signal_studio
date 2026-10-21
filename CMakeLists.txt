@@ -333,6 +333,16 @@ if(SS_BUILD_TESTS)
         BASE "${CMAKE_SOURCE_DIR}/resources"
         FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq"
     )
+    add_executable(SignalStudioProjectTreeTests tests/project_tree_presentation_tests.cpp)
+    target_link_libraries(SignalStudioProjectTreeTests PRIVATE SignalStudioCore Qt6::Widgets)
+    set_target_properties(SignalStudioProjectTreeTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioProjectTreeTests)
+    add_dependencies(SignalStudioProjectTreeTests SignalStudio)
+    add_test(NAME signal_studio_project_tree COMMAND SignalStudioProjectTreeTests)
+    set_tests_properties(signal_studio_project_tree PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 60
+        PASS_REGULAR_EXPRESSION "Totals: 8 passed, 0 failed")
+
     # Dedicated behavioral coverage for the wideband UI reorganization.
     add_executable(SignalStudioUxTests tests/ux_tests.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioUxTests PRIVATE
