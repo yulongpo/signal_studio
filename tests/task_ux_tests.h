@@ -313,7 +313,7 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
     for (int i = 0; i < target; ++i) QTest::keyClick(combo, Qt::Key_Down);
     QCOMPARE(combo->currentIndex(), target);
   }
-  QTest::mouseClick(window.findChild<QAbstractButton*>("powerSettings"), Qt::LeftButton);
+  QTest::mouseClick(chartSettingsEntry(window,"stftSettings"), Qt::LeftButton);
   auto* dynamic = window.findChild<QComboBox*>("dynamic");
   QVERIFY(dynamic && dynamic->isVisible());
   dynamic->setFocus(); dynamic->lineEdit()->selectAll();

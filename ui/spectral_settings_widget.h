@@ -12,6 +12,7 @@ public:
     SpectralParameters parameters() const;
     SpectrumStatistic statistic() const;
     QComboBox* takeStatisticControl();
+    QComboBox* takeInlineControl(const QString& suffix);
     void setParameters(const SpectralParameters&,SpectrumStatistic=SpectrumStatistic::Mean);
 signals:
     void edited();

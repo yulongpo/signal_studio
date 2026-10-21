@@ -1,3 +1,4 @@
+#include "chart_settings_helpers.h"
 // Independent native UI acceptance diagnostics. This executable uses the real
 // Windows QRhi backend and visible controls. The linked-cursor mode drives
 // actual IQ/DSP through the application; original scene captures use demo data.
@@ -1162,7 +1163,7 @@ int main(int argc, char* argv[]) {
     widebandNativeSelect(child<QComboBox>(window, "freqMode"), 1);
     QTest::keyClick(window.windowHandle(), Qt::Key_Escape);
     require(waitUntil([&] {
-              return !child<QWidget>(window, "displaySettingsPopover")->isVisible();
+              return !chartSettingsFrame(window,"displaySettings")->isVisible();
             }),
             "Display settings did not close after the visible controls committed");
     capture.scene("07_waterfall_colorbar_baseband", nullptr, [&] {

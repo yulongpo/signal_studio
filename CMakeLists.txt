@@ -366,7 +366,7 @@ if(SS_BUILD_TESTS)
     ss_add_ux_test(charts uxR02_chartSettingsStayStable uxA01_roiConfirmationAndEscape)
     ss_add_ux_test(layout uxR01_chartToolbarLayout uxR02_inspectorRouting
         uxR02_fileProperties uxR02_paletteWorkspaceOwnership
-        uxR03_taskKeyboardAndDetails uxR03_taskRowActions uxR01_lateRunFilterPopupAndRefresh)
+        uxR03_taskKeyboardAndDetails uxR03_taskRowActions uxR01_lateRunFilterPopupAndRefresh roundTwoFlatResponsiveControls)
     ss_add_ux_test(popovers uxP01_popupDismissal uxP02_popupChildrenAndGeometry
         uxS06_popoverDraftPolicy)
 

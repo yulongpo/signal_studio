@@ -1,3 +1,4 @@
+#include "chart_settings_helpers.h"
 #include <QtTest>
 #include <QAbstractButton>
 #include <QAction>
@@ -105,6 +106,7 @@ class UxTests : public QObject {
   void uxD03_activeTaskCancellationAndFrozenDisplay();
   void uxD01_topDerivationDiscardsCrossFileDraft();
   void uxR01_lateRunFilterPopupAndRefresh();
+  void roundTwoFlatResponsiveControls();
   void initTestCase() {
     QCoreApplication::setOrganizationName("SignalStudioTests");
     QCoreApplication::setApplicationName("WidebandUx");
@@ -286,6 +288,7 @@ class UxTests : public QObject {
 
 #include "popover_tests.h"
 #include "toolbar_ux_tests.h"
+#include "round_two_ux_tests.h"
 #include "spectral_ux_tests.h"
 #include "parameter_ux_tests.h"
 #include "inspector_ux_tests.h"

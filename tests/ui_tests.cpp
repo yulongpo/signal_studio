@@ -1,3 +1,4 @@
+#include "chart_settings_helpers.h"
 #include <QAbstractButton>
 #include <QAbstractItemView>
 #include <QAction>
@@ -142,9 +143,7 @@ bool openInspectorPage(MainWindow& window, const QString& context) {
 }
 
 void closeSettingsPopovers(MainWindow& window) {
-  for (const auto* name : {"filePropertiesPopover", "psdSettingsPopover",
-                           "stftSettingsPopover", "powerSettingsPopover",
-                           "displaySettingsPopover"})
+  for (const auto* name : {"filePropertiesPopover", "psdSettingsPopover", "stftSettingsPopover", "narrowbandPsdPanelControlsOverflowPopover", "narrowbandStftPanelControlsOverflowPopover", "narrowbandModulationStftControlsOverflowPopover", "recognitionStftPanelControlsOverflowPopover"})
     if (auto* frame = window.findChild<QWidget*>(name);
         frame && frame->isVisible()) {
       QTest::keyClick(frame, Qt::Key_Escape);
@@ -195,35 +194,14 @@ bool selectModelAndSpectrum(MainWindow& window, const QString& id,
 }
 
 bool openChartSettings(MainWindow& window, const QString& name) {
-  if (name == "psdSettings") {
-    window.session().setAuxiliaryMode(AuxiliaryMode::Psd);
-    window.refresh();
-  }
-  if (window.session().project().narrowbandWorkspaceOpen &&
-      !openInspectorPage(window, "Display")) return false;
+  if(name=="psdSettings"&&!window.session().project().narrowbandWorkspaceOpen){window.session().setAuxiliaryMode(AuxiliaryMode::Psd);window.refresh();}
   QCoreApplication::processEvents();
-  auto* frame = window.findChild<QWidget*>(name + "Popover");
-  if (!frame) return false;
-  if (frame->isVisible()) return true;
+  auto* frame=chartSettingsFrame(window,name);auto* entry=chartSettingsEntry(window,name);
+  if(!frame||!entry)return false;
+  if(frame->isVisible())return true;
   closeSettingsPopovers(window);
-  const bool narrow = window.session().project().narrowbandWorkspaceOpen;
-  auto* entry = window.findChild<QAbstractButton*>(
-      narrow ? "narrowband" + name : name);
-  if (narrow && (!entry || !entry->isEnabled() || !revealParameter(entry)))
-    return false;
-  if (entry && revealParameter(entry) && entry->isEnabled()) {
-    QTest::mouseClick(entry, Qt::LeftButton);
-  } else {
-    const auto strip = name == "psdSettings" ? "auxChartControls" : "specChartControls";
-    auto* more = window.findChild<QAbstractButton*>(QString(strip) + "Overflow");
-    if (!more || !more->isVisible() || !more->isEnabled()) return false;
-    QTest::mouseClick(more, Qt::LeftButton);
-    QCoreApplication::processEvents();
-    entry = window.findChild<QAbstractButton*>(name + "OverflowAction");
-    if (!entry || !revealParameter(entry) || !entry->isEnabled()) return false;
-    QTest::mouseClick(entry, Qt::LeftButton);
-  }
-  QCoreApplication::processEvents();
+  if(!revealParameter(entry)||!entry->isEnabled())return false;
+  QTest::mouseClick(entry,Qt::LeftButton);QCoreApplication::processEvents();
   return frame->isVisible();
 }
 
@@ -597,7 +575,7 @@ void UiTests::globalDisplaySettingsApplyAcrossFiles() {
   QCOMPARE(window.session().project().files[1].display.palette, Palette::Gray);
   QCOMPARE(window.session().project().files[1].display.dynamicRangeDb, 60.0);
   QCOMPARE(window.session().project().files[1].display.referenceLevelDb, -40.0);
-  QTest::keyClick(window.findChild<QWidget*>("powerSettingsPopover"), Qt::Key_Escape);
+  QTest::keyClick(chartSettingsFrame(window,"powerSettings"), Qt::Key_Escape);
   auto* auxiliaryPlot = window.findChild<PlotWidget*>("auxPlot");
   QVERIFY(auxiliaryPlot);
   const QPoint yAxisPoint(qRound(auxiliaryPlot->plotRect().left() - 20),
@@ -1166,7 +1144,7 @@ void UiTests::propertyFieldsFitSidebar() {
   QVERIFY(fieldRect.left() >= 0 && fieldRect.right() < scroll->viewport()->width());
   for (const auto* name : {"psdSettings", "stftSettings", "powerSettings", "displaySettings"}) {
     QVERIFY2(openChartSettings(window, name), name);
-    auto* frame = window.findChild<QWidget*>(QString(name) + "Popover");
+    auto* frame = chartSettingsFrame(window,QString(name));
     auto* area = frame->findChild<QScrollArea*>();
     QVERIFY(area && window.rect().contains(frame->geometry()));
     QStringList fields;
@@ -1175,10 +1153,11 @@ void UiTests::propertyFieldsFitSidebar() {
     else if (QString(name) == "powerSettings") fields = {"dynamic", "reference"};
     else fields = {"freqMode", "gridToggle", "colorbarToggle"};
     for (const auto& id : fields) {
-      auto* field = frame->findChild<QWidget*>(id);
+      auto* field = window.findChild<QWidget*>(id);
       QVERIFY2(revealParameter(field), qPrintable(id));
-      const QRect rect(field->mapTo(area->viewport(), QPoint()), field->size());
-      QVERIFY2(rect.left() >= 0 && rect.right() < area->viewport()->width(),
+      auto* visibleHost=area->isAncestorOf(field)?area->viewport():field->parentWidget();
+      const QRect rect(field->mapTo(visibleHost, QPoint()), field->size());
+      QVERIFY2(rect.left() >= 0 && rect.right() < visibleHost->width(),
                qPrintable(QString("Setting %1 must fit its visible viewport").arg(id)));
     }
     QTest::keyClick(frame, Qt::Key_Escape);
@@ -1412,7 +1391,7 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   QCOMPARE(nw->value(), previousNw);
   QCOMPARE(channel->psd.parameters.timeBandwidth, previousParameterNw);
   window.refresh();
-  QVERIFY(window.findChild<QWidget*>("psdSettingsPopover")->isVisible());
+  QVERIFY(chartSettingsFrame(window,"psdSettings")->isVisible());
   QVERIFY(edit->hasFocus());
   QCOMPARE(edit->text(), QString("4.5"));
   QTest::keyClick(edit, Qt::Key_Tab);
@@ -1601,7 +1580,7 @@ void UiTests::parameterInputsIgnoreWheel() {
   }
   for (const auto* name : {"psdSettings", "stftSettings", "powerSettings", "displaySettings"}) {
     QVERIFY2(openChartSettings(window, name), name);
-    auto* frame = window.findChild<QWidget*>(QString(name) + "Popover");
+    auto* frame = chartSettingsFrame(window,QString(name));
     check(frame);
     // Conditional rows must be visited through their real method/window
     // choices. They are intentionally hidden in the default Welch/Hann form.
@@ -1686,7 +1665,7 @@ void UiTests::parameterInputsIgnoreWheel() {
   QCOMPARE(window.session().activeFile()->display.dynamicRangeDb, previous);
   window.session().project().narrowbandWorkspaceOpen = false;
   window.refresh();
-  QTest::keyClick(window.findChild<QWidget*>("powerSettingsPopover"), Qt::Key_Escape);
+  QTest::keyClick(chartSettingsFrame(window,"powerSettings"), Qt::Key_Escape);
   auto* extract = window.findChild<QPushButton*>("extract");
   QVERIFY(revealParameter(extract));
   QTest::mouseClick(extract, Qt::LeftButton);
@@ -2001,7 +1980,7 @@ void UiTests::paletteControlsStaySynchronized() {
   QVERIFY(openChartSettings(window, "displaySettings"));
   QVERIFY(revealParameter(colorbar));
   QTest::mouseClick(colorbar, Qt::LeftButton);
-  QTest::keyClick(window.findChild<QWidget*>("displaySettingsPopover"), Qt::Key_Escape);
+  QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
   QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 10'000);
   const auto image = main->grab().toImage();
   const qreal dpr = image.devicePixelRatio();
@@ -2039,7 +2018,7 @@ void UiTests::paletteControlsStaySynchronized() {
   QCOMPARE(header->currentIndex(), static_cast<int>(Palette::Gray));
   QVERIFY(openInspectorPage(window, "Display"));
   QVERIFY(revealParameter(header));
-  auto* paletteHost = window.findChild<QWidget*>("paletteHost");
+  auto* paletteHost = chartSettingsStrip(window,"stftSettings");
   QVERIFY(paletteHost && paletteHost->isAncestorOf(header));
   QCOMPARE(window.findChild<QComboBox*>("colormap"), header);
   for (const auto* id : {"narrowbandStftPanelChart", "narrowbandModulationStftChart",
@@ -2065,7 +2044,7 @@ void UiTests::widebandAuxiliaryRenderingAndGestures() {
     mode->setCurrentIndex(static_cast<int>(auxiliaryMode));
     QVERIFY(openChartSettings(window, "displaySettings"));
     grid->setChecked(true);
-    QTest::keyClick(window.findChild<QWidget*>("displaySettingsPopover"), Qt::Key_Escape);
+    QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
     QTRY_VERIFY_WITH_TIMEOUT(chart->isDisplaySettled(), 10'000);
     if (QGuiApplication::platformName() == "windows") {
       QVERIFY(chart->gpuReady());
@@ -2077,13 +2056,13 @@ void UiTests::widebandAuxiliaryRenderingAndGestures() {
     const QImage withGrid = chartImage(chart);
     QVERIFY(openChartSettings(window, "displaySettings"));
     grid->setChecked(false);
-    QTest::keyClick(window.findChild<QWidget*>("displaySettingsPopover"), Qt::Key_Escape);
+    QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
     QTest::qWait(30);
     QVERIFY(changedPlotPixels(withGrid, chartImage(chart), chart->size(),
                               plot) > 50);
     QVERIFY(openChartSettings(window, "displaySettings"));
     grid->setChecked(true);
-    QTest::keyClick(window.findChild<QWidget*>("displaySettingsPopover"), Qt::Key_Escape);
+    QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
     const auto renderingBase = window.session().snapshot();
     const double center =
         (file->display.auxiliaryMin + file->display.auxiliaryMax) / 2.0;
@@ -2459,7 +2438,7 @@ void UiTests::narrowbandLinkedCursorsAndFrameSpectrum() {
   headerGrid->setChecked(true);
   QCOMPARE(rightGrid->isChecked(), true);
 
-  QTest::keyClick(window.findChild<QWidget*>("displaySettingsPopover"), Qt::Key_Escape);
+  QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
   QTest::keyClick(heat, Qt::Key_Escape);
   QTest::qWait(30);
   QVERIFY(!window.session().linkedCursor(context).pinned);
@@ -2501,7 +2480,7 @@ void UiTests::narrowbandPaletteSelectionUpdatesStftCharts() {
 
   QVERIFY(openInspectorPage(window, "Display"));
   QVERIFY(revealParameter(palette));
-  auto* paletteHost = window.findChild<QWidget*>("paletteHost");
+  auto* paletteHost = chartSettingsStrip(window,"stftSettings");
   QVERIFY(paletteHost && paletteHost->isAncestorOf(palette));
   QVERIFY(!palette->isEditable());
   QCOMPARE(window.findChildren<QComboBox*>("colormap").size(), 1);
@@ -2630,7 +2609,7 @@ void UiTests::sectionContextAndManualExpansion() {
   window.refresh();
   QVERIFY(openInspectorPage(window, "Display"));
   QVERIFY(openChartSettings(window, "psdSettings"));
-  auto* popup = window.findChild<QWidget*>("psdSettingsPopover");
+  auto* popup = chartSettingsFrame(window,"psdSettings");
   window.refresh();
   window.refresh();
   QVERIFY(popup->isVisible());
@@ -2807,7 +2786,7 @@ void UiTests::independentSpectralSettingsAndCustomRows() {
            QString("0"));
   QVERIFY(!window.findChild<QComboBox*>("psdOverlap")->isEnabled());
   method->setCurrentIndex(2);
-  QTest::keyClick(window.findChild<QWidget*>("psdSettingsPopover"), Qt::Key_Escape);
+  QTest::keyClick(chartSettingsFrame(window,"psdSettings"), Qt::Key_Escape);
   auto* stft = chartPoints(window, false);
   QVERIFY(revealParameter(stft));
   stft->setCurrentIndex(stft->findData(32));
@@ -3288,7 +3267,7 @@ void UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() {
   scale->setChecked(true);
   QVERIFY(plot->plotRect().width() < widthWithoutScale);
   QVERIFY(window.session().activeFile()->view == view);
-  QTest::keyClick(window.findChild<QWidget*>("displaySettingsPopover"), Qt::Key_Escape);
+  QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
   wheelAt(plot, plot->plotRect().center());
   QCoreApplication::processEvents();
   QVERIFY(plot->powerGenerationCount() > initialSamples);
@@ -3952,7 +3931,7 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
   QCOMPARE(stftChart->property("paletteIndex").toInt(), originalPalette);
   QVERIFY(openInspectorPage(window, "Display"));
   QVERIFY(revealParameter(palette));
-  auto* paletteHost = window.findChild<QWidget*>("paletteHost");
+  auto* paletteHost = chartSettingsStrip(window,"stftSettings");
   QVERIFY(paletteHost && paletteHost->isAncestorOf(palette));
   QVERIFY(!palette->isEditable());
   QCOMPARE(window.findChildren<QComboBox*>("colormap").size(), 1);
@@ -4356,7 +4335,7 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
     frequency->setCurrentIndex(1);
     grid->setChecked(false);
     colorbar->setChecked(true);
-    QTest::keyClick(window.findChild<QWidget*>("displaySettingsPopover"), Qt::Key_Escape);
+    QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
     QVERIFY(openFileProperties(window));
     QVERIFY(revealParameter(bandwidth));
     bandwidth->setValue(.5);

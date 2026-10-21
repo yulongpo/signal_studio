@@ -1290,15 +1290,6 @@ void MainWindow::buildWorkspace() {
   displaySummary_ = output("inspectorDisplaySummary");
   displaySummary_->setWordWrap(true);
   displayPage->addWidget(displaySummary_);
-  paletteHost_ = new QWidget;
-  paletteHost_->setObjectName("paletteHost");
-  auto* paletteRow = new QHBoxLayout(paletteHost_);
-  paletteRow->setContentsMargins(0, 0, 0, 0);
-  paletteRow->addWidget(new QLabel("色表"));
-  displayPage->addWidget(paletteHost_);
-  narrowbandSettingsLinks_ = new QWidget;
-  narrowbandSettingsLinks_->setObjectName("chartSettingsLinks");
-  displayPage->addWidget(narrowbandSettingsLinks_);
   displayPage->addStretch();
   filePropertiesContent_ = new QWidget;
   auto* fileForm = new QFormLayout(filePropertiesContent_);
@@ -1955,162 +1946,148 @@ void MainWindow::buildWorkspace() {
 void MainWindow::buildChartControls() {
   settingsPopovers_ = new SettingsPopoverHost(this);
   settingsPopovers_->add(filePropertiesButton_, filePropertiesContent_, "filePropertiesPopover");
-  const auto replaceStretch = [](QHBoxLayout* layout, QWidget* controls) {
-    for (int index = 0; index < layout->count(); ++index)
-      if (layout->itemAt(index)->spacerItem()) {
-        delete layout->takeAt(index);
-        layout->insertWidget(index, controls, 1);
-        return;
-      }
-    layout->addWidget(controls, 1);
+  const auto attach = [this](QWidget* head, const QString& name) {
+    auto* strip = new ChartControlStrip(settingsPopovers_, name, head);
+    auto* layout = qobject_cast<QHBoxLayout*>(head->layout());
+    for(int i=0;i<layout->count();++i) if(layout->itemAt(i)->spacerItem()) {
+      delete layout->takeAt(i);layout->insertWidget(i,strip,1);return strip;
+    }
+    layout->addWidget(strip,1);return strip;
   };
-  auto* auxHead = findChild<QWidget*>("auxChartHead");
-  auto* specHead = findChild<QWidget*>("specChartHead");
-  auxiliaryControls_ = new ChartControlStrip(settingsPopovers_, "auxChartControls", auxHead);
-  spectrumControls_ = new ChartControlStrip(settingsPopovers_, "specChartControls", specHead);
-  replaceStretch(qobject_cast<QHBoxLayout*>(auxHead->layout()), auxiliaryControls_);
-  replaceStretch(qobject_cast<QHBoxLayout*>(specHead->layout()), spectrumControls_);
-  const auto button = [this](const QString& id, const QString& text, const QString& help) {
-    auto* result = new QToolButton(this);
-    result->setObjectName(id);
-    result->setText(text);
-    result->setToolTip(help);
-    result->setAccessibleName(help);
-    result->setFixedHeight(24);
-    return result;
-  };
-  psdSettingsButton_ = button("psdSettings", "设置", "PSD 估计方法、窗、重叠与分段时长");
-  stftSettingsButton_ = button("stftSettings", "设置", "STFT 方法、窗、重叠与分段时长");
-  powerSettingsButton_ = button("powerSettings", "电平", "参考电平、动态范围与自动适配");
-  displaySettingsButton_ = button("displaySettings", "显示", "频率坐标、网格与色阶条");
-  settingsPopovers_->add(psdSettingsButton_, psdParameters_, "psdSettingsPopover");
-  settingsPopovers_->add(stftSettingsButton_, stftParameters_, "stftSettingsPopover");
-  auto* power = new QWidget;
-  auto* powerForm = new QFormLayout(power);
-  powerForm->setContentsMargins(0, 0, 0, 0);
-  powerForm->setSpacing(9);
-  powerForm->addRow("参考电平", reference_);
-  powerForm->addRow("动态范围", dynamic_);
-  powerForm->addRow(autoPowerFit_);
-  settingsPopovers_->add(powerSettingsButton_, power, "powerSettingsPopover");
-  auto* display = new QWidget;
-  auto* displayForm = new QFormLayout(display);
-  displayForm->setContentsMargins(0, 0, 0, 0);
-  displayForm->setSpacing(9);
-  displayForm->addRow("频率坐标", freqMode_);
-  displayForm->addRow("网格", grid_);
-  displayForm->addRow("色阶条", colorScale_);
-  settingsPopovers_->add(displaySettingsButton_, display, "displaySettingsPopover");
-  const auto addSetting = [this](ChartControlStrip* strip, QToolButton* setting,
-                                  const QString& title, int priority) {
-    strip->addControl(setting, title, priority, [this, strip, setting] {
-      settingsPopovers_->open(setting, strip->overflowButton());
-    });
-  };
-  waveformMode_->setFixedWidth(182);
-  waveformMode_->setToolTip("波形分量，单位 ADC 计数");
-  psd_->setFixedWidth(86);
-  psd_->setAccessibleName("PSD N");
-  stft_->setFixedWidth(86);
-  stft_->setAccessibleName("STFT N");
-  psdScope_->setFixedWidth(150);
-  psdScope_->setToolTip("PSD 统计时间范围；显示分析，不改变检测任务");
-  psdStatisticControl_ = psdParameters_->takeStatisticControl();
-  psdStatisticControl_->setFixedWidth(84);
-  psdStatisticControl_->setAccessibleName("PSD 统计类型");
-  psdSourceControl_ = combo("psdSource", {"统计谱", "驻留帧谱"});
-  psdSourceControl_->setFixedWidth(100);
-  psdSourceControl_->setToolTip("驻留帧谱直接复用实际 STFT 帧，N 随 STFT");
-  connect(psdSourceControl_, &QComboBox::currentIndexChanged, this, [this](int index) {
-    if (refreshing_) return;
-    const auto* file = session_.activeFile();
-    if (!file) return;
-    const auto* channel = session_.project().narrowbandWorkspaceOpen ? session_.activeChannel() : nullptr;
-    session_.setFramePsd(channel ? channel->id : file->metadata.id, index == 1);
-    refresh();
+  auxiliaryControls_=attach(findChild<QWidget*>("auxChartHead"),"auxChartControls");
+  spectrumControls_=attach(findChild<QWidget*>("specChartHead"),"specChartControls");
+  psdSettingsButton_=auxiliaryControls_->overflowButton();
+  stftSettingsButton_=spectrumControls_->overflowButton();
+  psdSettingsButton_->setObjectName("psdSettings");
+  stftSettingsButton_->setObjectName("stftSettings");
+  findChild<QWidget*>("auxChartControlsOverflowPopover")->setObjectName("psdSettingsPopover");
+  findChild<QWidget*>("specChartControlsOverflowPopover")->setObjectName("stftSettingsPopover");
+  powerSettingsButton_=displaySettingsButton_=stftSettingsButton_;
+  const auto field=[](QWidget* control,int width){control->setFixedWidth(width);};
+  field(waveformMode_,148);field(psd_,82);field(stft_,82);field(psdScope_,130);
+  field(reference_,116);field(dynamic_,90);field(propertyPalette_,100);field(freqMode_,82);
+  psd_->setAccessibleName("PSD N");stft_->setAccessibleName("STFT N");
+  psdStatisticControl_=psdParameters_->takeStatisticControl();field(psdStatisticControl_,76);
+  psdSourceControl_=combo("psdSource",{"统计谱","驻留帧谱"});field(psdSourceControl_,94);
+  connect(psdSourceControl_,&QComboBox::currentIndexChanged,this,[this](int index){
+    if(refreshing_)return;const auto* file=session_.activeFile();if(!file)return;
+    const auto* channel=session_.project().narrowbandWorkspaceOpen?session_.activeChannel():nullptr;
+    session_.setFramePsd(channel?channel->id:file->metadata.id,index==1);refresh();
   });
-  auxiliaryControls_->addControl(waveformMode_, "波形分量", 100);
-  auxiliaryControls_->addControl(psd_, "PSD N", 100);
-  auxiliaryControls_->addControl(psdScope_, "统计时间范围", 20);
-  auxiliaryControls_->addControl(psdStatisticControl_, "PSD 统计类型", 30);
-  auxiliaryControls_->addControl(psdSourceControl_, "统计谱 / 驻留帧谱", 10);
-  addSetting(auxiliaryControls_, psdSettingsButton_, "PSD 设置", 5);
-  spectrumControls_->addControl(stft_, "STFT N", 100);
-  spectrumControls_->addControl(propertyPalette_, "色表", 90);
-  addSetting(spectrumControls_, powerSettingsButton_, "电平", 80);
-  addSetting(spectrumControls_, displaySettingsButton_, "显示选项", 20);
-  addSetting(spectrumControls_, stftSettingsButton_, "STFT 设置", 10);
-  specMode_->setMaximumWidth(160);
-  specAxis_->setMaximumWidth(110);
-  auto* links = new QVBoxLayout(narrowbandSettingsLinks_);
-  links->setContentsMargins(12, 8, 12, 8);
-  auto* caption = new QLabel("图谱设置", narrowbandSettingsLinks_);
-  links->addWidget(caption);
-  for (auto* setting : {psdSettingsButton_, stftSettingsButton_, powerSettingsButton_, displaySettingsButton_}) {
-    const auto linkCaption = setting == psdSettingsButton_ ? "PSD 方法与窗…"
-        : setting == stftSettingsButton_ ? "STFT 方法与窗…"
-        : setting == powerSettingsButton_ ? "电平与自动适配…" : "显示选项…";
-    auto* link = new QPushButton(linkCaption, narrowbandSettingsLinks_);
-    link->setProperty("uiRole", "outline");
-    link->setToolTip(setting->toolTip());
-    link->setCursor(Qt::PointingHandCursor);
-    link->setObjectName("narrowband" + setting->objectName());
-    link->setAccessibleName(setting->toolTip());
-    links->addWidget(link);
-    connect(link, &QPushButton::clicked, this, [this, link, setting] {
-      settingsPopovers_->toggle(setting, link);
-    });
+  for(int i=0;i<3;++i){
+    const QString suffix=i==0?"Method":i==1?"Window":"Overlap";
+    psdInline_[i]=psdParameters_->takeInlineControl(suffix);
+    stftInline_[i]=stftParameters_->takeInlineControl(suffix);
+    field(psdInline_[i],i==0?104:i==1?100:72);
+    field(stftInline_[i],i==0?104:i==1?100:72);
   }
+  for(auto* mode:auxiliaryButtons_) auxiliaryControls_->addControl(mode,mode->text(),150);
+  auxiliaryControls_->addControl(evidenceMode_,"检测证据",130);
+  for(auto* mode:mainButtons_) spectrumControls_->addControl(mode,mode->text(),150);
+  auxiliaryControls_->addControl(waveformMode_,"波形分量",100);
+  auto* fit=new QToolButton;fit->setObjectName("waveformAutoFit");fit->setText("自动幅度");
+  auxiliaryControls_->addControl(fit,"自动幅度",80);
+  connect(fit,&QToolButton::clicked,this,[this]{if(auto* f=session_.activeFile()){f->display.waveformAutoFit=true;propagateGlobalRightSidebarSettings();refresh();}});
+  narrowbandControls_.fill(nullptr);
+  const std::array<QString,5> panels{"narrowbandWaveformPanel","narrowbandPsdPanel","narrowbandStftPanel","narrowbandModulationStft","recognitionStftPanel"};
+  for(int i=0;i<5;++i){
+    auto* panel=narrowband_->findChild<QWidget*>(panels[i]);
+    auto* layout=qobject_cast<QVBoxLayout*>(panel->layout());
+    auto* head=layout->itemAt(0)->widget();
+    head->setObjectName(panels[i]+"Head");head->setProperty("chartIndex",i);
+    narrowbandControls_[i]=attach(head,panels[i]+"Controls");
+  }
+  auto* nbWave=narrowband_->findChild<QComboBox*>("narrowbandWaveformMode");field(nbWave,104);
+  narrowbandControls_[0]->addControl(nbWave,"波形分量",100);
+  auto* nbFit=new QToolButton;nbFit->setObjectName("narrowbandWaveformAutoFit");nbFit->setText("自动幅度");
+  narrowbandControls_[0]->addControl(nbFit,"自动幅度",90);
+  connect(nbFit,&QToolButton::clicked,this,[this]{if(auto* c=session_.activeChannel()){c->waveformAutoScale=true;narrowband_->refreshFromSession();}});
+  auto* nbPsd=narrowband_->findChild<QComboBox*>("narrowbandPsdFft");field(nbPsd,94);
+  narrowbandControls_[1]->addControl(nbPsd,"PSD N",100);
+  auto* nbStft=narrowband_->findChild<QComboBox*>("narrowbandStftFft");field(nbStft,100);
+  narrowbandControls_[2]->addControl(nbStft,"STFT N",100);
+  for(const auto* name:{"channelFrequencyMode","narrowbandGrid"})
+    narrowbandControls_[2]->addControl(narrowband_->findChild<QWidget*>(name),name==QString("narrowbandGrid")?"网格":"频率坐标",20);
+  if(auto* bar=narrowband_->findChild<QWidget*>("narrowbandChartToolbar")){
+    if(auto* status=bar->findChild<QLabel*>("narrowbandDataStatus")){
+      status->setParent(narrowband_->findChild<QWidget*>("narrowbandHeader"));status->setMaximumWidth(150);
+      qobject_cast<QHBoxLayout*>(status->parentWidget()->layout())->insertWidget(5,status);status->show();
+    }
+    delete bar;
+  }
+  if(auto* eye=narrowband_->findChild<QWidget*>("narrowbandEyeLarge")){
+    auto* head=qobject_cast<QVBoxLayout*>(eye->layout())->itemAt(0)->widget();
+    auto* strip=attach(head,"narrowbandEyeControls");
+    for(const auto* name:{"eyeComponent","eyePeriods","eyeTraces"})strip->addControl(narrowband_->findChild<QWidget*>(name),QString::fromLatin1(name),50);
+  }
+  specMode_->setMaximumWidth(150);specAxis_->setMaximumWidth(100);
+  for(const auto* name:{"observePage","modulationPage","deepLearningPage","demodulationPage"})
+    connect(narrowband_->findChild<QAbstractButton*>(name),&QAbstractButton::clicked,this,[this]{updateChartControls(true);});
+  chartControlsInitialized_=false;
 }
 
 void MainWindow::updateChartControls(bool narrow) {
-  if (!auxiliaryControls_) return;
-  const auto* file = session_.activeFile();
-  const bool wave = !file || file->display.auxiliaryMode == AuxiliaryMode::Waveform;
-  const bool evidence = auxiliaryEvidenceVisible_;
-  auxiliaryControls_->requestVisible(waveformMode_, wave && !evidence);
-  for (auto* control : {static_cast<QWidget*>(psd_), static_cast<QWidget*>(psdScope_),
-                         static_cast<QWidget*>(psdStatisticControl_), static_cast<QWidget*>(psdSourceControl_),
-                         static_cast<QWidget*>(psdSettingsButton_)})
-    auxiliaryControls_->requestVisible(control, !wave && !evidence);
-  const bool ready = file && file->metadata.availability.status != LoadStatus::Loading;
-  filePropertiesButton_->setEnabled(file != nullptr);
-  spectrumControls_->setExternalHost(propertyPalette_, narrow ? paletteHost_ : nullptr);
-  paletteHost_->setVisible(narrow);
-  waveformMode_->setEnabled(ready);
-  stft_->setEnabled(ready);
-  for (auto* setting : {psdSettingsButton_, stftSettingsButton_, powerSettingsButton_, displaySettingsButton_})
-    setting->setEnabled(ready);
-  stftParameters_->setEnabled(ready);
+  if(!auxiliaryControls_)return;
+  const auto* file=session_.activeFile();
+  const bool wave=!file||file->display.auxiliaryMode==AuxiliaryMode::Waveform;
+  const bool evidence=auxiliaryEvidenceVisible_;
+  auto* heat=narrowbandControls_[2];
+  if(const auto* channel=session_.activeChannel()){
+    if(channel->page==NarrowbandPage::Modulation)heat=narrowbandControls_[3];
+    if(channel->page==NarrowbandPage::DeepLearning)heat=narrowbandControls_[4];
+  }
+  if(!chartControlsInitialized_||chartControlsNarrow_!=narrow||activeHeatmapControls_!=heat){
+    settingsPopovers_->closeForContextChange();
+    auto* psdHost=narrow?narrowbandControls_[1]:auxiliaryControls_;
+    auto* stftHost=narrow?heat:spectrumControls_;
+    if(!narrow){psdHost->addControl(psd_,"PSD N",100);stftHost->addControl(stft_,"STFT N",100);}
+    psdHost->addControl(psdSourceControl_,"谱来源",110);
+    psdHost->addControl(psdScope_,"统计范围",65);
+    psdHost->addControl(psdStatisticControl_,"统计类型",75);
+    for(int i=0;i<3;++i){
+      const QString title=i==0?"估计方法":i==1?"窗函数":"重叠 (%)";
+      psdHost->addControl(psdInline_[i],title,45-i*10);
+      stftHost->addControl(stftInline_[i],title,40-i*10);
+    }
+    psdHost->addPanel(psdParameters_,"PSD 高级参数");
+    stftHost->addPanel(stftParameters_,"STFT 高级参数");
+    stftHost->addControl(propertyPalette_,"色表",95);
+    stftHost->addControl(reference_,"参考电平",85);
+    stftHost->addControl(dynamic_,"动态范围",80);
+    stftHost->addControl(autoPowerFit_,"自动适配电平",70);
+    stftHost->addControl(colorScale_,"色阶条",5);
+    if(!narrow){stftHost->addControl(freqMode_,"频率坐标",15);stftHost->addControl(grid_,"网格",10);}
+    else{
+      heat->addControl(narrowband_->findChild<QComboBox*>("narrowbandStftFft"),"STFT N",100);
+      heat->addControl(narrowband_->findChild<QWidget*>("channelFrequencyMode"),"频率坐标",15);
+      heat->addControl(narrowband_->findChild<QWidget*>("narrowbandGrid"),"网格",10);
+    }
+    chartControlsNarrow_=narrow;activeHeatmapControls_=heat;chartControlsInitialized_=true;
+  }
+  auxiliaryControls_->requestVisible(waveformMode_,wave&&!evidence);
+  auxiliaryControls_->requestVisible(findChild<QWidget*>("waveformAutoFit"),wave&&!evidence);
+  for(auto* control:{static_cast<QWidget*>(psd_),static_cast<QWidget*>(psdScope_),static_cast<QWidget*>(psdStatisticControl_),static_cast<QWidget*>(psdSourceControl_)})auxiliaryControls_->requestVisible(control,!wave&&!evidence);
+  for(auto* control:psdInline_)auxiliaryControls_->requestVisible(control,!wave&&!evidence);
+  psdParameters_->setVisible(narrow||(!wave&&!evidence));
+  const bool ready=file&&file->metadata.availability.status!=LoadStatus::Loading;
+  filePropertiesButton_->setEnabled(file!=nullptr);
+  waveformMode_->setEnabled(ready);stft_->setEnabled(ready);stftParameters_->setEnabled(ready);
   psdSourceControl_->setEnabled(ready);
-  if (file) {
-    const auto* channel = narrow ? session_.activeChannel() : nullptr;
-    const auto& cursor = session_.linkedCursor(channel ? channel->id : file->metadata.id);
-    psd_->setEnabled(ready && !cursor.framePsd);
-    psdScope_->setEnabled(ready && !cursor.framePsd);
-    psdParameters_->setEnabled(ready && !cursor.framePsd);
-    psdSourceControl_->setCurrentIndex(cursor.framePsd ? 1 : 0);
-    if (auto* model = qobject_cast<QStandardItemModel*>(psdSourceControl_->model()))
-      model->item(1)->setEnabled(cursor.pinned);
-    psdStatisticControl_->setEnabled(ready && !cursor.framePsd &&
-                                    psdParameters_->parameters().method != SpectralMethod::Periodogram);
-    psdSettingsButton_->setEnabled(ready && !cursor.framePsd);
-  } else {
-    psdStatisticControl_->setEnabled(false);
+  bool frame=false;
+  if(file){
+    const auto* channel=narrow?session_.activeChannel():nullptr;
+    const auto& cursor=session_.linkedCursor(channel?channel->id:file->metadata.id);frame=cursor.framePsd;
+    psdSourceControl_->setCurrentIndex(frame?1:0);
+    if(auto* model=qobject_cast<QStandardItemModel*>(psdSourceControl_->model()))model->item(1)->setEnabled(cursor.pinned);
   }
-  for (auto* setting : {psdSettingsButton_, stftSettingsButton_, powerSettingsButton_, displaySettingsButton_})
-    if (auto* link = narrowbandSettingsLinks_->findChild<QPushButton*>("narrowband" + setting->objectName()))
-      link->setEnabled(setting->isEnabled());
-  if (file) {
-    powerSettingsButton_->setText(QString("电平 %1/%2")
-        .arg(QString::number(file->display.referenceLevelDb, 'f', 1),
-             QString::number(file->display.dynamicRangeDb, 'f', 1)));
-    powerSettingsButton_->setToolTip(QString("参考电平 %1 %2 · 动态范围 %3 dB\n打开电平与自动适配设置")
-        .arg(number(file->display.referenceLevelDb), powerUnit(file->metadata),
-             number(file->display.dynamicRangeDb)));
-  }
-  auxiliaryControls_->reflow();
-  spectrumControls_->reflow();
+  psd_->setEnabled(ready&&!frame);psdScope_->setEnabled(ready&&!frame);psdParameters_->setEnabled(ready&&!frame);
+  for(auto* control:psdInline_)control->setEnabled(ready&&!frame&&(!control->property("chartSettingRelevant").isValid()||control->property("chartSettingRelevant").toBool()));
+  for(auto* control:stftInline_)control->setEnabled(ready&&(!control->property("chartSettingRelevant").isValid()||control->property("chartSettingRelevant").toBool()));
+  psdStatisticControl_->setEnabled(ready&&!frame&&psdParameters_->parameters().method!=SpectralMethod::Periodogram);
+  const QString frameHelp=frame?"驻留帧谱：N 随 STFT；选择统计谱可设置独立 PSD N":"当前可见频段的独立 PSD 分析点数";
+  psd_->setToolTip(frameHelp);
+  auxiliaryControls_->reflow();spectrumControls_->reflow();
+  for(auto* strip:narrowbandControls_)if(strip)strip->reflow();
 }
 
 void MainWindow::rebuildTree() {

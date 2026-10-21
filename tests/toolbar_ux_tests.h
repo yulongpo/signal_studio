@@ -60,17 +60,20 @@ inline void UxTests::uxR01_chartToolbarLayout() {
   first.setObjectName("first"); first.setText("First settings");
   second.setObjectName("second"); second.setText("Other settings");
   int invoked = 0;
-  strip.addControl(&first, "First", 10, [&] { ++invoked; });
+  QObject::connect(&first,&QToolButton::clicked,[&]{++invoked;});
+  strip.addControl(&first, "First", 10);
   strip.addControl(&second, "Second", 1);
   root.show();
   QTest::qWait(30);
   QVERIFY(strip.overflowButton()->isVisible());
   QTest::mouseClick(strip.overflowButton(), Qt::LeftButton);
-  auto* alternate = root.findChild<QToolButton*>("firstOverflowAction");
-  QVERIFY(alternate && alternate->isVisible());
-  QTest::mouseClick(alternate, Qt::LeftButton);
-  QCOMPARE(invoked, 1);
-  QCOMPARE(first.parentWidget(), &strip);
+  QVERIFY(first.isVisible());
+  QVERIFY(first.parentWidget()!=&strip);
+  QVERIFY(!first.menu());
+  QTest::mouseClick(&first,Qt::LeftButton);
+  QCOMPARE(invoked,1);
+  QVERIFY(host.activePopover());
+  QTest::keyClick(&first,Qt::Key_Escape);
   QVERIFY(!host.activePopover());
   // Stack-owned controls must leave the strip before its destructor.
   first.setParent(nullptr); second.setParent(nullptr);
@@ -82,23 +85,24 @@ inline void UxTests::uxR02_chartSettingsStayStable() {
   window.session().addDemoFile();
   window.session().activateFile(first);
   expose(window);
-  auto* power = window.findChild<QAbstractButton*>("powerSettings");
+  window.session().setAuxiliaryMode(AuxiliaryMode::Psd);window.refresh();
+  auto* power = chartSettingsEntry(window,"psdSettings");
   QVERIFY(power && power->isVisible());
   QTest::mouseClick(power, Qt::LeftButton);
-  auto* frame = window.findChild<QFrame*>("powerSettingsPopover");
+  auto* frame = chartSettingsFrame(window,"psdSettings");
   QVERIFY(frame && frame->isVisible());
-  auto* reference = window.findChild<QComboBox*>("reference");
+  auto* reference = window.findChild<QComboBox*>("psdSegmentMs");
   QVERIFY(reference && reference->isVisible() && reference->isEditable());
-  const auto accepted = window.session().activeFile()->display.referenceLevelDb;
+  const auto accepted = window.session().activeFile()->display.psd.parameters.segmentMilliseconds;
   auto* parent = reference->parentWidget();
   reference->lineEdit()->setFocus();
   reference->lineEdit()->selectAll();
-  QTest::keyClicks(reference->lineEdit(), "-33");
+  QTest::keyClicks(reference->lineEdit(), "3.3");
   QVERIFY(reference->property("parameterDraft").toBool());
   for (int i = 0; i < 5; ++i) window.refresh();
   QCOMPARE(reference->parentWidget(), parent);
-  QCOMPARE(reference->currentText(), QString("-33"));
-  QCOMPARE(window.session().activeFile()->display.referenceLevelDb, accepted);
+  QCOMPARE(reference->currentText(), QString("3.3"));
+  QCOMPARE(window.session().activeFile()->display.psd.parameters.segmentMilliseconds, accepted);
   QVERIFY(reference->lineEdit()->hasFocus());
   QTest::keyClick(reference->lineEdit(), Qt::Key_Escape);
   QVERIFY(!frame->isVisible());
@@ -109,15 +113,12 @@ inline void UxTests::uxR02_chartSettingsStayStable() {
   window.refresh();
   QVERIFY(!frame->isVisible());
   QVERIFY(!reference->property("parameterDraft").toBool());
-  QTest::mouseClick(window.findChild<QAbstractButton*>("contextDisplay"), Qt::LeftButton);
-  for (const auto* entry : {"psdSettings", "stftSettings", "powerSettings", "displaySettings"}) {
-    const auto linkName = QString("narrowband") + entry;
-    auto* link = window.findChild<QPushButton*>(linkName);
-    auto* layer = window.findChild<QFrame*>(QString(entry) + "Popover");
-    QVERIFY(link && link->isVisible() && layer);
-    QTest::mouseClick(link, Qt::LeftButton);
-    QTRY_VERIFY(layer->isVisible());
-    QTest::mouseClick(link, Qt::LeftButton);
-    QTRY_VERIFY(!layer->isVisible());
+  QTest::mouseClick(window.findChild<QAbstractButton*>("psdMode"),Qt::LeftButton);QCoreApplication::processEvents();
+  QVERIFY(!window.findChild<QWidget*>("chartSettingsLinks"));
+  for(const auto* category:{"psdSettings","stftSettings"}){
+    auto* entry=chartSettingsEntry(window,category);auto* layer=chartSettingsFrame(window,category);
+    QVERIFY(entry&&entry->isVisible()&&layer);
+    QTest::mouseClick(entry,Qt::LeftButton);QTRY_VERIFY(layer->isVisible());
+    QTest::mouseClick(entry,Qt::LeftButton);QTRY_VERIFY(!layer->isVisible());
   }
 }

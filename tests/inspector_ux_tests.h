@@ -96,7 +96,7 @@ inline void UxTests::uxR02_paletteWorkspaceOwnership() {
   auto* palette = window.findChild<QComboBox*>("colormap");
   QVERIFY(palette && palette->isVisible());
   auto* owner = palette->parentWidget();
-  QCOMPARE(owner->objectName(), QString("paletteHost"));
+  QCOMPARE(owner->objectName(), QString("narrowbandStftPanelControls"));
   palette->setFocus();
   QTest::keyClick(palette, Qt::Key_Home);
   QCOMPARE(window.session().activeFile()->display.palette, Palette::Turbo);

@@ -347,19 +347,12 @@ void widebandChartMenuAction(PlotWidget* plot, const char* name) {
 }
 
 void widebandOpenChartSettings(MainWindow& window, const char* name) {
-  auto* entry = child<QWidget>(window, name);
-  const auto frameName = QString::fromLatin1(name) + "Popover";
-  auto* frame = child<QWidget>(window, qPrintable(frameName));
-  if (frame->isVisible()) return;
-  if (entry->isVisible()) widebandNativeClick(entry);
-  else {
-    const auto moreName = entry->parentWidget()->objectName() + "Overflow";
-    widebandNativeClick(child<QWidget>(window, qPrintable(moreName)));
-    const auto alternate = QString::fromLatin1(name) + "OverflowAction";
-    widebandNativeClick(child<QWidget>(window, qPrintable(alternate)));
-  }
-  require(waitUntil([&] { return frame->isVisible(); }),
-          "Native chart settings did not open: " + frameName);
+  auto* frame=chartSettingsFrame(window,QString::fromLatin1(name));
+  auto* entry=chartSettingsEntry(window,QString::fromLatin1(name));
+  require(frame&&entry,"The actual chart More settings entrance is missing");
+  if(frame->isVisible())return;
+  widebandNativeClick(entry);
+  require(waitUntil([&]{return frame->isVisible();}),"The flat chart More settings did not open");
 }
 
 QJsonObject widebandCurrentFileProperties(MainWindow& window) {

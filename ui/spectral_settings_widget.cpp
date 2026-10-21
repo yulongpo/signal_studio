@@ -73,6 +73,17 @@ QComboBox* SpectralSettingsWidget::takeStatisticControl() {
     }
     return statistic_;
 }
+QComboBox* SpectralSettingsWidget::takeInlineControl(const QString& suffix) {
+    auto* control=suffix=="Method"?method_:suffix=="Window"?window_:suffix=="Overlap"?overlap_:nullptr;
+    if(!control)return nullptr;
+    auto* form=qobject_cast<QFormLayout*>(layout());
+    if(form&&form->indexOf(control)>=0){
+        const auto taken=form->takeRow(control);
+        if(taken.labelItem){delete taken.labelItem->widget();delete taken.labelItem;}
+        delete taken.fieldItem;
+    }
+    return control;
+}
 void SpectralSettingsWidget::setParameters(const SpectralParameters& p,SpectrumStatistic statistic) {
     if(!validSpectralParameters(p))return;
     auto accepted=p;
@@ -125,7 +136,7 @@ void SpectralSettingsWidget::changeMethod(){
 }
 void SpectralSettingsWidget::updateAvailability(){const auto p=parameters();const bool mt=p.method==SpectralMethod::Multitaper,burg=p.method==SpectralMethod::Burg,period=p.method==SpectralMethod::Periodogram;
     auto* form=qobject_cast<QFormLayout*>(layout());
-    const auto row=[form](QWidget* field,bool visible){if(form&&field&&form->indexOf(field)>=0){form->setRowVisible(field,visible);field->setEnabled(visible);}};
+    const auto row=[form](QWidget* field,bool visible){if(!field)return;field->setProperty("chartSettingRelevant",visible);if(form&&form->indexOf(field)>=0){form->setRowVisible(field,visible);field->setEnabled(visible);}};
     row(window_,!mt&&!burg);row(beta_,!mt&&!burg&&p.window==SpectralWindow::Kaiser);
     row(nw_,mt);row(tapers_,mt);row(order_,burg);
     row(overlap_,!period&&p.method!=SpectralMethod::Bartlett);row(duration_,!period);row(statistic_,!period);

@@ -105,6 +105,10 @@ class MainWindow : public QMainWindow {
   void showInspectorPage(int page, bool intentional = false);
   SettingsPopoverHost* settingsPopovers_ = nullptr;
   ChartControlStrip *auxiliaryControls_ = nullptr, *spectrumControls_ = nullptr;
+  std::array<ChartControlStrip*,5> narrowbandControls_{};
+  ChartControlStrip* activeHeatmapControls_=nullptr;
+  std::array<QComboBox*,3> psdInline_{},stftInline_{};
+  bool chartControlsInitialized_=false,chartControlsNarrow_=false;
   QComboBox *psdStatisticControl_ = nullptr, *psdSourceControl_ = nullptr;
   QToolButton *psdSettingsButton_ = nullptr, *stftSettingsButton_ = nullptr,
               *powerSettingsButton_ = nullptr, *displaySettingsButton_ = nullptr;
