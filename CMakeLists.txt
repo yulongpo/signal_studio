@@ -346,12 +346,29 @@ if(SS_BUILD_TESTS)
         PREFIX "/signalstudio/demo"
         BASE "${CMAKE_SOURCE_DIR}/resources"
         FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq")
-    add_test(NAME signal_studio_ux COMMAND "${CMAKE_COMMAND}"
-        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUxTests>"
-        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ux-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
-        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
-    set_tests_properties(signal_studio_ux PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480)
+    function(ss_add_ux_test category)
+        add_test(NAME signal_studio_ux_${category} COMMAND "${CMAKE_COMMAND}"
+            "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUxTests>"
+            "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ux-${category}-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
+            "-DSS_UI_CASES=${ARGN}"
+            -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+        set_tests_properties(signal_studio_ux_${category} PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480
+            LABELS "wideband-ux;${category}")
+    endfunction()
+    ss_add_ux_test(detection uxD01_historicalDerivation uxD02_viewSourceKeepsDraft
+        uxD01_topDerivationDiscardsCrossFileDraft
+        uxD03_crossFileCancellation uxD03_activeTaskCancellationAndFrozenDisplay
+        uxD04_modelSpectrumMapping uxD05_foldedParametersAndFirstScreen
+        uxD06_visibleRangeEntry uxD08_preflightDetails)
+    ss_add_ux_test(spectral uxS01_methodHistory uxS02_conditionalRows
+        uxS03_spectralIndependence uxS03_framePsdPreservesSettings uxS06_invalidDraftRecovery)
+    ss_add_ux_test(charts uxR02_chartSettingsStayStable uxA01_roiConfirmationAndEscape)
+    ss_add_ux_test(layout uxR01_chartToolbarLayout uxR02_inspectorRouting
+        uxR02_fileProperties uxR02_paletteWorkspaceOwnership
+        uxR03_taskKeyboardAndDetails uxR03_taskRowActions uxR01_lateRunFilterPopupAndRefresh)
+    ss_add_ux_test(popovers uxP01_popupDismissal uxP02_popupChildrenAndGeometry
+        uxS06_popoverDraftPolicy)
 
     add_executable(SignalStudioUiCapture tests/ui_capture.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioUiCapture PRIVATE

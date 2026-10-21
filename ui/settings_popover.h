@@ -23,7 +23,7 @@ class SettingsPopoverHost : public QObject {
   QFrame* add(QAbstractButton* anchor, QWidget* content,
               const QString& objectName);
   void open(QAbstractButton* registeredAnchor, QWidget* anchorOverride = nullptr);
-  void toggle(QAbstractButton* anchor);
+  void toggle(QAbstractButton* anchor, QWidget* anchorOverride = nullptr);
   void close(PopoverCloseReason reason = PopoverCloseReason::Outside);
   void closeForContextChange();
   void reposition();

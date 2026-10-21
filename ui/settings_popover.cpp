@@ -107,9 +107,10 @@ void SettingsPopoverHost::open(QAbstractButton* registeredAnchor,
   }
 }
 
-void SettingsPopoverHost::toggle(QAbstractButton* anchor) {
-  if (active_ && activeAnchor_ == anchor) close();
-  else open(anchor);
+void SettingsPopoverHost::toggle(QAbstractButton* anchor, QWidget* anchorOverride) {
+  auto* placement = anchorOverride ? anchorOverride : anchor;
+  if (active_ && activeAnchor_ == anchor && positioningAnchor_ == placement) close();
+  else open(anchor, anchorOverride);
 }
 
 void SettingsPopoverHost::close(PopoverCloseReason reason) {

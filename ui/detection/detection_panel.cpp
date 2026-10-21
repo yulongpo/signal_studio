@@ -533,6 +533,7 @@ DetectionPanel::DetectionPanel(Session& session,
           &DetectionPanel::showSelectedDetails);
   derive_ = new QPushButton("派生新运行");
   derive_->setObjectName("deriveWidebandDetection");
+  derive_->setProperty("preserveParameterDrafts", true);
   commands->addWidget(derive_);
   connect(derive_, &QPushButton::clicked, this, [this] {
     if (const auto* run = selectedRun()) deriveRun(q(run->request.runId));

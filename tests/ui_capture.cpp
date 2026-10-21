@@ -977,6 +977,10 @@ int main(int argc, char* argv[]) {
   const auto arguments = app.arguments();
   if (arguments.size() == 3 && arguments.at(1) == "--wideband-ux")
     return runWidebandUxCapture(arguments.at(2));
+  if (arguments.size() == 4 && arguments.at(1) == "--wideband-ux-reopen")
+    return runWidebandUxReopenProbe(arguments.at(2), arguments.at(3));
+  if (arguments.size() == 4 && arguments.at(1) == "--wideband-ux-review")
+    return runWidebandUxReviewProbe(arguments.at(2), arguments.at(3));
   if (arguments.size() == 4 && arguments.at(1) == "--annotation-interactions" &&
       arguments.at(2) == "U3")
     return runAnnotationChannelsCapture(arguments.at(3));
@@ -1151,13 +1155,16 @@ int main(int argc, char* argv[]) {
                   MainMode::Waterfall,
               "Visible waterfall segment did not activate waterfall");
     });
-    auto* specToggle = child<QToolButton>(window, "specSectionToggle");
-    if (!specToggle->isChecked()) click(window, "specSectionToggle");
+    widebandOpenChartSettings(window, "displaySettings");
     auto* colorbar = child<QCheckBox>(window, "colorbarToggle");
-    child<QScrollArea>(window, "propScroll")->ensureWidgetVisible(colorbar);
-    QTest::qWait(80);
-    click(window, "colorbarToggle");
-    chooseRelativeFrequency(window);
+    widebandScrollTo(colorbar);
+    widebandNativeClick(colorbar);
+    widebandNativeSelect(child<QComboBox>(window, "freqMode"), 1);
+    QTest::keyClick(window.windowHandle(), Qt::Key_Escape);
+    require(waitUntil([&] {
+              return !child<QWidget>(window, "displaySettingsPopover")->isVisible();
+            }),
+            "Display settings did not close after the visible controls committed");
     capture.scene("07_waterfall_colorbar_baseband", nullptr, [&] {
       const auto& display = window.session().activeFile()->display;
       require(display.colorScale && !display.absoluteFrequency,

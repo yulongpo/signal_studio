@@ -1603,6 +1603,28 @@ void UiTests::parameterInputsIgnoreWheel() {
     QVERIFY2(openChartSettings(window, name), name);
     auto* frame = window.findChild<QWidget*>(QString(name) + "Popover");
     check(frame);
+    // Conditional rows must be visited through their real method/window
+    // choices. They are intentionally hidden in the default Welch/Hann form.
+    if (QString(name) == "psdSettings" || QString(name) == "stftSettings") {
+      const QString prefix = QString(name) == "psdSettings" ? "psd" : "stft";
+      auto* method = window.findChild<QComboBox*>(prefix + "Method");
+      auto* windowType = window.findChild<QComboBox*>(prefix + "Window");
+      const int previousMethod = method->currentIndex();
+      const int previousWindow = windowType->currentIndex();
+      const auto choose = [&](QComboBox* combo, int index) {
+        QVERIFY(revealParameter(combo));
+        combo->setFocus(); QTest::keyClick(combo, Qt::Key_Home);
+        for (int i = 0; i < index; ++i) QTest::keyClick(combo, Qt::Key_Down);
+        QCOMPARE(combo->currentIndex(), index);
+      };
+      for (int index = 0; index < method->count(); ++index) {
+        choose(method, index);
+        if (windowType->isVisible()) choose(windowType, windowType->findText("Kaiser"));
+        check(frame);
+      }
+      choose(method, previousMethod);
+      if (windowType->isVisible()) choose(windowType, previousWindow);
+    }
     QTest::keyClick(frame, Qt::Key_Escape);
   }
   window.session().project().narrowbandWorkspaceOpen = false;
@@ -1638,7 +1660,7 @@ void UiTests::parameterInputsIgnoreWheel() {
   check(popup);
   const int oldMinimum = scroll->minimumHeight();
   const int oldMaximum = scroll->maximumHeight();
-  scroll->setFixedHeight(220);
+  scroll->setFixedHeight(std::max(60, bandwidth->sizeHint().height() * 2));
   QCoreApplication::processEvents();
   QTRY_VERIFY(scroll->verticalScrollBar()->maximum() > 0);
   QVERIFY(revealParameter(bandwidth));
@@ -4957,6 +4979,7 @@ void UiTests::widebandAnnotationSelectionAndOverlap() {
   QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier,
                     table->visualRect(table->model()->index(1, 0)).center());
   QCOMPARE(file->selectedMarkIds.size(), std::size_t{0});
+  QVERIFY(openChartSettings(window, "displaySettings"));
   auto* frequency = window.findChild<QComboBox*>("freqMode");
   QVERIFY(frequency->isVisible() && frequency->width() >= 160);
 }

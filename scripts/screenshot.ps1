@@ -275,7 +275,14 @@ try {
             $report.logicalWindowSize.width -ne 2560 -or $report.logicalWindowSize.height -ne 1440) {
             throw 'UX acceptance requires the actual unique native 4K/150% fullscreen monitor.'
         }
-        if (@($report.scenes).Count -ne $report.sceneCount -or $report.sceneCount -lt 20) { throw 'Incomplete UX scene report.' }
+        if (@($report.scenes).Count -ne $report.sceneCount -or $report.sceneCount -lt 50 -or
+            @($report.scenes.scene | Select-Object -Unique).Count -ne $report.sceneCount) { throw 'Incomplete UX scene report.' }
+        if ($report.modelInferenceVerified -ne $true -or @($report.productionRuns).Count -ne 2 -or
+            @($report.productionRuns.request.profile.id | Select-Object -Unique).Count -ne 2 -or
+            $report.cpuDdcVerified -ne $true -or $report.cpuDdc.outputSamples -le 0 -or
+            $report.v6ReopenVerified -ne $true -or $report.nativeCancellation.pass -ne $true) {
+            throw 'Final UX report lacks formal FFSCN/SCN, real CPU DDC, cancellation or v6 reopening.'
+        }
         foreach ($scene in @($report.scenes)) {
             if ($scene.pass -ne $true -or -not (Test-Path -LiteralPath $scene.png -PathType Leaf) -or
                 $scene.windowScreen.connectedIndex -ne $report.screen.connectedIndex -or

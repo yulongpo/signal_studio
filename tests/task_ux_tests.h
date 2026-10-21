@@ -3,10 +3,110 @@
 #include <QDialog>
 #include <QJsonDocument>
 #include <QPlainTextEdit>
+#include <QPersistentModelIndex>
 #include <QScopeGuard>
 #include <QTextBrowser>
 #include <QTimer>
 #include "infrastructure/detection_store.h"
+
+inline void UxTests::uxR01_lateRunFilterPopupAndRefresh() {
+  QTemporaryDir directory;
+  MainWindow window;
+  QString issue;
+  QVERIFY(window.createProject(directory.path(), "run-filter", &issue));
+  issue = addSource(window, directory.path(), "IQ_A_FS1Msps_FC100MHz.dat");
+  QVERIFY2(issue.isEmpty(), qPrintable(issue));
+  expose(window);
+  QTest::mouseClick(window.findChild<QAbstractButton*>("resultTab"), Qt::LeftButton);
+  auto* filter = window.findChild<QComboBox*>("annotationRunFilter");
+  QVERIFY(filter && filter->isVisible());
+  QCOMPARE(filter->count(), 2);
+  const auto open = [&] {
+    QTest::mouseClick(filter, Qt::LeftButton, Qt::NoModifier, QPoint(filter->width() - 8, filter->height() / 2));
+  };
+  open();
+  QTRY_VERIFY(filter->view()->isVisible());
+  QTest::keyClick(filter->view(), Qt::Key_Escape);
+  QTRY_VERIFY(!filter->view()->isVisible());
+  auto* source = window.session().activeFile();
+  DetectionRequest request;
+  // Wider than the first-show editor, while fitting the offscreen plugin's
+  // small virtual popup screen. Native capture also checks full UUID IDs.
+  request.runId = "ux-filter-run-0123456789";
+  request.sourceIdentity = annotationSourceIdentity(source->metadata, window.session().projectGeneration());
+  request.profile = *findDetectionProfile("pipeline-fixture-v1");
+  request.requestedRange = fullRange(source->metadata);
+  request.contextRange = request.requestedRange;
+  request.rangeOrigin = "available-file";
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  QVERIFY2(panel->startRequest(request, issue), qPrintable(issue));
+  QTRY_VERIFY_WITH_TIMEOUT(filter->findData(QString::fromStdString(request.runId)) >= 2, 15000);
+  open();
+  auto* view = filter->view();
+  QTRY_VERIFY(view->isVisible());
+  const QPersistentModelIndex row(filter->model()->index(filter->findData(QString::fromStdString(request.runId)), 0));
+  view->scrollTo(row);
+  QTRY_VERIFY2(view->viewport()->rect().contains(view->visualRect(row)),
+      qPrintable(QString("row %1x%2; viewport %3x%4; view min %5; popup %6x%7")
+          .arg(view->visualRect(row).width()).arg(view->visualRect(row).height())
+          .arg(view->viewport()->width()).arg(view->viewport()->height())
+          .arg(view->minimumWidth()).arg(view->window()->width()).arg(view->window()->height())));
+  const auto tooltip = row.data(Qt::ToolTipRole).toString();
+  QCOMPARE(tooltip, QString::fromStdString(request.runId));
+  QTest::keyClick(view, Qt::Key_End);
+  QCOMPARE(view->currentIndex(), QModelIndex(row));
+  for (int refresh = 0; refresh < 5; ++refresh) window.refresh();
+  QVERIFY(row.isValid() && view->isVisible());
+  QCOMPARE(view->currentIndex(), QModelIndex(row));
+  QCOMPARE(row.data(Qt::UserRole).toString(), QString::fromStdString(request.runId));
+  QVERIFY(view->viewport()->rect().contains(view->visualRect(row)));
+  QTest::qWait(QApplication::doubleClickInterval() + 50);
+  QTest::mouseClick(view->viewport(), Qt::LeftButton, Qt::NoModifier, view->visualRect(row).center());
+  QTRY_VERIFY(!view->isVisible());
+  QCOMPARE(source->annotationFilter.runId, request.runId);
+}
+
+inline void UxTests::uxD01_topDerivationDiscardsCrossFileDraft() {
+  QTemporaryDir directory;
+  MainWindow window;
+  QString issue;
+  QVERIFY(window.createProject(directory.path(), "derive-draft", &issue));
+  issue = addSource(window, directory.path(), "IQ_A_FS1Msps_FC100MHz.dat");
+  QVERIFY2(issue.isEmpty(), qPrintable(issue));
+  const auto firstId = window.session().activeFile()->metadata.id;
+  issue = addSource(window, directory.path(), "IQ_B_FS1Msps_FC200MHz.dat");
+  QVERIFY2(issue.isEmpty(), qPrintable(issue));
+  auto history = historyFor(window);
+  history.request.runId = "history-b-scn";
+  history.request.profile = *findDetectionProfile("scn-max-psd-v1");
+  history.request.spectrumMode = DetectionSpectrumMode::ModelDefault;
+  window.session().activeFile()->detectionRuns.push_back(history);
+  QVERIFY(window.session().activateFile(firstId));
+  expose(window);
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  panel->refresh(); focusHistory(window, "history-b-scn");
+  QVERIFY(uxDetectionPage(window));
+  auto* card = window.findChild<DetectionCard*>("detectionCard");
+  auto* score = card->findChild<AdaptiveValueEdit*>("detectionScoreThreshold");
+  QVERIFY(uxDetectionReveal(window, score));
+  const auto accepted = card->request().parameters.scoreThreshold;
+  score->setFocus(); score->selectAll(); QTest::keyClicks(score, "0.83");
+  QVERIFY(score->property("parameterDraft").toBool());
+  auto* derive = panel->findChild<QPushButton*>("deriveWidebandDetection");
+  QVERIFY(derive && derive->isVisible() && derive->isEnabled());
+  QTest::mouseClick(derive, Qt::LeftButton);
+  QCOMPARE(card->request().sourceIdentity.fileId, history.request.sourceIdentity.fileId);
+  QCOMPARE(card->request().profile.id, std::string("scn-max-psd-v1"));
+  QCOMPARE(card->request().parentRunId, std::optional<std::string>("history-b-scn"));
+  QVERIFY(!score->property("parameterDraft").toBool());
+  auto* model = card->findChild<QComboBox*>("detectionModel");
+  model->setFocus(); QTest::keyClick(model, Qt::Key_Home);
+  QCOMPARE(card->request().profile.id, std::string("ffscn-gui-iq-v1"));
+  QCOMPARE(card->request().parameters.scoreThreshold, accepted);
+  QVERIFY(window.session().activateFile(firstId)); window.refresh();
+  QCOMPARE(card->request().parameters.scoreThreshold, accepted);
+  QVERIFY(window.session().activeFile()->detectionRuns.empty());
+}
 
 inline void UxTests::uxR03_taskRowActions() {
   QTemporaryDir directory;

@@ -2,7 +2,8 @@
 
 // Include inside ui_capture.cpp's anonymous namespace, AFTER the wideband and
 // annotation capture sidecars. All Qt/standard headers belong at global scope.
-// This runner owns only W2 chart scenes; it does not call historical R/U runners.
+// This runner owns this optimization's scenes and counts. Shared native helpers
+// do not modify archived R/U reports or their acceptance counts.
 
 QJsonObject widebandUxReachable(QWidget* widget, MainWindow& window,
                               bool requireEnabled = true) {
@@ -111,6 +112,108 @@ QJsonArray widebandUxToolbarEvidence(MainWindow& window) {
   return result;
 }
 
+QJsonObject widebandUxOpenSavedProject(MainWindow& window, const QString& projectPath,
+                                       const QDir& output) {
+  const bool oldNativeDialogs = QApplication::testAttribute(Qt::AA_DontUseNativeDialogs);
+  QApplication::setAttribute(Qt::AA_DontUseNativeDialogs, true);
+  bool accepted = false, typed = false;
+  QString failure;
+  QElapsedTimer elapsed;
+  elapsed.start();
+  QTimer picker;
+  picker.setInterval(100);
+  QJsonObject trace;
+  QObject::connect(&picker, &QTimer::timeout, &window, [&] {
+    auto* dialog = qobject_cast<QFileDialog*>(QApplication::activeModalWidget());
+    if (!dialog) {
+      if (elapsed.elapsed() < 15000) return;
+      failure = "W6 visible project file picker did not appear";
+      picker.stop();
+      for (auto* candidate : window.findChildren<QFileDialog*>()) candidate->reject();
+      if (auto* modal = qobject_cast<QDialog*>(QApplication::activeModalWidget())) modal->reject();
+      return;
+    }
+    try {
+      auto* field = child<QLineEdit>(*dialog, "fileNameEdit");
+      trace = {{"elapsedMs", elapsed.elapsed()}, {"directory", dialog->directory().absolutePath()},
+               {"selectedFiles", QJsonArray::fromStringList(dialog->selectedFiles())},
+               {"fileNameText", field->text()}, {"typed", typed}};
+      QFile diagnostic(output.filePath("project-picker-trace.json"));
+      if (diagnostic.open(QIODevice::WriteOnly)) diagnostic.write(QJsonDocument(trace).toJson());
+      if (elapsed.elapsed() >= 15000) dialog->grab().save(output.filePath("project-picker-failed.png"));
+      require(elapsed.elapsed() < 15000, "W6 project picker did not accept: " + field->text());
+      if (!typed) {
+        require(field->isVisible() && field->isEnabled(), "W6 project file name is not editable");
+        QTest::mouseClick(field, Qt::LeftButton);
+        QTest::keyClick(field, Qt::Key_A, Qt::ControlModifier);
+        QTest::keyClicks(field, QDir::toNativeSeparators(projectPath));
+        typed = true;
+        return;
+      }
+      QTest::keyClick(field, Qt::Key_Return);
+      if (!dialog->isVisible()) { accepted = true; picker.stop(); }
+    } catch (const std::exception& error) {
+      failure = QString::fromUtf8(error.what());
+      picker.stop(); dialog->reject();
+    }
+  });
+  picker.start();
+  widebandMenuAction(window, "openProjectJsonAction");
+  picker.stop();
+  QApplication::setAttribute(Qt::AA_DontUseNativeDialogs, oldNativeDialogs);
+  require(accepted && failure.isEmpty(), "W6 project picker reopen failed: " + failure);
+  trace["pass"] = true;
+  return trace;
+}
+
+int runWidebandUxReopenProbe(const QString& projectPath, const QString& outputDirectory) {
+  const QDir output(outputDirectory);
+  if (!QFileInfo(outputDirectory).isAbsolute() || !QDir().mkpath(outputDirectory)) return 2;
+  qApp->setProperty("uiStatePersistenceEnabled", false);
+  MainWindow window;
+  QJsonObject result{{"pass", false}};
+  try {
+    showFullScreenOnScreen(window, nativeAcceptanceScreen());
+    require(window.openProject(projectPath) && widebandDisplayReady(window), "Cannot prepare the saved-project probe");
+    const auto generation = window.session().projectGeneration();
+    result["picker"] = widebandUxOpenSavedProject(window, projectPath, output);
+    require(window.session().projectGeneration() > generation && widebandDisplayReady(window), "Picker did not replace the project");
+    result["pass"] = true;
+  } catch (const std::exception& error) { result["error"] = QString::fromUtf8(error.what()); }
+  QFile report(output.filePath("project-reopen-probe.json"));
+  if (report.open(QIODevice::WriteOnly)) report.write(QJsonDocument(result).toJson());
+  return result["pass"].toBool() ? 0 : 1;
+}
+
+int runWidebandUxReviewProbe(const QString& projectPath, const QString& outputDirectory) {
+  const QDir output(outputDirectory);
+  if (!QFileInfo(outputDirectory).isAbsolute() || !QDir().mkpath(outputDirectory)) return 2;
+  qApp->setProperty("uiStatePersistenceEnabled", false);
+  MainWindow window;
+  Capture capture{window, output, {child<PlotWidget>(window, "navigationPlot"),
+      child<PlotWidget>(window, "auxPlot"), child<PlotWidget>(window, "mainPlot")}};
+  QJsonObject result{{"pass", false}};
+  try {
+    auto* screen = nativeAcceptanceScreen();
+    showFullScreenOnScreen(window, screen);
+    require(window.openProject(projectPath), "Cannot prepare the saved-review probe");
+    for (const auto& file : window.session().project().files)
+      if (file.metadata.path.ends_with(".sigmf-data")) { window.session().activateFile(file.metadata.id); break; }
+    window.refresh();
+    require(widebandDisplayReady(window), "Actual review source did not settle");
+    result["review"] = widebandFinalAcceptance(capture, screen, projectPath, false);
+    result["pass"] = true;
+  } catch (const std::exception& error) {
+    result["error"] = QString::fromUtf8(error.what());
+    if (auto* popup = QApplication::activePopupWidget()) popup->grab().save(output.filePath("failed-popup.png"));
+    window.grab().save(output.filePath("failed-review.png"));
+  }
+  result["scenes"] = capture.scenes;
+  QFile report(output.filePath("review-probe.json"));
+  if (report.open(QIODevice::WriteOnly)) report.write(QJsonDocument(result).toJson());
+  return result["pass"].toBool() ? 0 : 1;
+}
+
 int runWidebandUxCapture(const QString& outputDirectory) {
   QDir output(outputDirectory);
   if (!QFileInfo(outputDirectory).isAbsolute() ||
@@ -126,7 +229,7 @@ int runWidebandUxCapture(const QString& outputDirectory) {
     QVariant value;
     ~RestorePersistence() { qApp->setProperty("uiStatePersistenceEnabled", value); }
   } restorePersistence{previousPersistence};
-  QJsonObject report{{"mode", "wideband-ux"}, {"scope", "W2 charts and W4 inspector"},
+  QJsonObject report{{"mode", "wideband-ux"}, {"scope", "W0-W6 final UI journey"},
                      {"pass", false}, {"error", ""},
                      {"qtVersion", QString::fromLatin1(qVersion())},
                      {"platform", QGuiApplication::platformName()},
@@ -191,6 +294,17 @@ int runWidebandUxCapture(const QString& outputDirectory) {
   const auto escape = [&] {
     QTest::keyClick(window.windowHandle(), Qt::Key_Escape);
     require(waitUntil(noPopovers), "W2 Escape did not close settings");
+  };
+  const auto commit = [&](const char* name, const QString& value) {
+    auto* widget = control(name);
+    widebandScrollTo(widget);
+    widebandUxClick(widget, window);
+    auto* editor = qobject_cast<QLineEdit*>(widget);
+    if (!editor) editor = widget->findChild<QLineEdit*>();
+    require(editor && editor->isVisible(), "W6 parameter has no visible editor");
+    QTest::keyClick(editor, Qt::Key_A, Qt::ControlModifier);
+    QTest::keyClicks(editor, value);
+    QTest::keyClick(editor, Qt::Key_Return);
   };
   try {
     report["binaryPath"] = QCoreApplication::applicationFilePath();
@@ -267,6 +381,38 @@ int runWidebandUxCapture(const QString& outputDirectory) {
     require(window.session().activeFile()->display.psd.parameters.removeMean != beforeMean,
             "W2 PSD settings switch did not apply");
     scene("w2-psd-settings-switch");
+    // Inspect every method on the real monitor, including whole-row hiding
+    // and return to a previously committed Welch/Kaiser configuration.
+    currentScene = "w6-psd-welch-kaiser";
+    auto* psdMethod = child<QComboBox>(window, "psdMethod");
+    widebandScrollTo(psdMethod);
+    widebandUxSelect(psdMethod, 2, window);
+    commit("psdOverlap", "65");
+    auto* psdWindow = child<QComboBox>(window, "psdWindow");
+    widebandScrollTo(psdWindow);
+    widebandUxSelect(psdWindow, 6, window);
+    commit("psdKaiserBeta", "12.5");
+    const auto welch = window.session().activeFile()->display.psd.parameters;
+    scene("w6-psd-welch-kaiser");
+    for (const auto index : {1, 3, 4, 2}) {
+      widebandScrollTo(psdMethod);
+      widebandUxSelect(psdMethod, index, window);
+      if (index == 1)
+        require(window.session().activeFile()->display.psd.parameters.overlap == 0 &&
+                    !control("psdOverlap")->isVisible(), "W6 Bartlett overlap row is not hidden/zero");
+      if (index == 3) {
+        commit("psdTimeBandwidth", "4.5");
+        commit("psdTapers", "7");
+        require(!psdWindow->isVisible(), "W6 DPSS retained an irrelevant window row");
+      }
+      if (index == 4) {
+        commit("psdBurgOrder", "27");
+        require(!psdWindow->isVisible(), "W6 Burg retained an irrelevant window row");
+      }
+      scene(QString("w6-psd-method-%1").arg(index));
+    }
+    require(window.session().activeFile()->display.psd.parameters == welch,
+            "W6 returning to Welch lost its committed legal configuration");
     widebandScrollTo(child<QComboBox>(window, "psdMethod"));
     widebandUxSelect(child<QComboBox>(window, "psdMethod"), 2, window);
     require(static_cast<int>(window.session().activeFile()->display.psd.parameters.method) == 2,
@@ -461,6 +607,231 @@ int runWidebandUxCapture(const QString& outputDirectory) {
     clickControl("manualTool");
     scene("w4-menu-roi-escape");
     clickControl("contextDisplay");
+    QJsonArray productionRuns;
+    for (const auto* modelId : {"ffscn-gui-iq-v1", "scn-max-psd-v1"}) {
+      currentScene = QString("w6-%1-preflight").arg(modelId);
+      clickControl("contextDetection");
+      // First-screen configuration is sufficient for both formal models.
+      for (const auto* fold : {"detectionAnalysisParametersToggle", "detectionPostprocessParametersToggle",
+                                "detectionResourceParametersToggle", "detectionCalculationDetailsToggle",
+                                "detectionDiagnosticsToggle"}) {
+        auto* toggle = child<QToolButton>(window, fold);
+        if (toggle->isChecked()) { widebandScrollTo(toggle); widebandUxClick(toggle, window); }
+      }
+      auto* model = child<QComboBox>(window, "detectionModel");
+      widebandScrollTo(model);
+      widebandUxSelect(model, model->findData(modelId), window);
+      auto* spectrum = child<QComboBox>(window, "detectionSpectrumMode");
+      widebandUxSelect(spectrum, spectrum->findData(0), window);
+      auto* range = child<QComboBox>(window, "detectionRangeOrigin");
+      widebandUxSelect(range, range->findData("available-file"), window);
+      clickControl("detectionStrategyCoarse");
+      auto* formalCard = child<DetectionCard>(window, "detectionCard");
+      require(formalCard->validationError().isEmpty(), "W6 formal preflight: " + formalCard->validationError());
+      auto* runButton = child<QPushButton>(window, "runWidebandDetection");
+      widebandUxReachable(runButton, window);
+      scene(currentScene);
+      const auto beforeRuns = window.session().activeFile()->detectionRuns.size();
+      widebandUxClick(runButton, window);
+      require(waitUntil([&] { return window.session().activeFile()->detectionRuns.size() == beforeRuns + 1; }),
+              "W6 visible run button did not create a frozen task");
+      const auto frozen = encodeDetectionRequest(window.session().activeFile()->detectionRuns.back().request);
+      const auto runId = window.session().activeFile()->detectionRuns.back().request.runId;
+      scene(QString("w6-%1-submitted").arg(modelId));
+      require(waitUntil([&] { return detectionIsTerminal(window.session().activeFile()->detectionRuns.back().lifecycle); }, 120000),
+              "W6 formal model did not reach a terminal state");
+      const auto completed = window.session().activeFile()->detectionRuns.back();
+      require(completed.lifecycle == DetectionLifecycle::Completed &&
+                  completed.completedWindows > 0 && completed.completedWindows == completed.eligibleWindows &&
+                  completed.request.profile.id == modelId &&
+                  completed.request.profile.backend != DetectionBackendKind::Fixture &&
+                  !completed.request.modelSha256.empty() && !completed.device.empty() &&
+                  completed.device.find("CPU spectrum") == std::string::npos && !completed.runtime.empty() &&
+                  encodeDetectionRequest(completed.request) == frozen,
+              "W6 actual model failed: " + QString::fromStdString(completed.error));
+      DetectionRun durable;
+      require(loadDetectionRun(QFileInfo(projectPath).absolutePath(), QString::fromStdString(runId), durable, error), error);
+      require(encodeDetectionRequest(durable.request) == frozen && durable.completedWindows == completed.completedWindows,
+              "W6 formal frozen request/prefix changed on disk");
+      productionRuns.append(encodeDetectionRun(completed));
+      clickControl("taskTab");
+      auto* list = child<QAbstractItemView>(window, "detectionRunList");
+      QModelIndex selected;
+      for (int row = 0; row < list->model()->rowCount(); ++row) {
+        const auto index = list->model()->index(row, 0);
+        if (index.data(Qt::UserRole).toString().toStdString() == runId) selected = index;
+      }
+      require(selected.isValid(), "W6 real model task is absent from its list");
+      list->scrollTo(selected);
+      const auto visible = list->visualRect(selected).intersected(list->viewport()->rect());
+      require(!visible.isEmpty(), "W6 actual task row is outside its viewport");
+      QTest::mouseClick(list->viewport(), Qt::LeftButton, Qt::NoModifier, visible.topLeft() + QPoint(18, 12));
+      list->setFocus();
+      require(list->hasFocus(), "W6 task keyboard focus was not acquired");
+      QSignalSpy sourceFocus(child<DetectionPanel>(window, "detectionPanel"), &DetectionPanel::runFocused);
+      QTest::keyClick(list, Qt::Key_Return);
+      require(waitUntil([&] { return sourceFocus.count() == 1; }) &&
+                  sourceFocus.first().first().toString().toStdString() == runId,
+              "W6 task Return did not focus exactly its runId");
+      bool detailsSeen = false;
+      QString detailsError;
+      QTimer::singleShot(60, &window, [&] {
+        auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+        try {
+          require(dialog, "W6 task Alt+Return did not open details");
+          auto* facts = child<QWidget>(*dialog, "detectionRunFacts");
+          require(facts->property("plainText").toString().contains(QString::fromStdString(runId)),
+                  "W6 actual task details show the wrong run");
+          scene(QString("w6-%1-task-details-keyboard").arg(modelId), dialog);
+          detailsSeen = true;
+          QTest::keyClick(dialog, Qt::Key_Escape);
+        } catch (const std::exception& failure) {
+          detailsError = QString::fromUtf8(failure.what());
+          if (dialog) dialog->reject();
+        }
+      });
+      list->setFocus();
+      QTest::keyClick(list, Qt::Key_Return, Qt::AltModifier);
+      require(detailsSeen && detailsError.isEmpty(), "W6 task details: " + detailsError);
+      window.activateWindow();
+      require(waitUntil([&] { return window.isActiveWindow(); }), "W6 model details did not return window focus");
+      scene(QString("w6-%1-completed").arg(modelId));
+    }
+    report["productionRuns"] = productionRuns;
+    report["modelInferenceVerified"] = productionRuns.size() == 2;
+    currentScene = "w6-real-task-cancel-prefix";
+    clickControl("contextDetection");
+    auto* cancelModel = child<QComboBox>(window, "detectionModel");
+    widebandScrollTo(cancelModel);
+    widebandUxSelect(cancelModel, cancelModel->findData("ffscn-gui-iq-v1"), window);
+    auto* analysis = child<QToolButton>(window, "detectionAnalysisParametersToggle");
+    widebandScrollTo(analysis); widebandUxClick(analysis, window);
+    commit("detectionFftSize", "8192");
+    commit("detectionModelFrames", "3");
+    commit("detectionModelHopFrames", "1");
+    commit("detectionHopMilliseconds", "0.01");
+    const auto cancellationStart = window.session().activeFile()->detectionRuns.size();
+    clickControl("runWidebandDetection");
+    require(waitUntil([&] { return window.session().activeFile()->detectionRuns.size() == cancellationStart + 1; }),
+            "W6 formal cancellation task was not submitted");
+    require(waitUntil([&] { const auto& run = window.session().activeFile()->detectionRuns.back();
+        return run.completedWindows > 0 && !detectionIsTerminal(run.lifecycle); }, 60000),
+        "W6 formal cancellation did not expose a live persisted prefix");
+    const auto beforeCancellation = window.session().activeFile()->detectionRuns.back();
+    const auto immutableChunk = beforeCancellation.chunks.front();
+    const auto chunkPath = QFileInfo(projectPath).absoluteDir().filePath(QString::fromStdString(immutableChunk.relativePath));
+    const auto chunkHash = widebandFileHash(chunkPath);
+    const auto displayBefore = window.session().activeFile()->display;
+    for (const auto* name : {"stftFft", "psdFft", "colormap"}) {
+      auto* combo = child<QComboBox>(window, name);
+      widebandUxSelect(combo, (combo->currentIndex() + 1) % combo->count(), window);
+    }
+    openSetting("powerSettings");
+    commit("dynamic", "72");
+    escape();
+    const auto& afterDisplayChange = window.session().activeFile()->detectionRuns.back();
+    const auto& changedDisplay = window.session().activeFile()->display;
+    require(!detectionIsTerminal(afterDisplayChange.lifecycle) &&
+                encodeDetectionRequest(afterDisplayChange.request) == encodeDetectionRequest(beforeCancellation.request) &&
+                displayBefore.stftSize != changedDisplay.stftSize && displayBefore.psdSize != changedDisplay.psdSize &&
+                displayBefore.palette != changedDisplay.palette && changedDisplay.dynamicRangeDb == 72,
+            "W6 display changes altered a live formal request or did not reach display state");
+    clickControl("taskTab");
+    auto* cancellationList = child<QAbstractItemView>(window, "detectionRunList");
+    QModelIndex cancellationRow;
+    for (int row = 0; row < cancellationList->model()->rowCount(); ++row) {
+      const auto index = cancellationList->model()->index(row, 0);
+      if (index.data(Qt::UserRole).toString().toStdString() == beforeCancellation.request.runId) cancellationRow = index;
+    }
+    require(cancellationRow.isValid(), "W6 live task row is missing");
+    cancellationList->scrollTo(cancellationRow);
+    QCoreApplication::processEvents();
+    const auto cancelVisible = cancellationList->visualRect(cancellationRow).intersected(cancellationList->viewport()->rect());
+    require(!cancelVisible.isEmpty(), "W6 live task row is clipped out");
+    QTest::mouseClick(cancellationList->viewport(), Qt::LeftButton, Qt::NoModifier, cancelVisible.topLeft() + QPoint(18, 12));
+    cancellationList->setFocus();
+    require(cancellationList->hasFocus() && child<QAction>(window, "taskCancelAction")->isEnabled(),
+            "W6 actual live task has no reachable keyboard cancel");
+    QTest::keyClick(cancellationList, Qt::Key_X, Qt::ControlModifier | Qt::ShiftModifier);
+    require(waitUntil([&] { return detectionIsTerminal(window.session().activeFile()->detectionRuns.back().lifecycle); }, 60000),
+            "W6 keyboard cancellation did not finish");
+    const auto cancelled = window.session().activeFile()->detectionRuns.back();
+    require(cancelled.lifecycle == DetectionLifecycle::Cancelled &&
+                cancelled.request.runId == beforeCancellation.request.runId &&
+                cancelled.completedWindows > 0 && cancelled.completedWindows < cancelled.eligibleWindows &&
+                encodeDetectionRequest(cancelled.request) == encodeDetectionRequest(beforeCancellation.request) &&
+                widebandFileHash(chunkPath) == chunkHash,
+            "W6 keyboard cancel changed target/request or lost its immutable prefix");
+    report["nativeCancellation"] = QJsonObject{{"pass", true}, {"input", "Ctrl+Shift+X on the visible selected task row"},
+        {"displayChangedDuringRun", true}, {"unchangedPrefixSha256", chunkHash}, {"run", encodeDetectionRun(cancelled)}};
+    scene(currentScene);
+    // Restore the chart budget after examining task rows.
+    if (child<QToolButton>(window, "resultsToggle")->isChecked()) clickControl("resultsToggle");
+    clickControl("timeFrequencyMode");
+    clickControl("manualTool");
+    const auto beforeManual = window.session().activeFile()->marks.size();
+    createMark(mainPlot, window.session().activeFile()->view, .25, .55, .38, .52);
+    require(window.session().activeFile()->marks.size() == beforeManual + 1,
+            "W6 visible continuous tool did not create its manual annotation");
+    const auto manualId = window.session().activeFile()->activeMarkId;
+    clickControl("manualTool");
+    clickControl("contextAnnotation");
+    const auto* manual = findAnnotation(*window.session().activeFile(), manualId);
+    require(manual && manual->sourceKind == AnnotationSource::Manual && activeSegment(*manual),
+            "W6 created annotation is not a located manual source");
+    const auto beforeRevision = manual->revisionId;
+    const auto originalEvidence = *manual->originEvidence;
+    const auto newEnd = activeSegment(*manual)->range.time.end - 1;
+    commit("annotationEndMilliseconds", QString::number(newEnd / window.session().activeFile()->metadata.sampleRateHz * 1000, 'g', 17));
+    manual = findAnnotation(*window.session().activeFile(), manualId);
+    require(manual->revisionId != beforeRevision && *manual->originEvidence == originalEvidence &&
+                activeSegment(*manual)->range.time.end == newEnd,
+            "W6 visible geometry edit changed original evidence or lost its revision");
+    scene("w6-manual-annotation-direct-edit");
+    clickControl("extract");
+    auto* channelDialog = channelsDialog(window, screen);
+    scene("w6-channel-source-and-parameters", channelDialog);
+    const auto channelCount = window.session().activeFile()->channels.size();
+    click(*channelDialog, "confirmChannelConfig");
+    require(waitUntil([&] { return window.session().activeFile()->channels.size() == channelCount + 1; }),
+            "W6 visible channel confirmation did not create its source snapshot");
+    const auto channel = window.session().activeFile()->channels.back();
+    require(channel.sourceSnapshot && channel.sourceSnapshot->annotationId == manualId,
+            "W6 channel snapshot is bound to a different annotation");
+    const auto ddc = channelsDdc(window, channel);
+    auto* narrow = window.findChild<NarrowbandWorkspace*>();
+    require(narrow && waitUntil([&] { return narrow->isVisible() && narrow->visibleChartsSettled() &&
+        narrow->visibleChartsGpuReady() && narrow->dataStatusText().contains("真实 DDC"); }, 60000),
+        "W6 narrowband did not display real CPU DDC output");
+    clickControl("contextChannel");
+    scene("w6-channel-page-real-cpu-ddc");
+    report["cpuDdc"] = ddc;
+    report["cpuDdcVerified"] = true;
+    clickControl("narrowbandClose");
+    require(widebandDisplayReady(window), "W6 return from channel did not restore charts");
+    // Save and reopen through the actual menu and visible JSON file picker.
+    widebandMenuAction(window, "saveProjectAction");
+    QFile saved(projectPath);
+    require(saved.open(QIODevice::ReadOnly), "W6 menu Save did not write project.json");
+    const auto savedObject = QJsonDocument::fromJson(saved.readAll()).object();
+    saved.close();
+    require(savedObject["version"].toInt() == 6, "W6 native project schema changed");
+    const auto generation = window.session().projectGeneration();
+    currentScene = "w6-visible-project-reopen";
+    report["projectPicker"] = widebandUxOpenSavedProject(window, projectPath, output);
+    require(window.session().projectGeneration() > generation && widebandDisplayReady(window),
+            "W6 visible file picker did not reopen the project");
+    const auto* reopened = findAnnotation(*window.session().activeFile(), manualId);
+    require(reopened && *reopened->originEvidence == originalEvidence &&
+                activeSegment(*reopened)->range.time.end == newEnd &&
+                window.session().activeFile()->channels.back().sourceSnapshot &&
+                *window.session().activeFile()->channels.back().sourceSnapshot == *channel.sourceSnapshot,
+            "W6 visible save/reopen changed geometry, origin or channel snapshot");
+    const auto reopenedDdc = channelsDdc(window, window.session().activeFile()->channels.back());
+    require(reopenedDdc["outputSha256"] == ddc["outputSha256"], "W6 reopen changed actual DDC samples");
+    report["v6ReopenVerified"] = true;
+    clickControl("contextDisplay");
+    scene("w6-saved-reopened-display-context");
     QJsonArray overflow;
     for (const auto* stripName : {"auxChartControls", "specChartControls"}) {
       const auto moreName = QString::fromLatin1(stripName) + "Overflow";
@@ -493,6 +864,8 @@ int runWidebandUxCapture(const QString& outputDirectory) {
     report["pass"] = false;
     report["error"] = QString::fromUtf8(error.what());
     report["failedScene"] = currentScene;
+    report["failedPng"] = output.filePath("failed-native-diagnostic.png");
+    window.grab().save(report["failedPng"].toString());
     capture.scenes.append(QJsonObject{{"scene", currentScene}, {"pass", false},
                                      {"error", QString::fromUtf8(error.what())}});
   }

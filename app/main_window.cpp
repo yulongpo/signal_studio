@@ -2058,7 +2058,7 @@ void MainWindow::buildChartControls() {
     link->setAccessibleName(setting->toolTip());
     links->addWidget(link);
     connect(link, &QPushButton::clicked, this, [this, link, setting] {
-      settingsPopovers_->open(setting, link);
+      settingsPopovers_->toggle(setting, link);
     });
   }
 }

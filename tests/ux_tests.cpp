@@ -103,6 +103,8 @@ class UxTests : public QObject {
   void uxR03_taskKeyboardAndDetails();
   void uxR03_taskRowActions();
   void uxD03_activeTaskCancellationAndFrozenDisplay();
+  void uxD01_topDerivationDiscardsCrossFileDraft();
+  void uxR01_lateRunFilterPopupAndRefresh();
   void initTestCase() {
     QCoreApplication::setOrganizationName("SignalStudioTests");
     QCoreApplication::setApplicationName("WidebandUx");

@@ -10,8 +10,13 @@ void finalClick(MainWindow& window, const char* name) {
     widebandChooseQuality(window, name);
     return;
   }
-  widebandScrollTo(child<QWidget>(window, name));
-  click(window, name);
+  auto* widget = action.startsWith("detection")
+                     ? widebandDetectionControl(window, name)
+                     : child<QWidget>(window, name);
+  if (action.contains("Annotation") || action == "extract")
+    widebandShowInspector(window, "contextAnnotation");
+  widebandScrollTo(widget);
+  widebandNativeClick(widget);
 }
 
 QJsonObject finalProcessMemory() {
@@ -157,13 +162,15 @@ QJsonObject finalPressure(Capture& capture, QScreen* screen,
             10000),
         "Pressure selection did not paint the selected chart overlay");
     selections.push_back(elapsed.nsecsElapsed() / 1000000.0);
-    elapsed.restart();
-    filter->setCurrentIndex(attempt % 2 ? 0 : 2);
+    // Start at the real row activation, excluding the user's time opening and
+    // navigating the native popup. Keep the original first-paint measurement.
+    widebandNativeSelect(filter, attempt % 2 ? 0 : 2,
+                          [&] { elapsed.restart(); });
     QCoreApplication::processEvents(QEventLoop::AllEvents);
     table->viewport()->repaint();
     filters.push_back(elapsed.nsecsElapsed() / 1000000.0);
   }
-  filter->setCurrentIndex(0);
+  widebandNativeSelect(filter, 0);
   widebandScene(capture, "41-synthetic-100000-activity-pressure", screen);
   const auto result =
       QJsonObject{{"syntheticUiFixture", true},
@@ -235,9 +242,8 @@ int runWidebandUnavailableCapture(const QString& outputDirectory,
     QTest::keyClick(capture.plots[2], Qt::Key_Escape);
     require(widebandSourceCounts(*file)["manual"].toInt() >= 2,
             "Unavailable inference prevented a real native manual chart drag");
-    auto* profile = child<QComboBox>(window, "detectionProfile");
-    profile->setCurrentIndex(profile->findData("ffscn-gui-iq-v1"));
-    child<QComboBox>(window, "detectionRangeOrigin")->setCurrentIndex(1);
+    widebandSelectModelSpectrum(window, "ffscn-gui-iq-v1");
+    widebandNativeSelect(child<QComboBox>(window, "detectionRangeOrigin"), 1);
     widebandResidentCardAtTop(window);
     auto* run = child<QPushButton>(window, "runWidebandDetection");
     if (expectedFailure == "missing-models") {
@@ -253,7 +259,7 @@ int runWidebandUnavailableCapture(const QString& outputDirectory,
               "GPU refusal check requires valid assets and explicitly hidden "
               "CUDA devices");
       const auto count = file->detectionRuns.size();
-      QTest::mouseClick(run, Qt::LeftButton);
+      widebandNativeClick(run);
       require(waitUntil(
                   [&] {
                     const auto* current = window.session().activeFile();
@@ -300,11 +306,20 @@ QJsonObject widebandFinalAcceptance(Capture& capture, QScreen* screen,
   auto* sourceFilter = child<QComboBox>(window, "annotationSourceFilter");
   auto* statusFilter = child<QComboBox>(window, "annotationReviewFilter");
   auto* score = child<QDoubleSpinBox>(window, "annotationMinimumMeanScore");
-  sourceFilter->setCurrentIndex(0);
-  statusFilter->setCurrentIndex(0);
-  score->setValue(0);
+  widebandNativeClick(child<QPushButton>(window, "resultTab"));
+  widebandNativeSelect(sourceFilter, 0);
+  widebandNativeSelect(statusFilter, 0);
+  const auto scoreValue = [&](const char* value) {
+    widebandScrollTo(score);
+    widebandNativeReachable(score);
+    score->setFocus();
+    score->selectAll();
+    QTest::keyClicks(score, value);
+    QTest::keyClick(score, Qt::Key_Return);
+  };
+  scoreValue("0");
   auto* runFilter = child<QComboBox>(window, "annotationRunFilter");
-  runFilter->setCurrentIndex(0);
+  widebandNativeSelect(runFilter, 0);
   const auto allAnnotations = widebandAnnotations(*file);
   QJsonArray allSources, allRuns;
   for (const auto& source : file->sourceSets)
@@ -341,7 +356,7 @@ QJsonObject widebandFinalAcceptance(Capture& capture, QScreen* screen,
             "Layer hiding changed stored annotations or did not filter rows");
     QTest::mouseClick(layer, Qt::LeftButton, Qt::NoModifier,
                       QPoint(8, layer->height() / 2));
-    sourceFilter->setCurrentIndex(layerIndex + 1);
+    widebandNativeSelect(sourceFilter, layerIndex + 1);
     require(waitUntil([&] {
               return visibleTable->model()->rowCount() == sourceCount;
             }) &&
@@ -350,12 +365,12 @@ QJsonObject widebandFinalAcceptance(Capture& capture, QScreen* screen,
     visibilityChecks.append(QJsonObject{{"source", key},
                                         {"sourceCount", sourceCount},
                                         {"storedUnchanged", true}});
-    sourceFilter->setCurrentIndex(0);
+    widebandNativeSelect(sourceFilter, 0);
   }
   const auto runId = file->detectionRuns.back().request.runId;
   const auto runIndex = runFilter->findData(QString::fromStdString(runId));
   require(runIndex > 0, "Real model run is absent from the visible run filter");
-  runFilter->setCurrentIndex(runIndex);
+  widebandNativeSelect(runFilter, runIndex);
   const auto expectedRunCount = std::count_if(
       file->marks.begin(), file->marks.end(), [&](const auto& annotation) {
         return !annotation.deleted && annotation.originEvidence &&
@@ -366,7 +381,7 @@ QJsonObject widebandFinalAcceptance(Capture& capture, QScreen* screen,
           }) &&
               unchanged(),
           "Run filter changed durable records or did not isolate the real run");
-  runFilter->setCurrentIndex(0);
+  widebandNativeSelect(runFilter, 0);
   require(
       visibleTable->model()->rowCount() == storedCount && unchanged(),
       "Restoring layers and filters did not restore the visible record set");
@@ -393,8 +408,8 @@ QJsonObject widebandFinalAcceptance(Capture& capture, QScreen* screen,
 
   const auto hiddenId = file->marks.front().id;
   const auto hiddenBefore = encodeAnnotation(file->marks.front());
-  sourceFilter->setCurrentIndex(3);
-  score->setValue(.5);
+  widebandNativeSelect(sourceFilter, 3);
+  scoreValue("0.5");
   auto* table = child<QTableView>(window, "annotationTable");
   QTest::mouseClick(
       table->horizontalHeader()->viewport(), Qt::LeftButton, Qt::NoModifier,
@@ -417,22 +432,20 @@ QJsonObject widebandFinalAcceptance(Capture& capture, QScreen* screen,
   require(encodeAnnotation(*findAnnotation(*file, hiddenId)) == hiddenBefore,
           "Batch review changed a hidden original label");
   widebandScene(capture, "35-score-sort-filter-batch-review", screen);
-  sourceFilter->setCurrentIndex(0);
-  score->setValue(0);
+  widebandNativeSelect(sourceFilter, 0);
+  scoreValue("0");
 
   widebandSelectAnnotation(window, algorithmId, "detection-v1");
   const auto geometryBefore = widebandAnnotations(*file);
   const auto segmentBefore = file->activeSegmentId;
-  file->display.mainMode = MainMode::Waterfall;
-  window.refresh();
+  widebandNativeClick(child<QPushButton>(window, "waterfallMode"));
   require(widebandDisplayReady(window), "Waterfall switch did not settle");
   require(
       widebandAnnotations(*file) == geometryBefore &&
           file->activeSegmentId == segmentBefore,
       "T-F/waterfall switch changed physical annotation geometry/selection");
   widebandScene(capture, "36-waterfall-same-active-segment", screen);
-  file->display.mainMode = MainMode::TimeFrequency;
-  window.refresh();
+  widebandNativeClick(child<QPushButton>(window, "timeFrequencyMode"));
   require(widebandDisplayReady(window), "T-F switch did not settle");
 
   const auto originalId = hiddenId;
@@ -477,8 +490,10 @@ QJsonObject widebandFinalAcceptance(Capture& capture, QScreen* screen,
         "detectionStrategyCoarse"}) {
     finalClick(window, strategy);
     for (bool enabled : {true, false}) {
-      widebandScrollTo(split);
-      if (split->isChecked() != enabled) click(window, "detectionSplitBursts");
+      widebandDetectionControl(window, "detectionSplitBursts");
+      if (split->isChecked() != enabled) widebandNativeClick(split);
+      require(split->isChecked() == enabled,
+              "Native branch split indicator did not apply its requested state");
       const bool fine =
           QString::fromLatin1(strategy) != "detectionStrategyCoarse";
       require(

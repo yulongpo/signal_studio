@@ -5,13 +5,15 @@ QJsonObject widebandAdaptationClosure(Capture& capture, QScreen* screen,
                                       const QString& project) {
   auto& window = capture.window;
   auto* card = child<DetectionCard>(window, "detectionCard");
-  auto* profile = child<QComboBox>(*card, "detectionProfile");
-  const auto previousProfile = profile->currentData();
-  profile->setCurrentIndex(profile->findData("ffscn-gui-iq-v1:2"));
-  child<QComboBox>(*card, "detectionRangeOrigin")->setCurrentIndex(1);
+  auto* model = child<QComboBox>(*card, "detectionModel");
+  auto* spectrum = child<QComboBox>(*card, "detectionSpectrumMode");
+  const auto previousModel = model->currentData().toString();
+  const auto previousSpectrum = spectrum->currentData().toInt();
+  widebandSelectModelSpectrum(window, "ffscn-gui-iq-v1:2");
+  widebandNativeSelect(child<QComboBox>(*card, "detectionRangeOrigin"), 1);
   const auto commit = [&](const char* name, const char* value) {
-    auto* edit = child<QLineEdit>(*card, name);
-    widebandScrollTo(edit);
+    auto* edit = qobject_cast<QLineEdit*>(widebandDetectionControl(window, name));
+    require(edit, "Native analysis parameter is not an editor");
     edit->setFocus();
     edit->selectAll();
     QTest::keyClicks(edit, value);
@@ -32,7 +34,8 @@ QJsonObject widebandAdaptationClosure(Capture& capture, QScreen* screen,
               card->validationError());
   widebandResidentCardAtTop(window);
   widebandScene(capture, "42-adapted-mean-spectrum-configuration", screen);
-  profile->setCurrentIndex(profile->findData(previousProfile));
+  widebandSelectModelSpectrum(window, previousModel + ":" +
+                                        QString::number(previousSpectrum));
 
   const auto originalFileId = window.session().activeFile()->metadata.id;
   QFile audit(QStringLiteral(
@@ -135,12 +138,11 @@ QJsonObject widebandCancellationFeedback(Capture& capture, QScreen* screen,
   require(widebandDisplayReady(window),
           "Cancellation source display not ready");
   auto* card = child<DetectionCard>(window, "detectionCard");
-  auto* profile = child<QComboBox>(*card, "detectionProfile");
-  profile->setCurrentIndex(profile->findData("ffscn-gui-iq-v1"));
-  child<QComboBox>(*card, "detectionRangeOrigin")->setCurrentIndex(1);
+  widebandSelectModelSpectrum(window, "ffscn-gui-iq-v1");
+  widebandNativeSelect(child<QComboBox>(*card, "detectionRangeOrigin"), 1);
   const auto commit = [&](const char* name, const char* value) {
-    auto* edit = child<QLineEdit>(*card, name);
-    widebandScrollTo(edit);
+    auto* edit = qobject_cast<QLineEdit*>(widebandDetectionControl(window, name));
+    require(edit, "Native cancellation parameter is not an editor");
     edit->setFocus();
     edit->selectAll();
     QTest::keyClicks(edit, value);
@@ -151,7 +153,7 @@ QJsonObject widebandCancellationFeedback(Capture& capture, QScreen* screen,
   commit("detectionModelHopFrames", "2");
   commit("detectionHopMilliseconds", "2");
   widebandScrollTo(child<QPushButton>(*card, "detectionStrategyCoarse"));
-  click(window, "detectionStrategyCoarse");
+  widebandNativeClick(child<QPushButton>(*card, "detectionStrategyCoarse"));
   require(card->validationError().isEmpty(), card->validationError());
   auto* runButton = child<QPushButton>(window, "runWidebandDetection");
   auto* cancel = child<QPushButton>(window, "cancelDetectionCardRun");
@@ -165,7 +167,7 @@ QJsonObject widebandCancellationFeedback(Capture& capture, QScreen* screen,
   });
   QElapsedTimer timer;
   timer.start();
-  QTest::mouseClick(runButton, Qt::LeftButton);
+  widebandNativeClick(runButton);
   require(waitUntil([&] {
             return window.session().activeFile()->detectionRuns.size() ==
                    previous + 1;
@@ -190,7 +192,7 @@ QJsonObject widebandCancellationFeedback(Capture& capture, QScreen* screen,
             run.lifecycle == DetectionLifecycle::Cancelled);
   });
   timer.restart();
-  QTest::mouseClick(cancel, Qt::LeftButton);
+  widebandNativeClick(cancel);
   require(waitUntil([&] {
             const auto state =
                 window.session().activeFile()->detectionRuns.back().lifecycle;

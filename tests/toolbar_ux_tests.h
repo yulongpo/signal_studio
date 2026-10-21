@@ -109,4 +109,15 @@ inline void UxTests::uxR02_chartSettingsStayStable() {
   window.refresh();
   QVERIFY(!frame->isVisible());
   QVERIFY(!reference->property("parameterDraft").toBool());
+  QTest::mouseClick(window.findChild<QAbstractButton*>("contextDisplay"), Qt::LeftButton);
+  for (const auto* entry : {"psdSettings", "stftSettings", "powerSettings", "displaySettings"}) {
+    const auto linkName = QString("narrowband") + entry;
+    auto* link = window.findChild<QPushButton*>(linkName);
+    auto* layer = window.findChild<QFrame*>(QString(entry) + "Popover");
+    QVERIFY(link && link->isVisible() && layer);
+    QTest::mouseClick(link, Qt::LeftButton);
+    QTRY_VERIFY(layer->isVisible());
+    QTest::mouseClick(link, Qt::LeftButton);
+    QTRY_VERIFY(!layer->isVisible());
+  }
 }
