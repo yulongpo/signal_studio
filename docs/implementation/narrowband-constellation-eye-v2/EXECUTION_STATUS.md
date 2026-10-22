@@ -8,7 +8,8 @@
 | W3 | 完成 | 调制页真实 IQ 散点、共用 GPU/软件坐标与等比例轴、后台最新请求发布；Debug 2/2（含 Qt 5/5） |
 | W4 | 完成 | 真实手工 Rs 眼图、32-tap 带限插值、RRC、I/Q、物理 SPS 与绘图密度；Debug 2/2，Qt 6/6 |
 | W5 | 完成 | 二/四阶与延迟循环谱、三子窗候选评分、手工接管、负例；Debug 2/2，Qt 7/7 |
-| W6–W8 | 未开始 | 按依赖顺序执行 |
+| W6 | 完成 | CFO/DDC 索引相位、RRC、Gardner、PSK Costas/16QAM 相位搜索+PLL、同步眼图；Debug 3/3，Qt 8/8 |
+| W7–W8 | 未开始 | 按依赖顺序执行 |
 
 不推送远端；仅在节点自检通过后本地提交。保留失败和中断日志。
 
@@ -43,3 +44,13 @@ W5：18 个 BPSK/QPSK/16QAM × α=0.20/0.35/0.50 × 理想/源采样 SNR20dB 文
 低 SNR CF32 为源采样 -20dB；CI16 版本含真实量化/饱和，clippingSamples 如实记录。
 FSK/OFDM/GMSK 假设不适用，但保留真实 raw。UI 候选采用为手工 Rs、再次手工覆盖通过。
 最新 W5 Debug 2/2（39.22 秒），Qt 7/7；数值报告 `NB-W5/diagnostics/symbol-rate.json`。
+
+W6：13 个同步正例（BPSK/QPSK/16QAM 理想/源 SNR20dB、1.5/4 MS/s 自动 Rs、
+QPSK/16QAM α=0.20/0.50、100 ppm 发射时钟偏差）均满足 W0 固定 CFO、定时、真符号
+EVM 门槛，并验证恢复眼图与同一真实符号时刻的一致性。真值对齐只允许统一正增益与
+BPSK π / QPSK、QAM π/2 模糊；没有任意逐点旋转或符号重排。
+八个负例强行套 QPSK 也不报 carrierLocked，原始 IQ 保留。
+时钟环默认归一化带宽 0.002，载波环 0.01；每个窗口明确丢弃 512 个捕获符号。
+条件 EVM 是选定模板且锁定后的诊断，与独立 TX 符号 EVM 分别报告。
+`NB-W6/diagnostics/recovery.json` 和节点日志记录数据；最新 Debug 3/3（55.23 秒）、Qt 8/8。
+Qt 已验证五种真实星座阶段、同步眼图、自动 Rs 和手工 CFO；硬件/原生/部署仍待 W8。

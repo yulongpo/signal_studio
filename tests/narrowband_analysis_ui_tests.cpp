@@ -112,7 +112,7 @@ class NarrowbandAnalysisUiTests : public QObject {
     window.findChild<QComboBox*>("eyeDrawingDensity")->setCurrentIndex(1);
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyes.size()==128 && workspace->analysisResult()->eyePeriods==3 && workspace->analysisResult()->eyePointsPerUi==8,15000);
     QCOMPARE(chart->property("eyeComponentCount").toInt(),1);QCOMPARE(workspace->analysisResult()->eyes[0].i.size(),std::size_t{25});
-    window.findChild<QComboBox*>("eyeAnalysisStage")->setCurrentIndex(1);
+    window.findChild<QComboBox*>("eyeAnalysisStage")->setCurrentIndex(static_cast<int>(AnalysisStage::MatchedFiltered));
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->filterDiscardedSamples>0 && workspace->analysisResult()->eyeStatus==AnalysisStatus::Ready,15000);
     mode->setCurrentIndex(0);
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyeStatus==AnalysisStatus::NeedSymbolRate,15000);
@@ -136,6 +136,28 @@ class NarrowbandAnalysisUiTests : public QObject {
     window.findChild<QComboBox*>("modulationFormat")->setCurrentIndex(static_cast<int>(ModulationHypothesis::Ofdm));
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyeStatus==AnalysisStatus::NotApplicable,15000);
     QVERIFY(!workspace->analysisResult()->constellation.empty());
+  }
+  void realSynchronizationStagesAndManualCfo() {
+    const auto node=qEnvironmentVariable("SS_NARROWBAND_NODE");if(node!="W6" && node!="W7" && node!="W8" && !node.isEmpty())return;
+    MainWindow window;populate(window,"qpsk-a35-awgn20.raw");auto* file=window.session().activeFile();
+    const auto id=window.session().createChannel("sync",file->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);QVERIFY(!id.empty());
+    window.refresh();auto* workspace=window.findChild<NarrowbandWorkspace*>();workspace->activatePageForAcceptance(1);
+    window.findChild<QComboBox*>("modulationFormat")->setCurrentIndex(static_cast<int>(ModulationHypothesis::Qpsk));
+    window.findChild<QPushButton*>("recoverNarrowbandSignal")->click();
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->carrierLocked && workspace->analysisResult()->eyeStatus==AnalysisStatus::Ready,20000);
+    const auto result=workspace->analysisResult();QVERIFY(result->timingLocked);QVERIFY(result->conditionalEvm<.18);
+    QVERIFY(result->constellationStage==AnalysisStage::CarrierRecovered);QVERIFY(result->eyeStage==AnalysisStage::CarrierRecovered);
+    auto* constellation=window.findChild<QComboBox*>("constellationAnalysisStage");
+    for(const auto stage:{AnalysisStage::RawIq,AnalysisStage::CfoCorrected,AnalysisStage::MatchedFiltered,AnalysisStage::TimingAligned,AnalysisStage::CarrierRecovered}) {
+      constellation->setCurrentIndex(static_cast<int>(stage));
+      QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->constellationStage==stage,20000);
+      QVERIFY(!workspace->analysisResult()->constellation.empty());
+    }
+    window.findChild<QDoubleSpinBox*>("analysisManualCfoHz")->setValue(15625);
+    window.findChild<QComboBox*>("analysisCfoMode")->setCurrentIndex(static_cast<int>(CfoMode::Manual));
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->carrierLocked &&
+      std::abs(workspace->analysisResult()->estimatedCfoHz-15625)<625,20000);
+    QCOMPARE(window.session().activeChannel()->analysis.cfoMode,CfoMode::Manual);
   }
 };
 QTEST_MAIN(NarrowbandAnalysisUiTests)

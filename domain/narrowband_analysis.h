@@ -56,10 +56,16 @@ struct SymbolRateCandidate {
   double rateHz=0,score=0,prominenceDb=0;
   std::string method;
 };
+struct ContinuousAnalysisStage {
+  AnalysisStage stage=AnalysisStage::RawIq;
+  SampleIndex outputBegin=0;
+  std::vector<std::complex<float>> samples;
+};
 struct NarrowbandAnalysisResult {
   AnalysisIdentity identity;
   AnalysisStatus status=AnalysisStatus::Failed, eyeStatus=AnalysisStatus::NeedSymbolRate;
   AnalysisStage constellationStage=AnalysisStage::RawIq;
+  AnalysisStage eyeStage=AnalysisStage::RawIq;
   std::string message, eyeMessage="需要输入或估计符号率。";
   std::shared_ptr<const AnalysisSourceData> source;
   std::vector<TaggedSymbol> constellation;
@@ -75,5 +81,10 @@ struct NarrowbandAnalysisResult {
   bool timingLocked=false,carrierLocked=false;
   std::vector<SymbolRateCandidate> rateCandidates;
   std::vector<TaggedSymbol> synchronizedSymbols;
+  std::vector<TaggedSymbol> clockSymbols;
+  std::vector<ContinuousAnalysisStage> stages;
+  std::size_t acquisitionSymbolsDiscarded=0;
+  double cfoConfidenceDb=0,timingPeriodSamples=0;
+  std::string syncMessage;
 };
 }  // namespace signalstudio

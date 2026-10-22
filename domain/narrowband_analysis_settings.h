@@ -20,7 +20,7 @@ struct NarrowbandAnalysisSettings {
   int filterSpanSymbols=10;
   CfoMode cfoMode=CfoMode::Off;
   double manualCfoHz=0,manualPhaseRadians=0;
-  double timingLoopBandwidth=.01,carrierLoopBandwidth=.01;
+  double timingLoopBandwidth=.002,carrierLoopBandwidth=.01;
   bool operator==(const NarrowbandAnalysisSettings&) const = default;
 };
 }  // namespace signalstudio

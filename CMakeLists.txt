@@ -104,6 +104,7 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/narrowband_analysis/pulse_shaping.cpp
     infrastructure/narrowband_analysis/eye_analysis.cpp
     infrastructure/narrowband_analysis/symbol_rate_estimator.cpp
+    infrastructure/narrowband_analysis/single_carrier_recovery.cpp
     infrastructure/channel_processor.h
     infrastructure/spectral_analysis.cpp
     infrastructure/spectral_windows.cpp
@@ -309,6 +310,12 @@ if(SS_BUILD_TESTS)
     add_test(NAME signal_studio_core COMMAND SignalStudioCoreTests)
     add_executable(SignalStudioChannelProcessorTests tests/channel_processor_tests.cpp)
     add_executable(SignalStudioNarrowbandAnalysisTests tests/narrowband_analysis_tests.cpp)
+    add_executable(SignalStudioNarrowbandRecoveryTests tests/narrowband_recovery_tests.cpp)
+    target_link_libraries(SignalStudioNarrowbandRecoveryTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    ss_target_defaults(SignalStudioNarrowbandRecoveryTests)
+    set_target_properties(SignalStudioNarrowbandRecoveryTests PROPERTIES AUTOMOC OFF)
+    add_test(NAME signal_studio_narrowband_recovery COMMAND SignalStudioNarrowbandRecoveryTests)
+    set_tests_properties(signal_studio_narrowband_recovery PROPERTIES TIMEOUT 180)
     target_link_libraries(SignalStudioNarrowbandAnalysisTests PRIVATE SignalStudioInfrastructure Qt6::Core)
     ss_target_defaults(SignalStudioNarrowbandAnalysisTests)
     set_target_properties(SignalStudioNarrowbandAnalysisTests PROPERTIES AUTOMOC OFF)

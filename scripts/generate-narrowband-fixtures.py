@@ -23,6 +23,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', required=True)
     parser.add_argument('--extra-only', action='store_true')
+    parser.add_argument('--recovery-only', action='store_true')
     args = parser.parse_args()
     root = Path(args.output)
     root.mkdir(parents=True, exist_ok=True)
@@ -45,6 +46,23 @@ def main():
             np.stack((symbols.real, symbols.imag), axis=-1).astype('<f4').tofile(root / (name + '.symbols'))
         (root / (name + '.truth.json')).write_text(json.dumps(truth, indent=2), encoding='utf-8')
         records.append(truth)
+
+    if args.recovery_only:
+        # A transmit-clock offset, with the RF carrier reapplied on the receiver
+        # sample grid. Original IQ/truth records remain untouched.
+        original = np.fromfile(root/'qpsk-a35-ideal.sigmf-data', dtype='<c8').astype(complex)
+        original *= np.exp(-1j*(2*np.pi*2_000_000*np.arange(len(original))/fs+.43))
+        scale = 1.0001
+        grid = np.arange(int(np.floor((len(original)-1)*scale))+1)/scale
+        warped = np.interp(grid,np.arange(len(original)),original.real)+1j*np.interp(grid,np.arange(len(original)),original.imag)
+        warped *= np.exp(1j*(2*np.pi*(2_000_000+rs*.025)*np.arange(len(warped))/fs+.43))
+        tx_symbols = np.fromfile(root/'qpsk-a35-ideal.symbols',dtype='<c8')
+        write('qpsk-clock100ppm',warped,dict(modulation='QPSK',symbolRateHz=rs/scale,nominalSymbolRateHz=rs,
+              alpha=.35,cfoHz=rs*.025,symbolCount=len(tx_symbols),symbolOriginSourceSample=199.36*scale,
+              sourceSamplesPerSymbol=sps*scale,clockOffsetPpm=100,snrDb=None),tx_symbols)
+        (root/'recovery-index.json').write_text(json.dumps(dict(records=records),indent=2),encoding='utf-8')
+        print('Added one independent transmit-clock-offset IQ record; original fixtures untouched.')
+        return
 
     if args.extra_only:
         # Additions only: leave every W0 record and its index untouched.

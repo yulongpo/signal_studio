@@ -43,6 +43,7 @@
 #include <QStackedWidget>
 #include <QTimer>
 #include <QToolTip>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <QClipboard>
@@ -270,7 +271,8 @@ public:
         setProperty("realEyeSource",true);setProperty("eyeTraceCount",static_cast<qulonglong>(result.eyes.size()));
         setProperty("eyeComponentCount",component==0?2:1);setProperty("eyePeriods",result.eyePeriods);
         setProperty("eyePointsPerUi",result.eyePointsPerUi);setProperty("physicalSamplesPerSymbol",result.samplesPerSymbol);
-        setStatus(str(result.eyeMessage),QString("真实 IQ · %1 条 · %2 UI · 未锁定").arg(result.eyes.size()).arg(result.eyePeriods));
+        setStatus(str(result.eyeMessage),QString("真实 IQ · %1 条 · %2 UI · %3").arg(result.eyes.size()).arg(result.eyePeriods)
+          .arg(result.eyeStage>=AnalysisStage::TimingAligned && result.timingLocked?"定时对齐":"周期假设，未锁定"));
         surface_->setHeatmap({}, {}, QString{});markGeometryDirty();
     }
     double amplitudeUnit(float value) const {return (yAxisMaximum_-value)/std::max(1e-15,yAxisMaximum_-yAxisMinimum_);}
@@ -1099,6 +1101,9 @@ void NarrowbandWorkspace::buildPages() {
     auto* pointCount=new QComboBox;pointCount->setObjectName("constellationPointBudget");
     for(const int n:{256,1024,4096,20000})pointCount->addItem(QString::number(n)+" 点",n);
     pointCount->setCurrentIndex(2);constellationRow->insertWidget(1,pointCount);
+    auto* constellationStage=new QComboBox;constellationStage->setObjectName("constellationAnalysisStage");
+    constellationStage->addItems({"原始 IQ","CFO 校正","匹配滤波","定时符号","载波恢复"});constellationRow->insertWidget(1,constellationStage);
+    connect(constellationStage,&QComboBox::currentIndexChanged,this,[this](int value){if(auto* c=session_.activeChannel())c->analysis.constellationStage=static_cast<AnalysisStage>(value);requestAnalysis(true);});
     auto* autoScale=new QCheckBox("自动缩放");autoScale->setObjectName("constellationAutoScale");autoScale->setChecked(true);constellationRow->insertWidget(2,autoScale);
     auto* axisMin=new ParameterDoubleSpinBox;axisMin->setObjectName("constellationAxisMinimum");axisMin->setRange(-1e12,1e12);axisMin->setDecimals(6);axisMin->setValue(-1);axisMin->setMaximumWidth(110);
     auto* axisMax=new ParameterDoubleSpinBox;axisMax->setObjectName("constellationAxisMaximum");axisMax->setRange(-1e12,1e12);axisMax->setDecimals(6);axisMax->setValue(1);axisMax->setMaximumWidth(110);
@@ -1117,11 +1122,11 @@ void NarrowbandWorkspace::buildPages() {
     modulationLayout->addWidget(eyePanel, 0, 1);
     auto* eyeHeading=eyePanel->findChild<QWidget*>("narrowbandEyeLargeHead");eyeHeading->setFixedHeight(36);
     auto* eyeRow=qobject_cast<QHBoxLayout*>(eyeHeading->layout());
-    auto* eyeStage=new QComboBox;eyeStage->setObjectName("eyeAnalysisStage");eyeStage->addItems({"原始 DDC IQ","RRC 假设滤波"});eyeRow->insertWidget(1,eyeStage);
+    auto* eyeStage=new QComboBox;eyeStage->setObjectName("eyeAnalysisStage");eyeStage->addItems({"原始 DDC IQ","CFO 校正后","RRC 假设滤波","定时对齐","载波恢复后"});eyeRow->insertWidget(1,eyeStage);
     auto* eyeDensity=new QComboBox;eyeDensity->setObjectName("eyeDrawingDensity");for(int n:{4,8,16})eyeDensity->addItem(QString("绘制 %1 点/UI").arg(n),n);eyeDensity->setCurrentIndex(2);eyeRow->insertWidget(2,eyeDensity);
     auto* eyeOffset=new ParameterDoubleSpinBox;eyeOffset->setObjectName("eyeTimingOffsetUi");eyeOffset->setRange(-2,2);eyeOffset->setDecimals(4);eyeOffset->setSingleStep(.05);eyeOffset->setSuffix(" UI");eyeOffset->setMaximumWidth(100);eyeRow->insertWidget(3,eyeOffset);
     auto* rolloff=new ParameterDoubleSpinBox;rolloff->setObjectName("analysisRrcRolloff");rolloff->setRange(.05,1);rolloff->setDecimals(2);rolloff->setSingleStep(.05);rolloff->setValue(.35);rolloff->setPrefix("α ");rolloff->setMaximumWidth(92);eyeRow->insertWidget(4,rolloff);
-    connect(eyeStage,&QComboBox::currentIndexChanged,this,[this](int index){if(auto* c=session_.activeChannel())c->analysis.eyeStage=index==0?AnalysisStage::RawIq:AnalysisStage::MatchedFiltered;requestAnalysis(true);});
+    connect(eyeStage,&QComboBox::currentIndexChanged,this,[this](int index){if(auto* c=session_.activeChannel())c->analysis.eyeStage=static_cast<AnalysisStage>(index);requestAnalysis(true);});
     connect(eyeDensity,&QComboBox::currentIndexChanged,this,[this,eyeDensity]{if(auto* c=session_.activeChannel())c->analysis.eyePointsPerUi=eyeDensity->currentData().toInt();requestAnalysis(true);});
     connect(eyeOffset,&QDoubleSpinBox::valueChanged,this,[this](double v){if(auto* c=session_.activeChannel())c->analysis.eyeTimingOffsetUi=v;requestAnalysis(true);});
     connect(rolloff,&QDoubleSpinBox::valueChanged,this,[this](double v){if(auto* c=session_.activeChannel())c->analysis.rolloff=v;requestAnalysis(true);});
@@ -1136,7 +1141,8 @@ void NarrowbandWorkspace::buildPages() {
     eyeComponent_ = new QComboBox; eyeComponent_->setObjectName("eyeComponent"); eyeComponent_->addItems({"I + Q", "I 分量", "Q 分量"});
     eyePeriods_ = new QComboBox; eyePeriods_->setObjectName("eyePeriods");for(int n:{1,2,3,4})eyePeriods_->addItem(QString::number(n),n);
     eyeTraces_ = new QComboBox; eyeTraces_->setObjectName("eyeTraces");for(int n:{32,64,128,256})eyeTraces_->addItem(QString("%1 条").arg(n),n);eyeTraces_->setCurrentIndex(1);
-    auto* sync = new QCheckBox("演示同步选项"); sync->setObjectName("syncOptionsDemo");
+    auto* sync = new QCheckBox("定时恢复"); sync->setObjectName("analysisTimingRecovery");
+    connect(sync,&QCheckBox::toggled,this,[this](bool value){if(auto* c=session_.activeChannel())c->analysis.timingRecovery=value;requestAnalysis(true);});
     auto* identify = actionButton("运行识别演示", "modulationIdentify", modulationRow); identify->setProperty("uiRole", "primary");
     modulationRow->addWidget(textLabel("调制格式")); modulationRow->addWidget(modulationType); modulationRow->addWidget(textLabel("符号率"));
     modulationRow->addWidget(symbolRateMode);modulationRow->addWidget(symbolRate); modulationRow->addWidget(eyeComponent_);
@@ -1144,6 +1150,7 @@ void NarrowbandWorkspace::buildPages() {
     modulationRow->addWidget(identify); modulationLayout->addWidget(modulationControls, 2, 0, 1, 2);
     auto* run=actionButton("分析", "runNarrowbandAnalysis",modulationRow);
     auto* cancel=actionButton("取消", "cancelNarrowbandAnalysis",modulationRow);
+    auto* recover=actionButton("恢复单载波", "recoverNarrowbandSignal",modulationRow);
     connect(run,&QPushButton::clicked,this,[this,symbolRateMode]{
       if(auto* c=session_.activeChannel();c && c->analysis.symbolRateMode==SymbolRateMode::Unknown){symbolRateMode->setCurrentIndex(2);return;}
       requestAnalysis(true);
@@ -1156,6 +1163,39 @@ void NarrowbandWorkspace::buildPages() {
     auto* candidates=new QComboBox;candidates->setObjectName("analysisRateCandidates");candidates->setMinimumContentsLength(30);rateRow->addWidget(candidates,1);
     auto* adopt=actionButton("采用为手工 Rs", "adoptSymbolRateCandidate",rateRow);rateRow->addWidget(adopt);
     modulationLayout->addWidget(rateRowWidget,4,0,1,2);
+    auto* more=new QToolButton;more->setObjectName("narrowbandSyncSettingsToggle");more->setText("更多同步设置");more->setCheckable(true);modulationLayout->addWidget(more,5,0,1,2);
+    auto* syncSettings=new QWidget;syncSettings->setObjectName("narrowbandSyncSettings");auto* syncLayout=new QHBoxLayout(syncSettings);syncLayout->setContentsMargins(6,2,6,2);
+    auto* left=new QFormLayout;auto* middle=new QFormLayout;auto* right=new QFormLayout;
+    syncLayout->addLayout(left);syncLayout->addLayout(middle);syncLayout->addLayout(right);
+    auto* cfoMode=new QComboBox;cfoMode->setObjectName("analysisCfoMode");cfoMode->addItems({"关闭 CFO 校正","自动 CFO（分析假设）","手工 CFO"});left->addRow("频偏校正",cfoMode);
+    auto* cfo=new ParameterDoubleSpinBox;cfo->setObjectName("analysisManualCfoHz");cfo->setRange(-2e9,2e9);cfo->setDecimals(3);cfo->setSuffix(" Hz");left->addRow("手工频偏",cfo);
+    auto* matched=new QCheckBox("RRC 匹配滤波（滚降为假设）");matched->setObjectName("analysisMatchedFilter");left->addRow(matched);
+    auto* carrier=new QCheckBox("载波相位恢复（所选模板）");carrier->setObjectName("analysisCarrierRecovery");middle->addRow(carrier);
+    auto* timingBw=new ParameterDoubleSpinBox;timingBw->setObjectName("analysisTimingLoopBandwidth");timingBw->setRange(.0001,.1);timingBw->setDecimals(4);timingBw->setValue(.002);middle->addRow("定时环带宽／符号率",timingBw);
+    auto* carrierBw=new ParameterDoubleSpinBox;carrierBw->setObjectName("analysisCarrierLoopBandwidth");carrierBw->setRange(.0001,.1);carrierBw->setDecimals(4);carrierBw->setValue(.01);middle->addRow("载波环带宽／符号率",carrierBw);
+    auto* phase=new ParameterDoubleSpinBox;phase->setObjectName("analysisManualPhaseRadians");phase->setRange(-20*std::numbers::pi,20*std::numbers::pi);phase->setDecimals(5);phase->setSuffix(" rad");right->addRow("手工 CFO 初始相位",phase);
+    auto* span=new ParameterIntSpinBox;span->setObjectName("analysisRrcSpan");span->setRange(2,32);span->setValue(10);right->addRow("RRC 跨度／符号",span);
+    auto* budget=new QComboBox;budget->setObjectName("analysisSampleBudget");for(int n:{1,2,4,8})budget->addItem(QString("%1 Mi 复样本").arg(n),n*1024*1024);right->addRow("分析预算（256 MiB 工作区）",budget);
+    syncSettings->hide();modulationLayout->addWidget(syncSettings,6,0,1,2);connect(more,&QToolButton::toggled,syncSettings,&QWidget::setVisible);
+    connect(cfoMode,&QComboBox::currentIndexChanged,this,[this](int value){if(auto* c=session_.activeChannel())c->analysis.cfoMode=static_cast<CfoMode>(value);requestAnalysis(true);});
+    connect(cfo,&QDoubleSpinBox::valueChanged,this,[this](double value){if(auto* c=session_.activeChannel())c->analysis.manualCfoHz=value;requestAnalysis(true);});
+    connect(matched,&QCheckBox::toggled,this,[this](bool value){if(auto* c=session_.activeChannel())c->analysis.matchedFilter=value;requestAnalysis(true);});
+    connect(carrier,&QCheckBox::toggled,this,[this](bool value){if(auto* c=session_.activeChannel())c->analysis.carrierRecovery=value;requestAnalysis(true);});
+    connect(timingBw,&QDoubleSpinBox::valueChanged,this,[this](double value){if(auto* c=session_.activeChannel())c->analysis.timingLoopBandwidth=value;requestAnalysis(true);});
+    connect(carrierBw,&QDoubleSpinBox::valueChanged,this,[this](double value){if(auto* c=session_.activeChannel())c->analysis.carrierLoopBandwidth=value;requestAnalysis(true);});
+    connect(phase,&QDoubleSpinBox::valueChanged,this,[this](double value){if(auto* c=session_.activeChannel())c->analysis.manualPhaseRadians=value;requestAnalysis(true);});
+    connect(span,&QSpinBox::valueChanged,this,[this](int value){if(auto* c=session_.activeChannel())c->analysis.filterSpanSymbols=value;requestAnalysis(true);});
+    connect(budget,&QComboBox::currentIndexChanged,this,[this,budget]{if(auto* c=session_.activeChannel())c->analysis.sampleBudget=static_cast<std::size_t>(budget->currentData().toInt());requestAnalysis(true);});
+    recover->setToolTip("按当前 BPSK/QPSK/16QAM 假设启用 RRC、Gardner、相位恢复；待确认 Rs 时先估计。保留手工 CFO/Rs。");
+    connect(recover,&QPushButton::clicked,this,[this]{
+      auto* c=session_.activeChannel();if(!c)return;
+      if(c->analysis.hypothesis==ModulationHypothesis::Unknown || c->analysis.hypothesis>=ModulationHypothesis::Fsk){modulationStatus_->setText("请选择 BPSK、QPSK 或 16QAM 分析假设；原始 IQ 不受影响。");return;}
+      if(c->analysis.symbolRateMode==SymbolRateMode::Unknown){c->analysis.symbolRateMode=SymbolRateMode::Estimated;c->analysis.symbolRateHz=0;}
+      if(c->analysis.cfoMode==CfoMode::Off)c->analysis.cfoMode=CfoMode::Automatic;
+      c->analysis.matchedFilter=true;c->analysis.timingRecovery=true;c->analysis.carrierRecovery=true;
+      c->analysis.constellationStage=AnalysisStage::CarrierRecovered;c->analysis.eyeStage=AnalysisStage::CarrierRecovered;
+      refreshFromSession();requestAnalysis(true);
+    });
     connect(adopt,&QPushButton::clicked,this,[this,candidates,symbolRateMode,symbolRate] {
       auto* c=session_.activeChannel();const auto* f=session_.activeFile();if(!c || !f || candidates->currentIndex()<0 || !analysisResult_ ||
         !analysisIdentityCurrent(analysisResult_->identity,f->metadata,*c,session_.projectGeneration(),analysisGeneration_))return;
@@ -1611,7 +1651,15 @@ void NarrowbandWorkspace::refreshFromSession() {
     }
     if(auto* mode=findChild<QComboBox*>("analysisSymbolRateMode")){QSignalBlocker b(mode);mode->setCurrentIndex(static_cast<int>(channel->analysis.symbolRateMode));}
     if(auto* hypothesis=findChild<QComboBox*>("modulationFormat")){QSignalBlocker b(hypothesis);hypothesis->setCurrentIndex(static_cast<int>(channel->analysis.hypothesis));}
-    if(auto* stage=findChild<QComboBox*>("eyeAnalysisStage")){QSignalBlocker b(stage);stage->setCurrentIndex(channel->analysis.eyeStage==AnalysisStage::RawIq?0:1);}
+    if(auto* stage=findChild<QComboBox*>("eyeAnalysisStage")){QSignalBlocker b(stage);stage->setCurrentIndex(static_cast<int>(channel->analysis.eyeStage));}
+    if(auto* stage=findChild<QComboBox*>("constellationAnalysisStage")){QSignalBlocker b(stage);stage->setCurrentIndex(static_cast<int>(channel->analysis.constellationStage));}
+    if(auto* mode=findChild<QComboBox*>("analysisCfoMode")){QSignalBlocker b(mode);mode->setCurrentIndex(static_cast<int>(channel->analysis.cfoMode));}
+    for(const auto& entry:std::array<std::pair<const char*,bool>,3>{{{"analysisMatchedFilter",channel->analysis.matchedFilter},{"analysisTimingRecovery",channel->analysis.timingRecovery},{"analysisCarrierRecovery",channel->analysis.carrierRecovery}}})
+      if(auto* control=findChild<QCheckBox*>(entry.first)){QSignalBlocker b(control);control->setChecked(entry.second);}
+    for(const auto& entry:std::array<std::pair<const char*,double>,4>{{{"analysisManualCfoHz",channel->analysis.manualCfoHz},{"analysisManualPhaseRadians",channel->analysis.manualPhaseRadians},{"analysisTimingLoopBandwidth",channel->analysis.timingLoopBandwidth},{"analysisCarrierLoopBandwidth",channel->analysis.carrierLoopBandwidth}}})
+      if(auto* control=findChild<QDoubleSpinBox*>(entry.first)){QSignalBlocker b(control);displayParameterValue(control,entry.second);}
+    if(auto* span=findChild<QSpinBox*>("analysisRrcSpan")){QSignalBlocker b(span);displayParameterValue(span,channel->analysis.filterSpanSymbols);}
+    if(auto* budget=findChild<QComboBox*>("analysisSampleBudget")){QSignalBlocker b(budget);budget->setCurrentIndex(budget->findData(static_cast<int>(channel->analysis.sampleBudget)));}
     if(auto* density=findChild<QComboBox*>("eyeDrawingDensity")){QSignalBlocker b(density);density->setCurrentIndex(density->findData(channel->analysis.eyePointsPerUi));}
     for(const auto& setting:std::array<std::pair<const char*,double>,2>{{{"eyeTimingOffsetUi",channel->analysis.eyeTimingOffsetUi},{"analysisRrcRolloff",channel->analysis.rolloff}}})
       if(auto* control=findChild<QDoubleSpinBox*>(setting.first)){QSignalBlocker b(control);displayParameterValue(control,setting.second);}
@@ -2143,7 +2191,10 @@ void NarrowbandWorkspace::installAnalysis() {
       .arg(str(data.message)).arg(points.size()).arg(data.source->samples.size()).arg(data.source->outputRateHz)
       .arg(data.source->outputSamples.begin).arg(data.source->outputSamples.end)
       .arg(data.source->sourceSamples.begin).arg(data.source->sourceSamples.end).arg(data.source->discardedLeft).arg(data.source->discardedRight);
-    constellationLarge_->setPoints(std::move(points),detail,QString("真实 IQ · %1 点 · 未同步").arg(data.constellation.size()));
+    const QStringList stageNames{"原始 IQ（未同步）","CFO 校正","匹配滤波","定时符号","载波恢复"};
+    constellationLarge_->setPoints(std::move(points),detail,QString("真实 IQ · %1 · %2 点").arg(stageNames.at(static_cast<int>(data.constellationStage))).arg(data.constellation.size()));
+    constellationLarge_->setProperty("analysisStage",static_cast<int>(data.constellationStage));
+    constellationLarge_->setProperty("timingLocked",data.timingLocked);constellationLarge_->setProperty("carrierLocked",data.carrierLocked);
     constellationLarge_->setProperty("realIqSource",true);
     constellationLarge_->setProperty("sourceChannelId",str(channel->id));
     constellationLarge_->setProperty("sourceConfigVersion",static_cast<qulonglong>(channel->configVersion));
@@ -2154,7 +2205,10 @@ void NarrowbandWorkspace::installAnalysis() {
       .arg(str(data.eyeMessage)).arg(static_cast<double>(data.source->outputRateHz)/channel->bandwidthHz,0,'g',6)
       .arg(data.symbolRateHz>0?QString::number(data.samplesPerSymbol,'g',9):QString("未给定 Rs"))
       .arg(data.eyePointsPerUi).arg(data.eyes.size()).arg(data.filterDiscardedSamples);
-    if(modulationStatus_)modulationStatus_->setText(detail+eyeDetail);
+    const auto syncDetail=QString("\n%1 · CFO %2 Hz · 定时周期 %3 samples · 捕获丢弃 %4 symbols%5")
+      .arg(str(data.syncMessage)).arg(data.estimatedCfoHz,0,'g',9).arg(data.timingPeriodSamples,0,'g',9).arg(data.acquisitionSymbolsDiscarded)
+      .arg(data.carrierLocked && data.conditionalEvm>=0?QString(" · 条件 EVM（所选模板）%1%").arg(data.conditionalEvm*100,0,'f',2):QString{});
+    if(modulationStatus_)modulationStatus_->setText(detail+eyeDetail+syncDetail);
 }
 
 void NarrowbandWorkspace::cancelWork() {

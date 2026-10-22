@@ -1,6 +1,7 @@
 #include "infrastructure/narrowband_analysis/constellation_analysis.h"
 #include "infrastructure/narrowband_analysis/eye_analysis.h"
 #include "infrastructure/narrowband_analysis/symbol_rate_estimator.h"
+#include "infrastructure/narrowband_analysis/single_carrier_recovery.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -56,6 +57,7 @@ NarrowbandAnalysisResult analyzeNarrowband(std::shared_ptr<const AnalysisSourceD
     if(estimate.reliable)effective.symbolRateHz=estimate.candidates.front().rateHz;
     else {effective.symbolRateMode=SymbolRateMode::Unknown;unreliable=true;}
   }
+  recoverSingleCarrier(result,effective,cancelled);
   buildEye(result,effective,cancelled);
   if(unreliable){result.eyeStatus=AnalysisStatus::LowConfidence;result.eyeMessage=rateMessage;}
   if(!rateMessage.empty())result.message+=" · "+rateMessage;
