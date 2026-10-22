@@ -443,6 +443,9 @@ QJsonObject encodeProject(const Project& project, const QString& path) {
           {QStringLiteral("bandwidthHz"), channel.bandwidthHz}};
       encoded.insert(QStringLiteral("outputSampleRateHz"),
                      channel.outputSampleRateHz);
+      encoded.insert(QStringLiteral("samplingPolicy"), QJsonObject{
+          {"mode", static_cast<int>(channel.sampling.mode)},
+          {"bandwidthFactor", channel.sampling.bandwidthFactor}});
       encoded.insert(QStringLiteral("filter"), filterName(channel.filter));
       encoded.insert(QStringLiteral("processingState"),
                      processingStateName(channel.processingState));
@@ -717,6 +720,15 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
       channel.centerFrequencyHz = number(channelData, "centerFrequencyHz");
       channel.bandwidthHz = number(channelData, "bandwidthHz");
       channel.outputSampleRateHz = number(channelData, "outputSampleRateHz");
+      if (channelData.contains("samplingPolicy")) {
+        const auto policy = object(channelData.value("samplingPolicy"), "samplingPolicy");
+        const auto mode = number(policy, "mode");
+        const auto factor = number(policy, "bandwidthFactor");
+        require((mode == 0 || mode == 1) &&
+                    (factor == 1.5 || factor == 2 || factor == 4 || factor == 8),
+                QStringLiteral("采样策略或带宽倍率无效"));
+        channel.sampling = {static_cast<ChannelSamplingMode>(static_cast<int>(mode)), factor};
+      }
       require(channel.outputSampleRateHz > 0,
               QStringLiteral("窄带输出采样率无效"));
       const auto filter = string(channelData, "filter", 32);

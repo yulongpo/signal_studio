@@ -15,6 +15,7 @@ if (-not $OutputDirectory) { $OutputDirectory = Join-Path $repoRoot "out/tasks/w
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 foreach ($part in @('logs','diagnostics','assets')) { New-Item -ItemType Directory -Path (Join-Path $OutputDirectory $part) -Force | Out-Null }
 $fixtureRoot = Join-Path $repoRoot 'out/tasks/wideband-detection/NB-W0/assets/fixtures'
+$runName = "$(Get-Date -Format 'yyyyMMdd-HHmmss-fff')-$Configuration"
 function Invoke-NarrowbandChecked([string]$Program, [string[]]$CommandArguments) {
     & $Program @CommandArguments
     if ($LASTEXITCODE -ne 0) { throw "$Program failed with exit code $LASTEXITCODE" }
@@ -43,10 +44,10 @@ try {
     } elseif ($Node -eq 'W8') {
         & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $Configuration -Action All *> (Join-Path $OutputDirectory "logs/final-$Configuration.txt")
     } else {
-        $testRegex = if ($Node -eq 'W1') { 'signal_studio_(channel_rate|channel_processor|core|annotations|annotation_store)$' } else { 'signal_studio_narrowband_analysis' }
-        $targets = if ($Node -eq 'W1') { @('SignalStudioChannelRateTests','SignalStudioChannelProcessorTests','SignalStudioCoreTests','SignalStudioAnnotationTests','SignalStudioAnnotationStoreTests') } else { @('SignalStudioNarrowbandAnalysisTests') }
+        $testRegex = if ($Node -eq 'W1') { 'signal_studio_(channel_rate|channel_processor|core|annotations|annotation_store|narrowband_analysis_ui)$' } else { 'signal_studio_narrowband_analysis' }
+        $targets = if ($Node -eq 'W1') { @('SignalStudioChannelRateTests','SignalStudioChannelProcessorTests','SignalStudioCoreTests','SignalStudioAnnotationTests','SignalStudioAnnotationStoreTests','SignalStudioNarrowbandAnalysisUiTests') } else { @('SignalStudioNarrowbandAnalysisTests') }
         if ($Node -in @('W3','W4','W7')) { $targets += 'SignalStudioNarrowbandAnalysisUiTests' }
-        & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $Configuration -Action All -Targets $targets -TestRegex $testRegex *> (Join-Path $OutputDirectory "logs/directed-$Configuration.txt")
+        & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $Configuration -Action All -Targets $targets -TestRegex $testRegex *> (Join-Path $OutputDirectory "logs/directed-$runName.txt")
     }
     if (-not $?) { throw "Narrowband $Node validation failed" }
     Write-Host "$Node $Configuration validation completed. Logs: $OutputDirectory/logs"

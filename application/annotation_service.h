@@ -22,6 +22,7 @@ struct AnnotationChannelRequest {
   SourceIdentity sourceIdentity;
   ViewRange boundRange, range;
   double outputSampleRateHz = 0;
+  ChannelSamplingPolicy sampling{ChannelSamplingMode::RecommendedFactor, 2.0};
   ChannelFilter filter = ChannelFilter::Standard;
   bool preserveSourceTime = true;
 };

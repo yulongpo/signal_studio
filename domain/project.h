@@ -9,6 +9,7 @@
 #include "domain/annotation.h"
 #include "domain/detection.h"
 #include "domain/sample_format.h"
+#include "domain/channel_sampling.h"
 
 namespace signalstudio {
 
@@ -129,6 +130,7 @@ struct Channel {
   double bandwidthHz = 0;
   TimeRange sourceTime;
   double outputSampleRateHz = 4e6;
+  ChannelSamplingPolicy sampling;
   ChannelFilter filter = ChannelFilter::Standard;
   ChannelProcessingState processingState =
       ChannelProcessingState::LegacyNeedsReview;

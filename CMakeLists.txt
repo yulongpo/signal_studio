@@ -59,6 +59,7 @@ function(ss_add_ui_assets target)
 endfunction()
 
 add_library(SignalStudioCore STATIC
+    domain/channel_sampling.cpp
     domain/annotation.cpp
     domain/detection.cpp
     domain/detection_postprocess.cpp
@@ -301,6 +302,12 @@ if(SS_BUILD_TESTS)
     ss_target_defaults(SignalStudioCoreTests)
     add_test(NAME signal_studio_core COMMAND SignalStudioCoreTests)
     add_executable(SignalStudioChannelProcessorTests tests/channel_processor_tests.cpp)
+    add_executable(SignalStudioChannelRateTests tests/channel_rate_tests.cpp)
+    target_link_libraries(SignalStudioChannelRateTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    set_target_properties(SignalStudioChannelRateTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioChannelRateTests)
+    add_test(NAME signal_studio_channel_rate COMMAND SignalStudioChannelRateTests)
+    set_tests_properties(signal_studio_channel_rate PROPERTIES TIMEOUT 120)
     target_link_libraries(SignalStudioChannelProcessorTests PRIVATE
         SignalStudioInfrastructure SignalStudioCore Qt6::Core)
     set_target_properties(SignalStudioChannelProcessorTests PROPERTIES AUTOMOC OFF)
@@ -321,6 +328,23 @@ if(SS_BUILD_TESTS)
     set_tests_properties(signal_studio_display_sampling PROPERTIES TIMEOUT 60)
 
     add_executable(SignalStudioUiTests tests/ui_tests.cpp ${SS_UI_SOURCES})
+    add_executable(SignalStudioNarrowbandAnalysisUiTests tests/narrowband_analysis_ui_tests.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioNarrowbandAnalysisUiTests PRIVATE
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
+        Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioNarrowbandAnalysisUiTests)
+    ss_add_graphics_shaders(SignalStudioNarrowbandAnalysisUiTests signalstudio_nb_analysis_ui_shaders)
+    ss_add_ui_assets(SignalStudioNarrowbandAnalysisUiTests)
+    qt_add_resources(SignalStudioNarrowbandAnalysisUiTests signalstudio_nb_analysis_demo
+        PREFIX "/signalstudio/demo" BASE "${CMAKE_SOURCE_DIR}/resources"
+        FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq")
+    add_dependencies(SignalStudioNarrowbandAnalysisUiTests SignalStudio)
+    add_test(NAME signal_studio_narrowband_analysis_ui COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioNarrowbandAnalysisUiTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/nb-analysis-ui-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_narrowband_analysis_ui PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480)
     target_link_libraries(SignalStudioUiTests PRIVATE
         SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)

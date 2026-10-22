@@ -626,6 +626,7 @@ std::string Session::createChannel(const std::string& name,
                    {centerFrequencyHz - bandwidthHz / 2,
                     centerFrequencyHz + bandwidthHz / 2}};
   request.outputSampleRateHz = outputSampleRateHz;
+  request.sampling.mode = ChannelSamplingMode::Manual;
   request.filter = filter;
   request.preserveSourceTime = preserveSourceTime;
   const auto created = createAnnotationChannel(request);

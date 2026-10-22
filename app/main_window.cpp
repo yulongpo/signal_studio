@@ -81,6 +81,7 @@
 #include "ui/import/signal_import_dialog.h"
 #include "ui/narrowband_workspace.h"
 #include "ui/parameter_input.h"
+#include "ui/channel_dsp_validation.h"
 #include "ui/source_units.h"
 #include "ui/spectral_settings_widget.h"
 
@@ -3298,6 +3299,16 @@ void MainWindow::showChannelDialog(const QString& channelId) {
   outputRate->setDecimals(9);
   outputRate->setSingleStep(1);
   outputRate->setSuffix(" MS/s");
+  auto* samplingMode = new QComboBox;
+  samplingMode->setObjectName("channelSamplingMode");
+  samplingMode->addItems({"推荐倍率（自动规划）", "自定义／保持当前采样率"});
+  samplingMode->setCurrentIndex(editing && original.sampling.mode == ChannelSamplingMode::Manual ? 1 : 0);
+  auto* bandwidthFactor = new QComboBox;
+  bandwidthFactor->setObjectName("channelBandwidthFactor");
+  for (const double factor : {1.5, 2.0, 4.0, 8.0}) bandwidthFactor->addItem(QString::number(factor) + "×", factor);
+  bandwidthFactor->setCurrentIndex(editing ? std::max(0, bandwidthFactor->findData(original.sampling.bandwidthFactor)) : 1);
+  auto rateValue = std::make_shared<double>(editing ? original.outputSampleRateHz : 0);
+  auto manualRate = std::make_shared<double>(*rateValue);
   auto* timeMode = new QComboBox;
   timeMode->setObjectName("channelTimeScope");
   timeMode->setEnabled(false);
@@ -3326,7 +3337,9 @@ void MainWindow::showChannelDialog(const QString& channelId) {
   form->addRow("实际提取范围", actualRange);
   form->addRow("射频中心", center);
   form->addRow("有效带宽", bandwidth);
-  form->addRow("输出采样率", outputRate);
+  form->addRow("采样策略", samplingMode);
+  form->addRow("过采样倍率（Fs／带宽）", bandwidthFactor);
+  form->addRow("实际输出采样率", outputRate);
   form->addRow("提取时段", timeMode);
   form->addRow(usePrefix);
   form->addRow("FIR 滤波", filter);
@@ -3356,23 +3369,43 @@ void MainWindow::showChannelDialog(const QString& channelId) {
   // MHz controls are a rounded presentation. Keep the exact physical edges
   // until a committed control change explicitly replaces them.
   auto frequency = std::make_shared<FrequencyRange>();
-  const auto readRequest = [request, frequency, name, begin, end, outputRate,
-                            filter, preserveTime] {
+  const auto readRequest = [request, frequency, name, begin, end, rateValue,
+                            samplingMode, bandwidthFactor, filter, preserveTime] {
     auto current = *request;
     current.name = name->text().trimmed().toStdString();
     current.range = {{begin->sampleValue(), end->sampleValue()}, *frequency};
-    current.outputSampleRateHz = outputRate->value() * 1e6;
+    current.outputSampleRateHz = *rateValue;
+    current.sampling = {samplingMode->currentIndex() == 0 ? ChannelSamplingMode::RecommendedFactor : ChannelSamplingMode::Manual,
+                        bandwidthFactor->currentData().toDouble()};
     current.filter = static_cast<ChannelFilter>(filter->currentIndex());
     current.preserveSourceTime = preserveTime->isChecked();
     return current;
   };
   const auto validate = [resolveFile, editing, original, begin, end,
                          readRequest, actualRange, preview, validation,
-                         confirm]() -> bool {
+                         confirm, rateValue, outputRate, samplingMode, bandwidthFactor]() -> bool {
     QString reason, field;
     auto* currentFile = resolveFile();
-    const auto current = readRequest();
+    auto current = readRequest();
     Channel candidate = editing ? original : Channel{};
+    candidate.centerFrequencyHz = (current.range.frequency.lowerHz + current.range.frequency.upperHz)/2;
+    candidate.bandwidthHz = current.range.frequency.upperHz-current.range.frequency.lowerHz;
+    candidate.outputSampleRateHz = current.outputSampleRateHz;
+    candidate.sampling = current.sampling;
+    candidate.filter = current.filter;
+    OutputRatePlan ratePlan;
+    outputRate->setEnabled(current.sampling.mode == ChannelSamplingMode::Manual);
+    bandwidthFactor->setEnabled(current.sampling.mode == ChannelSamplingMode::RecommendedFactor);
+    if (currentFile) {
+      ratePlan = planChannelOutputRate(currentFile->metadata, candidate);
+      if (ratePlan.valid && current.sampling.mode == ChannelSamplingMode::RecommendedFactor) {
+        *rateValue = ratePlan.realizedRateHz;
+        current.outputSampleRateHz = *rateValue;
+        candidate.outputSampleRateHz = *rateValue;
+        const QSignalBlocker blocked(outputRate);
+        displayParameterValue(outputRate, *rateValue/1e6);
+      }
+    }
     if (!currentFile) {
       field = "source";
       reason = "工程、文件或样本通道已切换，请重新打开配置。";
@@ -3391,6 +3424,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
       candidate.bandwidthHz =
           current.range.frequency.upperHz - current.range.frequency.lowerHz;
       candidate.outputSampleRateHz = current.outputSampleRateHz;
+      candidate.sampling = current.sampling;
       candidate.filter = current.filter;
       candidate.preserveSourceTime = current.preserveSourceTime;
     } else {
@@ -3409,16 +3443,16 @@ void MainWindow::showChannelDialog(const QString& channelId) {
             .arg(current.range.time.end)
             .arg(current.range.frequency.lowerHz / 1e6, 0, 'g', 12)
             .arg(current.range.frequency.upperHz / 1e6, 0, 'g', 12));
-    ChannelDspPlan plan;
-    const bool planned =
-        reason.isEmpty() && makeChannelDspPlan(currentFile->metadata, candidate,
-                                               plan, reason, &field);
+    if (reason.isEmpty() && !ratePlan.valid) {
+      reason = q(ratePlan.reason); field = q(ratePlan.field);
+    }
+    const auto& plan = ratePlan.dsp;
+    const bool planned = reason.isEmpty() && ratePlan.valid;
     if (planned) {
       std::size_t taps = 0;
-      for (const auto& coefficients : plan.stageCoefficients)
-        taps += coefficients.size();
+      for (const auto& stage : plan.stages) taps += stage.taps;
       preview->setText(
-          QString("来源 IQ → CPU DDC / FIR → 有理重采样\nFs %1 → %2 MS/s · "
+          QString("来源 IQ → CPU DDC / FIR → 有理重采样\n源 Fs %1 → 实际 %2 MS/s · "
                   "过渡带 %3 kHz · FIR %4 taps · L/M=%5/%6 · %7 dB 目标")
               .arg(plan.sourceRateHz / 1e6, 0, 'g', 12)
               .arg(plan.outputRateHz / 1e6, 0, 'g', 12)
@@ -3426,7 +3460,13 @@ void MainWindow::showChannelDialog(const QString& channelId) {
               .arg(taps)
               .arg(plan.interpolation)
               .arg(plan.decimation)
-              .arg(plan.stopbandAttenuationDb, 0, 'f', 0));
+              .arg(plan.attenuationDb, 0, 'f', 0) +
+          QString("\n目标 Fs %1 MS/s · 实际倍率 %2× · %3\n倍率为 Fs／带宽；每符号 SPS 需要符号率。")
+              .arg(ratePlan.targetRateHz/1e6, 0, 'g', 12)
+              .arg(ratePlan.realizedFactor, 0, 'g', 9).arg(q(ratePlan.reason)));
+      preview->setProperty("targetRateHz", ratePlan.targetRateHz);
+      preview->setProperty("realizedRateHz", ratePlan.realizedRateHz);
+      preview->setProperty("realizedFactor", ratePlan.realizedFactor);
     } else {
       preview->setText(
           "DSP 计划尚不可执行；请根据字段原因调整配置。FIR 保护带 "
@@ -3441,7 +3481,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
                            frequency, sourceMark, sourceSegment, bindingKind,
                            sourceSummary, begin, end, center, bandwidth,
                            outputRate, timeMode,
-                           validate](const std::string& segmentId = {}) {
+                           validate, rateValue, manualRate, samplingMode](const std::string& segmentId = {}) {
     auto* currentFile = resolveFile();
     if (!currentFile) {
       validate();
@@ -3451,6 +3491,8 @@ void MainWindow::showChannelDialog(const QString& channelId) {
     const auto* annotation = findAnnotation(*currentFile, id);
     *request = annotationChannelRequest(
         *currentFile, id, currentFile->view.time, generation, segmentId);
+    if (!editing && samplingMode->currentIndex() == 1)
+      request->outputSampleRateHz = *manualRate;
     if (editing) {
       request->annotationId = original.annotationId;
       request->segmentId = original.segmentId;
@@ -3460,6 +3502,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
           {original.centerFrequencyHz - original.bandwidthHz / 2,
            original.centerFrequencyHz + original.bandwidthHz / 2}};
       request->outputSampleRateHz = original.outputSampleRateHz;
+      request->sampling = original.sampling;
       if (original.sourceSnapshot) {
         request->bindingKind = original.sourceSnapshot->bindingKind;
         request->boundRange = original.sourceSnapshot->boundRange.value_or(
@@ -3518,6 +3561,8 @@ void MainWindow::showChannelDialog(const QString& channelId) {
                        : "待判断");
     sourceSummary->setText(sourceText);
     *frequency = request->range.frequency;
+    *rateValue = request->outputSampleRateHz;
+    *manualRate = *rateValue;
     begin->setSampleValue(request->range.time.begin);
     end->setSampleValue(request->range.time.end);
     for (auto* control : {center, bandwidth, outputRate})
@@ -3584,18 +3629,50 @@ void MainWindow::showChannelDialog(const QString& channelId) {
             validate();
           });
   connect(outputRate, &QDoubleSpinBox::valueChanged, dialog,
-          [validate] { validate(); });
+          [validate, rateValue, manualRate](double value) { *rateValue=value*1e6; *manualRate=*rateValue; validate(); });
+  connect(samplingMode, &QComboBox::currentIndexChanged, dialog,
+          [validate, samplingMode, rateValue, manualRate, outputRate](int index) {
+            if (index == 1) {
+              *rateValue=*manualRate;
+              const QSignalBlocker block(outputRate); displayParameterValue(outputRate,*rateValue/1e6);
+            }
+            validate();
+          });
+  connect(bandwidthFactor, &QComboBox::currentIndexChanged, dialog, [validate] { validate(); });
   connect(filter, &QComboBox::currentIndexChanged, dialog,
           [validate] { validate(); });
   connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
   connect(
       buttons, &QDialogButtonBox::accepted, dialog,
       [this, dialog, editing, channelId, original, resolveFile, readRequest,
-       validate, validation, autoOpen] {
+       validate, validation, autoOpen, confirm] {
+        if (dialog->property("channelPlanning").toBool()) return;
         if (!validate()) return;
         auto* currentFile = resolveFile();
         if (!currentFile) return;
         const auto current = readRequest();
+        Channel candidate=editing?original:Channel{};
+        candidate.centerFrequencyHz=(current.range.frequency.lowerHz+current.range.frequency.upperHz)/2;
+        candidate.bandwidthHz=current.range.frequency.upperHz-current.range.frequency.lowerHz;
+        candidate.sourceTime=current.range.time;
+        candidate.outputSampleRateHz=current.outputSampleRateHz;
+        candidate.filter=current.filter;
+        dialog->setProperty("channelPlanning",true);
+        confirm->setEnabled(false);
+        validation->setText("正在后台验证来源与 FIR 系数…");
+        validateChannelDspAsync(dialog,currentFile->metadata,candidate,
+          [this,dialog,editing,channelId,original,resolveFile,readRequest,current,validate,validation,autoOpen]
+          (bool valid,QString reason,QString field) {
+          dialog->setProperty("channelPlanning",false);
+          const bool previewValid=validate();
+          if(!valid) {validation->setProperty("field",field);validation->setText(field+"："+reason);return;}
+          const auto now=readRequest();
+          if(!previewValid || !resolveFile() || now.annotationId!=current.annotationId || now.segmentId!=current.segmentId ||
+             now.range!=current.range || now.outputSampleRateHz!=current.outputSampleRateHz ||
+             now.filter!=current.filter || now.sampling!=current.sampling || now.name!=current.name ||
+             now.preserveSourceTime!=current.preserveSourceTime) {
+            validation->setText("参数或来源已变化，请重新应用当前配置。");return;
+          }
         if (editing) {
           auto updated = original;
           updated.name = current.name;
@@ -3605,6 +3682,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
           updated.bandwidthHz =
               current.range.frequency.upperHz - current.range.frequency.lowerHz;
           updated.outputSampleRateHz = current.outputSampleRateHz;
+          updated.sampling = current.sampling;
           updated.filter = current.filter;
           updated.preserveSourceTime = current.preserveSourceTime;
           updated.visibleBasebandFrequency = {-updated.outputSampleRateHz / 2,
@@ -3629,6 +3707,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
         dialog->accept();
         log(editing ? "窄带通道参数已更新；创建来源快照保持不变。"
                     : "窄带通道已创建；真实 CPU DDC 按可见时段按需计算。");
+        });
       });
   dialog->open();
 }
