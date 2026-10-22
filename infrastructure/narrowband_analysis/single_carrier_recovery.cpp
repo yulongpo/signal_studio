@@ -206,12 +206,14 @@ void recoverSingleCarrier(NarrowbandAnalysisResult& result,const NarrowbandAnaly
   const auto fail=[&](const std::string& reason){result.syncMessage=reason;result.message+=" · "+reason;selectConstellation(result,settings);};
   if(!result.source || result.source->samples.empty())return;
   const auto& source=*result.source;const double fs=static_cast<double>(source.outputRateHz),rs=settings.symbolRateHz;
+  const bool usableRate=settings.symbolRateMode!=SymbolRateMode::Unknown && std::isfinite(rs) && rs>0;
   if(source.samples.size()>256U*1024U*1024U/112U){fail("同步工作区预算超限，请缩小分析时窗。");return;}
   const bool known=settings.hypothesis==ModulationHypothesis::Bpsk || settings.hypothesis==ModulationHypothesis::Qpsk || settings.hypothesis==ModulationHypothesis::Qam16;
   std::vector<std::complex<float>> signal;signal.reserve(source.samples.size());
   for(const auto z:source.samples)signal.push_back(static_cast<std::complex<float>>((std::complex<double>(z)-result.removedDc)*result.gain));
   double cfo=0;
   if(settings.cfoMode==CfoMode::Automatic) {
+    if(!usableRate){fail("自动 CFO 需要本次可靠候选或已确认的手工 Rs；待确认旧值不参与同步。");return;}
     if(!known){fail("自动 CFO 需要明确 BPSK/QPSK/16QAM 分析假设；未知信号可手工输入。");return;}
     const auto estimate=momentCfo(signal,fs,rs,settings.hypothesis,cancelled);
     result.cfoConfidenceDb=estimate.prominence;
@@ -226,14 +228,15 @@ void recoverSingleCarrier(NarrowbandAnalysisResult& result,const NarrowbandAnaly
   }
   auto outputBegin=source.outputSamples.begin;
   if(matched) {
-    if(!(rs>0)){fail("匹配滤波／定时恢复需要可靠候选或手工 Rs。");return;}
+    if(!usableRate){fail("匹配滤波／定时恢复需要可靠候选或手工 Rs。");return;}
     std::vector<std::complex<float>> filtered;std::size_t discarded=0;std::string error;
     if(!matchedRrc(signal,fs/rs,settings.rolloff,settings.filterSpanSymbols,filtered,discarded,error,cancelled)){fail(error);return;}
     outputBegin+=discarded;result.filterDiscardedSamples=discarded*2;signal=std::move(filtered);
     result.stages.push_back({AnalysisStage::MatchedFiltered,outputBegin,signal});
   }
   if(!timing){selectConstellation(result,settings);return;}
-  if(!(rs>0) || fs/rs<2){fail("Gardner 需要实际 SPS ≥ 2；请提高通道输出 Fs，K_B 不等于 SPS。");return;}
+  if(!usableRate){fail("定时恢复需要本次可靠候选或已确认的手工 Rs；待确认旧值不参与同步。");return;}
+  if(fs/rs<2){fail("Gardner 需要实际 SPS ≥ 2；请提高通道输出 Fs，K_B 不等于 SPS。");return;}
   const auto clock=synchronizeClock(signal,fs/rs,settings.timingLoopBandwidth,cancelled);
   result.timingLocked=clock.locked;result.timingErrorUi=clock.jitter;result.timingPeriodSamples=clock.period;
   if(!clock.locked){fail("定时未锁定：样本、循环特征或时钟稳定性不足。");return;}

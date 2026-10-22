@@ -3,7 +3,7 @@ if(NOT DEFINED SS_UI_TEST OR NOT DEFINED SS_UI_LOG)
 endif()
 # The Windows Qt GUI entry point may have no stdout console. Preserve QtTest's
 # explicit file logger and surface its actual diagnostics through CTest.
-if(NOT DEFINED SS_UI_CASES AND DEFINED ENV{SS_UI_CASES})
+if(DEFINED ENV{SS_UI_CASES} AND NOT "$ENV{SS_UI_CASES}" STREQUAL "" AND (NOT DEFINED SS_UI_CASES OR SS_UI_ALLOW_OVERRIDE))
     set(SS_UI_CASES "$ENV{SS_UI_CASES}")
 endif()
 file(REMOVE "${SS_UI_LOG}")

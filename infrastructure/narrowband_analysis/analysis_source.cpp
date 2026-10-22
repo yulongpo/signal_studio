@@ -8,6 +8,10 @@
 #include <limits>
 
 namespace signalstudio {
+std::string analysisPhysicalRevision(const FileMetadata& source) {
+  const QFileInfo info(QString::fromStdString(source.path));
+  return (QString::fromStdString(source.path)+'\n'+QString::number(info.size())+'\n'+QString::number(info.lastModified().toMSecsSinceEpoch())).toStdString();
+}
 std::string analysisSourceKey(const FileMetadata& source,const Channel& channel) {
   const QFileInfo info(QString::fromStdString(source.path));
   QStringList parts{QString::fromStdString(source.id),QString::fromStdString(source.path),

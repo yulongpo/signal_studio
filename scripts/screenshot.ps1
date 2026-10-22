@@ -6,6 +6,8 @@ param(
     [string]$OutputDirectory,
     [string]$Project,
     [switch]$Narrowband,
+    [switch]$NarrowbandAnalysis,
+    [switch]$AuxiliaryDisplay,
     [switch]$SoftwareRenderer,
     [switch]$WidebandDetection,
     [switch]$WidebandUx,
@@ -192,9 +194,11 @@ $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 if ($Project) { $Project = [IO.Path]::GetFullPath($Project) }
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $outputDir = Join-Path $repoRoot "out/vs2026-qt611-$($Configuration.ToLowerInvariant())_bin"
-$executableName = if ($WidebandDetection -or $WidebandUx -or $UiRefinement -or $AnnotationInteractions) { 'SignalStudioUiCapture.exe' } else { 'SignalStudio.exe' }
+$executableName = if ($NarrowbandAnalysis -or $WidebandDetection -or $WidebandUx -or $UiRefinement -or $AnnotationInteractions) { 'SignalStudioUiCapture.exe' } else { 'SignalStudio.exe' }
 $executable = Join-Path $outputDir $executableName
 if (-not (Test-Path -LiteralPath $executable)) { throw "Executable does not exist: $executable" }
+if ($AuxiliaryDisplay -and -not $NarrowbandAnalysis) { throw '-AuxiliaryDisplay is only for explicitly labelled narrowband renderer evidence.' }
+if ($NarrowbandAnalysis -and ($WidebandDetection -or $WidebandUx -or $UiRefinement -or $AnnotationInteractions -or $Narrowband -or $Project)) { throw 'Narrowband analysis has its own actual-source journey.' }
 if ($UiRefinement -and ($WidebandUx -or $WidebandDetection -or $Narrowband -or $SoftwareRenderer -or $Project -or $AnnotationInteractions -or $ProductionModel -or $FinalAcceptance)) { throw 'UI refinement has its own independent native journey.' }
 if ($Narrowband -and $Project) { throw 'The packaged narrowband demo cannot be combined with -Project.' }
 if ($WidebandUx -and ($WidebandDetection -or $Narrowband -or $SoftwareRenderer -or $Project -or $AnnotationInteractions -or $ProductionModel -or $FinalAcceptance)) {
@@ -213,7 +217,7 @@ $environmentNames = @(
     'QT_ENABLE_HIGHDPI_SCALING', 'QT_SCALE_FACTOR_ROUNDING_POLICY',
     'QT_USE_PHYSICAL_DPI', 'QT_OPENGL', 'QT_QUICK_BACKEND',
     'QSG_RHI_BACKEND', 'QT_RHI_BACKEND', 'QT_WIDGETS_RHI_BACKEND',
-    'QML2_IMPORT_PATH', 'QML_IMPORT_PATH'
+    'QML2_IMPORT_PATH', 'QML_IMPORT_PATH', 'SS_NARROWBAND_FIXTURES'
 )
 $savedEnvironment = @{}
 foreach ($name in $environmentNames) {
@@ -228,6 +232,28 @@ try {
     }
     $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot;$env:SystemRoot\System32\Wbem"
     $env:QT_QPA_PLATFORM = 'windows'
+    if ($NarrowbandAnalysis) {
+        $env:SS_NARROWBAND_FIXTURES = Join-Path $repoRoot 'out/tasks/wideband-detection/NB-W0/assets/fixtures'
+        $reportPath = Join-Path $OutputDirectory 'narrowband-analysis-report.json'
+        $captureArguments = @('--narrowband-analysis',$OutputDirectory)
+        if ($SoftwareRenderer) { $captureArguments += '--software-renderer' }
+        if ($AuxiliaryDisplay) { $captureArguments += '--auxiliary-display' }
+        & $executable @captureArguments | Out-Host
+        $captureExitCode = $LASTEXITCODE
+        if (-not (Test-Path -LiteralPath $reportPath)) { throw "Narrowband capture produced no report; exit $captureExitCode" }
+        $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+        $report | Add-Member -NotePropertyName process -NotePropertyValue ([ordered]@{executable=$executable;configuration=$Configuration;systemOnlyPath=$true;dpiOverridesCleared=$true;exitCode=$captureExitCode}) -Force
+        $report | ConvertTo-Json -Depth 80 | Set-Content -LiteralPath $reportPath -Encoding utf8
+        if ($captureExitCode -eq 3 -and $report.blocked) { throw "Native screen acceptance blocked: $($report.error). Report: $reportPath" }
+        if ($captureExitCode -ne 0 -or -not $report.pass -or $report.sceneCount -ne 12 -or @($report.projects).Count -ne 2) { throw "Narrowband capture failed: $($report.error). Report: $reportPath" }
+        if (-not $AuxiliaryDisplay -and -not $report.nativeAcceptance) { throw 'The required physical monitor was not accepted.' }
+        foreach ($scene in $report.scenes) {
+            if (-not $scene.pass -or -not (Test-Path -LiteralPath $scene.png) -or $scene.pixelSize.width -ne 3840 -or $scene.pixelSize.height -ne 2160) { throw "Narrowband scene failed: $($scene.scene)" }
+            if (-not $SoftwareRenderer -and ($scene.backend -notmatch 'D3D11' -or $scene.render.gpuDataDrawCalls -le 0 -or $scene.render.textureUploads -le 0)) { throw "No hardware chart data evidence: $($scene.scene)" }
+        }
+        Write-Host "Narrowband $Configuration $renderMode passed 12 scenes; physical native acceptance: $($report.nativeAcceptance). Report: $reportPath"
+        return
+    }
     if ($AnnotationInteractions) {
         $reportPath = Join-Path $OutputDirectory 'annotation-interactions-report.json'
         if (Test-Path -LiteralPath $reportPath -PathType Leaf) { Remove-Item -LiteralPath $reportPath }

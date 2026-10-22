@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QFileInfo>
+#include <QFile>
 #include <QTemporaryDir>
 #include <cmath>
 #include <QPushButton>
@@ -18,8 +19,8 @@ using namespace signalstudio;
 class NarrowbandAnalysisUiTests : public QObject {
   Q_OBJECT
   void populate(MainWindow& window,const QString& name="tone.raw") {
-    FileMetadata source;source.name=name.toStdString();
-    source.path=(qEnvironmentVariable("SS_NARROWBAND_FIXTURES")+"/"+name).toStdString();
+    FileMetadata source;source.name=QFileInfo(name).fileName().toStdString();
+    source.path=(QFileInfo(name).isAbsolute()?name:qEnvironmentVariable("SS_NARROWBAND_FIXTURES")+"/"+name).toStdString();
     source.sampleRateHz=20e6;source.centerFrequencyHz=100e6;source.sampleCount=static_cast<SampleIndex>(QFileInfo(QString::fromStdString(source.path)).size()/4);source.demo=false;
     window.session().addDemoFile(source);
     window.session().addMark({{1000,200000},{101.5e6,102.5e6}});
@@ -28,6 +29,7 @@ class NarrowbandAnalysisUiTests : public QObject {
   }
  private slots:
   void initTestCase() {
+    qInfo("NARROWBAND_VALIDATION_NODE=%s",qPrintable(qEnvironmentVariable("SS_NARROWBAND_NODE")));
     qApp->setProperty("softwareRenderer",true);
     qApp->setProperty("uiStatePersistenceEnabled",false);
   }
@@ -161,6 +163,20 @@ class NarrowbandAnalysisUiTests : public QObject {
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->carrierLocked &&
       std::abs(workspace->analysisResult()->estimatedCfoHz-15625)<625,20000);
     QCOMPARE(window.session().activeChannel()->analysis.cfoMode,CfoMode::Manual);
+    auto* mode=window.findChild<QComboBox*>("analysisSymbolRateMode");mode->setCurrentIndex(static_cast<int>(SymbolRateMode::Manual));
+    window.findChild<QDoubleSpinBox*>("symbolRate")->setValue(625000);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->carrierLocked,20000);
+    mode->setCurrentIndex(static_cast<int>(SymbolRateMode::Unknown));
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyeStatus==AnalysisStatus::NeedSymbolRate,15000);
+    QVERIFY(!workspace->analysisResult()->timingLocked && !workspace->analysisResult()->carrierLocked);
+    QVERIFY(workspace->analysisResult()->synchronizedSymbols.empty());QVERIFY(!workspace->analysisResult()->constellation.empty());
+    mode->setCurrentIndex(static_cast<int>(SymbolRateMode::Manual));
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->carrierLocked && !workspace->analysisResult()->eyes.empty(),20000);
+    const auto before=workspace->analysisResult()->eyes[0].outputStart;
+    window.findChild<QDoubleSpinBox*>("eyeTimingOffsetUi")->setValue(.25);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && !workspace->analysisResult()->eyes.empty() &&
+      (workspace->analysisResult()->eyes[0].outputStart.integer!=before.integer || std::abs(workspace->analysisResult()->eyes[0].outputStart.fraction-before.fraction)>.1),20000);
+    QCOMPARE(window.session().activeChannel()->analysis.eyeTimingOffsetUi,.25);
     window.findChild<QCheckBox*>("analysisTimingRecovery")->setChecked(false);
     QVERIFY(!window.session().activeChannel()->analysis.carrierRecovery);
     QVERIFY(window.session().activeChannel()->analysis.constellationStage<AnalysisStage::TimingAligned);
@@ -170,6 +186,37 @@ class NarrowbandAnalysisUiTests : public QObject {
   }
   void importToAnalysisSaveReopen_data() {
     QTest::addColumn<QString>("suffix");QTest::newRow("CI16-RAW")<<QString("raw");QTest::newRow("CF32-SigMF")<<QString("sigmf-meta");
+  }
+  void externalSourceChangeInvalidatesIdleAndPending() {
+    const auto node=qEnvironmentVariable("SS_NARROWBAND_NODE");if(node!="W7" && node!="W8" && !node.isEmpty())return;
+    QTemporaryDir directory;const auto path=directory.filePath("mutable.raw");
+    QVERIFY(QFile::copy(qEnvironmentVariable("SS_NARROWBAND_FIXTURES")+"/qpsk-a35-awgn20.raw",path));
+    MainWindow window;populate(window,path);auto* file=window.session().activeFile();
+    const auto id=window.session().createChannel("mutable",file->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);QVERIFY(!id.empty());window.refresh();
+    auto* workspace=window.findChild<NarrowbandWorkspace*>();workspace->activatePageForAcceptance(1);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult()!=nullptr,15000);QVERIFY(!workspace->analysisResult()->constellation.empty());
+    const auto change=[&]{QFile out(path);if(!out.open(QIODevice::Append))return false;return out.write(QByteArray(4,'\0'))==4;};
+    QVERIFY(change());
+    QTRY_VERIFY_WITH_TIMEOUT(!workspace->analysisResult(),2000);
+    QCOMPARE(window.findChild<QWidget*>("narrowbandConstellationLargeChart")->property("constellationPointCount").toULongLong(),qulonglong{0});
+    QVERIFY(window.findChild<QLabel*>("modulationAnalysisStatus")->text().contains("失效"));
+    window.findChild<QPushButton*>("runNarrowbandAnalysis")->click();QVERIFY(change());
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(),15000);
+    QVERIFY(!workspace->analysisResult());QVERIFY(window.findChild<QLabel*>("modulationAnalysisStatus")->text().contains("失效"));
+    // Ordinary refresh must catch the change synchronously, before the 20 ms
+    // result timer can invalidate either a published or an in-flight result.
+    window.findChild<QPushButton*>("runNarrowbandAnalysis")->click();
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult()!=nullptr,15000);
+    QVERIFY(change());window.refresh();
+    QVERIFY(!workspace->analysisResult());
+    QVERIFY(window.findChild<QLabel*>("modulationAnalysisStatus")->text().contains("失效"));
+    window.refresh();QTest::qWait(50);QVERIFY(!workspace->analysisResult());
+    window.findChild<QPushButton*>("runNarrowbandAnalysis")->click();
+    QVERIFY(change());window.refresh();
+    QVERIFY(!workspace->analysisResult());
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(),15000);
+    QVERIFY(!workspace->analysisResult());
+    QVERIFY(window.findChild<QLabel*>("modulationAnalysisStatus")->text().contains("失效"));
   }
   void importToAnalysisSaveReopen() {
     const auto node=qEnvironmentVariable("SS_NARROWBAND_NODE");if(node!="W7" && node!="W8" && !node.isEmpty())return;

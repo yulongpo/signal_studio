@@ -1,0 +1,6 @@
+{
+  "acceptedMatching": true,
+  "rejectedDebugAsRelease": true,
+  "rejectedReleaseAsDebug": true,
+  "fixturePurpose": "evidence gate unit test with actual CTest logs"
+}

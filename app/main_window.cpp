@@ -745,7 +745,7 @@ void MainWindow::buildWorkspace() {
   leftResize_->setObjectName("leftPanelResize");
   bodyLayout->addWidget(leftResize_);
 
-  auto* workspace = new QWidget;
+  auto* workspace = new QWidget(body);
   workspace->setObjectName("workspace");
   workspace->setMinimumWidth(0);
   auto* center = new QVBoxLayout(workspace);
@@ -791,10 +791,10 @@ void MainWindow::buildWorkspace() {
     enforceLayout(true);
   };
   graphLayout->addWidget(graphs_);
-  workspaceStack_ = new QStackedWidget;
+  workspaceStack_ = new QStackedWidget(workspace);
   workspaceStack_->setObjectName("workspaceStack");
   workspaceStack_->addWidget(graphArea);
-  narrowband_ = new NarrowbandWorkspace(session_);
+  narrowband_ = new NarrowbandWorkspace(session_, workspaceStack_);
   workspaceStack_->addWidget(narrowband_);
   connect(narrowband_, &NarrowbandWorkspace::displayParametersChanged, this,
           &MainWindow::refresh);

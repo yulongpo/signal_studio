@@ -436,12 +436,46 @@ if(SS_BUILD_TESTS)
         BASE "${CMAKE_SOURCE_DIR}/resources"
         FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq"
     )
-    add_test(NAME signal_studio_ui COMMAND "${CMAKE_COMMAND}"
-        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUiTests>"
-        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ui-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
-        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
-    set_tests_properties(signal_studio_ui PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480)
+    # Keep every original function/data row, with bounded independent groups.
+    # The frozen Qt -datatags inventory is checked again at delivery.
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/ui_tests.cpp")
+    file(READ "${CMAKE_SOURCE_DIR}/tests/ui_tests.cpp" ss_ui_source)
+    string(REPLACE "\r" "" ss_ui_source "${ss_ui_source}")
+    string(FIND "${ss_ui_source}" "  void workspaceLayout();" ss_ui_begin)
+    string(FIND "${ss_ui_source}" "\n};\n\nvoid UiTests::workspaceLayout()" ss_ui_end)
+    if(ss_ui_begin LESS 0 OR ss_ui_end LESS ss_ui_begin)
+        message(FATAL_ERROR "Cannot identify the complete main UI slot declarations")
+    endif()
+    math(EXPR ss_ui_length "${ss_ui_end}-${ss_ui_begin}")
+    string(SUBSTRING "${ss_ui_source}" ${ss_ui_begin} ${ss_ui_length} ss_ui_declarations)
+    string(REGEX MATCHALL "void [A-Za-z_][A-Za-z0-9_]*\\(\\)" ss_ui_slots "${ss_ui_declarations}")
+    set(ss_ui_group geometry)
+    foreach(ss_ui_slot IN LISTS ss_ui_slots)
+        string(REGEX REPLACE "void ([A-Za-z_][A-Za-z0-9_]*)\\(\\)" "\\1" ss_ui_case "${ss_ui_slot}")
+        if(ss_ui_case MATCHES "_data$")
+            continue()
+        endif()
+        if(ss_ui_case STREQUAL "powerInputsCommitAndFitReusesData")
+            set(ss_ui_group parameters)
+        elseif(ss_ui_case STREQUAL "unifiedAnnotationDraftsAndSegmentSwitch")
+            set(ss_ui_group annotations)
+        endif()
+        list(APPEND "SS_MAIN_UI_${ss_ui_group}" "${ss_ui_case}")
+    endforeach()
+    foreach(ss_ui_group IN ITEMS geometry parameters annotations)
+        set(ss_ui_test "signal_studio_ui_${ss_ui_group}")
+        if(ss_ui_group STREQUAL "geometry")
+            set(ss_ui_test signal_studio_ui)
+        endif()
+        add_test(NAME ${ss_ui_test} COMMAND "${CMAKE_COMMAND}"
+            "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUiTests>"
+            "-DSS_UI_CASES=${SS_MAIN_UI_${ss_ui_group}}"
+            "-DSS_UI_ALLOW_OVERRIDE=ON"
+            "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ui-${ss_ui_group}-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
+            -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+        set_tests_properties(${ss_ui_test} PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480 LABELS "ui;${ss_ui_group}")
+    endforeach()
     set_tests_properties(signal_studio_core PROPERTIES TIMEOUT 60)
 
     if(WIN32 AND SS_DEPLOY_RUNTIME)

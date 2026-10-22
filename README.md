@@ -1,8 +1,10 @@
 # Signal Studio
 
-独立开发的 C++20 / Qt 6.11.1 Widgets 离线 IQ 分析应用，当前分支为 `rebuild/a143-native`。主工作区依据 [A1.4.3](docs/prototype/a1.4.3/BASELINE.md)，宽带检测及三来源标记依据已获批的 [M0-P](docs/prototype/wideband-detection-r1/index.html)。旧 Signal Studio、ISA 和训练仓库不参与应用的源码、构建或运行；经授权只读参考的算法能力、显示策略及模型资产另有记录。
+独立开发的 C++20 / Qt 6.11.1 Widgets 离线 IQ 分析应用。窄带 v2 在 `rebuild/a143-native` 基线上由 `feature/narrowband-sampling-constellation-eye` 开发；见[窄带使用说明](docs/implementation/narrowband-constellation-eye-v2/USER_GUIDE.md)及[验收记录](docs/implementation/narrowband-constellation-eye-v2/VALIDATION.md)。主工作区依据 [A1.4.3](docs/prototype/a1.4.3/BASELINE.md)，宽带检测及三来源标记依据已获批的 [M0-P](docs/prototype/wideband-detection-r1/index.html)。旧 Signal Studio、ISA 和训练仓库不参与应用的源码、构建或运行；经授权只读参考的算法能力、显示策略及模型资产另有记录。
 
 当前已完成宽带离线检测，以及获批 U0 方案的标记选择、直接编辑、软删除、通道和持久化改造；U4 的 Debug/Release 完整回归、原生流程、独立部署和规格/质量复审均已通过。当前交付入口为 [U4 交付说明](docs/implementation/annotation-interactions/U4/DELIVERY.md)和[手动验证](docs/implementation/annotation-interactions/U4/MANUAL_VALIDATION.md)，节点提交和复审记录见[标记交互状态](docs/implementation/annotation-interactions/EXECUTION_STATUS.md)。宽带模型部署及历史验证保留在 [R6 交付说明](docs/implementation/wideband-detection/R6/DELIVERY.md)。大量数据效果、完整 L3/L4 与真实 RF 精度仍待手动验证。
+
+本次窄带 v2 的交付入口为[交付说明](docs/implementation/narrowband-constellation-eye-v2/DELIVERY.md)：默认目标 2B、实际采样率规划、真实两图和单载波恢复。两配置35个必要验证项及指定实屏/独立部署已闭环；完整回归中的失败与补测分别记录，提交前执行独立子代理终审。
 
 ## 工程、图谱与标记
 
@@ -59,7 +61,7 @@ Python 工具优先使用 `D:/profiles/anaconda/python.exe`。节点中间文件
 
 U4 本轮 Debug/Release 均完成 **23/23 CTest、108/108 Qt UI，0 失败、0 跳过**。Debug CTest 合计 518.20 秒、UI 370.81 秒；Release 合计 126.36 秒、UI 69.06 秒，原 UI 480 秒保护不变。Debug 重新构建后 3 个 UI 程序身份变化，已完整重跑。正式模型原生 Debug **43/43**、Release **46/46**；Release 标记 U1/U2/U3 **8/8、10/10、12/12**，覆盖实际 IQ CPU DDC、来源快照、v6 重开及旧版备份。两配置宽/窄带 GPU/软件共 8 种模式的包验证和 smoke 各自全部通过；缺模型和受控无兼容推理设备两情景仍可使用标签、手动标记与历史。详见 [U4 验证](docs/implementation/annotation-interactions/U4/VALIDATION.md)和[原生验收](docs/implementation/annotation-interactions/U4/NATIVE_ACCEPTANCE.md)。
 
-当前指定外接屏为 U27U2D、连接序号 1、DISPLAY2，3840×2160 物理、150% DPI、2560×1440 逻辑全屏。验收按实际屏幕探针选择，不固定旧连接序号；U1/U2、R5 中的 Redmi 27 NU / DISPLAY6 是当时的历史证据。
+本次窄带 v2 指定 Redmi 27 NU，要求物理 3840×2160、150% DPI、2560×1440 逻辑全屏。验收核对当次 Windows 活动设备友好名、原生设备路径、首选物理模式、连接序号及 Qt DPI；历史 U27U2D / DISPLAY2 和 Redmi / DISPLAY6 不代替当次探针。虚拟 4K 帧缓冲的渲染证据单独标注，不算指定实屏通过。
 
 代表性样本是本机实际读取的 TorchSig 合成基准 SigMF 文件：400000 个 CF32 样本、20 MS/s、20 ms、Fc 2.5 GHz。四条原始标签来自其 meta；标记交互场景中的手动和算法对象为明确的 UI 夹具。正式模型场景另执行真实 FFSCN Sample/ROI 前向，AMD Radeon 880M 的 QRhi D3D11 显示与 NVIDIA RTX 5060 的 TensorRT 推理分开记录。本轮未新增 SCN 前向效果验证；实际 IQ/DDC、UI 夹具或少量模型前向都不表示 RF 实采精度通过。
 
@@ -78,7 +80,7 @@ if (Test-Path -LiteralPath $manualRoot) { throw 'Use a new manual validation dir
 
 大量 G/T 配对矩阵和真实 RF 效果由用户交付后手动执行；[模型效果验证入口](docs/implementation/wideband-detection/R6/MANUAL_VALIDATION.md)提供新身份、新目录和结果解释。标记、通道及部署复核使用 [U4 手动验证](docs/implementation/annotation-interactions/U4/MANUAL_VALIDATION.md)。少量代表性功能/流程成功不替代 L3/L4，不覆盖所有统计谱的精度、跨硬件吞吐或受控冷/热启动基准。
 
-设备输入、持续采集、真实同步、Ubuntu 运行尚未完成；窄带识别/解调、星座和眼图仍为明确标示的合成演示。当前真实窄带能力为 CPU DDC/FIR/重采样、波形和谱分析。`portable-ninja` 与 OpenGL/Vulkan 接口保留后续跨平台路径，没有已通过的 Ubuntu 部署声明。
+窄带 v2 已接入默认目标 2B 与倍率/手工 Fs 规划、真实连续 IQ 星座和眼图，以及 BPSK/QPSK/16QAM 假设下的 Rs 候选、CFO、RRC、定时与相位恢复；细节与未通过项以本次验收记录为准。窄带模型识别与解调仍是明确标示的合成演示。设备输入、持续采集、实际调制分类、位流和 Ubuntu 运行尚未完成；`portable-ninja` 与 OpenGL/Vulkan 接口保留后续跨平台路径。
 
 ## 代码边界
 

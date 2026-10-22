@@ -198,8 +198,19 @@ void testBlindSymbolRateCandidates() {
     std::cout<<'\n';passed=passed && found;
   }
   const auto report=qEnvironmentVariable("SS_NARROWBAND_REPORT_DIR");
-  if(!report.isEmpty()){QDir().mkpath(report);QFile file(report+"/symbol-rate.json");check(file.open(QIODevice::WriteOnly),"Open rate diagnostic report");file.write(QJsonDocument(diagnostics).toJson());}
   check(passed,"Blind top-three Rs candidates must meet fixed 1% truth threshold for all 18 positive files");
+  QFile rateIndex(qEnvironmentVariable("SS_NARROWBAND_FIXTURES")+"/rate-index.json");check(rateIndex.open(QIODevice::ReadOnly),"Additional independent rates must be generated through scripts");
+  for(const auto& item:QJsonDocument::fromJson(rateIndex.readAll()).object()["records"].toArray()) {
+    const auto truth=item.toObject();const auto expected=truth["symbolRateHz"].toDouble();
+    const auto source=generatedSource(cache,truth["name"].toString().toStdString(),truth["outputRateHz"].toDouble(),truth["channelBandwidthHz"].toDouble());
+    check(source->status==AnalysisStatus::Ready,"Variable-symbol-rate real IQ must load");
+    const auto estimate=estimateSymbolRate(source->samples,source->outputRateHz);bool found=false;QJsonArray candidates;
+    for(std::size_t i=0;i<estimate.candidates.size();++i){const auto& c=estimate.candidates[i];if(i<3 && std::abs(c.rateHz-expected)/expected<=.01)found=true;candidates.append(QJsonObject{{"rateHz",c.rateHz},{"score",c.score}});}
+    diagnostics.append(QJsonObject{{"fixture",truth["name"]},{"truthRateHz",expected},{"foundTop3",found},{"reliable",estimate.reliable},{"candidates",candidates}});
+    std::cout<<"Variable Rs "<<expected<<": "<<(found?"PASS":"FAIL")<<'\n';
+    check(found && estimate.reliable,"Independent 250k/1M Rs must meet the same fixed top-three 1% threshold");
+  }
+  if(!report.isEmpty()){QDir().mkpath(report);QFile file(report+"/symbol-rate.json");check(file.open(QIODevice::WriteOnly),"Open rate diagnostic report");file.write(QJsonDocument(diagnostics).toJson());}
   for(const double rate:{1.5e6,4e6,8e6}) {
     const auto source=generatedSource(cache,"qpsk-a35-awgn20",rate);
     const auto estimate=estimateSymbolRate(source->samples,source->outputRateHz);bool found=false;

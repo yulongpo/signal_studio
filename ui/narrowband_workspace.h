@@ -68,6 +68,7 @@ signals:
 
 private:
     void requestAnalysis(bool force = false);
+    bool invalidateChangedAnalysisSource();
     void installAnalysis();
     void buildPages();
     void showPage(NarrowbandPage page);
@@ -175,6 +176,7 @@ private:
     std::unique_ptr<NarrowbandAnalysisService> analysisService_;
     std::shared_ptr<const NarrowbandAnalysisResult> analysisResult_;
     std::optional<AnalysisIdentity> lastAnalysisIdentity_;
+    std::string lastAnalysisPhysicalRevision_;
     NarrowbandAnalysisSettings lastAnalysisSettings_;
     TimeRange lastAnalysisTime_;
     std::uint64_t analysisGeneration_ = 0;

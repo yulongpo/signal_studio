@@ -13,6 +13,7 @@
 #include <numbers>
 #include <stdexcept>
 #include "infrastructure/narrowband_analysis/constellation_analysis.h"
+#include "infrastructure/narrowband_analysis/eye_analysis.h"
 
 using namespace signalstudio;
 namespace {
@@ -90,6 +91,47 @@ int main(int argc,char** argv) {
     const auto root=qEnvironmentVariable("SS_NARROWBAND_REPORT_DIR");if(!root.isEmpty()){QDir().mkpath(root);QFile report(root+"/recovery.json");check(report.open(QIODevice::WriteOnly),"Recovery diagnostic report");report.write(QJsonDocument(diagnostics).toJson());}
     check(passed,"Recovery must meet unchanged CFO, timing and true-symbol EVM thresholds");
     ChannelSampleCache cache;
+    {
+      const auto source=load(cache,"qpsk-a35-awgn20");NarrowbandAnalysisSettings s;
+      s.hypothesis=ModulationHypothesis::Qpsk;s.symbolRateMode=SymbolRateMode::Manual;s.symbolRateHz=625000;
+      s.cfoMode=CfoMode::Automatic;s.matchedFilter=true;s.timingRecovery=true;s.carrierRecovery=true;
+      s.constellationStage=AnalysisStage::CarrierRecovered;s.eyeStage=AnalysisStage::CarrierRecovered;
+      const auto locked=analyzeNarrowband(source,s);check(locked.carrierLocked && !locked.eyes.empty(),"Transition regression must begin from actual lock");
+      s.symbolRateMode=SymbolRateMode::Unknown;
+      const auto unknown=analyzeNarrowband(source,s);
+      check(!unknown.timingLocked && !unknown.carrierLocked && unknown.clockSymbols.empty() && unknown.synchronizedSymbols.empty() &&
+            unknown.constellationStage==AnalysisStage::RawIq && !unknown.constellation.empty() && unknown.eyeStatus==AnalysisStatus::NeedSymbolRate,
+            "Manual to Unknown must not use the retained positive Rs or report stale lock");
+      s.symbolRateMode=SymbolRateMode::Estimated;
+      auto unavailable=s;unavailable.cfoMode=CfoMode::Off;
+      const auto unreliable=analyzeNarrowband(load(cache,"noise"),unavailable);
+      check(!unreliable.timingLocked && !unreliable.carrierLocked && unreliable.synchronizedSymbols.empty() &&
+            unreliable.stages.empty() && unreliable.filterDiscardedSamples==0 && unreliable.clockSymbols.empty(),
+            "Unreliable automatic Rs must not reuse a retained manual number even with CFO bypassed");
+      auto manualCfo=s;manualCfo.symbolRateMode=SymbolRateMode::Unknown;manualCfo.cfoMode=CfoMode::Manual;manualCfo.manualCfoHz=15625;
+      manualCfo.matchedFilter=false;manualCfo.timingRecovery=false;manualCfo.carrierRecovery=false;
+      manualCfo.constellationStage=AnalysisStage::CfoCorrected;manualCfo.eyeStage=AnalysisStage::RawIq;
+      const auto cfoOnly=analyzeNarrowband(source,manualCfo);
+      const auto expectedFirst=std::complex<double>(source->samples.front())*std::polar(1.,-2*std::numbers::pi*15625*static_cast<double>(source->outputSamples.begin)/source->outputRateHz);
+      check(cfoOnly.constellationStage==AnalysisStage::CfoCorrected && cfoOnly.stages.size()==1 && cfoOnly.filterDiscardedSamples==0 &&
+            !cfoOnly.timingLocked && !cfoOnly.carrierLocked && cfoOnly.eyeStatus==AnalysisStatus::NeedSymbolRate &&
+            std::abs(std::complex<double>(cfoOnly.constellation.front().value)-expectedFirst)<1e-6,
+            "Unknown Rs must still allow independent manual CFO with exact NCO output");
+      s.symbolRateMode=SymbolRateMode::Manual;
+      const auto position=[](const SamplePosition& p){return static_cast<double>(p.integer)+p.fraction;};
+      const double period=position(locked.clockSymbols[1].output)-position(locked.clockSymbols[0].output);
+      for(const auto stage:{AnalysisStage::TimingAligned,AnalysisStage::CarrierRecovered})for(const double offset:{-2.,-.25,.25,2.}) {
+        auto shifted=locked;s.eyeStage=stage;s.eyeTimingOffsetUi=offset;buildEye(shifted,s);
+        check(shifted.eyeStatus==AnalysisStatus::Ready && !shifted.eyes.empty(),"Recovered eye offsets must keep interpolation within real support");
+        const double firstUi=std::ceil(std::max(0.,-offset))+offset;
+        const auto index=static_cast<std::size_t>(std::floor(firstUi));const double phase=firstUi-index;
+        const double expected=position(locked.clockSymbols[index].output)+(phase>0?phase*(position(locked.clockSymbols[index+1].output)-position(locked.clockSymbols[index].output)):0);
+        check(std::abs(position(shifted.eyes[0].outputPositions[0])-expected)<1e-7,"Signed eye offset must affect recovered fractional clock positions");
+        if(offset==.25)check(std::abs(position(shifted.eyes[0].outputStart)-position(locked.eyes[0].outputStart)-period*.25)<1e-7 &&
+          std::abs(shifted.eyes[0].i[0]-locked.eyes[0].i[0])>1e-5,"Quarter-UI offset must change both source position and real interpolated data");
+      }
+      std::cout<<"PASS stale-Rs rejection, independent manual CFO and signed recovered-eye offsets\n";
+    }
     for(const auto* name:{"noise","short-burst","short-qpsk","qpsk-low-snr","ofdm","fsk","gmsk","hop"}) {
       const auto source=load(cache,name);NarrowbandAnalysisSettings settings;
       settings.hypothesis=ModulationHypothesis::Qpsk;settings.symbolRateMode=SymbolRateMode::Manual;settings.symbolRateHz=625000;

@@ -117,17 +117,18 @@ class NarrowbandChart final : public QWidget {
 public:
     explicit NarrowbandChart(ChartMode mode, QWidget* parent = nullptr) : QWidget(parent), mode_(mode) {
         setMinimumSize(100, 90); setMouseTracking(true); setFocusPolicy(Qt::StrongFocus);
-        softwareFallback_ = qApp && qApp->property("softwareRenderer").toBool();
+        softwareFallback_ = (qApp && qApp->property("softwareRenderer").toBool()) || QGuiApplication::platformName()=="offscreen";
         auto* layout = new QVBoxLayout(this); layout->setContentsMargins(0, 0, 0, 0); layout->setSpacing(0);
-        surface_ = new AcceleratedSurface(this); surface_->setMinimumSize(80, 70); layout->addWidget(surface_);
-        surface_->setPainter([this](QPainter& painter) { draw(painter); });
-        if (mode_ == ChartMode::Curve || mode_ == ChartMode::Spectrum || mode_ == ChartMode::Heatmap)
-            surface_->setInversePainter([this](QPainter& painter) { drawCursors(painter, true); });
-        connect(surface_, &AcceleratedSurface::backendFailed, this, [this](const QString& reason) {
-            softwareFallback_ = true; surface_->hide();
-            setStatus(QStringLiteral("QPainter 软件回退 · %1").arg(reason)); update();
-        });
-        if (softwareFallback_) surface_->hide();
+        if(!softwareFallback_) {
+            surface_ = new AcceleratedSurface(this); surface_->setMinimumSize(80, 70); layout->addWidget(surface_);
+            surface_->setPainter([this](QPainter& painter) { draw(painter); });
+            if (mode_ == ChartMode::Curve || mode_ == ChartMode::Spectrum || mode_ == ChartMode::Heatmap)
+                surface_->setInversePainter([this](QPainter& painter) { drawCursors(painter, true); });
+            connect(surface_, &AcceleratedSurface::backendFailed, this, [this](const QString& reason) {
+                softwareFallback_ = true; surface_->hide();
+                setStatus(QStringLiteral("QPainter 软件回退 · %1").arg(reason)); update();
+            });
+        }
         setProperty("equalAxisScale", mode_ == ChartMode::Scatter);
         setProperty("xAxisLabel", QString{});
         setProperty("yAxisLabel", QString{});
@@ -211,7 +212,7 @@ public:
             palette_ = palette;
             if (!scalarRaster_.isNull()) {
                 raster_.setColorTable(chart_palette::colorTable(palette_));
-                surface_->setHeatmap(scalarRaster_, plotRect(), rasterRevision_, chart_palette::texture(palette_));
+                if(surface_)surface_->setHeatmap(scalarRaster_, plotRect(), rasterRevision_, chart_palette::texture(palette_));
                 invalidate();
             }
         }
@@ -246,13 +247,13 @@ public:
         const auto key = revision.isEmpty() ?
             QString::number(reinterpret_cast<quintptr>(this), 16) + QLatin1Char('/') + QString::number(scalarRaster_.cacheKey()) : revision;
         rasterRevision_ = key;
-        surface_->setHeatmap(scalarRaster_, scalarRaster_.isNull() ? QRectF{} : plotRect(), key, chart_palette::texture(palette_));
+        if(surface_)surface_->setHeatmap(scalarRaster_, scalarRaster_.isNull() ? QRectF{} : plotRect(), key, chart_palette::texture(palette_));
         invalidate();
     }
     void setPoints(std::vector<std::complex<float>> points, QString status = {}, QString summary = {}) {
         points_ = std::move(points); setProperty("constellationPointCount",static_cast<qulonglong>(points_.size()));
         if(points_.empty()){setProperty("realIqSource",false);setProperty("sourceChannelId",QString{});setProperty("actualSampleRateHz",qulonglong{0});}
-        setStatus(std::move(status), std::move(summary)); surface_->setHeatmap({}, {}, QString{}); markGeometryDirty();
+        setStatus(std::move(status), std::move(summary)); if(surface_)surface_->setHeatmap({}, {}, QString{}); markGeometryDirty();
     }
     void setIqRange(double minimum,double maximum,const QString& unit) {
         setYAxisRange(minimum,maximum,unit);
@@ -267,7 +268,7 @@ public:
     void setEye(std::vector<std::vector<float>> traces, QString status = {}, QString summary = {}) {
         series_ = std::move(traces);eyeComponents_.clear();setProperty("realEyeSource",false);
         setProperty("eyeTraceCount",static_cast<qulonglong>(series_.size()));
-        setStatus(std::move(status), std::move(summary)); surface_->setHeatmap({}, {}, QString{}); markGeometryDirty();
+        setStatus(std::move(status), std::move(summary)); if(surface_)surface_->setHeatmap({}, {}, QString{}); markGeometryDirty();
     }
     void setRealEye(const NarrowbandAnalysisResult& result,int component) {
         series_.clear();eyeComponents_.clear();
@@ -282,7 +283,7 @@ public:
         setProperty("eyePointsPerUi",result.eyePointsPerUi);setProperty("physicalSamplesPerSymbol",result.samplesPerSymbol);
         setStatus(str(result.eyeMessage),QString("真实 IQ · %1 条 · %2 UI · %3").arg(result.eyes.size()).arg(result.eyePeriods)
           .arg(result.eyeStage>=AnalysisStage::TimingAligned && result.timingLocked?"定时对齐":"周期假设，未锁定"));
-        surface_->setHeatmap({}, {}, QString{});markGeometryDirty();
+        if(surface_)surface_->setHeatmap({}, {}, QString{});markGeometryDirty();
     }
     double amplitudeUnit(float value) const {return (yAxisMaximum_-value)/std::max(1e-15,yAxisMaximum_-yAxisMinimum_);}
     QColor eyeColor(std::size_t series) const {
@@ -343,7 +344,7 @@ protected:
     void resizeEvent(QResizeEvent* event) override {
         // Hidden pages receive data before their final layout size is known.
         // Reposition the same GPU texture when the chart becomes visible.
-        if (!scalarRaster_.isNull())
+        if (surface_ && !scalarRaster_.isNull())
             surface_->setHeatmap(scalarRaster_, plotRect(), rasterRevision_, chart_palette::texture(palette_));
         markGeometryDirty();
         QWidget::resizeEvent(event);
@@ -540,6 +541,7 @@ private:
         if (!software) rebuildGeometry();
         painter.setRenderHint(QPainter::Antialiasing, true);
         const QRectF rect = plotRect();
+        if(mode_==ChartMode::Heatmap)setProperty("heatmapDrawRect",raster_.isNull()?QRectF{}:rect);
         if (software)
             painter.fillRect(QRectF(0, 0, width(), height()), QColor("#101b2a"));
         if (software && mode_ == ChartMode::Heatmap && !raster_.isNull()) {
@@ -771,7 +773,7 @@ private:
         status_ = std::move(details);
         displayStatus_ = summary.isEmpty() ? status_ : std::move(summary);
         setToolTip(status_);
-        surface_->setToolTip(status_);
+        if(surface_)surface_->setToolTip(status_);
         if (auto* panel = parentWidget()) panel->setToolTip(status_);
     }
     chart_feedback::Zone hoverZone_ = chart_feedback::Zone::None, dragZone_ = chart_feedback::Zone::None;
@@ -2136,9 +2138,12 @@ void NarrowbandWorkspace::requestPsd() {
     });
 }
 void NarrowbandWorkspace::cancelAnalysis(bool userInitiated) {
+    if(!analysisPending_ && !analysisResult_ && !lastAnalysisIdentity_ &&
+       (!analysisService_ || !analysisService_->busy()))return;
     if(analysisService_)analysisService_->cancel();
     ++analysisGeneration_;analysisPending_=false;analysisResult_.reset();
     if(!userInitiated)lastAnalysisIdentity_.reset();
+    if(auto* candidates=findChild<QComboBox*>("analysisRateCandidates")){QSignalBlocker b(candidates);candidates->clear();}
     if(constellationLarge_)constellationLarge_->setPoints({},"当前没有有效的真实星座结果。");
     if(eyeLarge_)eyeLarge_->setEye({},"当前没有有效的真实眼图结果。");
 }
@@ -2146,6 +2151,9 @@ void NarrowbandWorkspace::cancelAnalysis(bool userInitiated) {
 void NarrowbandWorkspace::requestAnalysis(bool force) {
     const auto* channel=session_.activeChannel();const auto* file=session_.activeFile();
     if(!analysisService_ || !channel || !file)return;
+    // Refresh can run before the result timer. Check the old physical revision
+    // before replacing its request identity, so it cannot hide an external edit.
+    if(invalidateChangedAnalysisSource() && !force)return;
     const auto sourceKey=analysisSourceKey(file->metadata,*channel);
     if(!force && lastAnalysisIdentity_ && lastAnalysisIdentity_->sourceKey==sourceKey &&
        lastAnalysisIdentity_->projectGeneration==session_.projectGeneration() &&
@@ -2163,6 +2171,7 @@ void NarrowbandWorkspace::requestAnalysis(bool force) {
     request.identity={session_.projectGeneration(),++analysisGeneration_,channel->configVersion,channel->id,sourceKey,{first,last}};
     request.sampleBudget=channel->analysis.sampleBudget;
     lastAnalysisIdentity_=request.identity;lastAnalysisTime_=channel->visibleSourceTime;lastAnalysisSettings_=channelAnalysisSettings(*channel);
+    lastAnalysisPhysicalRevision_=analysisPhysicalRevision(file->metadata);
     analysisPending_=true;analysisResult_.reset();
     if(auto* candidates=findChild<QComboBox*>("analysisRateCandidates")){QSignalBlocker b(candidates);candidates->clear();}
     constellationLarge_->setPoints({},"正在读取真实连续窄带 IQ…");
@@ -2171,12 +2180,41 @@ void NarrowbandWorkspace::requestAnalysis(bool force) {
     analysisService_->submit(file->metadata,*channel,request,lastAnalysisSettings_);
 }
 
+bool NarrowbandWorkspace::invalidateChangedAnalysisSource() {
+    const auto* channel=session_.activeChannel();const auto* file=session_.activeFile();
+    if(!lastAnalysisIdentity_ || !channel || !file ||
+       lastAnalysisIdentity_->channelId!=channel->id ||
+       lastAnalysisIdentity_->projectGeneration!=session_.projectGeneration())return false;
+    const auto revision=analysisPhysicalRevision(file->metadata);
+    if(lastAnalysisPhysicalRevision_==revision)return false;
+    cancelAnalysis(true);
+    // Keep an up-to-date cancellation marker until an explicit analysis action.
+    // Loader-prefix and normal context changes still follow automatic refresh.
+    lastAnalysisIdentity_->sourceKey=analysisSourceKey(file->metadata,*channel);
+    lastAnalysisIdentity_->channelConfigVersion=channel->configVersion;
+    lastAnalysisIdentity_->requestGeneration=analysisGeneration_;
+    lastAnalysisTime_=channel->visibleSourceTime;
+    lastAnalysisSettings_=channelAnalysisSettings(*channel);
+    lastAnalysisPhysicalRevision_=revision;
+    if(modulationStatus_)modulationStatus_->setText("来源文件已变化；旧结果失效，请重新分析。");
+    return true;
+}
+
 void NarrowbandWorkspace::installAnalysis() {
     if(!analysisService_)return;
-    auto result=analysisService_->takeResult();if(!result)return;
+    if(invalidateChangedAnalysisSource())return;
     const auto* channel=session_.activeChannel();const auto* file=session_.activeFile();
+    if(lastAnalysisIdentity_ && (!channel || !file ||
+       !analysisIdentityCurrent(*lastAnalysisIdentity_,file->metadata,*channel,session_.projectGeneration(),lastAnalysisIdentity_->requestGeneration) ||
+       lastAnalysisTime_!=channel->visibleSourceTime || lastAnalysisSettings_!=channelAnalysisSettings(*channel))) {
+      cancelAnalysis();
+      if(modulationStatus_)modulationStatus_->setText("来源、可用前缀或分析上下文已变化；旧结果失效，请重新分析。");return;
+    }
+    auto result=analysisService_->takeResult();if(!result)return;
     if(!channel || !file || !analysisIdentityCurrent(result->identity,file->metadata,*channel,session_.projectGeneration(),analysisGeneration_) ||
-       lastAnalysisTime_!=channel->visibleSourceTime || lastAnalysisSettings_!=channelAnalysisSettings(*channel))return;
+       lastAnalysisTime_!=channel->visibleSourceTime || lastAnalysisSettings_!=channelAnalysisSettings(*channel)) {
+      if(lastAnalysisIdentity_ && result->identity.requestGeneration==lastAnalysisIdentity_->requestGeneration){cancelAnalysis();if(modulationStatus_)modulationStatus_->setText("分析来源已变化；旧结果失效。");}return;
+    }
     analysisPending_=false;analysisResult_=std::move(result);
     if(analysisResult_->status!=AnalysisStatus::Ready) {
       constellationLarge_->setPoints({},str(analysisResult_->message));

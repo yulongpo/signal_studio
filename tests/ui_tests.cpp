@@ -4069,10 +4069,13 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
                                           : "recognitionStftPanelChart";
       auto* heat = window.findChild<QWidget*>(QString::fromLatin1(heatName));
       auto* surface = heat->findChild<AcceleratedSurface*>();
-      QVERIFY(surface);
       const QRectF expected(66, 14, std::max(1, heat->width() - 82),
                             std::max(1, heat->height() - 55));
-      QTRY_COMPARE(surface->heatmapTargetRect(), expected);
+      if(QGuiApplication::platformName()=="windows") {
+        QVERIFY(surface);QTRY_COMPARE(surface->heatmapTargetRect(), expected);
+      } else {
+        QVERIFY(!surface);QTRY_COMPARE(heat->property("heatmapDrawRect").toRectF(),expected);
+      }
     }
   }
   QVERIFY(window.session().activeChannel()->waveformAutoScale);

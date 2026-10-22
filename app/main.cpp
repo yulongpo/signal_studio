@@ -2,6 +2,7 @@
 #include "ui/brand/brand_assets.h"
 #include "ui/charts/plot_widget.h"
 #include "ui/narrowband_workspace.h"
+#include "ui/narrowband_analysis_evidence.h"
 #include "ui/display_target.h"
 
 #include <QApplication>
@@ -77,6 +78,7 @@ int main(int argc,char* argv[]) {
     parser.addOption({"software-renderer","Use the explicit QPainter fallback."});
     parser.addOption({"require-gpu","Fail the smoke test unless hardware rendering and texture reuse succeed."});
     parser.addOption({"verify-narrowband-pages","Cycle and validate all four NB-A1.1 pages before capture (requires --narrowband-demo)."});
+    parser.addOption({"verify-narrowband-analysis","Require real IQ, constellation, eye and carrier recovery in a saved --project."});
     parser.addOption({"renderer","QRhi API: auto, d3d11 (Windows), or opengl.","api","auto"});
     parser.addOption({"render-report","Write smoke-test renderer and cache evidence as JSON.","path"});parser.process(app);
     const bool interactiveLaunch = !parser.isSet("list-screens") && !parser.isSet("smoke-test") &&
@@ -147,6 +149,7 @@ int main(int argc,char* argv[]) {
       return 2;
     }
     if(parser.isSet("verify-narrowband-pages")&&!parser.isSet("narrowband-demo")){QTextStream(stderr)<<"--verify-narrowband-pages requires --narrowband-demo\n";return 2;}
+    if(parser.isSet("verify-narrowband-analysis")&&!parser.isSet("project")){QTextStream(stderr)<<"--verify-narrowband-analysis requires --project\n";return 2;}
     app.setProperty("softwareRenderer",parser.isSet("software-renderer"));app.setProperty("renderApi",renderer);
     signalstudio::MainWindow window;
     if(parser.isSet("narrowband-demo"))window.openNarrowbandDemoProject();
@@ -188,7 +191,7 @@ int main(int argc,char* argv[]) {
             bool chartsReady=(!parser.isSet("full-screen")||window.isFullScreen())&&
                 (!targetScreen||window.screen()==targetScreen)&&main&&aux&&nav&&main->isDisplaySettled()&&aux->isDisplaySettled()&&nav->isDisplaySettled()&&
                 (!parser.isSet("require-gpu")||(main->gpuReady()&&aux->gpuReady()&&nav->gpuReady()&&main->textureUploadCount()>0));
-            if(parser.isSet("narrowband-demo")){
+            if(parser.isSet("narrowband-demo") || parser.isSet("verify-narrowband-analysis")){
                 const bool dataReady=narrowband&&narrowband->dataStatusText().contains(QStringLiteral("真实 DDC"));
                 const bool settled=narrowband&&narrowband->visibleChartsSettled();
                 const bool gpuPage=narrowband&&narrowband->visibleChartsGpuReady();
@@ -220,6 +223,7 @@ int main(int argc,char* argv[]) {
                 chartsReady=(!parser.isSet("full-screen")||window.isFullScreen())&&(!targetScreen||window.screen()==targetScreen)&&
                     narrowband&&dataReady&&currentPageReady&&allPagesReady&&
                     (!parser.isSet("require-gpu")||narrowband->visibleTextureUploads()>0);
+                if(parser.isSet("verify-narrowband-analysis"))chartsReady=chartsReady && narrowband && narrowband->analysisResult() && narrowband->analysisResult()->carrierLocked && !narrowband->analysisResult()->eyes.empty();
             }
             if(parser.isSet("iq-interaction-test")&&chartsReady&&!interactionSent){
                 interactionSent=true;
@@ -234,9 +238,9 @@ int main(int argc,char* argv[]) {
                     {"interactionPending",main->hasPendingInteraction()}};
                 return;
             }
-            if (!chartsReady&&elapsed->elapsed()<(parser.isSet("narrowband-demo")?30000:10000))return;
+            if (!chartsReady&&elapsed->elapsed()<((parser.isSet("narrowband-demo")||parser.isSet("verify-narrowband-analysis"))?30000:10000))return;
             readinessTimer->stop();readinessTimer->deleteLater();
-            const bool narrowbandMode=parser.isSet("narrowband-demo");
+            const bool narrowbandMode=parser.isSet("narrowband-demo")||parser.isSet("verify-narrowband-analysis");
             const quint64 uploaded=narrowbandMode&&narrowband?narrowband->visibleTextureUploads():(main?main->textureUploadCount():0);
             const quint64 powers=main?main->powerGenerationCount():0;
             // A new overlay frame must reuse the existing heatmap texture and power matrix.
@@ -245,7 +249,7 @@ int main(int argc,char* argv[]) {
             QTimer::singleShot(150,&window,[&,main,uploaded,powers]{
                 auto* aux=window.findChild<signalstudio::PlotWidget*>("auxPlot");auto* nav=window.findChild<signalstudio::PlotWidget*>("navigationPlot");
                 auto* narrowband=window.findChild<signalstudio::NarrowbandWorkspace*>("narrowbandWorkspace");
-                const bool narrowbandMode=parser.isSet("narrowband-demo");
+                const bool narrowbandMode=parser.isSet("narrowband-demo")||parser.isSet("verify-narrowband-analysis");
                 bool ok=narrowbandMode?(narrowband&&narrowband->visibleChartsSettled()&&narrowband->dataStatusText().contains(QStringLiteral("真实 DDC"))&&
                         (!parser.isSet("verify-narrowband-pages")||(narrowbandPageMask==0x0f&&narrowband->currentPageIndex()==0))&&(!targetScreen||window.screen()==targetScreen)):
                     (main&&aux&&nav&&main->isDisplaySettled()&&aux->isDisplaySettled()&&nav->isDisplaySettled()&&main->plotRect().height()>=200&&(!targetScreen||window.screen()==targetScreen));
@@ -261,6 +265,7 @@ int main(int argc,char* argv[]) {
                         aux->renderStatistics().value("gpuDataDrawCalls").toInteger()+
                         nav->renderStatistics().value("gpuDataDrawCalls").toInteger()>0;
                 if(parser.isSet("require-gpu"))ok=ok&&gpu&&reuse;
+                if(parser.isSet("verify-narrowband-analysis"))ok=ok&&narrowband&&narrowband->analysisResult()&&narrowband->analysisResult()->carrierLocked&&!narrowband->analysisResult()->eyes.empty();
                 // Capture the application itself so the report remains scoped
                 // to this window and includes QRhiWidget child surfaces.
                 const auto capture=window.grab();
@@ -332,6 +337,7 @@ int main(int argc,char* argv[]) {
                     {"bandwidthHz",channel->bandwidthHz},{"outputSampleRateHz",channel->outputSampleRateHz},{"configVersion",QString::number(channel->configVersion)},
                     {"pageIndex",narrowband?narrowband->currentPageIndex():-1},{"dataStatus",narrowband?narrowband->dataStatusText():QStringLiteral("missing")}};
                 QJsonObject report{{"pass",ok},{"workspaceMode",narrowbandMode?"narrowband":"wideband"},
+                    {"analysis",signalstudio::narrowbandAnalysisEvidence(narrowband?narrowband->analysisResult().get():nullptr)},
                     {"narrowbandPagesVerified",narrowbandMode?narrowbandPageMask==0x0f:false},{"narrowbandPages",narrowbandPageEvidence},
                     {"activeChannel",activeChannelEvidence},{"hardwareRenderer",gpu},
                     {"backend",narrowbandMode&&narrowband?narrowband->visibleBackendDescription():(main?main->renderingBackend():"missing")},{"heatmapUploads",static_cast<qint64>(uploaded)},

@@ -7,6 +7,7 @@
 namespace signalstudio {
 using AnalysisCancel=std::function<bool()>;
 std::string analysisSourceKey(const FileMetadata&,const Channel&);
+std::string analysisPhysicalRevision(const FileMetadata&);
 bool mapAnalysisPosition(const AnalysisSourceData&,SamplePosition output,SamplePosition& source);
 bool analysisIdentityCurrent(const AnalysisIdentity&,const FileMetadata&,const Channel&,
                              std::uint64_t projectGeneration,std::uint64_t requestGeneration);

@@ -1,0 +1,50 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure -R ^signal_studio_narrowband_analysis$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 21
+    Start 21: signal_studio_narrowband_analysis
+
+21: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioNarrowbandAnalysisTests.exe
+21: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+21: Test timeout computed to be: 120
+21: source: direct/cache maximum error=1.33183e-14, valid=[34,39967)
+21: eye: fractional SPS=3.2, analytic NRMSE=0.000169596
+21: Rs bpsk-a20-ideal: PASS reliable=1 [625000,0.88281,18.2421dB] [397189,0.458163,11.8724dB] [227821,0.414368,11.2155dB] [307400,0.410498,11.1575dB] [317625,0.407284,11.1093dB]
+21: Rs bpsk-a20-awgn20: PASS reliable=1 [624999,0.881804,18.2271dB] [397185,0.457568,11.8635dB] [307394,0.410369,11.1555dB] [317623,0.408627,11.1294dB] [227825,0.407614,11.1142dB]
+21: Rs bpsk-a35-ideal: PASS reliable=1 [625000,1,23.7596dB] [397188,0.438007,11.5701dB] [335113,0.416074,11.2411dB] [391435,0.410734,11.161dB] [307382,0.386651,10.7998dB]
+21: Rs bpsk-a35-awgn20: PASS reliable=1 [625000,1,23.7304dB] [397182,0.433439,11.5016dB] [335114,0.413882,11.2082dB] [391442,0.402882,11.0432dB] [307382,0.384835,10.7725dB]
+21: Rs bpsk-a50-ideal: PASS reliable=1 [625000,1,27.7664dB] [397126,0.388359,11.0879dB] [335118,0.35373,10.3059dB] [391421,0.348257,10.69dB] [404071,0.30519,10.8559dB]
+21: Rs bpsk-a50-awgn20: PASS reliable=1 [625000,1,27.7195dB] [397110,0.370559,10.858dB] [335108,0.344853,10.1728dB] [391425,0.328571,10.4848dB] [404071,0.325449,10.878dB]
+21: Rs qpsk-a20-ideal: PASS reliable=1 [625000,0.934624,19.0194dB] [260039,0.296558,9.79797dB] [293475,0.24966,8.92322dB] [233500,0.235164,9.4426dB] [328096,0.232249,9.54101dB]
+21: Rs qpsk-a20-awgn20: PASS reliable=1 [625000,0.930571,18.9586dB] [260039,0.287037,9.77435dB] [255770,0.239625,8.66205dB] [293477,0.236953,8.76701dB] [233498,0.232549,9.32691dB]
+21: Rs qpsk-a35-ideal: PASS reliable=1 [625000,1,25.1079dB] [260034,0.303927,9.71897dB] [392629,0.238155,8.57233dB] [293479,0.233731,8.88959dB] [424807,0.224775,9.77378dB]
+21: Rs qpsk-a35-awgn20: PASS reliable=1 [625000,1,25.0902dB] [260038,0.310666,9.76569dB] [392620,0.243739,8.65608dB] [424807,0.228448,9.81777dB] [293474,0.225522,8.66532dB]
+21: Rs qpsk-a50-ideal: PASS reliable=1 [625000,1,29.5405dB] [424820,0.238704,9.5804dB] [530508,0.228446,9.02984dB] [392620,0.217391,8.26086dB] [469035,0.211711,8.59879dB]
+21: Rs qpsk-a50-awgn20: PASS reliable=1 [625000,1,29.4365dB] [424818,0.229029,9.41082dB] [469014,0.225019,8.63986dB] [392590,0.207323,8.10984dB] [530505,0.205293,8.83383dB]
+21: Rs 16qam-a20-ideal: PASS reliable=1 [625001,0.822975,17.3446dB] [239978,0.323605,9.94588dB] [254164,0.310511,9.65766dB] [142643,0.268072,9.07213dB] [229122,0.248952,9.24891dB]
+21: Rs 16qam-a20-awgn20: PASS reliable=1 [625001,0.815135,17.227dB] [239979,0.320711,9.85922dB] [254151,0.300771,9.51157dB] [142640,0.271529,9.07293dB] [229104,0.251262,9.21176dB]
+21: Rs 16qam-a35-ideal: PASS reliable=1 [625001,1,22.4489dB] [239993,0.288593,9.6674dB] [254161,0.256021,8.84031dB] [41242.9,0.200052,8.33068dB] [159726,0.196108,8.36635dB]
+21: Rs 16qam-a35-awgn20: PASS reliable=1 [625001,1,22.4604dB] [239995,0.292018,9.70347dB] [254203,0.260609,8.90914dB] [159723,0.209054,8.45418dB] [41241.4,0.202487,8.3601dB]
+21: Rs 16qam-a50-ideal: PASS reliable=1 [625000,1,25.6991dB] [240028,0.226722,9.04094dB] [254046,0.191539,8.20501dB] [38821.4,0.179399,8.38284dB] [41230,0.178477,8.17887dB]
+21: Rs 16qam-a50-awgn20: PASS reliable=1 [625000,1,25.7036dB] [240028,0.226073,9.04925dB] [254040,0.187393,8.13686dB] [38822.2,0.186105,8.44458dB] [41225.9,0.178676,8.1524dB]
+21: Variable Rs 250000: PASS
+21: Variable Rs 250000: PASS
+21: Variable Rs 250000: PASS
+21: Variable Rs 1e+06: PASS
+21: Variable Rs 1e+06: PASS
+21: Variable Rs 1e+06: PASS
+21: PASS continuous source, real constellation/eye, blind rate candidates and provenance
+1/1 Test #21: signal_studio_narrowband_analysis ...   Passed   16.24 sec
+
+The following tests passed:
+	signal_studio_narrowband_analysis
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =  16.26 sec

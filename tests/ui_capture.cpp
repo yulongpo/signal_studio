@@ -81,6 +81,7 @@
 #include "ui/import/signal_import_dialog.h"
 #include "ui/import/source_preview_widget.h"
 #include "ui/narrowband_workspace.h"
+#include "ui/narrowband_analysis_evidence.h"
 #ifdef Q_OS_WIN
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -961,6 +962,7 @@ void diagnoseMainHover(Capture& capture, QPoint target,
 #include "tests/linked_cursor_capture.h"
 #include "tests/spectral_loading_capture.h"
 #include "tests/wideband_detection_capture.h"
+#include "tests/narrowband_analysis_capture.h"
 
 // This runner reuses the actual-source and monitor helpers above.
 #include "tests/annotation_interactions_capture.h"
@@ -982,6 +984,8 @@ int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   QApplication::setApplicationName("SignalStudioNativeCapture");
   const auto arguments = app.arguments();
+  if (arguments.size() >= 3 && arguments.at(1) == "--narrowband-analysis")
+    return runNarrowbandAnalysisCapture(arguments.at(2),arguments.contains("--software-renderer"),arguments.contains("--auxiliary-display"));
   if (arguments.size() == 3 && arguments.at(1) == "--ui-refinement")
     return runUiRefinementCapture(arguments.at(2));
   if (arguments.size() == 3 && arguments.at(1) == "--wideband-ux")
@@ -1010,7 +1014,7 @@ int main(int argc, char* argv[]) {
   if (arguments.size() == 2 &&
       (arguments.at(1) == "--list-screens" || arguments.at(1) == "list")) {
     const QJsonObject inventory{{"platform", QGuiApplication::platformName()},
-                                {"screens", screensJson()}};
+                                {"screens", narrowbandScreensJson()}};
     QTextStream(stdout) << QJsonDocument(inventory).toJson(
         QJsonDocument::Indented);
     return 0;

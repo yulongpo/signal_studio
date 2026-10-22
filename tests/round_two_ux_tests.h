@@ -14,7 +14,11 @@ inline void UxTests::roundTwoFlatResponsiveControls() {
   QVERIFY(points->mapTo(&strip,QPoint()).x()>400);
   QVERIFY(strip.rect().contains(QRect(strip.overflowButton()->mapTo(&strip,QPoint()),strip.overflowButton()->size())));
   QCOMPARE(root.findChildren<QMenu*>().size(),0);
-  strip.resize(165,28);QTest::qWait(40);
+  // This scenario tests idle reflow. An editor retaining focus deliberately
+  // postpones rehosting to protect its input transaction.
+  root.setFocusPolicy(Qt::StrongFocus);root.setFocus();QVERIFY(root.hasFocus());
+  const int crampedWidth=std::max(72,strip.overflowButton()->sizeHint().width())+10;
+  strip.resize(crampedWidth,28);QTest::qWait(40);
   QTest::mouseClick(strip.overflowButton(),Qt::LeftButton);
   QVERIFY(host.activePopover());QVERIFY(points->isVisible()&&method->isVisible());
   QVERIFY(strip.popoverFrame()->isAncestorOf(points));

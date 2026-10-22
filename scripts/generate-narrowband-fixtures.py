@@ -24,6 +24,7 @@ def main():
     parser.add_argument('--output', required=True)
     parser.add_argument('--extra-only', action='store_true')
     parser.add_argument('--recovery-only', action='store_true')
+    parser.add_argument('--rates-only', action='store_true')
     args = parser.parse_args()
     root = Path(args.output)
     root.mkdir(parents=True, exist_ok=True)
@@ -31,7 +32,7 @@ def main():
     rng = np.random.default_rng(20261022)
     records = []
 
-    def write(name, x, truth, symbols=None):
+    def write(name, x, truth, symbols=None, bandwidth=1_000_000, output_rate=2_000_000):
         x = x.astype(np.complex64)
         raw = np.stack((x.real, x.imag), axis=-1)
         raw.astype('<f4').tofile(root / (name + '.sigmf-data'))
@@ -40,12 +41,36 @@ def main():
                 'captures': [{'core:sample_start': 0, 'core:frequency': 100_000_000}], 'annotations': []}
         (root / (name + '.sigmf-meta')).write_text(json.dumps(meta, indent=2), encoding='utf-8')
         truth.update(name=name, sourceRateHz=fs, sourceCenterHz=100_000_000,
-                     channelCenterHz=102_000_000, channelBandwidthHz=1_000_000,
-                     outputRateHz=2_000_000, sampleCount=len(x), syntheticTransmitter=True)
+                     channelCenterHz=102_000_000, channelBandwidthHz=bandwidth,
+                     outputRateHz=output_rate, sampleCount=len(x), syntheticTransmitter=True)
         if symbols is not None:
             np.stack((symbols.real, symbols.imag), axis=-1).astype('<f4').tofile(root / (name + '.symbols'))
         (root / (name + '.truth.json')).write_text(json.dumps(truth, indent=2), encoding='utf-8')
         records.append(truth)
+
+    if args.rates_only:
+        rate_rng = np.random.default_rng(20261024)
+        for rate in (250_000, 1_000_000):
+            rate_sps = fs // rate
+            for modulation in ('BPSK', 'QPSK', '16QAM'):
+                if modulation == 'BPSK':
+                    symbols = (2*rate_rng.integers(0, 2, count)-1).astype(complex)
+                elif modulation == 'QPSK':
+                    symbols = ((2*rate_rng.integers(0, 2, count)-1)+1j*(2*rate_rng.integers(0, 2, count)-1))/np.sqrt(2)
+                else:
+                    symbols = ((2*rate_rng.integers(0, 4, count)-3)+1j*(2*rate_rng.integers(0, 4, count)-3))/np.sqrt(10)
+                taps = rrc(np.arange(-6*rate_sps, 6*rate_sps+1)/rate_sps-.23, .35)
+                base = .25*upfirdn(taps, symbols, up=rate_sps)
+                x = base*np.exp(1j*(2*np.pi*(2_000_000+rate*.025)*np.arange(len(base))/fs+.43))
+                variance = np.mean(np.abs(base)**2)*.01
+                x += np.sqrt(variance/2)*(rate_rng.standard_normal(len(x))+1j*rate_rng.standard_normal(len(x)))
+                write(f'{modulation.lower()}-rs{rate}-awgn20', x,
+                      dict(modulation=modulation, symbolRateHz=rate, alpha=.35, snrDb=20,
+                           cfoHz=rate*.025, symbolCount=count, symbolOriginSourceSample=6.23*rate_sps),
+                      symbols, bandwidth=2*rate, output_rate=4*rate)
+        (root/'rate-index.json').write_text(json.dumps(dict(seed=20261024, records=records), indent=2), encoding='utf-8')
+        print('Added six independent 250k/1M symbol-rate records; original fixtures untouched.')
+        return
 
     if args.recovery_only:
         # A transmit-clock offset, with the RF carrier reapplied on the receiver

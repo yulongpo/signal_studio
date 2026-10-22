@@ -54,21 +54,24 @@ void buildEye(NarrowbandAnalysisResult& result,const NarrowbandAnalysisSettings&
   if(aligned && result.clockSymbols.size()<=static_cast<std::size_t>(settings.eyePeriods)) {
     result.eyeStatus=AnalysisStatus::InsufficientSamples;result.eyeMessage="已锁定符号时钟不足以覆盖眼图周期。";return;
   }
-  const auto lastSymbol=aligned?result.clockSymbols.size()-static_cast<std::size_t>(settings.eyePeriods)-1:static_cast<std::size_t>(std::floor(available/sps));
-  const auto count=std::min<std::size_t>(static_cast<std::size_t>(settings.eyeTraces),lastSymbol+1);
+  const auto firstSymbol=aligned?static_cast<std::size_t>(std::ceil(std::max(0.0,-settings.eyeTimingOffsetUi))):0;
+  const double lastClockSymbol=aligned?static_cast<double>(result.clockSymbols.size()-1)-settings.eyePeriods-settings.eyeTimingOffsetUi:std::floor(available/sps);
+  if(lastClockSymbol<static_cast<double>(firstSymbol)){result.eyeStatus=AnalysisStatus::InsufficientSamples;result.eyeMessage="定时偏移后的恢复时钟不足以覆盖眼图周期。";return;}
+  const auto lastSymbol=static_cast<std::size_t>(std::floor(lastClockSymbol));
+  const auto count=std::min<std::size_t>(static_cast<std::size_t>(settings.eyeTraces),lastSymbol-firstSymbol+1);
   const int points=settings.eyePeriods*settings.eyePointsPerUi+1;
   double minimum=std::numeric_limits<double>::infinity(),maximum=-minimum;
   for(std::size_t j=0;j<count;++j) {
     if(cancelled && cancelled()) {result.eyes.clear();result.eyeStatus=AnalysisStatus::Cancelled;return;}
-    const auto symbol=count>1?j*lastSymbol/(count-1):0;
+    const auto symbol=firstSymbol+(count>1?j*(lastSymbol-firstSymbol)/(count-1):0);
     const double first=start+symbol*sps;
     EyeTrace trace;trace.i.reserve(points);trace.q.reserve(points);trace.outputPositions.reserve(points);
     for(int p=0;p<points;++p) {
       double position=first+static_cast<double>(p)/settings.eyePointsPerUi*sps;
       if(aligned) {
-        const auto clockOffset=static_cast<std::size_t>(p/settings.eyePointsPerUi);
-        const double phase=static_cast<double>(p%settings.eyePointsPerUi)/settings.eyePointsPerUi;
-        const auto index=symbol+clockOffset;
+        const double clockPosition=std::clamp(static_cast<double>(symbol)+static_cast<double>(p)/settings.eyePointsPerUi+settings.eyeTimingOffsetUi,0.0,static_cast<double>(result.clockSymbols.size()-1));
+        const auto index=static_cast<std::size_t>(std::floor(clockPosition));
+        const double phase=clockPosition-static_cast<double>(index);
         const auto local=[outputBegin](const SamplePosition& value){return static_cast<double>(value.integer-outputBegin)+value.fraction;};
         position=local(result.clockSymbols[index].output);
         if(phase>0)position+=(local(result.clockSymbols[index+1].output)-position)*phase;
