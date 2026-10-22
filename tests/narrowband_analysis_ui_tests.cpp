@@ -5,11 +5,14 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QFileInfo>
+#include <QTemporaryDir>
 #include <cmath>
 #include <QPushButton>
 #include <QtTest>
 #include "app/main_window.h"
 #include "ui/narrowband_workspace.h"
+#include "ui/import/signal_import_dialog.h"
+#include "ui/controls/adaptive_value_edit.h"
 
 using namespace signalstudio;
 class NarrowbandAnalysisUiTests : public QObject {
@@ -158,6 +161,54 @@ class NarrowbandAnalysisUiTests : public QObject {
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->carrierLocked &&
       std::abs(workspace->analysisResult()->estimatedCfoHz-15625)<625,20000);
     QCOMPARE(window.session().activeChannel()->analysis.cfoMode,CfoMode::Manual);
+    window.findChild<QCheckBox*>("analysisTimingRecovery")->setChecked(false);
+    QVERIFY(!window.session().activeChannel()->analysis.carrierRecovery);
+    QVERIFY(window.session().activeChannel()->analysis.constellationStage<AnalysisStage::TimingAligned);
+    window.findChild<QCheckBox*>("analysisMatchedFilter")->setChecked(false);
+    QVERIFY(window.session().activeChannel()->analysis.constellationStage==AnalysisStage::RawIq);
+    QVERIFY(window.session().activeChannel()->analysis.eyeStage==AnalysisStage::RawIq);
+  }
+  void importToAnalysisSaveReopen_data() {
+    QTest::addColumn<QString>("suffix");QTest::newRow("CI16-RAW")<<QString("raw");QTest::newRow("CF32-SigMF")<<QString("sigmf-meta");
+  }
+  void importToAnalysisSaveReopen() {
+    const auto node=qEnvironmentVariable("SS_NARROWBAND_NODE");if(node!="W7" && node!="W8" && !node.isEmpty())return;
+    QFETCH(QString,suffix);QTemporaryDir directory;MainWindow window;QString error;
+    QVERIFY(window.createProject(directory.path(),"real-narrowband",&error));window.resize(2560,1440);window.show();
+    SignalImportDialog import("real-narrowband",&window);import.show();
+    QVERIFY(import.addPath(qEnvironmentVariable("SS_NARROWBAND_FIXTURES")+"/qpsk-a35-awgn20."+suffix));
+    if(suffix=="raw") {
+      for(const auto& entry:std::array<std::pair<const char*,const char*>,3>{{{"importSampleRate","20 MS/s"},{"importCenterFrequency","100 MHz"},{"importBandwidth","20 MHz"}}}) {
+        auto* edit=import.findChild<AdaptiveValueEdit*>(entry.first);QVERIFY(edit);edit->setFocus();edit->selectAll();QTest::keyClicks(edit,entry.second);QTest::keyClick(edit,Qt::Key_Return);
+      }
+      import.findChild<QCheckBox*>("importConfirmFormat")->setChecked(true);
+    }
+    import.commitSource=[&](FileState file,QString& e){return window.addImportedSource(std::move(file),e);};import.startImport();
+    auto* finish=import.findChild<QPushButton*>("importProgressFinish");QTRY_VERIFY_WITH_TIMEOUT(finish->isEnabled(),15000);finish->click();
+    auto* file=window.session().activeFile();QVERIFY(file && !file->metadata.demo);QCOMPARE(file->metadata.sampleRateHz,20e6);
+    QCOMPARE(file->metadata.sampleFormat.componentEncoding,suffix=="raw"?ComponentEncoding::Int16:ComponentEncoding::Float32);
+    QVERIFY(!file->navigationEnvelope.empty());QVERIFY(availableSamples(file->metadata)==file->metadata.sampleCount);
+    window.session().addMark({{0,file->metadata.sampleCount},{101.5e6,102.5e6}});window.refresh();
+    window.findChild<QPushButton*>("extract")->click();auto* dialog=window.findChild<QDialog*>("channelConfigDialog");QVERIFY(dialog);
+    QCOMPARE(dialog->findChild<QLabel*>("channelDspPlanPreview")->property("realizedRateHz").toDouble(),2e6);
+    dialog->findChild<QPushButton*>("confirmChannelConfig")->click();
+    QTRY_VERIFY_WITH_TIMEOUT(window.session().activeChannel()!=nullptr,15000);
+    auto* workspace=window.findChild<NarrowbandWorkspace*>();workspace->activatePageForAcceptance(1);
+    window.findChild<QComboBox*>("modulationFormat")->setCurrentIndex(static_cast<int>(ModulationHypothesis::Qpsk));
+    window.findChild<QPushButton*>("recoverNarrowbandSignal")->click();
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->carrierLocked,20000);
+    const auto saved=*window.session().activeChannel();const auto projectPath=directory.filePath("real-narrowband/project.json");
+    QVERIFY(window.saveProject(projectPath));QVERIFY(window.openProject(projectPath));workspace->activatePageForAcceptance(1);
+    QCOMPARE(window.session().activeChannel()->analysis,saved.analysis);
+    QCOMPARE(window.session().activeChannel()->sampling,saved.sampling);
+    QCOMPARE(window.session().activeChannel()->sourceTime,saved.sourceTime);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->carrierLocked,20000);
+    const auto second=window.session().createChannel("second",window.session().activeFile()->activeMarkId,102e6,1e6,2e6,saved.sourceTime,ChannelFilter::Standard,false,true);
+    QVERIFY(!second.empty());window.refresh();workspace->activatePageForAcceptance(1);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->identity.channelId==second,15000);
+    QVERIFY(!workspace->analysisResult()->timingLocked);QVERIFY(workspace->analysisResult()->eyes.empty());
+    QVERIFY(window.session().activateChannel(saved.id));window.refresh();workspace->activatePageForAcceptance(1);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->identity.channelId==saved.id && workspace->analysisResult()->carrierLocked,20000);
   }
 };
 QTEST_MAIN(NarrowbandAnalysisUiTests)

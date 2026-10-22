@@ -84,20 +84,38 @@ void persistence() {
   Channel c;c.id="channel";
   check(service.bindChannelSource(file,c,request).ok,"Rate request must bind source snapshot");
   c.visibleSourceTime=c.sourceTime;c.visibleBasebandFrequency={-1e6,1e6};
+  c.analysis.pointCount=1234;c.analysis.sampleBudget=65536;c.analysis.removeDc=true;c.analysis.normalizePower=true;
+  c.analysis.constellationAutoScale=false;c.analysis.symbolRateMode=SymbolRateMode::Manual;c.analysis.symbolRateHz=625000;
+  c.analysis.hypothesis=ModulationHypothesis::Qam16;c.analysis.constellationStage=AnalysisStage::CarrierRecovered;
+  c.analysis.eyeStage=AnalysisStage::TimingAligned;c.analysis.eyePointsPerUi=8;c.analysis.eyeTimingOffsetUi=.125;
+  c.analysis.matchedFilter=true;c.analysis.timingRecovery=true;c.analysis.carrierRecovery=true;c.analysis.rolloff=.2;
+  c.analysis.filterSpanSymbols=12;c.analysis.cfoMode=CfoMode::Manual;c.analysis.manualCfoHz=15625;
+  c.analysis.manualPhaseRadians=.43;c.analysis.timingLoopBandwidth=.003;c.analysis.carrierLoopBandwidth=.02;
   file.channels.push_back(c);project.files.push_back(file);project.activeFileId=file.metadata.id;
   QString error;if(!ProjectStore::save(path,project,error))throw std::runtime_error("New v6 save: "+error.toStdString());
   Project loaded;check(ProjectStore::load(path,loaded,error),"New optional sampling policy must load");
   check(loaded.files[0].channels[0].sampling==c.sampling && loaded.files[0].channels[0].outputSampleRateHz==2e6,"New policy and actual Fs must roundtrip");
+  check(loaded.files[0].channels[0].analysis==c.analysis,"All committed analysis parameters must roundtrip in v6");
   QFile input(path);check(input.open(QIODevice::ReadOnly),"Read project fixture");
   auto root=QJsonDocument::fromJson(input.readAll()).object();input.close();
   auto files=root["files"].toArray();auto f=files[0].toObject();auto channels=f["channels"].toArray();auto old=channels[0].toObject();
-  old.remove("samplingPolicy");old["outputSampleRateHz"]=4e6;
+  const auto validRoot=root;
+  const std::vector<std::pair<QString,QJsonValue>> bad={{"pointCount",255},{"pointCount",256.5},{"symbolRateMode",3},{"hypothesis",7},{"eyeStage",5},{"eyePointsPerUi",5},{"sampleBudget",8388609},{"removeDc",1},{"rolloff",0},{"timingLoopBandwidth","bad"},{"symbolRateHz",0}};
+  for(const auto& [key,value]:bad) {
+    auto invalid=c.analysis;auto settings=old["analysis"].toObject();settings[key]=value;
+    auto broken=old;broken["analysis"]=settings;channels[0]=broken;f["channels"]=channels;files[0]=f;root["files"]=files;
+    check(input.open(QIODevice::WriteOnly|QIODevice::Truncate),"Write malformed optional setting");input.write(QJsonDocument(root).toJson());input.close();
+    loaded.name="unchanged";check(!ProjectStore::load(path,loaded,error) && loaded.name=="unchanged" && loaded.files[0].channels[0].analysis==invalid,"Malformed optional analysis must reject without replacing existing project");
+  }
+  root=validRoot;files=root["files"].toArray();f=files[0].toObject();channels=f["channels"].toArray();old=channels[0].toObject();
+  old.remove("samplingPolicy");old.remove("analysis");old["outputSampleRateHz"]=4e6;
   channels[0]=old;f["channels"]=channels;files[0]=f;root["files"]=files;
   check(input.open(QIODevice::WriteOnly|QIODevice::Truncate),"Write old v6 fixture");input.write(QJsonDocument(root).toJson());input.close();
   check(ProjectStore::load(path,loaded,error),"Legacy v6 without optional policy must load");
   const auto& historical=loaded.files[0].channels[0];
   check(historical.outputSampleRateHz==4e6 && historical.sampling.mode==ChannelSamplingMode::Manual &&
         *historical.sourceSnapshot==*c.sourceSnapshot,"Legacy actual Fs and immutable source snapshot must survive");
+  check(historical.analysis.symbolRateMode==SymbolRateMode::Unknown && historical.analysis.symbolRateHz==0 && historical.symbolRate==c.symbolRate,"Unmarked historical Rs is preserved but never treated as an estimate");
   check(ProjectStore::save(path,loaded,error) && ProjectStore::load(path,loaded,error) && loaded.files[0].channels[0].outputSampleRateHz==4e6,"Legacy Fs must remain unchanged after save/reopen");
 }
 }

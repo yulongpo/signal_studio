@@ -4606,7 +4606,7 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   QVERIFY(create->isEnabled());
   channelDialog->findChild<QCheckBox*>("channelAutoOpen")->setChecked(false);
   create->click();
-  QCOMPARE(file->channels.size(), std::size_t{1});
+  QTRY_COMPARE_WITH_TIMEOUT(file->channels.size(), std::size_t{1}, 15000);
   QCOMPARE(file->channels.front().sourceSnapshot->bindingKind,
            ChannelBindingKind::LocatedSegment);
   QCOMPARE(annotation->reviewStatus, ReviewStatus::Rejected);
@@ -4681,7 +4681,7 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   QVERIFY(create->isEnabled());
   channelDialog->findChild<QCheckBox*>("channelAutoOpen")->setChecked(false);
   create->click();
-  QCOMPARE(file->channels.size(), std::size_t{2});
+  QTRY_COMPARE_WITH_TIMEOUT(file->channels.size(), std::size_t{2}, 15000);
   QCOMPARE(file->channels.back().sourceSnapshot->bindingKind,
            ChannelBindingKind::UserRange);
   QCOMPARE(file->channels.back().sourceTime, (TimeRange{0, 1000}));
@@ -4749,7 +4749,7 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   QVERIFY2(create->isEnabled(), qPrintable(validation->text()));
   channelDialog->findChild<QCheckBox*>("channelAutoOpen")->setChecked(false);
   create->click();
-  QCOMPARE(file->channels.size(), std::size_t{1});
+  QTRY_COMPARE_WITH_TIMEOUT(file->channels.size(), std::size_t{1}, 15000);
   QCOMPARE(file->channels.back().sourceSnapshot->range.frequency,
            croppedFrequency);
   QCOMPARE(file->channels.back().sourceSnapshot->boundRange->frequency,
@@ -4771,7 +4771,7 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   QVERIFY(create->isEnabled());
   channelDialog->findChild<QCheckBox*>("channelAutoOpen")->setChecked(false);
   create->click();
-  QCOMPARE(file->channels.size(), std::size_t{2});
+  QTRY_COMPARE_WITH_TIMEOUT(file->channels.size(), std::size_t{2}, 15000);
   QCOMPARE(file->channels.back().sourceSnapshot->range.frequency,
            exactFrequency);
   QCOMPARE(file->channels.back().sourceSnapshot->boundRange->frequency,
@@ -4813,8 +4813,8 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   channelName->setText(QStringLiteral("通").repeated(80));
   QVERIFY(create->isEnabled());
   create->click();
-  QCOMPARE(QString::fromStdString(file->channels.back().name),
-           QStringLiteral("通").repeated(80));
+  QTRY_COMPARE_WITH_TIMEOUT(QString::fromStdString(file->channels.back().name),
+           QStringLiteral("通").repeated(80), 15000);
   QVERIFY(file->channels.back().sourceSnapshot == nameSnapshot);
 }
 

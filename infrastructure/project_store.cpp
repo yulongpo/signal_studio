@@ -20,6 +20,7 @@
 #include "infrastructure/detection_store.h"
 #include "infrastructure/sample_format_json.h"
 #include "infrastructure/spectral_settings_json.h"
+#include "infrastructure/narrowband_analysis/analysis_settings_json.h"
 
 namespace signalstudio {
 namespace {
@@ -446,6 +447,7 @@ QJsonObject encodeProject(const Project& project, const QString& path) {
       encoded.insert(QStringLiteral("samplingPolicy"), QJsonObject{
           {"mode", static_cast<int>(channel.sampling.mode)},
           {"bandwidthFactor", channel.sampling.bandwidthFactor}});
+      encoded.insert(QStringLiteral("analysis"),encodeAnalysisSettings(channel.analysis));
       encoded.insert(QStringLiteral("filter"), filterName(channel.filter));
       encoded.insert(QStringLiteral("processingState"),
                      processingStateName(channel.processingState));
@@ -728,6 +730,10 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
                     (factor == 1.5 || factor == 2 || factor == 4 || factor == 8),
                 QStringLiteral("采样策略或带宽倍率无效"));
         channel.sampling = {static_cast<ChannelSamplingMode>(static_cast<int>(mode)), factor};
+      }
+      if(channelData.contains("analysis")) {
+        QString analysisError;
+        require(decodeAnalysisSettings(channelData.value("analysis"),channel.analysis,analysisError),analysisError);
       }
       require(channel.outputSampleRateHz > 0,
               QStringLiteral("窄带输出采样率无效"));
