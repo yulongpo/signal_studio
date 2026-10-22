@@ -92,6 +92,30 @@ class NarrowbandAnalysisUiTests : public QObject {
     window.session().newProject();window.refresh();QVERIFY(!workspace->analysisResult());
     QCOMPARE(chart->property("constellationPointCount").toULongLong(),qulonglong{0});
   }
+  void realEyeSymbolRateAndControls() {
+    const auto node=qEnvironmentVariable("SS_NARROWBAND_NODE");if(node=="W1" || node=="W3")return;
+    MainWindow window;populate(window);auto* file=window.session().activeFile();
+    const auto id=window.session().createChannel("eye",file->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);
+    QVERIFY(!id.empty());window.refresh();auto* workspace=window.findChild<NarrowbandWorkspace*>();workspace->activatePageForAcceptance(1);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult()!=nullptr,15000);
+    QVERIFY(workspace->analysisResult()->eyeStatus==AnalysisStatus::NeedSymbolRate);
+    auto* mode=window.findChild<QComboBox*>("analysisSymbolRateMode");auto* rs=window.findChild<QDoubleSpinBox*>("symbolRate");
+    mode->setCurrentIndex(1);rs->setValue(625000);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyeStatus==AnalysisStatus::Ready && workspace->analysisResult()->symbolRateHz==625000,15000);
+    auto* chart=window.findChild<QWidget*>("narrowbandEyeLargeChart");QVERIFY(chart->property("realEyeSource").toBool());
+    QCOMPARE(chart->property("physicalSamplesPerSymbol").toDouble(),3.2);QVERIFY(!workspace->analysisResult()->timingLocked);
+    window.findChild<QComboBox*>("eyePeriods")->setCurrentIndex(2);
+    window.findChild<QComboBox*>("eyeTraces")->setCurrentIndex(2);
+    window.findChild<QComboBox*>("eyeComponent")->setCurrentIndex(2);
+    window.findChild<QComboBox*>("eyeDrawingDensity")->setCurrentIndex(1);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyes.size()==128 && workspace->analysisResult()->eyePeriods==3 && workspace->analysisResult()->eyePointsPerUi==8,15000);
+    QCOMPARE(chart->property("eyeComponentCount").toInt(),1);QCOMPARE(workspace->analysisResult()->eyes[0].i.size(),std::size_t{25});
+    window.findChild<QComboBox*>("eyeAnalysisStage")->setCurrentIndex(1);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->filterDiscardedSamples>0 && workspace->analysisResult()->eyeStatus==AnalysisStatus::Ready,15000);
+    mode->setCurrentIndex(0);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyeStatus==AnalysisStatus::NeedSymbolRate,15000);
+    QVERIFY(!chart->property("realEyeSource").toBool());QCOMPARE(chart->property("eyeTraceCount").toULongLong(),qulonglong{0});
+  }
 };
 QTEST_MAIN(NarrowbandAnalysisUiTests)
 #include "narrowband_analysis_ui_tests.moc"

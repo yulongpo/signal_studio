@@ -1,4 +1,5 @@
 #include "infrastructure/narrowband_analysis/constellation_analysis.h"
+#include "infrastructure/narrowband_analysis/eye_analysis.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -42,6 +43,7 @@ NarrowbandAnalysisResult analyzeNarrowband(std::shared_ptr<const AnalysisSourceD
   }
   result.status=AnalysisStatus::Ready;
   result.message="真实连续 IQ 散点 · 未执行符号／载波同步";
+  buildEye(result,settings,cancelled);
   return result;
 }
 }  // namespace signalstudio

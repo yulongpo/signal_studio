@@ -9,10 +9,12 @@
 #include "domain/project.h"
 
 namespace signalstudio {
-enum class AnalysisStage { RawIq, CfoCorrected, MatchedFiltered, TimingAligned, CarrierRecovered };
 enum class AnalysisStatus { Ready, NeedSymbolRate, Estimating, Processing, InsufficientSamples, LowConfidence, NotApplicable, Cancelled, Failed };
-enum class SymbolRateMode { Unknown, Manual, Estimated };
-enum class ModulationHypothesis { Unknown, Bpsk, Qpsk, Qam16, Fsk, Ofdm, Gmsk };
+inline NarrowbandAnalysisSettings channelAnalysisSettings(const Channel& channel) {
+  auto settings=channel.analysis;
+  settings.eyePeriods=channel.eyePeriods;settings.eyeTraces=channel.eyeTraces;settings.eyeComponent=channel.eyeComponent;
+  return settings;
+}
 struct SamplePosition {
   SampleIndex integer = 0;
   double fraction = 0;
@@ -48,6 +50,11 @@ struct TaggedSymbol {
 struct EyeTrace {
   std::vector<float> i, q;
   SamplePosition outputStart, sourceStart;
+  std::vector<SamplePosition> outputPositions;
+};
+struct SymbolRateCandidate {
+  double rateHz=0,score=0,prominenceDb=0;
+  std::string method;
 };
 struct NarrowbandAnalysisResult {
   AnalysisIdentity identity;
@@ -60,5 +67,13 @@ struct NarrowbandAnalysisResult {
   double axisMinimum=-1,axisMaximum=1;
   std::complex<double> removedDc{};
   double gain=1;
+  double symbolRateHz=0,samplesPerSymbol=0,estimatedCfoHz=0;
+  double eyeAxisMinimum=-1,eyeAxisMaximum=1;
+  double conditionalEvm=-1,timingErrorUi=-1;
+  int eyePeriods=2,eyePointsPerUi=16;
+  std::size_t filterDiscardedSamples=0;
+  bool timingLocked=false,carrierLocked=false;
+  std::vector<SymbolRateCandidate> rateCandidates;
+  std::vector<TaggedSymbol> synchronizedSymbols;
 };
 }  // namespace signalstudio
