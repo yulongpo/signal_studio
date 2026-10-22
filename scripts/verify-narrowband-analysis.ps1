@@ -1,0 +1,53 @@
+[CmdletBinding()]
+param(
+    [ValidateSet('Debug','Release')][string]$Configuration = 'Debug',
+    [ValidateSet('W0','W1','W2','W3','W4','W5','W6','W7','W8')][string]$Node = 'W0',
+    [switch]$GenerateFixtures,
+    [switch]$Native,
+    [switch]$SoftwareRenderer,
+    [switch]$ProbeScreens,
+    [string]$OutputDirectory,
+    [string]$Python = 'D:/profiles/anaconda/python.exe'
+)
+$ErrorActionPreference = 'Stop'
+$repoRoot = Split-Path -Parent $PSScriptRoot
+if (-not $OutputDirectory) { $OutputDirectory = Join-Path $repoRoot "out/tasks/wideband-detection/NB-$Node" }
+$OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
+foreach ($part in @('logs','diagnostics','assets')) { New-Item -ItemType Directory -Path (Join-Path $OutputDirectory $part) -Force | Out-Null }
+$fixtureRoot = Join-Path $repoRoot 'out/tasks/wideband-detection/NB-W0/assets/fixtures'
+function Invoke-NarrowbandChecked([string]$Program, [string[]]$CommandArguments) {
+    & $Program @CommandArguments
+    if ($LASTEXITCODE -ne 0) { throw "$Program failed with exit code $LASTEXITCODE" }
+}
+Push-Location -LiteralPath $repoRoot
+try {
+    if ($GenerateFixtures) {
+        Invoke-NarrowbandChecked $Python @((Join-Path $PSScriptRoot 'generate-narrowband-fixtures.py'), '--output', $fixtureRoot)
+    }
+    if ($ProbeScreens) {
+        Invoke-NarrowbandChecked (Join-Path $repoRoot "out/vs2026-qt611-$($Configuration.ToLowerInvariant())_bin/SignalStudioUiCapture.exe") @('--list-screens')
+        return
+    }
+    if ($Native) {
+        $arguments = @('-Configuration', $Configuration, '-NarrowbandAnalysis', '-OutputDirectory', (Join-Path $OutputDirectory 'diagnostics/native'))
+        if ($SoftwareRenderer) { $arguments += '-SoftwareRenderer' }
+        & (Join-Path $PSScriptRoot 'screenshot.ps1') @arguments
+        if (-not $?) { throw 'Native narrowband analysis acceptance failed' }
+        return
+    }
+    $env:SS_NARROWBAND_FIXTURES = $fixtureRoot
+    $env:SS_NARROWBAND_REPORT_DIR = Join-Path $OutputDirectory 'diagnostics'
+    $env:SS_NARROWBAND_NODE = $Node
+    if ($Node -eq 'W0') {
+        & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $Configuration -Action All -Targets SignalStudioChannelProcessorTests -TestRegex '^signal_studio_channel_processor$' *> (Join-Path $OutputDirectory 'logs/baseline.txt')
+    } elseif ($Node -eq 'W8') {
+        & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $Configuration -Action All *> (Join-Path $OutputDirectory "logs/final-$Configuration.txt")
+    } else {
+        $testRegex = if ($Node -eq 'W1') { 'signal_studio_(channel_rate|channel_processor|core|annotations|annotation_store)$' } else { 'signal_studio_narrowband_analysis' }
+        $targets = if ($Node -eq 'W1') { @('SignalStudioChannelRateTests','SignalStudioChannelProcessorTests','SignalStudioCoreTests','SignalStudioAnnotationTests','SignalStudioAnnotationStoreTests') } else { @('SignalStudioNarrowbandAnalysisTests') }
+        if ($Node -in @('W3','W4','W7')) { $targets += 'SignalStudioNarrowbandAnalysisUiTests' }
+        & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $Configuration -Action All -Targets $targets -TestRegex $testRegex *> (Join-Path $OutputDirectory "logs/directed-$Configuration.txt")
+    }
+    if (-not $?) { throw "Narrowband $Node validation failed" }
+    Write-Host "$Node $Configuration validation completed. Logs: $OutputDirectory/logs"
+} finally { Pop-Location }
