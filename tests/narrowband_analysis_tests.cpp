@@ -4,7 +4,9 @@
 #include <limits>
 #include <stdexcept>
 #include <thread>
+#include <chrono>
 #include "infrastructure/narrowband_analysis/analysis_source.h"
+#include "infrastructure/narrowband_analysis/analysis_service.h"
 
 using namespace signalstudio;
 namespace {
@@ -83,9 +85,42 @@ void testMappingAndFailureBoundaries() {
   request=requestFor(source,c,{0,1000});
   check(readAnalysisSource(cache,source,c,request).samples.empty(),"Missing/failed data never produces fallback IQ");
 }
+void testRawConstellationAndLatestRequest() {
+  const auto source=sourceFixture();const auto channel=channelFixture();ChannelSampleCache cache;
+  auto request=requestFor(source,channel,{1000,19000});
+  auto samples=std::make_shared<AnalysisSourceData>(readAnalysisSource(cache,source,channel,request));
+  NarrowbandAnalysisSettings settings;settings.pointCount=1024;
+  const auto raw=analyzeNarrowband(samples,settings);
+  check(raw.status==AnalysisStatus::Ready && raw.constellation.size()==1024 && raw.constellationStage==AnalysisStage::RawIq,
+        "Raw constellation must not require symbol rate or synchronization");
+  for(std::size_t i=0;i<raw.constellation.size();++i) {
+    const auto offset=i*(samples->samples.size()-1)/(raw.constellation.size()-1);
+    check(raw.constellation[i].value==samples->samples[offset] && raw.constellation[i].output.integer==1000+offset &&
+          raw.constellation[i].source.integer==(1000+offset)*10,"Every plotted complex point must retain its exact IQ value and provenance");
+  }
+  check(raw.axisMinimum<-.25 && raw.axisMaximum>.25 && raw.axisMaximum<.3,"Full-point scaling must reflect actual amplitude, not fixed +/-1");
+  auto shifted=std::make_shared<AnalysisSourceData>(*samples);
+  for(auto& sample:shifted->samples)sample+=std::complex<float>(2,3);
+  settings.removeDc=true;settings.normalizePower=true;
+  const auto normalized=analyzeNarrowband(shifted,settings);
+  check(std::abs(normalized.removedDc-std::complex<double>(2,3))<.002 && normalized.gain>3.9 && normalized.gain<4.1,
+        "Explicit DC/RMS preprocessing must use all continuous samples");
+  NarrowbandAnalysisService service(cache);
+  service.submit(source,channel,request,{});
+  auto latest=request;latest.identity.requestGeneration=9;latest.identity.outputSamples={2000,4000};
+  service.submit(source,channel,latest,{});
+  std::shared_ptr<const NarrowbandAnalysisResult> result;
+  const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(10);
+  while(!result && std::chrono::steady_clock::now()<deadline) {result=service.takeResult();std::this_thread::sleep_for(std::chrono::milliseconds(5));}
+  check(result && result->status==AnalysisStatus::Ready && result->identity.requestGeneration==9 && result->source->outputSamples==TimeRange{2000,4000},
+        "Replaceable background service must only publish the latest request");
+  service.submit(source,channel,request,{});service.cancel();
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  check(!service.takeResult(),"Cancelled service work must not publish");
+}
 }
 int main(int argc,char** argv) {
   QCoreApplication app(argc,argv);
-  try {testContinuousSource();testMappingAndFailureBoundaries();std::cout<<"PASS continuous source, provenance, prefixes, concurrency and cancellation\n";}
+  try {testContinuousSource();testMappingAndFailureBoundaries();testRawConstellationAndLatestRequest();std::cout<<"PASS continuous source, raw IQ constellation, provenance, prefixes, concurrency and cancellation\n";}
   catch(const std::exception& e){std::cerr<<"FAIL "<<e.what()<<'\n';return 1;}
 }

@@ -10,6 +10,7 @@
 #include "domain/detection.h"
 #include "domain/sample_format.h"
 #include "domain/channel_sampling.h"
+#include "domain/narrowband_analysis_settings.h"
 
 namespace signalstudio {
 
@@ -131,6 +132,7 @@ struct Channel {
   TimeRange sourceTime;
   double outputSampleRateHz = 4e6;
   ChannelSamplingPolicy sampling;
+  NarrowbandAnalysisSettings analysis;
   ChannelFilter filter = ChannelFilter::Standard;
   ChannelProcessingState processingState =
       ChannelProcessingState::LegacyNeedsReview;

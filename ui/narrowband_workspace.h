@@ -2,6 +2,7 @@
 
 #include "application/session.h"
 #include "infrastructure/channel_processor.h"
+#include "infrastructure/narrowband_analysis/analysis_service.h"
 
 #include <QImage>
 #include <QJsonObject>
@@ -43,6 +44,7 @@ public:
     bool hasPendingInteraction() const;
     void cancelInteractions();
     void cancelWork();
+    void cancelAnalysis(bool userInitiated = false);
     QString dataStatusText() const;
     QString displayDiagnosticsText() const;
     int currentPageIndex() const;
@@ -56,6 +58,7 @@ public:
     QString visibleBackendDescription() const;
     QJsonObject renderStatistics() const;
     PowerAnalysisSnapshot powerSnapshot() const;
+    std::shared_ptr<const NarrowbandAnalysisResult> analysisResult() const { return analysisResult_; }
     void invalidateVisibleOverlays();
 
 signals:
@@ -64,6 +67,8 @@ signals:
     void autoPowerFitRequested();
 
 private:
+    void requestAnalysis(bool force = false);
+    void installAnalysis();
     void buildPages();
     void showPage(NarrowbandPage page);
     void updateFrequencyAxisLabels();
@@ -167,6 +172,14 @@ private:
     int recognitionProgressValue_ = 0;
     bool recognitionActive_ = false;
     ChannelSampleCache sampleCache_;
+    std::unique_ptr<NarrowbandAnalysisService> analysisService_;
+    std::shared_ptr<const NarrowbandAnalysisResult> analysisResult_;
+    std::optional<AnalysisIdentity> lastAnalysisIdentity_;
+    NarrowbandAnalysisSettings lastAnalysisSettings_;
+    TimeRange lastAnalysisTime_;
+    std::uint64_t analysisGeneration_ = 0;
+    bool analysisPending_ = false;
+    QLabel* modulationStatus_ = nullptr;
     ChannelSampleCacheStats displayCacheStats_;
     std::vector<float> averagePsd_;
     std::shared_ptr<const SpectralFrame> averagePower_;

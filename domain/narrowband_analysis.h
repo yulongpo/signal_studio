@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <memory>
 #include "domain/project.h"
 
 namespace signalstudio {
@@ -47,5 +48,17 @@ struct TaggedSymbol {
 struct EyeTrace {
   std::vector<float> i, q;
   SamplePosition outputStart, sourceStart;
+};
+struct NarrowbandAnalysisResult {
+  AnalysisIdentity identity;
+  AnalysisStatus status=AnalysisStatus::Failed, eyeStatus=AnalysisStatus::NeedSymbolRate;
+  AnalysisStage constellationStage=AnalysisStage::RawIq;
+  std::string message, eyeMessage="需要输入或估计符号率。";
+  std::shared_ptr<const AnalysisSourceData> source;
+  std::vector<TaggedSymbol> constellation;
+  std::vector<EyeTrace> eyes;
+  double axisMinimum=-1,axisMaximum=1;
+  std::complex<double> removedDc{};
+  double gain=1;
 };
 }  // namespace signalstudio

@@ -69,6 +69,29 @@ class NarrowbandAnalysisUiTests : public QObject {
     QCOMPARE(rate->value(),3.2);QCOMPARE(window.session().activeChannel()->outputSampleRateHz,4e6);
     dialog->reject();QCOMPARE(window.session().activeChannel()->outputSampleRateHz,4e6);
   }
+  void realRawPointsAndCancellation() {
+    if(qEnvironmentVariable("SS_NARROWBAND_NODE")=="W1")return;
+    MainWindow window;populate(window);auto* file=window.session().activeFile();
+    const auto id=window.session().createChannel("real",file->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);
+    QVERIFY(!id.empty());window.refresh();
+    auto* workspace=window.findChild<NarrowbandWorkspace*>();QVERIFY(workspace);
+    workspace->activatePageForAcceptance(1);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult()!=nullptr,15000);
+    const auto result=workspace->analysisResult();QVERIFY(result->status==AnalysisStatus::Ready);
+    QVERIFY(!result->constellation.empty());QVERIFY(result->constellation.front().value==result->source->samples.front());
+    auto* chart=window.findChild<QWidget*>("narrowbandConstellationLargeChart");QVERIFY(chart);
+    QVERIFY(chart->property("realIqSource").toBool());QCOMPARE(chart->property("actualSampleRateHz").toULongLong(),qulonglong{2000000});
+    QVERIFY(chart->property("iqAxisMaximum").toDouble()<.3);QVERIFY(chart->property("equalAxisScale").toBool());
+    auto* points=window.findChild<QComboBox*>("constellationPointBudget");QVERIFY(points);points->setCurrentIndex(0);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->constellation.size()==256,15000);
+    window.findChild<QPushButton*>("cancelNarrowbandAnalysis")->click();
+    QVERIFY(!workspace->analysisResult());QCOMPARE(chart->property("constellationPointCount").toULongLong(),qulonglong{0});
+    window.refresh();QTest::qWait(50);QVERIFY(!workspace->analysisResult());
+    window.findChild<QPushButton*>("runNarrowbandAnalysis")->click();
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult()!=nullptr,15000);
+    window.session().newProject();window.refresh();QVERIFY(!workspace->analysisResult());
+    QCOMPARE(chart->property("constellationPointCount").toULongLong(),qulonglong{0});
+  }
 };
 QTEST_MAIN(NarrowbandAnalysisUiTests)
 #include "narrowband_analysis_ui_tests.moc"

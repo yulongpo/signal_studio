@@ -2890,7 +2890,10 @@ void MainWindow::refresh() {
                      : std::string{}));
   workspaceStack_->setCurrentIndex(narrowOpen ? 1 : 0);
   workspaceModeButton_->setChecked(!narrowOpen);
-  if (narrowband_ && narrowOpen) narrowband_->refreshFromSession();
+  if (narrowband_) {
+    if (narrowOpen) narrowband_->refreshFromSession();
+    else narrowband_->cancelAnalysis();
+  }
   const bool projectReady =
       !projectPath_.isEmpty() || !session_.project().files.empty();
   for (auto* control : std::array<QWidget*, 14>{

@@ -99,6 +99,8 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/raw_sample_reader.cpp
     infrastructure/channel_processor.cpp
     infrastructure/narrowband_analysis/analysis_source.cpp
+    infrastructure/narrowband_analysis/constellation_analysis.cpp
+    infrastructure/narrowband_analysis/analysis_service.cpp
     infrastructure/channel_processor.h
     infrastructure/spectral_analysis.cpp
     infrastructure/spectral_windows.cpp
