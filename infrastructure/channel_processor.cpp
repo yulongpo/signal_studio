@@ -331,6 +331,40 @@ bool makeChannelDspPlan(const FileMetadata& source, const Channel& channel,
   return true;
 }
 
+TimeRange channelValidOutputSamples(const FileMetadata& source, const Channel& channel,
+                                    const ChannelDspPlan& plan) {
+  std::uint64_t total=0;
+  if(!sourceCountFor(source,channel,plan,total) || plan.stageCoefficients.empty() ||
+     channel.sourceTime.end-channel.sourceTime.begin>static_cast<std::uint64_t>(std::numeric_limits<SignedIndex>::max())) return {};
+  const auto length=static_cast<SignedIndex>(channel.sourceTime.end-channel.sourceTime.begin);
+  const auto support=[&](std::uint64_t n,SignedIndex& first,SignedIndex& last) {
+    SignedIndex grid=0;std::uint32_t phase=0;
+    if(!outputGrid(n,plan,grid,phase))return false;
+    const auto half=static_cast<SignedIndex>(plan.stageCoefficients.back().size()/2);
+    first=grid+ceilDiv(static_cast<SignedIndex>(phase)-half,plan.interpolation);
+    last=grid+floorDiv(static_cast<SignedIndex>(phase)+half,plan.interpolation);
+    for(int i=plan.sourceDecimationStages-1;i>=0;--i) {
+      const auto margin=static_cast<SignedIndex>(plan.stageCoefficients[static_cast<std::size_t>(i)].size()/2);
+      if(first<(std::numeric_limits<SignedIndex>::min()+margin)/2 ||
+         last>(std::numeric_limits<SignedIndex>::max()-margin)/2)return false;
+      first=2*first-margin;last=2*last+margin;
+    }
+    return true;
+  };
+  const auto lowerBound=[&](bool right) {
+    std::uint64_t lo=0,hi=total;
+    while(lo<hi) {
+      const auto middle=lo+(hi-lo)/2;SignedIndex first=0,last=0;
+      const bool ok=support(middle,first,last);
+      const bool reached=right ? (!ok || last>=length) : (ok && first>=0);
+      if(reached)hi=middle;else lo=middle+1;
+    }
+    return lo;
+  };
+  const auto begin=lowerBound(false),end=lowerBound(true);
+  return {begin,std::max(begin,end)};
+}
+
 bool processChannelSamples(const FileMetadata& source, const Channel& channel,
                            const ChannelDspPlan& plan, TimeRange outputSamples,
                            ChannelSampleData& result,
@@ -420,6 +454,7 @@ bool processChannelSamples(const FileMetadata& source, const Channel& channel,
             std::complex<double> sum{};
             const auto center = 2 * output;
             for (std::size_t tap = 0; tap < taps.size(); ++tap) {
+                if ((tap & 511U) == 0 && cancelled && cancelled()) return false;
                 const auto absolute = center + static_cast<SignedIndex>(tap) - half;
                 const auto sampleIndex = static_cast<std::size_t>(absolute - origin);
                 sum += std::complex<double>(current[sampleIndex].real(), current[sampleIndex].imag()) * taps[tap];
@@ -447,6 +482,7 @@ bool processChannelSamples(const FileMetadata& source, const Channel& channel,
         const SignedIndex lastTap = floorDiv(numerator + half, plan.interpolation);
         std::complex<double> sum{};
         for (SignedIndex inputIndex = firstTap; inputIndex <= lastTap; ++inputIndex) {
+            if ((inputIndex & 511) == 0 && cancelled && cancelled()) return false;
             const SignedIndex tapNumerator = half + numerator - inputIndex * plan.interpolation;
             if (tapNumerator < 0 || static_cast<std::uint64_t>(tapNumerator) >= taps.size()) continue;
             const SignedIndex local = inputIndex - origin;
@@ -465,8 +501,11 @@ bool processChannelSamples(const FileMetadata& source, const Channel& channel,
     sourceEndOffset = std::min(sourceEndOffset, channel.sourceTime.end - channel.sourceTime.begin);
     result.sourceSamples = {channel.sourceTime.begin + sourceBeginOffset,
         std::max(channel.sourceTime.begin + sourceBeginOffset, channel.sourceTime.begin + sourceEndOffset)};
-    result.leftPadded = outputSamples.begin == 0;
-    result.rightPadded = outputSamples.end == outputCount;
+    const auto valid=channelValidOutputSamples(source,channel,plan);
+    result.validOutputSamples.begin=std::min(outputSamples.end,std::max(outputSamples.begin,valid.begin));
+    result.validOutputSamples.end=std::max(result.validOutputSamples.begin,std::min(outputSamples.end,valid.end));
+    result.leftPadded = outputSamples.begin < valid.begin;
+    result.rightPadded = outputSamples.end > valid.end;
     return true;
 }
 
@@ -476,7 +515,7 @@ bool ChannelSampleCache::process(const FileMetadata& source, const Channel& chan
                                  const ChannelDspPlan& plan, TimeRange outputSamples,
                                  ChannelSampleData& result,
                                  const std::function<bool()>& cancelled) {
-    std::lock_guard lock(mutex_);
+    std::unique_lock lock(mutex_);
     result = {};
     result.waveformScale=adcScale(source.sampleFormat);
     if (outputSamples.begin >= outputSamples.end || outputSamples.end - outputSamples.begin > 8'000'000)
@@ -528,13 +567,15 @@ bool ChannelSampleCache::process(const FileMetadata& source, const Channel& chan
         } else {
             ++misses_;
             auto computed = std::make_shared<ChannelSampleData>();
+            lock.unlock();
             if (!processChannelSamples(source, channel, plan, {blockBegin, blockEnd}, *computed, cancelled)) {
                 result = {};
                 return false;
             }
+            lock.lock();
             block = computed;
             const auto bytes = computed->samples.size() * sizeof(std::complex<float>);
-            if (bytes <= budgetBytes_ && bytes_ <= std::numeric_limits<std::size_t>::max() - bytes) {
+            if (bytes <= budgetBytes_ && bytes_ <= std::numeric_limits<std::size_t>::max() - bytes && !entries_.contains(blockKey)) {
                 lru_.push_front(blockKey);
                 entries_.emplace(blockKey, Entry{block, lru_.begin(), bytes});
                 bytes_ += bytes;
@@ -574,8 +615,11 @@ bool ChannelSampleCache::process(const FileMetadata& source, const Channel& chan
     sourceEndOffset = std::min(sourceEndOffset, sourceLength);
     result.sourceSamples = {channel.sourceTime.begin + sourceBeginOffset,
         std::max(channel.sourceTime.begin + sourceBeginOffset, channel.sourceTime.begin + sourceEndOffset)};
-    result.leftPadded = outputSamples.begin == 0;
-    result.rightPadded = outputSamples.end == outputCount;
+    const auto valid=channelValidOutputSamples(source,channel,plan);
+    result.validOutputSamples.begin=std::min(outputSamples.end,std::max(outputSamples.begin,valid.begin));
+    result.validOutputSamples.end=std::max(result.validOutputSamples.begin,std::min(outputSamples.end,valid.end));
+    result.leftPadded = outputSamples.begin < valid.begin;
+    result.rightPadded = outputSamples.end > valid.end;
     return true;
 }
 

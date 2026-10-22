@@ -44,9 +44,10 @@ try {
     } elseif ($Node -eq 'W8') {
         & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $Configuration -Action All *> (Join-Path $OutputDirectory "logs/final-$Configuration.txt")
     } else {
-        $testRegex = if ($Node -eq 'W1') { 'signal_studio_(channel_rate|channel_processor|core|annotations|annotation_store|narrowband_analysis_ui)$' } else { 'signal_studio_narrowband_analysis' }
-        $targets = if ($Node -eq 'W1') { @('SignalStudioChannelRateTests','SignalStudioChannelProcessorTests','SignalStudioCoreTests','SignalStudioAnnotationTests','SignalStudioAnnotationStoreTests','SignalStudioNarrowbandAnalysisUiTests') } else { @('SignalStudioNarrowbandAnalysisTests') }
+        $testRegex = if ($Node -eq 'W1') { 'signal_studio_(channel_rate|channel_processor|core|annotations|annotation_store|narrowband_analysis_ui)$' } elseif ($Node -eq 'W2') { 'signal_studio_(narrowband_analysis|channel_processor|channel_rate)$' } else { 'signal_studio_narrowband_analysis' }
+        [string[]]$targets = if ($Node -eq 'W1') { @('SignalStudioChannelRateTests','SignalStudioChannelProcessorTests','SignalStudioCoreTests','SignalStudioAnnotationTests','SignalStudioAnnotationStoreTests','SignalStudioNarrowbandAnalysisUiTests') } else { @('SignalStudioNarrowbandAnalysisTests') }
         if ($Node -in @('W3','W4','W7')) { $targets += 'SignalStudioNarrowbandAnalysisUiTests' }
+        if ($Node -eq 'W2') { $targets += @('SignalStudioChannelProcessorTests','SignalStudioChannelRateTests') }
         & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $Configuration -Action All -Targets $targets -TestRegex $testRegex *> (Join-Path $OutputDirectory "logs/directed-$runName.txt")
     }
     if (-not $?) { throw "Narrowband $Node validation failed" }

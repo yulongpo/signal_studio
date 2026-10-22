@@ -32,6 +32,7 @@ struct ChannelDspPlan {
 struct ChannelSampleData {
     TimeRange outputSamples;
     TimeRange sourceSamples;
+    TimeRange validOutputSamples;
     std::vector<std::complex<float>> samples;
     bool leftPadded = false;
     bool rightPadded = false;
@@ -82,6 +83,9 @@ bool makeChannelDspPlan(const FileMetadata& source, const Channel& channel,
                         const std::function<bool()>& cancelled = {});
 bool designChannelLowpass(double sampleRateHz, double passEdgeHz, double stopEdgeHz,
                           double attenuationDb, std::vector<double>& coefficients);
+// Exact complete-convolution support, excluding every sample touched by the
+// source interval's zero extension. Output coordinates remain unchanged.
+TimeRange channelValidOutputSamples(const FileMetadata&, const Channel&, const ChannelDspPlan&);
 bool processChannelSamples(const FileMetadata& source, const Channel& channel,
                            const ChannelDspPlan& plan, TimeRange outputSamples,
                            ChannelSampleData& result,

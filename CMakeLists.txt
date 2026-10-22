@@ -98,6 +98,7 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/sigmf_metadata.cpp
     infrastructure/raw_sample_reader.cpp
     infrastructure/channel_processor.cpp
+    infrastructure/narrowband_analysis/analysis_source.cpp
     infrastructure/channel_processor.h
     infrastructure/spectral_analysis.cpp
     infrastructure/spectral_windows.cpp
@@ -302,6 +303,12 @@ if(SS_BUILD_TESTS)
     ss_target_defaults(SignalStudioCoreTests)
     add_test(NAME signal_studio_core COMMAND SignalStudioCoreTests)
     add_executable(SignalStudioChannelProcessorTests tests/channel_processor_tests.cpp)
+    add_executable(SignalStudioNarrowbandAnalysisTests tests/narrowband_analysis_tests.cpp)
+    target_link_libraries(SignalStudioNarrowbandAnalysisTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    ss_target_defaults(SignalStudioNarrowbandAnalysisTests)
+    set_target_properties(SignalStudioNarrowbandAnalysisTests PROPERTIES AUTOMOC OFF)
+    add_test(NAME signal_studio_narrowband_analysis COMMAND SignalStudioNarrowbandAnalysisTests)
+    set_tests_properties(signal_studio_narrowband_analysis PROPERTIES TIMEOUT 120)
     add_executable(SignalStudioChannelRateTests tests/channel_rate_tests.cpp)
     target_link_libraries(SignalStudioChannelRateTests PRIVATE SignalStudioInfrastructure Qt6::Core)
     set_target_properties(SignalStudioChannelRateTests PROPERTIES AUTOMOC OFF)
