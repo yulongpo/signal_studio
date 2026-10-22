@@ -103,6 +103,7 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/narrowband_analysis/analysis_service.cpp
     infrastructure/narrowband_analysis/pulse_shaping.cpp
     infrastructure/narrowband_analysis/eye_analysis.cpp
+    infrastructure/narrowband_analysis/symbol_rate_estimator.cpp
     infrastructure/channel_processor.h
     infrastructure/spectral_analysis.cpp
     infrastructure/spectral_windows.cpp

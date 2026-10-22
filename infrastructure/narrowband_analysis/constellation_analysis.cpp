@@ -1,5 +1,6 @@
 #include "infrastructure/narrowband_analysis/constellation_analysis.h"
 #include "infrastructure/narrowband_analysis/eye_analysis.h"
+#include "infrastructure/narrowband_analysis/symbol_rate_estimator.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -43,7 +44,21 @@ NarrowbandAnalysisResult analyzeNarrowband(std::shared_ptr<const AnalysisSourceD
   }
   result.status=AnalysisStatus::Ready;
   result.message="真实连续 IQ 散点 · 未执行符号／载波同步";
-  buildEye(result,settings,cancelled);
+  auto effective=settings;
+  if(settings.hypothesis==ModulationHypothesis::Fsk || settings.hypothesis==ModulationHypothesis::Ofdm || settings.hypothesis==ModulationHypothesis::Gmsk) {
+    result.eyeStatus=AnalysisStatus::NotApplicable;result.eyeMessage="所选体制不适用本期单载波 PSK/QAM 眼图和同步流程；保留真实原始 IQ。";
+    return result;
+  }
+  bool unreliable=false;std::string rateMessage;
+  if(settings.symbolRateMode==SymbolRateMode::Estimated) {
+    const auto estimate=estimateSymbolRate(source->samples,static_cast<double>(source->outputRateHz),cancelled);
+    result.rateCandidates=estimate.candidates;rateMessage=estimate.message;
+    if(estimate.reliable)effective.symbolRateHz=estimate.candidates.front().rateHz;
+    else {effective.symbolRateMode=SymbolRateMode::Unknown;unreliable=true;}
+  }
+  buildEye(result,effective,cancelled);
+  if(unreliable){result.eyeStatus=AnalysisStatus::LowConfidence;result.eyeMessage=rateMessage;}
+  if(!rateMessage.empty())result.message+=" · "+rateMessage;
   return result;
 }
 }  // namespace signalstudio

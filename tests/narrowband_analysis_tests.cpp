@@ -1,5 +1,10 @@
 #include <QCoreApplication>
 #include <QFileInfo>
+#include <QFile>
+#include <QDir>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -9,6 +14,7 @@
 #include "infrastructure/narrowband_analysis/analysis_source.h"
 #include "infrastructure/narrowband_analysis/analysis_service.h"
 #include "infrastructure/narrowband_analysis/pulse_shaping.h"
+#include "infrastructure/narrowband_analysis/symbol_rate_estimator.h"
 
 using namespace signalstudio;
 namespace {
@@ -166,9 +172,63 @@ void testFractionalEyeTruth() {
     check(difference>1,"I and Q must be independently derived components, not one repeated synthetic trace");
   }
 }
+std::shared_ptr<AnalysisSourceData> generatedSource(ChannelSampleCache& cache,const std::string& name,double outputRate=2e6,double bandwidth=1e6) {
+  auto source=sourceFixture();source.path=(qEnvironmentVariable("SS_NARROWBAND_FIXTURES")+"/"+QString::fromStdString(name)+".raw").toStdString();
+  source.sampleCount=static_cast<SampleIndex>(QFileInfo(QString::fromStdString(source.path)).size()/4);
+  auto c=channelFixture();c.id=name;c.sourceTime.end=source.sampleCount;c.outputSampleRateHz=outputRate;c.bandwidthHz=bandwidth;
+  const auto count=(source.sampleCount*static_cast<std::uint64_t>(outputRate)+19999999)/20000000;
+  return std::make_shared<AnalysisSourceData>(readAnalysisSource(cache,source,c,requestFor(source,c,{0,count})));
+}
+void testBlindSymbolRateCandidates() {
+  ChannelSampleCache cache;QJsonArray diagnostics;bool passed=true;
+  for(const auto* modulation:{"bpsk","qpsk","16qam"})for(const auto* alpha:{"20","35","50"})for(const auto* noise:{"ideal","awgn20"}) {
+    const auto name=std::string(modulation)+"-a"+alpha+"-"+noise;
+    const auto source=generatedSource(cache,name);
+    check(source->status==AnalysisStatus::Ready,"Actual modulation fixture must supply continuous IQ");
+    const auto estimate=estimateSymbolRate(source->samples,source->outputRateHz);
+    bool found=false;QJsonArray candidates;
+    for(std::size_t i=0;i<estimate.candidates.size();++i) {
+      const auto& candidate=estimate.candidates[i];
+      if(i<3 && std::abs(candidate.rateHz-625000)/625000<=.01)found=true;
+      candidates.push_back(QJsonObject{{"rateHz",candidate.rateHz},{"score",candidate.score},{"prominenceDb",candidate.prominenceDb},{"method",QString::fromStdString(candidate.method)}});
+    }
+    diagnostics.push_back(QJsonObject{{"fixture",QString::fromStdString(name)},{"foundTop3",found},{"reliable",estimate.reliable},{"observedSamples",static_cast<qint64>(estimate.observedSamples)},{"candidates",candidates}});
+    std::cout<<"Rs "<<name<<": "<<(found?"PASS":"FAIL")<<" reliable="<<estimate.reliable;
+    for(const auto& candidate:estimate.candidates)std::cout<<" ["<<candidate.rateHz<<','<<candidate.score<<','<<candidate.prominenceDb<<"dB]";
+    std::cout<<'\n';passed=passed && found;
+  }
+  const auto report=qEnvironmentVariable("SS_NARROWBAND_REPORT_DIR");
+  if(!report.isEmpty()){QDir().mkpath(report);QFile file(report+"/symbol-rate.json");check(file.open(QIODevice::WriteOnly),"Open rate diagnostic report");file.write(QJsonDocument(diagnostics).toJson());}
+  check(passed,"Blind top-three Rs candidates must meet fixed 1% truth threshold for all 18 positive files");
+  for(const double rate:{1.5e6,4e6,8e6}) {
+    const auto source=generatedSource(cache,"qpsk-a35-awgn20",rate);
+    const auto estimate=estimateSymbolRate(source->samples,source->outputRateHz);bool found=false;
+    for(std::size_t i=0;i<std::min<std::size_t>(3,estimate.candidates.size());++i)if(std::abs(estimate.candidates[i].rateHz-625000)/625000<=.01)found=true;
+    check(found,"Variable actual Fs must not be replaced by bandwidth or a default Rs");
+  }
+  {
+    auto source=sourceFixture();auto c=channelFixture();c.bandwidthHz=1234567;c.sampling={ChannelSamplingMode::RecommendedFactor,2};
+    const auto plan=planChannelOutputRate(source,c);check(plan.valid && plan.adjusted,"Fractional bandwidth fixture must exercise actual rate adjustment");
+    const auto iq=generatedSource(cache,"qpsk-a35-awgn20",plan.realizedRateHz,c.bandwidthHz);
+    const auto estimate=estimateSymbolRate(iq->samples,iq->outputRateHz);bool found=false;
+    for(std::size_t i=0;i<std::min<std::size_t>(3,estimate.candidates.size());++i)if(std::abs(estimate.candidates[i].rateHz-625000)/625000<.01)found=true;
+    check(found,"Automatically adjusted actual Fs must feed blind Rs estimation");
+  }
+  for(const auto* name:{"noise","short-burst","hop","qpsk-low-snr","short-qpsk"}) {
+    const auto source=generatedSource(cache,name);
+    const auto estimate=estimateSymbolRate(source->samples,source->outputRateHz);
+    check(!estimate.reliable,"Noise/short bursts/hops cannot claim a reliable symbol rate");
+  }
+  for(const auto pair:{std::pair{"fsk",ModulationHypothesis::Fsk},std::pair{"ofdm",ModulationHypothesis::Ofdm},std::pair{"gmsk",ModulationHypothesis::Gmsk}}) {
+    const auto source=generatedSource(cache,pair.first);NarrowbandAnalysisSettings settings;settings.hypothesis=pair.second;settings.symbolRateMode=SymbolRateMode::Estimated;
+    const auto result=analyzeNarrowband(source,settings);
+    check(result.status==AnalysisStatus::Ready && !result.constellation.empty() && result.eyeStatus==AnalysisStatus::NotApplicable && !result.timingLocked && !result.carrierLocked,
+          "Unsupported hypotheses retain actual raw IQ without false eye/synchronization claims");
+  }
+}
 }
 int main(int argc,char** argv) {
   QCoreApplication app(argc,argv);
-  try {testContinuousSource();testMappingAndFailureBoundaries();testRawConstellationAndLatestRequest();testFractionalEyeTruth();std::cout<<"PASS continuous source, real constellation/eye, fractional interpolation and provenance\n";}
+  try {testContinuousSource();testMappingAndFailureBoundaries();testRawConstellationAndLatestRequest();testFractionalEyeTruth();testBlindSymbolRateCandidates();std::cout<<"PASS continuous source, real constellation/eye, blind rate candidates and provenance\n";}
   catch(const std::exception& e){std::cerr<<"FAIL "<<e.what()<<'\n';return 1;}
 }

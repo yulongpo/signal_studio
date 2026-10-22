@@ -3,6 +3,7 @@ param(
     [ValidateSet('Debug','Release')][string]$Configuration = 'Debug',
     [ValidateSet('W0','W1','W2','W3','W4','W5','W6','W7','W8')][string]$Node = 'W0',
     [switch]$GenerateFixtures,
+    [switch]$GenerateEdgeFixtures,
     [switch]$Native,
     [switch]$SoftwareRenderer,
     [switch]$ProbeScreens,
@@ -25,6 +26,9 @@ try {
     if ($GenerateFixtures) {
         Invoke-NarrowbandChecked $Python @((Join-Path $PSScriptRoot 'generate-narrowband-fixtures.py'), '--output', $fixtureRoot)
     }
+    if ($GenerateEdgeFixtures) {
+        Invoke-NarrowbandChecked $Python @((Join-Path $PSScriptRoot 'generate-narrowband-fixtures.py'), '--output', $fixtureRoot, '--extra-only')
+    }
     if ($ProbeScreens) {
         Invoke-NarrowbandChecked (Join-Path $repoRoot "out/vs2026-qt611-$($Configuration.ToLowerInvariant())_bin/SignalStudioUiCapture.exe") @('--list-screens')
         return
@@ -46,7 +50,7 @@ try {
     } else {
         $testRegex = if ($Node -eq 'W1') { 'signal_studio_(channel_rate|channel_processor|core|annotations|annotation_store|narrowband_analysis_ui)$' } elseif ($Node -eq 'W2') { 'signal_studio_(narrowband_analysis|channel_processor|channel_rate)$' } else { 'signal_studio_narrowband_analysis' }
         [string[]]$targets = if ($Node -eq 'W1') { @('SignalStudioChannelRateTests','SignalStudioChannelProcessorTests','SignalStudioCoreTests','SignalStudioAnnotationTests','SignalStudioAnnotationStoreTests','SignalStudioNarrowbandAnalysisUiTests') } else { @('SignalStudioNarrowbandAnalysisTests') }
-        if ($Node -in @('W3','W4','W7')) { $targets += 'SignalStudioNarrowbandAnalysisUiTests' }
+        if ($Node -in @('W3','W4','W5','W6','W7')) { $targets += 'SignalStudioNarrowbandAnalysisUiTests' }
         if ($Node -eq 'W2') { $targets += @('SignalStudioChannelProcessorTests','SignalStudioChannelRateTests') }
         & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $Configuration -Action All -Targets $targets -TestRegex $testRegex *> (Join-Path $OutputDirectory "logs/directed-$runName.txt")
     }

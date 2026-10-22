@@ -4,6 +4,8 @@
 #include <QDoubleSpinBox>
 #include <QLabel>
 #include <QLineEdit>
+#include <QFileInfo>
+#include <cmath>
 #include <QPushButton>
 #include <QtTest>
 #include "app/main_window.h"
@@ -12,10 +14,10 @@
 using namespace signalstudio;
 class NarrowbandAnalysisUiTests : public QObject {
   Q_OBJECT
-  void populate(MainWindow& window) {
-    FileMetadata source;source.name="tone.raw";
-    source.path=(qEnvironmentVariable("SS_NARROWBAND_FIXTURES")+"/tone.raw").toStdString();
-    source.sampleRateHz=20e6;source.centerFrequencyHz=100e6;source.sampleCount=400000;source.demo=false;
+  void populate(MainWindow& window,const QString& name="tone.raw") {
+    FileMetadata source;source.name=name.toStdString();
+    source.path=(qEnvironmentVariable("SS_NARROWBAND_FIXTURES")+"/"+name).toStdString();
+    source.sampleRateHz=20e6;source.centerFrequencyHz=100e6;source.sampleCount=static_cast<SampleIndex>(QFileInfo(QString::fromStdString(source.path)).size()/4);source.demo=false;
     window.session().addDemoFile(source);
     window.session().addMark({{1000,200000},{101.5e6,102.5e6}});
     window.resize(2560,1440);window.show();window.refresh();
@@ -115,6 +117,25 @@ class NarrowbandAnalysisUiTests : public QObject {
     mode->setCurrentIndex(0);
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyeStatus==AnalysisStatus::NeedSymbolRate,15000);
     QVERIFY(!chart->property("realEyeSource").toBool());QCOMPARE(chart->property("eyeTraceCount").toULongLong(),qulonglong{0});
+  }
+  void estimatedCandidatesAndManualTakeover() {
+    const auto node=qEnvironmentVariable("SS_NARROWBAND_NODE");if(node=="W1" || node=="W3" || node=="W4")return;
+    MainWindow window;populate(window,"qpsk-a35-awgn20.raw");auto* file=window.session().activeFile();
+    const auto id=window.session().createChannel("rate",file->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);QVERIFY(!id.empty());
+    window.refresh();auto* workspace=window.findChild<NarrowbandWorkspace*>();workspace->activatePageForAcceptance(1);
+    auto* mode=window.findChild<QComboBox*>("analysisSymbolRateMode");mode->setCurrentIndex(2);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && !workspace->analysisResult()->rateCandidates.empty(),15000);
+    auto* candidates=window.findChild<QComboBox*>("analysisRateCandidates");int selected=-1;
+    for(int i=0;i<candidates->count();++i)if(std::abs(candidates->itemData(i).toDouble()-625000)/625000<.01){selected=i;break;}
+    QVERIFY(selected>=0);candidates->setCurrentIndex(selected);window.findChild<QPushButton*>("adoptSymbolRateCandidate")->click();
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyeStatus==AnalysisStatus::Ready,15000);
+    QCOMPARE(mode->currentIndex(),1);QCOMPARE(window.session().activeChannel()->analysis.symbolRateMode,SymbolRateMode::Manual);
+    auto* rs=window.findChild<QDoubleSpinBox*>("symbolRate");rs->setValue(500000);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->symbolRateHz==500000,15000);
+    QCOMPARE(window.session().activeChannel()->analysis.symbolRateHz,500000.0);
+    window.findChild<QComboBox*>("modulationFormat")->setCurrentIndex(static_cast<int>(ModulationHypothesis::Ofdm));
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyeStatus==AnalysisStatus::NotApplicable,15000);
+    QVERIFY(!workspace->analysisResult()->constellation.empty());
   }
 };
 QTEST_MAIN(NarrowbandAnalysisUiTests)

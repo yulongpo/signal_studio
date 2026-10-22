@@ -22,7 +22,9 @@ def rrc(t, alpha):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', required=True)
-    root = Path(parser.parse_args().output)
+    parser.add_argument('--extra-only', action='store_true')
+    args = parser.parse_args()
+    root = Path(args.output)
     root.mkdir(parents=True, exist_ok=True)
     fs, rs, sps, count = 20_000_000, 625_000, 32, 8192
     rng = np.random.default_rng(20261022)
@@ -43,6 +45,26 @@ def main():
             np.stack((symbols.real, symbols.imag), axis=-1).astype('<f4').tofile(root / (name + '.symbols'))
         (root / (name + '.truth.json')).write_text(json.dumps(truth, indent=2), encoding='utf-8')
         records.append(truth)
+
+    if args.extra_only:
+        # Additions only: leave every W0 record and its index untouched.
+        edge_rng = np.random.default_rng(20261023)
+        base = np.fromfile(root/'qpsk-a35-ideal.sigmf-data', dtype='<c8').astype(complex)
+        variance = np.mean(np.abs(base)**2)*100  # -20 dB per source sample
+        low = base+np.sqrt(variance/2)*(edge_rng.standard_normal(len(base))+1j*edge_rng.standard_normal(len(base)))
+        # CF32 remains the authority here; CI16 is deliberately quantized and
+        # saturated like an ADC, and the truth records its clipping count.
+        write('qpsk-low-snr', low, dict(modulation='QPSK', symbolRateHz=rs, alpha=.35,
+              snrDb=-20, clippingSamples=int(np.count_nonzero(np.maximum(np.abs(low.real),np.abs(low.imag))>=1))))
+        short_symbols = ((2*edge_rng.integers(0,2,64)-1)+1j*(2*edge_rng.integers(0,2,64)-1))/np.sqrt(2)
+        short_taps = rrc(np.arange(-6*sps,6*sps+1)/sps-.23,.35)
+        short = .25*upfirdn(short_taps,short_symbols,up=sps)
+        short *= np.exp(1j*(2*np.pi*(2_000_000+rs*.025)*np.arange(len(short))/fs+.43))
+        write('short-qpsk', short, dict(modulation='QPSK',symbolRateHz=rs,alpha=.35,symbolCount=64,
+              cfoHz=rs*.025,symbolOriginSourceSample=6*sps+.23*sps),short_symbols)
+        (root/'edge-index.json').write_text(json.dumps(dict(seed=20261023,records=records),indent=2),encoding='utf-8')
+        print('Added two edge records; original W0 fixtures were not rewritten.')
+        return
 
     for modulation in ('BPSK', 'QPSK', '16QAM'):
         if modulation == 'BPSK':

@@ -1130,8 +1130,8 @@ void NarrowbandWorkspace::buildPages() {
     auto* modulationControls = new QWidget; auto* modulationRow = new QHBoxLayout(modulationControls);
     modulationRow->setContentsMargins(6, 4, 6, 4);
     auto* modulationType = new QComboBox; modulationType->setObjectName("modulationFormat");
-    modulationType->addItems({"未知 / 自动", "BPSK", "QPSK", "8PSK", "16QAM", "64QAM", "2FSK", "4FSK", "MSK", "GMSK", "OFDM"});
-    auto* symbolRateMode=new QComboBox;symbolRateMode->setObjectName("analysisSymbolRateMode");symbolRateMode->addItems({"Rs 待确认","手工 Rs"});
+    modulationType->addItems({"未知（分析假设）", "BPSK", "QPSK", "16QAM", "FSK（不适用）", "OFDM（不适用）", "GMSK（不适用）"});
+    auto* symbolRateMode=new QComboBox;symbolRateMode->setObjectName("analysisSymbolRateMode");symbolRateMode->addItems({"Rs 待确认","手工 Rs","自动估计 Rs"});
     auto* symbolRate = new ParameterDoubleSpinBox; symbolRate->setObjectName("symbolRate"); symbolRate->setRange(1, 4e9); symbolRate->setDecimals(3); symbolRate->setValue(250'000); symbolRate->setSuffix(" Sym/s");
     eyeComponent_ = new QComboBox; eyeComponent_->setObjectName("eyeComponent"); eyeComponent_->addItems({"I + Q", "I 分量", "Q 分量"});
     eyePeriods_ = new QComboBox; eyePeriods_->setObjectName("eyePeriods");for(int n:{1,2,3,4})eyePeriods_->addItem(QString::number(n),n);
@@ -1144,21 +1144,38 @@ void NarrowbandWorkspace::buildPages() {
     modulationRow->addWidget(identify); modulationLayout->addWidget(modulationControls, 2, 0, 1, 2);
     auto* run=actionButton("分析", "runNarrowbandAnalysis",modulationRow);
     auto* cancel=actionButton("取消", "cancelNarrowbandAnalysis",modulationRow);
-    connect(run,&QPushButton::clicked,this,[this]{requestAnalysis(true);});
+    connect(run,&QPushButton::clicked,this,[this,symbolRateMode]{
+      if(auto* c=session_.activeChannel();c && c->analysis.symbolRateMode==SymbolRateMode::Unknown){symbolRateMode->setCurrentIndex(2);return;}
+      requestAnalysis(true);
+    });
     connect(cancel,&QPushButton::clicked,this,[this]{cancelAnalysis(true);if(modulationStatus_)modulationStatus_->setText("分析已取消。");});
     modulationStatus_=textLabel("真实 IQ 分析待运行", "modulationAnalysisStatus");
     modulationStatus_->setWordWrap(true);modulationLayout->addWidget(modulationStatus_,3,0,1,2);
+    auto* rateRowWidget=new QWidget;auto* rateRow=new QHBoxLayout(rateRowWidget);rateRow->setContentsMargins(6,0,6,0);
+    rateRow->addWidget(textLabel("Rs 候选（评分非概率）"));
+    auto* candidates=new QComboBox;candidates->setObjectName("analysisRateCandidates");candidates->setMinimumContentsLength(30);rateRow->addWidget(candidates,1);
+    auto* adopt=actionButton("采用为手工 Rs", "adoptSymbolRateCandidate",rateRow);rateRow->addWidget(adopt);
+    modulationLayout->addWidget(rateRowWidget,4,0,1,2);
+    connect(adopt,&QPushButton::clicked,this,[this,candidates,symbolRateMode,symbolRate] {
+      auto* c=session_.activeChannel();const auto* f=session_.activeFile();if(!c || !f || candidates->currentIndex()<0 || !analysisResult_ ||
+        !analysisIdentityCurrent(analysisResult_->identity,f->metadata,*c,session_.projectGeneration(),analysisGeneration_))return;
+      const auto rate=candidates->currentData().toDouble();if(!(rate>0))return;
+      c->analysis.symbolRateMode=SymbolRateMode::Manual;c->analysis.symbolRateHz=rate;c->symbolRate=rate;
+      {QSignalBlocker b(symbolRateMode);symbolRateMode->setCurrentIndex(1);}
+      {QSignalBlocker b(symbolRate);displayParameterValue(symbolRate,rate);}requestAnalysis(true);
+    });
     modulationLayout->setRowStretch(0, 3); modulationLayout->setRowStretch(1, 2);
-    modulationType->setToolTip("人工选择仅用于合成示例，未执行真实调制判决");
-    connect(modulationType, &QComboBox::currentTextChanged, this, [modulationType](const QString& value) {
-        modulationType->setToolTip("人工选择：" + value + "；未执行真实调制判决");
+    modulationType->setToolTip("仅为单载波分析假设，不是自动识别结果。");
+    connect(modulationType, &QComboBox::currentIndexChanged, this, [this,modulationType](int index) {
+        if(auto* c=session_.activeChannel())c->analysis.hypothesis=static_cast<ModulationHypothesis>(index);
+        modulationType->setToolTip("分析假设：" + modulationType->currentText() + "；不是识别结果。");requestAnalysis(true);
     });
     connect(symbolRate, &QDoubleSpinBox::valueChanged, this, [this,symbolRateMode](double value) {
         if (auto* channel = session_.activeChannel()) {channel->symbolRate = value;channel->analysis.symbolRateHz=value;channel->analysis.symbolRateMode=SymbolRateMode::Manual;}
         {QSignalBlocker block(symbolRateMode);symbolRateMode->setCurrentIndex(1);}requestAnalysis(true);
     });
     connect(symbolRateMode,&QComboBox::currentIndexChanged,this,[this,symbolRate](int index) {
-      if(auto* c=session_.activeChannel()){c->analysis.symbolRateMode=index==1?SymbolRateMode::Manual:SymbolRateMode::Unknown;if(index==1){c->analysis.symbolRateHz=symbolRate->value();c->symbolRate=symbolRate->value();}}
+      if(auto* c=session_.activeChannel()){c->analysis.symbolRateMode=static_cast<SymbolRateMode>(index);if(index==1){c->analysis.symbolRateHz=symbolRate->value();c->symbolRate=symbolRate->value();}else if(index==2)c->analysis.symbolRateHz=0;}
       requestAnalysis(true);
     });
     auto refreshEyeControls = [this] {
@@ -1586,10 +1603,14 @@ void NarrowbandWorkspace::refreshFromSession() {
     for (int i = 0; i < 4; ++i) pageButtons_[i]->setChecked(i == index);
     { QSignalBlocker blocker(waveformMode_); waveformMode_->setCurrentIndex(static_cast<int>(channel->waveform)); }
     if (auto* rate = findChild<QDoubleSpinBox*>("symbolRate")) {
-        const QSignalBlocker blocker(rate); displayParameterValue(rate,channel->analysis.symbolRateHz>0?channel->analysis.symbolRateHz:channel->symbolRate);
+        double displayed=channel->analysis.symbolRateHz>0?channel->analysis.symbolRateHz:channel->symbolRate;
+        if(channel->analysis.symbolRateMode==SymbolRateMode::Estimated && analysisResult_ && analysisResult_->symbolRateHz>0 &&
+           analysisIdentityCurrent(analysisResult_->identity,file->metadata,*channel,session_.projectGeneration(),analysisGeneration_))displayed=analysisResult_->symbolRateHz;
+        const QSignalBlocker blocker(rate); displayParameterValue(rate,displayed);
         rate->setToolTip(channel->analysis.symbolRateMode==SymbolRateMode::Unknown?"旧数值尚未确认；选择手工 Rs 后才用于眼图。":"已提交的符号率假设；不是调制识别结果。");
     }
     if(auto* mode=findChild<QComboBox*>("analysisSymbolRateMode")){QSignalBlocker b(mode);mode->setCurrentIndex(static_cast<int>(channel->analysis.symbolRateMode));}
+    if(auto* hypothesis=findChild<QComboBox*>("modulationFormat")){QSignalBlocker b(hypothesis);hypothesis->setCurrentIndex(static_cast<int>(channel->analysis.hypothesis));}
     if(auto* stage=findChild<QComboBox*>("eyeAnalysisStage")){QSignalBlocker b(stage);stage->setCurrentIndex(channel->analysis.eyeStage==AnalysisStage::RawIq?0:1);}
     if(auto* density=findChild<QComboBox*>("eyeDrawingDensity")){QSignalBlocker b(density);density->setCurrentIndex(density->findData(channel->analysis.eyePointsPerUi));}
     for(const auto& setting:std::array<std::pair<const char*,double>,2>{{{"eyeTimingOffsetUi",channel->analysis.eyeTimingOffsetUi},{"analysisRrcRolloff",channel->analysis.rolloff}}})
@@ -2086,6 +2107,7 @@ void NarrowbandWorkspace::requestAnalysis(bool force) {
     request.sampleBudget=channel->analysis.sampleBudget;
     lastAnalysisIdentity_=request.identity;lastAnalysisTime_=channel->visibleSourceTime;lastAnalysisSettings_=channelAnalysisSettings(*channel);
     analysisPending_=true;analysisResult_.reset();
+    if(auto* candidates=findChild<QComboBox*>("analysisRateCandidates")){QSignalBlocker b(candidates);candidates->clear();}
     constellationLarge_->setPoints({},"正在读取真实连续窄带 IQ…");
     eyeLarge_->setEye({},"正在读取真实连续窄带 IQ…");
     if(modulationStatus_)modulationStatus_->setText("正在分析真实 IQ；仅发布当前通道与配置结果…");
@@ -2105,6 +2127,13 @@ void NarrowbandWorkspace::installAnalysis() {
       if(modulationStatus_)modulationStatus_->setText(str(analysisResult_->message));return;
     }
     const auto& data=*analysisResult_;
+    if(auto* candidates=findChild<QComboBox*>("analysisRateCandidates")) {
+      QSignalBlocker b(candidates);candidates->clear();
+      for(const auto& candidate:data.rateCandidates)candidates->addItem(QString("%1 Sym/s · 评分 %2 · %3 dB · %4")
+        .arg(candidate.rateHz,0,'g',10).arg(candidate.score,0,'f',2).arg(candidate.prominenceDb,0,'f',1).arg(str(candidate.method)),candidate.rateHz);
+    }
+    if(channel->analysis.symbolRateMode==SymbolRateMode::Estimated && data.symbolRateHz>0)
+      if(auto* rate=findChild<QDoubleSpinBox*>("symbolRate")){QSignalBlocker b(rate);displayParameterValue(rate,data.symbolRateHz);}
     const double minimum=channel->analysis.constellationAutoScale?data.axisMinimum:channel->constellationMinimum;
     const double maximum=channel->analysis.constellationAutoScale?data.axisMaximum:channel->constellationMaximum;
     constellationLarge_->setIqRange(minimum,maximum,channel->analysis.normalizePower?"RMS 归一化":"解码 IQ 幅度");
