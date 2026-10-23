@@ -1,0 +1,41 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure -N
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+  Test  #1: signal_studio_parameter_input
+  Test  #2: signal_studio_detection_refined_fusion
+  Test  #3: signal_studio_detection_time_pipeline
+  Test  #4: signal_studio_detection_refinement
+  Test  #5: signal_studio_detection_sample_energy
+  Test  #6: signal_studio_detection_pipeline
+  Test  #7: signal_studio_detection_postprocess
+  Test  #8: signal_studio_detection_model_backend
+  Test  #9: signal_studio_detection_frequency_analysis
+  Test #10: signal_studio_detection_store
+  Test #11: signal_studio_detection_protocol
+  Test #12: signal_studio_detection_task
+  Test #13: signal_studio_detection_source
+  Test #14: signal_studio_annotations
+  Test #15: signal_studio_annotation_store
+  Test #16: signal_studio_label_import
+  Test #17: signal_studio_wav
+  Test #18: signal_studio_import
+  Test #19: signal_studio_sample_format
+  Test #20: signal_studio_core
+  Test #21: signal_studio_narrowband_modulation
+  Test #22: signal_studio_narrowband_recovery
+  Test #23: signal_studio_narrowband_analysis
+  Test #24: signal_studio_channel_rate
+  Test #25: signal_studio_channel_processor
+  Test #26: signal_studio_spectral_analysis
+  Test #27: signal_studio_display_sampling
+  Test #28: signal_studio_narrowband_analysis_ui
+  Test #29: signal_studio_project_tree
+  Test #30: signal_studio_ux_detection
+  Test #31: signal_studio_ux_spectral
+  Test #32: signal_studio_ux_charts
+  Test #33: signal_studio_ux_layout
+  Test #34: signal_studio_ux_popovers
+  Test #35: signal_studio_ui
+  Test #36: signal_studio_ui_parameters
+  Test #37: signal_studio_ui_annotations
+
+Total Tests: 37

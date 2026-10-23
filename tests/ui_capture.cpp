@@ -72,6 +72,8 @@
 #include "infrastructure/project_store.h"
 #include "infrastructure/raw_sample_reader.h"
 #include "infrastructure/source_metadata.h"
+#include "infrastructure/wav_metadata.h"
+#include <QStyleOptionSpinBox>
 #include "ui/annotations/annotation_panel.h"
 #include "ui/charts/accelerated_surface.h"
 #include "ui/charts/plot_widget.h"
@@ -986,6 +988,8 @@ int main(int argc, char* argv[]) {
   const auto arguments = app.arguments();
   if (arguments.size() >= 3 && arguments.at(1) == "--narrowband-analysis")
     return runNarrowbandAnalysisCapture(arguments.at(2),arguments.contains("--software-renderer"),arguments.contains("--auxiliary-display"));
+  if (arguments.size() >= 3 && arguments.at(1) == "--narrowband-feedback")
+    return runNarrowbandFeedbackCapture(arguments.at(2),qEnvironmentVariable("SS_FEEDBACK_SOURCE"),arguments.contains("--software-renderer"));
   if (arguments.size() == 3 && arguments.at(1) == "--ui-refinement")
     return runUiRefinementCapture(arguments.at(2));
   if (arguments.size() == 3 && arguments.at(1) == "--wideband-ux")

@@ -1,6 +1,7 @@
 #include "infrastructure/narrowband_analysis/single_carrier_recovery.h"
 #include "infrastructure/narrowband_analysis/fft.h"
 #include "infrastructure/narrowband_analysis/pulse_shaping.h"
+#include "domain/constellation.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -20,9 +21,10 @@ std::pair<double,double> loopGains(double bandwidth) {
   return {4*damping*theta/denominator,4*theta*theta/denominator};
 }
 CfoEstimate momentCfo(std::span<const std::complex<float>> signal,double fs,double rs,
-                      ModulationHypothesis hypothesis,const AnalysisCancel& cancelled) {
+                      ModulationHypothesis hypothesis,const ConstellationDefinition& definition,const AnalysisCancel& cancelled) {
   CfoEstimate result;
-  const int order=hypothesis==ModulationHypothesis::Bpsk?2:4;
+  const bool general=hypothesis==ModulationHypothesis::Psk || hypothesis==ModulationHypothesis::Qam || hypothesis==ModulationHypothesis::Apsk;
+  const int order=general?definition.momentOrder:hypothesis==ModulationHypothesis::Bpsk?2:4;
   const auto observed=std::min<std::size_t>(signal.size(),131072);
   if(observed<1024)return result;
   double energy=0;for(std::size_t i=0;i<observed;++i)energy+=std::norm(signal[i]);
@@ -34,7 +36,8 @@ CfoEstimate momentCfo(std::span<const std::complex<float>> signal,double fs,doub
     if((i&4095U)==0 && cancelled && cancelled())return result;
     const auto z=std::complex<double>(signal[i])/scale;
     const auto squared=z*z;
-    moment[i]=(order==2?squared:squared*squared)*(.5-.5*std::cos(2*pi*i/(observed-1)));
+    const auto value=general?std::polar(std::pow(std::min(std::abs(z),2.0),std::min(order,8)),order*std::arg(z)):(order==2?squared:squared*squared);
+    moment[i]=value*(.5-.5*std::cos(2*pi*i/(observed-1)));
   }
   narrowband_dsp::fft(moment);
   const double maximum=std::min(rs>0?rs*.10:fs/(order*2.5),fs/(2*order)*.9);
@@ -121,6 +124,56 @@ Clock synchronizeClock(std::span<const std::complex<float>> samples,double sps,d
   clock.locked=clock.coherence>.003 && clock.jitter<.15 && std::abs(fitted/sps-1)<.02 && clipped<clock.positions.size()/20;
   return clock;
 }
+CfoEstimate apskCfo(std::span<const std::complex<float>> input,double fs,double rs,
+    const NarrowbandAnalysisSettings& settings,const ConstellationDefinition& definition,const AnalysisCancel& cancelled) {
+  CfoEstimate result;std::vector<std::complex<float>> filtered;std::size_t discarded=0;std::string error;
+  if(!matchedRrc(input,fs/rs,settings.rolloff,settings.filterSpanSymbols,filtered,discarded,error,cancelled))return result;
+  const auto clock=synchronizeClock(filtered,fs/rs,settings.timingLoopBandwidth,cancelled);
+  if(!clock.locked || clock.values.size()<1024)return result;
+  std::vector<double> radii;std::vector<int> orders;
+  for(const auto point:definition.points) {
+    const double radius=std::abs(point);std::size_t ring=0;
+    while(ring<radii.size() && std::abs(radii[ring]-radius)>1e-6)++ring;
+    if(ring==radii.size()){radii.push_back(radius);orders.push_back(0);}++orders[ring];
+  }
+  const auto observed=std::min<std::size_t>(clock.values.size(),16384);double power=0;
+  for(std::size_t i=0;i<observed;++i)power+=std::norm(clock.values[i]);const double scale=std::sqrt(power/observed);
+  std::vector<std::vector<std::pair<double,double>>> phases(radii.size());
+  for(std::size_t i=0;i<observed;++i) {
+    const auto z=clock.values[i]/scale;std::size_t ring=0;double best=1e30;
+    for(std::size_t j=0;j<radii.size();++j)if(const double distance=std::abs(std::abs(z)-radii[j]);distance<best){best=distance;ring=j;}
+    phases[ring].emplace_back(static_cast<double>(i),std::arg(z));
+  }
+  const double rate=fs/clock.period,maximum=std::min(rs*.1,rate/(2*definition.symmetry)*.9);
+  std::vector<double> candidates;
+  for(std::size_t ring=0;ring<radii.size();++ring) {
+    if(cancelled && cancelled())return result;if(phases[ring].size()<64)continue;
+    std::size_t n=1;while(n<observed)n*=2;std::vector<std::complex<double>> spectrum(n);
+    const int order=orders[ring];
+    for(const auto [index,phase]:phases[ring])spectrum[static_cast<std::size_t>(index)]=std::polar(.5-.5*std::cos(2*pi*index/(observed-1)),order*phase);
+    narrowband_dsp::fft(spectrum);std::size_t peak=0;
+    for(std::size_t i=1;i<n;++i)if(std::norm(spectrum[i])>std::norm(spectrum[peak]))peak=i;
+    const double a=std::log(std::max(1e-30,std::norm(spectrum[(peak+n-1)%n]))),b=std::log(std::max(1e-30,std::norm(spectrum[peak]))),c=std::log(std::max(1e-30,std::norm(spectrum[(peak+1)%n])));
+    const double correction=std::abs(a-2*b+c)>1e-12?std::clamp(.5*(a-c)/(a-2*b+c),-.5,.5):0;
+    const double center=((peak<=n/2?static_cast<double>(peak):static_cast<double>(peak)-n)+correction)*rate/n/order;
+    const int aliases=static_cast<int>(std::ceil(maximum*order/rate))+1;
+    for(int alias=-aliases;alias<=aliases;++alias){const double hz=center+alias*rate/order;if(std::abs(hz)<=maximum)candidates.push_back(hz);}
+  }
+  double bestScore=0,bestWeakest=0;
+  for(const double hz:candidates) {
+    if(cancelled && cancelled())return result;double score=0,weakest=1;std::size_t count=0;
+    for(std::size_t ring=0;ring<radii.size();++ring) {
+      if(phases[ring].size()<64)continue;std::complex<double> sum{};
+      for(const auto [index,angle]:phases[ring])sum+=std::polar(1.0,orders[ring]*(angle-2*pi*hz*index/rate));
+      const double coherence=std::abs(sum)/phases[ring].size();weakest=std::min(weakest,coherence);
+      score+=coherence*phases[ring].size();count+=phases[ring].size();
+    }
+    if(count && score/count>bestScore){bestScore=score/count;bestWeakest=weakest;result.hz=hz;}
+  }
+  result.prominence=20*std::log10(std::max(1e-30,bestScore*std::sqrt(static_cast<double>(observed))));
+  result.valid=bestScore>.35 && bestWeakest>.12 && result.prominence>=12;
+  return result;
+}
 std::complex<double> slice(std::complex<double> z,ModulationHypothesis hypothesis) {
   if(hypothesis==ModulationHypothesis::Bpsk)return {z.real()>=0?1.0:-1.0,0};
   if(hypothesis==ModulationHypothesis::Qpsk)return {z.real()>=0?std::sqrt(.5):-std::sqrt(.5),z.imag()>=0?std::sqrt(.5):-std::sqrt(.5)};
@@ -179,7 +232,17 @@ void selectConstellation(NarrowbandAnalysisResult& result,const NarrowbandAnalys
   const std::vector<TaggedSymbol>* symbols=nullptr;
   if(settings.constellationStage==AnalysisStage::TimingAligned && result.timingLocked)symbols=&result.clockSymbols;
   if(settings.constellationStage==AnalysisStage::CarrierRecovered && result.carrierLocked)symbols=&result.synchronizedSymbols;
-  const auto* continuous=findAnalysisStage(result,settings.constellationStage);
+  auto selected=settings.constellationStage;
+  const auto* continuous=findAnalysisStage(result,selected);
+  // Show the furthest real stage, rather than silently returning raw samples
+  // when a requested carrier lock fails. The GUI labels request and result.
+  if(!symbols && !continuous) {
+    if(selected>=AnalysisStage::TimingAligned && result.timingLocked && !result.clockSymbols.empty()) {
+      symbols=&result.clockSymbols;selected=AnalysisStage::TimingAligned;
+    } else for(auto fallback:{AnalysisStage::MatchedFiltered,AnalysisStage::CfoCorrected}) {
+      if(fallback<selected && (continuous=findAnalysisStage(result,fallback))){selected=fallback;break;}
+    }
+  }
   if(!symbols && !continuous)return;
   const auto size=symbols?symbols->size():continuous->samples.size();if(!size)return;
   result.constellation.clear();const auto count=std::min<std::size_t>(settings.pointCount,size);
@@ -191,8 +254,37 @@ void selectConstellation(NarrowbandAnalysisResult& result,const NarrowbandAnalys
     result.constellation.push_back(tagged);
   }
   const double margin=std::max((maximum-minimum)*.05,1e-9);result.axisMinimum=minimum-margin;result.axisMaximum=maximum+margin;
-  result.constellationStage=settings.constellationStage;
+  result.constellationStage=selected;
   result.message="真实单载波处理阶段 · 绝对相位／比特极性未知";
+}
+bool restoreGeneralCarrier(const Clock& clock,const ConstellationDefinition& constellation,double bandwidth,
+    std::vector<std::complex<double>>& restored,std::vector<double>& phases,double& finalFrequency,double& evm,const AnalysisCancel& cancelled) {
+  if(clock.values.size()<=acquisitionSymbols+256)return false;
+  double power=0;for(std::size_t i=acquisitionSymbols;i<clock.values.size();++i)power+=std::norm(clock.values[i]);
+  const double scale=std::sqrt(power/(clock.values.size()-acquisitionSymbols));if(!(scale>1e-10))return false;
+  double phase=0,best=std::numeric_limits<double>::infinity();
+  const double interval=2*pi/constellation.symmetry;const auto count=std::min<std::size_t>(1024,clock.values.size());
+  for(int trial=0;trial<128;++trial) {
+    if(cancelled && cancelled())return false;
+    const double angle=interval*trial/128;const auto rotation=std::polar(1.0,-angle);double cost=0;
+    for(std::size_t i=0;i<count;++i){const auto z=clock.values[i]/scale*rotation;cost+=std::norm(z-constellation.points[nearestConstellationPoint(z,constellation)]);}
+    if(cost<best){best=cost;phase=angle;}
+  }
+  double frequency=0,errorPower=0,referencePower=0;const auto [alpha,beta]=loopGains(bandwidth);
+  std::vector<std::size_t> populations(constellation.points.size());
+  for(std::size_t i=0;i<clock.values.size();++i) {
+    if((i&255U)==0 && cancelled && cancelled())return false;
+    const auto z=clock.values[i]/scale*std::polar(1.0,-phase);const auto cell=nearestConstellationPoint(z,constellation);const auto decision=constellation.points[cell];
+    phases.push_back(phase);restored.push_back(z*scale);
+    const double error=std::clamp(std::imag(z*std::conj(decision))/std::max(.1,std::norm(decision)),-.5,.5);
+    frequency=std::clamp(frequency+beta*error,-.1,.1);phase+=frequency+alpha*error;
+    if(i>=acquisitionSymbols){errorPower+=std::norm(z-decision);referencePower+=std::norm(decision);++populations[cell];}
+  }
+  finalFrequency=frequency;evm=std::sqrt(errorPower/std::max(1e-30,referencePower));
+  std::size_t occupied=0;const auto requiredPerCell=std::max<std::size_t>(1,(clock.values.size()-acquisitionSymbols)/(constellation.points.size()*4));
+  for(const auto n:populations)if(n>=requiredPerCell)++occupied;
+  return occupied>=std::max<std::size_t>(2,constellation.points.size()*3/4) &&
+    evm<std::min(.18,constellation.minimumDistance*.45) && std::abs(frequency)<.099;
 }
 }
 const ContinuousAnalysisStage* findAnalysisStage(const NarrowbandAnalysisResult& result,AnalysisStage stage) {
@@ -208,14 +300,17 @@ void recoverSingleCarrier(NarrowbandAnalysisResult& result,const NarrowbandAnaly
   const auto& source=*result.source;const double fs=static_cast<double>(source.outputRateHz),rs=settings.symbolRateHz;
   const bool usableRate=settings.symbolRateMode!=SymbolRateMode::Unknown && std::isfinite(rs) && rs>0;
   if(source.samples.size()>256U*1024U*1024U/112U){fail("同步工作区预算超限，请缩小分析时窗。");return;}
-  const bool known=settings.hypothesis==ModulationHypothesis::Bpsk || settings.hypothesis==ModulationHypothesis::Qpsk || settings.hypothesis==ModulationHypothesis::Qam16;
+  const bool known=isSingleCarrierHypothesis(settings.hypothesis);
+  ConstellationDefinition definition;std::string definitionError;
+  if(known && !makeConstellation(settings,definition,definitionError)){fail(definitionError);return;}
   std::vector<std::complex<float>> signal;signal.reserve(source.samples.size());
   for(const auto z:source.samples)signal.push_back(static_cast<std::complex<float>>((std::complex<double>(z)-result.removedDc)*result.gain));
   double cfo=0;
   if(settings.cfoMode==CfoMode::Automatic) {
     if(!usableRate){fail("自动 CFO 需要本次可靠候选或已确认的手工 Rs；待确认旧值不参与同步。");return;}
-    if(!known){fail("自动 CFO 需要明确 BPSK/QPSK/16QAM 分析假设；未知信号可手工输入。");return;}
-    const auto estimate=momentCfo(signal,fs,rs,settings.hypothesis,cancelled);
+    if(!known){fail("自动 CFO 需要明确 PSK/QAM/APSK 调制族与阶数；未知信号可手工输入频偏。");return;}
+    const auto estimate=settings.hypothesis==ModulationHypothesis::Apsk?apskCfo(signal,fs,rs,settings,definition,cancelled):
+      momentCfo(signal,fs,rs,settings.hypothesis,definition,cancelled);
     result.cfoConfidenceDb=estimate.prominence;
     if(!estimate.valid){fail("粗 CFO 候选置信度不足或观测过短，保留原始 IQ。");return;}
     cfo=estimate.hz;
@@ -247,9 +342,11 @@ void recoverSingleCarrier(NarrowbandAnalysisResult& result,const NarrowbandAnaly
     mapAnalysisPosition(source,tagged.output,tagged.source);result.clockSymbols.push_back(tagged);
   }
   if(carrier) {
-    if(!known){fail("载波相位恢复需要明确的单载波 PSK/QAM 假设。");return;}
+    if(!known){fail("载波相位恢复需要明确的 PSK/QAM/APSK 调制族与阶数。");return;}
     std::vector<std::complex<double>> symbols;std::vector<double> phases;double residualFrequency=0,evm=0;
-    const bool locked=restoreCarrier(clock,settings.hypothesis,settings.carrierLoopBandwidth,symbols,phases,residualFrequency,evm,cancelled);
+    const bool general=settings.hypothesis==ModulationHypothesis::Psk || settings.hypothesis==ModulationHypothesis::Qam || settings.hypothesis==ModulationHypothesis::Apsk;
+    const bool locked=general?restoreGeneralCarrier(clock,definition,settings.carrierLoopBandwidth,symbols,phases,residualFrequency,evm,cancelled):
+      restoreCarrier(clock,settings.hypothesis,settings.carrierLoopBandwidth,symbols,phases,residualFrequency,evm,cancelled);
     result.carrierLocked=locked;
     if(!locked){fail("载波未锁定：模板残差、符号多样性或环路状态不满足条件。");return;}
     result.conditionalEvm=evm;result.estimatedCfoHz=cfo+residualFrequency*rs/(2*pi);

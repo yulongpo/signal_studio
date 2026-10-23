@@ -1947,12 +1947,12 @@ void MainWindow::buildChartControls() {
   auxiliaryControls_->addControl(fit,"自动幅度",80);
   connect(fit,&QToolButton::clicked,this,[this]{if(auto* f=session_.activeFile()){f->display.waveformAutoFit=true;propagateGlobalRightSidebarSettings();refresh();}});
   narrowbandControls_.fill(nullptr);
-  const std::array<QString,5> panels{"narrowbandWaveformPanel","narrowbandPsdPanel","narrowbandStftPanel","narrowbandModulationStft","recognitionStftPanel"};
-  for(int i=0;i<5;++i){
+  const std::array<QString,7> panels{"narrowbandWaveformPanel","narrowbandPsdPanel","narrowbandStftPanel","narrowbandModulationStft","recognitionStftPanel","narrowbandConstellationLarge","narrowbandEyeLarge"};
+  for(int i=0;i<static_cast<int>(panels.size());++i){
     auto* panel=narrowband_->findChild<QWidget*>(panels[i]);
     auto* layout=qobject_cast<QVBoxLayout*>(panel->layout());
     auto* head=layout->itemAt(0)->widget();
-    head->setObjectName(panels[i]+"Head");head->setProperty("chartIndex",i);
+    head->setObjectName(panels[i]+"Head");
     narrowbandControls_[i]=attach(head,panels[i]+"Controls");
   }
   auto* nbWave=narrowband_->findChild<QComboBox*>("narrowbandWaveformMode");field(nbWave,104);
@@ -1973,13 +1973,20 @@ void MainWindow::buildChartControls() {
     }
     delete bar;
   }
-  if(auto* eye=narrowband_->findChild<QWidget*>("narrowbandEyeLarge")){
-    auto* head=qobject_cast<QVBoxLayout*>(eye->layout())->itemAt(0)->widget();
-    auto* strip=attach(head,"narrowbandEyeControls");
-    strip->addControl(narrowband_->findChild<QWidget*>("eyeComponent"),"分量",70);
-    strip->addControl(narrowband_->findChild<QWidget*>("eyePeriods"),"周期",60);
-    strip->addControl(narrowband_->findChild<QWidget*>("eyeTraces"),"轨迹",50);
-  }
+  auto* constellation=narrowbandControls_[5];auto* eye=narrowbandControls_[6];
+  constellation->setObjectName("narrowbandConstellationControls");eye->setObjectName("narrowbandEyeControls");
+  constellation->addControl(narrowband_->findChild<QWidget*>("constellationAnalysisStage"),"阶段",100);
+  constellation->addControl(narrowband_->findChild<QWidget*>("constellationPointBudget"),"点数",90);
+  constellation->addControl(narrowband_->findChild<QWidget*>("constellationAutoScale"),"自动缩放",80);
+  for(const auto* name:{"constellationAxisMinimum","constellationAxisMaximum"})field(narrowband_->findChild<QWidget*>(name),230);
+  constellation->addPanel(narrowband_->findChild<QWidget*>("narrowbandConstellationDisplaySettings"));
+  eye->addControl(narrowband_->findChild<QWidget*>("eyeAnalysisStage"),"阶段",100);
+  eye->addControl(narrowband_->findChild<QWidget*>("eyeComponent"),"分量",80);
+  eye->addControl(narrowband_->findChild<QWidget*>("eyePeriods"),"周期",70);
+  eye->addControl(narrowband_->findChild<QWidget*>("eyeTraces"),"轨迹",60);
+  field(narrowband_->findChild<QWidget*>("eyeTimingOffsetUi"),160);
+  field(narrowband_->findChild<QWidget*>("analysisRrcRolloff"),130);
+  eye->addPanel(narrowband_->findChild<QWidget*>("narrowbandEyeDisplaySettings"));
   specMode_->setMaximumWidth(150);specAxis_->setMaximumWidth(100);
   connect(narrowband_,&NarrowbandWorkspace::pageChanged,this,[this]{
     if(session_.project().narrowbandWorkspaceOpen)updateChartControls(true);

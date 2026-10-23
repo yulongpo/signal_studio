@@ -187,7 +187,8 @@ void SettingsPopoverHost::reposition() {
   // reachable; long forms scroll within the originating chart's budget.
   for (auto* owner = positioningAnchor_->parentWidget(); owner && owner != root_;
        owner = owner->parentWidget()) {
-    if (!owner->property("chartIndex").isValid() || !owner->parentWidget()) continue;
+    if ((owner->property("uiRole").toString() != "chartHead" &&
+         !owner->property("chartIndex").isValid()) || !owner->parentWidget()) continue;
     auto* panel = owner->parentWidget();
     const int top = root_->mapFromGlobal(owner->mapToGlobal(QPoint(0, owner->height()))).y() + 4;
     const int bottom = root_->mapFromGlobal(panel->mapToGlobal(QPoint(0, panel->height()))).y() - 4;

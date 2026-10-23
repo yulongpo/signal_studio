@@ -1,0 +1,20 @@
+********* Start testing of NarrowbandAnalysisUiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+QINFO  : NarrowbandAnalysisUiTests::initTestCase() NARROWBAND_VALIDATION_NODE=W8
+PASS   : NarrowbandAnalysisUiTests::initTestCase()
+QWARN  : NarrowbandAnalysisUiTests::samplingTransactionAndActualCreation() This plugin does not support propagateSizeHints()
+PASS   : NarrowbandAnalysisUiTests::samplingTransactionAndActualCreation()
+QWARN  : NarrowbandAnalysisUiTests::legacyEditKeepsRateAndDraft() This plugin does not support propagateSizeHints()
+PASS   : NarrowbandAnalysisUiTests::legacyEditKeepsRateAndDraft()
+PASS   : NarrowbandAnalysisUiTests::realRawPointsAndCancellation()
+PASS   : NarrowbandAnalysisUiTests::realEyeSymbolRateAndControls()
+PASS   : NarrowbandAnalysisUiTests::estimatedCandidatesAndManualTakeover()
+PASS   : NarrowbandAnalysisUiTests::realSynchronizationStagesAndManualCfo()
+PASS   : NarrowbandAnalysisUiTests::externalSourceChangeInvalidatesIdleAndPending()
+QWARN  : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CI16-RAW) This plugin does not support propagateSizeHints()
+PASS   : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CI16-RAW)
+QWARN  : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CF32-SigMF) This plugin does not support propagateSizeHints()
+PASS   : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CF32-SigMF)
+PASS   : NarrowbandAnalysisUiTests::cleanupTestCase()
+Totals: 11 passed, 0 failed, 0 skipped, 0 blacklisted, 48436ms
+********* Finished testing of NarrowbandAnalysisUiTests *********

@@ -1,0 +1,241 @@
+{
+  "generated": "2026-10-23T18:04:06.8166446+08:00",
+  "fullSuiteRerun": false,
+  "currentCTestInventory": 37,
+  "configurations": [
+    {
+      "configuration": "Debug",
+      "targetedCTest": 6,
+      "parameterRegressionCTest": 4,
+      "positiveModulations": 50,
+      "noiseHypotheses": 6,
+      "uiPass": 11,
+      "nativeInputPass": 5,
+      "native": [
+        {
+          "mode": "gpu",
+          "scenes": 7,
+          "layoutUnified": true,
+          "report": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\NB-FEEDBACK-01\\diagnostics\\native-20261023-180129-927-Debug-gpu\\feedback-report.json",
+          "screen": {
+            "availableLogicalGeometry": {
+              "height": 1392,
+              "width": 2560,
+              "x": 2560,
+              "y": 0
+            },
+            "connectedIndex": 2,
+            "deviceName": "\\\\.\\DISPLAY6",
+            "devicePath": "\\\\.\\DISPLAY6",
+            "devicePixelRatio": 1.5,
+            "friendlyName": "Redmi 27 NU",
+            "identityMethod": "Windows active DisplayConfig source/target",
+            "logicalDpi": 96,
+            "logicalGeometry": {
+              "height": 1440,
+              "width": 2560,
+              "x": 2560,
+              "y": 0
+            },
+            "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+            "name": "Redmi 27 NU",
+            "outputTechnology": 5,
+            "physicalDpi": 109.05000625015624,
+            "pixelSize": {
+              "height": 2160,
+              "width": 3840
+            },
+            "preferredPixelSize": {
+              "height": 2160,
+              "width": 3840
+            },
+            "primary": false
+          }
+        },
+        {
+          "mode": "software",
+          "scenes": 7,
+          "layoutUnified": true,
+          "report": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\NB-FEEDBACK-01\\diagnostics\\native-20261023-180151-749-Debug-software\\feedback-report.json",
+          "screen": {
+            "availableLogicalGeometry": {
+              "height": 1392,
+              "width": 2560,
+              "x": 2560,
+              "y": 0
+            },
+            "connectedIndex": 2,
+            "deviceName": "\\\\.\\DISPLAY6",
+            "devicePath": "\\\\.\\DISPLAY6",
+            "devicePixelRatio": 1.5,
+            "friendlyName": "Redmi 27 NU",
+            "identityMethod": "Windows active DisplayConfig source/target",
+            "logicalDpi": 96,
+            "logicalGeometry": {
+              "height": 1440,
+              "width": 2560,
+              "x": 2560,
+              "y": 0
+            },
+            "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+            "name": "Redmi 27 NU",
+            "outputTechnology": 5,
+            "physicalDpi": 109.05000625015624,
+            "pixelSize": {
+              "height": 2160,
+              "width": 3840
+            },
+            "preferredPixelSize": {
+              "height": 2160,
+              "width": 3840
+            },
+            "primary": false
+          }
+        }
+      ],
+      "userSource": [
+        {
+          "actualStage": 3,
+          "assumption": "QPSK",
+          "carrierLocked": false,
+          "conditionalEvm": -1,
+          "estimatedCfoHz": -167184.9381459294,
+          "eyeTraces": 0,
+          "message": "载波未锁定：模板残差、符号多样性或环路状态不满足条件。",
+          "pass": true,
+          "symbolRateHz": 4891170.562021007,
+          "timingLocked": true
+        },
+        {
+          "actualStage": 4,
+          "assumption": "32QAM",
+          "carrierLocked": true,
+          "conditionalEvm": 0.08739666738763295,
+          "estimatedCfoHz": -167232.21851866218,
+          "eyeTraces": 64,
+          "message": "定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。",
+          "pass": true,
+          "symbolRateHz": 4891170.562021007,
+          "timingLocked": true
+        }
+      ]
+    },
+    {
+      "configuration": "Release",
+      "targetedCTest": 6,
+      "parameterRegressionCTest": 4,
+      "positiveModulations": 50,
+      "noiseHypotheses": 6,
+      "uiPass": 11,
+      "nativeInputPass": 5,
+      "native": [
+        {
+          "mode": "gpu",
+          "scenes": 7,
+          "layoutUnified": true,
+          "report": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\NB-FEEDBACK-01\\diagnostics\\native-20261023-180219-507-Release-gpu\\feedback-report.json",
+          "screen": {
+            "availableLogicalGeometry": {
+              "height": 1392,
+              "width": 2560,
+              "x": 2560,
+              "y": 0
+            },
+            "connectedIndex": 2,
+            "deviceName": "\\\\.\\DISPLAY6",
+            "devicePath": "\\\\.\\DISPLAY6",
+            "devicePixelRatio": 1.5,
+            "friendlyName": "Redmi 27 NU",
+            "identityMethod": "Windows active DisplayConfig source/target",
+            "logicalDpi": 96,
+            "logicalGeometry": {
+              "height": 1440,
+              "width": 2560,
+              "x": 2560,
+              "y": 0
+            },
+            "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+            "name": "Redmi 27 NU",
+            "outputTechnology": 5,
+            "physicalDpi": 109.05000625015624,
+            "pixelSize": {
+              "height": 2160,
+              "width": 3840
+            },
+            "preferredPixelSize": {
+              "height": 2160,
+              "width": 3840
+            },
+            "primary": false
+          }
+        },
+        {
+          "mode": "software",
+          "scenes": 7,
+          "layoutUnified": true,
+          "report": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\NB-FEEDBACK-01\\diagnostics\\native-20261023-180229-894-Release-software\\feedback-report.json",
+          "screen": {
+            "availableLogicalGeometry": {
+              "height": 1392,
+              "width": 2560,
+              "x": 2560,
+              "y": 0
+            },
+            "connectedIndex": 2,
+            "deviceName": "\\\\.\\DISPLAY6",
+            "devicePath": "\\\\.\\DISPLAY6",
+            "devicePixelRatio": 1.5,
+            "friendlyName": "Redmi 27 NU",
+            "identityMethod": "Windows active DisplayConfig source/target",
+            "logicalDpi": 96,
+            "logicalGeometry": {
+              "height": 1440,
+              "width": 2560,
+              "x": 2560,
+              "y": 0
+            },
+            "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+            "name": "Redmi 27 NU",
+            "outputTechnology": 5,
+            "physicalDpi": 109.05000625015624,
+            "pixelSize": {
+              "height": 2160,
+              "width": 3840
+            },
+            "preferredPixelSize": {
+              "height": 2160,
+              "width": 3840
+            },
+            "primary": false
+          }
+        }
+      ],
+      "userSource": [
+        {
+          "actualStage": 3,
+          "assumption": "QPSK",
+          "carrierLocked": false,
+          "conditionalEvm": -1,
+          "estimatedCfoHz": -167184.9381459294,
+          "eyeTraces": 0,
+          "message": "载波未锁定：模板残差、符号多样性或环路状态不满足条件。",
+          "pass": true,
+          "symbolRateHz": 4891170.562021007,
+          "timingLocked": true
+        },
+        {
+          "actualStage": 4,
+          "assumption": "32QAM",
+          "carrierLocked": true,
+          "conditionalEvm": 0.08739666738763295,
+          "estimatedCfoHz": -167232.21851866218,
+          "eyeTraces": 64,
+          "message": "定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。",
+          "pass": true,
+          "symbolRateHz": 4891170.562021007,
+          "timingLocked": true
+        }
+      ]
+    }
+  ]
+}

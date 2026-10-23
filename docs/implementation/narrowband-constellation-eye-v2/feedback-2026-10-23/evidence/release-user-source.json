@@ -1,0 +1,31 @@
+{
+    "inputKind": "user-provided generated wideband IQ; truth labels used only for validation",
+    "pass": true,
+    "runs": [
+        {
+            "actualStage": 3,
+            "assumption": "QPSK",
+            "carrierLocked": false,
+            "conditionalEvm": -1,
+            "estimatedCfoHz": -167184.9381459294,
+            "eyeTraces": 0,
+            "message": "载波未锁定：模板残差、符号多样性或环路状态不满足条件。",
+            "pass": true,
+            "symbolRateHz": 4891170.562021007,
+            "timingLocked": true
+        },
+        {
+            "actualStage": 4,
+            "assumption": "32QAM",
+            "carrierLocked": true,
+            "conditionalEvm": 0.08739666738763295,
+            "estimatedCfoHz": -167232.21851866218,
+            "eyeTraces": 64,
+            "message": "定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。",
+            "pass": true,
+            "symbolRateHz": 4891170.562021007,
+            "timingLocked": true
+        }
+    ],
+    "source": "D:/coding/FFSCN_train2/broadband_signal_generation/HY_test_opt_60MHz_10ms_CNR2_30_10000_thread16_20260906_partial_serial_fallback/data/20260906-224900-990_680400_bw_60000000_sampleTime_0.01_rollOff_0.35.wav"
+}

@@ -1,0 +1,22 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure -R ^signal_studio_(ui_parameters|ux_(popovers|spectral|layout))$
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+    Start 31: signal_studio_ux_spectral
+1/4 Test #31: signal_studio_ux_spectral ........   Passed    2.96 sec
+    Start 33: signal_studio_ux_layout
+2/4 Test #33: signal_studio_ux_layout ..........   Passed   20.69 sec
+    Start 34: signal_studio_ux_popovers
+3/4 Test #34: signal_studio_ux_popovers ........   Passed    0.93 sec
+    Start 36: signal_studio_ui_parameters
+4/4 Test #36: signal_studio_ui_parameters ......   Passed   31.17 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Label Time Summary:
+layout         =  20.69 sec*proc (1 test)
+parameters     =  31.17 sec*proc (1 test)
+popovers       =   0.93 sec*proc (1 test)
+spectral       =   2.96 sec*proc (1 test)
+ui             =  31.17 sec*proc (1 test)
+wideband-ux    =  24.58 sec*proc (3 tests)
+
+Total Test time (real) =  55.77 sec

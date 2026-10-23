@@ -5,13 +5,15 @@
 #include <cmath>
 #include <numbers>
 #include "domain/narrowband_analysis_settings.h"
+#include "domain/constellation.h"
 
 namespace signalstudio {
 inline QJsonObject encodeAnalysisSettings(const NarrowbandAnalysisSettings& s) {
   return {{"pointCount",s.pointCount},{"removeDc",s.removeDc},{"normalizePower",s.normalizePower},
     {"constellationAutoScale",s.constellationAutoScale},{"sampleBudget",static_cast<qint64>(s.sampleBudget)},
     {"symbolRateMode",static_cast<int>(s.symbolRateMode)},{"symbolRateHz",s.symbolRateHz},
-    {"hypothesis",static_cast<int>(s.hypothesis)},{"constellationStage",static_cast<int>(s.constellationStage)},
+    {"hypothesis",static_cast<int>(s.hypothesis)},{"modulationOrder",s.modulationOrder},{"apskRings",QString::fromStdString(s.apskRings)},
+    {"constellationStage",static_cast<int>(s.constellationStage)},
     {"eyeStage",static_cast<int>(s.eyeStage)},{"eyePointsPerUi",s.eyePointsPerUi},{"eyeTimingOffsetUi",s.eyeTimingOffsetUi},
     {"matchedFilter",s.matchedFilter},{"timingRecovery",s.timingRecovery},{"carrierRecovery",s.carrierRecovery},
     {"rolloff",s.rolloff},{"filterSpanSymbols",s.filterSpanSymbols},{"cfoMode",static_cast<int>(s.cfoMode)},
@@ -41,7 +43,8 @@ inline bool decodeAnalysisSettings(const QJsonValue& value,NarrowbandAnalysisSet
   double budget=static_cast<double>(s.sampleBudget);
   if(!integer("pointCount",s.pointCount,256,20000) || !number("sampleBudget",budget,256,8*1024*1024,true) ||
      !boolean("removeDc",s.removeDc) || !boolean("normalizePower",s.normalizePower) || !boolean("constellationAutoScale",s.constellationAutoScale) ||
-     !integer("symbolRateMode",rateMode,0,2) || !number("symbolRateHz",s.symbolRateHz,0,4e9) || !integer("hypothesis",hypothesis,0,6) ||
+     !integer("symbolRateMode",rateMode,0,2) || !number("symbolRateHz",s.symbolRateHz,0,4e9) || !integer("hypothesis",hypothesis,0,9) ||
+     !integer("modulationOrder",s.modulationOrder,2,4096) ||
      !integer("constellationStage",stage,0,4) || !integer("eyeStage",eye,0,4) || !integer("eyePointsPerUi",s.eyePointsPerUi,4,16) ||
      !number("eyeTimingOffsetUi",s.eyeTimingOffsetUi,-2,2) || !boolean("matchedFilter",s.matchedFilter) ||
      !boolean("timingRecovery",s.timingRecovery) || !boolean("carrierRecovery",s.carrierRecovery) ||
@@ -53,6 +56,15 @@ inline bool decodeAnalysisSettings(const QJsonValue& value,NarrowbandAnalysisSet
     error="analysis：绘图密度必须为 4/8/16，手工 Rs 必须为正。";return false;
   }
   s.sampleBudget=static_cast<std::size_t>(budget);s.symbolRateMode=static_cast<SymbolRateMode>(rateMode);s.hypothesis=static_cast<ModulationHypothesis>(hypothesis);
+  if(object.contains("apskRings")) {
+    if(!object["apskRings"].isString() || object["apskRings"].toString().size()>1024){error="analysis.apskRings 必须为不超过 1024 字符的环配置。";return false;}
+    s.apskRings=object["apskRings"].toString().toStdString();
+  }
+  if((s.modulationOrder&(s.modulationOrder-1))!=0){error="analysis.modulationOrder 必须为 2 次幂。";return false;}
+  if(isSingleCarrierHypothesis(s.hypothesis)) {
+    ConstellationDefinition constellation;std::string reason;
+    if(!makeConstellation(s,constellation,reason)){error=QString::fromStdString(reason);return false;}
+  }
   s.constellationStage=static_cast<AnalysisStage>(stage);s.eyeStage=static_cast<AnalysisStage>(eye);s.cfoMode=static_cast<CfoMode>(cfo);
   output=s;error.clear();return true;
 }

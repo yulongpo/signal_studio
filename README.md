@@ -6,6 +6,8 @@
 
 本次窄带 v2 的交付入口为[交付说明](docs/implementation/narrowband-constellation-eye-v2/DELIVERY.md)：默认目标 2B、实际采样率规划、真实两图和单载波恢复。两配置35个必要验证项及指定实屏/独立部署已闭环；完整回归中的失败与补测分别记录，提交前执行独立子代理终审。
 
+2026-10-23 反馈修复扩展 M-PSK/M-QAM/M-APSK（含 32QAM、交叉 QAM 和可编辑 APSK 环），明确“同步恢复”入口与阶段回退，修复 Windows 原生样式下上调按钮覆盖，并统一星座/眼图的标题设置条与“更多设置”。范围、条件和当次定向证据见[反馈修复记录](docs/implementation/narrowband-constellation-eye-v2/feedback-2026-10-23/FIX_REPORT.md)，提交前复审与分支顺序见[同步说明](docs/implementation/narrowband-constellation-eye-v2/feedback-2026-10-23/SYNC.md)；原 W8 归档保持原结论，不将后续定向回归混作全量。
+
 ## 工程、图谱与标记
 
 启动后新建或打开工程，再添加信号文件。新建工程立即创建独立目录和 `project.json`；演示工程通过文件菜单或 `--demo-data` 显式打开。原生格式 `signal-studio-native-project` 当前为 **v6**，仅接受当前版本，不再导入或迁移 v1–v5；样本索引使用 uint64、JSON 十进制字符串，频率使用 Hz。工程继续通过 `QSaveFile` 原子保存。工程保存文件配置、独立 PSD/STFT 参数、可用前缀、统一标记、来源修订和通道快照，不复制原始样本；重开仍需原始文件与工程附属记录。布局、全局显示偏好和最近工程另由 QSettings 保存。

@@ -1,0 +1,75 @@
+D:\softwares\cmake\bin\cmake.exe --preset local-debug
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26300.
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+CMake Warning at D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake:339 (message):
+  This project is using headers of the GuiPrivate module and will therefore
+  be tied to this specific Qt module build version.  Running this project
+  against other versions of the Qt modules may crash at any arbitrary point.
+  This is not a bug, but a result of using Qt internals.  You have been
+  warned!
+
+  You can disable this warning by setting QT_NO_PRIVATE_MODULE_WARNING to ON.
+Call Stack (most recent call first):
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6GuiPrivate/Qt6GuiPrivateConfig.cmake:48 (_qt_internal_show_private_module_warning)
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/Qt6Config.cmake:253 (find_package)
+  CMakeLists.txt:17 (find_package)
+
+
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+-- Configuring done (0.5s)
+-- Generating done (2.2s)
+-- Build files have been written to: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+D:\softwares\cmake\bin\cmake.exe --build --preset local-debug --target SignalStudioNarrowbandModulationTests
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  narrowband_modulation_tests.cpp
+  正在编译...
+  narrowband_modulation_tests.cpp
+  SignalStudioNarrowbandModulationTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioNarrowbandModulationTests.exe
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure -R ^signal_studio_narrowband_modulation$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 21
+    Start 21: signal_studio_narrowband_modulation
+
+21: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioNarrowbandModulationTests.exe
+21: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+21: Test timeout computed to be: 300
+21: Small APSK radii must normalize to finite points
+1/1 Test #21: signal_studio_narrowband_modulation ...***Failed    0.44 sec
+Small APSK radii must normalize to finite points
+
+
+0% tests passed, 1 tests failed out of 1
+
+Total Test time (real) =   0.45 sec
+
+The following tests FAILED:
+	 21 - signal_studio_narrowband_modulation (Failed)
+Errors while running CTest

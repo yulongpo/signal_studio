@@ -9,11 +9,13 @@
 #include <QTemporaryDir>
 #include <cmath>
 #include <QPushButton>
+#include <QToolButton>
 #include <QtTest>
 #include "app/main_window.h"
 #include "ui/narrowband_workspace.h"
 #include "ui/import/signal_import_dialog.h"
 #include "ui/controls/adaptive_value_edit.h"
+#include "ui/chart_control_strip.h"
 
 using namespace signalstudio;
 class NarrowbandAnalysisUiTests : public QObject {
@@ -119,6 +121,49 @@ class NarrowbandAnalysisUiTests : public QObject {
     QCOMPARE(chart->property("eyeComponentCount").toInt(),1);QCOMPARE(workspace->analysisResult()->eyes[0].i.size(),std::size_t{25});
     window.findChild<QComboBox*>("eyeAnalysisStage")->setCurrentIndex(static_cast<int>(AnalysisStage::MatchedFiltered));
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->filterDiscardedSamples>0 && workspace->analysisResult()->eyeStatus==AnalysisStatus::Ready,15000);
+    auto* eyeStrip=dynamic_cast<ChartControlStrip*>(window.findChild<QWidget*>("narrowbandEyeControls"));
+    auto* constellationStrip=dynamic_cast<ChartControlStrip*>(window.findChild<QWidget*>("narrowbandConstellationControls"));
+    QVERIFY(eyeStrip && constellationStrip);
+    for(auto* strip:{eyeStrip,constellationStrip}) {
+      auto* head=strip->parentWidget();QCOMPARE(head->height(),30);QVERIFY(strip->overflowButton()->isVisible());
+      QList<QRect> occupied;
+      for(auto* field:strip->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly)) {
+        if(!field->isVisible())continue;
+        const QRect rectangle(field->mapTo(head,QPoint()),field->size());
+        QVERIFY2(head->rect().contains(rectangle),qPrintable(field->objectName()));
+        for(const auto& previous:occupied)QVERIFY2(!rectangle.intersects(previous),qPrintable(field->objectName()));
+        occupied.append(rectangle);
+      }
+    }
+    auto* rolloff=window.findChild<QDoubleSpinBox*>("analysisRrcRolloff");
+    auto* offset=window.findChild<QDoubleSpinBox*>("eyeTimingOffsetUi");
+    QVERIFY(rolloff && offset && !rolloff->isVisible());
+    QTest::mouseClick(eyeStrip->overflowButton(),Qt::LeftButton);QTRY_VERIFY(rolloff->isVisible());
+    for(auto* spin:{rolloff,offset}) {
+      auto* editor=spin->findChild<QLineEdit*>();QVERIFY(editor);
+      QVERIFY(editor->contentsRect().width()>=editor->fontMetrics().horizontalAdvance(editor->displayText()));
+    }
+    auto* editor=rolloff->findChild<QLineEdit*>();const auto accepted=window.session().activeChannel()->analysis.rolloff;
+    auto* originalParent=rolloff->parentWidget();editor->setFocus();editor->selectAll();QTest::keyClicks(editor,"0.40");
+    window.refresh();QCOMPARE(rolloff->parentWidget(),originalParent);QVERIFY(editor->text().contains("0.40"));
+    QCOMPARE(window.session().activeChannel()->analysis.rolloff,accepted);
+    QTest::keyClick(editor,Qt::Key_Return);QCOMPARE(window.session().activeChannel()->analysis.rolloff,.4);
+    QTest::mouseClick(constellationStrip->overflowButton(),Qt::LeftButton);
+    QTRY_VERIFY(constellationStrip->popoverFrame()->isVisible());QVERIFY(!eyeStrip->popoverFrame()->isVisible());
+    auto* axis=window.findChild<QDoubleSpinBox*>("constellationAxisMinimum");QVERIFY(axis && axis->isVisible() && !axis->isEnabled());
+    QTest::mouseClick(window.findChild<QCheckBox*>("constellationAutoScale"),Qt::LeftButton);QVERIFY(axis->isEnabled());
+    QTRY_VERIFY(!constellationStrip->popoverFrame()->isVisible());
+    QTest::mouseClick(constellationStrip->overflowButton(),Qt::LeftButton);QTRY_VERIFY(axis->isVisible());
+    editor=axis->findChild<QLineEdit*>();editor->setFocus();editor->selectAll();QTest::keyClicks(editor,"-1.5");
+    window.refresh();QVERIFY(editor->text().startsWith("-1.5"));QTest::keyClick(editor,Qt::Key_Return);
+    QCOMPARE(window.session().activeChannel()->constellationMinimum,-1.5);
+    editor->selectAll();QTest::keyClicks(editor,"-2.5");
+    const auto other=window.session().createChannel("other",window.session().activeFile()->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);
+    QVERIFY(!other.empty());window.refresh();
+    QTRY_VERIFY(!constellationStrip->popoverFrame()->isVisible());QVERIFY(!axis->property("parameterDraft").toBool());
+    QVERIFY(window.session().activateChannel(id));window.refresh();
+    QCOMPARE(window.session().activeChannel()->constellationMinimum,-1.5);
+    workspace->activatePageForAcceptance(1);
     mode->setCurrentIndex(0);
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyeStatus==AnalysisStatus::NeedSymbolRate,15000);
     QVERIFY(!chart->property("realEyeSource").toBool());QCOMPARE(chart->property("eyeTraceCount").toULongLong(),qulonglong{0});
@@ -147,6 +192,9 @@ class NarrowbandAnalysisUiTests : public QObject {
     MainWindow window;populate(window,"qpsk-a35-awgn20.raw");auto* file=window.session().activeFile();
     const auto id=window.session().createChannel("sync",file->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);QVERIFY(!id.empty());
     window.refresh();auto* workspace=window.findChild<NarrowbandWorkspace*>();workspace->activatePageForAcceptance(1);
+    window.findChild<QPushButton*>("recoverNarrowbandSignal")->click();
+    QVERIFY(window.findChild<QLabel*>("modulationAnalysisStatus")->text().contains("请先选择"));
+    QCOMPARE(window.findChild<QPushButton*>("recoverNarrowbandSignal")->text(),QString("同步恢复"));
     window.findChild<QComboBox*>("modulationFormat")->setCurrentIndex(static_cast<int>(ModulationHypothesis::Qpsk));
     window.findChild<QPushButton*>("recoverNarrowbandSignal")->click();
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->carrierLocked && workspace->analysisResult()->eyeStatus==AnalysisStatus::Ready,20000);
@@ -183,6 +231,32 @@ class NarrowbandAnalysisUiTests : public QObject {
     window.findChild<QCheckBox*>("analysisMatchedFilter")->setChecked(false);
     QVERIFY(window.session().activeChannel()->analysis.constellationStage==AnalysisStage::RawIq);
     QVERIFY(window.session().activeChannel()->analysis.eyeStage==AnalysisStage::RawIq);
+    for(const auto& family:std::array<std::pair<ModulationHypothesis,const char*>,3>{{
+      {ModulationHypothesis::Psk,"psk8-awgn20"},{ModulationHypothesis::Qam,"qam32-awgn20"},{ModulationHypothesis::Apsk,"apsk16-awgn20"}}}) {
+      MainWindow expanded;const auto path=qEnvironmentVariable("SS_MODULATION_FIXTURES")+'/'+family.second+".raw";
+      populate(expanded,path);auto* f=expanded.session().activeFile();
+      const auto channelId=expanded.session().createChannel("family",f->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);QVERIFY(!channelId.empty());
+      expanded.refresh();auto* work=expanded.findChild<NarrowbandWorkspace*>();work->activatePageForAcceptance(1);
+      expanded.findChild<QComboBox*>("modulationFormat")->setCurrentIndex(static_cast<int>(family.first));
+      auto* order=expanded.findChild<QComboBox*>("analysisModulationOrder");QVERIFY(order->isVisible());
+      QCOMPARE(order->currentData().toInt(),family.first==ModulationHypothesis::Psk?8:family.first==ModulationHypothesis::Qam?32:16);
+      if(family.first==ModulationHypothesis::Qam)QVERIFY(order->findData(4096)>=0);
+      expanded.findChild<QPushButton*>("recoverNarrowbandSignal")->click();
+      QTRY_VERIFY_WITH_TIMEOUT(work->analysisResult() && work->analysisResult()->carrierLocked,20000);
+      QVERIFY(work->analysisResult()->constellationStage==AnalysisStage::CarrierRecovered);
+      auto* chart=expanded.findChild<QWidget*>("narrowbandConstellationLargeChart");QVERIFY(!chart->property("analysisStageFallback").toBool());
+      if(family.first==ModulationHypothesis::Apsk) {
+        expanded.findChild<QToolButton*>("narrowbandSyncSettingsToggle")->setChecked(true);
+        auto* rings=expanded.findChild<QLineEdit*>("analysisApskRings");QVERIFY(rings->isEnabled());rings->setFocus();
+        QTest::keyClicks(rings,"4:1:45,12:2.85:15");expanded.refresh();
+        QVERIFY(expanded.session().activeChannel()->analysis.apskRings.empty());QVERIFY(rings->text().contains("2.85"));
+        QTest::keyClick(rings,Qt::Key_Return);QCOMPARE(expanded.session().activeChannel()->analysis.apskRings,std::string("4:1:45,12:2.85:15"));
+        QTRY_VERIFY_WITH_TIMEOUT(work->analysisResult() && work->analysisResult()->carrierLocked,20000);
+      }
+      QTemporaryDir saved;const auto expected=expanded.session().activeChannel()->analysis;
+      QVERIFY(expanded.saveProject(saved.filePath("project.json")));QVERIFY(expanded.openProject(saved.filePath("project.json")));
+      QCOMPARE(expanded.session().activeChannel()->analysis,expected);
+    }
   }
   void importToAnalysisSaveReopen_data() {
     QTest::addColumn<QString>("suffix");QTest::newRow("CI16-RAW")<<QString("raw");QTest::newRow("CF32-SigMF")<<QString("sigmf-meta");

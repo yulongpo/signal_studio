@@ -1,0 +1,19 @@
+********* Start testing of ParameterInputTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : ParameterInputTests::initTestCase()
+QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarAddLine QRect(434,3 21x18) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarSubLine QRect(455,3 21x18) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarAddLine QRect(434,3 21x18) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarSubLine QRect(455,3 21x18) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarAddLine QRect(434,3 21x18) child QWidget(0x0)
+PASS   : ParameterInputTests::mouseSteps(native-style)
+QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarAddLine QRect(436,7 20x17) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarSubLine QRect(456,7 20x17) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarAddLine QRect(434,3 21x18) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarSubLine QRect(455,3 21x18) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarAddLine QRect(436,7 20x17) child QWidget(0x0)
+PASS   : ParameterInputTests::mouseSteps(application-style)
+PASS   : ParameterInputTests::textDraftPolicy()
+PASS   : ParameterInputTests::cleanupTestCase()
+Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 802ms
+********* Finished testing of ParameterInputTests *********

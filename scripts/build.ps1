@@ -60,6 +60,13 @@ try {
                     Invoke-CheckedCommand $Python $generatorArguments
                 }
             }
+            if (-not $TestRegex -or $TestRegex -match 'modulation|analysis_ui') {
+                if (-not $env:SS_MODULATION_FIXTURES) { $env:SS_MODULATION_FIXTURES = Join-Path $repoRoot 'out/tasks/wideband-detection/NB-FEEDBACK-01/assets/modulation-fixtures' }
+                $modulationIndex = Join-Path $env:SS_MODULATION_FIXTURES 'modulation-index.json'
+                if (-not (Test-Path -LiteralPath $modulationIndex) -or (Get-Content -LiteralPath $modulationIndex -Raw | ConvertFrom-Json).schemaVersion -ne 2) {
+                    Invoke-CheckedCommand $Python @((Join-Path $PSScriptRoot 'generate-modulation-fixtures.py'),'--output',$env:SS_MODULATION_FIXTURES)
+                }
+            }
         }
         $testArguments = @('--preset', $Preset, '--output-on-failure')
         if ($TestRegex) { $testArguments += @('-R', $TestRegex) }

@@ -59,6 +59,7 @@ function(ss_add_ui_assets target)
 endfunction()
 
 add_library(SignalStudioCore STATIC
+    domain/constellation.cpp
     domain/channel_sampling.cpp
     domain/annotation.cpp
     domain/detection.cpp
@@ -208,6 +209,15 @@ endif()
 
 if(SS_BUILD_TESTS)
     enable_testing()
+    add_executable(SignalStudioParameterInputTests tests/parameter_input_tests.cpp)
+    target_link_libraries(SignalStudioParameterInputTests PRIVATE Qt6::Widgets Qt6::Test)
+    ss_target_defaults(SignalStudioParameterInputTests)
+    add_test(NAME signal_studio_parameter_input COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioParameterInputTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/parameter-input-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_parameter_input PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 60)
     add_executable(SignalStudioDetectionRefinedFusionTests tests/detection_refined_fusion_tests.cpp)
     ss_target_defaults(SignalStudioDetectionRefinedFusionTests)
     set_target_properties(SignalStudioDetectionRefinedFusionTests PROPERTIES AUTOMOC OFF)
@@ -311,6 +321,16 @@ if(SS_BUILD_TESTS)
     add_executable(SignalStudioChannelProcessorTests tests/channel_processor_tests.cpp)
     add_executable(SignalStudioNarrowbandAnalysisTests tests/narrowband_analysis_tests.cpp)
     add_executable(SignalStudioNarrowbandRecoveryTests tests/narrowband_recovery_tests.cpp)
+    add_executable(SignalStudioNarrowbandModulationTests tests/narrowband_modulation_tests.cpp)
+    add_executable(SignalStudioNarrowbandFeedbackProbe tests/narrowband_feedback_probe.cpp)
+    target_link_libraries(SignalStudioNarrowbandFeedbackProbe PRIVATE SignalStudioInfrastructure Qt6::Core)
+    ss_target_defaults(SignalStudioNarrowbandFeedbackProbe)
+    set_target_properties(SignalStudioNarrowbandFeedbackProbe PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioNarrowbandModulationTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    ss_target_defaults(SignalStudioNarrowbandModulationTests)
+    set_target_properties(SignalStudioNarrowbandModulationTests PROPERTIES AUTOMOC OFF)
+    add_test(NAME signal_studio_narrowband_modulation COMMAND SignalStudioNarrowbandModulationTests)
+    set_tests_properties(signal_studio_narrowband_modulation PROPERTIES TIMEOUT 300)
     target_link_libraries(SignalStudioNarrowbandRecoveryTests PRIVATE SignalStudioInfrastructure Qt6::Core)
     ss_target_defaults(SignalStudioNarrowbandRecoveryTests)
     set_target_properties(SignalStudioNarrowbandRecoveryTests PROPERTIES AUTOMOC OFF)

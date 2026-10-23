@@ -100,7 +100,7 @@ void persistence() {
   auto root=QJsonDocument::fromJson(input.readAll()).object();input.close();
   auto files=root["files"].toArray();auto f=files[0].toObject();auto channels=f["channels"].toArray();auto old=channels[0].toObject();
   const auto validRoot=root;
-  const std::vector<std::pair<QString,QJsonValue>> bad={{"pointCount",255},{"pointCount",256.5},{"symbolRateMode",3},{"hypothesis",7},{"eyeStage",5},{"eyePointsPerUi",5},{"sampleBudget",8388609},{"removeDc",1},{"rolloff",0},{"timingLoopBandwidth","bad"},{"symbolRateHz",0}};
+  const std::vector<std::pair<QString,QJsonValue>> bad={{"pointCount",255},{"pointCount",256.5},{"symbolRateMode",3},{"hypothesis",10},{"eyeStage",5},{"eyePointsPerUi",5},{"sampleBudget",8388609},{"removeDc",1},{"rolloff",0},{"timingLoopBandwidth","bad"},{"symbolRateHz",0}};
   for(const auto& [key,value]:bad) {
     auto invalid=c.analysis;auto settings=old["analysis"].toObject();settings[key]=value;
     auto broken=old;broken["analysis"]=settings;channels[0]=broken;f["channels"]=channels;files[0]=f;root["files"]=files;

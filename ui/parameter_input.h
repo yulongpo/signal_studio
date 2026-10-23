@@ -66,6 +66,9 @@ class ParameterSpinBox : public Base, public ParameterDraft {
  public:
   explicit ParameterSpinBox(QWidget* parent = nullptr) : Base(parent) {
     this->setKeyboardTracking(false);
+    // Windows 11 places the native step buttons side by side. A styled edit
+    // field otherwise reserves only one button and intercepts clicks on Up.
+    this->setStyleSheet("QAbstractSpinBox { padding-right:44px; } QAbstractSpinBox QLineEdit { border:0; padding:0; background:transparent; }");
     auto* editor = this->template findChild<QLineEdit*>();
     editor->installEventFilter(this);
     QObject::connect(editor, &QLineEdit::textEdited, this,
@@ -177,6 +180,36 @@ class ParameterSpinBox : public Base, public ParameterDraft {
 };
 using ParameterDoubleSpinBox = ParameterSpinBox<QDoubleSpinBox>;
 using ParameterIntSpinBox = ParameterSpinBox<QSpinBox>;
+
+class ParameterTextEdit final : public QLineEdit, public ParameterDraft {
+ public:
+  explicit ParameterTextEdit(QWidget* parent=nullptr):QLineEdit(parent) {
+    connect(this,&QLineEdit::textEdited,this,[this]{setProperty("parameterDraft",true);});
+  }
+  std::function<bool(const QString&)> apply;
+  void displayText(const QString& value) {
+    if(property("parameterDraft").toBool())return;
+    committed_=value;setText(value);
+  }
+  void commit() override {
+    if(!property("parameterDraft").toBool() || (apply && !apply(text())))return;
+    committed_=text();setProperty("parameterDraft",false);setParameterError(this,{});
+  }
+  void discard() override {setProperty("parameterDraft",false);setParameterError(this,{});setText(committed_);}
+ protected:
+  void keyPressEvent(QKeyEvent* e) override {
+    if(e->key()==Qt::Key_Return || e->key()==Qt::Key_Enter){commit();e->accept();return;}
+    if(e->key()==Qt::Key_Escape){discard();e->accept();return;}
+    QLineEdit::keyPressEvent(e);
+  }
+  void focusOutEvent(QFocusEvent* e) override {
+    if(!parameterLayerHiding(this) && (e->reason()==Qt::TabFocusReason || e->reason()==Qt::BacktabFocusReason))commit();
+    QLineEdit::focusOutEvent(e);
+  }
+  void wheelEvent(QWheelEvent* e) override {e->ignore();}
+ private:
+  QString committed_;
+};
 
 class ParameterComboCommit final : public QObject, public ParameterDraft {
  public:
