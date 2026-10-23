@@ -1,0 +1,12 @@
+{
+  "scope": "Current v6 only; no tests added after the user scope change",
+  "firstDebugFullRun": "ctest-debug-01.txt: UI timed out at 480.05s; raw assertions also showed three obsolete layout/parent assumptions",
+  "diagnostics": "ui-debug-01-timeout.txt and .timing.jsonl",
+  "corrections": [
+    "Listen on chart-owned controls instead of all application events",
+    "Use the real PSD advanced widget after moving inline fields",
+    "Open a visible narrowband plot page before its More settings",
+    "Remove the old fixed colormap-width assumption",
+    "Remove v1-v5 migration code and obsolete migration checks"
+  ]
+}

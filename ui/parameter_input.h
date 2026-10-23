@@ -14,10 +14,29 @@
 #include <QPointer>
 #include <QSignalBlocker>
 #include <QSpinBox>
+#include <QStyle>
 #include <QWheelEvent>
 #include <functional>
 
 namespace signalstudio {
+inline void setParameterError(QWidget* widget, const QString& error) {
+  if (widget->property("parameterError").toString() == error &&
+      widget->property("invalid").toBool() == !error.isEmpty()) return;
+  if (widget->property("parameterError").toString().isEmpty() && !error.isEmpty())
+    widget->setProperty("parameterHelp", widget->toolTip());
+  widget->setProperty("parameterError", error);
+  widget->setProperty("invalid", !error.isEmpty());
+  if (!error.isEmpty()) widget->setToolTip(error);
+  else if (widget->property("parameterHelp").isValid())
+    widget->setToolTip(widget->property("parameterHelp").toString());
+  widget->style()->unpolish(widget);
+  widget->style()->polish(widget);
+}
+inline bool parameterLayerHiding(const QWidget* widget) {
+  for (auto* owner = widget; owner; owner = owner->parentWidget())
+    if (owner->property("parameterLayerHiding").toBool()) return true;
+  return false;
+}
 inline bool preservesParameterDrafts(QWidget* target, QMouseEvent* mouse) {
   if (mouse->button() != Qt::LeftButton) return true;
   for (auto* owner = target; owner; owner = owner->parentWidget()) {
@@ -47,6 +66,9 @@ class ParameterSpinBox : public Base, public ParameterDraft {
  public:
   explicit ParameterSpinBox(QWidget* parent = nullptr) : Base(parent) {
     this->setKeyboardTracking(false);
+    // Windows 11 places the native step buttons side by side. A styled edit
+    // field otherwise reserves only one button and intercepts clicks on Up.
+    this->setStyleSheet("QAbstractSpinBox { padding-right:44px; } QAbstractSpinBox QLineEdit { border:0; padding:0; background:transparent; }");
     auto* editor = this->template findChild<QLineEdit*>();
     editor->installEventFilter(this);
     QObject::connect(editor, &QLineEdit::textEdited, this,
@@ -54,6 +76,11 @@ class ParameterSpinBox : public Base, public ParameterDraft {
   }
   void commit() override {
     if (!this->property("parameterDraft").toBool()) return;
+    if (!this->hasAcceptableInput()) {
+      setParameterError(this, QStringLiteral("请输入控件范围内的有效数值。"));
+      return;
+    }
+    setParameterError(this, {});
     this->setProperty("parameterDraft", false);
     this->interpretText();
     // interpretText may reject an intermediate/invalid draft. Show the
@@ -63,16 +90,39 @@ class ParameterSpinBox : public Base, public ParameterDraft {
   }
   void discard() override {
     this->setProperty("parameterDraft", false);
+    setParameterError(this, {});
     const QSignalBlocker block(this);
     this->setValue(this->value());
   }
 
  protected:
+  bool event(QEvent* event) override {
+    if ((event->type() != QEvent::Hide && event->type() != QEvent::Show) ||
+        !this->property("parameterDraft").toBool())
+      return Base::event(event);
+    // QAbstractSpinBox interprets pending text in its Hide handler, even
+    // when keyboard tracking is disabled. Closing a temporary layer must
+    // preserve the last accepted value and the recoverable draft.
+    auto* editor = this->template findChild<QLineEdit*>();
+    const auto accepted = this->value();
+    const auto text = editor->text();
+    const QSignalBlocker block(this), editBlock(editor);
+    const bool handled = Base::event(event);
+    this->setValue(accepted);
+    editor->setText(text);
+    this->setProperty("parameterDraft", true);
+    return handled;
+  }
   bool eventFilter(QObject* watched, QEvent* event) override {
     if (event->type() == QEvent::KeyPress) {
       const int key = static_cast<QKeyEvent*>(event)->key();
       if (key == Qt::Key_Return || key == Qt::Key_Enter) {
         commit();
+        event->accept();
+        return true;
+      }
+      if (key == Qt::Key_Escape) {
+        discard();
         event->accept();
         return true;
       }
@@ -82,11 +132,14 @@ class ParameterSpinBox : public Base, public ParameterDraft {
   void focusOutEvent(QFocusEvent* event) override {
     // Mouse focus can move before the click's context is known. The shared
     // policy commits ordinary clicks and discards file/channel-switch drafts.
-    if (event->reason() == Qt::TabFocusReason ||
-        event->reason() == Qt::BacktabFocusReason) {
+    if (!parameterLayerHiding(this) &&
+        (event->reason() == Qt::TabFocusReason ||
+         event->reason() == Qt::BacktabFocusReason)) {
       commit();
-      Base::focusOutEvent(event);
-      return;
+      if (!this->property("parameterDraft").toBool()) {
+        Base::focusOutEvent(event);
+        return;
+      }
     }
     auto* editor = this->template findChild<QLineEdit*>();
     const auto value = this->value();
@@ -98,6 +151,11 @@ class ParameterSpinBox : public Base, public ParameterDraft {
     if (pending) editor->setText(draft);
   }
   void keyPressEvent(QKeyEvent* event) override {
+    if (event->key() == Qt::Key_Escape) {
+      discard();
+      event->accept();
+      return;
+    }
     if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
       commit();
       event->accept();
@@ -123,6 +181,36 @@ class ParameterSpinBox : public Base, public ParameterDraft {
 using ParameterDoubleSpinBox = ParameterSpinBox<QDoubleSpinBox>;
 using ParameterIntSpinBox = ParameterSpinBox<QSpinBox>;
 
+class ParameterTextEdit final : public QLineEdit, public ParameterDraft {
+ public:
+  explicit ParameterTextEdit(QWidget* parent=nullptr):QLineEdit(parent) {
+    connect(this,&QLineEdit::textEdited,this,[this]{setProperty("parameterDraft",true);});
+  }
+  std::function<bool(const QString&)> apply;
+  void displayText(const QString& value) {
+    if(property("parameterDraft").toBool())return;
+    committed_=value;setText(value);
+  }
+  void commit() override {
+    if(!property("parameterDraft").toBool() || (apply && !apply(text())))return;
+    committed_=text();setProperty("parameterDraft",false);setParameterError(this,{});
+  }
+  void discard() override {setProperty("parameterDraft",false);setParameterError(this,{});setText(committed_);}
+ protected:
+  void keyPressEvent(QKeyEvent* e) override {
+    if(e->key()==Qt::Key_Return || e->key()==Qt::Key_Enter){commit();e->accept();return;}
+    if(e->key()==Qt::Key_Escape){discard();e->accept();return;}
+    QLineEdit::keyPressEvent(e);
+  }
+  void focusOutEvent(QFocusEvent* e) override {
+    if(!parameterLayerHiding(this) && (e->reason()==Qt::TabFocusReason || e->reason()==Qt::BacktabFocusReason))commit();
+    QLineEdit::focusOutEvent(e);
+  }
+  void wheelEvent(QWheelEvent* e) override {e->ignore();}
+ private:
+  QString committed_;
+};
+
 class ParameterComboCommit final : public QObject, public ParameterDraft {
  public:
   ParameterComboCommit(QComboBox* combo, std::function<void()> apply)
@@ -144,6 +232,9 @@ class ParameterComboCommit final : public QObject, public ParameterDraft {
   }
   void discard() override {
     combo_->setProperty("parameterDraft", false);
+    setParameterError(combo_, {});
+    if (combo_->property("powerInputValid").isValid())
+      combo_->setProperty("powerInputValid", true);
     const QSignalBlocker block(combo_), editBlock(combo_->lineEdit());
     combo_->setEditText(combo_->property("parameterCommittedText").toString());
   }
@@ -157,10 +248,16 @@ class ParameterComboCommit final : public QObject, public ParameterDraft {
         event->accept();
         return true;
       }
+      if (key == Qt::Key_Escape && !QApplication::activePopupWidget()) {
+        discard();
+        event->accept();
+        return true;
+      }
     }
     if (event->type() == QEvent::FocusOut) {
       const auto reason = static_cast<QFocusEvent*>(event)->reason();
-      if (reason == Qt::TabFocusReason || reason == Qt::BacktabFocusReason)
+      if (!parameterLayerHiding(combo_) &&
+          (reason == Qt::TabFocusReason || reason == Qt::BacktabFocusReason))
         commit();
     }
     return false;
@@ -284,6 +381,7 @@ class ParameterInputPolicy final : public QObject {
       QList<QPointer<QWidget>> pending;
       for (auto* widget : root_->findChildren<QWidget*>())
         if (widget->property("parameterDraft").toBool() &&
+            widget->isVisible() &&
             // A modal dialog must not apply another window's pending values.
             widget->window() == target->window() && !contains(widget, target))
           pending.append(widget);

@@ -228,8 +228,12 @@ AnnotationChannelRequest annotationChannelRequest(
   }
   const double bandwidth =
       request.range.frequency.upperHz - request.range.frequency.lowerHz;
-  request.outputSampleRateHz =
-      std::min(file.metadata.sampleRateHz, std::max(4e6, bandwidth * 1.3));
+  Channel proposed;
+  proposed.bandwidthHz = bandwidth;
+  proposed.centerFrequencyHz = (request.range.frequency.lowerHz + request.range.frequency.upperHz)/2;
+  proposed.sampling = request.sampling;
+  const auto rate = planChannelOutputRate(file.metadata, proposed);
+  request.outputSampleRateHz = rate.valid ? rate.realizedRateHz : 0;
   return request;
 }
 
@@ -333,6 +337,7 @@ AnnotationResult prepareAnnotationChannel(
   candidate.bandwidthHz = bandwidth;
   candidate.sourceTime = range.time;
   candidate.outputSampleRateHz = request.outputSampleRateHz;
+  candidate.sampling = request.sampling;
   candidate.filter = request.filter;
   candidate.wholeSource = false;
   candidate.preserveSourceTime = request.preserveSourceTime;

@@ -1,3 +1,5 @@
+#include <QProgressBar>
+#include "chart_settings_helpers.h"
 // Independent native UI acceptance diagnostics. This executable uses the real
 // Windows QRhi backend and visible controls. The linked-cursor mode drives
 // actual IQ/DSP through the application; original scene captures use demo data.
@@ -70,6 +72,8 @@
 #include "infrastructure/project_store.h"
 #include "infrastructure/raw_sample_reader.h"
 #include "infrastructure/source_metadata.h"
+#include "infrastructure/wav_metadata.h"
+#include <QStyleOptionSpinBox>
 #include "ui/annotations/annotation_panel.h"
 #include "ui/charts/accelerated_surface.h"
 #include "ui/charts/plot_widget.h"
@@ -79,6 +83,7 @@
 #include "ui/import/signal_import_dialog.h"
 #include "ui/import/source_preview_widget.h"
 #include "ui/narrowband_workspace.h"
+#include "ui/narrowband_analysis_evidence.h"
 #ifdef Q_OS_WIN
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -262,18 +267,22 @@ struct Capture {
   void waitForSettledDisplay() {
     const auto* narrow = window.findChild<NarrowbandWorkspace*>();
     if (narrow && narrow->isVisible()) {
-      require(waitUntil([narrow] { return narrow->visibleChartsSettled(); }),
+      QElapsedTimer stable;
+      stable.start();
+      require(waitUntil([narrow, &stable] {
+                if (!narrow->visibleChartsSettled()) { stable.restart(); return false; }
+                return stable.elapsed() >= 80;
+              }),
               "Visible narrowband charts did not settle for capture");
-      QTest::qWait(80);
-      require(narrow->visibleChartsSettled(),
-              "Narrowband resumed preview before capture");
       return;
     }
-    require(waitUntil([this] { return plots[2]->isDisplaySettled(); }),
-            "Main chart did not settle on the latest requested display");
-    QTest::qWait(80);
-    require(plots[2]->isDisplaySettled(),
-            "Main chart resumed preview before capture");
+    QElapsedTimer stable;
+    stable.start();
+    require(waitUntil([this,&stable] {
+              if (!plots[2]->isDisplaySettled()) { stable.restart(); return false; }
+              return stable.elapsed() >= 80;
+            }),
+            "Main chart did not settle on the latest display for capture");
   }
 
   void waitForGpu() {
@@ -955,6 +964,7 @@ void diagnoseMainHover(Capture& capture, QPoint target,
 #include "tests/linked_cursor_capture.h"
 #include "tests/spectral_loading_capture.h"
 #include "tests/wideband_detection_capture.h"
+#include "tests/narrowband_analysis_capture.h"
 
 // This runner reuses the actual-source and monitor helpers above.
 #include "tests/annotation_interactions_capture.h"
@@ -964,6 +974,8 @@ void diagnoseMainHover(Capture& capture, QPoint target,
 
 // U3 reuses the same monitor, editing and real-IQ capture helpers.
 #include "tests/annotation_channels_capture.h"
+#include "tests/wideband_ux_capture.h"
+#include "tests/ui_refinement_capture.h"
 
 }  // namespace
 
@@ -974,6 +986,18 @@ int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   QApplication::setApplicationName("SignalStudioNativeCapture");
   const auto arguments = app.arguments();
+  if (arguments.size() >= 3 && arguments.at(1) == "--narrowband-analysis")
+    return runNarrowbandAnalysisCapture(arguments.at(2),arguments.contains("--software-renderer"),arguments.contains("--auxiliary-display"));
+  if (arguments.size() >= 3 && arguments.at(1) == "--narrowband-feedback")
+    return runNarrowbandFeedbackCapture(arguments.at(2),qEnvironmentVariable("SS_FEEDBACK_SOURCE"),arguments.contains("--software-renderer"));
+  if (arguments.size() == 3 && arguments.at(1) == "--ui-refinement")
+    return runUiRefinementCapture(arguments.at(2));
+  if (arguments.size() == 3 && arguments.at(1) == "--wideband-ux")
+    return runWidebandUxCapture(arguments.at(2));
+  if (arguments.size() == 4 && arguments.at(1) == "--wideband-ux-reopen")
+    return runWidebandUxReopenProbe(arguments.at(2), arguments.at(3));
+  if (arguments.size() == 4 && arguments.at(1) == "--wideband-ux-review")
+    return runWidebandUxReviewProbe(arguments.at(2), arguments.at(3));
   if (arguments.size() == 4 && arguments.at(1) == "--annotation-interactions" &&
       arguments.at(2) == "U3")
     return runAnnotationChannelsCapture(arguments.at(3));
@@ -994,7 +1018,7 @@ int main(int argc, char* argv[]) {
   if (arguments.size() == 2 &&
       (arguments.at(1) == "--list-screens" || arguments.at(1) == "list")) {
     const QJsonObject inventory{{"platform", QGuiApplication::platformName()},
-                                {"screens", screensJson()}};
+                                {"screens", narrowbandScreensJson()}};
     QTextStream(stdout) << QJsonDocument(inventory).toJson(
         QJsonDocument::Indented);
     return 0;
@@ -1148,13 +1172,16 @@ int main(int argc, char* argv[]) {
                   MainMode::Waterfall,
               "Visible waterfall segment did not activate waterfall");
     });
-    auto* specToggle = child<QToolButton>(window, "specSectionToggle");
-    if (!specToggle->isChecked()) click(window, "specSectionToggle");
+    widebandOpenChartSettings(window, "displaySettings");
     auto* colorbar = child<QCheckBox>(window, "colorbarToggle");
-    child<QScrollArea>(window, "propScroll")->ensureWidgetVisible(colorbar);
-    QTest::qWait(80);
-    click(window, "colorbarToggle");
-    chooseRelativeFrequency(window);
+    widebandScrollTo(colorbar);
+    widebandNativeClick(colorbar);
+    widebandNativeSelect(child<QComboBox>(window, "freqMode"), 1);
+    QTest::keyClick(window.windowHandle(), Qt::Key_Escape);
+    require(waitUntil([&] {
+              return !chartSettingsFrame(window,"displaySettings")->isVisible();
+            }),
+            "Display settings did not close after the visible controls committed");
     capture.scene("07_waterfall_colorbar_baseband", nullptr, [&] {
       const auto& display = window.session().activeFile()->display;
       require(display.colorScale && !display.absoluteFrequency,

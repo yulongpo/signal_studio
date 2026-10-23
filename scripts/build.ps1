@@ -6,7 +6,13 @@ param(
     [string]$Action = 'All',
     [string]$Preset,
     [string]$CMake = 'cmake',
-    [int]$Jobs = 0
+    [int]$Jobs = 0,
+    [string[]]$Targets = @(),
+    [string]$TestRegex,
+    [switch]$ListTests,
+    [switch]$VerboseTests,
+    [string[]]$UiCases = @(),
+    [string]$Python = 'D:/profiles/anaconda/python.exe'
 )
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -40,11 +46,42 @@ try {
     }
     if ($Action -in @('Build', 'All')) {
         $buildArguments = @('--build', '--preset', $Preset)
+        if ($Targets.Count -gt 0) { $buildArguments += @('--target') + $Targets }
         if ($Jobs -gt 0) { $buildArguments += @('--parallel', "$Jobs") }
         Invoke-CheckedCommand $cmakeExecutable $buildArguments
     }
     if ($Action -in @('Test', 'All')) {
-        Invoke-CheckedCommand $ctestExecutable @('--preset', $Preset, '--output-on-failure')
+        if (-not $ListTests -and (-not $TestRegex -or $TestRegex -match 'narrowband|channel_rate')) {
+            if (-not $env:SS_NARROWBAND_FIXTURES) { $env:SS_NARROWBAND_FIXTURES = Join-Path $repoRoot 'out/tasks/wideband-detection/NB-W0/assets/fixtures' }
+            foreach ($fixture in @(@('index.json',''),@('edge-index.json','--extra-only'),@('recovery-index.json','--recovery-only'),@('rate-index.json','--rates-only'))) {
+                if (-not (Test-Path -LiteralPath (Join-Path $env:SS_NARROWBAND_FIXTURES $fixture[0]))) {
+                    $generatorArguments = @((Join-Path $PSScriptRoot 'generate-narrowband-fixtures.py'),'--output',$env:SS_NARROWBAND_FIXTURES)
+                    if ($fixture[1]) { $generatorArguments += $fixture[1] }
+                    Invoke-CheckedCommand $Python $generatorArguments
+                }
+            }
+            if (-not $TestRegex -or $TestRegex -match 'modulation|analysis_ui') {
+                if (-not $env:SS_MODULATION_FIXTURES) { $env:SS_MODULATION_FIXTURES = Join-Path $repoRoot 'out/tasks/wideband-detection/NB-FEEDBACK-01/assets/modulation-fixtures' }
+                $modulationIndex = Join-Path $env:SS_MODULATION_FIXTURES 'modulation-index.json'
+                if (-not (Test-Path -LiteralPath $modulationIndex) -or (Get-Content -LiteralPath $modulationIndex -Raw | ConvertFrom-Json).schemaVersion -ne 2) {
+                    Invoke-CheckedCommand $Python @((Join-Path $PSScriptRoot 'generate-modulation-fixtures.py'),'--output',$env:SS_MODULATION_FIXTURES)
+                }
+            }
+        }
+        $testArguments = @('--preset', $Preset, '--output-on-failure')
+        if ($TestRegex) { $testArguments += @('-R', $TestRegex) }
+        if ($ListTests) { $testArguments += '-N' }
+        if ($VerboseTests) { $testArguments += '-V' }
+        $previousUiCases = $env:SS_UI_CASES
+        $previousQtFontDirectory = $env:QT_QPA_FONTDIR
+        try {
+            # The offscreen plugin uses Qt's generic font database, unlike
+            # native Windows. Give it the installed system fonts explicitly.
+            $systemFonts = Join-Path $env:SystemRoot 'Fonts'
+            if (-not $env:QT_QPA_FONTDIR -and (Test-Path -LiteralPath $systemFonts -PathType Container)) { $env:QT_QPA_FONTDIR = $systemFonts }
+            if ($UiCases.Count -gt 0) { $env:SS_UI_CASES = $UiCases -join ';' }
+            Invoke-CheckedCommand $ctestExecutable $testArguments
+        } finally { $env:SS_UI_CASES = $previousUiCases; $env:QT_QPA_FONTDIR = $previousQtFontDirectory }
     }
 }
 finally {

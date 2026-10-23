@@ -3288,7 +3288,20 @@ QMenu* PlotWidget::createContextMenu(const QPoint& point) {
     roi->setEnabled(file &&
                     file->metadata.availability.status != LoadStatus::Loading &&
                     availableSamples(file->metadata) > 0);
-    connect(roi, &QAction::triggered, this, &PlotWidget::detectionRoiRequested);
+    const auto sourceId = file ? file->metadata.id : std::string{};
+    const auto project = session_.projectGeneration();
+    const bool previousCreating = creating_;
+    connect(roi, &QAction::triggered, this, [this, sourceId, project, previousCreating] {
+      // Closing a native menu deactivates its owning window. Start the new
+      // tool after that transition, preserving the tool captured by the menu.
+      QTimer::singleShot(0, this, [this, sourceId, project, previousCreating] {
+        const auto* active = session_.activeFile();
+        if (!active || active->metadata.id != sourceId || session_.projectGeneration() != project) return;
+        if (QApplication::applicationState() != Qt::ApplicationActive) return;
+        if (previousCreating && !creating_) setCreating(true);
+        emit detectionRoiRequested();
+      });
+    });
   }
   menu->addSeparator();
   const auto addViewAction = [&](const QString& label, const char* name,

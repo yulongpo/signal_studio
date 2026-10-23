@@ -1,4 +1,8 @@
+#include "ui/project_tree_presentation.h"
 #include "app/main_window.h"
+#include "ui/chart_control_strip.h"
+#include "ui/context_stack.h"
+#include "ui/settings_popover.h"
 
 #include <QAction>
 #include <QApplication>
@@ -34,6 +38,7 @@
 #include <QResizeEvent>
 #include <QScreen>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QSettings>
 #include <QSignalBlocker>
 #include <QSplitter>
@@ -76,11 +81,16 @@
 #include "ui/import/signal_import_dialog.h"
 #include "ui/narrowband_workspace.h"
 #include "ui/parameter_input.h"
+#include "ui/channel_dsp_validation.h"
 #include "ui/source_units.h"
 #include "ui/spectral_settings_widget.h"
 
 namespace signalstudio {
 namespace {
+constexpr std::array<const char*, 5> kDetectionFolds{
+    "detectionAnalysisParametersToggle", "detectionPostprocessParametersToggle",
+    "detectionResourceParametersToggle", "detectionCalculationDetailsToggle",
+    "detectionDiagnosticsToggle"};
 QString q(const std::string& text) { return QString::fromStdString(text); }
 QString annotationCountText(const FileState& file) {
   const auto counts = annotationCounts(file);
@@ -94,56 +104,6 @@ QColor annotationSourceColor(AnnotationSource source) {
          : source == AnnotationSource::Manual      ? QColor("#edc56d")
                                                    : QColor("#51c4e9");
 }
-class AnnotationTreeDelegate final : public QStyledItemDelegate {
- public:
-  using QStyledItemDelegate::QStyledItemDelegate;
-  void paint(QPainter* painter, const QStyleOptionViewItem& option,
-             const QModelIndex& index) const override {
-    if (index.data(Qt::UserRole).toString() != "mark") {
-      QStyledItemDelegate::paint(painter, option, index);
-      return;
-    }
-    auto style = option;
-    initStyleOption(&style, index);
-    style.state &= ~(QStyle::State_Selected | QStyle::State_HasFocus |
-                     QStyle::State_MouseOver);
-    const auto* widgetStyle =
-        style.widget ? style.widget->style() : QApplication::style();
-    const auto textRect = widgetStyle->subElementRect(
-        QStyle::SE_ItemViewItemText, &style, style.widget);
-    const auto text = style.fontMetrics.elidedText(
-        style.text, style.textElideMode, textRect.width());
-    style.text.clear();
-    widgetStyle->drawControl(QStyle::CE_ItemViewItem, &style, painter,
-                             style.widget);
-    // The application item QSS overrides ForegroundRole during styled text
-    // painting. Draw mark text explicitly so every state keeps its source
-    // color.
-    painter->save();
-    painter->setFont(style.font);
-    painter->setPen(index.data(Qt::ForegroundRole).value<QBrush>().color());
-    painter->drawText(
-        textRect, static_cast<int>(style.displayAlignment) | Qt::TextSingleLine,
-        text);
-    painter->restore();
-    const auto state = index.data(Qt::UserRole + 3).toInt();
-    if (!(state & 7)) return;
-    painter->save();
-    QPen pen(state & 2   ? QColor("#84daf5")
-             : state & 1 ? QColor("#37647d")
-                         : QColor("#c0ecff"),
-             state & 2 ? 2 : 1);
-    if (!(state & 3)) pen.setStyle(Qt::DotLine);
-    painter->setPen(pen);
-    painter->setBrush(Qt::NoBrush);
-    painter->drawRect(option.rect.adjusted(1, 1, -2, -2));
-    if ((state & 4) && (state & 3)) {
-      painter->setPen(QPen(QColor("#d4f2ff"), 1, Qt::DotLine));
-      painter->drawRect(option.rect.adjusted(3, 3, -4, -4));
-    }
-    painter->restore();
-  }
-};
 bool hasActiveSegment(const FileState& file) {
   const auto* annotation = findMark(file, file.activeMarkId);
   return annotation && !annotation->deleted && activeSegment(*annotation);
@@ -247,48 +207,6 @@ QComboBox* combo(const QString& id, const QStringList& items) {
   widget->setFixedHeight(28);
   widget->setCursor(Qt::PointingHandCursor);
   return widget;
-}
-struct PropertySection {
-  QWidget* widget;
-  QFormLayout* form;
-};
-PropertySection section(QVBoxLayout* target, const QString& id,
-                        const QString& title, bool expanded) {
-  auto* widget = new QWidget;
-  widget->setObjectName(id);
-  widget->setProperty("uiRole", "section");
-  auto* layout = new QVBoxLayout(widget);
-  layout->setContentsMargins(0, 0, 0, 1);
-  layout->setSpacing(0);
-  auto* toggle = new QToolButton;
-  toggle->setObjectName(id + "Toggle");
-  toggle->setProperty("uiRole", "sectionToggle");
-  toggle->setText(title);
-  toggle->setCheckable(true);
-  toggle->setChecked(expanded);
-  toggle->setFixedHeight(34);
-  toggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-  toggle->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
-  toggle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  toggle->setCursor(Qt::PointingHandCursor);
-  auto* content = new QWidget;
-  content->setObjectName(id + "Content");
-  auto* form = new QFormLayout(content);
-  form->setContentsMargins(10, 5, 10, 9);
-  form->setVerticalSpacing(12);
-  form->setHorizontalSpacing(7);
-  form->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
-  form->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-  layout->addWidget(toggle);
-  layout->addWidget(content);
-  target->addWidget(widget);
-  content->setVisible(expanded);
-  QObject::connect(
-      toggle, &QToolButton::toggled, content, [content, toggle](bool open) {
-        content->setVisible(open);
-        toggle->setArrowType(open ? Qt::DownArrow : Qt::RightArrow);
-      });
-  return {widget, form};
 }
 void row(QFormLayout* form, const QString& title, QWidget* field) {
   auto* name = label(title, {}, "settingLabel");
@@ -417,6 +335,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         QPushButton[uiRole="icon"] { color:#a4c1d8; font-size:15px; padding:0; }
         QComboBox,QDoubleSpinBox,QLineEdit { border:1px solid #314963; background:#0e1a2a; border-radius:4px; padding:5px 7px; font-size:11px; }
         QComboBox:disabled,QDoubleSpinBox:disabled { color:#627a91; }
+        QLineEdit[invalid="true"],QComboBox[invalid="true"],QAbstractSpinBox[invalid="true"] { border-color:#e2a05b; }
         QComboBox QAbstractItemView { background:#17263a; selection-background-color:#235476; }
         QTreeWidget { border:0; background:#101d2f; outline:0; }
         QTreeWidget::item { border-radius:4px; padding:0 3px; color:#b2cbe4; }
@@ -586,9 +505,9 @@ void MainWindow::buildMenus() {
   });
   action->setObjectName("openProjectAction");
   action->setShortcut(QKeySequence::Open);
-  action = file->addAction("打开旧版工程 JSON…", this, [this] {
+  action = file->addAction("打开工程 JSON…", this, [this] {
     const auto path = QFileDialog::getOpenFileName(
-        this, "打开旧版工程 JSON", {}, "Signal Studio 工程 (*.json)");
+        this, "打开工程 JSON", {}, "Signal Studio 工程 (*.json)");
     if (!path.isEmpty()) openProject(path);
   });
   action->setObjectName("openProjectJsonAction");
@@ -812,7 +731,8 @@ void MainWindow::buildWorkspace() {
   tree_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   tree_->setContextMenuPolicy(Qt::CustomContextMenu);
   tree_->setMouseTracking(true);
-  tree_->setItemDelegate(new AnnotationTreeDelegate(tree_));
+  tree_->setItemDelegate(new ProjectTreePresentationDelegate(tree_));
+  tree_->setUniformRowHeights(false);
   connect(tree_, &QTreeWidget::itemExpanded, this,
           [this] { resizeTreeToContents(); });
   connect(tree_, &QTreeWidget::itemCollapsed, this,
@@ -825,7 +745,7 @@ void MainWindow::buildWorkspace() {
   leftResize_->setObjectName("leftPanelResize");
   bodyLayout->addWidget(leftResize_);
 
-  auto* workspace = new QWidget;
+  auto* workspace = new QWidget(body);
   workspace->setObjectName("workspace");
   workspace->setMinimumWidth(0);
   auto* center = new QVBoxLayout(workspace);
@@ -852,7 +772,10 @@ void MainWindow::buildWorkspace() {
   widebandDetect_ = push("◇ 检测当前区域…", "widebandDetect", scopeRow);
   widebandDetect_->setProperty("uiRole", "primary");
   connect(widebandDetect_, &QPushButton::clicked, this,
-          [this] { openWidebandDetection(); });
+          [this] {
+            detectionCard_->useVisibleRange();
+            openWidebandDetection();
+          });
   center->addWidget(scopeBar);
   auto* graphArea = new QWidget;
   auto* graphLayout = new QVBoxLayout(graphArea);
@@ -868,10 +791,10 @@ void MainWindow::buildWorkspace() {
     enforceLayout(true);
   };
   graphLayout->addWidget(graphs_);
-  workspaceStack_ = new QStackedWidget;
+  workspaceStack_ = new QStackedWidget(workspace);
   workspaceStack_->setObjectName("workspaceStack");
   workspaceStack_->addWidget(graphArea);
-  narrowband_ = new NarrowbandWorkspace(session_);
+  narrowband_ = new NarrowbandWorkspace(session_, workspaceStack_);
   workspaceStack_->addWidget(narrowband_);
   connect(narrowband_, &NarrowbandWorkspace::displayParametersChanged, this,
           &MainWindow::refresh);
@@ -923,10 +846,10 @@ void MainWindow::buildWorkspace() {
   auxMode_ = combo("modeAux", {"时域波形", "功率谱 (PSD)"});
   auxMode_->setParent(this);
   auxMode_->hide();
-  palette_ = combo("palette", {"Turbo", "Viridis", "Gray", "Plasma", "Inferno",
+  propertyPalette_ = combo("colormap", {"Turbo", "Viridis", "Gray", "Plasma", "Inferno",
                                "Magma", "Cividis", "CoolEdit Classic"});
-  palette_->setFixedSize(155, 26);
-  palette_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  propertyPalette_->setFixedSize(155, 24);
+  propertyPalette_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   const std::array<QString, 3> panelIds{"navPanel", "auxPanel", "specPanel"},
       names{"全局时间导航", "辅助分析", "宽带图谱"},
       maxIds{"navMaximize", "auxMaximize", "specMaximize"};
@@ -944,6 +867,7 @@ void MainWindow::buildWorkspace() {
     head->setFixedHeight(32);
     head->installEventFilter(this);
     head->setProperty("chartIndex", index);
+    head->setObjectName(index == 0 ? "navChartHead" : index == 1 ? "auxChartHead" : "specChartHead");
     auto* header = new QHBoxLayout(head);
     header->setContentsMargins(9, 0, 9, 0);
     header->setSpacing(7);
@@ -975,6 +899,8 @@ void MainWindow::buildWorkspace() {
         buttons[mode]->setFixedHeight(24);
         connect(buttons[mode], &QPushButton::clicked, this,
                 [this, index, mode] {
+                  if (settingsPopovers_)
+                    settingsPopovers_->close(PopoverCloseReason::AnchorHidden);
                   if (index == 1) auxiliaryEvidenceVisible_ = false;
                   (index == 1 ? auxMode_ : mainMode_)->setCurrentIndex(mode);
                   refresh();
@@ -1022,10 +948,6 @@ void MainWindow::buildWorkspace() {
       specAxis_->setMinimumWidth(0);
       specAxis_->setMaximumWidth(150);
       header->addWidget(specAxis_);
-      header->addWidget(palette_);
-      rangeTag_ = label({}, "rangeTag", "tag");
-      rangeTag_->setMinimumWidth(0);
-      header->addWidget(rangeTag_);
       manualTool_ = push("▱ 持续标记", "manualTool", header);
       manualTool_->setCheckable(true);
       connect(manualTool_, &QPushButton::clicked, this, [this](bool enabled) {
@@ -1199,7 +1121,12 @@ void MainWindow::buildWorkspace() {
   });
   connect(detection_, &DetectionPanel::runFocused, this,
           [this](const QString& id) {
-            if (detectionCard_) detectionCard_->focusRun(id);
+            if (detectionCard_) {
+              detectionCard_->focusRun(id);
+              propertiesCollapsed_ = false;
+              showInspectorPage(1, true);
+              enforceLayout();
+            }
           });
   taskSummary_->setParent(detection_);
   taskSummary_->hide();
@@ -1227,7 +1154,7 @@ void MainWindow::buildWorkspace() {
   propHead->setFixedHeight(35);
   auto* propHeadRow = new QHBoxLayout(propHead);
   propHeadRow->setContentsMargins(10, 0, 8, 0);
-  propertiesTitle_ = label("当前文件 / 分析参数");
+  propertiesTitle_ = label("分析与属性");
   propertiesTitle_->setStyleSheet("font-weight:600;");
   propHeadRow->addWidget(propertiesTitle_);
   propHeadRow->addStretch();
@@ -1256,6 +1183,25 @@ void MainWindow::buildWorkspace() {
     enforceLayout();
     saveUiState();
   });
+  inspectorTabs_ = new QWidget;
+  inspectorTabs_->setObjectName("inspectorTabs");
+  auto* inspectorTabsRow = new QHBoxLayout(inspectorTabs_);
+  inspectorTabsRow->setContentsMargins(6, 4, 6, 4);
+  inspectorTabsRow->setSpacing(3);
+  const QStringList inspectorNames{"显示", "检测", "标记", "通道"};
+  const QStringList inspectorIds{"contextDisplay", "contextDetection", "contextAnnotation", "contextChannel"};
+  for (int index = 0; index < 4; ++index) {
+    auto* tab = push(inspectorNames[index], inspectorIds[index], inspectorTabsRow);
+    inspectorButtons_[index] = tab;
+    tab->setCheckable(true);
+    tab->setFixedHeight(28);
+    tab->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    connect(tab, &QPushButton::clicked, this, [this, index] {
+      showInspectorPage(index, true);
+      saveUiState();
+    });
+  }
+  right->addWidget(inspectorTabs_);
   propScroll_ = new QScrollArea;
   propScroll_->setObjectName("propScroll");
   propScroll_->setWidgetResizable(true);
@@ -1264,17 +1210,47 @@ void MainWindow::buildWorkspace() {
   content->setObjectName("propContent");
   content->setMinimumWidth(0);
   content->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-  propertyLayout_ = new QVBoxLayout(content);
-  propertyLayout_->setContentsMargins(0, 0, 0, 20);
-  propertyLayout_->setSpacing(0);
-  auto file = section(propertyLayout_, "fileSection", "活动信号文件", true);
-  fileSection_ = file.widget;
+  auto* propertyLayout = new QVBoxLayout(content);
+  propertyLayout->setContentsMargins(0, 0, 0, 0);
+  inspectorPages_ = new ContextStack;
+  inspectorPages_->setObjectName("inspectorPages");
+  propertyLayout->addWidget(inspectorPages_);
+  const auto makePage = [this](const char* name) {
+    auto* page = new QWidget;
+    page->setObjectName(name);
+    auto* layout = new QVBoxLayout(page);
+    layout->setContentsMargins(10, 10, 10, 16);
+    layout->setSpacing(9);
+    inspectorPages_->addWidget(page);
+    return layout;
+  };
+  auto* displayPage = makePage("displayPage");
+  auto* detectionPage = makePage("detectionPage");
+  auto* annotationPage = makePage("annotationPage");
+  auto* channelPage = makePage("channelPage");
+  sourceSummary_ = output("inspectorSourceSummary");
+  sourceSummary_->setWordWrap(true);
+  displayPage->addWidget(sourceSummary_);
+  filePropertiesButton_ = new QPushButton("文件属性 / 调整有效带宽…");
+  filePropertiesButton_->setObjectName("fileProperties");
+  filePropertiesButton_->setProperty("uiRole", "outline");
+  filePropertiesButton_->setCursor(Qt::PointingHandCursor);
+  filePropertiesButton_->setToolTip("有效带宽是文件级物理分析范围，不随图谱显示缩放改变。");
+  displayPage->addWidget(filePropertiesButton_);
+  displaySummary_ = output("inspectorDisplaySummary");
+  displaySummary_->setWordWrap(true);
+  displayPage->addWidget(displaySummary_);
+  displayPage->addStretch();
+  filePropertiesContent_ = new QWidget;
+  auto* fileForm = new QFormLayout(filePropertiesContent_);
+  fileForm->setContentsMargins(5, 5, 5, 5);
+  fileForm->setSpacing(12);
   const std::array<QString, 4> fileNames{"文件", "采样率", "中心频率",
                                          "完整时间范围"},
       fileIds{"fileName", "sampleRate", "centerFreq", "fullRange"};
   for (int i = 0; i < 4; ++i) {
     fileValues_[i] = output(fileIds[i]);
-    row(file.form, fileNames[i], fileValues_[i]);
+    row(fileForm, fileNames[i], fileValues_[i]);
   }
   effectiveBandwidth_ = new ParameterDoubleSpinBox;
   effectiveBandwidth_->setObjectName("effectiveBandwidthMHz");
@@ -1286,16 +1262,17 @@ void MainWindow::buildWorkspace() {
   effectiveBandwidth_->setSuffix(" MHz");
   effectiveBandwidth_->setToolTip(
       "限定时频图和功率谱使用的中心有效带宽；最大值受采样率限制");
-  row(file.form, "有效带宽", effectiveBandwidth_);
-  auto detectionSection =
-      section(propertyLayout_, "detectionSection", "宽带信号检测", true);
-  detectionSection_ = detectionSection.widget;
-  detectionSection.form->setContentsMargins(0, 0, 0, 0);
+  row(fileForm, "有效带宽", effectiveBandwidth_);
+  auto* bandwidthHelp = label("中心有效带宽用于实际 PSD / STFT 分析，按文件保存。", "effectiveBandwidthHelp", "help");
+  bandwidthHelp->setWordWrap(true);
+  fileForm->addRow(bandwidthHelp);
   detectionCard_ = new DetectionCard(session_, [this] {
     return projectPath_.isEmpty() ? QString{}
                                   : QFileInfo(projectPath_).absolutePath();
   });
-  detectionSection.form->addRow(detectionCard_);
+  detectionPage->setContentsMargins(0, 4, 0, 12);
+  detectionPage->addWidget(detectionCard_);
+  detectionPage->addStretch();
   connect(detectionCard_, &DetectionCard::message, this, &MainWindow::log);
   connect(detectionCard_, &DetectionCard::selectionChanged, this, [this] {
     if (auto* file = session_.activeFile())
@@ -1317,26 +1294,20 @@ void MainWindow::buildWorkspace() {
             detection_->refresh();
             detectionCard_->refresh();
           });
-  auto view =
-      section(propertyLayout_, "viewSection", "当前视图（仅显示状态）", true);
-  viewSection_ = view.widget;
-  viewValues_[0] = output("visibleTime");
-  viewValues_[1] = output("visibleFreq");
-  row(view.form, "时间范围", viewValues_[0]);
-  row(view.form, "频率范围", viewValues_[1]);
-  auto mark =
-      section(propertyLayout_, "markSection", "标记详情 / 来源与修订", true);
-  markSection_ = mark.widget;
-  mark.form->addRow(annotations_->inspectorWidget());
-  const std::array<QString, 3> markNames{"开始时间", "结束时间", "频率范围"},
-      markIds{"selStart", "selEnd", "selFreq"};
-  for (int i = 0; i < 3; ++i) {
-    markValues_[i] = output(markIds[i]);
-    row(mark.form, markNames[i], markValues_[i]);
-  }
+  connect(detectionCard_, &DetectionCard::focusRunningRunRequested, this,
+          [this](const QString& runId) {
+            detection_->openRunSource(runId);
+            bottomTab_ = 1;
+            resultToggle_->setChecked(true);
+            updateBottom();
+          });
+  annotationEmpty_ = label("从图谱、结果列表或工程树选择标记，查看并编辑来源、活动段与修订。", "annotationEmptyGuide", "help");
+  annotationEmpty_->setWordWrap(true);
+  annotationPage->addWidget(annotationEmpty_);
+  annotationPage->addWidget(annotations_->inspectorWidget());
   selectedCount_ = label({}, "selectedCount", "help");
   selectedCount_->setWordWrap(true);
-  mark.form->addRow(selectedCount_);
+  annotationPage->addWidget(selectedCount_);
   auto* markActions = new QWidget;
   auto* markRow = new QHBoxLayout(markActions);
   markRow->setContentsMargins(0, 0, 0, 0);
@@ -1348,13 +1319,18 @@ void MainWindow::buildWorkspace() {
   for (auto* action : {rename_, locate_, delete_})
     action->setProperty("uiRole", "outline");
   markRow->addStretch();
-  mark.form->addRow(markActions);
+  annotationActions_ = markActions;
+  annotationPage->addWidget(markActions);
+  annotationPage->addStretch();
   connect(rename_, &QPushButton::clicked, this, &MainWindow::renameMark);
   connect(locate_, &QPushButton::clicked, this, &MainWindow::locateMark);
   connect(delete_, &QPushButton::clicked, this, &MainWindow::deleteMarks);
-  auto channel = section(propertyLayout_, "narrowbandChannelSection",
-                         "窄带通道参数", true);
-  channelSection_ = channel.widget;
+  auto* channelFields = new QWidget;
+  auto* channelForm = new QFormLayout(channelFields);
+  channelForm->setContentsMargins(0, 0, 0, 0);
+  channelForm->setSpacing(12);
+  channelPage->addWidget(channelFields);
+  channelPage->addStretch();
   const std::array<QString, 6> channelNames{"来源文件",   "来源标记",
                                             "射频中心",   "有效带宽",
                                             "输出采样率", "源样本时段"};
@@ -1363,14 +1339,21 @@ void MainWindow::buildWorkspace() {
       "narrowbandBandwidth",  "narrowbandOutputRate", "narrowbandSourceTime"};
   for (std::size_t index = 0; index < channelValues_.size(); ++index) {
     channelValues_[index] = output(channelIds[index]);
-    row(channel.form, channelNames[index], channelValues_[index]);
+    row(channelForm, channelNames[index], channelValues_[index]);
   }
   channelRevision_ = output("channelSourceRevision");
   channelRelation_ = output("channelSourceRelation");
   channelRevision_->setWordWrap(true);
   channelRelation_->setWordWrap(true);
-  row(channel.form, "创建修订", channelRevision_);
-  row(channel.form, "来源关系", channelRelation_);
+  auto* sourceDetails=new QWidget;sourceDetails->setObjectName("channelSourceDetails");
+  auto* sourceForm=new QFormLayout(sourceDetails);sourceForm->setContentsMargins(0,4,0,4);
+  row(sourceForm,"创建修订",channelRevision_);
+  auto* sourcePath=output("channelSourcePath");row(sourceForm,"完整来源",sourcePath);
+  auto* sourceToggle=new QToolButton;sourceToggle->setObjectName("channelSourceDetailsToggle");sourceToggle->setText("来源详情");sourceToggle->setCheckable(true);
+  sourceToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);sourceToggle->setArrowType(Qt::RightArrow);
+  channelForm->addRow(sourceToggle);channelForm->addRow(sourceDetails);sourceDetails->hide();
+  connect(sourceToggle,&QToolButton::toggled,this,[sourceDetails,sourceToggle](bool open){sourceDetails->setVisible(open);sourceToggle->setArrowType(open?Qt::DownArrow:Qt::RightArrow);});
+  row(channelForm, "来源关系", channelRelation_);
   auto* channelActions = new QWidget;
   auto* channelRow = new QHBoxLayout(channelActions);
   channelRow->setContentsMargins(0, 5, 0, 0);
@@ -1380,44 +1363,33 @@ void MainWindow::buildWorkspace() {
   auto* editChannel = push("修改参数…", "propertyEditChannel", channelRow);
   locateChannel->setProperty("uiRole", "outline");
   editChannel->setProperty("uiRole", "outline");
-  channel.form->addRow(channelActions);
+  channelForm->addRow(channelActions);
   connect(locateChannel, &QPushButton::clicked, this,
           &MainWindow::locateActiveChannelSource);
   connect(editChannel, &QPushButton::clicked, this, [this] {
     if (const auto* active = session_.activeChannel())
       showChannelDialog(q(active->id));
   });
-  auto psd = section(propertyLayout_, "psdSection", "辅助图设置", true);
-  psdSection_ = psd.widget;
   waveformMode_ =
       combo("waveformMode", {"I 分量（ADC 计数）", "Q 分量（ADC 计数）",
                              "幅度（RMS，ADC 计数）", "幅度包络（ADC 计数）"});
-  row(psd.form, "时域波形", waveformMode_);
   QStringList fftSizes;
   for (int order = 5; order <= 16; ++order)
     fftSizes << QString::number(1 << order);
   psd_ = combo("psdFft", fftSizes);
   psdScope_ = combo("psdScope",
                     {"当前可见时间窗", "当前活动信号标记", "整个文件 / 通道"});
-  row(psd.form, "PSD FFT 点数", psd_);
-  row(psd.form, "统计时间范围", psdScope_);
   psdParameters_ = new SpectralSettingsWidget(true);
-  psd.form->addRow(psdParameters_);
-  auto spec = section(propertyLayout_, "specSection", "时频图设置", true);
   QStringList stftSizes;
   for (int order = 5; order <= 16; ++order)
     stftSizes << QString::number(1 << order);
   stft_ = combo("stftFft", stftSizes);
-  propertyPalette_ =
-      combo("colormap", {"Turbo", "Viridis", "Gray", "Plasma", "Inferno",
-                         "Magma", "Cividis", "CoolEdit Classic"});
   dynamic_ = combo("dynamic",
                    {"20 dB", "40 dB", "60 dB", "80 dB", "100 dB", "120 dB"});
   reference_ =
       combo("reference", {"0 dBFS/Hz", "-20 dBFS/Hz", "-40 dBFS/Hz",
                           "-60 dBFS/Hz", "-80 dBFS/Hz", "-100 dBFS/Hz"});
   stftParameters_ = new SpectralSettingsWidget(false);
-  spec.form->addRow(stftParameters_);
   dynamic_->setEditable(true);
   reference_->setEditable(true);
   dynamic_->setInsertPolicy(QComboBox::NoInsert);
@@ -1426,37 +1398,27 @@ void MainWindow::buildWorkspace() {
     control->setCompleter(nullptr);
     control->lineEdit()->setValidator(new QRegularExpressionValidator(
         QRegularExpression(QStringLiteral(
-            R"([-+]?(?:\d+(?:\.\d{0,3})?|\.\d{1,3})(?:\s*dB(?:FS(?:/Hz)?)?)?)")),
+            R"([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?(?:\s*dB(?:FS(?:/Hz)?|\((?:unit|ADC)\^2/Hz\))?)?)")),
         control));
   }
   freqMode_ = combo("freqMode", {"射频绝对频率", "基带相对频率"});
-  freqMode_->setMinimumWidth(160);
-  layerRow->addWidget(label("频率坐标"));
-  layerRow->addWidget(freqMode_);
   layerRow->addStretch();
   for (int i = 0; i < dynamic_->count(); ++i)
     dynamic_->setItemData(i, 20 + 20 * i);
   for (int i = 0; i < reference_->count(); ++i)
     reference_->setItemData(i, -20 * i);
-  row(spec.form, "STFT FFT 点数", stft_);
-  row(spec.form, "颜色映射", propertyPalette_);
-  row(spec.form, "动态范围", dynamic_);
-  row(spec.form, "参考电平", reference_);
   autoPowerFit_ = new QPushButton("自动适配电平");
   autoPowerFit_->setObjectName("autoPowerFit");
-  spec.form->addRow(autoPowerFit_);
   connect(autoPowerFit_, &QPushButton::clicked, this,
           &MainWindow::autoFitPower);
   colorScale_ = new QCheckBox;
   colorScale_->setObjectName("colorbarToggle");
   grid_ = new QCheckBox;
   grid_->setObjectName("gridToggle");
-  row(spec.form, "显示色阶条", colorScale_);
-  row(spec.form, "网格显示", grid_);
-  propertyLayout_->addStretch();
   propScroll_->setWidget(content);
   right->addWidget(propScroll_, 1);
   right->addWidget(detectionCard_->actionsWidget());
+  showInspectorPage(0);
   bodyLayout->addWidget(properties_);
   const auto bindPanelResize = [this](PanelResizeHandle* handle, int* value,
                                       bool reverse, int minimum, int maximum) {
@@ -1739,7 +1701,10 @@ void MainWindow::buildWorkspace() {
     connect(plot, &PlotWidget::markDeleteRequested, this,
             &MainWindow::deleteMarks);
     connect(plot, &PlotWidget::widebandDetectionRequested, this,
-            [this] { openWidebandDetection(); });
+            [this] {
+              detectionCard_->useVisibleRange();
+              openWidebandDetection();
+            });
     connect(plot, &PlotWidget::detectionRoiRequested, this,
             &MainWindow::beginDetectionRoi);
   }
@@ -1794,7 +1759,7 @@ void MainWindow::buildWorkspace() {
       return;
     }
     if (narrow && sender() == grid_) {
-      if (auto* grid = narrowband_->findChild<QCheckBox*>("narrowbandGrid"))
+      if (auto* grid = findChild<QCheckBox*>("narrowbandGrid"))
         grid->setChecked(grid_->isChecked());
       refresh();
       return;
@@ -1824,7 +1789,7 @@ void MainWindow::buildWorkspace() {
     const auto nextAux = static_cast<AuxiliaryMode>(auxMode_->currentIndex());
     display.auxiliaryMode = nextAux;
     display.mainMode = static_cast<MainMode>(mainMode_->currentIndex());
-    display.palette = static_cast<Palette>(palette_->currentIndex());
+    display.palette = static_cast<Palette>(propertyPalette_->currentIndex());
     display.waveformMode =
         static_cast<WaveformMode>(waveformMode_->currentIndex());
     if (!narrow) {
@@ -1833,7 +1798,8 @@ void MainWindow::buildWorkspace() {
     }
     display.colorScale = colorScale_->isChecked();
     if (!narrow) {
-      display.psdSize = psd_->currentText().toInt();
+      if (!session_.linkedCursor(fileId).framePsd)
+        display.psdSize = psd_->currentText().toInt();
       display.stftSize = stft_->currentText().toInt();
     }
     if (sender() == psdScope_) {
@@ -1883,7 +1849,7 @@ void MainWindow::buildWorkspace() {
     refresh();
     scheduleRightSidebarSettingsSave();
   };
-  for (auto* control : {mainMode_, auxMode_, waveformMode_, palette_, psd_,
+  for (auto* control : {mainMode_, auxMode_, waveformMode_, propertyPalette_, psd_,
                         stft_, psdScope_, freqMode_})
     connect(control, &QComboBox::currentIndexChanged, this, change);
   for (auto* control : {dynamic_, reference_}) {
@@ -1898,10 +1864,6 @@ void MainWindow::buildWorkspace() {
   connect(narrowband_, &NarrowbandWorkspace::autoPowerFitRequested, this,
           &MainWindow::autoFitPower);
   connect(effectiveBandwidth_, &QDoubleSpinBox::valueChanged, this, change);
-  connect(propertyPalette_, &QComboBox::currentIndexChanged, this,
-          [this](int index) {
-            if (!refreshing_) palette_->setCurrentIndex(index);
-          });
   for (auto* control : {grid_, colorScale_})
     connect(control, &QCheckBox::toggled, this, change);
   statusBar()->setFixedHeight(25);
@@ -1927,11 +1889,175 @@ void MainWindow::buildWorkspace() {
       main_, &PlotWidget::backendChanged, ready,
       [ready](const QString& description) { ready->setToolTip(description); });
   for (auto* toggle : propScroll_->findChildren<QToolButton*>())
-    if (toggle->property("uiRole").toString() == "sectionToggle")
+    if (std::any_of(kDetectionFolds.begin(), kDetectionFolds.end(), [toggle](const char* name) {
+          return toggle->objectName() == name;
+        }))
       connect(toggle, &QToolButton::toggled, this, [this] { saveUiState(); });
   ready->setToolTip(main_->renderingBackend());
   updateBottom();
   qApp->installEventFilter(this);
+  // Settings must arbitrate Escape before the general workspace shortcuts.
+  buildChartControls();
+}
+
+void MainWindow::buildChartControls() {
+  settingsPopovers_ = new SettingsPopoverHost(this);
+  settingsPopovers_->add(filePropertiesButton_, filePropertiesContent_, "filePropertiesPopover");
+  const auto attach = [this](QWidget* head, const QString& name) {
+    auto* strip = new ChartControlStrip(settingsPopovers_, name, head);
+    auto* layout = qobject_cast<QHBoxLayout*>(head->layout());
+    for(int i=0;i<layout->count();++i) if(layout->itemAt(i)->spacerItem()) {
+      delete layout->takeAt(i);layout->insertWidget(i,strip,1);return strip;
+    }
+    layout->addWidget(strip,1);return strip;
+  };
+  auxiliaryControls_=attach(findChild<QWidget*>("auxChartHead"),"auxChartControls");
+  spectrumControls_=attach(findChild<QWidget*>("specChartHead"),"specChartControls");
+  auxiliaryControls_->setAuxiliaryStatus(auxStatus_);
+  spectrumControls_->setAuxiliaryStatus(specAxis_);
+  psdSettingsButton_=auxiliaryControls_->overflowButton();
+  stftSettingsButton_=spectrumControls_->overflowButton();
+  psdSettingsButton_->setObjectName("psdSettings");
+  stftSettingsButton_->setObjectName("stftSettings");
+  findChild<QWidget*>("auxChartControlsOverflowPopover")->setObjectName("psdSettingsPopover");
+  findChild<QWidget*>("specChartControlsOverflowPopover")->setObjectName("stftSettingsPopover");
+  powerSettingsButton_=displaySettingsButton_=stftSettingsButton_;
+  const auto field=[](QWidget* control,int width){control->setProperty("chartMinimumWidth",width);control->setFixedWidth(width);};
+  field(waveformMode_,148);field(psd_,82);field(stft_,82);field(psdScope_,130);
+  grid_->setText("网格");colorScale_->setText("色阶");
+  field(reference_,116);field(dynamic_,90);field(propertyPalette_,100);field(freqMode_,82);
+  enableCompactNumericCombo(reference_);enableCompactNumericCombo(dynamic_);
+  psd_->setAccessibleName("PSD N");stft_->setAccessibleName("STFT N");
+  psdStatisticControl_=psdParameters_->takeStatisticControl();field(psdStatisticControl_,76);
+  psdSourceControl_=combo("psdSource",{"统计谱","驻留帧谱"});field(psdSourceControl_,94);
+  connect(psdSourceControl_,&QComboBox::currentIndexChanged,this,[this](int index){
+    if(refreshing_)return;const auto* file=session_.activeFile();if(!file)return;
+    const auto* channel=session_.project().narrowbandWorkspaceOpen?session_.activeChannel():nullptr;
+    session_.setFramePsd(channel?channel->id:file->metadata.id,index==1);refresh();
+  });
+  for(int i=0;i<3;++i){
+    const QString suffix=i==0?"Method":i==1?"Window":"Overlap";
+    psdInline_[i]=psdParameters_->takeInlineControl(suffix);
+    stftInline_[i]=stftParameters_->takeInlineControl(suffix);
+    field(psdInline_[i],i==0?104:i==1?100:72);
+    field(stftInline_[i],i==0?104:i==1?100:72);
+  }
+  auxiliaryControls_->addControl(waveformMode_,"分量",100);
+  auto* fit=new QToolButton;fit->setObjectName("waveformAutoFit");fit->setText("自动幅度");
+  auxiliaryControls_->addControl(fit,"自动幅度",80);
+  connect(fit,&QToolButton::clicked,this,[this]{if(auto* f=session_.activeFile()){f->display.waveformAutoFit=true;propagateGlobalRightSidebarSettings();refresh();}});
+  narrowbandControls_.fill(nullptr);
+  const std::array<QString,7> panels{"narrowbandWaveformPanel","narrowbandPsdPanel","narrowbandStftPanel","narrowbandModulationStft","recognitionStftPanel","narrowbandConstellationLarge","narrowbandEyeLarge"};
+  for(int i=0;i<static_cast<int>(panels.size());++i){
+    auto* panel=narrowband_->findChild<QWidget*>(panels[i]);
+    auto* layout=qobject_cast<QVBoxLayout*>(panel->layout());
+    auto* head=layout->itemAt(0)->widget();
+    head->setObjectName(panels[i]+"Head");
+    narrowbandControls_[i]=attach(head,panels[i]+"Controls");
+  }
+  auto* nbWave=narrowband_->findChild<QComboBox*>("narrowbandWaveformMode");field(nbWave,104);
+  narrowbandControls_[0]->addControl(nbWave,"分量",100);
+  auto* nbFit=new QToolButton;nbFit->setObjectName("narrowbandWaveformAutoFit");nbFit->setText("自动幅度");
+  narrowbandControls_[0]->addControl(nbFit,"自动幅度",90);
+  connect(nbFit,&QToolButton::clicked,this,[this]{if(auto* c=session_.activeChannel()){c->waveformAutoScale=true;narrowband_->refreshFromSession();}});
+  auto* nbPsd=narrowband_->findChild<QComboBox*>("narrowbandPsdFft");field(nbPsd,94);
+  narrowbandControls_[1]->addControl(nbPsd,"PSD N",100);
+  auto* nbStft=narrowband_->findChild<QComboBox*>("narrowbandStftFft");field(nbStft,100);
+  narrowbandControls_[2]->addControl(nbStft,"STFT N",100);
+  for(const auto* name:{"channelFrequencyMode","narrowbandGrid"})
+    narrowbandControls_[2]->addControl(narrowband_->findChild<QWidget*>(name),name==QString("narrowbandGrid")?"网格":"频率",name==QString("narrowbandGrid")?10:15);
+  if(auto* bar=narrowband_->findChild<QWidget*>("narrowbandChartToolbar")){
+    if(auto* status=bar->findChild<QLabel*>("narrowbandDataStatus")){
+      status->setParent(narrowband_->findChild<QWidget*>("narrowbandHeader"));status->setMaximumWidth(150);
+      qobject_cast<QHBoxLayout*>(status->parentWidget()->layout())->insertWidget(5,status);status->show();
+    }
+    delete bar;
+  }
+  auto* constellation=narrowbandControls_[5];auto* eye=narrowbandControls_[6];
+  constellation->setObjectName("narrowbandConstellationControls");eye->setObjectName("narrowbandEyeControls");
+  constellation->addControl(narrowband_->findChild<QWidget*>("constellationAnalysisStage"),"阶段",100);
+  constellation->addControl(narrowband_->findChild<QWidget*>("constellationPointBudget"),"点数",90);
+  constellation->addControl(narrowband_->findChild<QWidget*>("constellationAutoScale"),"自动缩放",80);
+  for(const auto* name:{"constellationAxisMinimum","constellationAxisMaximum"})field(narrowband_->findChild<QWidget*>(name),230);
+  constellation->addPanel(narrowband_->findChild<QWidget*>("narrowbandConstellationDisplaySettings"));
+  eye->addControl(narrowband_->findChild<QWidget*>("eyeAnalysisStage"),"阶段",100);
+  eye->addControl(narrowband_->findChild<QWidget*>("eyeComponent"),"分量",80);
+  eye->addControl(narrowband_->findChild<QWidget*>("eyePeriods"),"周期",70);
+  eye->addControl(narrowband_->findChild<QWidget*>("eyeTraces"),"轨迹",60);
+  field(narrowband_->findChild<QWidget*>("eyeTimingOffsetUi"),160);
+  field(narrowband_->findChild<QWidget*>("analysisRrcRolloff"),130);
+  eye->addPanel(narrowband_->findChild<QWidget*>("narrowbandEyeDisplaySettings"));
+  specMode_->setMaximumWidth(150);specAxis_->setMaximumWidth(100);
+  connect(narrowband_,&NarrowbandWorkspace::pageChanged,this,[this]{
+    if(session_.project().narrowbandWorkspaceOpen)updateChartControls(true);
+  });
+  chartControlsInitialized_=false;
+}
+
+void MainWindow::updateChartControls(bool narrow) {
+  if(!auxiliaryControls_)return;
+  const auto* file=session_.activeFile();
+  const bool wave=!file||file->display.auxiliaryMode==AuxiliaryMode::Waveform;
+  const bool evidence=auxiliaryEvidenceVisible_;
+  auto* heat=narrowbandControls_[2];
+  if(const auto* channel=session_.activeChannel()){
+    if(channel->page==NarrowbandPage::Modulation)heat=narrowbandControls_[3];
+    if(channel->page==NarrowbandPage::DeepLearning)heat=narrowbandControls_[4];
+  }
+  if(!chartControlsInitialized_||chartControlsNarrow_!=narrow||activeHeatmapControls_!=heat){
+    settingsPopovers_->closeForContextChange();
+    auto* psdHost=narrow?narrowbandControls_[1]:auxiliaryControls_;
+    auto* stftHost=narrow?heat:spectrumControls_;
+    if(!narrow){psdHost->addControl(psd_,"PSD N",100);stftHost->addControl(stft_,"STFT N",100);}
+    psdHost->addControl(psdSourceControl_,"谱源",110);
+    psdHost->addControl(psdScope_,"范围",65);
+    psdHost->addControl(psdStatisticControl_,"统计",75);
+    for(int i=0;i<3;++i){
+      const QString title=i==0?"方法":i==1?"窗":"重叠 (%)";
+      psdHost->addControl(psdInline_[i],title,45-i*10);
+      stftHost->addControl(stftInline_[i],title,40-i*10);
+    }
+    psdHost->addPanel(psdParameters_,"PSD 高级参数");
+    stftHost->addPanel(stftParameters_,"STFT 高级参数");
+    stftHost->addControl(propertyPalette_,"色表",95);
+    stftHost->addControl(reference_,"参考",85);
+    stftHost->addControl(dynamic_,"动态",80);
+    stftHost->addControl(autoPowerFit_,"自动适配电平",70);
+    stftHost->addControl(colorScale_,"色阶条",5);
+    if(!narrow){stftHost->addControl(freqMode_,"频率",15);stftHost->addControl(grid_,"网格",10);}
+    else{
+      // Overflow layers are owned by the main window, outside the workspace.
+      // Resolve these singleton editors from their stable root after a page change.
+      heat->addControl(findChild<QComboBox*>("narrowbandStftFft"),"STFT N",100);
+      heat->addControl(findChild<QWidget*>("channelFrequencyMode"),"频率",15);
+      heat->addControl(findChild<QWidget*>("narrowbandGrid"),"网格",10);
+    }
+    chartControlsNarrow_=narrow;activeHeatmapControls_=heat;chartControlsInitialized_=true;
+  }
+  auxiliaryControls_->requestVisible(waveformMode_,wave&&!evidence);
+  auxiliaryControls_->requestVisible(findChild<QWidget*>("waveformAutoFit"),wave&&!evidence);
+  for(auto* control:{static_cast<QWidget*>(psd_),static_cast<QWidget*>(psdScope_),static_cast<QWidget*>(psdStatisticControl_),static_cast<QWidget*>(psdSourceControl_)})auxiliaryControls_->requestVisible(control,!wave&&!evidence);
+  for(auto* control:psdInline_)auxiliaryControls_->requestVisible(control,!wave&&!evidence);
+  psdParameters_->setVisible(narrow||(!wave&&!evidence));
+  const bool ready=file&&file->metadata.availability.status!=LoadStatus::Loading;
+  filePropertiesButton_->setEnabled(file!=nullptr);
+  waveformMode_->setEnabled(ready);stft_->setEnabled(ready);stftParameters_->setEnabled(ready);
+  psdSourceControl_->setEnabled(ready);
+  bool frame=false;
+  if(file){
+    const auto* channel=narrow?session_.activeChannel():nullptr;
+    const auto& cursor=session_.linkedCursor(channel?channel->id:file->metadata.id);frame=cursor.framePsd;
+    psdSourceControl_->setCurrentIndex(frame?1:0);
+    if(auto* model=qobject_cast<QStandardItemModel*>(psdSourceControl_->model()))model->item(1)->setEnabled(cursor.pinned);
+  }
+  psd_->setEnabled(ready&&!frame);psdScope_->setEnabled(ready&&!frame);psdParameters_->setEnabled(ready&&!frame);
+  for(auto* control:psdInline_)control->setEnabled(ready&&!frame&&(!control->property("chartSettingRelevant").isValid()||control->property("chartSettingRelevant").toBool()));
+  for(auto* control:stftInline_)control->setEnabled(ready&&(!control->property("chartSettingRelevant").isValid()||control->property("chartSettingRelevant").toBool()));
+  psdStatisticControl_->setEnabled(ready&&!frame&&psdParameters_->parameters().method!=SpectralMethod::Periodogram);
+  const QString frameHelp=frame?"驻留帧谱：N 随 STFT；选择统计谱可设置独立 PSD N":"当前可见频段的独立 PSD 分析点数";
+  psd_->setToolTip(frameHelp);
+  auxiliaryControls_->reflow();spectrumControls_->reflow();
+  for(auto* strip:narrowbandControls_)if(strip)strip->reflow();
 }
 
 void MainWindow::rebuildTree() {
@@ -1969,7 +2095,7 @@ void MainWindow::rebuildTree() {
     item->setData(0, Qt::UserRole + 1, q(file.metadata.id));
     item->setFlags(Qt::ItemIsEnabled);
     item->setSizeHint(0, QSize(0, 32));
-    item->setExpanded(true);
+    item->setExpanded(file.metadata.id == session_.project().activeFileId);
     item->setToolTip(0, q(file.metadata.path));
     const bool active = file.metadata.id == session_.project().activeFileId;
     if (active) {
@@ -2002,26 +2128,20 @@ void MainWindow::rebuildTree() {
     auto* actions = new QTreeWidgetItem(marks);
     actions->setFlags(Qt::ItemIsEnabled);
     actions->setData(0, Qt::UserRole, "treeActions");
-    actions->setSizeHint(0, QSize(0, 61));
+    actions->setSizeHint(0, QSize(0, 30));
     auto* controls = new QWidget;
-    auto* controlColumn = new QVBoxLayout(controls);
-    controlColumn->setContentsMargins(0, 1, 0, 1);
-    controlColumn->setSpacing(3);
-    auto* counts = new QLabel(annotationCountText(file));
-    counts->setObjectName("treeAnnotationCounts");
-    counts->setWordWrap(true);
-    controlColumn->addWidget(counts);
-    auto* actionRow = new QHBoxLayout;
-    actionRow->setSpacing(4);
-    controlColumn->addLayout(actionRow);
-    auto* all = push("全选匹配", "treeSelectAll", actionRow);
-    auto* remove = push("删除所选标记", "treeDeleteMarks", actionRow);
-    remove->setProperty("preserveParameterDrafts", true);
-    all->setProperty("uiRole", "outline");
-    remove->setProperty("uiRole", "outline");
-    all->setEnabled(annotationCounts(file).matching != 0);
-    remove->setEnabled(!file.selectedMarkIds.empty());
-    actionRow->addStretch();
+    auto* actionRow = new QHBoxLayout(controls);
+    actionRow->setContentsMargins(0,1,0,1);actionRow->setSpacing(4);
+    const auto count=annotationCounts(file);
+    auto* counts = new QLabel(count.selected ? QString("已选 %1").arg(count.selected) : QString("%1 项").arg(count.matching));
+    counts->setObjectName("treeAnnotationCounts");counts->setToolTip(annotationCountText(file));
+    actionRow->addWidget(counts,1);
+    auto* all=push("全选","treeSelectAll",actionRow);
+    auto* remove=push("删除","treeDeleteMarks",actionRow);
+    all->setToolTip("全选当前筛选的全部匹配标记");remove->setToolTip("预览并删除所选标记");
+    remove->setProperty("preserveParameterDrafts",true);
+    all->setProperty("uiRole","outline");remove->setProperty("uiRole","outline");
+    all->setEnabled(count.matching!=0);remove->setEnabled(count.selected!=0);
     tree_->setItemWidget(actions, 0, controls);
     connect(all, &QPushButton::clicked, this, &MainWindow::selectAllMarks);
     connect(remove, &QPushButton::clicked, this, &MainWindow::deleteMarks);
@@ -2078,7 +2198,7 @@ void MainWindow::rebuildTree() {
     auto* runs = new QTreeWidgetItem(
         item, {QString("检测运行 (%1)").arg(file.detectionRuns.size())});
     runs->setData(0, Qt::UserRole, "detectionRuns");
-    runs->setExpanded(true);
+    runs->setExpanded(false);
     for (std::size_t index = file.detectionRuns.size() > 100
                                  ? file.detectionRuns.size() - 100
                                  : 0;
@@ -2225,15 +2345,11 @@ void MainWindow::restoreUiState() {
       std::clamp(settings.value("propertyWidth", 390).toInt(), 320, 650);
   bottomHeight_ =
       std::clamp(settings.value("bottomHeight", 260).toInt(), 100, 500);
-  for (const auto& id : {"fileSection", "detectionSection", "viewSection",
-                         "markSection", "psdSection", "specSection"}) {
-    if (auto* toggle = findChild<QToolButton*>(QString::fromLatin1(id) +
-                                               QStringLiteral("Toggle")))
-      toggle->setChecked(
-          settings
-              .value(QStringLiteral("section/") + QString::fromLatin1(id), true)
-              .toBool());
-  }
+  inspectorManualOverride_ = false;
+  showInspectorPage(std::clamp(settings.value("inspectorPage", 0).toInt(), 0, 3));
+  for (const auto* name : kDetectionFolds)
+    if (auto* toggle = findChild<QToolButton*>(name))
+      toggle->setChecked(settings.value(QString("detectionFold/") + name, false).toBool());
   const auto splitterState =
       settings.value(QStringLiteral("graphSplitter")).toByteArray();
   splitterStateRestored_ =
@@ -2261,13 +2377,10 @@ void MainWindow::saveUiState() {
   settings.setValue("propertyWidth", propertyWidth_);
   settings.setValue("bottomHeight", bottomHeight_);
   settings.setValue(QStringLiteral("graphSplitter"), graphs_->saveState());
-  for (const auto& id : {"fileSection", "detectionSection", "viewSection",
-                         "markSection", "psdSection", "specSection"}) {
-    if (auto* toggle = findChild<QToolButton*>(QString::fromLatin1(id) +
-                                               QStringLiteral("Toggle")))
-      settings.setValue(QStringLiteral("section/") + QString::fromLatin1(id),
-                        toggle->isChecked());
-  }
+  if (inspectorPages_) settings.setValue("inspectorPage", inspectorPages_->currentIndex());
+  for (const auto* name : kDetectionFolds)
+    if (auto* toggle = findChild<QToolButton*>(name))
+      settings.setValue(QString("detectionFold/") + name, toggle->isChecked());
   settings.endGroup();
   settings.sync();
 }
@@ -2628,8 +2741,9 @@ void MainWindow::syncTreeState() {
     if (!marks || !channels) continue;
     const auto counts = annotationCounts(file);
     if (auto* controls = tree_->itemWidget(marks->child(0), 0)) {
-      controls->findChild<QLabel*>("treeAnnotationCounts")
-          ->setText(annotationCountText(file));
+      auto* summary=controls->findChild<QLabel*>("treeAnnotationCounts");
+      summary->setText(counts.selected?QString("已选 %1").arg(counts.selected):QString("%1 项").arg(counts.matching));
+      summary->setToolTip(annotationCountText(file));
       controls->findChild<QPushButton*>("treeSelectAll")
           ->setEnabled(counts.matching != 0);
       controls->findChild<QPushButton*>("treeDeleteMarks")
@@ -2668,6 +2782,8 @@ void MainWindow::syncTreeState() {
     }
   }
   syncTreeAnnotationStyles();
+  refreshProjectTreePresentation(tree_,session_.project());
+  resizeTreeToContents();
   revealTreeAnnotation();
 }
 
@@ -2767,6 +2883,12 @@ void MainWindow::refresh() {
   projectLabel_->setText(q(session_.project().name));
   const bool narrowOpen = session_.project().narrowbandWorkspaceOpen &&
                           session_.activeChannel() != nullptr;
+  const auto settingsContext = QString::number(session_.projectGeneration()) + "/" +
+      q(narrowOpen ? session_.activeChannel()->id : file ? file->metadata.id : std::string{});
+  if (settingsContext != settingsSourceContext_) {
+    if (settingsPopovers_) settingsPopovers_->closeForContextChange();
+    settingsSourceContext_ = settingsContext;
+  }
   if (parameterInputPolicy_)
     parameterInputPolicy_->setContext(
         QString::number(session_.projectGeneration()) + "/" +
@@ -2775,11 +2897,14 @@ void MainWindow::refresh() {
                      : std::string{}));
   workspaceStack_->setCurrentIndex(narrowOpen ? 1 : 0);
   workspaceModeButton_->setChecked(!narrowOpen);
-  if (narrowband_ && narrowOpen) narrowband_->refreshFromSession();
+  if (narrowband_) {
+    if (narrowOpen) narrowband_->refreshFromSession();
+    else narrowband_->cancelAnalysis();
+  }
   const bool projectReady =
       !projectPath_.isEmpty() || !session_.project().files.empty();
-  for (auto* control : std::array<QWidget*, 15>{
-           mainMode_, auxMode_, waveformMode_, palette_, propertyPalette_,
+  for (auto* control : std::array<QWidget*, 14>{
+           mainMode_, auxMode_, waveformMode_, propertyPalette_,
            dynamic_, reference_, freqMode_, grid_, colorScale_, psd_, stft_,
            psdScope_, extract_, effectiveBandwidth_})
     control->setEnabled(file != nullptr);
@@ -2834,7 +2959,6 @@ void MainWindow::refresh() {
     const auto& display = file->display;
     mainMode_->setCurrentIndex(static_cast<int>(display.mainMode));
     auxMode_->setCurrentIndex(static_cast<int>(display.auxiliaryMode));
-    palette_->setCurrentIndex(static_cast<int>(display.palette));
     propertyPalette_->setCurrentIndex(static_cast<int>(display.palette));
     dataSourceStatus_->setText(
         file->metadata.demo ? "演示数据 · 未运行 DSP"
@@ -2874,7 +2998,7 @@ void MainWindow::refresh() {
             ? 0
             : 1);
     const auto* narrowGrid =
-        narrowOpen ? narrowband_->findChild<QCheckBox*>("narrowbandGrid")
+        narrowOpen ? findChild<QCheckBox*>("narrowbandGrid")
                    : nullptr;
     grid_->setChecked(narrowGrid ? narrowGrid->isChecked() : display.grid);
     colorScale_->setChecked(display.colorScale);
@@ -2905,6 +3029,8 @@ void MainWindow::refresh() {
     const bool framePsd =
         session_.linkedCursor(channel ? channel->id : file->metadata.id)
             .framePsd;
+    if (framePsd)
+      showFft(psd_, channel ? channel->stftFftSize : display.stftSize);
     psd_->setEnabled(!framePsd);
     psdScope_->setEnabled(!framePsd);
     psdParameters_->setEnabled(!framePsd);
@@ -2923,8 +3049,6 @@ void MainWindow::refresh() {
     const bool loading =
         file->metadata.availability.status == LoadStatus::Loading;
     stopSourceLoad_->setVisible(loading);
-    psdSection_->setEnabled(!loading);
-    findChild<QWidget*>("specSection")->setEnabled(!loading);
     effectiveBandwidth_->setEnabled(!loading);
     navStatus_->setText(
         loading
@@ -2936,7 +3060,6 @@ void MainWindow::refresh() {
                          file->metadata.sampleRateHz) +
                   " s");
     auxStatus_->setText(auxiliary_->statusText());
-    rangeTag_->setText("动态 " + number(display.dynamicRangeDb) + " dB");
     const bool waterfall = display.mainMode == MainMode::Waterfall;
     specMode_->setText("正在框选信号 · 右键或 Esc 退出");
     specMode_->setVisible(main_->isCreating() && width() > 990);
@@ -2949,9 +3072,6 @@ void MainWindow::refresh() {
     fileValues_[2]->setText(number(file->metadata.centerFrequencyHz / 1e6) +
                             " MHz");
     fileValues_[3]->setText("0–" + number(duration) + " s");
-    viewValues_[0]->setText(
-        timeRange(file->view.time, file->metadata.sampleRateHz));
-    viewValues_[1]->setText(frequencyRange(file->view.frequency));
     viewData_->setText(
         "| 视图 ΔT " +
         coordinate(
@@ -2971,27 +3091,12 @@ void MainWindow::refresh() {
     if (mark) {
       const auto geometry =
           segment ? segment->range : mark->observation.value_or(file->view);
-      const double span =
-          static_cast<double>(geometry.time.end - geometry.time.begin) /
-          file->metadata.sampleRateHz;
-      markValues_[0]->setText(
-          segment ? coordinate(static_cast<double>(geometry.time.begin) /
-                                   file->metadata.sampleRateHz,
-                               span, true)
-                  : "时间未定位");
-      markValues_[1]->setText(
-          segment ? coordinate(static_cast<double>(geometry.time.end) /
-                                   file->metadata.sampleRateHz,
-                               span, true)
-                  : "观察窗口");
-      markValues_[2]->setText(frequencyRange(geometry.frequency));
       selectionData_->setText(
           "| 标记 " + q(mark->name) + " · " +
           coordinate(
               (geometry.frequency.lowerHz + geometry.frequency.upperHz) / 2, 0,
               false));
     } else {
-      for (auto* value : markValues_) value->setText("—");
       selectionData_->setText("| 无信号标记");
     }
     selectedCount_->setText(annotationCountText(*file) +
@@ -3021,8 +3126,6 @@ void MainWindow::refresh() {
     navStatus_->setText("—");
     auxStatus_->setText("—");
     for (auto* value : fileValues_) value->setText("—");
-    for (auto* value : viewValues_) value->setText("—");
-    for (auto* value : markValues_) value->setText("—");
     viewData_->clear();
     cursorData_->clear();
     selectionData_->setText("无信号标记");
@@ -3035,6 +3138,7 @@ void MainWindow::refresh() {
   updateBottom();
   updateTree();
   for (auto* plot : {navigation_, auxiliary_, main_}) plot->syncState();
+  updateChartControls(narrowOpen);
   refreshing_ = false;
   updatePowerFit();
 }
@@ -3061,6 +3165,7 @@ void MainWindow::locateActiveChannelSource() {
   session_.project().narrowbandWorkspaceOpen = false;
   workspaceStack_->setCurrentIndex(0);
   refresh();
+  showInspectorPage(2, true);
   log("已返回来源文件并定位源标记；再次打开通道可恢复窄带视图");
 }
 
@@ -3204,6 +3309,16 @@ void MainWindow::showChannelDialog(const QString& channelId) {
   outputRate->setDecimals(9);
   outputRate->setSingleStep(1);
   outputRate->setSuffix(" MS/s");
+  auto* samplingMode = new QComboBox;
+  samplingMode->setObjectName("channelSamplingMode");
+  samplingMode->addItems({"推荐倍率（自动规划）", "自定义／保持当前采样率"});
+  samplingMode->setCurrentIndex(editing && original.sampling.mode == ChannelSamplingMode::Manual ? 1 : 0);
+  auto* bandwidthFactor = new QComboBox;
+  bandwidthFactor->setObjectName("channelBandwidthFactor");
+  for (const double factor : {1.5, 2.0, 4.0, 8.0}) bandwidthFactor->addItem(QString::number(factor) + "×", factor);
+  bandwidthFactor->setCurrentIndex(editing ? std::max(0, bandwidthFactor->findData(original.sampling.bandwidthFactor)) : 1);
+  auto rateValue = std::make_shared<double>(editing ? original.outputSampleRateHz : 0);
+  auto manualRate = std::make_shared<double>(*rateValue);
   auto* timeMode = new QComboBox;
   timeMode->setObjectName("channelTimeScope");
   timeMode->setEnabled(false);
@@ -3232,7 +3347,9 @@ void MainWindow::showChannelDialog(const QString& channelId) {
   form->addRow("实际提取范围", actualRange);
   form->addRow("射频中心", center);
   form->addRow("有效带宽", bandwidth);
-  form->addRow("输出采样率", outputRate);
+  form->addRow("采样策略", samplingMode);
+  form->addRow("过采样倍率（Fs／带宽）", bandwidthFactor);
+  form->addRow("实际输出采样率", outputRate);
   form->addRow("提取时段", timeMode);
   form->addRow(usePrefix);
   form->addRow("FIR 滤波", filter);
@@ -3262,23 +3379,43 @@ void MainWindow::showChannelDialog(const QString& channelId) {
   // MHz controls are a rounded presentation. Keep the exact physical edges
   // until a committed control change explicitly replaces them.
   auto frequency = std::make_shared<FrequencyRange>();
-  const auto readRequest = [request, frequency, name, begin, end, outputRate,
-                            filter, preserveTime] {
+  const auto readRequest = [request, frequency, name, begin, end, rateValue,
+                            samplingMode, bandwidthFactor, filter, preserveTime] {
     auto current = *request;
     current.name = name->text().trimmed().toStdString();
     current.range = {{begin->sampleValue(), end->sampleValue()}, *frequency};
-    current.outputSampleRateHz = outputRate->value() * 1e6;
+    current.outputSampleRateHz = *rateValue;
+    current.sampling = {samplingMode->currentIndex() == 0 ? ChannelSamplingMode::RecommendedFactor : ChannelSamplingMode::Manual,
+                        bandwidthFactor->currentData().toDouble()};
     current.filter = static_cast<ChannelFilter>(filter->currentIndex());
     current.preserveSourceTime = preserveTime->isChecked();
     return current;
   };
   const auto validate = [resolveFile, editing, original, begin, end,
                          readRequest, actualRange, preview, validation,
-                         confirm]() -> bool {
+                         confirm, rateValue, outputRate, samplingMode, bandwidthFactor]() -> bool {
     QString reason, field;
     auto* currentFile = resolveFile();
-    const auto current = readRequest();
+    auto current = readRequest();
     Channel candidate = editing ? original : Channel{};
+    candidate.centerFrequencyHz = (current.range.frequency.lowerHz + current.range.frequency.upperHz)/2;
+    candidate.bandwidthHz = current.range.frequency.upperHz-current.range.frequency.lowerHz;
+    candidate.outputSampleRateHz = current.outputSampleRateHz;
+    candidate.sampling = current.sampling;
+    candidate.filter = current.filter;
+    OutputRatePlan ratePlan;
+    outputRate->setEnabled(current.sampling.mode == ChannelSamplingMode::Manual);
+    bandwidthFactor->setEnabled(current.sampling.mode == ChannelSamplingMode::RecommendedFactor);
+    if (currentFile) {
+      ratePlan = planChannelOutputRate(currentFile->metadata, candidate);
+      if (ratePlan.valid && current.sampling.mode == ChannelSamplingMode::RecommendedFactor) {
+        *rateValue = ratePlan.realizedRateHz;
+        current.outputSampleRateHz = *rateValue;
+        candidate.outputSampleRateHz = *rateValue;
+        const QSignalBlocker blocked(outputRate);
+        displayParameterValue(outputRate, *rateValue/1e6);
+      }
+    }
     if (!currentFile) {
       field = "source";
       reason = "工程、文件或样本通道已切换，请重新打开配置。";
@@ -3297,6 +3434,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
       candidate.bandwidthHz =
           current.range.frequency.upperHz - current.range.frequency.lowerHz;
       candidate.outputSampleRateHz = current.outputSampleRateHz;
+      candidate.sampling = current.sampling;
       candidate.filter = current.filter;
       candidate.preserveSourceTime = current.preserveSourceTime;
     } else {
@@ -3315,16 +3453,16 @@ void MainWindow::showChannelDialog(const QString& channelId) {
             .arg(current.range.time.end)
             .arg(current.range.frequency.lowerHz / 1e6, 0, 'g', 12)
             .arg(current.range.frequency.upperHz / 1e6, 0, 'g', 12));
-    ChannelDspPlan plan;
-    const bool planned =
-        reason.isEmpty() && makeChannelDspPlan(currentFile->metadata, candidate,
-                                               plan, reason, &field);
+    if (reason.isEmpty() && !ratePlan.valid) {
+      reason = q(ratePlan.reason); field = q(ratePlan.field);
+    }
+    const auto& plan = ratePlan.dsp;
+    const bool planned = reason.isEmpty() && ratePlan.valid;
     if (planned) {
       std::size_t taps = 0;
-      for (const auto& coefficients : plan.stageCoefficients)
-        taps += coefficients.size();
+      for (const auto& stage : plan.stages) taps += stage.taps;
       preview->setText(
-          QString("来源 IQ → CPU DDC / FIR → 有理重采样\nFs %1 → %2 MS/s · "
+          QString("来源 IQ → CPU DDC / FIR → 有理重采样\n源 Fs %1 → 实际 %2 MS/s · "
                   "过渡带 %3 kHz · FIR %4 taps · L/M=%5/%6 · %7 dB 目标")
               .arg(plan.sourceRateHz / 1e6, 0, 'g', 12)
               .arg(plan.outputRateHz / 1e6, 0, 'g', 12)
@@ -3332,7 +3470,13 @@ void MainWindow::showChannelDialog(const QString& channelId) {
               .arg(taps)
               .arg(plan.interpolation)
               .arg(plan.decimation)
-              .arg(plan.stopbandAttenuationDb, 0, 'f', 0));
+              .arg(plan.attenuationDb, 0, 'f', 0) +
+          QString("\n目标 Fs %1 MS/s · 实际倍率 %2× · %3\n倍率为 Fs／带宽；每符号 SPS 需要符号率。")
+              .arg(ratePlan.targetRateHz/1e6, 0, 'g', 12)
+              .arg(ratePlan.realizedFactor, 0, 'g', 9).arg(q(ratePlan.reason)));
+      preview->setProperty("targetRateHz", ratePlan.targetRateHz);
+      preview->setProperty("realizedRateHz", ratePlan.realizedRateHz);
+      preview->setProperty("realizedFactor", ratePlan.realizedFactor);
     } else {
       preview->setText(
           "DSP 计划尚不可执行；请根据字段原因调整配置。FIR 保护带 "
@@ -3347,7 +3491,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
                            frequency, sourceMark, sourceSegment, bindingKind,
                            sourceSummary, begin, end, center, bandwidth,
                            outputRate, timeMode,
-                           validate](const std::string& segmentId = {}) {
+                           validate, rateValue, manualRate, samplingMode](const std::string& segmentId = {}) {
     auto* currentFile = resolveFile();
     if (!currentFile) {
       validate();
@@ -3357,6 +3501,8 @@ void MainWindow::showChannelDialog(const QString& channelId) {
     const auto* annotation = findAnnotation(*currentFile, id);
     *request = annotationChannelRequest(
         *currentFile, id, currentFile->view.time, generation, segmentId);
+    if (!editing && samplingMode->currentIndex() == 1)
+      request->outputSampleRateHz = *manualRate;
     if (editing) {
       request->annotationId = original.annotationId;
       request->segmentId = original.segmentId;
@@ -3366,6 +3512,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
           {original.centerFrequencyHz - original.bandwidthHz / 2,
            original.centerFrequencyHz + original.bandwidthHz / 2}};
       request->outputSampleRateHz = original.outputSampleRateHz;
+      request->sampling = original.sampling;
       if (original.sourceSnapshot) {
         request->bindingKind = original.sourceSnapshot->bindingKind;
         request->boundRange = original.sourceSnapshot->boundRange.value_or(
@@ -3424,6 +3571,8 @@ void MainWindow::showChannelDialog(const QString& channelId) {
                        : "待判断");
     sourceSummary->setText(sourceText);
     *frequency = request->range.frequency;
+    *rateValue = request->outputSampleRateHz;
+    *manualRate = *rateValue;
     begin->setSampleValue(request->range.time.begin);
     end->setSampleValue(request->range.time.end);
     for (auto* control : {center, bandwidth, outputRate})
@@ -3490,18 +3639,50 @@ void MainWindow::showChannelDialog(const QString& channelId) {
             validate();
           });
   connect(outputRate, &QDoubleSpinBox::valueChanged, dialog,
-          [validate] { validate(); });
+          [validate, rateValue, manualRate](double value) { *rateValue=value*1e6; *manualRate=*rateValue; validate(); });
+  connect(samplingMode, &QComboBox::currentIndexChanged, dialog,
+          [validate, samplingMode, rateValue, manualRate, outputRate](int index) {
+            if (index == 1) {
+              *rateValue=*manualRate;
+              const QSignalBlocker block(outputRate); displayParameterValue(outputRate,*rateValue/1e6);
+            }
+            validate();
+          });
+  connect(bandwidthFactor, &QComboBox::currentIndexChanged, dialog, [validate] { validate(); });
   connect(filter, &QComboBox::currentIndexChanged, dialog,
           [validate] { validate(); });
   connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
   connect(
       buttons, &QDialogButtonBox::accepted, dialog,
       [this, dialog, editing, channelId, original, resolveFile, readRequest,
-       validate, validation, autoOpen] {
+       validate, validation, autoOpen, confirm] {
+        if (dialog->property("channelPlanning").toBool()) return;
         if (!validate()) return;
         auto* currentFile = resolveFile();
         if (!currentFile) return;
         const auto current = readRequest();
+        Channel candidate=editing?original:Channel{};
+        candidate.centerFrequencyHz=(current.range.frequency.lowerHz+current.range.frequency.upperHz)/2;
+        candidate.bandwidthHz=current.range.frequency.upperHz-current.range.frequency.lowerHz;
+        candidate.sourceTime=current.range.time;
+        candidate.outputSampleRateHz=current.outputSampleRateHz;
+        candidate.filter=current.filter;
+        dialog->setProperty("channelPlanning",true);
+        confirm->setEnabled(false);
+        validation->setText("正在后台验证来源与 FIR 系数…");
+        validateChannelDspAsync(dialog,currentFile->metadata,candidate,
+          [this,dialog,editing,channelId,original,resolveFile,readRequest,current,validate,validation,autoOpen]
+          (bool valid,QString reason,QString field) {
+          dialog->setProperty("channelPlanning",false);
+          const bool previewValid=validate();
+          if(!valid) {validation->setProperty("field",field);validation->setText(field+"："+reason);return;}
+          const auto now=readRequest();
+          if(!previewValid || !resolveFile() || now.annotationId!=current.annotationId || now.segmentId!=current.segmentId ||
+             now.range!=current.range || now.outputSampleRateHz!=current.outputSampleRateHz ||
+             now.filter!=current.filter || now.sampling!=current.sampling || now.name!=current.name ||
+             now.preserveSourceTime!=current.preserveSourceTime) {
+            validation->setText("参数或来源已变化，请重新应用当前配置。");return;
+          }
         if (editing) {
           auto updated = original;
           updated.name = current.name;
@@ -3511,6 +3692,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
           updated.bandwidthHz =
               current.range.frequency.upperHz - current.range.frequency.lowerHz;
           updated.outputSampleRateHz = current.outputSampleRateHz;
+          updated.sampling = current.sampling;
           updated.filter = current.filter;
           updated.preserveSourceTime = current.preserveSourceTime;
           updated.visibleBasebandFrequency = {-updated.outputSampleRateHz / 2,
@@ -3535,6 +3717,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
         dialog->accept();
         log(editing ? "窄带通道参数已更新；创建来源快照保持不变。"
                     : "窄带通道已创建；真实 CPU DDC 按可见时段按需计算。");
+        });
       });
   dialog->open();
 }
@@ -3545,17 +3728,55 @@ void MainWindow::updatePropertyContext() {
   const bool narrow =
       session_.project().narrowbandWorkspaceOpen && channel && file;
   const bool marked = !narrow && file && findMark(*file, file->activeMarkId);
-  const bool psd =
-      !narrow && file && file->display.auxiliaryMode == AuxiliaryMode::Psd;
-  channelSection_->setVisible(narrow);
-  fileSection_->setVisible(!narrow);
-  detectionSection_->setVisible(!narrow);
-  detectionCard_->actionsWidget()->setVisible(!narrow);
-  viewSection_->setVisible(!narrow);
-  psdSection_->setVisible(!narrow);
-  markSection_->setVisible(marked);
-  if (narrow) {
+  inspectorButtons_[1]->setEnabled(!narrow);
+  inspectorButtons_[3]->setEnabled(file && channel);
+  annotations_->inspectorWidget()->setVisible(marked);
+  annotationEmpty_->setVisible(!marked);
+  annotationActions_->setVisible(marked);
+  selectedCount_->setVisible(marked && file->selectedMarkIds.size() > 1);
+  const auto selection = file ? q(file->activeMarkId) + ":" + q(file->activeSegmentId) : QString{};
+  const auto context = QString::number(session_.projectGeneration()) + ":" +
+      (file ? q(file->metadata.id) : QString{}) + ":" +
+      (narrow ? q(channel->id) : QStringLiteral("wide"));
+  if (context != inspectorContext_) {
+    inspectorContext_ = context;
+    inspectorSelection_ = selection;
+    inspectorManualOverride_ = false;
+    if (narrow) showInspectorPage(3);
+  } else if (selection != inspectorSelection_) {
+    inspectorSelection_ = selection;
+    const auto widgets = findChildren<QWidget*>();
+    const bool draft = std::any_of(widgets.begin(), widgets.end(), [](QWidget* widget) {
+      return widget->property("parameterDraft").toBool();
+    });
+    if (marked && !draft && !inspectorManualOverride_) showInspectorPage(2);
+  }
+  if ((!channel && inspectorPages_->currentIndex() == 3) ||
+      (narrow && inspectorPages_->currentIndex() == 1)) showInspectorPage(narrow ? 3 : 0);
+  if (file) {
+    const auto state = file->metadata.demo ? QStringLiteral("演示数据")
+        : file->metadata.availability.status == LoadStatus::Loading ? QStringLiteral("正在读取")
+        : file->metadata.availability.status == LoadStatus::Partial ? QStringLiteral("可用前缀")
+        : file->metadata.availability.status == LoadStatus::Failed ? QStringLiteral("读取异常")
+        : QStringLiteral("实际数据");
+    sourceSummary_->setText(q(file->metadata.name) + "\n" + state + " · " +
+        number(file->metadata.sampleRateHz / 1e6) + " MS/s · " +
+        number(file->metadata.centerFrequencyHz / 1e6) + " MHz");
+    const bool frame = session_.linkedCursor(narrow ? channel->id : file->metadata.id).framePsd;
+    const int stftN = narrow ? channel->stftFftSize : file->display.stftSize;
+    const int psdN = frame ? stftN : narrow ? channel->psdFftSize : file->display.psdSize;
+    displaySummary_->setText(QString("PSD N %1 · %2\nSTFT N %3 · %4\n参考 %5 %6\n动态 %7 dB")
+        .arg(psdN).arg(frame ? "驻留帧谱" : "统计谱").arg(stftN)
+        .arg(propertyPalette_->currentText()).arg(QString::number(file->display.referenceLevelDb, 'f', 2))
+        .arg(powerUnit(file->metadata)).arg(QString::number(file->display.dynamicRangeDb, 'f', 2)));
+  } else {
+    sourceSummary_->setText("请先新建或打开工程，再添加信号文件。");
+    displaySummary_->clear();
+  }
+  if (file && channel) {
     channelValues_[0]->setText(q(file->metadata.name));
+    channelValues_[0]->setToolTip(q(file->metadata.path));
+    findChild<QLabel*>("channelSourcePath")->setText(q(file->metadata.path));
     const auto* sourceMark = findMark(*file, channel->sourceMarkId);
     channelValues_[1]->setText(sourceMark ? q(sourceMark->name)
                                           : "来源标记丢失");
@@ -3571,17 +3792,23 @@ void MainWindow::updatePropertyContext() {
                                   : "旧版来源；没有创建修订快照");
     channelRelation_->setText(channelRelationLabel(channel->sourceRelation));
   }
-  const auto context =
-      (file ? q(file->metadata.id) : QString{}) + ":" + QString::number(psd) +
-      ":" + QString::number(marked) + ":" + QString::number(narrow) + ":" +
-      (channel ? q(channel->id) + ":" + QString::number(channel->configVersion)
-               : QString{});
-  if (context == propertyContext_) return;
-  propertyContext_ = context;
-  auto* first = narrow ? channelSection_ : fileSection_;
-  propertyLayout_->removeWidget(first);
-  propertyLayout_->insertWidget(0, first);
-  propertyLayout_->activate();
+  showInspectorPage(inspectorPages_->currentIndex());
+}
+void MainWindow::showInspectorPage(int page, bool intentional) {
+  if (!inspectorPages_) return;
+  page = std::clamp(page, 0, 3);
+  if (page == 3 && !session_.activeChannel()) page = 0;
+  if (intentional) inspectorManualOverride_ = true;
+  auto* previousPage = inspectorPages_->currentWidget();
+  if (previousPage) previousPage->setProperty("parameterLayerHiding", true);
+  inspectorPages_->setCurrentIndex(page);
+  if (previousPage) previousPage->setProperty("parameterLayerHiding", false);
+  for (int index = 0; index < 4; ++index) {
+    const QSignalBlocker blocker(inspectorButtons_[index]);
+    inspectorButtons_[index]->setChecked(index == page);
+  }
+  detectionCard_->actionsWidget()->setVisible(page == 1 &&
+      !session_.project().narrowbandWorkspaceOpen && !propertiesCollapsed_ && width() > 1150);
 }
 void MainWindow::updateBottom() {
   if (annotations_) annotations_->refresh();
@@ -3660,13 +3887,15 @@ void MainWindow::enforceLayout(bool reset) {
   resourceBody_->setVisible(!hideResources);
   propertiesTitle_->setVisible(!hideProperties);
   propScroll_->setVisible(!hideProperties);
+  if (inspectorTabs_) inspectorTabs_->setVisible(!hideProperties);
+  if (detectionCard_ && inspectorPages_)
+    detectionCard_->actionsWidget()->setVisible(!hideProperties && inspectorPages_->currentIndex() == 1 &&
+        !session_.project().narrowbandWorkspaceOpen);
   propRail_->setVisible(hideProperties);
   findChild<QPushButton*>("propClose")->setVisible(!hideProperties);
   scope_->setVisible(w > 1330);
   projectLabel_->setVisible(w > 990);
   specMode_->setVisible(main_ && main_->isCreating() && w > 990);
-  specAxis_->setVisible(w > 1330);
-  rangeTag_->setVisible(w > 990);
   cursorData_->setVisible(w > 990);
   viewData_->setVisible(w > 1150);
   findChild<QLabel*>("navHint")->setVisible(w > 1150);
@@ -3900,7 +4129,8 @@ void MainWindow::applyPowerInput(QComboBox* control) {
   text.remove(QRegularExpression(
       QStringLiteral("\\s*dB(?:FS(?:/Hz)?|\\((?:unit|ADC)\\^2/Hz\\))?\\s*$")));
   bool ok = false;
-  const double value = text.toDouble(&ok);
+  const double value = !control->property("parameterCustomCommit").toBool()&&control->currentData().isValid()
+                           ? control->currentData().toDouble(&ok) : text.toDouble(&ok);
   const auto& display = session_.activeFile()->display;
   PowerDisplayRange range{display.referenceLevelDb, display.dynamicRangeDb};
   if (control == dynamic_)
@@ -3909,12 +4139,14 @@ void MainWindow::applyPowerInput(QComboBox* control) {
     range.referenceLevelDb = value;
   const bool valid = ok && range.valid();
   control->setProperty("powerInputValid", valid);
-  control->lineEdit()->setStyleSheet(valid ? QString{} : "color:#ffbb68;");
-  control->setToolTip(valid ? QString{}
+  setParameterError(control, valid ? QString{}
                       : control == dynamic_
                           ? "请输入大于 0 且不超过 10000 的动态范围"
                           : "请输入 -200 至 100 的参考电平（dBFS/Hz）");
-  if (!valid) return;
+  if (!valid) {
+    control->setProperty("parameterDraft", true);
+    return;
+  }
   if (control->property("parameterCustomCommit").toBool())
     rememberCustomValue(control, value,
                         control == dynamic_
@@ -3927,20 +4159,15 @@ void MainWindow::applyPowerInput(QComboBox* control) {
 }
 void MainWindow::normalizePowerInput(QComboBox* control) {
   if (refreshing_ || !session_.activeFile()) return;
+  if (!control->property("powerInputValid").toBool()) return;
   const auto& display = session_.activeFile()->display;
   const QSignalBlocker blocker(control);
   const QSignalBlocker editBlocker(control->lineEdit());
   control->setProperty("parameterDraft", false);
-  const auto text =
-      number(control == dynamic_ ? display.dynamicRangeDb
-                                 : display.referenceLevelDb) +
-      (control == dynamic_ ? " dB"
-                           : " " + powerUnit(session_.activeFile()->metadata));
-  control->setProperty("parameterCommittedText", text);
-  control->setEditText(text);
+  displayComboValue(control,control == dynamic_ ? display.dynamicRangeDb : display.referenceLevelDb,
+                    control == dynamic_ ? " dB" : " " + powerUnit(session_.activeFile()->metadata));
   control->lineEdit()->setStyleSheet({});
   control->setProperty("powerInputValid", true);
-  control->setToolTip({});
 }
 void MainWindow::updatePowerFit() {
   if (!autoPowerFit_) return;
@@ -4076,6 +4303,7 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
           annotations_->revealActive();
           treeRevealPending_ = true;
           refresh();
+          showInspectorPage(2, true);
         }
         return true;
       }
@@ -4248,15 +4476,15 @@ void MainWindow::locateMark() {
   if (const auto* file = session_.activeFile())
     session_.focusMark(file->activeMarkId);
   refresh();
+  showInspectorPage(2, true);
 }
 void MainWindow::openWidebandDetection(const DetectionRun* parentRun) {
   if (!detectionCard_) return;
   propertiesCollapsed_ = false;
   enforceLayout();
   detectionCard_->configure(parentRun);
-  if (auto* toggle = findChild<QToolButton*>("detectionSectionToggle"))
-    toggle->setChecked(true);
-  propScroll_->ensureWidgetVisible(detectionSection_, 0, 12);
+  showInspectorPage(1, true);
+  propScroll_->verticalScrollBar()->setValue(0);
 }
 
 void MainWindow::beginDetectionRoi() {

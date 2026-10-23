@@ -1,0 +1,289 @@
+D:\softwares\cmake\bin\cmake.exe --preset local-debug
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26300.
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+CMake Warning at D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake:339 (message):
+  This project is using headers of the GuiPrivate module and will therefore
+  be tied to this specific Qt module build version.  Running this project
+  against other versions of the Qt modules may crash at any arbitrary point.
+  This is not a bug, but a result of using Qt internals.  You have been
+  warned!
+
+  You can disable this warning by setting QT_NO_PRIVATE_MODULE_WARNING to ON.
+Call Stack (most recent call first):
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6GuiPrivate/Qt6GuiPrivateConfig.cmake:48 (_qt_internal_show_private_module_warning)
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/Qt6Config.cmake:253 (find_package)
+  CMakeLists.txt:17 (find_package)
+
+
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+-- Configuring done (0.5s)
+-- Generating done (2.5s)
+-- Build files have been written to: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+D:\softwares\cmake\bin\cmake.exe --build --preset local-debug --target SignalStudioUiTests SignalStudioUxTests
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  SignalStudioBrand.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioBrand.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionWorker.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionWorker.exe
+  Automatic MOC for target SignalStudio
+  正在扫描源以查找模块依赖项...
+  SignalStudio.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudio.exe
+  Deploying Qt and compiler runtime to the standalone output directory
+EXEC : warning : Cannot find any version of the dxcompiler.dll and dxil.dll. This is not a problem unless Direct3D 12 and certain features are used by the application. [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudio.vcxproj]
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140D_ATOMIC_WAIT.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140_2D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/VCRUNTIME140D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/VCRUNTIME140_1D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/ucrtbased.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140_1D.dll
+  D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudio.exe 64 bit, debug executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugind.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding Qt6Svg for qsvgicond.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugind.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugind.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Skipping system library C:/WINDOWS/system32/icuuc.dll
+  Qt6Cored.dll is up to date.
+  Qt6Guid.dll is up to date.
+  Qt6Networkd.dll is up to date.
+  Qt6Svgd.dll is up to date.
+  Qt6Widgetsd.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  concrt140d.dll is up to date.
+  msvcp140_1d.dll is up to date.
+  msvcp140_2d.dll is up to date.
+  msvcp140d.dll is up to date.
+  msvcp140d_atomic_wait.dll is up to date.
+  msvcp140d_codecvt_ids.dll is up to date.
+  vccorlib140d.dll is up to date.
+  vcruntime140_1d.dll is up to date.
+  vcruntime140_threadsd.dll is up to date.
+  vcruntime140d.dll is up to date.
+  qtuiotouchplugind.dll is up to date.
+  qsvgicond.dll is up to date.
+  qgifd.dll is up to date.
+  qicnsd.dll is up to date.
+  qicod.dll is up to date.
+  qjpegd.dll is up to date.
+  qsvgd.dll is up to date.
+  qtgad.dll is up to date.
+  qtiffd.dll is up to date.
+  qwbmpd.dll is up to date.
+  qwebpd.dll is up to date.
+  qnetworklistmanagerd.dll is up to date.
+  qminimald.dll is up to date.
+  qoffscreend.dll is up to date.
+  qwindowsd.dll is up to date.
+  qmodernwindowsstyled.dll is up to date.
+  qcertonlybackendd.dll is up to date.
+  qschannelbackendd.dll is up to date.
+  -- Staged 10 x64 Debug CRT DLLs from C:/Program Files/Microsoft Visual Studio/18/Community/VC/Redist/MSVC/14.51.36231/debug_nonredist/x64/Microsoft.VC145.DebugCRT
+  -- Staged debug UCRT from C:\Program Files (x86)\Windows Kits\10\/bin/10.0.26100.0/x64/ucrt/ucrtbased.dll
+  Automatic MOC for target SignalStudioUiTests
+  正在扫描源以查找模块依赖项...
+  ui_tests.cpp
+  settings_popover.cpp
+  narrowband_workspace.cpp
+  main_window.cpp
+  正在编译...
+  narrowband_workspace.cpp
+  settings_popover.cpp
+  ui_tests.cpp
+  main_window.cpp
+D:\project\signal_studio_rebuild\ui\narrowband_workspace.cpp(2249,17): warning C4458: “data”的声明隐藏了类成员 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioUiTests.vcxproj]
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtWidgets\qwidget.h(785,18):
+      参见“QWidget::data”的声明
+  
+  mocs_compilation_Debug.cpp
+  SignalStudioUiTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioUiTests.exe
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  SignalStudioBrand.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioBrand.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionWorker.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionWorker.exe
+  Automatic MOC for target SignalStudio
+  正在扫描源以查找模块依赖项...
+  SignalStudio.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudio.exe
+  Deploying Qt and compiler runtime to the standalone output directory
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140D_ATOMIC_WAIT.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140_2D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/VCRUNTIME140D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/VCRUNTIME140_1D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/ucrtbased.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140_1D.dll
+  D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudio.exe 64 bit, debug executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugind.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+EXEC : warning : Cannot find any version of the dxcompiler.dll and dxil.dll. This is not a problem unless Direct3D 12 and certain features are used by the application. [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudio.vcxproj]
+  Adding Qt6Svg for qsvgicond.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugind.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugind.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Skipping system library C:/WINDOWS/system32/icuuc.dll
+  Qt6Cored.dll is up to date.
+  Qt6Guid.dll is up to date.
+  Qt6Networkd.dll is up to date.
+  Qt6Svgd.dll is up to date.
+  Qt6Widgetsd.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  concrt140d.dll is up to date.
+  msvcp140_1d.dll is up to date.
+  msvcp140_2d.dll is up to date.
+  msvcp140d.dll is up to date.
+  msvcp140d_atomic_wait.dll is up to date.
+  msvcp140d_codecvt_ids.dll is up to date.
+  vccorlib140d.dll is up to date.
+  vcruntime140_1d.dll is up to date.
+  vcruntime140_threadsd.dll is up to date.
+  vcruntime140d.dll is up to date.
+  qtuiotouchplugind.dll is up to date.
+  qsvgicond.dll is up to date.
+  qgifd.dll is up to date.
+  qicnsd.dll is up to date.
+  qicod.dll is up to date.
+  qjpegd.dll is up to date.
+  qsvgd.dll is up to date.
+  qtgad.dll is up to date.
+  qtiffd.dll is up to date.
+  qwbmpd.dll is up to date.
+  qwebpd.dll is up to date.
+  qnetworklistmanagerd.dll is up to date.
+  qminimald.dll is up to date.
+  qoffscreend.dll is up to date.
+  qwindowsd.dll is up to date.
+  qmodernwindowsstyled.dll is up to date.
+  qcertonlybackendd.dll is up to date.
+  qschannelbackendd.dll is up to date.
+  -- Staged 10 x64 Debug CRT DLLs from C:/Program Files/Microsoft Visual Studio/18/Community/VC/Redist/MSVC/14.51.36231/debug_nonredist/x64/Microsoft.VC145.DebugCRT
+  -- Staged debug UCRT from C:\Program Files (x86)\Windows Kits\10\/bin/10.0.26100.0/x64/ucrt/ucrtbased.dll
+  Automatic MOC for target SignalStudioUxTests
+  正在扫描源以查找模块依赖项...
+  narrowband_workspace.cpp
+  settings_popover.cpp
+  main_window.cpp
+  ux_tests.cpp
+  正在编译...
+  main_window.cpp
+  ux_tests.cpp
+  narrowband_workspace.cpp
+  settings_popover.cpp
+D:\project\signal_studio_rebuild\ui\narrowband_workspace.cpp(2249,17): warning C4458: “data”的声明隐藏了类成员 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioUxTests.vcxproj]
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtWidgets\qwidget.h(785,18):
+      参见“QWidget::data”的声明
+  
+  mocs_compilation_Debug.cpp
+  SignalStudioUxTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioUxTests.exe
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure -R ^signal_studio_(ui_parameters|ux_(popovers|spectral|layout))$
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+    Start 31: signal_studio_ux_spectral
+1/4 Test #31: signal_studio_ux_spectral ........   Passed    3.55 sec
+    Start 33: signal_studio_ux_layout
+2/4 Test #33: signal_studio_ux_layout ..........   Passed   25.69 sec
+    Start 34: signal_studio_ux_popovers
+3/4 Test #34: signal_studio_ux_popovers ........   Passed    1.02 sec
+    Start 36: signal_studio_ui_parameters
+4/4 Test #36: signal_studio_ui_parameters ......***Failed    0.83 sec
+Unknown test function: 'parameterInputsCommitOnlyExplicitly'.
+Unknown test function: 'parameterInputsIgnoreMouseWheel'.
+
+D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUiTests.exe -functions
+lists all available test functions.
+
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+FAIL!  : UiTests::parameterInputsCommitOnlyExplicitly() Function not found: parameterInputsCommitOnlyExplicitly
+FAIL!  : UiTests::parameterInputsIgnoreMouseWheel() Function not found: parameterInputsIgnoreMouseWheel
+Totals: 0 passed, 2 failed, 0 skipped, 0 blacklisted, 4ms
+********* Finished testing of UiTests *********
+
+CMake Error at D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake:20 (message):
+  Qt UI raw log contains a failure or no successful totals
+
+
+
+
+75% tests passed, 1 tests failed out of 4
+
+Label Time Summary:
+layout         =  25.69 sec*proc (1 test)
+parameters     =   0.83 sec*proc (1 test)
+popovers       =   1.02 sec*proc (1 test)
+spectral       =   3.55 sec*proc (1 test)
+ui             =   0.83 sec*proc (1 test)
+wideband-ux    =  30.25 sec*proc (3 tests)
+
+Total Test time (real) =  31.11 sec
+
+The following tests FAILED:
+	 36 - signal_studio_ui_parameters (Failed)              parameters ui
+Errors while running CTest

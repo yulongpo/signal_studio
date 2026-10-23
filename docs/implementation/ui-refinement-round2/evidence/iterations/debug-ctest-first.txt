@@ -1,0 +1,76 @@
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+      Start  1: signal_studio_detection_refined_fusion
+ 1/29 Test  #1: signal_studio_detection_refined_fusion .......   Passed    0.03 sec
+      Start  2: signal_studio_detection_time_pipeline
+ 2/29 Test  #2: signal_studio_detection_time_pipeline ........   Passed   38.87 sec
+      Start  3: signal_studio_detection_refinement
+ 3/29 Test  #3: signal_studio_detection_refinement ...........   Passed    0.04 sec
+      Start  4: signal_studio_detection_sample_energy
+ 4/29 Test  #4: signal_studio_detection_sample_energy ........   Passed    0.21 sec
+      Start  5: signal_studio_detection_pipeline
+ 5/29 Test  #5: signal_studio_detection_pipeline .............   Passed   21.70 sec
+      Start  6: signal_studio_detection_postprocess
+ 6/29 Test  #6: signal_studio_detection_postprocess ..........   Passed    0.03 sec
+      Start  7: signal_studio_detection_model_backend
+ 7/29 Test  #7: signal_studio_detection_model_backend ........   Passed    0.34 sec
+      Start  8: signal_studio_detection_frequency_analysis
+ 8/29 Test  #8: signal_studio_detection_frequency_analysis ...   Passed    0.47 sec
+      Start  9: signal_studio_detection_store
+ 9/29 Test  #9: signal_studio_detection_store ................   Passed    3.39 sec
+      Start 10: signal_studio_detection_protocol
+10/29 Test #10: signal_studio_detection_protocol .............   Passed    1.28 sec
+      Start 11: signal_studio_detection_task
+11/29 Test #11: signal_studio_detection_task .................   Passed   37.04 sec
+      Start 12: signal_studio_detection_source
+12/29 Test #12: signal_studio_detection_source ...............   Passed    5.11 sec
+      Start 13: signal_studio_annotations
+13/29 Test #13: signal_studio_annotations ....................   Passed    0.89 sec
+      Start 14: signal_studio_annotation_store
+14/29 Test #14: signal_studio_annotation_store ...............   Passed   46.36 sec
+      Start 15: signal_studio_label_import
+15/29 Test #15: signal_studio_label_import ...................   Passed   52.81 sec
+      Start 16: signal_studio_wav
+16/29 Test #16: signal_studio_wav ............................   Passed    1.46 sec
+      Start 17: signal_studio_import
+17/29 Test #17: signal_studio_import .........................   Passed    0.97 sec
+      Start 18: signal_studio_sample_format
+18/29 Test #18: signal_studio_sample_format ..................   Passed   11.32 sec
+      Start 19: signal_studio_core
+19/29 Test #19: signal_studio_core ...........................   Passed    1.42 sec
+      Start 20: signal_studio_channel_processor
+20/29 Test #20: signal_studio_channel_processor ..............   Passed    1.23 sec
+      Start 21: signal_studio_spectral_analysis
+21/29 Test #21: signal_studio_spectral_analysis ..............   Passed    1.22 sec
+      Start 22: signal_studio_display_sampling
+22/29 Test #22: signal_studio_display_sampling ...............   Passed    0.04 sec
+      Start 23: signal_studio_project_tree
+23/29 Test #23: signal_studio_project_tree ...................   Passed    0.41 sec
+      Start 24: signal_studio_ux_detection
+24/29 Test #24: signal_studio_ux_detection ...................   Passed   41.67 sec
+      Start 25: signal_studio_ux_spectral
+25/29 Test #25: signal_studio_ux_spectral ....................   Passed    3.04 sec
+      Start 26: signal_studio_ux_charts
+26/29 Test #26: signal_studio_ux_charts ......................   Passed   12.44 sec
+      Start 27: signal_studio_ux_layout
+27/29 Test #27: signal_studio_ux_layout ......................   Passed   39.30 sec
+      Start 28: signal_studio_ux_popovers
+28/29 Test #28: signal_studio_ux_popovers ....................   Passed    0.94 sec
+      Start 29: signal_studio_ui
+29/29 Test #29: signal_studio_ui .............................***Timeout 480.05 sec
+
+
+97% tests passed, 1 tests failed out of 29
+
+Label Time Summary:
+charts         =  12.44 sec*proc (1 test)
+detection      =  41.67 sec*proc (1 test)
+layout         =  39.30 sec*proc (1 test)
+popovers       =   0.94 sec*proc (1 test)
+spectral       =   3.04 sec*proc (1 test)
+wideband-ux    =  97.41 sec*proc (5 tests)
+
+Total Test time (real) = 804.20 sec
+
+The following tests FAILED:
+	 29 - signal_studio_ui (Timeout)
+Errors while running CTest

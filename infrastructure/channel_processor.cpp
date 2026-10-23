@@ -57,7 +57,7 @@ double kaiserBeta(double attenuation) {
 }
 
 bool lowpass(double sampleRate, double passEdge, double stopEdge, double attenuation,
-             std::vector<double>& taps) {
+             std::vector<double>& taps, const std::function<bool()>& cancelled = {}) {
     if (!(sampleRate > 0) || !(passEdge > 0) || !(stopEdge > passEdge) || stopEdge >= sampleRate / 2)
         return false;
     const double transition = (stopEdge - passEdge) / sampleRate;
@@ -72,6 +72,7 @@ bool lowpass(double sampleRate, double passEdge, double stopEdge, double attenua
     taps.resize(static_cast<std::size_t>(count));
     double sum = 0;
     for (int index = 0; index < count; ++index) {
+        if ((index & 255) == 0 && cancelled && cancelled()) return false;
         const int offset = index - half;
         const double ideal = offset == 0 ? 2 * cutoff / sampleRate :
             std::sin(2 * std::numbers::pi * cutoff * offset / sampleRate) /
@@ -225,7 +226,8 @@ bool designChannelLowpass(double sampleRateHz, double passEdgeHz, double stopEdg
 }
 
 bool makeChannelDspPlan(const FileMetadata& source, const Channel& channel,
-                        ChannelDspPlan& plan, QString& error, QString* field) {
+                        ChannelDspPlan& plan, QString& error, QString* field,
+                        const std::function<bool()>& cancelled) {
   error.clear();
   plan = {};
   if (field) *field = "source";
@@ -298,61 +300,69 @@ bool makeChannelDspPlan(const FileMetadata& source, const Channel& channel,
     return false;
   }
 
-  const double targetDb = channel.filter == ChannelFilter::FastPreview     ? 40
-                          : channel.filter == ChannelFilter::HighRejection ? 80
-                                                                           : 60;
-  std::uint64_t stageRate = sourceRate;
-  std::vector<std::vector<double>> stages;
-  const auto minimumIntermediateRate =
-      static_cast<std::uint64_t>(std::ceil(stopEdge * 4));
-  while (stageRate / 2 >= minimumIntermediateRate && stageRate / 2 >= 2) {
-    const auto nextRate = stageRate / 2;
-    const double aliasStop = static_cast<double>(nextRate) - stopEdge;
+  ChannelDspSpecification specification;
+  std::string detail, key;
+  if (!describeChannelDsp(source, channel, specification, detail, &key)) {
+    error = QString::fromStdString(detail);
+    if (field) *field = QString::fromStdString(key);
+    return false;
+  }
+  plan.sourceRateHz = specification.sourceRateHz;
+  plan.outputRateHz = specification.outputRateHz;
+  plan.interpolation = specification.interpolation;
+  plan.decimation = specification.decimation;
+  plan.sourceDecimationStages = specification.sourceDecimationStages;
+  plan.transitionHz = specification.transitionHz;
+  plan.cutoffHz = specification.cutoffHz;
+  plan.stopbandAttenuationDb = specification.attenuationDb;
+  plan.estimatedWorkingBytes = specification.estimatedWorkingBytes;
+  for (const auto& stage : specification.stages) {
     std::vector<double> coefficients;
-    const double stageAttenuation =
-        targetDb + 6 + 20 * std::log10(static_cast<double>(stages.size() + 2));
-    if (!lowpass(static_cast<double>(stageRate), passEdge, aliasStop,
-                 stageAttenuation, coefficients))
-      break;
-    stages.push_back(std::move(coefficients));
-    stageRate = nextRate;
+    if (!lowpass(stage.sampleRateHz, stage.passEdgeHz, stage.stopEdgeHz,
+                 stage.attenuationDb, coefficients, cancelled)) {
+      error = "FIR 系数构造失败。";
+      if (field) *field = "filter";
+      return false;
+    }
+    plan.stageCoefficients.push_back(std::move(coefficients));
   }
-  const auto common = gcd(outputRate, stageRate);
-  const auto interpolation = outputRate / common;
-  const auto decimation = stageRate / common;
-  if (!interpolation || !decimation || interpolation > 4096 ||
-      decimation > 4096) {
-    error = QStringLiteral("有理重采样比例超出 L、M ≤ 4096 的支持范围");
-    if (field) *field = "outputSampleRateHz";
-    return false;
-  }
-  const double expandedRate = static_cast<double>(stageRate) * interpolation;
-  const double rationalStop = std::min(expandedRate / 2, passEdge + transition);
-  std::vector<double> finalCoefficients;
-  const double finalAttenuation =
-      targetDb + 6 + 20 * std::log10(static_cast<double>(stages.size() + 1));
-  if (!lowpass(expandedRate, passEdge, rationalStop, finalAttenuation,
-               finalCoefficients)) {
-    error = QStringLiteral(
-        "FIR 阶数超出当前资源预算；请增加过渡带或更换输出采样率");
-    if (field) *field = "filter";
-    return false;
-  }
-  stages.push_back(std::move(finalCoefficients));
-  plan.sourceRateHz = sourceRate;
-  plan.outputRateHz = outputRate;
-  plan.interpolation = static_cast<std::uint32_t>(interpolation);
-  plan.decimation = static_cast<std::uint32_t>(decimation);
-  plan.sourceDecimationStages = static_cast<int>(stages.size()) - 1;
-  plan.transitionHz = transition;
-  plan.cutoffHz = passEdge + transition / 2;
-  plan.stopbandAttenuationDb = targetDb;
-  plan.stageCoefficients = std::move(stages);
-  for (const auto& coefficients : plan.stageCoefficients)
-    plan.estimatedWorkingBytes += coefficients.size() * sizeof(double);
   error.clear();
   if (field) field->clear();
   return true;
+}
+
+TimeRange channelValidOutputSamples(const FileMetadata& source, const Channel& channel,
+                                    const ChannelDspPlan& plan) {
+  std::uint64_t total=0;
+  if(!sourceCountFor(source,channel,plan,total) || plan.stageCoefficients.empty() ||
+     channel.sourceTime.end-channel.sourceTime.begin>static_cast<std::uint64_t>(std::numeric_limits<SignedIndex>::max())) return {};
+  const auto length=static_cast<SignedIndex>(channel.sourceTime.end-channel.sourceTime.begin);
+  const auto support=[&](std::uint64_t n,SignedIndex& first,SignedIndex& last) {
+    SignedIndex grid=0;std::uint32_t phase=0;
+    if(!outputGrid(n,plan,grid,phase))return false;
+    const auto half=static_cast<SignedIndex>(plan.stageCoefficients.back().size()/2);
+    first=grid+ceilDiv(static_cast<SignedIndex>(phase)-half,plan.interpolation);
+    last=grid+floorDiv(static_cast<SignedIndex>(phase)+half,plan.interpolation);
+    for(int i=plan.sourceDecimationStages-1;i>=0;--i) {
+      const auto margin=static_cast<SignedIndex>(plan.stageCoefficients[static_cast<std::size_t>(i)].size()/2);
+      if(first<(std::numeric_limits<SignedIndex>::min()+margin)/2 ||
+         last>(std::numeric_limits<SignedIndex>::max()-margin)/2)return false;
+      first=2*first-margin;last=2*last+margin;
+    }
+    return true;
+  };
+  const auto lowerBound=[&](bool right) {
+    std::uint64_t lo=0,hi=total;
+    while(lo<hi) {
+      const auto middle=lo+(hi-lo)/2;SignedIndex first=0,last=0;
+      const bool ok=support(middle,first,last);
+      const bool reached=right ? (!ok || last>=length) : (ok && first>=0);
+      if(reached)hi=middle;else lo=middle+1;
+    }
+    return lo;
+  };
+  const auto begin=lowerBound(false),end=lowerBound(true);
+  return {begin,std::max(begin,end)};
 }
 
 bool processChannelSamples(const FileMetadata& source, const Channel& channel,
@@ -444,6 +454,7 @@ bool processChannelSamples(const FileMetadata& source, const Channel& channel,
             std::complex<double> sum{};
             const auto center = 2 * output;
             for (std::size_t tap = 0; tap < taps.size(); ++tap) {
+                if ((tap & 511U) == 0 && cancelled && cancelled()) return false;
                 const auto absolute = center + static_cast<SignedIndex>(tap) - half;
                 const auto sampleIndex = static_cast<std::size_t>(absolute - origin);
                 sum += std::complex<double>(current[sampleIndex].real(), current[sampleIndex].imag()) * taps[tap];
@@ -471,6 +482,7 @@ bool processChannelSamples(const FileMetadata& source, const Channel& channel,
         const SignedIndex lastTap = floorDiv(numerator + half, plan.interpolation);
         std::complex<double> sum{};
         for (SignedIndex inputIndex = firstTap; inputIndex <= lastTap; ++inputIndex) {
+            if ((inputIndex & 511) == 0 && cancelled && cancelled()) return false;
             const SignedIndex tapNumerator = half + numerator - inputIndex * plan.interpolation;
             if (tapNumerator < 0 || static_cast<std::uint64_t>(tapNumerator) >= taps.size()) continue;
             const SignedIndex local = inputIndex - origin;
@@ -489,8 +501,11 @@ bool processChannelSamples(const FileMetadata& source, const Channel& channel,
     sourceEndOffset = std::min(sourceEndOffset, channel.sourceTime.end - channel.sourceTime.begin);
     result.sourceSamples = {channel.sourceTime.begin + sourceBeginOffset,
         std::max(channel.sourceTime.begin + sourceBeginOffset, channel.sourceTime.begin + sourceEndOffset)};
-    result.leftPadded = outputSamples.begin == 0;
-    result.rightPadded = outputSamples.end == outputCount;
+    const auto valid=channelValidOutputSamples(source,channel,plan);
+    result.validOutputSamples.begin=std::min(outputSamples.end,std::max(outputSamples.begin,valid.begin));
+    result.validOutputSamples.end=std::max(result.validOutputSamples.begin,std::min(outputSamples.end,valid.end));
+    result.leftPadded = outputSamples.begin < valid.begin;
+    result.rightPadded = outputSamples.end > valid.end;
     return true;
 }
 
@@ -500,7 +515,7 @@ bool ChannelSampleCache::process(const FileMetadata& source, const Channel& chan
                                  const ChannelDspPlan& plan, TimeRange outputSamples,
                                  ChannelSampleData& result,
                                  const std::function<bool()>& cancelled) {
-    std::lock_guard lock(mutex_);
+    std::unique_lock lock(mutex_);
     result = {};
     result.waveformScale=adcScale(source.sampleFormat);
     if (outputSamples.begin >= outputSamples.end || outputSamples.end - outputSamples.begin > 8'000'000)
@@ -552,13 +567,15 @@ bool ChannelSampleCache::process(const FileMetadata& source, const Channel& chan
         } else {
             ++misses_;
             auto computed = std::make_shared<ChannelSampleData>();
+            lock.unlock();
             if (!processChannelSamples(source, channel, plan, {blockBegin, blockEnd}, *computed, cancelled)) {
                 result = {};
                 return false;
             }
+            lock.lock();
             block = computed;
             const auto bytes = computed->samples.size() * sizeof(std::complex<float>);
-            if (bytes <= budgetBytes_ && bytes_ <= std::numeric_limits<std::size_t>::max() - bytes) {
+            if (bytes <= budgetBytes_ && bytes_ <= std::numeric_limits<std::size_t>::max() - bytes && !entries_.contains(blockKey)) {
                 lru_.push_front(blockKey);
                 entries_.emplace(blockKey, Entry{block, lru_.begin(), bytes});
                 bytes_ += bytes;
@@ -598,8 +615,11 @@ bool ChannelSampleCache::process(const FileMetadata& source, const Channel& chan
     sourceEndOffset = std::min(sourceEndOffset, sourceLength);
     result.sourceSamples = {channel.sourceTime.begin + sourceBeginOffset,
         std::max(channel.sourceTime.begin + sourceBeginOffset, channel.sourceTime.begin + sourceEndOffset)};
-    result.leftPadded = outputSamples.begin == 0;
-    result.rightPadded = outputSamples.end == outputCount;
+    const auto valid=channelValidOutputSamples(source,channel,plan);
+    result.validOutputSamples.begin=std::min(outputSamples.end,std::max(outputSamples.begin,valid.begin));
+    result.validOutputSamples.end=std::max(result.validOutputSamples.begin,std::min(outputSamples.end,valid.end));
+    result.leftPadded = outputSamples.begin < valid.begin;
+    result.rightPadded = outputSamples.end > valid.end;
     return true;
 }
 

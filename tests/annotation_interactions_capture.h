@@ -31,6 +31,7 @@ void interactionClickRow(MainWindow& window, const std::string& id,
             return window.session().activeFile()->activeMarkId == id;
           }),
           "Clicked annotation is not the current business object");
+  widebandShowInspector(window, "contextAnnotation");
 }
 
 ViewRange interactionRange(const FileMetadata& metadata, double beginMs,
@@ -178,7 +179,8 @@ void interactionScene(Capture& capture, const QString& name, QScreen* screen) {
   record["tableCounts"] =
       child<QLabel>(capture.window, "annotationCounts")->text();
   record["treeCounts"] =
-      child<QLabel>(capture.window, "treeAnnotationCounts")->text();
+      child<QLabel>(capture.window, "treeAnnotationCounts")->toolTip();
+  record["treeSummary"]=child<QLabel>(capture.window,"treeAnnotationCounts")->text();
   require(record["tableCounts"].toString().startsWith(
               record["treeCounts"].toString() + " · 页 "),
           "Tree and table annotation counts disagree");
@@ -206,6 +208,7 @@ void interactionSelectionScenes(Capture& capture, QScreen* screen) {
         session.annotations().select(*file, {id}, id, segmentId);
     require(result.ok, QString::fromStdString(result.error));
     window.refresh();
+    widebandShowInspector(window, "contextAnnotation");
   };
   const auto initialView = file->view;
   select("algo-observation");
@@ -289,7 +292,7 @@ void interactionSelectionScenes(Capture& capture, QScreen* screen) {
   click(window, "treeSelectAll");
   require(file->selectedMarkIds.size() == 268,
           "Tree select-all did not include all matching table pages");
-  child<QComboBox>(window, "annotationSourceFilter")->setCurrentIndex(3);
+  widebandNativeSelect(child<QComboBox>(window, "annotationSourceFilter"), 3);
   require(file->selectedMarkIds.size() == 263 &&
               std::all_of(file->selectedMarkIds.begin(),
                           file->selectedMarkIds.end(),
@@ -305,7 +308,7 @@ void interactionSelectionScenes(Capture& capture, QScreen* screen) {
           "Closing a source layer retained invisible selection");
   interactionScene(capture, "07-closed-layer-prunes-selection", screen);
   click(window, "annotationLayer2");
-  child<QComboBox>(window, "annotationSourceFilter")->setCurrentIndex(0);
+  widebandNativeSelect(child<QComboBox>(window, "annotationSourceFilter"), 0);
   require(file->selectedMarkIds.empty(),
           "Restoring filters must not restore hidden old selection");
   interactionScene(capture, "08-filter-restored-without-old-selection", screen);
@@ -390,11 +393,7 @@ int runAnnotationInteractionsCapture(
     file->display.grid = true;
     interactionPublishFixtures(window, false);
     click(window, "resultTab");
-    auto* detectionToggle =
-        child<QToolButton>(window, "detectionSectionToggle");
-    widebandScrollTo(detectionToggle);
-    if (detectionToggle->isChecked())
-      QTest::mouseClick(detectionToggle, Qt::LeftButton);
+    widebandShowInspector(window, "contextAnnotation");
     require(widebandDisplayReady(window),
             "Actual IQ display did not settle on hardware QRhi");
     if (captureScenes)

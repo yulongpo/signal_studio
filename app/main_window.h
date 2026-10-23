@@ -34,6 +34,8 @@ class PlotWidget;
 class NarrowbandWorkspace;
 class SourceLoader;
 class SpectralSettingsWidget;
+class SettingsPopoverHost;
+class ChartControlStrip;
 class ParameterInputPolicy;
 class PanelResizeHandle;
 class MainWindow : public QMainWindow {
@@ -98,6 +100,29 @@ class MainWindow : public QMainWindow {
   void autoFitPower();
   void buildMenus();
   void buildWorkspace();
+  void buildChartControls();
+  void updateChartControls(bool narrow);
+  void showInspectorPage(int page, bool intentional = false);
+  SettingsPopoverHost* settingsPopovers_ = nullptr;
+  ChartControlStrip *auxiliaryControls_ = nullptr, *spectrumControls_ = nullptr;
+  std::array<ChartControlStrip*,7> narrowbandControls_{};
+  ChartControlStrip* activeHeatmapControls_=nullptr;
+  std::array<QComboBox*,3> psdInline_{},stftInline_{};
+  bool chartControlsInitialized_=false,chartControlsNarrow_=false;
+  QComboBox *psdStatisticControl_ = nullptr, *psdSourceControl_ = nullptr;
+  QToolButton *psdSettingsButton_ = nullptr, *stftSettingsButton_ = nullptr,
+              *powerSettingsButton_ = nullptr, *displaySettingsButton_ = nullptr;
+  QWidget* narrowbandSettingsLinks_ = nullptr;
+  QWidget *inspectorTabs_ = nullptr, *paletteHost_ = nullptr,
+          *filePropertiesContent_ = nullptr, *annotationActions_ = nullptr;
+  QStackedWidget* inspectorPages_ = nullptr;
+  std::array<QPushButton*, 4> inspectorButtons_{};
+  QPushButton* filePropertiesButton_ = nullptr;
+  QLabel *sourceSummary_ = nullptr, *displaySummary_ = nullptr,
+         *annotationEmpty_ = nullptr;
+  QString inspectorContext_, inspectorSelection_;
+  bool inspectorManualOverride_ = false;
+  QString settingsSourceContext_;
   void restoreUiState();
   void saveUiState();
   void restoreRightSidebarSettings(FileState& file);
@@ -141,7 +166,6 @@ class MainWindow : public QMainWindow {
   Session session_;
   DetectionPanel* detection_ = nullptr;
   DetectionCard* detectionCard_ = nullptr;
-  QWidget* detectionSection_ = nullptr;
   QWidget* detectionRoiConfirmation_ = nullptr;
   QPushButton* detectionRoiTool_ = nullptr;
   QPushButton* manualTool_ = nullptr;
@@ -170,7 +194,7 @@ class MainWindow : public QMainWindow {
        destroying_ = false;
   bool resourcesCollapsed_ = false, propertiesCollapsed_ = false;
   int maximizedPanel_ = -1, bottomTab_ = 0;
-  QString propertyContext_, cursorFileId_;
+  QString cursorFileId_;
   SampleIndex cursorSample_ = 0;
   double cursorFrequency_ = 0;
   QStringList treeStructure_;
@@ -185,12 +209,8 @@ class MainWindow : public QMainWindow {
           *empty_ = nullptr;
   QWidget *maxHost_ = nullptr, *maxVeil_ = nullptr;
   QScrollArea* propScroll_ = nullptr;
-  QVBoxLayout* propertyLayout_ = nullptr;
-  QWidget *fileSection_ = nullptr, *viewSection_ = nullptr,
-          *markSection_ = nullptr, *psdSection_ = nullptr,
-          *channelSection_ = nullptr;
   QComboBox *mainMode_ = nullptr, *auxMode_ = nullptr, *waveformMode_ = nullptr,
-            *palette_ = nullptr, *propertyPalette_ = nullptr;
+            *propertyPalette_ = nullptr;
   QComboBox *stft_ = nullptr, *psd_ = nullptr, *psdScope_ = nullptr,
             *dynamic_ = nullptr, *reference_ = nullptr, *freqMode_ = nullptr;
   QDoubleSpinBox* effectiveBandwidth_ = nullptr;
@@ -198,12 +218,10 @@ class MainWindow : public QMainWindow {
   std::array<QPushButton*, 2> auxiliaryButtons_{}, mainButtons_{};
   std::array<QPushButton*, 3> bottomButtons_{};
   std::array<QLabel*, 4> fileValues_{};
-  std::array<QLabel*, 2> viewValues_{};
-  std::array<QLabel*, 3> markValues_{};
   std::array<QLabel*, 6> channelValues_{};
   QLabel *channelRevision_ = nullptr, *channelRelation_ = nullptr;
   QLabel *scope_ = nullptr, *projectLabel_ = nullptr, *navStatus_ = nullptr,
-         *auxStatus_ = nullptr, *rangeTag_ = nullptr,
+         *auxStatus_ = nullptr,
          *dataSourceStatus_ = nullptr;
   QLabel *specMode_ = nullptr, *specAxis_ = nullptr, *selectedCount_ = nullptr,
          *cursorData_ = nullptr, *viewData_ = nullptr,

@@ -59,6 +59,8 @@ function(ss_add_ui_assets target)
 endfunction()
 
 add_library(SignalStudioCore STATIC
+    domain/constellation.cpp
+    domain/channel_sampling.cpp
     domain/annotation.cpp
     domain/detection.cpp
     domain/detection_postprocess.cpp
@@ -97,6 +99,13 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/sigmf_metadata.cpp
     infrastructure/raw_sample_reader.cpp
     infrastructure/channel_processor.cpp
+    infrastructure/narrowband_analysis/analysis_source.cpp
+    infrastructure/narrowband_analysis/constellation_analysis.cpp
+    infrastructure/narrowband_analysis/analysis_service.cpp
+    infrastructure/narrowband_analysis/pulse_shaping.cpp
+    infrastructure/narrowband_analysis/eye_analysis.cpp
+    infrastructure/narrowband_analysis/symbol_rate_estimator.cpp
+    infrastructure/narrowband_analysis/single_carrier_recovery.cpp
     infrastructure/channel_processor.h
     infrastructure/spectral_analysis.cpp
     infrastructure/spectral_windows.cpp
@@ -121,6 +130,10 @@ target_link_libraries(SignalStudioBrand PUBLIC Qt6::Widgets)
 target_compile_definitions(SignalStudioBrand PRIVATE SS_PRODUCT_VERSION="${PROJECT_VERSION}" SS_BUILD_REVISION="${SS_BUILD_REVISION}")
 
 set(SS_UI_SOURCES
+    ui/settings_popover.cpp
+    ui/settings_popover.h
+    ui/chart_control_strip.h
+    ui/context_stack.h
     ui/detection/detection_card.cpp
     ui/detection/detection_card.h
     ui/detection/detection_panel.cpp
@@ -196,6 +209,15 @@ endif()
 
 if(SS_BUILD_TESTS)
     enable_testing()
+    add_executable(SignalStudioParameterInputTests tests/parameter_input_tests.cpp)
+    target_link_libraries(SignalStudioParameterInputTests PRIVATE Qt6::Widgets Qt6::Test)
+    ss_target_defaults(SignalStudioParameterInputTests)
+    add_test(NAME signal_studio_parameter_input COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioParameterInputTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/parameter-input-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_parameter_input PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 60)
     add_executable(SignalStudioDetectionRefinedFusionTests tests/detection_refined_fusion_tests.cpp)
     ss_target_defaults(SignalStudioDetectionRefinedFusionTests)
     set_target_properties(SignalStudioDetectionRefinedFusionTests PROPERTIES AUTOMOC OFF)
@@ -297,6 +319,34 @@ if(SS_BUILD_TESTS)
     ss_target_defaults(SignalStudioCoreTests)
     add_test(NAME signal_studio_core COMMAND SignalStudioCoreTests)
     add_executable(SignalStudioChannelProcessorTests tests/channel_processor_tests.cpp)
+    add_executable(SignalStudioNarrowbandAnalysisTests tests/narrowband_analysis_tests.cpp)
+    add_executable(SignalStudioNarrowbandRecoveryTests tests/narrowband_recovery_tests.cpp)
+    add_executable(SignalStudioNarrowbandModulationTests tests/narrowband_modulation_tests.cpp)
+    add_executable(SignalStudioNarrowbandFeedbackProbe tests/narrowband_feedback_probe.cpp)
+    target_link_libraries(SignalStudioNarrowbandFeedbackProbe PRIVATE SignalStudioInfrastructure Qt6::Core)
+    ss_target_defaults(SignalStudioNarrowbandFeedbackProbe)
+    set_target_properties(SignalStudioNarrowbandFeedbackProbe PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioNarrowbandModulationTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    ss_target_defaults(SignalStudioNarrowbandModulationTests)
+    set_target_properties(SignalStudioNarrowbandModulationTests PROPERTIES AUTOMOC OFF)
+    add_test(NAME signal_studio_narrowband_modulation COMMAND SignalStudioNarrowbandModulationTests)
+    set_tests_properties(signal_studio_narrowband_modulation PROPERTIES TIMEOUT 300)
+    target_link_libraries(SignalStudioNarrowbandRecoveryTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    ss_target_defaults(SignalStudioNarrowbandRecoveryTests)
+    set_target_properties(SignalStudioNarrowbandRecoveryTests PROPERTIES AUTOMOC OFF)
+    add_test(NAME signal_studio_narrowband_recovery COMMAND SignalStudioNarrowbandRecoveryTests)
+    set_tests_properties(signal_studio_narrowband_recovery PROPERTIES TIMEOUT 180)
+    target_link_libraries(SignalStudioNarrowbandAnalysisTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    ss_target_defaults(SignalStudioNarrowbandAnalysisTests)
+    set_target_properties(SignalStudioNarrowbandAnalysisTests PROPERTIES AUTOMOC OFF)
+    add_test(NAME signal_studio_narrowband_analysis COMMAND SignalStudioNarrowbandAnalysisTests)
+    set_tests_properties(signal_studio_narrowband_analysis PROPERTIES TIMEOUT 120)
+    add_executable(SignalStudioChannelRateTests tests/channel_rate_tests.cpp)
+    target_link_libraries(SignalStudioChannelRateTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    set_target_properties(SignalStudioChannelRateTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioChannelRateTests)
+    add_test(NAME signal_studio_channel_rate COMMAND SignalStudioChannelRateTests)
+    set_tests_properties(signal_studio_channel_rate PROPERTIES TIMEOUT 120)
     target_link_libraries(SignalStudioChannelProcessorTests PRIVATE
         SignalStudioInfrastructure SignalStudioCore Qt6::Core)
     set_target_properties(SignalStudioChannelProcessorTests PROPERTIES AUTOMOC OFF)
@@ -317,6 +367,23 @@ if(SS_BUILD_TESTS)
     set_tests_properties(signal_studio_display_sampling PROPERTIES TIMEOUT 60)
 
     add_executable(SignalStudioUiTests tests/ui_tests.cpp ${SS_UI_SOURCES})
+    add_executable(SignalStudioNarrowbandAnalysisUiTests tests/narrowband_analysis_ui_tests.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioNarrowbandAnalysisUiTests PRIVATE
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
+        Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioNarrowbandAnalysisUiTests)
+    ss_add_graphics_shaders(SignalStudioNarrowbandAnalysisUiTests signalstudio_nb_analysis_ui_shaders)
+    ss_add_ui_assets(SignalStudioNarrowbandAnalysisUiTests)
+    qt_add_resources(SignalStudioNarrowbandAnalysisUiTests signalstudio_nb_analysis_demo
+        PREFIX "/signalstudio/demo" BASE "${CMAKE_SOURCE_DIR}/resources"
+        FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq")
+    add_dependencies(SignalStudioNarrowbandAnalysisUiTests SignalStudio)
+    add_test(NAME signal_studio_narrowband_analysis_ui COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioNarrowbandAnalysisUiTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/nb-analysis-ui-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_narrowband_analysis_ui PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480)
     target_link_libraries(SignalStudioUiTests PRIVATE
         SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
@@ -329,6 +396,53 @@ if(SS_BUILD_TESTS)
         BASE "${CMAKE_SOURCE_DIR}/resources"
         FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq"
     )
+    add_executable(SignalStudioProjectTreeTests tests/project_tree_presentation_tests.cpp)
+    target_link_libraries(SignalStudioProjectTreeTests PRIVATE SignalStudioCore Qt6::Widgets)
+    set_target_properties(SignalStudioProjectTreeTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioProjectTreeTests)
+    add_dependencies(SignalStudioProjectTreeTests SignalStudio)
+    add_test(NAME signal_studio_project_tree COMMAND SignalStudioProjectTreeTests)
+    set_tests_properties(signal_studio_project_tree PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 60
+        PASS_REGULAR_EXPRESSION "Totals: 8 passed, 0 failed")
+
+    # Dedicated behavioral coverage for the wideband UI reorganization.
+    add_executable(SignalStudioUxTests tests/ux_tests.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioUxTests PRIVATE
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
+        Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioUxTests)
+    target_compile_definitions(SignalStudioUxTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    ss_add_graphics_shaders(SignalStudioUxTests signalstudio_ux_test_shaders)
+    ss_add_ui_assets(SignalStudioUxTests)
+    qt_add_resources(SignalStudioUxTests signalstudio_ux_test_narrowband_demo
+        PREFIX "/signalstudio/demo"
+        BASE "${CMAKE_SOURCE_DIR}/resources"
+        FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq")
+    function(ss_add_ux_test category)
+        add_test(NAME signal_studio_ux_${category} COMMAND "${CMAKE_COMMAND}"
+            "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUxTests>"
+            "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ux-${category}-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
+            "-DSS_UI_CASES=${ARGN}"
+            -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+        set_tests_properties(signal_studio_ux_${category} PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480
+            LABELS "wideband-ux;${category}")
+    endfunction()
+    ss_add_ux_test(detection uxD01_historicalDerivation uxD02_viewSourceKeepsDraft
+        uxD01_topDerivationDiscardsCrossFileDraft
+        uxD03_crossFileCancellation uxD03_activeTaskCancellationAndFrozenDisplay
+        uxD04_modelSpectrumMapping uxD05_foldedParametersAndFirstScreen
+        uxD06_visibleRangeEntry uxD08_preflightDetails)
+    ss_add_ux_test(spectral uxS01_methodHistory uxS02_conditionalRows
+        uxS03_spectralIndependence uxS03_framePsdPreservesSettings uxS06_invalidDraftRecovery)
+    ss_add_ux_test(charts uxR02_chartSettingsStayStable uxA01_roiConfirmationAndEscape roundTwoNarrowbandPsdAndPages)
+    ss_add_ux_test(layout uxR01_chartToolbarLayout uxR02_inspectorRouting
+        uxR02_fileProperties uxR02_paletteWorkspaceOwnership
+        uxR03_taskKeyboardAndDetails uxR03_taskRowActions uxR01_lateRunFilterPopupAndRefresh roundTwoFlatResponsiveControls)
+    ss_add_ux_test(popovers uxP01_popupDismissal uxP02_popupChildrenAndGeometry
+        uxS06_popoverDraftPolicy)
+
     add_executable(SignalStudioUiCapture tests/ui_capture.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioUiCapture PRIVATE
         SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
@@ -342,12 +456,46 @@ if(SS_BUILD_TESTS)
         BASE "${CMAKE_SOURCE_DIR}/resources"
         FILES "${CMAKE_SOURCE_DIR}/resources/narrowband_demo.iq"
     )
-    add_test(NAME signal_studio_ui COMMAND "${CMAKE_COMMAND}"
-        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUiTests>"
-        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ui-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
-        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
-    set_tests_properties(signal_studio_ui PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480)
+    # Keep every original function/data row, with bounded independent groups.
+    # The frozen Qt -datatags inventory is checked again at delivery.
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/ui_tests.cpp")
+    file(READ "${CMAKE_SOURCE_DIR}/tests/ui_tests.cpp" ss_ui_source)
+    string(REPLACE "\r" "" ss_ui_source "${ss_ui_source}")
+    string(FIND "${ss_ui_source}" "  void workspaceLayout();" ss_ui_begin)
+    string(FIND "${ss_ui_source}" "\n};\n\nvoid UiTests::workspaceLayout()" ss_ui_end)
+    if(ss_ui_begin LESS 0 OR ss_ui_end LESS ss_ui_begin)
+        message(FATAL_ERROR "Cannot identify the complete main UI slot declarations")
+    endif()
+    math(EXPR ss_ui_length "${ss_ui_end}-${ss_ui_begin}")
+    string(SUBSTRING "${ss_ui_source}" ${ss_ui_begin} ${ss_ui_length} ss_ui_declarations)
+    string(REGEX MATCHALL "void [A-Za-z_][A-Za-z0-9_]*\\(\\)" ss_ui_slots "${ss_ui_declarations}")
+    set(ss_ui_group geometry)
+    foreach(ss_ui_slot IN LISTS ss_ui_slots)
+        string(REGEX REPLACE "void ([A-Za-z_][A-Za-z0-9_]*)\\(\\)" "\\1" ss_ui_case "${ss_ui_slot}")
+        if(ss_ui_case MATCHES "_data$")
+            continue()
+        endif()
+        if(ss_ui_case STREQUAL "powerInputsCommitAndFitReusesData")
+            set(ss_ui_group parameters)
+        elseif(ss_ui_case STREQUAL "unifiedAnnotationDraftsAndSegmentSwitch")
+            set(ss_ui_group annotations)
+        endif()
+        list(APPEND "SS_MAIN_UI_${ss_ui_group}" "${ss_ui_case}")
+    endforeach()
+    foreach(ss_ui_group IN ITEMS geometry parameters annotations)
+        set(ss_ui_test "signal_studio_ui_${ss_ui_group}")
+        if(ss_ui_group STREQUAL "geometry")
+            set(ss_ui_test signal_studio_ui)
+        endif()
+        add_test(NAME ${ss_ui_test} COMMAND "${CMAKE_COMMAND}"
+            "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUiTests>"
+            "-DSS_UI_CASES=${SS_MAIN_UI_${ss_ui_group}}"
+            "-DSS_UI_ALLOW_OVERRIDE=ON"
+            "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ui-${ss_ui_group}-test-results-$<LOWER_CASE:$<CONFIG>>.txt"
+            -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+        set_tests_properties(${ss_ui_test} PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480 LABELS "ui;${ss_ui_group}")
+    endforeach()
     set_tests_properties(signal_studio_core PROPERTIES TIMEOUT 60)
 
     if(WIN32 AND SS_DEPLOY_RUNTIME)
@@ -357,7 +505,7 @@ if(SS_BUILD_TESTS)
         add_dependencies(SignalStudioUiTests SignalStudio)
         add_dependencies(SignalStudioUiCapture SignalStudio)
         foreach(test_target IN ITEMS SignalStudioDetectionSourceTests SignalStudioLabelImportTests SignalStudioWavTests
-                SignalStudioImportTests SignalStudioUiTests SignalStudioUiCapture)
+                SignalStudioImportTests SignalStudioUiTests SignalStudioUxTests SignalStudioUiCapture)
             add_dependencies(${test_target} SignalStudio)
             add_custom_command(TARGET ${test_target} POST_BUILD
                 COMMAND "${CMAKE_COMMAND}" -E copy_if_different

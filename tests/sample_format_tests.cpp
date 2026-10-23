@@ -515,41 +515,6 @@ int main(int argc, char** argv) {
                             std::max_element(frame->linearPower.begin(),
                                              frame->linearPower.end())),
           "real peak");
-    // Legacy v1/v2/v3 ignore absent format fields and keep CI16 semantics.
-    Session legacy;
-    legacy.addDemoFile("legacy", 1e6, 100e6, 1);
-    const auto projectPath = dir.filePath("legacy.json");
-    check(ProjectStore::save(projectPath, legacy.project(), error),
-          "legacy seed");
-    QJsonObject root;
-    {
-      QFile file(projectPath);
-      file.open(QIODevice::ReadOnly);
-      root = QJsonDocument::fromJson(file.readAll()).object();
-    }
-    for (int version : {1, 2, 3}) {
-      auto document = root;
-      document["version"] = version;
-      auto files = document["files"].toArray();
-      auto entry = files[0].toObject();
-      auto metadata = entry["metadata"].toObject();
-      metadata.remove("sampleFormat");
-      entry["metadata"] = metadata;
-      entry["marks"] = QJsonArray{};
-      entry.remove("annotationStore");
-      files[0] = entry;
-      document["files"] = files;
-      {
-        QFile file(projectPath);
-        file.open(QIODevice::WriteOnly);
-        file.write(QJsonDocument(document).toJson());
-      }
-      Project restored;
-      check(ProjectStore::load(projectPath, restored, error),
-            "legacy v1/v2/v3 load");
-      check(restored.files[0].metadata.sampleFormat == SampleFormat{},
-            "legacy CI16 fallback");
-    }
     // Non-four-byte frame and stop/restart boundary with meaningful real reads.
     f = {};
     f.componentEncoding = ComponentEncoding::Int8;

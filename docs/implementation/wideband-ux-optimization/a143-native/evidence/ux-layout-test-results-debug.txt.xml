@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite name="UxTests" timestamp="2026&#x002D;10&#x002D;21T16:00:24" hostname="HH&#x002D;laptop" tests="9" failures="0" errors="0" skipped="0" time="21.939">
+  <properties>
+    <property name="QTestVersion" value="6.11.1"/>
+    <property name="QtVersion" value="6.11.1"/>
+    <property name="QtBuild" value="Qt 6.11.1 (x86_64&#x002D;little_endian&#x002D;llp64 shared (dynamic) debug build; by MSVC 2022)"/>
+  </properties>
+  <testcase name="initTestCase" classname="UxTests" time="0.001"/>
+  <testcase name="uxR01_chartToolbarLayout" classname="UxTests" time="2.330">
+    <system-err>
+      <![CDATA[QFontDatabase: Cannot find font directory D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxR02_inspectorRouting" classname="UxTests" time="3.173">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxR02_fileProperties" classname="UxTests" time="2.220">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxR02_paletteWorkspaceOwnership" classname="UxTests" time="2.651">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+      <![CDATA[QRhiWidget: No QRhi]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxR03_taskKeyboardAndDetails" classname="UxTests" time="3.168">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxR03_taskRowActions" classname="UxTests" time="2.934">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support propagateSizeHints()]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxR01_lateRunFilterPopupAndRefresh" classname="UxTests" time="5.452">
+    <system-err>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[QRhiWidget: QRhi is not supported on this platform.]]>
+      <![CDATA[This plugin does not support raise()]]>
+      <![CDATA[This plugin does not support grabbing the keyboard]]>
+      <![CDATA[This plugin does not support raise()]]>
+      <![CDATA[This plugin does not support grabbing the keyboard]]>
+    </system-err>
+  </testcase>
+  <testcase name="cleanupTestCase" classname="UxTests" time="0.000"/>
+</testsuite>

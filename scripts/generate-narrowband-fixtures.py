@@ -1,0 +1,165 @@
+"""Independent transmit waveforms and readable truth; never used by the receiver."""
+import argparse
+import json
+from pathlib import Path
+
+import numpy as np
+from scipy.signal import upfirdn
+
+
+def rrc(t, alpha):
+    h = np.empty_like(t)
+    zero = np.isclose(t, 0)
+    singular = np.isclose(np.abs(t), 1 / (4 * alpha))
+    regular = ~(zero | singular)
+    x = t[regular]
+    h[regular] = (np.sin(np.pi*x*(1-alpha)) + 4*alpha*x*np.cos(np.pi*x*(1+alpha))) / (np.pi*x*(1-(4*alpha*x)**2))
+    h[zero] = 1 + alpha*(4/np.pi-1)
+    h[singular] = alpha/np.sqrt(2)*((1+2/np.pi)*np.sin(np.pi/(4*alpha)) + (1-2/np.pi)*np.cos(np.pi/(4*alpha)))
+    return h
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--output', required=True)
+    parser.add_argument('--extra-only', action='store_true')
+    parser.add_argument('--recovery-only', action='store_true')
+    parser.add_argument('--rates-only', action='store_true')
+    args = parser.parse_args()
+    root = Path(args.output)
+    root.mkdir(parents=True, exist_ok=True)
+    fs, rs, sps, count = 20_000_000, 625_000, 32, 8192
+    rng = np.random.default_rng(20261022)
+    records = []
+
+    def write(name, x, truth, symbols=None, bandwidth=1_000_000, output_rate=2_000_000):
+        x = x.astype(np.complex64)
+        raw = np.stack((x.real, x.imag), axis=-1)
+        raw.astype('<f4').tofile(root / (name + '.sigmf-data'))
+        np.rint(np.clip(raw, -1, 32767/32768)*32768).astype('<i2').tofile(root / (name + '.raw'))
+        meta = {'global': {'core:datatype': 'cf32_le', 'core:sample_rate': fs, 'core:version': '1.0.0'},
+                'captures': [{'core:sample_start': 0, 'core:frequency': 100_000_000}], 'annotations': []}
+        (root / (name + '.sigmf-meta')).write_text(json.dumps(meta, indent=2), encoding='utf-8')
+        truth.update(name=name, sourceRateHz=fs, sourceCenterHz=100_000_000,
+                     channelCenterHz=102_000_000, channelBandwidthHz=bandwidth,
+                     outputRateHz=output_rate, sampleCount=len(x), syntheticTransmitter=True)
+        if symbols is not None:
+            np.stack((symbols.real, symbols.imag), axis=-1).astype('<f4').tofile(root / (name + '.symbols'))
+        (root / (name + '.truth.json')).write_text(json.dumps(truth, indent=2), encoding='utf-8')
+        records.append(truth)
+
+    if args.rates_only:
+        rate_rng = np.random.default_rng(20261024)
+        for rate in (250_000, 1_000_000):
+            rate_sps = fs // rate
+            for modulation in ('BPSK', 'QPSK', '16QAM'):
+                if modulation == 'BPSK':
+                    symbols = (2*rate_rng.integers(0, 2, count)-1).astype(complex)
+                elif modulation == 'QPSK':
+                    symbols = ((2*rate_rng.integers(0, 2, count)-1)+1j*(2*rate_rng.integers(0, 2, count)-1))/np.sqrt(2)
+                else:
+                    symbols = ((2*rate_rng.integers(0, 4, count)-3)+1j*(2*rate_rng.integers(0, 4, count)-3))/np.sqrt(10)
+                taps = rrc(np.arange(-6*rate_sps, 6*rate_sps+1)/rate_sps-.23, .35)
+                base = .25*upfirdn(taps, symbols, up=rate_sps)
+                x = base*np.exp(1j*(2*np.pi*(2_000_000+rate*.025)*np.arange(len(base))/fs+.43))
+                variance = np.mean(np.abs(base)**2)*.01
+                x += np.sqrt(variance/2)*(rate_rng.standard_normal(len(x))+1j*rate_rng.standard_normal(len(x)))
+                write(f'{modulation.lower()}-rs{rate}-awgn20', x,
+                      dict(modulation=modulation, symbolRateHz=rate, alpha=.35, snrDb=20,
+                           cfoHz=rate*.025, symbolCount=count, symbolOriginSourceSample=6.23*rate_sps),
+                      symbols, bandwidth=2*rate, output_rate=4*rate)
+        (root/'rate-index.json').write_text(json.dumps(dict(seed=20261024, records=records), indent=2), encoding='utf-8')
+        print('Added six independent 250k/1M symbol-rate records; original fixtures untouched.')
+        return
+
+    if args.recovery_only:
+        # A transmit-clock offset, with the RF carrier reapplied on the receiver
+        # sample grid. Original IQ/truth records remain untouched.
+        original = np.fromfile(root/'qpsk-a35-ideal.sigmf-data', dtype='<c8').astype(complex)
+        original *= np.exp(-1j*(2*np.pi*2_000_000*np.arange(len(original))/fs+.43))
+        scale = 1.0001
+        grid = np.arange(int(np.floor((len(original)-1)*scale))+1)/scale
+        warped = np.interp(grid,np.arange(len(original)),original.real)+1j*np.interp(grid,np.arange(len(original)),original.imag)
+        warped *= np.exp(1j*(2*np.pi*(2_000_000+rs*.025)*np.arange(len(warped))/fs+.43))
+        tx_symbols = np.fromfile(root/'qpsk-a35-ideal.symbols',dtype='<c8')
+        write('qpsk-clock100ppm',warped,dict(modulation='QPSK',symbolRateHz=rs/scale,nominalSymbolRateHz=rs,
+              alpha=.35,cfoHz=rs*.025,symbolCount=len(tx_symbols),symbolOriginSourceSample=199.36*scale,
+              sourceSamplesPerSymbol=sps*scale,clockOffsetPpm=100,snrDb=None),tx_symbols)
+        (root/'recovery-index.json').write_text(json.dumps(dict(records=records),indent=2),encoding='utf-8')
+        print('Added one independent transmit-clock-offset IQ record; original fixtures untouched.')
+        return
+
+    if args.extra_only:
+        # Additions only: leave every W0 record and its index untouched.
+        edge_rng = np.random.default_rng(20261023)
+        base = np.fromfile(root/'qpsk-a35-ideal.sigmf-data', dtype='<c8').astype(complex)
+        variance = np.mean(np.abs(base)**2)*100  # -20 dB per source sample
+        low = base+np.sqrt(variance/2)*(edge_rng.standard_normal(len(base))+1j*edge_rng.standard_normal(len(base)))
+        # CF32 remains the authority here; CI16 is deliberately quantized and
+        # saturated like an ADC, and the truth records its clipping count.
+        write('qpsk-low-snr', low, dict(modulation='QPSK', symbolRateHz=rs, alpha=.35,
+              snrDb=-20, clippingSamples=int(np.count_nonzero(np.maximum(np.abs(low.real),np.abs(low.imag))>=1))))
+        short_symbols = ((2*edge_rng.integers(0,2,64)-1)+1j*(2*edge_rng.integers(0,2,64)-1))/np.sqrt(2)
+        short_taps = rrc(np.arange(-6*sps,6*sps+1)/sps-.23,.35)
+        short = .25*upfirdn(short_taps,short_symbols,up=sps)
+        short *= np.exp(1j*(2*np.pi*(2_000_000+rs*.025)*np.arange(len(short))/fs+.43))
+        write('short-qpsk', short, dict(modulation='QPSK',symbolRateHz=rs,alpha=.35,symbolCount=64,
+              cfoHz=rs*.025,symbolOriginSourceSample=6*sps+.23*sps),short_symbols)
+        (root/'edge-index.json').write_text(json.dumps(dict(seed=20261023,records=records),indent=2),encoding='utf-8')
+        print('Added two edge records; original W0 fixtures were not rewritten.')
+        return
+
+    for modulation in ('BPSK', 'QPSK', '16QAM'):
+        if modulation == 'BPSK':
+            symbols = (2*rng.integers(0, 2, count)-1).astype(complex)
+        elif modulation == 'QPSK':
+            symbols = ((2*rng.integers(0, 2, count)-1) + 1j*(2*rng.integers(0, 2, count)-1))/np.sqrt(2)
+        else:
+            symbols = ((2*rng.integers(0, 4, count)-3) + 1j*(2*rng.integers(0, 4, count)-3))/np.sqrt(10)
+        for alpha in (.2, .35, .5):
+            # Fractional timing is synthesized in the transmit pulse itself.
+            delay_ui, span = .23, 12
+            taps = rrc(np.arange(-span*sps//2, span*sps//2+1)/sps-delay_ui, alpha)
+            base = .25 * upfirdn(taps, symbols, up=sps)
+            for snr in (None, 20):
+                cfo = 0 if snr is None else rs*.025
+                t = np.arange(len(base))/fs
+                x = base*np.exp(1j*(2*np.pi*(2_000_000+cfo)*t+.43))
+                if snr is not None:
+                    variance = np.mean(np.abs(base)**2)*10**(-snr/10)
+                    x += np.sqrt(variance/2)*(rng.standard_normal(len(x))+1j*rng.standard_normal(len(x)))
+                name = f'{modulation.lower()}-a{int(alpha*100):02d}-' + ('ideal' if snr is None else 'awgn20')
+                write(name, x, dict(modulation=modulation, symbolRateHz=rs, alpha=alpha,
+                      cfoHz=cfo, initialPhase=.43, timingOffsetUi=delay_ui,
+                      symbolOriginSourceSample=span*sps/2+delay_ui*sps,
+                      symbolCount=count, snrDb=snr, gain=.25), symbols)
+
+    n = 400_000
+    t = np.arange(n)/fs
+    write('tone', .25*np.exp(2j*np.pi*2_050_000*t), dict(modulation='Tone', basebandToneHz=50_000))
+    noise = .2*(rng.standard_normal(n)+1j*rng.standard_normal(n))/np.sqrt(2)
+    write('noise', noise, dict(modulation='Noise'))
+    bits = rng.integers(0, 2, (n+sps-1)//sps)
+    f = np.repeat((bits*2-1)*rs/4, sps)[:n]
+    write('fsk', .25*np.exp(2j*np.pi*(2_000_000*t+np.cumsum(f)/fs)), dict(modulation='FSK', symbolRateHz=rs))
+    from scipy.ndimage import gaussian_filter1d
+    gf = gaussian_filter1d(f, sps*.3)
+    write('gmsk', .25*np.exp(2j*np.pi*(2_000_000*t+np.cumsum(gf)/fs)), dict(modulation='GMSK', symbolRateHz=rs))
+    carriers = np.zeros((1200, 64), complex)
+    carriers[:, 20:44] = (rng.choice((-1, 1), (1200, 24))+1j*rng.choice((-1, 1), (1200, 24)))/np.sqrt(2)
+    ofdm = np.fft.ifft(np.fft.ifftshift(carriers, axes=1), axis=1)*2
+    ofdm = np.concatenate((ofdm[:, -16:], ofdm), axis=1).reshape(-1)
+    ofdm = np.repeat(ofdm, 4)[:n]
+    write('ofdm', ofdm*np.exp(2j*np.pi*2_000_000*np.arange(len(ofdm))/fs), dict(modulation='OFDM'))
+    short = np.zeros(n, complex)
+    short[10000:11024] = .25*np.exp(2j*np.pi*2_000_000*t[10000:11024])
+    write('short-burst', short, dict(modulation='ShortBurst', activeSourceRange=[10000,11024]))
+    write('hop', .25*np.exp(2j*np.pi*(2_000_000*t+np.cumsum(np.where(t < .01, -180_000, 180_000))/fs)), dict(modulation='Hopping'))
+    thresholds = dict(cacheAbsoluteError=1e-6, interpolationNrmse=1e-3, rateRelativeError=.01,
+        residualCfoOverRs=.001, timingIdealUi=.05, timingAwgn20Ui=.10, evmIdeal=.05, evmAwgn20=.18)
+    (root/'index.json').write_text(json.dumps(dict(seed=20261022, thresholds=thresholds, records=records), indent=2), encoding='utf-8')
+    print(f'Generated {len(records)} deterministic transmit records (CI16 RAW and CF32 SigMF); no RF capture claims. {root}')
+
+
+if __name__ == '__main__':
+    main()

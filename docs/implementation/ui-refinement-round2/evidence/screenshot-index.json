@@ -1,0 +1,639 @@
+[
+  {
+    "report": "native-debug",
+    "scene": "01-narrowband-observe",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\01-narrowband-observe.png",
+    "sha256": "583d1b27d148d98cc83506ad2d86581d0fb6384c952262820ace8484dbd6a66c",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "02-narrowband-psd-8192",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\02-narrowband-psd-8192.png",
+    "sha256": "995e565ffda046ef352f5d507dd1131a1fc5baf31b9589d0963807e5d9085222",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "03-narrowband-psd-flat-more",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\03-narrowband-psd-flat-more.png",
+    "sha256": "28e8bd8e1280d16dbaa0c9233a0b4c801843bc6252ee3a9e22b047f93d705455",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "04-narrowband-frame-psd",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\04-narrowband-frame-psd.png",
+    "sha256": "007afd4fd1e36aba127f3d6363d516c4dcccfea662be59592a3829fec7eba91c",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "05-narrowband-statistical-psd-restored",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\05-narrowband-statistical-psd-restored.png",
+    "sha256": "f32aa4fa45fedbcfef1b84d1ff2e8b5ecde5c0a5bc6423fb81e15758ba705fde",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "06-modulation-and-eye-settings",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\06-modulation-and-eye-settings.png",
+    "sha256": "2c4d715ef84a278024f1e6130906e9c545501ffd5b772a22c6efdada5ad4b8fc",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "07-recognition-empty",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\07-recognition-empty.png",
+    "sha256": "0762d05c5da14092ff299050824a8502db78aab5dd28a96db158e619cc1a7ccf",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "08-recognition-running",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\08-recognition-running.png",
+    "sha256": "1f1cc5ab217cc6456d47e3ad9224b125f366af18393078137d8985c43e454a1d",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "09-recognition-stopped",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\09-recognition-stopped.png",
+    "sha256": "675b0885e2f4791a6929c258650e5820830d81192eb30b447a45d5f75c246e6f",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "10-recognition-completed",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\10-recognition-completed.png",
+    "sha256": "02255eeb62234f9003012214a2b3a2cde9395722a8a87223011adee2e11b175c",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "11-recognition-stale",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\11-recognition-stale.png",
+    "sha256": "809e47ad9093c562b2c0ec5078666093482d5a750360fe89f80124b4f2a65406",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "12-demodulation-labelled-example",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\12-demodulation-labelled-example.png",
+    "sha256": "a12098a713788b8e9dc1f18cb0dd65b2322e2c2dd041f9cbb4a8b3fbf86cf9f0",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "13-observation-restored",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\13-observation-restored.png",
+    "sha256": "c3b2001bcf558e0d42cb6e17f10a6b7f24e17b1f49f3f0c9586fee6f962fc671",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "14-project-reopened",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\14-project-reopened.png",
+    "sha256": "319f68905f90f88a2bf0a69a92f894d6283348f16e11e26627addcd62d571885",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "15-wideband-waveform",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\15-wideband-waveform.png",
+    "sha256": "0782993ba2f50ac5b27b9e7ba2b9a48f48724e3d77ffd6561d17fc89724cd208",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "16-wideband-psd-right-settings",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\16-wideband-psd-right-settings.png",
+    "sha256": "2cfaa80d9a7826d1f39cd1df612ea701ddfafdcd1a10ccbe4e78279b5f166fc1",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "17-wideband-psd-kaiser-more",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\17-wideband-psd-kaiser-more.png",
+    "sha256": "0f38fe4eced9af5398d802a464ab0162ef4758be62759f9bfea9feef34f2db0d",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "18-wideband-stft-flat-more",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\18-wideband-stft-flat-more.png",
+    "sha256": "5fb9051341986e15576b029b692aceba04e70a7accfff9d7a0f30187b6903d19",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "19-wideband-waterfall",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\19-wideband-waterfall.png",
+    "sha256": "fc359cbc5a82acac03f047610e186a11d3f9617f0faf841b7eb6771da2be9fc9",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "20-wideband-main-maximized",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\20-wideband-main-maximized.png",
+    "sha256": "2a5ef3eb224f5392f21a9d31295e7a5f51c7d88fc45a83bbe0c969bd5f878579",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "21-sidebar-collapsed-responsive",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\21-sidebar-collapsed-responsive.png",
+    "sha256": "eaf65ec04f63686b6939e8d1369cdbdfd437f571c87f46710f94e18e49bb4dd7",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "22-project-tree-names-and-current",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\22-project-tree-names-and-current.png",
+    "sha256": "d9c8d1b47a235bfab184e33ebabad48aac45e49896a35cf9889a111850596e4f",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "23-project-tree-multiselection",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\23-project-tree-multiselection.png",
+    "sha256": "1e37003b5e666a9561ca69849ec8f0c7c0a350cc1a468f4ca2b4c123db958bd2",
+    "archivedPath": null
+  },
+  {
+    "report": "native-debug",
+    "scene": "24-project-tree-refresh-preserved",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-debug\\24-project-tree-refresh-preserved.png",
+    "sha256": "1e37003b5e666a9561ca69849ec8f0c7c0a350cc1a468f4ca2b4c123db958bd2",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "01-narrowband-observe",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\01-narrowband-observe.png",
+    "sha256": "9ff8bdf8a8c7f494473fe4269bde242ff2fa48586ecf6cbc5ddc68d352a8043f",
+    "archivedPath": "docs\\implementation\\ui-refinement-round2\\screenshots\\narrowband-observe.png"
+  },
+  {
+    "report": "native-release",
+    "scene": "02-narrowband-psd-8192",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\02-narrowband-psd-8192.png",
+    "sha256": "995e565ffda046ef352f5d507dd1131a1fc5baf31b9589d0963807e5d9085222",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "03-narrowband-psd-flat-more",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\03-narrowband-psd-flat-more.png",
+    "sha256": "28e8bd8e1280d16dbaa0c9233a0b4c801843bc6252ee3a9e22b047f93d705455",
+    "archivedPath": "docs\\implementation\\ui-refinement-round2\\screenshots\\narrowband-psd-more.png"
+  },
+  {
+    "report": "native-release",
+    "scene": "04-narrowband-frame-psd",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\04-narrowband-frame-psd.png",
+    "sha256": "007afd4fd1e36aba127f3d6363d516c4dcccfea662be59592a3829fec7eba91c",
+    "archivedPath": "docs\\implementation\\ui-refinement-round2\\screenshots\\narrowband-frame-psd.png"
+  },
+  {
+    "report": "native-release",
+    "scene": "05-narrowband-statistical-psd-restored",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\05-narrowband-statistical-psd-restored.png",
+    "sha256": "f32aa4fa45fedbcfef1b84d1ff2e8b5ecde5c0a5bc6423fb81e15758ba705fde",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "06-modulation-and-eye-settings",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\06-modulation-and-eye-settings.png",
+    "sha256": "2c4d715ef84a278024f1e6130906e9c545501ffd5b772a22c6efdada5ad4b8fc",
+    "archivedPath": "docs\\implementation\\ui-refinement-round2\\screenshots\\modulation-eye.png"
+  },
+  {
+    "report": "native-release",
+    "scene": "07-recognition-empty",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\07-recognition-empty.png",
+    "sha256": "0762d05c5da14092ff299050824a8502db78aab5dd28a96db158e619cc1a7ccf",
+    "archivedPath": "docs\\implementation\\ui-refinement-round2\\screenshots\\recognition-empty.png"
+  },
+  {
+    "report": "native-release",
+    "scene": "08-recognition-running",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\08-recognition-running.png",
+    "sha256": "1f1cc5ab217cc6456d47e3ad9224b125f366af18393078137d8985c43e454a1d",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "09-recognition-stopped",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\09-recognition-stopped.png",
+    "sha256": "675b0885e2f4791a6929c258650e5820830d81192eb30b447a45d5f75c246e6f",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "10-recognition-completed",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\10-recognition-completed.png",
+    "sha256": "02255eeb62234f9003012214a2b3a2cde9395722a8a87223011adee2e11b175c",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "11-recognition-stale",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\11-recognition-stale.png",
+    "sha256": "809e47ad9093c562b2c0ec5078666093482d5a750360fe89f80124b4f2a65406",
+    "archivedPath": "docs\\implementation\\ui-refinement-round2\\screenshots\\recognition-stale.png"
+  },
+  {
+    "report": "native-release",
+    "scene": "12-demodulation-labelled-example",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\12-demodulation-labelled-example.png",
+    "sha256": "35f3098d6c5a7a0fdc1b564ab82483a67bd8332cb4dd2b83be630e2e77db7de9",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "13-observation-restored",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\13-observation-restored.png",
+    "sha256": "c3b2001bcf558e0d42cb6e17f10a6b7f24e17b1f49f3f0c9586fee6f962fc671",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "14-project-reopened",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\14-project-reopened.png",
+    "sha256": "319f68905f90f88a2bf0a69a92f894d6283348f16e11e26627addcd62d571885",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "15-wideband-waveform",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\15-wideband-waveform.png",
+    "sha256": "3f35a0480bc5e59f698e3b3674067f09c8eff51d298492b3ae09c6d3ddc42631",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "16-wideband-psd-right-settings",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\16-wideband-psd-right-settings.png",
+    "sha256": "6f45b07cd733fa5b905285a46c74e073ec3616da42a6e5807da181d2ceae1e35",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "17-wideband-psd-kaiser-more",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\17-wideband-psd-kaiser-more.png",
+    "sha256": "29334d5196e950f37fc10ff24b52cd7c0ccda480d16dfc73636f05fe793e9cab",
+    "archivedPath": "docs\\implementation\\ui-refinement-round2\\screenshots\\wideband-psd-more.png"
+  },
+  {
+    "report": "native-release",
+    "scene": "18-wideband-stft-flat-more",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\18-wideband-stft-flat-more.png",
+    "sha256": "ae84726e422be9895fb9e04b5bacbe2b868b005b34ff2cc6eccbd231966ad3c1",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "19-wideband-waterfall",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\19-wideband-waterfall.png",
+    "sha256": "8505bfe50f9f1edb24d7506e3999c5c4d5f94e79a3e881e4e7c9d9ceb83eaeed",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "20-wideband-main-maximized",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\20-wideband-main-maximized.png",
+    "sha256": "c45fed02bebbfbb01fc26fc08d36ed6ab1ebec4c983bc27fa68081077a66abab",
+    "archivedPath": "docs\\implementation\\ui-refinement-round2\\screenshots\\wideband-maximized.png"
+  },
+  {
+    "report": "native-release",
+    "scene": "21-sidebar-collapsed-responsive",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\21-sidebar-collapsed-responsive.png",
+    "sha256": "22403d3802e45ebb71079cd800b361dd9fe7bd64c7ba69c87a127546328b5965",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "22-project-tree-names-and-current",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\22-project-tree-names-and-current.png",
+    "sha256": "781d1f90e5249fab8dde84c128527ee527ffed733ec6e12ca1f2b976f9485246",
+    "archivedPath": null
+  },
+  {
+    "report": "native-release",
+    "scene": "23-project-tree-multiselection",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\23-project-tree-multiselection.png",
+    "sha256": "1e37003b5e666a9561ca69849ec8f0c7c0a350cc1a468f4ca2b4c123db958bd2",
+    "archivedPath": "docs\\implementation\\ui-refinement-round2\\screenshots\\project-tree.png"
+  },
+  {
+    "report": "native-release",
+    "scene": "24-project-tree-refresh-preserved",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-native-release\\24-project-tree-refresh-preserved.png",
+    "sha256": "1e37003b5e666a9561ca69849ec8f0c7c0a350cc1a468f4ca2b4c123db958bd2",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "01-imported-manual-resident-card",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\01-imported-manual-resident-card.png",
+    "sha256": "e7f1151ee3e061e470652b9ac8a3c5439d84246e0a8a5fafa13f656987a90fa7",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "02-config-main-window",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\02-config-main-window.png",
+    "sha256": "070aabcac0d3373f9938e0cb6b95dad6c23ab7a5aadcc64b38504e9d445a7ff4",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "02-config-card-visible-crop",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\02-config-card-visible-crop.png",
+    "sha256": "a74c372d0352e928525217c726f25aaf39ecc5e3f2e100a638b0753b384229dd",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "03-completed-task-cards",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\03-completed-task-cards.png",
+    "sha256": "1fc6f32b0acacff7b5784fa2662bc7ef0ed7b58e1b4fc8dc21415c9b8ce86810",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "04-task-readable-details",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\04-task-readable-details.png",
+    "sha256": "ac40b3de897810a67d276b53278ef6c15e26e3f2ed51155d8aee9eb2dbabd791",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "05-three-layers-revision-pending",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\05-three-layers-revision-pending.png",
+    "sha256": "7c140f99e197d4f0c3a802248d949d073454cbf3d0e272c7d6aebbb7eb52c91e",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "06-saved-reopened",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\06-saved-reopened.png",
+    "sha256": "9df00c3bfd785dd6b0afd1e10cc93d75859909c46396a7b745942667bcc6b0e4",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "07-roi-preview-before-esc",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\07-roi-preview-before-esc.png",
+    "sha256": "5ae6f6c74507ebd2a7636e462c1413cf2f11182a9e020ee947f9c1625ca32d20",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "08-roi-esc-manual-restored",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\08-roi-esc-manual-restored.png",
+    "sha256": "9822a5d263daa9a0b3201ebb503ab19295653ff6076e8edc6f43e344f7a70e8c",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "09-roi-preview-before-enter",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\09-roi-preview-before-enter.png",
+    "sha256": "5ae6f6c74507ebd2a7636e462c1413cf2f11182a9e020ee947f9c1625ca32d20",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "10-roi-enter-confirmed",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\10-roi-enter-confirmed.png",
+    "sha256": "bea7aebfc916ab59c6cf12568577f25afc69894371ddffd2dce787af24a27282",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "11-layout-left-committed",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\11-layout-left-committed.png",
+    "sha256": "27ad1eb6923984a62a2b279636534c48c91039291d633994bedd286c143b6a8e",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "12-layout-left-esc-restored",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\12-layout-left-esc-restored.png",
+    "sha256": "976ae7fb715b84c651a7e4c434a349a8bf0b6548d36b943b51d36a0257955bd7",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "13-layout-right-committed",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\13-layout-right-committed.png",
+    "sha256": "8f6ab42858e6fecd94cc1ea19df0d383445faeeac84344020087463890cfb97d",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "14-layout-right-esc-restored",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\14-layout-right-esc-restored.png",
+    "sha256": "bff109930382d0f60148d2ec2d89eee66a9ba5f7ac3d56227c50f94715112a19",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "15-layout-bottom-committed",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\15-layout-bottom-committed.png",
+    "sha256": "04936b60b5bbcdd330e6a2faecb4a8946d755fd474d5f6fe00ded9c45acc504b",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "16-layout-bottom-esc-restored",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\16-layout-bottom-esc-restored.png",
+    "sha256": "e92409a74c05c63c8ffab3280aea3c84654eeeabddca46d0b5517dd97c222d52",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "17-auxiliary-evidence-facts",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\17-auxiliary-evidence-facts.png",
+    "sha256": "69f2f6b260de3bf4486445b8c7875383876d0a88c99c9efd137dd7e5dbce0614",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "18-auxiliary-original-fields-collapsed",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\18-auxiliary-original-fields-collapsed.png",
+    "sha256": "74a848bd71fda093db2d9f4d727a66504d5fdaf78f7ae4af79b826992694376e",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "19-auxiliary-original-fields-visible",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\19-auxiliary-original-fields-visible.png",
+    "sha256": "6a9e34299dbcad5b76daad79be3151a58eed33bdfe54a935b6ae7fa4b40b7b94",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "20-original-pending-segment-direct-channel",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\20-original-pending-segment-direct-channel.png",
+    "sha256": "cc0f0df9976dde61417c902eedca8d1ccc9cc95d5f7e6118d835a733018e37e3",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "21-pending-unconfirmed-channel-configuration",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\21-pending-unconfirmed-channel-configuration.png",
+    "sha256": "c6a571ce6f52e2fc7971fe54046e6d71f4a3543df0f2add42efca8453c020496",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "22-pending-source-unchanged-after-reopen",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\22-pending-source-unchanged-after-reopen.png",
+    "sha256": "2e150c99bf8a12d329c3819ce830b019f04511221c45f52c517371bd9eb9af30",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "23-production-model-running",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\23-production-model-running.png",
+    "sha256": "9c40ca890f4ff11310f08c3af6cb3c361e799885fd13835bc86ec68031d9ffe2",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "24-production-model-time-refinement",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\24-production-model-time-refinement.png",
+    "sha256": "d3fbda5cdf61cf88da4cff066714ffd1071293ce837b29defb5cc81a27e4cfad",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "25-real-algorithm-quality-is-optional",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\25-real-algorithm-quality-is-optional.png",
+    "sha256": "09afcc82968ea050e751b67dc95458e58507b4f4144d539b5b7fd4a11f97149a",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "26-real-algorithm-channel-parameters",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\26-real-algorithm-channel-parameters.png",
+    "sha256": "276e2bd837b42c302f8d9fd182c629ce6d9fe86eb68feb8686e5abb6e7b28609",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "27-real-algorithm-cpu-ddc",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\27-real-algorithm-cpu-ddc.png",
+    "sha256": "d7a99dffce53c0433e90fd8d6c9f2eaa59e3c6348d61b88ef79052ffa02d0ee6",
+    "archivedPath": "docs\\implementation\\ui-refinement-round2\\screenshots\\27-real-algorithm-cpu-ddc.png"
+  },
+  {
+    "report": "production-release",
+    "scene": "28-real-algorithm-ddc-saved-reopened",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\28-real-algorithm-ddc-saved-reopened.png",
+    "sha256": "2e9bc5d5c94eb6577f6143e50d7797ac4d2225613f4862212d1a80af4f5f0c09",
+    "archivedPath": "docs\\implementation\\ui-refinement-round2\\screenshots\\28-real-algorithm-ddc-saved-reopened.png"
+  },
+  {
+    "report": "production-release",
+    "scene": "29-real-algorithm-revision-preserves-ddc",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\29-real-algorithm-revision-preserves-ddc.png",
+    "sha256": "1b23ac727096d121b7386ec62921af443f06c8f9691e7d1405e25ba19387bcf7",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "30-real-algorithm-changed-source-reopened",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\30-real-algorithm-changed-source-reopened.png",
+    "sha256": "eaf219231855e715d89941f300b7c1ffcb8dc38850782f520e714dbce2f956f8",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "31-real-roi-approved-parameter-matrix",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\31-real-roi-approved-parameter-matrix.png",
+    "sha256": "ecbcf0392edd1a8434c931819f9de1e221c0abf9f72f1f9a09919c2b9edd6f12",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "32-real-roi-time-result",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\32-real-roi-time-result.png",
+    "sha256": "74225f23ed0df4c8317d9d3be3e422c69efece0ffcbfc23b000a7dc710714738",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "33-real-roi-saved-reopened",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\33-real-roi-saved-reopened.png",
+    "sha256": "27ddcc95d4adb7e1c6f2b30dd45285f3d9783afbb37095cd79a737228071f9c0",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "42-adapted-mean-spectrum-configuration",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\42-adapted-mean-spectrum-configuration.png",
+    "sha256": "194c6d49f51a064395d1ee6a830d39f6284fcd377122205ae1b5e80c07454c4d",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "43-generator-labels-real-wav",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\43-generator-labels-real-wav.png",
+    "sha256": "82e08cc8a3c0eed62e80fd9db0589f81f070e842e34d1e85270f7e1b16c41c91",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "34-same-id-repeat-review",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\34-same-id-repeat-review.png",
+    "sha256": "d4b099368c3f6f2c39737cd7d136ad21bc7858e7ef878d769d273d31e19ba098",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "35-score-sort-filter-batch-review",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\35-score-sort-filter-batch-review.png",
+    "sha256": "74bd8cafce34402b89bbfe1f0f8a3213018a17b4d8ce634092bd40eccbc8dbbf",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "36-waterfall-same-active-segment",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\36-waterfall-same-active-segment.png",
+    "sha256": "c226812aff543debad1a6f3dc1bdbe06d2c34e8fcbc1251e1b4c9e2afb31d2cc",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "37-original-label-manual-split",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\37-original-label-manual-split.png",
+    "sha256": "b981790bfa4302975201bd50ab3480d61441cee446d1541e39fec791fda7e0ee",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "38-merge-and-restore-origin",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\38-merge-and-restore-origin.png",
+    "sha256": "a82308b14f9d07b453d97a92b6d680765c6b4dc39605c3207391d69a1ffa9dd6",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "39-visible-json-csv-export",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\39-visible-json-csv-export.png",
+    "sha256": "c488d34656cc685f78fdb6d9316ed14232d2ad62a814f522a49506dd97d2e7ba",
+    "archivedPath": null
+  },
+  {
+    "report": "production-release",
+    "scene": "40-native-branch-enable-matrix",
+    "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance\\assets\\delivery-production-release\\40-native-branch-enable-matrix.png",
+    "sha256": "d7129ce4eb1e2aa33cbd6ddb09e5f44608f32b0b821ea3526e9b9d6b5daf7680",
+    "archivedPath": null
+  }
+]

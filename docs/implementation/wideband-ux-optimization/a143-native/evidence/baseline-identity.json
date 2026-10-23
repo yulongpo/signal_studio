@@ -1,0 +1,49 @@
+{
+  "sourceCommit": "4904740c353b434f7ad824ffc149880b5a0012ce",
+  "branch": "rebuild/a143-native",
+  "qt": "6.11.1",
+  "generator": "Visual Studio 18 2026",
+  "productSourceChanged": false,
+  "harnessFiles": [
+    "CMakeLists.txt",
+    "tests/ux_tests.cpp"
+  ],
+  "binaries": [
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudio.exe",
+      "length": 11557376,
+      "sha256": "6EE6B0785881294A8C21757D4DB3D56521BA076D9989306A47E9E1E822A3CBD3",
+      "lastWriteUtc": "2026-10-21T03:56:14.0877033Z"
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioUiTests.exe",
+      "length": 13524992,
+      "sha256": "0D664844F9AEF1F5DAD31AA29BB860B99ED833C4D5F0D719E4BEB55CACD0ADAC",
+      "lastWriteUtc": "2026-10-21T03:56:43.7444430Z"
+    },
+    {
+      "path": "out/vs2026-qt611-debug_bin/SignalStudioUiCapture.exe",
+      "length": 12884992,
+      "sha256": "6B6026DDED5D7A8AFF8924BF79C5ECAD741716354EDEBB559EDBB62A2F296EAC",
+      "lastWriteUtc": "2026-10-21T03:56:40.8986381Z"
+    },
+    {
+      "path": "out/vs2026-qt611-release_bin/SignalStudio.exe",
+      "length": 4495360,
+      "sha256": "2F5D5A07C151ABDF6029784039DCE087830047329BFEA7BD2F349965BE6E7911",
+      "lastWriteUtc": "2026-10-21T03:56:51.7086708Z"
+    },
+    {
+      "path": "out/vs2026-qt611-release_bin/SignalStudioUiTests.exe",
+      "length": 5063680,
+      "sha256": "1BC40754F4C8C3B57213EA5662B0DA2BDC3892EAC307A07BB5E4F2ECE23992EB",
+      "lastWriteUtc": "2026-10-21T03:57:21.8070763Z"
+    },
+    {
+      "path": "out/vs2026-qt611-release_bin/SignalStudioUiCapture.exe",
+      "length": 4986368,
+      "sha256": "657009F69962CBAADF3D70435BB3409E7164A6970DA15D5A88910D01BEA7D1CD",
+      "lastWriteUtc": "2026-10-21T03:57:19.3615627Z"
+    }
+  ]
+}

@@ -129,19 +129,19 @@ void AdaptiveValueEdit::commit() {
     return;
   if (!property("parameterDraft").toBool()) return;
   const auto parsed = parseAdaptiveValue(text(), kind_, allowNegative_);
-  setProperty("parameterDraft", false);
   if (!parsed) {
-    setProperty("invalid", true);
-    setText(formatAdaptiveValue(value_, kind_));
+    setParameterError(this, QStringLiteral("请输入有效数值和对应单位。"));
     return;
   }
-  setProperty("invalid", false);
+  setProperty("parameterDraft", false);
+  setParameterError(this, {});
   value_ = *parsed;
   setText(formatAdaptiveValue(value_, kind_));
   emit valueCommitted(value_);
 }
 void AdaptiveValueEdit::discard() {
   setProperty("parameterDraft", false);
+  setParameterError(this, {});
   setText(formatAdaptiveValue(value_, kind_));
 }
 void AdaptiveValueEdit::keyPressEvent(QKeyEvent* event) {
@@ -155,8 +155,9 @@ void AdaptiveValueEdit::keyPressEvent(QKeyEvent* event) {
     QLineEdit::keyPressEvent(event);
 }
 void AdaptiveValueEdit::focusOutEvent(QFocusEvent* event) {
-  if (event->reason() == Qt::TabFocusReason ||
-      event->reason() == Qt::BacktabFocusReason)
+  if (!parameterLayerHiding(this) &&
+      (event->reason() == Qt::TabFocusReason ||
+       event->reason() == Qt::BacktabFocusReason))
     commit();
   QLineEdit::focusOutEvent(event);
 }

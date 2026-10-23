@@ -1,3 +1,6 @@
+#include <QMouseEvent>
+#include "ui/source_units.h"
+#include "chart_settings_helpers.h"
 #include <QAbstractButton>
 #include <QAbstractItemView>
 #include <QAction>
@@ -111,6 +114,136 @@ void showWindow(MainWindow& window) {
         "Windows UI window did not enter the actual 4K acceptance screen "
         "at native 4K / 150%% full screen.");
   }
+}
+
+// The offscreen plugin has a small virtual screen; a taller plot's centre
+// can lie outside its cursor bounds. Deliver a public move event there.
+// Windows acceptance continues to move the real cursor in its actual window.
+void movePlotMouse(QWidget* plot,const QPoint& point) {
+  if(QGuiApplication::platformName()=="windows"){QTest::mouseMove(plot,point);return;}
+  QMouseEvent event(QEvent::MouseMove,QPointF(point),QPointF(plot->mapTo(plot->window(),point)),QPointF(plot->mapToGlobal(point)),Qt::NoButton,Qt::NoButton,Qt::NoModifier);
+  QCoreApplication::sendEvent(plot,&event);
+}
+
+// Use the visible chart entry (or its narrowband/overflow command), never
+// synthesize input against the old, hidden sidebar parameter sections.
+bool revealParameter(QWidget* widget) {
+  if (!widget) return false;
+  QCoreApplication::processEvents();
+  if (!widget->isVisible()) {
+    ChartControlStrip* owner = nullptr;
+    for (auto* parent = widget; parent && !owner; parent = parent->parentWidget()) {
+      owner = dynamic_cast<ChartControlStrip*>(parent->property("chartControlOwner").value<QObject*>());
+      if (!owner) owner = dynamic_cast<ChartControlStrip*>(parent->property("chartPanelOwner").value<QObject*>());
+    }
+    if (!owner || !owner->isVisible() || !owner->overflowButton()->isVisible()) return false;
+    if (!owner->popoverFrame()->isVisible()) QTest::mouseClick(owner->overflowButton(), Qt::LeftButton);
+    QCoreApplication::processEvents();
+    if (!widget->isVisible()) return false;
+  }
+  for (auto* parent = widget->parentWidget(); parent; parent = parent->parentWidget())
+    if (auto* scroll = qobject_cast<QScrollArea*>(parent))
+      scroll->ensureWidgetVisible(widget);
+  QCoreApplication::processEvents();
+  if (!widget->isVisible()) return false;
+  for (auto* parent = widget->parentWidget(); parent; parent = parent->parentWidget())
+    if (auto* scroll = qobject_cast<QScrollArea*>(parent))
+      if (!scroll->viewport()->rect().contains(
+              widget->mapTo(scroll->viewport(), widget->rect().center())))
+        return false;
+  return true;
+}
+
+bool openInspectorPage(MainWindow& window, const QString& context) {
+  auto* entry = window.findChild<QPushButton*>("context" + context);
+  if (!entry || !entry->isEnabled() || !revealParameter(entry)) return false;
+  QTest::mouseClick(entry, Qt::LeftButton);
+  QCoreApplication::processEvents();
+  QString pageName = context;
+  pageName[0] = pageName[0].toLower();
+  auto* page = window.findChild<QWidget*>(pageName + "Page");
+  return entry->isChecked() && page && page->isVisible();
+}
+
+void closeSettingsPopovers(MainWindow& window) {
+  for (const auto* name : {"filePropertiesPopover", "psdSettingsPopover", "stftSettingsPopover", "narrowbandPsdPanelControlsOverflowPopover", "narrowbandStftPanelControlsOverflowPopover", "narrowbandModulationStftControlsOverflowPopover", "recognitionStftPanelControlsOverflowPopover"})
+    if (auto* frame = window.findChild<QWidget*>(name);
+        frame && frame->isVisible()) {
+      QTest::keyClick(frame, Qt::Key_Escape);
+      QCoreApplication::processEvents();
+    }
+}
+
+bool openFileProperties(MainWindow& window) {
+  closeSettingsPopovers(window);
+  if (!openInspectorPage(window, "Display")) return false;
+  auto* entry = window.findChild<QPushButton*>("fileProperties");
+  if (!entry || !entry->isEnabled() || !revealParameter(entry)) return false;
+  QTest::mouseClick(entry, Qt::LeftButton);
+  QCoreApplication::processEvents();
+  auto* host = window.findChild<QWidget*>("filePropertiesPopover");
+  return host && host->isVisible();
+}
+
+bool openDetectionFold(MainWindow& window, const QString& name) {
+  if (!openInspectorPage(window, "Detection")) return false;
+  auto* toggle = window.findChild<QToolButton*>(name);
+  if (!toggle || !toggle->isEnabled() || !revealParameter(toggle)) return false;
+  if (!toggle->isChecked()) QTest::mouseClick(toggle, Qt::LeftButton);
+  QCoreApplication::processEvents();
+  return toggle->isChecked();
+}
+
+bool selectModelAndSpectrum(MainWindow& window, const QString& id,
+                            DetectionSpectrumMode mode =
+                                DetectionSpectrumMode::ModelDefault) {
+  // Preserve a pending draft until changing the model cancels it. Clicking
+  // an already active tab here would commit it through the outside-click policy.
+  auto* page = window.findChild<QWidget*>("detectionPage");
+  if ((!page || !page->isVisible()) &&
+      !openInspectorPage(window, "Detection")) return false;
+  auto* model = window.findChild<QComboBox*>("detectionModel");
+  auto* spectrum = window.findChild<QComboBox*>("detectionSpectrumMode");
+  if (!model || !spectrum || !revealParameter(model)) return false;
+  const int modelIndex = model->findData(id);
+  if (modelIndex < 0) return false;
+  model->setCurrentIndex(modelIndex);
+  const int spectrumIndex = spectrum->findData(static_cast<int>(mode));
+  if (spectrumIndex < 0 || !revealParameter(spectrum)) return false;
+  spectrum->setCurrentIndex(spectrumIndex);
+  auto* card = window.findChild<DetectionCard*>("detectionCard");
+  return card && card->request().profile.id == id.toStdString() &&
+         card->request().spectrumMode == mode;
+}
+
+bool openChartSettings(MainWindow& window, const QString& name) {
+  if(window.session().project().narrowbandWorkspaceOpen){
+    auto* entry=chartSettingsEntry(window,name);
+    if((name=="psdSettings"&&window.session().activeChannel()->page!=NarrowbandPage::Observe)||!entry||!entry->isVisible())
+      QTest::mouseClick(window.findChild<QAbstractButton*>("observePage"),Qt::LeftButton);
+  }else if(name=="psdSettings"){
+    QTest::mouseClick(window.findChild<QAbstractButton*>("psdMode"),Qt::LeftButton);
+  }
+  QCoreApplication::processEvents();
+  auto* frame=chartSettingsFrame(window,name);auto* entry=chartSettingsEntry(window,name);
+  if(!frame||!entry)return false;
+  if(frame->isVisible())return true;
+  closeSettingsPopovers(window);
+  if(!revealParameter(entry)||!entry->isEnabled())return false;
+  QTest::mouseClick(entry,Qt::LeftButton);QCoreApplication::processEvents();
+  return frame->isVisible();
+}
+
+QComboBox* chartPoints(MainWindow& window, bool psd) {
+  // Narrowband has its own visible N controls. Use the exact registered
+  // names in each workspace; a missing editor must fail the test.
+  if (window.session().project().narrowbandWorkspaceOpen)
+    return window.findChild<QComboBox*>(psd ? "narrowbandPsdFft" : "narrowbandStftFft");
+  return window.findChild<QComboBox*>(psd ? "psdFft" : "stftFft");
+}
+
+QComboBox* waveformControl(MainWindow& window) {
+  return window.findChild<QComboBox*>("waveformMode");
 }
 
 QList<QTreeWidgetItem*> descendantsOfType(QTreeWidgetItem* parent,
@@ -444,7 +577,7 @@ void UiTests::globalDisplaySettingsApplyAcrossFiles() {
   showWindow(window);
   auto* mainMode = window.findChild<QComboBox*>("modeMain");
   auto* auxiliaryMode = window.findChild<QComboBox*>("modeAux");
-  auto* palette = window.findChild<QComboBox*>("palette");
+  auto* palette = window.findChild<QComboBox*>("colormap");
   auto* dynamic = window.findChild<QComboBox*>("dynamic");
   auto* reference = window.findChild<QComboBox*>("reference");
   QVERIFY(mainMode);
@@ -456,8 +589,9 @@ void UiTests::globalDisplaySettingsApplyAcrossFiles() {
   mainMode->setCurrentIndex(1);
   auxiliaryMode->setCurrentIndex(1);
   palette->setCurrentIndex(2);
-  dynamic->setCurrentIndex(dynamic->findText("60 dB"));
-  reference->setCurrentIndex(reference->findText("-40 dBFS/Hz"));
+  QVERIFY(openChartSettings(window, "powerSettings"));
+  dynamic->setCurrentIndex(dynamic->findData(60));
+  reference->setCurrentIndex(reference->findData(-40));
   QCOMPARE(static_cast<int>(window.session().activeFile()->display.mainMode),
            static_cast<int>(MainMode::Waterfall));
   QCOMPARE(
@@ -470,6 +604,7 @@ void UiTests::globalDisplaySettingsApplyAcrossFiles() {
   QCOMPARE(window.session().project().files[1].display.palette, Palette::Gray);
   QCOMPARE(window.session().project().files[1].display.dynamicRangeDb, 60.0);
   QCOMPARE(window.session().project().files[1].display.referenceLevelDb, -40.0);
+  QTest::keyClick(chartSettingsFrame(window,"powerSettings"), Qt::Key_Escape);
   auto* auxiliaryPlot = window.findChild<PlotWidget*>("auxPlot");
   QVERIFY(auxiliaryPlot);
   const QPoint yAxisPoint(qRound(auxiliaryPlot->plotRect().left() - 20),
@@ -493,8 +628,8 @@ void UiTests::globalDisplaySettingsApplyAcrossFiles() {
   QCOMPARE(mainMode->currentIndex(), 0);
   QCOMPARE(auxiliaryMode->currentIndex(), 0);
   QCOMPARE(palette->currentIndex(), 0);
-  QCOMPARE(dynamic->currentText(), QString("60 dB"));
-  QCOMPARE(reference->currentText(), QString("-40 dBFS/Hz"));
+  QCOMPARE(dynamic->currentText(), QString("60.00 dB"));
+  QCOMPARE(reference->currentText(), QString("-40.00 dBFS/Hz"));
   QVERIFY(window.session().activateFile(secondId));
   window.refresh();
   QCOMPARE(mainMode->currentIndex(), 0);
@@ -787,7 +922,7 @@ void UiTests::displayChangeSurvivesPendingWheelCommit() {
   showWindow(window);
   auto* plot = window.findChild<PlotWidget*>("mainPlot");
   auto* mode = window.findChild<QComboBox*>("modeMain");
-  auto* palette = window.findChild<QComboBox*>("palette");
+  auto* palette = window.findChild<QComboBox*>("colormap");
   QVERIFY(plot);
   QVERIFY(mode);
   QVERIFY(palette);
@@ -1020,24 +1155,48 @@ void UiTests::responsiveWorkspace() {
 
 void UiTests::propertyFieldsFitSidebar() {
   DemoMainWindow window;
-  window.resize(2560, 1440);
-  window.show();
-  QCoreApplication::processEvents();
+  showWindow(window);
   auto* scroll = window.findChild<QScrollArea*>("propScroll");
-  QVERIFY(scroll);
-  auto* viewport = scroll->viewport();
-  QVERIFY(viewport && viewport->width() > 0);
-  for (const auto* id :
-       {"effectiveBandwidthMHz", "psdFft", "stftFft", "dynamic", "reference"}) {
-    auto* field = window.findChild<QWidget*>(id);
-    QVERIFY2(field, id);
-    const auto fieldRect =
-        QRect(field->mapTo(viewport, QPoint()), field->size());
-    QVERIFY2(
-        fieldRect.left() >= 0 && fieldRect.right() < viewport->width(),
-        qPrintable(
-            QString("Property field %1 must not be clipped at the right edge")
-                .arg(id)));
+  QVERIFY(scroll && scroll->viewport()->width() > 0);
+  QVERIFY(openFileProperties(window));
+  auto* host = window.findChild<QWidget*>("filePropertiesPopover");
+  scroll = host->findChild<QScrollArea*>();
+  QVERIFY(scroll && host->isVisible());
+  for (const auto* name : {"fileName", "sampleRate", "centerFreq", "fullRange",
+                           "effectiveBandwidthMHz"}) {
+    QCOMPARE(window.findChildren<QWidget*>(name).size(), 1);
+    QVERIFY(host->findChild<QWidget*>(name));
+  }
+  auto* bandwidth = host->findChild<QWidget*>("effectiveBandwidthMHz");
+  QVERIFY(revealParameter(bandwidth));
+  const QRect fieldRect(bandwidth->mapTo(scroll->viewport(), QPoint()), bandwidth->size());
+  QVERIFY(fieldRect.left() >= 0 && fieldRect.right() < scroll->viewport()->width());
+  for (const auto* name : {"psdSettings", "stftSettings", "powerSettings", "displaySettings"}) {
+    QVERIFY2(openChartSettings(window, name), name);
+    auto* frame = chartSettingsFrame(window,QString(name));
+    auto* area = frame->findChild<QScrollArea*>();
+    QVERIFY(area && window.rect().contains(frame->geometry()));
+    QStringList fields;
+    if (QString(name) == "psdSettings") fields = {"psdMethod", "psdWindow", "psdOverlap", "psdSegmentMs"};
+    else if (QString(name) == "stftSettings") fields = {"stftMethod", "stftWindow", "stftOverlap", "stftSegmentMs"};
+    else if (QString(name) == "powerSettings") fields = {"dynamic", "reference"};
+    else fields = {"freqMode", "gridToggle", "colorbarToggle"};
+    for (const auto& id : fields) {
+      auto* field = window.findChild<QWidget*>(id);
+      QVERIFY2(revealParameter(field), qPrintable(id));
+      auto* visibleHost=area->isAncestorOf(field)?area->viewport():field->parentWidget();
+      const QRect rect(field->mapTo(visibleHost, QPoint()), field->size());
+      QVERIFY2(rect.left() >= 0 && rect.right() < visibleHost->width(),
+               qPrintable(QString("Setting %1 must fit its visible viewport").arg(id)));
+    }
+    QTest::keyClick(frame, Qt::Key_Escape);
+    QVERIFY(!frame->isVisible());
+  }
+  for (bool psd : {true, false}) {
+    auto* points = chartPoints(window, psd);
+    QVERIFY(revealParameter(points));
+    const QRect rect(points->mapTo(points->parentWidget(), QPoint()), points->size());
+    QVERIFY(points->parentWidget()->rect().contains(rect));
   }
 }
 
@@ -1054,7 +1213,7 @@ void UiTests::prototypeDisplayDefaultsAndOptions() {
   QCOMPARE(file->view.time.begin, SampleIndex{0});
   QCOMPARE(file->view.time.end, SampleIndex{960'000'000ULL});
   QCOMPARE(file->display.palette, Palette::CoolEditClassic);
-  QCOMPARE(window.findChild<QComboBox*>("palette")->currentText(),
+  QCOMPARE(window.findChild<QComboBox*>("colormap")->currentText(),
            QString("CoolEdit Classic"));
   QCOMPARE(file->view.frequency.lowerHz, 80'000'000.0);
   QCOMPARE(file->view.frequency.upperHz, 120'000'000.0);
@@ -1065,8 +1224,8 @@ void UiTests::prototypeDisplayDefaultsAndOptions() {
   QVERIFY(file->display.waveformMax > file->display.waveformMin);
   QCOMPARE(file->display.psdMin, -100.0);
   QCOMPARE(file->display.psdMax, 0.0);
-  auto* stft = window.findChild<QComboBox*>("stftFft");
-  auto* psd = window.findChild<QComboBox*>("psdFft");
+  auto* stft = chartPoints(window, false);
+  auto* psd = chartPoints(window, true);
   auto* dynamic = window.findChild<QComboBox*>("dynamic");
   auto* reference = window.findChild<QComboBox*>("reference");
   auto* scope = window.findChild<QComboBox*>("psdScope");
@@ -1076,18 +1235,19 @@ void UiTests::prototypeDisplayDefaultsAndOptions() {
   const QStringList palettes{"Turbo",   "Viridis",         "Gray",
                              "Plasma",  "Inferno",         "Magma",
                              "Cividis", "CoolEdit Classic"};
-  QCOMPARE(comboLabels(window.findChild<QComboBox*>("palette")), palettes);
   QCOMPARE(comboLabels(window.findChild<QComboBox*>("colormap")), palettes);
+  QCOMPARE(window.findChildren<QComboBox*>("colormap").size(), 1);
+  QVERIFY(!window.findChild<QComboBox*>("palette"));
   QStringList fftSizes;
   for (int order = 5; order <= 16; ++order)
     fftSizes << QString::number(1 << order);
   QCOMPARE(comboLabels(stft), fftSizes);
   QCOMPARE(comboLabels(psd), fftSizes);
-  QCOMPARE(comboLabels(dynamic), QStringList({"20 dB", "40 dB", "60 dB",
-                                              "80 dB", "100 dB", "120 dB"}));
+  QCOMPARE(comboLabels(dynamic), QStringList({"20.00 dB", "40.00 dB", "60.00 dB",
+                                              "80.00 dB", "100.00 dB", "120.00 dB"}));
   QCOMPARE(comboLabels(reference),
-           QStringList({"0 dBFS/Hz", "-20 dBFS/Hz", "-40 dBFS/Hz",
-                        "-60 dBFS/Hz", "-80 dBFS/Hz", "-100 dBFS/Hz"}));
+           QStringList({"0.00 dBFS/Hz", "-20.00 dBFS/Hz", "-40.00 dBFS/Hz",
+                        "-60.00 dBFS/Hz", "-80.00 dBFS/Hz", "-100.00 dBFS/Hz"}));
   QCOMPARE(stft->currentText(), QString("2048"));
   QCOMPARE(psd->currentText(), QString("4096"));
   QCOMPARE(dynamic->currentIndex(), 3);
@@ -1123,7 +1283,9 @@ void UiTests::powerInputsCommitAndFitReusesData() {
   const auto previousDynamic =
       window.session().activeFile()->display.dynamicRangeDb;
   const auto previousCustom = dynamic->property("lastCustomValue");
+  QVERIFY(openChartSettings(window, "powerSettings"));
   auto* editor = dynamic->lineEdit();
+  QVERIFY(revealParameter(editor));
   editor->setFocus();
   editor->selectAll();
   QTest::keyClicks(editor, "123.5");
@@ -1136,7 +1298,7 @@ void UiTests::powerInputsCommitAndFitReusesData() {
   QCOMPARE(editor->cursorPosition(), 5);
   QTest::keyClick(editor, Qt::Key_Tab);
   QCOMPARE(window.session().activeFile()->display.dynamicRangeDb, 123.5);
-  QCOMPARE(editor->text(), QString("123.5 dB"));
+  QCOMPARE(editor->text(), QString("123.50 dB"));
   editor->setFocus();
   editor->selectAll();
   QTest::keyClicks(editor, "123.5");
@@ -1146,6 +1308,7 @@ void UiTests::powerInputsCommitAndFitReusesData() {
   QCOMPARE(window.session().activeChannel()->psdAxisMinimum,
            window.session().activeFile()->display.referenceLevelDb - 123.5);
   editor = reference->lineEdit();
+  QVERIFY(revealParameter(editor));
   editor->setFocus();
   editor->selectAll();
   QTest::keyClicks(editor, "-");
@@ -1162,6 +1325,8 @@ void UiTests::powerInputsCommitAndFitReusesData() {
   QVERIFY(window.session().linkedCursor(context).pinned);
   QVERIFY(window.session().setChannelPsdRange(-350, -250, false));
   window.refresh();
+  QVERIFY(openChartSettings(window, "powerSettings"));
+  QVERIFY(revealParameter(editor));
   editor->setFocus();
   editor->selectAll();
   QTest::keyClicks(editor, "-36");
@@ -1173,6 +1338,7 @@ void UiTests::powerInputsCommitAndFitReusesData() {
   const auto expected =
       fitPowerDisplayRange(*snapshot.heatmap, snapshot.psd.get());
   QVERIFY(expected.valid);
+  QVERIFY(revealParameter(fit));
   QTest::mouseClick(fit, Qt::LeftButton);
   QCOMPARE(window.session().activeFile()->display.referenceLevelDb,
            expected.range.referenceLevelDb);
@@ -1180,6 +1346,7 @@ void UiTests::powerInputsCommitAndFitReusesData() {
            expected.range.lowerDb());
   QCOMPARE(window.session().spectrogram(context), spectrum);
   QCOMPARE(workspace->renderStatistics()["requestGeneration"], generation);
+  QVERIFY(revealParameter(editor));
   editor->setFocus();
   editor->selectAll();
   QTest::keyClicks(editor, "101");
@@ -1188,17 +1355,20 @@ void UiTests::powerInputsCommitAndFitReusesData() {
   QTest::mouseClick(outside, Qt::LeftButton);
   QCOMPARE(window.session().activeFile()->display.referenceLevelDb,
            expected.range.referenceLevelDb);
-  QVERIFY(reference->currentText().endsWith("dBFS/Hz"));
+  QCOMPARE(reference->currentText(), QString("101"));
+  QVERIFY(reference->property("invalid").toBool());
+  QVERIFY(reference->property("parameterDraft").toBool());
 }
 
 void UiTests::parameterDraftsRequireExplicitCommit() {
   MainWindow window;
   window.openNarrowbandDemoProject();
   showWindow(window);
+  QVERIFY(openChartSettings(window, "psdSettings"));
   auto* outside = window.findChild<QLabel*>("statusTime");
   auto* overlap = window.findChild<QComboBox*>("psdOverlap");
   auto* duration = window.findChild<QComboBox*>("psdSegmentMs");
-  auto* parameters = overlap->parentWidget();
+  auto* parameters = duration->parentWidget();
   auto* settings = qobject_cast<SpectralSettingsWidget*>(parameters);
   QVERIFY(settings);
   auto* channel = window.session().activeChannel();
@@ -1223,12 +1393,16 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   QTest::mouseClick(outside, Qt::LeftButton);
   QCOMPARE(channel->psd.parameters.overlap, .6375);
   QCOMPARE(overlap->property("lastCustomValue").toDouble(), 63.75);
+  QVERIFY(openChartSettings(window, "psdSettings"));
+  QVERIFY(revealParameter(duration));
   duration->lineEdit()->setFocus();
   duration->lineEdit()->selectAll();
   QTest::keyClicks(duration->lineEdit(), "-");
   QTest::keyClick(duration->lineEdit(), Qt::Key_Return);
   QCOMPARE(channel->psd.parameters.segmentMilliseconds, 0.0);
-  QCOMPARE(duration->currentText(), QString("0"));
+  QCOMPARE(duration->currentText(), QString("-"));
+  QVERIFY(duration->property("invalid").toBool());
+  QVERIFY(duration->property("parameterDraft").toBool());
   window.findChild<QComboBox*>("psdMethod")
       ->setCurrentIndex(static_cast<int>(SpectralMethod::Multitaper));
   // Imported parameters can have more precision than the editor displays.
@@ -1239,18 +1413,22 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   auto* edit = nw->findChild<QLineEdit*>();
   const double previousNw = nw->value();
   const double previousParameterNw = channel->psd.parameters.timeBandwidth;
+  QVERIFY(revealParameter(edit));
   edit->setFocus();
   edit->selectAll();
   QTest::keyClicks(edit, "4.5");
   QCOMPARE(nw->value(), previousNw);
   QCOMPARE(channel->psd.parameters.timeBandwidth, previousParameterNw);
   window.refresh();
+  QVERIFY(chartSettingsFrame(window,"psdSettings")->isVisible());
+  QVERIFY(edit->hasFocus());
   QCOMPARE(edit->text(), QString("4.5"));
   QTest::keyClick(edit, Qt::Key_Tab);
   window.refresh();
   QCOMPARE(nw->value(), 4.5);
   QCOMPARE(edit->text(), QString("4.50"));
   QCOMPARE(settings->parameters().timeBandwidth, 4.5);
+  QVERIFY(revealParameter(edit));
   edit->setFocus();
   edit->selectAll();
   QTest::keyClicks(edit, "5.25");
@@ -1264,6 +1442,7 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   auto* count = window.findChild<QSpinBox*>("psdTapers");
   edit = count->findChild<QLineEdit*>();
   const int previousCount = count->value();
+  QVERIFY(revealParameter(edit));
   edit->setFocus();
   edit->selectAll();
   QTest::keyClicks(edit, "5");
@@ -1272,13 +1451,16 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   QCOMPARE(edit->text(), QString("5"));
   QTest::keyClick(edit, Qt::Key_Backtab);
   QCOMPARE(channel->psd.parameters.tapers, 5);
+  QVERIFY(revealParameter(edit));
   edit->setFocus();
   QTest::keyClick(edit, Qt::Key_Up);
   QCOMPARE(channel->psd.parameters.tapers, 5);
   QTest::keyClick(edit, Qt::Key_Return);
   QCOMPARE(channel->psd.parameters.tapers, 6);
   // Context switching cancels drafts instead of applying them to another file.
+  QVERIFY(openChartSettings(window, "powerSettings"));
   auto* dynamic = window.findChild<QComboBox*>("dynamic");
+  QVERIFY(revealParameter(dynamic));
   dynamic->lineEdit()->setFocus();
   dynamic->lineEdit()->selectAll();
   QTest::keyClicks(dynamic->lineEdit(), "77.25");
@@ -1289,11 +1471,14 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   QCOMPARE(window.session().activeFile()->display.dynamicRangeDb, oldDynamic);
   QVERIFY(!dynamic->property("parameterDraft").toBool());
   QVERIFY(dynamic->currentText() != QString("77.25"));
+  QVERIFY(openFileProperties(window));
   auto* bandwidth = window.findChild<QDoubleSpinBox*>("effectiveBandwidthMHz");
+  QVERIFY(bandwidth);
   edit = bandwidth->findChild<QLineEdit*>();
   const double originalBandwidth =
       window.session().activeFile()->metadata.effectiveBandwidthHz;
   const double nextBandwidth = bandwidth->value() * .8;
+  QVERIFY(revealParameter(edit));
   edit->setFocus();
   edit->selectAll();
   QTest::keyClicks(
@@ -1306,6 +1491,7 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   QVERIFY(
       std::abs(window.session().activeFile()->metadata.effectiveBandwidthHz -
                nextBandwidth * 1e6) < .5);
+  closeSettingsPopovers(window);
   // Dynamically opened dialogs get the same numeric policy; Return commits
   // the editor, and does not accidentally submit the dialog's default button.
   window.findChild<QPushButton*>("extract")->click();
@@ -1314,6 +1500,7 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   auto* center = dialog->findChild<QDoubleSpinBox*>("channelCenterMHz");
   const double oldCenter = center->value();
   edit = center->findChild<QLineEdit*>();
+  QVERIFY(revealParameter(edit));
   edit->setFocus();
   edit->selectAll();
   QTest::keyClicks(
@@ -1330,6 +1517,7 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   auto* rate = window.findChild<QDoubleSpinBox*>("symbolRate");
   edit = rate->findChild<QLineEdit*>();
   const double previousRate = channel->symbolRate;
+  QVERIFY(revealParameter(edit));
   edit->setFocus();
   edit->selectAll();
   QTest::keyClicks(edit, "275000");
@@ -1341,6 +1529,7 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   edit = threshold->findChild<QLineEdit*>();
   QSignalSpy edits(threshold, &QDoubleSpinBox::valueChanged);
   const double previousThreshold = threshold->value();
+  QVERIFY(revealParameter(edit));
   edit->setFocus();
   edit->selectAll();
   QTest::keyClicks(edit, "0.75");
@@ -1356,8 +1545,13 @@ void UiTests::parameterInputsIgnoreWheel() {
   window.openNarrowbandDemoProject();
   showWindow(window);
   int combos = 0, spins = 0;
+  QList<QPointer<QComboBox>> checkedCombos;
+  QList<QPointer<QAbstractSpinBox>> checkedSpins;
   const auto check = [&](QWidget* root) {
     for (auto* combo : root->findChildren<QComboBox*>()) {
+      if (checkedCombos.contains(combo) || !combo->isVisible()) continue;
+      QVERIFY(revealParameter(combo));
+      checkedCombos.append(combo);
       const int index = combo->currentIndex();
       const auto text = combo->currentText();
       for (bool focused : {false, true}) {
@@ -1365,8 +1559,10 @@ void UiTests::parameterInputsIgnoreWheel() {
           combo->setFocus();
         else
           window.setFocus();
-        for (int delta : {120, -120})
+        for (int delta : {120, -120}) {
+          QVERIFY(revealParameter(combo));
           wheelAt(combo, combo->rect().center(), delta);
+        }
         QVERIFY2(combo->currentIndex() == index,
                  qPrintable(QString("Wheel/focus changed %1 from %2 to %3")
                                 .arg(combo->objectName())
@@ -1374,6 +1570,7 @@ void UiTests::parameterInputsIgnoreWheel() {
                                 .arg(combo->currentIndex())));
         QCOMPARE(combo->currentText(), text);
         if (combo->lineEdit()) {
+          QVERIFY(revealParameter(combo->lineEdit()));
           wheelAt(combo->lineEdit(), combo->lineEdit()->rect().center());
           QCOMPARE(combo->currentText(), text);
         }
@@ -1381,41 +1578,113 @@ void UiTests::parameterInputsIgnoreWheel() {
       ++combos;
     }
     for (auto* spin : root->findChildren<QAbstractSpinBox*>()) {
+      if (checkedSpins.contains(spin) || !spin->isVisible()) continue;
+      QVERIFY(revealParameter(spin));
+      checkedSpins.append(spin);
       const auto text = spin->findChild<QLineEdit*>()->text();
       for (bool focused : {false, true}) {
         if (focused)
           spin->setFocus();
         else
           window.setFocus();
-        for (int delta : {120, -120})
+        for (int delta : {120, -120}) {
+          QVERIFY(revealParameter(spin));
           wheelAt(spin, spin->rect().center(), delta);
+        }
         QCOMPARE(spin->findChild<QLineEdit*>()->text(), text);
-        wheelAt(spin->findChild<QLineEdit*>(), spin->rect().center());
+        auto* edit = spin->findChild<QLineEdit*>();
+        QVERIFY(revealParameter(edit));
+        wheelAt(edit, edit->rect().center());
         QCOMPARE(spin->findChild<QLineEdit*>()->text(), text);
       }
       ++spins;
     }
   };
-  check(&window);
-  QVERIFY2(
-      combos >= 30 && spins >= 12,
-      qPrintable(
-          QString("Checked %1 combos and %2 spins").arg(combos).arg(spins)));
+  auto* workspace = window.findChild<NarrowbandWorkspace*>();
+  QVERIFY(workspace);
+  for (int page = 0; page < 4; ++page) {
+    workspace->activatePageForAcceptance(page);
+    QCoreApplication::processEvents();
+    check(workspace);
+  }
+  for (const auto* name : {"psdSettings", "stftSettings", "powerSettings", "displaySettings"}) {
+    QVERIFY2(openChartSettings(window, name), name);
+    auto* frame = chartSettingsFrame(window,QString(name));
+    check(frame);
+    // Conditional rows must be visited through their real method/window
+    // choices. They are intentionally hidden in the default Welch/Hann form.
+    if (QString(name) == "psdSettings" || QString(name) == "stftSettings") {
+      const QString prefix = QString(name) == "psdSettings" ? "psd" : "stft";
+      auto* method = window.findChild<QComboBox*>(prefix + "Method");
+      auto* windowType = window.findChild<QComboBox*>(prefix + "Window");
+      const int previousMethod = method->currentIndex();
+      const int previousWindow = windowType->currentIndex();
+      const auto choose = [&](QComboBox* combo, int index) {
+        QVERIFY(revealParameter(combo));
+        combo->setFocus(); QTest::keyClick(combo, Qt::Key_Home);
+        for (int i = 0; i < index; ++i) QTest::keyClick(combo, Qt::Key_Down);
+        QCOMPARE(combo->currentIndex(), index);
+      };
+      for (int index = 0; index < method->count(); ++index) {
+        choose(method, index);
+        if (windowType->isVisible()) choose(windowType, windowType->findText("Kaiser"));
+        check(frame);
+      }
+      choose(method, previousMethod);
+      if (windowType->isVisible()) choose(windowType, previousWindow);
+    }
+    QTest::keyClick(frame, Qt::Key_Escape);
+  }
   window.session().project().narrowbandWorkspaceOpen = false;
   window.refresh();
-  for (auto* toggle : window.findChildren<QToolButton*>())
-    if (toggle->property("uiRole").toString() == "sectionToggle")
-      toggle->setChecked(true);
+  QVERIFY(openInspectorPage(window, "Display"));
+  window.session().setAuxiliaryMode(AuxiliaryMode::Waveform);
+  window.refresh();
+  check(&window);
+  window.session().setAuxiliaryMode(AuxiliaryMode::Psd);
+  window.refresh();
+  check(&window);
+  // Pages and folds must be visited explicitly so the wheel checks retain
+  // their former coverage after the shared sidebar becomes a page stack.
+  auto* file = window.session().activeFile();
+  QVERIFY(file && !file->marks.empty());
+  window.session().selectMarks({file->marks.front().id}, file->marks.front().id);
+  window.refresh();
+  for (const auto* context : {"Display", "Detection", "Annotation", "Channel"}) {
+    QVERIFY(openInspectorPage(window, context));
+    check(&window);
+  }
+  for (const auto* fold : {"detectionAnalysisParametersToggle",
+                           "detectionPostprocessParametersToggle",
+                           "detectionResourceParametersToggle"}) {
+    QVERIFY(openDetectionFold(window, fold));
+    check(window.findChild<QWidget*>("detectionPage"));
+  }
+  QVERIFY(openFileProperties(window));
+  auto* popup = window.findChild<QWidget*>("filePropertiesPopover");
+  auto* scroll = popup->findChild<QScrollArea*>();
+  auto* bandwidth = popup->findChild<QDoubleSpinBox*>("effectiveBandwidthMHz");
+  QVERIFY(scroll && bandwidth);
+  check(popup);
+  const int oldMinimum = scroll->minimumHeight();
+  const int oldMaximum = scroll->maximumHeight();
+  scroll->setFixedHeight(std::max(60, bandwidth->sizeHint().height() * 2));
   QCoreApplication::processEvents();
-  auto* scroll = window.findChild<QScrollArea*>("propScroll");
   QTRY_VERIFY(scroll->verticalScrollBar()->maximum() > 0);
-  scroll->verticalScrollBar()->setValue(0);
-  auto* palette = window.findChild<QComboBox*>("colormap");
-  const int paletteIndex = palette->currentIndex();
-  wheelAt(palette, palette->rect().center(), -120);
-  QCOMPARE(palette->currentIndex(), paletteIndex);
-  QVERIFY(scroll->verticalScrollBar()->value() > 0);
+  QVERIFY(revealParameter(bandwidth));
+  const double bandwidthBefore = bandwidth->value();
+  const auto bandwidthText = bandwidth->findChild<QLineEdit*>()->text();
+  scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());
+  const int scrollBefore = scroll->verticalScrollBar()->value();
+  wheelAt(bandwidth, bandwidth->rect().center(), 120);
+  QCOMPARE(bandwidth->value(), bandwidthBefore);
+  QCOMPARE(bandwidth->findChild<QLineEdit*>()->text(), bandwidthText);
+  QVERIFY(scroll->verticalScrollBar()->value() < scrollBefore);
+  scroll->setMinimumHeight(oldMinimum);
+  scroll->setMaximumHeight(oldMaximum);
+  QVERIFY(openChartSettings(window, "powerSettings"));
   auto* dynamic = window.findChild<QComboBox*>("dynamic");
+  QVERIFY(revealParameter(dynamic));
   dynamic->lineEdit()->setFocus();
   dynamic->lineEdit()->selectAll();
   const double previous = window.session().activeFile()->display.dynamicRangeDb;
@@ -1425,12 +1694,17 @@ void UiTests::parameterInputsIgnoreWheel() {
   QCOMPARE(window.session().activeFile()->display.dynamicRangeDb, previous);
   window.session().project().narrowbandWorkspaceOpen = false;
   window.refresh();
-  window.findChild<QPushButton*>("extract")->click();
+  QTest::keyClick(chartSettingsFrame(window,"powerSettings"), Qt::Key_Escape);
+  auto* extract = window.findChild<QPushButton*>("extract");
+  QVERIFY(revealParameter(extract));
+  QTest::mouseClick(extract, Qt::LeftButton);
   auto* dialog = window.findChild<QDialog*>("channelConfigDialog");
   QVERIFY(dialog);
   check(dialog);
   auto* source = dialog->findChild<QComboBox*>("channelSourceMark");
-  source->showPopup();
+  QVERIFY(revealParameter(source));
+  QTest::mouseClick(source, Qt::LeftButton);
+  QTRY_VERIFY(source->view()->isVisible());
   const int selected = source->currentIndex();
   const auto highlighted = source->view()->currentIndex();
   wheelAt(source->view()->viewport(),
@@ -1444,6 +1718,8 @@ void UiTests::parameterInputsIgnoreWheel() {
   QVERIFY(dialog);
   check(dialog);
   dialog->reject();
+  QVERIFY2(combos >= 30 && spins >= 12,
+           qPrintable(QString("Checked %1 visible combos and %2 visible spins").arg(combos).arg(spins)));
   qInfo(
       "Wheel protection checked %d combos and %d spin boxes, including dialogs "
       "and editors",
@@ -1679,29 +1955,29 @@ void UiTests::initialFileViewShowsFirstFivePercentOrTenMilliseconds() {
 void UiTests::paletteControlsStaySynchronized() {
   DemoMainWindow window;
   showWindow(window);
-  auto* header = window.findChild<QComboBox*>("palette");
-  auto* property = window.findChild<QComboBox*>("colormap");
-  auto* rangeTag = window.findChild<QWidget*>("rangeTag");
+  auto* header = window.findChild<QComboBox*>("colormap");
+  auto* rangeTag = window.findChild<QWidget*>("dynamicLabel");
   auto* maximize = window.findChild<QAbstractButton*>("specMaximize");
-  QVERIFY(header && property);
-  QVERIFY(rangeTag && maximize);
-  QCOMPARE(header->width(), 155);
-  auto* spectrumHeader = header->parentWidget();
+  QVERIFY(header && rangeTag && maximize);
+  QCOMPARE(window.findChildren<QComboBox*>("colormap").size(), 1);
+  QVERIFY(!window.findChild<QComboBox*>("palette"));
+  auto* spectrumHeader = window.findChild<QWidget*>("specChartHead");
   QVERIFY(spectrumHeader);
-  QVERIFY(header->isVisible() && rangeTag->isVisible() &&
-          maximize->isVisible());
-  QVERIFY(header->geometry().right() < rangeTag->geometry().left());
-  QVERIFY(rangeTag->geometry().right() < maximize->geometry().left());
-  QVERIFY(maximize->geometry().right() < spectrumHeader->width());
+  QVERIFY(revealParameter(header) && rangeTag->isVisible() && maximize->isVisible());
+  const QRect paletteRect(header->mapTo(spectrumHeader, QPoint()), header->size());
+  const QRect rangeRect(rangeTag->mapTo(spectrumHeader, QPoint()), rangeTag->size());
+  const QRect maximizeRect(maximize->mapTo(spectrumHeader, QPoint()), maximize->size());
+  QVERIFY(paletteRect.right() < rangeRect.left());
+  QVERIFY(rangeRect.right() < maximizeRect.left());
+  QVERIFY(maximizeRect.right() < spectrumHeader->width());
   const QStringList expectedPalettes{"Turbo",   "Viridis",         "Gray",
                                      "Plasma",  "Inferno",         "Magma",
                                      "Cividis", "CoolEdit Classic"};
   QCOMPARE(comboLabels(header), expectedPalettes);
-  QCOMPARE(comboLabels(property), expectedPalettes);
   QCOMPARE(header->currentText(), QString("CoolEdit Classic"));
   header->setCurrentIndex(1);
-  QCOMPARE(property->currentIndex(), 1);
-  property->setCurrentIndex(2);
+  QCOMPARE(window.session().activeFile()->display.palette, Palette::Viridis);
+  header->setCurrentIndex(2);
   QCOMPARE(header->currentIndex(), 2);
   QCOMPARE(static_cast<int>(window.session().activeFile()->display.palette),
            static_cast<int>(Palette::Gray));
@@ -1710,26 +1986,29 @@ void UiTests::paletteControlsStaySynchronized() {
       window.session().project().files[1].metadata.id));
   window.refresh();
   QCOMPARE(header->currentIndex(), 2);
-  QCOMPARE(property->currentIndex(), 2);
+  QCOMPARE(window.session().activeFile()->display.palette, Palette::Gray);
   QVERIFY(window.session().activateFile(first));
   window.refresh();
   QCOMPARE(header->currentIndex(), 2);
-  QCOMPARE(property->currentIndex(), 2);
+  QCOMPARE(window.session().activeFile()->display.palette, Palette::Gray);
   const auto cividisIndex = header->findText("Cividis");
   QVERIFY(cividisIndex >= 0);
   header->setCurrentIndex(cividisIndex);
-  QCOMPARE(property->currentText(), QString("Cividis"));
+  QCOMPARE(header->currentText(), QString("Cividis"));
   QCOMPARE(window.session().activeFile()->display.palette, Palette::Cividis);
   const auto classicIndex = header->findText("CoolEdit Classic");
   QVERIFY(classicIndex >= 0);
   header->setCurrentIndex(classicIndex);
-  QCOMPARE(property->currentText(), QString("CoolEdit Classic"));
+  QCOMPARE(header->currentText(), QString("CoolEdit Classic"));
   QCOMPARE(window.session().activeFile()->display.palette,
            Palette::CoolEditClassic);
   auto* colorbar = window.findChild<QCheckBox*>("colorbarToggle");
   auto* main = window.findChild<PlotWidget*>("mainPlot");
   QVERIFY(colorbar && main);
-  colorbar->setChecked(true);
+  QVERIFY(openChartSettings(window, "displaySettings"));
+  QVERIFY(revealParameter(colorbar));
+  QTest::mouseClick(colorbar, Qt::LeftButton);
+  QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
   QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 10'000);
   const auto image = main->grab().toImage();
   const qreal dpr = image.devicePixelRatio();
@@ -1748,6 +2027,36 @@ void UiTests::paletteControlsStaySynchronized() {
   }
   QVERIFY2(hasRedTransition,
            "CoolEdit Classic must include its red high-energy transition.");
+  QTimer::singleShot(50, &window, [] {
+    if (auto* question = qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
+      QTest::mouseClick(question->button(QMessageBox::Yes), Qt::LeftButton);
+  });
+  window.openNarrowbandDemoProject();
+  QVERIFY(window.session().activeChannel());
+  const auto channelId = window.session().activeChannel()->id;
+  window.session().project().narrowbandWorkspaceOpen = false;
+  window.refresh();
+  QVERIFY(revealParameter(header));
+  QVERIFY(spectrumHeader->isAncestorOf(header));
+  header->setCurrentIndex(static_cast<int>(Palette::Gray));
+  QVERIFY(window.session().activateChannel(channelId));
+  window.session().project().narrowbandWorkspaceOpen = true;
+  window.refresh();
+  QCOMPARE(window.session().activeFile()->display.palette, Palette::Gray);
+  QCOMPARE(header->currentIndex(), static_cast<int>(Palette::Gray));
+  QVERIFY(openInspectorPage(window, "Display"));
+  QVERIFY(revealParameter(header));
+  auto* paletteHost = chartSettingsStrip(window,"stftSettings");
+  QVERIFY(paletteHost && paletteHost->isAncestorOf(header));
+  QCOMPARE(window.findChild<QComboBox*>("colormap"), header);
+  for (const auto* id : {"narrowbandStftPanelChart", "narrowbandModulationStftChart",
+                          "recognitionStftPanelChart"}) {
+    auto* chart = window.findChild<QWidget*>(id);
+    QVERIFY(chart);
+    QCOMPARE(chart->property("paletteIndex").toInt(), static_cast<int>(Palette::Gray));
+  }
+  QCOMPARE(window.findChildren<QComboBox*>("colormap").size(), 1);
+  QVERIFY(!window.findChild<QComboBox*>("palette"));
 }
 
 void UiTests::widebandAuxiliaryRenderingAndGestures() {
@@ -1761,7 +2070,9 @@ void UiTests::widebandAuxiliaryRenderingAndGestures() {
   for (const auto auxiliaryMode :
        {AuxiliaryMode::Waveform, AuxiliaryMode::Psd}) {
     mode->setCurrentIndex(static_cast<int>(auxiliaryMode));
+    QVERIFY(openChartSettings(window, "displaySettings"));
     grid->setChecked(true);
+    QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
     QTRY_VERIFY_WITH_TIMEOUT(chart->isDisplaySettled(), 10'000);
     if (QGuiApplication::platformName() == "windows") {
       QVERIFY(chart->gpuReady());
@@ -1771,11 +2082,15 @@ void UiTests::widebandAuxiliaryRenderingAndGestures() {
     const QRectF plot = chart->plotRect();
     QVERIFY(traceCoversPlot(chartImage(chart), chart->size(), plot));
     const QImage withGrid = chartImage(chart);
+    QVERIFY(openChartSettings(window, "displaySettings"));
     grid->setChecked(false);
+    QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
     QTest::qWait(30);
     QVERIFY(changedPlotPixels(withGrid, chartImage(chart), chart->size(),
                               plot) > 50);
+    QVERIFY(openChartSettings(window, "displaySettings"));
     grid->setChecked(true);
+    QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
     const auto renderingBase = window.session().snapshot();
     const double center =
         (file->display.auxiliaryMin + file->display.auxiliaryMax) / 2.0;
@@ -2077,7 +2392,8 @@ void UiTests::narrowbandLinkedCursorsAndFrameSpectrum() {
   auto* headerStft = window.findChild<QComboBox*>("narrowbandStftFft");
   QVERIFY(rightStft && headerStft);
   const int wideStft = window.session().activeFile()->display.stftSize;
-  rightStft->setCurrentText("4096");
+  QVERIFY(revealParameter(headerStft));
+  headerStft->setCurrentIndex(headerStft->findData(4096));
   QCOMPARE(window.session().activeChannel()->stftFftSize, 4096);
   QCOMPARE(headerStft->currentData().toInt(), 4096);
   QCOMPARE(window.session().activeFile()->display.stftSize, wideStft);
@@ -2090,9 +2406,9 @@ void UiTests::narrowbandLinkedCursorsAndFrameSpectrum() {
   const auto matrix = window.session().spectrogram(context);
   QVERIFY(matrix && !matrix->frames.empty());
   const QRectF plot(66, 14, heat->width() - 82, heat->height() - 55);
-  QTest::mouseMove(heat, plot.center().toPoint());
+  movePlotMouse(heat, plot.center().toPoint());
   QTest::qWait(40);
-  QVERIFY(heat->property("cursorReadout").toString().contains("dBFS/Hz"));
+  QTRY_VERIFY2_WITH_TIMEOUT(heat->property("cursorReadout").toString().contains(powerUnit(window.session().activeFile()->metadata)),qPrintable(QString("readout=%1 visible=%2 hover=%3 frames=%4").arg(heat->property("cursorReadout").toString()).arg(heat->isVisible()).arg(heat->property("hoverCursorVisible").toBool()).arg(matrix->frames.size())),3000);
   QVERIFY(plot.contains(heat->property("cursorReadoutRect").toRectF()));
   const auto hoveredSample = heat->property("cursorSourceSample").toULongLong();
   const double hoveredSeconds =
@@ -2104,7 +2420,7 @@ void UiTests::narrowbandLinkedCursorsAndFrameSpectrum() {
               .contains(QString::number(hoveredSeconds / .001, 'g', 10)));
   const auto uploads = workspace->visibleTextureUploads(),
              vertices = workspace->visibleGpuVertexUploads();
-  QTest::mouseMove(heat, (plot.center() + QPointF(30, 20)).toPoint());
+  movePlotMouse(heat, (plot.center() + QPointF(30, 20)).toPoint());
   QTest::qWait(50);
   QCOMPARE(workspace->visibleTextureUploads(), uploads);
   QCOMPARE(workspace->visibleGpuVertexUploads(), vertices);
@@ -2138,6 +2454,7 @@ void UiTests::narrowbandLinkedCursorsAndFrameSpectrum() {
     rightFrequency = window.findChild<QComboBox*>("frequencyMode");
   QVERIFY(rightFrequency);
   QCOMPARE(rightFrequency->currentIndex(), 0);
+  QVERIFY(openChartSettings(window, "displaySettings"));
   rightFrequency->setCurrentIndex(1);
   QCOMPARE(frequency->currentIndex(), 0);
   QCOMPARE(window.session().linkedCursor(context).frequencyHz, bb);
@@ -2149,6 +2466,7 @@ void UiTests::narrowbandLinkedCursorsAndFrameSpectrum() {
   headerGrid->setChecked(true);
   QCOMPARE(rightGrid->isChecked(), true);
 
+  QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
   QTest::keyClick(heat, Qt::Key_Escape);
   QTest::qWait(30);
   QVERIFY(!window.session().linkedCursor(context).pinned);
@@ -2188,6 +2506,17 @@ void UiTests::narrowbandPaletteSelectionUpdatesStftCharts() {
   QCOMPARE(recognition->property("paletteIndex").toInt(), originalPalette);
   const auto oldHeatmap = observation->grab().toImage();
 
+  QVERIFY(openInspectorPage(window, "Display"));
+  QVERIFY(revealParameter(palette));
+  auto* paletteHost = chartSettingsStrip(window,"stftSettings");
+  QVERIFY(paletteHost && paletteHost->isAncestorOf(palette));
+  QVERIFY(!palette->isEditable());
+  QCOMPARE(window.findChildren<QComboBox*>("colormap").size(), 1);
+  auto* paletteParent = palette->parentWidget();
+  window.refresh();
+  window.refresh();
+  QCOMPARE(palette->parentWidget(), paletteParent);
+  QVERIFY(revealParameter(palette));
   const int nextPalette = originalPalette == static_cast<int>(Palette::Gray)
                               ? static_cast<int>(Palette::Turbo)
                               : static_cast<int>(Palette::Gray);
@@ -2244,43 +2573,95 @@ void UiTests::panelRailsAndBottomTabs() {
 void UiTests::sectionContextAndManualExpansion() {
   DemoMainWindow window;
   showWindow(window);
-  auto* file = window.findChild<QWidget*>("fileSection");
-  auto* mark = window.findChild<QWidget*>("markSection");
-  auto* psd = window.findChild<QWidget*>("psdSection");
-  auto* toggle = window.findChild<QToolButton*>("psdSectionToggle");
-  auto* content = window.findChild<QWidget*>("psdSectionContent");
-  QVERIFY(file && mark && psd && toggle && content);
-  QVERIFY(file->isVisible());
-  QVERIFY(!mark->isVisible());
-  QVERIFY(content->isVisible());
-  auto* scroll = window.findChild<QScrollArea*>("propScroll");
-  QVERIFY(scroll);
-  scroll->ensureWidgetVisible(toggle);
-  QTRY_VERIFY(scroll->viewport()->rect().contains(
-      toggle->mapTo(scroll->viewport(), toggle->rect().center())));
-  QTest::mouseClick(toggle, Qt::LeftButton);
-  QVERIFY(!content->isVisible());
-  window.refresh();
-  window.refresh();
-  QVERIFY(!content->isVisible());
+  const QStringList contexts{"Display", "Detection", "Annotation", "Channel"};
+  const auto assertPage = [&](const QString& active) {
+    for (const auto& context : contexts) {
+      auto* button = window.findChild<QPushButton*>("context" + context);
+      QString name = context;
+      name[0] = name[0].toLower();
+      auto* page = window.findChild<QWidget*>(name + "Page");
+      QVERIFY(button && page);
+      QVERIFY(revealParameter(button));
+      QCOMPARE(button->isChecked(), context == active);
+      QCOMPARE(page->isVisible(), context == active);
+    }
+  };
+  assertPage("Display");
+  for (const auto* id : {"fileSection", "viewSection", "markSection",
+                          "psdSection", "specSection", "detectionSection",
+                          "narrowbandChannelSection"}) {
+    QVERIFY2(!window.findChild<QWidget*>(id), id);
+    QVERIFY2(!window.findChild<QWidget*>(QString(id) + "Toggle"), id);
+    QVERIFY2(!window.findChild<QWidget*>(QString(id) + "Content"), id);
+  }
+  // A new selection may choose Annotation until the user explicitly picks a tab.
   window.session().addMark(innerRange(window.session().activeFile()->view));
   window.refresh();
-  QCoreApplication::processEvents();
-  QVERIFY(mark->isVisible());
-  QVERIFY(file->mapTo(&window, QPoint()).y() <
-          mark->mapTo(&window, QPoint()).y());
-  QCOMPARE(window.findChildren<QWidget*>("markSection").size(), 1);
+  assertPage("Annotation");
+  QCOMPARE(window.findChildren<QWidget*>("annotationPanel").size(), 1);
+  QVERIFY(openInspectorPage(window, "Display"));
   window.session().selectMarks({});
   window.refresh();
-  QCoreApplication::processEvents();
-  QVERIFY(!mark->isVisible());
-  auto* psdMode = window.findChild<QAbstractButton*>("psdMode");
-  QVERIFY(psdMode);
-  QTest::mouseClick(psdMode, Qt::LeftButton);
-  QCoreApplication::processEvents();
-  QVERIFY(!content->isVisible());
-  QVERIFY(file->mapTo(&window, QPoint()).y() <
-          psd->mapTo(&window, QPoint()).y());
+  window.session().addMark(innerRange(window.session().activeFile()->view));
+  window.refresh();
+  window.refresh();
+  assertPage("Display");
+  // Explicit MainWideband commands override the manual tab choice.
+  auto* plot = window.findChild<PlotWidget*>("mainPlot");
+  QVERIFY(plot && revealParameter(plot));
+  QTest::mouseClick(window.findChild<QPushButton*>("manualTool"), Qt::LeftButton);
+  QVERIFY(plot->isCreating());
+  // The native journey separately clicks the actual context menu and checks
+  // its window-manager activation. Use the visible chart entrance for this
+  // offscreen page-routing/previous-tool contract.
+  auto* detect = window.findChild<QPushButton*>("detectionRoiTool");
+  QVERIFY(detect && revealParameter(detect));
+  QTest::mouseClick(detect, Qt::LeftButton);
+  assertPage("Detection");
+  QVERIFY(plot->isSelectingDetectionRoi());
+  QTest::keyClick(plot, Qt::Key_Escape);
+  QVERIFY(plot->isCreating());
+  window.session().selectMarks({});
+  window.refresh();
+  assertPage("Detection");
+  // A physical source switch clears the manual lock.
+  const auto first = window.session().project().activeFileId;
+  window.session().addDemoFile("inspector-context.iq", 1e6, 100e6, .01);
+  window.refresh();
+  window.session().addMark(innerRange(window.session().activeFile()->view));
+  window.refresh();
+  assertPage("Annotation");
+  QVERIFY(openInspectorPage(window, "Detection"));
+  QVERIFY(window.session().activateFile(first));
+  window.session().selectMarks({});
+  window.refresh();
+  QVERIFY(openInspectorPage(window, "Display"));
+  QVERIFY(openChartSettings(window, "psdSettings"));
+  auto* popup = chartSettingsFrame(window,"psdSettings");
+  window.refresh();
+  window.refresh();
+  QVERIFY(popup->isVisible());
+  assertPage("Display");
+  QTest::keyClick(popup, Qt::Key_Escape);
+  QVERIFY(!popup->isVisible());
+  // Existing channels have a details page even in the wideband workspace.
+  QTimer::singleShot(50, &window, [] {
+    if (auto* question =
+            qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
+      QTest::mouseClick(question->button(QMessageBox::Yes), Qt::LeftButton);
+  });
+  window.openNarrowbandDemoProject();
+  assertPage("Channel");
+  QVERIFY(window.session().activeChannel());
+  const auto channelId = window.session().activeChannel()->id;
+  window.session().project().narrowbandWorkspaceOpen = false;
+  window.refresh();
+  QVERIFY(openInspectorPage(window, "Channel"));
+  assertPage("Channel");
+  QVERIFY(openInspectorPage(window, "Display"));
+  QVERIFY(window.session().activateChannel(channelId));
+  window.refresh();
+  assertPage("Channel");
 }
 
 void UiTests::panelMaximizeAndRestore() {
@@ -2415,11 +2796,13 @@ void UiTests::independentSpectralSettingsAndCustomRows() {
   const auto spectrum = window.session().spectrogram(context);
   const QJsonValue generation =
       workspace->renderStatistics().value("requestGeneration");
-  auto* psd = window.findChild<QComboBox*>("psdFft");
-  psd->setCurrentText("32");
+  auto* psd = chartPoints(window, true);
+  QVERIFY(revealParameter(psd));
+  psd->setCurrentIndex(psd->findData(32));
   QTRY_COMPARE(window.session().activeChannel()->psdFftSize, 32);
   QCOMPARE(workspace->renderStatistics()["requestGeneration"], generation);
   QCOMPARE(window.session().spectrogram(context), spectrum);
+  QVERIFY(openChartSettings(window, "psdSettings"));
   auto* windowType = window.findChild<QComboBox*>("psdWindow");
   windowType->setCurrentIndex(2);
   QCOMPARE(window.session().activeChannel()->psd.parameters.window,
@@ -2431,12 +2814,15 @@ void UiTests::independentSpectralSettingsAndCustomRows() {
            QString("0"));
   QVERIFY(!window.findChild<QComboBox*>("psdOverlap")->isEnabled());
   method->setCurrentIndex(2);
-  auto* stft = window.findChild<QComboBox*>("stftFft");
-  stft->setCurrentText("32");
+  QTest::keyClick(chartSettingsFrame(window,"psdSettings"), Qt::Key_Escape);
+  auto* stft = chartPoints(window, false);
+  QVERIFY(revealParameter(stft));
+  stft->setCurrentIndex(stft->findData(32));
   QTRY_VERIFY_WITH_TIMEOUT(
       window.session().spectrogram(context) &&
           window.session().spectrogram(context) != spectrum,
       15000);
+  QVERIFY(openChartSettings(window, "powerSettings"));
   auto* dynamic = window.findChild<QComboBox*>("dynamic");
   const int presets = dynamic->count();
   dynamic->lineEdit()->setFocus();
@@ -2673,7 +3059,7 @@ void UiTests::nativeProjectRoundtripAndInvalidImport() {
   window.refresh();
   auto* mode = window.findChild<QComboBox*>("modeMain");
   auto* auxiliary = window.findChild<QComboBox*>("modeAux");
-  auto* palette = window.findChild<QComboBox*>("palette");
+  auto* palette = window.findChild<QComboBox*>("colormap");
   auto* scope = window.findChild<QComboBox*>("psdScope");
   QVERIFY(mode && auxiliary && palette && scope);
   mode->setCurrentIndex(1);
@@ -2885,7 +3271,7 @@ void UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() {
   DemoMainWindow window;
   showWindow(window);
   auto* plot = window.findChild<PlotWidget*>("mainPlot");
-  auto* palette = window.findChild<QComboBox*>("palette");
+  auto* palette = window.findChild<QComboBox*>("colormap");
   auto* relative = window.findChild<QComboBox*>("freqMode");
   auto* scale = window.findChild<QCheckBox*>("colorbarToggle");
   QVERIFY(plot && palette && relative && scale);
@@ -2900,6 +3286,7 @@ void UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() {
   QTest::mouseMove(plot, plot->plotRect().center().toPoint(), 10);
   QCoreApplication::processEvents();
   QCOMPARE(plot->powerGenerationCount(), initialSamples);
+  QVERIFY(openChartSettings(window, "displaySettings"));
   relative->setCurrentIndex(1);
   QCoreApplication::processEvents();
   QVERIFY(!window.session().activeFile()->display.absoluteFrequency);
@@ -2908,6 +3295,7 @@ void UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache() {
   scale->setChecked(true);
   QVERIFY(plot->plotRect().width() < widthWithoutScale);
   QVERIFY(window.session().activeFile()->view == view);
+  QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
   wheelAt(plot, plot->plotRect().center());
   QCoreApplication::processEvents();
   QVERIFY(plot->powerGenerationCount() > initialSamples);
@@ -2919,8 +3307,9 @@ void UiTests::renameUsesPlainTextAndEightyCharacterLimit() {
   const auto id =
       window.session().addMark(innerRange(window.session().activeFile()->view));
   window.refresh();
+  QVERIFY(openInspectorPage(window, "Annotation"));
   auto* rename = window.findChild<QAbstractButton*>("renameMark");
-  QVERIFY(rename);
+  QVERIFY(revealParameter(rename));
   const QString typed = "<b>" + QString(96, 'x') + "</b>";
   QTimer accept;
   connect(&accept, &QTimer::timeout, [typed] {
@@ -2931,7 +3320,8 @@ void UiTests::renameUsesPlainTextAndEightyCharacterLimit() {
     }
   });
   accept.start(5);
-  rename->click();
+  QVERIFY(revealParameter(rename));
+  QTest::mouseClick(rename, Qt::LeftButton);
   accept.stop();
   const auto renamed = QString::fromStdString(
       findMark(*window.session().activeFile(), id)->name);
@@ -2948,7 +3338,8 @@ void UiTests::renameUsesPlainTextAndEightyCharacterLimit() {
       dialog->reject();
   });
   reject.start(5);
-  rename->click();
+  QVERIFY(revealParameter(rename));
+  QTest::mouseClick(rename, Qt::LeftButton);
   reject.stop();
   QCOMPARE(QString::fromStdString(
                findMark(*window.session().activeFile(), id)->name),
@@ -3024,7 +3415,7 @@ void UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() {
   DemoMainWindow window;
   showWindow(window);
   auto* plot = window.findChild<PlotWidget*>("auxPlot");
-  auto* palette = window.findChild<QComboBox*>("palette");
+  auto* palette = window.findChild<QComboBox*>("colormap");
   QVERIFY(plot && palette);
   window.session().setAuxiliaryMode(AuxiliaryMode::Waveform);
   QVERIFY(window.session().setAuxiliaryRange(-30, 30, false));
@@ -3115,7 +3506,7 @@ void UiTests::importFloatingUnitsAndFailureRecovery() {
   auto* finish = dialog.findChild<QPushButton*>("importProgressFinish");
   QTRY_VERIFY_WITH_TIMEOUT(finish->isEnabled(), 15000);
   finish->click();
-  auto* waveform = window.findChild<QComboBox*>("waveformMode");
+  auto* waveform = waveformControl(window);
   auto* reference = window.findChild<QComboBox*>("reference");
   QVERIFY(waveform->itemText(0).contains("原始幅度"));
   QVERIFY(reference->currentText().contains("dB(unit^2/Hz)"));
@@ -3502,15 +3893,18 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
   auto* stftChart = window.findChild<QWidget*>("narrowbandStftPanelChart");
   auto* palette = window.findChild<QComboBox*>("colormap");
   auto* channelProperties =
-      window.findChild<QWidget*>("narrowbandChannelSection");
+      window.findChild<QWidget*>("channelPage");
   auto* grid = window.findChild<QCheckBox*>("narrowbandGrid");
   QVERIFY(workspace && workspace->isVisible() && eyeComponent && eyePeriods &&
           eyeTraces && frequencyMode && waveformMode && waveformChart &&
           stftChart && palette);
   QVERIFY(stack && status && channelProperties &&
           channelProperties->isVisible() && grid);
+  QVERIFY(window.findChild<QPushButton*>("contextChannel")->isChecked());
   QVERIFY(!window.findChild<QWidget*>("narrowbandNavigation"));
-  QVERIFY(window.findChild<QWidget*>("narrowbandChartToolbar"));
+  QVERIFY(!window.findChild<QWidget*>("narrowbandChartToolbar"));
+  QVERIFY(window.findChild<QSplitter*>("narrowbandObserveSplitter"));
+  QVERIFY(!window.findChild<QWidget*>("narrowbandConstellationPreview"));
   QCOMPARE(waveformMode->count(), 4);
   QCOMPARE(waveformMode->itemText(3), QStringLiteral("幅度包络"));
   QCOMPARE(window.findChild<QLabel*>("narrowbandCenter")->text(),
@@ -3565,6 +3959,17 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
   window.refresh();
   const int originalPalette = palette->currentIndex();
   QCOMPARE(stftChart->property("paletteIndex").toInt(), originalPalette);
+  QVERIFY(openInspectorPage(window, "Display"));
+  QVERIFY(revealParameter(palette));
+  auto* paletteHost = chartSettingsStrip(window,"stftSettings");
+  QVERIFY(paletteHost && paletteHost->isAncestorOf(palette));
+  QVERIFY(!palette->isEditable());
+  QCOMPARE(window.findChildren<QComboBox*>("colormap").size(), 1);
+  auto* paletteParent = palette->parentWidget();
+  window.refresh();
+  window.refresh();
+  QCOMPARE(palette->parentWidget(), paletteParent);
+  QVERIFY(revealParameter(palette));
   const int nextPalette = originalPalette == static_cast<int>(Palette::Gray)
                               ? static_cast<int>(Palette::Turbo)
                               : static_cast<int>(Palette::Gray);
@@ -3590,11 +3995,10 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
       "narrowbandWaveformPanelChart",
       "narrowbandPsdPanelChart",
       "narrowbandStftPanelChart",
-      "narrowbandConstellationPreviewChart",
       "narrowbandConstellationLargeChart",
       "narrowbandEyeLargeChart",
       "recognitionTimelinePanelChart",
-      "demodConstellationPanelChart"};
+      "demodConstellationPanelChart", "demodEyePanelChart"};
   for (const auto* name : chartNames) {
     auto* chart = window.findChild<QWidget*>(QString::fromLatin1(name));
     QVERIFY2(chart, name);
@@ -3602,6 +4006,8 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
     QVERIFY2(!chart->property("yAxisLabel").toString().isEmpty(), name);
     QVERIFY(chart->property("gridVisible").toBool());
   }
+  QVERIFY(openInspectorPage(window, "Channel"));
+  QVERIFY(revealParameter(grid));
   grid->setChecked(false);
   QCoreApplication::processEvents();
   for (const auto* name : chartNames)
@@ -3663,23 +4069,34 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
                                           : "recognitionStftPanelChart";
       auto* heat = window.findChild<QWidget*>(QString::fromLatin1(heatName));
       auto* surface = heat->findChild<AcceleratedSurface*>();
-      QVERIFY(surface);
       const QRectF expected(66, 14, std::max(1, heat->width() - 82),
                             std::max(1, heat->height() - 55));
-      QTRY_COMPARE(surface->heatmapTargetRect(), expected);
+      if(QGuiApplication::platformName()=="windows") {
+        QVERIFY(surface);QTRY_COMPARE(surface->heatmapTargetRect(), expected);
+      } else {
+        QVERIFY(!surface);QTRY_COMPARE(heat->property("heatmapDrawRect").toRectF(),expected);
+      }
     }
   }
   QVERIFY(window.session().activeChannel()->waveformAutoScale);
   QCOMPARE(window.session().activeChannel()->waveform,
            NarrowbandWaveform::Magnitude);
+  QTest::mouseClick(window.findChild<QAbstractButton*>("modulationPage"),Qt::LeftButton);
+  QVERIFY(revealParameter(eyeComponent));
   eyeComponent->setCurrentIndex(2);
   eyePeriods->setCurrentIndex(2);
   eyeTraces->setCurrentIndex(2);
+  QVERIFY(openInspectorPage(window, "Channel"));
+  QTest::mouseClick(window.findChild<QAbstractButton*>("observePage"),Qt::LeftButton);
+  QVERIFY(openChartSettings(window,"displaySettings"));
+  QVERIFY(revealParameter(frequencyMode));
   frequencyMode->setCurrentIndex(1);
   QVERIFY(window.session().activeChannel()->absoluteFrequencyLabels);
   QCOMPARE(window.session().activeChannel()->eyeComponent, 2);
   QCOMPARE(window.session().activeChannel()->eyePeriods, 3);
   QCOMPARE(window.session().activeChannel()->eyeTraces, 128);
+  QTest::keyClick(chartSettingsFrame(window,"displaySettings"),Qt::Key_Escape);
+  QTest::mouseClick(window.findChild<QAbstractButton*>("deepLearningPage"),Qt::LeftButton);
   auto* run = window.findChild<QPushButton*>("runRecognition");
   auto* stop = window.findChild<QPushButton*>("stopRecognition");
   auto* statusText = window.findChild<QLabel*>("recognitionStatus");
@@ -3699,6 +4116,7 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
   QVERIFY(projectDirectory.isValid());
   const auto projectPath =
       projectDirectory.filePath(QStringLiteral("narrowband-project.json"));
+  QTest::mouseClick(window.findChild<QAbstractButton*>("demodulationPage"),Qt::LeftButton);
   QVERIFY(window.saveProject(projectPath));
   MainWindow reopened;
   QVERIFY(reopened.openProject(projectPath));
@@ -3714,7 +4132,9 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
   const auto channelId = QString::fromStdString(channel->id);
   auto* locate = window.findChild<QPushButton*>("narrowbandLocateSource");
   QVERIFY(locate);
-  locate->click();
+  QVERIFY(openInspectorPage(window, "Channel"));
+  QVERIFY(revealParameter(locate));
+  QTest::mouseClick(locate, Qt::LeftButton);
   QVERIFY(!window.session().project().narrowbandWorkspaceOpen);
   QCOMPARE(window.session().activeFile()->activeMarkId,
            std::string("demo-mark-signal-01"));
@@ -3751,9 +4171,9 @@ void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
       window.session().activeFile()->metadata.availability.status ==
           LoadStatus::Ready,
       10000);
-  auto* waveform = window.findChild<QComboBox*>("waveformMode");
+  auto* waveform = waveformControl(window);
   auto* bandwidth = window.findChild<QDoubleSpinBox*>("effectiveBandwidthMHz");
-  auto* stft = window.findChild<QComboBox*>("stftFft");
+  auto* stft = chartPoints(window, false);
   auto* dynamic = window.findChild<QComboBox*>("dynamic");
   auto* reference = window.findChild<QComboBox*>("reference");
   QVERIFY(waveform && bandwidth && stft && dynamic && reference);
@@ -3763,11 +4183,7 @@ void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
   QCOMPARE(bandwidth->value(), .8);
   QCOMPARE(fullRange(file->metadata).frequency,
            (FrequencyRange{9.6e6, 10.4e6}));
-  for (const auto* id : {"fileSection", "viewSection", "markSection",
-                         "psdSection", "specSection"}) {
-    auto* toggle = window.findChild<QToolButton*>(QString(id) + "Toggle");
-    QVERIFY(toggle && toggle->isChecked());
-  }
+  QVERIFY(window.findChild<QWidget*>("displayPage")->isVisible());
   QVERIFY(window.findChild<QAction*>("mouseInteractionHelpAction"));
   QVERIFY(!window.findChild<QWidget*>("helpSection"));
 
@@ -3786,11 +4202,16 @@ void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
   QVERIFY(file->display.waveformAutoFit);
   QTRY_VERIFY_WITH_TIMEOUT(auxiliary->isDisplaySettled(), 10'000);
 
-  auto* psd = window.findChild<QComboBox*>("psdFft");
+  auto* psd = chartPoints(window, true);
   QVERIFY(psd);
   const auto fullViewTime = file->view.time;
   stft->setCurrentText("256");
+  window.session().setAuxiliaryMode(AuxiliaryMode::Psd);
+  window.refresh();
+  QVERIFY(revealParameter(psd));
   psd->setCurrentText("1024");
+  window.session().setAuxiliaryMode(AuxiliaryMode::Waveform);
+  window.refresh();
   QVERIFY(window.session().setView(
       {{fullViewTime.begin, fullViewTime.begin + 1024}, file->view.frequency},
       false));
@@ -3803,11 +4224,17 @@ void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
   window.refresh();
   QTRY_VERIFY_WITH_TIMEOUT(!auxiliary->samplePointsVisible(), 10'000);
 
+  QVERIFY(openFileProperties(window));
+  QVERIFY(revealParameter(bandwidth));
   bandwidth->setValue(.5);
+  closeSettingsPopovers(window);
   QCOMPARE(file->metadata.effectiveBandwidthHz, 500'000.0);
   QCOMPARE(file->view.frequency, (FrequencyRange{9.75e6, 10.25e6}));
   QCOMPARE(stft->count(), 12);
   QCOMPARE(stft->currentText(), QString("256"));
+  window.session().setAuxiliaryMode(AuxiliaryMode::Psd);
+  window.refresh();
+  QVERIFY(revealParameter(psd));
   psd->setCurrentText("8192");
   QCOMPARE(file->display.psdSize, 8192);
   const auto oldTime = file->view.time;
@@ -3827,6 +4254,8 @@ void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
   const auto initialPowerGenerations = main->powerGenerationCount();
   const auto initialColorTransforms =
       main->renderStatistics().value("colorTransformGenerations").toInt();
+  QVERIFY(openChartSettings(window, "powerSettings"));
+  QVERIFY(revealParameter(dynamic));
   dynamic->setFocus();
   dynamic->lineEdit()->selectAll();
   QTest::keyClicks(dynamic->lineEdit(), "87.5");
@@ -3900,11 +4329,9 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
   otherRaw.close();
   {
     MainWindow window;
-    window.resize(1480, 920);
-    auto* section = window.findChild<QToolButton*>("specSectionToggle");
+    showWindow(window);
     auto* results = window.findChild<QToolButton*>("resultsToggle");
-    QVERIFY(section && results);
-    section->setChecked(false);
+    QVERIFY(results);
     results->setChecked(true);
     QVERIFY(window.saveProject(projectPath));
     QCOMPARE(window.findChildren<QAction*>("recentProjectAction").size(), 1);
@@ -3914,12 +4341,13 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
         window.session().activeFile()->metadata.availability.status !=
             LoadStatus::Loading,
         10000);
-    auto* palette = window.findChild<QComboBox*>("palette");
+    QVERIFY(openInspectorPage(window, "Display"));
+    auto* palette = window.findChild<QComboBox*>("colormap");
     auto* mainMode = window.findChild<QComboBox*>("modeMain");
     auto* auxiliaryMode = window.findChild<QComboBox*>("modeAux");
-    auto* waveformMode = window.findChild<QComboBox*>("waveformMode");
-    auto* stft = window.findChild<QComboBox*>("stftFft");
-    auto* psd = window.findChild<QComboBox*>("psdFft");
+    auto* waveformMode = waveformControl(window);
+    auto* stft = chartPoints(window, false);
+    auto* psd = chartPoints(window, true);
     auto* dynamic = window.findChild<QComboBox*>("dynamic");
     auto* reference = window.findChild<QComboBox*>("reference");
     auto* frequency = window.findChild<QComboBox*>("freqMode");
@@ -3933,18 +4361,24 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
     waveformMode->setCurrentIndex(static_cast<int>(WaveformMode::Q));
     mainMode->setCurrentIndex(static_cast<int>(MainMode::Waterfall));
     auxiliaryMode->setCurrentIndex(static_cast<int>(AuxiliaryMode::Psd));
+    QCoreApplication::processEvents();
     palette->setCurrentIndex(
         palette->findText(QStringLiteral("CoolEdit Classic")));
     stft->setCurrentText(QStringLiteral("4096"));
     psd->setCurrentText(QStringLiteral("8192"));
-    dynamic->setCurrentIndex(dynamic->findText(QStringLiteral("60 dB")));
+    QVERIFY(openChartSettings(window, "powerSettings"));
+    dynamic->setCurrentIndex(dynamic->findData(60));
     reference->setCurrentIndex(
-        reference->findText(QStringLiteral("-40 dBFS/Hz")));
+        reference->findData(-40));
+    QVERIFY(openChartSettings(window, "displaySettings"));
     frequency->setCurrentIndex(1);
-    bandwidth->setValue(.5);
     grid->setChecked(false);
     colorbar->setChecked(true);
-    showWindow(window);
+    QTest::keyClick(chartSettingsFrame(window,"displaySettings"), Qt::Key_Escape);
+    QVERIFY(openFileProperties(window));
+    QVERIFY(revealParameter(bandwidth));
+    bandwidth->setValue(.5);
+    closeSettingsPopovers(window);
     const auto resizePanel = [&](const char* id, QPoint delta) {
       auto* handle = window.findChild<QWidget*>(id);
       const auto origin = handle->mapToGlobal(handle->rect().center());
@@ -3965,6 +4399,9 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
     QCOMPARE(storedPropertyWidth, 440);
     QCOMPARE(storedBottomHeight, 315);
     window.findChild<QPushButton*>("detectionEvidenceMode")->click();
+    QVERIFY(openInspectorPage(window, "Detection"));
+    window.refresh();
+    QVERIFY(window.findChild<QWidget*>("detectionPage")->isVisible());
   }
   {
     MainWindow restored;
@@ -3977,10 +4414,10 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
              storedBottomHeight);
     QVERIFY(
         restored.findChild<QPushButton*>("detectionEvidenceMode")->isChecked());
-    auto* section = restored.findChild<QToolButton*>("specSectionToggle");
+    QVERIFY(restored.findChild<QWidget*>("detectionPage")->isVisible());
+    QVERIFY(restored.findChild<QPushButton*>("contextDetection")->isChecked());
     auto* results = restored.findChild<QToolButton*>("resultsToggle");
-    QVERIFY(section && results);
-    QVERIFY(!section->isChecked());
+    QVERIFY(results);
     QVERIFY(results->isChecked());
     QString error;
     QVERIFY2(restored.addIqFile(iqPath, &error), qPrintable(error));
@@ -3998,6 +4435,11 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
     QVERIFY(!file->display.grid);
     QVERIFY(file->display.colorScale);
     QCOMPARE(file->metadata.effectiveBandwidthHz, 500'000.0);
+    QTRY_COMPARE_WITH_TIMEOUT(restored.session().activeFile()->metadata.availability.status,
+                              LoadStatus::Ready, 10000);
+    QVERIFY(!restored.session().addMark(innerRange(file->view)).empty());
+    restored.refresh();
+    QVERIFY(restored.findChild<QWidget*>("annotationPage")->isVisible());
     QVERIFY2(restored.addIqFile(otherIqPath, &error), qPrintable(error));
     const auto* secondFile = restored.session().activeFile();
     QVERIFY(secondFile);
@@ -4047,22 +4489,28 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
               .ok);
   showWindow(window);
   window.refresh();
+  QVERIFY(openInspectorPage(window, "Annotation"));
   auto* panel = window.findChild<AnnotationPanel*>("annotationPanel");
   auto* start = window.findChild<QLineEdit*>("annotationStartMilliseconds");
   auto* low = window.findChild<AdaptiveValueEdit*>("annotationLowerMHz");
   auto* segments = window.findChild<QComboBox*>("annotationSegment");
   QVERIFY(panel && start && low && segments);
+  QVERIFY(revealParameter(start));
   start->setFocus();
   start->selectAll();
   QTest::keyClicks(start, "0.125");
   window.refresh();
   QCOMPARE(start->text(), QString("0.125"));
   QCOMPARE(annotation->segments[0].range.time.begin, SampleIndex{100});
+  QVERIFY(revealParameter(segments));
   segments->setCurrentIndex(1);
   QVERIFY(!start->property("parameterDraft").toBool());
   QCOMPARE(start->text(), QString("0.6"));
+  QVERIFY(revealParameter(start));
   QTest::keyClick(start, Qt::Key_Return);
   QCOMPARE(annotation->segments[1].range.time.begin, SampleIndex{600});
+  QVERIFY(openInspectorPage(window, "Annotation"));
+  QVERIFY(revealParameter(low));
   low->setFocus();
   low->selectAll();
   QTest::keyClicks(low, "-0.19");
@@ -4161,7 +4609,7 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   QVERIFY(create->isEnabled());
   channelDialog->findChild<QCheckBox*>("channelAutoOpen")->setChecked(false);
   create->click();
-  QCOMPARE(file->channels.size(), std::size_t{1});
+  QTRY_COMPARE_WITH_TIMEOUT(file->channels.size(), std::size_t{1}, 15000);
   QCOMPARE(file->channels.front().sourceSnapshot->bindingKind,
            ChannelBindingKind::LocatedSegment);
   QCOMPARE(annotation->reviewStatus, ReviewStatus::Rejected);
@@ -4236,7 +4684,7 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   QVERIFY(create->isEnabled());
   channelDialog->findChild<QCheckBox*>("channelAutoOpen")->setChecked(false);
   create->click();
-  QCOMPARE(file->channels.size(), std::size_t{2});
+  QTRY_COMPARE_WITH_TIMEOUT(file->channels.size(), std::size_t{2}, 15000);
   QCOMPARE(file->channels.back().sourceSnapshot->bindingKind,
            ChannelBindingKind::UserRange);
   QCOMPARE(file->channels.back().sourceTime, (TimeRange{0, 1000}));
@@ -4304,7 +4752,7 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   QVERIFY2(create->isEnabled(), qPrintable(validation->text()));
   channelDialog->findChild<QCheckBox*>("channelAutoOpen")->setChecked(false);
   create->click();
-  QCOMPARE(file->channels.size(), std::size_t{1});
+  QTRY_COMPARE_WITH_TIMEOUT(file->channels.size(), std::size_t{1}, 15000);
   QCOMPARE(file->channels.back().sourceSnapshot->range.frequency,
            croppedFrequency);
   QCOMPARE(file->channels.back().sourceSnapshot->boundRange->frequency,
@@ -4326,7 +4774,7 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   QVERIFY(create->isEnabled());
   channelDialog->findChild<QCheckBox*>("channelAutoOpen")->setChecked(false);
   create->click();
-  QCOMPARE(file->channels.size(), std::size_t{2});
+  QTRY_COMPARE_WITH_TIMEOUT(file->channels.size(), std::size_t{2}, 15000);
   QCOMPARE(file->channels.back().sourceSnapshot->range.frequency,
            exactFrequency);
   QCOMPARE(file->channels.back().sourceSnapshot->boundRange->frequency,
@@ -4340,6 +4788,7 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   const auto originalChannelName = file->channels.back().name;
   QVERIFY(window.session().activateChannel(file->channels.back().id));
   window.refresh();
+  QVERIFY(openInspectorPage(window, "Channel"));
   auto* editChannel = window.findChild<QPushButton*>("propertyEditChannel");
   QVERIFY(editChannel && editChannel->isVisible());
   editChannel->click();
@@ -4367,8 +4816,8 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   channelName->setText(QStringLiteral("通").repeated(80));
   QVERIFY(create->isEnabled());
   create->click();
-  QCOMPARE(QString::fromStdString(file->channels.back().name),
-           QStringLiteral("通").repeated(80));
+  QTRY_COMPARE_WITH_TIMEOUT(QString::fromStdString(file->channels.back().name),
+           QStringLiteral("通").repeated(80), 15000);
   QVERIFY(file->channels.back().sourceSnapshot == nameSnapshot);
 }
 
@@ -4406,6 +4855,7 @@ void UiTests::torchSigLabelsNativeRoundtrip() {
   const auto annotationId = file->marks[0].id;
   window.session().selectMarks({annotationId}, annotationId);
   window.refresh();
+  QVERIFY(openInspectorPage(window, "Annotation"));
   auto* editor = window.findChild<QLineEdit*>("annotationStartMilliseconds");
   QVERIFY(editor && editor->isEnabled());
   QTemporaryDir directory;
@@ -4505,10 +4955,14 @@ void UiTests::widebandAnnotationSelectionAndOverlap() {
   QTest::mouseClick(overlaps, Qt::LeftButton, Qt::NoModifier,
                     overlaps->actionGeometry(choice).center());
   QTRY_COMPARE(file->activeSegmentId, firstSegment);
+  QVERIFY(openInspectorPage(window, "Detection"));
+  QVERIFY(revealParameter(range));
   range->setCurrentIndex(range->findData("active-segment"));
-  QVERIFY(cardSegment->isVisible());
+  QVERIFY(revealParameter(cardSegment));
   cardSegment->setCurrentIndex(
       cardSegment->findData(QString::fromStdString(secondSegment)));
+  QVERIFY(openInspectorPage(window, "Annotation"));
+  QVERIFY(revealParameter(inspector));
   QTRY_COMPARE(inspector->currentData().toString(),
                QString::fromStdString(secondSegment));
 
@@ -4543,8 +4997,9 @@ void UiTests::widebandAnnotationSelectionAndOverlap() {
   QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier,
                     table->visualRect(table->model()->index(1, 0)).center());
   QCOMPARE(file->selectedMarkIds.size(), std::size_t{0});
+  QVERIFY(openChartSettings(window, "displaySettings"));
   auto* frequency = window.findChild<QComboBox*>("freqMode");
-  QVERIFY(frequency->isVisible() && frequency->width() >= 160);
+  QVERIFY(revealParameter(frequency));
 }
 
 void UiTests::widebandFixtureTaskNativeRoundtrip() {
@@ -4667,14 +5122,25 @@ void UiTests::widebandConfigurationCommittedDrafts() {
       LoadStatus::Ready, 10000);
   auto* card = window.findChild<DetectionCard*>("detectionCard");
   QVERIFY(card);
-  auto* profile = card->findChild<QComboBox*>("detectionProfile");
-  QVERIFY(profile);
-  profile->setCurrentIndex(profile->findData("pipeline-fixture-v1"));
+  QVERIFY(!card->findChild<QComboBox*>("detectionProfile"));
+  QVERIFY(!card->findChild<QToolButton*>("detectionAdvancedParametersToggle"));
+  QVERIFY(selectModelAndSpectrum(window, "pipeline-fixture-v1"));
+  for (const auto* name : {"detectionAnalysisParametersToggle",
+                           "detectionPostprocessParametersToggle",
+                           "detectionResourceParametersToggle",
+                           "detectionCalculationDetailsToggle",
+                           "detectionDiagnosticsToggle"}) {
+    auto* toggle = card->findChild<QToolButton*>(name);
+    QVERIFY2(toggle && !toggle->isChecked(), name);
+  }
   auto* score = card->findChild<AdaptiveValueEdit*>("detectionScoreThreshold");
   auto* origin = card->findChild<QComboBox*>("detectionRangeOrigin");
   QVERIFY(score && origin);
+  QVERIFY(openInspectorPage(window, "Display"));
   window.findChild<QAction*>("widebandDetectionAction")->trigger();
+  QVERIFY(window.findChild<QWidget*>("detectionPage")->isVisible());
   QVERIFY(!QApplication::activeModalWidget());
+  QVERIFY(revealParameter(score));
   score->setFocus();
   score->selectAll();
   QTest::keyClicks(score, "0.8");
@@ -4690,26 +5156,36 @@ void UiTests::widebandConfigurationCommittedDrafts() {
   const auto requested = ViewRange{{100, 10000}, {2490000000, 2510000000}};
   card->setRequestedRoi(requested);
   QCOMPARE(card->request().requestedRange, requested);
-  window.findChild<QPushButton*>("widebandDetect")->click();
+  // Opening configuration preserves a custom range. The explicitly named
+  // current-region button selects the visible range (covered by UX-D06).
+  QVERIFY(openInspectorPage(window, "Display"));
+  window.findChild<QAction*>("widebandDetectionAction")->trigger();
+  QVERIFY(window.findChild<QWidget*>("detectionPage")->isVisible());
   QCOMPARE(card->request().requestedRange, requested);
+  QVERIFY(revealParameter(origin));
   origin->setCurrentIndex(1);
   QCOMPARE(card->request().requestedRange.time, (TimeRange{0, 400000}));
   QCOMPARE(card->request().requestedRange.frequency,
            (FrequencyRange{2490000000, 2510000000}));
+  QVERIFY(revealParameter(origin));
   origin->setCurrentIndex(2);
   QVERIFY(card->validationError().contains("时间未定位") ||
           card->validationError().contains("活动"));
   auto* margin =
       card->findChild<AdaptiveValueEdit*>("detectionBandwidthMarginDb");
   QVERIFY(margin);
-  card->findChild<QPushButton*>("detectionStrategySample")->click();
+  QVERIFY(openDetectionFold(window, "detectionPostprocessParametersToggle"));
+  auto* sample = card->findChild<QPushButton*>("detectionStrategySample");
+  QVERIFY(revealParameter(sample));
+  QTest::mouseClick(sample, Qt::LeftButton);
   QVERIFY(margin->isEnabled());
+  QVERIFY(revealParameter(margin));
   margin->setFocus();
   margin->selectAll();
   QTest::keyClicks(margin, "9");
   QTest::keyClick(margin, Qt::Key_Return);
   QCOMPARE(card->request().parameters.bandwidthMarginDb, 9.);
-  profile->setCurrentIndex(profile->findData("scn-max-psd-v1"));
+  QVERIFY(selectModelAndSpectrum(window, "scn-max-psd-v1"));
   QCOMPARE(card->request().profile.modelHopFrames, std::uint32_t{5});
   QCOMPARE(card->request().parameters.timeStrategy,
            DetectionTimeStrategy::Coarse);
@@ -4718,14 +5194,20 @@ void UiTests::widebandConfigurationCommittedDrafts() {
   scnSnapshot.request.runId = "scn-fixed-margin-snapshot";
   scnSnapshot.request.parameters.bandwidthMarginDb = 11.25;
   card->configure(&scnSnapshot);
-  auto* description = card->findChild<QLabel*>("detectionProfileDescription");
-  QVERIFY(description && description->text().contains("固定 3 dB") &&
-          description->text().contains("固定 6 dB"));
+  QVERIFY(openDetectionFold(window, "detectionCalculationDetailsToggle"));
+  auto* description = card->findChild<QLabel*>("detectionCalculationDetailsText");
+  QVERIFY(description && revealParameter(description));
+  QVERIFY(description->text().contains("FFT 窗") &&
+          description->text().contains("模型上下文"));
+  auto* model = card->findChild<QComboBox*>("detectionModel");
+  QVERIFY(model && model->toolTip().contains("固定 3 dB") &&
+          model->toolTip().contains("固定 6 dB"));
   for (const auto* name : {"detectionStrategySample", "detectionStrategyRoi",
                            "detectionStrategyCoarse"}) {
     auto* strategy = card->findChild<QPushButton*>(name);
     QVERIFY(strategy);
-    strategy->click();
+    QVERIFY(revealParameter(strategy));
+    QTest::mouseClick(strategy, Qt::LeftButton);
     QVERIFY(!margin->isEnabled());
     QCOMPARE(card->request().parameters.bandwidthMarginDb, 11.25);
   }
@@ -4733,16 +5215,19 @@ void UiTests::widebandConfigurationCommittedDrafts() {
   card->configure(&scnSnapshot);
   QVERIFY(!margin->isEnabled());
   QCOMPARE(card->request().parameters.bandwidthMarginDb, 11.25);
-  profile->setCurrentIndex(profile->findData("pipeline-fixture-v1"));
+  QVERIFY(selectModelAndSpectrum(window, "pipeline-fixture-v1"));
   QCOMPARE(card->request().parameters.scoreThreshold, .8);
   QVERIFY(margin->isEnabled());
   QCOMPARE(card->request().parameters.bandwidthMarginDb, 9.);
-  profile->setCurrentIndex(profile->findData("ffscn-gui-iq-v1:2"));
+  QVERIFY(selectModelAndSpectrum(window, "ffscn-gui-iq-v1", DetectionSpectrumMode::Mean));
   QCOMPARE(card->request().spectrumMode, DetectionSpectrumMode::Mean);
+  QVERIFY(revealParameter(origin));
   origin->setCurrentIndex(origin->findData("available-file"));
+  QVERIFY(openDetectionFold(window, "detectionAnalysisParametersToggle"));
   const auto commitText = [&](const char* name, const char* text) {
     auto* edit = card->findChild<QLineEdit*>(name);
     QVERIFY(edit);
+    QVERIFY(revealParameter(edit));
     edit->setFocus();
     edit->selectAll();
     QTest::keyClicks(edit, text);
@@ -4759,25 +5244,28 @@ void UiTests::widebandConfigurationCommittedDrafts() {
   QVERIFY2(card->validationError().isEmpty(),
            qPrintable(card->validationError()));
   const auto frozenMean = card->request();
-  profile->setCurrentIndex(profile->findData("scn-max-psd-v1:4"));
+  QVERIFY(selectModelAndSpectrum(window, "scn-max-psd-v1", DetectionSpectrumMode::Minimum));
   QCOMPARE(card->request().spectrumMode, DetectionSpectrumMode::Minimum);
-  profile->setCurrentIndex(profile->findData("ffscn-gui-iq-v1:2"));
+  QVERIFY(selectModelAndSpectrum(window, "ffscn-gui-iq-v1", DetectionSpectrumMode::Mean));
   QCOMPARE(card->request().profile.fftSize, frozenMean.profile.fftSize);
   QCOMPARE(card->request().profile.modelFrames, frozenMean.profile.modelFrames);
   const auto meanScore = card->request().parameters.scoreThreshold;
+  QVERIFY(revealParameter(score));
   score->setFocus();
   score->selectAll();
   QTest::keyClicks(score, "0.91");
-  profile->setCurrentIndex(profile->findData("scn-max-psd-v1:4"));
-  profile->setCurrentIndex(profile->findData("ffscn-gui-iq-v1:2"));
+  QVERIFY(selectModelAndSpectrum(window, "scn-max-psd-v1", DetectionSpectrumMode::Minimum));
+  QVERIFY(selectModelAndSpectrum(window, "ffscn-gui-iq-v1", DetectionSpectrumMode::Mean));
   QCOMPARE(card->request().parameters.scoreThreshold, meanScore);
-  profile->setCurrentIndex(profile->findData("pipeline-fixture-v1"));
+  QVERIFY(selectModelAndSpectrum(window, "pipeline-fixture-v1"));
   window.session().addDemoFile("other-file.iq", 20e6, 2500e6, .02);
   QVERIFY(window.session().activateFile(sourceId));
   window.refresh();
   auto* tree = window.findChild<QTreeWidget*>("projectTree");
   QTRY_VERIFY(tree->topLevelItemCount() == 1 &&
               tree->topLevelItem(0)->childCount() == 2);
+  QVERIFY(openInspectorPage(window, "Detection"));
+  QVERIFY(revealParameter(score));
   score->setFocus();
   score->selectAll();
   QTest::keyClicks(score, "0.9");
@@ -4804,7 +5292,10 @@ void UiTests::widebandRoiPreservesManualTool() {
   const auto view = window.session().activeFile()->view;
   QSignalSpy confirmed(plot, &PlotWidget::detectionRoiConfirmed);
   plot->setCreating(true);
-  window.findChild<QPushButton*>("detectionRoiTool")->click();
+  QVERIFY(openInspectorPage(window, "Detection"));
+  auto* roiTool = window.findChild<QPushButton*>("detectionRoiTool");
+  QVERIFY(revealParameter(roiTool));
+  QTest::mouseClick(roiTool, Qt::LeftButton);
   QVERIFY(plot->isSelectingDetectionRoi());
   drag(plot, pointAt(plot, view, .20, .30), pointAt(plot, view, .40, .60));
   QVERIFY(plot->hasDetectionRoiPreview());
@@ -4832,7 +5323,9 @@ void UiTests::widebandRoiPreservesManualTool() {
   QVERIFY(!plot->isSelectingDetectionRoi());
   QVERIFY(plot->isCreating());
   QCOMPARE(confirmed.count(), 0);
-  window.findChild<QPushButton*>("detectionRoiTool")->click();
+  QVERIFY(openInspectorPage(window, "Detection"));
+  QVERIFY(revealParameter(roiTool));
+  QTest::mouseClick(roiTool, Qt::LeftButton);
   drag(plot, pointAt(plot, view, .20, .30), pointAt(plot, view, .40, .60));
   QVERIFY(plot->hasDetectionRoiPreview());
   window.findChild<QPushButton*>("confirmDetectionRoi")->click();

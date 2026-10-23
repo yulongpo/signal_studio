@@ -1,6 +1,5 @@
 #include "infrastructure/project_store.h"
 
-#include <QCryptographicHash>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -21,6 +20,7 @@
 #include "infrastructure/detection_store.h"
 #include "infrastructure/sample_format_json.h"
 #include "infrastructure/spectral_settings_json.h"
+#include "infrastructure/narrowband_analysis/analysis_settings_json.h"
 
 namespace signalstudio {
 namespace {
@@ -444,6 +444,10 @@ QJsonObject encodeProject(const Project& project, const QString& path) {
           {QStringLiteral("bandwidthHz"), channel.bandwidthHz}};
       encoded.insert(QStringLiteral("outputSampleRateHz"),
                      channel.outputSampleRateHz);
+      encoded.insert(QStringLiteral("samplingPolicy"), QJsonObject{
+          {"mode", static_cast<int>(channel.sampling.mode)},
+          {"bandwidthFactor", channel.sampling.bandwidthFactor}});
+      encoded.insert(QStringLiteral("analysis"),encodeAnalysisSettings(channel.analysis));
       encoded.insert(QStringLiteral("filter"), filterName(channel.filter));
       encoded.insert(QStringLiteral("processingState"),
                      processingStateName(channel.processingState));
@@ -569,17 +573,13 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
               QStringLiteral("signal-studio-native-project"),
           QStringLiteral("不支持的工程格式；需要 Signal Studio 原生工程"));
   const auto versionValue = number(root, "version");
-  require(versionValue == 1 || versionValue == 2 || versionValue == 3 ||
-              versionValue == 4 || versionValue == 5 || versionValue == 6,
-          QStringLiteral("不支持的原生工程版本"));
-  const auto version = static_cast<int>(versionValue);
+  require(versionValue == 6,
+          QStringLiteral("仅支持当前 v6 工程；旧版工程请新建工程并重新导入信号。"));
   Project project;
   project.name = utf8(string(root, "name", 80));
   project.activeFileId = utf8(string(root, "activeFileId", 100, true));
-  if (version >= 2) {
-    project.activeChannelId = utf8(string(root, "activeChannelId", 100, true));
-    project.narrowbandWorkspaceOpen = boolean(root, "narrowbandWorkspaceOpen");
-  }
+  project.activeChannelId = utf8(string(root, "activeChannelId", 100, true));
+  project.narrowbandWorkspaceOpen = boolean(root, "narrowbandWorkspaceOpen");
   QSet<QString> fileIds;
   for (const auto& value : array(root, "files", 150)) {
     const auto data = object(value, QStringLiteral("file"));
@@ -595,14 +595,12 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
     file.metadata.sampleRateHz = number(metadata, "sampleRateHz");
     file.metadata.centerFrequencyHz = number(metadata, "centerFrequencyHz");
     file.metadata.sampleCount = sampleIndex(metadata, "sampleCount");
-    if (version >= 4) {
-      require(metadata["sampleFormat"].isObject(), "版本 4 缺少样本格式");
-      try {
-        file.metadata.sampleFormat =
-            decodeSampleFormat(metadata["sampleFormat"].toObject());
-      } catch (const std::exception& e) {
-        require(false, QString::fromUtf8(e.what()));
-      }
+    require(metadata["sampleFormat"].isObject(), "工程缺少样本格式");
+    try {
+      file.metadata.sampleFormat =
+          decodeSampleFormat(metadata["sampleFormat"].toObject());
+    } catch (const std::exception& e) {
+      require(false, QString::fromUtf8(e.what()));
     }
     file.metadata.declaredBandwidthHz =
         metadata.contains(QStringLiteral("declaredBandwidthHz"))
@@ -610,8 +608,6 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
             : 0.0;
     require(file.metadata.declaredBandwidthHz >= 0,
             QStringLiteral("声明带宽不能为负数"));
-    // Old native projects had no effective-band field and displayed the
-    // complete sample rate.
     file.metadata.effectiveBandwidthHz =
         metadata.contains(QStringLiteral("effectiveBandwidthHz"))
             ? number(metadata, "effectiveBandwidthHz")
@@ -640,20 +636,15 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
             bounds.frequency.lowerHz < bounds.frequency.upperHz &&
             std::isfinite(bounds.frequency.upperHz - bounds.frequency.lowerHz),
         QStringLiteral("IQ 文件元数据无效"));
-    SampleIndex prefix = file.metadata.sampleCount;
-    if (version >= 3) {
-      prefix = sampleIndex(metadata, "availableSamples");
-      require(prefix <= file.metadata.sampleCount,
-              QStringLiteral("可用前缀超出物理文件"));
-      file.metadata.availability.fingerprint =
-          utf8(string(metadata, "sourceFingerprint", 200, true));
-    }
+    const auto prefix = sampleIndex(metadata, "availableSamples");
+    require(prefix <= file.metadata.sampleCount,
+            QStringLiteral("可用前缀超出物理文件"));
+    file.metadata.availability.fingerprint =
+        utf8(string(metadata, "sourceFingerprint", 200, true));
     file.display = decodeDisplay(data.value(QStringLiteral("display")));
-    if (version >= 3) {
-      const auto d = data["display"].toObject();
-      require(d.contains("psdSettings") && d.contains("spectrogramSettings"),
-              QStringLiteral("版本 3/4 缺少独立谱参数"));
-    }
+    const auto d = data["display"].toObject();
+    require(d.contains("psdSettings") && d.contains("spectrogramSettings"),
+            QStringLiteral("工程缺少独立谱参数"));
     require(
         file.display.spectrogram.parameters.method == SpectralMethod::Welch ||
             file.display.spectrogram.parameters.method ==
@@ -661,61 +652,48 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
         QStringLiteral("不支持的时频图分析方法"));
     file.view = decodeRange(data.value(QStringLiteral("view")), file.metadata);
     QSet<QString> markIds;
-    if (version >= 5) {
-      QString why;
-      require(data["annotationStore"].isObject(), "缺少标记索引");
-      const bool stored = readAnnotationStore(
-          path, data["annotationStore"].toObject(), file, why);
-      require(stored, why);
-      for (const auto& a : file.marks) markIds.insert(text(a.id));
-      const auto layers = array(data, "annotationLayers", 3);
-      require(layers.size() == 3, "需要3个来源图层");
-      for (int i = 0; i < 3; ++i) {
-        require(layers[i].isBool(), "图层值须为布尔");
-        file.annotationLayers[i] = layers[i].toBool();
-      }
-      if (data.contains("annotationView")) {
-        const auto filter = object(data["annotationView"], "annotationView");
-        const auto source = number(filter, "source");
-        const auto review = number(filter, "review");
-        const auto score = number(filter, "minimumMean");
-        require(source >= -1 && source <= 2 && std::floor(source) == source &&
-                    review >= -1 && review <= 2 &&
-                    std::floor(review) == review && score >= -1 && score <= 1,
-                "标记显示筛选无效");
-        file.annotationFilter.source = static_cast<int>(source);
-        file.annotationFilter.review = static_cast<int>(review);
-        file.annotationFilter.minimumMean = score;
-        file.annotationFilter.runId = utf8(string(filter, "runId", 128, true));
-      }
-      file.activeSegmentId = utf8(string(data, "activeSegmentId", 128, true));
-      if (data.contains("detectionRuns")) {
-        QSet<QString> runIds;
-        for (const auto& idValue : array(data, "detectionRuns", 4096)) {
-          require(idValue.isString(), "检测运行ID须为字符串");
-          const auto id = idValue.toString();
-          require(!id.isEmpty() && id.size() <= 128 && !runIds.contains(id),
-                  "检测运行ID重复或无效");
-          runIds.insert(id);
-          DetectionRun run;
-          const bool loaded =
-              loadDetectionRun(QFileInfo(path).absolutePath(), id, run, why);
-          require(loaded, why);
-          require(run.request.sourceIdentity.fileId == file.metadata.id,
-                  "检测运行引用属于其它文件");
-          file.detectionRuns.push_back(std::move(run));
-        }
-      }
-    } else {
-      for (const auto& markValue : array(data, "marks", 2000)) {
-        const auto markData = object(markValue, QStringLiteral("mark"));
-        const auto id = string(markData, "id", 100);
-        require(!markIds.contains(id), QStringLiteral("标记 id 重复"));
-        markIds.insert(id);
-        file.marks.push_back(
-            {utf8(id), utf8(string(markData, "name", 80)),
-             decodeRange(markData.value(QStringLiteral("range")), file.metadata,
-                         false)});
+    QString why;
+    require(data["annotationStore"].isObject(), "缺少标记索引");
+    const bool stored = readAnnotationStore(
+        path, data["annotationStore"].toObject(), file, why);
+    require(stored, why);
+    for (const auto& a : file.marks) markIds.insert(text(a.id));
+    const auto layers = array(data, "annotationLayers", 3);
+    require(layers.size() == 3, "需要3个来源图层");
+    for (int i = 0; i < 3; ++i) {
+      require(layers[i].isBool(), "图层值须为布尔");
+      file.annotationLayers[i] = layers[i].toBool();
+    }
+    if (data.contains("annotationView")) {
+      const auto filter = object(data["annotationView"], "annotationView");
+      const auto source = number(filter, "source");
+      const auto review = number(filter, "review");
+      const auto score = number(filter, "minimumMean");
+      require(source >= -1 && source <= 2 && std::floor(source) == source &&
+                  review >= -1 && review <= 2 &&
+                  std::floor(review) == review && score >= -1 && score <= 1,
+              "标记显示筛选无效");
+      file.annotationFilter.source = static_cast<int>(source);
+      file.annotationFilter.review = static_cast<int>(review);
+      file.annotationFilter.minimumMean = score;
+      file.annotationFilter.runId = utf8(string(filter, "runId", 128, true));
+    }
+    file.activeSegmentId = utf8(string(data, "activeSegmentId", 128, true));
+    if (data.contains("detectionRuns")) {
+      QSet<QString> runIds;
+      for (const auto& idValue : array(data, "detectionRuns", 4096)) {
+        require(idValue.isString(), "检测运行ID须为字符串");
+        const auto id = idValue.toString();
+        require(!id.isEmpty() && id.size() <= 128 && !runIds.contains(id),
+                "检测运行ID重复或无效");
+        runIds.insert(id);
+        DetectionRun run;
+        const bool loaded =
+            loadDetectionRun(QFileInfo(path).absolutePath(), id, run, why);
+        require(loaded, why);
+        require(run.request.sourceIdentity.fileId == file.metadata.id,
+                "检测运行引用属于其它文件");
+        file.detectionRuns.push_back(std::move(run));
       }
     }
     QSet<QString> channelIds;
@@ -743,164 +721,162 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
       channel.sourceMarkId = utf8(sourceId);
       channel.centerFrequencyHz = number(channelData, "centerFrequencyHz");
       channel.bandwidthHz = number(channelData, "bandwidthHz");
-      channel.processingState = ChannelProcessingState::LegacyNeedsReview;
-      if (version >= 2) {
-        channel.outputSampleRateHz = number(channelData, "outputSampleRateHz");
-        require(channel.outputSampleRateHz > 0,
-                QStringLiteral("窄带输出采样率无效"));
-        const auto filter = string(channelData, "filter", 32);
-        require(filter == QStringLiteral("fastPreview") ||
-                    filter == QStringLiteral("standard") ||
-                    filter == QStringLiteral("highRejection"),
-                QStringLiteral("未知窄带滤波器"));
-        channel.filter = filter == QStringLiteral("fastPreview")
-                             ? ChannelFilter::FastPreview
-                         : filter == QStringLiteral("highRejection")
-                             ? ChannelFilter::HighRejection
-                             : ChannelFilter::Standard;
-        const auto state = string(channelData, "processingState", 32);
-        require(state == QStringLiteral("ready") ||
-                    state == QStringLiteral("legacyNeedsReview") ||
-                    state == QStringLiteral("sourceMissing") ||
-                    state == QStringLiteral("invalid"),
-                QStringLiteral("未知窄带通道状态"));
-        channel.processingState =
-            state == QStringLiteral("ready") ? ChannelProcessingState::Ready
-            : state == QStringLiteral("sourceMissing")
-                ? ChannelProcessingState::SourceMissing
-            : state == QStringLiteral("invalid")
-                ? ChannelProcessingState::Invalid
-                : ChannelProcessingState::LegacyNeedsReview;
-        channel.configVersion = sampleIndex(channelData, "configVersion");
-        require(channel.configVersion > 0, QStringLiteral("通道配置版本无效"));
-        channel.sourceTime = decodeTimeRange(
-            channelData.value(QStringLiteral("sourceTime")),
-            file.metadata.sampleCount, QStringLiteral("sourceTime"));
-        channel.wholeSource = boolean(channelData, "wholeSource");
-        channel.preserveSourceTime = boolean(channelData, "preserveSourceTime");
-        const auto page = string(channelData, "page", 32);
-        require(page == QStringLiteral("observe") ||
-                    page == QStringLiteral("modulation") ||
-                    page == QStringLiteral("deepLearning") ||
-                    page == QStringLiteral("demodulation"),
-                QStringLiteral("未知窄带工作页"));
-        channel.page = page == QStringLiteral("modulation")
-                           ? NarrowbandPage::Modulation
-                       : page == QStringLiteral("deepLearning")
-                           ? NarrowbandPage::DeepLearning
-                       : page == QStringLiteral("demodulation")
-                           ? NarrowbandPage::Demodulation
-                           : NarrowbandPage::Observe;
-        channel.visibleSourceTime = decodeTimeRange(
-            channelData.value(QStringLiteral("visibleSourceTime")),
-            file.metadata.sampleCount, QStringLiteral("visibleSourceTime"));
-        require(channel.visibleSourceTime.begin >= channel.sourceTime.begin &&
-                    channel.visibleSourceTime.end <= channel.sourceTime.end,
-                QStringLiteral("窄带可见时间必须位于通道提取时段内"));
-        const auto visibleFrequency = object(
-            channelData.value(QStringLiteral("visibleBasebandFrequency")),
-            QStringLiteral("visibleBasebandFrequency"));
-        channel.visibleBasebandFrequency = {
-            number(visibleFrequency, "lowerHz"),
-            number(visibleFrequency, "upperHz")};
-        require(channel.visibleBasebandFrequency.lowerHz <
-                        channel.visibleBasebandFrequency.upperHz &&
-                    channel.visibleBasebandFrequency.lowerHz >=
-                        -channel.outputSampleRateHz / 2 &&
-                    channel.visibleBasebandFrequency.upperHz <=
-                        channel.outputSampleRateHz / 2,
-                QStringLiteral("窄带可见基带频率范围无效"));
-        channel.psdFftSize = fftSize(channelData, "psdFftSize");
-        channel.stftFftSize = fftSize(channelData, "stftFftSize");
-        if (version >= 3) {
-          channel.psd = decodePsdSettings(channelData["psdSettings"]);
-          channel.spectrogram.parameters =
-              decodeSpectralParameters(channelData["spectrogramSettings"]);
-          require(
-              channel.spectrogram.parameters.method == SpectralMethod::Welch ||
-                  channel.spectrogram.parameters.method ==
-                      SpectralMethod::Multitaper,
-              QStringLiteral("不支持的窄带时频图方法"));
-        } else
-          channel.psd.scope = PsdScope::Visible;
-        const auto waveform = string(channelData, "waveform", 32);
-        require(waveform == QStringLiteral("iq") ||
-                    waveform == QStringLiteral("magnitude") ||
-                    waveform == QStringLiteral("phase") ||
-                    waveform == QStringLiteral("envelope"),
-                QStringLiteral("未知窄带波形模式"));
-        channel.waveform = waveform == QStringLiteral("magnitude")
-                               ? NarrowbandWaveform::Magnitude
-                           : waveform == QStringLiteral("phase")
-                               ? NarrowbandWaveform::Phase
-                           : waveform == QStringLiteral("envelope")
-                               ? NarrowbandWaveform::Envelope
-                               : NarrowbandWaveform::IQ;
-        channel.waveformAxisMinimum =
-            channelData.contains(QStringLiteral("waveformAxisMinimum"))
-                ? number(channelData, "waveformAxisMinimum")
-                : -32768.0;
-        channel.waveformAxisMaximum =
-            channelData.contains(QStringLiteral("waveformAxisMaximum"))
-                ? number(channelData, "waveformAxisMaximum")
-                : 32768.0;
-        channel.waveformAutoScale =
-            channelData.contains(QStringLiteral("waveformAutoScale"))
-                ? boolean(channelData, "waveformAutoScale")
-                : true;
-        channel.psdAxisMinimum =
-            channelData.contains(QStringLiteral("psdAxisMinimum"))
-                ? number(channelData, "psdAxisMinimum")
-                : -120.0;
-        channel.psdAxisMaximum =
-            channelData.contains(QStringLiteral("psdAxisMaximum"))
-                ? number(channelData, "psdAxisMaximum")
-                : 0.0;
-        require(
-            channel.waveformAxisMinimum < channel.waveformAxisMaximum &&
-                channel.waveformAxisMaximum - channel.waveformAxisMinimum <=
-                    2.0e12 &&
-                validPsdRange(channel.psdAxisMinimum, channel.psdAxisMaximum),
-            QStringLiteral("窄带波形或 PSD 纵轴范围无效"));
-        channel.symbolRate = number(channelData, "symbolRate");
-        require(channel.symbolRate > 0, QStringLiteral("符号率必须大于 0"));
-        const auto eyePeriods = number(channelData, "eyePeriods");
-        const auto eyeTraces = number(channelData, "eyeTraces");
-        const auto eyeComponent = number(channelData, "eyeComponent");
-        const auto selectedBit = number(channelData, "selectedBit");
-        require(eyePeriods >= 1 && eyePeriods <= 8 &&
-                    std::floor(eyePeriods) == eyePeriods && eyeTraces >= 8 &&
-                    eyeTraces <= 256 && std::floor(eyeTraces) == eyeTraces &&
-                    eyeComponent >= 0 && eyeComponent <= 2 &&
-                    std::floor(eyeComponent) == eyeComponent &&
-                    selectedBit >= -1 && selectedBit <= 4095 &&
-                    std::floor(selectedBit) == selectedBit,
-                QStringLiteral("星座、眼图或位流视图参数超出范围"));
-        channel.eyePeriods = static_cast<int>(eyePeriods);
-        channel.eyeTraces = static_cast<int>(eyeTraces);
-        channel.eyeComponent = static_cast<int>(eyeComponent);
-        channel.selectedBit = static_cast<int>(selectedBit);
-        channel.constellationMinimum =
-            number(channelData, "constellationMinimum");
-        channel.constellationMaximum =
-            number(channelData, "constellationMaximum");
-        require(channel.constellationMinimum < channel.constellationMaximum,
-                QStringLiteral("星座图范围无效"));
-        channel.relativeTime = boolean(channelData, "relativeTime");
-        channel.absoluteFrequencyLabels =
-            channelData.contains(QStringLiteral("absoluteFrequencyLabels"))
-                ? boolean(channelData, "absoluteFrequencyLabels")
-                : false;
-      } else {
-        const auto* sourceMark = findMark(file, channel.sourceMarkId);
-        if (sourceMark) {
-          channel.sourceTime = sourceMark->range.time;
-          channel.visibleSourceTime = channel.sourceTime;
-          channel.outputSampleRateHz = std::max(4e6, channel.bandwidthHz * 1.3);
-          channel.visibleBasebandFrequency = {-channel.outputSampleRateHz / 2,
-                                              channel.outputSampleRateHz / 2};
-        }
+      channel.outputSampleRateHz = number(channelData, "outputSampleRateHz");
+      if (channelData.contains("samplingPolicy")) {
+        const auto policy = object(channelData.value("samplingPolicy"), "samplingPolicy");
+        const auto mode = number(policy, "mode");
+        const auto factor = number(policy, "bandwidthFactor");
+        require((mode == 0 || mode == 1) &&
+                    (factor == 1.5 || factor == 2 || factor == 4 || factor == 8),
+                QStringLiteral("采样策略或带宽倍率无效"));
+        channel.sampling = {static_cast<ChannelSamplingMode>(static_cast<int>(mode)), factor};
       }
+      if(channelData.contains("analysis")) {
+        QString analysisError;
+        require(decodeAnalysisSettings(channelData.value("analysis"),channel.analysis,analysisError),analysisError);
+      }
+      require(channel.outputSampleRateHz > 0,
+              QStringLiteral("窄带输出采样率无效"));
+      const auto filter = string(channelData, "filter", 32);
+      require(filter == QStringLiteral("fastPreview") ||
+                  filter == QStringLiteral("standard") ||
+                  filter == QStringLiteral("highRejection"),
+              QStringLiteral("未知窄带滤波器"));
+      channel.filter = filter == QStringLiteral("fastPreview")
+                           ? ChannelFilter::FastPreview
+                       : filter == QStringLiteral("highRejection")
+                           ? ChannelFilter::HighRejection
+                           : ChannelFilter::Standard;
+      const auto state = string(channelData, "processingState", 32);
+      require(state == QStringLiteral("ready") ||
+                  state == QStringLiteral("legacyNeedsReview") ||
+                  state == QStringLiteral("sourceMissing") ||
+                  state == QStringLiteral("invalid"),
+              QStringLiteral("未知窄带通道状态"));
+      channel.processingState =
+          state == QStringLiteral("ready") ? ChannelProcessingState::Ready
+          : state == QStringLiteral("sourceMissing")
+              ? ChannelProcessingState::SourceMissing
+          : state == QStringLiteral("invalid")
+              ? ChannelProcessingState::Invalid
+              : ChannelProcessingState::LegacyNeedsReview;
+      channel.configVersion = sampleIndex(channelData, "configVersion");
+      require(channel.configVersion > 0, QStringLiteral("通道配置版本无效"));
+      channel.sourceTime = decodeTimeRange(
+          channelData.value(QStringLiteral("sourceTime")),
+          file.metadata.sampleCount, QStringLiteral("sourceTime"));
+      channel.wholeSource = boolean(channelData, "wholeSource");
+      channel.preserveSourceTime = boolean(channelData, "preserveSourceTime");
+      const auto page = string(channelData, "page", 32);
+      require(page == QStringLiteral("observe") ||
+                  page == QStringLiteral("modulation") ||
+                  page == QStringLiteral("deepLearning") ||
+                  page == QStringLiteral("demodulation"),
+              QStringLiteral("未知窄带工作页"));
+      channel.page = page == QStringLiteral("modulation")
+                         ? NarrowbandPage::Modulation
+                     : page == QStringLiteral("deepLearning")
+                         ? NarrowbandPage::DeepLearning
+                     : page == QStringLiteral("demodulation")
+                         ? NarrowbandPage::Demodulation
+                         : NarrowbandPage::Observe;
+      channel.visibleSourceTime = decodeTimeRange(
+          channelData.value(QStringLiteral("visibleSourceTime")),
+          file.metadata.sampleCount, QStringLiteral("visibleSourceTime"));
+      require(channel.visibleSourceTime.begin >= channel.sourceTime.begin &&
+                  channel.visibleSourceTime.end <= channel.sourceTime.end,
+              QStringLiteral("窄带可见时间必须位于通道提取时段内"));
+      const auto visibleFrequency = object(
+          channelData.value(QStringLiteral("visibleBasebandFrequency")),
+          QStringLiteral("visibleBasebandFrequency"));
+      channel.visibleBasebandFrequency = {
+          number(visibleFrequency, "lowerHz"),
+          number(visibleFrequency, "upperHz")};
+      require(channel.visibleBasebandFrequency.lowerHz <
+                      channel.visibleBasebandFrequency.upperHz &&
+                  channel.visibleBasebandFrequency.lowerHz >=
+                      -channel.outputSampleRateHz / 2 &&
+                  channel.visibleBasebandFrequency.upperHz <=
+                      channel.outputSampleRateHz / 2,
+              QStringLiteral("窄带可见基带频率范围无效"));
+      channel.psdFftSize = fftSize(channelData, "psdFftSize");
+      channel.stftFftSize = fftSize(channelData, "stftFftSize");
+      channel.psd = decodePsdSettings(channelData["psdSettings"]);
+      channel.spectrogram.parameters =
+          decodeSpectralParameters(channelData["spectrogramSettings"]);
+      require(
+          channel.spectrogram.parameters.method == SpectralMethod::Welch ||
+              channel.spectrogram.parameters.method ==
+                  SpectralMethod::Multitaper,
+          QStringLiteral("不支持的窄带时频图方法"));
+      const auto waveform = string(channelData, "waveform", 32);
+      require(waveform == QStringLiteral("iq") ||
+                  waveform == QStringLiteral("magnitude") ||
+                  waveform == QStringLiteral("phase") ||
+                  waveform == QStringLiteral("envelope"),
+              QStringLiteral("未知窄带波形模式"));
+      channel.waveform = waveform == QStringLiteral("magnitude")
+                             ? NarrowbandWaveform::Magnitude
+                         : waveform == QStringLiteral("phase")
+                             ? NarrowbandWaveform::Phase
+                         : waveform == QStringLiteral("envelope")
+                             ? NarrowbandWaveform::Envelope
+                             : NarrowbandWaveform::IQ;
+      channel.waveformAxisMinimum =
+          channelData.contains(QStringLiteral("waveformAxisMinimum"))
+              ? number(channelData, "waveformAxisMinimum")
+              : -32768.0;
+      channel.waveformAxisMaximum =
+          channelData.contains(QStringLiteral("waveformAxisMaximum"))
+              ? number(channelData, "waveformAxisMaximum")
+              : 32768.0;
+      channel.waveformAutoScale =
+          channelData.contains(QStringLiteral("waveformAutoScale"))
+              ? boolean(channelData, "waveformAutoScale")
+              : true;
+      channel.psdAxisMinimum =
+          channelData.contains(QStringLiteral("psdAxisMinimum"))
+              ? number(channelData, "psdAxisMinimum")
+              : -120.0;
+      channel.psdAxisMaximum =
+          channelData.contains(QStringLiteral("psdAxisMaximum"))
+              ? number(channelData, "psdAxisMaximum")
+              : 0.0;
+      require(
+          channel.waveformAxisMinimum < channel.waveformAxisMaximum &&
+              channel.waveformAxisMaximum - channel.waveformAxisMinimum <=
+                  2.0e12 &&
+              validPsdRange(channel.psdAxisMinimum, channel.psdAxisMaximum),
+          QStringLiteral("窄带波形或 PSD 纵轴范围无效"));
+      channel.symbolRate = number(channelData, "symbolRate");
+      require(channel.symbolRate > 0, QStringLiteral("符号率必须大于 0"));
+      const auto eyePeriods = number(channelData, "eyePeriods");
+      const auto eyeTraces = number(channelData, "eyeTraces");
+      const auto eyeComponent = number(channelData, "eyeComponent");
+      const auto selectedBit = number(channelData, "selectedBit");
+      require(eyePeriods >= 1 && eyePeriods <= 8 &&
+                  std::floor(eyePeriods) == eyePeriods && eyeTraces >= 8 &&
+                  eyeTraces <= 256 && std::floor(eyeTraces) == eyeTraces &&
+                  eyeComponent >= 0 && eyeComponent <= 2 &&
+                  std::floor(eyeComponent) == eyeComponent &&
+                  selectedBit >= -1 && selectedBit <= 4095 &&
+                  std::floor(selectedBit) == selectedBit,
+              QStringLiteral("星座、眼图或位流视图参数超出范围"));
+      channel.eyePeriods = static_cast<int>(eyePeriods);
+      channel.eyeTraces = static_cast<int>(eyeTraces);
+      channel.eyeComponent = static_cast<int>(eyeComponent);
+      channel.selectedBit = static_cast<int>(selectedBit);
+      channel.constellationMinimum =
+          number(channelData, "constellationMinimum");
+      channel.constellationMaximum =
+          number(channelData, "constellationMaximum");
+      require(channel.constellationMinimum < channel.constellationMaximum,
+              QStringLiteral("星座图范围无效"));
+      channel.relativeTime = boolean(channelData, "relativeTime");
+      channel.absoluteFrequencyLabels =
+          channelData.contains(QStringLiteral("absoluteFrequencyLabels"))
+              ? boolean(channelData, "absoluteFrequencyLabels")
+              : false;
       // Center +/- bandwidth/2 can differ from the original edges by an ULP.
       const auto roundingTolerance =
           std::max({1.0, std::abs(sampledBand.lowerHz),
@@ -916,34 +892,28 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
                   channel.centerFrequencyHz + channel.bandwidthHz / 2 <=
                       sampledBand.upperHz + roundingTolerance,
               QStringLiteral("窄带通道频率或带宽无效"));
-      if (version >= 5) {
-        require(channelData["annotationSource"].isObject(),
-                "v5通道缺少不可变来源快照");
-        AnnotationChannelSnapshot snapshot;
-        QString why;
-        const bool decoded = decodeAnnotationChannelSnapshot(
-            channelData["annotationSource"].toObject(), file.metadata, snapshot,
-            why, version);
-        require(decoded, why);
-        // Pre-v6 snapshots retain their original binding range byte-for-value.
-        // Their saved DSP parameters independently preserve the extraction;
-        // neither range is regenerated from the current annotation or the
-        // other.
-        require(snapshot.annotationId == channel.sourceMarkId,
-                "通道旧ID与新来源ID不一致");
-        channel.annotationId = snapshot.annotationId;
-        channel.segmentId = snapshot.segmentId;
-        channel.revisionId = snapshot.revisionId;
-        channel.sourceIdentity = snapshot.sourceIdentity;
-        channel.sourceSnapshot =
-            std::make_shared<const AnnotationChannelSnapshot>(
-                std::move(snapshot));
-      }
+      require(channelData["annotationSource"].isObject(),
+              "通道缺少不可变来源快照");
+      AnnotationChannelSnapshot snapshot;
+      QString why;
+      const bool decoded = decodeAnnotationChannelSnapshot(
+          channelData["annotationSource"].toObject(), file.metadata, snapshot,
+          why);
+      require(decoded, why);
+      require(snapshot.annotationId == channel.sourceMarkId,
+              "通道与来源快照的标记ID不一致");
+      channel.annotationId = snapshot.annotationId;
+      channel.segmentId = snapshot.segmentId;
+      channel.revisionId = snapshot.revisionId;
+      channel.sourceIdentity = snapshot.sourceIdentity;
+      channel.sourceSnapshot =
+          std::make_shared<const AnnotationChannelSnapshot>(
+              std::move(snapshot));
       file.channels.push_back(std::move(channel));
     }
     QSet<QString> selectedIds;
     for (const auto& idValue :
-         array(data, "selectedMarkIds", version >= 5 ? 100000 : 2000)) {
+         array(data, "selectedMarkIds", 100000)) {
       require(idValue.isString(), QStringLiteral("所选标记 id 必须是字符串"));
       const auto id = idValue.toString();
       require(markIds.contains(id) && !selectedIds.contains(id),
@@ -952,22 +922,20 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
       file.selectedMarkIds.push_back(utf8(id));
     }
     const auto active =
-        string(data, "activeMarkId", version >= 5 ? 128 : 100, true);
+        string(data, "activeMarkId", 128, true);
     require(
         active.isEmpty() ? selectedIds.isEmpty() : selectedIds.contains(active),
         QStringLiteral("活动标记必须属于选择集合"));
     require(!file.display.psdFromSelection || !active.isEmpty(),
             QStringLiteral("标记 PSD 统计需要活动标记"));
     file.activeMarkId = utf8(active);
-    if (version >= 5) {
-      const auto* annotation = findAnnotation(file, file.activeMarkId);
-      require(file.activeSegmentId ==
-                  (annotation ? annotation->activeSegmentId : std::string{}),
-              "活动段必须匹配当前活动标记");
-      for (const auto& id : file.selectedMarkIds) {
-        const auto* selected = findAnnotation(file, id);
-        require(selected && !selected->deleted, "不能选择已删除标记");
-      }
+    const auto* annotation = findAnnotation(file, file.activeMarkId);
+    require(file.activeSegmentId ==
+                (annotation ? annotation->activeSegmentId : std::string{}),
+            "活动段必须匹配当前活动标记");
+    for (const auto& id : file.selectedMarkIds) {
+      const auto* selected = findAnnotation(file, id);
+      require(selected && !selected->deleted, "不能选择已删除标记");
     }
     file.metadata.availability.availableSamples = prefix;
     file.metadata.availability.status = prefix == file.metadata.sampleCount
@@ -976,10 +944,6 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
     if (prefix)
       file.view = clampRange(file.view, file.metadata, file.display.stftSize,
                              file.display.psdSize);
-    if (version < 5) {
-      const auto migrated = attachLegacyAnnotations(file);
-      require(migrated.ok, text(migrated.error));
-    }
     const auto validAnnotations = validateFileAnnotations(file);
     require(validAnnotations.ok, text(validAnnotations.error));
     refreshChannelSourceRelations(file);
@@ -1006,70 +970,6 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
   return project;
 }
 
-bool preserveUpgradeSnapshot(const QString& path, QString& error) {
-  QFile previous(path);
-  if (!previous.exists()) return true;
-  if (!previous.open(QIODevice::ReadOnly)) {
-    error = "无法读取升级前工程：" + previous.errorString();
-    return false;
-  }
-  if (previous.size() > maximumDocumentBytes) {
-    error = "升级前工程超过 32 MiB，不能安全保存快照。";
-    return false;
-  }
-  const auto bytes = previous.readAll();
-  if (previous.error() != QFileDevice::NoError) {
-    error = "读取升级前工程失败：" + previous.errorString();
-    return false;
-  }
-  previous.close();
-  const auto document = QJsonDocument::fromJson(bytes);
-  const auto root = document.object();
-  const auto version = root["version"].toDouble();
-  if (!document.isObject() ||
-      root["schema"] != "signal-studio-native-project" || version < 1 ||
-      version > 5 || std::floor(version) != version)
-    return true;
-
-  const auto hash = QString::fromLatin1(
-      QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex());
-  const auto base = path + ".pre-v6-v" +
-                    QString::number(static_cast<int>(version)) + "-" + hash;
-  for (int suffix = 0; suffix < 1000; ++suffix) {
-    const auto backupPath =
-        base + (suffix ? "-" + QString::number(suffix) : "") + ".bak";
-    QFile backup(backupPath);
-    if (backup.exists()) {
-      if (backup.open(QIODevice::ReadOnly) && backup.size() == bytes.size() &&
-          backup.readAll() == bytes)
-        return true;
-      // A pre-existing different file is never overwritten, even when its
-      // name happens to claim the same digest.
-      continue;
-    }
-    if (!backup.open(QIODevice::WriteOnly | QIODevice::NewOnly)) {
-      if (QFileInfo::exists(backupPath)) continue;
-      error = "升级前工程快照创建失败：" + backup.errorString();
-      return false;
-    }
-    const bool written = backup.write(bytes) == bytes.size() && backup.flush();
-    const auto why = backup.errorString();
-    backup.close();
-    if (!written) {
-      backup.remove();
-      error = "升级前工程快照写入失败：" + why;
-      return false;
-    }
-    QFile verified(backupPath);
-    if (!verified.open(QIODevice::ReadOnly) || verified.readAll() != bytes) {
-      error = "升级前工程快照校验失败，原工程保持不变。";
-      return false;
-    }
-    return true;
-  }
-  error = "升级前工程快照没有可用文件名，原工程保持不变。";
-  return false;
-}
 
 }  // namespace
 
@@ -1109,7 +1009,6 @@ bool ProjectStore::save(const QString& path, const Project& project,
     error = QStringLiteral("工程文件超过 32 MiB 上限");
     return false;
   }
-  if (!preserveUpgradeSnapshot(path, error)) return false;
   QSaveFile file(path);
   if (!file.open(QIODevice::WriteOnly)) {
     error = file.errorString();

@@ -1,0 +1,236 @@
+D:\softwares\cmake\bin\cmake.exe --preset local-debug
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26300.
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+CMake Warning at D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake:339 (message):
+  This project is using headers of the GuiPrivate module and will therefore
+  be tied to this specific Qt module build version.  Running this project
+  against other versions of the Qt modules may crash at any arbitrary point.
+  This is not a bug, but a result of using Qt internals.  You have been
+  warned!
+
+  You can disable this warning by setting QT_NO_PRIVATE_MODULE_WARNING to ON.
+Call Stack (most recent call first):
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6GuiPrivate/Qt6GuiPrivateConfig.cmake:48 (_qt_internal_show_private_module_warning)
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/Qt6Config.cmake:253 (find_package)
+  CMakeLists.txt:17 (find_package)
+
+
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+-- Configuring done (0.4s)
+-- Generating done (2.2s)
+-- Build files have been written to: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+D:\softwares\cmake\bin\cmake.exe --build --preset local-debug --target SignalStudioNarrowbandModulationTests
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  project.cpp
+  session.cpp
+  annotation_service.cpp
+  constellation.cpp
+  channel_sampling.cpp
+  正在编译...
+  annotation_service.cpp
+  project.cpp
+  session.cpp
+  constellation.cpp
+  channel_sampling.cpp
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  annotation_json.cpp
+  detection_projection.cpp
+  detection_source.cpp
+  detection_sample_energy.cpp
+  constellation_analysis.cpp
+  annotation_store.cpp
+  label_import.cpp
+  raw_sample_reader.cpp
+  detection_store.cpp
+  detection_task.cpp
+  sigmf_metadata.cpp
+  import_controller.cpp
+  analysis_source.cpp
+  detection_refined_publication.cpp
+  channel_processor.cpp
+  source_metadata.cpp
+  detection_frequency_analysis.cpp
+  detection_time_analysis.cpp
+  pulse_shaping.cpp
+  analysis_service.cpp
+  eye_analysis.cpp
+  spectral_windows.cpp
+  spectral_analysis.cpp
+  int16_iq_file.cpp
+  symbol_rate_estimator.cpp
+  source_loader.cpp
+  single_carrier_recovery.cpp
+  project_store.cpp
+  正在编译...
+  label_import.cpp
+  detection_task.cpp
+  detection_frequency_analysis.cpp
+  detection_projection.cpp
+  annotation_json.cpp
+  detection_store.cpp
+  detection_source.cpp
+  analysis_source.cpp
+  pulse_shaping.cpp
+  annotation_store.cpp
+  detection_sample_energy.cpp
+  channel_processor.cpp
+  source_metadata.cpp
+  raw_sample_reader.cpp
+  detection_refined_publication.cpp
+  constellation_analysis.cpp
+  import_controller.cpp
+  detection_time_analysis.cpp
+  sigmf_metadata.cpp
+  analysis_service.cpp
+D:\project\signal_studio_rebuild\infrastructure\raw_sample_reader.cpp(94,21): warning C4456: “n”的声明隐藏了上一个本地声明 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioInfrastructure.vcxproj]
+      D:\project\signal_studio_rebuild\infrastructure\raw_sample_reader.cpp(74,16):
+      参见“n”的声明
+  
+  eye_analysis.cpp
+  symbol_rate_estimator.cpp
+  single_carrier_recovery.cpp
+  spectral_analysis.cpp
+  source_loader.cpp
+  int16_iq_file.cpp
+  spectral_windows.cpp
+  project_store.cpp
+D:\project\signal_studio_rebuild\infrastructure\project_store.cpp(898,15): warning C4456: “why”的声明隐藏了上一个本地声明 [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudioInfrastructure.vcxproj]
+      D:\project\signal_studio_rebuild\infrastructure\project_store.cpp(655,13):
+      参见“why”的声明
+  
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioInfrastructure.lib
+  Building Custom Rule D:/project/signal_studio_rebuild/CMakeLists.txt
+  正在扫描源以查找模块依赖项...
+  narrowband_modulation_tests.cpp
+  正在编译...
+  narrowband_modulation_tests.cpp
+  SignalStudioNarrowbandModulationTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioNarrowbandModulationTests.exe
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure -R ^signal_studio_narrowband_modulation$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 21
+    Start 21: signal_studio_narrowband_modulation
+
+21: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioNarrowbandModulationTests.exe
+21: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+21: Test timeout computed to be: 300
+21: psk2-ideal pass=1 carrier=1 CFO/Rs=3.25229e-09 EVM=0.00842609 timing=0.00560442 conditional=0.00842616 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk2-awgn20 pass=1 carrier=1 CFO/Rs=2.91986e-06 EVM=0.0196212 timing=0.00566509 conditional=0.0196221 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk4-ideal pass=1 carrier=1 CFO/Rs=1.58536e-07 EVM=0.0107195 timing=0.00754574 conditional=0.0107197 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk4-awgn20 pass=1 carrier=1 CFO/Rs=3.0199e-06 EVM=0.0209404 timing=0.00771363 conditional=0.0209415 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk8-ideal pass=1 carrier=1 CFO/Rs=9.64603e-07 EVM=0.00935556 timing=0.00643016 conditional=0.00935566 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk8-awgn20 pass=1 carrier=1 CFO/Rs=4.00296e-06 EVM=0.0199331 timing=0.00623873 conditional=0.0199341 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk16-ideal pass=1 carrier=1 CFO/Rs=5.38657e-07 EVM=0.00976344 timing=0.00651596 conditional=0.00976356 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk16-awgn20 pass=1 carrier=1 CFO/Rs=4.93564e-06 EVM=0.0201506 timing=0.0063347 conditional=0.0201516 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk32-ideal pass=1 carrier=1 CFO/Rs=4.96716e-06 EVM=0.0101767 timing=0.00702572 conditional=0.0101769 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk32-awgn30 pass=1 carrier=1 CFO/Rs=6.29763e-06 EVM=0.0116842 timing=0.00706601 conditional=0.0116844 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk64-ideal pass=1 carrier=1 CFO/Rs=5.99268e-06 EVM=0.0122061 timing=0.00853643 conditional=0.0121831 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk64-awgn40 pass=1 carrier=1 CFO/Rs=5.73447e-06 EVM=0.0123596 timing=0.00854035 conditional=0.0123241 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk128-ideal pass=1 carrier=1 CFO/Rs=1.25149e-06 EVM=0.00780623 timing=0.00524517 conditional=0.00778417 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk128-awgn40 pass=1 carrier=1 CFO/Rs=1.06411e-06 EVM=0.00801411 timing=0.00525999 conditional=0.00798727 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk256-ideal pass=1 carrier=1 CFO/Rs=6.79703e-07 EVM=0.0102194 timing=0.0069411 conditional=0.00884813 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk256-awgn40 pass=1 carrier=1 CFO/Rs=4.77476e-07 EVM=0.0103906 timing=0.00694427 conditional=0.00900251 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam4-ideal pass=1 carrier=1 CFO/Rs=1.76615e-06 EVM=0.00993585 timing=0.00687535 conditional=0.00993598 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam4-awgn20 pass=1 carrier=1 CFO/Rs=7.67742e-06 EVM=0.0202364 timing=0.0067993 conditional=0.0202374 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam8-ideal pass=1 carrier=1 CFO/Rs=8.11023e-06 EVM=0.024953 timing=0.0179394 conditional=0.0249701 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam8-awgn20 pass=1 carrier=1 CFO/Rs=2.85779e-06 EVM=0.0307447 timing=0.0179695 conditional=0.0307638 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam16-ideal pass=1 carrier=1 CFO/Rs=6.5938e-06 EVM=0.0155152 timing=0.0109554 conditional=0.0160062 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam16-awgn20 pass=1 carrier=1 CFO/Rs=9.34438e-06 EVM=0.0235252 timing=0.0108377 conditional=0.0238267 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam32-ideal pass=1 carrier=1 CFO/Rs=1.6847e-07 EVM=0.0147727 timing=0.0106814 conditional=0.0147761 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam32-awgn20 pass=1 carrier=1 CFO/Rs=2.3964e-06 EVM=0.0233867 timing=0.0110146 conditional=0.0233916 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam64-ideal pass=1 carrier=1 CFO/Rs=1.47965e-06 EVM=0.0166282 timing=0.0120686 conditional=0.0170269 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam64-awgn20 pass=1 carrier=1 CFO/Rs=8.13579e-08 EVM=0.0244143 timing=0.0122216 conditional=0.0246643 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam128-ideal pass=1 carrier=1 CFO/Rs=3.81017e-06 EVM=0.016141 timing=0.0115025 conditional=0.0161592 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam128-awgn20 pass=1 carrier=1 CFO/Rs=6.95168e-06 EVM=0.0238611 timing=0.0114164 conditional=0.02386 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam256-ideal pass=1 carrier=1 CFO/Rs=8.65602e-07 EVM=0.0144927 timing=0.0103307 conditional=0.0145997 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam256-awgn20 pass=1 carrier=1 CFO/Rs=4.77171e-06 EVM=0.0229882 timing=0.0103971 conditional=0.0230685 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk8-ideal pass=1 carrier=1 CFO/Rs=4.43455e-06 EVM=0.0127543 timing=0.0090998 conditional=0.0128134 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk8-awgn20 pass=1 carrier=1 CFO/Rs=4.99847e-08 EVM=0.0218754 timing=0.00916372 conditional=0.0219194 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk16-ideal pass=1 carrier=1 CFO/Rs=4.88133e-06 EVM=0.0151057 timing=0.0107482 conditional=0.0151797 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk16-awgn20 pass=1 carrier=1 CFO/Rs=1.92018e-06 EVM=0.0236288 timing=0.010971 conditional=0.0236663 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk32-ideal pass=1 carrier=1 CFO/Rs=5.94883e-06 EVM=0.0161135 timing=0.0115036 conditional=0.016656 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk32-awgn20 pass=1 carrier=1 CFO/Rs=5.67661e-06 EVM=0.0240183 timing=0.0116239 conditional=0.0243587 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk64-ideal pass=0 carrier=0 CFO/Rs=0.004 EVM=1e+06 timing=0 conditional=-1 粗 CFO 候选置信度不足或观测过短，保留原始 IQ。
+21: apsk64-awgn20 pass=0 carrier=0 CFO/Rs=0.004 EVM=1e+06 timing=0 conditional=-1 粗 CFO 候选置信度不足或观测过短，保留原始 IQ。
+21: apsk128-ideal pass=0 carrier=0 CFO/Rs=0.004 EVM=1e+06 timing=0 conditional=-1 粗 CFO 候选置信度不足或观测过短，保留原始 IQ。
+21: apsk128-awgn20 pass=0 carrier=0 CFO/Rs=0.004 EVM=1e+06 timing=0 conditional=-1 粗 CFO 候选置信度不足或观测过短，保留原始 IQ。
+21: apsk256-ideal pass=0 carrier=1 CFO/Rs=0.00565339 EVM=0.999999 timing=0.00915255 conditional=0.0427327 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk256-awgn20 pass=0 carrier=0 CFO/Rs=0.004 EVM=1e+06 timing=0 conditional=-1 粗 CFO 候选置信度不足或观测过短，保留原始 IQ。
+21: Family/order recovery cases failed
+1/1 Test #21: signal_studio_narrowband_modulation ...***Failed   24.02 sec
+psk2-ideal pass=1 carrier=1 CFO/Rs=3.25229e-09 EVM=0.00842609 timing=0.00560442 conditional=0.00842616 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk2-awgn20 pass=1 carrier=1 CFO/Rs=2.91986e-06 EVM=0.0196212 timing=0.00566509 conditional=0.0196221 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk4-ideal pass=1 carrier=1 CFO/Rs=1.58536e-07 EVM=0.0107195 timing=0.00754574 conditional=0.0107197 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk4-awgn20 pass=1 carrier=1 CFO/Rs=3.0199e-06 EVM=0.0209404 timing=0.00771363 conditional=0.0209415 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk8-ideal pass=1 carrier=1 CFO/Rs=9.64603e-07 EVM=0.00935556 timing=0.00643016 conditional=0.00935566 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk8-awgn20 pass=1 carrier=1 CFO/Rs=4.00296e-06 EVM=0.0199331 timing=0.00623873 conditional=0.0199341 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk16-ideal pass=1 carrier=1 CFO/Rs=5.38657e-07 EVM=0.00976344 timing=0.00651596 conditional=0.00976356 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk16-awgn20 pass=1 carrier=1 CFO/Rs=4.93564e-06 EVM=0.0201506 timing=0.0063347 conditional=0.0201516 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk32-ideal pass=1 carrier=1 CFO/Rs=4.96716e-06 EVM=0.0101767 timing=0.00702572 conditional=0.0101769 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk32-awgn30 pass=1 carrier=1 CFO/Rs=6.29763e-06 EVM=0.0116842 timing=0.00706601 conditional=0.0116844 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk64-ideal pass=1 carrier=1 CFO/Rs=5.99268e-06 EVM=0.0122061 timing=0.00853643 conditional=0.0121831 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk64-awgn40 pass=1 carrier=1 CFO/Rs=5.73447e-06 EVM=0.0123596 timing=0.00854035 conditional=0.0123241 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk128-ideal pass=1 carrier=1 CFO/Rs=1.25149e-06 EVM=0.00780623 timing=0.00524517 conditional=0.00778417 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk128-awgn40 pass=1 carrier=1 CFO/Rs=1.06411e-06 EVM=0.00801411 timing=0.00525999 conditional=0.00798727 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk256-ideal pass=1 carrier=1 CFO/Rs=6.79703e-07 EVM=0.0102194 timing=0.0069411 conditional=0.00884813 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk256-awgn40 pass=1 carrier=1 CFO/Rs=4.77476e-07 EVM=0.0103906 timing=0.00694427 conditional=0.00900251 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam4-ideal pass=1 carrier=1 CFO/Rs=1.76615e-06 EVM=0.00993585 timing=0.00687535 conditional=0.00993598 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam4-awgn20 pass=1 carrier=1 CFO/Rs=7.67742e-06 EVM=0.0202364 timing=0.0067993 conditional=0.0202374 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam8-ideal pass=1 carrier=1 CFO/Rs=8.11023e-06 EVM=0.024953 timing=0.0179394 conditional=0.0249701 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam8-awgn20 pass=1 carrier=1 CFO/Rs=2.85779e-06 EVM=0.0307447 timing=0.0179695 conditional=0.0307638 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam16-ideal pass=1 carrier=1 CFO/Rs=6.5938e-06 EVM=0.0155152 timing=0.0109554 conditional=0.0160062 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam16-awgn20 pass=1 carrier=1 CFO/Rs=9.34438e-06 EVM=0.0235252 timing=0.0108377 conditional=0.0238267 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam32-ideal pass=1 carrier=1 CFO/Rs=1.6847e-07 EVM=0.0147727 timing=0.0106814 conditional=0.0147761 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam32-awgn20 pass=1 carrier=1 CFO/Rs=2.3964e-06 EVM=0.0233867 timing=0.0110146 conditional=0.0233916 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam64-ideal pass=1 carrier=1 CFO/Rs=1.47965e-06 EVM=0.0166282 timing=0.0120686 conditional=0.0170269 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam64-awgn20 pass=1 carrier=1 CFO/Rs=8.13579e-08 EVM=0.0244143 timing=0.0122216 conditional=0.0246643 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam128-ideal pass=1 carrier=1 CFO/Rs=3.81017e-06 EVM=0.016141 timing=0.0115025 conditional=0.0161592 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam128-awgn20 pass=1 carrier=1 CFO/Rs=6.95168e-06 EVM=0.0238611 timing=0.0114164 conditional=0.02386 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam256-ideal pass=1 carrier=1 CFO/Rs=8.65602e-07 EVM=0.0144927 timing=0.0103307 conditional=0.0145997 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam256-awgn20 pass=1 carrier=1 CFO/Rs=4.77171e-06 EVM=0.0229882 timing=0.0103971 conditional=0.0230685 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk8-ideal pass=1 carrier=1 CFO/Rs=4.43455e-06 EVM=0.0127543 timing=0.0090998 conditional=0.0128134 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk8-awgn20 pass=1 carrier=1 CFO/Rs=4.99847e-08 EVM=0.0218754 timing=0.00916372 conditional=0.0219194 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk16-ideal pass=1 carrier=1 CFO/Rs=4.88133e-06 EVM=0.0151057 timing=0.0107482 conditional=0.0151797 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk16-awgn20 pass=1 carrier=1 CFO/Rs=1.92018e-06 EVM=0.0236288 timing=0.010971 conditional=0.0236663 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk32-ideal pass=1 carrier=1 CFO/Rs=5.94883e-06 EVM=0.0161135 timing=0.0115036 conditional=0.016656 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk32-awgn20 pass=1 carrier=1 CFO/Rs=5.67661e-06 EVM=0.0240183 timing=0.0116239 conditional=0.0243587 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk64-ideal pass=0 carrier=0 CFO/Rs=0.004 EVM=1e+06 timing=0 conditional=-1 粗 CFO 候选置信度不足或观测过短，保留原始 IQ。
+apsk64-awgn20 pass=0 carrier=0 CFO/Rs=0.004 EVM=1e+06 timing=0 conditional=-1 粗 CFO 候选置信度不足或观测过短，保留原始 IQ。
+apsk128-ideal pass=0 carrier=0 CFO/Rs=0.004 EVM=1e+06 timing=0 conditional=-1 粗 CFO 候选置信度不足或观测过短，保留原始 IQ。
+apsk128-awgn20 pass=0 carrier=0 CFO/Rs=0.004 EVM=1e+06 timing=0 conditional=-1 粗 CFO 候选置信度不足或观测过短，保留原始 IQ。
+apsk256-ideal pass=0 carrier=1 CFO/Rs=0.00565339 EVM=0.999999 timing=0.00915255 conditional=0.0427327 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk256-awgn20 pass=0 carrier=0 CFO/Rs=0.004 EVM=1e+06 timing=0 conditional=-1 粗 CFO 候选置信度不足或观测过短，保留原始 IQ。
+Family/order recovery cases failed
+
+
+0% tests passed, 1 tests failed out of 1
+
+Total Test time (real) =  24.03 sec
+
+The following tests FAILED:
+	 21 - signal_studio_narrowband_modulation (Failed)
+Errors while running CTest

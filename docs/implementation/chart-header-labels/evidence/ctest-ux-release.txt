@@ -1,0 +1,20 @@
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+    Start 25: signal_studio_ux_spectral
+1/4 Test #25: signal_studio_ux_spectral ........   Passed    0.70 sec
+    Start 26: signal_studio_ux_charts
+2/4 Test #26: signal_studio_ux_charts ..........   Passed    2.52 sec
+    Start 27: signal_studio_ux_layout
+3/4 Test #27: signal_studio_ux_layout ..........   Passed    5.17 sec
+    Start 28: signal_studio_ux_popovers
+4/4 Test #28: signal_studio_ux_popovers ........   Passed    1.04 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Label Time Summary:
+charts         =   2.52 sec*proc (1 test)
+layout         =   5.17 sec*proc (1 test)
+popovers       =   1.04 sec*proc (1 test)
+spectral       =   0.70 sec*proc (1 test)
+wideband-ux    =   9.43 sec*proc (4 tests)
+
+Total Test time (real) =   9.45 sec

@@ -134,11 +134,14 @@ QJsonObject channelsDdc(MainWindow& window, const Channel& channel,
 
 Channel channelsConfirm(MainWindow& window, QDialog& dialog, bool autoOpen) {
   const auto before = window.session().activeFile()->channels.size();
-  child<QCheckBox>(dialog, "channelAutoOpen")->setChecked(autoOpen);
+  auto* automatic = child<QCheckBox>(dialog, "channelAutoOpen");
+  if (automatic->isChecked() != autoOpen) widebandNativeClick(automatic);
+  require(automatic->isChecked() == autoOpen,
+          "Native channel auto-open indicator did not apply its requested state");
   auto* confirm = child<QPushButton>(dialog, "confirmChannelConfig");
   require(waitUntil([&] { return confirm->isEnabled(); }),
           child<QLabel>(dialog, "channelValidation")->text());
-  QTest::mouseClick(confirm, Qt::LeftButton);
+  widebandNativeClick(confirm);
   require(waitUntil([&] {
             return window.session().activeFile()->channels.size() == before + 1;
           }),
@@ -357,7 +360,9 @@ void interactionChannelScenes(Capture& capture, QScreen* screen) {
   session.activeFile()->view = fullRange(completeMetadata);
   session.activeFile()->view.time = {240000, 320000};
   window.refresh();
-  click(window, "extract");
+  widebandShowInspector(window, "contextAnnotation");
+  widebandScrollTo(child<QPushButton>(window, "extract"));
+  widebandNativeClick(child<QPushButton>(window, "extract"));
   dialog = channelsDialog(window, screen);
   auto* confirm = child<QPushButton>(*dialog, "confirmChannelConfig");
   require(!confirm->isEnabled() &&
@@ -415,7 +420,9 @@ void interactionChannelScenes(Capture& capture, QScreen* screen) {
               .ok,
           "Cannot establish the multiple-source selection fixture");
   window.refresh();
-  click(window, "extract");
+  widebandShowInspector(window, "contextAnnotation");
+  widebandScrollTo(child<QPushButton>(window, "extract"));
+  widebandNativeClick(child<QPushButton>(window, "extract"));
   dialog = channelsDialog(window, screen);
   auto* source = child<QComboBox>(*dialog, "channelSourceMark");
   require(source->currentData().toString().isEmpty() &&
@@ -424,7 +431,7 @@ void interactionChannelScenes(Capture& capture, QScreen* screen) {
   const auto manualIndex = source->findData("manual-1");
   require(manualIndex >= 0,
           "The explicitly selectable manual source is absent");
-  source->setCurrentIndex(manualIndex);
+  widebandNativeSelect(source, manualIndex);
   require(
       waitUntil([&] {
         return child<QPushButton>(*dialog, "confirmChannelConfig")->isEnabled();

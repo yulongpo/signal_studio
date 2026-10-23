@@ -1,0 +1,213 @@
+{
+  "codeRevision": "e666cea38bad6918f8fe8bbbd005025c7761496f",
+  "fullRegressionProductRevision": "1176f8ccb2b0e0ad160d6c311b3e6658590cb9fe",
+  "postRegressionChanges": "Current-project menu wording, native capture stability and generated build revision; final native/deployment validation ran after the rebuild.",
+  "productAndToolsMatchCodeRevision": true,
+  "programs": [
+    {
+      "configuration": "debug",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudio.exe",
+      "bytes": 11960320,
+      "sha256": "6d19661c19ead4bdc7cab60a4167b8c0d4b118b601084093d20d741948100b25",
+      "embeddedRevision": "e666cea"
+    },
+    {
+      "configuration": "debug",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+      "bytes": 13814784,
+      "sha256": "f720d2030c4d5450b0b28ce390132d088568d80e8d4d47b61fd8e16c754a69f8",
+      "embeddedRevision": "e666cea"
+    },
+    {
+      "configuration": "release",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe",
+      "bytes": 4645376,
+      "sha256": "1dfddf6eac65ee6cd99d7026b45bc013ae388f59690eec767565b80f620dae7c",
+      "embeddedRevision": "e666cea"
+    },
+    {
+      "configuration": "release",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+      "bytes": 5299712,
+      "sha256": "477c0eaae7d0e459718368ccfe65ab23f7482547326fc9e06e67c9bdcd56a182",
+      "embeddedRevision": "e666cea"
+    }
+  ],
+  "nativeScreen": {
+    "availableLogicalGeometry": {
+      "height": 1392,
+      "width": 2560,
+      "x": 2560,
+      "y": 0
+    },
+    "connectedIndex": 2,
+    "deviceName": "\\\\.\\DISPLAY6",
+    "devicePath": "\\\\.\\DISPLAY6",
+    "devicePixelRatio": 1.5,
+    "friendlyName": "Redmi 27 NU",
+    "identityMethod": "Windows active DisplayConfig source/target",
+    "logicalDpi": 96,
+    "logicalGeometry": {
+      "height": 1440,
+      "width": 2560,
+      "x": 2560,
+      "y": 0
+    },
+    "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+    "name": "Redmi 27 NU",
+    "physicalDpi": 109.05000625015624,
+    "pixelSize": {
+      "height": 2160,
+      "width": 3840
+    },
+    "primary": false
+  },
+  "commands": [
+    {
+      "name": "delivery-native-debug",
+      "startedUtc": "2026-10-21T11:01:13.2878282Z",
+      "finishedUtc": "2026-10-21T11:02:21.4598332Z",
+      "exitCode": 0,
+      "elapsedSeconds": 68.1737494,
+      "script": "scripts/screenshot.ps1",
+      "arguments": [
+        "-Configuration",
+        "Debug",
+        "-UiRefinement",
+        "-OutputDirectory",
+        "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-native-debug"
+      ]
+    },
+    {
+      "name": "delivery-native-release",
+      "startedUtc": "2026-10-21T11:02:21.5044273Z",
+      "finishedUtc": "2026-10-21T11:02:52.0425921Z",
+      "exitCode": 0,
+      "elapsedSeconds": 30.5382059,
+      "script": "scripts/screenshot.ps1",
+      "arguments": [
+        "-Configuration",
+        "Release",
+        "-UiRefinement",
+        "-OutputDirectory",
+        "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-native-release"
+      ]
+    },
+    {
+      "name": "delivery-production-release",
+      "startedUtc": "2026-10-21T11:02:52.0474466Z",
+      "finishedUtc": "2026-10-21T11:04:36.9467321Z",
+      "exitCode": 0,
+      "elapsedSeconds": 104.8993242,
+      "script": "scripts/screenshot.ps1",
+      "arguments": [
+        "-Configuration",
+        "Release",
+        "-WidebandDetection",
+        "-ProductionModel",
+        "-OutputDirectory",
+        "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-production-release"
+      ]
+    },
+    {
+      "name": "delivery-debug-gpu",
+      "startedUtc": "2026-10-21T11:04:36.9590437Z",
+      "finishedUtc": "2026-10-21T11:04:48.5088725Z",
+      "exitCode": 0,
+      "elapsedSeconds": 11.549862,
+      "script": "scripts/gpu_smoke.ps1",
+      "arguments": [
+        "-Configuration",
+        "Debug",
+        "-OutputDirectory",
+        "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-deployment/debug-gpu"
+      ]
+    },
+    {
+      "name": "delivery-release-gpu",
+      "startedUtc": "2026-10-21T11:04:48.5129942Z",
+      "finishedUtc": "2026-10-21T11:04:53.2061345Z",
+      "exitCode": 0,
+      "elapsedSeconds": 4.6931757,
+      "script": "scripts/gpu_smoke.ps1",
+      "arguments": [
+        "-Configuration",
+        "Release",
+        "-OutputDirectory",
+        "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-deployment/release-gpu"
+      ]
+    },
+    {
+      "name": "delivery-debug-narrowband",
+      "startedUtc": "2026-10-21T11:04:53.2109605Z",
+      "finishedUtc": "2026-10-21T11:05:03.5820937Z",
+      "exitCode": 0,
+      "elapsedSeconds": 10.3711755,
+      "script": "scripts/verify-package.ps1",
+      "arguments": [
+        "-Configuration",
+        "Debug",
+        "-Narrowband",
+        "-ReportPath",
+        "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-deployment/debug-narrowband.json"
+      ]
+    },
+    {
+      "name": "delivery-release-narrowband",
+      "startedUtc": "2026-10-21T11:05:03.5865196Z",
+      "finishedUtc": "2026-10-21T11:05:07.4481634Z",
+      "exitCode": 0,
+      "elapsedSeconds": 3.8616781,
+      "script": "scripts/verify-package.ps1",
+      "arguments": [
+        "-Configuration",
+        "Release",
+        "-Narrowband",
+        "-ReportPath",
+        "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-deployment/release-narrowband.json"
+      ]
+    },
+    {
+      "name": "delivery-debug-software",
+      "startedUtc": "2026-10-21T11:05:07.4522146Z",
+      "finishedUtc": "2026-10-21T11:05:14.2632588Z",
+      "exitCode": 0,
+      "elapsedSeconds": 6.8110785,
+      "script": "scripts/verify-package.ps1",
+      "arguments": [
+        "-Configuration",
+        "Debug",
+        "-SoftwareRenderer",
+        "-ReportPath",
+        "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-deployment/debug-software.json"
+      ]
+    },
+    {
+      "name": "delivery-release-software",
+      "startedUtc": "2026-10-21T11:05:14.2817503Z",
+      "finishedUtc": "2026-10-21T11:05:17.1094229Z",
+      "exitCode": 0,
+      "elapsedSeconds": 2.8277048,
+      "script": "scripts/verify-package.ps1",
+      "arguments": [
+        "-Configuration",
+        "Release",
+        "-SoftwareRenderer",
+        "-ReportPath",
+        "D:\\project\\signal_studio_rebuild\\out\\tasks\\ui-refinement-round2\\05-acceptance/assets/delivery-deployment/release-software.json"
+      ]
+    }
+  ],
+  "nativeScenes": {
+    "Debug": 24,
+    "Release": 24
+  },
+  "formalModel": {
+    "profileId": "ffscn-gui-iq-v1",
+    "device": "NVIDIA GeForce RTX 5060 Laptop GPU",
+    "windows": "3",
+    "cpuDdcSamples": 16384,
+    "cpuDdcOutputSha256": "2f5c8ce025ce4a7e7040d23e6ab93ccf8255e5ce334eeef7d18611d97d54bece"
+  },
+  "generatedUtc": "2026-10-21T11:08:33.193282+00:00"
+}

@@ -24,20 +24,26 @@ SpectralSettingsWidget::SpectralSettingsWidget(bool psd,QWidget* parent):QWidget
     tapers_=new ParameterIntSpinBox;tapers_->setObjectName(prefix+"Tapers");tapers_->setRange(1,32);form->addRow("DPSS 窗数",tapers_);
     order_=new ParameterIntSpinBox(this);order_->setObjectName(prefix+"BurgOrder");order_->setRange(1,256);if(psd)form->addRow("Burg 阶数",order_);else order_->hide();
     mean_=new QCheckBox("去除有效样本均值");mean_->setObjectName(prefix+"RemoveMean");form->addRow(mean_);
-    const auto changed=[this]{if(updating_)return;updateAvailability();if(validSpectralParameters(parameters()))emit edited();};
-    for(auto* combo:{method_,window_,statistic_})if(combo)connect(combo,&QComboBox::currentIndexChanged,this,changed);
+    const auto changed=[this]{if(updating_)return;updateAvailability();if(validSpectralParameters(parameters())){cacheCurrentMethod();emit edited();}};
+    connect(method_,&QComboBox::currentIndexChanged,this,[this]{if(!updating_)changeMethod();});
+    for(auto* combo:{window_,statistic_})if(combo)connect(combo,&QComboBox::currentIndexChanged,this,changed);
     for(auto* combo:{overlap_,duration_}){
         bindParameterCombo(combo,[this,combo,changed]{
             if(updating_)return;
             bool ok=false;const double value=combo->currentText().toDouble(&ok);
             auto candidate=parameters();
             if(combo==overlap_)candidate.overlap=value/100;else candidate.segmentMilliseconds=value;
-            if(ok&&validSpectralParameters(candidate)) {
-                combo->setProperty("lastValidValue",value);
-                if(combo->property("parameterCustomCommit").toBool())rememberCustomValue(combo,value,{});
-                changed();
+            if(!ok||!validSpectralParameters(candidate)) {
+                combo->setProperty("parameterDraft",true);
+                setParameterError(combo,combo==overlap_?"重叠率必须是 0（含）到 100（不含）之间的有限数值":"分段时长必须是 0 到 1e9 毫秒之间的有限数值；0 为自动 N/B");
+                return;
             }
-            displayComboValue(combo,combo->property("lastValidValue").toDouble(),{});
+            combo->setProperty("parameterDraft",false);
+            setParameterError(combo,{});
+            combo->setProperty("lastValidValue",value);
+            if(combo->property("parameterCustomCommit").toBool())rememberCustomValue(combo,value,{});
+            displayComboValue(combo,value,{});
+            changed();
         });
     }
     for(auto* spin:{beta_,nw_})connect(spin,&QDoubleSpinBox::valueChanged,this,changed);
@@ -45,25 +51,101 @@ SpectralSettingsWidget::SpectralSettingsWidget(bool psd,QWidget* parent):QWidget
     connect(mean_,&QCheckBox::toggled,this,changed);setParameters({});
 }
 SpectralParameters SpectralSettingsWidget::parameters() const {
-    SpectralParameters p;p.method=psd_?static_cast<SpectralMethod>(method_->currentIndex()):static_cast<SpectralMethod>(method_->currentData().toInt());
+    SpectralParameters p;p.method=activeMethod_;
+    const auto exact=[](QDoubleSpinBox* control){
+        return control->property("spectralShownValue").isValid()&&
+            control->value()==control->property("spectralShownValue").toDouble()
+            ?control->property("spectralExactValue").toDouble():control->value();
+    };
     p.window=static_cast<SpectralWindow>(window_->currentIndex());
-    p.overlap=overlap_->property("lastValidValue").toDouble()/100;
+    p.overlap=activeMethod_==SpectralMethod::Bartlett?0:overlap_->property("lastValidValue").toDouble()/100;
     p.segmentMilliseconds=duration_->property("lastValidValue").toDouble();
-    p.kaiserBeta=beta_->value();p.timeBandwidth=nw_->value();p.tapers=tapers_->value();p.burgOrder=order_->value();p.removeMean=mean_->isChecked();return p;
+    p.kaiserBeta=exact(beta_);p.timeBandwidth=exact(nw_);p.tapers=tapers_->value();p.burgOrder=order_->value();p.removeMean=mean_->isChecked();return p;
 }
 SpectrumStatistic SpectralSettingsWidget::statistic() const{return statistic_?static_cast<SpectrumStatistic>(statistic_->currentIndex()):SpectrumStatistic::Mean;}
+QComboBox* SpectralSettingsWidget::takeStatisticControl() {
+    if (!statistic_) return nullptr;
+    auto* form = qobject_cast<QFormLayout*>(layout());
+    if (form && form->indexOf(statistic_) >= 0) {
+        const auto taken = form->takeRow(statistic_);
+        if (taken.labelItem) { delete taken.labelItem->widget(); delete taken.labelItem; }
+        delete taken.fieldItem;
+    }
+    return statistic_;
+}
+QComboBox* SpectralSettingsWidget::takeInlineControl(const QString& suffix) {
+    auto* control=suffix=="Method"?method_:suffix=="Window"?window_:suffix=="Overlap"?overlap_:nullptr;
+    if(!control)return nullptr;
+    auto* form=qobject_cast<QFormLayout*>(layout());
+    if(form&&form->indexOf(control)>=0){
+        const auto taken=form->takeRow(control);
+        if(taken.labelItem){delete taken.labelItem->widget();delete taken.labelItem;}
+        delete taken.fieldItem;
+    }
+    return control;
+}
 void SpectralSettingsWidget::setParameters(const SpectralParameters& p,SpectrumStatistic statistic) {
-    updating_=true;method_->setCurrentIndex(psd_?static_cast<int>(p.method):p.method==SpectralMethod::Multitaper?1:0);window_->setCurrentIndex(static_cast<int>(p.window));
-    overlap_->setProperty("lastValidValue",p.overlap*100);duration_->setProperty("lastValidValue",p.segmentMilliseconds);displayComboValue(overlap_,p.overlap*100,{});displayComboValue(duration_,p.segmentMilliseconds,{});
-    displayParameterValue(beta_,p.kaiserBeta);displayParameterValue(nw_,p.timeBandwidth);
-    displayParameterValue(tapers_,p.tapers);displayParameterValue(order_,p.burgOrder);mean_->setChecked(p.removeMean);
+    if(!validSpectralParameters(p))return;
+    auto accepted=p;
+    if(!psd_&&accepted.method!=SpectralMethod::Multitaper)accepted.method=SpectralMethod::Welch;
+    if(accepted.method==SpectralMethod::Bartlett)accepted.overlap=0;
+    updating_=true;
+    if(initialized_&&activeMethod_!=accepted.method){
+        cacheCurrentMethod();
+        // A method change leaves its drafts behind; only committed values
+        // belong in history. Ordinary domain refreshes preserve active drafts.
+        for(auto* combo:{overlap_,duration_}){
+            for(auto* child:combo->children())if(auto* draft=dynamic_cast<ParameterDraft*>(child))draft->discard();
+            setParameterError(combo,{});
+        }
+        for(auto* spin:{static_cast<QAbstractSpinBox*>(beta_),static_cast<QAbstractSpinBox*>(nw_),static_cast<QAbstractSpinBox*>(tapers_),static_cast<QAbstractSpinBox*>(order_)}){
+            if(auto* draft=dynamic_cast<ParameterDraft*>(spin))draft->discard();
+            setParameterError(spin,{});
+        }
+    }
+    activeMethod_=accepted.method;
+    methodHistory_[static_cast<int>(activeMethod_)]=accepted;
+    method_->setCurrentIndex(psd_?static_cast<int>(accepted.method):accepted.method==SpectralMethod::Multitaper?1:0);window_->setCurrentIndex(static_cast<int>(accepted.window));
+    overlap_->setProperty("lastValidValue",accepted.overlap*100);duration_->setProperty("lastValidValue",accepted.segmentMilliseconds);displayComboValue(overlap_,accepted.overlap*100,{});displayComboValue(duration_,accepted.segmentMilliseconds,{});
+    displayParameterValue(beta_,accepted.kaiserBeta);displayParameterValue(nw_,accepted.timeBandwidth);
+    // Imported committed values can be more precise than the spin's display.
+    // Visiting another method must not turn display rounding into an edit.
+    for(auto* control:{beta_,nw_}){
+        control->setProperty("spectralExactValue",control==beta_?accepted.kaiserBeta:accepted.timeBandwidth);
+        control->setProperty("spectralShownValue",control->value());
+    }
+    displayParameterValue(tapers_,accepted.tapers);displayParameterValue(order_,accepted.burgOrder);mean_->setChecked(accepted.removeMean);
+    for(auto* combo:{overlap_,duration_})if(!combo->property("parameterDraft").toBool())setParameterError(combo,{});
     if(statistic_)statistic_->setCurrentIndex(static_cast<int>(statistic));updateAvailability();updating_=false;
+    initialized_=true;
+}
+void SpectralSettingsWidget::cacheCurrentMethod(){
+    if(!initialized_)return;
+    const auto p=parameters();
+    if(validSpectralParameters(p))methodHistory_[static_cast<int>(activeMethod_)]=p;
+}
+void SpectralSettingsWidget::changeMethod(){
+    const auto selected=psd_?static_cast<SpectralMethod>(method_->currentIndex()):static_cast<SpectralMethod>(method_->currentData().toInt());
+    if(selected==activeMethod_)return;
+    cacheCurrentMethod();
+    auto next=methodHistory_[static_cast<int>(selected)].value_or(SpectralParameters{});
+    next.method=selected;
+    const auto currentStatistic=statistic();
+    setParameters(next,currentStatistic);
+    emit edited();
 }
 void SpectralSettingsWidget::updateAvailability(){const auto p=parameters();const bool mt=p.method==SpectralMethod::Multitaper,burg=p.method==SpectralMethod::Burg,period=p.method==SpectralMethod::Periodogram;
-    window_->setEnabled(!mt&&!burg);beta_->setEnabled(!mt&&!burg&&p.window==SpectralWindow::Kaiser);nw_->setEnabled(mt);tapers_->setEnabled(mt);order_->setEnabled(burg);
-    if(p.method==SpectralMethod::Bartlett){overlap_->setProperty("lastValidValue",0.0);displayComboValue(overlap_,0.0,{});}
-    overlap_->setEnabled(!period&&p.method!=SpectralMethod::Bartlett);duration_->setEnabled(!period);
-    if(statistic_)statistic_->setEnabled(!period);
-    overlap_->setToolTip(p.method==SpectralMethod::Bartlett?"Bartlett 固定零重叠":"配置重叠；短窄带时频图会显示实际重叠");
+    auto* form=qobject_cast<QFormLayout*>(layout());
+    const auto row=[form](QWidget* field,bool visible){if(!field)return;field->setProperty("chartSettingRelevant",visible);if(form&&form->indexOf(field)>=0){form->setRowVisible(field,visible);field->setEnabled(visible);}};
+    row(window_,!mt&&!burg);row(beta_,!mt&&!burg&&p.window==SpectralWindow::Kaiser);
+    row(nw_,mt);row(tapers_,mt);row(order_,burg);
+    row(overlap_,!period&&p.method!=SpectralMethod::Bartlett);row(duration_,!period);row(statistic_,!period);
+    method_->setToolTip(p.method==SpectralMethod::Bartlett?"Bartlett：固定 0% 重叠，各段互不重叠":
+        burg?"Burg：阶数 1–256，且必须小于真实有效样本数；补零不参与模型拟合":
+        mt?"DPSS 多窗：NW 0.5–32，窗数 K 1–32；短数据受有效样本支持限制":
+        period?"周期图：单次 FFT，使用窗函数；重叠、分段时长和统计类型不适用":
+        "Welch：按分段时长与重叠率估计；短数据的有效观测和补零由分析诊断显示，补零不提高真实分辨率");
+    if(!overlap_->property("invalid").toBool())overlap_->setToolTip("重叠率范围 [0, 100%)；短窄带时频图会显示实际重叠");
+    if(!duration_->property("invalid").toBool())duration_->setToolTip("0 为自动 N/B；其它值为实际观测窗时长（毫秒），范围 [0, 1e9]；数据不足时显示有效观测和补零量");
 }
 }

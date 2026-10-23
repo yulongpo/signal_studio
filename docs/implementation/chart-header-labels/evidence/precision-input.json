@@ -1,0 +1,9 @@
+{
+  "projectPath": "D:/project/signal_studio_rebuild/out/tasks/chart-header-labels/02-acceptance/diagnostics/precision-project/project.json",
+  "recordedUtc": "2026-10-21T12:46:25.1569126Z",
+  "sha256": "1374e59e739c0654caad060005f57b83beca7dc60b7e5b9b66b421c9c83a9c93",
+  "referenceLevelDb": -79.0121397394,
+  "dynamicRangeDb": 113.814300793,
+  "window": 4,
+  "inputKind": "v6 real-IQ journey project with display-only changes; auxiliary axis matches selected PSD mode"
+}

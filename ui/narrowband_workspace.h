@@ -2,6 +2,7 @@
 
 #include "application/session.h"
 #include "infrastructure/channel_processor.h"
+#include "infrastructure/narrowband_analysis/analysis_service.h"
 
 #include <QImage>
 #include <QJsonObject>
@@ -43,7 +44,9 @@ public:
     bool hasPendingInteraction() const;
     void cancelInteractions();
     void cancelWork();
+    void cancelAnalysis(bool userInitiated = false);
     QString dataStatusText() const;
+    QString displayDiagnosticsText() const;
     int currentPageIndex() const;
     void activatePageForAcceptance(int index);
     bool visibleChartsSettled() const;
@@ -55,18 +58,24 @@ public:
     QString visibleBackendDescription() const;
     QJsonObject renderStatistics() const;
     PowerAnalysisSnapshot powerSnapshot() const;
+    std::shared_ptr<const NarrowbandAnalysisResult> analysisResult() const { return analysisResult_; }
     void invalidateVisibleOverlays();
 
 signals:
+    void pageChanged(int index);
     void displayParametersChanged();
     void autoPowerFitRequested();
 
 private:
+    void requestAnalysis(bool force = false);
+    bool invalidateChangedAnalysisSource();
+    void installAnalysis();
     void buildPages();
     void showPage(NarrowbandPage page);
     void updateFrequencyAxisLabels();
     void updateLinkedCursors();
     void updatePowerColors();
+    void fitWaveformAmplitude();
     void expandAnalysisTime();
     void finishChartWheel();
     void cancelChartWheel();
@@ -94,8 +103,10 @@ private:
     void exportBitstream();
     void copyBitstream();
     void updateCaption();
+    void setDataStatus(const QString& summary, const QString& details = {});
     void markRecognitionStale(const QString& reason);
     void updateRecognitionDetail();
+    void updateRecognitionSummary();
 
     struct RecognitionSegment {
         std::uint64_t sourceBegin = 0;
@@ -112,10 +123,12 @@ private:
     NarrowbandChart* navigation_ = nullptr;
     NarrowbandChart *waveform_ = nullptr, *psd_ = nullptr, *stft_ = nullptr;
     NarrowbandChart *modulationStft_ = nullptr, *recognitionStft_ = nullptr;
-    NarrowbandChart *constellationSmall_ = nullptr, *constellationLarge_ = nullptr, *constellationDemod_ = nullptr;
+    NarrowbandChart *constellationLarge_ = nullptr, *constellationDemod_ = nullptr;
     NarrowbandChart *eyeSmall_ = nullptr, *eyeLarge_ = nullptr, *eyeDemod_ = nullptr, *timeline_ = nullptr;
     QLabel *caption_ = nullptr, *dataStatus_ = nullptr, *analysisStatus_ = nullptr;
     QLabel *recognitionTop5_ = nullptr;
+    std::array<QLabel*, 4> recognitionStats_{};
+    QString displayDiagnostics_;
     QProgressBar* recognitionProgress_ = nullptr;
     QPushButton *runRecognition_ = nullptr, *stopRecognition_ = nullptr;
     QComboBox *model_ = nullptr, *fftSize_ = nullptr, *waveformMode_ = nullptr;
@@ -160,6 +173,15 @@ private:
     int recognitionProgressValue_ = 0;
     bool recognitionActive_ = false;
     ChannelSampleCache sampleCache_;
+    std::unique_ptr<NarrowbandAnalysisService> analysisService_;
+    std::shared_ptr<const NarrowbandAnalysisResult> analysisResult_;
+    std::optional<AnalysisIdentity> lastAnalysisIdentity_;
+    std::string lastAnalysisPhysicalRevision_;
+    NarrowbandAnalysisSettings lastAnalysisSettings_;
+    TimeRange lastAnalysisTime_;
+    std::uint64_t analysisGeneration_ = 0;
+    bool analysisPending_ = false;
+    QLabel* modulationStatus_ = nullptr;
     ChannelSampleCacheStats displayCacheStats_;
     std::vector<float> averagePsd_;
     std::shared_ptr<const SpectralFrame> averagePower_;

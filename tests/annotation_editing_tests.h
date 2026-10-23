@@ -128,6 +128,7 @@ void UiTests::annotationDirectTableDraftsAndPublication() {
   // Actual Cancel clicks must bypass the generic outside-click commit policy.
   window.session().selectMarks({importedId}, importedId);
   window.refresh();
+  QVERIFY(openInspectorPage(window, "Annotation"));
   auto* low = window.findChild<QLineEdit*>("annotationLowerMHz");
   auto* cancel = window.findChild<QPushButton*>("cancelAnnotationGeometry");
   auto* properties = window.findChild<QScrollArea*>("propScroll");
@@ -138,9 +139,11 @@ void UiTests::annotationDirectTableDraftsAndPublication() {
       properties->viewport()->mapFromGlobal(
           cancel->mapToGlobal(cancel->rect().center()))));
   const auto beforeCancel = findAnnotation(*file, importedId)->revisionId;
+  QVERIFY(revealParameter(low));
   low->setFocus();
   low->selectAll();
   QTest::keyClicks(low, "99.81");
+  QVERIFY(revealParameter(cancel));
   QTest::mouseClick(cancel, Qt::LeftButton);
   QCOMPARE(findAnnotation(*file, importedId)->revisionId, beforeCancel);
   QVERIFY(!low->property("parameterDraft").toBool());
@@ -151,6 +154,7 @@ void UiTests::annotationDirectTableDraftsAndPublication() {
   editor = window.findChild<QLineEdit*>("annotationTableEditor");
   QVERIFY(editor && editor->isVisible());
   QTest::keyClicks(editor, "Must cancel with real button");
+  QVERIFY(revealParameter(cancel));
   QTest::mouseClick(cancel, Qt::LeftButton);
   QCOMPARE(findAnnotation(*file, importedId)->revisionId, beforeCancel);
   QCOMPARE(findAnnotation(*file, importedId)->name,
@@ -180,8 +184,11 @@ void UiTests::annotationAtomicRangeAndUnknownFrequency() {
   window.session().selectMarks({id}, id);
   showWindow(window);
   window.refresh();
+  QVERIFY(openInspectorPage(window, "Annotation"));
   auto* panel = window.findChild<AnnotationPanel*>("annotationPanel");
   QVERIFY(panel);
+  auto* editRange = window.findChild<QPushButton*>("editAnnotationRange");
+  QVERIFY(editRange && revealParameter(editRange));
   const auto history = window.session().annotations().historySize(*file);
   bool dialogChecked = false;
   QTimer::singleShot(0, &window, [&] {
@@ -202,7 +209,7 @@ void UiTests::annotationAtomicRangeAndUnknownFrequency() {
     QTest::keyClicks(end, "65");
     apply->click();
   });
-  panel->editRange();
+  QTest::mouseClick(editRange, Qt::LeftButton);
   QVERIFY(dialogChecked);
   annotation = findAnnotation(*file, id);
   QCOMPARE(annotation->segments.front(), first);
@@ -228,8 +235,10 @@ void UiTests::annotationAtomicRangeAndUnknownFrequency() {
   QVERIFY(originalEvidence == *unknown.originEvidence);
   window.session().selectMarks({unknown.id}, unknown.id);
   window.refresh();
+  QVERIFY(openInspectorPage(window, "Annotation"));
   auto* low = window.findChild<AdaptiveValueEdit*>("annotationLowerMHz");
   QVERIFY(low && low->isEnabled());
+  QVERIFY(revealParameter(low));
   QVERIFY(!window.findChild<QLineEdit*>("annotationStartMilliseconds")
                ->isEnabled());
   low->setFocus();
@@ -309,15 +318,22 @@ void UiTests::annotationDeletePreviewPreservesDraftAndChannels() {
   file->channels.push_back(channel);
   const auto snapshot = channel.sourceSnapshot;
   window.session().selectMarks({id, annotationUiId(4)}, id);
+  window.session().setAuxiliaryMode(AuxiliaryMode::Psd);
   showWindow(window);
   window.refresh();
   auto* psdScope = window.findChild<QComboBox*>("psdScope");
   QVERIFY(psdScope);
+  QVERIFY(revealParameter(psdScope));
   psdScope->setCurrentIndex(1);
   QVERIFY(file->display.psdFromSelection);
+  QVERIFY(openInspectorPage(window, "Annotation"));
+  window.findChild<QPushButton*>("resultTab")->click();
+  auto* remove = window.findChild<QPushButton*>("deleteSelectedAnnotations");
+  QVERIFY(remove && revealParameter(remove));
   auto* panel = window.findChild<AnnotationPanel*>("annotationPanel");
   auto* low = window.findChild<QLineEdit*>("annotationLowerMHz");
   QVERIFY(panel && low);
+  QVERIFY(revealParameter(low));
   low->setFocus();
   low->selectAll();
   QTest::keyClicks(low, "99.81");
@@ -333,7 +349,7 @@ void UiTests::annotationDeletePreviewPreservesDraftAndChannels() {
                      summary->property("channelCount").toInt() == 1;
     dialog->findChild<QPushButton*>("deleteAnnotationsCancel")->click();
   });
-  panel->deleteSelected();
+  QTest::mouseClick(remove, Qt::LeftButton);
   QVERIFY(previewChecked);
   QCOMPARE(findAnnotation(*file, id)->revisionId, revision);
   QCOMPARE(findAnnotation(*file, id)->segments.front().range, original);
@@ -344,7 +360,7 @@ void UiTests::annotationDeletePreviewPreservesDraftAndChannels() {
     if (dialog)
       dialog->findChild<QPushButton*>("deleteAnnotationsConfirm")->click();
   });
-  panel->deleteSelected();
+  QTest::mouseClick(remove, Qt::LeftButton);
   QVERIFY(findAnnotation(*file, id)->deleted);
   QVERIFY(findAnnotation(*file, annotationUiId(4))->deleted);
   QCOMPARE(file->channels.size(), std::size_t{1});
@@ -403,9 +419,11 @@ void UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() {
   window.session().selectMarks({id}, id);
   showWindow(window);
   window.refresh();
+  QVERIFY(openInspectorPage(window, "Annotation"));
   auto* low = window.findChild<QLineEdit*>("annotationLowerMHz");
   auto* open = window.findChild<QAction*>("openProjectJsonAction");
   QVERIFY(low && open);
+  QVERIFY(revealParameter(low));
   const auto revision = findAnnotation(*file, id)->revisionId;
   const auto original = findAnnotation(*file, id)->segments.front().range;
   low->setFocus();
@@ -499,6 +517,7 @@ void UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() {
   const bool openedProject = window.openProject(saved);
   QVERIFY2(modalFailure.isEmpty(), qPrintable(modalFailure));
   QVERIFY2(openedProject, "Opening the saved project failed");
+  QVERIFY(window.findChild<QWidget*>("annotationPage")->isVisible());
   QVERIFY(window.session().projectGeneration() > generation);
   QVERIFY(!window.findChild<QLineEdit*>("annotationTableEditor"));
   file = window.session().activeFile();

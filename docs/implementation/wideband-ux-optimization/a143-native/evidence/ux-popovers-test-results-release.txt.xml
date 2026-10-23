@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite name="UxTests" timestamp="2026&#x002D;10&#x002D;21T15:58:37" hostname="HH&#x002D;laptop" tests="5" failures="0" errors="0" skipped="0" time="0.489">
+  <properties>
+    <property name="QTestVersion" value="6.11.1"/>
+    <property name="QtVersion" value="6.11.1"/>
+    <property name="QtBuild" value="Qt 6.11.1 (x86_64&#x002D;little_endian&#x002D;llp64 shared (dynamic) release build; by MSVC 2022)"/>
+  </properties>
+  <testcase name="initTestCase" classname="UxTests" time="0.000"/>
+  <testcase name="uxP01_popupDismissal" classname="UxTests" time="0.009">
+    <system-err>
+      <![CDATA[QFontDatabase: Cannot find font directory D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxP02_popupChildrenAndGeometry" classname="UxTests" time="0.471">
+    <system-err>
+      <![CDATA[This plugin does not support raise()]]>
+      <![CDATA[This plugin does not support grabbing the keyboard]]>
+      <![CDATA[QFont::setPointSizeF: Point size <= 0 (-0.750000), must be greater than 0]]>
+      <![CDATA[QFont::setPointSizeF: Point size <= 0 (-0.750000), must be greater than 0]]>
+      <![CDATA[QFont::setPointSizeF: Point size <= 0 (-0.750000), must be greater than 0]]>
+      <![CDATA[This plugin does not support raise()]]>
+      <![CDATA[This plugin does not support grabbing the keyboard]]>
+      <![CDATA[This plugin does not support raise()]]>
+      <![CDATA[This plugin does not support grabbing the keyboard]]>
+      <![CDATA[QFont::setPointSizeF: Point size <= 0 (-0.750000), must be greater than 0]]>
+      <![CDATA[QFont::setPointSizeF: Point size <= 0 (-0.750000), must be greater than 0]]>
+      <![CDATA[QFont::setPointSizeF: Point size <= 0 (-0.750000), must be greater than 0]]>
+    </system-err>
+  </testcase>
+  <testcase name="uxS06_popoverDraftPolicy" classname="UxTests" time="0.005"/>
+  <testcase name="cleanupTestCase" classname="UxTests" time="0.000"/>
+</testsuite>

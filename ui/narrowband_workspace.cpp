@@ -1,4 +1,5 @@
 #include "ui/parameter_input.h"
+#include "domain/constellation.h"
 #include "infrastructure/source_loader.h"
 #include <chrono>
 #include "infrastructure/spectral_analysis.h"
@@ -34,13 +35,16 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QResizeEvent>
+#include <QScrollArea>
 #include <QSignalBlocker>
 #include <QSettings>
 #include <QSlider>
 #include <QSpinBox>
+#include <QSplitter>
 #include <QStackedWidget>
 #include <QTimer>
 #include <QToolTip>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <QClipboard>
@@ -65,6 +69,16 @@ namespace signalstudio {
 namespace {
 
 QString str(const std::string& value) { return QString::fromUtf8(value.data(), static_cast<qsizetype>(value.size())); }
+void enableStage(NarrowbandAnalysisSettings& s, AnalysisStage stage) {
+    if ((stage==AnalysisStage::CfoCorrected || stage==AnalysisStage::CarrierRecovered) && s.cfoMode==CfoMode::Off)s.cfoMode=CfoMode::Automatic;
+    if (stage == AnalysisStage::MatchedFiltered) s.matchedFilter = true;
+    if (stage >= AnalysisStage::TimingAligned) s.timingRecovery = true;
+    if (stage == AnalysisStage::CarrierRecovered) s.carrierRecovery = true;
+}
+void demoteStage(NarrowbandAnalysisSettings& s, AnalysisStage removed, AnalysisStage fallback) {
+    for (auto* stage : {&s.constellationStage, &s.eyeStage})
+        if (*stage >= removed) *stage = fallback;
+}
 QLabel* textLabel(const QString& value, const QString& id = {}) {
     auto* label = new QLabel(value); label->setWordWrap(true);
     if (!id.isEmpty()) label->setObjectName(id);
@@ -73,6 +87,19 @@ QLabel* textLabel(const QString& value, const QString& id = {}) {
 QPushButton* actionButton(const QString& value, const QString& id, QLayout* layout) {
     auto* button = new QPushButton(value); button->setObjectName(id); button->setCursor(Qt::PointingHandCursor);
     layout->addWidget(button); return button;
+}
+void displayFftValue(QComboBox* combo, int points) {
+    const QSignalBlocker blocker(combo);
+    for (int row = 0; row < combo->count(); ++row) {
+        const auto text = QString::number(combo->itemData(row).toInt());
+        if (combo->itemText(row) != text) combo->setItemText(row, text);
+    }
+    int index = combo->findData(points);
+    if (index < 0 && points >= 16 && points <= 262144 && (points & (points - 1)) == 0) {
+        combo->addItem(QString::number(points), points);
+        index = combo->count() - 1;
+    }
+    if (index >= 0) combo->setCurrentIndex(index);
 }
 QString waveformAxisLabel(NarrowbandWaveform mode, const FileMetadata* metadata = nullptr) {
     if (metadata) return sourceUnits(waveformAxisLabel(mode), *metadata);
@@ -92,16 +119,18 @@ class NarrowbandChart final : public QWidget {
 public:
     explicit NarrowbandChart(ChartMode mode, QWidget* parent = nullptr) : QWidget(parent), mode_(mode) {
         setMinimumSize(100, 90); setMouseTracking(true); setFocusPolicy(Qt::StrongFocus);
-        softwareFallback_ = qApp && qApp->property("softwareRenderer").toBool();
+        softwareFallback_ = (qApp && qApp->property("softwareRenderer").toBool()) || QGuiApplication::platformName()=="offscreen";
         auto* layout = new QVBoxLayout(this); layout->setContentsMargins(0, 0, 0, 0); layout->setSpacing(0);
-        surface_ = new AcceleratedSurface(this); surface_->setMinimumSize(80, 70); layout->addWidget(surface_);
-        surface_->setPainter([this](QPainter& painter) { draw(painter); });
-        if (mode_ == ChartMode::Curve || mode_ == ChartMode::Spectrum || mode_ == ChartMode::Heatmap)
-            surface_->setInversePainter([this](QPainter& painter) { drawCursors(painter, true); });
-        connect(surface_, &AcceleratedSurface::backendFailed, this, [this](const QString& reason) {
-            softwareFallback_ = true; surface_->hide(); status_ = QStringLiteral("QPainter 软件回退 · %1").arg(reason); update();
-        });
-        if (softwareFallback_) surface_->hide();
+        if(!softwareFallback_) {
+            surface_ = new AcceleratedSurface(this); surface_->setMinimumSize(80, 70); layout->addWidget(surface_);
+            surface_->setPainter([this](QPainter& painter) { draw(painter); });
+            if (mode_ == ChartMode::Curve || mode_ == ChartMode::Spectrum || mode_ == ChartMode::Heatmap)
+                surface_->setInversePainter([this](QPainter& painter) { drawCursors(painter, true); });
+            connect(surface_, &AcceleratedSurface::backendFailed, this, [this](const QString& reason) {
+                softwareFallback_ = true; surface_->hide();
+                setStatus(QStringLiteral("QPainter 软件回退 · %1").arg(reason)); update();
+            });
+        }
         setProperty("equalAxisScale", mode_ == ChartMode::Scatter);
         setProperty("xAxisLabel", QString{});
         setProperty("yAxisLabel", QString{});
@@ -120,6 +149,7 @@ public:
             setProperty("xAxisLabel", QStringLiteral("时间 (符号周期)"));
             setProperty("yAxisLabel", yAxisLabel_);
         } else if (mode_ == ChartMode::Scatter) {
+            yAxisMinimum_=-1; yAxisMaximum_=1; yAxisLabel_="归一化";
             setProperty("xAxisLabel", QStringLiteral("I (归一化)"));
             setProperty("yAxisLabel", QStringLiteral("Q (归一化)"));
         }
@@ -131,8 +161,8 @@ public:
         const double side = std::max(1.0, std::min(base.width(), base.height()));
         return QRectF(base.center().x() - side / 2, base.center().y() - side / 2, side, side);
     }
-    void setSeries(std::vector<std::vector<float>> series, QString status = {}) {
-        series_ = std::move(series); status_ = std::move(status);
+    void setSeries(std::vector<std::vector<float>> series, QString status = {}, QString summary = {}) {
+        series_ = std::move(series); setStatus(std::move(status), std::move(summary));
         setProperty("samplePointCount", samplePointsVisible_ && !series_.empty() ? static_cast<qulonglong>(series_.front().size()) : 0);
         updateFitDiagnostics(); markGeometryDirty();
     }
@@ -184,7 +214,7 @@ public:
             palette_ = palette;
             if (!scalarRaster_.isNull()) {
                 raster_.setColorTable(chart_palette::colorTable(palette_));
-                surface_->setHeatmap(scalarRaster_, plotRect(), rasterRevision_, chart_palette::texture(palette_));
+                if(surface_)surface_->setHeatmap(scalarRaster_, plotRect(), rasterRevision_, chart_palette::texture(palette_));
                 invalidate();
             }
         }
@@ -205,7 +235,7 @@ public:
         updateFitDiagnostics();
         markGeometryDirty();
     }
-    void setRaster(QImage image, QString status = {}, QString revision = {}) {
+    void setRaster(QImage image, QString status = {}, QString revision = {}, QString summary = {}) {
         if (!image.isNull()) {
             scalarRaster_ = image.format() == QImage::Format_Grayscale8 ? image : image.convertToFormat(QImage::Format_Grayscale8);
             raster_ = QImage(scalarRaster_.size(), QImage::Format_Indexed8);
@@ -215,20 +245,65 @@ public:
         } else {
             scalarRaster_ = {}; raster_ = {};
         }
-        status_ = std::move(status);
+        setStatus(std::move(status), std::move(summary));
         const auto key = revision.isEmpty() ?
             QString::number(reinterpret_cast<quintptr>(this), 16) + QLatin1Char('/') + QString::number(scalarRaster_.cacheKey()) : revision;
         rasterRevision_ = key;
-        surface_->setHeatmap(scalarRaster_, scalarRaster_.isNull() ? QRectF{} : plotRect(), key, chart_palette::texture(palette_));
+        if(surface_)surface_->setHeatmap(scalarRaster_, scalarRaster_.isNull() ? QRectF{} : plotRect(), key, chart_palette::texture(palette_));
         invalidate();
     }
-    void setPoints(std::vector<std::complex<float>> points, QString status = {}) {
-        points_ = std::move(points); status_ = std::move(status); surface_->setHeatmap({}, {}, QString{}); markGeometryDirty();
+    void setPoints(std::vector<std::complex<float>> points, QString status = {}, QString summary = {}) {
+        points_ = std::move(points); setProperty("constellationPointCount",static_cast<qulonglong>(points_.size()));
+        if(points_.empty()){setProperty("realIqSource",false);setProperty("sourceChannelId",QString{});setProperty("actualSampleRateHz",qulonglong{0});}
+        setStatus(std::move(status), std::move(summary)); if(surface_)surface_->setHeatmap({}, {}, QString{}); markGeometryDirty();
     }
-    void setEye(std::vector<std::vector<float>> traces, QString status = {}) {
-        series_ = std::move(traces); status_ = std::move(status); surface_->setHeatmap({}, {}, QString{}); markGeometryDirty();
+    void setIqRange(double minimum,double maximum,const QString& unit) {
+        setYAxisRange(minimum,maximum,unit);
+        setProperty("iqAxisMinimum",minimum);setProperty("iqAxisMaximum",maximum);
+        setProperty("iqUnit",unit);
+    }
+    QPointF iqPoint(std::complex<float> point) const {
+        const auto rect=plotRect();const double span=std::max(1e-15,yAxisMaximum_-yAxisMinimum_);
+        return {rect.left()+(point.real()-yAxisMinimum_)/span*rect.width(),
+                rect.bottom()-(point.imag()-yAxisMinimum_)/span*rect.height()};
+    }
+    void setEye(std::vector<std::vector<float>> traces, QString status = {}, QString summary = {}) {
+        series_ = std::move(traces);eyeComponents_.clear();setProperty("realEyeSource",false);
+        setProperty("eyeTraceCount",static_cast<qulonglong>(series_.size()));
+        setStatus(std::move(status), std::move(summary)); if(surface_)surface_->setHeatmap({}, {}, QString{}); markGeometryDirty();
+    }
+    void setRealEye(const NarrowbandAnalysisResult& result,int component) {
+        series_.clear();eyeComponents_.clear();
+        for(const auto& trace:result.eyes) {
+            if(component!=2){series_.push_back(trace.i);eyeComponents_.push_back(0);}
+            if(component!=1){series_.push_back(trace.q);eyeComponents_.push_back(1);}
+        }
+        setYAxisRange(result.eyeAxisMinimum,result.eyeAxisMaximum,result.gain!=1?"归一化 IQ 幅度":"解码 IQ 幅度");
+        setSymbolPeriod(result.eyePeriods);
+        setProperty("realEyeSource",true);setProperty("eyeTraceCount",static_cast<qulonglong>(result.eyes.size()));
+        setProperty("eyeComponentCount",component==0?2:1);setProperty("eyePeriods",result.eyePeriods);
+        setProperty("eyePointsPerUi",result.eyePointsPerUi);setProperty("physicalSamplesPerSymbol",result.samplesPerSymbol);
+        setStatus(str(result.eyeMessage),QString("真实 IQ · %1 条 · %2 UI · %3").arg(result.eyes.size()).arg(result.eyePeriods)
+          .arg(result.eyeStage>=AnalysisStage::TimingAligned && result.timingLocked?"定时对齐":"周期假设，未锁定"));
+        if(surface_)surface_->setHeatmap({}, {}, QString{});markGeometryDirty();
+    }
+    double amplitudeUnit(float value) const {return (yAxisMaximum_-value)/std::max(1e-15,yAxisMaximum_-yAxisMinimum_);}
+    QColor eyeColor(std::size_t series) const {
+        if(series<eyeComponents_.size())return eyeComponents_[series]==0?QColor(88,206,242,80):QColor(237,193,111,80);
+        return QColor(72,207,196,80+static_cast<int>(series%75));
     }
     QString status() const { return status_; }
+    QString displayStatus() const { return displayStatus_; }
+    std::optional<std::pair<double, double>> valueRange() const {
+        double minimum = std::numeric_limits<double>::infinity(), maximum = -minimum;
+        for (const auto& line : series_) for (const float value : line) {
+            if (!std::isfinite(value)) continue;
+            minimum = std::min(minimum, static_cast<double>(value));
+            maximum = std::max(maximum, static_cast<double>(value));
+        }
+        if (!std::isfinite(minimum) || !std::isfinite(maximum)) return std::nullopt;
+        return std::pair{minimum, maximum};
+    }
     bool isDisplaySettled() const { return softwareFallback_ || (surface_ && surface_->isReady() && !surface_->hasPendingUploads()); }
     bool gpuReady() const { return !softwareFallback_ && surface_ && surface_->isReady(); }
     quint64 textureUploadCount() const { return softwareFallback_ || !surface_ ? 0 : surface_->textureUploadCount(); }
@@ -271,7 +346,7 @@ protected:
     void resizeEvent(QResizeEvent* event) override {
         // Hidden pages receive data before their final layout size is known.
         // Reposition the same GPU texture when the chart becomes visible.
-        if (!scalarRaster_.isNull())
+        if (surface_ && !scalarRaster_.isNull())
             surface_->setHeatmap(scalarRaster_, plotRect(), rasterRevision_, chart_palette::texture(palette_));
         markGeometryDirty();
         QWidget::resizeEvent(event);
@@ -404,7 +479,7 @@ private:
             for (std::size_t index = 0; index < values.size(); ++index) {
                 const double x = plot.left() + plot.width() * seriesUnit(index, values.size());
                 double y = .5;
-                if (eye) y = .5 - std::clamp<double>(values[index], -1.3, 1.3) * .34;
+                if (eye) y = amplitudeUnit(values[index]);
                 else if (mode_ == ChartMode::Curve || mode_ == ChartMode::Spectrum)
                     y = 1.0 - std::clamp((static_cast<double>(values[index]) - yAxisMinimum_) / span, 0.0, 1.0);
                 else if (mode_ == ChartMode::Timeline) y = 1.0 - std::clamp<double>(values[index], 0.0, 1.0);
@@ -417,11 +492,11 @@ private:
         if (mode_ == ChartMode::Scatter && !points_.empty()) {
             const auto first = static_cast<quint32>(vertices.size());
             const QColor color("#53c8f1");
-            const double side = std::min(plot.width(), plot.height());
             constexpr int sectors = 8;
+            int outside=0;
             for (const auto& point : points_) {
-                const QPointF center(plot.center().x() + point.real() * side * .42,
-                                     plot.center().y() - point.imag() * side * .42);
+                const QPointF center=iqPoint(point);
+                if(!plot.contains(center)) {++outside;continue;}
                 for (int sector = 0; sector < sectors; ++sector) {
                     const double a0 = 2.0 * std::numbers::pi * sector / sectors;
                     const double a1 = 2.0 * std::numbers::pi * (sector + 1) / sectors;
@@ -430,12 +505,13 @@ private:
                     append(center + QPointF(3.0 * std::cos(a1), 3.0 * std::sin(a1)), color);
                 }
             }
+            setProperty("outsidePointCount",outside);
             draws.push_back({AcceleratedSurface::ChartDrawCall::Topology::Triangles, first,
                              static_cast<quint32>(vertices.size() - first)});
         } else if (mode_ != ChartMode::Navigation) {
             const std::array<QColor, 3> colors{QColor("#58cef2"), QColor("#edc16f"), QColor("#f179ac")};
             for (std::size_t series = 0; series < series_.size(); ++series)
-                addLine(series_[series], mode_ == ChartMode::Eye ? QColor(72, 207, 196, 80 + series % 75) : colors[series % colors.size()],
+                addLine(series_[series], mode_ == ChartMode::Eye ? eyeColor(series) : colors[series % colors.size()],
                         mode_ == ChartMode::Eye);
             if (mode_ == ChartMode::Curve && samplePointsVisible_) {
                 constexpr int sectors = 8;
@@ -467,6 +543,7 @@ private:
         if (!software) rebuildGeometry();
         painter.setRenderHint(QPainter::Antialiasing, true);
         const QRectF rect = plotRect();
+        if(mode_==ChartMode::Heatmap)setProperty("heatmapDrawRect",raster_.isNull()?QRectF{}:rect);
         if (software)
             painter.fillRect(QRectF(0, 0, width(), height()), QColor("#101b2a"));
         if (software && mode_ == ChartMode::Heatmap && !raster_.isNull()) {
@@ -481,6 +558,12 @@ private:
                 painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y));
             }
         }
+        if(mode_==ChartMode::Scatter && yAxisMinimum_<=0 && yAxisMaximum_>=0) {
+            const auto zero=iqPoint({0,0});painter.setPen(QPen(QColor("#7896ad"),1,Qt::DashLine));
+            painter.drawLine(QPointF(zero.x(),rect.top()),QPointF(zero.x(),rect.bottom()));
+            painter.drawLine(QPointF(rect.left(),zero.y()),QPointF(rect.right(),zero.y()));
+            setProperty("iqZeroPixel",zero);
+        }
         painter.setPen(QPen(QColor("#607a91"), 1)); painter.drawRect(rect);
         chart_feedback::drawAxisHighlight(painter, this->rect(), rect, hoverZone_);
         painter.setFont(QFont("Consolas", 8)); painter.setPen(QColor("#86a4bd"));
@@ -493,14 +576,14 @@ private:
                     (frequencyAbsolute_ ? frequencyCenterHz_ : 0.0);
                 label = QString::number(value / frequencyScale_, 'g', 4);
             } else if (mode_ == ChartMode::Scatter || mode_ == ChartMode::Eye)
-                label = QString::number(1.0 - tick * .5, 'g', 3);
+                label = QString::number(yAxisMaximum_-(yAxisMaximum_-yAxisMinimum_)*tick/4,'g',4);
             else if (mode_ == ChartMode::Timeline)
                 label = QString::number(1.0 - tick * .25, 'g', 3);
             if (!label.isEmpty()) painter.drawText(QRectF(0, rect.top() + rect.height() * tick / 4.0 - 8, 48, 16), Qt::AlignRight, label);
         }
         const QString verticalLabel = mode_ == ChartMode::Curve || mode_ == ChartMode::Spectrum ? yAxisLabel_ :
-            mode_ == ChartMode::Heatmap ? frequencyAxisLabel_ : mode_ == ChartMode::Scatter ? QStringLiteral("Q (归一化)") :
-            mode_ == ChartMode::Eye ? QStringLiteral("幅度 (归一化)") : QStringLiteral("置信度 (0–1)");
+            mode_ == ChartMode::Heatmap ? frequencyAxisLabel_ : mode_ == ChartMode::Scatter ? "Q ("+yAxisLabel_+")" :
+            mode_ == ChartMode::Eye ? yAxisLabel_ : QStringLiteral("置信度 (0–1)");
         setProperty("yAxisLabel", verticalLabel);
         if (!verticalLabel.isEmpty()) {
             painter.save();
@@ -516,7 +599,7 @@ private:
                 label = QString::number((frequencyRange_.lowerHz + offset +
                     (frequencyRange_.upperHz - frequencyRange_.lowerHz) * tick / 4.0) / frequencyScale_, 'g', 4);
             } else if (mode_ == ChartMode::Scatter)
-                label = QString::number(-1.0 + tick * .5, 'g', 3);
+                label = QString::number(yAxisMinimum_+(yAxisMaximum_-yAxisMinimum_)*tick/4,'g',4);
             else if (mode_ == ChartMode::Eye)
                 label = QString::number(symbolPeriods_ * tick / 4.0, 'g', 3);
             else if (mode_ == ChartMode::Curve || mode_ == ChartMode::Heatmap || mode_ == ChartMode::Timeline) {
@@ -529,18 +612,19 @@ private:
             }
         }
         const QString horizontalLabel = mode_ == ChartMode::Spectrum ? frequencyAxisLabel_ :
-            mode_ == ChartMode::Scatter ? QStringLiteral("I (归一化)") :
+            mode_ == ChartMode::Scatter ? "I ("+yAxisLabel_+")" :
             mode_ == ChartMode::Eye ? QStringLiteral("时间 (符号周期)") : timeAxisLabel_;
         setProperty("xAxisLabel", horizontalLabel);
         painter.drawText(QRectF(rect.left(), height() - 16, rect.width(), 14), Qt::AlignHCenter | Qt::AlignBottom, horizontalLabel);
         if (software && mode_ == ChartMode::Scatter) {
             painter.save(); painter.setClipRect(rect); painter.setPen(Qt::NoPen); painter.setBrush(QColor("#53c8f1"));
-            const qreal side = std::min(rect.width(), rect.height());
+            int outside=0;
             for (const auto& point : points_) {
-                const QPointF p(rect.center().x() + point.real() * side * .42,
-                                rect.center().y() - point.imag() * side * .42);
+                const QPointF p=iqPoint(point);
+                if(!rect.contains(p)) {++outside;continue;}
                 painter.drawEllipse(p, 3.0, 3.0);
             }
+            setProperty("outsidePointCount",outside);
             painter.restore();
         } else if (mode_ == ChartMode::Navigation) {
             painter.fillRect(rect, QColor("#1b2c40"));
@@ -554,10 +638,10 @@ private:
                 QPainterPath path; const auto& values = series_[static_cast<std::size_t>(s)];
                 for (std::size_t i = 0; i < values.size(); ++i) {
                     const QPointF p(rect.left() + rect.width() * seriesUnit(i, values.size()),
-                        rect.center().y() - std::clamp<double>(values[i], -1.3, 1.3) * rect.height() * .34);
+                        rect.top()+amplitudeUnit(values[i])*rect.height());
                     if (!i) path.moveTo(p); else path.lineTo(p);
                 }
-                painter.setPen(QPen(QColor(72, 207, 196, 55 + s % 95), 1)); painter.drawPath(path);
+                painter.setPen(QPen(eyeColor(static_cast<std::size_t>(s)), 1)); painter.drawPath(path);
             }
             painter.restore();
         } else if (software && !series_.empty()) {
@@ -587,9 +671,16 @@ private:
             }
             painter.restore();
         }
-        if (!status_.isEmpty()) {
+        if (!displayStatus_.isEmpty()) {
             painter.fillRect(QRectF(rect.left() + 6, rect.top() + 5, rect.width() - 12, 20), QColor(7, 17, 28, 190));
-            painter.setPen(QColor("#aac1d4")); painter.drawText(QRectF(rect.left() + 11, rect.top() + 5, rect.width() - 20, 20), Qt::AlignVCenter, status_);
+            painter.setPen(QColor("#aac1d4"));
+            painter.drawText(QRectF(rect.left() + 11, rect.top() + 5, rect.width() - 20, 20), Qt::AlignVCenter,
+                painter.fontMetrics().elidedText(displayStatus_, Qt::ElideRight, std::max(1, static_cast<int>(rect.width() - 20))));
+        }
+        if(mode_==ChartMode::Eye && !eyeComponents_.empty()) {
+            const QRectF legend(rect.right()-80,rect.top()+28,76,19);painter.fillRect(legend,QColor(7,17,28,210));
+            painter.setPen(QColor("#58cef2"));painter.drawText(legend.adjusted(5,0,-38,0),Qt::AlignCenter,"I");
+            painter.setPen(QColor("#edc16f"));painter.drawText(legend.adjusted(38,0,-5,0),Qt::AlignCenter,"Q");
         }
         if (dragging_ && dragZone_ == chart_feedback::Zone::Plot && mode_ != ChartMode::Timeline) {
             painter.setPen(QPen(QColor("#f1cf7f"), 1, Qt::DashLine));
@@ -680,6 +771,13 @@ private:
         const bool pan=dragging_ && (dragZone_ == chart_feedback::Zone::XAxis || dragZone_ == chart_feedback::Zone::YAxis);
         setCursor(mode_ == ChartMode::Timeline && hoverZone_ == chart_feedback::Zone::Plot ? Qt::PointingHandCursor : chart_feedback::cursor(hoverZone_,pan,dragging_ && !pan));
     }
+    void setStatus(QString details, QString summary = {}) {
+        status_ = std::move(details);
+        displayStatus_ = summary.isEmpty() ? status_ : std::move(summary);
+        setToolTip(status_);
+        if(surface_)surface_->setToolTip(status_);
+        if (auto* panel = parentWidget()) panel->setToolTip(status_);
+    }
     chart_feedback::Zone hoverZone_ = chart_feedback::Zone::None, dragZone_ = chart_feedback::Zone::None;
     ChartMode mode_;
     AcceleratedSurface* surface_ = nullptr;
@@ -700,7 +798,9 @@ private:
     QImage scalarRaster_;
     QString rasterRevision_;
     Palette palette_ = Palette::CoolEditClassic;
+    std::vector<int> eyeComponents_;
     QString status_;
+    QString displayStatus_;
     QString frequencyAxisText_;
     QString frequencyAxisLabel_ = QStringLiteral("基带频率 (Hz)");
     QString frequencyUnit_ = QStringLiteral("Hz");
@@ -721,7 +821,7 @@ namespace {
 QWidget* plotPanel(const QString& title, const QString& id, ChartMode mode, NarrowbandChart*& chart) {
     auto* result = new QWidget; result->setObjectName(id); result->setProperty("uiRole", "chartPanel");
     auto* layout = new QVBoxLayout(result); layout->setContentsMargins(1, 1, 1, 1); layout->setSpacing(0);
-    auto* heading = new QWidget; heading->setProperty("uiRole", "chartHead"); heading->setFixedHeight(30);
+    auto* heading = new QWidget; heading->setObjectName(id + "Head"); heading->setProperty("uiRole", "chartHead"); heading->setFixedHeight(30);
     auto* row = new QHBoxLayout(heading); row->setContentsMargins(9, 0, 9, 0);
     auto* name = textLabel(title, id + "Title"); name->setStyleSheet("font-weight:600;color:#d5e6f5;"); row->addWidget(name); row->addStretch();
     layout->addWidget(heading); chart = new NarrowbandChart(mode); chart->setObjectName(id + QStringLiteral("Chart"));
@@ -794,6 +894,9 @@ NarrowbandWorkspace::NarrowbandWorkspace(Session& session, QWidget* parent) : QW
       QProgressBar::chunk { background:#31acd0; } QPlainTextEdit { background:#0c1725;border:1px solid #29435c;color:#89e0d4;font:13px Consolas; }
     )" + signalstudio::checkboxStyleSheet());
     buildPages();
+    analysisService_=std::make_unique<NarrowbandAnalysisService>(sampleCache_);
+    auto* analysisTimer=new QTimer(this);analysisTimer->setInterval(20);
+    connect(analysisTimer,&QTimer::timeout,this,&NarrowbandWorkspace::installAnalysis);analysisTimer->start();
     recognitionTimer_ = new QTimer(this); recognitionTimer_->setInterval(85);
     connect(recognitionTimer_, &QTimer::timeout, this, &NarrowbandWorkspace::updateRecognition);
     chartWheelTimer_ = new QTimer(this); chartWheelTimer_->setSingleShot(true); chartWheelTimer_->setInterval(220);
@@ -803,7 +906,7 @@ NarrowbandWorkspace::NarrowbandWorkspace(Session& session, QWidget* parent) : QW
     refreshFromSession();
 }
 
-NarrowbandWorkspace::~NarrowbandWorkspace() { finishChartWheel(); cancelPsd(); cancelWork(); }
+NarrowbandWorkspace::~NarrowbandWorkspace() { cancelAnalysis();analysisService_.reset();finishChartWheel(); cancelPsd(); cancelWork(); }
 
 void NarrowbandWorkspace::setCallbacks(std::function<void()> locateSource, std::function<void()> editChannel,
                                        std::function<void()> returnToWide, std::function<void(const QString&)> log) {
@@ -815,6 +918,19 @@ QString NarrowbandWorkspace::dataStatusText() const {
     return dataStatus_ ? dataStatus_->text() : QStringLiteral("窄带数据状态未知");
 }
 
+QString NarrowbandWorkspace::displayDiagnosticsText() const {
+    if (psdStatus_.isEmpty() || psdStatus_ == displayDiagnostics_) return displayDiagnostics_;
+    return displayDiagnostics_ + "\n" + psdStatus_;
+}
+
+void NarrowbandWorkspace::setDataStatus(const QString& summary, const QString& details) {
+    displayDiagnostics_ = details.isEmpty() ? summary : details;
+    if (dataStatus_) {
+        dataStatus_->setText(summary);
+        dataStatus_->setToolTip(displayDiagnosticsText());
+    }
+}
+
 int NarrowbandWorkspace::currentPageIndex() const { return pages_ ? pages_->currentIndex() : -1; }
 
 void NarrowbandWorkspace::activatePageForAcceptance(int index) {
@@ -824,6 +940,7 @@ void NarrowbandWorkspace::activatePageForAcceptance(int index) {
 
 bool NarrowbandWorkspace::visibleChartsSettled() const {
     if (displayPending_) return false;
+    if (currentPageIndex()==1 && analysisPending_)return false;
     bool found = false;
     for (const auto* chart : charts_) {
         if (!chart || !chart->isVisible()) continue;
@@ -913,7 +1030,8 @@ void NarrowbandWorkspace::buildPages() {
         connect(pageButtons_[i], &QPushButton::clicked, this, [this, i] { showPage(static_cast<NarrowbandPage>(i)); });
     }
     headerRow->addSpacing(10); caption_ = textLabel("未选择窄带通道", "narrowbandCaption");
-    caption_->setStyleSheet("font:11px Consolas;color:#85b4d3;"); headerRow->addWidget(caption_, 1);
+    caption_->setWordWrap(false); caption_->setMinimumWidth(0); caption_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    caption_->setStyleSheet("color:#85b4d3;"); headerRow->addWidget(caption_, 1);
     auto* locate = actionButton("⌖ 来源", "narrowbandLocateSource", headerRow);
     auto* edit = actionButton("⚙ 通道参数", "narrowbandEditChannel", headerRow);
     auto* close = actionButton("返回宽带", "narrowbandClose", headerRow);
@@ -925,12 +1043,13 @@ void NarrowbandWorkspace::buildPages() {
     auto* chartToolbar = new QWidget; chartToolbar->setObjectName("narrowbandChartToolbar");
     auto* chartToolbarRow = new QHBoxLayout(chartToolbar); chartToolbarRow->setContentsMargins(6, 0, 6, 0); chartToolbarRow->setSpacing(6);
     dataStatus_ = textLabel("等待通道数据", "narrowbandDataStatus"); dataStatus_->setStyleSheet("color:#78cbdf;font:10px Consolas;");
+    dataStatus_->setMinimumWidth(0); dataStatus_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     waveformMode_ = new QComboBox; waveformMode_->setObjectName("narrowbandWaveformMode");
     waveformMode_->addItems({"I / Q", "幅度 (RMS)", "相位", "幅度包络"});
     displayPsdFft_ = new QComboBox; displayPsdFft_->setObjectName("narrowbandPsdFft");
-    for(int order=5;order<=16;++order)displayPsdFft_->addItem("PSD "+QString::number(1<<order),1<<order); displayPsdFft_->setCurrentIndex(7);
+    for(int order=5;order<=16;++order)displayPsdFft_->addItem(QString::number(1<<order),1<<order); displayPsdFft_->setCurrentIndex(7);
     displayStftFft_ = new QComboBox; displayStftFft_->setObjectName("narrowbandStftFft");
-    for (int order = 5; order <= 16; ++order) displayStftFft_->addItem("STFT " + QString::number(1 << order), 1 << order);
+    for (int order = 5; order <= 16; ++order) displayStftFft_->addItem(QString::number(1 << order), 1 << order);
     displayStftFft_->setCurrentIndex(5);
     frequencyMode_ = new QComboBox; frequencyMode_->setObjectName("channelFrequencyMode");
     frequencyMode_->addItems({"基带", "RF"});
@@ -961,70 +1080,186 @@ void NarrowbandWorkspace::buildPages() {
         updateFrequencyAxisLabels(); emit displayParametersChanged();
     });
     pages_ = new QStackedWidget; pages_->setObjectName("narrowbandPageStack"); root->addWidget(pages_, 1);
+    connect(pages_,&QStackedWidget::currentChanged,this,&NarrowbandWorkspace::pageChanged);
     auto makePage = [this](int index) {
         auto* page = new QWidget; page->setObjectName(QStringLiteral("nbPage%1").arg(index));
         pageWidgets_[static_cast<std::size_t>(index)] = page; pages_->addWidget(page); return page;
     };
 
-    auto* observe = makePage(0); auto* observeLayout = new QGridLayout(observe);
+    auto* observe = makePage(0); auto* observeLayout = new QVBoxLayout(observe);
     observeLayout->setContentsMargins(0, 0, 0, 0); observeLayout->setSpacing(5);
-    observeLayout->addWidget(plotPanel("I / Q 双线波形", "narrowbandWaveformPanel", ChartMode::Curve, waveform_), 0, 0);
-    observeLayout->addWidget(plotPanel("功率谱密度", "narrowbandPsdPanel", ChartMode::Spectrum, psd_), 0, 1);
-    observeLayout->addWidget(plotPanel("窄带时频图 · dBFS/Hz", "narrowbandStftPanel", ChartMode::Heatmap, stft_), 1, 0, 1, 2);
-    observeLayout->addWidget(plotPanel("星座预览", "narrowbandConstellationPreview", ChartMode::Scatter, constellationSmall_), 2, 0);
-    auto* previewInfo = textLabel("合成示例 · 未执行载波恢复、定时同步或解调", "syntheticConstellationNote");
-    previewInfo->setStyleSheet("color:#dfbc78;font-size:10px;padding:6px;");
-    observeLayout->addWidget(previewInfo, 2, 1);
-    observeLayout->setRowStretch(0, 1); observeLayout->setRowStretch(1, 2); observeLayout->setRowStretch(2, 1);
-    observeLayout->setColumnStretch(0, 1); observeLayout->setColumnStretch(1, 1);
+    auto* observeSplitter = new QSplitter(Qt::Vertical); observeSplitter->setObjectName("narrowbandObserveSplitter");
+    observeSplitter->setChildrenCollapsible(false); observeSplitter->setHandleWidth(5);
+    auto* observeTop = new QWidget; observeTop->setObjectName("narrowbandObserveTopRow");
+    auto* observeTopLayout = new QHBoxLayout(observeTop); observeTopLayout->setContentsMargins(0, 0, 0, 0); observeTopLayout->setSpacing(5);
+    observeTopLayout->addWidget(plotPanel("波形", "narrowbandWaveformPanel", ChartMode::Curve, waveform_), 1);
+    observeTopLayout->addWidget(plotPanel("功率谱密度", "narrowbandPsdPanel", ChartMode::Spectrum, psd_), 1);
+    observeSplitter->addWidget(observeTop);
+    observeSplitter->addWidget(plotPanel("时频图", "narrowbandStftPanel", ChartMode::Heatmap, stft_));
+    observeSplitter->setStretchFactor(0, 1); observeSplitter->setStretchFactor(1, 1); observeSplitter->setSizes({320, 640});
+    const auto observeState = QSettings().value(QStringLiteral("narrowband/observeSplitterState")).toByteArray();
+    if (!observeState.isEmpty()) observeSplitter->restoreState(observeState);
+    connect(observeSplitter, &QSplitter::splitterMoved, this, [observeSplitter] {
+        QSettings().setValue(QStringLiteral("narrowband/observeSplitterState"), observeSplitter->saveState());
+    });
+    observeLayout->addWidget(observeSplitter);
 
     auto* modulation = makePage(1); auto* modulationLayout = new QGridLayout(modulation);
     modulationLayout->setContentsMargins(0, 0, 0, 0); modulationLayout->setSpacing(5);
-    modulationLayout->addWidget(plotPanel("大星座图", "narrowbandConstellationLarge", ChartMode::Scatter, constellationLarge_), 0, 0);
-    modulationLayout->addWidget(plotPanel("眼图 · 同步未执行", "narrowbandEyeLarge", ChartMode::Eye, eyeLarge_), 0, 1);
-    modulationLayout->addWidget(plotPanel("联动时频图", "narrowbandModulationStft", ChartMode::Heatmap, modulationStft_), 1, 0, 1, 2);
+    auto* constellationPanel=plotPanel("星座 · 真实 IQ", "narrowbandConstellationLarge", ChartMode::Scatter, constellationLarge_);
+    modulationLayout->addWidget(constellationPanel, 0, 0);
+    auto* chartParameters=new QWidget(modulation);chartParameters->hide();
+    auto* pointCount=new QComboBox(chartParameters);pointCount->setObjectName("constellationPointBudget");
+    for(const int n:{256,1024,4096,20000})pointCount->addItem(QString::number(n)+" 点",n);
+    pointCount->setCurrentIndex(2);
+    auto* constellationStage=new QComboBox(chartParameters);constellationStage->setObjectName("constellationAnalysisStage");
+    constellationStage->addItems({"原始 IQ","CFO 校正","匹配滤波","定时符号","载波恢复"});
+    connect(constellationStage,&QComboBox::currentIndexChanged,this,[this](int value){if(auto* c=session_.activeChannel()){c->analysis.constellationStage=static_cast<AnalysisStage>(value);enableStage(c->analysis,c->analysis.constellationStage);}refreshFromSession();requestAnalysis(true);});
+    auto* autoScale=new QCheckBox("自动缩放",chartParameters);autoScale->setObjectName("constellationAutoScale");autoScale->setChecked(true);
+    auto* constellationSettings=new QWidget(chartParameters);constellationSettings->setObjectName("narrowbandConstellationDisplaySettings");
+    auto* constellationForm=new QFormLayout(constellationSettings);constellationForm->setContentsMargins(4,4,4,4);constellationForm->setSpacing(8);
+    auto* axisMin=new ParameterDoubleSpinBox;axisMin->setObjectName("constellationAxisMinimum");axisMin->setRange(-1e12,1e12);axisMin->setDecimals(6);axisMin->setValue(-1);axisMin->setEnabled(false);
+    auto* axisMax=new ParameterDoubleSpinBox;axisMax->setObjectName("constellationAxisMaximum");axisMax->setRange(-1e12,1e12);axisMax->setDecimals(6);axisMax->setValue(1);axisMax->setEnabled(false);
+    auto* dc=new QCheckBox("去 DC");dc->setObjectName("analysisRemoveDc");constellationForm->addRow(dc);
+    auto* norm=new QCheckBox("功率归一化");norm->setObjectName("analysisNormalizePower");constellationForm->addRow(norm);
+    constellationForm->addRow("I/Q 轴下限",axisMin);constellationForm->addRow("I/Q 轴上限",axisMax);
+    connect(pointCount,&QComboBox::currentIndexChanged,this,[this,pointCount]{if(auto* c=session_.activeChannel())c->analysis.pointCount=pointCount->currentData().toInt();requestAnalysis(true);});
+    connect(autoScale,&QCheckBox::toggled,this,[this,axisMin,axisMax](bool enabled){axisMin->setEnabled(!enabled);axisMax->setEnabled(!enabled);if(auto* c=session_.activeChannel())c->analysis.constellationAutoScale=enabled;requestAnalysis(true);});
+    for(auto* axis:{axisMin,axisMax})connect(axis,&QDoubleSpinBox::valueChanged,this,[this,axisMin,axisMax]{
+      if(axisMin->value()>=axisMax->value()) {setParameterError(axisMin,"I/Q 轴下限必须小于上限。");return;}
+      setParameterError(axisMin,{});if(auto* c=session_.activeChannel()){c->constellationMinimum=axisMin->value();c->constellationMaximum=axisMax->value();}requestAnalysis(true);
+    });
+    connect(dc,&QCheckBox::toggled,this,[this](bool v){if(auto* c=session_.activeChannel())c->analysis.removeDc=v;requestAnalysis(true);});
+    connect(norm,&QCheckBox::toggled,this,[this](bool v){if(auto* c=session_.activeChannel())c->analysis.normalizePower=v;requestAnalysis(true);});
+    auto* eyePanel=plotPanel("眼图 · 真实 IQ", "narrowbandEyeLarge", ChartMode::Eye, eyeLarge_);
+    modulationLayout->addWidget(eyePanel, 0, 1);
+    auto* eyeStage=new QComboBox(chartParameters);eyeStage->setObjectName("eyeAnalysisStage");eyeStage->addItems({"原始 DDC IQ","CFO 校正后","RRC 假设滤波","定时对齐","载波恢复后"});
+    auto* eyeSettings=new QWidget(chartParameters);eyeSettings->setObjectName("narrowbandEyeDisplaySettings");
+    auto* eyeForm=new QFormLayout(eyeSettings);eyeForm->setContentsMargins(4,4,4,4);eyeForm->setSpacing(8);
+    auto* eyeDensity=new QComboBox;eyeDensity->setObjectName("eyeDrawingDensity");for(int n:{4,8,16})eyeDensity->addItem(QString("%1 点/UI").arg(n),n);eyeDensity->setCurrentIndex(2);eyeForm->addRow("绘图密度",eyeDensity);
+    auto* eyeOffset=new ParameterDoubleSpinBox;eyeOffset->setObjectName("eyeTimingOffsetUi");eyeOffset->setRange(-2,2);eyeOffset->setDecimals(4);eyeOffset->setSingleStep(.05);eyeOffset->setSuffix(" UI");eyeForm->addRow("折叠偏移",eyeOffset);
+    auto* rolloff=new ParameterDoubleSpinBox;rolloff->setObjectName("analysisRrcRolloff");rolloff->setRange(.05,1);rolloff->setDecimals(2);rolloff->setSingleStep(.05);rolloff->setValue(.35);rolloff->setPrefix("α ");eyeForm->addRow("RRC 滚降",rolloff);
+    connect(eyeStage,&QComboBox::currentIndexChanged,this,[this](int index){if(auto* c=session_.activeChannel()){c->analysis.eyeStage=static_cast<AnalysisStage>(index);enableStage(c->analysis,c->analysis.eyeStage);}refreshFromSession();requestAnalysis(true);});
+    connect(eyeDensity,&QComboBox::currentIndexChanged,this,[this,eyeDensity]{if(auto* c=session_.activeChannel())c->analysis.eyePointsPerUi=eyeDensity->currentData().toInt();requestAnalysis(true);});
+    connect(eyeOffset,&QDoubleSpinBox::valueChanged,this,[this](double v){if(auto* c=session_.activeChannel())c->analysis.eyeTimingOffsetUi=v;requestAnalysis(true);});
+    connect(rolloff,&QDoubleSpinBox::valueChanged,this,[this](double v){if(auto* c=session_.activeChannel())c->analysis.rolloff=v;requestAnalysis(true);});
+    modulationLayout->addWidget(plotPanel("时频图", "narrowbandModulationStft", ChartMode::Heatmap, modulationStft_), 1, 0, 1, 2);
+    modulationLayout->setColumnStretch(0, 1); modulationLayout->setColumnStretch(1, 1);
     auto* modulationControls = new QWidget; auto* modulationRow = new QHBoxLayout(modulationControls);
     modulationRow->setContentsMargins(6, 4, 6, 4);
     auto* modulationType = new QComboBox; modulationType->setObjectName("modulationFormat");
-    modulationType->addItems({"未知 / 自动", "BPSK", "QPSK", "8PSK", "16QAM", "64QAM", "2FSK", "4FSK", "MSK", "GMSK", "OFDM"});
-    auto* symbolRate = new ParameterDoubleSpinBox; symbolRate->setObjectName("symbolRate"); symbolRate->setRange(1, 20'000'000); symbolRate->setDecimals(0); symbolRate->setValue(250'000); symbolRate->setSuffix(" Sym/s");
+    modulationType->addItems({"未知（分析假设）", "BPSK", "QPSK", "16QAM", "FSK（不适用）", "OFDM（不适用）", "GMSK（不适用）", "M-PSK", "M-QAM", "M-APSK"});
+    auto* order=new QComboBox;order->setObjectName("analysisModulationOrder");
+    for(int m:{2,4,8,16,32,64,128,256})order->addItem(QString("M=%1").arg(m),m);
+    order->setToolTip("PSK：2–256；QAM：4–4096（8 为矩形，32/128/512/2048 为交叉形）；APSK：8–256，可编辑环配置。");
+    auto* symbolRateMode=new QComboBox;symbolRateMode->setObjectName("analysisSymbolRateMode");symbolRateMode->addItems({"Rs 待确认","手工 Rs","自动估计 Rs"});
+    auto* symbolRate = new ParameterDoubleSpinBox; symbolRate->setObjectName("symbolRate"); symbolRate->setRange(1, 4e9); symbolRate->setDecimals(3); symbolRate->setValue(250'000); symbolRate->setSuffix(" Sym/s");
     eyeComponent_ = new QComboBox; eyeComponent_->setObjectName("eyeComponent"); eyeComponent_->addItems({"I + Q", "I 分量", "Q 分量"});
-    eyePeriods_ = new QComboBox; eyePeriods_->setObjectName("eyePeriods"); eyePeriods_->addItems({"1 周期", "2 周期", "3 周期", "4 周期"});
-    eyeTraces_ = new QComboBox; eyeTraces_->setObjectName("eyeTraces"); eyeTraces_->addItems({"32 条", "64 条", "128 条", "256 条"}); eyeTraces_->setCurrentIndex(1);
-    auto* sync = new QCheckBox("演示同步选项"); sync->setObjectName("syncOptionsDemo");
+    eyePeriods_ = new QComboBox; eyePeriods_->setObjectName("eyePeriods");for(int n:{1,2,3,4})eyePeriods_->addItem(QString::number(n),n);
+    eyeTraces_ = new QComboBox; eyeTraces_->setObjectName("eyeTraces");for(int n:{32,64,128,256})eyeTraces_->addItem(QString("%1 条").arg(n),n);eyeTraces_->setCurrentIndex(1);
+    auto* sync = new QCheckBox("定时恢复"); sync->setObjectName("analysisTimingRecovery");
+    connect(sync,&QCheckBox::toggled,this,[this](bool value){if(auto* c=session_.activeChannel()){auto& s=c->analysis;s.timingRecovery=value;if(!value){s.carrierRecovery=false;demoteStage(s,AnalysisStage::TimingAligned,s.matchedFilter?AnalysisStage::MatchedFiltered:AnalysisStage::RawIq);}}refreshFromSession();requestAnalysis(true);});
     auto* identify = actionButton("运行识别演示", "modulationIdentify", modulationRow); identify->setProperty("uiRole", "primary");
-    modulationRow->addWidget(textLabel("调制格式")); modulationRow->addWidget(modulationType); modulationRow->addWidget(textLabel("符号率"));
-    modulationRow->addWidget(symbolRate); modulationRow->addWidget(textLabel("眼图")); modulationRow->addWidget(eyeComponent_);
+    modulationRow->addWidget(textLabel("调制假设")); modulationRow->addWidget(modulationType);modulationRow->addWidget(order); modulationRow->addWidget(textLabel("符号率"));
+    modulationRow->addWidget(symbolRateMode);modulationRow->addWidget(symbolRate); modulationRow->addWidget(eyeComponent_);
     modulationRow->addWidget(eyePeriods_); modulationRow->addWidget(eyeTraces_); modulationRow->addWidget(sync); modulationRow->addStretch();
     modulationRow->addWidget(identify); modulationLayout->addWidget(modulationControls, 2, 0, 1, 2);
-    modulationLayout->setRowStretch(0, 3); modulationLayout->setRowStretch(1, 2);
-    connect(modulationType, &QComboBox::currentTextChanged, this, [this](const QString& value) {
-        if (analysisStatus_) analysisStatus_->setText("调制格式为人工选择示意：" + value + " · 未做真实判决");
+    auto* run=actionButton("分析", "runNarrowbandAnalysis",modulationRow);
+    auto* cancel=actionButton("取消", "cancelNarrowbandAnalysis",modulationRow);
+    auto* recover=actionButton("同步恢复", "recoverNarrowbandSignal",modulationRow);recover->setProperty("uiRole","primary");
+    connect(run,&QPushButton::clicked,this,[this,symbolRateMode]{
+      if(auto* c=session_.activeChannel();c && c->analysis.symbolRateMode==SymbolRateMode::Unknown){symbolRateMode->setCurrentIndex(2);return;}
+      requestAnalysis(true);
     });
-    connect(symbolRate, &QDoubleSpinBox::valueChanged, this, [this](double value) {
-        if (auto* channel = session_.activeChannel()) channel->symbolRate = value;
+    connect(cancel,&QPushButton::clicked,this,[this]{cancelAnalysis(true);if(modulationStatus_)modulationStatus_->setText("分析已取消。");});
+    modulationStatus_=textLabel("真实 IQ 分析待运行", "modulationAnalysisStatus");
+    modulationStatus_->setWordWrap(true);modulationLayout->addWidget(modulationStatus_,3,0,1,2);
+    auto* rateRowWidget=new QWidget;auto* rateRow=new QHBoxLayout(rateRowWidget);rateRow->setContentsMargins(6,0,6,0);
+    rateRow->addWidget(textLabel("Rs 候选（评分非概率）"));
+    auto* candidates=new QComboBox;candidates->setObjectName("analysisRateCandidates");candidates->setMinimumContentsLength(30);rateRow->addWidget(candidates,1);
+    auto* adopt=actionButton("采用为手工 Rs", "adoptSymbolRateCandidate",rateRow);rateRow->addWidget(adopt);
+    modulationLayout->addWidget(rateRowWidget,4,0,1,2);
+    auto* more=new QToolButton;more->setObjectName("narrowbandSyncSettingsToggle");more->setText("更多同步设置");more->setCheckable(true);modulationLayout->addWidget(more,5,0,1,2);
+    auto* syncSettings=new QWidget;syncSettings->setObjectName("narrowbandSyncSettings");auto* syncLayout=new QHBoxLayout(syncSettings);syncLayout->setContentsMargins(6,2,6,2);
+    auto* left=new QFormLayout;auto* middle=new QFormLayout;auto* right=new QFormLayout;
+    syncLayout->addLayout(left);syncLayout->addLayout(middle);syncLayout->addLayout(right);
+    auto* cfoMode=new QComboBox;cfoMode->setObjectName("analysisCfoMode");cfoMode->addItems({"关闭 CFO 校正","自动 CFO（分析假设）","手工 CFO"});left->addRow("频偏校正",cfoMode);
+    auto* cfo=new ParameterDoubleSpinBox;cfo->setObjectName("analysisManualCfoHz");cfo->setRange(-2e9,2e9);cfo->setDecimals(3);cfo->setSuffix(" Hz");left->addRow("手工频偏",cfo);
+    auto* matched=new QCheckBox("RRC 匹配滤波（滚降为假设）");matched->setObjectName("analysisMatchedFilter");left->addRow(matched);
+    auto* carrier=new QCheckBox("载波相位恢复（所选模板）");carrier->setObjectName("analysisCarrierRecovery");middle->addRow(carrier);
+    auto* timingBw=new ParameterDoubleSpinBox;timingBw->setObjectName("analysisTimingLoopBandwidth");timingBw->setRange(.0001,.1);timingBw->setDecimals(4);timingBw->setSingleStep(.0001);timingBw->setValue(.002);middle->addRow("定时环带宽／符号率",timingBw);
+    auto* carrierBw=new ParameterDoubleSpinBox;carrierBw->setObjectName("analysisCarrierLoopBandwidth");carrierBw->setRange(.0001,.1);carrierBw->setDecimals(4);carrierBw->setSingleStep(.0001);carrierBw->setValue(.01);middle->addRow("载波环带宽／符号率",carrierBw);
+    auto* phase=new ParameterDoubleSpinBox;phase->setObjectName("analysisManualPhaseRadians");phase->setRange(-20*std::numbers::pi,20*std::numbers::pi);phase->setDecimals(5);phase->setSuffix(" rad");right->addRow("手工 CFO 初始相位",phase);
+    auto* span=new ParameterIntSpinBox;span->setObjectName("analysisRrcSpan");span->setRange(2,32);span->setValue(10);right->addRow("RRC 跨度／符号",span);
+    auto* budget=new QComboBox;budget->setObjectName("analysisSampleBudget");for(int n:{1,2,4,8})budget->addItem(QString("%1 Mi 复样本").arg(n),n*1024*1024);right->addRow("分析预算（256 MiB 工作区）",budget);
+    auto* rings=new ParameterTextEdit;rings->setObjectName("analysisApskRings");rings->setPlaceholderText("默认环；可填 4:1:45,12:2.85:15");
+    rings->setToolTip("每环 点数:相对半径:相位角度，逗号分隔。半径递增、点数之和等于 M；空值使用分析预设，不代表特定编码标准。");
+    right->addRow("APSK 环／半径／角度",rings);
+    rings->apply=[this,rings](const QString& text){
+      auto* c=session_.activeChannel();if(!c)return false;
+      auto settings=c->analysis;settings.apskRings=text.trimmed().toStdString();ConstellationDefinition definition;std::string error;
+      if(settings.hypothesis==ModulationHypothesis::Apsk && !makeConstellation(settings,definition,error)){setParameterError(rings,str(error));return false;}
+      c->analysis.apskRings=settings.apskRings;requestAnalysis(true);return true;
+    };
+    syncSettings->hide();modulationLayout->addWidget(syncSettings,6,0,1,2);connect(more,&QToolButton::toggled,syncSettings,&QWidget::setVisible);
+    connect(cfoMode,&QComboBox::currentIndexChanged,this,[this](int value){if(auto* c=session_.activeChannel())c->analysis.cfoMode=static_cast<CfoMode>(value);requestAnalysis(true);});
+    connect(cfo,&QDoubleSpinBox::valueChanged,this,[this](double value){if(auto* c=session_.activeChannel())c->analysis.manualCfoHz=value;requestAnalysis(true);});
+    connect(matched,&QCheckBox::toggled,this,[this](bool value){if(auto* c=session_.activeChannel()){c->analysis.matchedFilter=value;if(!value)for(auto* stage:{&c->analysis.constellationStage,&c->analysis.eyeStage})if(*stage==AnalysisStage::MatchedFiltered)*stage=AnalysisStage::RawIq;}refreshFromSession();requestAnalysis(true);});
+    connect(carrier,&QCheckBox::toggled,this,[this](bool value){if(auto* c=session_.activeChannel()){c->analysis.carrierRecovery=value;if(value)c->analysis.timingRecovery=true;else demoteStage(c->analysis,AnalysisStage::CarrierRecovered,c->analysis.timingRecovery?AnalysisStage::TimingAligned:AnalysisStage::RawIq);}refreshFromSession();requestAnalysis(true);});
+    connect(timingBw,&QDoubleSpinBox::valueChanged,this,[this](double value){if(auto* c=session_.activeChannel())c->analysis.timingLoopBandwidth=value;requestAnalysis(true);});
+    connect(carrierBw,&QDoubleSpinBox::valueChanged,this,[this](double value){if(auto* c=session_.activeChannel())c->analysis.carrierLoopBandwidth=value;requestAnalysis(true);});
+    connect(phase,&QDoubleSpinBox::valueChanged,this,[this](double value){if(auto* c=session_.activeChannel())c->analysis.manualPhaseRadians=value;requestAnalysis(true);});
+    connect(span,&QSpinBox::valueChanged,this,[this](int value){if(auto* c=session_.activeChannel())c->analysis.filterSpanSymbols=value;requestAnalysis(true);});
+    connect(budget,&QComboBox::currentIndexChanged,this,[this,budget]{if(auto* c=session_.activeChannel())c->analysis.sampleBudget=static_cast<std::size_t>(budget->currentData().toInt());requestAnalysis(true);});
+    recover->setToolTip("按当前 PSK/QAM/APSK 及阶数启用 CFO、RRC、Gardner 和载波恢复；待确认 Rs 时先估计，保留手工 CFO/Rs。");
+    connect(recover,&QPushButton::clicked,this,[this]{
+      auto* c=session_.activeChannel();if(!c)return;
+      if(!isSingleCarrierHypothesis(c->analysis.hypothesis)){modulationStatus_->setText("无法同步：请先选择 PSK、QAM 或 APSK 调制假设及阶数；仅估计 Rs 不等于识别调制。");findChild<QComboBox*>("modulationFormat")->setFocus();return;}
+      if(c->analysis.symbolRateMode==SymbolRateMode::Unknown){c->analysis.symbolRateMode=SymbolRateMode::Estimated;c->analysis.symbolRateHz=0;}
+      if(c->analysis.cfoMode==CfoMode::Off)c->analysis.cfoMode=CfoMode::Automatic;
+      c->analysis.matchedFilter=true;c->analysis.timingRecovery=true;c->analysis.carrierRecovery=true;
+      c->analysis.constellationStage=AnalysisStage::CarrierRecovered;c->analysis.eyeStage=AnalysisStage::CarrierRecovered;
+      refreshFromSession();requestAnalysis(true);
+    });
+    connect(adopt,&QPushButton::clicked,this,[this,candidates,symbolRateMode,symbolRate] {
+      auto* c=session_.activeChannel();const auto* f=session_.activeFile();if(!c || !f || candidates->currentIndex()<0 || !analysisResult_ ||
+        !analysisIdentityCurrent(analysisResult_->identity,f->metadata,*c,session_.projectGeneration(),analysisGeneration_))return;
+      const auto rate=candidates->currentData().toDouble();if(!(rate>0))return;
+      c->analysis.symbolRateMode=SymbolRateMode::Manual;c->analysis.symbolRateHz=rate;c->symbolRate=rate;
+      {QSignalBlocker b(symbolRateMode);symbolRateMode->setCurrentIndex(1);}
+      {QSignalBlocker b(symbolRate);displayParameterValue(symbolRate,rate);}requestAnalysis(true);
+    });
+    modulationLayout->setRowStretch(0, 3); modulationLayout->setRowStretch(1, 2);
+    modulationType->setToolTip("仅为单载波分析假设，不是自动识别结果。");
+    connect(modulationType, &QComboBox::currentIndexChanged, this, [this,modulationType](int index) {
+        if(auto* c=session_.activeChannel()){c->analysis.hypothesis=static_cast<ModulationHypothesis>(index);if(index>=7){c->analysis.modulationOrder=index==7?8:index==8?32:16;c->analysis.apskRings.clear();}}
+        modulationType->setToolTip("分析假设：" + modulationType->currentText() + "；不是识别结果。");refreshFromSession();requestAnalysis(true);
+    });
+    connect(order,&QComboBox::currentIndexChanged,this,[this,order](int){if(auto* c=session_.activeChannel()){c->analysis.modulationOrder=order->currentData().toInt();c->analysis.apskRings.clear();}refreshFromSession();requestAnalysis(true);});
+    connect(symbolRate, &QDoubleSpinBox::valueChanged, this, [this,symbolRateMode](double value) {
+        if (auto* channel = session_.activeChannel()) {channel->symbolRate = value;channel->analysis.symbolRateHz=value;channel->analysis.symbolRateMode=SymbolRateMode::Manual;}
+        {QSignalBlocker block(symbolRateMode);symbolRateMode->setCurrentIndex(1);}requestAnalysis(true);
+    });
+    connect(symbolRateMode,&QComboBox::currentIndexChanged,this,[this,symbolRate](int index) {
+      if(auto* c=session_.activeChannel()){c->analysis.symbolRateMode=static_cast<SymbolRateMode>(index);if(index==1){c->analysis.symbolRateHz=symbolRate->value();c->symbolRate=symbolRate->value();}else if(index==2)c->analysis.symbolRateHz=0;}
+      requestAnalysis(true);
     });
     auto refreshEyeControls = [this] {
         const auto* channel = session_.activeChannel(); if (!channel) return;
         const auto traces = channel->eyeTraces;
-        const auto component = eyeComponent_ ? eyeComponent_->currentIndex() : 0;
-        auto lines = syntheticEye(traces, 192, channel ? channel->eyePeriods : 2, 9);
-        if (component != 0) {
-            const float sign = component == 1 ? 1.f : -1.f;
-            for (auto& line : lines) for (auto& point : line) point *= sign;
-        }
-        if (eyeLarge_) eyeLarge_->setEye(std::move(lines), "合成示例 · 未执行定时同步");
-        if (eyeDemod_) eyeDemod_->setEye(syntheticEye(traces, 192, channel ? channel->eyePeriods : 2, 17), "合成示例 · 未执行定时同步");
+        if (eyeDemod_) eyeDemod_->setEye(syntheticEye(traces, 192, channel ? channel->eyePeriods : 2, 17), "合成示例 · 未执行定时同步", "合成示例");
+        requestAnalysis(true);
     };
     connect(eyeComponent_, &QComboBox::currentIndexChanged, this, [this, refreshEyeControls](int index) {
         if (auto* channel = session_.activeChannel()) channel->eyeComponent = index;
         refreshEyeControls();
     });
-    connect(eyePeriods_, &QComboBox::currentIndexChanged, this, [this](int index) {
-        if (auto* channel = session_.activeChannel()) channel->eyePeriods = index + 1;
+    connect(eyePeriods_, &QComboBox::currentIndexChanged, this, [this](int) {
+        if (auto* channel = session_.activeChannel()) channel->eyePeriods = eyePeriods_->currentData().toInt();
+        requestAnalysis(true);
     });
-    connect(eyeTraces_, &QComboBox::currentIndexChanged, this, [this, refreshEyeControls](int index) {
-        if (auto* channel = session_.activeChannel()) channel->eyeTraces = 32 << index;
+    connect(eyeTraces_, &QComboBox::currentIndexChanged, this, [this, refreshEyeControls](int) {
+        if (auto* channel = session_.activeChannel()) channel->eyeTraces = eyeTraces_->currentData().toInt();
         refreshEyeControls();
     });
     connect(identify, &QPushButton::clicked, this, [this] { showPage(NarrowbandPage::DeepLearning); });
@@ -1033,10 +1268,17 @@ void NarrowbandWorkspace::buildPages() {
     deepLayout->setContentsMargins(0, 0, 0, 0); deepLayout->setSpacing(5);
     auto* configPanel = new QWidget; configPanel->setObjectName("demoRecognitionConfig"); configPanel->setMinimumWidth(260); configPanel->setMaximumWidth(360);
     auto* configLayout = new QVBoxLayout(configPanel); configLayout->setContentsMargins(10, 8, 10, 8); configLayout->setSpacing(7);
-    auto* configTitle = textLabel("深度学习识别 · UI 演示"); configTitle->setStyleSheet("font-size:14px;font-weight:650;"); configLayout->addWidget(configTitle);
-    auto* disclaimer = textLabel("合成分数与进度；权重不会加载，未执行真实模型推理。", "recognitionSyntheticDisclosure");
-    disclaimer->setStyleSheet("color:#e5bf77;background:#332b1a;padding:7px;font-size:10px;"); configLayout->addWidget(disclaimer);
+    auto* configScroll = new QScrollArea; configScroll->setObjectName("recognitionConfigScroll");
+    configScroll->setWidgetResizable(true); configScroll->setFrameShape(QFrame::NoFrame);
+    configScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    auto* configContents = new QWidget; configContents->setObjectName("recognitionConfigContents");
+    auto* fieldsLayout = new QVBoxLayout(configContents); fieldsLayout->setContentsMargins(0, 0, 6, 0); fieldsLayout->setSpacing(8);
+    auto* configTitle = textLabel("识别配置"); configTitle->setStyleSheet("font-size:14px;font-weight:650;"); fieldsLayout->addWidget(configTitle);
+    auto* disclaimer = textLabel("合成示例：分数与进度仅用于演示，未执行真实模型推理。", "recognitionSyntheticDisclosure");
+    disclaimer->setToolTip("选择模型文件只记录文件名，不加载或执行权重；本页结果不代表真实信号识别能力。");
+    disclaimer->setStyleSheet("color:#e5bf77;background:#332b1a;padding:7px;font-size:11px;"); fieldsLayout->addWidget(disclaimer);
     auto* form = new QFormLayout; form->setVerticalSpacing(6); form->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    form->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow); form->setRowWrapPolicy(QFormLayout::WrapLongRows);
     model_ = new QComboBox; model_->setObjectName("recognitionModel");
     model_->addItems({"ResNet18 · v1.0", "CLDNN · v1.0", "Transformer · v1.0"});
     fftSize_ = new QComboBox; fftSize_->setObjectName("recognitionFrameLength"); fftSize_->addItems({"1024", "2048", "4096", "8192"}); fftSize_->setCurrentText("2048");
@@ -1048,41 +1290,55 @@ void NarrowbandWorkspace::buildPages() {
     auto* device = new QComboBox; device->setObjectName("recognitionDevice"); device->addItems({"演示无设备", "CPU · 设计选项", "GPU · 设计选项"});
     form->addRow("模型", model_); form->addRow("窗口点数", fftSize_); form->addRow("归一化", recognitionNormalization_); form->addRow("重叠率", recognitionOverlap_);
     form->addRow("分析范围", recognitionScope_); form->addRow("目标采样率", recognitionSampleRate_); form->addRow("类别阈值", recognitionThreshold_); form->addRow("设备", device);
-    configLayout->addLayout(form);
-    recognitionAllowResample_ = new QCheckBox("采样率不匹配时允许预处理重采样（选项）"); recognitionAllowResample_->setObjectName("recognitionAllowResample"); recognitionAllowResample_->setChecked(true); configLayout->addWidget(recognitionAllowResample_);
-    auto* manageModel = actionButton("模型管理 / 选择权重文件…", "recognitionModelManager", configLayout); manageModel->setProperty("uiRole", "outline");
+    fieldsLayout->addLayout(form);
+    recognitionAllowResample_ = new QCheckBox("允许预处理重采样（演示）"); recognitionAllowResample_->setObjectName("recognitionAllowResample"); recognitionAllowResample_->setChecked(true);
+    recognitionAllowResample_->setToolTip("仅校验演示配置中的目标采样率；识别演示不执行真实模型预处理。"); fieldsLayout->addWidget(recognitionAllowResample_);
+    auto* manageModel = actionButton("选择模型文件…", "recognitionModelManager", fieldsLayout); manageModel->setProperty("uiRole", "outline");
+    manageModel->setToolTip("演示只记录文件名，不加载或执行模型权重");
     connect(manageModel, &QPushButton::clicked, this, [this] {
         const auto path = QFileDialog::getOpenFileName(this, "选择模型文件名（演示不会加载权重）", {}, "Model files (*.onnx *.pt *.pth *.engine);;All files (*.*)");
-        if (!path.isEmpty()) { selectedModelFile_ = QFileInfo(path).fileName(); if (analysisStatus_) analysisStatus_->setText("已记录文件名：" + selectedModelFile_ + " · 未读取文件内容"); }
+        if (!path.isEmpty()) {
+            selectedModelFile_ = QFileInfo(path).fileName();
+            if (auto* button = findChild<QPushButton*>("recognitionModelManager"))
+                button->setToolTip("已记录：" + selectedModelFile_ + "；未加载或执行权重");
+        }
     });
+    fieldsLayout->addStretch(); configScroll->setWidget(configContents); configLayout->addWidget(configScroll, 1);
+    auto* taskControls = new QWidget; taskControls->setObjectName("recognitionTaskControls");
+    auto* taskLayout = new QVBoxLayout(taskControls); taskLayout->setContentsMargins(0, 0, 0, 0); taskLayout->setSpacing(7);
     auto* runRow = new QWidget; auto* runLayout = new QHBoxLayout(runRow); runLayout->setContentsMargins(0, 0, 0, 0);
     runRecognition_ = actionButton("运行识别演示", "runRecognition", runLayout); runRecognition_->setProperty("uiRole", "primary");
     stopRecognition_ = actionButton("停止", "stopRecognition", runLayout); stopRecognition_->setEnabled(false);
     connect(runRecognition_, &QPushButton::clicked, this, [this] { startDemoRecognition(); });
     connect(stopRecognition_, &QPushButton::clicked, this, [this] { stopDemoRecognition(); });
-    configLayout->addWidget(runRow);
-    recognitionProgress_ = new QProgressBar; recognitionProgress_->setObjectName("recognitionProgress"); recognitionProgress_->setRange(0, 100); recognitionProgress_->setValue(0); configLayout->addWidget(recognitionProgress_);
-    analysisStatus_ = textLabel("待校验 · synthetic=true", "recognitionStatus"); analysisStatus_->setStyleSheet("color:#83c8d8;font-size:10px;"); configLayout->addWidget(analysisStatus_);
-    auto* modelInfo = textLabel("模板：ResNet18 / CLDNN / Transformer\n权重哈希：空\n实际推理提供方：无 · 前端合成", "recognitionModelInfo");
-    modelInfo->setStyleSheet("color:#94aeca;font:10px Consolas;"); configLayout->addWidget(modelInfo); configLayout->addStretch(); deepLayout->addWidget(configPanel);
+    taskLayout->addWidget(runRow);
+    recognitionProgress_ = new QProgressBar; recognitionProgress_->setObjectName("recognitionProgress"); recognitionProgress_->setRange(0, 100); recognitionProgress_->setValue(0); taskLayout->addWidget(recognitionProgress_);
+    analysisStatus_ = textLabel("待运行 · 合成示例", "recognitionStatus"); analysisStatus_->setStyleSheet("color:#83c8d8;font-size:11px;"); taskLayout->addWidget(analysisStatus_);
+    configLayout->addWidget(taskControls); deepLayout->addWidget(configPanel);
     auto* resultSide = new QWidget; auto* resultLayout = new QVBoxLayout(resultSide); resultLayout->setContentsMargins(0, 0, 0, 0); resultLayout->setSpacing(5);
     auto* resultCards = new QWidget; auto* cardRow = new QHBoxLayout(resultCards); cardRow->setContentsMargins(0, 0, 0, 0); cardRow->setSpacing(5);
-    for (const auto& [title, value] : std::array<std::pair<QString, QString>, 4>{{{"信号片段", "18"}, {"主类别", "QPSK"}, {"平均置信度", "0.82"}, {"预测时间", "演示"}}}) {
-        auto* card = textLabel(title + "\n" + value); card->setObjectName("recognitionStatCard");
-        card->setStyleSheet("background:#16253a;border:1px solid #2d4964;padding:9px;color:#c9def0;"); cardRow->addWidget(card);
+    const std::array<QString, 4> statTitles{"信号片段", "主类别", "平均置信度", "任务状态"};
+    for (std::size_t i = 0; i < recognitionStats_.size(); ++i) {
+        auto* card = textLabel(statTitles[i] + "\n" + (i == 3 ? QStringLiteral("待运行") : QStringLiteral("—")), "recognitionStatCard");
+        recognitionStats_[i] = card; card->setMinimumWidth(0); card->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        card->setToolTip("合成识别示例统计；运行完成后按实际生成的演示结果更新，不代表真实推理。");
+        card->setStyleSheet("background:#16253a;border:1px solid #2d4964;padding:9px;color:#c9def0;"); cardRow->addWidget(card, 1);
     }
     resultLayout->addWidget(resultCards);
-    recognitionTop5_ = textLabel("Top-5 候选\n等待演示识别结果", "recognitionTop5");
+    recognitionTop5_ = textLabel("Top-5 候选 · 等待合成示例结果", "recognitionTop5");
     recognitionTop5_->setStyleSheet("background:#111f32;border:1px solid #2c455e;padding:10px;color:#c2d7e8;"); resultLayout->addWidget(recognitionTop5_);
-    resultLayout->addWidget(plotPanel("片段置信度时间轴 · 合成示例", "recognitionTimelinePanel", ChartMode::Timeline, timeline_), 1);
-    resultLayout->addWidget(plotPanel("当前通道时频图 · 真实 IQ", "recognitionStftPanel", ChartMode::Heatmap, recognitionStft_), 2);
+    resultLayout->addWidget(plotPanel("置信度时间轴 · 合成示例", "recognitionTimelinePanel", ChartMode::Timeline, timeline_), 1);
+    resultLayout->addWidget(plotPanel("通道时频图", "recognitionStftPanel", ChartMode::Heatmap, recognitionStft_), 2);
     auto* exportRow = new QWidget; auto* exportLayout = new QHBoxLayout(exportRow); exportLayout->setContentsMargins(0, 0, 0, 0); exportLayout->addStretch();
     auto* exportJson = actionButton("导出 JSON", "exportRecognitionJson", exportLayout); exportJson->setProperty("uiRole", "outline");
     connect(exportJson, &QPushButton::clicked, this, &NarrowbandWorkspace::exportRecognition); resultLayout->addWidget(exportRow);
     deepLayout->addWidget(resultSide, 1);
     connect(recognitionThreshold_, &QDoubleSpinBox::valueChanged, this, [this](double value) {
         updateRecognitionDetail();
-        if (analysisStatus_) analysisStatus_->setText(QStringLiteral("阈值 %.2f 只重判未知类别 · 合成分数不会重算").arg(value));
+        if (analysisStatus_ && !recognitionActive_ && !recognitionSegments_.empty()) {
+            analysisStatus_->setText(recognitionResultStale_ ? QStringLiteral("上次合成结果已过期") : QStringLiteral("合成示例完成 · 阈值 %1").arg(value, 0, 'f', 2));
+            analysisStatus_->setToolTip("阈值只重判未知类别，已生成的合成分数不重新计算。");
+        }
     });
     auto invalidateRecognition = [this] { markRecognitionStale("识别配置已变化"); };
     connect(model_, &QComboBox::currentIndexChanged, this, invalidateRecognition);
@@ -1095,11 +1351,14 @@ void NarrowbandWorkspace::buildPages() {
 
     auto* demod = makePage(3); auto* demodLayout = new QVBoxLayout(demod); demodLayout->setContentsMargins(0, 0, 0, 0); demodLayout->setSpacing(5);
     auto* demodCharts = new QGridLayout; demodCharts->setSpacing(5);
-    demodCharts->addWidget(plotPanel("解调星座", "demodConstellationPanel", ChartMode::Scatter, constellationDemod_), 0, 0);
-    demodCharts->addWidget(plotPanel("眼图", "demodEyePanel", ChartMode::Eye, eyeDemod_), 0, 1);
+    demodCharts->addWidget(plotPanel("解调星座 · 合成示例", "demodConstellationPanel", ChartMode::Scatter, constellationDemod_), 0, 0);
+    demodCharts->addWidget(plotPanel("眼图 · 合成示例", "demodEyePanel", ChartMode::Eye, eyeDemod_), 0, 1);
+    demodCharts->setColumnStretch(0, 1); demodCharts->setColumnStretch(1, 1);
     demodLayout->addLayout(demodCharts, 2);
     auto* bitHead = new QWidget; auto* bitRow = new QHBoxLayout(bitHead); bitRow->setContentsMargins(8, 2, 8, 2);
-    bitRow->addWidget(textLabel("解调位流 · 合成示例 · 未执行真实解调")); auto* selectAllBits = new QCheckBox("全选"); selectAllBits->setObjectName("selectAllBits"); bitRow->addWidget(selectAllBits);
+    auto* demodStatus = textLabel("位流 · 合成示例", "demodulationStatus");
+    demodStatus->setToolTip("未执行真实解调；合成位流没有实际源符号时间映射。"); bitRow->addWidget(demodStatus);
+    auto* selectAllBits = new QCheckBox("全选"); selectAllBits->setObjectName("selectAllBits"); bitRow->addWidget(selectAllBits);
     auto* copyBits = actionButton("复制", "copySyntheticBits", bitRow); auto* saveBits = actionButton("导出位流", "exportSyntheticBits", bitRow);
     bitRow->addStretch(); auto* locateBit = actionButton("示意回定位", "locateSyntheticBit", bitRow); demodLayout->addWidget(bitHead);
     bitstream_ = new QPlainTextEdit; bitstream_->setObjectName("syntheticBitstream"); bitstream_->setReadOnly(true); bitstream_->setMinimumHeight(95);
@@ -1110,8 +1369,8 @@ void NarrowbandWorkspace::buildPages() {
     connect(copyBits, &QPushButton::clicked, this, &NarrowbandWorkspace::copyBitstream);
     connect(saveBits, &QPushButton::clicked, this, &NarrowbandWorkspace::exportBitstream);
     connect(selectAllBits, &QCheckBox::toggled, this, [this](bool checked) { if (checked) bitstream_->selectAll(); else bitstream_->moveCursor(QTextCursor::Start); });
-    connect(locateBit, &QPushButton::clicked, this, [this] {
-        if (analysisStatus_) analysisStatus_->setText("示意定位：合成位流没有实际源符号时间映射");
+    connect(locateBit, &QPushButton::clicked, this, [this, demodStatus] {
+        demodStatus->setText("合成位流无实际源符号可定位");
         if (log_) log_("位流示意回定位；无实际解调样本可定位");
     });
 
@@ -1310,7 +1569,7 @@ void NarrowbandWorkspace::buildPages() {
     bindGesture(psd_, ChartMode::Spectrum); bindGesture(stft_, ChartMode::Heatmap);
     bindGesture(modulationStft_, ChartMode::Heatmap); bindGesture(recognitionStft_, ChartMode::Heatmap);
     charts_ = {waveform_, psd_, stft_, modulationStft_, recognitionStft_,
-               constellationSmall_, constellationLarge_, constellationDemod_, eyeLarge_, eyeDemod_, timeline_};
+               constellationLarge_, constellationDemod_, eyeLarge_, eyeDemod_, timeline_};
     for (auto* chart : charts_) if (chart) {
         chart->cancelPendingGesture = [this] { cancelChartWheel(); };
         chart->navigateHistory = [this](bool forward) {
@@ -1385,7 +1644,8 @@ void NarrowbandWorkspace::refreshFromSession() {
     const auto* file = session_.activeFile();
     if (!channel || !file) {
         markRecognitionStale("通道或源文件已关闭");
-        cancelPsd(); cancelWork(); sampleCache_.clear(); caption_->setText("未选择窄带通道"); dataStatus_->setText("等待通道数据");
+        cancelAnalysis();cancelPsd(); cancelWork(); sampleCache_.clear(); caption_->setText("未选择窄带通道"); caption_->setToolTip({});
+        psdStatus_.clear(); setDataStatus("等待通道数据");
         if (waveform_) waveform_->setSeries({}, "当前没有活动通道");
         return;
     }
@@ -1394,32 +1654,55 @@ void NarrowbandWorkspace::refreshFromSession() {
         chart->setProperty("sourcePowerUnit", powerUnit(file->metadata));
         chart->setProperty("sourceAmplitudeUnit", amplitudeUnit(file->metadata));
     }
-    if (!recognitionSegments_.empty() && recognitionChannelId_ == channel->id) {
+    if ((recognitionActive_ || !recognitionSegments_.empty()) && recognitionChannelId_ == channel->id) {
         if (recognitionConfigVersion_ != channel->configVersion)
             markRecognitionStale("通道配置已变化");
         else if (recognitionScope_ && recognitionScope_->currentIndex() == 0 &&
                  (recognitionRangeBegin_ != channel->visibleSourceTime.begin || recognitionRangeEnd_ != channel->visibleSourceTime.end))
             markRecognitionStale("分析时间范围已变化");
-    } else if (!recognitionSegments_.empty() && recognitionChannelId_ != channel->id) {
+    } else if ((recognitionActive_ || !recognitionSegments_.empty()) && recognitionChannelId_ != channel->id) {
         markRecognitionStale("已切换活动通道");
     }
-    if (auto* title = findChild<QLabel*>("narrowbandStftPanelTitle")) title->setText("窄带时频图 · " + powerUnit(file->metadata));
     updateCaption();
     const auto index = static_cast<int>(channel->page);
     if (pages_->currentIndex() != index) pages_->setCurrentIndex(index);
     for (int i = 0; i < 4; ++i) pageButtons_[i]->setChecked(i == index);
     { QSignalBlocker blocker(waveformMode_); waveformMode_->setCurrentIndex(static_cast<int>(channel->waveform)); }
     if (auto* rate = findChild<QDoubleSpinBox*>("symbolRate")) {
-        const QSignalBlocker blocker(rate); displayParameterValue(rate, channel->symbolRate);
+        double displayed=channel->analysis.symbolRateHz>0?channel->analysis.symbolRateHz:channel->symbolRate;
+        if(channel->analysis.symbolRateMode==SymbolRateMode::Estimated && analysisResult_ && analysisResult_->symbolRateHz>0 &&
+           analysisIdentityCurrent(analysisResult_->identity,file->metadata,*channel,session_.projectGeneration(),analysisGeneration_))displayed=analysisResult_->symbolRateHz;
+        const QSignalBlocker blocker(rate); displayParameterValue(rate,displayed);
+        rate->setToolTip(channel->analysis.symbolRateMode==SymbolRateMode::Unknown?"旧数值尚未确认；选择手工 Rs 后才用于眼图。":"已提交的符号率假设；不是调制识别结果。");
     }
-    const int psdIndex = displayPsdFft_->findData(channel->psdFftSize);
-    { QSignalBlocker blocker(displayPsdFft_); displayPsdFft_->setCurrentIndex(psdIndex); }
-    const auto stftIndex = displayStftFft_->findData(channel->stftFftSize);
-    { QSignalBlocker blocker(displayStftFft_); displayStftFft_->setCurrentIndex(stftIndex < 0 ? 5 : stftIndex); }
+    if(auto* mode=findChild<QComboBox*>("analysisSymbolRateMode")){QSignalBlocker b(mode);mode->setCurrentIndex(static_cast<int>(channel->analysis.symbolRateMode));}
+    if(auto* hypothesis=findChild<QComboBox*>("modulationFormat")){QSignalBlocker b(hypothesis);hypothesis->setCurrentIndex(static_cast<int>(channel->analysis.hypothesis));}
+    if(auto* order=findChild<QComboBox*>("analysisModulationOrder")) {
+      QSignalBlocker b(order);const auto h=channel->analysis.hypothesis;const int minimum=h==ModulationHypothesis::Apsk?8:h==ModulationHypothesis::Qam?4:2,maximum=h==ModulationHypothesis::Qam?4096:256;
+      if(order->itemData(0).toInt()!=minimum || order->itemData(order->count()-1).toInt()!=maximum){order->clear();for(int m=minimum;m<=maximum;m*=2)order->addItem(QString("M=%1").arg(m),m);}
+      order->setCurrentIndex(order->findData(channel->analysis.modulationOrder));order->setVisible(h>=ModulationHypothesis::Psk);
+    }
+    if(auto* rings=dynamic_cast<ParameterTextEdit*>(findChild<QLineEdit*>("analysisApskRings"))) {
+      rings->displayText(str(channel->analysis.apskRings));rings->setEnabled(channel->analysis.hypothesis==ModulationHypothesis::Apsk);
+      rings->setPlaceholderText(str(defaultApskRings(channel->analysis.modulationOrder)));
+    }
+    // Chart editors can live in the main window's shared overflow layer.
+    if(auto* stage=window()->findChild<QComboBox*>("eyeAnalysisStage")){QSignalBlocker b(stage);stage->setCurrentIndex(static_cast<int>(channel->analysis.eyeStage));}
+    if(auto* stage=window()->findChild<QComboBox*>("constellationAnalysisStage")){QSignalBlocker b(stage);stage->setCurrentIndex(static_cast<int>(channel->analysis.constellationStage));}
+    if(auto* mode=findChild<QComboBox*>("analysisCfoMode")){QSignalBlocker b(mode);mode->setCurrentIndex(static_cast<int>(channel->analysis.cfoMode));}
+    for(const auto& entry:std::array<std::pair<const char*,bool>,3>{{{"analysisMatchedFilter",channel->analysis.matchedFilter},{"analysisTimingRecovery",channel->analysis.timingRecovery},{"analysisCarrierRecovery",channel->analysis.carrierRecovery}}})
+      if(auto* control=findChild<QCheckBox*>(entry.first)){QSignalBlocker b(control);control->setChecked(entry.second);}
+    for(const auto& entry:std::array<std::pair<const char*,double>,4>{{{"analysisManualCfoHz",channel->analysis.manualCfoHz},{"analysisManualPhaseRadians",channel->analysis.manualPhaseRadians},{"analysisTimingLoopBandwidth",channel->analysis.timingLoopBandwidth},{"analysisCarrierLoopBandwidth",channel->analysis.carrierLoopBandwidth}}})
+      if(auto* control=findChild<QDoubleSpinBox*>(entry.first)){QSignalBlocker b(control);displayParameterValue(control,entry.second);}
+    if(auto* span=findChild<QSpinBox*>("analysisRrcSpan")){QSignalBlocker b(span);displayParameterValue(span,channel->analysis.filterSpanSymbols);}
+    if(auto* budget=findChild<QComboBox*>("analysisSampleBudget")){QSignalBlocker b(budget);const auto n=static_cast<int>(channel->analysis.sampleBudget);if(budget->findData(n)<0)budget->addItem(QString("%1 复样本（已保存）").arg(n),n);budget->setCurrentIndex(budget->findData(n));}
+    if(auto* density=window()->findChild<QComboBox*>("eyeDrawingDensity")){QSignalBlocker b(density);density->setCurrentIndex(density->findData(channel->analysis.eyePointsPerUi));}
+    for(const auto& setting:std::array<std::pair<const char*,double>,2>{{{"eyeTimingOffsetUi",channel->analysis.eyeTimingOffsetUi},{"analysisRrcRolloff",channel->analysis.rolloff}}})
+      if(auto* control=window()->findChild<QDoubleSpinBox*>(setting.first)){QSignalBlocker b(control);displayParameterValue(control,setting.second);}
+    displayFftValue(displayStftFft_, channel->stftFftSize);
     { QSignalBlocker blocker(frequencyMode_); frequencyMode_->setCurrentIndex(channel->absoluteFrequencyLabels ? 1 : 0); }
-    { QSignalBlocker blocker(eyePeriods_); eyePeriods_->setCurrentIndex(std::clamp(channel->eyePeriods - 1, 0, 3)); }
-    const auto traceIndex = channel->eyeTraces <= 32 ? 0 : channel->eyeTraces <= 64 ? 1 : channel->eyeTraces <= 128 ? 2 : 3;
-    { QSignalBlocker blocker(eyeTraces_); eyeTraces_->setCurrentIndex(traceIndex); }
+    { QSignalBlocker blocker(eyePeriods_);if(eyePeriods_->findData(channel->eyePeriods)<0)eyePeriods_->addItem(QString("%1（旧设置）").arg(channel->eyePeriods),channel->eyePeriods);eyePeriods_->setCurrentIndex(eyePeriods_->findData(channel->eyePeriods)); }
+    { QSignalBlocker blocker(eyeTraces_);if(eyeTraces_->findData(channel->eyeTraces)<0)eyeTraces_->addItem(QString("%1 条（旧设置）").arg(channel->eyeTraces),channel->eyeTraces);eyeTraces_->setCurrentIndex(eyeTraces_->findData(channel->eyeTraces)); }
     { QSignalBlocker blocker(eyeComponent_); eyeComponent_->setCurrentIndex(channel->eyeComponent); }
     updateFrequencyAxisLabels();
     if (waveform_)
@@ -1433,17 +1716,14 @@ void NarrowbandWorkspace::refreshFromSession() {
             static_cast<double>(channel->visibleSourceTime.end - channel->sourceTime.begin) / total);
         navigation_->setSeries({}, QStringLiteral("%1 – %2 · 源时间窗位置").arg(channel->sourceTime.begin).arg(channel->sourceTime.end));
     }
-    if (constellationSmall_) constellationSmall_->setPoints(syntheticConstellation(), "合成示例 · 未执行符号同步");
-    if (constellationLarge_) constellationLarge_->setPoints(syntheticConstellation(81), "合成示例 · 未执行符号同步");
-    if (constellationDemod_) constellationDemod_->setPoints(syntheticConstellation(103), "合成示例 · 未执行载波恢复");
-    if (eyeSmall_) eyeSmall_->setEye(syntheticEye(channel->eyeTraces, 96, channel->eyePeriods), "合成示例 · 未执行定时同步");
-    auto eyeLines = syntheticEye(channel->eyeTraces, 192, channel->eyePeriods);
-    if (channel->eyeComponent != 0) {
-        const float sign = channel->eyeComponent == 1 ? 1.f : -1.f;
-        for (auto& line : eyeLines) for (auto& point : line) point *= sign;
+    if(auto* points=window()->findChild<QComboBox*>("constellationPointBudget")){QSignalBlocker b(points);if(points->findData(channel->analysis.pointCount)<0)points->addItem(QString("%1 点").arg(channel->analysis.pointCount),channel->analysis.pointCount);points->setCurrentIndex(points->findData(channel->analysis.pointCount));}
+    for(const auto& setting:std::array<std::pair<const char*,bool>,3>{{{"constellationAutoScale",channel->analysis.constellationAutoScale},{"analysisRemoveDc",channel->analysis.removeDc},{"analysisNormalizePower",channel->analysis.normalizePower}}}) {
+      if(auto* control=window()->findChild<QCheckBox*>(setting.first)){QSignalBlocker b(control);control->setChecked(setting.second);}
     }
-    if (eyeLarge_) eyeLarge_->setEye(std::move(eyeLines), "合成示例 · 未执行定时同步");
-    if (eyeDemod_) eyeDemod_->setEye(syntheticEye(channel->eyeTraces, 192, channel->eyePeriods, 17), "合成示例 · 未执行定时同步");
+    for(const auto& axis:std::array<std::pair<const char*,double>,2>{{{"constellationAxisMinimum",channel->constellationMinimum},{"constellationAxisMaximum",channel->constellationMaximum}}})
+      if(auto* control=window()->findChild<QDoubleSpinBox*>(axis.first)){QSignalBlocker b(control);displayParameterValue(control,axis.second);control->setEnabled(!channel->analysis.constellationAutoScale);}
+    if (constellationDemod_) constellationDemod_->setPoints(syntheticConstellation(103), "合成示例 · 未执行载波恢复或真实解调", "合成示例");
+    if (eyeDemod_) eyeDemod_->setEye(syntheticEye(channel->eyeTraces, 192, channel->eyePeriods, 17), "合成示例 · 未执行定时同步", "合成示例");
     requestDisplay();
 }
 
@@ -1482,15 +1762,30 @@ void NarrowbandWorkspace::updateLinkedCursors() {
     if (key != linkedPsdKey_) {
         linkedPsdKey_ = key;
         if (cursor.framePsd) {
+            QString summary = frame ? QStringLiteral("驻留帧谱") : QStringLiteral("驻留帧不可用 / 正在更新");
+            if (frame && frame->paddedSamples) summary += QStringLiteral(" · 补零 %1").arg(frame->paddedSamples);
             psd_->setSeries(frame ? std::vector<std::vector<float>>{spectrumDb(*frame)} : std::vector<std::vector<float>>{},
-                frame ? QStringLiteral("驻留帧谱 · N=%1 · 与 STFT 帧逐 bin 一致").arg(frame->linearPower.size()) : QStringLiteral("驻留帧不可用 / 正在更新"));
+                frame ? QStringLiteral("驻留帧谱 · N=%1 · 与 STFT 帧逐 bin 一致 · 有效观测 %2 ms · 补零 %3；补零不提高真实分辨率")
+                    .arg(frame->linearPower.size()).arg(frame->observedSeconds * 1000, 0, 'g', 6).arg(frame->paddedSamples) : summary, summary);
             psd_->setProperty("effectiveFftPoints", frame ? static_cast<int>(frame->linearPower.size()) : channel->stftFftSize);
         } else {
-            psd_->setSeries(averagePsd_.empty() ? std::vector<std::vector<float>>{} : std::vector<std::vector<float>>{averagePsd_}, psdStatus_);
+            QString summary = psdStatus_;
+            if (psdStatus_.startsWith("PSD 完成")) {
+                summary = "统计谱";
+                if (averagePower_ && averagePower_->paddedSamples) summary += QStringLiteral(" · 补零 %1").arg(averagePower_->paddedSamples);
+            }
+            psd_->setSeries(averagePsd_.empty() ? std::vector<std::vector<float>>{} : std::vector<std::vector<float>>{averagePsd_}, psdStatus_, summary);
             psd_->setProperty("effectiveFftPoints", channel->psdFftSize);
         }
     }
-    if (displayPsdFft_) { displayPsdFft_->setEnabled(!cursor.framePsd); displayPsdFft_->setToolTip(cursor.framePsd ? "驻留帧谱的有效点数随 STFT；平均谱设置保留" : "当前可见频段内的分析点数"); }
+    if (displayPsdFft_) {
+        displayFftValue(displayPsdFft_, cursor.framePsd && frame ? static_cast<int>(frame->linearPower.size()) :
+            cursor.framePsd ? channel->stftFftSize : channel->psdFftSize);
+        if(cursor.framePsd)displayPsdFft_->setItemText(displayPsdFft_->currentIndex(),QString("%1（随 STFT）").arg(displayPsdFft_->currentData().toInt()));
+        displayPsdFft_->setEnabled(!cursor.framePsd);
+        displayPsdFft_->setToolTip(cursor.framePsd ? "N 随 STFT；选择统计谱可修改独立PSD N" : "当前可见频段内的分析点数");
+    }
+    if (dataStatus_) dataStatus_->setToolTip(displayDiagnosticsText());
 }
 PowerAnalysisSnapshot NarrowbandWorkspace::powerSnapshot() const {
     PowerAnalysisSnapshot result;
@@ -1508,7 +1803,26 @@ void NarrowbandWorkspace::updatePowerColors() {
     if (key == powerColorKey_) return;
     powerColorKey_ = key;
     const auto image = spectrumImage(rasterPower_, QSize(560, 240), file->display.referenceLevelDb, file->display.dynamicRangeDb);
-    for (auto* chart : {stft_, modulationStft_, recognitionStft_}) if (chart) chart->setRaster(image, dataStatus_->text(), key);
+    for (auto* chart : {stft_, modulationStft_, recognitionStft_}) if (chart) chart->setRaster(image, chart->status(), key, chart->displayStatus());
+}
+
+void NarrowbandWorkspace::fitWaveformAmplitude() {
+    auto* channel = session_.activeChannel();
+    if (!channel || !channel->waveformAutoScale || !waveform_) return;
+    const auto range = waveform_->valueRange();
+    if (!range) return;
+    auto [minimum, maximum] = *range;
+    double span = maximum - minimum;
+    const double minimumSpan = channel->waveform == NarrowbandWaveform::Phase ? .01 : 1.0;
+    if (span < minimumSpan) {
+        const double center = (minimum + maximum) / 2.0;
+        span = std::max(minimumSpan, std::abs(center) * 1e-6);
+        minimum = center - span / 2.0; maximum = center + span / 2.0;
+    }
+    const double padding = span / 6.0;
+    session_.setChannelAmplitudeRange(minimum - padding, maximum + padding, true, false);
+    waveform_->setYAxisRange(channel->waveformAxisMinimum, channel->waveformAxisMaximum,
+        waveformAxisLabel(channel->waveform, session_.activeFile() ? &session_.activeFile()->metadata : nullptr));
 }
 
 void NarrowbandWorkspace::expandAnalysisTime() {
@@ -1519,7 +1833,7 @@ void NarrowbandWorkspace::expandAnalysisTime() {
     std::uint64_t required = 0;
     if (!mulDiv(std::max(stft.inputSamples, psd.inputSamples), rateHz(file->metadata.sampleRateHz), rateHz(channel->outputSampleRateHz), true, required)) return;
     const auto total = channel->sourceTime.end - channel->sourceTime.begin;
-    if (required > total) { dataStatus_->setText("通道总时长不足以满足当前分析点数"); return; }
+    if (required > total) { setDataStatus("通道总时长不足以满足当前分析点数"); return; }
     const auto& cursor = session_.linkedCursor(channel->id);
     const auto center = cursor.pinned ? cursor.sourceSample : channel->visibleSourceTime.begin + (channel->visibleSourceTime.end - channel->visibleSourceTime.begin) / 2;
     const auto alignment = static_cast<std::uint64_t>(std::ceil(file->metadata.sampleRateHz / channel->outputSampleRateHz));
@@ -1558,6 +1872,7 @@ void NarrowbandWorkspace::cancelChartWheel() {
 void NarrowbandWorkspace::requestDisplay(bool settled) {
     const auto* active = session_.activeChannel(); const auto* file = session_.activeFile();
     if (!active || !file || !waveform_ || !psd_ || !stft_) return;
+    if(currentPageIndex()==1)requestAnalysis();
     const auto prefix = availableSamples(file->metadata);
     if (file->metadata.availability.status == LoadStatus::Failed || !prefix ||
         active->sourceTime.begin >= active->sourceTime.end ||
@@ -1583,9 +1898,8 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
                      .arg(active->sourceTime.begin)
                      .arg(active->sourceTime.end)
                      .arg(prefix);
-      dataStatus_->setText(reason);
-      analysisStatus_->setText(reason);
       psdStatus_ = reason;
+      setDataStatus(reason);
       psd_->setProperty("psdComplete", false);
       waveform_->setSamplePointsVisible(false);
       for (auto* chart : {waveform_, psd_}) chart->setSeries({}, reason);
@@ -1604,7 +1918,7 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
         lastConfigVersion_ == active->configVersion && lastVisibleTime_ == active->visibleSourceTime &&
         lastVisibleFrequency_ == active->visibleBasebandFrequency && lastWaveform_ == active->waveform &&
         lastStftFft_ == active->stftFftSize && lastSpectrogramSettings_==active->spectrogram;
-    if (unchanged) { updateLinkedCursors(); updatePowerColors(); return; }
+    if (unchanged) { fitWaveformAmplitude(); updateLinkedCursors(); updatePowerColors(); return; }
     const bool invalidateChannelCache = hasDisplayRequest_ && lastChannelId_ == active->id &&
         lastConfigVersion_ != active->configVersion;
     cancelWork();
@@ -1618,7 +1932,7 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
         stft_->setRaster({}, "等待频段分析…");
         if (modulationStft_) modulationStft_->setRaster({}, "等待频段分析…");
         if (recognitionStft_) recognitionStft_->setRaster({}, "等待频段分析…");
-        dataStatus_->setText("等待交互停止后计算…");
+        setDataStatus("等待交互停止后计算…");
         displaySettleTimer_->start(); return;
     }
     const auto channel = *active; const auto source = file->metadata;
@@ -1636,31 +1950,30 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
             QStringLiteral("源 IQ 文件不可用 · 真实 DDC 未运行");
         waveform_->setSeries({}, status); psd_->setSeries({}, status); stft_->setRaster({}, status);
         if (modulationStft_) modulationStft_->setRaster({}, status); if (recognitionStft_) recognitionStft_->setRaster({}, status);
-        dataStatus_->setText(status);
-        analysisStatus_->setText(status); return;
+        setDataStatus(status); return;
     }
     if (!makeChannelDspPlan(source, channel, plan, error)) {
         waveform_->setSeries({}, error); psd_->setSeries({}, error); stft_->setRaster({}, error);
         if (modulationStft_) modulationStft_->setRaster({}, error); if (recognitionStft_) recognitionStft_->setRaster({}, error);
-        dataStatus_->setText("参数校验失败"); analysisStatus_->setText(error); return;
+        setDataStatus("参数校验失败：" + error); return;
     }
     const auto sourceRate = rateHz(source.sampleRateHz), outputRate = rateHz(channel.outputSampleRateHz);
     std::uint64_t firstOutput = 0, lastOutput = 0;
     if (!sourceRate || !outputRate || channel.visibleSourceTime.begin < channel.sourceTime.begin ||
         !mulDiv(channel.visibleSourceTime.begin - channel.sourceTime.begin, outputRate, sourceRate, true, firstOutput) ||
         !mulDiv(channel.visibleSourceTime.end - channel.sourceTime.begin, outputRate, sourceRate, false, lastOutput)) {
-        waveform_->setSeries({}, "输出采样映射超出支持范围"); dataStatus_->setText("映射无效"); return;
+        waveform_->setSeries({}, "输出采样映射超出支持范围"); setDataStatus("输出采样映射超出支持范围"); return;
     }
     std::uint64_t outputTotal = 0;
     if (!mulDiv(channel.sourceTime.end - channel.sourceTime.begin, outputRate, sourceRate, true, outputTotal)) {
-        waveform_->setSeries({}, "通道输出样本数超出 uint64 范围"); dataStatus_->setText("输出长度无效"); return;
+        waveform_->setSeries({}, "通道输出样本数超出 uint64 范围"); setDataStatus("输出长度无效", "通道输出样本数超出 uint64 范围"); return;
     }
     lastOutput = std::min(lastOutput, outputTotal);
     if (lastOutput <= firstOutput) {
         const auto message = QStringLiteral("当前可见范围没有输出样本");
         waveform_->setSeries({}, message); psd_->setSeries({}, message); stft_->setRaster({}, message);
         auto unavailable=std::make_shared<SpectrogramData>();unavailable->sourceView=channel.visibleSourceTime;unavailable->error="当前可见范围没有输出样本";session_.installSpectrogram(channel.id,unavailable);
-        dataStatus_->setText("等待有效时间窗"); return;
+        setDataStatus("当前可见范围没有输出样本"); return;
     }
     const auto outputSpan = lastOutput - firstOutput;
     const auto physicalPlotWidth = static_cast<std::uint64_t>(std::max(1.0,
@@ -1670,7 +1983,7 @@ void NarrowbandWorkspace::requestDisplay(bool settled) {
         std::clamp(std::llround(waveform_->plotRect().width() * waveform_->devicePixelRatioF() * 2.0), 1400LL, 65536LL));
     waveform_->setSeries({}, "正在按需读取并处理当前可见 IQ…");
     stft_->setRaster({}, "正在计算真实 STFT…");
-    dataStatus_->setText(QStringLiteral("处理中 · 配置 v%1 · 请求 %2").arg(config).arg(generation));
+    setDataStatus("正在处理窄带数据…", QStringLiteral("处理中 · 配置 v%1 · 请求 %2").arg(config).arg(generation));
     displayPending_ = true;
     auto cancel = std::make_shared<std::atomic_bool>(false); cancellation_ = cancel;
     worker_ = std::thread([this, channel, source, plan = std::move(plan), firstOutput, lastOutput, waveformPoints,
@@ -1760,31 +2073,6 @@ void NarrowbandWorkspace::installFrame(std::uint64_t generation, std::uint64_t c
     if(average){averagePower_=std::move(average);averagePsd_=psd;} linkedPsdKey_.clear(); rasterPower_ = std::move(rasterPower); powerColorKey_.clear();
     waveform_->setSamplePositions(std::move(samplePositions));
     for (auto* chart : {stft_, modulationStft_, recognitionStft_}) if (chart) chart->setSpectralData(spectrum);
-    if (channel->waveformAutoScale && !waveformI.empty()) {
-        double minimum = std::numeric_limits<double>::infinity();
-        double maximum = -std::numeric_limits<double>::infinity();
-        const auto include = [&](const std::vector<float>& values) {
-            for (const float value : values) {
-                if (!std::isfinite(value)) continue;
-                minimum = std::min(minimum, static_cast<double>(value));
-                maximum = std::max(maximum, static_cast<double>(value));
-            }
-        };
-        include(waveformI);
-        include(waveformQ);
-        if (std::isfinite(minimum) && std::isfinite(maximum)) {
-            double span = maximum - minimum;
-            const double minimumSpan = channel->waveform == NarrowbandWaveform::Phase ? .01 : 1.0;
-            if (span < minimumSpan) {
-                const double center = (minimum + maximum) / 2.0;
-                span = std::max(minimumSpan, std::abs(center) * 1e-6);
-                minimum = center - span / 2.0;
-                maximum = center + span / 2.0;
-            }
-            const double padding = span / 6.0;
-            session_.setChannelAmplitudeRange(minimum - padding, maximum + padding, true, false);
-        }
-    }
     if (waveform_)
         waveform_->setYAxisRange(channel->waveformAxisMinimum, channel->waveformAxisMaximum,
                                  waveformAxisLabel(channel->waveform, session_.activeFile() ? &session_.activeFile()->metadata : nullptr));
@@ -1793,24 +2081,35 @@ void NarrowbandWorkspace::installFrame(std::uint64_t generation, std::uint64_t c
         waveform_->setSamplePointsVisible(samplePointsVisible && !waveformI.empty());
     }
     if (psd_) psd_->setYAxisRange(channel->psdAxisMinimum, channel->psdAxisMaximum, session_.activeFile() ? powerUnit(session_.activeFile()->metadata) : QStringLiteral("dBFS/Hz"));
+    const bool waveformReady = !waveformI.empty();
+    QString stftSummary = stftReady ? QStringLiteral("STFT") : QStringLiteral("STFT 不可用");
+    if (spectrum) {
+        std::uint64_t maximumPadding = 0;
+        for (const auto& frame : spectrum->frames) maximumPadding = std::max(maximumPadding, frame->paddedSamples);
+        if (maximumPadding) stftSummary += QStringLiteral(" · 补零最多 %1/帧").arg(maximumPadding);
+        if (!spectrum->error.empty()) stftSummary += " · 分析异常";
+        if (spectrum->repeatedObservation) stftSummary += " · 重复观测";
+    }
+    const QString summary = (waveformReady ? QStringLiteral("真实 DDC") : QStringLiteral("IQ 读取或窄带计算失败")) + " · " + stftSummary;
+    if (stftSummary.contains("补零")) status += "；补零不提高真实分辨率";
     if (!waveformI.empty()) {
-        if (waveformQ.empty()) waveform_->setSeries({std::move(waveformI)}, status);
-        else waveform_->setSeries({std::move(waveformI), std::move(waveformQ)}, status);
+        if (waveformQ.empty()) waveform_->setSeries({std::move(waveformI)}, status, "真实 DDC");
+        else waveform_->setSeries({std::move(waveformI), std::move(waveformQ)}, status, "真实 DDC");
     } else waveform_->setSeries({}, status);
-    if (psdReady && !psd.empty()) psd_->setSeries({std::move(psd)}, status);
+    fitWaveformAmplitude();
+    if (psdReady && !psd.empty()) psd_->setSeries({std::move(psd)}, status, "统计谱");
     const auto revision = QStringLiteral("nb-%1-%2").arg(configVersion).arg(generation);
     if (stftReady && !stft.isNull()) {
-        stft_->setRaster(stft, status, revision);
-        if (modulationStft_) modulationStft_->setRaster(stft, status, revision);
-        if (recognitionStft_) recognitionStft_->setRaster(stft, status, revision);
+        stft_->setRaster(stft, status, revision, stftSummary);
+        if (modulationStft_) modulationStft_->setRaster(stft, status, revision, stftSummary);
+        if (recognitionStft_) recognitionStft_->setRaster(stft, status, revision, stftSummary);
     } else {
         const QString unavailable = status;
         stft_->setRaster({}, unavailable);
         if (modulationStft_) modulationStft_->setRaster({}, unavailable);
         if (recognitionStft_) recognitionStft_->setRaster({}, unavailable);
     }
-    dataStatus_->setText(status);
-    if (analysisStatus_) analysisStatus_->setText(status);
+    setDataStatus(summary, status);
     updateLinkedCursors(); updatePowerColors();
     emit displayParametersChanged();
 }
@@ -1863,6 +2162,132 @@ void NarrowbandWorkspace::requestPsd() {
         deliver(std::move(frame),status,true);
     });
 }
+void NarrowbandWorkspace::cancelAnalysis(bool userInitiated) {
+    if(!analysisPending_ && !analysisResult_ && !lastAnalysisIdentity_ &&
+       (!analysisService_ || !analysisService_->busy()))return;
+    if(analysisService_)analysisService_->cancel();
+    ++analysisGeneration_;analysisPending_=false;analysisResult_.reset();
+    if(!userInitiated)lastAnalysisIdentity_.reset();
+    if(auto* candidates=findChild<QComboBox*>("analysisRateCandidates")){QSignalBlocker b(candidates);candidates->clear();}
+    if(constellationLarge_)constellationLarge_->setPoints({},"当前没有有效的真实星座结果。");
+    if(eyeLarge_)eyeLarge_->setEye({},"当前没有有效的真实眼图结果。");
+}
+
+void NarrowbandWorkspace::requestAnalysis(bool force) {
+    const auto* channel=session_.activeChannel();const auto* file=session_.activeFile();
+    if(!analysisService_ || !channel || !file)return;
+    // Refresh can run before the result timer. Check the old physical revision
+    // before replacing its request identity, so it cannot hide an external edit.
+    if(invalidateChangedAnalysisSource() && !force)return;
+    const auto sourceKey=analysisSourceKey(file->metadata,*channel);
+    if(!force && lastAnalysisIdentity_ && lastAnalysisIdentity_->sourceKey==sourceKey &&
+       lastAnalysisIdentity_->projectGeneration==session_.projectGeneration() &&
+       lastAnalysisTime_==channel->visibleSourceTime && lastAnalysisSettings_==channelAnalysisSettings(*channel))return;
+    if(channel->processingState!=ChannelProcessingState::Ready || file->metadata.demo) {
+      cancelAnalysis();if(modulationStatus_)modulationStatus_->setText("来源没有可用的真实通道 IQ。");return;
+    }
+    std::uint64_t first=0,last=0;
+    if(channel->visibleSourceTime.begin<channel->sourceTime.begin ||
+       !mulDiv(channel->visibleSourceTime.begin-channel->sourceTime.begin,rateHz(channel->outputSampleRateHz),rateHz(file->metadata.sampleRateHz),true,first) ||
+       !mulDiv(channel->visibleSourceTime.end-channel->sourceTime.begin,rateHz(channel->outputSampleRateHz),rateHz(file->metadata.sampleRateHz),false,last)) {
+      cancelAnalysis();if(modulationStatus_)modulationStatus_->setText("分析区间不能映射到实际输出采样网格。");return;
+    }
+    AnalysisRequest request;
+    request.identity={session_.projectGeneration(),++analysisGeneration_,channel->configVersion,channel->id,sourceKey,{first,last}};
+    request.sampleBudget=channel->analysis.sampleBudget;
+    lastAnalysisIdentity_=request.identity;lastAnalysisTime_=channel->visibleSourceTime;lastAnalysisSettings_=channelAnalysisSettings(*channel);
+    lastAnalysisPhysicalRevision_=analysisPhysicalRevision(file->metadata);
+    analysisPending_=true;analysisResult_.reset();
+    if(auto* candidates=findChild<QComboBox*>("analysisRateCandidates")){QSignalBlocker b(candidates);candidates->clear();}
+    constellationLarge_->setPoints({},"正在读取真实连续窄带 IQ…");
+    eyeLarge_->setEye({},"正在读取真实连续窄带 IQ…");
+    if(modulationStatus_)modulationStatus_->setText("正在分析真实 IQ；仅发布当前通道与配置结果…");
+    analysisService_->submit(file->metadata,*channel,request,lastAnalysisSettings_);
+}
+
+bool NarrowbandWorkspace::invalidateChangedAnalysisSource() {
+    const auto* channel=session_.activeChannel();const auto* file=session_.activeFile();
+    if(!lastAnalysisIdentity_ || !channel || !file ||
+       lastAnalysisIdentity_->channelId!=channel->id ||
+       lastAnalysisIdentity_->projectGeneration!=session_.projectGeneration())return false;
+    const auto revision=analysisPhysicalRevision(file->metadata);
+    if(lastAnalysisPhysicalRevision_==revision)return false;
+    cancelAnalysis(true);
+    // Keep an up-to-date cancellation marker until an explicit analysis action.
+    // Loader-prefix and normal context changes still follow automatic refresh.
+    lastAnalysisIdentity_->sourceKey=analysisSourceKey(file->metadata,*channel);
+    lastAnalysisIdentity_->channelConfigVersion=channel->configVersion;
+    lastAnalysisIdentity_->requestGeneration=analysisGeneration_;
+    lastAnalysisTime_=channel->visibleSourceTime;
+    lastAnalysisSettings_=channelAnalysisSettings(*channel);
+    lastAnalysisPhysicalRevision_=revision;
+    if(modulationStatus_)modulationStatus_->setText("来源文件已变化；旧结果失效，请重新分析。");
+    return true;
+}
+
+void NarrowbandWorkspace::installAnalysis() {
+    if(!analysisService_)return;
+    if(invalidateChangedAnalysisSource())return;
+    const auto* channel=session_.activeChannel();const auto* file=session_.activeFile();
+    if(lastAnalysisIdentity_ && (!channel || !file ||
+       !analysisIdentityCurrent(*lastAnalysisIdentity_,file->metadata,*channel,session_.projectGeneration(),lastAnalysisIdentity_->requestGeneration) ||
+       lastAnalysisTime_!=channel->visibleSourceTime || lastAnalysisSettings_!=channelAnalysisSettings(*channel))) {
+      cancelAnalysis();
+      if(modulationStatus_)modulationStatus_->setText("来源、可用前缀或分析上下文已变化；旧结果失效，请重新分析。");return;
+    }
+    auto result=analysisService_->takeResult();if(!result)return;
+    if(!channel || !file || !analysisIdentityCurrent(result->identity,file->metadata,*channel,session_.projectGeneration(),analysisGeneration_) ||
+       lastAnalysisTime_!=channel->visibleSourceTime || lastAnalysisSettings_!=channelAnalysisSettings(*channel)) {
+      if(lastAnalysisIdentity_ && result->identity.requestGeneration==lastAnalysisIdentity_->requestGeneration){cancelAnalysis();if(modulationStatus_)modulationStatus_->setText("分析来源已变化；旧结果失效。");}return;
+    }
+    analysisPending_=false;analysisResult_=std::move(result);
+    if(analysisResult_->status!=AnalysisStatus::Ready) {
+      constellationLarge_->setPoints({},str(analysisResult_->message));
+      eyeLarge_->setEye({},str(analysisResult_->message));
+      if(modulationStatus_)modulationStatus_->setText(str(analysisResult_->message));return;
+    }
+    const auto& data=*analysisResult_;
+    if(auto* candidates=findChild<QComboBox*>("analysisRateCandidates")) {
+      QSignalBlocker b(candidates);candidates->clear();
+      for(const auto& candidate:data.rateCandidates)candidates->addItem(QString("%1 Sym/s · 评分 %2 · %3 dB · %4")
+        .arg(candidate.rateHz,0,'g',10).arg(candidate.score,0,'f',2).arg(candidate.prominenceDb,0,'f',1).arg(str(candidate.method)),candidate.rateHz);
+    }
+    if(channel->analysis.symbolRateMode==SymbolRateMode::Estimated && data.symbolRateHz>0)
+      if(auto* rate=findChild<QDoubleSpinBox*>("symbolRate")){QSignalBlocker b(rate);displayParameterValue(rate,data.symbolRateHz);}
+    const double minimum=channel->analysis.constellationAutoScale?data.axisMinimum:channel->constellationMinimum;
+    const double maximum=channel->analysis.constellationAutoScale?data.axisMaximum:channel->constellationMaximum;
+    constellationLarge_->setIqRange(minimum,maximum,channel->analysis.normalizePower?"RMS 归一化":"解码 IQ 幅度");
+    std::vector<std::complex<float>> points;points.reserve(data.constellation.size());
+    for(const auto& point:data.constellation)points.push_back(point.value);
+    const auto detail=QString("%1 · %2 点 / %3 有效样本 · Fs %4 S/s · output [%5,%6) · source [%7,%8) · 排除边界 %9/%10")
+      .arg(str(data.message)).arg(points.size()).arg(data.source->samples.size()).arg(data.source->outputRateHz)
+      .arg(data.source->outputSamples.begin).arg(data.source->outputSamples.end)
+      .arg(data.source->sourceSamples.begin).arg(data.source->sourceSamples.end).arg(data.source->discardedLeft).arg(data.source->discardedRight);
+    const QStringList stageNames{"原始 IQ（未同步）","CFO 校正","匹配滤波","定时符号","载波恢复"};
+    const bool fallback=channel->analysis.constellationStage!=data.constellationStage;
+    const auto stageSummary=fallback?QString("同步未完成 · 请求%1 / 显示%2").arg(stageNames.at(static_cast<int>(channel->analysis.constellationStage)),stageNames.at(static_cast<int>(data.constellationStage))):
+      QString("真实 IQ · %1 · %2 点").arg(stageNames.at(static_cast<int>(data.constellationStage))).arg(data.constellation.size());
+    constellationLarge_->setPoints(std::move(points),detail,stageSummary);
+    constellationLarge_->setProperty("requestedAnalysisStage",static_cast<int>(channel->analysis.constellationStage));
+    constellationLarge_->setProperty("analysisStageFallback",fallback);
+    constellationLarge_->setProperty("analysisStage",static_cast<int>(data.constellationStage));
+    constellationLarge_->setProperty("timingLocked",data.timingLocked);constellationLarge_->setProperty("carrierLocked",data.carrierLocked);
+    constellationLarge_->setProperty("realIqSource",true);
+    constellationLarge_->setProperty("sourceChannelId",str(channel->id));
+    constellationLarge_->setProperty("sourceConfigVersion",static_cast<qulonglong>(channel->configVersion));
+    constellationLarge_->setProperty("actualSampleRateHz",static_cast<qulonglong>(data.source->outputRateHz));
+    if(data.eyeStatus==AnalysisStatus::Ready)eyeLarge_->setRealEye(data,channel->eyeComponent);
+    else eyeLarge_->setEye({},str(data.eyeMessage));
+    const auto eyeDetail=QString("\n%1 · K_B=%2× · 实际 SPS=%3 · 绘图插值 %4 点/UI · 有效轨迹 %5 · RRC 丢弃 %6 样本")
+      .arg(str(data.eyeMessage)).arg(static_cast<double>(data.source->outputRateHz)/channel->bandwidthHz,0,'g',6)
+      .arg(data.symbolRateHz>0?QString::number(data.samplesPerSymbol,'g',9):QString("未给定 Rs"))
+      .arg(data.eyePointsPerUi).arg(data.eyes.size()).arg(data.filterDiscardedSamples);
+    const auto syncDetail=QString("\n%1 · CFO %2 Hz · 定时周期 %3 samples · 捕获丢弃 %4 symbols%5")
+      .arg(str(data.syncMessage)).arg(data.estimatedCfoHz,0,'g',9).arg(data.timingPeriodSamples,0,'g',9).arg(data.acquisitionSymbolsDiscarded)
+      .arg(data.carrierLocked && data.conditionalEvm>=0?QString(" · 条件 EVM（所选模板）%1%").arg(data.conditionalEvm*100,0,'f',2):QString{});
+    if(modulationStatus_)modulationStatus_->setText(detail+eyeDetail+syncDetail);
+}
+
 void NarrowbandWorkspace::cancelWork() {
     if (displaySettleTimer_) displaySettleTimer_->stop();
     displayPending_ = false;
@@ -1876,7 +2301,8 @@ void NarrowbandWorkspace::updateCaption() {
     const auto* channel = session_.activeChannel(); const auto* file = session_.activeFile();
     if (!channel || !file) return;
     const double center = channel->centerFrequencyHz / 1e6, bandwidth = channel->bandwidthHz / 1e6;
-    caption_->setText(QStringLiteral("%1  ·  %2 / %3  ·  Fc %4 MHz  BW %5 MHz  Fs′ %6 MS/s")
+    caption_->setText(str(channel->name));
+    caption_->setToolTip(QStringLiteral("%1\n来源：%2 / %3\nFc %4 MHz · BW %5 MHz · Fs′ %6 MS/s")
         .arg(str(channel->name), str(file->metadata.name), str(channel->sourceMarkId))
         .arg(center, 0, 'f', 3).arg(bandwidth, 0, 'f', 3).arg(channel->outputSampleRateHz / 1e6, 0, 'f', 3));
     updateLinkedCursors();
@@ -1911,7 +2337,9 @@ void NarrowbandWorkspace::startDemoRecognition() {
     recognitionSourceMarkId_ = channel->sourceMarkId; recognitionConfigVersion_ = channel->configVersion;
     recognitionRangeBegin_ = range.begin; recognitionRangeEnd_ = range.end;
     recognitionActive_ = true; recognitionProgressValue_ = 0; ++recognitionGeneration_;
-    analysisStatus_->setText("校验通过 · 合成识别开始 · 权重不会加载或执行");
+    analysisStatus_->setText("合成示例运行中…"); analysisStatus_->setToolTip("分数与进度仅用于演示，未加载权重或执行真实模型推理。");
+    if (timeline_) timeline_->setSeries({}, "等待合成示例结果");
+    updateRecognitionDetail();
     runRecognition_->setEnabled(false); stopRecognition_->setEnabled(true); recognitionProgress_->setValue(0); recognitionTimer_->start();
     if (!selectedModelFile_.isEmpty() && log_) log_("识别演示使用模型文件名作为界面记录；未读取或执行权重");
 }
@@ -1919,6 +2347,11 @@ void NarrowbandWorkspace::startDemoRecognition() {
 void NarrowbandWorkspace::stopDemoRecognition() {
     stopRecognition();
     if (analysisStatus_) analysisStatus_->setText("识别演示已停止");
+    if (recognitionSegments_.empty()) {
+        if (recognitionTop5_) recognitionTop5_->setText("Top-5 候选 · 演示已停止，尚无完成结果");
+        if (timeline_) timeline_->setSeries({}, "合成示例已停止");
+    }
+    if (recognitionStats_[3]) recognitionStats_[3]->setText("任务状态\n已停止");
 }
 
 void NarrowbandWorkspace::stopRecognition() {
@@ -1926,12 +2359,14 @@ void NarrowbandWorkspace::stopRecognition() {
     recognitionActive_ = false;
     if (runRecognition_) runRecognition_->setEnabled(session_.activeChannel() != nullptr);
     if (stopRecognition_) stopRecognition_->setEnabled(false);
+    updateRecognitionSummary();
 }
 
 void NarrowbandWorkspace::updateRecognition() {
     if (!recognitionActive_) return;
     recognitionProgressValue_ = std::min(100, recognitionProgressValue_ + 6 + static_cast<int>(recognitionGeneration_ % 4));
     recognitionProgress_->setValue(recognitionProgressValue_);
+    if (analysisStatus_) analysisStatus_->setText(QStringLiteral("合成示例运行中 · %1%").arg(recognitionProgressValue_));
     if (recognitionProgressValue_ >= 100) {
         stopRecognition();
         const auto span = recognitionRangeEnd_ - recognitionRangeBegin_;
@@ -1955,14 +2390,14 @@ void NarrowbandWorkspace::updateRecognition() {
             segment.topClass = static_cast<int>(std::distance(segment.scores.begin(), std::max_element(segment.scores.begin(), segment.scores.end())));
             recognitionSegments_.push_back(segment);
         }
-        if (analysisStatus_) analysisStatus_->setText(QStringLiteral("完成 · %1 个确定性合成分段 · 预测非真实模型输出").arg(count));
+        if (analysisStatus_) analysisStatus_->setText(QStringLiteral("合成示例完成 · %1 个片段").arg(count));
         if (timeline_) {
             std::vector<float> scores; scores.reserve(recognitionSegments_.size());
             for (const auto& segment : recognitionSegments_) scores.push_back(static_cast<float>(segment.scores[static_cast<std::size_t>(segment.topClass)]));
-            timeline_->setSeries({std::move(scores)}, QStringLiteral("synthetic=true · %1 segments · demo classifier").arg(count));
+            timeline_->setSeries({std::move(scores)}, QStringLiteral("合成示例 · %1 个片段，分数不代表真实模型输出").arg(count), "合成示例");
         }
         selectedRecognitionSegment_ = 0; updateRecognitionDetail();
-        if (log_) log_("合成识别任务完成；18 段 Top-5 仅用于界面演示");
+        if (log_) log_(QStringLiteral("合成识别任务完成；%1 段 Top-5 仅用于界面演示").arg(count));
     }
 }
 
@@ -1978,7 +2413,12 @@ void NarrowbandWorkspace::markRecognitionStale(const QString& reason) {
 }
 
 void NarrowbandWorkspace::updateRecognitionDetail() {
-    if (!recognitionTop5_ || recognitionSegments_.empty()) return;
+    updateRecognitionSummary();
+    if (!recognitionTop5_) return;
+    if (recognitionSegments_.empty()) {
+        recognitionTop5_->setText(recognitionActive_ ? "Top-5 候选 · 合成示例运行中…" : "Top-5 候选 · 等待合成示例结果");
+        recognitionTop5_->setToolTip({}); return;
+    }
     const int index = std::clamp(selectedRecognitionSegment_, 0, static_cast<int>(recognitionSegments_.size()) - 1);
     selectedRecognitionSegment_ = index;
     const auto& segment = recognitionSegments_[static_cast<std::size_t>(index)];
@@ -1989,10 +2429,9 @@ void NarrowbandWorkspace::updateRecognitionDetail() {
     const bool stale = recognitionResultStale_ || !current || current->id != recognitionChannelId_ || current->configVersion != recognitionConfigVersion_;
     const double threshold = recognitionThreshold_ ? recognitionThreshold_->value() : .5;
     const QString predicted = segment.scores[static_cast<std::size_t>(order[0])] < threshold ? QStringLiteral("未知 / 需复核") : QString::fromLatin1(labels[order[0]]);
-    QString detail = QStringLiteral("片段 %1 / %2 · %3%4\n源样本 [%5, %6)\nTop-5 原始合成分数：")
+    QString detail = QStringLiteral("片段 %1 / %2 · %3%4 · 合成示例")
         .arg(index + 1).arg(recognitionSegments_.size())
-        .arg(predicted).arg(stale ? QStringLiteral(" · Stale") : QString{})
-        .arg(QString::number(segment.sourceBegin)).arg(QString::number(segment.sourceEnd));
+        .arg(predicted).arg(stale ? QStringLiteral(" · 已过期") : QString{});
     for (int rank = 0; rank < 5; ++rank) {
         const int category = order[static_cast<std::size_t>(rank)];
         detail += QStringLiteral("\n%1. %2  %3%")
@@ -2000,6 +2439,30 @@ void NarrowbandWorkspace::updateRecognitionDetail() {
             .arg(segment.scores[static_cast<std::size_t>(category)] * 100, 0, 'f', 1);
     }
     recognitionTop5_->setText(detail);
+    recognitionTop5_->setToolTip(QStringLiteral("源样本 [%1, %2)\nTop-5 原始合成分数，不代表真实模型输出。\n%3")
+        .arg(segment.sourceBegin).arg(segment.sourceEnd).arg(detail));
+}
+
+void NarrowbandWorkspace::updateRecognitionSummary() {
+    const std::array<QString, 4> titles{"信号片段", "主类别", "平均置信度", "任务状态"};
+    std::array<QString, 4> values{"—", "—", "—", recognitionActive_ ? "运行中" : "待运行"};
+    if (!recognitionSegments_.empty()) {
+        constexpr std::array<const char*, 6> labels{"BPSK", "QPSK", "8PSK", "16QAM", "FSK", "未知 / 需复核"};
+        std::array<std::size_t, 6> counts{};
+        double confidence = 0;
+        const double threshold = recognitionThreshold_ ? recognitionThreshold_->value() : .5;
+        for (const auto& segment : recognitionSegments_) {
+            const auto score = segment.scores[static_cast<std::size_t>(segment.topClass)];
+            ++counts[score < threshold ? 5 : static_cast<std::size_t>(segment.topClass)]; confidence += score;
+        }
+        const auto mainClass = static_cast<std::size_t>(std::distance(counts.begin(), std::max_element(counts.begin(), counts.end())));
+        const auto* channel = session_.activeChannel();
+        const bool stale = recognitionResultStale_ || !channel || channel->id != recognitionChannelId_ || channel->configVersion != recognitionConfigVersion_;
+        values = {QString::number(static_cast<qulonglong>(recognitionSegments_.size())), QString::fromUtf8(labels[mainClass]),
+            QString::number(confidence / recognitionSegments_.size() * 100, 'f', 1) + "%", stale ? "已过期" : "合成完成"};
+    }
+    for (std::size_t i = 0; i < recognitionStats_.size(); ++i)
+        if (recognitionStats_[i]) recognitionStats_[i]->setText(titles[i] + "\n" + values[i]);
 }
 
 void NarrowbandWorkspace::exportRecognition() {
@@ -2035,7 +2498,7 @@ void NarrowbandWorkspace::exportRecognition() {
     QFile file(path); if (!file.open(QIODevice::WriteOnly) || file.write(QJsonDocument(object).toJson(QJsonDocument::Indented)) < 0) {
         if (log_) log_("无法写入演示识别 JSON: " + file.errorString()); return;
     }
-    if (log_) log_("已导出 synthetic=true 的演示识别结果");
+    if (log_) log_("已导出合成示例识别结果");
 }
 
 void NarrowbandWorkspace::copyBitstream() { if (bitstream_) QApplication::clipboard()->setText(bitstream_->toPlainText()); }

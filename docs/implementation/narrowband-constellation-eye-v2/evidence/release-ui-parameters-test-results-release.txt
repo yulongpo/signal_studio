@@ -1,0 +1,158 @@
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+PASS   : UiTests::initTestCase()
+PASS   : UiTests::powerInputsCommitAndFitReusesData()
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() This plugin does not support propagateSizeHints()
+PASS   : UiTests::parameterDraftsRequireExplicitCommit()
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support raise()
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support grabbing the keyboard
+QINFO  : UiTests::parameterInputsIgnoreWheel() Wheel protection checked 52 combos and 16 spin boxes, including dialogs and editors
+PASS   : UiTests::parameterInputsIgnoreWheel()
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+PASS   : UiTests::pinnedAxisLabelsSurviveLeave()
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+PASS   : UiTests::sharedInteractionFeedback()
+PASS   : UiTests::customWindowControls()
+PASS   : UiTests::initialFileViewShowsFirstFivePercentOrTenMilliseconds()
+PASS   : UiTests::panelRailsAndBottomTabs()
+QWARN  : UiTests::sectionContextAndManualExpansion() This plugin does not support propagateSizeHints()
+PASS   : UiTests::sectionContextAndManualExpansion()
+QINFO  : UiTests::panelMaximizeAndRestore() navPanel original QSize(1872, 82) restored QSize(1872, 82) graph sizes QList(82, 205, 969)
+QINFO  : UiTests::panelMaximizeAndRestore() auxPanel original QSize(1872, 205) restored QSize(1872, 205) graph sizes QList(82, 205, 969)
+QINFO  : UiTests::panelMaximizeAndRestore() specPanel original QSize(1872, 969) restored QSize(1872, 969) graph sizes QList(82, 205, 969)
+PASS   : UiTests::panelMaximizeAndRestore()
+PASS   : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x)
+PASS   : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y)
+PASS   : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x)
+PASS   : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y)
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+PASS   : UiTests::navigationClickPreservesSpanAndCancelsDrag()
+PASS   : UiTests::independentSpectralSettingsAndCustomRows()
+PASS   : UiTests::loadedPrefixStopAndRoundtrip()
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() This plugin does not support grabbing the mouse
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() This plugin does not support grabbing the mouse
+PASS   : UiTests::fileSwitchCancelsUnfinishedEdit()
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-n)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-ne)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-e)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-se)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-s)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-sw)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-w)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-nw)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-n)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-ne)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-e)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-se)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-s)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-sw)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-w)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-nw)
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() This plugin does not support propagateSizeHints()
+PASS   : UiTests::nativeProjectRoundtripAndInvalidImport()
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() This plugin does not support propagateSizeHints()
+PASS   : UiTests::contextMenuActionsAndCoveredMarkSelection()
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+PASS   : UiTests::unselectedMarkClickAndSubthresholdGesture()
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() This plugin does not support grabbing the mouse
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() This plugin does not support grabbing the mouse
+PASS   : UiTests::clippedMarkBorderMovesWithoutInventingHandle()
+QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+PASS   : UiTests::captureLossAndDeactivationRollback()
+PASS   : UiTests::resetRestoresCompleteViewSnapshot()
+PASS   : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache()
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+PASS   : UiTests::renameUsesPlainTextAndEightyCharacterLimit()
+PASS   : UiTests::splitterKeyboardResetAndEscapeRollback()
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() This plugin does not support grabbing the mouse
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() This plugin does not support grabbing the mouse
+PASS   : UiTests::treeToPlotShiftSelectionPreservesAnchor()
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() This plugin does not support grabbing the mouse
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() This plugin does not support grabbing the mouse
+PASS   : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY()
+QWARN  : UiTests::creationModeSurvivesMaximize() This plugin does not support grabbing the mouse
+QWARN  : UiTests::creationModeSurvivesMaximize() This plugin does not support grabbing the mouse
+PASS   : UiTests::creationModeSurvivesMaximize()
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() This plugin does not support grabbing the mouse
+PASS   : UiTests::escapeCancelsGestureBeforeLeavingMaximize()
+PASS   : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq()
+PASS   : UiTests::importFormatAndAdaptiveDraft()
+PASS   : UiTests::importFloatingUnitsAndFailureRecovery()
+PASS   : UiTests::importTemplatesBatchAndSigmf()
+QWARN  : UiTests::brandResourcesAndAbout() This plugin does not support propagateSizeHints()
+PASS   : UiTests::brandResourcesAndAbout()
+PASS   : UiTests::importRealFilesAndCancelPrefix()
+PASS   : UiTests::narrowbandDemoResourceAndFourPages()
+PASS   : UiTests::waveformBandwidthAndVisiblePaneStftSettings()
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+PASS   : UiTests::uiStatePersistenceAndRecentProjects()
+PASS   : UiTests::cleanupTestCase()
+Totals: 58 passed, 0 failed, 0 skipped, 0 blacklisted, 74107ms
+********* Finished testing of UiTests *********

@@ -1,0 +1,23 @@
+********* Start testing of UxTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UxTests::initTestCase()
+QWARN  : UxTests::uxP01_popupDismissal() QFontDatabase: Cannot find font directory D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+PASS   : UxTests::uxP01_popupDismissal()
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support raise()
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support grabbing the keyboard
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() QFont::setPointSizeF: Point size <= 0 (-0.750000), must be greater than 0
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() QFont::setPointSizeF: Point size <= 0 (-0.750000), must be greater than 0
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() QFont::setPointSizeF: Point size <= 0 (-0.750000), must be greater than 0
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support raise()
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support grabbing the keyboard
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support raise()
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support grabbing the keyboard
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() QFont::setPointSizeF: Point size <= 0 (-0.750000), must be greater than 0
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() QFont::setPointSizeF: Point size <= 0 (-0.750000), must be greater than 0
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() QFont::setPointSizeF: Point size <= 0 (-0.750000), must be greater than 0
+PASS   : UxTests::uxP02_popupChildrenAndGeometry()
+PASS   : UxTests::uxS06_popoverDraftPolicy()
+PASS   : UxTests::cleanupTestCase()
+Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 643ms
+********* Finished testing of UxTests *********

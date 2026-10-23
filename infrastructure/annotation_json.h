@@ -16,8 +16,7 @@ QJsonObject encodeSourceIdentity(const SourceIdentity&);
 bool decodeSourceIdentity(const QJsonObject&, SourceIdentity&, QString& error);
 QJsonObject encodeAnnotationChannelSnapshot(const AnnotationChannelSnapshot&);
 bool decodeAnnotationChannelSnapshot(const QJsonObject&, const FileMetadata&,
-                                     AnnotationChannelSnapshot&, QString& error,
-                                     int projectVersion = 6);
+                                     AnnotationChannelSnapshot&, QString& error);
 QByteArray exportAnnotationsJson(const FileState&);
 QByteArray exportAnnotationsCsv(const FileState&);
 }  // namespace signalstudio

@@ -1,0 +1,12 @@
+Transcribed excerpt from this session's first Windows native tool output.
+The early script used a fixed log filename and the subsequent passing run
+overwrote that file. This is an excerpt, not an archived complete raw log.
+Later runs use timestamped paths.
+
+ParameterInputTests::mouseSteps(application-style)
+SC_SpinBoxUp QRect(436,7 20x17)
+child QLineEdit(name="qt_spinbox_lineedit")
+FAIL! Compared doubles are not the same:
+Actual (real.value()): 0.35
+Expected (.45): 0.45
+Totals: 3 passed, 1 failed, 0 skipped.

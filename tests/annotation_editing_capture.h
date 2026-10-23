@@ -18,6 +18,7 @@ void editingSelect(MainWindow& window, const std::string& id,
       session.annotations().select(*session.activeFile(), {id}, id, segment);
   require(result.ok, QString::fromStdString(result.error));
   window.refresh();
+  widebandShowInspector(window, "contextAnnotation");
   auto* table = child<QTableView>(window, "annotationTable");
   require(
       waitUntil([&] { return interactionTableIndex(*table, id).isValid(); }),
@@ -34,7 +35,8 @@ void editingScene(Capture& capture, const QString& name, QScreen* screen,
   record["tableCounts"] =
       child<QLabel>(capture.window, "annotationCounts")->text();
   record["treeCounts"] =
-      child<QLabel>(capture.window, "treeAnnotationCounts")->text();
+      child<QLabel>(capture.window, "treeAnnotationCounts")->toolTip();
+  record["treeSummary"]=child<QLabel>(capture.window,"treeAnnotationCounts")->text();
   require(record["tableCounts"].toString().startsWith(
               record["treeCounts"].toString() + " · 页 "),
           "Tree and table counts differ during editing");
@@ -47,8 +49,14 @@ QLineEdit* editingTableEditor(MainWindow& window, const std::string& id,
   const auto index = interactionTableIndex(*table, id).siblingAtColumn(column);
   require(index.isValid(), "Editable annotation cell is not on this page");
   table->scrollTo(index);
-  table->setCurrentIndex(index);
-  table->setFocus();
+  QCoreApplication::processEvents();
+  const auto rect = table->visualRect(index);
+  require(!rect.isEmpty() && table->viewport()->rect().contains(rect),
+          "Editable annotation cell is clipped in the actual table");
+  QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    rect.center());
+  require(table->currentIndex() == index && table->hasFocus(),
+          "Click did not focus the actual editable annotation cell");
   QTest::keyClick(table, Qt::Key_F2);
   QLineEdit* editor = nullptr;
   require(waitUntil([&] {
@@ -62,6 +70,8 @@ QLineEdit* editingTableEditor(MainWindow& window, const std::string& id,
 }
 
 void editingType(QLineEdit& editor, const char* text) {
+  widebandScrollTo(&editor);
+  widebandNativeReachable(&editor);
   editor.setFocus();
   editor.selectAll();
   QTest::keyClicks(&editor, text);
@@ -196,6 +206,7 @@ void interactionEditingScenes(Capture& capture, QScreen* screen) {
           "A name edit failed or reset the optional quality judgment");
 
   const auto manualBeforeRange = editingMark(window, "manual-1");
+  widebandShowInspector(window, "contextAnnotation");
   auto* rangeButton = child<QPushButton>(window, "editAnnotationRange");
   widebandScrollTo(rangeButton);
   editingDialog(
@@ -273,6 +284,7 @@ void interactionEditingScenes(Capture& capture, QScreen* screen) {
       "algo-located-s2");
   require(selection.ok, QString::fromStdString(selection.error));
   window.refresh();
+  widebandShowInspector(window, "contextAnnotation");
   editingDialog(
       window, "annotationDeleteDialog",
       [&] { click(window, "deleteSelectedAnnotations"); },

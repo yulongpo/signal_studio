@@ -1,0 +1,234 @@
+{
+  "sourceCommit": "696ce12d689afd2be849c9b72999e8f12778587e",
+  "regressionSourceCommit": "a64117e6ca5380aecb55f9dda161af896fc5f9fb",
+  "finalTextChange": "696ce12 only clarifies names, units and decimals in the right display summary; final native and package checks use this source",
+  "addedTestCases": 0,
+  "fullCtestRerun": false,
+  "formalModelForwardRerun": false,
+  "configurations": {
+    "debug": {
+      "ui": {
+        "businessCases": 19,
+        "qtPassed": 21,
+        "qtFailed": 0,
+        "elapsedMs": 247865
+      },
+      "ux": [
+        {
+          "category": "spectral",
+          "qtPassed": 7,
+          "businessCases": 5
+        },
+        {
+          "category": "charts",
+          "qtPassed": 5,
+          "businessCases": 3
+        },
+        {
+          "category": "layout",
+          "qtPassed": 10,
+          "businessCases": 8
+        },
+        {
+          "category": "popovers",
+          "qtPassed": 5,
+          "businessCases": 3
+        }
+      ],
+      "native": {
+        "pass": true,
+        "scenes": 24,
+        "screen": {
+          "availableLogicalGeometry": {
+            "height": 1392,
+            "width": 2560,
+            "x": 2560,
+            "y": 0
+          },
+          "connectedIndex": 2,
+          "deviceName": "\\\\.\\DISPLAY6",
+          "devicePath": "\\\\.\\DISPLAY6",
+          "devicePixelRatio": 1.5,
+          "friendlyName": "Redmi 27 NU",
+          "identityMethod": "Windows active DisplayConfig source/target",
+          "logicalDpi": 96,
+          "logicalGeometry": {
+            "height": 1440,
+            "width": 2560,
+            "x": 2560,
+            "y": 0
+          },
+          "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+          "name": "Redmi 27 NU",
+          "physicalDpi": 109.05000625015624,
+          "pixelSize": {
+            "height": 2160,
+            "width": 3840
+          },
+          "primary": false
+        },
+        "cpuDdc": {
+          "annotationId": "demo-mark-signal-01",
+          "availableSamples": "262144",
+          "bindingKind": "LocatedSegment",
+          "channelId": "channel-2",
+          "cpuDdcVerified": true,
+          "energy": 2658.703063711524,
+          "firstSourceSample": 0,
+          "leftPadded": true,
+          "modelInferenceVerified": false,
+          "outputBegin": "0",
+          "outputEnd": "7680",
+          "outputSamples": 7680,
+          "outputSha256": "6fd3ba52da78ac48e3d514cb2b7b4adf87674793451331a86287d91a862efe3c",
+          "realIq": true,
+          "rightPadded": true,
+          "segmentId": "demo-mark-signal-01:s0",
+          "sourceBegin": "0",
+          "sourceEnd": "196608"
+        },
+        "v6Reopen": true
+      },
+      "packages": [
+        {
+          "mode": "wideband-gpu",
+          "pass": true,
+          "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+          "report": "package-debug-wideband-gpu.json"
+        },
+        {
+          "mode": "narrowband-gpu",
+          "pass": true,
+          "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+          "report": "package-debug-narrowband-gpu.json"
+        },
+        {
+          "mode": "wideband-software",
+          "pass": true,
+          "backend": "QPainter 软件绘制",
+          "report": "package-debug-wideband-software.json"
+        }
+      ]
+    },
+    "release": {
+      "ui": {
+        "businessCases": 19,
+        "qtPassed": 21,
+        "qtFailed": 0,
+        "elapsedMs": 75376
+      },
+      "ux": [
+        {
+          "category": "spectral",
+          "qtPassed": 7,
+          "businessCases": 5
+        },
+        {
+          "category": "charts",
+          "qtPassed": 5,
+          "businessCases": 3
+        },
+        {
+          "category": "layout",
+          "qtPassed": 10,
+          "businessCases": 8
+        },
+        {
+          "category": "popovers",
+          "qtPassed": 5,
+          "businessCases": 3
+        }
+      ],
+      "native": {
+        "pass": true,
+        "scenes": 24,
+        "screen": {
+          "availableLogicalGeometry": {
+            "height": 1392,
+            "width": 2560,
+            "x": 2560,
+            "y": 0
+          },
+          "connectedIndex": 2,
+          "deviceName": "\\\\.\\DISPLAY6",
+          "devicePath": "\\\\.\\DISPLAY6",
+          "devicePixelRatio": 1.5,
+          "friendlyName": "Redmi 27 NU",
+          "identityMethod": "Windows active DisplayConfig source/target",
+          "logicalDpi": 96,
+          "logicalGeometry": {
+            "height": 1440,
+            "width": 2560,
+            "x": 2560,
+            "y": 0
+          },
+          "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+          "name": "Redmi 27 NU",
+          "physicalDpi": 109.05000625015624,
+          "pixelSize": {
+            "height": 2160,
+            "width": 3840
+          },
+          "primary": false
+        },
+        "cpuDdc": {
+          "annotationId": "demo-mark-signal-01",
+          "availableSamples": "262144",
+          "bindingKind": "LocatedSegment",
+          "channelId": "channel-2",
+          "cpuDdcVerified": true,
+          "energy": 2658.703063711524,
+          "firstSourceSample": 0,
+          "leftPadded": true,
+          "modelInferenceVerified": false,
+          "outputBegin": "0",
+          "outputEnd": "7680",
+          "outputSamples": 7680,
+          "outputSha256": "6fd3ba52da78ac48e3d514cb2b7b4adf87674793451331a86287d91a862efe3c",
+          "realIq": true,
+          "rightPadded": true,
+          "segmentId": "demo-mark-signal-01:s0",
+          "sourceBegin": "0",
+          "sourceEnd": "196608"
+        },
+        "v6Reopen": true
+      },
+      "packages": [
+        {
+          "mode": "wideband-gpu",
+          "pass": true,
+          "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+          "report": "package-release-wideband-gpu.json"
+        },
+        {
+          "mode": "narrowband-gpu",
+          "pass": true,
+          "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
+          "report": "package-release-narrowband-gpu.json"
+        },
+        {
+          "mode": "wideband-software",
+          "pass": true,
+          "backend": "QPainter 软件绘制",
+          "report": "package-release-wideband-software.json"
+        }
+      ]
+    }
+  },
+  "precision": {
+    "input": {
+      "projectPath": "D:/project/signal_studio_rebuild/out/tasks/chart-header-labels/02-acceptance/diagnostics/precision-project/project.json",
+      "recordedUtc": "2026-10-21T12:46:25.1569126Z",
+      "sha256": "1374e59e739c0654caad060005f57b83beca7dc60b7e5b9b66b421c9c83a9c93",
+      "referenceLevelDb": -79.0121397394,
+      "dynamicRangeDb": 113.814300793,
+      "window": 4,
+      "inputKind": "v6 real-IQ journey project with display-only changes; auxiliary axis matches selected PSD mode"
+    },
+    "inputUnchanged": true,
+    "referenceShown": "-79.01 dBFS/Hz",
+    "dynamicShown": "113.81 dB",
+    "windowShown": "Blackman-Harris",
+    "visualInspection": true
+  }
+}

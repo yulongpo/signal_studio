@@ -114,13 +114,25 @@ void widebandScrollTo(QWidget* widget) {
       scroll = area;
       break;
     }
-  require(waitUntil([widget, scroll] {
+  const bool exposed = waitUntil([widget, scroll] {
             // Wrapped source fields can change the layout after selection.
             // Re-evaluate scrolling against the current native geometry.
-            if (scroll) scroll->ensureWidgetVisible(widget, 12, 12);
-            return widget->isVisible() &&
-                   !widebandVisibleRect(widget, *widget->window()).isEmpty();
-          }),
+            if (scroll) {
+              const auto topLeft = widget->mapTo(scroll->widget(), QPoint());
+              // Ask for the complete control rectangle; a spin box's input
+              // cursor rectangle can be smaller than its painted frame.
+              scroll->ensureVisible(topLeft.x() + widget->width() / 2,
+                                    topLeft.y() + widget->height() / 2,
+                                    widget->width() / 2 + 12,
+                                    widget->height() / 2 + 12);
+            }
+            const auto visible = widebandVisibleRect(widget, *widget->window());
+            const QRect bounds(widget->mapTo(widget->window(), QPoint()), widget->size());
+            const bool fits = scroll && widget->width() <= scroll->viewport()->width() &&
+                              widget->height() <= scroll->viewport()->height();
+            return widget->isVisible() && (fits ? visible == bounds : !visible.isEmpty());
+          });
+  require(exposed,
           QString("Native scroll did not expose widget %1: visible=%2, "
                   "geometry=%3,%4 %5x%6, scroll=%7/%8")
               .arg(widget->objectName())
@@ -131,6 +143,247 @@ void widebandScrollTo(QWidget* widget) {
               .arg(widget->height())
               .arg(scroll ? scroll->verticalScrollBar()->value() : -1)
               .arg(scroll ? scroll->verticalScrollBar()->maximum() : -1));
+}
+
+// Shared by the historical R/U runners. Never send input to an editor until
+// its actual page/fold has been exposed and native hit testing can reach it.
+void widebandNativeReachable(QWidget* widget, bool requireEnabled = true) {
+  require(widget && widget->isVisible() && !widget->size().isEmpty() &&
+              (!requireEnabled || widget->isEnabled()),
+          "Native control is unavailable: " +
+              (widget ? widget->objectName() : QString("<null>")));
+  auto* root = widget->window();
+  const QRect bounds(widget->mapTo(root, QPoint()), widget->size());
+  require(widebandVisibleRect(widget, *root) == bounds,
+          "Native control is clipped: " + widget->objectName());
+  auto* hit = root->childAt(bounds.center());
+  require(hit && (hit == widget || widget->isAncestorOf(hit)),
+          "Native control is obstructed: " + widget->objectName());
+  require(root->windowHandle(), "Native control has no exposed window");
+}
+
+void widebandNativeClick(QWidget* widget) {
+  widebandNativeReachable(widget);
+  QPoint point = widget->rect().center();
+  if (auto* checkbox = qobject_cast<QCheckBox*>(widget)) {
+    QStyleOptionButton option;
+    option.initFrom(checkbox);
+    option.text = checkbox->text();
+    point = checkbox->style()->subElementRect(QStyle::SE_CheckBoxIndicator,
+                                              &option, checkbox).center();
+    require(widget->rect().contains(point), "Native checkbox indicator is clipped");
+  }
+  auto* root = widget->window();
+  QTest::mouseClick(root->windowHandle(), Qt::LeftButton, Qt::NoModifier,
+                    root->mapFromGlobal(widget->mapToGlobal(point)));
+  QCoreApplication::processEvents();
+}
+
+void widebandNativeSelect(QComboBox* combo, int index,
+                           const std::function<void()>& beforeActivation = {}) {
+  widebandScrollTo(combo);
+  widebandNativeReachable(combo);
+  require(index >= 0 && index < combo->count(),
+          "Native combo choice is absent: " + combo->objectName());
+  auto* root = combo->window();
+  const QPoint arrow(combo->width() - 8, combo->height() / 2);
+  QTest::mouseClick(root->windowHandle(), Qt::LeftButton, Qt::NoModifier,
+                    root->mapFromGlobal(combo->mapToGlobal(arrow)));
+  auto* view = combo->view();
+  require(waitUntil([&] { return view->isVisible(); }),
+          "Native dropdown did not open: " + combo->objectName());
+  QTest::qWait(QApplication::doubleClickInterval() + 50);
+  const auto item = combo->model()->index(index, combo->modelColumn(),
+                                         combo->rootModelIndex());
+  require(combo->model()->flags(item).testFlag(Qt::ItemIsEnabled),
+          "Native dropdown choice is disabled");
+  view->scrollTo(item);
+  QCoreApplication::processEvents();
+  QRect rect;
+  const bool rowReady = waitUntil([&] {
+    view->scrollTo(item);
+    rect = view->visualRect(item);
+    return !rect.isEmpty() && view->viewport()->rect().contains(rect);
+  }, 1500);
+  require(rowReady,
+          QString("Native dropdown choice is clipped: %1 row=%2,%3 %4x%5 viewport=%6x%7")
+              .arg(combo->objectName()).arg(rect.x()).arg(rect.y()).arg(rect.width()).arg(rect.height())
+              .arg(view->viewport()->width()).arg(view->viewport()->height()));
+  auto* popup = view->window();
+  const auto point = popup->mapFromGlobal(
+      view->viewport()->mapToGlobal(rect.center()));
+  auto* hit = popup->childAt(point);
+  require(popup->windowHandle() && hit &&
+              (hit == view->viewport() || view->viewport()->isAncestorOf(hit)),
+          "Native dropdown row is obstructed");
+  QTest::mouseMove(popup->windowHandle(), point, 20);
+  QTest::mousePress(view->viewport(), Qt::LeftButton, Qt::NoModifier, rect.center());
+  QTest::qWait(60);
+  if (beforeActivation) beforeActivation();
+  QTest::mouseRelease(view->viewport(), Qt::LeftButton, Qt::NoModifier, rect.center());
+  require(waitUntil([&] {
+            return !view->isVisible() && combo->currentIndex() == index;
+          }),
+          "Native dropdown did not apply the chosen row: " + combo->objectName());
+}
+
+void widebandShowInspector(MainWindow& window, const char* tabName) {
+  auto* rail = child<QPushButton>(window, "propRailOpen");
+  if (rail->isVisible()) widebandNativeClick(rail);
+  auto* tab = child<QPushButton>(window, tabName);
+  if (!tab->isChecked()) widebandNativeClick(tab);
+  require(waitUntil([&] { return tab->isVisible() && tab->isChecked(); }),
+          "Native inspector page did not open: " + QString::fromLatin1(tabName));
+}
+
+void widebandDetectionFold(MainWindow& window, const char* name, bool open = true) {
+  widebandShowInspector(window, "contextDetection");
+  auto* toggle = child<QToolButton>(window, name);
+  widebandScrollTo(toggle);
+  if (toggle->isChecked() != open) widebandNativeClick(toggle);
+  require(waitUntil([&] { return toggle->isChecked() == open; }),
+          "Native detection fold did not change: " + QString::fromLatin1(name));
+}
+
+QWidget* widebandDetectionControl(MainWindow& window, const char* name) {
+  widebandShowInspector(window, "contextDetection");
+  auto* widget = child<QWidget>(window, name);
+  for (auto* owner = widget->parentWidget(); owner; owner = owner->parentWidget()) {
+    const auto group = owner->objectName();
+    if (group == "detectionAnalysisParameters" ||
+        group == "detectionPostprocessParameters" ||
+        group == "detectionResourceParameters" ||
+        group == "detectionCalculationDetails" ||
+        group == "detectionDiagnosticsSection") {
+      const auto toggle = group == "detectionDiagnosticsSection"
+                              ? QString("detectionDiagnosticsToggle")
+                              : group + "Toggle";
+      widebandDetectionFold(window, qPrintable(toggle));
+      break;
+    }
+  }
+  widebandScrollTo(widget);
+  widebandNativeReachable(widget);
+  return widget;
+}
+
+// The old profile key encoded both values. Keep that mapping explicit while
+// selecting both new controls through their real native popup rows.
+void widebandSelectModelSpectrum(MainWindow& window, const QString& key) {
+  widebandShowInspector(window, "contextDetection");
+  const auto separator = key.lastIndexOf(':');
+  const auto modelId = separator < 0 ? key : key.left(separator);
+  bool valid = true;
+  const auto spectrum = separator < 0 ? 0 : key.mid(separator + 1).toInt(&valid);
+  require(valid && spectrum >= 0 && spectrum <= 4, "Invalid model/spectrum key");
+  auto* model = child<QComboBox>(window, "detectionModel");
+  widebandNativeSelect(model, model->findData(modelId));
+  auto* mode = child<QComboBox>(window, "detectionSpectrumMode");
+  if (mode->isEnabled()) widebandNativeSelect(mode, mode->findData(spectrum));
+  else require(mode->isVisible() && spectrum == 0 && mode->count() == 1 &&
+                   mode->currentData().toInt() == 0,
+               "The explicitly selected fixture/experimental model must retain its sole default spectrum");
+  const auto request = child<DetectionCard>(window, "detectionCard")->request();
+  require(request.profile.id == modelId.toStdString() &&
+              static_cast<int>(request.spectrumMode) == spectrum,
+          "Visible model/spectrum selection differs from the frozen request");
+}
+
+void widebandMenuAction(MainWindow& window, const char* name) {
+  auto* action = child<QAction>(window, name);
+  require(action->isEnabled(), "Native menu action is disabled");
+  auto* bar = window.menuBar();
+  QAction* heading = nullptr;
+  for (auto* candidate : bar->actions())
+    if (candidate->menu() && candidate->menu()->actions().contains(action))
+      heading = candidate;
+  require(heading && bar->isVisible(), "Native menu heading is unavailable");
+  const auto headingRect = bar->actionGeometry(heading);
+  require(!headingRect.isEmpty() && bar->rect().contains(headingRect),
+          "Native menu heading is clipped");
+  QTest::mouseClick(window.windowHandle(), Qt::LeftButton, Qt::NoModifier,
+                    window.mapFromGlobal(bar->mapToGlobal(headingRect.center())));
+  auto* menu = heading->menu();
+  require(waitUntil([&] { return menu->isVisible(); }),
+          "Native menu did not open");
+  QTest::qWait(QApplication::doubleClickInterval() + 50);
+  const auto row = menu->actionGeometry(action);
+  require(!row.isEmpty() && menu->rect().contains(row),
+          "Native menu action is clipped");
+  QTest::mouseMove(menu, row.center(), 20);
+  QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier, row.center());
+  require(waitUntil([&] { return !menu->isVisible(); }),
+          "Native menu action did not close its menu");
+}
+
+void widebandChartMenuAction(PlotWidget* plot, const char* name) {
+  widebandNativeReachable(plot);
+  const auto point = plot->plotRect().center().toPoint();
+  bool handled = false;
+  QString failure;
+  QTimer::singleShot(100, plot, [&] {
+    auto* menu = qobject_cast<QMenu*>(QApplication::activePopupWidget());
+    try {
+      require(menu && menu->isVisible(), "Native chart context menu did not open");
+      auto* action = child<QAction>(*menu, name);
+      require(action->isEnabled(), "Native chart context action is unavailable");
+      QTest::qWait(QApplication::doubleClickInterval() + 50);
+      const auto row = menu->actionGeometry(action);
+      require(!row.isEmpty() && menu->rect().contains(row),
+              "Native chart context action is clipped");
+      QTest::mouseMove(menu, row.center(), 20);
+      QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier, row.center());
+    } catch (const std::exception& error) {
+      failure = QString::fromUtf8(error.what());
+      if (menu) menu->close();
+    }
+    handled = true;
+  });
+  // QtTest mouse buttons do not synthesize a context-menu event. Send the
+  // public mouse-context event to the visible plot, then click its real menu.
+  QContextMenuEvent event(QContextMenuEvent::Mouse, point, plot->mapToGlobal(point));
+  QCoreApplication::sendEvent(plot, &event);
+  require(waitUntil([&] { return handled; }) && failure.isEmpty(), failure);
+}
+
+void widebandOpenChartSettings(MainWindow& window, const char* name) {
+  auto* frame=chartSettingsFrame(window,QString::fromLatin1(name));
+  auto* entry=chartSettingsEntry(window,QString::fromLatin1(name));
+  require(frame&&entry,"The actual chart More settings entrance is missing");
+  if(frame->isVisible())return;
+  widebandNativeClick(entry);
+  require(waitUntil([&]{return frame->isVisible();}),"The flat chart More settings did not open");
+}
+
+QJsonObject widebandCurrentFileProperties(MainWindow& window) {
+  widebandShowInspector(window, "contextDisplay");
+  auto* entry = child<QPushButton>(window, "fileProperties");
+  widebandScrollTo(entry);
+  widebandNativeClick(entry);
+  auto* frame = child<QWidget>(window, "filePropertiesPopover");
+  require(waitUntil([&] { return frame->isVisible(); }),
+          "The current file properties did not open through their visible entry");
+  QJsonObject result;
+  for (const auto* name : {"fileName", "sampleRate", "centerFreq", "fullRange"}) {
+    auto* value = child<QLabel>(window, name);
+    widebandScrollTo(value);
+    widebandNativeReachable(value, false);
+    require(!value->text().isEmpty(), "Current file property has no readable value");
+    result[name] = value->text();
+  }
+  const auto* file = window.session().activeFile();
+  require(file && result["fileName"].toString() ==
+                      QString::fromStdString(file->metadata.name),
+          "Visible file properties belong to a different source");
+  auto* bandwidth = child<QDoubleSpinBox>(window, "effectiveBandwidthMHz");
+  widebandScrollTo(bandwidth);
+  widebandNativeReachable(bandwidth);
+  result["effectiveBandwidthMHz"] = bandwidth->value();
+  result["fileId"] = QString::fromStdString(file->metadata.id);
+  QTest::keyClick(window.windowHandle(), Qt::Key_Escape);
+  require(waitUntil([&] { return !frame->isVisible(); }),
+          "The file properties did not close through Escape");
+  return result;
 }
 
 void widebandScene(Capture& capture, const QString& name, QScreen* screen,
@@ -167,8 +420,10 @@ void widebandChooseQuality(MainWindow& window, const char* actionName,
                            Capture* capture = nullptr,
                            QScreen* screen = nullptr,
                            const QString& sceneName = {}) {
+  widebandShowInspector(window, "contextAnnotation");
   auto* button = child<QPushButton>(window, "annotationQualityMenu");
   widebandScrollTo(button);
+  widebandNativeReachable(button);
   bool handled = false;
   QString failure;
   QTimer::singleShot(100, &window, [&] {
@@ -248,6 +503,13 @@ QJsonArray widebandSources(const FileState& file) {
 }
 
 void widebandRequireVisibleActions(MainWindow& window) {
+  // W4 deliberately shows these fixed controls only on the Detection page.
+  // Check that page, then restore the visible annotation/evidence scene.
+  QString previous;
+  for (const auto* page : {"contextDisplay", "contextDetection",
+                            "contextAnnotation", "contextChannel"})
+    if (child<QPushButton>(window, page)->isChecked()) previous = page;
+  widebandShowInspector(window, "contextDetection");
   for (const auto* name : {"runWidebandDetection", "cancelDetectionCardRun"}) {
     auto* button = child<QPushButton>(window, name);
     const auto bounds = QRect(button->mapTo(&window, QPoint()), button->size());
@@ -256,23 +518,30 @@ void widebandRequireVisibleActions(MainWindow& window) {
             widebandVisibleRect(button, window) == bounds,
         QString("Fixed action is clipped or outside the native viewport: ") +
             name);
+    widebandNativeReachable(button, false);
   }
+  if (!previous.isEmpty() && previous != "contextDetection")
+    widebandShowInspector(window, qPrintable(previous));
 }
 
 void widebandResidentCardAtTop(MainWindow& window) {
+  // File facts now live on Display/file properties; the resident detection
+  // page must expose the basic configuration immediately, with fixed actions.
+  widebandShowInspector(window, "contextDetection");
   auto* scroll = child<QScrollArea>(window, "propScroll");
-  auto* file = child<QWidget>(window, "fileSection");
   auto* card = child<QWidget>(window, "detectionCard");
+  auto* model = child<QComboBox>(window, "detectionModel");
   scroll->verticalScrollBar()->setValue(0);
   require(waitUntil([&] {
-            const auto fileRect = widebandVisibleRect(file, window);
             const auto cardRect = widebandVisibleRect(card, window);
             return scroll->verticalScrollBar()->value() == 0 &&
-                   fileRect.height() >= 60 && cardRect.height() >= 200 &&
-                   cardRect.top() >= fileRect.bottom();
+                   cardRect.height() >= 200 &&
+                   widebandVisibleRect(model, window) ==
+                       QRect(model->mapTo(&window, QPoint()), model->size());
           }),
-          "The first native scene must show the current file above its "
-          "resident detection card with the property viewport at the top");
+          "The first native scene must show the resident detection page at "
+          "the top with its model and basic configuration visible");
+  widebandNativeReachable(model);
   widebandRequireVisibleActions(window);
 }
 
@@ -301,6 +570,7 @@ void widebandCaptureVisibleCard(Capture& capture, QScreen* screen,
 }
 
 QPlainTextEdit* widebandOpenOriginalFields(MainWindow& window) {
+  widebandShowInspector(window, "contextAnnotation");
   auto* evidence = child<QPlainTextEdit>(window, "annotationEvidence");
   if (!evidence->isVisible()) {
     auto* toggle =
@@ -370,6 +640,7 @@ void widebandSelectAnnotation(
       waitUntil(
           [&] { return window.session().activeFile()->activeMarkId == id; }),
       "Native annotation table selection did not reach the application state");
+  widebandShowInspector(window, "contextAnnotation");
   auto* evidence = widebandOpenOriginalFields(window);
   require(evidence->toPlainText().contains(expectedFormat),
           "Selected annotation details do not show their actual source format");
@@ -443,35 +714,23 @@ QJsonArray widebandCheckConfigurationEntrances(Capture& capture) {
   auto& window = capture.window;
   auto* card = child<QWidget>(window, "detectionCard");
   const auto fileId = window.session().activeFile()->metadata.id;
-  auto* toggle = child<QToolButton>(window, "detectionSectionToggle");
+  auto* tab = child<QPushButton>(window, "contextDetection");
   QJsonArray entries;
   for (const auto* entry : {"widebandDetectionAction", "widebandDetect",
                             "contextWidebandDetectionAction"}) {
-    widebandScrollTo(toggle);
-    if (toggle->isChecked()) QTest::mouseClick(toggle, Qt::LeftButton);
+    widebandShowInspector(window, "contextDisplay");
     require(
         !card->isVisible(),
-        "Detection section did not collapse before independent entry check");
+        "Detection page did not hide before independent entry check");
     if (QString::fromLatin1(entry) == "widebandDetectionAction") {
-      auto* action = child<QAction>(window, entry);
-      require(action->isEnabled(), "Detection menu entry is unavailable");
-      action->trigger();
+      widebandMenuAction(window, entry);
     } else if (QString::fromLatin1(entry) == "widebandDetect") {
-      click(window, entry);
+      widebandNativeClick(child<QPushButton>(window, entry));
     } else {
-      auto* plot = capture.plots[2];
-      const auto point = plot->plotRect().center().toPoint();
-      std::unique_ptr<QMenu> menu(plot->createContextMenu(point));
-      auto* action = child<QAction>(*menu, entry);
-      require(action->isEnabled(), "Detection context entry is unavailable");
-      menu->popup(plot->mapToGlobal(point));
-      require(waitUntil([&] { return menu->isVisible(); }),
-              "Native chart context menu did not become visible");
-      QTest::mouseClick(menu.get(), Qt::LeftButton, Qt::NoModifier,
-                        menu->actionGeometry(action).center());
+      widebandChartMenuAction(capture.plots[2], entry);
     }
-    require(waitUntil([&] { return card->isVisible() && toggle->isChecked(); }),
-            "Detection entry did not expand the resident card");
+    require(waitUntil([&] { return card->isVisible() && tab->isChecked(); }),
+            "Detection entry did not show the resident card page");
     require(!QApplication::activeModalWidget() &&
                 child<QWidget>(window, "detectionCard") == card &&
                 window.findChildren<QWidget*>("detectionCard").size() == 1 &&
@@ -479,7 +738,7 @@ QJsonArray widebandCheckConfigurationEntrances(Capture& capture) {
                 window.session().activeFile()->detectionRuns.empty(),
             "Detection entry opened a modal, changed source, duplicated card, "
             "or started a task");
-    widebandScrollTo(child<QComboBox>(*card, "detectionProfile"));
+    widebandScrollTo(child<QComboBox>(*card, "detectionModel"));
     require(!widebandVisibleRect(card, window).isEmpty(),
             "Expanded DetectionCard is outside the native viewport");
     entries.append(QJsonObject{{"entry", entry},
@@ -496,28 +755,40 @@ QJsonObject widebandConfigureAndStart(Capture& capture, QScreen* screen) {
   auto* card = child<QWidget>(window, "detectionCard");
   require(card->isVisible() && !QApplication::activeModalWidget(),
           "Configuration must use the visible resident DetectionCard");
-  auto* profile = child<QComboBox>(*card, "detectionProfile");
-  const int fixture = profile->findData("pipeline-fixture-v1");
+  auto* model = child<QComboBox>(*card, "detectionModel");
+  const int fixture = model->findData("pipeline-fixture-v1");
   require(fixture >= 0,
           "Fixture must be explicitly enabled before constructing MainWindow");
-  profile->setCurrentIndex(fixture);
+  widebandSelectModelSpectrum(window, "pipeline-fixture-v1");
   auto* origin = child<QComboBox>(*card, "detectionRangeOrigin");
   require(origin->itemData(1).toString() == "available-file",
           "Native range index 1 must mean the available file");
-  origin->setCurrentIndex(1);
-  widebandScrollTo(profile);
+  widebandNativeSelect(origin, 1);
+  widebandScrollTo(model);
   auto* range = child<QLabel>(*card, "detectionRequestedRange");
   auto* times = child<QLabel>(*card, "detectionPhysicalTimes");
   require(range->isVisible() && !range->text().isEmpty() &&
               times->isVisible() && !times->text().isEmpty(),
           "Resident configuration lacks readable frozen physical facts");
+  auto* calculations = qobject_cast<QLabel*>(
+      widebandDetectionControl(window, "detectionCalculationDetailsText"));
+  require(calculations && calculations->text().contains("FFT 窗") &&
+              calculations->text().contains("谱步长") &&
+              calculations->text().contains("模型上下文（请求）") &&
+              calculations->text().contains("窗口滑动") &&
+              calculations->text().contains("实际上下文样本") &&
+              calculations->text().contains("边缘补零"),
+          "Expanded calculation details lack the full physical timing basis");
+  const auto timingDetails = calculations->text();
+  widebandDetectionFold(window, "detectionCalculationDetailsToggle", false);
+  widebandResidentCardAtTop(window);
   auto* run = child<QPushButton>(window, "runWidebandDetection");
   require(run->isVisible() && run->isEnabled() &&
               !widebandVisibleRect(run, window).isEmpty(),
           "The fixed real-file run button is unavailable");
   widebandScene(capture, "02-config-main-window", screen);
   widebandCaptureVisibleCard(capture, screen, card);
-  QTest::mouseClick(run, Qt::LeftButton);
+  widebandNativeClick(run);
   require(waitUntil(
               [&] {
                 return window.session().activeFile()->detectionRuns.size() == 1;
@@ -539,6 +810,7 @@ QJsonObject widebandConfigureAndStart(Capture& capture, QScreen* screen) {
       "Native resident-card submission; pipeline fixture is not a model";
   configuration["visiblePhysicalRangeText"] = range->text();
   configuration["visibleTimingText"] = times->text();
+  configuration["expandedCalculationDetailsText"] = timingDetails;
   return configuration;
 }
 
@@ -616,11 +888,13 @@ void widebandCaptureTaskDetails(Capture& capture, QScreen* screen) {
           "The completed run is absent from the native task-card list");
   const auto index = list->model()->index(0, 0);
   const auto text = index.data(Qt::DisplayRole).toString();
+  const auto& run = window.session().activeFile()->detectionRuns.front();
   require(
-      text.contains("完成") && text.contains("unique windows 3 / 3") &&
-          text.contains("已读谱帧") && text.contains("RF") &&
-          text.contains("已覆盖") && text.contains("未覆盖"),
-      "Actual task card lacks readable completed-window/range/coverage facts");
+      text.contains("完成") && text.contains("窗口 3 / 3") &&
+          text.contains(QString("已读谱帧 %1").arg(run.readFrames)) &&
+          text.contains(QString("结果 %1").arg(run.resultCount)) &&
+          text.contains("阶段："),
+      "Actual compact task row lacks lifecycle, phase, read/window/result counts");
   list->scrollTo(index);
   const auto visible =
       list->visualRect(index).intersected(list->viewport()->rect());
@@ -648,7 +922,11 @@ void widebandCaptureTaskDetails(Capture& capture, QScreen* screen) {
               !widebandVisibleRect(facts, *dialog).isEmpty() &&
               readable.contains("冻结请求") && readable.contains("RF") &&
               readable.contains("completed windows 3") &&
-              readable.contains("已覆盖") && readable.contains("未读"),
+              readable.contains("eligible 3") &&
+              readable.contains("冻结上下文") &&
+              readable.contains("已覆盖") && readable.contains("已读：") &&
+              readable.contains("未读：") && readable.contains("排除：") &&
+              readable.contains("未读或排除区域没有检测结论"),
           "Visible readable task facts lack actual frozen ranges or coverage");
       require(!child<QPlainTextEdit>(*dialog, "detectionRunTechnicalJson")
                    ->isVisible(),
@@ -659,14 +937,17 @@ void widebandCaptureTaskDetails(Capture& capture, QScreen* screen) {
       record["visibleReadableFacts"] = readable;
       record["technicalJsonInitiallyCollapsed"] = true;
       capture.scenes[capture.scenes.size() - 1] = record;
-      dialog->accept();
+      auto* buttons = dialog->findChild<QDialogButtonBox*>();
+      require(buttons && buttons->button(QDialogButtonBox::Close),
+              "Task details have no visible Close button");
+      widebandNativeClick(buttons->button(QDialogButtonBox::Close));
     } catch (const std::exception& failure) {
       error = QString::fromUtf8(failure.what());
       if (dialog) dialog->reject();
     }
     handled = true;
   });
-  QTest::mouseClick(details, Qt::LeftButton);
+  widebandNativeClick(details);
   require(waitUntil([&] { return handled; }, 5000),
           "Coverage dialog callback did not complete");
   require(error.isEmpty(), error);
@@ -742,9 +1023,10 @@ QJsonObject widebandCaptureRoi(Capture& capture, QScreen* screen) {
             "ROI draft changed view, marks/revisions or the completed task");
   };
   startCreating(plot);
-  auto* roi = child<QAction>(window, "widebandDetectionRoiAction");
-  roi->trigger();
-  require(plot->isSelectingDetectionRoi() && !plot->isCreating(),
+  widebandMenuAction(window, "widebandDetectionRoiAction");
+  require(waitUntil([&] {
+            return plot->isSelectingDetectionRoi() && !plot->isCreating();
+          }),
           "ROI must take priority over continuous manual marking");
   createMark(plot, view, .22, .65, .20, .75);
   require(
@@ -786,7 +1068,9 @@ QJsonObject widebandCaptureRoi(Capture& capture, QScreen* screen) {
                      confirmedRange = range;
                      confirmed = true;
                    });
-  roi->trigger();
+  widebandMenuAction(window, "widebandDetectionRoiAction");
+  require(waitUntil([&] { return plot->isSelectingDetectionRoi(); }),
+          "Second visible ROI menu entry did not activate the tool");
   createMark(plot, view, .22, .65, .20, .75);
   require(plot->hasDetectionRoiPreview(),
           "Second native ROI drag did not retain its confirmation draft");
@@ -1223,12 +1507,10 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
                                            const QString& projectPath) {
   auto& window = capture.window;
   auto* card = child<QWidget>(window, "detectionCard");
-  auto* profile = child<QComboBox>(*card, "detectionProfile");
   auto* origin = child<QComboBox>(*card, "detectionRangeOrigin");
-  child<QAction>(window, "widebandDetectionAction")->trigger();
-  widebandScrollTo(profile);
-  profile->setCurrentIndex(profile->findData("ffscn-gui-iq-v1"));
-  origin->setCurrentIndex(origin->findData("available-file"));
+  widebandMenuAction(window, "widebandDetectionAction");
+  widebandSelectModelSpectrum(window, "ffscn-gui-iq-v1");
+  widebandNativeSelect(origin, origin->findData("available-file"));
   window.refresh();
   auto* button = child<QPushButton>(window, "runWidebandDetection");
   require(button->isVisible() && button->isEnabled(),
@@ -1245,7 +1527,7 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
   });
   QElapsedTimer startFeedback;
   startFeedback.start();
-  QTest::mouseClick(button, Qt::LeftButton);
+  widebandNativeClick(button);
   require(waitUntil(
               [&] {
                 return window.session().activeFile()->detectionRuns.size() ==
@@ -1460,20 +1742,20 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
           "Changed source relation or old DDC snapshot was lost");
   widebandSelectAnnotation(window, selectedId, "detection-v1");
   widebandScene(capture, "30-real-algorithm-changed-source-reopened", screen);
-  child<QAction>(window, "widebandDetectionAction")->trigger();
+  widebandMenuAction(window, "widebandDetectionAction");
   auto* roiButton = child<QPushButton>(window, "detectionStrategyRoi");
   widebandScrollTo(roiButton);
-  QTest::mouseClick(roiButton, Qt::LeftButton);
+  widebandNativeClick(roiButton);
+  widebandDetectionFold(window, "detectionPostprocessParametersToggle");
   auto* split = child<QCheckBox>(window, "detectionSplitBursts");
   widebandScrollTo(split);
   if (split->isChecked())
-    QTest::mouseClick(split, Qt::LeftButton, Qt::NoModifier,
-                      QPoint(12, split->height() / 2));
+    widebandNativeClick(split);
   require(waitUntil([&] { return !split->isChecked(); }),
           "Actual no-split checkbox indicator did not toggle");
   const auto setParameter = [&](const char* name, const char* value) {
-    auto* edit = child<QLineEdit>(window, name);
-    widebandScrollTo(edit);
+    auto* edit = qobject_cast<QLineEdit*>(widebandDetectionControl(window, name));
+    require(edit, "Approved ROI parameter is not an editor");
     require(edit->isEnabled(), "Approved ROI parameter is disabled");
     edit->setFocus();
     edit->selectAll();
@@ -1490,7 +1772,7 @@ QJsonObject widebandCaptureProductionModel(Capture& capture, QScreen* screen,
   const auto beforeRoi = window.session().activeFile()->detectionRuns.size();
   button = child<QPushButton>(window, "runWidebandDetection");
   widebandScrollTo(button);
-  QTest::mouseClick(button, Qt::LeftButton);
+  widebandNativeClick(button);
   require(waitUntil([&] {
             return window.session().activeFile()->detectionRuns.size() ==
                    beforeRoi + 1;
@@ -1692,12 +1974,16 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
     widebandSelectAnnotation(window, originalId);
     report["configurationEntrances"] =
         widebandCheckConfigurationEntrances(capture);
+    report["currentFileProperties"] = widebandCurrentFileProperties(window);
     widebandResidentCardAtTop(window);
     widebandScene(capture, "01-imported-manual-resident-card", screen);
     report["residentCardPlacement"] =
         QJsonObject{{"pass", true},
                     {"propertyViewportAtTop", true},
-                    {"currentFileAboveResidentCardVisible", true},
+                    {"currentFileAboveResidentCardVisible", false},
+                    {"currentFileFactsVisibleViaProperties", true},
+                    {"placementContract", "W4 contextual inspector; Display/file properties and Detection"},
+                    {"modelAndBasicConfigurationVisible", true},
                     {"fixedRunAndCancelActionsFullyVisible", true}};
     report["configuration"] = widebandConfigureAndStart(capture, screen);
     const auto run = widebandWaitForRun(window);

@@ -20,6 +20,7 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSaveFile>
+#include <QScreen>
 #include <QSignalBlocker>
 #include <QStyledItemDelegate>
 #include <QTableView>
@@ -480,6 +481,10 @@ void AnnotationPanel::buildFilters(QVBoxLayout* outer) {
   bar->addWidget(status_);
   run_ = new QComboBox;
   run_->setObjectName("annotationRunFilter");
+  run_->setAccessibleName("按检测运行筛选");
+  // Use list-item sizing for dynamic IDs. The menu-style combo delegate can
+  // add its reserved menu width again after the popup is constrained by QSS.
+  run_->setItemDelegate(new QStyledItemDelegate(run_));
   run_->addItem("全部运行", QString{});
   bar->addWidget(run_);
   minimumScore_ = new ParameterDoubleSpinBox;
@@ -1421,14 +1426,44 @@ void AnnotationPanel::refresh() {
   const auto runId = f ? q(f->annotationFilter.runId) : QString{};
   {
     const QSignalBlocker block(run_);
-    run_->clear();
-    run_->addItem("全部运行", QString{});
-    run_->addItem("非算法来源", "__no_run__");
+    QStringList ids{QString{}, "__no_run__"};
     if (f)
       for (const auto& sourceSet : f->sourceSets)
-        if (!sourceSet.runId.empty() && run_->findData(q(sourceSet.runId)) < 0)
-          run_->addItem(q(sourceSet.runId), q(sourceSet.runId));
-    run_->setCurrentIndex(std::max(0, run_->findData(runId)));
+        if (!sourceSet.runId.empty() && !ids.contains(q(sourceSet.runId)))
+          ids.push_back(q(sourceSet.runId));
+    bool samePrefix = run_->count() <= ids.size();
+    for (int index = 0; samePrefix && index < run_->count(); ++index)
+      samePrefix = run_->itemData(index).toString() == ids[index];
+    // Ordinary refresh and appended publications keep the same popup model
+    // and persistent rows, including the user's current hover/keyboard row.
+    if (!samePrefix) run_->clear();
+    for (int index = run_->count(); index < ids.size(); ++index) {
+      const auto text = index == 0 ? QString("全部运行")
+                        : index == 1 ? QString("非算法来源") : ids[index];
+      run_->addItem(text, ids[index]);
+      run_->setItemData(index, text, Qt::ToolTipRole);
+    }
+    const int selected = std::max(0, run_->findData(runId));
+    if (run_->currentIndex() != selected) run_->setCurrentIndex(selected);
+    run_->view()->ensurePolished();
+    // Include the actual delegate's check/icon/style margins, not just the
+    // text advance. The collapsed editor can retain its compact width.
+    int popupWidth = run_->width();
+    QStyleOptionViewItem option;
+    option.initFrom(run_->view());
+    option.font = run_->font();
+    option.fontMetrics = QFontMetrics(option.font);
+    for (int index = 0; index < run_->count(); ++index) {
+      const auto item = run_->model()->index(index, run_->modelColumn(), run_->rootModelIndex());
+      popupWidth = std::max(popupWidth,
+          run_->view()->itemDelegate()->sizeHint(option, item).width() + 24);
+      popupWidth = std::max(popupWidth,
+          run_->fontMetrics().horizontalAdvance(run_->itemText(index)) + 40);
+    }
+    if (auto* screen = run_->screen())
+      popupWidth = std::min(popupWidth, std::max(1, screen->availableGeometry().width() - 16));
+    if (run_->view()->minimumWidth() != popupWidth) run_->view()->setMinimumWidth(popupWidth);
+    run_->setToolTip(runId.isEmpty() ? QString("按检测运行筛选") : run_->currentText());
   }
   model_->update(
       page_, revealActive_ ||

@@ -1,0 +1,544 @@
+{
+    "configuration": "Release",
+    "layoutUnified": true,
+    "mode": "narrowband-feedback",
+    "nativeAcceptance": true,
+    "pass": true,
+    "project": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/NB-FEEDBACK-01/diagnostics/native-20261023-180229-894-Release-software/user-source-copy/project.json",
+    "sceneCount": 7,
+    "scenes": [
+        {
+            "analysis": {
+                "carrierLocked": false,
+                "cfoHz": 0,
+                "channelId": "channel-2",
+                "conditionalEvm": -1,
+                "constellationStage": 0,
+                "continuousIqSamples": 134656,
+                "diagnostic": "自动 CFO 需要本次可靠候选或已确认的手工 Rs；待确认旧值不参与同步。",
+                "eyeStage": 0,
+                "eyeTraces": 0,
+                "outputRateHz": 13540000,
+                "pointCount": 4096,
+                "ready": true,
+                "realSource": true,
+                "samplesPerSymbol": 0,
+                "symbolRateHz": 0,
+                "timingLocked": false
+            },
+            "backend": "QPainter 软件绘制",
+            "headerChecks": [
+                {
+                    "controls": 6,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandConstellationControls"
+                },
+                {
+                    "controls": 9,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandEyeControls"
+                },
+                {
+                    "controls": 20,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandModulationStftControls"
+                }
+            ],
+            "name": "01-unknown-fallback",
+            "pass": true,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/NB-FEEDBACK-01/diagnostics/native-20261023-180229-894-Release-software/01-unknown-fallback.png",
+            "render": {
+                "actualFrames": 130,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "backend": "QPainter 软件绘制",
+                "binHz": 6611.328125,
+                "effectiveHop": "1024",
+                "effectiveOverlap": 0.5,
+                "frameGeneration": "8",
+                "gpuDataDrawCalls": 0,
+                "gpuVertexUploads": 0,
+                "inverseCursorDrawCalls": 0,
+                "iqCacheBytes": 1077752,
+                "iqCacheHits": 1601,
+                "iqCacheMisses": 27,
+                "matrixBytes": 1084720,
+                "noiseBandwidthHz": 9921.836834391777,
+                "paddedFrames": 0,
+                "pending": false,
+                "repeatedObservation": false,
+                "requestGeneration": "8",
+                "requiredSeconds": 0.00015125553914327916,
+                "textureUploads": 0
+            }
+        },
+        {
+            "analysis": {
+                "carrierLocked": false,
+                "cfoHz": -167184.9459517657,
+                "channelId": "channel-2",
+                "conditionalEvm": -1,
+                "constellationStage": 3,
+                "continuousIqSamples": 134656,
+                "diagnostic": "载波未锁定：模板残差、符号多样性或环路状态不满足条件。",
+                "eyeStage": 4,
+                "eyeTraces": 0,
+                "outputRateHz": 13540000,
+                "pointCount": 4096,
+                "ready": true,
+                "realSource": true,
+                "samplesPerSymbol": 2.7682534943956933,
+                "symbolRateHz": 4891170.562021007,
+                "timingLocked": true
+            },
+            "backend": "QPainter 软件绘制",
+            "headerChecks": [
+                {
+                    "controls": 6,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandConstellationControls"
+                },
+                {
+                    "controls": 9,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandEyeControls"
+                },
+                {
+                    "controls": 20,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandModulationStftControls"
+                }
+            ],
+            "name": "02-qpsk-mismatch",
+            "pass": true,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/NB-FEEDBACK-01/diagnostics/native-20261023-180229-894-Release-software/02-qpsk-mismatch.png",
+            "render": {
+                "actualFrames": 130,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "backend": "QPainter 软件绘制",
+                "binHz": 6611.328125,
+                "effectiveHop": "1024",
+                "effectiveOverlap": 0.5,
+                "frameGeneration": "8",
+                "gpuDataDrawCalls": 0,
+                "gpuVertexUploads": 0,
+                "inverseCursorDrawCalls": 0,
+                "iqCacheBytes": 1077752,
+                "iqCacheHits": 1601,
+                "iqCacheMisses": 27,
+                "matrixBytes": 1084720,
+                "noiseBandwidthHz": 9921.836834391777,
+                "paddedFrames": 0,
+                "pending": false,
+                "repeatedObservation": false,
+                "requestGeneration": "8",
+                "requiredSeconds": 0.00015125553914327916,
+                "textureUploads": 0
+            }
+        },
+        {
+            "analysis": {
+                "carrierLocked": true,
+                "cfoHz": -167225.22215886414,
+                "channelId": "channel-2",
+                "conditionalEvm": 0.08723120118740647,
+                "constellationStage": 4,
+                "continuousIqSamples": 134656,
+                "diagnostic": "定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。",
+                "eyeStage": 4,
+                "eyeTraces": 64,
+                "outputRateHz": 13540000,
+                "pointCount": 4096,
+                "ready": true,
+                "realSource": true,
+                "samplesPerSymbol": 2.7682534943956933,
+                "symbolRateHz": 4891170.562021007,
+                "timingLocked": true
+            },
+            "backend": "QPainter 软件绘制",
+            "headerChecks": [
+                {
+                    "controls": 6,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandConstellationControls"
+                },
+                {
+                    "controls": 9,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandEyeControls"
+                },
+                {
+                    "controls": 20,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandModulationStftControls"
+                }
+            ],
+            "name": "03-32qam-recovered",
+            "pass": true,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/NB-FEEDBACK-01/diagnostics/native-20261023-180229-894-Release-software/03-32qam-recovered.png",
+            "render": {
+                "actualFrames": 130,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "backend": "QPainter 软件绘制",
+                "binHz": 6611.328125,
+                "effectiveHop": "1024",
+                "effectiveOverlap": 0.5,
+                "frameGeneration": "8",
+                "gpuDataDrawCalls": 0,
+                "gpuVertexUploads": 0,
+                "inverseCursorDrawCalls": 0,
+                "iqCacheBytes": 1077752,
+                "iqCacheHits": 1601,
+                "iqCacheMisses": 27,
+                "matrixBytes": 1084720,
+                "noiseBandwidthHz": 9921.836834391777,
+                "paddedFrames": 0,
+                "pending": false,
+                "repeatedObservation": false,
+                "requestGeneration": "8",
+                "requiredSeconds": 0.00015125553914327916,
+                "textureUploads": 0
+            }
+        },
+        {
+            "analysis": {
+                "carrierLocked": true,
+                "cfoHz": -167225.22215886414,
+                "channelId": "channel-2",
+                "conditionalEvm": 0.08723120118740647,
+                "constellationStage": 4,
+                "continuousIqSamples": 134656,
+                "diagnostic": "定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。",
+                "eyeStage": 4,
+                "eyeTraces": 64,
+                "outputRateHz": 13540000,
+                "pointCount": 4096,
+                "ready": true,
+                "realSource": true,
+                "samplesPerSymbol": 2.7682534943956933,
+                "symbolRateHz": 4891170.562021007,
+                "timingLocked": true
+            },
+            "backend": "QPainter 软件绘制",
+            "headerChecks": [
+                {
+                    "controls": 6,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandConstellationControls"
+                },
+                {
+                    "controls": 9,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandEyeControls"
+                },
+                {
+                    "controls": 20,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandModulationStftControls"
+                }
+            ],
+            "name": "04-eye-settings",
+            "pass": true,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/NB-FEEDBACK-01/diagnostics/native-20261023-180229-894-Release-software/04-eye-settings.png",
+            "render": {
+                "actualFrames": 130,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "backend": "QPainter 软件绘制",
+                "binHz": 6611.328125,
+                "effectiveHop": "1024",
+                "effectiveOverlap": 0.5,
+                "frameGeneration": "8",
+                "gpuDataDrawCalls": 0,
+                "gpuVertexUploads": 0,
+                "inverseCursorDrawCalls": 0,
+                "iqCacheBytes": 1077752,
+                "iqCacheHits": 1601,
+                "iqCacheMisses": 27,
+                "matrixBytes": 1084720,
+                "noiseBandwidthHz": 9921.836834391777,
+                "paddedFrames": 0,
+                "pending": false,
+                "repeatedObservation": false,
+                "requestGeneration": "8",
+                "requiredSeconds": 0.00015125553914327916,
+                "textureUploads": 0
+            }
+        },
+        {
+            "analysis": {
+                "carrierLocked": true,
+                "cfoHz": -167225.22215886414,
+                "channelId": "channel-2",
+                "conditionalEvm": 0.08723120118740647,
+                "constellationStage": 4,
+                "continuousIqSamples": 134656,
+                "diagnostic": "定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。",
+                "eyeStage": 4,
+                "eyeTraces": 64,
+                "outputRateHz": 13540000,
+                "pointCount": 4096,
+                "ready": true,
+                "realSource": true,
+                "samplesPerSymbol": 2.7682534943956933,
+                "symbolRateHz": 4891170.562021007,
+                "timingLocked": true
+            },
+            "backend": "QPainter 软件绘制",
+            "headerChecks": [
+                {
+                    "controls": 6,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandConstellationControls"
+                },
+                {
+                    "controls": 9,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandEyeControls"
+                },
+                {
+                    "controls": 20,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandModulationStftControls"
+                }
+            ],
+            "name": "05-constellation-settings",
+            "pass": true,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/NB-FEEDBACK-01/diagnostics/native-20261023-180229-894-Release-software/05-constellation-settings.png",
+            "render": {
+                "actualFrames": 130,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "backend": "QPainter 软件绘制",
+                "binHz": 6611.328125,
+                "effectiveHop": "1024",
+                "effectiveOverlap": 0.5,
+                "frameGeneration": "8",
+                "gpuDataDrawCalls": 0,
+                "gpuVertexUploads": 0,
+                "inverseCursorDrawCalls": 0,
+                "iqCacheBytes": 1077752,
+                "iqCacheHits": 1601,
+                "iqCacheMisses": 27,
+                "matrixBytes": 1084720,
+                "noiseBandwidthHz": 9921.836834391777,
+                "paddedFrames": 0,
+                "pending": false,
+                "repeatedObservation": false,
+                "requestGeneration": "8",
+                "requiredSeconds": 0.00015125553914327916,
+                "textureUploads": 0
+            }
+        },
+        {
+            "analysis": {
+                "carrierLocked": true,
+                "cfoHz": -167225.22215886414,
+                "channelId": "channel-2",
+                "conditionalEvm": 0.08723120118740647,
+                "constellationStage": 4,
+                "continuousIqSamples": 134656,
+                "diagnostic": "定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。",
+                "eyeStage": 4,
+                "eyeTraces": 64,
+                "outputRateHz": 13540000,
+                "pointCount": 4096,
+                "ready": true,
+                "realSource": true,
+                "samplesPerSymbol": 2.7682534943956933,
+                "symbolRateHz": 4891170.562021007,
+                "timingLocked": true
+            },
+            "backend": "QPainter 软件绘制",
+            "headerChecks": [
+                {
+                    "controls": 6,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandConstellationControls"
+                },
+                {
+                    "controls": 9,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandEyeControls"
+                },
+                {
+                    "controls": 20,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandModulationStftControls"
+                }
+            ],
+            "name": "06-native-step-controls",
+            "pass": true,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/NB-FEEDBACK-01/diagnostics/native-20261023-180229-894-Release-software/06-native-step-controls.png",
+            "render": {
+                "actualFrames": 130,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "backend": "QPainter 软件绘制",
+                "binHz": 6611.328125,
+                "effectiveHop": "1024",
+                "effectiveOverlap": 0.5,
+                "frameGeneration": "8",
+                "gpuDataDrawCalls": 0,
+                "gpuVertexUploads": 0,
+                "inverseCursorDrawCalls": 0,
+                "iqCacheBytes": 1077752,
+                "iqCacheHits": 1601,
+                "iqCacheMisses": 27,
+                "matrixBytes": 1084720,
+                "noiseBandwidthHz": 9921.836834391777,
+                "paddedFrames": 0,
+                "pending": false,
+                "repeatedObservation": false,
+                "requestGeneration": "8",
+                "requiredSeconds": 0.00015125553914327916,
+                "textureUploads": 0
+            }
+        },
+        {
+            "analysis": {
+                "carrierLocked": true,
+                "cfoHz": -167225.22215886414,
+                "channelId": "channel-2",
+                "conditionalEvm": 0.08723120118740647,
+                "constellationStage": 4,
+                "continuousIqSamples": 134656,
+                "diagnostic": "定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。",
+                "eyeStage": 4,
+                "eyeTraces": 64,
+                "outputRateHz": 13540000,
+                "pointCount": 4096,
+                "ready": true,
+                "realSource": true,
+                "samplesPerSymbol": 2.7682534943956933,
+                "symbolRateHz": 4891170.562021007,
+                "timingLocked": true
+            },
+            "backend": "QPainter 软件绘制",
+            "headerChecks": [
+                {
+                    "controls": 6,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandConstellationControls"
+                },
+                {
+                    "controls": 9,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandEyeControls"
+                },
+                {
+                    "controls": 20,
+                    "height": 30,
+                    "noOverlap": true,
+                    "rightAligned": true,
+                    "strip": "narrowbandModulationStftControls"
+                }
+            ],
+            "name": "07-v6-reopened",
+            "pass": true,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/NB-FEEDBACK-01/diagnostics/native-20261023-180229-894-Release-software/07-v6-reopened.png",
+            "render": {
+                "actualFrames": 130,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "backend": "QPainter 软件绘制",
+                "binHz": 6611.328125,
+                "effectiveHop": "1024",
+                "effectiveOverlap": 0.5,
+                "frameGeneration": "15",
+                "gpuDataDrawCalls": 0,
+                "gpuVertexUploads": 0,
+                "inverseCursorDrawCalls": 0,
+                "iqCacheBytes": 1077752,
+                "iqCacheHits": 3394,
+                "iqCacheMisses": 49,
+                "matrixBytes": 1084720,
+                "noiseBandwidthHz": 9921.836834391777,
+                "paddedFrames": 0,
+                "pending": false,
+                "repeatedObservation": false,
+                "requestGeneration": "15",
+                "requiredSeconds": 0.00015125553914327916,
+                "textureUploads": 0
+            }
+        }
+    ],
+    "screen": {
+        "availableLogicalGeometry": {
+            "height": 1392,
+            "width": 2560,
+            "x": 2560,
+            "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+            "height": 1440,
+            "width": 2560,
+            "x": 2560,
+            "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+            "height": 2160,
+            "width": 3840
+        },
+        "preferredPixelSize": {
+            "height": 2160,
+            "width": 3840
+        },
+        "primary": false
+    },
+    "softwareRenderer": true,
+    "source": "D:/coding/FFSCN_train2/broadband_signal_generation/HY_test_opt_60MHz_10ms_CNR2_30_10000_thread16_20260906_partial_serial_fallback/data/20260906-224900-990_680400_bw_60000000_sampleTime_0.01_rollOff_0.35.wav"
+}

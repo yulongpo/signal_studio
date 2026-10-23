@@ -1,0 +1,6 @@
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+FAIL!  : UiTests::parameterInputsCommitOnlyExplicitly() Function not found: parameterInputsCommitOnlyExplicitly
+FAIL!  : UiTests::parameterInputsIgnoreMouseWheel() Function not found: parameterInputsIgnoreMouseWheel
+Totals: 0 passed, 2 failed, 0 skipped, 0 blacklisted, 4ms
+********* Finished testing of UiTests *********

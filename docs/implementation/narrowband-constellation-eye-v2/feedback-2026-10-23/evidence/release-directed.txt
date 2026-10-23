@@ -1,0 +1,530 @@
+D:\softwares\cmake\bin\cmake.exe --preset local-release
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26300.
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+CMake Warning at D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake:339 (message):
+  This project is using headers of the GuiPrivate module and will therefore
+  be tied to this specific Qt module build version.  Running this project
+  against other versions of the Qt modules may crash at any arbitrary point.
+  This is not a bug, but a result of using Qt internals.  You have been
+  warned!
+
+  You can disable this warning by setting QT_NO_PRIVATE_MODULE_WARNING to ON.
+Call Stack (most recent call first):
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6GuiPrivate/Qt6GuiPrivateConfig.cmake:48 (_qt_internal_show_private_module_warning)
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/Qt6Config.cmake:253 (find_package)
+  CMakeLists.txt:17 (find_package)
+
+
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+-- Configuring done (0.6s)
+-- Generating done (2.6s)
+-- Build files have been written to: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+D:\softwares\cmake\bin\cmake.exe --build --preset local-release --target SignalStudioParameterInputTests SignalStudioNarrowbandAnalysisUiTests SignalStudioNarrowbandRecoveryTests SignalStudioNarrowbandModulationTests SignalStudioNarrowbandAnalysisTests SignalStudioChannelRateTests SignalStudioNarrowbandFeedbackProbe SignalStudio SignalStudioUiCapture
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  Automatic MOC for target SignalStudioParameterInputTests
+  正在扫描源以查找模块依赖项...
+  SignalStudioParameterInputTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioParameterInputTests.exe
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  SignalStudioBrand.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioBrand.lib
+  正在扫描源以查找模块依赖项...
+  constellation.cpp
+  正在编译...
+  constellation.cpp
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionWorker.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionWorker.exe
+  Automatic MOC for target SignalStudio
+  正在扫描源以查找模块依赖项...
+  SignalStudio.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudio.exe
+  Deploying Qt and compiler runtime to the standalone output directory
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_ATOMIC_WAIT.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_2.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/VCRUNTIME140.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/VCRUNTIME140_1.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_1.dll
+  D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudio.exe 64 bit, release executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugin.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding Qt6Svg for qsvgicon.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+EXEC : warning : Cannot find any version of the dxcompiler.dll and dxil.dll. This is not a problem unless Direct3D 12 and certain features are used by the application. [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudio.vcxproj]
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Skipping system library C:/WINDOWS/system32/icuuc.dll
+  Qt6Core.dll is up to date.
+  Qt6Gui.dll is up to date.
+  Qt6Network.dll is up to date.
+  Qt6Svg.dll is up to date.
+  Qt6Widgets.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  vc_redist.x64.exe is up to date.
+  qtuiotouchplugin.dll is up to date.
+  qsvgicon.dll is up to date.
+  qgif.dll is up to date.
+  qicns.dll is up to date.
+  qico.dll is up to date.
+  qjpeg.dll is up to date.
+  qsvg.dll is up to date.
+  qtga.dll is up to date.
+  qtiff.dll is up to date.
+  qwbmp.dll is up to date.
+  qwebp.dll is up to date.
+  qnetworklistmanager.dll is up to date.
+  qminimal.dll is up to date.
+  qoffscreen.dll is up to date.
+  qwindows.dll is up to date.
+  qmodernwindowsstyle.dll is up to date.
+  qcertonlybackend.dll is up to date.
+  qschannelbackend.dll is up to date.
+  -- Staged 10 x64 Release CRT DLLs from C:/Program Files/Microsoft Visual Studio/18/Community/VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.CRT
+  Automatic MOC for target SignalStudioNarrowbandAnalysisUiTests
+  正在扫描源以查找模块依赖项...
+  SignalStudioNarrowbandAnalysisUiTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandAnalysisUiTests.exe
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioNarrowbandRecoveryTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandRecoveryTests.exe
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  narrowband_modulation_tests.cpp
+  正在编译...
+  narrowband_modulation_tests.cpp
+  SignalStudioNarrowbandModulationTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandModulationTests.exe
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioNarrowbandAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandAnalysisTests.exe
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioChannelRateTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioChannelRateTests.exe
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioNarrowbandFeedbackProbe.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandFeedbackProbe.exe
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  SignalStudioBrand.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioBrand.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionWorker.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionWorker.exe
+  Automatic MOC for target SignalStudio
+  正在扫描源以查找模块依赖项...
+  SignalStudio.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudio.exe
+  Deploying Qt and compiler runtime to the standalone output directory
+EXEC : warning : Cannot find any version of the dxcompiler.dll and dxil.dll. This is not a problem unless Direct3D 12 and certain features are used by the application. [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudio.vcxproj]
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_ATOMIC_WAIT.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_2.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/VCRUNTIME140.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/VCRUNTIME140_1.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_1.dll
+  D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudio.exe 64 bit, release executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugin.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding Qt6Svg for qsvgicon.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Skipping system library C:/WINDOWS/system32/icuuc.dll
+  Qt6Core.dll is up to date.
+  Qt6Gui.dll is up to date.
+  Qt6Network.dll is up to date.
+  Qt6Svg.dll is up to date.
+  Qt6Widgets.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  vc_redist.x64.exe is up to date.
+  qtuiotouchplugin.dll is up to date.
+  qsvgicon.dll is up to date.
+  qgif.dll is up to date.
+  qicns.dll is up to date.
+  qico.dll is up to date.
+  qjpeg.dll is up to date.
+  qsvg.dll is up to date.
+  qtga.dll is up to date.
+  qtiff.dll is up to date.
+  qwbmp.dll is up to date.
+  qwebp.dll is up to date.
+  qnetworklistmanager.dll is up to date.
+  qminimal.dll is up to date.
+  qoffscreen.dll is up to date.
+  qwindows.dll is up to date.
+  qmodernwindowsstyle.dll is up to date.
+  qcertonlybackend.dll is up to date.
+  qschannelbackend.dll is up to date.
+  -- Staged 10 x64 Release CRT DLLs from C:/Program Files/Microsoft Visual Studio/18/Community/VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.CRT
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  SignalStudioBrand.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioBrand.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionWorker.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionWorker.exe
+  Automatic MOC for target SignalStudio
+  正在扫描源以查找模块依赖项...
+  SignalStudio.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudio.exe
+  Deploying Qt and compiler runtime to the standalone output directory
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_ATOMIC_WAIT.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_2.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/VCRUNTIME140.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/VCRUNTIME140_1.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_1.dll
+  D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudio.exe 64 bit, release executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugin.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding Qt6Svg for qsvgicon.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+EXEC : warning : Cannot find any version of the dxcompiler.dll and dxil.dll. This is not a problem unless Direct3D 12 and certain features are used by the application. [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudio.vcxproj]
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Skipping system library C:/WINDOWS/system32/icuuc.dll
+  Qt6Core.dll is up to date.
+  Qt6Gui.dll is up to date.
+  Qt6Network.dll is up to date.
+  Qt6Svg.dll is up to date.
+  Qt6Widgets.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  vc_redist.x64.exe is up to date.
+  qtuiotouchplugin.dll is up to date.
+  qsvgicon.dll is up to date.
+  qgif.dll is up to date.
+  qicns.dll is up to date.
+  qico.dll is up to date.
+  qjpeg.dll is up to date.
+  qsvg.dll is up to date.
+  qtga.dll is up to date.
+  qtiff.dll is up to date.
+  qwbmp.dll is up to date.
+  qwebp.dll is up to date.
+  qnetworklistmanager.dll is up to date.
+  qminimal.dll is up to date.
+  qoffscreen.dll is up to date.
+  qwindows.dll is up to date.
+  qmodernwindowsstyle.dll is up to date.
+  qcertonlybackend.dll is up to date.
+  qschannelbackend.dll is up to date.
+  -- Staged 10 x64 Release CRT DLLs from C:/Program Files/Microsoft Visual Studio/18/Community/VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.CRT
+  Automatic MOC for target SignalStudioUiCapture
+  正在扫描源以查找模块依赖项...
+  SignalStudioUiCapture.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUiCapture.exe
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure -R ^signal_studio_(parameter_input|narrowband_analysis_ui|narrowband_recovery|narrowband_modulation|narrowband_analysis|channel_rate)$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+    Start  1: signal_studio_parameter_input
+
+1: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioParameterInputTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-release/parameter-input-release.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+1: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+1: Environment variables: 
+1:  QT_QPA_PLATFORM=offscreen
+1:  QT_SCALE_FACTOR=1.5
+1: Test timeout computed to be: 60
+1: ********* Start testing of ParameterInputTests *********
+1: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+1: PASS   : ParameterInputTests::initTestCase()
+1: QWARN  : ParameterInputTests::mouseSteps(native-style) This plugin does not support propagateSizeHints()
+1: QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarAddLine QRect(463,3 14x9) child QWidget(0x0)
+1: QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarSubLine QRect(463,12 14x10) child QWidget(0x0)
+1: QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarAddLine QRect(463,3 14x9) child QWidget(0x0)
+1: QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarSubLine QRect(463,12 14x10) child QWidget(0x0)
+1: QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarAddLine QRect(463,3 14x9) child QWidget(0x0)
+1: PASS   : ParameterInputTests::mouseSteps(native-style)
+1: QWARN  : ParameterInputTests::mouseSteps(application-style) This plugin does not support propagateSizeHints()
+1: QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarAddLine QRect(463,3 14x12) child QWidget(0x0)
+1: QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarSubLine QRect(463,15 14x13) child QWidget(0x0)
+1: QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarAddLine QRect(463,3 14x9) child QWidget(0x0)
+1: QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarSubLine QRect(463,12 14x10) child QWidget(0x0)
+1: QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarAddLine QRect(463,3 14x12) child QWidget(0x0)
+1: PASS   : ParameterInputTests::mouseSteps(application-style)
+1: QWARN  : ParameterInputTests::textDraftPolicy() This plugin does not support propagateSizeHints()
+1: PASS   : ParameterInputTests::textDraftPolicy()
+1: PASS   : ParameterInputTests::cleanupTestCase()
+1: Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 97ms
+1: ********* Finished testing of ParameterInputTests *********
+1: 
+1/6 Test  #1: signal_studio_parameter_input ..........   Passed    0.35 sec
+test 21
+    Start 21: signal_studio_narrowband_modulation
+
+21: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandModulationTests.exe
+21: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+21: Test timeout computed to be: 300
+21: PASS tiny APSK relative radii normalize finitely and preserve geometry/v6
+21: psk2-ideal pass=1 carrier=1 CFO/Rs=3.25229e-09 EVM=0.00842609 timing=0.00560442 conditional=0.00842616 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk2-awgn20 pass=1 carrier=1 CFO/Rs=2.91986e-06 EVM=0.0196212 timing=0.00566509 conditional=0.0196221 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk4-ideal pass=1 carrier=1 CFO/Rs=1.58536e-07 EVM=0.0107195 timing=0.00754574 conditional=0.0107197 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk4-awgn20 pass=1 carrier=1 CFO/Rs=3.0199e-06 EVM=0.0209404 timing=0.00771363 conditional=0.0209415 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk8-ideal pass=1 carrier=1 CFO/Rs=9.64603e-07 EVM=0.00935556 timing=0.00643016 conditional=0.00935566 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk8-awgn20 pass=1 carrier=1 CFO/Rs=4.00296e-06 EVM=0.0199331 timing=0.00623873 conditional=0.0199341 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk16-ideal pass=1 carrier=1 CFO/Rs=5.38657e-07 EVM=0.00976344 timing=0.00651596 conditional=0.00976356 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk16-awgn20 pass=1 carrier=1 CFO/Rs=4.93564e-06 EVM=0.0201506 timing=0.0063347 conditional=0.0201516 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk32-ideal pass=1 carrier=1 CFO/Rs=4.96716e-06 EVM=0.0101767 timing=0.00702572 conditional=0.0101769 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk32-awgn30 pass=1 carrier=1 CFO/Rs=6.29763e-06 EVM=0.0116842 timing=0.00706601 conditional=0.0116844 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk64-ideal pass=1 carrier=1 CFO/Rs=5.99268e-06 EVM=0.0122061 timing=0.00853643 conditional=0.0121831 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk64-awgn40 pass=1 carrier=1 CFO/Rs=5.73447e-06 EVM=0.0123596 timing=0.00854035 conditional=0.0123241 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk128-ideal pass=1 carrier=1 CFO/Rs=1.25149e-06 EVM=0.00780623 timing=0.00524517 conditional=0.00778417 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk128-awgn40 pass=1 carrier=1 CFO/Rs=1.06411e-06 EVM=0.00801411 timing=0.00525999 conditional=0.00798727 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk256-ideal pass=1 carrier=1 CFO/Rs=6.79703e-07 EVM=0.0102194 timing=0.0069411 conditional=0.00884813 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: psk256-awgn40 pass=1 carrier=1 CFO/Rs=4.77476e-07 EVM=0.0103906 timing=0.00694427 conditional=0.00900251 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam4-ideal pass=1 carrier=1 CFO/Rs=1.76615e-06 EVM=0.00993585 timing=0.00687535 conditional=0.00993598 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam4-awgn20 pass=1 carrier=1 CFO/Rs=7.67742e-06 EVM=0.0202364 timing=0.0067993 conditional=0.0202374 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam8-ideal pass=1 carrier=1 CFO/Rs=8.11023e-06 EVM=0.024953 timing=0.0179394 conditional=0.0249701 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam8-awgn20 pass=1 carrier=1 CFO/Rs=2.85779e-06 EVM=0.0307447 timing=0.0179695 conditional=0.0307638 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam16-ideal pass=1 carrier=1 CFO/Rs=6.5938e-06 EVM=0.0155152 timing=0.0109554 conditional=0.0160062 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam16-awgn20 pass=1 carrier=1 CFO/Rs=9.34438e-06 EVM=0.0235252 timing=0.0108377 conditional=0.0238267 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam32-ideal pass=1 carrier=1 CFO/Rs=1.6847e-07 EVM=0.0147727 timing=0.0106814 conditional=0.0147761 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam32-awgn20 pass=1 carrier=1 CFO/Rs=2.3964e-06 EVM=0.0233867 timing=0.0110146 conditional=0.0233916 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam64-ideal pass=1 carrier=1 CFO/Rs=1.47965e-06 EVM=0.0166282 timing=0.0120686 conditional=0.0170269 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam64-awgn20 pass=1 carrier=1 CFO/Rs=8.13579e-08 EVM=0.0244143 timing=0.0122216 conditional=0.0246643 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam128-ideal pass=1 carrier=1 CFO/Rs=3.81017e-06 EVM=0.016141 timing=0.0115025 conditional=0.0161592 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam128-awgn20 pass=1 carrier=1 CFO/Rs=6.95168e-06 EVM=0.0238611 timing=0.0114164 conditional=0.02386 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam256-ideal pass=1 carrier=1 CFO/Rs=8.65602e-07 EVM=0.0144927 timing=0.0103307 conditional=0.0145997 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam256-awgn20 pass=1 carrier=1 CFO/Rs=4.77171e-06 EVM=0.0229882 timing=0.0103971 conditional=0.0230685 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam512-ideal pass=1 carrier=1 CFO/Rs=1.50892e-06 EVM=0.00438868 timing=0.00279837 conditional=0.00477683 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam512-awgn40 pass=1 carrier=1 CFO/Rs=1.69826e-06 EVM=0.00471853 timing=0.002777 conditional=0.00508099 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam1024-ideal pass=1 carrier=1 CFO/Rs=1.55456e-06 EVM=0.0072678 timing=0.00508517 conditional=0.00727779 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam1024-awgn40 pass=1 carrier=1 CFO/Rs=1.29457e-06 EVM=0.00752186 timing=0.00511392 conditional=0.00753141 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam2048-ideal pass=1 carrier=1 CFO/Rs=9.24916e-07 EVM=0.00673512 timing=0.00468091 conditional=0.00674738 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam2048-awgn40 pass=1 carrier=1 CFO/Rs=1.15946e-06 EVM=0.00698293 timing=0.00469114 conditional=0.00699465 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam4096-ideal pass=1 carrier=1 CFO/Rs=1.39411e-06 EVM=0.00548695 timing=0.00363784 conditional=0.01056 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: qam4096-awgn40 pass=1 carrier=1 CFO/Rs=1.2689e-06 EVM=0.00573658 timing=0.00363568 conditional=0.010685 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk8-ideal pass=1 carrier=1 CFO/Rs=3.08631e-06 EVM=0.0113355 timing=0.00786918 conditional=0.0121511 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk8-awgn20 pass=1 carrier=1 CFO/Rs=4.0164e-06 EVM=0.0210253 timing=0.00777177 conditional=0.0215085 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk16-ideal pass=1 carrier=1 CFO/Rs=1.07572e-06 EVM=0.0121005 timing=0.00859257 conditional=0.0121324 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk16-awgn20 pass=1 carrier=1 CFO/Rs=3.29502e-06 EVM=0.0218267 timing=0.00883574 conditional=0.0218385 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk32-ideal pass=1 carrier=1 CFO/Rs=6.50755e-06 EVM=0.0155605 timing=0.0110155 conditional=0.0173832 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk32-awgn20 pass=1 carrier=1 CFO/Rs=5.69769e-06 EVM=0.0233644 timing=0.0108638 conditional=0.0246641 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk64-ideal pass=1 carrier=1 CFO/Rs=3.58738e-06 EVM=0.0176611 timing=0.0124914 conditional=0.0176614 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk64-awgn20 pass=1 carrier=1 CFO/Rs=7.77714e-06 EVM=0.0254265 timing=0.0126392 conditional=0.0254266 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk128-ideal pass=1 carrier=1 CFO/Rs=3.42126e-06 EVM=0.0138533 timing=0.0101035 conditional=0.0148399 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk128-awgn20 pass=1 carrier=1 CFO/Rs=3.2911e-06 EVM=0.0225779 timing=0.0102169 conditional=0.0232334 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk256-ideal pass=1 carrier=1 CFO/Rs=2.04118e-07 EVM=0.0127556 timing=0.00890721 conditional=0.0131641 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: apsk256-awgn20 pass=1 carrier=1 CFO/Rs=1.03956e-06 EVM=0.0220087 timing=0.00894123 conditional=0.0222723 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+21: PASS six noise hypotheses and strict family/order/ring persistence
+2/6 Test #21: signal_studio_narrowband_modulation ....   Passed    1.39 sec
+test 22
+    Start 22: signal_studio_narrowband_recovery
+
+22: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandRecoveryTests.exe
+22: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+22: Test timeout computed to be: 180
+22: bpsk-a35-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=-0.000649978 CFO/Rs error=1.03997e-09 timing/UI=0.00490307 EVM=0.00736443 TED jitter=0.00315684 conditional=0.00736448 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: bpsk-a35-awgn20 Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=15625.2 CFO/Rs error=3.18534e-07 timing/UI=0.00496743 EVM=0.0192806 TED jitter=0.00326806 conditional=0.0192815 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: qpsk-a35-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=-0.00983853 CFO/Rs error=1.57416e-08 timing/UI=0.00962689 EVM=0.0136381 TED jitter=0.00626352 conditional=0.0136385 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: qpsk-a35-awgn20 Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=15626.3 CFO/Rs error=2.03848e-06 timing/UI=0.00955112 EVM=0.0223415 TED jitter=0.00621329 conditional=0.0223429 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: 16qam-a35-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=1.44007 CFO/Rs error=2.30412e-06 timing/UI=0.0121759 EVM=0.0170459 TED jitter=0.00842755 conditional=0.0174434 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: 16qam-a35-awgn20 Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=15626.3 CFO/Rs error=2.12617e-06 timing/UI=0.0120239 EVM=0.0245624 TED jitter=0.00819964 conditional=0.024817 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: qpsk-a35-awgn20 Fs=1.5e+06 timingLock=1 carrierLock=1 N=7645 CFO=15626.8 CFO/Rs error=2.84272e-06 timing/UI=0.00958348 EVM=0.0222811 TED jitter=0.00627749 conditional=0.0222825 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: qpsk-a35-awgn20 Fs=4e+06 timingLock=1 carrierLock=1 N=7654 CFO=15625.4 CFO/Rs error=7.04363e-07 timing/UI=0.00956116 EVM=0.0225081 TED jitter=0.00623907 conditional=0.0225095 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: qpsk-a20-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=4.67353 CFO/Rs error=7.47765e-06 timing/UI=0.0190812 EVM=0.0299376 TED jitter=0.0156456 conditional=0.0299409 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: 16qam-a20-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=5.57891 CFO/Rs error=8.92626e-06 timing/UI=0.0293794 EVM=0.0464409 TED jitter=0.0109111 conditional=0.0465234 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: qpsk-a50-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=0.0423554 CFO/Rs error=6.77687e-08 timing/UI=0.00274449 EVM=0.00460338 TED jitter=0.00216278 conditional=0.0046034 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: 16qam-a50-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=0.732293 CFO/Rs error=1.17167e-06 timing/UI=0.00410676 EVM=0.00590813 TED jitter=0.00348171 conditional=0.00704123 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: qpsk-clock100ppm Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=15625.5 CFO/Rs error=7.23809e-07 timing/UI=0.0120407 EVM=0.0167684 TED jitter=0.00680672 conditional=0.0167689 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+22: PASS stale-Rs rejection, independent manual CFO and signed recovered-eye offsets
+22: PASS single-carrier recovery against independent source symbols, CFO and timing truth
+3/6 Test #22: signal_studio_narrowband_recovery ......   Passed    0.63 sec
+test 23
+    Start 23: signal_studio_narrowband_analysis
+
+23: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandAnalysisTests.exe
+23: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+23: Test timeout computed to be: 120
+23: source: direct/cache maximum error=1.33183e-14, valid=[34,39967)
+23: eye: fractional SPS=3.2, analytic NRMSE=0.000169596
+23: Rs bpsk-a20-ideal: PASS reliable=1 [625000,0.88281,18.2421dB] [397189,0.458163,11.8724dB] [227821,0.414368,11.2155dB] [307400,0.410498,11.1575dB] [317625,0.407284,11.1093dB]
+23: Rs bpsk-a20-awgn20: PASS reliable=1 [624999,0.881804,18.2271dB] [397185,0.457568,11.8635dB] [307394,0.410369,11.1555dB] [317623,0.408627,11.1294dB] [227825,0.407614,11.1142dB]
+23: Rs bpsk-a35-ideal: PASS reliable=1 [625000,1,23.7596dB] [397188,0.438007,11.5701dB] [335113,0.416074,11.2411dB] [391435,0.410734,11.161dB] [307382,0.386651,10.7998dB]
+23: Rs bpsk-a35-awgn20: PASS reliable=1 [625000,1,23.7304dB] [397182,0.433439,11.5016dB] [335114,0.413882,11.2082dB] [391442,0.402882,11.0432dB] [307382,0.384835,10.7725dB]
+23: Rs bpsk-a50-ideal: PASS reliable=1 [625000,1,27.7664dB] [397126,0.388359,11.0879dB] [335118,0.35373,10.3059dB] [391421,0.348257,10.69dB] [404071,0.30519,10.8559dB]
+23: Rs bpsk-a50-awgn20: PASS reliable=1 [625000,1,27.7195dB] [397110,0.370559,10.858dB] [335108,0.344853,10.1728dB] [391425,0.328571,10.4848dB] [404071,0.325449,10.878dB]
+23: Rs qpsk-a20-ideal: PASS reliable=1 [625000,0.934624,19.0194dB] [260039,0.296558,9.79797dB] [293475,0.24966,8.92322dB] [233500,0.235164,9.4426dB] [328096,0.232249,9.54101dB]
+23: Rs qpsk-a20-awgn20: PASS reliable=1 [625000,0.930571,18.9586dB] [260039,0.287037,9.77435dB] [255770,0.239625,8.66205dB] [293477,0.236953,8.76701dB] [233498,0.232549,9.32691dB]
+23: Rs qpsk-a35-ideal: PASS reliable=1 [625000,1,25.1079dB] [260034,0.303927,9.71897dB] [392629,0.238155,8.57233dB] [293479,0.233731,8.88959dB] [424807,0.224775,9.77378dB]
+23: Rs qpsk-a35-awgn20: PASS reliable=1 [625000,1,25.0902dB] [260038,0.310666,9.76569dB] [392620,0.243739,8.65608dB] [424807,0.228448,9.81777dB] [293474,0.225522,8.66532dB]
+23: Rs qpsk-a50-ideal: PASS reliable=1 [625000,1,29.5405dB] [424820,0.238704,9.5804dB] [530508,0.228446,9.02984dB] [392620,0.217391,8.26086dB] [469035,0.211711,8.59879dB]
+23: Rs qpsk-a50-awgn20: PASS reliable=1 [625000,1,29.4365dB] [424818,0.229029,9.41082dB] [469014,0.225019,8.63986dB] [392590,0.207323,8.10984dB] [530505,0.205293,8.83383dB]
+23: Rs 16qam-a20-ideal: PASS reliable=1 [625001,0.822975,17.3446dB] [239978,0.323605,9.94588dB] [254164,0.310511,9.65766dB] [142643,0.268072,9.07213dB] [229122,0.248952,9.24891dB]
+23: Rs 16qam-a20-awgn20: PASS reliable=1 [625001,0.815135,17.227dB] [239979,0.320711,9.85922dB] [254151,0.300771,9.51157dB] [142640,0.271529,9.07293dB] [229104,0.251262,9.21176dB]
+23: Rs 16qam-a35-ideal: PASS reliable=1 [625001,1,22.4489dB] [239993,0.288593,9.6674dB] [254161,0.256021,8.84031dB] [41242.9,0.200052,8.33068dB] [159726,0.196108,8.36635dB]
+23: Rs 16qam-a35-awgn20: PASS reliable=1 [625001,1,22.4604dB] [239995,0.292018,9.70347dB] [254203,0.260609,8.90914dB] [159723,0.209054,8.45418dB] [41241.4,0.202487,8.3601dB]
+23: Rs 16qam-a50-ideal: PASS reliable=1 [625000,1,25.6991dB] [240028,0.226722,9.04094dB] [254046,0.191539,8.20501dB] [38821.4,0.179399,8.38284dB] [41230,0.178477,8.17887dB]
+23: Rs 16qam-a50-awgn20: PASS reliable=1 [625000,1,25.7036dB] [240028,0.226073,9.04925dB] [254040,0.187393,8.13686dB] [38822.2,0.186105,8.44458dB] [41225.9,0.178676,8.1524dB]
+23: Variable Rs 250000: PASS
+23: Variable Rs 250000: PASS
+23: Variable Rs 250000: PASS
+23: Variable Rs 1e+06: PASS
+23: Variable Rs 1e+06: PASS
+23: Variable Rs 1e+06: PASS
+23: PASS continuous source, real constellation/eye, blind rate candidates and provenance
+4/6 Test #23: signal_studio_narrowband_analysis ......   Passed    0.98 sec
+test 24
+    Start 24: signal_studio_channel_rate
+
+24: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioChannelRateTests.exe
+24: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+24: Test timeout computed to be: 120
+24: PASS actual bandwidth-rate planning, CI16 numerical output, manual refusal, odd source rate and v6 compatibility
+5/6 Test #24: signal_studio_channel_rate .............   Passed    0.25 sec
+test 28
+    Start 28: signal_studio_narrowband_analysis_ui
+
+28: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioNarrowbandAnalysisUiTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-release/nb-analysis-ui-release.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+28: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+28: Environment variables: 
+28:  QT_QPA_PLATFORM=offscreen
+28:  QT_SCALE_FACTOR=1.5
+28: Test timeout computed to be: 480
+28: ********* Start testing of NarrowbandAnalysisUiTests *********
+28: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+28: QINFO  : NarrowbandAnalysisUiTests::initTestCase() NARROWBAND_VALIDATION_NODE=W8
+28: PASS   : NarrowbandAnalysisUiTests::initTestCase()
+28: QWARN  : NarrowbandAnalysisUiTests::samplingTransactionAndActualCreation() This plugin does not support propagateSizeHints()
+28: PASS   : NarrowbandAnalysisUiTests::samplingTransactionAndActualCreation()
+28: QWARN  : NarrowbandAnalysisUiTests::legacyEditKeepsRateAndDraft() This plugin does not support propagateSizeHints()
+28: PASS   : NarrowbandAnalysisUiTests::legacyEditKeepsRateAndDraft()
+28: PASS   : NarrowbandAnalysisUiTests::realRawPointsAndCancellation()
+28: PASS   : NarrowbandAnalysisUiTests::realEyeSymbolRateAndControls()
+28: PASS   : NarrowbandAnalysisUiTests::estimatedCandidatesAndManualTakeover()
+28: PASS   : NarrowbandAnalysisUiTests::realSynchronizationStagesAndManualCfo()
+28: PASS   : NarrowbandAnalysisUiTests::externalSourceChangeInvalidatesIdleAndPending()
+28: QWARN  : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CI16-RAW) This plugin does not support propagateSizeHints()
+28: PASS   : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CI16-RAW)
+28: QWARN  : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CF32-SigMF) This plugin does not support propagateSizeHints()
+28: PASS   : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CF32-SigMF)
+28: PASS   : NarrowbandAnalysisUiTests::cleanupTestCase()
+28: Totals: 11 passed, 0 failed, 0 skipped, 0 blacklisted, 11011ms
+28: ********* Finished testing of NarrowbandAnalysisUiTests *********
+28: 
+6/6 Test #28: signal_studio_narrowband_analysis_ui ...   Passed   11.32 sec
+
+The following tests passed:
+	signal_studio_parameter_input
+	signal_studio_narrowband_modulation
+	signal_studio_narrowband_recovery
+	signal_studio_narrowband_analysis
+	signal_studio_channel_rate
+	signal_studio_narrowband_analysis_ui
+
+100% tests passed, 0 tests failed out of 6
+
+Total Test time (real) =  14.93 sec
