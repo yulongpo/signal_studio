@@ -204,13 +204,15 @@ int main(int argc,char* argv[]) {
     else if (parser.isSet("full-screen")) window.showFullScreen();
     else if (!parser.isSet("size")) window.showMaximized();
     else window.show();
+    // Timer callbacks run inside app.exec(); their referenced state must live
+    // until that event loop returns, rather than inside the setup-only block.
+    bool interactionSent=false,iqWheelZoomPassed=false;
+    int narrowbandPageMask=0;
+    QJsonArray narrowbandPageEvidence;
+    QJsonObject iqInteractionEvidence;
     if(parser.isSet("smoke-test")||parser.isSet("screenshot")||parser.isSet("iq-interaction-test")) {
         auto* readinessTimer=new QTimer(&window);readinessTimer->setInterval(50);
         auto elapsed=std::make_shared<QElapsedTimer>();elapsed->start();
-        bool interactionSent=false,iqWheelZoomPassed=false;
-        int narrowbandPageMask=0;
-        QJsonArray narrowbandPageEvidence;
-        QJsonObject iqInteractionEvidence;
         QObject::connect(readinessTimer,&QTimer::timeout,&window,[&,readinessTimer,elapsed]{
             auto* main=window.findChild<signalstudio::PlotWidget*>("mainPlot");
             auto* aux=window.findChild<signalstudio::PlotWidget*>("auxPlot");
@@ -271,13 +273,22 @@ int main(int argc,char* argv[]) {
             const bool narrowbandMode=parser.isSet("narrowband-demo")||parser.isSet("verify-narrowband-analysis");
             const quint64 uploaded=narrowbandMode&&narrowband?narrowband->visibleTextureUploads():(main?main->textureUploadCount():0);
             const quint64 powers=main?main->powerGenerationCount():0;
+            const quint64 framesBeforeOverlay=narrowbandMode&&narrowband?narrowband->visibleCompletedFrames():(main?main->completedFrameCount():0);
             // A new overlay frame must reuse the existing heatmap texture and power matrix.
             if(narrowbandMode&&narrowband)narrowband->invalidateVisibleOverlays();
             else if(main) {main->setCreating(true);main->setCreating(false);}
-            QTimer::singleShot(150,&window,[&,main,uploaded,powers]{
+            auto* overlayTimer=new QTimer(&window);overlayTimer->setInterval(25);
+            auto overlayElapsed=std::make_shared<QElapsedTimer>();overlayElapsed->start();
+            QObject::connect(overlayTimer,&QTimer::timeout,&window,[&,main,uploaded,powers,framesBeforeOverlay,overlayTimer,overlayElapsed]{
                 auto* aux=window.findChild<signalstudio::PlotWidget*>("auxPlot");auto* nav=window.findChild<signalstudio::PlotWidget*>("navigationPlot");
                 auto* narrowband=window.findChild<signalstudio::NarrowbandWorkspace*>("narrowbandWorkspace");
                 const bool narrowbandMode=parser.isSet("narrowband-demo")||parser.isSet("verify-narrowband-analysis");
+                const bool overlaySettled=narrowbandMode?(narrowband&&narrowband->visibleChartsSettled()):
+                    (main&&aux&&nav&&main->isDisplaySettled()&&aux->isDisplaySettled()&&nav->isDisplaySettled());
+                const quint64 framesAfterOverlay=narrowbandMode&&narrowband?narrowband->visibleCompletedFrames():(main?main->completedFrameCount():0);
+                const bool freshOverlayFrame=!parser.isSet("require-gpu")||framesAfterOverlay>framesBeforeOverlay;
+                if((!overlaySettled||!freshOverlayFrame)&&overlayElapsed->elapsed()<5000)return;
+                overlayTimer->stop();overlayTimer->deleteLater();
                 bool ok=narrowbandMode?(narrowband&&narrowband->visibleChartsSettled()&&narrowband->dataStatusText().contains(QStringLiteral("真实 DDC"))&&
                         (!parser.isSet("verify-narrowband-pages")||(narrowbandPageMask==0x1f&&narrowband->currentPageIndex()==0))&&(!targetScreen||window.screen()==targetScreen)):
                     (main&&aux&&nav&&main->isDisplaySettled()&&aux->isDisplaySettled()&&nav->isDisplaySettled()&&main->plotRect().height()>=200&&(!targetScreen||window.screen()==targetScreen));
@@ -293,7 +304,7 @@ int main(int argc,char* argv[]) {
                         main->renderStatistics().value("gpuDataDrawCalls").toInteger()+
                         aux->renderStatistics().value("gpuDataDrawCalls").toInteger()+
                         nav->renderStatistics().value("gpuDataDrawCalls").toInteger()>0;
-                if(parser.isSet("require-gpu"))ok=ok&&gpu&&reuse;
+                if(parser.isSet("require-gpu"))ok=ok&&gpu&&reuse&&freshOverlayFrame;
                 if(parser.isSet("verify-narrowband-analysis"))ok=ok&&narrowband&&narrowband->analysisResult()&&narrowband->analysisResult()->carrierLocked&&!narrowband->analysisResult()->eyes.empty();
                 // Capture the application itself so the report remains scoped
                 // to this window and includes QRhiWidget child surfaces.
@@ -367,6 +378,8 @@ int main(int argc,char* argv[]) {
                     {"pageIndex",narrowband?narrowband->currentPageIndex():-1},{"dataStatus",narrowband?narrowband->dataStatusText():QStringLiteral("missing")}};
                 QJsonObject report{{"pass",ok},{"workspaceMode",narrowbandMode?"narrowband":"wideband"},
                     {"acceptanceSymbolRateHypothesisHz",acceptanceSymbolRate},
+                    {"overlaySettled",overlaySettled},{"freshOverlayFrame",freshOverlayFrame},
+                    {"overlayVerificationMilliseconds",overlayElapsed->elapsed()},
                     {"analysis",signalstudio::narrowbandAnalysisEvidence(narrowband?narrowband->analysisResult().get():nullptr)},
                     {"narrowbandPagesVerified",narrowbandMode?narrowbandPageMask==0x1f:false},{"narrowbandPages",narrowbandPageEvidence},
                     {"activeChannel",activeChannelEvidence},{"hardwareRenderer",gpu},
@@ -387,12 +400,13 @@ int main(int argc,char* argv[]) {
                     {"devicePixelRatio",window.devicePixelRatioF()},{"logicalWindowSize",QJsonArray{window.width(),window.height()}},{"capturePixelSize",QJsonArray{capture.width(),capture.height()}},{"fourK150Verified",fourK},
                     {"screen",screenInfo(window.screen())},{"screens",screenInventory()},{"fullScreen",window.isFullScreen()},{"activeFile",activeFileEvidence},
                     {"iqInteraction",iqInteractionEvidence},
+                    {"narrowbandRendering",narrowband?narrowband->renderStatistics():QJsonObject{}},
                     {"mainRendering",main?main->renderStatistics():QJsonObject{}},{"auxiliaryRendering",aux?aux->renderStatistics():QJsonObject{}},
                     {"navigationRendering",nav?nav->renderStatistics():QJsonObject{}},
                     {"screenLogicalSize",QJsonArray{window.screen()->geometry().width(),window.screen()->geometry().height()}},{"screenLogicalDpi",window.screen()->logicalDotsPerInch()}};
                 if(parser.isSet("render-report")) {const auto path=parser.value("render-report");QDir().mkpath(QFileInfo(path).absolutePath());QFile file(path);if(!file.open(QIODevice::WriteOnly)||file.write(QJsonDocument(report).toJson())<0)ok=false;}
                 QTextStream(stdout)<<QJsonDocument(report).toJson(QJsonDocument::Compact)<<"\n";app.exit(ok?0:1);
-            });
+            });overlayTimer->start();
         });readinessTimer->start();
     }
     return app.exec();
