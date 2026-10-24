@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "codeHead": "bc22bd57458a9c3b0654aa38169dd9ef07c86ce2",
+  "nativeReport": "evidence/review-fixes/release-detection-native.json",
+  "pass": true,
+  "actualModelSavedPrefix": {
+    "savedWhileRunning": true,
+    "postSaveProgressVerified": true,
+    "reopenedAfterCancelWithoutResave": true,
+    "durablePrefixExact": true,
+    "runningContainerSha256": "e4583fe2b062c032872c471e780a66188bc9b78aee9adae298bec5106fbda1a3",
+    "savedCompletedWindows": "6",
+    "startFeedbackMilliseconds": 172.3765,
+    "cancelFeedbackMilliseconds": 67.3124,
+    "cancelCompletionMilliseconds": 224.0829
+  },
+  "syntheticUiPressure": {
+    "activitySegments": 100000,
+    "filter": {
+      "includesChartFrame": false,
+      "includesFirstPaint": true,
+      "p50Milliseconds": 386.9181,
+      "p95Milliseconds": 415.1766,
+      "samplesMilliseconds": [
+        415.1766,
+        412.9787,
+        366.7603,
+        407.5306,
+        386.9181,
+        369.5569,
+        329.2797,
+        367.1057,
+        397.345,
+        414.979,
+        371.1254,
+        393.1985,
+        401.5955,
+        381.3136,
+        404.5502,
+        404.4669,
+        376.1193,
+        369.7703,
+        381.618,
+        421.1943
+      ],
+      "targetMet": false,
+      "targetMilliseconds": 200
+    },
+    "memoryAfter": {
+      "peakRssBytes": 810065920,
+      "pid": 23248,
+      "privateBytes": 576737280,
+      "rssBytes": 512081920
+    },
+    "memoryBefore": {
+      "peakRssBytes": 810065920,
+      "pid": 23248,
+      "privateBytes": 744730624,
+      "rssBytes": 684150784
+    },
+    "modelAccuracyEvidence": false,
+    "objects": 1000,
+    "selection": {
+      "includesChartFrame": true,
+      "includesFirstPaint": true,
+      "p50Milliseconds": 406.9653,
+      "p95Milliseconds": 425.5413,
+      "samplesMilliseconds": [
+        431.0109,
+        420.0391,
+        392.9883,
+        357.0297,
+        411.9216,
+        378.5733,
+        364.8209,
+        414.0014,
+        406.9653,
+        377.3335,
+        378.587,
+        417.3683,
+        408.3407,
+        410.4176,
+        390.1059,
+        425.5413,
+        412.6311,
+        378.8591,
+        376.1012,
+        412.9549
+      ],
+      "targetMet": false,
+      "targetMilliseconds": 200
+    },
+    "setupMilliseconds": 1191,
+    "syntheticUiFixture": true,
+    "tableChildWidgets": 19,
+    "tableRows": 200,
+    "visibleTimeSamples": 20000
+  }
+}

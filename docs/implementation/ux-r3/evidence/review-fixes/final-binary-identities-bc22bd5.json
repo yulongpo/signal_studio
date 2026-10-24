@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "codeHead": "bc22bd57458a9c3b0654aa38169dd9ef07c86ce2",
+  "binaries": [
+    {
+      "configuration": "debug",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudio.exe",
+      "bytes": 13695488,
+      "sha256": "c4c1f62f7c6c48cc3ff84c7f0d46ad48a4b3f118cd1bb133b058ff1687d6bfb8",
+      "codeHead": "bc22bd57458a9c3b0654aa38169dd9ef07c86ce2",
+      "configuredBrandRevision": "bc22bd5"
+    },
+    {
+      "configuration": "debug",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+      "bytes": 15745536,
+      "sha256": "2fbfd1bf8689c1fada7b4c7b995c0c3e85ee85fba35aab9b79c1a439d6deb5e6",
+      "codeHead": "bc22bd57458a9c3b0654aa38169dd9ef07c86ce2",
+      "configuredBrandRevision": "bc22bd5"
+    },
+    {
+      "configuration": "debug",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioDetectionWorker.exe",
+      "bytes": 2664960,
+      "sha256": "67807f239a8afc14e8eeb140c76c5d7f1927c63b2ec3dd5f3108da8a7a3fd56d",
+      "codeHead": "bc22bd57458a9c3b0654aa38169dd9ef07c86ce2",
+      "configuredBrandRevision": "bc22bd5"
+    },
+    {
+      "configuration": "release",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe",
+      "bytes": 5209600,
+      "sha256": "eea16dc4b0857758750089f975d7084544703cf793b1020b77e82af79619bf23",
+      "codeHead": "bc22bd57458a9c3b0654aa38169dd9ef07c86ce2",
+      "configuredBrandRevision": "bc22bd5"
+    },
+    {
+      "configuration": "release",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+      "bytes": 6001152,
+      "sha256": "81b5e076077e64e026c6bd77d1617c4c58b9d687e1f1be42dfd95c15e9816cb7",
+      "codeHead": "bc22bd57458a9c3b0654aa38169dd9ef07c86ce2",
+      "configuredBrandRevision": "bc22bd5"
+    },
+    {
+      "configuration": "release",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionWorker.exe",
+      "bytes": 219136,
+      "sha256": "7b5dd7e0a44bf6e97357e5f4c62e4f71e539b54f337adbbde4202a862005c5b5",
+      "codeHead": "bc22bd57458a9c3b0654aa38169dd9ef07c86ce2",
+      "configuredBrandRevision": "bc22bd5"
+    }
+  ],
+  "note": "Final app/capture/worker rebuild updates only configured brand revision after complete CTest; actual final binaries rerun through all 12 deployment processes."
+}

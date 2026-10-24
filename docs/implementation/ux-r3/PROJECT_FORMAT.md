@@ -1,6 +1,6 @@
 # UX-R3 G2 工程容器与独立行为测试
 
-本文描述 `infrastructure/project_file.{h,cpp}` 和 `ProjectStore` 在实施提交 `064b509` 的工程容器合同，以及分轮测试结果。最终独立 Review、应用工作流与原生验收结论分别见 INDEPENDENT_REVIEW、VALIDATION，不以格式文档替代运行证据。
+本文描述 `infrastructure/project_file.{h,cpp}` 和 `ProjectStore` 截至修复提交 `bc22bd5` 的工程容器合同，以及分轮测试结果。最终独立 Review、应用工作流与原生验收结论分别见 INDEPENDENT_REVIEW、VALIDATION，不以格式文档替代运行证据。
 
 ## 工程身份与布局
 

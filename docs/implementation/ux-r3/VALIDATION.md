@@ -1,6 +1,6 @@
 # UX-R3 验证记录
 
-本记录冻结独立终审前的本地验证事实。完整 Debug/Release 回归、实际实屏与独立部署已完成；历史失败逐轮保留。独立审核与远端发布状态另见 INDEPENDENT_REVIEW.md 和 POST_REVIEW_SYNC.json，不以本地测试代替审核。
+本记录保留首次独立终审前的本地验证事实及后续修复轮次。首次终审结论为 REJECTED（3 Major），修复后的构建、行为和实屏验证见末节新记录；旧完整 Debug/Release 回归、实际实屏与独立部署不豁免新缺口。历史失败逐轮保留。独立审核与远端发布状态另见 INDEPENDENT_REVIEW.md 和 POST_REVIEW_SYNC.json，不以本地测试代替审核。
 
 | 轮次 | 实际范围与结果 |
 | --- | --- |
@@ -50,3 +50,36 @@ Windows 关联控制测试实际注册 HKCU 本程序 ProgID，通过 ShellExecu
 2026-10-24 当前实屏探针：Redmi 27 NU、连接序号 **1**、`\\.\DISPLAY6`、主屏，首选/实际 **3840×2160**，DPR **1.5**，逻辑 **2560×1440**；报告在 `G7/probe-20261024/diagnostics/`。这与 G0 连接序号 2 的历史探针分别记录，不按连接序号推断屏幕身份。
 
 本地结果：Debug/Release 完整 CTest 各 40/40；两配置主 UI 106、窄带 11 行无遗漏/无跳过；轴矩阵 96 场景、窄带矩阵 72 场景、Release 真实模型检测闭环 46 场景；最终二进制部署 12/12，系统文件关联打开/注销通过。下一硬门禁为最终精确 HEAD 的独立 Review；只有 APPROVED 且待推送 HEAD 完全一致、最新远端安全可同步时才可推送。
+
+## 首次终审及披露修正（2026-10-25）
+
+独立审核 df0ba04 为 REJECTED：M1 活动检测索引变化使旧容器摘要失效；M2 Reference 普通保存切换资产根；M3 判决观察、参考区域和 I/Q 读数缺失。原报告完整保存在 out/tasks/wideband-detection/UX-R3/review/REJECTED-df0ba04.md；修复后必须审核新精确 HEAD。
+
+当轮 Release 原生启动反馈 367.1684 ms（目标未达），取消可见 123.8201 ms、取消完成 278.1047 ms；十万合成活动段筛选 p95 416.1672 ms、选择 p95 435.4769 ms，均未达 200 ms 建议目标。这里披露限制，不将建议目标变为额外硬门禁，也不声称未剖析的性能原因。
+
+独立纯数据区重算：A/B 主图 -2.904% 至 -1.708%、辅助图 -28.56% 至 -27.68%；C 主图 -3.116% 至 -1.896%、辅助图 -17.367% 至 -16.327%。外部分配测试不是纯数据高度下限，逐场景 plotRect、部件尺寸及文字带预算保留在原生 JSON。
+
+## 独立拒绝后的修复验证（代码 bc22bd5）
+
+三项 Major 的代码修复已本地提交，首次规范拒绝报告逐字节归档为 `evidence/review-fixes/initial-independent-review-df0ba04.md`，原独立复现日志也保留。独立 Review Agent 的预审读取实际新代码并复算判决/位置/鼠标坐标，未确认原 Major 仍存在；预审不是最终 APPROVED，仍等待最终文档和验证后的精确 HEAD。
+
+| 修复轮次 | 实际结果与范围 |
+|---|---|
+| codec 首次新增回归 | 45/46；测试在 save 替换 Project 后继续使用旧 run 引用，修正夹具引用生命周期；原失败归档 `codec-first-45-of-46.txt` |
+| Debug / Release 定向 | 各 3/3 CTest：工程 46/46、调制族数值、窄带 UI 14 Qt 行/12 业务行；该次未设 W8，不充当 W8 最终证据 |
+| Reference 活动保存 UI 首次 | terminal-b 旧历史未设置合法 contextRange，真实 writeDetectionRun 拒绝；补齐第二源上下文后重跑，没有删除或放宽旧断言 |
+| Reference 活动保存 UI Release | 3/3 Qt 行含 init/cleanup，实际 QAction → QFileDialog → No 引用，普通保存保持根/reference，继续增加分片，取消后不重存重开最新前缀；闲置普通保存仍保留引用 |
+| Debug 完整构建首次 | capture 仍运行时链接报 LNK1168，未进入 CTest；等待专属原生进程自然结束后原样重建，未杀用户进程 |
+| Release 完整修复版 | 40/40 CTest，295.36 s；主 UI 106、窄带 12 业务行，W8、0 skipped，逐行并集核对通过；三个主 UI TIMEOUT 仍各 480 |
+| Debug 完整修复版 | 40/40 CTest，1589.32 s；主 UI 106、窄带 12 业务行，W8、0 skipped，逐行并集核对通过；主 UI 三组 299.13/417.62/194.75 s，TIMEOUT 各 480 未变 |
+| 新窄带实屏矩阵 | Debug/Release × GPU/软件各 26/26，共 104 场景，旧 18 及新增 8 完整；对应四份 `evidence/review-fixes/native-*.json` |
+| 真实模型保存恢复扩展 | Release 46/46，真正 TensorRT 任务 Running 时保存，再实际推进，取消后旧容器字节不变也能加载最新 Cancelled 及完全一致的持久前缀/冻结请求；不是用 API 夹具冒充模型运行 |
+
+新原生四组合与真实模型仍使用 Redmi 27 NU、连接 1、DISPLAY6、3840×2160、150%。M3 的参考区域为 QPainter 矢量覆盖层，真实散点仍为 QRhi 顶点；软件 GPU 计数为零。API 子进程中断回归只终止 QProcess 自建夹具，不冒称 TensorRT 崩溃验收。Debug 窄带矩阵采集在额外 G6 capture 断言之前，M3 路径源码相同；此后的差异仅增加 wideband capture 的活动保存恢复断言，不改变窄带实现或场景。
+
+新 Release 实屏启动反馈 172.3765 ms、取消可见 67.3124 ms，二者本次达到 200 ms 建议值；取消完成 224.0829 ms。十万合成活动段筛选 p95 415.1766 ms、选择 p95 425.5413 ms，仍未达 200 ms。保留首次 367.1684/416.1672/435.4769 ms 未达快照；不以单次快照宣称稳定性能通过。复验期间另有 Debug CTest 在运行，没有做独占负载或瓶颈因果剖析。
+
+原始完整日志、当前逐行覆盖、26 场景/新模型报告及最终部署版本映射归档到 evidence/review-fixes/，旧 71 项归档逐字节保留；最终独立报告必须另行核对完整精确 HEAD。
+CMake 在配置时将 Git 短修订写入 Brand 的 About 元数据；修复构建开始于代码提交之前，首轮全量二进制带前一修订标识，实际业务源码与 bc22bd5 相同。全量结束后再次配置并仅重建 app/capture/worker，使交付版本标识为 bc22bd5；业务源码不变，最终 12 个实际部署进程按新二进制重新验证，六个 exe 身份以 final-binary-identities-bc22bd5.json 为准。About 元数据变化不冒称重新跑过业务全量，构建转录与前后证据分别保留。
+
+最终交付版本元数据对齐 bc22bd5 后，Debug/Release 的宽带、五页、真实眼图 × GPU/软件共 12/12 再次通过，均从对应 _bin 目录、仅系统 PATH 独立启动；app/capture/worker 六个最终二进制 SHA-256 已记录。当前 ARCHIVE_MANIFEST 为 151 项，原 71 项 bytes/SHA 全部保持，新增证据与关键截图逐字节归档；规范最终报告在最终提交后由独立 Reviewer 生成，不由主 Agent 签署。

@@ -126,3 +126,9 @@ Release 替换对应配置与新输出目录。目标实屏为本次用户指定
 | `13-decision-reference-off` | 移除参考区域，保留条件判决及共享结果 |
 
 脚本校验 26 个唯一名称、各场景原有硬件条件、未知条件、来源阶段、判决边界文本、参考图层和缩放坐标公式。上文历史 18/18 仅为修复前证据，不能证明新增 M3 场景通过。本轮编译、数值测试、Qt 行枚举、四组合实屏及部署仍待主 Agent 统一执行；最终结论由原独立 Review Agent Boyle 审查新的精确 HEAD。本子 Agent 不编辑独立报告、不提交、不推送。
+
+## M3 主 Agent 集成验证结果
+
+代码冻结为 bc22bd5 后，Debug/Release 完整 CTest 各 40/40；窄带实际 W8 为 14 个 Qt 行/12 个业务行，原 11 行均保留，0 skipped。调制族数值测试和工程 46 项行为测试均通过。Debug/Release GPU/软件四个原生组合各 26/26，共 104 场景；实际 Redmi 27 NU、连接 1、DISPLAY6、4K 150%，不是 offscreen。四份原始 JSON 及 20 张新增关键截图逐字节归档至 evidence/review-fixes/ 和 screenshots/review-fixes/，428 项实施者证据核对记录在 native-matrix-check.json；这份自检不是最终独立批准。
+
+最终独立 Review 仍由未参与实现的 Boyle 检查完整交付与精确 HEAD。旧交接段中的“待验证”是实施子 Agent 当时状态；以本节、VALIDATION 的逐轮真实结果及最终规范审核报告为准。真实模型/位流不可用、参考覆盖层非 GPU 数据几何、现场 RF 精度未验收等边界保持。

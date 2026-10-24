@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "pass": true,
+  "cases": [
+    {
+      "case": "wideband-gpu",
+      "pass": true,
+      "report": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\deployment-release-final-revision\\wideband-gpu.json"
+    },
+    {
+      "case": "five-pages-gpu",
+      "pass": true,
+      "report": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\deployment-release-final-revision\\five-pages-gpu.json"
+    },
+    {
+      "case": "real-eye-project-gpu",
+      "pass": true,
+      "report": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\deployment-release-final-revision\\real-eye-project-gpu.json"
+    },
+    {
+      "case": "wideband-software",
+      "pass": true,
+      "report": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\deployment-release-final-revision\\wideband-software.json"
+    },
+    {
+      "case": "five-pages-software",
+      "pass": true,
+      "report": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\deployment-release-final-revision\\five-pages-software.json"
+    },
+    {
+      "case": "real-eye-project-software",
+      "pass": true,
+      "report": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\deployment-release-final-revision\\real-eye-project-software.json"
+    }
+  ],
+  "configuration": "Release"
+}

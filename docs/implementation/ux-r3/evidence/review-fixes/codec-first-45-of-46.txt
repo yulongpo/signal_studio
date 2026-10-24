@@ -1,0 +1,119 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure -R ^signal_studio_project_file$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 21
+    Start 21: signal_studio_project_file
+
+21: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioProjectFileTests.exe
+21: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+21: Test timeout computed to be: 120
+21: FAIL save-running-progress-chunks-and-cancel: Detection profile identity/shape is not registered
+21: PASS live-reject-changed-frozen-request
+21: PASS live-reject-dropped-saved-prefix
+21: PASS live-reject-corrupt-future-chunk
+21: PASS live-reject-missing-future-chunk
+21: PASS live-reject-missing-manifest-anchor
+21: PASS live-reject-unknown-integrity-rule
+21: PASS ordinary-save-reference-retains-root
+21: PASS ordinary-save-renamed-copy-retains-root
+21: PASS ordinary-save-missing-original-is-explicit
+21: PASS killed-publisher-recovers-post-save-prefix
+21: PASS direct-create-stable-id
+21: PASS annotation-channel-detection-roundtrip
+21: PASS move-project-assets-and-raw
+21: PASS save-as-copy
+21: PASS save-as-reference-original-bytes
+21: PASS raw-relocation-and-same-length-rejection
+21: PASS missing-source-save-and-recovery
+21: PASS wrong-raw-at-stored-path
+21: PASS corrupt-annotation-asset
+21: PASS missing-annotation-asset
+21: PASS corrupt-detection-asset
+21: PASS missing-detection-asset
+21: PASS invalid-json-and-missing-assets
+21: PASS container-magic
+21: PASS container-version
+21: PASS container-project-id
+21: PASS container-state
+21: PASS missing-source-reference
+21: PASS duplicate-source-reference
+21: PASS reference-physical-mismatch
+21: PASS manifest-path-traversal
+21: PASS legacy-v6-explicit-readonly-conversion
+21: PASS cancel-legacy-conversion
+21: PASS reject-legacy-v1-through-v5
+21: PASS legacy-corrupt-shards
+21: PASS protect-existing-nonproject-target
+21: PASS protect-existing-other-project
+21: PASS invalid-save-preserves-target
+21: PASS absolute-only-and-cross-drive-source-reference
+21: PASS no-write-directory
+21: PASS cancel-load-entry
+21: PASS cancel-load-late
+21: PASS cancel-save-entry
+21: PASS cancel-save-near-publication
+21: PASS cancel-save-last-checkpoint
+21: 45/46 project file behavior cases passed
+1/1 Test #21: signal_studio_project_file .......***Failed   15.69 sec
+FAIL save-running-progress-chunks-and-cancel: Detection profile identity/shape is not registered
+PASS live-reject-changed-frozen-request
+PASS live-reject-dropped-saved-prefix
+PASS live-reject-corrupt-future-chunk
+PASS live-reject-missing-future-chunk
+PASS live-reject-missing-manifest-anchor
+PASS live-reject-unknown-integrity-rule
+PASS ordinary-save-reference-retains-root
+PASS ordinary-save-renamed-copy-retains-root
+PASS ordinary-save-missing-original-is-explicit
+PASS killed-publisher-recovers-post-save-prefix
+PASS direct-create-stable-id
+PASS annotation-channel-detection-roundtrip
+PASS move-project-assets-and-raw
+PASS save-as-copy
+PASS save-as-reference-original-bytes
+PASS raw-relocation-and-same-length-rejection
+PASS missing-source-save-and-recovery
+PASS wrong-raw-at-stored-path
+PASS corrupt-annotation-asset
+PASS missing-annotation-asset
+PASS corrupt-detection-asset
+PASS missing-detection-asset
+PASS invalid-json-and-missing-assets
+PASS container-magic
+PASS container-version
+PASS container-project-id
+PASS container-state
+PASS missing-source-reference
+PASS duplicate-source-reference
+PASS reference-physical-mismatch
+PASS manifest-path-traversal
+PASS legacy-v6-explicit-readonly-conversion
+PASS cancel-legacy-conversion
+PASS reject-legacy-v1-through-v5
+PASS legacy-corrupt-shards
+PASS protect-existing-nonproject-target
+PASS protect-existing-other-project
+PASS invalid-save-preserves-target
+PASS absolute-only-and-cross-drive-source-reference
+PASS no-write-directory
+PASS cancel-load-entry
+PASS cancel-load-late
+PASS cancel-save-entry
+PASS cancel-save-near-publication
+PASS cancel-save-last-checkpoint
+45/46 project file behavior cases passed
+
+
+0% tests passed, 1 tests failed out of 1
+
+Total Test time (real) =  15.70 sec
+
+The following tests FAILED:
+	 21 - signal_studio_project_file (Failed)
+Errors while running CTest
