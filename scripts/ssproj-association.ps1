@@ -9,7 +9,8 @@ if ($Unregister) {
     if ($PSCmdlet.ShouldProcess('Current user .ssproj association', 'Unregister')) {
         if (Test-Path -LiteralPath $extension) {
             if ((Get-Item -LiteralPath $extension).GetValue('') -eq $programId) {
-                (Get-Item -LiteralPath $extension).DeleteValue('', $false)
+                $writableKey = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Classes\.ssproj', $true)
+                try { $writableKey.DeleteValue('', $false) } finally { $writableKey.Dispose() }
             }
             Remove-ItemProperty -LiteralPath (Join-Path $extension 'OpenWithProgids') -Name $programId -ErrorAction SilentlyContinue
         }

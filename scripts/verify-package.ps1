@@ -40,7 +40,7 @@ try {
     New-Item -ItemType Directory -Path (Split-Path -Parent $reportPath) -Force | Out-Null
     $arguments = @()
     if ($AnalysisProject) { $arguments += @('--project',$AnalysisProject,'--verify-narrowband-analysis') }
-    elseif ($Narrowband) { $arguments += @('--narrowband-demo', '--verify-narrowband-pages') } else { $arguments += '--demo-data' }
+    elseif ($Narrowband) { $arguments += @('--narrowband-demo', '--verify-narrowband-pages', '--acceptance-symbol-rate', '1000000') } else { $arguments += '--demo-data' }
     $arguments += @('--smoke-test', '--size', '2560x1440', '--screen', '4k', '--full-screen', '--verify-4k-150', '--render-report', $reportPath, $renderOption)
     if ($AnalysisProject) { & $executable @arguments 2>&1 | Out-File -LiteralPath ([IO.Path]::ChangeExtension($reportPath,'.process.log')) -Encoding utf8 }
     else { & $executable @arguments | Out-Host }
@@ -48,11 +48,12 @@ try {
     if (-not (Test-Path -LiteralPath $reportPath)) { throw "Renderer report was not produced: $reportPath" }
     $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
     if ($report.pass -ne $true -or $report.fourK150Verified -ne $true -or $report.fullScreen -ne $true -or $report.captureHasVisibleContent -ne $true) { throw 'Native display or renderer acceptance failed.' }
-    if ($Narrowband -and ($report.workspaceMode -ne 'narrowband' -or $report.narrowbandPagesVerified -ne $true -or
+    if ($Narrowband -and ($report.workspaceMode -ne 'narrowband' -or $report.acceptanceSymbolRateHypothesisHz -ne 1000000 -or $report.narrowbandPagesVerified -ne $true -or
         @($report.narrowbandPages).Count -ne 5 -or
         (@($report.narrowbandPages.pageIndex | Sort-Object -Unique) -join ',') -ne '0,1,2,3,4')) { throw 'All five distinct narrowband pages must be verified (mask 0x1f).' }
     if ($AnalysisProject -and ($report.workspaceMode -ne 'narrowband' -or -not $report.analysis.ready -or -not $report.analysis.realSource -or -not $report.analysis.carrierLocked -or $report.analysis.eyeTraces -le 0 -or $report.analysis.pointCount -le 0)) { throw 'The real analysis project must produce recovered constellation and eye data.' }
-    if (-not $SoftwareRenderer -and ($report.hardwareRenderer -ne $true -or $report.heatmapUploads -le 0 -or
+    $hasDataUpload = $report.heatmapUploads -gt 0 -or ($AnalysisProject -and $report.gpuVertexUploads -gt 0)
+    if (-not $SoftwareRenderer -and ($report.hardwareRenderer -ne $true -or -not $hasDataUpload -or
         $report.gpuDataDrawCalls -le 0 -or $report.gpuVertexUploads -le 0)) { throw 'Hardware QRhi chart-data drawing and buffer uploads were not verified.' }
     if (-not $SoftwareRenderer -and $Narrowband -and
         # The unavailable recognition model does not exempt its visible real

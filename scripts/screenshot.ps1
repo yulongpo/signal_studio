@@ -411,7 +411,7 @@ try {
         $screenshotPath = Join-Path $OutputDirectory "$prefix-$($Configuration.ToLowerInvariant())-$renderMode-$size.png"
         $reportPath = Join-Path $OutputDirectory "$prefix-$($Configuration.ToLowerInvariant())-$renderMode-$size.json"
         $appArguments = @()
-        if ($Narrowband) { $appArguments += @('--narrowband-demo', '--verify-narrowband-pages') } else { $appArguments += '--demo-data' }
+        if ($Narrowband) { $appArguments += @('--narrowband-demo', '--verify-narrowband-pages', '--acceptance-symbol-rate', '1000000') } else { $appArguments += '--demo-data' }
         $appArguments += @('--screenshot', $screenshotPath, '--size', $size, '--screen', '4k', '--full-screen', '--render-report', $reportPath, $renderOption)
         if ($size -eq '2560x1440') { $appArguments += '--verify-4k-150' }
         if ($Project) { $appArguments += @('--project', $Project) }

@@ -48,7 +48,7 @@ try {
     }
     Get-Content -LiteralPath $screenPath | Out-Host
     $arguments = @()
-    if ($Narrowband) { $arguments += @('--narrowband-demo', '--verify-narrowband-pages') } else { $arguments += '--demo-data' }
+    if ($Narrowband) { $arguments += @('--narrowband-demo', '--verify-narrowband-pages', '--acceptance-symbol-rate', '1000000') } else { $arguments += '--demo-data' }
     $arguments += @('--smoke-test', '--screen', '4k', '--full-screen', '--verify-4k-150',
         '--size', '2560x1440', '--render-report', $reportPath, '--screenshot', $screenshotPath, $renderOption)
     & $executable @arguments | Out-Host

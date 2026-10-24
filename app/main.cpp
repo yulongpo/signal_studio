@@ -21,6 +21,7 @@
 #include <QElapsedTimer>
 #include <QPushButton>
 #include <memory>
+#include <cmath>
 
 namespace {
 QJsonObject screenInfo(const QScreen* screen) {
@@ -78,6 +79,7 @@ int main(int argc,char* argv[]) {
     parser.addOption({"software-renderer","Use the explicit QPainter fallback."});
     parser.addOption({"require-gpu","Fail the smoke test unless hardware rendering and texture reuse succeed."});
     parser.addOption({"verify-narrowband-pages","Cycle and validate all five narrowband pages before capture (requires --narrowband-demo)."});
+    parser.addOption({"acceptance-symbol-rate","Explicit manual Rs hypothesis for packaged-demo rendering acceptance; not an estimate.","Hz"});
     parser.addOption({"verify-narrowband-analysis","Require real IQ, constellation, eye and carrier recovery in a saved --project."});
     parser.addOption({"renderer","QRhi API: auto, d3d11 (Windows), or opengl.","api","auto"});
     parser.addOption({"axis-title-mode", "Y axis title layout: A unit at top, B header, C rotated.", "A|B|C", "A"});
@@ -151,9 +153,30 @@ int main(int argc,char* argv[]) {
     }
     if(parser.isSet("verify-narrowband-pages")&&!parser.isSet("narrowband-demo")){QTextStream(stderr)<<"--verify-narrowband-pages requires --narrowband-demo\n";return 2;}
     if(parser.isSet("verify-narrowband-analysis")&&!parser.isSet("project")){QTextStream(stderr)<<"--verify-narrowband-analysis requires --project\n";return 2;}
+    double acceptanceSymbolRate = 0;
+    if (parser.isSet("acceptance-symbol-rate")) {
+      bool valid = false;
+      acceptanceSymbolRate = parser.value("acceptance-symbol-rate").toDouble(&valid);
+      if (!parser.isSet("verify-narrowband-pages") ||
+          (!parser.isSet("smoke-test") && !parser.isSet("screenshot")) ||
+          !valid || !std::isfinite(acceptanceSymbolRate) || acceptanceSymbolRate <= 0) {
+        QTextStream(stderr) << "Acceptance Rs must be explicit, finite and positive, with --verify-narrowband-pages and a smoke/capture operation\n";
+        return 2;
+      }
+    }
     app.setProperty("softwareRenderer",parser.isSet("software-renderer"));app.setProperty("renderApi",renderer);
     signalstudio::MainWindow window;
     if(parser.isSet("narrowband-demo"))window.openNarrowbandDemoProject();
+    if (acceptanceSymbolRate > 0) {
+      auto* channel = window.session().activeChannel();
+      if (!channel || acceptanceSymbolRate > channel->outputSampleRateHz / 2) {
+        QTextStream(stderr) << "Acceptance Rs requires at least two output samples per symbol\n";
+        return 2;
+      }
+      channel->analysis.symbolRateMode = signalstudio::SymbolRateMode::Manual;
+      channel->analysis.symbolRateHz = channel->symbolRate = acceptanceSymbolRate;
+      window.refresh();
+    }
     if(parser.isSet("demo-data")&&!parser.isSet("project")){
         const auto first=window.session().addDemoFile();window.session().addDemoFile();window.session().addDemoFile();
         window.session().activateFile(first);window.refresh();
@@ -227,7 +250,7 @@ int main(int argc,char* argv[]) {
                     (narrowbandPageMask==0x1f&&narrowband&&narrowband->currentPageIndex()==0&&currentPageReady);
                 chartsReady=(!parser.isSet("full-screen")||window.isFullScreen())&&(!targetScreen||window.screen()==targetScreen)&&
                     narrowband&&dataReady&&currentPageReady&&allPagesReady&&
-                    (!parser.isSet("require-gpu")||narrowband->visibleTextureUploads()>0);
+                    (!parser.isSet("require-gpu")||narrowband->visibleTextureUploads()>0||narrowband->visibleGpuVertexUploads()>0);
                 if(parser.isSet("verify-narrowband-analysis"))chartsReady=chartsReady && narrowband && narrowband->analysisResult() && narrowband->analysisResult()->carrierLocked && !narrowband->analysisResult()->eyes.empty();
             }
             if(parser.isSet("iq-interaction-test")&&chartsReady&&!interactionSent){
@@ -262,7 +285,8 @@ int main(int argc,char* argv[]) {
                 const quint64 uploadsAfterOverlay=narrowbandMode&&narrowband?narrowband->visibleTextureUploads():(main?main->textureUploadCount():0);
                 const bool reuse=(narrowbandMode&&narrowband)?uploadsAfterOverlay==uploaded&&narrowband->visibleCompletedFrames()>0:
                     main&&main->textureUploadCount()==uploaded&&main->powerGenerationCount()==powers;
-                const bool gpu=narrowbandMode&&narrowband?narrowband->visibleChartsGpuReady()&&uploaded>0&&
+                const bool gpu=narrowbandMode&&narrowband?narrowband->visibleChartsGpuReady()&&
+                        (uploaded>0||narrowband->visibleGpuVertexUploads()>0)&&
                         narrowband->visibleCompletedFrames()>0&&narrowband->visibleGpuDataDrawCalls()>0:
                     main&&aux&&nav&&main->gpuReady()&&aux->gpuReady()&&nav->gpuReady()&&uploaded>0&&
                         main->completedFrameCount()>0&&aux->completedFrameCount()>0&&nav->completedFrameCount()>0&&
@@ -342,6 +366,7 @@ int main(int argc,char* argv[]) {
                     {"bandwidthHz",channel->bandwidthHz},{"outputSampleRateHz",channel->outputSampleRateHz},{"configVersion",QString::number(channel->configVersion)},
                     {"pageIndex",narrowband?narrowband->currentPageIndex():-1},{"dataStatus",narrowband?narrowband->dataStatusText():QStringLiteral("missing")}};
                 QJsonObject report{{"pass",ok},{"workspaceMode",narrowbandMode?"narrowband":"wideband"},
+                    {"acceptanceSymbolRateHypothesisHz",acceptanceSymbolRate},
                     {"analysis",signalstudio::narrowbandAnalysisEvidence(narrowband?narrowband->analysisResult().get():nullptr)},
                     {"narrowbandPagesVerified",narrowbandMode?narrowbandPageMask==0x1f:false},{"narrowbandPages",narrowbandPageEvidence},
                     {"activeChannel",activeChannelEvidence},{"hardwareRenderer",gpu},

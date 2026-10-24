@@ -38,7 +38,8 @@ finally{
         [void]$launched.CloseMainWindow()
         if(-not $launched.WaitForExit(10000)){$report.pass=$false;$report.error='The owned association-test window did not close; left running for inspection'}
     }
-    & "$PSScriptRoot/ssproj-association.ps1" -Unregister
+    try { & "$PSScriptRoot/ssproj-association.ps1" -Unregister }
+    catch { $report.pass=$false; $report.error="$($report.error) Association cleanup: $($_.Exception.Message)" }
     $report.unregistered=-not (Test-Path -LiteralPath $program)
     $report.pass=$report.pass -and $report.unregistered
     $absoluteReport=[IO.Path]::GetFullPath($ReportPath)
