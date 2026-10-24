@@ -13,6 +13,7 @@
 #include "infrastructure/annotation_json.h"
 #include "infrastructure/annotation_store.h"
 #include "infrastructure/label_import.h"
+#include "infrastructure/label_discovery.h"
 #include "infrastructure/wav_metadata.h"
 
 using namespace signalstudio;
@@ -71,10 +72,414 @@ QJsonObject readJson(const QString& path) {
 QString baseOf(const FileMetadata& m) {
   return QString::fromStdString(m.path).chopped(11);
 }
+LabelFieldMapping sampleMapping() {
+  LabelFieldMapping m;
+  m.delimiter = LabelDelimiter::Comma;
+  m.classColumn = 0;
+  m.startColumn = 1;
+  m.endColumn = 2;
+  m.lowerColumn = 3;
+  m.upperColumn = 4;
+  m.timeUnit = LabelTimeUnit::Samples;
+  m.interval = LabelInterval::InclusiveEnd;
+  m.indexOrigin = 1;
+  m.frequencyLayout = LabelFrequencyLayout::Edges;
+  m.frequencyUnit = LabelFrequencyUnit::Hz;
+  m.frequencyReference = LabelFrequencyReference::Baseband;
+  return m;
+}
+FileMetadata matlabPair(QTemporaryDir& dir, const QByteArray& text) {
+  QDir(dir.path()).mkpath("data");
+  QDir(dir.path()).mkpath("label");
+  sizeFile(dir.filePath("data/name.data"), 4000);
+  write(dir.filePath("label/name.txt"), text);
+  return target(dir.filePath("data/name.data"), 1000, 1000, 10000);
+}
 }  // namespace
 class LabelImportTests : public QObject {
   Q_OBJECT
  private slots:
+  void manualTxtRequiresMappingAndPreviewIsBounded() {
+    QTemporaryDir dir;
+    const auto metadata = matlabPair(dir, "BPSK,1,10,-100,100\n");
+    const auto manual = dir.filePath("arbitrary-manual-label.txt");
+    write(manual, "BPSK,1,10,-100,100\n");
+    const auto unknown = importLabelSource(manual, metadata);
+    QCOMPARE(unknown.state, LabelImportState::NeedsMapping);
+    QVERIFY(!unknown.error.isEmpty() && unknown.annotations.empty());
+    QString preview, error;
+    QVERIFY(previewLabelSource(manual, preview, error));
+    QVERIFY(!hasGeneratorLabelHeader(preview));
+    const auto mapped = importMappedTextLabels(manual, metadata, sampleMapping());
+    QVERIFY2(mapped.ok(), qPrintable(mapped.error));
+    QCOMPARE(mapped.annotations.size(), std::size_t{1});
+    write(manual, QByteArray(50000, 'a'));
+    QVERIFY(previewLabelSource(manual, preview, error, {}, 32));
+    QCOMPARE(preview.size(), qsizetype{32});
+    LabelImportOptions limited;
+    limited.maximumBytes = 4;
+    QCOMPARE(importLabelSource(manual, metadata, 0, false, limited).state,
+             LabelImportState::LimitExceeded);
+    limited = {};
+    limited.cancelled = [] { return true; };
+    QCOMPARE(importLabelSource(manual, metadata, 0, false, limited).state,
+             LabelImportState::Cancelled);
+    QVERIFY(!previewLabelSource(dir.filePath("missing.txt"), preview, error));
+    QVERIFY(preview.isEmpty() && !error.isEmpty());
+
+    const auto generatorData = dir.filePath("generator.raw");
+    sizeFile(generatorData, 2400000);
+    const auto generatorMetadata = target(generatorData);
+    const auto known = fixture("generator-60m-10ms.txt");
+    write(manual, known);
+    const auto imported = importLabelSource(manual, generatorMetadata);
+    QVERIFY2(imported.ok(), qPrintable(imported.error));
+    QCOMPARE(imported.annotations.size(), std::size_t{12});
+    const auto bad = QByteArray("1: time_start:0 time_end:0.01 sig_len:invalid\n") +
+                     known.mid(known.indexOf('\n') + 1);
+    write(manual, bad);
+    QVERIFY(previewLabelSource(manual, preview, error));
+    QVERIFY(hasGeneratorLabelHeader(preview));
+    const auto rejected = importLabelSource(manual, generatorMetadata);
+    QCOMPARE(rejected.state, LabelImportState::Error);
+    QVERIFY(!rejected.ok() && rejected.annotations.empty());
+  }
+
+  void strictMatlabPairAndReverseLookup() {
+    QTemporaryDir dir;
+    auto metadata = matlabPair(dir, "BPSK,1,10,-100,100\n");
+    const auto found = discoverLabelCandidates(metadata);
+    QCOMPARE(found.state, LabelDiscoveryState::NeedsMapping);
+    QCOMPARE(found.candidates.size(), std::size_t{1});
+    QCOMPARE(found.candidates[0].labelPath, dir.filePath("label/name.txt"));
+    const auto reverse = discoverDataForLabel(dir.filePath("label/name.txt"));
+    QCOMPARE(reverse.state, LabelDiscoveryState::Found);
+    QCOMPARE(reverse.candidates[0].dataPath, dir.filePath("data/name.data"));
+    FileState file;
+    file.metadata = metadata;
+    const auto blocked = prepareDiscoveredLabels(found.candidates[0], file);
+    QCOMPARE(blocked.disposition, LabelImportDisposition::NeedsMapping);
+    QVERIFY(file.marks.empty());
+    QFile::remove(dir.filePath("label/name.txt"));
+    write(dir.filePath("label/other.txt"), "unrelated");
+    QCOMPARE(discoverLabelCandidates(metadata).state, LabelDiscoveryState::NotFound);
+    const auto stale = prepareDiscoveredLabels(found.candidates[0], file, 0, sampleMapping());
+    QCOMPARE(stale.disposition, LabelImportDisposition::Rejected);
+  }
+
+  void casingAndMultipleCandidatesAreExplicit() {
+    QTemporaryDir dir;
+    const auto metadata = matlabPair(dir, "BPSK,1,10,-100,100\n");
+    QVERIFY(QFile::rename(dir.filePath("label/name.txt"), dir.filePath("label/temporary.txt")));
+    QVERIFY(QFile::rename(dir.filePath("label/temporary.txt"), dir.filePath("label/NAME.txt")));
+    QCOMPARE(discoverLabelCandidates(metadata).state, LabelDiscoveryState::Ambiguous);
+    QVERIFY(QFile::rename(dir.filePath("label/NAME.txt"), dir.filePath("label/temporary.txt")));
+    QVERIFY(QFile::rename(dir.filePath("label/temporary.txt"), dir.filePath("label/name.txt")));
+    write(dir.filePath("data/name.txt"), "BPSK,1,10,-100,100\n");
+    const auto ambiguous = discoverLabelCandidates(metadata);
+    QCOMPARE(ambiguous.state, LabelDiscoveryState::Ambiguous);
+    QCOMPARE(ambiguous.candidates.size(), std::size_t{2});
+    FileState file;
+    file.metadata = metadata;
+    const auto selected = prepareDiscoveredLabels(ambiguous.candidates[0], file, 0, sampleMapping());
+    QCOMPARE(selected.disposition, LabelImportDisposition::Ready);
+  }
+
+  void discoveryAndParserBudgetsAndCancellation() {
+    QTemporaryDir dir;
+    const auto metadata = matlabPair(dir, "BPSK,1,10,-100,100\nQPSK,11,20,-100,100\n");
+    LabelDiscoveryOptions options;
+    options.maximumDirectoryEntries = 1;
+    QCOMPARE(discoverLabelCandidates(metadata, options).state, LabelDiscoveryState::LimitExceeded);
+    options = {};
+    options.parsing.maximumBytes = 4;
+    QCOMPARE(discoverLabelCandidates(metadata, options).state, LabelDiscoveryState::LimitExceeded);
+    options = {};
+    options.parsing.cancelled = [] { return true; };
+    QCOMPARE(discoverLabelCandidates(metadata, options).state, LabelDiscoveryState::Cancelled);
+    const auto cancelled = importMappedTextLabels(dir.filePath("label/name.txt"), metadata,
+                                                  sampleMapping(), 0, options.parsing);
+    QCOMPARE(cancelled.state, LabelImportState::Cancelled);
+    QVERIFY(cancelled.annotations.empty());
+    options = {};
+    options.parsing.timeoutMs = 1;
+    options.parsing.cancelled = [] { QTest::qSleep(20); return false; };
+    QCOMPARE(discoverLabelCandidates(metadata, options).state, LabelDiscoveryState::LimitExceeded);
+    LabelImportOptions limit;
+    limit.maximumRecords = 1;
+    const auto rejected = importMappedTextLabels(dir.filePath("label/name.txt"), metadata,
+                                                 sampleMapping(), 0, limit);
+    QCOMPARE(rejected.state, LabelImportState::LimitExceeded);
+    QVERIFY(rejected.annotations.empty());
+    limit = {};
+    limit.maximumLines = 1;
+    QCOMPARE(importMappedTextLabels(dir.filePath("label/name.txt"), metadata,
+                                    sampleMapping(), 0, limit).state, LabelImportState::LimitExceeded);
+    write(dir.filePath("label/name.txt"), QByteArray("BPSK,1,10,-100,100\n") + QByteArray::fromHex("c3"));
+    QVERIFY(!importMappedTextLabels(dir.filePath("label/name.txt"), metadata, sampleMapping()).ok());
+  }
+
+  void mappedIndicesUnitsAndSavedMapping() {
+    QTemporaryDir dir;
+    const auto metadata = matlabPair(dir, "BPSK,1,10,-100,100\n");
+    const auto imported = importMappedTextLabels(dir.filePath("label/name.txt"), metadata, sampleMapping());
+    QVERIFY2(imported.ok(), qPrintable(imported.error));
+    QCOMPARE(imported.sourceSet.formatId, std::string("mapped-txt-v1"));
+    const auto& range = imported.annotations[0].segments[0].range;
+    QCOMPARE(range.time.begin, quint64{0});
+    QCOMPARE(range.time.end, quint64{10});
+    QCOMPARE(range.frequency.lowerHz, 9900.0);
+    QCOMPARE(range.frequency.upperHz, 10100.0);
+    LabelFieldMapping restored;
+    QString error;
+    QVERIFY(restoreLabelFieldMapping(imported.sourceSet, restored, error));
+    QCOMPARE(encodeLabelFieldMapping(restored), encodeLabelFieldMapping(sampleMapping()));
+    const auto again = importMappedTextLabels(dir.filePath("label/name.txt"), metadata, restored, 99);
+    QCOMPARE(again.sourceSet.id, imported.sourceSet.id);
+    auto invalid = encodeLabelFieldMapping(restored);
+    invalid["interval"] = 99;
+    QVERIFY(!decodeLabelFieldMapping(invalid, restored, error));
+    QCOMPARE(encodeLabelFieldMapping(restored), encodeLabelFieldMapping(sampleMapping()));
+    auto rf = sampleMapping();
+    rf.frequencyReference = LabelFrequencyReference::RF;
+    rf.frequencyUnit = LabelFrequencyUnit::KHz;
+    rf.frequencyLayout = LabelFrequencyLayout::CenterBandwidth;
+    write(dir.filePath("label/name.txt"), "QAM,1,10,10,0.2\n");
+    const auto absolute = importMappedTextLabels(dir.filePath("label/name.txt"), metadata, rf);
+    QVERIFY2(absolute.ok(), qPrintable(absolute.error));
+    QCOMPARE(absolute.annotations[0].segments[0].range.frequency.lowerHz, 9900.0);
+  }
+
+  void mappedRoundingFramesAndPhysicalRejection() {
+    QTemporaryDir dir;
+    const auto metadata = matlabPair(dir, "BPSK,0.0005,0.0015,-100,100\n");
+    auto mapping = sampleMapping();
+    mapping.timeUnit = LabelTimeUnit::Seconds;
+    mapping.indexOrigin = 0;
+    mapping.interval = LabelInterval::ExclusiveEnd;
+    auto imported = importMappedTextLabels(dir.filePath("label/name.txt"), metadata, mapping);
+    QVERIFY(!imported.ok() && imported.annotations.empty());
+    mapping.allowTimeRounding = true;
+    imported = importMappedTextLabels(dir.filePath("label/name.txt"), metadata, mapping);
+    QVERIFY2(imported.ok(), qPrintable(imported.error));
+    QCOMPARE(imported.annotations[0].segments[0].range.time.begin, quint64{1});
+    QCOMPARE(imported.annotations[0].segments[0].range.time.end, quint64{2});
+    QCOMPARE(imported.annotations[0].segments[0].timeQuality, TimeQuality::RoundedLabel);
+    mapping = sampleMapping();
+    mapping.timeUnit = LabelTimeUnit::Frames;
+    mapping.frameHopSamples = 5;
+    mapping.frameLengthSamples = 10;
+    write(dir.filePath("label/name.txt"), "BPSK,2,3,-100,100\n");
+    imported = importMappedTextLabels(dir.filePath("label/name.txt"), metadata, mapping);
+    QVERIFY(imported.ok());
+    QCOMPARE(imported.annotations[0].segments[0].range.time.begin, quint64{5});
+    QCOMPARE(imported.annotations[0].segments[0].range.time.end, quint64{20});
+    for (const auto& bad : {"BPSK,0,10,-100,100\n", "BPSK,1,18446744073709551615,-100,100\n",
+                            "BPSK,1,10,nan,100\n", "BPSK,1,10,-600,100\n",
+                            "BPSK,1,10,-100,100\nQPSK,1,10,-100,99999\n"}) {
+      write(dir.filePath("label/name.txt"), bad);
+      imported = importMappedTextLabels(dir.filePath("label/name.txt"), metadata, mapping);
+      QVERIFY2(!imported.ok() && imported.annotations.empty(), bad);
+    }
+    mapping = sampleMapping();
+    mapping.delimiter = LabelDelimiter::Tab;
+    write(dir.filePath("label/name.txt"), "\t1\t10\t-100\t100\n");
+    QVERIFY(!importMappedTextLabels(dir.filePath("label/name.txt"), metadata, mapping).ok());
+  }
+
+  void unknownTimeObservationAndClassOnlyAreNotRectangles() {
+    QTemporaryDir dir;
+    const auto metadata = matlabPair(dir, "BPSK,1,10,-100,100\n");
+    auto mapping = sampleMapping();
+    mapping.timeUnit = LabelTimeUnit::Unknown;
+    auto imported = importMappedTextLabels(dir.filePath("label/name.txt"), metadata, mapping);
+    QVERIFY2(imported.ok(), qPrintable(imported.error));
+    QVERIFY(imported.annotations[0].segments.empty());
+    QVERIFY(imported.annotations[0].observation.has_value());
+    QCOMPARE(imported.annotations[0].observationTimeQuality, TimeQuality::Unknown);
+    QVERIFY(imported.annotations[0].originEvidence->originalObservation.has_value());
+    mapping.frequencyLayout = LabelFrequencyLayout::Unknown;
+    imported = importMappedTextLabels(dir.filePath("label/name.txt"), metadata, mapping);
+    QCOMPARE(imported.state, LabelImportState::Incomplete);
+    QCOMPARE(imported.incompleteRecords, std::size_t{1});
+    QVERIFY(imported.annotations.empty());
+    QVERIFY(!imported.sourceSet.originalText.empty());
+    write(dir.filePath("label/name.txt"), "\n \t\n");
+    QCOMPARE(discoverLabelCandidates(metadata).state, LabelDiscoveryState::Empty);
+    const auto empty = importMappedTextLabels(dir.filePath("label/name.txt"), metadata, sampleMapping());
+    QCOMPARE(empty.state, LabelImportState::Empty);
+    QVERIFY(empty.ok() && empty.annotations.empty());
+  }
+
+  void generatorDiscoveryAndSafePublication() {
+    QTemporaryDir dir;
+    const auto data = dir.filePath("capture.raw");
+    const auto label = dir.filePath("capture.txt");
+    sizeFile(data, 2400000);
+    write(label, fixture("generator-60m-10ms.txt"));
+    FileState file;
+    file.metadata = target(data);
+    file.metadata.availability.fingerprint = "known-data";
+    auto discovered = discoverLabelCandidates(file.metadata);
+    QCOMPARE(discovered.state, LabelDiscoveryState::Found);
+    QCOMPARE(discovered.candidates[0].profile, LabelProfile::GeneratorText);
+    const auto prepared = prepareDiscoveredLabels(discovered.candidates[0], file, 7);
+    QCOMPARE(prepared.disposition, LabelImportDisposition::Ready);
+    AnnotationService service;
+    QVERIFY(!publishDiscoveredLabels(service, file, prepared, 8).ok);
+    QVERIFY(file.marks.empty());
+    QVERIFY(publishDiscoveredLabels(service, file, prepared, 7).ok);
+    QVERIFY(service.createManual(file, "Manual", {{0, 100}, {-100, 100}}).ok);
+    const auto count = file.marks.size();
+    const auto annotationId = file.marks[0].id;
+    QVERIFY(service.rename(file, annotationId, "User revised", "keep").ok);
+    const auto again = prepareDiscoveredLabels(discovered.candidates[0], file, 7);
+    QCOMPARE(again.disposition, LabelImportDisposition::AlreadyImported);
+    QVERIFY(!publishDiscoveredLabels(service, file, again, 7).changed);
+    QCOMPARE(file.marks.size(), count);
+    QCOMPARE(findAnnotation(file, annotationId)->name, std::string("User revised"));
+    write(label, fixture("generator-60m-10ms.txt") + "\n");
+    const auto changed = prepareDiscoveredLabels(discovered.candidates[0], file, 7);
+    QCOMPARE(changed.disposition, LabelImportDisposition::SourceChanged);
+    QVERIFY(!publishDiscoveredLabels(service, file, changed, 7).ok);
+    // A prior plan must also notice a new source published in the meantime.
+    QCOMPARE(file.marks.size(), count);
+    auto growing = file;
+    growing.metadata.availability.status = LoadStatus::Partial;
+    growing.metadata.availability.availableSamples = 1000;
+    QVERIFY(publishDiscoveredLabels(service, growing, prepared, 7).ok);
+    auto metadataChanged = file;
+    metadataChanged.metadata.availability.fingerprint = "different-data";
+    QVERIFY(!publishDiscoveredLabels(service, metadataChanged, prepared, 7).ok);
+  }
+
+  void incompleteEvidenceConfirmationCancellationDeduplicationAndUndo() {
+    QTemporaryDir dir;
+    FileState file;
+    file.metadata = matlabPair(dir, "BPSK\nQAM\n");
+    const auto candidate = discoverLabelCandidates(file.metadata).candidates[0];
+    auto mapping = sampleMapping();
+    mapping.timeUnit = LabelTimeUnit::Unknown;
+    mapping.frequencyLayout = LabelFrequencyLayout::Unknown;
+    const auto prepared = prepareDiscoveredLabels(candidate, file, 4, mapping);
+    QCOMPARE(prepared.disposition, LabelImportDisposition::IncompleteEvidence);
+    QCOMPARE(prepared.imported.state, LabelImportState::Incomplete);
+    QVERIFY(!prepared.imported.error.isEmpty());
+    QCOMPARE(prepared.imported.incompleteRecords, std::size_t{2});
+    QVERIFY(prepared.imported.annotations.empty());
+    QVERIFY(prepared.classCounts.empty());
+    QVERIFY(!prepared.timeExtent && !prepared.frequencyExtent);
+    // Preview/confirmation cancelled: no publication has happened.
+    QVERIFY(file.sourceSets.empty() && file.marks.empty());
+    LabelDiscoveryOptions options;
+    options.parsing.cancelled = [] { return true; };
+    const auto cancelled = prepareDiscoveredLabels(candidate, file, 4, mapping, options);
+    AnnotationService service;
+    QVERIFY(!publishDiscoveredLabels(service, file, cancelled, 4).ok);
+    QVERIFY(file.sourceSets.empty() && file.marks.empty());
+    const auto published = publishDiscoveredLabels(service, file, prepared, 4);
+    QVERIFY2(published.ok, published.error.c_str());
+    QVERIFY(published.changed);
+    QCOMPARE(file.sourceSets.size(), std::size_t{1});
+    QVERIFY(file.marks.empty());
+    QCOMPARE(file.sourceSets.front().originalText, std::string("BPSK\nQAM\n"));
+    QVERIFY(!file.sourceSets.front().diagnostics.empty());
+    const auto sourceId = file.sourceSets.front().id;
+    LabelFieldMapping restored;
+    QString error;
+    QVERIFY(restoreLabelFieldMapping(file.sourceSets.front(), restored, error));
+    QCOMPARE(encodeLabelFieldMapping(restored), encodeLabelFieldMapping(mapping));
+    AnnotationSourceSet decoded;
+    QVERIFY(decodeSourceSet(encodeSourceSet(file.sourceSets.front()), file.metadata, decoded, error));
+    QCOMPARE(decoded.originalText, file.sourceSets.front().originalText);
+    QCOMPARE(decoded.coordinateInterpretation, file.sourceSets.front().coordinateInterpretation);
+    QJsonObject index;
+    const auto projectPath = dir.filePath("evidence-only.ssproj");
+    QVERIFY2(writeAnnotationStore(projectPath, file, index, error), qPrintable(error));
+    FileState reopened;
+    reopened.metadata = file.metadata;
+    QVERIFY2(readAnnotationStore(projectPath, index, reopened, error), qPrintable(error));
+    QCOMPARE(reopened.sourceSets.size(), std::size_t{1});
+    QVERIFY(reopened.marks.empty());
+    QCOMPARE(reopened.sourceSets.front().originalText, file.sourceSets.front().originalText);
+    QVERIFY(restoreLabelFieldMapping(reopened.sourceSets.front(), restored, error));
+    const auto again = prepareDiscoveredLabels(candidate, file, 4, restored);
+    QCOMPARE(again.disposition, LabelImportDisposition::AlreadyImported);
+    QVERIFY(!publishDiscoveredLabels(service, file, again, 4).changed);
+    QCOMPARE(file.sourceSets.size(), std::size_t{1});
+    QVERIFY(service.undo(file).ok);
+    QVERIFY(file.sourceSets.empty() && file.marks.empty());
+    QVERIFY(service.redo(file).ok);
+    QCOMPARE(file.sourceSets.front().id, sourceId);
+    write(dir.filePath("label/name.txt"), "BPSK\nQAM\nFSK\n");
+    const auto changed = prepareDiscoveredLabels(candidate, file, 4, restored);
+    QCOMPARE(changed.disposition, LabelImportDisposition::SourceChanged);
+    QVERIFY(!publishDiscoveredLabels(service, file, changed, 4).ok);
+    QCOMPARE(file.sourceSets.size(), std::size_t{1});
+    QVERIFY(file.marks.empty());
+  }
+
+  void mappedProfileUsesAnnotationServiceAndProfileChangesRequireReview() {
+    QTemporaryDir dir;
+    FileState file;
+    file.metadata = matlabPair(dir, "BPSK,1,10,-100,100\n");
+    const auto candidate = discoverLabelCandidates(file.metadata).candidates[0];
+    const auto prepared = prepareDiscoveredLabels(candidate, file, 1, sampleMapping());
+    QCOMPARE(prepared.disposition, LabelImportDisposition::Ready);
+    AnnotationService service;
+    const auto published = publishDiscoveredLabels(service, file, prepared, 1);
+    // Integration must register mapped-txt-v1 in domain/annotation.cpp.
+    QVERIFY2(published.ok, published.error.c_str());
+    QCOMPARE(file.marks.size(), std::size_t{1});
+    QVERIFY(validateFileAnnotations(file).ok);
+    const auto snapshot = file;
+    auto changedMapping = sampleMapping();
+    changedMapping.interval = LabelInterval::ExclusiveEnd;
+    const auto changed = prepareDiscoveredLabels(candidate, file, 1, changedMapping);
+    QCOMPARE(changed.disposition, LabelImportDisposition::SourceChanged);
+    QVERIFY(!publishDiscoveredLabels(service, file, changed, 1).ok);
+    LabelFieldMapping restored;
+    QString error;
+    QVERIFY(restoreLabelFieldMapping(file.sourceSets.front(), restored, error));
+    QCOMPARE(prepareDiscoveredLabels(candidate, file, 2, restored).disposition,
+             LabelImportDisposition::AlreadyImported);
+    file = snapshot;
+    QVERIFY(service.deleteBatch(file, {file.marks[0].id}).ok);
+    const auto deleted = prepareDiscoveredLabels(candidate, file, 2, restored);
+    QCOMPARE(deleted.disposition, LabelImportDisposition::AlreadyImported);
+    QVERIFY(!publishDiscoveredLabels(service, file, deleted, 2).changed);
+    QVERIFY(file.marks[0].deleted);
+  }
+
+  void sigmfEmptyIsValidAndSupplementalConflictsRemainErrors() {
+    QTemporaryDir dir;
+    const auto metadata = torchTarget(dir);
+    const auto base = baseOf(metadata);
+    auto meta = readJson(base + ".sigmf-meta");
+    meta["annotations"] = QJsonArray{};
+    write(base + ".sigmf-meta", QJsonDocument(meta).toJson());
+    auto imported = importTorchSigLabels(base + ".sigmf-meta", metadata);
+    QVERIFY(!imported.ok());  // Four supplemental events conflict with zero meta records.
+    auto extra = readJson(base + ".json");
+    extra["events"] = QJsonArray{};
+    extra["n_events"] = 0;
+    write(base + ".json", QJsonDocument(extra).toJson());
+    imported = importTorchSigLabels(base + ".sigmf-meta", metadata);
+    QVERIFY2(imported.ok(), qPrintable(imported.error));
+    QCOMPARE(imported.state, LabelImportState::Empty);
+    QVERIFY(imported.annotations.empty());
+    LabelImportOptions depth;
+    depth.maximumJsonDepth = 1;
+    QCOMPARE(importTorchSigLabels(base + ".sigmf-meta", metadata, 0, false, depth).state,
+             LabelImportState::LimitExceeded);
+    FileState file;
+    file.metadata = metadata;
+    const auto found = discoverLabelCandidates(metadata);
+    QCOMPARE(found.state, LabelDiscoveryState::Found);
+    const auto prepared = prepareDiscoveredLabels(found.candidates[0], file);
+    QCOMPARE(prepared.disposition, LabelImportDisposition::Empty);
+  }
+
   void generatorFixtureAndPhysicalBinding() {
     QTemporaryDir dir;
     const auto path = dir.filePath("generator.txt"),
@@ -556,10 +961,15 @@ class LabelImportTests : public QObject {
     QVERIFY(raw.size() < 32 * 1024 * 1024);
     write(base + ".sigmf-meta", raw);
     QVERIFY(QFile::remove(base + ".json"));
-    const auto rejected = importTorchSigLabels(base + ".sigmf-meta", metadata);
+    // Exercise the normalized byte budget independently of the interactive
+    // deadline, including when this large fixture runs in Debug under load.
+    LabelImportOptions options;
+    options.timeoutMs = 30000;
+    const auto rejected =
+        importTorchSigLabels(base + ".sigmf-meta", metadata, 0, false, options);
     QVERIFY(!rejected.ok());
     QVERIFY(rejected.annotations.empty());
-    QVERIFY(rejected.error.contains("累计预算"));
+    QVERIFY2(rejected.error.contains("累计预算"), qUtf8Printable(rejected.error));
   }
 
   void largeGeneratorRecordUsesSourceLineReference() {

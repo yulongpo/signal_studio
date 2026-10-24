@@ -23,10 +23,10 @@ class QLabel;
 class QPlainTextEdit;
 class QProgressBar;
 class QPushButton;
+class QScrollArea;
 class QStackedWidget;
 class QTimer;
-
-class QStackedWidget;
+class QToolButton;
 
 namespace signalstudio {
 
@@ -48,6 +48,8 @@ public:
     QString dataStatusText() const;
     QString displayDiagnosticsText() const;
     int currentPageIndex() const;
+    void activatePage(NarrowbandPage page);
+    void setSyncPanelExpanded(bool expanded);
     void activatePageForAcceptance(int index);
     bool visibleChartsSettled() const;
     bool visibleChartsGpuReady() const;
@@ -70,6 +72,8 @@ private:
     void requestAnalysis(bool force = false);
     bool invalidateChangedAnalysisSource();
     void installAnalysis();
+    void renderAnalysis();
+    void setAnalysisStatus(const QString& text);
     void buildPages();
     void showPage(NarrowbandPage page);
     void updateFrequencyAxisLabels();
@@ -117,8 +121,10 @@ private:
 
     Session& session_;
     QStackedWidget* pages_ = nullptr;
-    std::array<QWidget*, 4> pageWidgets_{};
-    std::array<QPushButton*, 4> pageButtons_{};
+    std::array<QWidget*, 5> pageWidgets_{};
+    std::array<QPushButton*, 5> pageButtons_{};
+    QScrollArea* syncPanel_ = nullptr;
+    QToolButton* syncPanelToggle_ = nullptr;
     std::vector<NarrowbandChart*> charts_;
     NarrowbandChart* navigation_ = nullptr;
     NarrowbandChart *waveform_ = nullptr, *psd_ = nullptr, *stft_ = nullptr;
@@ -181,7 +187,9 @@ private:
     TimeRange lastAnalysisTime_;
     std::uint64_t analysisGeneration_ = 0;
     bool analysisPending_ = false;
+    QString analysisProjectionKey_;
     QLabel* modulationStatus_ = nullptr;
+    QLabel* analysisSummary_ = nullptr;
     ChannelSampleCacheStats displayCacheStats_;
     std::vector<float> averagePsd_;
     std::shared_ptr<const SpectralFrame> averagePower_;

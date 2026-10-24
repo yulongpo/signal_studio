@@ -411,7 +411,7 @@ void UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() {
   const auto id = annotationUiId(0);
   QTemporaryDir directory;
   QVERIFY(directory.isValid());
-  const auto saved = directory.filePath("committed-project.json");
+  const auto saved = directory.filePath("committed-project.ssproj");
   QString preflightError;
   QVERIFY2(ProjectStore::save(directory.filePath("preflight.json"),
                               window.session().project(), preflightError),
@@ -421,7 +421,7 @@ void UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() {
   window.refresh();
   QVERIFY(openInspectorPage(window, "Annotation"));
   auto* low = window.findChild<QLineEdit*>("annotationLowerMHz");
-  auto* open = window.findChild<QAction*>("openProjectJsonAction");
+  auto* open = window.findChild<QAction*>("openProjectAction");
   QVERIFY(low && open);
   QVERIFY(revealParameter(low));
   const auto revision = findAnnotation(*file, id)->revisionId;

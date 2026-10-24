@@ -1,6 +1,8 @@
 #include "infrastructure/project_store.h"
 
 #include <QFile>
+#include <QCryptographicHash>
+#include <QDataStream>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -162,10 +164,12 @@ QString pageName(NarrowbandPage value) {
   switch (value) {
     case NarrowbandPage::Observe:
       return QStringLiteral("observe");
-    case NarrowbandPage::Modulation:
-      return QStringLiteral("modulation");
-    case NarrowbandPage::DeepLearning:
-      return QStringLiteral("deepLearning");
+    case NarrowbandPage::Constellation:
+      return QStringLiteral("constellation");
+    case NarrowbandPage::Eye:
+      return QStringLiteral("eye");
+    case NarrowbandPage::Recognition:
+      return QStringLiteral("recognition");
     case NarrowbandPage::Demodulation:
       return QStringLiteral("demodulation");
   }
@@ -410,13 +414,13 @@ DisplaySettings decodeDisplay(const QJsonValue& value) {
   return display;
 }
 
-QJsonObject encodeProject(const Project& project, const QString& path) {
+QJsonObject encodeProject(const Project& project, const QString& path, bool writeAssets = true) {
   QJsonArray files;
   for (const auto& file : project.files) {
     const auto& metadata = file.metadata;
     QJsonObject annotationIndex;
     QString annotationError;
-    const bool stored =
+    const bool stored = !writeAssets ||
         writeAnnotationStore(path, file, annotationIndex, annotationError);
     require(stored, annotationError);
     QJsonArray channels;
@@ -458,6 +462,8 @@ QJsonObject encodeProject(const Project& project, const QString& path) {
       encoded.insert(QStringLiteral("preserveSourceTime"),
                      channel.preserveSourceTime);
       encoded.insert(QStringLiteral("page"), pageName(channel.page));
+      encoded.insert(QStringLiteral("narrowbandDisplay"),
+                     QJsonObject{{"version", 1}, {"syncPanelExpanded", channel.syncPanelExpanded}});
       encoded.insert(QStringLiteral("visibleSourceTime"),
                      encodeTimeRange(visibleTime));
       encoded.insert(
@@ -505,7 +511,7 @@ QJsonObject encodeProject(const Project& project, const QString& path) {
       require(run.request.sourceIdentity.fileId == file.metadata.id,
               "检测运行与工程文件身份不符");
       DetectionRun persistedRun;
-      const bool runStored =
+      const bool runStored = !writeAssets ||
           loadDetectionRun(QFileInfo(path).absolutePath(),
                            text(run.request.runId), persistedRun, runError);
       require(runStored, runError);
@@ -769,17 +775,28 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
       channel.preserveSourceTime = boolean(channelData, "preserveSourceTime");
       const auto page = string(channelData, "page", 32);
       require(page == QStringLiteral("observe") ||
+                  page == QStringLiteral("constellation") ||
+                  page == QStringLiteral("eye") ||
+                  page == QStringLiteral("recognition") ||
                   page == QStringLiteral("modulation") ||
                   page == QStringLiteral("deepLearning") ||
                   page == QStringLiteral("demodulation"),
               QStringLiteral("未知窄带工作页"));
-      channel.page = page == QStringLiteral("modulation")
-                         ? NarrowbandPage::Modulation
-                     : page == QStringLiteral("deepLearning")
-                         ? NarrowbandPage::DeepLearning
+      channel.page = (page == QStringLiteral("modulation") || page == QStringLiteral("constellation"))
+                         ? NarrowbandPage::Constellation
+                     : page == QStringLiteral("eye")
+                         ? NarrowbandPage::Eye
+                     : (page == QStringLiteral("deepLearning") || page == QStringLiteral("recognition"))
+                         ? NarrowbandPage::Recognition
                      : page == QStringLiteral("demodulation")
                          ? NarrowbandPage::Demodulation
                          : NarrowbandPage::Observe;
+      if (channelData.contains(QStringLiteral("narrowbandDisplay"))) {
+        const auto display = object(channelData.value(QStringLiteral("narrowbandDisplay")),
+                                    QStringLiteral("narrowbandDisplay"));
+        require(number(display, "version") == 1, QStringLiteral("未知窄带显示状态版本"));
+        channel.syncPanelExpanded = boolean(display, "syncPanelExpanded");
+      }
       channel.visibleSourceTime = decodeTimeRange(
           channelData.value(QStringLiteral("visibleSourceTime")),
           file.metadata.sampleCount, QStringLiteral("visibleSourceTime"));
@@ -973,8 +990,54 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
 
 }  // namespace
 
-bool ProjectStore::save(const QString& path, const Project& project,
-                        QString& error) {
+QByteArray ProjectStore::stateToken(const Project& project) {
+  auto projection = encodeProject(project, {}, false);
+  auto files = projection["files"].toArray();
+  for (qsizetype i = 0; i < files.size(); ++i) {
+    auto file = files[i].toObject();
+    auto display = file["display"].toObject();
+    if (project.files[static_cast<std::size_t>(i)].display.waveformAutoFit) {
+      // Auto-fit bounds are derived from the arriving curve, not an edit.
+      display.remove("waveformMin"); display.remove("waveformMax");
+      if (project.files[static_cast<std::size_t>(i)].display.auxiliaryMode == AuxiliaryMode::Waveform) {
+        display.remove("auxiliaryMin"); display.remove("auxiliaryMax");
+      }
+    }
+    auto channels = file["channels"].toArray();
+    for (qsizetype c = 0; c < channels.size(); ++c) {
+      auto channel = channels[c].toObject();
+      if (project.files[static_cast<std::size_t>(i)].channels[static_cast<std::size_t>(c)].waveformAutoScale) {
+        channel.remove("waveformAxisMinimum"); channel.remove("waveformAxisMaximum");
+      }
+      channels[c] = channel;
+    }
+    file["channels"] = channels; file["display"] = display; files[i] = file;
+  }
+  projection["files"] = files;
+  QByteArray data = QJsonDocument(projection).toJson(QJsonDocument::Compact);
+  QDataStream stream(&data, QIODevice::Append);
+  for (const auto& file : project.files) {
+    stream << quint64(file.marks.size()) << quint64(file.sourceSets.size());
+    for (const auto& source : file.sourceSets)
+      stream << text(source.id) << source.deleted << text(source.sourceHash);
+    for (const auto& a : file.marks) {
+      stream << text(a.id) << text(a.revisionId) << text(a.reviewRevisionId)
+             << text(a.name) << text(a.note) << a.deleted << int(a.reviewStatus)
+             << text(a.activeSegmentId) << quint64(a.segments.size())
+             << quint64(a.range.time.begin) << quint64(a.range.time.end)
+             << a.range.frequency.lowerHz << a.range.frequency.upperHz;
+      for (const auto& s : a.segments)
+        stream << text(s.id) << quint64(s.range.time.begin) << quint64(s.range.time.end)
+               << s.range.frequency.lowerHz << s.range.frequency.upperHz;
+    }
+    for (const auto& run : file.detectionRuns)
+      stream << QJsonDocument(encodeDetectionRun(run)).toJson(QJsonDocument::Compact);
+  }
+  return QCryptographicHash::hash(data, QCryptographicHash::Sha256);
+}
+
+bool ProjectStore::encodeDocument(const QString& path, const Project& project,
+                                  QJsonObject& document, QString& error) {
   error.clear();
   Project normalized = project;
   for (auto& source : normalized.files) {
@@ -1004,6 +1067,14 @@ bool ProjectStore::save(const QString& path, const Project& project,
     error = QString::fromUtf8(invalid.what());
     return false;
   }
+  document = std::move(data);
+  return true;
+}
+
+bool ProjectStore::save(const QString& path, const Project& project,
+                        QString& error) {
+  QJsonObject data;
+  if (!encodeDocument(path, project, data, error)) return false;
   const auto document = QJsonDocument(data).toJson(QJsonDocument::Indented);
   if (document.size() > maximumDocumentBytes) {
     error = QStringLiteral("工程文件超过 32 MiB 上限");
@@ -1024,6 +1095,21 @@ bool ProjectStore::save(const QString& path, const Project& project,
     return false;
   }
   return true;
+}
+
+bool ProjectStore::decodeDocument(const QJsonObject& document, const QString& path,
+                                  Project& target, QString& error) {
+  error.clear();
+  try {
+    auto parsed = decodeProject(document, path);
+    target = std::move(parsed);
+    return true;
+  } catch (const InvalidProject& invalid) {
+    error = invalid.message;
+  } catch (const std::exception& invalid) {
+    error = QString::fromUtf8(invalid.what());
+  }
+  return false;
 }
 
 bool ProjectStore::load(const QString& path, Project& target, QString& error) {

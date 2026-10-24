@@ -115,6 +115,9 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/int16_iq_file.h
     infrastructure/project_store.cpp
     infrastructure/project_store.h
+    infrastructure/project_file.cpp
+    infrastructure/project_file.h
+    infrastructure/label_discovery.cpp
 )
 set_target_properties(SignalStudioInfrastructure PROPERTIES AUTOMOC OFF)
 target_link_libraries(SignalStudioInfrastructure PUBLIC SignalStudioCore Qt6::Core)
@@ -130,6 +133,8 @@ target_link_libraries(SignalStudioBrand PUBLIC Qt6::Widgets)
 target_compile_definitions(SignalStudioBrand PRIVATE SS_PRODUCT_VERSION="${PROJECT_VERSION}" SS_BUILD_REVISION="${SS_BUILD_REVISION}")
 
 set(SS_UI_SOURCES
+    ui/label_mapping_dialog.cpp
+    ui/label_mapping_dialog.h
     ui/settings_popover.cpp
     ui/settings_popover.h
     ui/chart_control_strip.h
@@ -318,6 +323,42 @@ if(SS_BUILD_TESTS)
     set_target_properties(SignalStudioCoreTests PROPERTIES AUTOMOC OFF)
     ss_target_defaults(SignalStudioCoreTests)
     add_test(NAME signal_studio_core COMMAND SignalStudioCoreTests)
+
+    add_executable(SignalStudioProjectFileTests tests/project_file_tests.cpp)
+    target_link_libraries(SignalStudioProjectFileTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    set_target_properties(SignalStudioProjectFileTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioProjectFileTests)
+    add_dependencies(SignalStudioProjectFileTests SignalStudio)
+    add_test(NAME signal_studio_project_file COMMAND SignalStudioProjectFileTests)
+    set_tests_properties(signal_studio_project_file PROPERTIES TIMEOUT 120)
+
+    add_executable(SignalStudioUxR3AxisTests tests/ux_r3_axis_tests.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioUxR3AxisTests PRIVATE SignalStudioInfrastructure SignalStudioBrand
+        Qt6::Widgets Qt6::Test Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioUxR3AxisTests)
+    ss_add_graphics_shaders(SignalStudioUxR3AxisTests signalstudio_ux_r3_axis_shaders)
+    ss_add_ui_assets(SignalStudioUxR3AxisTests)
+    add_dependencies(SignalStudioUxR3AxisTests SignalStudio)
+    add_test(NAME signal_studio_ux_r3_axes COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUxR3AxisTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ux-r3-axes-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_ux_r3_axes PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 120)
+
+    add_executable(SignalStudioUxR3WorkflowTests tests/ux_r3_workflow_tests.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioUxR3WorkflowTests PRIVATE SignalStudioInfrastructure SignalStudioBrand
+        Qt6::Widgets Qt6::Test Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioUxR3WorkflowTests)
+    ss_add_graphics_shaders(SignalStudioUxR3WorkflowTests signalstudio_ux_r3_workflow_shaders)
+    ss_add_ui_assets(SignalStudioUxR3WorkflowTests)
+    add_dependencies(SignalStudioUxR3WorkflowTests SignalStudio)
+    add_test(NAME signal_studio_ux_r3_workflows COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUxR3WorkflowTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ux-r3-workflows-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_ux_r3_workflows PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 180)
     add_executable(SignalStudioChannelProcessorTests tests/channel_processor_tests.cpp)
     add_executable(SignalStudioNarrowbandAnalysisTests tests/narrowband_analysis_tests.cpp)
     add_executable(SignalStudioNarrowbandRecoveryTests tests/narrowband_recovery_tests.cpp)

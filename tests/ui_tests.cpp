@@ -56,6 +56,8 @@
 
 #include "app/main_window.h"
 #include "infrastructure/annotation_json.h"
+#include "infrastructure/project_file.h"
+#include "infrastructure/project_store.h"
 #include "infrastructure/source_metadata.h"
 #include "tests/fixtures/raw_fixture.h"
 #include "ui/annotations/annotation_panel.h"
@@ -78,9 +80,14 @@ using namespace signalstudio;
 
 namespace {
 
-// Preserve the A1.4.3 plot budget after adding the approved persistent layers
-// bar (31 px) and bottom resize handle (5 px), without changing chart ratios.
+// Preserve the original allocated chart area. UX-R3 measures separate title
+// and tick bands, so their actual budget is added back for this layout check.
 constexpr int kCollapsedWidebandPlotMinimum = 875 - 31 - 5;
+double widebandOriginalPlotBudget(const PlotWidget* chart) {
+  const auto budget = chart->axisLayout().budget;
+  // Original plotRect used height()-46; its top offset was already included.
+  return chart->plotRect().height() + budget.top + budget.bottom - 46;
+}
 
 void showWindow(MainWindow& window) {
   // 3840x2160 physical pixels at 150% scaling use this logical client size.
@@ -535,7 +542,7 @@ void UiTests::workspaceLayout() {
   QVERIFY(main->isVisible());
   QCOMPARE(window.findChild<QWidget*>("annotationLayerBar")->height(), 31);
   QCOMPARE(window.findChild<QWidget*>("bottomPanelResize")->height(), 5);
-  QVERIFY2(main->plotRect().height() >= kCollapsedWidebandPlotMinimum,
+  QVERIFY2(widebandOriginalPlotBudget(main) >= kCollapsedWidebandPlotMinimum,
            "The approved layers bar and resize handle must be the only new "
            "vertical deductions from the A1.4.3 main plot budget.");
   QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 5000);
@@ -820,7 +827,7 @@ void UiTests::emptyProjectAndFileActions() {
   completeNew.start(5);
   create->trigger();
   QTRY_VERIFY_WITH_TIMEOUT(
-      QFileInfo::exists(directory.filePath("workflow-project/project.json")),
+      QFileInfo::exists(directory.filePath("workflow-project.ssproj")),
       2'000);
   completeNew.stop();
   QVERIFY(addSignal->isEnabled());
@@ -835,7 +842,11 @@ void UiTests::emptyProjectAndFileActions() {
   QCOMPARE(QString::fromStdString(window.session().project().name),
            QStringLiteral("workflow-project"));
   MainWindow reopened;
-  QVERIFY(reopened.openProject(directory.filePath("workflow-project")));
+  QVERIFY(reopened.openProject(directory.filePath("workflow-project.ssproj")));
+  QVERIFY(!reopened.session().project().projectId.empty());
+  QCOMPARE(QString::fromStdString(reopened.session().project().assetDirectory),
+           directory.filePath("workflow-project.ssproj.assets/") +
+               QString::fromStdString(reopened.session().project().projectId));
   QCOMPARE(QString::fromStdString(reopened.session().project().name),
            QStringLiteral("workflow-project"));
   QVERIFY(window.session().project().files.empty());
@@ -1147,7 +1158,7 @@ void UiTests::responsiveWorkspace() {
   QVERIFY(navY < auxY && auxY < specY);
   QCOMPARE(nav->height(), 82);
   QCOMPARE(aux->height(), 205);
-  QVERIFY(plot->plotRect().height() >= kCollapsedWidebandPlotMinimum);
+  QVERIFY(widebandOriginalPlotBudget(plot) >= kCollapsedWidebandPlotMinimum);
   QVERIFY(window.findChildren<QToolBar*>().empty());
   QVERIFY(!window.findChild<QComboBox*>("modeMain")->isVisible());
   QVERIFY(!window.findChild<QComboBox*>("modeAux")->isVisible());
@@ -1514,6 +1525,7 @@ void UiTests::parameterDraftsRequireExplicitCommit() {
   window.refresh();
   auto* workspace = window.findChild<NarrowbandWorkspace*>();
   workspace->activatePageForAcceptance(1);
+  workspace->setSyncPanelExpanded(true);
   auto* rate = window.findChild<QDoubleSpinBox*>("symbolRate");
   edit = rate->findChild<QLineEdit*>();
   const double previousRate = channel->symbolRate;
@@ -1813,12 +1825,13 @@ void UiTests::pinnedAxisLabelsSurviveLeave() {
   QVERIFY(aux->plotRect().contains(aux->property("pinnedValueRect").toRectF()));
   window.session().clearCursor(window.session().activeFile()->metadata.id);
   window.refresh();
+  const auto currentPlot = main->plotRect();
   for (const auto edge :
-       {plot.topLeft() + QPointF(1, 1), plot.bottomRight() - QPointF(1, 1)}) {
+       {currentPlot.topLeft() + QPointF(1, 1), currentPlot.bottomRight() - QPointF(1, 1)}) {
     QTest::mouseClick(main, Qt::LeftButton, Qt::NoModifier, edge.toPoint());
     QCoreApplication::sendEvent(main, &leave);
     QTest::qWait(30);
-    QVERIFY(plot.contains(main->property("pinnedReadoutRect").toRectF()));
+    QVERIFY(main->plotRect().contains(main->property("pinnedReadoutRect").toRectF()));
   }
   window.session().newProject();
   window.refresh();
@@ -2135,7 +2148,7 @@ void UiTests::widebandAuxiliaryRenderingAndGestures() {
 
     const double low = file->display.auxiliaryMin,
                  high = file->display.auxiliaryMax;
-    wheelAt(chart, QPointF(40, plot.center().y()));
+    wheelAt(chart, QPointF(chart->plotRect().left() / 2, plot.center().y()));
     QVERIFY(file->display.auxiliaryMax - file->display.auxiliaryMin <
             high - low);
     QCOMPARE(file->view, base);
@@ -2144,10 +2157,15 @@ void UiTests::widebandAuxiliaryRenderingAndGestures() {
     window.refresh();
     QCOMPARE(file->display.auxiliaryMin, low);
     QCOMPARE(file->display.auxiliaryMax, high);
-    const QPoint axis(40, qRound(plot.center().y()));
+    const QPoint axis(qRound(chart->plotRect().left() / 2),
+                      qRound(chart->plotRect().center().y()));
     QTest::mousePress(chart, Qt::LeftButton, Qt::NoModifier, axis);
     QTest::mouseMove(chart, axis + QPoint(0, 15), 10);
-    QVERIFY(file->display.auxiliaryMin != low);
+    QVERIFY2(file->display.auxiliaryMin != low,
+             qPrintable(QString("mode=%1 low=%2 now=%3 axis=%4,%5 zone=%6 pending=%7")
+                 .arg(static_cast<int>(auxiliaryMode)).arg(low).arg(file->display.auxiliaryMin)
+                 .arg(axis.x()).arg(axis.y()).arg(chart->property("interactionZone").toString())
+                 .arg(chart->hasPendingInteraction())));
     QTest::keyClick(chart, Qt::Key_Escape);
     QTest::mouseRelease(chart, Qt::LeftButton, Qt::NoModifier,
                         axis + QPoint(0, 15));
@@ -2882,8 +2900,8 @@ void UiTests::loadedPrefixStopAndRoundtrip() {
   QVERIFY(file->view.time.end <= prefix);
   QVERIFY(file->navigationEnvelope.size() <= 2048);
   QVERIFY(!stop->isVisible());
-  QVERIFY(window.saveProject(directory.filePath("project.json")));
-  QVERIFY(window.openProject(directory.filePath("project.json")));
+  QVERIFY(window.saveProject(directory.filePath("project.ssproj")));
+  QVERIFY(window.openProject(directory.filePath("project.ssproj")));
   QTRY_VERIFY_WITH_TIMEOUT(
       window.session().activeFile()->metadata.availability.status !=
           LoadStatus::Loading,
@@ -3073,7 +3091,31 @@ void UiTests::nativeProjectRoundtripAndInvalidImport() {
   const auto expected = window.session().activeFile()->view;
   QTemporaryDir temporary;
   QVERIFY(temporary.isValid());
-  const auto saved = temporary.filePath("roundtrip.json");
+  const auto saved = temporary.filePath("roundtrip.ssproj");
+  // Keep the original v6 state roundtrip contract as an explicit conversion;
+  // MainWindow opens the resulting container rather than treating JSON as an
+  // application project file. The legacy index must remain byte-for-byte intact.
+  const auto legacyPath = temporary.filePath("roundtrip-v6.json");
+  QString conversionError;
+  QVERIFY2(ProjectStore::save(legacyPath, window.session().project(), conversionError),
+           qPrintable(conversionError));
+  Project legacy;
+  QVERIFY2(ProjectStore::load(legacyPath, legacy, conversionError), qPrintable(conversionError));
+  QFile legacyFile(legacyPath);
+  QVERIFY(legacyFile.open(QIODevice::ReadOnly));
+  const auto legacyBytes = legacyFile.readAll();
+  legacyFile.close();
+  Project converted;
+  const auto convertedPath = temporary.filePath("converted-v6.ssproj");
+  QVERIFY2(ProjectFileCodec::importLegacy(legacyPath, convertedPath, converted, conversionError),
+           qPrintable(conversionError));
+  QCOMPARE(ProjectStore::stateToken(converted), ProjectStore::stateToken(legacy));
+  QVERIFY(legacyFile.open(QIODevice::ReadOnly));
+  QCOMPARE(legacyFile.readAll(), legacyBytes);
+  legacyFile.close();
+  QVERIFY(window.openProject(convertedPath));
+  QCOMPARE(window.session().activeFile()->view, expected);
+  QCOMPARE(window.session().activeFile()->activeMarkId, markId);
   QVERIFY(window.saveProject(saved));
   window.session().newProject();
   window.refresh();
@@ -3085,7 +3127,7 @@ void UiTests::nativeProjectRoundtripAndInvalidImport() {
            std::size_t{1});
   QCOMPARE(palette->currentIndex(), 1);
   QCOMPARE(scope->currentIndex(), 1);
-  const auto invalid = temporary.filePath("invalid.json");
+  const auto invalid = temporary.filePath("invalid.ssproj");
   QFile file(invalid);
   QVERIFY(file.open(QIODevice::WriteOnly));
   file.write("{\"signals\":[{\"name\":\"bad\",\"fs\":0}]}");
@@ -3375,7 +3417,7 @@ void UiTests::splitterKeyboardResetAndEscapeRollback() {
   QCoreApplication::processEvents();
   QCOMPARE(splitter->sizes()[0], 82);
   QCOMPARE(splitter->sizes()[1], 205);
-  QVERIFY(main->plotRect().height() >= kCollapsedWidebandPlotMinimum);
+  QVERIFY(widebandOriginalPlotBudget(main) >= kCollapsedWidebandPlotMinimum);
 }
 
 void UiTests::treeToPlotShiftSelectionPreservesAnchor() {
@@ -4053,9 +4095,10 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
       waveformChart->property("fitDataVerticalFraction").toDouble() > 0.0,
       15'000);
 
-  const std::array<const char*, 4> buttons{
-      "observePage", "modulationPage", "deepLearningPage", "demodulationPage"};
-  for (int index = 0; index < 4; ++index) {
+  // Preserve the historical Qt case name while covering the new fifth page.
+  const std::array<const char*, 5> buttons{
+      "observePage", "modulationPage", "deepLearningPage", "demodulationPage", "eyePage"};
+  for (int index = 0; index < 5; ++index) {
     auto* button = window.findChild<QPushButton*>(
         QString::fromLatin1(buttons[static_cast<std::size_t>(index)]));
     QVERIFY(button && button->isEnabled());
@@ -4081,7 +4124,7 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
   QVERIFY(window.session().activeChannel()->waveformAutoScale);
   QCOMPARE(window.session().activeChannel()->waveform,
            NarrowbandWaveform::Magnitude);
-  QTest::mouseClick(window.findChild<QAbstractButton*>("modulationPage"),Qt::LeftButton);
+  QTest::mouseClick(window.findChild<QAbstractButton*>("eyePage"),Qt::LeftButton);
   QVERIFY(revealParameter(eyeComponent));
   eyeComponent->setCurrentIndex(2);
   eyePeriods->setCurrentIndex(2);
@@ -4115,7 +4158,7 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
   QTemporaryDir projectDirectory;
   QVERIFY(projectDirectory.isValid());
   const auto projectPath =
-      projectDirectory.filePath(QStringLiteral("narrowband-project.json"));
+      projectDirectory.filePath(QStringLiteral("narrowband-project.ssproj"));
   QTest::mouseClick(window.findChild<QAbstractButton*>("demodulationPage"),Qt::LeftButton);
   QVERIFY(window.saveProject(projectPath));
   MainWindow reopened;
@@ -4281,9 +4324,9 @@ void UiTests::waveformBandwidthAndVisiblePaneStftSettings() {
   QCOMPARE(main->powerGenerationCount(), initialPowerGenerations);
 
   const auto projectPath =
-      directory.filePath(QStringLiteral("saved-state.json"));
+      directory.filePath(QStringLiteral("saved-state.ssproj"));
   QVERIFY2(window.saveProject(projectPath),
-           "The project JSON must preserve the analysis snapshot.");
+           "The .ssproj project must preserve the analysis snapshot.");
   window.session().newProject();
   window.refresh();
   QVERIFY(window.openProject(projectPath));
@@ -4313,7 +4356,7 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
   qApp->setProperty("uiStatePersistenceEnabled", true);
   int storedResourceWidth = 0, storedPropertyWidth = 0, storedBottomHeight = 0;
   const auto projectPath =
-      directory.filePath(QStringLiteral("recent-empty-project.json"));
+      directory.filePath(QStringLiteral("recent-empty-project.ssproj"));
   const auto iqPath =
       directory.filePath(QStringLiteral("IQ0_FS1Msps_BW800kHz_FC10MHz.dat"));
   const auto otherIqPath =
@@ -4459,7 +4502,20 @@ void UiTests::uiStatePersistenceAndRecentProjects() {
     QVERIFY(menu);
     auto* recent = menu->findChild<QAction*>("recentProjectAction");
     QVERIFY(recent && recent->isEnabled());
+    bool discardedDirtyProject = false;
+    QTimer discardChanges;
+    connect(&discardChanges, &QTimer::timeout, &restored, [&] {
+      auto* question = qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+      if (!question || question->windowTitle() != "未保存的工程修改") return;
+      if (auto* discard = question->button(QMessageBox::Discard)) {
+        discardedDirtyProject = true;
+        QTest::mouseClick(discard, Qt::LeftButton);
+      }
+    });
+    discardChanges.start(5);
     recent->trigger();
+    discardChanges.stop();
+    QVERIFY(discardedDirtyProject);
     QVERIFY(restored.session().project().files.empty());
     QCOMPARE(restored.session().project().name,
              std::string("射频信号分析工程"));
@@ -4822,6 +4878,16 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
 }
 
 void UiTests::torchSigLabelsNativeRoundtrip() {
+  const auto phase = [](const char* name) {
+    const auto path = qEnvironmentVariable("SS_UI_TIMING_LOG");
+    if (path.isEmpty()) return;
+    QFile output(path);
+    if (!output.open(QIODevice::WriteOnly | QIODevice::Append)) return;
+    output.write(QJsonDocument(QJsonObject{{"test", "torchSigLabelsNativeRoundtrip"},
+        {"phase", name}, {"utc", QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)}}).toJson(QJsonDocument::Compact) + '\n');
+  };
+  QTimer unexpectedModal;
+  unexpectedModal.setInterval(15000);
   const auto localMeta = QStringLiteral(
       SS_SOURCE_DIR "/resources/sigmf_data_demo/0000000.sigmf-meta");
   const QString meta =
@@ -4842,16 +4908,42 @@ void UiTests::torchSigLabelsNativeRoundtrip() {
   source.metadata.sampleFormat = *suggestions.format;
   source.metadata.demo = false;
   MainWindow window;
+  connect(&unexpectedModal, &QTimer::timeout, &window, [&] {
+    if (auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget())) {
+      phase("unexpected-modal");
+      const auto* message = qobject_cast<QMessageBox*>(dialog);
+      qWarning().noquote() << "Unexpected import/save dialog:" << dialog->windowTitle()
+                           << (message ? message->text() : QString{});
+      QTest::qFail("Programmatic label roundtrip must not wait on an unhandled modal", __FILE__, __LINE__);
+      dialog->reject();
+    }
+  });
+  unexpectedModal.start();
+  phase("add-source");
   QString error;
   QVERIFY2(window.addImportedSource(std::move(source), error),
            qPrintable(error));
   showWindow(window);
-  QVERIFY2(window.importLabels(meta, &error), qPrintable(error));
   auto* file = window.session().activeFile();
+  // Trusted metadata discovery is queued after source publication. Require
+  // automatic import before exercising the explicit idempotent import path.
+  QTRY_COMPARE_WITH_TIMEOUT(file->marks.size(), std::size_t{4}, 10000);
+  phase("automatic-labels-ready");
   QCOMPARE(file->marks.size(), std::size_t{4});
   QCOMPARE(file->sourceSets.size(), std::size_t{1});
+  QJsonArray originalAnnotations;
+  for (const auto& annotation : file->marks)
+    originalAnnotations.append(encodeAnnotation(annotation));
+  const auto originalSource = encodeSourceSet(file->sourceSets.front());
+  phase("explicit-import-before");
+  QVERIFY2(window.importLabels(meta, &error), qPrintable(error));
+  phase("explicit-import-after");
   QVERIFY(window.importLabels(meta, &error));
   QCOMPARE(file->marks.size(), std::size_t{4});
+  QCOMPARE(file->sourceSets.size(), std::size_t{1});
+  QCOMPARE(encodeSourceSet(file->sourceSets.front()), originalSource);
+  for (std::size_t i = 0; i < file->marks.size(); ++i)
+    QCOMPARE(encodeAnnotation(file->marks[i]), originalAnnotations[static_cast<qsizetype>(i)].toObject());
   const auto annotationId = file->marks[0].id;
   window.session().selectMarks({annotationId}, annotationId);
   window.refresh();
@@ -4859,11 +4951,19 @@ void UiTests::torchSigLabelsNativeRoundtrip() {
   auto* editor = window.findChild<QLineEdit*>("annotationStartMilliseconds");
   QVERIFY(editor && editor->isEnabled());
   QTemporaryDir directory;
-  const auto path = directory.filePath("project.json");
+  const auto path = directory.filePath("project.ssproj");
+  phase("save-before");
   QVERIFY(window.saveProject(path));
+  phase("save-after");
   QVERIFY(window.openProject(path));
+  phase("reopen-after");
   file = window.session().activeFile();
+  QTRY_VERIFY_WITH_TIMEOUT(file->metadata.availability.status != LoadStatus::Loading, 10000);
+  QCoreApplication::processEvents();
   QCOMPARE(file->marks.size(), std::size_t{4});
+  QCOMPARE(file->sourceSets.size(), std::size_t{1});
+  for (std::size_t i = 0; i < file->marks.size(); ++i)
+    QCOMPARE(encodeAnnotation(file->marks[i]), originalAnnotations[static_cast<qsizetype>(i)].toObject());
   QCOMPARE(file->marks[0].id, annotationId);
   QCOMPARE(file->metadata.sampleCount, SampleIndex{400000});
   QCOMPARE(file->metadata.centerFrequencyHz, 2.5e9);
@@ -5043,7 +5143,7 @@ void UiTests::widebandFixtureTaskNativeRoundtrip() {
   QCOMPARE(file->marks[0].sourceKind, AnnotationSource::Algorithm);
   QVERIFY(file->marks[0].segments.empty() && file->marks[0].observation);
   const auto count = file->marks.size();
-  const auto projectPath = directory.filePath("M2 task/project.json");
+  const auto projectPath = directory.filePath("M2 task.ssproj");
   QVERIFY(window.saveProject(projectPath));
   QVERIFY(window.openProject(projectPath));
   file = window.session().activeFile();

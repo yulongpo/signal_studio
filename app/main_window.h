@@ -6,6 +6,7 @@
 #include <array>
 #include <map>
 #include <unordered_set>
+#include <thread>
 
 #include "application/session.h"
 
@@ -56,11 +57,16 @@ class MainWindow : public QMainWindow {
   bool addIqFile(const QString& path, QString* error = nullptr);
   bool addImportedSource(FileState file, QString& error);
   bool saveProject(const QString& path);
+  bool importLegacyProject(const QString& legacy, const QString& destination, QString* error = nullptr);
+  bool relocateSource(const QString& fileId, const QString& path, QString* error = nullptr);
+  bool isProjectDirty() const;
+  void discoverLabels(const QString& fileId = {});
   void openNarrowbandDemoProject();
   void cancelInteractions(bool exitCreating = true);
   bool clearActiveLinkedCursor();
 
  protected:
+  void closeEvent(QCloseEvent*) override;
   void resizeEvent(QResizeEvent*) override;
   void moveEvent(QMoveEvent*) override;
   void changeEvent(QEvent*) override;
@@ -78,6 +84,8 @@ class MainWindow : public QMainWindow {
   };
   std::map<std::string, LoadJob> sourceLoads_;
   QTimer* sourceLoadTimer_ = nullptr;
+  std::vector<std::jthread> labelWorkers_;
+  std::unordered_set<std::string> labelDiscoveryPending_;
   QPushButton* stopSourceLoad_ = nullptr;
   SpectralSettingsWidget *psdParameters_ = nullptr, *stftParameters_ = nullptr;
   bool handleWindowChrome(QObject*, QEvent*);
@@ -180,6 +188,13 @@ class MainWindow : public QMainWindow {
   QPushButton* evidenceMode_ = nullptr;
   bool auxiliaryEvidenceVisible_ = false;
   QString projectPath_;
+  QByteArray savedProjectToken_;
+  void saveProjectAsDialog();
+  void importLegacyProjectDialog();
+  void closeProject();
+  bool confirmProjectTransition();
+  QString projectAssetDirectory() const;
+  bool detectionAssetsInUse() const;
   static constexpr std::size_t kTreeAnnotationBatchSize = 40;
   QString treeAnnotationContext_;
   std::array<std::size_t, 3> treeAnnotationLimits_{kTreeAnnotationBatchSize,

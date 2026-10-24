@@ -976,6 +976,7 @@ void diagnoseMainHover(Capture& capture, QPoint target,
 #include "tests/annotation_channels_capture.h"
 #include "tests/wideband_ux_capture.h"
 #include "tests/ui_refinement_capture.h"
+#include "tests/ux_r3_capture.h"
 
 }  // namespace
 
@@ -986,6 +987,8 @@ int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   QApplication::setApplicationName("SignalStudioNativeCapture");
   const auto arguments = app.arguments();
+  if (arguments.size() >= 3 && arguments.at(1) == "--ux-r3")
+    return runUxR3Capture(arguments.at(2), arguments.contains("--software-renderer"));
   if (arguments.size() >= 3 && arguments.at(1) == "--narrowband-analysis")
     return runNarrowbandAnalysisCapture(arguments.at(2),arguments.contains("--software-renderer"),arguments.contains("--auxiliary-display"));
   if (arguments.size() >= 3 && arguments.at(1) == "--narrowband-feedback")
@@ -1215,23 +1218,38 @@ int main(int argc, char* argv[]) {
     });
     click(window, "resourceToggle");
     click(window, "propRailOpen");
+    const auto shortcutProjectName = "capture-new-" +
+        QUuid::createUuid().toString(QUuid::WithoutBraces);
+    bool shortcutProjectCreated = false;
     QTimer newProjectConfirmation;
     QObject::connect(&newProjectConfirmation, &QTimer::timeout,
-                     [&newProjectConfirmation] {
+                     [&] {
                        if (auto* dialog = qobject_cast<QMessageBox*>(
                                QApplication::activeModalWidget())) {
+                         if (dialog->windowTitle() == "未保存的工程修改") {
+                           if (auto* discard = dialog->button(QMessageBox::Discard))
+                             QTest::mouseClick(discard, Qt::LeftButton);
+                           return;
+                         }
                          if (auto* yes = dialog->button(QMessageBox::Yes)) {
-                           newProjectConfirmation.stop();
                            QTest::mouseClick(yes, Qt::LeftButton);
                          }
+                       } else if (auto* projectDialog = qobject_cast<QDialog*>(
+                                      QApplication::activeModalWidget());
+                                  projectDialog && projectDialog->objectName() == "newProjectDialog") {
+                         projectDialog->findChild<QLineEdit*>("newProjectName")->setText(shortcutProjectName);
+                         projectDialog->findChild<QLineEdit*>("newProjectLocation")->setText(output.absolutePath());
+                         newProjectConfirmation.stop();
+                         QTest::mouseClick(child<QPushButton>(*projectDialog, "createProjectButton"), Qt::LeftButton);
+                         shortcutProjectCreated = QFileInfo::exists(output.filePath(shortcutProjectName + ".ssproj"));
                        }
                      });
     newProjectConfirmation.start(10);
     QTest::keyClick(&window, Qt::Key_N, Qt::ControlModifier);
-    newProjectConfirmation.stop();
     require(waitUntil(
-                [&window] { return window.session().project().files.empty(); }),
+                [&] { return shortcutProjectCreated && window.session().project().files.empty(); }, 10000),
             "New-project shortcut did not clear the project");
+    newProjectConfirmation.stop();
     capture.scene("11_empty_project", nullptr, [&] {
       require(child<QWidget>(window, "emptyWorkspace")->isVisible(),
               "Empty workspace overlay is missing");

@@ -291,11 +291,27 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
     return {};
   };
   QTRY_VERIFY_WITH_TIMEOUT(find() && find()->completedWindows > 0 && !detectionIsTerminal(find()->lifecycle), 15000);
+  // A copied Save As must not switch the live worker away from the asset
+  // directory to which its frozen job continues publishing chunks.
+  const auto originalAssets = window.session().project().assetDirectory;
+  const auto copiedProject = directory.filePath("running-copy.ssproj");
+  bool assetCopyWarning = false;
+  QTimer::singleShot(0, &window, [&] {
+    if (auto* warning = qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
+      assetCopyWarning = warning->windowTitle() == "暂不能复制工程资产";
+      warning->accept();
+    }
+  });
+  QVERIFY(!window.saveProject(copiedProject));
+  QVERIFY(assetCopyWarning && !QFileInfo::exists(copiedProject));
+  QCOMPARE(window.session().project().assetDirectory, originalAssets);
   const auto frozen = encodeDetectionRequest(find()->request);
   const auto firstChunks = find()->chunks.size();
   QVERIFY(firstChunks > 0);
   const auto firstChunk = find()->chunks.front();
-  QFile durablePrefix(directory.filePath("active-task/") + QString::fromStdString(firstChunk.relativePath));
+  const QDir assets(QString::fromStdString(window.session().project().assetDirectory));
+  QVERIFY(assets.exists());
+  QFile durablePrefix(assets.filePath(QString::fromStdString(firstChunk.relativePath)));
   QVERIFY(durablePrefix.open(QIODevice::ReadOnly));
   const auto prefixBytes = durablePrefix.readAll();
   durablePrefix.close();
@@ -343,7 +359,7 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
   QVERIFY(find()->chunks.size() >= firstChunks);
   QCOMPARE(window.session().activeFile()->detectionRuns.front().lifecycle, DetectionLifecycle::Completed);
   DetectionRun reopened;
-  QVERIFY2(loadDetectionRun(directory.filePath("active-task"), QString::fromStdString(runId), reopened, issue), qPrintable(issue));
+  QVERIFY2(loadDetectionRun(assets.absolutePath(), QString::fromStdString(runId), reopened, issue), qPrintable(issue));
   QCOMPARE(reopened.lifecycle, DetectionLifecycle::Cancelled);
   QCOMPARE(encodeDetectionRequest(reopened.request), frozen);
   QCOMPARE(reopened.chunks.size(), find()->chunks.size());

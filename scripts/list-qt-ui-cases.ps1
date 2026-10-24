@@ -1,8 +1,8 @@
 [CmdletBinding()]
-param([ValidateSet('Debug','Release')][string]$Configuration='Debug',[switch]$Freeze)
+param([ValidateSet('Debug','Release')][string]$Configuration='Debug',[switch]$Freeze,[string]$OutputDirectory)
 $ErrorActionPreference='Stop'
 $repoRoot=Split-Path -Parent $PSScriptRoot
-$output=Join-Path $repoRoot 'out/tasks/wideband-detection/NB-W8/assets/ui-cases'
+$output=if($OutputDirectory){[IO.Path]::GetFullPath($OutputDirectory)}else{Join-Path $repoRoot 'out/tasks/wideband-detection/NB-W8/assets/ui-cases'}
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $savedPlatform=$env:QT_QPA_PLATFORM
 try {
@@ -13,9 +13,11 @@ try {
         if($LASTEXITCODE -ne 0){throw "Cannot enumerate $target data tags"}
         if($Freeze) {
             $name=if($target -eq 'SignalStudioUiTests'){'ui_main_cases.txt'}else{'ui_narrowband_cases.txt'}
-            $expected=if($target -eq 'SignalStudioUiTests'){106}else{9}
+            $expected=if($target -eq 'SignalStudioUiTests'){106}else{11}
             $lines=@(Get-Content -LiteralPath (Join-Path $output "$target.txt") | Where-Object {$_ -match '^\w+ \w+( .+)?$'})
             if($lines.Count -ne $expected){throw "Unexpected $target inventory count $($lines.Count), expected $expected"}
+            $previous=Get-Content -LiteralPath (Join-Path $repoRoot "tests/fixtures/$name")
+            if(@($previous | Where-Object {$_ -notin $lines}).Count -ne 0){throw 'Existing frozen Qt rows disappeared; do not replace the inventory'}
             $lines | Set-Content -LiteralPath (Join-Path $repoRoot "tests/fixtures/$name") -Encoding utf8
         }
     }

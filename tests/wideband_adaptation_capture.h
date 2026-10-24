@@ -220,7 +220,7 @@ QJsonObject widebandCancellationFeedback(Capture& capture, QScreen* screen,
           "Cancellation lost the real model prefix or claimed full coverage");
   QString error;
   DetectionRun durable;
-  require(loadDetectionRun(QFileInfo(project).absolutePath(),
+  require(loadDetectionRun(QString::fromStdString(window.session().project().assetDirectory),
                            QString::fromStdString(run.request.runId), durable,
                            error) &&
               encodeDetectionRun(durable) == encodeDetectionRun(run),

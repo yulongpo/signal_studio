@@ -68,7 +68,7 @@ int main(int argc,char* argv[]) {
     parser.addOption({"list-screens",
                       "Print monitor names, dimensions and DPI, then exit."});
     parser.addOption({"project",
-                      "Open a native project folder or JSON at startup.",
+                      "Open a .ssproj project file at startup.",
                       "path"});
     parser.addOption({"demo-data","Load the three prototype demo files; normal startup is an empty project."});
     parser.addOption({"narrowband-demo","Open the packaged NB-A1.1 project with a real deterministic IQ source."});
@@ -77,9 +77,10 @@ int main(int argc,char* argv[]) {
     parser.addOption({"iq-interaction-test","Send one real wheel-zoom event after the IQ graphs settle; requires --iq-file."});
     parser.addOption({"software-renderer","Use the explicit QPainter fallback."});
     parser.addOption({"require-gpu","Fail the smoke test unless hardware rendering and texture reuse succeed."});
-    parser.addOption({"verify-narrowband-pages","Cycle and validate all four NB-A1.1 pages before capture (requires --narrowband-demo)."});
+    parser.addOption({"verify-narrowband-pages","Cycle and validate all five narrowband pages before capture (requires --narrowband-demo)."});
     parser.addOption({"verify-narrowband-analysis","Require real IQ, constellation, eye and carrier recovery in a saved --project."});
     parser.addOption({"renderer","QRhi API: auto, d3d11 (Windows), or opengl.","api","auto"});
+    parser.addOption({"axis-title-mode", "Y axis title layout: A unit at top, B header, C rotated.", "A|B|C", "A"});
     parser.addOption({"render-report","Write smoke-test renderer and cache evidence as JSON.","path"});parser.process(app);
     const bool interactiveLaunch = !parser.isSet("list-screens") && !parser.isSet("smoke-test") &&
         !parser.isSet("screenshot") && !parser.isSet("iq-interaction-test");
@@ -157,6 +158,10 @@ int main(int argc,char* argv[]) {
         const auto first=window.session().addDemoFile();window.session().addDemoFile();window.session().addDemoFile();
         window.session().activateFile(first);window.refresh();
     }
+    const auto axisMode = parser.value("axis-title-mode");
+    if (axisMode != "A" && axisMode != "B" && axisMode != "C") { QTextStream(stderr) << "Invalid axis title mode\n"; return 2; }
+    for (auto* plot : window.findChildren<signalstudio::PlotWidget*>())
+      plot->setAxisTitleMode(axisMode == "B" ? signalstudio::PlotWidget::AxisTitleMode::Header : axisMode == "C" ? signalstudio::PlotWidget::AxisTitleMode::Rotated : signalstudio::PlotWidget::AxisTitleMode::UnitAtTop);
     const auto size=parser.value("size").split('x');if(size.size()!=2||size[0].toInt()<1050||size[1].toInt()<650){QTextStream(stderr)<<"Invalid --size: minimum 1050x650\n";return 2;}
     window.resize(size[0].toInt(),size[1].toInt());
     if(parser.isSet("project")&&!window.openProject(parser.value("project")))return 2;
@@ -199,7 +204,7 @@ int main(int argc,char* argv[]) {
                     (gpuPage&&narrowband->visibleCompletedFrames()>0&&narrowband->visibleGpuDataDrawCalls()>0));
                 if(parser.isSet("verify-narrowband-pages")&&narrowband&&dataReady&&pageReady){
                     const int page=narrowband->currentPageIndex();
-                    if(page>=0&&page<4){
+                    if(page>=0&&page<5){
                         const int bit=1<<page;
                         if((narrowbandPageMask&bit)==0){
                             narrowbandPageMask|=bit;
@@ -211,15 +216,15 @@ int main(int argc,char* argv[]) {
                                 {"backend",narrowband->visibleBackendDescription()}});
                         }
                     }
-                    if(narrowbandPageMask!=0x0f){
-                        for(int nextPage=0;nextPage<4;++nextPage)if((narrowbandPageMask&(1<<nextPage))==0){narrowband->activatePageForAcceptance(nextPage);break;}
+                    if(narrowbandPageMask!=0x1f){
+                        for(int nextPage=0;nextPage<5;++nextPage)if((narrowbandPageMask&(1<<nextPage))==0){narrowband->activatePageForAcceptance(nextPage);break;}
                     }else if(narrowband->currentPageIndex()!=0){narrowband->activatePageForAcceptance(0);}
                 }
                 const bool currentPageReady=narrowband&&narrowband->visibleChartsSettled()&&
                     (!parser.isSet("require-gpu")||(narrowband->visibleChartsGpuReady()&&narrowband->visibleCompletedFrames()>0&&
                                                        narrowband->visibleGpuDataDrawCalls()>0));
                 const bool allPagesReady=!parser.isSet("verify-narrowband-pages")||
-                    (narrowbandPageMask==0x0f&&narrowband&&narrowband->currentPageIndex()==0&&currentPageReady);
+                    (narrowbandPageMask==0x1f&&narrowband&&narrowband->currentPageIndex()==0&&currentPageReady);
                 chartsReady=(!parser.isSet("full-screen")||window.isFullScreen())&&(!targetScreen||window.screen()==targetScreen)&&
                     narrowband&&dataReady&&currentPageReady&&allPagesReady&&
                     (!parser.isSet("require-gpu")||narrowband->visibleTextureUploads()>0);
@@ -251,7 +256,7 @@ int main(int argc,char* argv[]) {
                 auto* narrowband=window.findChild<signalstudio::NarrowbandWorkspace*>("narrowbandWorkspace");
                 const bool narrowbandMode=parser.isSet("narrowband-demo")||parser.isSet("verify-narrowband-analysis");
                 bool ok=narrowbandMode?(narrowband&&narrowband->visibleChartsSettled()&&narrowband->dataStatusText().contains(QStringLiteral("真实 DDC"))&&
-                        (!parser.isSet("verify-narrowband-pages")||(narrowbandPageMask==0x0f&&narrowband->currentPageIndex()==0))&&(!targetScreen||window.screen()==targetScreen)):
+                        (!parser.isSet("verify-narrowband-pages")||(narrowbandPageMask==0x1f&&narrowband->currentPageIndex()==0))&&(!targetScreen||window.screen()==targetScreen)):
                     (main&&aux&&nav&&main->isDisplaySettled()&&aux->isDisplaySettled()&&nav->isDisplaySettled()&&main->plotRect().height()>=200&&(!targetScreen||window.screen()==targetScreen));
                 if(parser.isSet("iq-interaction-test")) ok=ok&&interactionSent&&iqWheelZoomPassed;
                 const quint64 uploadsAfterOverlay=narrowbandMode&&narrowband?narrowband->visibleTextureUploads():(main?main->textureUploadCount():0);
@@ -338,7 +343,7 @@ int main(int argc,char* argv[]) {
                     {"pageIndex",narrowband?narrowband->currentPageIndex():-1},{"dataStatus",narrowband?narrowband->dataStatusText():QStringLiteral("missing")}};
                 QJsonObject report{{"pass",ok},{"workspaceMode",narrowbandMode?"narrowband":"wideband"},
                     {"analysis",signalstudio::narrowbandAnalysisEvidence(narrowband?narrowband->analysisResult().get():nullptr)},
-                    {"narrowbandPagesVerified",narrowbandMode?narrowbandPageMask==0x0f:false},{"narrowbandPages",narrowbandPageEvidence},
+                    {"narrowbandPagesVerified",narrowbandMode?narrowbandPageMask==0x1f:false},{"narrowbandPages",narrowbandPageEvidence},
                     {"activeChannel",activeChannelEvidence},{"hardwareRenderer",gpu},
                     {"backend",narrowbandMode&&narrowband?narrowband->visibleBackendDescription():(main?main->renderingBackend():"missing")},{"heatmapUploads",static_cast<qint64>(uploaded)},
                     {"uploadsAfterOverlay",static_cast<qint64>(uploadsAfterOverlay)},{"powerGenerations",static_cast<qint64>(powers)},{"overlayReusesHeatmap",reuse},

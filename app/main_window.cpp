@@ -9,6 +9,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QContextMenuEvent>
+#include <QCloseEvent>
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDialog>
@@ -18,6 +19,8 @@
 #include <QDoubleValidator>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QDesktopServices>
+#include <QUrl>
 #include <QFormLayout>
 #include <QInputDialog>
 #include <QJsonDocument>
@@ -33,6 +36,8 @@
 #include <QPixmap>
 #include <QPlainTextEdit>
 #include <QProgressBar>
+#include <QProgressDialog>
+#include <QEventLoop>
 #include <QPushButton>
 #include <QRegularExpressionValidator>
 #include <QResizeEvent>
@@ -58,6 +63,7 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <future>
 #include <limits>
 #include <unordered_map>
 #include <unordered_set>
@@ -65,6 +71,10 @@
 #include "infrastructure/channel_processor.h"
 #include "infrastructure/int16_iq_file.h"
 #include "infrastructure/project_store.h"
+#include "infrastructure/project_file.h"
+#include "infrastructure/label_discovery.h"
+#include "ui/label_mapping_dialog.h"
+#include "ui/background_operation.h"
 #include "infrastructure/source_loader.h"
 #include "infrastructure/spectral_settings_json.h"
 #include "infrastructure/wav_metadata.h"
@@ -87,6 +97,11 @@
 
 namespace signalstudio {
 namespace {
+bool projectIo(QWidget* parent, const QString& title,
+               const std::function<bool(std::function<bool()>)>& operation) {
+  return runBackgroundOperation(parent, title, operation);
+}
+
 constexpr std::array<const char*, 5> kDetectionFolds{
     "detectionAnalysisParametersToggle", "detectionPostprocessParametersToggle",
     "detectionResourceParametersToggle", "detectionCalculationDetailsToggle",
@@ -497,20 +512,34 @@ void MainWindow::buildMenus() {
       file->addAction("▧ 新建工程…", this, &MainWindow::showNewProjectDialog);
   action->setObjectName("newProjectAction");
   action->setShortcut(QKeySequence::New);
-  action = file->addAction("⇧ 打开工程文件夹…", this, [this] {
-    const auto path = QFileDialog::getExistingDirectory(
-        this, "打开工程文件夹",
-        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
-    if (!path.isEmpty()) openProject(path);
+  action = file->addAction("⇧ 打开工程…", this, [this] {
+    const auto path = QFileDialog::getOpenFileName(
+        this, "打开 Signal Studio 工程", {}, "Signal Studio 工程 (*.ssproj)");
+    if (!path.isEmpty() && confirmProjectTransition()) openProject(path);
   });
   action->setObjectName("openProjectAction");
   action->setShortcut(QKeySequence::Open);
-  action = file->addAction("打开工程 JSON…", this, [this] {
-    const auto path = QFileDialog::getOpenFileName(
-        this, "打开工程 JSON", {}, "Signal Studio 工程 (*.json)");
-    if (!path.isEmpty()) openProject(path);
-  });
+  action = file->addAction("导入旧工程 v6…", this, &MainWindow::importLegacyProjectDialog);
   action->setObjectName("openProjectJsonAction");
+  auto* discover = file->addAction("重新发现当前信号标签…", this, [this] { discoverLabels(); });
+  discover->setObjectName("discoverLabelsAction");
+  auto* fromLabel = file->addAction("从 DATA/TXT 标签定位信号…", this, [this] {
+    if (projectPath_.isEmpty() && session_.project().files.empty()) { log("请先新建或打开 .ssproj 工程"); return; }
+    const auto path = QFileDialog::getOpenFileName(this, "选择 label/<name>.txt", {}, "文本标签 (*.txt)");
+    if (path.isEmpty()) return;
+    LabelDiscoveryResult reverse;
+    projectIo(this, "核对同名 DATA 配对…", [&](auto cancelled) {
+      LabelDiscoveryOptions options; options.parsing.cancelled = cancelled;
+      reverse = discoverDataForLabel(path, options); return true;
+    });
+    if (reverse.state != LabelDiscoveryState::Found || reverse.candidates.size() != 1) { QMessageBox::information(this, "未建立配对", reverse.message); return; }
+    auto* dialog = new SignalImportDialog(q(session_.project().name), this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->commitSource = [this](FileState source, QString& why) { return addImportedSource(std::move(source), why); };
+    dialog->addPath(reverse.candidates.front().dataPath);
+    dialog->open();
+  });
+  fromLabel->setObjectName("importDatasetFromLabelAction");
   action =
       file->addAction("打开宽带演示工程", this, &MainWindow::openDemoProject);
   action->setObjectName("openDemoProjectAction");
@@ -527,12 +556,17 @@ void MainWindow::buildMenus() {
       return;
     }
     const auto path = QFileDialog::getSaveFileName(
-        this, "保存工程 JSON", "signal-studio-project.json",
-        "Signal Studio 工程 (*.json)");
+        this, "保存工程", "signal-studio-project.ssproj",
+        "Signal Studio 工程 (*.ssproj)");
     if (!path.isEmpty()) saveProject(path);
   });
   saveAction_->setObjectName("saveProjectAction");
   saveAction_->setShortcut(QKeySequence::Save);
+  auto* saveAs = file->addAction("另存为…", this, &MainWindow::saveProjectAsDialog);
+  saveAs->setObjectName("saveProjectAsAction");
+  saveAs->setShortcut(QKeySequence::SaveAs);
+  auto* closeProjectAction = file->addAction("关闭工程", this, &MainWindow::closeProject);
+  closeProjectAction->setObjectName("closeProjectAction");
   recentProjectsMenu_ = file->addMenu("最近打开的工程");
   recentProjectsMenu_->setObjectName("recentProjectsMenu");
   updateRecentProjectsMenu();
@@ -1109,8 +1143,7 @@ void MainWindow::buildWorkspace() {
   resultSummary_->hide();
   bottomContent_->addWidget(annotations_);
   detection_ = new DetectionPanel(session_, [this] {
-    return projectPath_.isEmpty() ? QString{}
-                                  : QFileInfo(projectPath_).absolutePath();
+    return projectAssetDirectory();
   });
   connect(detection_, &DetectionPanel::changed, this, [this] { refresh(); });
   connect(detection_, &DetectionPanel::message, this, &MainWindow::log);
@@ -1231,6 +1264,12 @@ void MainWindow::buildWorkspace() {
   sourceSummary_ = output("inspectorSourceSummary");
   sourceSummary_->setWordWrap(true);
   displayPage->addWidget(sourceSummary_);
+  auto* axisMode = combo("axisTitleMode", {"Y 轴单位顶置（A）", "完整轴标题带（B）", "传统旋转标题（C）"});
+  axisMode->setToolTip("刻度与标题独立布局；同时应用于宽带主图和辅助图。");
+  displayPage->addWidget(axisMode);
+  connect(axisMode, &QComboBox::activated, this, [this](int index) {
+    main_->setAxisTitleMode(static_cast<PlotWidget::AxisTitleMode>(index));
+  });
   filePropertiesButton_ = new QPushButton("文件属性 / 调整有效带宽…");
   filePropertiesButton_->setObjectName("fileProperties");
   filePropertiesButton_->setProperty("uiRole", "outline");
@@ -1267,8 +1306,7 @@ void MainWindow::buildWorkspace() {
   bandwidthHelp->setWordWrap(true);
   fileForm->addRow(bandwidthHelp);
   detectionCard_ = new DetectionCard(session_, [this] {
-    return projectPath_.isEmpty() ? QString{}
-                                  : QFileInfo(projectPath_).absolutePath();
+    return projectAssetDirectory();
   });
   detectionPage->setContentsMargins(0, 4, 0, 12);
   detectionPage->addWidget(detectionCard_);
@@ -1575,6 +1613,17 @@ void MainWindow::buildWorkspace() {
         auto* item = tree_->itemAt(point);
         if (!item) return;
         const auto kind = item->data(0, Qt::UserRole).toString();
+        if (kind == "project") {
+          QMenu menu(this);
+          menu.addAction("工程路径与资产…", this, [this] {
+            QMessageBox::information(this, "工程详情", "工程：" + projectPath_ + "\nprojectId：" + q(session_.project().projectId) + "\n伴随资产：" + projectAssetDirectory());
+          });
+          menu.addAction("在资源管理器中显示", this, [this] {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(projectPath_).absolutePath()));
+          });
+          menu.exec(tree_->viewport()->mapToGlobal(point));
+          return;
+        }
         if (kind == "channel") {
           const auto channelId = item->data(0, Qt::UserRole + 1).toString();
           QMenu menu(this);
@@ -1636,6 +1685,17 @@ void MainWindow::buildWorkspace() {
           });
           menu.addAction("添加 / 打开 IQ…", this,
                          &MainWindow::showAddFileDialog);
+          menu.addAction("重新定位源文件…", this, [this, fileId] {
+            const auto path = QFileDialog::getOpenFileName(this, "选择同一源文件（校验长度、格式和内容签名）");
+            if (path.isEmpty()) return;
+            QString why;
+            if (!relocateSource(fileId, path, &why)) QMessageBox::warning(this, "重新定位失败", why);
+          });
+          menu.addAction("在资源管理器中显示", this, [this, fileId] {
+            for (const auto& f : session_.project().files)
+              if (q(f.metadata.id) == fileId)
+                QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(q(f.metadata.path)).absolutePath()));
+          });
           menu.exec(tree_->viewport()->mapToGlobal(point));
           return;
         }
@@ -2084,6 +2144,7 @@ void MainWindow::rebuildTree() {
   root->setExpanded(true);
   root->setFlags(Qt::ItemIsEnabled);
   root->setData(0, Qt::UserRole, "project");
+  root->setToolTip(0, projectPath_ + "\n资产：" + projectAssetDirectory());
   root->setSizeHint(0, QSize(0, 35));
   root->setBackground(0, QColor("#1b2f45"));
   QFont bold = tree_->font();
@@ -2655,9 +2716,9 @@ void MainWindow::updateRecentProjectsMenu() {
     action->setObjectName(QStringLiteral("recentProjectAction"));
     action->setToolTip(path);
     action->setStatusTip(path);
-    action->setEnabled(QFileInfo::exists(path));
+    action->setEnabled(QFileInfo::exists(path) && path.endsWith(".ssproj", Qt::CaseInsensitive));
     connect(action, &QAction::triggered, this,
-            [this, path] { openProject(path); });
+            [this, path] { if (confirmProjectTransition()) openProject(path); });
   }
   if (paths.isEmpty()) {
     auto* empty = recentProjectsMenu_->addAction("暂无历史工程");
@@ -2880,6 +2941,8 @@ void MainWindow::refresh() {
   refreshing_ = true;
   auto* file = session_.activeFile();
   if (file) session_.annotations().reconcileSelection(*file);
+  const bool dirty = isProjectDirty();
+  setWindowTitle(q(session_.project().name) + (dirty ? " *" : "") + " · Signal Studio UX-R3");
   projectLabel_->setText(q(session_.project().name));
   const bool narrowOpen = session_.project().narrowbandWorkspaceOpen &&
                           session_.activeChannel() != nullptr;
@@ -2932,7 +2995,7 @@ void MainWindow::refresh() {
         projectReady
             ? "当前工程：" + q(session_.project().name) +
                   "。添加信号后即可进行宽带数据操作。"
-            : "第一步：新建工程（自动创建工程文件夹）或打开已有工程。");
+            : "第一步：新建 .ssproj 工程文件或打开已有工程。");
   if (auto* actions = findChild<QWidget*>("emptyProjectActions"))
     actions->setVisible(!projectReady);
   if (auto* addButton = findChild<QPushButton*>("emptyAddSignal"))
@@ -3762,6 +3825,7 @@ void MainWindow::updatePropertyContext() {
     sourceSummary_->setText(q(file->metadata.name) + "\n" + state + " · " +
         number(file->metadata.sampleRateHz / 1e6) + " MS/s · " +
         number(file->metadata.centerFrequencyHz / 1e6) + " MHz");
+    sourceSummary_->setToolTip("工程：" + projectPath_ + "\n源文件：" + q(file->metadata.path) + "\n" + q(file->metadata.availability.error));
     const bool frame = session_.linkedCursor(narrow ? channel->id : file->metadata.id).framePsd;
     const int stftN = narrow ? channel->stftFftSize : file->display.stftSize;
     const int psdN = frame ? stftN : narrow ? channel->psdFftSize : file->display.psdSize;
@@ -4572,6 +4636,7 @@ void MainWindow::renameMark() {
   }
 }
 void MainWindow::showNewProjectDialog() {
+  if (!confirmProjectTransition()) return;
   if ((!projectPath_.isEmpty() || !session_.project().files.empty()) &&
       QMessageBox::question(this, "新建工程",
                             "新建工程会切换当前工程，继续吗？") !=
@@ -4588,7 +4653,7 @@ void MainWindow::showNewProjectDialog() {
   layout->setContentsMargins(20, 18, 20, 18);
   layout->setSpacing(12);
   auto* intro =
-      label("新工程将创建独立文件夹，并在其中保存 project.json。", {}, "help");
+      label("在所选目录直接创建 .ssproj 工程文件；IQ 文件保持外置。", {}, "help");
   intro->setWordWrap(true);
   layout->addWidget(intro);
   auto* form = new QFormLayout;
@@ -4613,7 +4678,7 @@ void MainWindow::showNewProjectDialog() {
   layout->addWidget(target);
   auto updateTarget = [name, location, target] {
     target->setText("将创建：" +
-                    QDir(location->text()).filePath(name->text().trimmed()));
+                    QDir(location->text()).filePath(name->text().trimmed() + ".ssproj"));
   };
   connect(name, &QLineEdit::textChanged, dialog,
           [updateTarget] { updateTarget(); });
@@ -4631,7 +4696,7 @@ void MainWindow::showNewProjectDialog() {
   layout->addWidget(error);
   auto* buttons = new QDialogButtonBox(
       QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
-  buttons->button(QDialogButtonBox::Ok)->setText("创建工程文件夹");
+  buttons->button(QDialogButtonBox::Ok)->setText("创建工程文件");
   buttons->button(QDialogButtonBox::Ok)->setObjectName("createProjectButton");
   buttons->button(QDialogButtonBox::Cancel)->setText("取消");
   layout->addWidget(buttons);
@@ -4664,19 +4729,12 @@ bool MainWindow::createProject(const QString& parentDirectory,
     setError("工程保存位置不存在，请重新选择。");
     return false;
   }
-  if (!parent.mkdir(name)) {
-    setError(
-        "无法创建工程文件夹；请检查名称、权限，或选择一个尚不存在的文件夹。");
-    return false;
-  }
-  const QString folder = parent.absoluteFilePath(name);
-  const QString projectFile = QDir(folder).filePath("project.json");
+  const QString projectFile = parent.absoluteFilePath(name.endsWith(".ssproj", Qt::CaseInsensitive) ? name : name + ".ssproj");
+  if (QFileInfo::exists(projectFile)) { setError("工程文件已存在，请选择其它名称。"); return false; }
   Project candidate;
   candidate.name = name.toUtf8().toStdString();
   QString message;
-  if (!ProjectStore::save(projectFile, candidate, message)) {
-    QFile::remove(projectFile);
-    QDir().rmdir(folder);
+  if (!ProjectFileCodec::save(projectFile, candidate, message)) {
     setError("工程文件初始化失败：" + message);
     return false;
   }
@@ -4684,9 +4742,10 @@ bool MainWindow::createProject(const QString& parentDirectory,
   if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
   session_.replaceProject(std::move(candidate));
   projectPath_ = QFileInfo(projectFile).absoluteFilePath();
+  savedProjectToken_ = ProjectStore::stateToken(session_.project());
   rememberProject(projectPath_);
   refresh();
-  log("已创建工程文件夹：" + folder);
+  log("已创建工程文件：" + projectPath_);
   if (error) error->clear();
   return true;
 }
@@ -4826,6 +4885,9 @@ bool MainWindow::addImportedSource(FileState file, QString& error) {
                QString::fromStdString(formatId(metadata.sampleFormat)))
           .arg(availableSamples(metadata)));
   error.clear();
+  QTimer::singleShot(0, this, [this, fileId = q(id), generation = session_.projectGeneration()] {
+    if (session_.projectGeneration() == generation) discoverLabels(fileId);
+  });
   return true;
 }
 
@@ -4881,9 +4943,8 @@ bool MainWindow::openProject(const QString& path) {
   Project candidate;
   QString error;
   const QFileInfo requested(path);
-  const QString projectFile =
-      requested.isDir() ? QDir(path).filePath("project.json") : path;
-  if (!ProjectStore::load(projectFile, candidate, error)) {
+  const QString projectFile = requested.absoluteFilePath();
+  if (!projectIo(this, "校验工程与伴随资产…", [&](auto cancelled) { return ProjectFileCodec::load(projectFile, candidate, error, cancelled); })) {
     QMessageBox::critical(this, "打开失败", error);
     return false;
   }
@@ -4894,11 +4955,12 @@ bool MainWindow::openProject(const QString& path) {
                                          : candidate.files.front().display);
   if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
   session_.replaceProject(std::move(candidate));
-  for (auto& file : session_.project().files)
-    if (!file.metadata.demo)
-      startSourceLoad(file, availableSamples(file.metadata));
   applyGlobalRightSidebarSettings(fallbackSettings);
   projectPath_ = QFileInfo(projectFile).absoluteFilePath();
+  savedProjectToken_ = ProjectStore::stateToken(session_.project());
+  for (auto& file : session_.project().files)
+    if (!file.metadata.demo && file.metadata.availability.status != LoadStatus::Failed)
+      startSourceLoad(file, availableSamples(file.metadata));
   rememberProject(projectPath_);
   refresh();
   scheduleRightSidebarSettingsSave();
@@ -4906,20 +4968,142 @@ bool MainWindow::openProject(const QString& path) {
   return true;
 }
 bool MainWindow::saveProject(const QString& path) {
-  const QFileInfo requested(path);
-  const QString projectFile =
-      requested.isDir() ? QDir(path).filePath("project.json") : path;
+  const QString projectFile = QFileInfo(path).absoluteFilePath();
+  if (QFileInfo(projectPath_).absoluteFilePath().compare(projectFile, Qt::CaseInsensitive) != 0 && detectionAssetsInUse()) {
+    const QPointer<QWidget> priorFocus(QApplication::focusWidget());
+    QMessageBox::warning(this, "暂不能复制工程资产", "检测任务仍在写入当前资产目录。请等待任务结束或取消完成后再另存为；当前工程仍可保存。");
+    activateWindow();
+    if (priorFocus && priorFocus->isVisible() && priorFocus->isEnabled())
+      priorFocus->setFocus(Qt::OtherFocusReason);
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    return false;
+  }
   cancelInteractions(false);
   QString error;
-  if (!ProjectStore::save(projectFile, session_.project(), error)) {
+  auto candidate = session_.project();
+  if (!projectIo(this, "保存工程与伴随资产…", [&](auto cancelled) { return ProjectFileCodec::save(projectFile, candidate, error, AssetSaveMode::Copy, cancelled); })) {
     QMessageBox::critical(this, "保存失败", error);
     return false;
   }
   projectPath_ = QFileInfo(projectFile).absoluteFilePath();
+  session_.project().projectId = candidate.projectId;
+  session_.project().assetDirectory = candidate.assetDirectory;
+  for (auto& file : session_.project().files)
+    for (const auto& saved : candidate.files) if (file.metadata.id == saved.metadata.id) {
+      file.metadata.referenceSignature = saved.metadata.referenceSignature;
+      file.metadata.referenceBytes = saved.metadata.referenceBytes;
+    }
+  savedProjectToken_ = ProjectStore::stateToken(candidate);
   rememberProject(projectPath_);
   refresh();
   log("工程已保存：" + projectPath_);
   return true;
+}
+
+QString MainWindow::projectAssetDirectory() const {
+  return projectPath_.isEmpty() ? QString{} : ProjectFileCodec::assetDirectory(projectPath_, session_.project());
+}
+bool MainWindow::detectionAssetsInUse() const {
+  if (!detection_) return false;
+  const auto jobs = detection_->tasks().snapshots();
+  return std::any_of(jobs.begin(), jobs.end(), [](const DetectionRun& run) {
+    return run.lifecycle == DetectionLifecycle::Queued || run.lifecycle == DetectionLifecycle::Validating ||
+           run.lifecycle == DetectionLifecycle::Running || run.lifecycle == DetectionLifecycle::Cancelling;
+  });
+}
+bool MainWindow::isProjectDirty() const {
+  if (projectPath_.isEmpty()) return !session_.project().files.empty();
+  try { return savedProjectToken_ != ProjectStore::stateToken(session_.project()); }
+  catch (...) { return true; }
+}
+void MainWindow::saveProjectAsDialog() {
+  const auto path = QFileDialog::getSaveFileName(this, "工程另存为", projectPath_.isEmpty() ? "Signal Studio.ssproj" : projectPath_, "Signal Studio 工程 (*.ssproj)");
+  if (path.isEmpty()) return;
+  const auto answer = QMessageBox::question(this, "伴随资产", "复制伴随标记/检测资产到新工程旁？\n选择“否”将显式引用当前资产目录。原工程文件不会改变。", QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+  if (answer == QMessageBox::Cancel) return;
+  if (answer == QMessageBox::Yes && detectionAssetsInUse()) {
+    QMessageBox::warning(this, "暂不能复制工程资产", "请等待检测结束或取消完成后再复制资产；也可显式选择引用当前资产目录。");
+    return;
+  }
+  QString error;
+  cancelInteractions(false);
+  auto candidate = session_.project();
+  if (!projectIo(this, "另存工程与伴随资产…", [&](auto cancelled) { return ProjectFileCodec::save(path, candidate, error, answer == QMessageBox::Yes ? AssetSaveMode::Copy : AssetSaveMode::Reference, cancelled); })) {
+    QMessageBox::critical(this, "另存为失败", error); return;
+  }
+  projectPath_ = QFileInfo(path).absoluteFilePath();
+  session_.project().projectId = candidate.projectId;
+  session_.project().assetDirectory = candidate.assetDirectory;
+  for (auto& file : session_.project().files)
+    for (const auto& saved : candidate.files) if (file.metadata.id == saved.metadata.id) {
+      file.metadata.referenceSignature = saved.metadata.referenceSignature;
+      file.metadata.referenceBytes = saved.metadata.referenceBytes;
+    }
+  savedProjectToken_ = ProjectStore::stateToken(candidate);
+  rememberProject(projectPath_);
+  refresh();
+}
+bool MainWindow::importLegacyProject(const QString& legacy, const QString& destination, QString* error) {
+  Project candidate;
+  QString why;
+  if (!projectIo(this, "复制转换旧 v6 工程…", [&](auto cancelled) {
+        return ProjectFileCodec::importLegacy(legacy, destination, candidate, why, cancelled);
+      })) { if (error) *error = why; return false; }
+  return openProject(destination);
+}
+void MainWindow::importLegacyProjectDialog() {
+  if (!confirmProjectTransition()) return;
+  const auto path = QFileDialog::getOpenFileName(this, "只读导入旧 v6 工程", {}, "旧 Signal Studio 工程 (*.json)");
+  if (path.isEmpty()) return;
+  Project preview;
+  QString error;
+  if (!projectIo(this, "只读校验旧 v6 工程…", [&](auto cancelled) {
+        if (cancelled()) { error = "已取消旧工程预览"; return false; }
+        const bool loaded = ProjectStore::load(path, preview, error);
+        if (cancelled()) { error = "已取消旧工程预览"; return false; }
+        return loaded;
+      })) { QMessageBox::warning(this, "旧工程校验失败", error); return; }
+  std::size_t marks = 0, channels = 0, runs = 0;
+  for (const auto& f : preview.files) { marks += f.marks.size(); channels += f.channels.size(); runs += f.detectionRuns.size(); }
+  if (QMessageBox::question(this, "转换预览", QString("%1 个文件，%2 个标记，%3 个通道，%4 次检测。\n将复制转换为新的 .ssproj；原 JSON 与资产保持。继续？").arg(preview.files.size()).arg(marks).arg(channels).arg(runs)) != QMessageBox::Yes) return;
+  const auto target = QFileDialog::getSaveFileName(this, "保存转换后的工程", QFileInfo(path).absoluteDir().filePath(q(preview.name) + ".ssproj"), "Signal Studio 工程 (*.ssproj)");
+  if (!target.isEmpty() && !importLegacyProject(path, target, &error)) QMessageBox::warning(this, "转换失败", error);
+}
+void MainWindow::closeProject() {
+  if (!confirmProjectTransition()) return;
+  cancelInteractions();
+  sourceLoads_.clear();
+  if (narrowband_) narrowband_->cancelWork();
+  session_.newProject();
+  projectPath_.clear();
+  savedProjectToken_.clear();
+  refresh();
+}
+bool MainWindow::confirmProjectTransition() {
+  if (!isProjectDirty()) return true;
+  const auto result = QMessageBox::question(this, "未保存的工程修改", "保存当前工程修改后继续？", QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel, QMessageBox::Save);
+  if (result == QMessageBox::Cancel) return false;
+  if (result == QMessageBox::Discard) return true;
+  auto path = projectPath_;
+  if (path.isEmpty()) path = QFileDialog::getSaveFileName(this, "保存当前工程", "Signal Studio.ssproj", "Signal Studio 工程 (*.ssproj)");
+  return !path.isEmpty() && saveProject(path);
+}
+void MainWindow::closeEvent(QCloseEvent* event) {
+  if (qApp->property("uiStatePersistenceEnabled").toBool() && !confirmProjectTransition()) { event->ignore(); return; }
+  QMainWindow::closeEvent(event);
+}
+bool MainWindow::relocateSource(const QString& fileId, const QString& path, QString* error) {
+  for (auto& f : session_.project().files) if (q(f.metadata.id) == fileId) {
+    QString why;
+    if (!ProjectFileCodec::relocate(f.metadata, path, why)) { if (error) *error = why; return false; }
+    sourceLoads_.erase(f.metadata.id);
+    startSourceLoad(f, f.metadata.sampleCount);
+    refresh();
+    if (error) error->clear();
+    return true;
+  }
+  if (error) *error = "源文件不属于当前工程";
+  return false;
 }
 void MainWindow::startSourceLoad(FileState& file, SampleIndex target) {
   const auto path = QString::fromStdString(file.metadata.path);
@@ -4978,6 +5162,10 @@ void MainWindow::pollSourceLoads() {
                                        .arg(snapshot.loaded)
                                        .arg(file.metadata.sampleCount)
                                  : "读入失败：" + snapshot.error);
+    if (snapshot.loaded && snapshot.error.isEmpty())
+      QTimer::singleShot(0, this, [this, fileId = q(file.metadata.id), generation = session_.projectGeneration()] {
+        if (session_.projectGeneration() == generation) discoverLabels(fileId);
+      });
     if (!snapshot.loaded && file.marks.empty() && file.channels.empty()) {
       const auto id = file.metadata.id;
       session_.activateFile(id);
@@ -4999,5 +5187,144 @@ namespace signalstudio {
 bool MainWindow::importLabels(const QString& path, QString* error,
                               bool preview) {
   return annotations_ && annotations_->importLabels(path, error, preview);
+}
+
+void MainWindow::discoverLabels(const QString& requestedId) {
+  auto* active = session_.activeFile();
+  const auto fileId = requestedId.isEmpty() && active ? q(active->metadata.id) : requestedId;
+  auto found = std::find_if(session_.project().files.begin(), session_.project().files.end(), [&](const auto& f) { return q(f.metadata.id) == fileId; });
+  if (found == session_.project().files.end() || found->metadata.demo || !availableSamples(found->metadata)) return;
+  const auto generation = session_.projectGeneration();
+  FileState source;
+  source.metadata = found->metadata;
+  source.sourceSets = found->sourceSets;
+  if (!requestedId.isEmpty()) {
+    const auto key = std::to_string(generation) + "/" + source.metadata.id;
+    if (!labelDiscoveryPending_.insert(key).second) return;
+    const QPointer<MainWindow> owner(this);
+    labelWorkers_.emplace_back([owner, source, generation, key](std::stop_token stop) {
+      LabelDiscoveryOptions options;
+      options.parsing.cancelled = [&] { return stop.stop_requested(); };
+      const auto discovered = discoverLabelCandidates(source.metadata, options);
+      std::optional<LabelImportPlan> prepared;
+      if (discovered.candidates.size() == 1 && discovered.state != LabelDiscoveryState::Empty) {
+        std::optional<LabelFieldMapping> mapping;
+        const auto& candidate = discovered.candidates.front();
+        for (const auto& set : source.sourceSets) {
+          if (set.deleted || QFileInfo(q(set.originalPath)).fileName() != QFileInfo(candidate.labelPath).fileName()) continue;
+          LabelFieldMapping saved;
+          QString error;
+          if (restoreLabelFieldMapping(set, saved, error)) { mapping = saved; break; }
+        }
+        if (candidate.profile != LabelProfile::MatlabDataTxt || mapping)
+          prepared = prepareDiscoveredLabels(candidate, source, generation, mapping, options);
+      }
+      if (stop.stop_requested()) return;
+      QMetaObject::invokeMethod(qApp, [owner, source, generation, key, discovered, prepared] {
+        if (!owner) return;
+        owner->labelDiscoveryPending_.erase(key);
+        if (owner->session_.projectGeneration() != generation) return;
+        auto& files = owner->session_.project().files;
+        const auto current = std::find_if(files.begin(), files.end(), [&](const auto& f) { return f.metadata.id == source.metadata.id; });
+        if (current == files.end()) return;
+        if (!prepared) {
+          owner->log(discovered.message + (discovered.candidates.empty() || discovered.state == LabelDiscoveryState::Empty
+              ? QString{} : "；可从文件菜单“重新发现当前信号标签”打开预览/字段映射"));
+          return;
+        }
+        const auto& plan = *prepared;
+        if (plan.disposition != LabelImportDisposition::Ready && plan.disposition != LabelImportDisposition::Empty && plan.disposition != LabelImportDisposition::AlreadyImported) {
+          owner->log(plan.message + "；请从文件菜单重新发现并明确处理"); return;
+        }
+        const auto result = publishDiscoveredLabels(owner->session_.annotations(), *current, plan, generation);
+        owner->log(result.ok ? (result.changed ? QString("已自动导入 %1 个标签 · %2").arg(plan.imported.annotations.size()).arg(q(plan.imported.sourceSet.originalPath)) : "标签已存在，未重复导入") : q(result.error));
+        if (result.changed) owner->refresh();
+      }, Qt::QueuedConnection);
+    });
+    return;
+  }
+  LabelDiscoveryResult discovery;
+  projectIo(this, "发现信号标签…", [&](auto cancelled) {
+    LabelDiscoveryOptions options;
+    options.parsing.cancelled = cancelled;
+    discovery = discoverLabelCandidates(source.metadata, options);
+    return true;
+  });
+  if (discovery.candidates.empty()) { log(discovery.message); return; }
+  if (discovery.state == LabelDiscoveryState::Empty) { log(discovery.message); return; }
+  auto selected = discovery.candidates.front();
+  if (discovery.candidates.size() > 1) {
+    QStringList choices;
+    for (const auto& c : discovery.candidates) choices << c.labelPath;
+    bool ok = false;
+    const auto choice = QInputDialog::getItem(this, "选择标签来源", discovery.message, choices, 0, false, &ok);
+    if (!ok) return;
+    selected = discovery.candidates[choices.indexOf(choice)];
+  }
+  std::optional<LabelFieldMapping> mapping;
+  if (selected.profile == LabelProfile::MatlabDataTxt) {
+    for (const auto& previous : source.sourceSets) {
+      if (previous.profileId != "user-confirmed-delimited-txt" || previous.deleted) continue;
+      if (QFileInfo(q(previous.originalPath)).fileName() != QFileInfo(selected.labelPath).fileName()) continue;
+      const auto stored = QJsonDocument::fromJson(QByteArray::fromStdString(previous.coordinateInterpretation));
+      LabelFieldMapping decoded;
+      QString why;
+      if (decodeLabelFieldMapping(stored.object(), decoded, why)) { mapping = decoded; break; }
+    }
+    if (!mapping) {
+      LabelMappingDialog dialog(selected.labelPath, selected.preview, this);
+      if (dialog.exec() != QDialog::Accepted || !dialog.mapping()) { log("已取消字段映射，未导入任何标签"); return; }
+      mapping = dialog.mapping();
+    }
+  }
+  LabelImportPlan plan;
+  projectIo(this, "校验标签字段与物理范围…", [&](auto cancelled) {
+    LabelDiscoveryOptions options;
+    options.parsing.cancelled = cancelled;
+    plan = prepareDiscoveredLabels(selected, source, generation, mapping, options);
+    return true;
+  });
+  found = std::find_if(session_.project().files.begin(), session_.project().files.end(), [&](const auto& f) { return q(f.metadata.id) == fileId; });
+  if (generation != session_.projectGeneration() || found == session_.project().files.end()) { log("工程/文件上下文已变化，未发布标签"); return; }
+  QString summary = QString("%1 个标签 · %2\n%3").arg(plan.imported.annotations.size()).arg(selected.labelPath, plan.message);
+  if (plan.disposition == LabelImportDisposition::IncompleteEvidence)
+    summary = "仅保存原始来源、类别、映射和诊断；0 个可定位标记。\n" + summary;
+  QStringList classes;
+  for (const auto& [name, count] : plan.classCounts) classes << QString("%1:%2").arg(q(name)).arg(count);
+  summary += "\n类别：" + classes.join(", ");
+  if (plan.timeExtent) summary += QString("\n样本 [%1,%2)").arg(plan.timeExtent->begin).arg(plan.timeExtent->end);
+  if (plan.frequencyExtent) summary += QString(" · RF [%1,%2] Hz").arg(plan.frequencyExtent->lowerHz, 0, 'g', 14).arg(plan.frequencyExtent->upperHz, 0, 'g', 14);
+  for (const auto& d : plan.imported.diagnostics) summary += "\n" + q(d.message);
+  bool explicitReload = false;
+  if (plan.disposition == LabelImportDisposition::SourceChanged) {
+    QMessageBox prompt(QMessageBox::Question, "标签来源已变化", summary + "\n保留现有修订，或将新内容作为独立来源版本载入。", QMessageBox::NoButton, this);
+    auto* reload = prompt.addButton("载入新版本", QMessageBox::AcceptRole);
+    auto* compare = prompt.addButton("比对原始内容", QMessageBox::ActionRole);
+    prompt.addButton("保留现有", QMessageBox::RejectRole);
+    prompt.exec();
+    if (prompt.clickedButton() == compare) {
+      QDialog diff(this);
+      diff.setWindowTitle("标签来源比对（只读）"); diff.resize(900, 600);
+      auto* layout = new QVBoxLayout(&diff);
+      auto* text = new QPlainTextEdit(&diff); text->setReadOnly(true);
+      QString old;
+      for (const auto& prior : found->sourceSets) if (QFileInfo(q(prior.originalPath)).fileName() == QFileInfo(selected.labelPath).fileName()) old += q(prior.originalText).left(65536) + "\n";
+      text->setPlainText("原来源（预览上限 64 KiB/项）：\n" + old + "\n新来源（预览上限 64 KiB）：\n" + q(plan.imported.sourceSet.originalText).left(65536));
+      layout->addWidget(text); diff.exec(); return;
+    }
+    if (prompt.clickedButton() != reload) return;
+    explicitReload = true;
+  } else if (plan.disposition == LabelImportDisposition::Rejected || plan.disposition == LabelImportDisposition::NeedsMapping) {
+    log(summary);
+    QMessageBox::warning(this, "标签校验未通过", summary);
+    return;
+  } else if (mapping && plan.disposition != LabelImportDisposition::AlreadyImported) {
+    if (QMessageBox::question(this, "标签导入预览", summary + "\n确认按此字段映射导入？", QMessageBox::Yes | QMessageBox::Cancel) != QMessageBox::Yes) return;
+  }
+  const auto published = explicitReload
+      ? session_.annotations().publishSourceSet(*found, plan.imported.sourceSet, plan.imported.annotations)
+      : publishDiscoveredLabels(session_.annotations(), *found, plan, generation);
+  log(published.ok ? (published.changed ? "已自动导入：" + summary : "相同标签来源已存在，未重复导入") : "标签未发布：" + q(published.error));
+  refresh();
 }
 }  // namespace signalstudio

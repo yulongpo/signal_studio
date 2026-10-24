@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "application/session.h"
+#include "ui/charts/axis_layout.h"
 #include "ui/charts/display_sampling.h"
 #include "ui/charts/interaction_feedback.h"
 
@@ -28,11 +29,18 @@ struct CurvePayload;
 
 class PlotWidget : public QWidget {
   Q_OBJECT
+  Q_PROPERTY(AxisTitleMode axisTitleMode READ axisTitleMode WRITE setAxisTitleMode)
  public:
   enum class Kind { Navigation, Auxiliary, Main };
+  enum class AxisTitleMode { UnitAtTop, Header, Rotated };
+  Q_ENUM(AxisTitleMode)
   PlotWidget(Session& session, Kind kind, QWidget* parent = nullptr);
   ~PlotWidget() override;
   QRectF plotRect() const;
+  AxisTitleMode axisTitleMode() const { return axisTitleMode_; }
+  Q_INVOKABLE void setAxisTitleMode(AxisTitleMode mode);
+  axis_layout::Layout axisLayout() const;
+  Q_INVOKABLE QJsonObject axisLayoutStatistics() const;
   QPointF toPixel(SampleIndex sample, double frequencyHz) const;
   void setCreating(bool enabled);
   bool isCreating() const { return creating_; }
@@ -110,6 +118,14 @@ class PlotWidget : public QWidget {
   bool event(QEvent*) override;
 
  private:
+  struct AxisLayoutCache;
+  const AxisLayoutCache& measuredAxes() const;
+  void freezeAxisLayouts();
+  void releaseAxisLayouts();
+  void refreshAxisLayouts();
+  mutable std::unique_ptr<AxisLayoutCache> axisLayoutCache_;
+  std::optional<axis_layout::Budget> frozenAxisBudget_;
+  AxisTitleMode axisTitleMode_ = AxisTitleMode::UnitAtTop;
   using Zone = chart_feedback::Zone;
   enum class Tool {
     ZoomBox,

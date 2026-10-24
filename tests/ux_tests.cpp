@@ -5,6 +5,7 @@
 #include <QComboBox>
 #include <QFile>
 #include <QListView>
+#include <QMessageBox>
 #include <QLabel>
 #include <QScrollArea>
 #include <QPushButton>

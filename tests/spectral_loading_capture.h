@@ -48,7 +48,7 @@ int runSpectralLoadingCapture(const QString& directory,const QString& largeIq) {
         require(file->navigationEnvelope.size()<=2048,"Navigator exceeded 2048 envelope points");
         report["loading"]=QJsonObject{{"source",path},{"physicalBytes",QFileInfo(path).size()},{"prefixSamples",QString::number(prefix)},{"envelopePoints",static_cast<int>(file->navigationEnvelope.size())},{"status","Partial"}};
         file->view.time={0,std::min<SampleIndex>(prefix,static_cast<SampleIndex>(file->metadata.sampleRateHz*.01))};window.refresh();require(wideReady(),"Prefix wideband did not settle");save("02-prefix-envelope");
-        require(window.saveProject(output.filePath("prefix-project.json")),"Prefix project save failed");require(window.openProject(output.filePath("prefix-project.json")),"Prefix project reopen failed");
+        require(window.saveProject(output.filePath("prefix-project.ssproj")),"Prefix project save failed");require(window.openProject(output.filePath("prefix-project.ssproj")),"Prefix project reopen failed");
         require(waitUntil([&]{return window.session().activeFile()->metadata.availability.status!=LoadStatus::Loading;},10000),"Prefix reopen did not complete");file=window.session().activeFile();require(availableSamples(file->metadata)==prefix,"Reopen changed prefix");
         child<QComboBox>(window,"psdFft")->setCurrentText("32");child<QComboBox>(window,"stftFft")->setCurrentText("32");
         window.session().setAuxiliaryMode(AuxiliaryMode::Psd);window.session().setView({{0,3},file->view.frequency},false);window.refresh();require(wideReady(),"Padded wide PSD did not settle");

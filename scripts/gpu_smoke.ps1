@@ -58,8 +58,10 @@ try {
     if ($report.pass -ne $true -or $report.fourK150Verified -ne $true -or $report.fullScreen -ne $true -or $report.captureHasVisibleContent -ne $true) {
         throw 'The application did not confirm a successful native 4K / 150% full-screen run.'
     }
-    if ($Narrowband -and ($report.workspaceMode -ne 'narrowband' -or $report.narrowbandPagesVerified -ne $true -or @($report.narrowbandPages).Count -ne 4)) {
-        throw 'The narrowband capture did not validate all four pages.'
+    if ($Narrowband -and ($report.workspaceMode -ne 'narrowband' -or $report.narrowbandPagesVerified -ne $true -or
+        @($report.narrowbandPages).Count -ne 5 -or
+        (@($report.narrowbandPages.pageIndex | Sort-Object -Unique) -join ',') -ne '0,1,2,3,4')) {
+        throw 'The narrowband capture must validate all five distinct pages (mask 0x1f).'
     }
     if ($report.screen.connectedIndex -lt 1 -or
         [Math]::Abs([double]$report.screen.devicePixelRatio - 1.5) -gt 0.001 -or
@@ -76,6 +78,8 @@ try {
     }
     if (-not $SoftwareRenderer -and $Narrowband -and
         @($report.narrowbandPages | Where-Object { $_.gpuDataDrawCalls -le 0 }).Count -gt 0) {
+        # This checks visible real chart data, including the recognition page's
+        # real spectrum. It does not require an available recognition model.
         throw 'Every narrowband page must show at least one GPU chart-data draw call.'
     }
     if ($SoftwareRenderer -and $report.hardwareRenderer -eq $true) {

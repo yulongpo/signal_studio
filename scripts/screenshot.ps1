@@ -245,13 +245,35 @@ try {
         $report | Add-Member -NotePropertyName process -NotePropertyValue ([ordered]@{executable=$executable;configuration=$Configuration;systemOnlyPath=$true;dpiOverridesCleared=$true;exitCode=$captureExitCode}) -Force
         $report | ConvertTo-Json -Depth 80 | Set-Content -LiteralPath $reportPath -Encoding utf8
         if ($captureExitCode -eq 3 -and $report.blocked) { throw "Native screen acceptance blocked: $($report.error). Report: $reportPath" }
-        if ($captureExitCode -ne 0 -or -not $report.pass -or $report.sceneCount -ne 12 -or @($report.projects).Count -ne 2) { throw "Narrowband capture failed: $($report.error). Report: $reportPath" }
+        if ($captureExitCode -ne 0 -or -not $report.pass -or $report.sceneCount -ne 18 -or
+            @($report.scenes).Count -ne 18 -or @($report.projects).Count -ne 2 -or
+            $report.mode -ne 'narrowband-analysis-ux-r3' -or $report.softwareRenderer -ne [bool]$SoftwareRenderer) { throw "Narrowband capture failed: $($report.error). Report: $reportPath" }
         if (-not $AuxiliaryDisplay -and -not $report.nativeAcceptance) { throw 'The required physical monitor was not accepted.' }
-        foreach ($scene in $report.scenes) {
-            if (-not $scene.pass -or -not (Test-Path -LiteralPath $scene.png) -or $scene.pixelSize.width -ne 3840 -or $scene.pixelSize.height -ne 2160) { throw "Narrowband scene failed: $($scene.scene)" }
-            if (-not $SoftwareRenderer -and ($scene.backend -notmatch 'D3D11' -or $scene.render.gpuDataDrawCalls -le 0 -or $scene.render.textureUploads -le 0)) { throw "No hardware chart data evidence: $($scene.scene)" }
+        if ($report.platform -ne 'windows' -or -not $report.fullScreen -or
+            $report.logicalWindowSize.width -ne 2560 -or $report.logicalWindowSize.height -ne 1440 -or
+            $report.screen.connectedIndex -lt 1 -or [string]::IsNullOrWhiteSpace($report.screen.friendlyName) -or
+            [string]::IsNullOrWhiteSpace($report.screen.monitorDevicePath) -or
+            $report.screen.pixelSize.width -ne 3840 -or $report.screen.pixelSize.height -ne 2160 -or
+            [Math]::Abs($report.screen.devicePixelRatio - 1.5) -gt 0.001) { throw 'Narrowband capture requires actual native 4K/150% fullscreen evidence.' }
+        if (-not $AuxiliaryDisplay -and ($report.screen.friendlyName -ine 'Redmi 27 NU' -or
+            $report.screen.preferredPixelSize.width -ne 3840 -or $report.screen.preferredPixelSize.height -ne 2160)) { throw 'The designated Redmi physical screen was not verified.' }
+        $expectedScenes = foreach ($prefix in @('ci16','cf32')) {
+            foreach ($suffix in @('01-ddc','02-raw','03-manual-eye','04-recovered-constellation','05-recovered-eye',
+                '06-recognition-unavailable','07-demodulation-unavailable','08-reopened-eye','09-cancelled')) { "$prefix-$suffix" }
         }
-        Write-Host "Narrowband $Configuration $renderMode passed 12 scenes; physical native acceptance: $($report.nativeAcceptance). Report: $reportPath"
+        if (@($report.scenes.scene | Select-Object -Unique).Count -ne 18 -or
+            @(Compare-Object $expectedScenes @($report.scenes.scene)).Count -ne 0) { throw 'Narrowband capture must cover the complete ci16/cf32 independent-page journeys.' }
+        foreach ($scene in $report.scenes) {
+            if (-not $scene.pass -or -not (Test-Path -LiteralPath $scene.png -PathType Leaf) -or $scene.pixelSize.width -ne 3840 -or $scene.pixelSize.height -ne 2160 -or
+                [Math]::Abs($scene.devicePixelRatio - 1.5) -gt 0.001) { throw "Narrowband scene failed: $($scene.scene)" }
+            if (-not $SoftwareRenderer -and ($scene.backend -notmatch 'D3D11' -or $scene.backend -match 'CPU|Software|QPainter' -or
+                $scene.render.gpuDataDrawCalls -le 0 -or ($scene.render.textureUploads -le 0 -and $scene.render.gpuVertexUploads -le 0))) { throw "No hardware chart data evidence: $($scene.scene)" }
+            if (-not $SoftwareRenderer -and $scene.scene -match '-(02-raw|03-manual-eye|04-recovered-constellation|05-recovered-eye|08-reopened-eye)$' -and
+                $scene.render.gpuVertexUploads -le 0) { throw "Independent constellation/eye page lacks GPU vertex uploads: $($scene.scene)" }
+            if ($SoftwareRenderer -and ($scene.backend -notmatch 'QPainter' -or $scene.render.gpuDataDrawCalls -ne 0 -or
+                $scene.render.textureUploads -ne 0 -or $scene.render.gpuVertexUploads -ne 0)) { throw "Software fallback evidence is inconsistent: $($scene.scene)" }
+        }
+        Write-Host "Narrowband $Configuration $renderMode passed 18 scenes; physical native acceptance: $($report.nativeAcceptance). Report: $reportPath"
         return
     }
     if ($AnnotationInteractions) {

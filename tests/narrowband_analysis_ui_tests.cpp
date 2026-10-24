@@ -6,6 +6,10 @@
 #include <QLineEdit>
 #include <QFileInfo>
 #include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QScrollArea>
+#include <QStackedWidget>
 #include <QTemporaryDir>
 #include <cmath>
 #include <QPushButton>
@@ -16,6 +20,7 @@
 #include "ui/import/signal_import_dialog.h"
 #include "ui/controls/adaptive_value_edit.h"
 #include "ui/chart_control_strip.h"
+#include "infrastructure/project_store.h"
 
 using namespace signalstudio;
 class NarrowbandAnalysisUiTests : public QObject {
@@ -34,6 +39,133 @@ class NarrowbandAnalysisUiTests : public QObject {
     qInfo("NARROWBAND_VALIDATION_NODE=%s",qPrintable(qEnvironmentVariable("SS_NARROWBAND_NODE")));
     qApp->setProperty("softwareRenderer",true);
     qApp->setProperty("uiStatePersistenceEnabled",false);
+  }
+  void independentPagesShareAnalysisAndKeepDisplayState() {
+    MainWindow window; populate(window,"qpsk-a35-awgn20.raw");
+    auto* file=window.session().activeFile();
+    const auto id=window.session().createChannel("pages",file->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);
+    QVERIFY(!id.empty()); window.refresh();
+    auto* workspace=window.findChild<NarrowbandWorkspace*>(); QVERIFY(workspace);
+    auto* stack=window.findChild<QStackedWidget*>("narrowbandPageStack"); QVERIFY(stack); QCOMPARE(stack->count(),5);
+    auto* rateMode=window.findChild<QComboBox*>("analysisSymbolRateMode");
+    auto* rate=window.findChild<QDoubleSpinBox*>("symbolRate");
+    auto* pointBudget=window.findChild<QComboBox*>("constellationPointBudget");
+    auto* autoScale=window.findChild<QCheckBox*>("constellationAutoScale");
+    auto* axisMinimum=window.findChild<QDoubleSpinBox*>("constellationAxisMinimum");
+    auto* axisMaximum=window.findChild<QDoubleSpinBox*>("constellationAxisMaximum");
+    auto* eyeComponent=window.findChild<QComboBox*>("eyeComponent");
+    auto* eyePeriods=window.findChild<QComboBox*>("eyePeriods");
+    auto* eyeTraces=window.findChild<QComboBox*>("eyeTraces");
+    auto* eyeDensity=window.findChild<QComboBox*>("eyeDrawingDensity");
+    auto* runAnalysis=window.findChild<QPushButton*>("runNarrowbandAnalysis");
+    auto* runRecognition=window.findChild<QPushButton*>("runRealRecognition");
+    auto* recognitionUnavailable=window.findChild<QLabel*>("recognitionUnavailable");
+    auto* demodulationUnavailable=window.findChild<QLabel*>("demodulationUnavailable");
+    auto* summary=window.findChild<QLabel*>("narrowbandAnalysisSummary");
+    QVERIFY(rateMode && rate && pointBudget && autoScale && axisMinimum && axisMaximum);
+    QVERIFY2(eyeComponent && eyePeriods && eyeTraces && eyeDensity,
+             "Eye editors must belong to the window and remain discoverable when hosted in chart settings");
+    QVERIFY(runAnalysis && runRecognition && recognitionUnavailable && demodulationUnavailable && summary);
+    workspace->activatePage(NarrowbandPage::Constellation);
+    workspace->setSyncPanelExpanded(true);
+    rateMode->setCurrentIndex(1);
+    rate->setValue(625000);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyeStatus==AnalysisStatus::Ready,15000);
+    const auto snapshot=workspace->analysisResult();
+    const auto generation=workspace->renderStatistics()["analysisGeneration"].toString();
+    auto* constellation=window.findChild<QWidget*>("narrowbandConstellationLargeChart");
+    auto* eye=window.findChild<QWidget*>("narrowbandEyeLargeChart");
+    auto* panel=window.findChild<QScrollArea*>("narrowbandSharedSyncPanel");
+    QVERIFY(constellation && eye && panel);
+    const std::array<std::pair<const char*,NarrowbandPage>,5> destinations{{
+      {"eyePage",NarrowbandPage::Eye},{"observePage",NarrowbandPage::Observe},
+      {"deepLearningPage",NarrowbandPage::Recognition},{"demodulationPage",NarrowbandPage::Demodulation},
+      {"modulationPage",NarrowbandPage::Constellation}}};
+    for(const auto& [button,page]:destinations) {
+      auto* navigation=window.findChild<QPushButton*>(button);QVERIFY(navigation);
+      QTest::mouseClick(navigation,Qt::LeftButton);
+      QTRY_COMPARE(workspace->currentPageIndex(),static_cast<int>(page));
+      QCOMPARE(window.session().activeChannel()->page,page);
+      QCOMPARE(constellation->isVisible(),page==NarrowbandPage::Constellation);
+      QCOMPARE(eye->isVisible(),page==NarrowbandPage::Eye);
+      QVERIFY(panel->isVisible());
+      QCOMPARE(workspace->analysisResult().get(),snapshot.get());
+      QCOMPARE(workspace->renderStatistics()["analysisGeneration"].toString(),generation);
+    }
+    QVERIFY(!runRecognition->isEnabled());
+    QVERIFY(recognitionUnavailable->text().contains("不可用"));
+    QVERIFY(demodulationUnavailable->text().contains("不可用"));
+    pointBudget->setCurrentIndex(0);
+    autoScale->setChecked(false);
+    axisMinimum->setValue(-2);
+    axisMaximum->setValue(2);
+    workspace->activatePage(NarrowbandPage::Eye);
+    eyeComponent->setCurrentIndex(2);
+    eyeTraces->setCurrentIndex(0);
+    eyeDensity->setCurrentIndex(0);
+    QTest::qWait(50);
+    QCOMPARE(workspace->analysisResult().get(),snapshot.get());
+    QCOMPARE(workspace->renderStatistics()["analysisGeneration"].toString(),generation);
+    QCOMPARE(eye->property("eyeTraceCount").toULongLong(),qulonglong{32});
+    QCOMPARE(eye->property("eyePointsPerUi").toInt(),4);
+    QCOMPARE(eye->property("eyeComponentCount").toInt(),1);
+    workspace->setSyncPanelExpanded(false); workspace->activatePage(NarrowbandPage::Constellation);
+    QVERIFY(!panel->isVisible()); QCOMPARE(constellation->property("iqAxisMinimum").toDouble(),-2.);
+    QCOMPARE(constellation->property("iqAxisMaximum").toDouble(),2.);
+    workspace->activatePage(NarrowbandPage::Recognition);
+    rate->setValue(500000);
+    QVERIFY(!workspace->analysisResult()); // Old graph cannot remain current while a request is pending.
+    workspace->activatePage(NarrowbandPage::Eye);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->symbolRateHz==500000,15000);
+    QVERIFY(workspace->analysisResult()->identity.requestGeneration>snapshot->identity.requestGeneration);
+    runAnalysis->click();
+    workspace->activatePage(NarrowbandPage::Constellation);
+    workspace->cancelAnalysis(true);
+    workspace->activatePage(NarrowbandPage::Eye);window.refresh();QTest::qWait(100);
+    QVERIFY(!workspace->analysisResult());QCOMPARE(eye->property("eyeTraceCount").toULongLong(),qulonglong{0});
+    QCOMPARE(constellation->property("constellationPointCount").toULongLong(),qulonglong{0});
+    QVERIFY(summary->text().contains("取消"));
+  }
+  void pagePersistenceAndLegacyNames() {
+    MainWindow window;populate(window);
+    const auto id=window.session().createChannel("persist",window.session().activeFile()->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);
+    QVERIFY(!id.empty());window.refresh();
+    QTemporaryDir directory;const auto path=directory.filePath("page-v6.json");QString error;
+    const std::array<std::pair<NarrowbandPage,const char*>,5> pages{{
+      {NarrowbandPage::Observe,"observe"},{NarrowbandPage::Constellation,"constellation"},
+      {NarrowbandPage::Eye,"eye"},{NarrowbandPage::Recognition,"recognition"},{NarrowbandPage::Demodulation,"demodulation"}}};
+    for(const auto& [page,name]:pages) {
+      auto* c=window.session().activeChannel();c->page=page;c->syncPanelExpanded=true;
+      c->constellationMinimum=-2;c->constellationMaximum=3;c->eyePeriods=3;c->eyeComponent=2;c->eyeTraces=128;
+      const auto analysis=c->analysis;
+      QVERIFY2(ProjectStore::save(path,window.session().project(),error),qPrintable(error));
+      Project loaded;QVERIFY2(ProjectStore::load(path,loaded,error),qPrintable(error));
+      const auto& restored=loaded.files.front().channels.front();
+      QCOMPARE(restored.page,page);QVERIFY(restored.syncPanelExpanded);QCOMPARE(restored.analysis,analysis);
+      QCOMPARE(restored.constellationMinimum,-2.);QCOMPARE(restored.constellationMaximum,3.);
+      QCOMPARE(restored.eyePeriods,3);QCOMPARE(restored.eyeComponent,2);QCOMPARE(restored.eyeTraces,128);
+      QFile file(path);QVERIFY(file.open(QIODevice::ReadOnly));
+      const auto encoded=QJsonDocument::fromJson(file.readAll()).object();file.close();
+      QCOMPARE(encoded["files"].toArray()[0].toObject()["channels"].toArray()[0].toObject()["page"].toString(),QString(name));
+    }
+    QFile file(path);QVERIFY(file.open(QIODevice::ReadOnly));const auto baseline=QJsonDocument::fromJson(file.readAll()).object();file.close();
+    const auto writeChannel=[&](QJsonObject channel){
+      auto document=baseline;auto files=document["files"].toArray();auto f=files[0].toObject();
+      auto channels=f["channels"].toArray();channels[0]=channel;f["channels"]=channels;files[0]=f;document["files"]=files;
+      if(!file.open(QIODevice::WriteOnly|QIODevice::Truncate))return false;
+      const auto bytes=QJsonDocument(document).toJson();const bool ok=file.write(bytes)==bytes.size();file.close();return ok;
+    };
+    auto channel=baseline["files"].toArray()[0].toObject()["channels"].toArray()[0].toObject();
+    for(const auto& [legacy,page]:std::array<std::pair<const char*,NarrowbandPage>,2>{{{"modulation",NarrowbandPage::Constellation},{"deepLearning",NarrowbandPage::Recognition}}}) {
+      channel["page"]=legacy;channel.remove("narrowbandDisplay");QVERIFY(writeChannel(channel));
+      Project loaded;QVERIFY2(ProjectStore::load(path,loaded,error),qPrintable(error));
+      QCOMPARE(loaded.files.front().channels.front().page,page);QVERIFY(!loaded.files.front().channels.front().syncPanelExpanded);
+      QCOMPARE(loaded.files.front().channels.front().analysis,window.session().activeChannel()->analysis);
+    }
+    channel["page"]="unrecognized-page";QVERIFY(writeChannel(channel));
+    Project sentinel;sentinel.name="unchanged";QVERIFY(!ProjectStore::load(path,sentinel,error));QCOMPARE(sentinel.name,std::string("unchanged"));
+    channel["page"]="eye";channel["narrowbandDisplay"]=QJsonObject{{"version",2},{"syncPanelExpanded",true}};
+    QVERIFY(writeChannel(channel));QVERIFY(!ProjectStore::load(path,sentinel,error));QCOMPARE(sentinel.name,std::string("unchanged"));
   }
   void samplingTransactionAndActualCreation() {
     MainWindow window;populate(window);
@@ -92,7 +224,8 @@ class NarrowbandAnalysisUiTests : public QObject {
     QVERIFY(chart->property("realIqSource").toBool());QCOMPARE(chart->property("actualSampleRateHz").toULongLong(),qulonglong{2000000});
     QVERIFY(chart->property("iqAxisMaximum").toDouble()<.3);QVERIFY(chart->property("equalAxisScale").toBool());
     auto* points=window.findChild<QComboBox*>("constellationPointBudget");QVERIFY(points);points->setCurrentIndex(0);
-    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->constellation.size()==256,15000);
+    QTRY_COMPARE(chart->property("constellationPointCount").toULongLong(),qulonglong{256});
+    QCOMPARE(workspace->analysisResult().get(),result.get());
     window.findChild<QPushButton*>("cancelNarrowbandAnalysis")->click();
     QVERIFY(!workspace->analysisResult());QCOMPARE(chart->property("constellationPointCount").toULongLong(),qulonglong{0});
     window.refresh();QTest::qWait(50);QVERIFY(!workspace->analysisResult());
@@ -106,6 +239,7 @@ class NarrowbandAnalysisUiTests : public QObject {
     MainWindow window;populate(window);auto* file=window.session().activeFile();
     const auto id=window.session().createChannel("eye",file->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);
     QVERIFY(!id.empty());window.refresh();auto* workspace=window.findChild<NarrowbandWorkspace*>();workspace->activatePageForAcceptance(1);
+    workspace->setSyncPanelExpanded(true);
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult()!=nullptr,15000);
     QVERIFY(workspace->analysisResult()->eyeStatus==AnalysisStatus::NeedSymbolRate);
     auto* mode=window.findChild<QComboBox*>("analysisSymbolRateMode");auto* rs=window.findChild<QDoubleSpinBox*>("symbolRate");
@@ -117,14 +251,16 @@ class NarrowbandAnalysisUiTests : public QObject {
     window.findChild<QComboBox*>("eyeTraces")->setCurrentIndex(2);
     window.findChild<QComboBox*>("eyeComponent")->setCurrentIndex(2);
     window.findChild<QComboBox*>("eyeDrawingDensity")->setCurrentIndex(1);
-    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyes.size()==128 && workspace->analysisResult()->eyePeriods==3 && workspace->analysisResult()->eyePointsPerUi==8,15000);
-    QCOMPARE(chart->property("eyeComponentCount").toInt(),1);QCOMPARE(workspace->analysisResult()->eyes[0].i.size(),std::size_t{25});
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyePeriods==3 && chart->property("eyeTraceCount").toULongLong()==128 && chart->property("eyePointsPerUi").toInt()==8,15000);
+    QCOMPARE(chart->property("eyeComponentCount").toInt(),1);QCOMPARE(chart->property("eyePointsPerTrace").toInt(),25);
     window.findChild<QComboBox*>("eyeAnalysisStage")->setCurrentIndex(static_cast<int>(AnalysisStage::MatchedFiltered));
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->filterDiscardedSamples>0 && workspace->analysisResult()->eyeStatus==AnalysisStatus::Ready,15000);
     auto* eyeStrip=dynamic_cast<ChartControlStrip*>(window.findChild<QWidget*>("narrowbandEyeControls"));
     auto* constellationStrip=dynamic_cast<ChartControlStrip*>(window.findChild<QWidget*>("narrowbandConstellationControls"));
     QVERIFY(eyeStrip && constellationStrip);
     for(auto* strip:{eyeStrip,constellationStrip}) {
+      workspace->activatePage(strip==eyeStrip?NarrowbandPage::Eye:NarrowbandPage::Constellation);
+      QCoreApplication::processEvents();
       auto* head=strip->parentWidget();QCOMPARE(head->height(),30);QVERIFY(strip->overflowButton()->isVisible());
       QList<QRect> occupied;
       for(auto* field:strip->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly)) {
@@ -137,6 +273,7 @@ class NarrowbandAnalysisUiTests : public QObject {
     }
     auto* rolloff=window.findChild<QDoubleSpinBox*>("analysisRrcRolloff");
     auto* offset=window.findChild<QDoubleSpinBox*>("eyeTimingOffsetUi");
+    workspace->activatePage(NarrowbandPage::Eye);
     QVERIFY(rolloff && offset && !rolloff->isVisible());
     QTest::mouseClick(eyeStrip->overflowButton(),Qt::LeftButton);QTRY_VERIFY(rolloff->isVisible());
     for(auto* spin:{rolloff,offset}) {
@@ -148,6 +285,7 @@ class NarrowbandAnalysisUiTests : public QObject {
     window.refresh();QCOMPARE(rolloff->parentWidget(),originalParent);QVERIFY(editor->text().contains("0.40"));
     QCOMPARE(window.session().activeChannel()->analysis.rolloff,accepted);
     QTest::keyClick(editor,Qt::Key_Return);QCOMPARE(window.session().activeChannel()->analysis.rolloff,.4);
+    workspace->activatePage(NarrowbandPage::Constellation);
     QTest::mouseClick(constellationStrip->overflowButton(),Qt::LeftButton);
     QTRY_VERIFY(constellationStrip->popoverFrame()->isVisible());QVERIFY(!eyeStrip->popoverFrame()->isVisible());
     auto* axis=window.findChild<QDoubleSpinBox*>("constellationAxisMinimum");QVERIFY(axis && axis->isVisible() && !axis->isEnabled());
@@ -173,6 +311,7 @@ class NarrowbandAnalysisUiTests : public QObject {
     MainWindow window;populate(window,"qpsk-a35-awgn20.raw");auto* file=window.session().activeFile();
     const auto id=window.session().createChannel("rate",file->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);QVERIFY(!id.empty());
     window.refresh();auto* workspace=window.findChild<NarrowbandWorkspace*>();workspace->activatePageForAcceptance(1);
+    workspace->setSyncPanelExpanded(true);
     auto* mode=window.findChild<QComboBox*>("analysisSymbolRateMode");mode->setCurrentIndex(2);
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && !workspace->analysisResult()->rateCandidates.empty(),15000);
     auto* candidates=window.findChild<QComboBox*>("analysisRateCandidates");int selected=-1;
@@ -236,7 +375,7 @@ class NarrowbandAnalysisUiTests : public QObject {
       MainWindow expanded;const auto path=qEnvironmentVariable("SS_MODULATION_FIXTURES")+'/'+family.second+".raw";
       populate(expanded,path);auto* f=expanded.session().activeFile();
       const auto channelId=expanded.session().createChannel("family",f->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);QVERIFY(!channelId.empty());
-      expanded.refresh();auto* work=expanded.findChild<NarrowbandWorkspace*>();work->activatePageForAcceptance(1);
+      expanded.refresh();auto* work=expanded.findChild<NarrowbandWorkspace*>();work->activatePageForAcceptance(1);work->setSyncPanelExpanded(true);
       expanded.findChild<QComboBox*>("modulationFormat")->setCurrentIndex(static_cast<int>(family.first));
       auto* order=expanded.findChild<QComboBox*>("analysisModulationOrder");QVERIFY(order->isVisible());
       QCOMPARE(order->currentData().toInt(),family.first==ModulationHypothesis::Psk?8:family.first==ModulationHypothesis::Qam?32:16);
@@ -254,7 +393,7 @@ class NarrowbandAnalysisUiTests : public QObject {
         QTRY_VERIFY_WITH_TIMEOUT(work->analysisResult() && work->analysisResult()->carrierLocked,20000);
       }
       QTemporaryDir saved;const auto expected=expanded.session().activeChannel()->analysis;
-      QVERIFY(expanded.saveProject(saved.filePath("project.json")));QVERIFY(expanded.openProject(saved.filePath("project.json")));
+      QVERIFY(expanded.saveProject(saved.filePath("project.ssproj")));QVERIFY(expanded.openProject(saved.filePath("project.ssproj")));
       QCOMPARE(expanded.session().activeChannel()->analysis,expected);
     }
   }
@@ -318,7 +457,7 @@ class NarrowbandAnalysisUiTests : public QObject {
     window.findChild<QComboBox*>("modulationFormat")->setCurrentIndex(static_cast<int>(ModulationHypothesis::Qpsk));
     window.findChild<QPushButton*>("recoverNarrowbandSignal")->click();
     QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->carrierLocked,20000);
-    const auto saved=*window.session().activeChannel();const auto projectPath=directory.filePath("real-narrowband/project.json");
+    const auto saved=*window.session().activeChannel();const auto projectPath=directory.filePath("real-narrowband.ssproj");
     QVERIFY(window.saveProject(projectPath));QVERIFY(window.openProject(projectPath));workspace->activatePageForAcceptance(1);
     QCOMPARE(window.session().activeChannel()->analysis,saved.analysis);
     QCOMPARE(window.session().activeChannel()->sampling,saved.sampling);

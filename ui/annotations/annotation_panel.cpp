@@ -16,6 +16,7 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QMessageBox>
 #include <QPainter>
 #include <QPlainTextEdit>
 #include <QPushButton>
@@ -35,6 +36,8 @@
 
 #include "infrastructure/annotation_json.h"
 #include "infrastructure/label_import.h"
+#include "ui/label_mapping_dialog.h"
+#include "ui/background_operation.h"
 #include "ui/annotations/annotation_evidence_widget.h"
 #include "ui/controls/adaptive_value_edit.h"
 #include "ui/controls/unsigned_value_edit.h"
@@ -1679,11 +1682,40 @@ bool AnnotationPanel::importLabels(const QString& path, QString* error,
     if (error) *error = "请先导入信号";
     return false;
   }
-  auto result =
-      importLabelSource(path, f->metadata, session_.projectGeneration());
+  const auto metadata = f->metadata;
+  const auto generation = session_.projectGeneration();
+  LabelImportResult result;
+  runBackgroundOperation(window(), "校验标签来源…", [&](auto cancelled) {
+    LabelImportOptions options; options.cancelled = cancelled;
+    result = importLabelSource(path, metadata, generation, false, options); return result.ok();
+  });
+  if (result.state == LabelImportState::NeedsMapping) {
+    QString boundedPreview, why;
+    if (!runBackgroundOperation(window(), "读取标签预览…", [&](auto cancelled) {
+          LabelImportOptions options; options.cancelled = cancelled;
+          return previewLabelSource(path, boundedPreview, why, options);
+        })) { if (error) *error = why; emit message(why); return false; }
+    LabelMappingDialog mapping(path, boundedPreview, this);
+    if (mapping.exec() != QDialog::Accepted || !mapping.mapping()) return false;
+    const auto fields = *mapping.mapping();
+    runBackgroundOperation(window(), "校验字段映射与物理范围…", [&](auto cancelled) {
+      LabelImportOptions options; options.cancelled = cancelled;
+      result = importMappedTextLabels(path, metadata, fields, generation, options); return result.ok();
+    });
+  }
+  f = session_.activeFile();
+  if (!f || f->metadata.id != metadata.id || generation != session_.projectGeneration()) { if (error) *error = "标签导入上下文已变化"; return false; }
+  if (result.state == LabelImportState::Incomplete && result.incompleteRecords) {
+    if (QMessageBox::question(this, "仅保存标签来源证据", result.error + "\n只保留原文、类别、映射和诊断，生成 0 个定位标记。继续？", QMessageBox::Yes | QMessageBox::Cancel) != QMessageBox::Yes) return false;
+    const auto archived = session_.annotations().publishSourceSet(*f, result.sourceSet, {});
+    if (error) *error = q(archived.error);
+    emit message(archived.ok ? "已保存原始标签证据；0 个可定位标记" : q(archived.error));
+    if (archived.changed) emit changed();
+    return archived.ok;
+  }
   if (preview) {
     QDialog dialog(this);
-    dialog.setWindowTitle("两类标签导入预览");
+    dialog.setWindowTitle("标签导入预览");
     dialog.resize(780, 570);
     auto* l = new QVBoxLayout(&dialog);
     auto* report = new QPlainTextEdit;

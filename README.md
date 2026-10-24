@@ -10,13 +10,13 @@
 
 ## 工程、图谱与标记
 
-启动后新建或打开工程，再添加信号文件。新建工程立即创建独立目录和 `project.json`；演示工程通过文件菜单或 `--demo-data` 显式打开。原生格式 `signal-studio-native-project` 当前为 **v6**，仅接受当前版本，不再导入或迁移 v1–v5；样本索引使用 uint64、JSON 十进制字符串，频率使用 Hz。工程继续通过 `QSaveFile` 原子保存。工程保存文件配置、独立 PSD/STFT 参数、可用前缀、统一标记、来源修订和通道快照，不复制原始样本；重开仍需原始文件与工程附属记录。布局、全局显示偏好和最近工程另由 QSettings 保存。
+启动后新建或打开工程，再添加信号文件。新建工程在任意现有目录直接创建 `.ssproj` 文件，伴随资产默认保存到 `.ssproj.assets/<projectId>/`；演示工程通过文件菜单或 `--demo-data` 显式打开。原生格式 `signal-studio-native-project` 当前为 **v6**，仅接受当前版本，不再导入或迁移 v1–v5；样本索引使用 uint64、JSON 十进制字符串，频率使用 Hz。`.ssproj` 为 magic/schemaVersion=1、稳定 projectId 的 JSON 容器，内嵌 v6 状态和校验资产清单；旧 v6 JSON 从“导入旧工程 v6”显式只读转换。工程通过 `QSaveFile` 原子保存。工程保存文件配置、独立 PSD/STFT 参数、可用前缀、统一标记、来源修订和通道快照，不复制原始样本；重开仍需原始文件与工程附属记录。布局、全局显示偏好和最近工程另由 QSettings 保存。
 
 RAW 导入可配置实数/复数、int8/uint8/int16/int32/float32/float64、字节序、IQ/QI/平面布局、多通道及头尾字节；导入预检确认后只读访问。支持 SigMF 元数据与配套数据，以及本任务生成器的 IQ WAV。文件级采样率、中心频率、有效带宽和物理长度参与坐标换算。顺序加载以 4 MiB 块扫描生成不超过 2048 点的导航包络；停止后只分析可用前缀，不把未读尾部当作噪声。
 
 宽带与窄带具有导航、波形/PSD、时频/瀑布和物理轴交互。显示分析点数表示当前可见频带的分析点数；频带变窄时所需观测增长，观测不足则说明补零量，补零不提高真实分辨率。PSD/STFT 参数与缓存独立；PSD 支持周期图、Bartlett、Welch、DPSS 多窗、Burg 及平均/最大/最小统计。显示抽帧、缩放与已提交检测任务相互独立。
 
-原始样本标签、手动标记、算法检测结果共用记录、图层、选择、修订与质量判断。原始标签仅适配本任务生成器的 TXT，以及指定 TorchSig 数据的 SigMF annotations；保留原文、来源 hash、量化、原始与当前几何。图、表、左树共享所选对象和当前活动段；全选覆盖当前筛选的全部页，左树按需加载。单击选择不缩放，定位才调整视区。
+信号导入后有界自动发现可信标签；`data/name.data` 严格配对 `label/name.txt`，未知列式 TXT 必须显式映射索引、单位和频率解释。无标签可手工标记。原始样本标签、手动标记、算法检测结果共用记录、图层、选择、修订与质量判断。原始标签仅适配本任务生成器的 TXT，以及指定 TorchSig 数据的 SigMF annotations；保留原文、来源 hash、量化、原始与当前几何。图、表、左树共享所选对象和当前活动段；全选覆盖当前筛选的全部页，左树按需加载。单击选择不缩放，定位才调整视区。
 
 三来源均可直接编辑：表格双击或 F2、完整范围表单及图形控制点都在同一对象上自动生成修订，原始证据不变。多 TIME 段仍属于同一对象，范围编辑只作用于当前段；时间未定位对象只修改频率。删除先预览对象、段及关联通道数量，再执行可撤销的软删除；一次撤销保留后来发布的后台结果。
 
@@ -53,7 +53,7 @@ $env:SS_DETECTION_TRT_ROOT = 'D:/project/signal_studio_rebuild/out/tasks/wideban
 ./scripts/run.ps1 -Configuration Release
 ```
 
-构建脚本依次配置、编译、CTest；公共 presets 为 `vs2026-qt611-debug/release`。可执行目录为 `out/vs2026-qt611-debug_bin/` 和 `out/vs2026-qt611-release_bin/`。Windows 自动部署 Qt、插件和完整 CRT；**模型、TensorRT/CUDA DLL 及许可证须独立部署**。完成构建后从对应输出目录启动 `SignalStudio.exe`，独立运行身份与结果见 U4 交付记录。
+构建脚本依次配置、编译、CTest；公共 presets 为 `vs2026-qt611-debug/release`。可执行目录为 `out/vs2026-qt611-debug_bin/` 和 `out/vs2026-qt611-release_bin/`。Windows 自动部署 Qt、插件和完整 CRT；**模型、TensorRT/CUDA DLL 及许可证须独立部署**。完成构建后从对应输出目录启动 `SignalStudio.exe`（可用 `--project <file.ssproj>` 打开工程），独立运行身份与结果见 U4 交付记录。
 
 运行时不需要 Python、训练仓库、Qt 安装路径或 TensorRT SDK 路径，但需要原始样本、工程附属文件、匹配的模型包和 NVIDIA 驱动。当前冻结模型包验证环境为 RTX 5060 Laptop / SM 12.0 / TensorRT 10.11；不承诺其它 GPU 可直接复用序列化引擎，缺少兼容设备或模型时有明确不可用原因。显示软件回退不提供 CPU 模型推理。模型与 CUDA/TensorRT 大资产在被忽略的 `out/`，**Git clone 不包含它们**；准确部署顺序、SHA 和重建入口见 [模型交付](docs/implementation/wideband-detection/R6/MODEL_DEPLOYMENT.md)。
 
@@ -96,3 +96,5 @@ if (Test-Path -LiteralPath $manualRoot) { throw 'Use a new manual validation dir
 | `tests/`、`docs/` | 行为/边界回归、冻结原型、架构与逐节点实际证据 |
 
 代码遵循现有命名与 Google 格式。[显示架构](docs/architecture/rendering.md)、[谱参数与前缀加载](docs/architecture/spectral-settings-and-loading.md)、[窄带通道](docs/architecture/narrowband.md)说明当前边界；较早 [UI 基线验收](docs/acceptance/ui-parity.md)保留阶段事实。检测状态见 R1–R6，标记交互和 v6 通道状态见 U1–U4。
+
+本轮 UX-R3 的设计、格式、验证与交付索引见 [UX-R3 计划](docs/implementation/ux-r3/PLAN.md)。窄带新增独立星座图与眼图导航页，共享真实分析状态；识别/解调示例仍与真实模型能力分开。验证结果以本轮 VALIDATION.md 为准。

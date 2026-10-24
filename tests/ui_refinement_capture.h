@@ -43,7 +43,7 @@ int runUiRefinementCapture(const QString& directory) {
   qApp->setProperty("uiStatePersistenceEnabled",false);
   MainWindow window;window.openNarrowbandDemoProject();
   const auto projectDirectory=output.filePath("project");QDir().mkpath(projectDirectory);
-  const auto projectPath=QDir(projectDirectory).filePath("project.json");
+  const auto projectPath=QDir(projectDirectory).filePath("project.ssproj");
   if(!window.saveProject(projectPath))return 2;
   auto* screen=nativeAcceptanceScreen();showFullScreenOnScreen(window,screen);
   Capture capture{window,output,{child<PlotWidget>(window,"navigationPlot"),child<PlotWidget>(window,"auxPlot"),child<PlotWidget>(window,"mainPlot")}};

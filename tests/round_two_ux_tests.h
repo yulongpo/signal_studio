@@ -80,7 +80,7 @@ inline void UxTests::roundTwoNarrowbandPsdAndPages() {
       const auto recognition=state->text();window.refresh();QCOMPARE(state->text(),recognition);
     }
   }
-  QTemporaryDir directory;const auto project=directory.filePath("project.json");
+  QTemporaryDir directory;const auto project=directory.filePath("project.ssproj");
   QVERIFY(window.saveProject(project));QVERIFY(window.openProject(project));
   QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(),20000);
   QCOMPARE(window.session().activeChannel()->psdFftSize,16);

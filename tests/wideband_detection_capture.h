@@ -845,11 +845,11 @@ DetectionRun widebandWaitForRun(MainWindow& window) {
   return run;
 }
 
-std::uint64_t widebandRawCandidateCount(const QString& projectPath,
+std::uint64_t widebandRawCandidateCount(const QString& assetDirectory,
                                         const DetectionRun& run) {
   QJsonArray chunks;
   QString error;
-  const bool loaded = readDetectionChunks(QFileInfo(projectPath).absolutePath(),
+  const bool loaded = readDetectionChunks(assetDirectory,
                                           run, chunks, error);
   require(loaded, error);
   std::uint64_t count = 0;
@@ -1933,7 +1933,7 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
     const bool created =
         window.createProject(output.absolutePath(), projectName, &error);
     require(created, error);
-    const auto project = output.filePath(projectName + "/project.json");
+    const auto project = output.filePath(projectName + ".ssproj");
     report["projectPath"] = project;
     const QString data = widebandRepresentativeDataPath();
     const auto meta = data.chopped(11) + ".sigmf-meta";
@@ -1949,11 +1949,19 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
     source["metaSha256"] = widebandFileHash(meta);
     source["dataBytes"] = QString::number(QFileInfo(data).size());
     report["source"] = source;
+    require(waitUntil([&] {
+              return widebandSourceCounts(*window.session().activeFile())["importedLabels"].toInt() == 4;
+            }, 10000), "Trusted SigMF labels were not automatically imported");
+    const auto automaticAnnotations = widebandAnnotations(*window.session().activeFile());
+    const auto automaticSourceCount = window.session().activeFile()->sourceSets.size();
     const bool imported = window.importLabels(meta, &error, false);
     require(imported, error);
     auto* file = window.session().activeFile();
     require(widebandSourceCounts(*file)["importedLabels"].toInt() == 4,
             "The actual paired metadata did not produce four original labels");
+    require(file->sourceSets.size() == automaticSourceCount &&
+                widebandAnnotations(*file) == automaticAnnotations,
+            "Explicit reimport duplicated labels or changed automatic-import IDs/evidence");
     const auto originalId = file->marks.front().id;
     window.refresh();
     click(window, "psdMode");
@@ -1989,7 +1997,8 @@ int runWidebandDetectionCapture(const QString& outputDirectory,
     const auto run = widebandWaitForRun(window);
     report["run"] = encodeDetectionRun(run);
     report["modelInferenceVerified"] = false;
-    const auto rawCandidates = widebandRawCandidateCount(project, run);
+    const auto rawCandidates = widebandRawCandidateCount(
+        QString::fromStdString(window.session().project().assetDirectory), run);
     const auto algorithmObservations =
         widebandSourceCounts(*window.session().activeFile())["algorithm"]
             .toInt();

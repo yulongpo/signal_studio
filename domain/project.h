@@ -79,7 +79,12 @@ enum class ChannelProcessingState {
   SourceMissing,
   Invalid
 };
-enum class NarrowbandPage { Observe, Modulation, DeepLearning, Demodulation };
+// Keep the old in-memory indices for callers of activatePageForAcceptance().
+// Persistence uses names, with legacy v6 names accepted by ProjectStore.
+enum class NarrowbandPage {
+  Observe = 0, Constellation = 1, Recognition = 2, Demodulation = 3, Eye = 4,
+  Modulation = Constellation, DeepLearning = Recognition
+};
 enum class NarrowbandWaveform { IQ, Magnitude, Phase, Envelope };
 
 struct DisplaySettings {
@@ -122,6 +127,9 @@ struct FileMetadata {
   double effectiveBandwidthHz = 0;
   FileAvailability availability;
   SampleFormat sampleFormat;
+  // Bounded content identity for safe file relocation; independent of mtime.
+  std::string referenceSignature;
+  std::uint64_t referenceBytes = 0;
 };
 struct Channel {
   std::string id;
@@ -140,6 +148,7 @@ struct Channel {
   bool wholeSource = false;
   bool preserveSourceTime = true;
   NarrowbandPage page = NarrowbandPage::Observe;
+  bool syncPanelExpanded = false;
   TimeRange visibleSourceTime;
   FrequencyRange visibleBasebandFrequency;
   int psdFftSize = 4096;
@@ -249,6 +258,9 @@ inline AnnotationCounts annotationCounts(const FileState& file) {
   return counts;
 }
 struct Project {
+  std::string projectId;
+  // Session-only resolved asset root. The .ssproj manifest owns its reference.
+  std::string assetDirectory;
   std::string name = "未命名工程";
   std::string activeFileId;
   std::string activeChannelId;
