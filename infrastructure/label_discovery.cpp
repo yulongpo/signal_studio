@@ -315,6 +315,21 @@ LabelImportPlan prepareDiscoveredLabels(const LabelCandidate& chosen, const File
   return plan;
 }
 
+std::optional<LabelFieldMapping> reusableLabelFieldMapping(const FileState& file,
+                                                         const QString& labelPath) {
+  std::optional<LabelFieldMapping> result;
+  for (const auto& source : file.sourceSets) {
+    if (source.deleted || !samePath(q(source.originalPath), labelPath) ||
+        !sameBinding(source.sourceIdentity, annotationSourceIdentity(file.metadata))) continue;
+    LabelFieldMapping mapping;
+    QString error;
+    if (!restoreLabelFieldMapping(source, mapping, error)) continue;
+    if (result && encodeLabelFieldMapping(*result) != encodeLabelFieldMapping(mapping)) return {};
+    result = std::move(mapping);
+  }
+  return result;
+}
+
 AnnotationResult publishDiscoveredLabels(AnnotationService& service, FileState& file,
                                          const LabelImportPlan& prepared,
                                          std::uint64_t generation) {

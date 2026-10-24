@@ -441,6 +441,18 @@ class LabelImportTests : public QObject {
     LabelFieldMapping restored;
     QString error;
     QVERIFY(restoreLabelFieldMapping(file.sourceSets.front(), restored, error));
+    const auto reused = reusableLabelFieldMapping(file, candidate.labelPath);
+    QVERIFY(reused);
+    QCOMPARE(encodeLabelFieldMapping(*reused), encodeLabelFieldMapping(restored));
+    QVERIFY(!reusableLabelFieldMapping(file, dir.filePath("moved/" + QFileInfo(candidate.labelPath).fileName())));
+    auto wrongBinding = file;
+    wrongBinding.metadata.sampleRateHz *= 2;
+    QVERIFY(!reusableLabelFieldMapping(wrongBinding, candidate.labelPath));
+    auto conflicting = file;
+    auto other = conflicting.sourceSets.front();
+    other.coordinateInterpretation = QJsonDocument(encodeLabelFieldMapping(changedMapping)).toJson(QJsonDocument::Compact).toStdString();
+    conflicting.sourceSets.push_back(other);
+    QVERIFY(!reusableLabelFieldMapping(conflicting, candidate.labelPath));
     QCOMPARE(prepareDiscoveredLabels(candidate, file, 2, restored).disposition,
              LabelImportDisposition::AlreadyImported);
     file = snapshot;

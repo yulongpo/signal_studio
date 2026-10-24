@@ -5208,14 +5208,8 @@ void MainWindow::discoverLabels(const QString& requestedId) {
       const auto discovered = discoverLabelCandidates(source.metadata, options);
       std::optional<LabelImportPlan> prepared;
       if (discovered.candidates.size() == 1 && discovered.state != LabelDiscoveryState::Empty) {
-        std::optional<LabelFieldMapping> mapping;
         const auto& candidate = discovered.candidates.front();
-        for (const auto& set : source.sourceSets) {
-          if (set.deleted || QFileInfo(q(set.originalPath)).fileName() != QFileInfo(candidate.labelPath).fileName()) continue;
-          LabelFieldMapping saved;
-          QString error;
-          if (restoreLabelFieldMapping(set, saved, error)) { mapping = saved; break; }
-        }
+        const auto mapping = reusableLabelFieldMapping(source, candidate.labelPath);
         if (candidate.profile != LabelProfile::MatlabDataTxt || mapping)
           prepared = prepareDiscoveredLabels(candidate, source, generation, mapping, options);
       }
@@ -5263,14 +5257,7 @@ void MainWindow::discoverLabels(const QString& requestedId) {
   }
   std::optional<LabelFieldMapping> mapping;
   if (selected.profile == LabelProfile::MatlabDataTxt) {
-    for (const auto& previous : source.sourceSets) {
-      if (previous.profileId != "user-confirmed-delimited-txt" || previous.deleted) continue;
-      if (QFileInfo(q(previous.originalPath)).fileName() != QFileInfo(selected.labelPath).fileName()) continue;
-      const auto stored = QJsonDocument::fromJson(QByteArray::fromStdString(previous.coordinateInterpretation));
-      LabelFieldMapping decoded;
-      QString why;
-      if (decodeLabelFieldMapping(stored.object(), decoded, why)) { mapping = decoded; break; }
-    }
+    mapping = reusableLabelFieldMapping(source, selected.labelPath);
     if (!mapping) {
       LabelMappingDialog dialog(selected.labelPath, selected.preview, this);
       if (dialog.exec() != QDialog::Accepted || !dialog.mapping()) { log("已取消字段映射，未导入任何标签"); return; }

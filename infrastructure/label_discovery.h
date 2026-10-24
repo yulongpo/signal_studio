@@ -35,6 +35,11 @@ LabelDiscoveryResult discoverLabelCandidates(const FileMetadata&,
 // still needs the ordinary source-import dialog to determine binary metadata.
 LabelDiscoveryResult discoverDataForLabel(const QString&,
                                           const LabelDiscoveryOptions& = {});
+// Reuse only an unambiguous mapping for this exact label location and the
+// current immutable IQ binding. A moved label or conflicting profile needs
+// explicit field confirmation; basename equality alone is insufficient.
+std::optional<LabelFieldMapping> reusableLabelFieldMapping(const FileState&,
+                                                         const QString& labelPath);
 
 enum class LabelImportDisposition { Ready, Empty, IncompleteEvidence, AlreadyImported,
                                     SourceChanged, NeedsMapping, Rejected };
