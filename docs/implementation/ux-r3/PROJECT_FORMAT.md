@@ -28,14 +28,14 @@ arbitrary-directory/
 | `schemaVersion` | 数字 `1`；其它版本拒绝。与嵌入状态的 v6 不是同一版本号。 |
 | `projectId` | 非空、非 null 的 UUID；保存时沿用已有 ID。 |
 | `assetDirectory` | Copy 默认写相对于 `.ssproj` 所在目录的路径；Reference 写绝对资产路径。加载同时支持绝对和相对位置。 |
-| `assetMode` | 写入 `copy` 或 `reference`。当前加载流程不单独校验这个字段，也不依赖它解析位置。 |
-| `assets` | `annotations/` 和 `detections/` 下文件的清单，每项含 `assetId`、`path`、十进制字符串 `bytes`、完整文件 `sha256`。 |
+| `assetMode` | 写入并校验 `copy` 或 `reference`；普通保存保留原模式及原资产引用。 |
+| `assets` | 标记、检测分片及 heads 证据为完整文件 SHA-256/长度；活动检测索引采用下述 `detection-live-v1` 冻结请求与持久前缀规则。 |
 | `sourceReferences` | 每个非 demo、非 Qt 资源路径文件的外部源引用。 |
 | `state` | 完整 `signal-studio-native-project`、`version: 6` 状态对象，由 `ProjectStore::decodeDocument` 校验。 |
 
 容器最多 32 MiB，最多 150 条源引用。资产清单最多 20000 项、累计最多 2 GiB；不代表其它存储层上限放宽。标记存储仍独立限制分片和累计预算，检测存储仍独立校验请求、分片身份和内容。
 
-资产路径必须为 `annotations/` 或 `detections/` 下的相对路径，禁止绝对路径、反斜杠和 `..` 路径分量，并检查真实路径包含关系及符号链接。读取会检查清单中每项的 ID、重复路径、长度和 SHA-256；随后原生状态读取器还会检查它引用的标记及检测分片。当前 `verifyManifest` 校验列出的条目，没有单独比较清单与磁盘文件集合是否完全相等。
+资产路径必须为 `annotations/` 或 `detections/` 下的相对路径，禁止绝对路径、反斜杠和 `..` 路径分量，并检查真实路径包含关系及符号链接。读取检查每项 ID 与重复路径；不可变项检查长度和 SHA-256，活动索引检查下述冻结请求和持久前缀；原生状态读取器还检查所引用的标记及检测分片。磁盘可以包含未引用临时文件；每个项目 run 仍必须存在清单锚点。
 
 容器 `state` 由 `ProjectStore::encodeDocument` 直接生成内存对象；该接口沿用标记分片写入、检测资产读取校验及完整解码验证，成功后才返回 payload。codec 不再生成、改写或读取中间 `state-v6.json`。代码仍把 `<asset-root>/state-v6.json` 作为虚拟 `assetPath` 传给 encode/decode，仅用于取得伴随资产的基准目录，磁盘上无需存在该文件。加载始终使用容器内嵌状态；旧运行残留的同名文件也不是状态真源，不属于 `assets` 清单。
 
@@ -55,9 +55,15 @@ Windows 跨盘无法形成相对路径，此时 `relativePath` 明确为空，�
 
 ## 保存、另存与旧 v6 转换
 
-`save(path, project, error, mode, cancelled)` 默认 Copy。它先用本地 candidate 计算身份、复制检测证据，以 `encodeDocument` 生成内存 v6 状态并写入或校验内容寻址分片，再用 `QSaveFile` 发布容器，最后把 candidate 赋回调用方。已有目标必须通过 magic、schemaVersion 和 projectId 检查，非工程文件及不同项目 ID 会被拒绝。失败通过 `false` 和 `error` 返回。取消可能留下未引用的新分片，不能据此宣称整个目录具有事务回滚能力；本轮验证的是原工程已有字节及调用方 target 不变。
+`save(path, project, error, mode, cancelled)` 默认 Preserve。首次无资产工程创建默认 Copy 根；已有工程普通保存严格保留容器内原 `assetDirectory` 字符串与 `assetMode`，核对会话根一致。已有资产但原容器缺失或目标改变时，要求显式 Copy/Reference，不能隐式迁移。MainWindow 的活动任务保护按实际资产根是否变化判断，同路径保存使用 Preserve。它先用本地 candidate 计算身份、必要时复制检测证据，以 `encodeDocument` 生成内存 v6 状态并写入或校验内容寻址分片，再用 `QSaveFile` 发布容器，最后把 candidate 赋回调用方。已有目标必须通过 magic、schemaVersion 和 projectId 检查，非工程文件及不同项目 ID 会被拒绝。失败通过 `false` 和 `error` 返回。取消可能留下未引用的新分片，不能据此宣称整个目录具有事务回滚能力；本轮验证的是原工程已有字节及调用方 target 不变。
 
-Copy 使用 `<destination>.assets/<projectId>`，保留 `projectId`；检测证据从之前的资产目录校验后复制，标记和来源快照通过存储层重新输出。Reference 在已有资产位置时继续引用它；无已有位置时仍创建默认位置。两种模式均不复制 RAW，RAW 仍受独立外部源引用约束。引用模式依赖原资产根目录持续存在。
+显式 Copy 使用 `<destination>.assets/<projectId>`，保留 `projectId`；检测证据从之前的资产目录校验后复制，标记和来源快照通过存储层重新输出。Reference 必须已有可用资产根并继续引用它。两种模式均不复制 RAW，RAW 仍受独立外部源引用约束。引用模式依赖原资产根目录持续存在。
+
+### 活动检测索引与不可变证据
+
+检测 `manifest.json` 会在阶段、分片发布、取消和终态时原子更新，不能固定其保存时整文件摘要。保存时仍活动的 run 使用 `integrity: detection-live-v1`：锚定 runId 对应目录、冻结请求的 compact JSON SHA-256、已验证的完整 chunk 描述符前缀和 completedWindows/readFrames/resultCount 最低值。加载先用检测存储层验证当前索引、请求、来源、每个 chunk 与 heads SHA，再核对冻结请求相同、保存前缀未删除/替换/重排、计数未倒退；新发布证据仍计入 20000 文件/2 GiB 总预算。未完成生命周期读为 recoverable Interrupted，已经 Cancelled/Completed 则保留终态。项目中每个 run 必须有清单锚点。
+
+标记、chunk、heads 与保存时已终结的 manifest 继续固定完整长度和 SHA-256，旧 schema-1 静态条目保持严格校验。运行临时文件及其它项目共享根下未引用 run 不进入容器清单。新规则不是忽略检测文件变化，也不能追认已因旧版摘要失效且没有冻结请求锚点的工程。API 子进程夹具的中断恢复不等于 TensorRT 进程崩溃验收。
 
 `importLegacy(legacy, destination, target, error)` 为显式转换入口：
 
@@ -88,7 +94,7 @@ v1–v5 不兼容，不能通过改后缀实现迁移。直接 `ProjectFileCodec
 
 夹具由 Session demo、QTemporaryDir、4096 个小端 int16 IQ 样本构造；带标记几何修订、修订前通道快照、Eye 页和真实落盘的检测历史/结果分片。demo 与真实源用例均实际生成 RAW，从磁盘文件取得 `iqSourceFingerprint`，使历史检测请求持有不可变来源身份；demo 标志仍决定 codec 是否创建外部源引用。检测 profile 是 `pipeline-fixture-v1`，不代表模型运行或现场 RF 精度。
 
-当前为 35 个用例，原始 33 项覆盖直接创建和稳定 ID、移动整个工程及 RAW/资产、另存 Copy/Reference、真实源移动/同长度错误源、失踪与恢复、损坏或失踪的标记/检测资产、错误 JSON/容器/引用、旧 v6 只读转换、v1–v5 拒绝、已有目标保护、无写目录和保存/读取取消；后续增加跨磁盘绝对源引用与旧 v6 转换取消。失败读取、转换和取消还比较 target 内存；转换及另存比较原文件树字节。
+首次终审前为 35 个用例；修复增加 11 项至 46 项。原始 33 项覆盖直接创建和稳定 ID、移动整个工程及 RAW/资产、另存 Copy/Reference、真实源移动/同长度错误源、失踪与恢复、损坏或失踪的标记/检测资产、错误 JSON/容器/引用、旧 v6 只读转换、v1–v5 拒绝、已有目标保护、无写目录和保存/读取取消；随后增加跨磁盘绝对源引用与旧 v6 转换取消。新项覆盖保存后正常进展/分片/取消、冻结请求篡改、保存前缀丢失、新分片损坏/缺失、清单锚点缺失/未知规则、引用及改名 Copy 普通保存保根、缺失原文件要求显式另存，以及专属 API 夹具子进程被终止后的持久前缀恢复。失败读取、转换和取消比较 target 内存；转换及另存比较原文件树字节。新测试实际结果见 VALIDATION，不因加入用例即宣称通过。
 
 Windows 无写目录用例只针对 QTemporaryDir 下新建的测试目录，用 `icacls.exe` 给 Everyone SID 添加显式拒绝创建文件/子目录，先通过实际写探针验证拒写，再调用 codec；作用域退出移除该临时拒绝项。其它平台使用权限位并同样验证。权限无法建立时用例失败并说明夹具无效，不把可写目录误记为权限边界通过。
 

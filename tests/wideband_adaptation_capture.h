@@ -185,6 +185,27 @@ QJsonObject widebandCancellationFeedback(Capture& capture, QScreen* screen,
               },
               60'000),
           "Real task did not expose a cancellable persisted prefix");
+  const auto frozenRequest = encodeDetectionRequest(
+      window.session().activeFile()->detectionRuns.back().request);
+  const auto liveAssetRoot = window.session().project().assetDirectory;
+  require(window.saveProject(project), "Running real model project did not save");
+  const auto runningContainerHash = widebandFileHash(project);
+  const auto savedCompleted = window.session().activeFile()->detectionRuns.back().completedWindows;
+  require(window.session().project().assetDirectory == liveAssetRoot &&
+              waitUntil([&] {
+                const auto& value = window.session().activeFile()->detectionRuns.back();
+                return value.lifecycle == DetectionLifecycle::Running &&
+                       value.completedWindows > savedCompleted;
+              }, 60'000),
+          "Real model did not publish further progress after current-project save");
+  Project runningReopen;
+  QString runningError;
+  require(ProjectFileCodec::load(project, runningReopen, runningError), runningError);
+  const auto runningFile = std::find_if(runningReopen.files.begin(), runningReopen.files.end(),
+      [&](const auto& value) { return value.metadata.id == generatorId; });
+  require(runningFile != runningReopen.files.end() && !runningFile->detectionRuns.empty() &&
+              runningFile->detectionRuns.back().lifecycle == DetectionLifecycle::Interrupted,
+          "Saved active real-model project did not expose recoverable interrupted history");
   WidebandFeedbackPaint cancelPaint(*cancel, [&] {
     const auto& run = window.session().activeFile()->detectionRuns.back();
     return !cancel->isEnabled() &&
@@ -226,6 +247,16 @@ QJsonObject widebandCancellationFeedback(Capture& capture, QScreen* screen,
               encodeDetectionRun(durable) == encodeDetectionRun(run),
           error);
   widebandScene(capture, "44-real-model-cancelled-prefix", screen);
+  Project cancelledReopen;
+  require(widebandFileHash(project) == runningContainerHash &&
+              ProjectFileCodec::load(project, cancelledReopen, error), error);
+  const auto savedFile = std::find_if(cancelledReopen.files.begin(), cancelledReopen.files.end(),
+      [&](const auto& value) { return value.metadata.id == generatorId; });
+  require(savedFile != cancelledReopen.files.end() && !savedFile->detectionRuns.empty() &&
+              encodeDetectionRun(savedFile->detectionRuns.back()) == encodeDetectionRun(run) &&
+              encodeDetectionRequest(run.request) == frozenRequest &&
+              window.session().project().assetDirectory == liveAssetRoot,
+          "Previously saved container lost post-save real-model prefix/cancel state or frozen request");
   require(window.saveProject(project), "Cancelled run project did not save");
   require(window.session().activateFile(originalId),
           "Cannot restore original source after cancellation");
@@ -243,5 +274,9 @@ QJsonObject widebandCancellationFeedback(Capture& capture, QScreen* screen,
           {"startTargetMet", startMs <= 200},
           {"cancelTargetMet", cancelFeedbackMs <= 200},
           {"run", encodeDetectionRun(run)},
+          {"savedWhileRunning", true}, {"postSaveProgressVerified", true},
+          {"reopenedAfterCancelWithoutResave", true},
+          {"runningContainerSha256", runningContainerHash},
+          {"savedCompletedWindows", QString::number(savedCompleted)},
           {"durablePrefixExact", true}};
 }

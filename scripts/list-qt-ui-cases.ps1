@@ -13,7 +13,7 @@ try {
         if($LASTEXITCODE -ne 0){throw "Cannot enumerate $target data tags"}
         if($Freeze) {
             $name=if($target -eq 'SignalStudioUiTests'){'ui_main_cases.txt'}else{'ui_narrowband_cases.txt'}
-            $expected=if($target -eq 'SignalStudioUiTests'){106}else{11}
+            $expected=if($target -eq 'SignalStudioUiTests'){106}else{12}
             $lines=@(Get-Content -LiteralPath (Join-Path $output "$target.txt") | Where-Object {$_ -match '^\w+ \w+( .+)?$'})
             if($lines.Count -ne $expected){throw "Unexpected $target inventory count $($lines.Count), expected $expected"}
             $previous=Get-Content -LiteralPath (Join-Path $repoRoot "tests/fixtures/$name")

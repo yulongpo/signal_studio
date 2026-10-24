@@ -1,4 +1,5 @@
 #include <QProgressBar>
+#include "infrastructure/project_file.h"
 #include "chart_settings_helpers.h"
 // Independent native UI acceptance diagnostics. This executable uses the real
 // Windows QRhi backend and visible controls. The linked-cursor mode drives

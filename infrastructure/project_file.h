@@ -4,11 +4,11 @@
 #include "domain/project.h"
 
 namespace signalstudio {
-enum class AssetSaveMode { Copy, Reference };
+enum class AssetSaveMode { Copy, Reference, Preserve };
 class ProjectFileCodec {
  public:
   static bool save(const QString& path, Project& project, QString& error,
-                   AssetSaveMode mode = AssetSaveMode::Copy,
+                   AssetSaveMode mode = AssetSaveMode::Preserve,
                    std::function<bool()> cancelled = {});
   static bool load(const QString& path, Project& target, QString& error,
                    std::function<bool()> cancelled = {});

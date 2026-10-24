@@ -149,6 +149,7 @@ struct Channel {
   bool preserveSourceTime = true;
   NarrowbandPage page = NarrowbandPage::Observe;
   bool syncPanelExpanded = false;
+  bool constellationDecisions = false, constellationReference = false;
   TimeRange visibleSourceTime;
   FrequencyRange visibleBasebandFrequency;
   int psdFftSize = 4096;

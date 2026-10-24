@@ -14,6 +14,7 @@
 #include <cmath>
 #include <QPushButton>
 #include <QToolButton>
+#include <QWheelEvent>
 #include <QtTest>
 #include "app/main_window.h"
 #include "ui/narrowband_workspace.h"
@@ -21,6 +22,7 @@
 #include "ui/controls/adaptive_value_edit.h"
 #include "ui/chart_control_strip.h"
 #include "infrastructure/project_store.h"
+#include "domain/constellation_observation.h"
 
 using namespace signalstudio;
 class NarrowbandAnalysisUiTests : public QObject {
@@ -126,6 +128,58 @@ class NarrowbandAnalysisUiTests : public QObject {
     QCOMPARE(constellation->property("constellationPointCount").toULongLong(),qulonglong{0});
     QVERIFY(summary->text().contains("取消"));
   }
+  void conditionalDecisionsReferenceAndIqCoordinates() {
+    MainWindow window;populate(window,"qpsk-a35-awgn20.raw");auto* file=window.session().activeFile();
+    const auto id=window.session().createChannel("decision",file->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);
+    QVERIFY(!id.empty());window.refresh();
+    auto* workspace=window.findChild<NarrowbandWorkspace*>();workspace->activatePage(NarrowbandPage::Constellation);
+    auto* stage=window.findChild<QComboBox*>("constellationAnalysisStage");
+    auto* reference=window.findChild<QCheckBox*>("constellationReferenceRegions");
+    auto* chart=window.findChild<QWidget*>("narrowbandConstellationLargeChart");QVERIFY(stage && reference && chart);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult()!=nullptr,15000);
+    const auto raw=workspace->analysisResult();const auto rawGeneration=workspace->renderStatistics()["analysisGeneration"].toString();
+    stage->setCurrentIndex(5);reference->setChecked(true);window.refresh();QTest::qWait(50);
+    QCOMPARE(workspace->analysisResult().get(),raw.get());QCOMPARE(workspace->renderStatistics()["analysisGeneration"].toString(),rawGeneration);
+    QVERIFY(chart->property("analysisStageFallback").toBool());QVERIFY(!chart->property("decisionAvailable").toBool());
+    QCOMPARE(chart->property("referenceCellCount").toInt(),0);QVERIFY(chart->property("decisionMessage").toString().contains("假设"));
+    window.findChild<QComboBox*>("modulationFormat")->setCurrentIndex(static_cast<int>(ModulationHypothesis::Qpsk));
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult()!=nullptr,15000);
+    QVERIFY(!chart->property("decisionAvailable").toBool());QVERIFY(!chart->property("decisionVisible").toBool());
+    window.findChild<QPushButton*>("recoverNarrowbandSignal")->click();
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->carrierLocked,20000);
+    const auto snapshot=workspace->analysisResult();const auto generation=workspace->renderStatistics()["analysisGeneration"].toString();
+    stage->setCurrentIndex(5);reference->setChecked(true);
+    QVERIFY(chart->property("decisionVisible").toBool());QCOMPARE(chart->property("referenceTemplateCount").toInt(),4);
+    QTRY_COMPARE_WITH_TIMEOUT(chart->property("referenceCellCount").toInt(),4,5000);
+    const auto observed=observeConstellation(*snapshot,window.session().activeChannel()->analysis);
+    QVERIFY(observed.decisionAvailable);QVERIFY(!observed.decisions.empty());
+    QCOMPARE(observed.samples.front().output,snapshot->synchronizedSymbols.front().output);
+    QCOMPARE(observed.decisions.front().source,snapshot->synchronizedSymbols.front().source);
+    const auto input=observed.samples.front().value;const auto decision=observed.decisions.front().value;
+    QCOMPARE(chart->property("decisionInput").toPointF(),QPointF(input.real(),input.imag()));
+    QCOMPARE(chart->property("decisionOutput").toPointF(),QPointF(decision.real(),decision.imag()));
+    QVERIFY(chart->property("decisionMessage").toString().contains("绝对相位"));
+    for(int i=0;i<6;++i){stage->setCurrentIndex(i);reference->setChecked(i%2==0);window.refresh();}
+    stage->setCurrentIndex(5);reference->setChecked(true);
+    auto* minimum=window.findChild<QDoubleSpinBox*>("constellationAxisMinimum");auto* maximum=window.findChild<QDoubleSpinBox*>("constellationAxisMaximum");
+    window.findChild<QCheckBox*>("constellationAutoScale")->setChecked(false);minimum->setValue(-2);maximum->setValue(2);
+    QCoreApplication::processEvents();
+    const auto plot=chart->property("iqPlotRect").toRectF();QVERIFY(plot.width()>10);QCOMPARE(plot.width(),plot.height());
+    const auto checkPointer=[&](QPoint pixel) {
+      QTest::mouseMove(chart,pixel);QCoreApplication::processEvents();
+      if(!chart->property("iqReadoutValid").toBool())return false;
+      const auto value=chart->property("iqReadout").toPointF();const auto low=chart->property("iqAxisMinimum").toDouble(),high=chart->property("iqAxisMaximum").toDouble();
+      return std::abs(value.x()-(low+(pixel.x()-plot.left())/plot.width()*(high-low)))<1e-9 &&
+             std::abs(value.y()-(high-(pixel.y()-plot.top())/plot.height()*(high-low)))<1e-9;
+    };
+    const auto pixel=QPointF(plot.left()+plot.width()*.25,plot.top()+plot.height()*.75).toPoint();QVERIFY(checkPointer(pixel));
+    QWheelEvent wheel(QPointF(pixel),QPointF(chart->mapToGlobal(pixel)),QPoint(),QPoint(0,120),Qt::NoButton,Qt::NoModifier,Qt::NoScrollPhase,false);
+    QCoreApplication::sendEvent(chart,&wheel);QVERIFY(chart->property("iqAxisMaximum").toDouble()<2);
+    QVERIFY(checkPointer(pixel+QPoint(2,2)));QTest::mouseMove(chart,QPoint(1,1));QVERIFY(!chart->property("iqReadoutValid").toBool());
+    QCOMPARE(workspace->analysisResult().get(),snapshot.get());QCOMPARE(workspace->renderStatistics()["analysisGeneration"].toString(),generation);
+    workspace->cancelAnalysis(true);reference->setChecked(false);reference->setChecked(true);stage->setCurrentIndex(0);window.refresh();QTest::qWait(50);
+    QVERIFY(!workspace->analysisResult());QCOMPARE(chart->property("referenceCellCount").toInt(),0);QVERIFY(!chart->property("decisionAvailable").toBool());
+  }
   void pagePersistenceAndLegacyNames() {
     MainWindow window;populate(window);
     const auto id=window.session().createChannel("persist",window.session().activeFile()->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);
@@ -136,12 +190,14 @@ class NarrowbandAnalysisUiTests : public QObject {
       {NarrowbandPage::Eye,"eye"},{NarrowbandPage::Recognition,"recognition"},{NarrowbandPage::Demodulation,"demodulation"}}};
     for(const auto& [page,name]:pages) {
       auto* c=window.session().activeChannel();c->page=page;c->syncPanelExpanded=true;
+      c->constellationDecisions=true;c->constellationReference=true;
       c->constellationMinimum=-2;c->constellationMaximum=3;c->eyePeriods=3;c->eyeComponent=2;c->eyeTraces=128;
       const auto analysis=c->analysis;
       QVERIFY2(ProjectStore::save(path,window.session().project(),error),qPrintable(error));
       Project loaded;QVERIFY2(ProjectStore::load(path,loaded,error),qPrintable(error));
       const auto& restored=loaded.files.front().channels.front();
       QCOMPARE(restored.page,page);QVERIFY(restored.syncPanelExpanded);QCOMPARE(restored.analysis,analysis);
+      QVERIFY(restored.constellationDecisions && restored.constellationReference);
       QCOMPARE(restored.constellationMinimum,-2.);QCOMPARE(restored.constellationMaximum,3.);
       QCOMPARE(restored.eyePeriods,3);QCOMPARE(restored.eyeComponent,2);QCOMPARE(restored.eyeTraces,128);
       QFile file(path);QVERIFY(file.open(QIODevice::ReadOnly));
@@ -160,12 +216,20 @@ class NarrowbandAnalysisUiTests : public QObject {
       channel["page"]=legacy;channel.remove("narrowbandDisplay");QVERIFY(writeChannel(channel));
       Project loaded;QVERIFY2(ProjectStore::load(path,loaded,error),qPrintable(error));
       QCOMPARE(loaded.files.front().channels.front().page,page);QVERIFY(!loaded.files.front().channels.front().syncPanelExpanded);
+      QVERIFY(!loaded.files.front().channels.front().constellationDecisions && !loaded.files.front().channels.front().constellationReference);
       QCOMPARE(loaded.files.front().channels.front().analysis,window.session().activeChannel()->analysis);
     }
     channel["page"]="unrecognized-page";QVERIFY(writeChannel(channel));
     Project sentinel;sentinel.name="unchanged";QVERIFY(!ProjectStore::load(path,sentinel,error));QCOMPARE(sentinel.name,std::string("unchanged"));
     channel["page"]="eye";channel["narrowbandDisplay"]=QJsonObject{{"version",2},{"syncPanelExpanded",true}};
     QVERIFY(writeChannel(channel));QVERIFY(!ProjectStore::load(path,sentinel,error));QCOMPARE(sentinel.name,std::string("unchanged"));
+    channel["narrowbandDisplay"]=QJsonObject{{"version",1},{"syncPanelExpanded",true}};
+    QVERIFY(writeChannel(channel));Project optional;QVERIFY(ProjectStore::load(path,optional,error));
+    QVERIFY(!optional.files.front().channels.front().constellationDecisions && !optional.files.front().channels.front().constellationReference);
+    for(const auto* key:{"constellationDecisions","constellationReference"}) {
+      channel["narrowbandDisplay"]=QJsonObject{{"version",1},{"syncPanelExpanded",true},{key,"invalid"}};
+      QVERIFY(writeChannel(channel));QVERIFY(!ProjectStore::load(path,sentinel,error));QCOMPARE(sentinel.name,std::string("unchanged"));
+    }
   }
   void samplingTransactionAndActualCreation() {
     MainWindow window;populate(window);
@@ -342,7 +406,8 @@ class NarrowbandAnalysisUiTests : public QObject {
     auto* constellation=window.findChild<QComboBox*>("constellationAnalysisStage");
     for(const auto stage:{AnalysisStage::RawIq,AnalysisStage::CfoCorrected,AnalysisStage::MatchedFiltered,AnalysisStage::TimingAligned,AnalysisStage::CarrierRecovered}) {
       constellation->setCurrentIndex(static_cast<int>(stage));
-      QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->constellationStage==stage,20000);
+      QCOMPARE(workspace->analysisResult().get(),result.get());
+      QCOMPARE(window.findChild<QWidget*>("narrowbandConstellationLargeChart")->property("analysisStage").toInt(),static_cast<int>(stage));
       QVERIFY(!workspace->analysisResult()->constellation.empty());
     }
     window.findChild<QDoubleSpinBox*>("analysisManualCfoHz")->setValue(15625);
@@ -384,6 +449,12 @@ class NarrowbandAnalysisUiTests : public QObject {
       QTRY_VERIFY_WITH_TIMEOUT(work->analysisResult() && work->analysisResult()->carrierLocked,20000);
       QVERIFY(work->analysisResult()->constellationStage==AnalysisStage::CarrierRecovered);
       auto* chart=expanded.findChild<QWidget*>("narrowbandConstellationLargeChart");QVERIFY(!chart->property("analysisStageFallback").toBool());
+      const auto familySnapshot=work->analysisResult();
+      expanded.findChild<QComboBox*>("constellationAnalysisStage")->setCurrentIndex(5);
+      expanded.findChild<QCheckBox*>("constellationReferenceRegions")->setChecked(true);
+      QVERIFY(chart->property("decisionVisible").toBool());
+      QTRY_COMPARE_WITH_TIMEOUT(chart->property("referenceCellCount").toInt(),expanded.session().activeChannel()->analysis.modulationOrder,5000);
+      QCOMPARE(work->analysisResult().get(),familySnapshot.get());
       if(family.first==ModulationHypothesis::Apsk) {
         expanded.findChild<QToolButton*>("narrowbandSyncSettingsToggle")->setChecked(true);
         auto* rings=expanded.findChild<QLineEdit*>("analysisApskRings");QVERIFY(rings->isEnabled());rings->setFocus();
@@ -391,6 +462,8 @@ class NarrowbandAnalysisUiTests : public QObject {
         QVERIFY(expanded.session().activeChannel()->analysis.apskRings.empty());QVERIFY(rings->text().contains("2.85"));
         QTest::keyClick(rings,Qt::Key_Return);QCOMPARE(expanded.session().activeChannel()->analysis.apskRings,std::string("4:1:45,12:2.85:15"));
         QTRY_VERIFY_WITH_TIMEOUT(work->analysisResult() && work->analysisResult()->carrierLocked,20000);
+        QTRY_COMPARE_WITH_TIMEOUT(chart->property("referenceCellCount").toInt(),16,5000);
+        QVERIFY(chart->property("decisionVisible").toBool());
       }
       QTemporaryDir saved;const auto expected=expanded.session().activeChannel()->analysis;
       QVERIFY(expanded.saveProject(saved.filePath("project.ssproj")));QVERIFY(expanded.openProject(saved.filePath("project.ssproj")));

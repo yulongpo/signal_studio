@@ -36,7 +36,8 @@
 | 五页切换、公共同步面板开合 | 保留同一请求、同一结果指针和两页显示状态 |
 | 星座显示点数、自动/手工坐标范围 | 从快照更新图形，不读取 IQ、不重复同步 |
 | 眼图 I/Q、轨迹数、4/8/16 点/UI 密度 | 从共同高密度轨迹抽取显示，不读取 IQ、不重复同步；点/UI 不改变真实 SPS |
-| Rs、CFO、RRC、调制假设/阶数、恢复开关、阶段、周期/折叠偏移或样本预算 | 沿现有异步服务提交新请求，立即清除过期图形；保留真实条件与锁定判据 |
+| 星座来源阶段、判决观察、参考区域、I/Q 缩放与读数 | 从真实共享快照投影；不读取 IQ、不重复同步；参考几何另有可取消显示计算 |
+| Rs、CFO、RRC、调制假设/阶数、恢复开关、眼图阶段、周期/折叠偏移或样本预算 | 沿现有异步服务提交新请求，立即清除过期图形；保留真实条件与锁定判据 |
 | 源/可用前缀、通道配置、源时间窗、工程代次改变 | 来源或依赖不匹配的旧结果不能发布 |
 | 用户取消 | 清空两图与结果；相同上下文中的普通刷新/切页不自动重启，显式分析可恢复 |
 
@@ -81,8 +82,47 @@ GUI 不重写同步算法。`AnalysisIdentity` 继续包含工程代次、请求
 
 `tests/narrowband_analysis_capture.h` 的分析采集现在为 RAW/SigMF 各 9 场景，共 18 场景，包含分别显示的恢复星座/眼图、识别/解调不可用、Eye 页 `.ssproj` 重开和取消。反馈采集保持 7 场景，显式切入眼图页后操作眼图标题栏。只检查当前可见标题栏；GPU 眼图检查实际顶点上传与数据绘制，不要求该页不存在的热图纹理上传。采集继续要求实际 Redmi 4K/150% 全屏，辅助屏证据不能替代指定实屏。
 
-集成已同步 `scripts/screenshot.ps1`：验收要求 18 个唯一场景，硬件证据按页面接受纹理上传或顶点上传，并继续要求 D3D11 与实际数据绘制。星座/眼图必须有顶点上传；软件路径的 GPU 上传与绘制计数必须为零。
+集成已同步 `scripts/screenshot.ps1`：M3 修复后的验收要求 26 个唯一场景，包含全部旧 18 场景，硬件证据按页面接受纹理上传或顶点上传，并继续要求 D3D11 与实际数据绘制。星座/眼图必须有顶点上传；软件路径的 GPU 上传与绘制计数必须为零。
 
 节点实施后的构建与采集由主 Agent 统一执行。2026-10-24 Release 在实际 Redmi 27 NU / DISPLAY6 / 4K 150% 上 GPU 和软件各 18/18 通过，报告分别为 `G7/native-narrowband-release/` 和 `G7/native-narrowband-release-software/` 中的 `narrowband-analysis-report.json`。Debug/Release 完整回归及历史失败由 VALIDATION 统一记录。新增测试使用独立生成器的确定性 IQ 文件，经实际 CPU DDC/恢复链处理；这不代表现场 RF 精度通过。
 
 Debug 随后也在相同实屏上 GPU/软件各 18/18 通过。部署五页循环使用 CLI 显式传入 1 MHz 手工 Rs 假设，并在报告 acceptanceSymbolRateHypothesisHz 中记录；这是内置实际 IQ 图形验收的前置配置，不是对阿拉善样例真实符号率的估计。普通启动仍为 Rs 待确认，未知时眼图给出提示。真实已保存工程则沿用其用户配置和恢复结果，独立眼图页允许顶点绘制而不要求不存在的热图纹理。
+
+## M3 修复交接（2026-10-25，等待主 Agent 统一验证）
+
+独立报告指出，现有载波环内的最近邻判决没有成为显示消费者，星座页也缺少参考区域和 I/Q 指针读数。修复复用 `makeConstellation` / `nearestConstellationPoint`，未修改 `single_carrier_recovery` 或已有恢复 DSP。新增头文件 `domain/constellation_observation.h` 提供有界显示投影和参考几何，无需新增构建源。
+
+星座阶段下拉框保留前五项，新增第六项“判决观察”。前五项现在从同一个已发布快照选择真实连续阶段、定时符号或恢复符号；不存在的阶段明确退回实际已完成阶段。执行哪些处理仍由共同步参数及“同步恢复”按钮控制。判决观察绑定载波恢复来源，要求本次实际定时与载波均锁定、模板有效、实际整段 RMS 有限且非零；否则保留实际可用散点并显示判决不可用，不制造已判决点。
+
+`ConstellationObservation` 为每个显示候选保留判决前 `TaggedSymbol`、判决后 `TaggedSymbol` 和模板索引。判决前后共享原始 output/source 整数及小数位置，采用当前完整来源阶段的 RMS 将模板归一化坐标映射到实际 I/Q 幅度，至多 20000 个候选，再按显示预算抽取。RMS 与判决索引不随显示点数和缩放改变。明确标示用户调制假设、实际载波恢复来源、RMS 约定、绝对相位/比特极性未知和“非识别、非位流”。真实识别及真实位流仍未部署；独立生成器 IQ 夹具经真实 CPU DDC/恢复，不代表现场 RF 精度。
+
+标题栏设置中的 `constellationReferenceRegions` 开关显示金色模板十字及欧氏最近邻 Voronoi 决策区域。PSK、方形/矩形/交叉 QAM 和可编辑 APSK 共用真实模板。每个区域为距离半平面交集；有四个格点邻居的 QAM 点只需四约束，其余边界/缺角点使用全部竞争点，所以交叉 QAM 缺角外的斜边也保持正确。4096 QAM 的半平面次数低于 1.07M，PSK/APSK 至多 65536，计算在独立显示 worker 上执行，按模板与视野缓存并检查独立显示代次/取消。显示未完成时 `referencePending=true`，原生 settled 条件会等待；切换/取消不接受过期几何。参考使用 **QPainter 矢量覆盖层**，不上传 CPU 整图，也不把它计为 GPU 数据几何；真实散点仍使用既有 QRhi 顶点绘制，旧 GPU 顶点、热图与软件零 GPU 计数条件保持。
+
+鼠标在真实等比例绘图区内移动时显示 I/Q；读数由同一 `plotRect()` 与实际上下限逆映射，图框外不显示。滚轮同时缩放 I/Q 数值范围，切为手工范围并更新既有参数输入框。手工范围、自动缩放、滚轮缩放和窗口尺寸变化共用相同映射，不从屏幕像素值、散点索引或颜色产生坐标。`renderStatistics().constellationView` 记录原始指针位置、plot 几何、上下限、I/Q、来源阶段、参考渲染类型及首个判决的前后数值/模板索引/位置，供独立复核。
+
+v6 的 `narrowbandDisplay.version=1` 增加可选布尔 `constellationDecisions` 与 `constellationReference`；缺字段均为 false，旧阶段枚举仍为 0–4，未新增持久化的算法阶段。非法新布尔值按完整工程校验拒绝且保留目标。五页、共享快照、请求身份、物理修订、取消发布检查保持。
+
+验证入口由主 Agent 在源码冻结后执行，本实施子 Agent **未启动构建、测试或原生 GUI**：
+
+```powershell
+# Debug / Release 分别执行；使用既有脚本的真实夹具和环境配置。
+./scripts/build.ps1 -Configuration Debug -Action All -Targets SignalStudioNarrowbandAnalysisUiTests,SignalStudioNarrowbandModulationTests,SignalStudioUiCapture -TestRegex '^signal_studio_narrowband_(analysis_ui|modulation)$'
+./scripts/list-qt-ui-cases.ps1 -Configuration Debug -Freeze
+./scripts/screenshot.ps1 -Configuration Debug -NarrowbandAnalysis -OutputDirectory 'D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R3/diagnostics/m3-debug-gpu'
+./scripts/screenshot.ps1 -Configuration Debug -NarrowbandAnalysis -SoftwareRenderer -OutputDirectory 'D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R3/diagnostics/m3-debug-software'
+```
+
+Release 替换对应配置与新输出目录。目标实屏为本次用户指定 Redmi 27 NU、连接 1、DISPLAY6、3840×2160 / 150%；沿现有脚本探测实际唯一屏幕并记录连接、友好名称、设备路径和 DPI，不复用历史连接序号。辅助显示证据不能替代。
+
+新增 Qt 行 `conditionalDecisionsReferenceAndIqCoordinates`，现有 11 行全部保留，总计 12 行，清单与枚举脚本同步。覆盖未知/未锁定、真实恢复判决及位置、六种显示切换、参考开关、手工范围、鼠标及滚轮逆映射、同快照/同请求代次、取消后不复活。原有阶段回归改查实际显示阶段并断言结果指针不变；v6 测试增加新字段往返、旧默认及非法值拒绝。原有调制测试矩阵增加区域覆盖面积、区域顶点最近邻约束、独立穷举采样点归属、定制 APSK、取消及真实恢复符号的条件判决/来源验证，噪声失败不得产出判决。
+
+原生矩阵保留 `ci16` / `cf32` 的旧 01–09，每来源新增四个唯一场景，共 26 个：
+
+| 后缀 | 必须证明的行为 |
+|---|---|
+| `10-decision-unknown` | 未知假设无模板/判决，保留实际 IQ，同快照/代次 |
+| `11-decision-reference` | 实际恢复符号条件判决、真实来源位置、QPSK 四个最近邻区域 |
+| `12-decision-iq-zoom` | 实屏 QPA 鼠标事件及 Qt 注入滚轮后的实际绘图区逆映射，保留快照/代次 |
+| `13-decision-reference-off` | 移除参考区域，保留条件判决及共享结果 |
+
+脚本校验 26 个唯一名称、各场景原有硬件条件、未知条件、来源阶段、判决边界文本、参考图层和缩放坐标公式。上文历史 18/18 仅为修复前证据，不能证明新增 M3 场景通过。本轮编译、数值测试、Qt 行枚举、四组合实屏及部署仍待主 Agent 统一执行；最终结论由原独立 Review Agent Boyle 审查新的精确 HEAD。本子 Agent 不编辑独立报告、不提交、不推送。

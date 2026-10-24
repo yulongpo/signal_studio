@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QDialog>
+#include <QFileDialog>
+#include <QCryptographicHash>
 #include <QJsonDocument>
 #include <QPlainTextEdit>
 #include <QPersistentModelIndex>
@@ -260,6 +262,11 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
   const auto secondId = window.session().activeFile()->metadata.id;
   auto completedB = historyFor(window);
   completedB.request.runId = "terminal-b";
+  completedB.request.contextRange = fullRange(window.session().activeFile()->metadata);
+  // historyFor may carry its original manifest identity. This renamed history
+  // must be real durable evidence before exercising the ordinary save path.
+  completedB.manifestRelativePath.clear();
+  QVERIFY2(writeDetectionRun(QString::fromStdString(window.session().project().assetDirectory), completedB, issue), qPrintable(issue));
   window.session().activeFile()->detectionRuns.push_back(completedB);
   QVERIFY(window.session().activateFile(firstId));
   expose(window);
@@ -290,7 +297,20 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
         if (value.request.runId == runId) return value;
     return {};
   };
-  QTRY_VERIFY_WITH_TIMEOUT(find() && find()->completedWindows > 0 && !detectionIsTerminal(find()->lifecycle), 15000);
+  QTRY_VERIFY_WITH_TIMEOUT(find() && find()->completedWindows > 0 && find()->lifecycle == DetectionLifecycle::Running, 15000);
+  // The actual modal dialogs are driven below. A broken save/open path must
+  // unwind its dialog rather than hanging this regression's nested event loop.
+  const auto boundedDialogCall = [&](const auto& operation) {
+    QElapsedTimer deadline;deadline.start();
+    QTimer watchdog;watchdog.setInterval(10);bool timedOut=false;
+    QObject::connect(&watchdog,&QTimer::timeout,&window,[&] {
+      if(deadline.elapsed()<10000)return;
+      timedOut=true;
+      if(auto* dialog=qobject_cast<QDialog*>(QApplication::activeModalWidget()))dialog->reject();
+    });
+    watchdog.start();const bool result=operation();watchdog.stop();
+    return result && !timedOut;
+  };
   // A copied Save As must not switch the live worker away from the asset
   // directory to which its frozen job continues publishing chunks.
   const auto originalAssets = window.session().project().assetDirectory;
@@ -302,7 +322,7 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
       warning->accept();
     }
   });
-  QVERIFY(!window.saveProject(copiedProject));
+  QVERIFY(!boundedDialogCall([&]{return window.saveProject(copiedProject);}));
   QVERIFY(assetCopyWarning && !QFileInfo::exists(copiedProject));
   QCOMPARE(window.session().project().assetDirectory, originalAssets);
   const auto frozen = encodeDetectionRequest(find()->request);
@@ -316,6 +336,67 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
   const auto prefixBytes = durablePrefix.readAll();
   durablePrefix.close();
   QVERIFY(!prefixBytes.isEmpty());
+  const auto originalProject=directory.filePath("active-task.ssproj");
+  QVERIFY(boundedDialogCall([&]{return window.saveProject(originalProject);}));
+  QCOMPARE(window.session().project().assetDirectory,originalAssets);
+  QVERIFY(find() && find()->lifecycle==DetectionLifecycle::Running);
+
+  const auto referenceProject=directory.filePath("running-reference.ssproj");
+  auto* saveAs=window.findChild<QAction*>("saveProjectAsAction");QVERIFY(saveAs && saveAs->isEnabled());
+  const bool nativeDialogsDisabled=QCoreApplication::testAttribute(Qt::AA_DontUseNativeDialogs);
+  QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs,true);
+  const auto restoreDialogs=qScopeGuard([&]{QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs,nativeDialogsDisabled);});
+  bool fileDialogSeen=false,referenceChoiceSeen=false,unexpectedDialog=false;
+  QTimer saveAsDriver;saveAsDriver.setInterval(10);
+  QObject::connect(&saveAsDriver,&QTimer::timeout,&window,[&] {
+    if(auto* dialog=qobject_cast<QFileDialog*>(QApplication::activeModalWidget())) {
+      if(fileDialogSeen)return;
+      fileDialogSeen=dialog->windowTitle()=="工程另存为" && dialog->acceptMode()==QFileDialog::AcceptSave;
+      if(!fileDialogSeen){unexpectedDialog=true;dialog->reject();return;}
+      dialog->setDirectory(directory.path());dialog->selectFile(QFileInfo(referenceProject).fileName());
+      QMetaObject::invokeMethod(dialog,"accept",Qt::QueuedConnection);
+    } else if(auto* question=qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
+      if(question->windowTitle()=="伴随资产" && question->standardButtons().testFlag(QMessageBox::No)) {
+        referenceChoiceSeen=true;QTest::mouseClick(question->button(QMessageBox::No),Qt::LeftButton);
+      } else {unexpectedDialog=true;question->reject();}
+    }
+  });
+  saveAsDriver.start();
+  const bool saveAsReturned=boundedDialogCall([&]{saveAs->trigger();return true;});
+  saveAsDriver.stop();
+  QVERIFY(saveAsReturned && fileDialogSeen && referenceChoiceSeen && !unexpectedDialog);
+  QVERIFY(QFileInfo::exists(referenceProject));
+  QCOMPARE(window.session().project().assetDirectory,originalAssets);
+  QVERIFY(find() && find()->lifecycle==DetectionLifecycle::Running);
+  const auto readContainer=[&](const QString& projectPath) {
+    QFile file(projectPath);return file.open(QIODevice::ReadOnly)?file.readAll():QByteArray{};
+  };
+  const auto referenceBeforeSave=QJsonDocument::fromJson(readContainer(referenceProject)).object();
+  QCOMPARE(referenceBeforeSave["assetMode"].toString(),QString("reference"));
+  QCOMPARE(QDir(referenceBeforeSave["assetDirectory"].toString()).absolutePath(),QDir(QString::fromStdString(originalAssets)).absolutePath());
+  // This is the current Reference path: ordinary Save must use Preserve,
+  // neither converting it to Copy nor moving the active worker's asset root.
+  QVERIFY(boundedDialogCall([&]{return window.saveProject(referenceProject);}));
+  QCOMPARE(window.session().project().assetDirectory,originalAssets);
+  const auto savedWhileRunning=readContainer(referenceProject);QVERIFY(!savedWhileRunning.isEmpty());
+  const auto referenceAfterSave=QJsonDocument::fromJson(savedWhileRunning).object();
+  QCOMPARE(referenceAfterSave["assetMode"].toString(),QString("reference"));
+  QCOMPARE(referenceAfterSave["assetDirectory"],referenceBeforeSave["assetDirectory"]);
+  QVERIFY(!QFileInfo::exists(referenceProject+".assets"));
+  QJsonObject savedLiveIndex;
+  for(const auto entry:referenceAfterSave["assets"].toArray()) {
+    const auto object=entry.toObject();
+    if(object["runId"].toString()==QString::fromStdString(runId))savedLiveIndex=object;
+  }
+  QCOMPARE(savedLiveIndex["integrity"].toString(),QString("detection-live-v1"));
+  QCOMPARE(savedLiveIndex["requestSha256"].toString(),QString::fromLatin1(QCryptographicHash::hash(QJsonDocument(frozen).toJson(QJsonDocument::Compact),QCryptographicHash::Sha256).toHex()));
+  const auto savedMinimumChunks=savedLiveIndex["minimumChunks"].toArray();
+  QVERIFY(savedMinimumChunks.size()>=static_cast<qsizetype>(firstChunks));
+  const auto savedCompleted=find()->completedWindows;const auto savedChunks=find()->chunks.size();
+  QTRY_VERIFY_WITH_TIMEOUT(find() && find()->lifecycle==DetectionLifecycle::Running && find()->completedWindows>savedCompleted && find()->chunks.size()>savedChunks,15000);
+  QCOMPARE(window.session().project().assetDirectory,originalAssets);
+  QCOMPARE(encodeDetectionRequest(find()->request),frozen);
+  window.activateWindow();
   auto* palette = window.findChild<QComboBox*>("colormap");
   palette->setFocus(); QTest::keyClick(palette, Qt::Key_Down);
   for (const auto* name : {"stftFft", "psdFft"}) {
@@ -367,4 +448,33 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
   QVERIFY(durablePrefix.open(QIODevice::ReadOnly));
   QCOMPARE(durablePrefix.readAll(), prefixBytes);
   QVERIFY(std::any_of(reopened.coverage.begin(), reopened.coverage.end(), [](const auto& part) { return part.kind == DetectionCoverageKind::Unread; }));
+  durablePrefix.close();
+  // The container still has its Running-time request and minimum prefix. Its
+  // bytes must not be refreshed to make the later Cancelled manifest load.
+  QCOMPARE(readContainer(referenceProject),savedWhileRunning);
+  const auto latestChunks=encodeDetectionRun(reopened)["chunks"].toArray();
+  QVERIFY(latestChunks.size()>savedMinimumChunks.size());
+  for(qsizetype i=0;i<savedMinimumChunks.size();++i)QCOMPARE(latestChunks[i],savedMinimumChunks[i]);
+  MainWindow restoredWindow;
+  QVERIFY(boundedDialogCall([&]{return restoredWindow.openProject(referenceProject);}));
+  QCOMPARE(restoredWindow.session().project().assetDirectory,originalAssets);
+  const auto findRestored=[&]() -> std::optional<DetectionRun> {
+    for(const auto& source:restoredWindow.session().project().files)
+      for(const auto& value:source.detectionRuns)if(value.request.runId==runId)return value;
+    return {};
+  };
+  QVERIFY(findRestored());const auto restoredRun=*findRestored();
+  QCOMPARE(restoredRun.lifecycle,DetectionLifecycle::Cancelled);
+  QCOMPARE(restoredRun.completedWindows,reopened.completedWindows);
+  QCOMPARE(restoredRun.chunks.size(),reopened.chunks.size());
+  QCOMPARE(encodeDetectionRequest(restoredRun.request),frozen);
+  QCOMPARE(encodeDetectionRun(restoredRun)["chunks"].toArray(),latestChunks);
+  QVERIFY(std::any_of(restoredRun.coverage.begin(),restoredRun.coverage.end(),[](const auto& part){return part.kind==DetectionCoverageKind::Unread;}));
+  // After reopening, an idle ordinary Save must still preserve Reference.
+  QVERIFY(boundedDialogCall([&]{return restoredWindow.saveProject(referenceProject);}));
+  QCOMPARE(restoredWindow.session().project().assetDirectory,originalAssets);
+  const auto idleContainer=QJsonDocument::fromJson(readContainer(referenceProject)).object();
+  QCOMPARE(idleContainer["assetMode"].toString(),QString("reference"));
+  QCOMPARE(idleContainer["assetDirectory"],referenceBeforeSave["assetDirectory"]);
+  QVERIFY(!QFileInfo::exists(referenceProject+".assets"));
 }

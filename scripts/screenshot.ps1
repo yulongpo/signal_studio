@@ -245,8 +245,8 @@ try {
         $report | Add-Member -NotePropertyName process -NotePropertyValue ([ordered]@{executable=$executable;configuration=$Configuration;systemOnlyPath=$true;dpiOverridesCleared=$true;exitCode=$captureExitCode}) -Force
         $report | ConvertTo-Json -Depth 80 | Set-Content -LiteralPath $reportPath -Encoding utf8
         if ($captureExitCode -eq 3 -and $report.blocked) { throw "Native screen acceptance blocked: $($report.error). Report: $reportPath" }
-        if ($captureExitCode -ne 0 -or -not $report.pass -or $report.sceneCount -ne 18 -or
-            @($report.scenes).Count -ne 18 -or @($report.projects).Count -ne 2 -or
+        if ($captureExitCode -ne 0 -or -not $report.pass -or $report.sceneCount -ne 26 -or
+            @($report.scenes).Count -ne 26 -or @($report.projects).Count -ne 2 -or
             $report.mode -ne 'narrowband-analysis-ux-r3' -or $report.softwareRenderer -ne [bool]$SoftwareRenderer) { throw "Narrowband capture failed: $($report.error). Report: $reportPath" }
         if (-not $AuxiliaryDisplay -and -not $report.nativeAcceptance) { throw 'The required physical monitor was not accepted.' }
         if ($report.platform -ne 'windows' -or -not $report.fullScreen -or
@@ -259,21 +259,46 @@ try {
             $report.screen.preferredPixelSize.width -ne 3840 -or $report.screen.preferredPixelSize.height -ne 2160)) { throw 'The designated Redmi physical screen was not verified.' }
         $expectedScenes = foreach ($prefix in @('ci16','cf32')) {
             foreach ($suffix in @('01-ddc','02-raw','03-manual-eye','04-recovered-constellation','05-recovered-eye',
-                '06-recognition-unavailable','07-demodulation-unavailable','08-reopened-eye','09-cancelled')) { "$prefix-$suffix" }
+                '06-recognition-unavailable','07-demodulation-unavailable','08-reopened-eye','09-cancelled',
+                '10-decision-unknown','11-decision-reference','12-decision-iq-zoom','13-decision-reference-off')) { "$prefix-$suffix" }
         }
-        if (@($report.scenes.scene | Select-Object -Unique).Count -ne 18 -or
+        if (@($report.scenes.scene | Select-Object -Unique).Count -ne 26 -or
             @(Compare-Object $expectedScenes @($report.scenes.scene)).Count -ne 0) { throw 'Narrowband capture must cover the complete ci16/cf32 independent-page journeys.' }
         foreach ($scene in $report.scenes) {
             if (-not $scene.pass -or -not (Test-Path -LiteralPath $scene.png -PathType Leaf) -or $scene.pixelSize.width -ne 3840 -or $scene.pixelSize.height -ne 2160 -or
                 [Math]::Abs($scene.devicePixelRatio - 1.5) -gt 0.001) { throw "Narrowband scene failed: $($scene.scene)" }
             if (-not $SoftwareRenderer -and ($scene.backend -notmatch 'D3D11' -or $scene.backend -match 'CPU|Software|QPainter' -or
                 $scene.render.gpuDataDrawCalls -le 0 -or ($scene.render.textureUploads -le 0 -and $scene.render.gpuVertexUploads -le 0))) { throw "No hardware chart data evidence: $($scene.scene)" }
-            if (-not $SoftwareRenderer -and $scene.scene -match '-(02-raw|03-manual-eye|04-recovered-constellation|05-recovered-eye|08-reopened-eye)$' -and
+            if (-not $SoftwareRenderer -and $scene.scene -match '-(02-raw|03-manual-eye|04-recovered-constellation|05-recovered-eye|08-reopened-eye|10-decision-unknown|11-decision-reference|12-decision-iq-zoom|13-decision-reference-off)$' -and
                 $scene.render.gpuVertexUploads -le 0) { throw "Independent constellation/eye page lacks GPU vertex uploads: $($scene.scene)" }
             if ($SoftwareRenderer -and ($scene.backend -notmatch 'QPainter' -or $scene.render.gpuDataDrawCalls -ne 0 -or
                 $scene.render.textureUploads -ne 0 -or $scene.render.gpuVertexUploads -ne 0)) { throw "Software fallback evidence is inconsistent: $($scene.scene)" }
         }
-        Write-Host "Narrowband $Configuration $renderMode passed 18 scenes; physical native acceptance: $($report.nativeAcceptance). Report: $reportPath"
+        foreach ($prefix in @('ci16','cf32')) {
+            $raw = @($report.scenes | Where-Object scene -eq "$prefix-02-raw")[0]
+            $unknown = @($report.scenes | Where-Object scene -eq "$prefix-10-decision-unknown")[0]
+            $recovered = @($report.scenes | Where-Object scene -eq "$prefix-04-recovered-constellation")[0]
+            if ($unknown.render.constellationView.decisionAvailable -or $unknown.render.constellationView.referenceCellCount -ne 0 -or
+                $unknown.render.analysisGeneration -ne $raw.render.analysisGeneration) { throw 'Unknown hypothesis decision boundary failed' }
+            foreach ($suffix in @('11-decision-reference','12-decision-iq-zoom','13-decision-reference-off')) {
+                $entry = @($report.scenes | Where-Object scene -eq "$prefix-$suffix")[0]
+                $view = $entry.render.constellationView
+                if (-not $view.decisionVisible -or -not $view.decisionAvailable -or $view.sourceStage -ne 4 -or
+                    $entry.render.analysisGeneration -ne $recovered.render.analysisGeneration -or
+                    $view.decisionMessage -notmatch '非识别、非位流') { throw "Conditional decision/source contract failed: $prefix-$suffix" }
+                if ($suffix -eq '13-decision-reference-off') {
+                    if ($view.referenceCellCount -ne 0) { throw 'Reference off must remove the reference layer' }
+                } elseif ($view.referenceCellCount -ne 4 -or $view.referenceTemplateCount -ne 4 -or $view.referenceRenderer -ne 'QPainter vector Voronoi overlay') { throw 'Exact QPSK reference vector overlay missing' }
+                if ($suffix -eq '12-decision-iq-zoom') {
+                    $span = $view.axisMaximum - $view.axisMinimum
+                    $expectedI = $view.axisMinimum + ($view.iqPointerX - $view.iqPlotLeft) / $view.iqPlotWidth * $span
+                    $expectedQ = $view.axisMaximum - ($view.iqPointerY - $view.iqPlotTop) / $view.iqPlotHeight * $span
+                    if ($view.autoScale -or -not $view.iqReadoutValid -or [Math]::Abs($view.iqPlotWidth-$view.iqPlotHeight) -gt 0.001 -or
+                        [Math]::Abs($view.iqI-$expectedI) -gt 1e-8 -or [Math]::Abs($view.iqQ-$expectedQ) -gt 1e-8) { throw 'Zoomed I/Q inverse mapping evidence failed' }
+                }
+            }
+        }
+        Write-Host "Narrowband $Configuration $renderMode passed 26 scenes; physical native acceptance: $($report.nativeAcceptance). Report: $reportPath"
         return
     }
     if ($AnnotationInteractions) {

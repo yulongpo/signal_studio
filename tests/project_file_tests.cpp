@@ -11,6 +11,7 @@
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtEndian>
+#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -677,6 +678,162 @@ void cancelledLoad(bool immediate) {
   sameEvidence(project, load(path));  // Cancellation scope must not leak.
 }
 enum class CancelSaveAt { Entry, NearPublication, LastCheckpoint };
+DetectionRun& startLive(Project& project) {
+  auto run = project.files.front().detectionRuns.front();
+  run.request.runId = "live-save-regression";
+  run.manifestRelativePath.clear();
+  run.chunks.clear(); run.resultCount = 0;
+  run.lifecycle = DetectionLifecycle::Running;
+  run.computationPhase = "reading";
+  run.completedWindows = 0; run.readFrames = 0; run.eligibleWindows = 3;
+  run.coverage.clear();
+  QString error;
+  check(writeDetectionRun(q(project.assetDirectory), run, error), error);
+  project.files.front().detectionRuns.push_back(run);
+  return project.files.front().detectionRuns.back();
+}
+void advanceLive(Project& project) {
+  auto& run = project.files.front().detectionRuns.back();
+  ++run.completedWindows; ++run.readFrames;
+  run.computationPhase = "inference";
+  run.coverage = {{DetectionCoverageKind::Completed,
+      {{128, 384}, {99.9e6, 100.1e6}}, "durable fixture prefix"},
+      {DetectionCoverageKind::Unread,
+      {{384, 1024}, {99.9e6, 100.1e6}}, "fixture remainder"}};
+  QString error;
+  check(appendDetectionChunk(q(project.assetDirectory), run,
+      {QJsonObject{{"windowId", QString::number(run.completedWindows)}, {"fixture", true}}}, {}, error), error);
+}
+void liveProgressAndCancellation() {
+  QTemporaryDir directory;
+  auto project = fixture(directory.path(), true);
+  const auto path = directory.filePath("live.ssproj");
+  save(path, project);
+  startLive(project);
+  save(path, project, AssetSaveMode::Preserve);
+  const auto containerBefore = read(path);
+  const auto annotations = exportAnnotationsJson(project.files.front());
+  const auto frozen = encodeDetectionRequest(project.files.front().detectionRuns.back().request);
+  auto& run = project.files.front().detectionRuns.back();
+  run.computationPhase = "inference";
+  QString error;
+  check(writeDetectionRun(q(project.assetDirectory), run, error), error);
+  auto restored = load(path);
+  check(restored.files.front().detectionRuns.back().lifecycle == DetectionLifecycle::Interrupted,
+        "Saved Running index must recover after phase-only publication");
+  advanceLive(project);
+  restored = load(path);
+  check(restored.files.front().detectionRuns.back().chunks.size() == 1 &&
+        restored.files.front().detectionRuns.back().recoverable,
+        "New verified chunks must survive without resaving the container");
+  save(path, project, AssetSaveMode::Preserve);
+  const auto savedPrefix = read(path);
+  const auto chunk = project.files.front().detectionRuns.back().chunks.front();
+  const auto chunkBytes = read(QDir(q(project.assetDirectory)).filePath(q(chunk.relativePath)));
+  advanceLive(project);
+  auto& cancelling = project.files.front().detectionRuns.back();
+  cancelling.lifecycle = DetectionLifecycle::Cancelling;
+  check(writeDetectionRun(q(project.assetDirectory), cancelling, error), error);
+  check(load(path).files.front().detectionRuns.back().lifecycle == DetectionLifecycle::Interrupted,
+        "Cancelling index must remain recoverable");
+  cancelling.lifecycle = DetectionLifecycle::Cancelled;
+  check(writeDetectionRun(q(project.assetDirectory), cancelling, error), error);
+  restored = load(path);
+  const auto& recovered = restored.files.front().detectionRuns.back();
+  check(recovered.lifecycle == DetectionLifecycle::Cancelled && recovered.chunks.size() == 2 &&
+        encodeDetectionRequest(recovered.request) == frozen && read(path) == savedPrefix &&
+        exportAnnotationsJson(restored.files.front()) == annotations &&
+        read(QDir(q(project.assetDirectory)).filePath(q(chunk.relativePath))) == chunkBytes,
+        "Cancel must preserve frozen request, annotations and immutable chunks in saved project");
+  check(containerBefore != savedPrefix, "Regression must include saving an actual published prefix");
+}
+void liveTamper(int kind) {
+  QTemporaryDir directory;
+  auto project = fixture(directory.path(), true);
+  const auto path = directory.filePath("tamper.ssproj");
+  save(path, project); startLive(project); advanceLive(project);
+  save(path, project, AssetSaveMode::Preserve);
+  auto& run = project.files.front().detectionRuns.back();
+  const auto manifestPath = QDir(q(project.assetDirectory)).filePath(q(run.manifestRelativePath));
+  if (kind == 0) {
+    auto changed = run; changed.request.rangeOrigin = "custom";
+    writeObject(manifestPath, encodeDetectionRun(changed));
+  } else if (kind == 1) {
+    auto changed = run; changed.chunks.clear(); changed.resultCount = 0;
+    writeObject(manifestPath, encodeDetectionRun(changed));
+  } else if (kind == 2 || kind == 3) {
+    advanceLive(project);
+    const auto future = QDir(q(project.assetDirectory)).filePath(q(run.chunks.back().relativePath));
+    if (kind == 2) write(future, "corrupt future chunk");
+    else check(QFile::remove(future), "Cannot remove owned future chunk fixture");
+  } else {
+    auto container = object(path); auto assets = container["assets"].toArray();
+    for (qsizetype i = 0; i < assets.size(); ++i) {
+      auto entry = assets[i].toObject();
+      if (entry["integrity"] != "detection-live-v1") continue;
+      if (kind == 4) assets.removeAt(i);
+      else { entry["integrity"] = "unknown-rule"; assets[i] = entry; }
+      break;
+    }
+    container["assets"] = assets; writeObject(path, container);
+  }
+  rejectedLoad(path, project);
+}
+void preserveAssetMode(bool reference) {
+  QTemporaryDir directory;
+  auto project = fixture(directory.path(), true);
+  const auto first = directory.filePath("original.ssproj"); save(first, project);
+  auto path = directory.filePath("renamed.ssproj");
+  if (reference) save(path, project, AssetSaveMode::Reference);
+  else check(QFile::rename(first, path), "Cannot rename owned project fixture");
+  const auto root = project.assetDirectory;
+  const auto before = object(path);
+  project.name = "ordinary save preserves association";
+  QString error;
+  check(ProjectFileCodec::save(path, project, error), error);
+  auto reopened = load(path);
+  reopened.name += " reopened";
+  check(ProjectFileCodec::save(path, reopened, error), error);
+  const auto after = object(path);
+  check(after["assetMode"] == before["assetMode"] &&
+        after["assetDirectory"] == before["assetDirectory"] &&
+        reopened.assetDirectory == root && !QFileInfo::exists(path + ".assets"),
+        "Ordinary save/reopen must retain explicit copy/reference mode and original asset root");
+}
+void preserveMissingTarget() {
+  QTemporaryDir directory;
+  auto project = fixture(directory.path(), true);
+  const auto path = directory.filePath("deleted.ssproj"); save(path, project);
+  check(QFile::remove(path), "Cannot remove owned project fixture");
+  const auto before = memory(project);
+  QString error;
+  check(!ProjectFileCodec::save(path, project, error) && !error.isEmpty() &&
+        !QFileInfo::exists(path) && before == memory(project),
+        "Missing original must require explicit Copy/Reference rather than migrate assets");
+}
+void killedPublisherRecovery() {
+  QTemporaryDir directory;
+  QProcess publisher;
+  publisher.start(QCoreApplication::applicationFilePath(), {"--live-publisher", directory.path()});
+  check(publisher.waitForStarted(5000), "Owned fixture publisher failed to start");
+  QByteArray output;
+  for (int i = 0; i < 100 && !output.contains("READY"); ++i) {
+    publisher.waitForReadyRead(100); output += publisher.readAllStandardOutput();
+    if (publisher.state() == QProcess::NotRunning) break;
+  }
+  // Only this QProcess-owned fixture is terminated; no application/user process.
+  publisher.kill();
+  check(publisher.waitForFinished(5000) && output.contains("READY"),
+        "Fixture publisher did not publish its post-save chunk before interruption: " +
+        QString::fromUtf8(output + publisher.readAllStandardError()));
+  const auto project = load(directory.filePath("interrupted.ssproj"));
+  const auto& run = project.files.front().detectionRuns.back();
+  check(run.lifecycle == DetectionLifecycle::Interrupted && run.recoverable &&
+        run.chunks.size() == 2 && run.completedWindows == 2 &&
+        std::any_of(run.coverage.begin(), run.coverage.end(), [](const auto& part) {
+          return part.kind == DetectionCoverageKind::Unread;
+        }), "Process interruption must recover verified post-save prefix and unread remainder");
+}
 void cancelledSave(CancelSaveAt when) {
   QTemporaryDir directory;
   auto project = fixture(directory.path());
@@ -716,7 +873,29 @@ void cancelledSave(CancelSaveAt when) {
 
 int main(int argc, char** argv) {
   QCoreApplication application(argc, argv);
+  if (application.arguments().size() == 3 && application.arguments()[1] == "--live-publisher") {
+    try {
+      const auto directory = application.arguments()[2];
+      auto project = fixture(directory, true);
+      const auto path = QDir(directory).filePath("interrupted.ssproj");
+      save(path, project); startLive(project); advanceLive(project);
+      save(path, project, AssetSaveMode::Preserve); advanceLive(project);
+      std::cout << "READY\n" << std::flush;
+      return application.exec();
+    } catch (const std::exception& error) { std::cerr << error.what(); return 2; }
+  }
   const std::vector<std::pair<const char*, std::function<void()>>> cases{
+      {"save-running-progress-chunks-and-cancel", liveProgressAndCancellation},
+      {"live-reject-changed-frozen-request", [] { liveTamper(0); }},
+      {"live-reject-dropped-saved-prefix", [] { liveTamper(1); }},
+      {"live-reject-corrupt-future-chunk", [] { liveTamper(2); }},
+      {"live-reject-missing-future-chunk", [] { liveTamper(3); }},
+      {"live-reject-missing-manifest-anchor", [] { liveTamper(4); }},
+      {"live-reject-unknown-integrity-rule", [] { liveTamper(5); }},
+      {"ordinary-save-reference-retains-root", [] { preserveAssetMode(true); }},
+      {"ordinary-save-renamed-copy-retains-root", [] { preserveAssetMode(false); }},
+      {"ordinary-save-missing-original-is-explicit", preserveMissingTarget},
+      {"killed-publisher-recovers-post-save-prefix", killedPublisherRecovery},
       {"direct-create-stable-id", directCreateAndStableId},
       {"annotation-channel-detection-roundtrip", evidenceRoundtrip},
       {"move-project-assets-and-raw", moveWholeProjectAndAssets},

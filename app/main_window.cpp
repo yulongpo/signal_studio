@@ -4969,7 +4969,14 @@ bool MainWindow::openProject(const QString& path) {
 }
 bool MainWindow::saveProject(const QString& path) {
   const QString projectFile = QFileInfo(path).absoluteFilePath();
-  if (QFileInfo(projectPath_).absoluteFilePath().compare(projectFile, Qt::CaseInsensitive) != 0 && detectionAssetsInUse()) {
+  const bool currentPath = !projectPath_.isEmpty() &&
+      QFileInfo(projectPath_).absoluteFilePath().compare(projectFile, Qt::CaseInsensitive) == 0;
+  const auto saveMode = currentPath ? AssetSaveMode::Preserve : AssetSaveMode::Copy;
+  const QString targetAssets = currentPath ? q(session_.project().assetDirectory) :
+      projectFile + ".assets/" + q(session_.project().projectId);
+  const bool assetRootChanges = QDir(targetAssets).absolutePath().compare(
+      QDir(q(session_.project().assetDirectory)).absolutePath(), Qt::CaseInsensitive) != 0;
+  if (assetRootChanges && detectionAssetsInUse()) {
     const QPointer<QWidget> priorFocus(QApplication::focusWidget());
     QMessageBox::warning(this, "暂不能复制工程资产", "检测任务仍在写入当前资产目录。请等待任务结束或取消完成后再另存为；当前工程仍可保存。");
     activateWindow();
@@ -4981,7 +4988,7 @@ bool MainWindow::saveProject(const QString& path) {
   cancelInteractions(false);
   QString error;
   auto candidate = session_.project();
-  if (!projectIo(this, "保存工程与伴随资产…", [&](auto cancelled) { return ProjectFileCodec::save(projectFile, candidate, error, AssetSaveMode::Copy, cancelled); })) {
+  if (!projectIo(this, "保存工程与伴随资产…", [&](auto cancelled) { return ProjectFileCodec::save(projectFile, candidate, error, saveMode, cancelled); })) {
     QMessageBox::critical(this, "保存失败", error);
     return false;
   }

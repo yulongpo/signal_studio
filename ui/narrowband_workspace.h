@@ -31,6 +31,7 @@ class QToolButton;
 namespace signalstudio {
 
 class NarrowbandChart;
+struct ConstellationObservation;
 
 class NarrowbandWorkspace final : public QWidget {
     Q_OBJECT
@@ -188,6 +189,8 @@ private:
     std::uint64_t analysisGeneration_ = 0;
     bool analysisPending_ = false;
     QString analysisProjectionKey_;
+    QString constellationObservationKey_;
+    std::shared_ptr<const ConstellationObservation> constellationObservation_;
     QLabel* modulationStatus_ = nullptr;
     QLabel* analysisSummary_ = nullptr;
     ChannelSampleCacheStats displayCacheStats_;

@@ -463,7 +463,9 @@ QJsonObject encodeProject(const Project& project, const QString& path, bool writ
                      channel.preserveSourceTime);
       encoded.insert(QStringLiteral("page"), pageName(channel.page));
       encoded.insert(QStringLiteral("narrowbandDisplay"),
-                     QJsonObject{{"version", 1}, {"syncPanelExpanded", channel.syncPanelExpanded}});
+                     QJsonObject{{"version", 1}, {"syncPanelExpanded", channel.syncPanelExpanded},
+                                 {"constellationDecisions",channel.constellationDecisions},
+                                 {"constellationReference",channel.constellationReference}});
       encoded.insert(QStringLiteral("visibleSourceTime"),
                      encodeTimeRange(visibleTime));
       encoded.insert(
@@ -796,6 +798,8 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
                                     QStringLiteral("narrowbandDisplay"));
         require(number(display, "version") == 1, QStringLiteral("未知窄带显示状态版本"));
         channel.syncPanelExpanded = boolean(display, "syncPanelExpanded");
+        if(display.contains("constellationDecisions"))channel.constellationDecisions=boolean(display,"constellationDecisions");
+        if(display.contains("constellationReference"))channel.constellationReference=boolean(display,"constellationReference");
       }
       channel.visibleSourceTime = decodeTimeRange(
           channelData.value(QStringLiteral("visibleSourceTime")),

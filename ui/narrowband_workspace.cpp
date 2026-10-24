@@ -1,5 +1,6 @@
 #include "ui/parameter_input.h"
 #include "domain/constellation.h"
+#include "domain/constellation_observation.h"
 #include "infrastructure/source_loader.h"
 #include <chrono>
 #include "infrastructure/spectral_analysis.h"
@@ -54,6 +55,7 @@
 #include <QPainter>
 #include <QKeyEvent>
 #include <QPainterPath>
+#include <QPolygonF>
 #include <QFile>
 #include <QTextCursor>
 
@@ -81,6 +83,11 @@ NarrowbandAnalysisSettings processingSettings(const Channel& channel) {
     settings.eyeComponent = 0;
     settings.eyeTraces = 256;
     settings.eyePointsPerUi = 16;
+    // Source-stage selection is a display projection; execution is governed
+    // by explicit shared processing controls and the independent eye stage.
+    settings.constellationStage=settings.carrierRecovery?AnalysisStage::CarrierRecovered:
+        settings.timingRecovery?AnalysisStage::TimingAligned:settings.matchedFilter?AnalysisStage::MatchedFiltered:
+        settings.cfoMode!=CfoMode::Off?AnalysisStage::CfoCorrected:AnalysisStage::RawIq;
     return settings;
 }
 void enableStage(NarrowbandAnalysisSettings& s, AnalysisStage stage) {
@@ -131,6 +138,7 @@ enum class ChartMode { Curve, Spectrum, Heatmap, Scatter, Eye, Timeline, Navigat
 
 class NarrowbandChart final : public QWidget {
 public:
+    ~NarrowbandChart() override {cancelReference();}
     explicit NarrowbandChart(ChartMode mode, QWidget* parent = nullptr) : QWidget(parent), mode_(mode) {
         setMinimumSize(100, 90); setMouseTracking(true); setFocusPolicy(Qt::StrongFocus);
         softwareFallback_ = (qApp && qApp->property("softwareRenderer").toBool()) || QGuiApplication::platformName()=="offscreen";
@@ -268,7 +276,11 @@ public:
     }
     void setPoints(std::vector<std::complex<float>> points, QString status = {}, QString summary = {}) {
         points_ = std::move(points); setProperty("constellationPointCount",static_cast<qulonglong>(points_.size()));
-        if(points_.empty()){setProperty("realIqSource",false);setProperty("sourceChannelId",QString{});setProperty("actualSampleRateHz",qulonglong{0});}
+        if(points_.empty()){setProperty("realIqSource",false);setProperty("sourceChannelId",QString{});setProperty("actualSampleRateHz",qulonglong{0});
+            cancelReference();
+            referenceCells_.clear();referencePoints_.clear();referenceKey_.clear();referenceVisible_=false;
+            setProperty("referenceCellCount",0);setProperty("referenceTemplateCount",0);setProperty("decisionAvailable",false);setProperty("decisionVisible",false);setProperty("iqReadoutValid",false);
+            for(const auto* name:{"decisionInput","decisionOutput","decisionTemplateIndex","decisionSourceInteger","decisionSourceFraction","decisionOutputInteger","decisionOutputFraction"})setProperty(name,QVariant{});}
         setStatus(std::move(status), std::move(summary)); if(surface_)surface_->setHeatmap({}, {}, QString{}); markGeometryDirty();
     }
     void setIqRange(double minimum,double maximum,const QString& unit) {
@@ -281,6 +293,38 @@ public:
         return {rect.left()+(point.real()-yAxisMinimum_)/span*rect.width(),
                 rect.bottom()-(point.imag()-yAxisMinimum_)/span*rect.height()};
     }
+    QPointF iqAt(QPointF pixel) const {
+        const auto plot=plotRect();const auto span=yAxisMaximum_-yAxisMinimum_;
+        return {yAxisMinimum_+(pixel.x()-plot.left())/plot.width()*span,
+                yAxisMaximum_-(pixel.y()-plot.top())/plot.height()*span};
+    }
+    void setReference(const ConstellationObservation& observation,bool visible) {
+        const auto low=yAxisMinimum_/observation.referenceScale,high=yAxisMaximum_/observation.referenceScale;
+        QString key=QString::number(low,'g',17)+'/'+QString::number(high,'g',17);
+        for(auto p:observation.definition.points)key+='/'+QString::number(p.real(),'g',17)+','+QString::number(p.imag(),'g',17);
+        referenceVisible_=visible && !observation.definition.points.empty();referenceScale_=observation.referenceScale;
+        referencePoints_=observation.definition.points;
+        if(!referenceVisible_)cancelReference();
+        else if(referenceKey_!=key && referenceJobKey_!=key) {
+            cancelReference();referenceCells_.clear();referenceKey_.clear();referenceJobKey_=key;
+            referencePending_=true;setProperty("referencePending",true);
+            referenceCancellation_=std::make_shared<std::atomic_bool>(false);
+            const auto cancelled=referenceCancellation_;const auto generation=referenceGeneration_;
+            referenceWorker_=std::thread([this,definition=observation.definition,low,high,key,cancelled,generation] {
+                auto cells=constellationDecisionCells(definition,low,high,[cancelled]{return cancelled->load();});
+                if(cancelled->load())return;
+                QMetaObject::invokeMethod(this,[this,cells=std::move(cells),key,generation]() mutable {
+                    if(generation!=referenceGeneration_)return;
+                    referenceCells_=std::move(cells);referenceKey_=key;referenceJobKey_.clear();referencePending_=false;
+                    setProperty("referencePending",false);setProperty("referenceCellCount",static_cast<int>(referenceCells_.size()));invalidate();
+                },Qt::QueuedConnection);
+            });
+        }
+        setProperty("referenceCellCount",referenceVisible_?static_cast<int>(referenceCells_.size()):0);
+        setProperty("referenceTemplateCount",referenceVisible_?static_cast<int>(referencePoints_.size()):0);
+        setProperty("referenceRenderer","QPainter vector Voronoi overlay");invalidate();
+    }
+    std::function<void(double)> iqZoomRequested;
     void setEye(std::vector<std::vector<float>> traces, QString status = {}, QString summary = {}) {
         series_ = std::move(traces);eyeComponents_.clear();setProperty("realEyeSource",false);
         setProperty("eyeTraceCount",static_cast<qulonglong>(series_.size()));
@@ -328,7 +372,7 @@ public:
         if (!std::isfinite(minimum) || !std::isfinite(maximum)) return std::nullopt;
         return std::pair{minimum, maximum};
     }
-    bool isDisplaySettled() const { return softwareFallback_ || (surface_ && surface_->isReady() && !surface_->hasPendingUploads()); }
+    bool isDisplaySettled() const { return !referencePending_ && (softwareFallback_ || (surface_ && surface_->isReady() && !surface_->hasPendingUploads())); }
     bool gpuReady() const { return !softwareFallback_ && surface_ && surface_->isReady(); }
     quint64 textureUploadCount() const { return softwareFallback_ || !surface_ ? 0 : surface_->textureUploadCount(); }
     quint64 completedFrameCount() const { return softwareFallback_ || !surface_ ? 0 : surface_->completedFrameCount(); }
@@ -363,7 +407,7 @@ public:
     }
     bool event(QEvent* event) override {
         if(cursor_overlay::tooltip(this,event)) return true;
-        if (event->type() == QEvent::Leave) { hoverPosition_.reset(); if (!dragging_) { hoverZone_ = chart_feedback::Zone::None; setCursor(Qt::ArrowCursor); setProperty("interactionZone",static_cast<int>(hoverZone_)); } invalidate(); }
+        if (event->type() == QEvent::Leave) { hoverPosition_.reset();setProperty("iqReadoutValid",false); if (!dragging_) { hoverZone_ = chart_feedback::Zone::None; setCursor(Qt::ArrowCursor); setProperty("interactionZone",static_cast<int>(hoverZone_)); } invalidate(); }
         return QWidget::event(event);
     }
 protected:
@@ -383,6 +427,9 @@ protected:
     }
     void wheelEvent(QWheelEvent* event) override {
         const auto pos = event->position(); const int delta = event->angleDelta().y();
+        if(mode_==ChartMode::Scatter && iqZoomRequested && plotRect().contains(pos) && delta) {
+            iqZoomRequested(delta>0?.8:1.25);event->accept();return;
+        }
         const QPointF normalized(pos.x() / std::max(1, width()), pos.y() / std::max(1, height()));
         if (gesture) gesture(normalized, normalized, delta, false);
         event->accept();
@@ -402,6 +449,10 @@ protected:
         QWidget::mousePressEvent(event);
     }
     void mouseMoveEvent(QMouseEvent* event) override {
+        if(mode_==ChartMode::Scatter) {
+            const bool valid=!points_.empty() && plotRect().contains(event->position());setProperty("iqReadoutValid",valid);
+            if(valid){const auto iq=iqAt(event->position());setProperty("iqReadout",iq);setProperty("iqPointerPixel",event->position());}
+        }
         if (dragging_) { dragEnd_ = event->position(); updateHover(event->position()); invalidate(); event->accept(); return; }
         hoverPosition_ = plotRect().contains(event->position()) ? std::optional<QPointF>{event->position()} : std::nullopt;
         updateHover(event->position()); QToolTip::hideText(); invalidate(); QWidget::mouseMoveEvent(event);
@@ -459,6 +510,11 @@ protected:
         event->accept();
     }
 private:
+    void cancelReference() {
+        if(referenceCancellation_)referenceCancellation_->store(true);
+        if(referenceWorker_.joinable())referenceWorker_.join();
+        ++referenceGeneration_;referenceJobKey_.clear();referencePending_=false;setProperty("referencePending",false);
+    }
     void updateFitDiagnostics() {
         if (mode_ != ChartMode::Curve || series_.empty()) {
             setProperty("fitDataVerticalFraction", -1.0);
@@ -567,6 +623,7 @@ private:
         if (!software) rebuildGeometry();
         painter.setRenderHint(QPainter::Antialiasing, true);
         const QRectF rect = plotRect();
+        if(mode_==ChartMode::Scatter)setProperty("iqPlotRect",rect);
         if(mode_==ChartMode::Heatmap)setProperty("heatmapDrawRect",raster_.isNull()?QRectF{}:rect);
         if (software)
             painter.fillRect(QRectF(0, 0, width(), height()), QColor("#101b2a"));
@@ -710,6 +767,30 @@ private:
             painter.setPen(QPen(QColor("#f1cf7f"), 1, Qt::DashLine));
             painter.drawRect(QRectF(dragStart_, dragEnd_).normalized());
         }
+        if(mode_==ChartMode::Scatter) {
+            painter.save();painter.setClipRect(rect);
+            if(referenceVisible_) {
+                painter.setPen(QPen(QColor(237,193,111,130),1));painter.setBrush(Qt::NoBrush);
+                for(const auto& cell:referenceCells_) {
+                    QPolygonF polygon;for(auto p:cell.polygon)polygon<<iqPoint(static_cast<std::complex<float>>(p*referenceScale_));
+                    painter.drawPolygon(polygon);
+                }
+                painter.setPen(QPen(QColor("#edc16f"),1.2));
+                for(auto p:referencePoints_) {
+                    const auto pixel=iqPoint(static_cast<std::complex<float>>(p*referenceScale_));
+                    painter.drawLine(pixel-QPointF(3,0),pixel+QPointF(3,0));painter.drawLine(pixel-QPointF(0,3),pixel+QPointF(0,3));
+                }
+            }
+            const bool iqValid=!points_.empty() && hoverPosition_ && rect.contains(*hoverPosition_);
+            setProperty("iqReadoutValid",iqValid);
+            if(iqValid) {
+                const auto iq=iqAt(*hoverPosition_);setProperty("iqReadout",iq);
+                const QString label=QString("I=%1  Q=%2 · %3").arg(iq.x(),0,'g',9).arg(iq.y(),0,'g',9).arg(property("iqUnit").toString());
+                const QRectF band(rect.left()+6,rect.bottom()-26,rect.width()-12,22);
+                painter.fillRect(band,QColor(7,17,28,230));painter.setPen(QColor("#ffffff"));painter.drawText(band,Qt::AlignCenter,label);
+            }
+            painter.restore();
+        }
         if (software) drawCursors(painter);
     }
     void drawCursors(QPainter& painter, bool inverseMask = false) {
@@ -807,6 +888,16 @@ private:
     AcceleratedSurface* surface_ = nullptr;
     std::vector<std::vector<float>> series_;
     std::vector<std::complex<float>> points_;
+    std::vector<ConstellationCell> referenceCells_;
+    std::vector<std::complex<double>> referencePoints_;
+    QString referenceKey_;
+    QString referenceJobKey_;
+    std::thread referenceWorker_;
+    std::shared_ptr<std::atomic_bool> referenceCancellation_;
+    std::uint64_t referenceGeneration_=0;
+    bool referencePending_=false;
+    bool referenceVisible_=false;
+    double referenceScale_=1;
     FrequencyRange frequencyRange_;
     double frequencyCenterHz_ = 0;
     double yAxisMinimum_ = -32768.0;
@@ -1051,6 +1142,32 @@ QJsonObject NarrowbandWorkspace::renderStatistics() const {
             {"autoScale",channel->analysis.constellationAutoScale},
             {"axisMinimum",constellationLarge_->property("iqAxisMinimum").toDouble()},
             {"axisMaximum",constellationLarge_->property("iqAxisMaximum").toDouble()},
+            {"decisionRequested",channel->constellationDecisions},{"referenceRequested",channel->constellationReference},
+            {"decisionVisible",constellationLarge_->property("decisionVisible").toBool()},
+            {"decisionAvailable",constellationLarge_->property("decisionAvailable").toBool()},
+            {"decisionMessage",constellationLarge_->property("decisionMessage").toString()},
+            {"sourceStage",constellationLarge_->property("analysisStage").toInt()},
+            {"referenceCellCount",constellationLarge_->property("referenceCellCount").toInt()},
+            {"referencePending",constellationLarge_->property("referencePending").toBool()},
+            {"referenceTemplateCount",constellationLarge_->property("referenceTemplateCount").toInt()},
+            {"referenceScale",constellationLarge_->property("referenceScale").toDouble()},
+            {"referenceRenderer",constellationLarge_->property("referenceRenderer").toString()},
+            {"iqReadoutValid",constellationLarge_->property("iqReadoutValid").toBool()},
+            {"iqI",constellationLarge_->property("iqReadout").toPointF().x()},
+            {"iqQ",constellationLarge_->property("iqReadout").toPointF().y()},
+            {"iqPointerX",constellationLarge_->property("iqPointerPixel").toPointF().x()},
+            {"iqPointerY",constellationLarge_->property("iqPointerPixel").toPointF().y()},
+            {"iqPlotLeft",constellationLarge_->plotRect().left()},{"iqPlotTop",constellationLarge_->plotRect().top()},
+            {"iqPlotWidth",constellationLarge_->plotRect().width()},{"iqPlotHeight",constellationLarge_->plotRect().height()},
+            {"decisionTemplateIndex",static_cast<qint64>(constellationLarge_->property("decisionTemplateIndex").toULongLong())},
+            {"decisionInputI",constellationLarge_->property("decisionInput").toPointF().x()},
+            {"decisionInputQ",constellationLarge_->property("decisionInput").toPointF().y()},
+            {"decisionOutputI",constellationLarge_->property("decisionOutput").toPointF().x()},
+            {"decisionOutputQ",constellationLarge_->property("decisionOutput").toPointF().y()},
+            {"decisionSourceInteger",QString::number(constellationLarge_->property("decisionSourceInteger").toULongLong())},
+            {"decisionSourceFraction",constellationLarge_->property("decisionSourceFraction").toDouble()},
+            {"decisionOutputInteger",QString::number(constellationLarge_->property("decisionOutputInteger").toULongLong())},
+            {"decisionOutputFraction",constellationLarge_->property("decisionOutputFraction").toDouble()},
             {"visible",constellationLarge_->isVisible()}};
         result["eyeView"]=QJsonObject{{"component",channel->eyeComponent},
             {"traceBudget",channel->eyeTraces},{"pointsPerUi",channel->analysis.eyePointsPerUi},
@@ -1183,8 +1300,12 @@ void NarrowbandWorkspace::buildPages() {
     for(const int n:{256,1024,4096,20000})pointCount->addItem(QString::number(n)+" 点",n);
     pointCount->setCurrentIndex(2);
     auto* constellationStage=new QComboBox(chartParameters);constellationStage->setObjectName("constellationAnalysisStage");
-    constellationStage->addItems({"原始 IQ","CFO 校正","匹配滤波","定时符号","载波恢复"});
-    connect(constellationStage,&QComboBox::currentIndexChanged,this,[this](int value){if(auto* c=session_.activeChannel()){c->analysis.constellationStage=static_cast<AnalysisStage>(value);enableStage(c->analysis,c->analysis.constellationStage);}refreshFromSession();requestAnalysis(true);});
+    constellationStage->addItems({"原始 IQ","CFO 校正","匹配滤波","定时符号","载波恢复","判决观察"});
+    constellationStage->setToolTip("仅切换共享快照显示。判决来源为载波恢复符号；未锁定时不可用。处理请使用同步与参数。");
+    connect(constellationStage,&QComboBox::currentIndexChanged,this,[this](int value){
+        if(auto* c=session_.activeChannel()){c->constellationDecisions=value==5;c->analysis.constellationStage=value==5?AnalysisStage::CarrierRecovered:static_cast<AnalysisStage>(value);}
+        renderAnalysis();emit displayParametersChanged();
+    });
     auto* autoScale=new QCheckBox("自动缩放",chartParameters);autoScale->setObjectName("constellationAutoScale");autoScale->setChecked(true);
     auto* constellationSettings=new QWidget(chartParameters);constellationSettings->setObjectName("narrowbandConstellationDisplaySettings");
     auto* constellationForm=new QFormLayout(constellationSettings);constellationForm->setContentsMargins(4,4,4,4);constellationForm->setSpacing(8);
@@ -1192,6 +1313,9 @@ void NarrowbandWorkspace::buildPages() {
     auto* axisMax=new ParameterDoubleSpinBox;axisMax->setObjectName("constellationAxisMaximum");axisMax->setRange(-1e12,1e12);axisMax->setDecimals(6);axisMax->setValue(1);axisMax->setEnabled(false);
     auto* dc=new QCheckBox("去 DC");dc->setObjectName("analysisRemoveDc");constellationForm->addRow(dc);
     auto* norm=new QCheckBox("功率归一化");norm->setObjectName("analysisNormalizePower");constellationForm->addRow(norm);
+    auto* reference=new QCheckBox("参考模板 / 最近邻决策区域（用户假设）");reference->setObjectName("constellationReferenceRegions");constellationForm->addRow(reference);
+    reference->setToolTip("模板按当前真实来源阶段整段 RMS 对齐；仅为条件参考，非调制识别。金色十字及 Voronoi 边界使用 QPainter 矢量覆盖层。");
+    connect(reference,&QCheckBox::toggled,this,[this](bool enabled){if(auto* c=session_.activeChannel())c->constellationReference=enabled;renderAnalysis();emit displayParametersChanged();});
     constellationForm->addRow("I/Q 轴下限",axisMin);constellationForm->addRow("I/Q 轴上限",axisMax);
     connect(pointCount,&QComboBox::currentIndexChanged,this,[this,pointCount]{if(auto* c=session_.activeChannel())c->analysis.pointCount=pointCount->currentData().toInt();renderAnalysis();emit displayParametersChanged();});
     connect(autoScale,&QCheckBox::toggled,this,[this,axisMin,axisMax](bool enabled){axisMin->setEnabled(!enabled);axisMax->setEnabled(!enabled);if(auto* c=session_.activeChannel())c->analysis.constellationAutoScale=enabled;renderAnalysis();emit displayParametersChanged();});
@@ -1199,6 +1323,15 @@ void NarrowbandWorkspace::buildPages() {
       if(axisMin->value()>=axisMax->value()) {setParameterError(axisMin,"I/Q 轴下限必须小于上限。");return;}
       setParameterError(axisMin,{});if(auto* c=session_.activeChannel()){c->constellationMinimum=axisMin->value();c->constellationMaximum=axisMax->value();}renderAnalysis();emit displayParametersChanged();
     });
+    constellationLarge_->iqZoomRequested=[this,autoScale,axisMin,axisMax](double factor){
+        auto* c=session_.activeChannel();if(!c || !analysisResult_)return;
+        const double low=constellationLarge_->property("iqAxisMinimum").toDouble(),high=constellationLarge_->property("iqAxisMaximum").toDouble();
+        const double center=(low+high)/2,half=(high-low)*factor/2;
+        if(half<1e-8 || center-half<axisMin->minimum() || center+half>axisMax->maximum())return;
+        c->analysis.constellationAutoScale=false;c->constellationMinimum=center-half;c->constellationMaximum=center+half;
+        {QSignalBlocker a(autoScale),b(axisMin),d(axisMax);autoScale->setChecked(false);displayParameterValue(axisMin,center-half);displayParameterValue(axisMax,center+half);}
+        axisMin->setEnabled(true);axisMax->setEnabled(true);renderAnalysis();emit displayParametersChanged();
+    };
     connect(dc,&QCheckBox::toggled,this,[this](bool v){if(auto* c=session_.activeChannel())c->analysis.removeDc=v;requestAnalysis(true);});
     connect(norm,&QCheckBox::toggled,this,[this](bool v){if(auto* c=session_.activeChannel())c->analysis.normalizePower=v;requestAnalysis(true);});
     auto* eyePanel=plotPanel("眼图 · 真实 IQ", "narrowbandEyeLarge", ChartMode::Eye, eyeLarge_);
@@ -1783,7 +1916,8 @@ void NarrowbandWorkspace::refreshFromSession() {
     }
     // Chart editors can live in the main window's shared overflow layer.
     if(auto* stage=window()->findChild<QComboBox*>("eyeAnalysisStage")){QSignalBlocker b(stage);stage->setCurrentIndex(static_cast<int>(channel->analysis.eyeStage));}
-    if(auto* stage=window()->findChild<QComboBox*>("constellationAnalysisStage")){QSignalBlocker b(stage);stage->setCurrentIndex(static_cast<int>(channel->analysis.constellationStage));}
+    if(auto* stage=window()->findChild<QComboBox*>("constellationAnalysisStage")){QSignalBlocker b(stage);stage->setCurrentIndex(channel->constellationDecisions?5:static_cast<int>(channel->analysis.constellationStage));}
+    if(auto* reference=window()->findChild<QCheckBox*>("constellationReferenceRegions")){QSignalBlocker b(reference);reference->setChecked(channel->constellationReference);}
     if(auto* mode=findChild<QComboBox*>("analysisCfoMode")){QSignalBlocker b(mode);mode->setCurrentIndex(static_cast<int>(channel->analysis.cfoMode));}
     for(const auto& entry:std::array<std::pair<const char*,bool>,3>{{{"analysisMatchedFilter",channel->analysis.matchedFilter},{"analysisTimingRecovery",channel->analysis.timingRecovery},{"analysisCarrierRecovery",channel->analysis.carrierRecovery}}})
       if(auto* control=findChild<QCheckBox*>(entry.first)){QSignalBlocker b(control);control->setChecked(entry.second);}
@@ -2374,32 +2508,64 @@ void NarrowbandWorkspace::renderAnalysis() {
         QString::number(channel->analysis.pointCount),QString::number(channel->analysis.constellationAutoScale),
         QString::number(channel->constellationMinimum,'g',17),QString::number(channel->constellationMaximum,'g',17),
         QString::number(channel->eyeComponent),QString::number(channel->eyeTraces),
-        QString::number(channel->analysis.eyePointsPerUi)}.join('/');
+        QString::number(channel->analysis.eyePointsPerUi),QString::number(static_cast<int>(channel->analysis.constellationStage)),
+        QString::number(channel->constellationDecisions),QString::number(channel->constellationReference)}.join('/');
     if(analysisProjectionKey_==projectionKey)return;
     analysisProjectionKey_=projectionKey;
     if(channel->analysis.symbolRateMode==SymbolRateMode::Estimated && data.symbolRateHz>0)
       if(auto* rate=findChild<QDoubleSpinBox*>("symbolRate")){QSignalBlocker b(rate);displayParameterValue(rate,data.symbolRateHz);}
-    const double minimum=channel->analysis.constellationAutoScale?data.axisMinimum:channel->constellationMinimum;
-    const double maximum=channel->analysis.constellationAutoScale?data.axisMaximum:channel->constellationMaximum;
+    const auto observationKey=QString::number(data.identity.requestGeneration)+'/'+QString::number(static_cast<int>(channel->analysis.constellationStage));
+    if(!constellationObservation_ || constellationObservationKey_!=observationKey) {
+        constellationObservation_=std::make_shared<const ConstellationObservation>(observeConstellation(data,channel->analysis));
+        constellationObservationKey_=observationKey;
+    }
+    const auto& observation=*constellationObservation_;
+    const bool decisions=channel->constellationDecisions && observation.decisionAvailable;
+    const auto& samples=decisions?observation.decisions:observation.samples;
+    double autoMin=std::numeric_limits<double>::infinity(),autoMax=-autoMin;
+    for(const auto& sample:samples){autoMin=std::min({autoMin,double(sample.value.real()),double(sample.value.imag())});autoMax=std::max({autoMax,double(sample.value.real()),double(sample.value.imag())});}
+    if(channel->constellationReference)for(auto p:observation.definition.points){p*=observation.referenceScale;autoMin=std::min({autoMin,p.real(),p.imag()});autoMax=std::max({autoMax,p.real(),p.imag()});}
+    if(!std::isfinite(autoMin) || !std::isfinite(autoMax)){autoMin=-1;autoMax=1;}
+    const double margin=std::max((autoMax-autoMin)*.05,1e-9);
+    const double minimum=channel->analysis.constellationAutoScale?autoMin-margin:channel->constellationMinimum;
+    const double maximum=channel->analysis.constellationAutoScale?autoMax+margin:channel->constellationMaximum;
     constellationLarge_->setIqRange(minimum,maximum,channel->analysis.normalizePower?"RMS 归一化":"解码 IQ 幅度");
-    const auto count = std::min(data.constellation.size(), static_cast<std::size_t>(channel->analysis.pointCount));
+    const auto count = std::min(samples.size(), static_cast<std::size_t>(channel->analysis.pointCount));
     std::vector<std::complex<float>> points; points.reserve(count);
     for (std::size_t i=0; i<count; ++i) {
-      const auto index = count > 1 ? i*(data.constellation.size()-1)/(count-1) : 0;
-      points.push_back(data.constellation[index].value);
+      const auto index = count > 1 ? i*(samples.size()-1)/(count-1) : 0;
+      points.push_back(samples[index].value);
     }
     const auto detail=QString("%1 · %2 点 / %3 有效样本 · Fs %4 S/s · output [%5,%6) · source [%7,%8) · 排除边界 %9/%10")
       .arg(str(data.message)).arg(points.size()).arg(data.source->samples.size()).arg(data.source->outputRateHz)
       .arg(data.source->outputSamples.begin).arg(data.source->outputSamples.end)
       .arg(data.source->sourceSamples.begin).arg(data.source->sourceSamples.end).arg(data.source->discardedLeft).arg(data.source->discardedRight);
     const QStringList stageNames{"原始 IQ（未同步）","CFO 校正","匹配滤波","定时符号","载波恢复"};
-    const bool fallback=channel->analysis.constellationStage!=data.constellationStage;
-    const auto stageSummary=fallback?QString("同步未完成 · 请求%1 / 显示%2").arg(stageNames.at(static_cast<int>(channel->analysis.constellationStage)),stageNames.at(static_cast<int>(data.constellationStage))):
-      QString("真实 IQ · %1 · %2 点").arg(stageNames.at(static_cast<int>(data.constellationStage))).arg(count);
-    constellationLarge_->setPoints(std::move(points),detail,stageSummary);
+    const bool fallback=channel->analysis.constellationStage!=observation.sourceStage || (channel->constellationDecisions && !decisions);
+    const auto stageSummary=channel->constellationDecisions?str(observation.message):fallback?QString("阶段未完成 · 请求%1 / 显示%2").arg(stageNames.at(static_cast<int>(channel->analysis.constellationStage)),stageNames.at(static_cast<int>(observation.sourceStage))):
+      QString("真实 IQ · %1 · %2 点").arg(stageNames.at(static_cast<int>(observation.sourceStage))).arg(count);
+    const auto observationDetail=QString("\n%1\n请求来源：%2；实际来源：%3；参考缩放：%4；未锁定时保留实际散点。%5")
+        .arg(str(observation.message),stageNames.at(static_cast<int>(channel->analysis.constellationStage)),stageNames.at(static_cast<int>(observation.sourceStage)))
+        .arg(observation.referenceScale,0,'g',12).arg(str(data.syncMessage));
+    constellationLarge_->setPoints(std::move(points),detail+observationDetail,stageSummary);
+    constellationLarge_->setReference(observation,channel->constellationReference);
+    constellationLarge_->setProperty("decisionAvailable",observation.decisionAvailable);
+    constellationLarge_->setProperty("decisionVisible",decisions);
+    constellationLarge_->setProperty("decisionMessage",str(observation.message));
+    constellationLarge_->setProperty("referenceScale",observation.referenceScale);
+    if(!observation.decisions.empty()) {
+        const auto& sample=observation.samples.front();const auto& decision=observation.decisions.front();
+        constellationLarge_->setProperty("decisionInput",QPointF(sample.value.real(),sample.value.imag()));
+        constellationLarge_->setProperty("decisionOutput",QPointF(decision.value.real(),decision.value.imag()));
+        constellationLarge_->setProperty("decisionTemplateIndex",static_cast<qulonglong>(observation.templateIndices.front()));
+        constellationLarge_->setProperty("decisionSourceInteger",static_cast<qulonglong>(decision.source.integer));
+        constellationLarge_->setProperty("decisionSourceFraction",decision.source.fraction);
+        constellationLarge_->setProperty("decisionOutputInteger",static_cast<qulonglong>(decision.output.integer));
+        constellationLarge_->setProperty("decisionOutputFraction",decision.output.fraction);
+    }
     constellationLarge_->setProperty("requestedAnalysisStage",static_cast<int>(channel->analysis.constellationStage));
     constellationLarge_->setProperty("analysisStageFallback",fallback);
-    constellationLarge_->setProperty("analysisStage",static_cast<int>(data.constellationStage));
+    constellationLarge_->setProperty("analysisStage",static_cast<int>(observation.sourceStage));
     constellationLarge_->setProperty("timingLocked",data.timingLocked);constellationLarge_->setProperty("carrierLocked",data.carrierLocked);
     constellationLarge_->setProperty("realIqSource",true);
     constellationLarge_->setProperty("sourceChannelId",str(channel->id));
@@ -2414,7 +2580,7 @@ void NarrowbandWorkspace::renderAnalysis() {
     const auto syncDetail=QString("\n%1 · CFO %2 Hz · 定时周期 %3 samples · 捕获丢弃 %4 symbols%5")
       .arg(str(data.syncMessage)).arg(data.estimatedCfoHz,0,'g',9).arg(data.timingPeriodSamples,0,'g',9).arg(data.acquisitionSymbolsDiscarded)
       .arg(data.carrierLocked && data.conditionalEvm>=0?QString(" · 条件 EVM（所选模板）%1%").arg(data.conditionalEvm*100,0,'f',2):QString{});
-    if(modulationStatus_)setAnalysisStatus(detail+eyeDetail+syncDetail);
+    if(modulationStatus_)setAnalysisStatus(detail+observationDetail+eyeDetail+syncDetail);
 }
 
 void NarrowbandWorkspace::cancelWork() {

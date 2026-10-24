@@ -80,12 +80,13 @@ using namespace signalstudio;
 
 namespace {
 
-// Preserve the original allocated chart area. UX-R3 measures separate title
-// and tick bands, so their actual budget is added back for this layout check.
+// Compare external chart allocation using the legacy fixed-band convention.
+// This deliberately does not constrain pure data height: UX-R3's measured title
+// and tick bands have a separately reported area cost in native evidence.
 constexpr int kCollapsedWidebandPlotMinimum = 875 - 31 - 5;
 double widebandOriginalPlotBudget(const PlotWidget* chart) {
   const auto budget = chart->axisLayout().budget;
-  // Original plotRect used height()-46; its top offset was already included.
+  // Algebraically height()-46; not a minimum for the current plotRect height.
   return chart->plotRect().height() + budget.top + budget.bottom - 46;
 }
 
@@ -543,8 +544,8 @@ void UiTests::workspaceLayout() {
   QCOMPARE(window.findChild<QWidget*>("annotationLayerBar")->height(), 31);
   QCOMPARE(window.findChild<QWidget*>("bottomPanelResize")->height(), 5);
   QVERIFY2(widebandOriginalPlotBudget(main) >= kCollapsedWidebandPlotMinimum,
-           "The approved layers bar and resize handle must be the only new "
-           "vertical deductions from the A1.4.3 main plot budget.");
+           "External chart allocation must retain the A1.4.3 budget after "
+           "the layers bar and resize handle; measured text bands are separate.");
   QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 5000);
   const auto waveform = auxiliary->grab().toImage();
   QVERIFY(!waveform.isNull());

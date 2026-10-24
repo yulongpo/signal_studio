@@ -64,6 +64,11 @@ int runNarrowbandAnalysisCapture(const QString& directory,bool software,bool aux
             auto* root=edit->window();QTest::mouseClick(root->windowHandle(),Qt::LeftButton,Qt::NoModifier,root->mapFromGlobal(edit->mapToGlobal(edit->rect().center())));
             QTest::keyClick(root->windowHandle(),Qt::Key_A,Qt::ControlModifier);for(const auto character:value.toLatin1())QTest::keyClick(root->windowHandle(),character);QTest::keyClick(root->windowHandle(),Qt::Key_Return);
         };
+        const auto referenceVisible=[&](bool enabled) {
+            auto* control=child<QCheckBox>(window,"constellationReferenceRegions");if(control->isChecked()==enabled)return;
+            auto* strip=dynamic_cast<ChartControlStrip*>(child<QWidget>(window,"narrowbandConstellationControls"));require(strip,"Constellation settings strip required");
+            widebandNativeClick(strip->overflowButton());widebandNativeReachable(control);widebandNativeClick(control);widebandNativeClick(strip->overflowButton());
+        };
         for(const auto& suffix:{QString("raw"),QString("sigmf-meta")}) {
             const auto prefix=suffix=="raw"?QString("ci16"):QString("cf32");QString error;
             require(window.createProject(directory,prefix,&error),error);
@@ -86,6 +91,11 @@ int runNarrowbandAnalysisCapture(const QString& directory,bool software,bool aux
             scene(prefix+"-01-ddc");widebandNativeClick(child<QPushButton>(window,"modulationPage"));
             require(waitUntil([&]{return workspace->analysisResult()!=nullptr;},15000),"Raw analysis did not finish");
             auto result=workspace->analysisResult();require(!result->constellation.empty() && result->eyes.empty() && result->constellation.front().value==result->source->samples.front(),"Raw scatter must match continuous IQ and unknown Rs must not create an eye");scene(prefix+"-02-raw");
+            auto* stage=child<QComboBox>(window,"constellationAnalysisStage");auto* constellation=child<QWidget>(window,"narrowbandConstellationLargeChart");
+            const auto rawGeneration=workspace->renderStatistics()["analysisGeneration"].toString();
+            widebandNativeSelect(stage,5);referenceVisible(true);
+            require(workspace->analysisResult()==result && workspace->renderStatistics()["analysisGeneration"].toString()==rawGeneration && !constellation->property("decisionAvailable").toBool() && constellation->property("referenceCellCount").toInt()==0,"Unknown modulation must not invent a decision/template or rerun DSP");
+            scene(prefix+"-10-decision-unknown");widebandNativeSelect(stage,0);referenceVisible(false);
             widebandNativeClick(child<QToolButton>(window,"narrowbandSyncSettingsToggle"));
             widebandNativeSelect(child<QComboBox>(window,"analysisSymbolRateMode"),1);
             auto* rs=child<QDoubleSpinBox>(window,"symbolRate");auto* rsEdit=rs->findChild<QLineEdit*>();require(rsEdit,"Rs editor is absent");
@@ -100,6 +110,26 @@ int runNarrowbandAnalysisCapture(const QString& directory,bool software,bool aux
             require(waitUntil([&]{auto r=workspace->analysisResult();return r && r->carrierLocked && !r->eyes.empty();},20000),"True single-carrier recovery did not lock on the prescribed fixture");
             const auto recovered=workspace->analysisResult();
             widebandNativeClick(child<QPushButton>(window,"modulationPage"));scene(prefix+"-04-recovered-constellation");
+            const auto recoveredGeneration=workspace->renderStatistics()["analysisGeneration"].toString();
+            widebandNativeSelect(stage,5);referenceVisible(true);
+            require(waitUntil([&]{return constellation->property("decisionVisible").toBool() && constellation->property("referenceCellCount").toInt()==4;},5000) && constellation->property("analysisStage").toInt()==static_cast<int>(AnalysisStage::CarrierRecovered),"Real recovered samples must produce conditional decisions and exact QPSK Voronoi reference");
+            require(constellation->property("decisionSourceInteger").toULongLong()==recovered->synchronizedSymbols.front().source.integer && std::abs(constellation->property("decisionSourceFraction").toDouble()-recovered->synchronizedSymbols.front().source.fraction)<1e-12,"Decision provenance must retain actual source sample position");
+            scene(prefix+"-11-decision-reference");
+            const auto plot=constellation->property("iqPlotRect").toRectF();require(plot.width()>10 && std::abs(plot.width()-plot.height())<1e-9,"Equal I/Q plot required");
+            const auto pixel=QPointF(plot.left()+plot.width()*.25,plot.top()+plot.height()*.75).toPoint();
+            QTest::mouseMove(window.windowHandle(),constellation->mapTo(&window,pixel),10);
+            QWheelEvent wheel(QPointF(pixel),QPointF(constellation->mapToGlobal(pixel)),QPoint(),QPoint(0,120),Qt::NoButton,Qt::NoModifier,Qt::NoScrollPhase,false);
+            QCoreApplication::sendEvent(constellation,&wheel);
+            const auto pointer=pixel+QPoint(3,2);QTest::mouseMove(window.windowHandle(),constellation->mapTo(&window,pointer),10);QCoreApplication::processEvents();
+            const auto iq=constellation->property("iqReadout").toPointF();const double low=constellation->property("iqAxisMinimum").toDouble(),high=constellation->property("iqAxisMaximum").toDouble();
+            require(!window.session().activeChannel()->analysis.constellationAutoScale && constellation->property("iqReadoutValid").toBool() &&
+                std::abs(iq.x()-(low+(pointer.x()-plot.left())/plot.width()*(high-low)))<1e-9 &&
+                std::abs(iq.y()-(high-(pointer.y()-plot.top())/plot.height()*(high-low)))<1e-9,"Native pointer must inverse-map the actual zoomed equal-aspect plot to numeric I/Q");
+            require(workspace->analysisResult()==recovered && workspace->renderStatistics()["analysisGeneration"].toString()==recoveredGeneration,"Decision/reference/zoom must retain snapshot and request generation");
+            scene(prefix+"-12-decision-iq-zoom");referenceVisible(false);
+            require(constellation->property("referenceCellCount").toInt()==0 && constellation->property("decisionVisible").toBool() && workspace->analysisResult()==recovered,"Reference toggle only changes display");
+            scene(prefix+"-13-decision-reference-off");widebandNativeSelect(stage,4);
+            widebandNativeClick(child<QCheckBox>(window,"constellationAutoScale"));
             widebandNativeClick(child<QPushButton>(window,"eyePage"));scene(prefix+"-05-recovered-eye");
             widebandNativeClick(child<QPushButton>(window,"deepLearningPage"));
             require(!child<QPushButton>(window,"runRealRecognition")->isEnabled() && child<QLabel>(window,"recognitionUnavailable")->isVisible(),"Undeployed recognition must be unavailable");scene(prefix+"-06-recognition-unavailable");
@@ -113,7 +143,7 @@ int runNarrowbandAnalysisCapture(const QString& directory,bool software,bool aux
             require(waitUntil([&]{auto r=workspace->analysisResult();return r && r->carrierLocked;},20000),"Reopened real source must recover again");scene(prefix+"-08-reopened-eye");projects.append(projectPath);
             auto* cancel=child<QPushButton>(window,"cancelNarrowbandAnalysis");widebandScrollTo(cancel);widebandNativeClick(cancel);require(!workspace->analysisResult(),"Cancel must clear the current result");scene(prefix+"-09-cancelled");
         }
-        report["pass"]=scenes.size()==18;report["nativeAcceptance"]=!auxiliary && report["pass"].toBool();
+        report["pass"]=scenes.size()==26;report["nativeAcceptance"]=!auxiliary && report["pass"].toBool();
     } catch(const std::exception& e) {report["error"]=QString::fromUtf8(e.what());}
     report["scenes"]=scenes;report["sceneCount"]=scenes.size();report["projects"]=projects;report["fullScreen"]=window.isFullScreen();report["logicalWindowSize"]=sizeJson(window.size());
     require(write(),"Could not write narrowband capture report");return report["pass"].toBool()?0:1;
