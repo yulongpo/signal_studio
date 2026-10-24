@@ -1,0 +1,66 @@
+{
+  "finalCodeHead": "05d80d54c8bf1f73788a84cdd8438ccf617eacb4",
+  "binaries": [
+    {
+      "lastWriteUtc": "2026-10-24T16:25:05.2088875Z",
+      "note": "Final CLI validation binary",
+      "bytes": 13484544,
+      "sha256": "b40ea7ace62b63579c8ccf749e63d44774f794087240f4899d4d0285efa93516",
+      "buildHead": "05d80d54c8bf1f73788a84cdd8438ccf617eacb4",
+      "configuration": "debug",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudio.exe",
+      "name": "SignalStudio.exe"
+    },
+    {
+      "lastWriteUtc": "2026-10-24T15:55:07.688568Z",
+      "note": "Actual file hash/time are authoritative; target C++ inputs were unchanged by the later app/main.cpp-only fix. An earlier up-to-date worker need not have been relinked.",
+      "bytes": 15525888,
+      "sha256": "ba800245df614f75baa3ad85ef1293851def4143b97cee64b27bfddfad43be58",
+      "configuration": "debug",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+      "name": "SignalStudioUiCapture.exe",
+      "lastFullValidationHead": "064b509ba8384bd0f7a13abab40cb810675d91b6"
+    },
+    {
+      "lastWriteUtc": "2026-10-24T15:54:44.1541482Z",
+      "note": "Actual file hash/time are authoritative; target C++ inputs were unchanged by the later app/main.cpp-only fix. An earlier up-to-date worker need not have been relinked.",
+      "bytes": 2664960,
+      "sha256": "949c11fd17018630ef8b2463fb365faef0be994b1f392f7699603acaaf84445f",
+      "configuration": "debug",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioDetectionWorker.exe",
+      "name": "SignalStudioDetectionWorker.exe",
+      "lastFullValidationHead": "064b509ba8384bd0f7a13abab40cb810675d91b6"
+    },
+    {
+      "lastWriteUtc": "2026-10-24T16:25:12.990363Z",
+      "note": "Final CLI validation binary",
+      "bytes": 5146112,
+      "sha256": "acb04ca134f008070bdcb3096a84eeceae3bf9905da5ede038026ce6a33c8f3f",
+      "buildHead": "05d80d54c8bf1f73788a84cdd8438ccf617eacb4",
+      "configuration": "release",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe",
+      "name": "SignalStudio.exe"
+    },
+    {
+      "lastWriteUtc": "2026-10-24T15:29:15.7588961Z",
+      "note": "Actual file hash/time are authoritative; target C++ inputs were unchanged by the later app/main.cpp-only fix. An earlier up-to-date worker need not have been relinked.",
+      "bytes": 5923328,
+      "sha256": "d6becf0833be1ea899a1f251e8cbf41d4c4fe9b7b16dc68cec3d8ebe346d0de6",
+      "configuration": "release",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+      "name": "SignalStudioUiCapture.exe",
+      "lastFullValidationHead": "717ab8f4146daba9a349ab2aa8854f47f9ab69f3"
+    },
+    {
+      "lastWriteUtc": "2026-10-24T15:25:48.3118461Z",
+      "note": "Actual file hash/time are authoritative; target C++ inputs were unchanged by the later app/main.cpp-only fix. An earlier up-to-date worker need not have been relinked.",
+      "bytes": 219136,
+      "sha256": "96e23b1c6250154635fb6826e8a161c72dd32f38e94db2d1b2fb211e9aea94c4",
+      "configuration": "release",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionWorker.exe",
+      "name": "SignalStudioDetectionWorker.exe",
+      "lastFullValidationHead": "717ab8f4146daba9a349ab2aa8854f47f9ab69f3"
+    }
+  ],
+  "capturedUtc": "2026-10-24T16:28:52.0069113Z"
+}

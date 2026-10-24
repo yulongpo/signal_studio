@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "configuration": "Release",
+  "pass": true,
+  "groups": [
+    {
+      "logs": [
+        "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release\\ui-geometry-test-results-release.txt",
+        "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release\\ui-parameters-test-results-release.txt",
+        "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release\\ui-annotations-test-results-release.txt"
+      ],
+      "inventory": "D:\\project\\signal_studio_rebuild\\tests\\fixtures\\ui_main_cases.txt",
+      "businessCases": 106,
+      "suite": "main"
+    },
+    {
+      "logs": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release\\nb-analysis-ui-release.txt",
+      "inventory": "D:\\project\\signal_studio_rebuild\\tests\\fixtures\\ui_narrowband_cases.txt",
+      "businessCases": 11,
+      "suite": "narrowband"
+    }
+  ]
+}

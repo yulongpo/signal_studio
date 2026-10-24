@@ -1,0 +1,122 @@
+[
+  {
+    "renderer": "native-axis-release",
+    "group": "A, False",
+    "leftMin": 40.0,
+    "leftMax": 42.0,
+    "verticalCostMin": 37.0,
+    "verticalCostMax": 37.0,
+    "areaGainPctMin": -27.759999999999994,
+    "areaGainPctMax": -1.7078604009759246
+  },
+  {
+    "renderer": "native-axis-release",
+    "group": "A, True",
+    "leftMin": 46.0,
+    "leftMax": 62.0,
+    "verticalCostMin": 37.0,
+    "verticalCostMax": 37.0,
+    "areaGainPctMin": -28.559999999999995,
+    "areaGainPctMax": -2.0340511297337383
+  },
+  {
+    "renderer": "native-axis-release",
+    "group": "B, False",
+    "leftMin": 40.0,
+    "leftMax": 42.0,
+    "verticalCostMin": 37.0,
+    "verticalCostMax": 37.0,
+    "areaGainPctMin": -27.759999999999994,
+    "areaGainPctMax": -1.7078604009759246
+  },
+  {
+    "renderer": "native-axis-release",
+    "group": "B, True",
+    "leftMin": 46.0,
+    "leftMax": 62.0,
+    "verticalCostMin": 37.0,
+    "verticalCostMax": 37.0,
+    "areaGainPctMin": -28.559999999999995,
+    "areaGainPctMax": -2.0340511297337383
+  },
+  {
+    "renderer": "native-axis-release",
+    "group": "C, False",
+    "leftMin": 78.0,
+    "leftMax": 80.0,
+    "verticalCostMin": 21.0,
+    "verticalCostMax": 21.0,
+    "areaGainPctMin": -16.421818181818182,
+    "areaGainPctMax": -1.8961493582263733
+  },
+  {
+    "renderer": "native-axis-release",
+    "group": "C, True",
+    "leftMin": 84.0,
+    "leftMax": 100.0,
+    "verticalCostMin": 21.0,
+    "verticalCostMax": 21.0,
+    "areaGainPctMin": -17.36727272727273,
+    "areaGainPctMax": -2.228704784130686
+  },
+  {
+    "renderer": "native-axis-release-software",
+    "group": "A, False",
+    "leftMin": 40.0,
+    "leftMax": 42.0,
+    "verticalCostMin": 37.0,
+    "verticalCostMax": 37.0,
+    "areaGainPctMin": -27.759999999999994,
+    "areaGainPctMax": -1.7078604009759246
+  },
+  {
+    "renderer": "native-axis-release-software",
+    "group": "A, True",
+    "leftMin": 46.0,
+    "leftMax": 62.0,
+    "verticalCostMin": 37.0,
+    "verticalCostMax": 37.0,
+    "areaGainPctMin": -28.559999999999995,
+    "areaGainPctMax": -2.0340511297337383
+  },
+  {
+    "renderer": "native-axis-release-software",
+    "group": "B, False",
+    "leftMin": 40.0,
+    "leftMax": 42.0,
+    "verticalCostMin": 37.0,
+    "verticalCostMax": 37.0,
+    "areaGainPctMin": -27.759999999999994,
+    "areaGainPctMax": -1.7078604009759246
+  },
+  {
+    "renderer": "native-axis-release-software",
+    "group": "B, True",
+    "leftMin": 46.0,
+    "leftMax": 62.0,
+    "verticalCostMin": 37.0,
+    "verticalCostMax": 37.0,
+    "areaGainPctMin": -28.559999999999995,
+    "areaGainPctMax": -2.0340511297337383
+  },
+  {
+    "renderer": "native-axis-release-software",
+    "group": "C, False",
+    "leftMin": 78.0,
+    "leftMax": 80.0,
+    "verticalCostMin": 21.0,
+    "verticalCostMax": 21.0,
+    "areaGainPctMin": -16.421818181818182,
+    "areaGainPctMax": -1.8961493582263733
+  },
+  {
+    "renderer": "native-axis-release-software",
+    "group": "C, True",
+    "leftMin": 84.0,
+    "leftMax": 100.0,
+    "verticalCostMin": 21.0,
+    "verticalCostMax": 21.0,
+    "areaGainPctMin": -17.36727272727273,
+    "areaGainPctMax": -2.228704784130686
+  }
+]

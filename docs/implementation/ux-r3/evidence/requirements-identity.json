@@ -1,0 +1,6 @@
+{
+  "source": "reference/Signal_Studio_UX_R3_Codex_Master_Prompt.md",
+  "frozen": "docs/implementation/ux-r3/REQUIREMENTS.md",
+  "sha256": "7b951de356c96360381c447afb8cc2686c35c67117a87e900f0e42ba3b868925",
+  "releaseGate": "Independent APPROVED of exact final HEAD, then fresh remote ancestry check and normal push only"
+}

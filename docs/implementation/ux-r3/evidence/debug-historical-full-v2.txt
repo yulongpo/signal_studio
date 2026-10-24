@@ -1,0 +1,1050 @@
+D:\softwares\cmake\bin\cmake.exe --preset local-debug
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26300.
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+CMake Warning at D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake:339 (message):
+  This project is using headers of the GuiPrivate module and will therefore
+  be tied to this specific Qt module build version.  Running this project
+  against other versions of the Qt modules may crash at any arbitrary point.
+  This is not a bug, but a result of using Qt internals.  You have been
+  warned!
+
+  You can disable this warning by setting QT_NO_PRIVATE_MODULE_WARNING to ON.
+Call Stack (most recent call first):
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6GuiPrivate/Qt6GuiPrivateConfig.cmake:48 (_qt_internal_show_private_module_warning)
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/Qt6Config.cmake:253 (find_package)
+  CMakeLists.txt:17 (find_package)
+
+
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+-- Configuring done (0.5s)
+-- Generating done (2.4s)
+-- Build files have been written to: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+D:\softwares\cmake\bin\cmake.exe --build --preset local-debug --parallel 4
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioBrand.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioBrand.lib
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioDisplaySamplingTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDisplaySamplingTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionRefinedFusionTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionRefinedFusionTests.exe
+  SignalStudioDetectionPostprocessTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionPostprocessTests.exe
+  正在扫描源以查找模块依赖项...
+  Automatic MOC for target SignalStudioParameterInputTests
+  正在扫描源以查找模块依赖项...
+  SignalStudioAnnotationTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioAnnotationTests.exe
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\lib\Debug\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionRefinementTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionRefinementTests.exe
+  SignalStudioParameterInputTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioParameterInputTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioNarrowbandModulationTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioNarrowbandModulationTests.exe
+  SignalStudioNarrowbandFeedbackProbe.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioNarrowbandFeedbackProbe.exe
+  SignalStudioNarrowbandAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioNarrowbandAnalysisTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionSampleEnergyTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionSampleEnergyTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioNarrowbandRecoveryTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioNarrowbandRecoveryTests.exe
+  SignalStudioDetectionTimePipelineTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionTimePipelineTests.exe
+  SignalStudioAnnotationStoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioAnnotationStoreTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionWorker.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionWorker.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionPipelineTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionPipelineTests.exe
+  SignalStudioDetectionFrequencyAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionFrequencyAnalysisTests.exe
+  SignalStudioChannelProcessorTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioChannelProcessorTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioChannelRateTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioChannelRateTests.exe
+  SignalStudioDetectionModelBackendTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionModelBackendTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionProtocolTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionProtocolTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionStoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionStoreTests.exe
+  Automatic MOC for target SignalStudioSampleFormatTests
+  正在扫描源以查找模块依赖项...
+  SignalStudioSampleFormatTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioSampleFormatTests.exe
+  Automatic MOC for target SignalStudio
+  正在扫描源以查找模块依赖项...
+  SignalStudio.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudio.exe
+  Deploying Qt and compiler runtime to the standalone output directory
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140D_ATOMIC_WAIT.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140_2D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/VCRUNTIME140D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/VCRUNTIME140_1D.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/ucrtbased.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/MSVCP140_1D.dll
+  D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudio.exe 64 bit, debug executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugind.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+EXEC : warning : Cannot find any version of the dxcompiler.dll and dxil.dll. This is not a problem unless Direct3D 12 and certain features are used by the application. [D:\project\signal_studio_rebuild\out\vs2026-qt611-debug\SignalStudio.vcxproj]
+  Adding Qt6Svg for qsvgicond.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugind.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugind.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackendd.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Skipping system library C:/WINDOWS/system32/icuuc.dll
+  Qt6Cored.dll is up to date.
+  Qt6Guid.dll is up to date.
+  Qt6Networkd.dll is up to date.
+  Qt6Svgd.dll is up to date.
+  Qt6Widgetsd.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  concrt140d.dll is up to date.
+  msvcp140_1d.dll is up to date.
+  msvcp140_2d.dll is up to date.
+  msvcp140d.dll is up to date.
+  msvcp140d_atomic_wait.dll is up to date.
+  msvcp140d_codecvt_ids.dll is up to date.
+  vccorlib140d.dll is up to date.
+  vcruntime140_1d.dll is up to date.
+  vcruntime140_threadsd.dll is up to date.
+  vcruntime140d.dll is up to date.
+  qtuiotouchplugind.dll is up to date.
+  qsvgicond.dll is up to date.
+  qgifd.dll is up to date.
+  qicnsd.dll is up to date.
+  qicod.dll is up to date.
+  qjpegd.dll is up to date.
+  qsvgd.dll is up to date.
+  qtgad.dll is up to date.
+  qtiffd.dll is up to date.
+  qwbmpd.dll is up to date.
+  qwebpd.dll is up to date.
+  qnetworklistmanagerd.dll is up to date.
+  qminimald.dll is up to date.
+  qoffscreend.dll is up to date.
+  qwindowsd.dll is up to date.
+  qmodernwindowsstyled.dll is up to date.
+  qcertonlybackendd.dll is up to date.
+  qschannelbackendd.dll is up to date.
+  -- Staged 10 x64 Debug CRT DLLs from C:/Program Files/Microsoft Visual Studio/18/Community/VC/Redist/MSVC/14.51.36231/debug_nonredist/x64/Microsoft.VC145.DebugCRT
+  -- Staged debug UCRT from C:\Program Files (x86)\Windows Kits\10\/bin/10.0.26100.0/x64/ucrt/ucrtbased.dll
+  Automatic MOC for target SignalStudioUxR3AxisTests
+  Automatic MOC for target SignalStudioNarrowbandAnalysisUiTests
+  Automatic MOC for target SignalStudioUxR3WorkflowTests
+  Automatic MOC for target SignalStudioImportTests
+  Automatic MOC for target SignalStudioUxTests
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionTaskTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionTaskTests.exe
+  SignalStudioImportTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioImportTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioUxTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioUxTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  Automatic MOC for target SignalStudioWavTests
+  SignalStudioNarrowbandAnalysisUiTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioNarrowbandAnalysisUiTests.exe
+  正在扫描源以查找模块依赖项...
+  ux_r3_workflow_tests.cpp
+  SignalStudioUxR3AxisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioUxR3AxisTests.exe
+  正在扫描源以查找模块依赖项...
+  Automatic MOC for target SignalStudioUiCapture
+  SignalStudioWavTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioWavTests.exe
+  Automatic MOC for target SignalStudioUiTests
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioCoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioCoreTests.exe
+  ui_capture.cpp
+  正在扫描源以查找模块依赖项...
+  SignalStudioUiTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioUiTests.exe
+  正在编译...
+  正在扫描源以查找模块依赖项...
+  SignalStudioSpectralAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioSpectralAnalysisTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioProjectTreeTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioProjectTreeTests.exe
+  ux_r3_workflow_tests.cpp
+  正在扫描源以查找模块依赖项...
+  SignalStudioProjectFileTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioProjectFileTests.exe
+  Automatic MOC for target SignalStudioLabelImportTests
+  正在编译...
+  正在扫描源以查找模块依赖项...
+  SignalStudioLabelImportTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioLabelImportTests.exe
+  ui_capture.cpp
+  Automatic MOC for target SignalStudioDetectionSourceTests
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionSourceTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioDetectionSourceTests.exe
+  SignalStudioUxR3WorkflowTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioUxR3WorkflowTests.exe
+  mocs_compilation_Debug.cpp
+  SignalStudioUiCapture.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioUiCapture.exe
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+      Start  1: signal_studio_parameter_input
+ 1/40 Test  #1: signal_studio_parameter_input ................   Passed    0.62 sec
+      Start  2: signal_studio_detection_refined_fusion
+ 2/40 Test  #2: signal_studio_detection_refined_fusion .......   Passed    0.18 sec
+      Start  3: signal_studio_detection_time_pipeline
+ 3/40 Test  #3: signal_studio_detection_time_pipeline ........   Passed   18.14 sec
+      Start  4: signal_studio_detection_refinement
+ 4/40 Test  #4: signal_studio_detection_refinement ...........   Passed    0.22 sec
+      Start  5: signal_studio_detection_sample_energy
+ 5/40 Test  #5: signal_studio_detection_sample_energy ........   Passed    0.38 sec
+      Start  6: signal_studio_detection_pipeline
+ 6/40 Test  #6: signal_studio_detection_pipeline .............   Passed   14.54 sec
+      Start  7: signal_studio_detection_postprocess
+ 7/40 Test  #7: signal_studio_detection_postprocess ..........   Passed    0.20 sec
+      Start  8: signal_studio_detection_model_backend
+ 8/40 Test  #8: signal_studio_detection_model_backend ........   Passed    0.47 sec
+      Start  9: signal_studio_detection_frequency_analysis
+ 9/40 Test  #9: signal_studio_detection_frequency_analysis ...   Passed    0.53 sec
+      Start 10: signal_studio_detection_store
+10/40 Test #10: signal_studio_detection_store ................   Passed    2.12 sec
+      Start 11: signal_studio_detection_protocol
+11/40 Test #11: signal_studio_detection_protocol .............   Passed    0.82 sec
+      Start 12: signal_studio_detection_task
+12/40 Test #12: signal_studio_detection_task .................   Passed   19.30 sec
+      Start 13: signal_studio_detection_source
+13/40 Test #13: signal_studio_detection_source ...............   Passed    3.48 sec
+      Start 14: signal_studio_annotations
+14/40 Test #14: signal_studio_annotations ....................   Passed    0.82 sec
+      Start 15: signal_studio_annotation_store
+15/40 Test #15: signal_studio_annotation_store ...............   Passed   28.31 sec
+      Start 16: signal_studio_label_import
+16/40 Test #16: signal_studio_label_import ...................   Passed   24.79 sec
+      Start 17: signal_studio_wav
+17/40 Test #17: signal_studio_wav ............................   Passed    1.15 sec
+      Start 18: signal_studio_import
+18/40 Test #18: signal_studio_import .........................   Passed    0.93 sec
+      Start 19: signal_studio_sample_format
+19/40 Test #19: signal_studio_sample_format ..................   Passed    5.81 sec
+      Start 20: signal_studio_core
+20/40 Test #20: signal_studio_core ...........................   Passed    1.52 sec
+      Start 21: signal_studio_project_file
+21/40 Test #21: signal_studio_project_file ...................   Passed    7.53 sec
+      Start 22: signal_studio_ux_r3_axes
+22/40 Test #22: signal_studio_ux_r3_axes .....................   Passed    1.00 sec
+      Start 23: signal_studio_ux_r3_workflows
+23/40 Test #23: signal_studio_ux_r3_workflows ................***Failed   39.41 sec
+
+      Start 24: signal_studio_narrowband_modulation
+24/40 Test #24: signal_studio_narrowband_modulation ..........   Passed   24.92 sec
+      Start 25: signal_studio_narrowband_recovery
+25/40 Test #25: signal_studio_narrowband_recovery ............   Passed    9.28 sec
+      Start 26: signal_studio_narrowband_analysis
+26/40 Test #26: signal_studio_narrowband_analysis ............   Passed   15.09 sec
+      Start 27: signal_studio_channel_rate
+27/40 Test #27: signal_studio_channel_rate ...................   Passed    0.81 sec
+      Start 28: signal_studio_channel_processor
+28/40 Test #28: signal_studio_channel_processor ..............   Passed    1.30 sec
+      Start 29: signal_studio_spectral_analysis
+29/40 Test #29: signal_studio_spectral_analysis ..............   Passed    1.39 sec
+      Start 30: signal_studio_display_sampling
+30/40 Test #30: signal_studio_display_sampling ...............   Passed    0.16 sec
+      Start 31: signal_studio_narrowband_analysis_ui
+31/40 Test #31: signal_studio_narrowband_analysis_ui .........***Failed    5.19 sec
+A crash occurred in D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioNarrowbandAnalysisUiTests.exe.
+While testing independentPagesShareAnalysisAndKeepDisplayState
+Function time: 4784ms Total time: 4788ms
+
+Exception address: 0x00007FFC34F0D05B
+Exception code   : 0xc0000005
+Nearby symbol    : QLineEdit::`default constructor closure'
+
+Stack:
+#  1: QTestLog::enterTestFunction() - 0x00007FFCBFB4610E
+#  2: UnhandledExceptionFilter() - 0x00007FFD90A3F400
+#  3: strncpy() - 0x00007FFD932E7F90
+#  4: _C_specific_handler() - 0x00007FFD932A4AC0
+#  5: _chkstk() - 0x00007FFD932E6280
+#  6: RtlWow64GetCurrentMachine() - 0x00007FFD932439E0
+#  7: KiUserExceptionDispatcher() - 0x00007FFD932E5C30
+#  8: QLineEdit::`default constructor closure'() - 0x00007FFC34EE2FA5
+#  9: QLineEdit::`default constructor closure'() - 0x00007FFC34EE2FA5
+# 10: QLineEdit::`default constructor closure'() - 0x00007FFC34EE2FA5
+# 11: QLineEdit::`default constructor closure'() - 0x00007FFC34EE2FA5
+# 12: NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() - 0x00007FF7103526F0
+# 13: NarrowbandAnalysisUiTests::qt_static_metacall() - 0x00007FF710328B20
+# 14: QFileInfo::filePath() - 0x00007FFC337ADEA6
+# 15: QFileInfo::filePath() - 0x00007FFC337ADEA6
+# 16: QTestLog::enterTestFunction() - 0x00007FFCBFB4610E
+# 17: QTestLog::enterTestFunction() - 0x00007FFCBFB4610E
+# 18: QTestLog::enterTestFunction() - 0x00007FFCBFB4610E
+# 19: QTestLog::enterTestFunction() - 0x00007FFCBFB4610E
+# 20: QTestLog::enterTestFunction() - 0x00007FFCBFB4610E
+# 21: QTestLog::enterTestFunction() - 0x00007FFCBFB4610E
+# 22: QTestLog::enterTestFunction() - 0x00007FFCBFB4610E
+# 23: QTestLog::enterTestFunction() - 0x00007FFCBFB4610E
+# 24: QTestLog::enterTestFunction() - 0x00007FFCBFB4610E
+# 25: QTestLog::enterTestFunction() - 0x00007FFCBFB4610E
+# 26: main() - 0x00007FF710328C60
+# 27: invoke_main() - 0x00007FF7109D8A50
+# 28: __scrt_common_main_seh() - 0x00007FF7109D8840
+# 29: __scrt_common_main() - 0x00007FF7109D8820
+# 30: mainCRTStartup() - 0x00007FF7109D8B10
+# 31: BaseThreadInitThunk() - 0x00007FFD9258CDE0
+# 32: RtlUserThreadStart() - 0x00007FFD931FEE20
+
+********* Start testing of NarrowbandAnalysisUiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+QINFO  : NarrowbandAnalysisUiTests::initTestCase() NARROWBAND_VALIDATION_NODE=W8
+PASS   : NarrowbandAnalysisUiTests::initTestCase()
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+
+CMake Error at D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake:20 (message):
+  Qt UI raw log contains a failure or no successful totals
+
+
+
+      Start 32: signal_studio_project_tree
+32/40 Test #32: signal_studio_project_tree ...................   Passed    0.44 sec
+      Start 33: signal_studio_ux_detection
+33/40 Test #33: signal_studio_ux_detection ...................***Failed   56.92 sec
+********* Start testing of UxTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UxTests::initTestCase()
+QWARN  : UxTests::uxD01_historicalDerivation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_historicalDerivation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_historicalDerivation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_historicalDerivation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_historicalDerivation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_historicalDerivation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UxTests::uxD01_historicalDerivation()
+QWARN  : UxTests::uxD02_viewSourceKeepsDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD02_viewSourceKeepsDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD02_viewSourceKeepsDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD02_viewSourceKeepsDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD02_viewSourceKeepsDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD02_viewSourceKeepsDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+FAIL!  : UxTests::uxD02_viewSourceKeepsDraft() '!focused.isEmpty()' returned FALSE. ()
+D:\project\signal_studio_rebuild\tests\ux_tests.cpp(220) : failure location
+QWARN  : UxTests::uxD01_topDerivationDiscardsCrossFileDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_topDerivationDiscardsCrossFileDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_topDerivationDiscardsCrossFileDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_topDerivationDiscardsCrossFileDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_topDerivationDiscardsCrossFileDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_topDerivationDiscardsCrossFileDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_topDerivationDiscardsCrossFileDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_topDerivationDiscardsCrossFileDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD01_topDerivationDiscardsCrossFileDraft() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UxTests::uxD01_topDerivationDiscardsCrossFileDraft()
+QWARN  : UxTests::uxD03_crossFileCancellation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_crossFileCancellation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_crossFileCancellation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_crossFileCancellation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_crossFileCancellation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_crossFileCancellation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_crossFileCancellation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UxTests::uxD03_crossFileCancellation()
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+FAIL!  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() 'list->hasFocus()' returned FALSE. ()
+D:\project\signal_studio_rebuild\tests\task_ux_tests.h(337) : failure location
+QWARN  : UxTests::uxD04_modelSpectrumMapping() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxD04_modelSpectrumMapping() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxD04_modelSpectrumMapping() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxD04_modelSpectrumMapping() This plugin does not support propagateSizeHints()
+PASS   : UxTests::uxD04_modelSpectrumMapping()
+QWARN  : UxTests::uxD05_foldedParametersAndFirstScreen() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD05_foldedParametersAndFirstScreen() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD05_foldedParametersAndFirstScreen() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD05_foldedParametersAndFirstScreen() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD05_foldedParametersAndFirstScreen() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD05_foldedParametersAndFirstScreen() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+FAIL!  : UxTests::uxD05_foldedParametersAndFirstScreen() 'fft->hasFocus()' returned FALSE. ()
+D:\project\signal_studio_rebuild\tests\detection_card_ux_tests.h(244) : failure location
+QWARN  : UxTests::uxD06_visibleRangeEntry() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD06_visibleRangeEntry() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD06_visibleRangeEntry() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UxTests::uxD06_visibleRangeEntry()
+QWARN  : UxTests::uxD08_preflightDetails() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD08_preflightDetails() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD08_preflightDetails() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD08_preflightDetails() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD08_preflightDetails() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxD08_preflightDetails() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UxTests::uxD08_preflightDetails()
+PASS   : UxTests::cleanupTestCase()
+Totals: 8 passed, 3 failed, 0 skipped, 0 blacklisted, 56559ms
+********* Finished testing of UxTests *********
+
+CMake Error at D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake:20 (message):
+  Qt UI raw log contains a failure or no successful totals
+
+
+
+      Start 34: signal_studio_ux_spectral
+34/40 Test #34: signal_studio_ux_spectral ....................   Passed    2.91 sec
+      Start 35: signal_studio_ux_charts
+35/40 Test #35: signal_studio_ux_charts ......................   Passed   12.77 sec
+      Start 36: signal_studio_ux_layout
+36/40 Test #36: signal_studio_ux_layout ......................***Failed   37.83 sec
+********* Start testing of UxTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UxTests::initTestCase()
+QWARN  : UxTests::uxR01_chartToolbarLayout() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_chartToolbarLayout() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_chartToolbarLayout() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_chartToolbarLayout() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_chartToolbarLayout() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_chartToolbarLayout() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_chartToolbarLayout() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_chartToolbarLayout() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UxTests::uxR01_chartToolbarLayout()
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_inspectorRouting() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UxTests::uxR02_inspectorRouting()
+QWARN  : UxTests::uxR02_fileProperties() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_fileProperties() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_fileProperties() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_fileProperties() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_fileProperties() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UxTests::uxR02_fileProperties()
+QWARN  : UxTests::uxR02_paletteWorkspaceOwnership() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_paletteWorkspaceOwnership() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_paletteWorkspaceOwnership() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_paletteWorkspaceOwnership() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_paletteWorkspaceOwnership() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_paletteWorkspaceOwnership() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_paletteWorkspaceOwnership() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_paletteWorkspaceOwnership() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_paletteWorkspaceOwnership() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR02_paletteWorkspaceOwnership() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UxTests::uxR02_paletteWorkspaceOwnership()
+QWARN  : UxTests::uxR03_taskKeyboardAndDetails() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR03_taskKeyboardAndDetails() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR03_taskKeyboardAndDetails() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR03_taskKeyboardAndDetails() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR03_taskKeyboardAndDetails() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR03_taskKeyboardAndDetails() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+FAIL!  : UxTests::uxR03_taskKeyboardAndDetails() 'list->hasFocus()' returned FALSE. ()
+D:\project\signal_studio_rebuild\tests\task_ux_tests.h(187) : failure location
+QWARN  : UxTests::uxR03_taskRowActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR03_taskRowActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR03_taskRowActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR03_taskRowActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR03_taskRowActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR03_taskRowActions() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR03_taskRowActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR03_taskRowActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UxTests::uxR03_taskRowActions()
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support raise()
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support grabbing the keyboard
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support raise()
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support grabbing the keyboard
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UxTests::uxR01_lateRunFilterPopupAndRefresh()
+PASS   : UxTests::roundTwoFlatResponsiveControls()
+PASS   : UxTests::cleanupTestCase()
+Totals: 9 passed, 1 failed, 0 skipped, 0 blacklisted, 37405ms
+********* Finished testing of UxTests *********
+
+CMake Error at D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake:20 (message):
+  Qt UI raw log contains a failure or no successful totals
+
+
+
+      Start 37: signal_studio_ux_popovers
+37/40 Test #37: signal_studio_ux_popovers ....................   Passed    0.92 sec
+      Start 38: signal_studio_ui
+38/40 Test #38: signal_studio_ui .............................***Failed   94.43 sec
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UiTests::initTestCase()
+QWARN  : UiTests::workspaceLayout() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::workspaceLayout() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+FAIL!  : UiTests::workspaceLayout() 'main->plotRect().height() >= kCollapsedWidebandPlotMinimum' returned FALSE. (The approved layers bar and resize handle must be the only new vertical deductions from the A1.4.3 main plot budget.)
+D:\project\signal_studio_rebuild\tests\ui_tests.cpp(542) : failure location
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::globalDisplaySettingsApplyAcrossFiles() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::globalDisplaySettingsApplyAcrossFiles()
+QWARN  : UiTests::mainModeCoordinateDirection() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::mainModeCoordinateDirection() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::mainModeCoordinateDirection() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::mainModeCoordinateDirection()
+QWARN  : UiTests::continuousMarkCreation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::continuousMarkCreation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::continuousMarkCreation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::continuousMarkCreation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::continuousMarkCreation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::continuousMarkCreation()
+QWARN  : UiTests::escapeCancelsCreation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::escapeCancelsCreation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::escapeCancelsCreation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::escapeCancelsCreation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::escapeCancelsCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeCancelsCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeCancelsCreation() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::escapeCancelsCreation()
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkMovePreservesSpan() This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkMovePreservesSpan() This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkMovePreservesSpan() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::selectedMarkMovePreservesSpan()
+QWARN  : UiTests::escapeRollsBackMarkMove() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::escapeRollsBackMarkMove() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::escapeRollsBackMarkMove() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::escapeRollsBackMarkMove() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::escapeRollsBackMarkMove() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeRollsBackMarkMove() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::escapeRollsBackMarkMove() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeRollsBackMarkMove() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::escapeRollsBackMarkMove()
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() This plugin does not support grabbing the mouse
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() This plugin does not support grabbing the mouse
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::singleClickSelectsWithoutChangingView()
+QWARN  : UiTests::boxZoomAndHistoryActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::boxZoomAndHistoryActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::boxZoomAndHistoryActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::boxZoomAndHistoryActions() This plugin does not support grabbing the mouse
+QWARN  : UiTests::boxZoomAndHistoryActions() This plugin does not support grabbing the mouse
+QWARN  : UiTests::boxZoomAndHistoryActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::boxZoomAndHistoryActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::boxZoomAndHistoryActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::boxZoomAndHistoryActions()
+QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::emptyProjectAndFileActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::emptyProjectAndFileActions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::emptyProjectAndFileActions()
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::treeSelectionPreservesNodesAndShiftAnchor() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::treeSelectionPreservesNodesAndShiftAnchor()
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::displayChangeSurvivesPendingWheelCommit() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::displayChangeSurvivesPendingWheelCommit()
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53)
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53)
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum)
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum)
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude)
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power)
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::selectedMarkCornerAndEdgeResize(time-frequency)
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::selectedMarkCornerAndEdgeResize(waterfall)
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::responsiveWorkspace(4k-150-percent) QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+FAIL!  : UiTests::responsiveWorkspace(4k-150-percent) 'plot->plotRect().height() >= kCollapsedWidebandPlotMinimum' returned FALSE. ()
+D:\project\signal_studio_rebuild\tests\ui_tests.cpp(1156) : failure location
+QWARN  : UiTests::propertyFieldsFitSidebar() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::propertyFieldsFitSidebar() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::propertyFieldsFitSidebar() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::propertyFieldsFitSidebar() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::propertyFieldsFitSidebar() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::propertyFieldsFitSidebar()
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::prototypeDisplayDefaultsAndOptions() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::prototypeDisplayDefaultsAndOptions()
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::paletteControlsStaySynchronized() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::paletteControlsStaySynchronized()
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::narrowbandPaletteSelectionUpdatesStftCharts()
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+FAIL!  : UiTests::widebandAuxiliaryRenderingAndGestures() 'file->display.auxiliaryMax - file->display.auxiliaryMin < high - low' returned FALSE. ()
+D:\project\signal_studio_rebuild\tests\ui_tests.cpp(2146) : failure location
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::narrowbandAuxiliaryRenderingAndGestures()
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::widebandLinkedCursorsAndFrameSpectrum()
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::narrowbandLinkedCursorsAndFrameSpectrum()
+PASS   : UiTests::cleanupTestCase()
+Totals: 28 passed, 3 failed, 0 skipped, 0 blacklisted, 94077ms
+********* Finished testing of UiTests *********
+
+CMake Error at D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake:20 (message):
+  Qt UI raw log contains a failure or no successful totals
+
+
+
+      Start 39: signal_studio_ui_parameters
+39/40 Test #39: signal_studio_ui_parameters ..................***Timeout 480.04 sec
+
+      Start 40: signal_studio_ui_annotations
+40/40 Test #40: signal_studio_ui_annotations .................***Failed  309.57 sec
+
+         torchSigLabelsNativeRoundtrip function time: 300011ms, total time: 305361ms
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UiTests::initTestCase()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+PASS   : UiTests::unifiedAnnotationDraftsAndSegmentSwitch()
+QWARN  : UiTests::torchSigLabelsNativeRoundtrip() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::torchSigLabelsNativeRoundtrip() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::torchSigLabelsNativeRoundtrip() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::torchSigLabelsNativeRoundtrip() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::torchSigLabelsNativeRoundtrip() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::torchSigLabelsNativeRoundtrip() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::torchSigLabelsNativeRoundtrip() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::torchSigLabelsNativeRoundtrip() QWidget::setWindowModified: The window title does not contain a '[*]' placeholder
+QWARN  : UiTests::torchSigLabelsNativeRoundtrip() This plugin does not support propagateSizeHints()
+QFATAL : UiTests::torchSigLabelsNativeRoundtrip() Test function timed out
+FAIL!  : UiTests::torchSigLabelsNativeRoundtrip() Received a fatal error.
+Totals: 2 passed, 1 failed, 0 skipped, 0 blacklisted, 305361ms
+********* Finished testing of UiTests *********
+
+CMake Error at D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake:20 (message):
+  Qt UI raw log contains a failure or no successful totals
+
+
+
+
+83% tests passed, 7 tests failed out of 40
+
+Label Time Summary:
+annotations    = 309.57 sec*proc (1 test)
+charts         =  12.77 sec*proc (1 test)
+detection      =  56.92 sec*proc (1 test)
+geometry       =  94.43 sec*proc (1 test)
+layout         =  37.83 sec*proc (1 test)
+parameters     = 480.04 sec*proc (1 test)
+popovers       =   0.92 sec*proc (1 test)
+spectral       =   2.91 sec*proc (1 test)
+ui             = 884.04 sec*proc (3 tests)
+wideband-ux    = 111.35 sec*proc (5 tests)
+
+Total Test time (real) = 1226.28 sec
+
+The following tests FAILED:
+	 23 - signal_studio_ux_r3_workflows (Failed)
+	 31 - signal_studio_narrowband_analysis_ui (Failed)
+	 33 - signal_studio_ux_detection (Failed)               detection wideband-ux
+	 36 - signal_studio_ux_layout (Failed)                  layout wideband-ux
+	 38 - signal_studio_ui (Failed)                         geometry ui
+	 39 - signal_studio_ui_parameters (Timeout)             parameters ui
+	 40 - signal_studio_ui_annotations (Failed)             annotations ui
+Errors while running CTest

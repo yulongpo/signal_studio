@@ -1,0 +1,28 @@
+********* Start testing of LabelImportTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+PASS   : LabelImportTests::initTestCase()
+PASS   : LabelImportTests::manualTxtRequiresMappingAndPreviewIsBounded()
+PASS   : LabelImportTests::strictMatlabPairAndReverseLookup()
+PASS   : LabelImportTests::casingAndMultipleCandidatesAreExplicit()
+PASS   : LabelImportTests::discoveryAndParserBudgetsAndCancellation()
+PASS   : LabelImportTests::mappedIndicesUnitsAndSavedMapping()
+PASS   : LabelImportTests::mappedRoundingFramesAndPhysicalRejection()
+PASS   : LabelImportTests::unknownTimeObservationAndClassOnlyAreNotRectangles()
+PASS   : LabelImportTests::generatorDiscoveryAndSafePublication()
+PASS   : LabelImportTests::incompleteEvidenceConfirmationCancellationDeduplicationAndUndo()
+PASS   : LabelImportTests::mappedProfileUsesAnnotationServiceAndProfileChangesRequireReview()
+PASS   : LabelImportTests::sigmfEmptyIsValidAndSupplementalConflictsRemainErrors()
+PASS   : LabelImportTests::generatorFixtureAndPhysicalBinding()
+PASS   : LabelImportTests::generatorRoundingAndRejectWholeBatch()
+PASS   : LabelImportTests::torchSigFixtureAndOrderIndependentMatching()
+PASS   : LabelImportTests::torchSigConflictsAndUnsupported()
+PASS   : LabelImportTests::codecFullRoundtripAndExports()
+PASS   : LabelImportTests::largeSharedAndRecordEvidenceRemainLossless()
+PASS   : LabelImportTests::normalizedBatchBudgetRejectsAtomically()
+PASS   : LabelImportTests::largeGeneratorRecordUsesSourceLineReference()
+QINFO  : LabelImportTests::actualTwoSourceAssets() Actual generator annotations 10 segments 65 source SHA256 "dcef967000723aff575aa98eb413f0aad3a14575f92c55a3cc6199484f793b83"
+QINFO  : LabelImportTests::actualTwoSourceAssets() Actual TorchSig annotations 4 source SHA256 "5efd03dae0f53002c8400ddc2ba65e367d7dde315b232a24cd77a2b1bd982a29"
+PASS   : LabelImportTests::actualTwoSourceAssets()
+PASS   : LabelImportTests::cleanupTestCase()
+Totals: 22 passed, 0 failed, 0 skipped, 0 blacklisted, 7427ms
+********* Finished testing of LabelImportTests *********

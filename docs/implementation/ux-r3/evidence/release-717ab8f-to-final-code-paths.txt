@@ -1,0 +1,7 @@
+app/main.cpp
+scripts/gpu_smoke.ps1
+scripts/screenshot.ps1
+scripts/ssproj-association.ps1
+scripts/test-ssproj-association.ps1
+scripts/verify-package.ps1
+scripts/verify-ux-r3-deployment.ps1

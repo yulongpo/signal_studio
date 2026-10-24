@@ -1,0 +1,336 @@
+D:\softwares\cmake\bin\cmake.exe --preset local-release
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26300.
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+CMake Warning at D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake:339 (message):
+  This project is using headers of the GuiPrivate module and will therefore
+  be tied to this specific Qt module build version.  Running this project
+  against other versions of the Qt modules may crash at any arbitrary point.
+  This is not a bug, but a result of using Qt internals.  You have been
+  warned!
+
+  You can disable this warning by setting QT_NO_PRIVATE_MODULE_WARNING to ON.
+Call Stack (most recent call first):
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6GuiPrivate/Qt6GuiPrivateConfig.cmake:48 (_qt_internal_show_private_module_warning)
+  D:/softwares/Qt/6.11.1/msvc2022_64/lib/cmake/Qt6/Qt6Config.cmake:253 (find_package)
+  CMakeLists.txt:17 (find_package)
+
+
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/heatmap.frag -> heatmap.frag.qsb exposed as :/signalstudio/shaders/heatmap.frag.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.vert -> texture.vert.qsb exposed as :/signalstudio/shaders/texture.vert.qsb
+D:/project/signal_studio_rebuild/ui/charts/shaders/texture.frag -> texture.frag.qsb exposed as :/signalstudio/shaders/texture.frag.qsb
+-- Configuring done (0.4s)
+-- Generating done (2.3s)
+-- Build files have been written to: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+D:\softwares\cmake\bin\cmake.exe --build --preset local-release --parallel 3
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioCore.lib
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  brand_assets.cpp
+  SignalStudioDetectionRefinementTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionRefinementTests.exe
+  SignalStudioAnnotationTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioAnnotationTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionRefinedFusionTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionRefinedFusionTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionPostprocessTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionPostprocessTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDisplaySamplingTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDisplaySamplingTests.exe
+  Automatic MOC for target SignalStudioParameterInputTests
+  project_file.cpp
+  label_import.cpp
+  正在编译...
+  正在扫描源以查找模块依赖项...
+  brand_assets.cpp
+  SignalStudioParameterInputTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioParameterInputTests.exe
+  正在编译...
+  label_import.cpp
+  project_file.cpp
+  qrc_branding_Release.cpp
+  SignalStudioBrand.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioBrand.lib
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioInfrastructure.lib
+  Automatic MOC for target SignalStudioSampleFormatTests
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioNarrowbandAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandAnalysisTests.exe
+  SignalStudioNarrowbandModulationTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandModulationTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioAnnotationStoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioAnnotationStoreTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioNarrowbandFeedbackProbe.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandFeedbackProbe.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionTimePipelineTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionTimePipelineTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioSampleFormatTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioSampleFormatTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionModelBackendTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionModelBackendTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionStoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionStoreTests.exe
+  SignalStudioNarrowbandRecoveryTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandRecoveryTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioChannelRateTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioChannelRateTests.exe
+  SignalStudioDetectionSampleEnergyTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionSampleEnergyTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionPipelineTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionPipelineTests.exe
+  SignalStudioDetectionProtocolTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionProtocolTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionFrequencyAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionFrequencyAnalysisTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioChannelProcessorTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioChannelProcessorTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionWorker.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionWorker.exe
+  Automatic MOC for target SignalStudio
+  正在扫描源以查找模块依赖项...
+  main_window.cpp
+  正在编译...
+  main_window.cpp
+  SignalStudio.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudio.exe
+  Deploying Qt and compiler runtime to the standalone output directory
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_ATOMIC_WAIT.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_2.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/VCRUNTIME140.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/VCRUNTIME140_1.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_1.dll
+  D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudio.exe 64 bit, release executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugin.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding Qt6Svg for qsvgicon.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+EXEC : warning : Cannot find any version of the dxcompiler.dll and dxil.dll. This is not a problem unless Direct3D 12 and certain features are used by the application. [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudio.vcxproj]
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Skipping system library C:/WINDOWS/system32/icuuc.dll
+  Qt6Core.dll is up to date.
+  Qt6Gui.dll is up to date.
+  Qt6Network.dll is up to date.
+  Qt6Svg.dll is up to date.
+  Qt6Widgets.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  vc_redist.x64.exe is up to date.
+  qtuiotouchplugin.dll is up to date.
+  qsvgicon.dll is up to date.
+  qgif.dll is up to date.
+  qicns.dll is up to date.
+  qico.dll is up to date.
+  qjpeg.dll is up to date.
+  qsvg.dll is up to date.
+  qtga.dll is up to date.
+  qtiff.dll is up to date.
+  qwbmp.dll is up to date.
+  qwebp.dll is up to date.
+  qnetworklistmanager.dll is up to date.
+  qminimal.dll is up to date.
+  qoffscreen.dll is up to date.
+  qwindows.dll is up to date.
+  qmodernwindowsstyle.dll is up to date.
+  qcertonlybackend.dll is up to date.
+  qschannelbackend.dll is up to date.
+  -- Staged 10 x64 Release CRT DLLs from C:/Program Files/Microsoft Visual Studio/18/Community/VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.CRT
+  Automatic MOC for target SignalStudioImportTests
+  Automatic MOC for target SignalStudioDetectionSourceTests
+  Automatic MOC for target SignalStudioUiTests
+  Automatic MOC for target SignalStudioLabelImportTests
+  Automatic MOC for target SignalStudioWavTests
+  Automatic MOC for target SignalStudioUxR3AxisTests
+  Automatic MOC for target SignalStudioUiCapture
+  Automatic MOC for target SignalStudioUxR3WorkflowTests
+  Automatic MOC for target SignalStudioNarrowbandAnalysisUiTests
+  Automatic MOC for target SignalStudioUxTests
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  label_import_tests.cpp
+  main_window.cpp
+  main_window.cpp
+  SignalStudioDetectionSourceTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionSourceTests.exe
+  SignalStudioDetectionTaskTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionTaskTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  main_window.cpp
+  ui_tests.cpp
+  main_window.cpp
+  正在扫描源以查找模块依赖项...
+  main_window.cpp
+  main_window.cpp
+  SignalStudioSpectralAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioSpectralAnalysisTests.exe
+  正在编译...
+  main_window.cpp
+  正在编译...
+  正在扫描源以查找模块依赖项...
+  正在编译...
+  SignalStudioProjectTreeTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioProjectTreeTests.exe
+  正在编译...
+  main_window.cpp
+  label_import_tests.cpp
+  main_window.cpp
+  正在编译...
+  ui_tests.cpp
+  main_window.cpp
+  正在扫描源以查找模块依赖项...
+  SignalStudioProjectFileTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioProjectFileTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioCoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioCoreTests.exe
+  正在编译...
+  main_window.cpp
+  SignalStudioUxR3WorkflowTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUxR3WorkflowTests.exe
+  SignalStudioUiCapture.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUiCapture.exe
+  SignalStudioLabelImportTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioLabelImportTests.exe
+  正在编译...
+  正在扫描源以查找模块依赖项...
+  main_window.cpp
+  SignalStudioWavTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioWavTests.exe
+  SignalStudioUxTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUxTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioImportTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioImportTests.exe
+  SignalStudioUiTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUiTests.exe
+  SignalStudioUxR3AxisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUxR3AxisTests.exe
+  SignalStudioNarrowbandAnalysisUiTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandAnalysisUiTests.exe
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+      Start  1: signal_studio_parameter_input
+ 1/40 Test  #1: signal_studio_parameter_input ................   Passed    0.34 sec
+      Start  2: signal_studio_detection_refined_fusion
+ 2/40 Test  #2: signal_studio_detection_refined_fusion .......   Passed    0.01 sec
+      Start  3: signal_studio_detection_time_pipeline
+ 3/40 Test  #3: signal_studio_detection_time_pipeline ........   Passed    1.61 sec
+      Start  4: signal_studio_detection_refinement
+ 4/40 Test  #4: signal_studio_detection_refinement ...........   Passed    0.01 sec
+      Start  5: signal_studio_detection_sample_energy
+ 5/40 Test  #5: signal_studio_detection_sample_energy ........   Passed    0.21 sec
+      Start  6: signal_studio_detection_pipeline
+ 6/40 Test  #6: signal_studio_detection_pipeline .............   Passed    1.81 sec
+      Start  7: signal_studio_detection_postprocess
+ 7/40 Test  #7: signal_studio_detection_postprocess ..........   Passed    0.01 sec
+      Start  8: signal_studio_detection_model_backend
+ 8/40 Test  #8: signal_studio_detection_model_backend ........   Passed    0.17 sec
+      Start  9: signal_studio_detection_frequency_analysis
+ 9/40 Test  #9: signal_studio_detection_frequency_analysis ...   Passed    0.22 sec
+      Start 10: signal_studio_detection_store
+10/40 Test #10: signal_studio_detection_store ................   Passed    1.05 sec
+      Start 11: signal_studio_detection_protocol
+11/40 Test #11: signal_studio_detection_protocol .............   Passed    0.46 sec
+      Start 12: signal_studio_detection_task
+12/40 Test #12: signal_studio_detection_task .................   Passed    9.04 sec
+      Start 13: signal_studio_detection_source
+13/40 Test #13: signal_studio_detection_source ...............   Passed    0.96 sec
+      Start 14: signal_studio_annotations
+14/40 Test #14: signal_studio_annotations ....................   Passed    0.06 sec
+      Start 15: signal_studio_annotation_store
+15/40 Test #15: signal_studio_annotation_store ...............   Passed    5.47 sec
+      Start 16: signal_studio_label_import
+16/40 Test #16: signal_studio_label_import ...................   Passed    7.36 sec
+      Start 17: signal_studio_wav
+17/40 Test #17: signal_studio_wav ............................   Passed    0.71 sec
+      Start 18: signal_studio_import
+18/40 Test #18: signal_studio_import .........................   Passed    0.50 sec
+      Start 19: signal_studio_sample_format
+19/40 Test #19: signal_studio_sample_format ..................   Passed    3.36 sec
+      Start 20: signal_studio_core
+20/40 Test #20: signal_studio_core ...........................   Passed    0.56 sec
+      Start 21: signal_studio_project_file
+21/40 Test #21: signal_studio_project_file ...................   Passed    4.75 sec
+      Start 22: signal_studio_ux_r3_axes
+22/40 Test #22: signal_studio_ux_r3_axes .....................   Passed    0.37 sec
+      Start 23: signal_studio_ux_r3_workflows
+23/40 Test #23: signal_studio_ux_r3_workflows ................   Passed   11.79 sec
+      Start 24: signal_studio_narrowband_modulation
+24/40 Test #24: signal_studio_narrowband_modulation ..........   Passed    1.37 sec
+      Start 25: signal_studio_narrowband_recovery
+25/40 Test #25: signal_studio_narrowband_recovery ............   Passed    0.60 sec
+      Start 26: signal_studio_narrowband_analysis
+26/40 Test #26: signal_studio_narrowband_analysis ............   Passed    0.96 sec
+      Start 27: signal_studio_channel_rate
+27/40 Test #27: signal_studio_channel_rate ...................   Passed    0.24 sec
+      Start 28: signal_studio_channel_processor
+28/40 Test #28: signal_studio_channel_processor ..............   Passed    0.28 sec
+      Start 29: signal_studio_spectral_analysis
+29/40 Test #29: signal_studio_spectral_analysis ..............   Passed    0.28 sec
+      Start 30: signal_studio_display_sampling
+30/40 Test #30: signal_studio_display_sampling ...............   Passed    0.01 sec
+      Start 31: signal_studio_narrowband_analysis_ui
+31/40 Test #31: signal_studio_narrowband_analysis_ui .........   Passed   18.18 sec
+      Start 32: signal_studio_project_tree
+32/40 Test #32: signal_studio_project_tree ...................   Passed    0.27 sec
+      Start 33: signal_studio_ux_detection
+33/40 Test #33: signal_studio_ux_detection ...................   Passed    7.88 sec
+      Start 34: signal_studio_ux_spectral
+34/40 Test #34: signal_studio_ux_spectral ....................   Passed    0.83 sec
+      Start 35: signal_studio_ux_charts
+35/40 Test #35: signal_studio_ux_charts ......................   Passed    5.73 sec
+      Start 36: signal_studio_ux_layout
+36/40 Test #36: signal_studio_ux_layout ......................   Passed    6.84 sec
+      Start 37: signal_studio_ux_popovers
+37/40 Test #37: signal_studio_ux_popovers ....................   Passed    0.84 sec
+      Start 38: signal_studio_ui
+38/40 Test #38: signal_studio_ui .............................   Passed   40.17 sec
+      Start 39: signal_studio_ui_parameters
+39/40 Test #39: signal_studio_ui_parameters ..................   Passed  109.07 sec
+      Start 40: signal_studio_ui_annotations
+40/40 Test #40: signal_studio_ui_annotations .................   Passed   46.59 sec
+
+100% tests passed, 0 tests failed out of 40
+
+Label Time Summary:
+annotations    =  46.59 sec*proc (1 test)
+charts         =   5.73 sec*proc (1 test)
+detection      =   7.88 sec*proc (1 test)
+geometry       =  40.17 sec*proc (1 test)
+layout         =   6.84 sec*proc (1 test)
+parameters     = 109.07 sec*proc (1 test)
+popovers       =   0.84 sec*proc (1 test)
+spectral       =   0.83 sec*proc (1 test)
+ui             = 195.82 sec*proc (3 tests)
+wideband-ux    =  22.12 sec*proc (5 tests)
+
+Total Test time (real) = 291.08 sec

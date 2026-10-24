@@ -1,0 +1,361 @@
+{
+  "files": [
+    {
+      "sha256": "25a9e25784ef4edf3c169bc3d1242a9ec80b5f06f83c65d444ed728da24d1120",
+      "path": "evidence/association-initial-failure.json",
+      "bytes": 530
+    },
+    {
+      "sha256": "3bd6821b50851c563aec4f5905d8456836662c0aa3824a830b3461ff24878ed1",
+      "path": "evidence/association-shell-open-and-unregister.json",
+      "bytes": 565
+    },
+    {
+      "sha256": "254ee017e0099e14afe35117034124eb76cc1e85a8452c0accb4b62272d76471",
+      "path": "evidence/axis-release-measurements.json",
+      "bytes": 3267
+    },
+    {
+      "sha256": "2f70dd17f6dc805b12f24c7b4a99f886919919a6036e9482a944f81a1779cca1",
+      "path": "evidence/binary-identities-064b509.json",
+      "bytes": 2433
+    },
+    {
+      "sha256": "6cf9124f3704216ba41d44413aef2f94b575026149d994ce72584906c7005300",
+      "path": "evidence/debug-064b509-coverage.json",
+      "bytes": 886
+    },
+    {
+      "sha256": "1566b128bf920757cfa8a1e16b69849f815fadd867e4e0b97e7ec1e8e34792fb",
+      "path": "evidence/debug-064b509-full.txt",
+      "bytes": 23585
+    },
+    {
+      "sha256": "4a0e588699a09e9fc579fb955d55b048c00013daea9e2ba3543b7d391dce4b68",
+      "path": "evidence/debug-axis-gpu.json",
+      "bytes": 2524754
+    },
+    {
+      "sha256": "217c255c76a234935ab362a91cb517113b19c86340c42c258e7b8bdb4a9e5d1d",
+      "path": "evidence/debug-axis-software.json",
+      "bytes": 2062783
+    },
+    {
+      "sha256": "f3f5e574cc64e479d9c12d5fc33d4493bc7096f33afa001c1ae89703924b47dd",
+      "path": "evidence/debug-cross-drive-v3.txt",
+      "bytes": 40010
+    },
+    {
+      "sha256": "fe232b097447f88eadf2122b48a0788d3b7bd4fb92026f1249672282bcbb4620",
+      "path": "evidence/debug-deployment-deployment-summary.json",
+      "bytes": 1537
+    },
+    {
+      "sha256": "41ea017338b43ef063fc50e53ee1c8b5c914d3ac2d20efb8400c17e16691a163",
+      "path": "evidence/debug-deployment-five-pages-gpu.json",
+      "bytes": 18688
+    },
+    {
+      "sha256": "67c9c9ad78da7563ad9e41fff02fccb22f8ad44347207f23a2cd2e213b82f0ec",
+      "path": "evidence/debug-deployment-five-pages-software.json",
+      "bytes": 13900
+    },
+    {
+      "sha256": "d21cab110ce29f60b114207d44afcc43fcc85874ccdbb3ff45461ea4a7587b3b",
+      "path": "evidence/debug-deployment-real-eye-project-gpu.json",
+      "bytes": 16408
+    },
+    {
+      "sha256": "8f8442d2531a3439659a84b307ecae2ea422fe0824f76559f2507e6e88d57516",
+      "path": "evidence/debug-deployment-real-eye-project-software.json",
+      "bytes": 12775
+    },
+    {
+      "sha256": "f24e7d24649598dfbd21df9db745fb6ef7bbdd9ebaa4fd7e7f900e7447f9f8e6",
+      "path": "evidence/debug-deployment-wideband-gpu.json",
+      "bytes": 15976
+    },
+    {
+      "sha256": "5f8284c8b91485eef8e233cae0264182b023e155f719b31fffacde1ace29ac39",
+      "path": "evidence/debug-deployment-wideband-software.json",
+      "bytes": 11138
+    },
+    {
+      "sha256": "da6ccc45f1e4c362357f82c4448764e0c596c8c07f0b8487a8f03565cd10da30",
+      "path": "evidence/debug-final-ctest-raw.log",
+      "bytes": 120684
+    },
+    {
+      "sha256": "c034f82bc2c82b5525c6473923fac7ad6e1eda124190f894408edfd5d0938c21",
+      "path": "evidence/debug-historical-full-v2.txt",
+      "bytes": 108112
+    },
+    {
+      "sha256": "8e224feba869aec8ae4cfce0cc4678551717d31158c6b32f1ccad2f6468429f4",
+      "path": "evidence/debug-historical-full-v4.txt",
+      "bytes": 36573
+    },
+    {
+      "sha256": "eb7bda42fe456e37e95963cb82f45df37e2a903c4c7fa0cb4008dfc9785a6940",
+      "path": "evidence/debug-historical-overlay-not-settled.json",
+      "bytes": 18542
+    },
+    {
+      "sha256": "56dbda7d2c6ee4608024c57bc6f091ee983d410f04e330770a50b4cb5a880119",
+      "path": "evidence/debug-label-test-results.txt",
+      "bytes": 2164
+    },
+    {
+      "sha256": "0cab420b8f36e4be2aae62364fd668fb63966b76a2f8e84a564ce06d0db0a75d",
+      "path": "evidence/debug-narrowband-gpu.json",
+      "bytes": 44287
+    },
+    {
+      "sha256": "4cb23ab32efadf88f6fe87342ccf36859ef28d20fb6bd65fce487f5a65c7402e",
+      "path": "evidence/debug-narrowband-software.json",
+      "bytes": 42414
+    },
+    {
+      "sha256": "a3b8b694b325ea33a26b755e241d136cc5471651c2feb770a275e4a399a51016",
+      "path": "evidence/debug-nb-analysis-ui.txt",
+      "bytes": 1834
+    },
+    {
+      "sha256": "d986bca1e2ed0fd8e4094a2fd64950b43d9093219aaf620555b2d568d2cb227e",
+      "path": "evidence/debug-transition-full.txt",
+      "bytes": 55655
+    },
+    {
+      "sha256": "f0fe0f08fe92e1eb7b218a60e566edd44bf39f8ea0664f259df7039d0a625bc1",
+      "path": "evidence/debug-ui-annotations-test-results.txt",
+      "bytes": 6947
+    },
+    {
+      "sha256": "17680c796af17ab1b7033aa80491ce81471ff902c30f7f137f3d66a9829d85ab",
+      "path": "evidence/debug-ui-geometry-test-results.txt",
+      "bytes": 9500
+    },
+    {
+      "sha256": "86a15da39d37b79fdc5687479976dc643296383b3e6faeeb56882aaa4718b0ca",
+      "path": "evidence/debug-ui-parameters-test-results.txt",
+      "bytes": 13913
+    },
+    {
+      "sha256": "1370fb3781d52ae1e4251ced07af348e93a505aab7c520c6ee521aecabf259ad",
+      "path": "evidence/debug-ux-r3-workflows.txt",
+      "bytes": 3017
+    },
+    {
+      "sha256": "ef028a4445c42fc4b494c7c227e910f818a402648460f4d723b5ebad5fabf676",
+      "path": "evidence/final-binary-identities.json",
+      "bytes": 3602
+    },
+    {
+      "sha256": "358426147162419355b7a4f5fdadbd8d0f9d01b53cfeee349ac88091d6241579",
+      "path": "evidence/final-source-freeze.json",
+      "bytes": 283
+    },
+    {
+      "sha256": "fb171c59c22a924caa3fede90b329740ed6f6e9ed3bb91a270197edb8c3c1715",
+      "path": "evidence/release-3499cfb-coverage.json",
+      "bytes": 904
+    },
+    {
+      "sha256": "12f09b13be6b0cba9f59b7cd49436595a6dd4596e61e04bb1d88182f1d5deaad",
+      "path": "evidence/release-3499cfb-full.txt",
+      "bytes": 23143
+    },
+    {
+      "sha256": "5d241b5c3194d98361130e3f83f5e414b9264a683244537df6aaa30daa158e25",
+      "path": "evidence/release-717ab8f-coverage.json",
+      "bytes": 904
+    },
+    {
+      "sha256": "a04e104af11a8e3175b68d8c2880d5a974723031b43332a4073b564e425e9735",
+      "path": "evidence/release-717ab8f-full.txt",
+      "bytes": 22884
+    },
+    {
+      "sha256": "cae888cee5132f34f34ea769bdde90c5104c5d46a1ed395c26a1be9a7d22a55e",
+      "path": "evidence/release-717ab8f-to-final-code-paths.txt",
+      "bytes": 195
+    },
+    {
+      "sha256": "39aecd33f6a35a33751d6b677ba7d07a04eabb47ab23632f3bcd068d64b375f1",
+      "path": "evidence/release-axis-gpu.json",
+      "bytes": 2524272
+    },
+    {
+      "sha256": "2c5e234e8ad5a0b9457d66e001f2fbb2d130436213c3e1f82fbbf197741616f6",
+      "path": "evidence/release-axis-software.json",
+      "bytes": 2062788
+    },
+    {
+      "sha256": "37e21754ed832cd5b25617afe9614f168964a89ac6a2068f59561762c183ddf6",
+      "path": "evidence/release-deployment-deployment-summary.json",
+      "bytes": 1551
+    },
+    {
+      "sha256": "09e1048f79794ab77bd648a26969b2296d827be6c2228fd1754b0ddf15b96416",
+      "path": "evidence/release-deployment-five-pages-gpu.json",
+      "bytes": 18674
+    },
+    {
+      "sha256": "e26faae64d0ec138127a0621d7d3d8c41fc4001e83f35be13e72d61c5e5c12b4",
+      "path": "evidence/release-deployment-five-pages-software.json",
+      "bytes": 13902
+    },
+    {
+      "sha256": "39ec64ac3911c838721b8a817f62f2884cbaf43dd4e6f3175378713de9c81284",
+      "path": "evidence/release-deployment-real-eye-project-gpu.json",
+      "bytes": 17285
+    },
+    {
+      "sha256": "541e3b9466e1d9d436e221d970107dac84e201f817938ec33ae9f00af13fbe40",
+      "path": "evidence/release-deployment-real-eye-project-software.json",
+      "bytes": 12778
+    },
+    {
+      "sha256": "e256919681911153878d31fe8a211ed661fa5f1ca3cad721def09d1e6bec848e",
+      "path": "evidence/release-deployment-wideband-gpu.json",
+      "bytes": 15916
+    },
+    {
+      "sha256": "96a17888f51610688f0f150fcbf8914ec62dff5d5363c9dc7af6ef04c480f460",
+      "path": "evidence/release-deployment-wideband-software.json",
+      "bytes": 11154
+    },
+    {
+      "sha256": "9056541b1cfadcc540e56af0cafa5df22ea8aab83621e8cbb5a589f2a7d141b8",
+      "path": "evidence/release-detection-native.json",
+      "bytes": 1525602
+    },
+    {
+      "sha256": "b441e59086da0787fe3e7bcfc450e4a0a81fde1e55a9f69739f6eb0fa9c0cef2",
+      "path": "evidence/release-final-ctest-raw.log",
+      "bytes": 120925
+    },
+    {
+      "sha256": "456e69da68a2ddb8e5488490178938df4793c213f724610b345aca77e9ea3544",
+      "path": "evidence/release-historical-demo-unknown-rs.json",
+      "bytes": 19747
+    },
+    {
+      "sha256": "8d21de0921455c7b910ddbeb76853c859b59e4c2efbccbcbf8fb1b02834528c9",
+      "path": "evidence/release-historical-full-v1.txt",
+      "bytes": 72940
+    },
+    {
+      "sha256": "d2f63ce350a25620c430e07af20d422467cec8a9ca637b7bb226b557d0a14a7f",
+      "path": "evidence/release-label-test-results.txt",
+      "bytes": 2165
+    },
+    {
+      "sha256": "bea6990c82a765cd99c3075883416694ea1c6b4e684cae979380a7a66e0d2929",
+      "path": "evidence/release-narrowband-gpu.json",
+      "bytes": 44337
+    },
+    {
+      "sha256": "688cac515f5ffb02b396ebbb28598deb43f772dd3187b73f3d8410a627b752f7",
+      "path": "evidence/release-narrowband-software.json",
+      "bytes": 42464
+    },
+    {
+      "sha256": "f4e75dbae816b7fca6ece436dad06a9c54ef2e0179e149caab673a684e085e62",
+      "path": "evidence/release-nb-analysis-ui.txt",
+      "bytes": 1835
+    },
+    {
+      "sha256": "59f9a54e9e3ec04cae16c09009433a4849ff5a72cc2b8e7c96d1028b92e27e7a",
+      "path": "evidence/release-ui-annotations-test-results.txt",
+      "bytes": 6948
+    },
+    {
+      "sha256": "d922e367c100f80b4b6f500bf6443cbb9a36ab525f489e110e3c65680bd50dd2",
+      "path": "evidence/release-ui-geometry-test-results.txt",
+      "bytes": 9501
+    },
+    {
+      "sha256": "fc5c41f48f5cc49dbe7f8eaeb744447c3d6bc05b6492191cb522408bd66ce8bd",
+      "path": "evidence/release-ui-parameters-test-results.txt",
+      "bytes": 13915
+    },
+    {
+      "sha256": "e3b10d0e94f136408174636a94c14044b85c435eb72d354974a17e64de73993d",
+      "path": "evidence/release-ux-r3-workflows.txt",
+      "bytes": 3019
+    },
+    {
+      "sha256": "55e33441fc2cd2515c20c4943db6a3f8c545d9330ccf0160c37d26781803fc54",
+      "path": "evidence/requirements-identity.json",
+      "bytes": 330
+    },
+    {
+      "sha256": "5dd745f956e815356ca5b7c210586bb6d0cef8390389c0f7b16112ab89b8949e",
+      "path": "evidence/SignalStudioNarrowbandAnalysisUiTests.txt",
+      "bytes": 694
+    },
+    {
+      "sha256": "01a9d3cd29fcdfd438657dd9c3f22255bb59eb47207ad2c6538830227d5e70c8",
+      "path": "evidence/SignalStudioUiTests.txt",
+      "bytes": 5008
+    },
+    {
+      "sha256": "74908c92dab11b0de4bd16f5dea75f0a137b2be44d27bc84e8936704be3a25ac",
+      "path": "evidence/VALIDATION_INDEX.json",
+      "bytes": 500
+    },
+    {
+      "sha256": "0013acb7f4b58af9bdbdc67fcdf8c520dfbe4c2bb3107ed82bf050dfe95e99b9",
+      "path": "screenshots/24-production-model-time-refinement.png",
+      "bytes": 1167027
+    },
+    {
+      "sha256": "ecf27bee41db403079f6ece4c5059f82880cdd6f72e23b0b992e632ad6bd5a74",
+      "path": "screenshots/27-real-algorithm-cpu-ddc.png",
+      "bytes": 425562
+    },
+    {
+      "sha256": "63dfa1775ea96faf5885b4d16c5d464a559c9aece485599707e4cb1a7158f009",
+      "path": "screenshots/44-real-model-cancelled-prefix.png",
+      "bytes": 729945
+    },
+    {
+      "sha256": "14584bec564fa52b2060c02a2312ac6d9ef563d56101461d1cd6ec6b977bf314",
+      "path": "screenshots/A-psd-tf-long.png",
+      "bytes": 543259
+    },
+    {
+      "sha256": "865069500eeb6e7175cb9c7a8d46f75ba3be74cf99ff9000a1e8c78e3c468f2c",
+      "path": "screenshots/A-waveform-tf-short.png",
+      "bytes": 1359444
+    },
+    {
+      "sha256": "f7e21693a215088354047a328c75dfd113711d56ee80b8f726f03181f5e0ab88",
+      "path": "screenshots/B-psd-tf-long.png",
+      "bytes": 546484
+    },
+    {
+      "sha256": "1baf8c0b28f402f30704758c58cd365c29fc1e02444caaef0922ee0330d16197",
+      "path": "screenshots/C-psd-tf-long.png",
+      "bytes": 545344
+    },
+    {
+      "sha256": "48e346e44d9128469b42d6d8b16a4f110984cad5987f49ff3405023821f6302b",
+      "path": "screenshots/cf32-04-recovered-constellation.png",
+      "bytes": 377115
+    },
+    {
+      "sha256": "55c4aa6b213d5d6d9f8d3044291b9bac5314eaca8fa00e016936ef1c62c87dd9",
+      "path": "screenshots/cf32-05-recovered-eye.png",
+      "bytes": 708312
+    },
+    {
+      "sha256": "5ebca0b0ee49affe07882c88574ee4efb520d7b321a82d7a9c37b7090ca5bfe3",
+      "path": "screenshots/cf32-06-recognition-unavailable.png",
+      "bytes": 423048
+    }
+  ],
+  "generatedUtc": "2026-10-24T16:29:48.2561705Z",
+  "scope": "Frozen local evidence and key screenshots, before independent review"
+}
