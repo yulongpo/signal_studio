@@ -55,6 +55,7 @@ try {
         }elseif($scene.backend -notmatch 'D3D11' -or $scene.render.gpuDataDrawCalls -le 0 -or $scene.render.textureUploads -le 0){throw 'Hardware data rendering evidence missing'}
     }
     if(-not $Baseline -and ($r.cpuDdcOutputSamples -ne 512 -or $r.fullCopyCharacters -lt 16000 -or
+       $r.ordinarySupplementalEntriesVerified -ne 2 -or $r.largeRfbenchValidationExecuted -ne $false -or
        -not(Test-Path -LiteralPath $r.detailsScreenshot))){throw 'Missing full evidence copy/channel/DSP proof'}
     Write-Host "UX-R4 $Configuration software=$([bool]$SoftwareRenderer): $expected main scenes and details passed. $path"
 } finally {

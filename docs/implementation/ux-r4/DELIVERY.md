@@ -1,5 +1,8 @@
 # Signal Studio UX-R4 本地交付
 
+> 当前为本地待复审状态，未推送。首次独立审核 REJECTED 后的修复和实际阻塞见
+> [POST_REVIEW_FIX](POST_REVIEW_FIX.md)；以下最初验收汇总不代表修复版原生复制已通过。
+
 完成范围：宽带标记侧栏、来源证据分层、按钮状态、图谱设置降噪、文字布局和跨视图联动。
 不重复 R3，不修改算法、DSP、worker 或 .ssproj/v6 持久化格式。
 

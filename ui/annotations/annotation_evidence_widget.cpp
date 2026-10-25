@@ -4,6 +4,9 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QDialog>
+#include <QLineEdit>
+#include <QTextCursor>
+#include <QTimer>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QFont>
@@ -33,6 +36,7 @@ namespace {
 
 constexpr std::size_t kRangePreviewCount = 4;
 constexpr std::size_t kWindowPreviewCount = 12;
+constexpr qsizetype kEvidencePageCharacters = 65536;
 
 QString text(const std::string& value) { return QString::fromUtf8(value); }
 
@@ -462,26 +466,120 @@ AnnotationEvidenceWidget::AnnotationEvidenceWidget(Mode mode, QWidget* parent)
   // editor instead of increasing the enclosing scroll area's content size.
   rawFields_->setMinimumHeight(220);
   rawFields_->setMinimumWidth(0);
-  rawFields_->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  rawFields_->setLineWrapMode(QPlainTextEdit::NoWrap);
   rawFields_->hide();
   factsLayout->addWidget(rawToggle_);
   factsLayout->addWidget(rawFields_);
+  rawNavigation_ = new QWidget(body);
+  auto* navigation = new QGridLayout(rawNavigation_);
+  navigation->setContentsMargins(0, 0, 0, 0);
+  auto* previous = new QPushButton("上一页", rawNavigation_);
+  previous->setAutoDefault(false);
+  previous->setObjectName("annotationEvidencePreviousPage");
+  auto* next = new QPushButton("下一页", rawNavigation_);
+  next->setAutoDefault(false);
+  next->setObjectName("annotationEvidenceNextPage");
+  rawPageLabel_ = wrappingLabel("annotationEvidencePage", rawNavigation_);
+  navigation->addWidget(previous, 0, 0);
+  navigation->addWidget(rawPageLabel_, 0, 1);
+  navigation->addWidget(next, 0, 2);
+  rawSearch_ = new QLineEdit(rawNavigation_);
+  rawSearch_->setObjectName("annotationEvidenceSearch");
+  rawSearch_->setPlaceholderText("在完整原文中查找（跨页）");
+  auto* find = new QPushButton("查找下一处", rawNavigation_);
+  find->setAutoDefault(false);
+  find->setObjectName("annotationEvidenceFindNext");
+  navigation->addWidget(rawSearch_, 1, 0, 1, 2);
+  navigation->addWidget(find, 1, 2);
+  factsLayout->addWidget(rawNavigation_);
+  rawNavigation_->hide();
+  connect(previous, &QPushButton::clicked, this, [this] { showRawPage(rawPage_ - 1); });
+  connect(next, &QPushButton::clicked, this, [this] { showRawPage(rawPage_ + 1); });
+  connect(find, &QPushButton::clicked, this, &AnnotationEvidenceWidget::findRawText);
+  connect(rawSearch_, &QLineEdit::returnPressed, this, &AnnotationEvidenceWidget::findRawText);
   auto* actions = new QHBoxLayout;
   auto* copy = new QPushButton("复制完整证据", details_);
+  copy->setAutoDefault(false);
   copy->setObjectName("annotationCopyEvidence");
   actions->addWidget(copy);
   connect(copy, &QPushButton::clicked, this, [this] {
-    QApplication::clipboard()->setText(rawFields_->toPlainText());
+    copyFullText(++copyRequest_, fullText_, 0);
   });
   auto* close = new QPushButton("关闭", details_);
+  close->setAutoDefault(false);
   actions->addWidget(close);
   connect(close, &QPushButton::clicked, details_, &QDialog::close);
   dialogLayout->addLayout(actions);
   connect(rawToggle_, &QToolButton::toggled, this, [this](bool expanded) {
     rawFields_->setVisible(expanded);
+    rawNavigation_->setVisible(expanded);
     rawToggle_->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
   });
   clearEvidence();
+}
+
+void AnnotationEvidenceWidget::setFullText(QString value) {
+  ++copyRequest_; // A pending retry must not publish evidence from an old context.
+  fullText_ = std::move(value);
+  showRawPage(0);
+}
+
+void AnnotationEvidenceWidget::copyFullText(quint64 request, const QString& value, int attempt) {
+  if (request != copyRequest_) return;
+  auto* clipboard = QApplication::clipboard();
+  clipboard->setText(value);
+  auto* button = details_->findChild<QPushButton*>("annotationCopyEvidence");
+  if (clipboard->text() == value) {
+    button->setText("复制完整证据");
+    button->setToolTip(QString("已复制完整证据：%1 字符").arg(value.size()));
+    return;
+  }
+  if (attempt >= 4) {
+    button->setText("复制失败 · 重试");
+    button->setToolTip("系统剪贴板暂不可用；请稍后重试。完整证据仍可在此查看。");
+    return;
+  }
+  QTimer::singleShot(100, this, [this, request, value, attempt] {
+    copyFullText(request, value, attempt + 1);
+  });
+}
+
+void AnnotationEvidenceWidget::showRawPage(qsizetype page) {
+  const auto count = std::max<qsizetype>(1, (fullText_.size() + kEvidencePageCharacters - 1) / kEvidencePageCharacters);
+  rawPage_ = std::clamp<qsizetype>(page, 0, count - 1);
+  auto begin = rawPage_ * kEvidencePageCharacters;
+  auto end = std::min(begin + kEvidencePageCharacters, fullText_.size());
+  // Adjacent pages may share one UTF-16 code point; never show a split surrogate.
+  if (begin > 0 && fullText_.at(begin).isLowSurrogate()) --begin;
+  if (end < fullText_.size() && fullText_.at(end).isLowSurrogate()) ++end;
+  rawPageStart_ = begin;
+  rawFields_->setPlainText(fullText_.mid(begin, end - begin));
+  rawPageLabel_->setText(QString("第 %1/%2 页 · 全文 %3 字符；复制不受分页限制")
+      .arg(rawPage_ + 1).arg(count).arg(fullText_.size()));
+  rawNavigation_->findChild<QPushButton*>("annotationEvidencePreviousPage")->setEnabled(rawPage_ > 0);
+  rawNavigation_->findChild<QPushButton*>("annotationEvidenceNextPage")->setEnabled(rawPage_ + 1 < count);
+}
+
+void AnnotationEvidenceWidget::findRawText() {
+  const auto needle = rawSearch_->text();
+  if (needle.isEmpty()) return;
+  const auto offset = rawPageStart_;
+  const auto start = offset + rawFields_->textCursor().selectionEnd();
+  auto found = fullText_.indexOf(needle, start);
+  if (found < 0) found = fullText_.indexOf(needle);
+  if (found < 0) { rawSearch_->setToolTip("全文中未找到该文本"); return; }
+  showRawPage(found / kEvidencePageCharacters);
+  // Show a complete match even when it straddles a page boundary, without
+  // changing or truncating the full copy buffer.
+  const auto pageBegin = rawPageStart_;
+  const auto local = found - pageBegin;
+  if (!rawFields_->toPlainText().contains(needle))
+    rawFields_->setPlainText(fullText_.mid(pageBegin, std::max(kEvidencePageCharacters, local + needle.size())));
+  QTextCursor cursor(rawFields_->document());
+  cursor.setPosition(static_cast<int>(local));
+  cursor.setPosition(static_cast<int>(local + needle.size()), QTextCursor::KeepAnchor);
+  rawFields_->setTextCursor(cursor);
+  rawFields_->ensureCursorVisible();
 }
 
 void AnnotationEvidenceWidget::openDetails() {
@@ -557,7 +655,7 @@ void AnnotationEvidenceWidget::clearEvidence() {
   setLabelText(scoreDefinition_, {});
   setLabelText(summary_, "选择标记后查看来源状态；技术信息按需展开。");
   for (auto* value : values_) setLabelText(value, "—");
-  rawFields_->clear();
+  setFullText({});
   rawToggle_->setEnabled(false);
 }
 
@@ -589,6 +687,7 @@ void AnnotationEvidenceWidget::setAnnotation(const Annotation* annotation,
          << originalSampleRate << (file ? text(file->metadata.id) : QString{})
          << (source ? text(source->id) : QString{})
          << (source ? text(source->sourceHash) : QString{})
+         << (source ? text(source->supplementalHash) : QString{})
          << (source ? text(source->profileId) : QString{})
          << (source ? text(source->formatId) : QString{})
          << (source ? text(source->originalPath) : QString{})
@@ -725,12 +824,21 @@ void AnnotationEvidenceWidget::showOriginEvidence(
   raw += QString("\nrevision 记录: %1\nreview 记录: %2")
              .arg(count(annotation.revisions.size()),
                   count(annotation.reviewHistory.size()));
-  if (source) raw += "\n完整来源原文:\n" + text(source->originalText);
+  if (source) {
+    raw += "\n完整主来源原文 [originalText]:\n" + text(source->originalText) +
+           "\nsupplementalHash: " + present(source->supplementalHash) +
+           "\n完整补充来源原文 [supplementalOriginalText]:\n" + text(source->supplementalOriginalText);
+    auto metadata = encodeSourceSet(*source);
+    metadata.remove("originalText");
+    metadata.remove("supplementalOriginalText");
+    raw += "\n完整来源元数据（主/补充原文见上，引用按 sourceSetId/sourceText/jsonPointer 解析）:\n" +
+           QString::fromUtf8(QJsonDocument(metadata).toJson());
+  }
   // The pretty facts are previews; the copy surface retains every geometry,
   // window ID, original field and revision, without silently truncating tokens.
   raw += "\n完整标记记录（含不可变原始证据与修订）:\n" +
          QString::fromUtf8(QJsonDocument(encodeAnnotation(annotation)).toJson());
-  rawFields_->setPlainText(raw);
+  setFullText(std::move(raw));
   rawToggle_->setEnabled(true);
 }
 
@@ -764,7 +872,7 @@ void AnnotationEvidenceWidget::showScores(const Annotation& annotation,
     ids << QString("…共 %1 个唯一窗口").arg(count(unique.size()));
   setFact(Fact::WindowIds, ids.empty() ? "—" : ids.join(", "));
   if (evidence)
-    rawFields_->appendPlainText(
+    setFullText(fullText_ + "\n" +
         "scoreMean: " + optionalScore(evidence->scoreMean) +
         "\nscoreMax: " + optionalScore(evidence->scoreMax) +
         "\nuniqueWindowCount: " + count(unique.size()) +

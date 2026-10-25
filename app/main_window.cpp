@@ -3934,7 +3934,7 @@ void MainWindow::updateBottom() {
       const auto* file = session_.activeFile();
       auxiliaryEvidence_->setAnnotation(
           file ? findMark(*file, file->activeMarkId) : nullptr, file);
-    }
+    } else auxiliaryEvidence_->setAnnotation(nullptr, session_.activeFile());
     auxiliaryDisplay_->setCurrentIndex(auxiliaryEvidenceVisible_ ? 1 : 0);
     evidenceMode_->setChecked(auxiliaryEvidenceVisible_);
     if (auxiliaryEvidenceVisible_)

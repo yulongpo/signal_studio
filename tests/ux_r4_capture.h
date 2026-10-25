@@ -176,7 +176,13 @@ int runUxR4Capture(const QString& directory, bool baseline, bool software) {
       require(waitUntil([&]{return dialog->isVisible();}),"Evidence details did not open");
       auto* copy=dialog->findChild<QPushButton*>("annotationCopyEvidence");
       widebandNativeClick(copy);
-      const auto copied=QApplication::clipboard()->text();
+      QString copied;
+      require(waitUntil([&]{copied=QApplication::clipboard()->text();return copied.contains("END_OF_RAW");},5000),
+              "System clipboard did not publish the complete evidence after bounded retries");
+      report["copyCheck"]=QJsonObject{{"characters",copied.size()},
+          {"tail",copied.contains("END_OF_RAW")},
+          {"hash",copied.contains(QString::fromStdString(set->sourceHash))},
+          {"path",copied.contains(QString::fromStdString(set->originalPath))}};
       require(copied.contains("END_OF_RAW") && copied.contains(QString::fromStdString(set->sourceHash)) &&
               copied.contains(QString::fromStdString(set->originalPath)),"Evidence copy was truncated");
       auto* raw=dialog->findChild<QPlainTextEdit*>("annotationEvidence");
@@ -234,6 +240,38 @@ int runUxR4Capture(const QString& directory, bool baseline, bool software) {
         if(annotation.sourceKind==AnnotationSource::ImportedLabel && !annotation.deleted) {select(annotation.id);break;}
       }
       capture("14-imported-source");
+      const auto importedSelected=file->activeMarkId;
+      const auto checkSupplement=[&](QWidget* entry) {
+        const auto* current=findAnnotation(*file,file->activeMarkId);
+        const auto* source=current?findSourceSet(*file,current->sourceSetId):nullptr;
+        require(source && !source->supplementalOriginalText.empty(),"Ordinary TorchSig supplement missing");
+        const auto sourceBefore=encodeSourceSet(*source);
+        auto* open=entry->findChild<QToolButton*>("annotationEvidenceDetailsToggle");
+        widebandScrollTo(open);widebandNativeClick(open);
+        auto* dialog=entry->findChild<QDialog*>("annotationEvidenceDetailsDialog");
+        require(dialog && dialog->isVisible(),"Supplement details not visible");
+        widebandNativeClick(child<QPushButton>(*dialog,"annotationCopyEvidence"));
+        QString copied;
+        require(waitUntil([&]{copied=QApplication::clipboard()->text();
+            return copied.contains(QString::fromStdString(source->supplementalHash));},5000),
+            "System clipboard did not publish supplemental evidence");
+        require(copied.contains(QString::fromUtf8(source->supplementalOriginalText)) &&
+                copied.contains(QString::fromStdString(source->supplementalHash)),
+                "Complete supplemental source/hash missing from native copy");
+        auto* toggle=dialog->findChild<QToolButton*>();
+        for(auto* candidate:dialog->findChildren<QToolButton*>())
+          if(candidate->objectName().endsWith("OriginalFieldsToggle"))toggle=candidate;
+        if(!toggle->isChecked()){widebandScrollTo(toggle);widebandNativeClick(toggle);}
+        auto* search=child<QLineEdit>(*dialog,"annotationEvidenceSearch");
+        widebandScrollTo(search);widebandNativeClick(search);search->selectAll();
+        QTest::keyClicks(search,"n_events");QTest::keyClick(search,Qt::Key_Return);
+        QPlainTextEdit* raw=nullptr;
+        for(auto* candidate:dialog->findChildren<QPlainTextEdit*>())raw=candidate;
+        require(raw && raw->textCursor().selectedText()=="n_events","Supplement not viewable/searchable");
+        require(encodeSourceSet(*source)==sourceBefore,"Disclosure modified source set");
+        dialog->close();
+      };
+      checkSupplement(evidence);
       select("algo-located");
       // The new primary button must route to the existing real channel dialog.
       Channel channel;
@@ -258,7 +296,12 @@ int runUxR4Capture(const QString& directory, bool baseline, bool software) {
               processChannelSamples(file->metadata,channel,plan,{0,512},samples) &&
               samples.samples.size()==512,"Real channel DDC failed: "+error);
       report["cpuDdcOutputSamples"]=int(samples.samples.size());
-      tap("detectionEvidenceMode"); capture("15-auxiliary-evidence");
+      tap("detectionEvidenceMode");
+      select(importedSelected);
+      checkSupplement(child<QWidget>(window,"auxiliaryDetectionEvidence"));
+      report["ordinarySupplementalEntriesVerified"]=2;
+      report["largeRfbenchValidationExecuted"]=false;
+      select("algo-located");capture("15-auxiliary-evidence");
       tap("psdMode");capture("16-psd");
       tap("waterfallMode");capture("17-waterfall");
       tap("timeFrequencyMode");

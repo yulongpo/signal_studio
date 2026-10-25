@@ -12,6 +12,7 @@ class QPlainTextEdit;
 class QToolButton;
 class QVBoxLayout;
 class QDialog;
+class QLineEdit;
 
 namespace signalstudio {
 
@@ -65,6 +66,10 @@ class AnnotationEvidenceWidget final : public QWidget {
   void showOriginEvidence(const Annotation&, const AnnotationSourceSet*);
   void showScores(const Annotation&, bool fixture);
   void openDetails();
+  void setFullText(QString);
+  void showRawPage(qsizetype);
+  void findRawText();
+  void copyFullText(quint64 request, const QString& text, int attempt);
 
   Mode mode_ = Mode::Inspector;
   QLabel* title_ = nullptr;
@@ -73,6 +78,13 @@ class AnnotationEvidenceWidget final : public QWidget {
   QLabel* scoreDefinition_ = nullptr;
   QLabel* summary_ = nullptr;
   QDialog* details_ = nullptr;
+  QWidget* rawNavigation_ = nullptr;
+  QLabel* rawPageLabel_ = nullptr;
+  QLineEdit* rawSearch_ = nullptr;
+  QString fullText_;
+  qsizetype rawPage_ = 0;
+  qsizetype rawPageStart_ = 0;
+  quint64 copyRequest_ = 0;
   QToolButton* rawToggle_ = nullptr;
   QPlainTextEdit* rawFields_ = nullptr;
   QWidget* measuredTrace_ = nullptr;

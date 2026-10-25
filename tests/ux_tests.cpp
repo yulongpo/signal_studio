@@ -15,6 +15,9 @@
 #include <QClipboard>
 #include <QDialog>
 #include <QPlainTextEdit>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include "infrastructure/label_import.h"
 #include "ui/annotations/annotation_evidence_widget.h"
 
 #include "app/main_window.h"
@@ -192,6 +195,92 @@ class UxTests : public QObject {
     window.refresh();
     QVERIFY(!create->isEnabled());
     QVERIFY(!window.findChild<QPushButton*>("annotationInspectorLocate")->isEnabled());
+  }
+
+  void uxR4_supplementalSourceAndPagedCopy() {
+    QTemporaryDir directory;
+    const auto base=directory.filePath("0000000");
+    const auto read=[](const QString& name) {
+      QFile f(QString::fromUtf8(SS_SOURCE_DIR)+"/tests/fixtures/wideband/"+name);
+      if(!f.open(QIODevice::ReadOnly))return QByteArray{};
+      return f.readAll();
+    };
+    auto primary=read("torchsig-0000000.sigmf-meta");
+    auto extra=QJsonDocument::fromJson(read("torchsig-0000000.json")).object();
+    // Ordinary-sized real parser input. Large RFbench validation is explicitly
+    // excluded by the user's latest instruction.
+    extra["unknown_header_field"]="SUPPLEMENT_HEADER_PRESERVED";
+    const auto supplemental=QJsonDocument(extra).toJson();
+    for(const auto& suffix:{QString(".sigmf-meta"),QString(".json")}) {
+      QFile f(base+suffix);QVERIFY(f.open(QIODevice::WriteOnly));
+      const auto bytes=suffix==".json"?supplemental:primary;
+      QCOMPARE(f.write(bytes),bytes.size());
+    }
+    QFile iq(base+".sigmf-data");QVERIFY(iq.open(QIODevice::WriteOnly));
+    QVERIFY(iq.resize(3200000));iq.close();
+    FileState file;
+    file.metadata.id="supplemental-ui";file.metadata.path=(base+".sigmf-data").toStdString();
+    file.metadata.sampleRateHz=20e6;file.metadata.centerFrequencyHz=2500e6;
+    file.metadata.sampleCount=400000;file.metadata.effectiveBandwidthHz=20e6;
+    file.metadata.sampleFormat.componentEncoding=ComponentEncoding::Float32;
+    file.metadata.sampleFormat.normalizeIntegerAdc=false;
+    const auto imported=importTorchSigLabels(base+".sigmf-meta",file.metadata);
+    QVERIFY2(imported.ok(),qPrintable(imported.error));
+    QVERIFY(!imported.annotations.empty());
+    file.sourceSets={imported.sourceSet};file.marks=imported.annotations;
+    const auto sourceBefore=encodeSourceSet(file.sourceSets.front());
+    const auto markBefore=encodeAnnotation(file.marks.front());
+    for(auto mode:{AnnotationEvidenceWidget::Mode::Inspector,AnnotationEvidenceWidget::Mode::Auxiliary}) {
+      AnnotationEvidenceWidget evidence(mode);
+      evidence.resize(380,230);evidence.setAnnotation(&file.marks.front(),&file);evidence.show();
+      evidence.findChild<QToolButton*>("annotationEvidenceDetailsToggle")->click();
+      evidence.findChild<QToolButton*>("annotationOriginalFieldsToggle")->click();
+      auto* raw=evidence.findChild<QPlainTextEdit*>("annotationEvidence");
+      QVERIFY(raw->isVisible());
+      QVERIFY(raw->toPlainText().contains("SUPPLEMENT_HEADER_PRESERVED"));
+      evidence.findChild<QPushButton*>("annotationCopyEvidence")->click();
+      const auto copied=QApplication::clipboard()->text();
+      QVERIFY(copied.contains(QString::fromUtf8(primary)));
+      QVERIFY(copied.contains(QString::fromUtf8(supplemental)));
+      QVERIFY(copied.contains(QString::fromStdString(imported.sourceSet.supplementalHash)));
+      QVERIFY(copied.contains("supplementalOriginalText"));
+      QCOMPARE(encodeSourceSet(file.sourceSets.front()),sourceBefore);
+      QCOMPARE(encodeAnnotation(file.marks.front()),markBefore);
+    }
+    // Small synthetic text exercises paging independently of RFbench events.
+    auto origin=std::make_shared<OriginEvidence>(*file.marks.front().originEvidence);
+    origin->originalFieldsJson="{\"paging\":\""+std::string(140000,'p')+"PAGE_TAIL\"}";
+    file.marks.front().originEvidence=origin;
+    AnnotationEvidenceWidget evidence;
+    evidence.setAnnotation(&file.marks.front(),&file);evidence.show();
+    evidence.findChild<QToolButton*>("annotationEvidenceDetailsToggle")->click();
+    evidence.findChild<QToolButton*>("annotationOriginalFieldsToggle")->click();
+    auto* raw=evidence.findChild<QPlainTextEdit*>("annotationEvidence");
+    QVERIFY(raw->toPlainText().size()<=65536);
+    auto* search=evidence.findChild<QLineEdit*>("annotationEvidenceSearch");
+    search->setText("PAGE_TAIL");QTest::keyClick(search,Qt::Key_Return);
+    QVERIFY(raw->toPlainText().contains("PAGE_TAIL"));
+    QCOMPARE(raw->textCursor().selectedText(),QString("PAGE_TAIL"));
+    evidence.findChild<QPushButton*>("annotationCopyEvidence")->click();
+    QVERIFY(QApplication::clipboard()->text().contains(std::string(140000,'p').c_str()));
+  }
+
+  void uxR4_auxiliaryDetailsCloseWithHiddenContext() {
+    MainWindow window;
+    window.session().addDemoFile();
+    const auto id=window.session().addMark({{1000,4000},{99.9e6,100.1e6}});
+    window.session().selectMarks({id},id);expose(window);
+    window.findChild<QPushButton*>("detectionEvidenceMode")->click();
+    auto* evidence=window.findChild<QWidget*>("auxiliaryDetectionEvidence");
+    evidence->findChild<QToolButton*>("annotationEvidenceDetailsToggle")->click();
+    auto* dialog=evidence->findChild<QDialog*>("annotationEvidenceDetailsDialog");
+    QVERIFY(dialog->isVisible());
+    window.findChild<QPushButton*>("waveMode")->click();
+    QVERIFY(!dialog->isVisible());
+    window.session().addDemoFile("other",1e6,101e6,.02);window.refresh();
+    QVERIFY(!dialog->isVisible());
+    window.findChild<QPushButton*>("detectionEvidenceMode")->click();
+    QVERIFY(evidence->findChild<QPlainTextEdit*>("auxiliaryAnnotationEvidence")->toPlainText().isEmpty());
   }
 
   void uxD01_historicalDerivation() {

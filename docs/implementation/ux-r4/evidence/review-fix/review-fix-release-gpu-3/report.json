@@ -1,0 +1,2734 @@
+{
+  "baseline": false,
+  "binary": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioUiCapture.exe",
+  "error": "System clipboard did not publish the complete evidence after bounded retries",
+  "lastScene": "06-located",
+  "mode": "ux-r4",
+  "modelInferenceVerified": false,
+  "pass": false,
+  "scenes": [
+    {
+      "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+      "captureMethod": "native QWidget grab with QRhi readback",
+      "identityText": "ALG 01 · 交互夹具双活动段\n算法 · 待判断 · 类别未知\n当前第 1/2 段",
+      "inspectorControls": [
+        {
+          "enabled": true,
+          "objectName": "annotationIdentity",
+          "rect": {
+            "height": 48,
+            "width": 350,
+            "x": 2190,
+            "y": 119
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorLocate",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 173
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorCreateChannel",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 207
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 24,
+            "width": 350,
+            "x": 2190,
+            "y": 241
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 172,
+            "x": 2190,
+            "y": 271
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 172,
+            "x": 2368,
+            "y": 271
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationStartMilliseconds",
+          "rect": {
+            "height": 29,
+            "width": 172,
+            "x": 2190,
+            "y": 293
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEndMilliseconds",
+          "rect": {
+            "height": 29,
+            "width": 172,
+            "x": 2368,
+            "y": 293
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 172,
+            "x": 2190,
+            "y": 328
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 172,
+            "x": 2368,
+            "y": 328
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationLowerMHz",
+          "rect": {
+            "height": 29,
+            "width": 172,
+            "x": 2190,
+            "y": 350
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationUpperMHz",
+          "rect": {
+            "height": 29,
+            "width": 172,
+            "x": 2368,
+            "y": 350
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationRangeSummary",
+          "rect": {
+            "height": 32,
+            "width": 350,
+            "x": 2190,
+            "y": 385
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "editAnnotationRange",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2190,
+            "y": 423
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "cancelAnnotationGeometry",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2368,
+            "y": 423
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 24,
+            "width": 350,
+            "x": 2190,
+            "y": 457
+          }
+        },
+        {
+          "enabled": false,
+          "objectName": "annotationPreviousSegment",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2190,
+            "y": 487
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationNextSegment",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2368,
+            "y": 487
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationSegment",
+          "rect": {
+            "height": 29,
+            "width": 350,
+            "x": 2190,
+            "y": 521
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "restoreAnnotationOrigin",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 556
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "addAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 590
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "splitAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2190,
+            "y": 624
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "mergeAnnotationSegments",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2368,
+            "y": 624
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "deleteAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 658
+          }
+        },
+        {
+          "enabled": false,
+          "objectName": "adoptAnnotationObservation",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2190,
+            "y": 692
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "editAnnotationNote",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2368,
+            "y": 692
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 350,
+            "x": 2190,
+            "y": 726
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceTitle",
+          "rect": {
+            "height": 16,
+            "width": 350,
+            "x": 2190,
+            "y": 748
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceSummary",
+          "rect": {
+            "height": 16,
+            "width": 350,
+            "x": 2190,
+            "y": 771
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceDetailsToggle",
+          "rect": {
+            "height": 31,
+            "width": 120,
+            "x": 2190,
+            "y": 794
+          }
+        }
+      ],
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "plotRect": {
+        "height": 623,
+        "width": 1807,
+        "x": 41,
+        "y": 12
+      },
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/review-fix-release-gpu-3/01-default.png",
+      "propertyWidth": 390,
+      "render": {
+        "acceptedHeatmapPreview": false,
+        "actualFrameInputSamples": "2048",
+        "actualSpectralFrames": 194,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "axisLayout": {
+          "dpr": 1.5,
+          "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+          "header": {
+            "height": 0,
+            "width": 1854,
+            "x": 8,
+            "y": 4
+          },
+          "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+          "leftGainFrom88": 47,
+          "localBottom": 32,
+          "localLeft": 41,
+          "localTop": 12,
+          "logicalDpiX": 96,
+          "logicalDpiY": 96,
+          "mode": "CompactHeader",
+          "plot": {
+            "height": 623,
+            "width": 1807,
+            "x": 41,
+            "y": 12
+          },
+          "sharedLeft": 41,
+          "tickHeight": 16,
+          "tickLabelWidth": 26,
+          "widgetHeight": 667,
+          "widgetWidth": 1870,
+          "xOrigin": "",
+          "xTickBand": {
+            "height": 16,
+            "width": 1807,
+            "x": 41,
+            "y": 647
+          },
+          "xTicks": [
+            "0",
+            "2",
+            "4",
+            "6",
+            "8",
+            "10"
+          ],
+          "xTitle": "时间 (ms)",
+          "xTitleBand": {
+            "height": 0,
+            "width": 1807,
+            "x": 41,
+            "y": 666
+          },
+          "yOrigin": "",
+          "yTicks": [
+            "2490",
+            "2495",
+            "2500",
+            "2505",
+            "2510"
+          ],
+          "yTitle": "频率 (MHz)",
+          "yUnit": "MHz"
+        },
+        "binHz": 9765.625,
+        "colorTransformGenerations": 1,
+        "committedGeneration": 7,
+        "cpuWallTimings": {
+          "chartDrawCalls": 0,
+          "chartDrawCallsSkipped": 0,
+          "chartPaletteUploads": 2,
+          "chartVertexUploads": 0,
+          "gpuTimestamps": false,
+          "heatmapDrawCalls": 2,
+          "heatmapUploadPreparation": {
+            "lastMs": 1.1892,
+            "maxMs": 1.1892,
+            "samples": 1,
+            "totalMs": 1.1892
+          },
+          "lastChartDrawLoopIterations": 0,
+          "lastChartDrawRecordCount": 0,
+          "lastChartDrawStage": 0,
+          "lastChartVertexCount": 0,
+          "lastRenderHeight": 667,
+          "lastRenderWidth": 1870,
+          "measurement": "GUI-thread wall time measured with QElapsedTimer",
+          "overlayImagePreparation": {
+            "lastMs": 0.3881,
+            "maxMs": 1.8138,
+            "samples": 12,
+            "totalMs": 7.3877
+          },
+          "overlayPainter": {
+            "lastMs": 9.4537,
+            "maxMs": 9.5628,
+            "samples": 12,
+            "totalMs": 38.4216
+          },
+          "overlayUploadEnqueue": {
+            "lastMs": 0.0059,
+            "maxMs": 0.2445,
+            "samples": 12,
+            "totalMs": 0.8605999999999998
+          },
+          "paintEventIncludingQtSubmit": {
+            "lastMs": 13.6301,
+            "maxMs": 14.4311,
+            "samples": 14,
+            "totalMs": 92.33720000000001
+          },
+          "paletteUploads": 2,
+          "prepareUploads": {
+            "lastMs": 0.0023,
+            "maxMs": 11.415,
+            "samples": 15,
+            "totalMs": 55.545899999999996
+          },
+          "render": {
+            "lastMs": 0.0216,
+            "maxMs": 11.5198,
+            "samples": 15,
+            "totalMs": 56.116800000000005
+          },
+          "renderInvocations": 15,
+          "unit": "ms"
+        },
+        "cursorPinned": false,
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi heatmap texture",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 322500,
+        "effectiveOverlap": 0.5,
+        "framePsd": false,
+        "generation": 7,
+        "gpuChartDrawCalls": 0,
+        "gpuDataDrawCalls": 2,
+        "gpuDataRenderer": "QRhi shader / vertex buffer",
+        "gpuHeatmapDrawCalls": 2,
+        "gpuPaletteUploads": 2,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 0,
+        "heatmapCacheHits": 0,
+        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+        "heatmapHeight": 430,
+        "heatmapWidth": 750,
+        "inverseCursorDrawCalls": 15,
+        "lastMatrixMs": 40.6199,
+        "matrixReductions": 0,
+        "noiseBandwidthHz": 14655.593551538814,
+        "overlayUploads": 12,
+        "paddedFrames": 0,
+        "pinnedFrequencyHz": 0,
+        "pinnedSourceSample": "0",
+        "powerGenerations": 4,
+        "quality": "settled",
+        "requestedGeneration": 7,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "requiredSeconds": 0.0001024,
+        "samplePointCount": 0,
+        "samplePointsVisible": false,
+        "settled": true,
+        "sourcePoints": 397312,
+        "staleDrops": 3,
+        "textureUploads": 1,
+        "workerIdle": true
+      },
+      "scene": "01-default"
+    },
+    {
+      "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+      "captureMethod": "native QWidget grab with QRhi readback",
+      "identityText": "超长标记名称 · Long signal name / QPSK / 中文 English / 0123456789 / 现场样本\n算法 · 待判断 · 类别未知\n当前第 1/2 段",
+      "inspectorControls": [
+        {
+          "enabled": true,
+          "objectName": "annotationIdentity",
+          "rect": {
+            "height": 64,
+            "width": 350,
+            "x": 2190,
+            "y": 119
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorLocate",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 189
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorCreateChannel",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 223
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 24,
+            "width": 350,
+            "x": 2190,
+            "y": 257
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 172,
+            "x": 2190,
+            "y": 287
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 172,
+            "x": 2368,
+            "y": 287
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationStartMilliseconds",
+          "rect": {
+            "height": 29,
+            "width": 172,
+            "x": 2190,
+            "y": 309
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEndMilliseconds",
+          "rect": {
+            "height": 29,
+            "width": 172,
+            "x": 2368,
+            "y": 309
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 172,
+            "x": 2190,
+            "y": 344
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 172,
+            "x": 2368,
+            "y": 344
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationLowerMHz",
+          "rect": {
+            "height": 29,
+            "width": 172,
+            "x": 2190,
+            "y": 366
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationUpperMHz",
+          "rect": {
+            "height": 29,
+            "width": 172,
+            "x": 2368,
+            "y": 366
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationRangeSummary",
+          "rect": {
+            "height": 32,
+            "width": 350,
+            "x": 2190,
+            "y": 401
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "editAnnotationRange",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2190,
+            "y": 439
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "cancelAnnotationGeometry",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2368,
+            "y": 439
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 24,
+            "width": 350,
+            "x": 2190,
+            "y": 473
+          }
+        },
+        {
+          "enabled": false,
+          "objectName": "annotationPreviousSegment",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2190,
+            "y": 503
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationNextSegment",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2368,
+            "y": 503
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationSegment",
+          "rect": {
+            "height": 29,
+            "width": 350,
+            "x": 2190,
+            "y": 537
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "restoreAnnotationOrigin",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 572
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "addAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 606
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "splitAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2190,
+            "y": 640
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "mergeAnnotationSegments",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2368,
+            "y": 640
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "deleteAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 674
+          }
+        },
+        {
+          "enabled": false,
+          "objectName": "adoptAnnotationObservation",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2190,
+            "y": 708
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "editAnnotationNote",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2368,
+            "y": 708
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 350,
+            "x": 2190,
+            "y": 742
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceTitle",
+          "rect": {
+            "height": 16,
+            "width": 350,
+            "x": 2190,
+            "y": 764
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceSummary",
+          "rect": {
+            "height": 16,
+            "width": 350,
+            "x": 2190,
+            "y": 787
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceDetailsToggle",
+          "rect": {
+            "height": 31,
+            "width": 120,
+            "x": 2190,
+            "y": 810
+          }
+        }
+      ],
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "plotRect": {
+        "height": 623,
+        "width": 1807,
+        "x": 41,
+        "y": 12
+      },
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/review-fix-release-gpu-3/02-long-name.png",
+      "propertyWidth": 390,
+      "render": {
+        "acceptedHeatmapPreview": false,
+        "actualFrameInputSamples": "2048",
+        "actualSpectralFrames": 194,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "axisLayout": {
+          "dpr": 1.5,
+          "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+          "header": {
+            "height": 0,
+            "width": 1854,
+            "x": 8,
+            "y": 4
+          },
+          "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+          "leftGainFrom88": 47,
+          "localBottom": 32,
+          "localLeft": 41,
+          "localTop": 12,
+          "logicalDpiX": 96,
+          "logicalDpiY": 96,
+          "mode": "CompactHeader",
+          "plot": {
+            "height": 623,
+            "width": 1807,
+            "x": 41,
+            "y": 12
+          },
+          "sharedLeft": 41,
+          "tickHeight": 16,
+          "tickLabelWidth": 26,
+          "widgetHeight": 667,
+          "widgetWidth": 1870,
+          "xOrigin": "",
+          "xTickBand": {
+            "height": 16,
+            "width": 1807,
+            "x": 41,
+            "y": 647
+          },
+          "xTicks": [
+            "0",
+            "2",
+            "4",
+            "6",
+            "8",
+            "10"
+          ],
+          "xTitle": "时间 (ms)",
+          "xTitleBand": {
+            "height": 0,
+            "width": 1807,
+            "x": 41,
+            "y": 666
+          },
+          "yOrigin": "",
+          "yTicks": [
+            "2490",
+            "2495",
+            "2500",
+            "2505",
+            "2510"
+          ],
+          "yTitle": "频率 (MHz)",
+          "yUnit": "MHz"
+        },
+        "binHz": 9765.625,
+        "colorTransformGenerations": 1,
+        "committedGeneration": 7,
+        "cpuWallTimings": {
+          "chartDrawCalls": 0,
+          "chartDrawCallsSkipped": 0,
+          "chartPaletteUploads": 2,
+          "chartVertexUploads": 0,
+          "gpuTimestamps": false,
+          "heatmapDrawCalls": 4,
+          "heatmapUploadPreparation": {
+            "lastMs": 1.1892,
+            "maxMs": 1.1892,
+            "samples": 1,
+            "totalMs": 1.1892
+          },
+          "lastChartDrawLoopIterations": 0,
+          "lastChartDrawRecordCount": 0,
+          "lastChartDrawStage": 0,
+          "lastChartVertexCount": 0,
+          "lastRenderHeight": 667,
+          "lastRenderWidth": 1870,
+          "measurement": "GUI-thread wall time measured with QElapsedTimer",
+          "overlayImagePreparation": {
+            "lastMs": 0.3366,
+            "maxMs": 1.8138,
+            "samples": 13,
+            "totalMs": 7.7242999999999995
+          },
+          "overlayPainter": {
+            "lastMs": 8.6026,
+            "maxMs": 9.5628,
+            "samples": 13,
+            "totalMs": 47.0242
+          },
+          "overlayUploadEnqueue": {
+            "lastMs": 0.0037,
+            "maxMs": 0.2445,
+            "samples": 13,
+            "totalMs": 0.8642999999999998
+          },
+          "paintEventIncludingQtSubmit": {
+            "lastMs": 10.9309,
+            "maxMs": 14.4311,
+            "samples": 15,
+            "totalMs": 103.2681
+          },
+          "paletteUploads": 2,
+          "prepareUploads": {
+            "lastMs": 0.0025,
+            "maxMs": 11.415,
+            "samples": 17,
+            "totalMs": 64.8539
+          },
+          "render": {
+            "lastMs": 0.023,
+            "maxMs": 11.5198,
+            "samples": 17,
+            "totalMs": 65.4702
+          },
+          "renderInvocations": 17,
+          "unit": "ms"
+        },
+        "cursorPinned": false,
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi heatmap texture",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 322500,
+        "effectiveOverlap": 0.5,
+        "framePsd": false,
+        "generation": 7,
+        "gpuChartDrawCalls": 0,
+        "gpuDataDrawCalls": 4,
+        "gpuDataRenderer": "QRhi shader / vertex buffer",
+        "gpuHeatmapDrawCalls": 4,
+        "gpuPaletteUploads": 2,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 0,
+        "heatmapCacheHits": 0,
+        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+        "heatmapHeight": 430,
+        "heatmapWidth": 750,
+        "inverseCursorDrawCalls": 17,
+        "lastMatrixMs": 40.6199,
+        "matrixReductions": 0,
+        "noiseBandwidthHz": 14655.593551538814,
+        "overlayUploads": 13,
+        "paddedFrames": 0,
+        "pinnedFrequencyHz": 0,
+        "pinnedSourceSample": "0",
+        "powerGenerations": 4,
+        "quality": "settled",
+        "requestedGeneration": 7,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "requiredSeconds": 0.0001024,
+        "samplePointCount": 0,
+        "samplePointsVisible": false,
+        "settled": true,
+        "sourcePoints": 397312,
+        "staleDrops": 3,
+        "textureUploads": 1,
+        "workerIdle": true
+      },
+      "scene": "02-long-name"
+    },
+    {
+      "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+      "captureMethod": "native QWidget grab with QRhi readback",
+      "identityText": "超长标记名称 · Long signal name / QPSK / 中文 English / 0123456789 / 现场样本\n算法 · 待判断 · 类别未知\n当前第 1/2 段",
+      "inspectorControls": [
+        {
+          "enabled": true,
+          "objectName": "annotationIdentity",
+          "rect": {
+            "height": 64,
+            "width": 280,
+            "x": 2260,
+            "y": 119
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorLocate",
+          "rect": {
+            "height": 28,
+            "width": 280,
+            "x": 2260,
+            "y": 189
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorCreateChannel",
+          "rect": {
+            "height": 28,
+            "width": 280,
+            "x": 2260,
+            "y": 223
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 24,
+            "width": 280,
+            "x": 2260,
+            "y": 257
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 137,
+            "x": 2260,
+            "y": 287
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 137,
+            "x": 2403,
+            "y": 287
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationStartMilliseconds",
+          "rect": {
+            "height": 29,
+            "width": 137,
+            "x": 2260,
+            "y": 309
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEndMilliseconds",
+          "rect": {
+            "height": 29,
+            "width": 137,
+            "x": 2403,
+            "y": 309
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 137,
+            "x": 2260,
+            "y": 344
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 137,
+            "x": 2403,
+            "y": 344
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationLowerMHz",
+          "rect": {
+            "height": 29,
+            "width": 137,
+            "x": 2260,
+            "y": 366
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationUpperMHz",
+          "rect": {
+            "height": 29,
+            "width": 137,
+            "x": 2403,
+            "y": 366
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationRangeSummary",
+          "rect": {
+            "height": 32,
+            "width": 280,
+            "x": 2260,
+            "y": 401
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "editAnnotationRange",
+          "rect": {
+            "height": 28,
+            "width": 137,
+            "x": 2260,
+            "y": 439
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "cancelAnnotationGeometry",
+          "rect": {
+            "height": 28,
+            "width": 137,
+            "x": 2403,
+            "y": 439
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 24,
+            "width": 280,
+            "x": 2260,
+            "y": 473
+          }
+        },
+        {
+          "enabled": false,
+          "objectName": "annotationPreviousSegment",
+          "rect": {
+            "height": 28,
+            "width": 137,
+            "x": 2260,
+            "y": 503
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationNextSegment",
+          "rect": {
+            "height": 28,
+            "width": 137,
+            "x": 2403,
+            "y": 503
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationSegment",
+          "rect": {
+            "height": 29,
+            "width": 280,
+            "x": 2260,
+            "y": 537
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "restoreAnnotationOrigin",
+          "rect": {
+            "height": 28,
+            "width": 280,
+            "x": 2260,
+            "y": 572
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "addAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 280,
+            "x": 2260,
+            "y": 606
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "splitAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 137,
+            "x": 2260,
+            "y": 640
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "mergeAnnotationSegments",
+          "rect": {
+            "height": 28,
+            "width": 137,
+            "x": 2403,
+            "y": 640
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "deleteAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 280,
+            "x": 2260,
+            "y": 674
+          }
+        },
+        {
+          "enabled": false,
+          "objectName": "adoptAnnotationObservation",
+          "rect": {
+            "height": 28,
+            "width": 137,
+            "x": 2260,
+            "y": 708
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "editAnnotationNote",
+          "rect": {
+            "height": 28,
+            "width": 137,
+            "x": 2403,
+            "y": 708
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 280,
+            "x": 2260,
+            "y": 742
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceTitle",
+          "rect": {
+            "height": 16,
+            "width": 280,
+            "x": 2260,
+            "y": 764
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceSummary",
+          "rect": {
+            "height": 16,
+            "width": 280,
+            "x": 2260,
+            "y": 787
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceDetailsToggle",
+          "rect": {
+            "height": 31,
+            "width": 120,
+            "x": 2260,
+            "y": 810
+          }
+        }
+      ],
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "plotRect": {
+        "height": 623,
+        "width": 1877,
+        "x": 41,
+        "y": 12
+      },
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/review-fix-release-gpu-3/03-narrow-320-long-name.png",
+      "propertyWidth": 320,
+      "render": {
+        "acceptedHeatmapPreview": false,
+        "actualFrameInputSamples": "2048",
+        "actualSpectralFrames": 194,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "axisLayout": {
+          "dpr": 1.5,
+          "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+          "header": {
+            "height": 0,
+            "width": 1924,
+            "x": 8,
+            "y": 4
+          },
+          "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+          "leftGainFrom88": 47,
+          "localBottom": 32,
+          "localLeft": 41,
+          "localTop": 12,
+          "logicalDpiX": 96,
+          "logicalDpiY": 96,
+          "mode": "CompactHeader",
+          "plot": {
+            "height": 623,
+            "width": 1877,
+            "x": 41,
+            "y": 12
+          },
+          "sharedLeft": 41,
+          "tickHeight": 16,
+          "tickLabelWidth": 26,
+          "widgetHeight": 667,
+          "widgetWidth": 1940,
+          "xOrigin": "",
+          "xTickBand": {
+            "height": 16,
+            "width": 1877,
+            "x": 41,
+            "y": 647
+          },
+          "xTicks": [
+            "0",
+            "2",
+            "4",
+            "6",
+            "8",
+            "10"
+          ],
+          "xTitle": "时间 (ms)",
+          "xTitleBand": {
+            "height": 0,
+            "width": 1877,
+            "x": 41,
+            "y": 666
+          },
+          "yOrigin": "",
+          "yTicks": [
+            "2490",
+            "2495",
+            "2500",
+            "2505",
+            "2510"
+          ],
+          "yTitle": "频率 (MHz)",
+          "yUnit": "MHz"
+        },
+        "binHz": 9765.625,
+        "colorTransformGenerations": 3,
+        "committedGeneration": 9,
+        "cpuWallTimings": {
+          "chartDrawCalls": 0,
+          "chartDrawCallsSkipped": 0,
+          "chartPaletteUploads": 2,
+          "chartVertexUploads": 0,
+          "gpuTimestamps": false,
+          "heatmapDrawCalls": 9,
+          "heatmapUploadPreparation": {
+            "lastMs": 0.9555,
+            "maxMs": 1.1892,
+            "samples": 3,
+            "totalMs": 2.3114
+          },
+          "lastChartDrawLoopIterations": 0,
+          "lastChartDrawRecordCount": 0,
+          "lastChartDrawStage": 0,
+          "lastChartVertexCount": 0,
+          "lastRenderHeight": 667,
+          "lastRenderWidth": 1940,
+          "measurement": "GUI-thread wall time measured with QElapsedTimer",
+          "overlayImagePreparation": {
+            "lastMs": 0.3974,
+            "maxMs": 1.8138,
+            "samples": 17,
+            "totalMs": 10.388799999999998
+          },
+          "overlayPainter": {
+            "lastMs": 9.3449,
+            "maxMs": 9.5628,
+            "samples": 17,
+            "totalMs": 82.6057
+          },
+          "overlayUploadEnqueue": {
+            "lastMs": 0.0038,
+            "maxMs": 0.2445,
+            "samples": 17,
+            "totalMs": 1.1072999999999997
+          },
+          "paintEventIncludingQtSubmit": {
+            "lastMs": 13.2951,
+            "maxMs": 14.7637,
+            "samples": 19,
+            "totalMs": 154.3962
+          },
+          "paletteUploads": 2,
+          "prepareUploads": {
+            "lastMs": 0.0022,
+            "maxMs": 12.4585,
+            "samples": 22,
+            "totalMs": 107.53439999999999
+          },
+          "render": {
+            "lastMs": 0.0212,
+            "maxMs": 12.5209,
+            "samples": 22,
+            "totalMs": 108.3603
+          },
+          "renderInvocations": 22,
+          "unit": "ms"
+        },
+        "cursorPinned": false,
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi heatmap texture",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 322500,
+        "effectiveOverlap": 0.5,
+        "framePsd": false,
+        "generation": 9,
+        "gpuChartDrawCalls": 0,
+        "gpuDataDrawCalls": 9,
+        "gpuDataRenderer": "QRhi shader / vertex buffer",
+        "gpuHeatmapDrawCalls": 9,
+        "gpuPaletteUploads": 2,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 0,
+        "heatmapCacheHits": 1,
+        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+        "heatmapHeight": 430,
+        "heatmapWidth": 750,
+        "inverseCursorDrawCalls": 22,
+        "lastMatrixMs": 40.6199,
+        "matrixReductions": 1,
+        "noiseBandwidthHz": 14655.593551538814,
+        "overlayUploads": 17,
+        "paddedFrames": 0,
+        "pinnedFrequencyHz": 0,
+        "pinnedSourceSample": "0",
+        "powerGenerations": 4,
+        "quality": "settled",
+        "requestedGeneration": 9,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "requiredSeconds": 0.0001024,
+        "samplePointCount": 0,
+        "samplePointsVisible": false,
+        "settled": true,
+        "sourcePoints": 397312,
+        "staleDrops": 3,
+        "textureUploads": 3,
+        "workerIdle": true
+      },
+      "scene": "03-narrow-320-long-name"
+    },
+    {
+      "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+      "captureMethod": "native QWidget grab with QRhi readback",
+      "identityText": "超长标记名称 · Long signal name / QPSK / 中文 English / 0123456789 / 现场样本\n算法 · 待判断 · 类别未知\n当前第 1/2 段",
+      "inspectorControls": [
+        {
+          "enabled": true,
+          "objectName": "annotationIdentity",
+          "rect": {
+            "height": 48,
+            "width": 610,
+            "x": 1930,
+            "y": 119
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorLocate",
+          "rect": {
+            "height": 28,
+            "width": 610,
+            "x": 1930,
+            "y": 173
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorCreateChannel",
+          "rect": {
+            "height": 28,
+            "width": 610,
+            "x": 1930,
+            "y": 207
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 24,
+            "width": 610,
+            "x": 1930,
+            "y": 241
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 302,
+            "x": 1930,
+            "y": 271
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 302,
+            "x": 2238,
+            "y": 271
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationStartMilliseconds",
+          "rect": {
+            "height": 29,
+            "width": 302,
+            "x": 1930,
+            "y": 293
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEndMilliseconds",
+          "rect": {
+            "height": 29,
+            "width": 302,
+            "x": 2238,
+            "y": 293
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 302,
+            "x": 1930,
+            "y": 328
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 302,
+            "x": 2238,
+            "y": 328
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationLowerMHz",
+          "rect": {
+            "height": 29,
+            "width": 302,
+            "x": 1930,
+            "y": 350
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationUpperMHz",
+          "rect": {
+            "height": 29,
+            "width": 302,
+            "x": 2238,
+            "y": 350
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationRangeSummary",
+          "rect": {
+            "height": 32,
+            "width": 610,
+            "x": 1930,
+            "y": 385
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "editAnnotationRange",
+          "rect": {
+            "height": 28,
+            "width": 302,
+            "x": 1930,
+            "y": 423
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "cancelAnnotationGeometry",
+          "rect": {
+            "height": 28,
+            "width": 302,
+            "x": 2238,
+            "y": 423
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 24,
+            "width": 610,
+            "x": 1930,
+            "y": 457
+          }
+        },
+        {
+          "enabled": false,
+          "objectName": "annotationPreviousSegment",
+          "rect": {
+            "height": 28,
+            "width": 302,
+            "x": 1930,
+            "y": 487
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationNextSegment",
+          "rect": {
+            "height": 28,
+            "width": 302,
+            "x": 2238,
+            "y": 487
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationSegment",
+          "rect": {
+            "height": 29,
+            "width": 610,
+            "x": 1930,
+            "y": 521
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "restoreAnnotationOrigin",
+          "rect": {
+            "height": 28,
+            "width": 610,
+            "x": 1930,
+            "y": 556
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "addAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 610,
+            "x": 1930,
+            "y": 590
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "splitAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 302,
+            "x": 1930,
+            "y": 624
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "mergeAnnotationSegments",
+          "rect": {
+            "height": 28,
+            "width": 302,
+            "x": 2238,
+            "y": 624
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "deleteAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 610,
+            "x": 1930,
+            "y": 658
+          }
+        },
+        {
+          "enabled": false,
+          "objectName": "adoptAnnotationObservation",
+          "rect": {
+            "height": 28,
+            "width": 302,
+            "x": 1930,
+            "y": 692
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "editAnnotationNote",
+          "rect": {
+            "height": 28,
+            "width": 302,
+            "x": 2238,
+            "y": 692
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 610,
+            "x": 1930,
+            "y": 726
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceTitle",
+          "rect": {
+            "height": 16,
+            "width": 610,
+            "x": 1930,
+            "y": 748
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceSummary",
+          "rect": {
+            "height": 16,
+            "width": 610,
+            "x": 1930,
+            "y": 771
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceDetailsToggle",
+          "rect": {
+            "height": 31,
+            "width": 120,
+            "x": 1930,
+            "y": 794
+          }
+        }
+      ],
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "plotRect": {
+        "height": 623,
+        "width": 1547,
+        "x": 41,
+        "y": 12
+      },
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/review-fix-release-gpu-3/04-expanded-650.png",
+      "propertyWidth": 650,
+      "render": {
+        "acceptedHeatmapPreview": false,
+        "actualFrameInputSamples": "2048",
+        "actualSpectralFrames": 194,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "axisLayout": {
+          "dpr": 1.5,
+          "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+          "header": {
+            "height": 0,
+            "width": 1594,
+            "x": 8,
+            "y": 4
+          },
+          "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+          "leftGainFrom88": 47,
+          "localBottom": 32,
+          "localLeft": 41,
+          "localTop": 12,
+          "logicalDpiX": 96,
+          "logicalDpiY": 96,
+          "mode": "CompactHeader",
+          "plot": {
+            "height": 623,
+            "width": 1547,
+            "x": 41,
+            "y": 12
+          },
+          "sharedLeft": 41,
+          "tickHeight": 16,
+          "tickLabelWidth": 26,
+          "widgetHeight": 667,
+          "widgetWidth": 1610,
+          "xOrigin": "",
+          "xTickBand": {
+            "height": 16,
+            "width": 1547,
+            "x": 41,
+            "y": 647
+          },
+          "xTicks": [
+            "0",
+            "2",
+            "4",
+            "6",
+            "8",
+            "10"
+          ],
+          "xTitle": "时间 (ms)",
+          "xTitleBand": {
+            "height": 0,
+            "width": 1547,
+            "x": 41,
+            "y": 666
+          },
+          "yOrigin": "",
+          "yTicks": [
+            "2490",
+            "2495",
+            "2500",
+            "2505",
+            "2510"
+          ],
+          "yTitle": "频率 (MHz)",
+          "yUnit": "MHz"
+        },
+        "binHz": 9765.625,
+        "colorTransformGenerations": 5,
+        "committedGeneration": 11,
+        "cpuWallTimings": {
+          "chartDrawCalls": 0,
+          "chartDrawCallsSkipped": 0,
+          "chartPaletteUploads": 2,
+          "chartVertexUploads": 0,
+          "gpuTimestamps": false,
+          "heatmapDrawCalls": 14,
+          "heatmapUploadPreparation": {
+            "lastMs": 1.6004,
+            "maxMs": 1.6004,
+            "samples": 5,
+            "totalMs": 4.1284
+          },
+          "lastChartDrawLoopIterations": 0,
+          "lastChartDrawRecordCount": 0,
+          "lastChartDrawStage": 0,
+          "lastChartVertexCount": 0,
+          "lastRenderHeight": 667,
+          "lastRenderWidth": 1610,
+          "measurement": "GUI-thread wall time measured with QElapsedTimer",
+          "overlayImagePreparation": {
+            "lastMs": 0.3344,
+            "maxMs": 2.0194,
+            "samples": 21,
+            "totalMs": 13.612999999999998
+          },
+          "overlayPainter": {
+            "lastMs": 10.2776,
+            "maxMs": 14.8487,
+            "samples": 21,
+            "totalMs": 127.72299999999998
+          },
+          "overlayUploadEnqueue": {
+            "lastMs": 0.0052,
+            "maxMs": 0.3466,
+            "samples": 21,
+            "totalMs": 1.4696999999999998
+          },
+          "paintEventIncludingQtSubmit": {
+            "lastMs": 15.0033,
+            "maxMs": 18.192,
+            "samples": 23,
+            "totalMs": 218.7773
+          },
+          "paletteUploads": 2,
+          "prepareUploads": {
+            "lastMs": 0.0025,
+            "maxMs": 15.8383,
+            "samples": 27,
+            "totalMs": 161.88129999999998
+          },
+          "render": {
+            "lastMs": 0.0279,
+            "maxMs": 15.8837,
+            "samples": 27,
+            "totalMs": 163.0182
+          },
+          "renderInvocations": 27,
+          "unit": "ms"
+        },
+        "cursorPinned": false,
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi heatmap texture",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 322500,
+        "effectiveOverlap": 0.5,
+        "framePsd": false,
+        "generation": 11,
+        "gpuChartDrawCalls": 0,
+        "gpuDataDrawCalls": 14,
+        "gpuDataRenderer": "QRhi shader / vertex buffer",
+        "gpuHeatmapDrawCalls": 14,
+        "gpuPaletteUploads": 2,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 0,
+        "heatmapCacheHits": 3,
+        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+        "heatmapHeight": 430,
+        "heatmapWidth": 750,
+        "inverseCursorDrawCalls": 27,
+        "lastMatrixMs": 40.6199,
+        "matrixReductions": 1,
+        "noiseBandwidthHz": 14655.593551538814,
+        "overlayUploads": 21,
+        "paddedFrames": 0,
+        "pinnedFrequencyHz": 0,
+        "pinnedSourceSample": "0",
+        "powerGenerations": 4,
+        "quality": "settled",
+        "requestedGeneration": 11,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "requiredSeconds": 0.0001024,
+        "samplePointCount": 0,
+        "samplePointsVisible": false,
+        "settled": true,
+        "sourcePoints": 397312,
+        "staleDrops": 3,
+        "textureUploads": 5,
+        "workerIdle": true
+      },
+      "scene": "04-expanded-650"
+    },
+    {
+      "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+      "captureMethod": "native QWidget grab with QRhi readback",
+      "identityText": "超长标记名称 · Long signal name / QPSK / 中文 English / 0123456789 / 现场样本\n算法 · 待判断 · 类别未知\n当前第 1/2 段",
+      "inspectorControls": [],
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "plotRect": {
+        "height": 623,
+        "width": 2164,
+        "x": 41,
+        "y": 12
+      },
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/review-fix-release-gpu-3/05-hidden.png",
+      "propertyWidth": 38,
+      "render": {
+        "acceptedHeatmapPreview": false,
+        "actualFrameInputSamples": "2048",
+        "actualSpectralFrames": 194,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "axisLayout": {
+          "dpr": 1.5,
+          "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+          "header": {
+            "height": 0,
+            "width": 2211,
+            "x": 8,
+            "y": 4
+          },
+          "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+          "leftGainFrom88": 47,
+          "localBottom": 32,
+          "localLeft": 41,
+          "localTop": 12,
+          "logicalDpiX": 96,
+          "logicalDpiY": 96,
+          "mode": "CompactHeader",
+          "plot": {
+            "height": 623,
+            "width": 2164,
+            "x": 41,
+            "y": 12
+          },
+          "sharedLeft": 41,
+          "tickHeight": 16,
+          "tickLabelWidth": 26,
+          "widgetHeight": 667,
+          "widgetWidth": 2227,
+          "xOrigin": "",
+          "xTickBand": {
+            "height": 16,
+            "width": 2164,
+            "x": 41,
+            "y": 647
+          },
+          "xTicks": [
+            "0",
+            "2",
+            "4",
+            "6",
+            "8",
+            "10"
+          ],
+          "xTitle": "时间 (ms)",
+          "xTitleBand": {
+            "height": 0,
+            "width": 2164,
+            "x": 41,
+            "y": 666
+          },
+          "yOrigin": "",
+          "yTicks": [
+            "2490",
+            "2495",
+            "2500",
+            "2505",
+            "2510"
+          ],
+          "yTitle": "频率 (MHz)",
+          "yUnit": "MHz"
+        },
+        "binHz": 9765.625,
+        "colorTransformGenerations": 9,
+        "committedGeneration": 15,
+        "cpuWallTimings": {
+          "chartDrawCalls": 0,
+          "chartDrawCallsSkipped": 0,
+          "chartPaletteUploads": 2,
+          "chartVertexUploads": 0,
+          "gpuTimestamps": false,
+          "heatmapDrawCalls": 22,
+          "heatmapUploadPreparation": {
+            "lastMs": 2.5473,
+            "maxMs": 2.5473,
+            "samples": 9,
+            "totalMs": 8.4934
+          },
+          "lastChartDrawLoopIterations": 0,
+          "lastChartDrawRecordCount": 0,
+          "lastChartDrawStage": 0,
+          "lastChartVertexCount": 0,
+          "lastRenderHeight": 667,
+          "lastRenderWidth": 2227,
+          "measurement": "GUI-thread wall time measured with QElapsedTimer",
+          "overlayImagePreparation": {
+            "lastMs": 0.5618,
+            "maxMs": 2.5736,
+            "samples": 28,
+            "totalMs": 20.9725
+          },
+          "overlayPainter": {
+            "lastMs": 14.6558,
+            "maxMs": 14.8487,
+            "samples": 28,
+            "totalMs": 216.6974
+          },
+          "overlayUploadEnqueue": {
+            "lastMs": 0.0064,
+            "maxMs": 0.4808,
+            "samples": 28,
+            "totalMs": 2.4103999999999997
+          },
+          "paintEventIncludingQtSubmit": {
+            "lastMs": 20.8143,
+            "maxMs": 24.433,
+            "samples": 30,
+            "totalMs": 346.51869999999997
+          },
+          "paletteUploads": 2,
+          "prepareUploads": {
+            "lastMs": 0.0031,
+            "maxMs": 20.6946,
+            "samples": 35,
+            "totalMs": 271.415
+          },
+          "render": {
+            "lastMs": 0.0264,
+            "maxMs": 20.778,
+            "samples": 35,
+            "totalMs": 273.10040000000004
+          },
+          "renderInvocations": 35,
+          "unit": "ms"
+        },
+        "cursorPinned": false,
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi heatmap texture",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 322500,
+        "effectiveOverlap": 0.5,
+        "framePsd": false,
+        "generation": 15,
+        "gpuChartDrawCalls": 0,
+        "gpuDataDrawCalls": 22,
+        "gpuDataRenderer": "QRhi shader / vertex buffer",
+        "gpuHeatmapDrawCalls": 22,
+        "gpuPaletteUploads": 2,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 0,
+        "heatmapCacheHits": 7,
+        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+        "heatmapHeight": 430,
+        "heatmapWidth": 750,
+        "inverseCursorDrawCalls": 35,
+        "lastMatrixMs": 40.6199,
+        "matrixReductions": 1,
+        "noiseBandwidthHz": 14655.593551538814,
+        "overlayUploads": 28,
+        "paddedFrames": 0,
+        "pinnedFrequencyHz": 0,
+        "pinnedSourceSample": "0",
+        "powerGenerations": 4,
+        "quality": "settled",
+        "requestedGeneration": 15,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "requiredSeconds": 0.0001024,
+        "samplePointCount": 0,
+        "samplePointsVisible": false,
+        "settled": true,
+        "sourcePoints": 397312,
+        "staleDrops": 3,
+        "textureUploads": 9,
+        "workerIdle": true
+      },
+      "scene": "05-hidden"
+    },
+    {
+      "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+      "captureMethod": "native QWidget grab with QRhi readback",
+      "identityText": "超长标记名称 · Long signal name / QPSK / 中文 English / 0123456789 / 现场样本\n算法 · 待判断 · 类别未知\n当前第 1/2 段",
+      "inspectorControls": [
+        {
+          "enabled": true,
+          "objectName": "annotationIdentity",
+          "rect": {
+            "height": 64,
+            "width": 350,
+            "x": 2190,
+            "y": 119
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorLocate",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 189
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorCreateChannel",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 223
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 24,
+            "width": 350,
+            "x": 2190,
+            "y": 257
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 172,
+            "x": 2190,
+            "y": 287
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 172,
+            "x": 2368,
+            "y": 287
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationStartMilliseconds",
+          "rect": {
+            "height": 29,
+            "width": 172,
+            "x": 2190,
+            "y": 309
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEndMilliseconds",
+          "rect": {
+            "height": 29,
+            "width": 172,
+            "x": 2368,
+            "y": 309
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 172,
+            "x": 2190,
+            "y": 344
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 172,
+            "x": 2368,
+            "y": 344
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationLowerMHz",
+          "rect": {
+            "height": 29,
+            "width": 172,
+            "x": 2190,
+            "y": 366
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationUpperMHz",
+          "rect": {
+            "height": 29,
+            "width": 172,
+            "x": 2368,
+            "y": 366
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationRangeSummary",
+          "rect": {
+            "height": 32,
+            "width": 350,
+            "x": 2190,
+            "y": 401
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "editAnnotationRange",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2190,
+            "y": 439
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "cancelAnnotationGeometry",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2368,
+            "y": 439
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 24,
+            "width": 350,
+            "x": 2190,
+            "y": 473
+          }
+        },
+        {
+          "enabled": false,
+          "objectName": "annotationPreviousSegment",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2190,
+            "y": 503
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationNextSegment",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2368,
+            "y": 503
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationSegment",
+          "rect": {
+            "height": 29,
+            "width": 350,
+            "x": 2190,
+            "y": 537
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "restoreAnnotationOrigin",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 572
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "addAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 606
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "splitAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2190,
+            "y": 640
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "mergeAnnotationSegments",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2368,
+            "y": 640
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "deleteAnnotationSegment",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 674
+          }
+        },
+        {
+          "enabled": false,
+          "objectName": "adoptAnnotationObservation",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2190,
+            "y": 708
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "editAnnotationNote",
+          "rect": {
+            "height": 28,
+            "width": 172,
+            "x": 2368,
+            "y": 708
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "",
+          "rect": {
+            "height": 16,
+            "width": 350,
+            "x": 2190,
+            "y": 742
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceTitle",
+          "rect": {
+            "height": 16,
+            "width": 350,
+            "x": 2190,
+            "y": 764
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceSummary",
+          "rect": {
+            "height": 16,
+            "width": 350,
+            "x": 2190,
+            "y": 787
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationEvidenceDetailsToggle",
+          "rect": {
+            "height": 31,
+            "width": 120,
+            "x": 2190,
+            "y": 810
+          }
+        }
+      ],
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "plotRect": {
+        "height": 623,
+        "width": 1812,
+        "x": 36,
+        "y": 12
+      },
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/review-fix-release-gpu-3/06-located.png",
+      "propertyWidth": 390,
+      "render": {
+        "acceptedHeatmapPreview": false,
+        "actualFrameInputSamples": "86064",
+        "actualSpectralFrames": 1,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "axisLayout": {
+          "dpr": 1.5,
+          "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+          "header": {
+            "height": 0,
+            "width": 1854,
+            "x": 8,
+            "y": 4
+          },
+          "headerText": "X 时间 (ms) · Y RF频率 Δ (kHz) · F₀ = 2.501932 GHz",
+          "leftGainFrom88": 52,
+          "localBottom": 32,
+          "localLeft": 36,
+          "localTop": 12,
+          "logicalDpiX": 96,
+          "logicalDpiY": 96,
+          "mode": "CompactHeader",
+          "plot": {
+            "height": 623,
+            "width": 1812,
+            "x": 36,
+            "y": 12
+          },
+          "sharedLeft": 36,
+          "tickHeight": 16,
+          "tickLabelWidth": 20,
+          "widgetHeight": 667,
+          "widgetWidth": 1870,
+          "xOrigin": "",
+          "xTickBand": {
+            "height": 16,
+            "width": 1812,
+            "x": 36,
+            "y": 647
+          },
+          "xTicks": [
+            "2.06",
+            "3.24",
+            "4.41",
+            "5.59",
+            "6.76",
+            "7.94"
+          ],
+          "xTitle": "时间 (ms)",
+          "xTitleBand": {
+            "height": 0,
+            "width": 1812,
+            "x": 36,
+            "y": 666
+          },
+          "yOrigin": "F₀ = 2.501932 GHz",
+          "yTicks": [
+            "0",
+            "119",
+            "238",
+            "357",
+            "476"
+          ],
+          "yTitle": "频率 Δ (kHz)",
+          "yUnit": "Δ kHz"
+        },
+        "binHz": 232.421875,
+        "colorTransformGenerations": 13,
+        "committedGeneration": 19,
+        "cpuWallTimings": {
+          "chartDrawCalls": 0,
+          "chartDrawCallsSkipped": 0,
+          "chartPaletteUploads": 2,
+          "chartVertexUploads": 0,
+          "gpuTimestamps": false,
+          "heatmapDrawCalls": 31,
+          "heatmapUploadPreparation": {
+            "lastMs": 2.3937,
+            "maxMs": 2.5473,
+            "samples": 13,
+            "totalMs": 13.383399999999998
+          },
+          "lastChartDrawLoopIterations": 0,
+          "lastChartDrawRecordCount": 0,
+          "lastChartDrawStage": 0,
+          "lastChartVertexCount": 0,
+          "lastRenderHeight": 667,
+          "lastRenderWidth": 1870,
+          "measurement": "GUI-thread wall time measured with QElapsedTimer",
+          "overlayImagePreparation": {
+            "lastMs": 0.4349,
+            "maxMs": 2.7319,
+            "samples": 36,
+            "totalMs": 26.9765
+          },
+          "overlayPainter": {
+            "lastMs": 7.141,
+            "maxMs": 14.8487,
+            "samples": 36,
+            "totalMs": 298.5532
+          },
+          "overlayUploadEnqueue": {
+            "lastMs": 0.005,
+            "maxMs": 0.4808,
+            "samples": 36,
+            "totalMs": 2.5555999999999988
+          },
+          "paintEventIncludingQtSubmit": {
+            "lastMs": 12.3979,
+            "maxMs": 24.433,
+            "samples": 38,
+            "totalMs": 462.4115
+          },
+          "paletteUploads": 2,
+          "prepareUploads": {
+            "lastMs": 0.0031,
+            "maxMs": 20.6946,
+            "samples": 44,
+            "totalMs": 369.44770000000005
+          },
+          "render": {
+            "lastMs": 0.0337,
+            "maxMs": 20.778,
+            "samples": 44,
+            "totalMs": 371.6356
+          },
+          "renderInvocations": 44,
+          "unit": "ms"
+        },
+        "cursorPinned": false,
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi heatmap texture",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 322500,
+        "effectiveOverlap": 0.5,
+        "framePsd": false,
+        "generation": 19,
+        "gpuChartDrawCalls": 0,
+        "gpuDataDrawCalls": 31,
+        "gpuDataRenderer": "QRhi shader / vertex buffer",
+        "gpuHeatmapDrawCalls": 31,
+        "gpuPaletteUploads": 2,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 0,
+        "heatmapCacheHits": 9,
+        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+        "heatmapHeight": 430,
+        "heatmapWidth": 750,
+        "inverseCursorDrawCalls": 44,
+        "lastMatrixMs": 24.473,
+        "matrixReductions": 1,
+        "noiseBandwidthHz": 348.6426180736329,
+        "overlayUploads": 36,
+        "paddedFrames": 0,
+        "pinnedFrequencyHz": 0,
+        "pinnedSourceSample": "0",
+        "powerGenerations": 6,
+        "quality": "settled",
+        "requestedGeneration": 19,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "requiredSeconds": 0.0043032,
+        "samplePointCount": 0,
+        "samplePointsVisible": false,
+        "settled": true,
+        "sourcePoints": 2048,
+        "staleDrops": 3,
+        "textureUploads": 13,
+        "workerIdle": true
+      },
+      "scene": "06-located"
+    }
+  ],
+  "screen": {
+    "availableLogicalGeometry": {
+      "height": 1392,
+      "width": 2560,
+      "x": 0,
+      "y": 0
+    },
+    "connectedIndex": 1,
+    "deviceName": "\\\\.\\DISPLAY6",
+    "devicePath": "\\\\.\\DISPLAY6",
+    "devicePixelRatio": 1.5,
+    "friendlyName": "Redmi 27 NU",
+    "identityMethod": "Windows active DisplayConfig source/target",
+    "logicalDpi": 96,
+    "logicalGeometry": {
+      "height": 1440,
+      "width": 2560,
+      "x": 0,
+      "y": 0
+    },
+    "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+    "name": "Redmi 27 NU",
+    "outputTechnology": 5,
+    "physicalDpi": 109.05000625015624,
+    "pixelSize": {
+      "height": 2160,
+      "width": 3840
+    },
+    "preferredPixelSize": {
+      "height": 2160,
+      "width": 3840
+    },
+    "primary": true
+  },
+  "softwareRenderer": false,
+  "source": {
+    "centerFrequencyHz": 2500000000,
+    "decodedCompleteFrames": "400000",
+    "format": "CF32",
+    "formatKey": "CF32/1/1/1/0/0/0/0/0",
+    "metadataProvenance": "SigMF 1.0.0",
+    "navigationEnvelopePoints": 1563,
+    "physicalSamples": "400000",
+    "sampleRateHz": 20000000
+  },
+  "syntheticAnnotations": true,
+  "process": {
+    "configuration": "Release",
+    "exitCode": 1,
+    "elapsedSeconds": 14.175973,
+    "systemOnlyPath": true,
+    "dpiOverridesCleared": true,
+    "timeoutSeconds": 300
+  }
+}

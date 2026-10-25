@@ -11,6 +11,7 @@
 | 来源与备注 | restoreAnnotationOrigin、adoptAnnotationObservation、editAnnotationNote |
 | 技术事实 | annotationEvidenceWidget、annotationEvidenceDetailsToggle、annotationEvidenceDetailsDialog |
 | 原始全文 / 复制 | annotationOriginalFieldsToggle、annotationEvidence、annotationCopyEvidence |
+| 原文分页 / 全文搜索 | annotationEvidencePreviousPage、annotationEvidenceNextPage、annotationEvidencePage、annotationEvidenceSearch、annotationEvidenceFindNext |
 | 危险操作 / 撤销 | deleteMarks、undoAnnotations、redoAnnotations |
 | 联动 | annotationTable、projectTree、mainPlot、contextAnnotation、auxiliaryDetectionEvidence |
 | 唯一设置 / 溢出 | auxChartControls、specChartControls、psdSettings、stftSettings |
