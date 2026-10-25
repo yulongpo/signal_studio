@@ -1,9 +1,9 @@
 # UX-R4 验证
 
-> 当前状态：首次独立审核对 `26b9fff` 给出 REJECTED，原因是共享补充来源原文遗漏。
-> 已完成实现修复及 Debug/Release 定向 Qt 回归；新版本原生复制被 Windows 系统剪贴板错误 5 阻塞。
-> 下文四组完整原生结果为首次审核前版本的历史证据，不能冒充修复版已全部通过。
-> 最新结果、用户关于不执行大型 RFbench 验证的修订及待完成项见 [POST_REVIEW_FIX](POST_REVIEW_FIX.md)。
+> 首次独立审核对 `26b9fff` 给出 REJECTED，原因是共享补充来源原文遗漏，已修复。
+> 用户恢复系统剪贴板后，修复版 Debug/Release 四组原生流程全部通过；下表及四组目录已更新为修复版证据。
+> 用户明确不执行大型 RFbench 事件验证；本次使用常规真实导入样本和小型合成分页文本。
+> 修复、失败、恢复及最终复审边界见 [POST_REVIEW_FIX](POST_REVIEW_FIX.md)。
 
 ## 最终结果
 
@@ -13,10 +13,10 @@
 
 | 配置 | 原生结果 | 证据 |
 |---|---|---|
-| Release D3D11 / RTX 5060 Laptop | 21 主窗口场景 + 详情，通过 | [report](evidence/release-gpu/report.json) |
-| Release QWidget / QPainter | 21 主窗口场景 + 详情，通过；带分步日志复查 20.62 s | [report](evidence/release-software/report.json) |
-| Debug D3D11 / RTX 5060 Laptop | 21 主窗口场景 + 详情，通过；带分步日志复查 86.71 s | [report](evidence/debug-gpu/report.json) |
-| Debug QWidget / QPainter | 21 主窗口场景 + 详情，通过 | [report](evidence/debug-software/report.json) |
+| Release D3D11 / RTX 5060 Laptop | 21 主窗口场景 + 详情，通过；22.01 s | [report](evidence/release-gpu/report.json) |
+| Release QWidget / QPainter | 21 主窗口场景 + 详情，通过；21.43 s | [report](evidence/release-software/report.json) |
+| Debug D3D11 / RTX 5060 Laptop | 21 主窗口场景 + 详情，通过；52.38 s | [report](evidence/debug-gpu/report.json) |
+| Debug QWidget / QPainter | 21 主窗口场景 + 详情，通过；56.08 s | [report](evidence/debug-software/report.json) |
 
 每组使用实际 20 MS/s / 400000 CF32 样本的图谱、原有真实标签和明确标注的交互夹具。
 最后一个大频率场景是 **999.999 GHz 合成元数据的 UI 压力夹具**，不证明此频率的 RF 分析精度。
@@ -34,7 +34,8 @@
   多选明确当前对象、创建入口禁用；无选择/缺失来源保持无效上下文保护。
   缺失 sourceSet 的非法测试记录按既有 reconcile 规则撤销选择，不修改领域规则来保留无效可编辑对象。
 - 默认摘要不显示完整 ID/SHA/JSON；详情复制包含原始 JSON 尾部、完整来源路径/哈希、
-  引用和修订，复制 37072 字符且 encodeAnnotation 前后相等。
+  引用和修订，复制 38987 字符且 encodeAnnotation 前后相等。普通大小 TorchSig 的完整补充原文、
+  补充 hash 在右侧与辅助两处均完成原生查看、搜索和全文复制读回校验。
 - 辅助证据、PSD、时频、瀑布、换色表、24 个新增密集标记、ROI 预览/取消、控制柄；
   悬停检查不增加谱功率计算次数。保存重开 .ssproj 后保留通道来源快照。
 
@@ -45,21 +46,23 @@
 ## 构建与精简回归
 
 Debug/Release 均经 `scripts/build.ps1` 构建 SignalStudio、SignalStudioUiCapture、
-SignalStudioUxTests 和 SignalStudioUiTests。最终应用源码的相关 CTest 每配置 12/12：
+SignalStudioUxTests 和 SignalStudioUiTests。相关 CTest 每配置共 12/12；修复后补跑受影响的 5 组 UI，
+其余 7 组未改模块的合同结果沿用首次验证，不混称同一次执行：
 
 | 范围 | 每配置 CTest 结果 | 说明 |
 |---|---|---|
-| UX charts/layout/popovers/annotation | 4/4 | 含新证据完整复制、当前对象/动作状态；仍覆盖原溢出/草稿/ROI/窄带页 |
+| UX charts/layout/popovers/annotation | 4/4 | 修复后通过；含普通补充来源、分页搜索、隐藏辅助上下文、完整复制和当前对象/动作状态 |
 | UI annotations 定向覆盖 | 1/1 | 11 业务用例；树/图/表、多段、颜色、几何、删除、草稿、TorchSig、worker 夹具保存重开 |
 | 参数/标记/标记持久化/标签/WAV/工程文件/工程树 | 7/7 | 标签各配置 32 pass，4 个符号链接场景因主机权限跳过；不隐瞒跳过 |
 
-五组 Qt UI 日志每配置共 27 个业务函数（PASS 总数包含各程序 init/cleanup，不作为新增功能数）。
+修复后五组 Qt UI 日志每配置共 29 个业务函数（PASS 总数包含各程序 init/cleanup，不作为新增功能数）。
 offscreen CTest 证明交互和状态，不证明硬件显示。真实硬件显示由上表四组原生报告单独证明。
 结果并非一次性全库矩阵；本轮只运行受影响范围。详细 CTest 和 Qt 日志在 [evidence/logs](evidence/logs/)。
 
 `scripts/verify-package.ps1` 在 Debug/Release 两个 `_bin` 目录分别验证 GPU 与软件独立启动，
 共 4/4；system-only PATH、实际 Windows 平台、CompactHeader 默认行为和部署运行库均保留。
-详见 [evidence/package](evidence/package/)。没有进行额外批量 SHA 计算或模型/DLL 指纹清单。
+首次结果见 [evidence/package](evidence/package/)，修复版四次启动结果见
+[evidence/review-fix](evidence/review-fix/)。没有进行额外批量 SHA 计算或模型/DLL 指纹清单。
 
 ## 失败、复查和限制
 
@@ -75,6 +78,9 @@ offscreen CTest 证明交互和状态，不证明硬件显示。真实硬件显�
 5. 大频率首次超出既有 ±1 THz 标记合同，被拒绝；已使用合同内元数据夹具，不修改领域边界。
 6. 原型 JavaScript 语法检查通过；Computer Use 因无法可靠识别浏览器 URL 停止，未继续浏览器自动化。
    不声称原型浏览器交互已实测。交互原型可用文件交付；实际 Qt 功能由上述原生点击证明。
+7. 首次独立审核拒绝指出共享补充原文遗漏，已补全主/补充原文和元数据，增加普通导入与分页测试。
+   用户随后明确不执行大型 RFbench 事件验证，该项保持未实测边界。修复版曾被系统 `OpenClipboard`
+   错误 5 阻塞；用户恢复后系统探针和四组原生流程全部通过，失败与恢复记录均保留。
 
 既有 Ubuntu、设备输入、现场 RF 精度和模型识别/解调限制不因本轮 UI 优化改变。
 独立审核及发布结果以提交外 `INDEPENDENT_REVIEW.md`、`PUBLISH_RECORD.json` 为准。

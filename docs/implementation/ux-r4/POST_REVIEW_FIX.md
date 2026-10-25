@@ -32,11 +32,11 @@ Debug/Release 均构建应用、原生 runner 和两个 Qt 测试程序。修复
 - 共 5/5 受影响 CTest 组，每配置 29 个 UI 业务函数；没有重跑无关算法矩阵。
 
 修复版还从 Debug/Release 部署目录以 system-only PATH 分别执行 GPU / 软件独立启动，4/4 通过；
-这些结果只证明独立启动及 renderer，不替代尚被系统剪贴板阻塞的原生复制流程。
+这些结果证明独立启动及 renderer；下述恢复后的原生流程另行证明复制与完整交互。
 
 原始构建、首轮失败、修复后的 Qt 日志和原生失败报告归档于 [evidence/review-fix](evidence/review-fix/)。
 
-## 原生复制的真实阻塞
+## 原生复制的阻塞及恢复
 
 新版本 Release GPU 原生运行已完成前六个场景，随后复制操作无法读回系统剪贴板。
 Qt 原生日志包含 `OleSetClipboard` / `OpenClipboard` 失败，COM 错误 `0x800401d0`；
@@ -44,14 +44,20 @@ Qt 原生日志包含 `OleSetClipboard` / `OpenClipboard` 失败，COM 错误 `0
 运行环境为 `WinSta0`、输入桌面 `Default`。探针不读写剪贴板内容。
 已清理主代理和独立审核代理各自闲置的 Computer Use 会话，系统状态仍未恢复。
 
-这是当前主机的实际阻塞，不能将其误报为原文截断或复制通过。详见
-[clipboard-status.json](evidence/review-fix/clipboard-status.json)。已请求用户恢复系统剪贴板；
+这是当时主机的实际阻塞，不能将其误报为原文截断或复制通过。详见
+[clipboard-status.json](evidence/review-fix/clipboard-status.json)。随后用户恢复系统剪贴板；
 未擅自关闭用户应用或修改系统安全/隐私设置。
 
-## 待完成
+恢复后 [系统探针](evidence/review-fix/clipboard-after-restore.json) 返回 OpenClipboard=true、错误 0。
+修复版四组原生程序全部通过，每组 21 主场景及详情，复制 38987 字符。
+右侧与辅助两处使用常规真实 TorchSig 来源，补充全文/hash 实际读回匹配，原文搜索也通过。
+四组报告均记录 ordinarySupplementalEntriesVerified=2、largeRfbenchValidationExecuted=false。
+完整截图和报告已更新至 evidence 下四个对应目录；失败日志继续保留于 review-fix。
 
-1. 剪贴板恢复后完成修复版原生复制/查看及受影响原生场景，更新证据和独立启动结果。
-2. 形成最终本地精确 HEAD，由未参与实现的独立 Review Agent 重新全面审核。
-3. 只有新报告明确 APPROVED、HEAD 完全相同且最新远端祖先关系安全时才正常推送。
+## 发布门禁
 
-当前没有最终 APPROVED，不具备发布资格。已有旧 UX-R3 未跟踪材料保留。
+1. 固化最终本地精确 HEAD，由未参与实现的独立 Review Agent 重新全面审核。
+2. 只有新报告明确 APPROVED、HEAD 完全相同且最新远端祖先关系安全时才正常推送。
+
+发布资格仅由当前精确 HEAD 对应的独立 APPROVED 决定，不能从本文自述推定。
+最终审核和发布记录保留提交外，避免提交身份漂移。已有旧 UX-R3 未跟踪材料保留。

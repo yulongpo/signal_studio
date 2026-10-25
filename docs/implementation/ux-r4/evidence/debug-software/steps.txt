@@ -1,0 +1,86 @@
+2026-10-25T13:59:32.958Z 01-default begin
+2026-10-25T13:59:33.111Z 01-default events settled
+2026-10-25T13:59:33.532Z 01-default widget readback complete
+2026-10-25T13:59:34.229Z 01-default assertions complete
+2026-10-25T13:59:34.231Z long name refresh begin
+2026-10-25T13:59:34.267Z long name refresh complete
+2026-10-25T13:59:34.268Z 02-long-name begin
+2026-10-25T13:59:34.481Z 02-long-name events settled
+2026-10-25T13:59:34.782Z 02-long-name widget readback complete
+2026-10-25T13:59:35.459Z 02-long-name assertions complete
+2026-10-25T13:59:36.126Z 03-narrow-320-long-name begin
+2026-10-25T13:59:36.277Z 03-narrow-320-long-name events settled
+2026-10-25T13:59:36.511Z 03-narrow-320-long-name widget readback complete
+2026-10-25T13:59:37.192Z 03-narrow-320-long-name assertions complete
+2026-10-25T13:59:37.729Z 04-expanded-650 begin
+2026-10-25T13:59:37.881Z 04-expanded-650 events settled
+2026-10-25T13:59:38.074Z 04-expanded-650 widget readback complete
+2026-10-25T13:59:38.682Z 04-expanded-650 assertions complete
+2026-10-25T13:59:39.672Z 05-hidden begin
+2026-10-25T13:59:39.824Z 05-hidden events settled
+2026-10-25T13:59:40.049Z 05-hidden widget readback complete
+2026-10-25T13:59:40.720Z 05-hidden assertions complete
+2026-10-25T13:59:42.358Z 06-located begin
+2026-10-25T13:59:42.586Z 06-located events settled
+2026-10-25T13:59:42.807Z 06-located widget readback complete
+2026-10-25T13:59:43.280Z 06-located assertions complete
+2026-10-25T13:59:46.871Z 08-edited-and-restored begin
+2026-10-25T13:59:47.022Z 08-edited-and-restored events settled
+2026-10-25T13:59:47.251Z 08-edited-and-restored widget readback complete
+2026-10-25T13:59:48.189Z 08-edited-and-restored assertions complete
+2026-10-25T13:59:48.449Z 09-time-unknown begin
+2026-10-25T13:59:48.602Z 09-time-unknown events settled
+2026-10-25T13:59:48.823Z 09-time-unknown widget readback complete
+2026-10-25T13:59:49.733Z 09-time-unknown assertions complete
+2026-10-25T13:59:50.038Z 10-multi-selection begin
+2026-10-25T13:59:50.233Z 10-multi-selection events settled
+2026-10-25T13:59:50.504Z 10-multi-selection widget readback complete
+2026-10-25T13:59:51.403Z 10-multi-selection assertions complete
+2026-10-25T13:59:51.447Z 11-no-selection begin
+2026-10-25T13:59:51.631Z 11-no-selection events settled
+2026-10-25T13:59:51.847Z 11-no-selection widget readback complete
+2026-10-25T13:59:52.730Z 11-no-selection assertions complete
+2026-10-25T13:59:53.076Z 12-missing-source begin
+2026-10-25T13:59:53.267Z 12-missing-source events settled
+2026-10-25T13:59:53.487Z 12-missing-source widget readback complete
+2026-10-25T13:59:54.377Z 12-missing-source assertions complete
+2026-10-25T13:59:54.707Z 13-manual-source begin
+2026-10-25T13:59:54.859Z 13-manual-source events settled
+2026-10-25T13:59:55.079Z 13-manual-source widget readback complete
+2026-10-25T13:59:55.956Z 13-manual-source assertions complete
+2026-10-25T13:59:56.199Z 14-imported-source begin
+2026-10-25T13:59:56.351Z 14-imported-source events settled
+2026-10-25T13:59:56.572Z 14-imported-source widget readback complete
+2026-10-25T13:59:57.454Z 14-imported-source assertions complete
+2026-10-25T14:00:01.157Z 15-auxiliary-evidence begin
+2026-10-25T14:00:01.309Z 15-auxiliary-evidence events settled
+2026-10-25T14:00:01.534Z 15-auxiliary-evidence widget readback complete
+2026-10-25T14:00:02.440Z 15-auxiliary-evidence assertions complete
+2026-10-25T14:00:02.803Z 16-psd begin
+2026-10-25T14:00:02.954Z 16-psd events settled
+2026-10-25T14:00:03.183Z 16-psd widget readback complete
+2026-10-25T14:00:04.079Z 16-psd assertions complete
+2026-10-25T14:00:04.471Z 17-waterfall begin
+2026-10-25T14:00:04.623Z 17-waterfall events settled
+2026-10-25T14:00:05.899Z 17-waterfall widget readback complete
+2026-10-25T14:00:07.095Z 17-waterfall assertions complete
+2026-10-25T14:00:09.194Z 18-tree-plot-table-linked begin
+2026-10-25T14:00:09.347Z 18-tree-plot-table-linked events settled
+2026-10-25T14:00:09.574Z 18-tree-plot-table-linked widget readback complete
+2026-10-25T14:00:10.509Z 18-tree-plot-table-linked assertions complete
+2026-10-25T14:00:12.822Z 19-dense-roi-long-file begin
+2026-10-25T14:00:12.973Z 19-dense-roi-long-file events settled
+2026-10-25T14:00:13.244Z 19-dense-roi-long-file widget readback complete
+2026-10-25T14:00:14.147Z 19-dense-roi-long-file assertions complete
+2026-10-25T14:00:15.456Z 20-palette-and-handles begin
+2026-10-25T14:00:15.616Z 20-palette-and-handles events settled
+2026-10-25T14:00:15.862Z 20-palette-and-handles widget readback complete
+2026-10-25T14:00:16.786Z 20-palette-and-handles assertions complete
+2026-10-25T14:00:18.088Z 21-reopened begin
+2026-10-25T14:00:18.321Z 21-reopened events settled
+2026-10-25T14:00:20.189Z 21-reopened widget readback complete
+2026-10-25T14:00:21.081Z 21-reopened assertions complete
+2026-10-25T14:00:22.114Z 22-large-frequency-synthetic-metadata begin
+2026-10-25T14:00:22.266Z 22-large-frequency-synthetic-metadata events settled
+2026-10-25T14:00:22.466Z 22-large-frequency-synthetic-metadata widget readback complete
+2026-10-25T14:00:22.897Z 22-large-frequency-synthetic-metadata assertions complete
