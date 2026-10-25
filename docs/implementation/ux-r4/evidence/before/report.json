@@ -1,0 +1,1659 @@
+{
+    "baseline": true,
+    "binary": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioUiCapture.exe",
+    "mode": "ux-r4",
+    "modelInferenceVerified": false,
+    "pass": true,
+    "scenes": [
+        {
+            "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+            "inspectorControls": [
+                {
+                    "enabled": true,
+                    "objectName": "annotationIdentity",
+                    "rect": {
+                        "height": 80,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 119
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationSegment",
+                    "rect": {
+                        "height": 29,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 205
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationPreviousSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 240
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationNextSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 240
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 274
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 274
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationStartMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 296
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEndMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 296
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 331
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 331
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationLowerMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 353
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationUpperMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 353
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationRange",
+                    "rect": {
+                        "height": 28,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 388
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "cancelAnnotationGeometry",
+                    "rect": {
+                        "height": 28,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 388
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "restoreAnnotationOrigin",
+                    "rect": {
+                        "height": 28,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 422
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "addAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 456
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "splitAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 110,
+                        "x": 2190,
+                        "y": 490
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "mergeAnnotationSegments",
+                    "rect": {
+                        "height": 28,
+                        "width": 110,
+                        "x": 2306,
+                        "y": 490
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "deleteAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 110,
+                        "x": 2422,
+                        "y": 490
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "adoptAnnotationObservation",
+                    "rect": {
+                        "height": 28,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 524
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationNote",
+                    "rect": {
+                        "height": 28,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 524
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 558
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceTitle",
+                    "rect": {
+                        "height": 16,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 580
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceContext",
+                    "rect": {
+                        "height": 32,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 603
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceNotice",
+                    "rect": {
+                        "height": 32,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 642
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceMethodCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 681
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceMethod",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 681
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceTimeBasisCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 702
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceTimeBasis",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 702
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceUncertaintyCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 723
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceUncertainty",
+                    "rect": {
+                        "height": 32,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 723
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceFrequencyCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 760
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceFrequency",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 760
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceCurrentRangeCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 781
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceCurrentRange",
+                    "rect": {
+                        "height": 112,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 781
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceOriginalRangeCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 898
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceOriginalRange",
+                    "rect": {
+                        "height": 112,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 898
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceObservationCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1015
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceObservation",
+                    "rect": {
+                        "height": 48,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1015
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceMeanCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1068
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceMean",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1068
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceMaximumCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1089
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceMaximum",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1089
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceWindowsCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1110
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceWindows",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1110
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceWindowIdsCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1131
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceWindowIds",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1131
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceNoiseCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1152
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceNoise",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1152
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceReasonCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1173
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceReason",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1173
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceClassCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1194
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceClass",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1194
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceFormatCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1215
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceFormat",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1215
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceOriginCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1236
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceOrigin",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1236
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceCoordinatesCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1257
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceCoordinates",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1257
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceScoreDefinition",
+                    "rect": {
+                        "height": 96,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 1280
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationOriginalFieldsToggle",
+                    "rect": {
+                        "height": 31,
+                        "width": 131,
+                        "x": 2190,
+                        "y": 1383
+                    }
+                }
+            ],
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "plotRect": {
+                "height": 623,
+                "width": 1807,
+                "x": 41,
+                "y": 12
+            },
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/before/01-default.png",
+            "render": {
+                "acceptedHeatmapPreview": false,
+                "actualFrameInputSamples": "2048",
+                "actualSpectralFrames": 194,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "axisLayout": {
+                    "dpr": 1.5,
+                    "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+                    "header": {
+                        "height": 0,
+                        "width": 1854,
+                        "x": 8,
+                        "y": 4
+                    },
+                    "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+                    "leftGainFrom88": 47,
+                    "localBottom": 32,
+                    "localLeft": 41,
+                    "localTop": 12,
+                    "logicalDpiX": 96,
+                    "logicalDpiY": 96,
+                    "mode": "CompactHeader",
+                    "plot": {
+                        "height": 623,
+                        "width": 1807,
+                        "x": 41,
+                        "y": 12
+                    },
+                    "sharedLeft": 41,
+                    "tickHeight": 16,
+                    "tickLabelWidth": 26,
+                    "widgetHeight": 667,
+                    "widgetWidth": 1870,
+                    "xOrigin": "",
+                    "xTickBand": {
+                        "height": 16,
+                        "width": 1807,
+                        "x": 41,
+                        "y": 647
+                    },
+                    "xTicks": [
+                        "0",
+                        "2",
+                        "4",
+                        "6",
+                        "8",
+                        "10"
+                    ],
+                    "xTitle": "时间 (ms)",
+                    "xTitleBand": {
+                        "height": 0,
+                        "width": 1807,
+                        "x": 41,
+                        "y": 666
+                    },
+                    "yOrigin": "",
+                    "yTicks": [
+                        "2490",
+                        "2495",
+                        "2500",
+                        "2505",
+                        "2510"
+                    ],
+                    "yTitle": "频率 (MHz)",
+                    "yUnit": "MHz"
+                },
+                "binHz": 9765.625,
+                "colorTransformGenerations": 1,
+                "committedGeneration": 7,
+                "cpuWallTimings": {
+                    "chartDrawCalls": 0,
+                    "chartDrawCallsSkipped": 0,
+                    "chartPaletteUploads": 2,
+                    "chartVertexUploads": 0,
+                    "gpuTimestamps": false,
+                    "heatmapDrawCalls": 1,
+                    "heatmapUploadPreparation": {
+                        "lastMs": 1.2737,
+                        "maxMs": 1.2737,
+                        "samples": 1,
+                        "totalMs": 1.2737
+                    },
+                    "lastChartDrawLoopIterations": 0,
+                    "lastChartDrawRecordCount": 0,
+                    "lastChartDrawStage": 0,
+                    "lastChartVertexCount": 0,
+                    "lastRenderHeight": 667,
+                    "lastRenderWidth": 1870,
+                    "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                    "overlayImagePreparation": {
+                        "lastMs": 0.354,
+                        "maxMs": 1.9459,
+                        "samples": 12,
+                        "totalMs": 7.6735
+                    },
+                    "overlayPainter": {
+                        "lastMs": 7.6249,
+                        "maxMs": 9.4098,
+                        "samples": 12,
+                        "totalMs": 36.845600000000005
+                    },
+                    "overlayUploadEnqueue": {
+                        "lastMs": 0.0032,
+                        "maxMs": 0.4065,
+                        "samples": 12,
+                        "totalMs": 1.1666000000000003
+                    },
+                    "paintEventIncludingQtSubmit": {
+                        "lastMs": 11.4028,
+                        "maxMs": 14.1604,
+                        "samples": 14,
+                        "totalMs": 90.2736
+                    },
+                    "paletteUploads": 2,
+                    "prepareUploads": {
+                        "lastMs": 9.6181,
+                        "maxMs": 11.8645,
+                        "samples": 14,
+                        "totalMs": 55.6541
+                    },
+                    "render": {
+                        "lastMs": 9.69,
+                        "maxMs": 11.9237,
+                        "samples": 14,
+                        "totalMs": 56.173399999999994
+                    },
+                    "renderInvocations": 14,
+                    "unit": "ms"
+                },
+                "cursorPinned": false,
+                "curveCacheHits": 0,
+                "curvePathElements": 0,
+                "curveRasterMethod": "QRhi heatmap texture",
+                "curveReductions": 0,
+                "curveSourceGenerations": 0,
+                "drawnLineSegments": 0,
+                "drawnPoints": 322500,
+                "effectiveOverlap": 0.5,
+                "framePsd": false,
+                "generation": 7,
+                "gpuChartDrawCalls": 0,
+                "gpuDataDrawCalls": 1,
+                "gpuDataRenderer": "QRhi shader / vertex buffer",
+                "gpuHeatmapDrawCalls": 1,
+                "gpuPaletteUploads": 2,
+                "gpuUploadsPending": false,
+                "gpuVertexUploads": 0,
+                "heatmapCacheHits": 0,
+                "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                "heatmapHeight": 430,
+                "heatmapWidth": 750,
+                "inverseCursorDrawCalls": 14,
+                "lastMatrixMs": 45.7252,
+                "matrixReductions": 0,
+                "noiseBandwidthHz": 14655.593551538814,
+                "overlayUploads": 12,
+                "paddedFrames": 0,
+                "pinnedFrequencyHz": 0,
+                "pinnedSourceSample": "0",
+                "powerGenerations": 4,
+                "quality": "settled",
+                "requestedGeneration": 7,
+                "requestedHeatmapHeight": 430,
+                "requestedHeatmapWidth": 750,
+                "requestedPixels": 322500,
+                "requiredSeconds": 0.0001024,
+                "samplePointCount": 0,
+                "samplePointsVisible": false,
+                "settled": true,
+                "sourcePoints": 397312,
+                "staleDrops": 3,
+                "textureUploads": 1,
+                "workerIdle": true
+            },
+            "scene": "01-default"
+        },
+        {
+            "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+            "inspectorControls": [
+                {
+                    "enabled": true,
+                    "objectName": "annotationIdentity",
+                    "rect": {
+                        "height": 96,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 119
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationSegment",
+                    "rect": {
+                        "height": 29,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 221
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationPreviousSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 256
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationNextSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 256
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 290
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 290
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationStartMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 312
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEndMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 312
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 347
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 347
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationLowerMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 369
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationUpperMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 369
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationRange",
+                    "rect": {
+                        "height": 28,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 404
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "cancelAnnotationGeometry",
+                    "rect": {
+                        "height": 28,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 404
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "restoreAnnotationOrigin",
+                    "rect": {
+                        "height": 28,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 438
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "addAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 472
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "splitAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 110,
+                        "x": 2190,
+                        "y": 506
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "mergeAnnotationSegments",
+                    "rect": {
+                        "height": 28,
+                        "width": 110,
+                        "x": 2306,
+                        "y": 506
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "deleteAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 110,
+                        "x": 2422,
+                        "y": 506
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "adoptAnnotationObservation",
+                    "rect": {
+                        "height": 28,
+                        "width": 168,
+                        "x": 2190,
+                        "y": 540
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationNote",
+                    "rect": {
+                        "height": 28,
+                        "width": 168,
+                        "x": 2364,
+                        "y": 540
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 574
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceTitle",
+                    "rect": {
+                        "height": 16,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 596
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceContext",
+                    "rect": {
+                        "height": 32,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 619
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceNotice",
+                    "rect": {
+                        "height": 32,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 658
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceMethodCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 697
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceMethod",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 697
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceTimeBasisCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 718
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceTimeBasis",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 718
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceUncertaintyCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 739
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceUncertainty",
+                    "rect": {
+                        "height": 32,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 739
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceFrequencyCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 776
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceFrequency",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 776
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceCurrentRangeCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 797
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceCurrentRange",
+                    "rect": {
+                        "height": 112,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 797
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceOriginalRangeCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 914
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceOriginalRange",
+                    "rect": {
+                        "height": 112,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 914
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceObservationCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1031
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceObservation",
+                    "rect": {
+                        "height": 48,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1031
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceMeanCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1084
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceMean",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1084
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceMaximumCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1105
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceMaximum",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1105
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceWindowsCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1126
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceWindows",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1126
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceWindowIdsCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1147
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceWindowIds",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1147
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceNoiseCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1168
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceNoise",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1168
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceReasonCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1189
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceReason",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1189
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceClassCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1210
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceClass",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1210
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceFormatCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1231
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceFormat",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1231
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceOriginCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1252
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceOrigin",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1252
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceCoordinatesCaption",
+                    "rect": {
+                        "height": 16,
+                        "width": 60,
+                        "x": 2190,
+                        "y": 1273
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceCoordinates",
+                    "rect": {
+                        "height": 16,
+                        "width": 274,
+                        "x": 2258,
+                        "y": 1273
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceScoreDefinition",
+                    "rect": {
+                        "height": 96,
+                        "width": 342,
+                        "x": 2190,
+                        "y": 1296
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationOriginalFieldsToggle",
+                    "rect": {
+                        "height": 31,
+                        "width": 131,
+                        "x": 2190,
+                        "y": 1399
+                    }
+                }
+            ],
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "plotRect": {
+                "height": 623,
+                "width": 1807,
+                "x": 41,
+                "y": 12
+            },
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/before/02-long-name.png",
+            "render": {
+                "acceptedHeatmapPreview": false,
+                "actualFrameInputSamples": "2048",
+                "actualSpectralFrames": 194,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "axisLayout": {
+                    "dpr": 1.5,
+                    "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+                    "header": {
+                        "height": 0,
+                        "width": 1854,
+                        "x": 8,
+                        "y": 4
+                    },
+                    "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+                    "leftGainFrom88": 47,
+                    "localBottom": 32,
+                    "localLeft": 41,
+                    "localTop": 12,
+                    "logicalDpiX": 96,
+                    "logicalDpiY": 96,
+                    "mode": "CompactHeader",
+                    "plot": {
+                        "height": 623,
+                        "width": 1807,
+                        "x": 41,
+                        "y": 12
+                    },
+                    "sharedLeft": 41,
+                    "tickHeight": 16,
+                    "tickLabelWidth": 26,
+                    "widgetHeight": 667,
+                    "widgetWidth": 1870,
+                    "xOrigin": "",
+                    "xTickBand": {
+                        "height": 16,
+                        "width": 1807,
+                        "x": 41,
+                        "y": 647
+                    },
+                    "xTicks": [
+                        "0",
+                        "2",
+                        "4",
+                        "6",
+                        "8",
+                        "10"
+                    ],
+                    "xTitle": "时间 (ms)",
+                    "xTitleBand": {
+                        "height": 0,
+                        "width": 1807,
+                        "x": 41,
+                        "y": 666
+                    },
+                    "yOrigin": "",
+                    "yTicks": [
+                        "2490",
+                        "2495",
+                        "2500",
+                        "2505",
+                        "2510"
+                    ],
+                    "yTitle": "频率 (MHz)",
+                    "yUnit": "MHz"
+                },
+                "binHz": 9765.625,
+                "colorTransformGenerations": 1,
+                "committedGeneration": 7,
+                "cpuWallTimings": {
+                    "chartDrawCalls": 0,
+                    "chartDrawCallsSkipped": 0,
+                    "chartPaletteUploads": 2,
+                    "chartVertexUploads": 0,
+                    "gpuTimestamps": false,
+                    "heatmapDrawCalls": 2,
+                    "heatmapUploadPreparation": {
+                        "lastMs": 1.2737,
+                        "maxMs": 1.2737,
+                        "samples": 1,
+                        "totalMs": 1.2737
+                    },
+                    "lastChartDrawLoopIterations": 0,
+                    "lastChartDrawRecordCount": 0,
+                    "lastChartDrawStage": 0,
+                    "lastChartVertexCount": 0,
+                    "lastRenderHeight": 667,
+                    "lastRenderWidth": 1870,
+                    "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                    "overlayImagePreparation": {
+                        "lastMs": 0.3159,
+                        "maxMs": 1.9459,
+                        "samples": 13,
+                        "totalMs": 7.9894
+                    },
+                    "overlayPainter": {
+                        "lastMs": 8.4948,
+                        "maxMs": 9.4098,
+                        "samples": 13,
+                        "totalMs": 45.3404
+                    },
+                    "overlayUploadEnqueue": {
+                        "lastMs": 0.0043,
+                        "maxMs": 0.4065,
+                        "samples": 13,
+                        "totalMs": 1.1709000000000003
+                    },
+                    "paintEventIncludingQtSubmit": {
+                        "lastMs": 10.6802,
+                        "maxMs": 14.1604,
+                        "samples": 15,
+                        "totalMs": 100.9538
+                    },
+                    "paletteUploads": 2,
+                    "prepareUploads": {
+                        "lastMs": 9.1295,
+                        "maxMs": 11.8645,
+                        "samples": 15,
+                        "totalMs": 64.7836
+                    },
+                    "render": {
+                        "lastMs": 9.1525,
+                        "maxMs": 11.9237,
+                        "samples": 15,
+                        "totalMs": 65.32589999999999
+                    },
+                    "renderInvocations": 15,
+                    "unit": "ms"
+                },
+                "cursorPinned": false,
+                "curveCacheHits": 0,
+                "curvePathElements": 0,
+                "curveRasterMethod": "QRhi heatmap texture",
+                "curveReductions": 0,
+                "curveSourceGenerations": 0,
+                "drawnLineSegments": 0,
+                "drawnPoints": 322500,
+                "effectiveOverlap": 0.5,
+                "framePsd": false,
+                "generation": 7,
+                "gpuChartDrawCalls": 0,
+                "gpuDataDrawCalls": 2,
+                "gpuDataRenderer": "QRhi shader / vertex buffer",
+                "gpuHeatmapDrawCalls": 2,
+                "gpuPaletteUploads": 2,
+                "gpuUploadsPending": false,
+                "gpuVertexUploads": 0,
+                "heatmapCacheHits": 0,
+                "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                "heatmapHeight": 430,
+                "heatmapWidth": 750,
+                "inverseCursorDrawCalls": 15,
+                "lastMatrixMs": 45.7252,
+                "matrixReductions": 0,
+                "noiseBandwidthHz": 14655.593551538814,
+                "overlayUploads": 13,
+                "paddedFrames": 0,
+                "pinnedFrequencyHz": 0,
+                "pinnedSourceSample": "0",
+                "powerGenerations": 4,
+                "quality": "settled",
+                "requestedGeneration": 7,
+                "requestedHeatmapHeight": 430,
+                "requestedHeatmapWidth": 750,
+                "requestedPixels": 322500,
+                "requiredSeconds": 0.0001024,
+                "samplePointCount": 0,
+                "samplePointsVisible": false,
+                "settled": true,
+                "sourcePoints": 397312,
+                "staleDrops": 3,
+                "textureUploads": 1,
+                "workerIdle": true
+            },
+            "scene": "02-long-name"
+        }
+    ],
+    "screen": {
+        "availableLogicalGeometry": {
+            "height": 1392,
+            "width": 2560,
+            "x": 0,
+            "y": 0
+        },
+        "connectedIndex": 1,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+            "height": 1440,
+            "width": 2560,
+            "x": 0,
+            "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+            "height": 2160,
+            "width": 3840
+        },
+        "preferredPixelSize": {
+            "height": 2160,
+            "width": 3840
+        },
+        "primary": true
+    },
+    "softwareRenderer": false,
+    "source": {
+        "centerFrequencyHz": 2500000000,
+        "decodedCompleteFrames": "400000",
+        "format": "CF32",
+        "formatKey": "CF32/1/1/1/0/0/0/0/0",
+        "metadataProvenance": "SigMF 1.0.0",
+        "navigationEnvelopePoints": 1563,
+        "physicalSamples": "400000",
+        "sampleRateHz": 20000000
+    },
+    "syntheticAnnotations": true
+}

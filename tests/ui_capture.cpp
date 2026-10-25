@@ -979,6 +979,7 @@ void diagnoseMainHover(Capture& capture, QPoint target,
 #include "tests/ui_refinement_capture.h"
 #include "tests/ux_r3_label_capture.h"
 #include "tests/ux_r3_capture.h"
+#include "tests/ux_r4_capture.h"
 
 }  // namespace
 
@@ -989,6 +990,9 @@ int main(int argc, char* argv[]) {
   QApplication app(argc, argv);
   QApplication::setApplicationName("SignalStudioNativeCapture");
   const auto arguments = app.arguments();
+  if (arguments.size() >= 3 && arguments.at(1) == "--ux-r4")
+    return runUxR4Capture(arguments.at(2), arguments.contains("--baseline"),
+                         arguments.contains("--software-renderer"));
   if (arguments.size() >= 3 && arguments.at(1) == "--ux-r3")
     return runUxR3Capture(arguments.at(2), arguments.contains("--software-renderer"));
   if (arguments.size() >= 3 && arguments.at(1) == "--narrowband-analysis")
