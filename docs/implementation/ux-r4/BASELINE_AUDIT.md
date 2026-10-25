@@ -24,5 +24,7 @@ Qt 2560×1440。身份取自当前 Windows DisplayConfig，不沿用历史屏幕
 
 基线采集入口：`SignalStudioUiCapture --ux-r4 <absolute-dir> --baseline`。
 图谱输入为实际 20 MS/s CF32 IQ；标记为明确命名的交互夹具，不代表模型推理。
-基线图片及实测几何归档到 evidence/before；后续 VALIDATION 记录实际结果。
+基线初始默认帧及实测几何归档到 evidence/before；后续 VALIDATION 记录实际结果。
+原 Windows grabWindow 的后续长名称画面可能滞留旧 DWM 内容，已排除，不作前后比较。
+最终采集使用既有 Capture 的原生 QWidget/QRhi 回读，并记录当次文本和侧栏实际宽度。
 不执行源码、日志、图片、DLL 的指纹扫描。

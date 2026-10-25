@@ -58,3 +58,11 @@
 ## UX-R3 发布门禁
 
 本轮以 `reference/Signal_Studio_UX_R3_Codex_Master_Prompt.md` 为依据，事实和证据见 `docs/implementation/ux-r3/`。全部开发与验证后必须由独立 Review 子代理审查最终精确 HEAD；只有其明确 APPROVED、待推送 HEAD 完全一致且最新远端可正常快进时，才允许同步到 `rebuild/a143-native`。禁止强推或主代理自审替代。审核报告在最终提交后生成并随本地交付保留，避免把含自身 SHA 的报告再次提交导致批准身份漂移。发布校验脚本为 `scripts/publish-ux-r3.ps1`。
+
+## UX-R4 标记工作区
+
+- 本轮依据 reference 中 `Signal_Studio_UX_R4_Review_and_Plan.md` 和 `Signal_Studio_UX_R4_Codex_Master_Prompt.md`；事实与证据见 `docs/implementation/ux-r4/`，在 `rebuild/a143-native` 继续开发。
+- 标记属性及辅助证据共用短摘要和非模态完整详情；原始证据及修订完整复制。当前对象/多选、普通选择/定位分别保留既有语义，不改变检测算法、DSP 或工程持久化格式。
+- 仅必要 Git 版本核验及确有需要的单点完整性检查；禁止批量计算源码、图片、日志、模型和 DLL 指纹。产品已有校验保持启用。
+- 原生入口 `scripts/verify-ux-r4.ps1`；实际唯一 4K/150% 屏幕、GPU/软件分别记录。原生 QWidget/QRhi 回读避免 Windows grabWindow 的旧画面；原型不替代 Qt 验收。
+- 最终精确 HEAD 必须经未参与实现的独立 Review 子代理明确 APPROVED。审核及发布记录保留在提交外，避免身份漂移；`scripts/publish-ux-r4.ps1 -Push` 校验精确 HEAD、工作区和最新远端祖先关系后才正常推送，禁止强推。

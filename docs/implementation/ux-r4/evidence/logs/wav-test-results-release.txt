@@ -1,0 +1,12 @@
+********* Start testing of WavInputTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+PASS   : WavInputTests::initTestCase()
+PASS   : WavInputTests::noncanonicalLayoutAndReader()
+PASS   : WavInputTests::metadataAuthorityAndRawUnchanged()
+PASS   : WavInputTests::malformedAndUnsupported()
+PASS   : WavInputTests::boundedHeaderRead()
+QINFO  : WavInputTests::actualGeneratorGolden() Generator WAV golden: D:/coding/FFSCN_train2/broadband_signal_generation/test_sig2/data/20260728-025821-162_bw_20000000_sampleTime_0.8_rollOff_0.35.wav SHA256 88f96c6deab9e435db8f111463092fdae9b800aeb3cbccd82d7426551d52d9cd complex frames byte-compared 3072 metadata bytes read 44
+PASS   : WavInputTests::actualGeneratorGolden()
+PASS   : WavInputTests::cleanupTestCase()
+Totals: 7 passed, 0 failed, 0 skipped, 0 blacklisted, 497ms
+********* Finished testing of WavInputTests *********

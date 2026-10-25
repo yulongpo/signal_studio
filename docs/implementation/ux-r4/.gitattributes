@@ -1,0 +1,2 @@
+# Preserve original evidence bytes; logs naturally contain trailing whitespace.
+evidence/** -text -whitespace

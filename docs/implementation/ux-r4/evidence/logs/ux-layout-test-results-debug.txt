@@ -1,0 +1,30 @@
+********* Start testing of UxTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UxTests::initTestCase()
+PASS   : UxTests::uxR01_chartToolbarLayout()
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() QTemporaryDir: Unable to remove "C:\\Users\\Admin\\AppData\\Local\\Temp\\WidebandUx-InFxpf" most likely due to the presence of read-only files.
+PASS   : UxTests::uxR02_inspectorRouting()
+PASS   : UxTests::uxR02_fileProperties()
+PASS   : UxTests::uxR02_paletteWorkspaceOwnership()
+QWARN  : UxTests::uxR03_taskKeyboardAndDetails() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR03_taskKeyboardAndDetails() This plugin does not support propagateSizeHints()
+PASS   : UxTests::uxR03_taskKeyboardAndDetails()
+QWARN  : UxTests::uxR03_taskRowActions() This plugin does not support propagateSizeHints()
+PASS   : UxTests::uxR03_taskRowActions()
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support raise()
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support grabbing the keyboard
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support raise()
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support grabbing the keyboard
+PASS   : UxTests::uxR01_lateRunFilterPopupAndRefresh()
+PASS   : UxTests::roundTwoFlatResponsiveControls()
+PASS   : UxTests::cleanupTestCase()
+Totals: 10 passed, 0 failed, 0 skipped, 0 blacklisted, 43827ms
+********* Finished testing of UxTests *********

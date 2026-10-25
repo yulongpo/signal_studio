@@ -1,0 +1,20 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure -R ^signal_studio_(annotations|annotation_store|project_file|label_import|wav|parameter_input|project_tree)$
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+    Start  1: signal_studio_parameter_input
+1/7 Test  #1: signal_studio_parameter_input ....   Passed    0.57 sec
+    Start 14: signal_studio_annotations
+2/7 Test #14: signal_studio_annotations ........   Passed    0.26 sec
+    Start 15: signal_studio_annotation_store
+3/7 Test #15: signal_studio_annotation_store ...   Passed    5.31 sec
+    Start 16: signal_studio_label_import
+4/7 Test #16: signal_studio_label_import .......   Passed    8.88 sec
+    Start 17: signal_studio_wav
+5/7 Test #17: signal_studio_wav ................   Passed    0.80 sec
+    Start 21: signal_studio_project_file
+6/7 Test #21: signal_studio_project_file .......   Passed   11.50 sec
+    Start 32: signal_studio_project_tree
+7/7 Test #32: signal_studio_project_tree .......   Passed    0.58 sec
+
+100% tests passed, 0 tests failed out of 7
+
+Total Test time (real) =  27.93 sec

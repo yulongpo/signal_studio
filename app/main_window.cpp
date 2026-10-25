@@ -353,6 +353,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         QPushButton[uiRole="destructive"]:hover { background:#6e3346; border-color:#f49dae; }
         QPushButton[uiRole="destructive"]:disabled { background:#24212b; color:#9a8491; border-color:#53404d; }
         QToolButton[uiRole="tertiary"] { background:#182c3c; border-color:#3b596f; text-align:left; }
+        QPushButton[uiRole="primary"]:disabled { background:#1a2938; color:#8799aa; border-color:#344354; }
+        QPushButton[uiRole="destructive"]:pressed { background:#874059; border-color:#ffc3cd; }
+        QPushButton:focus,QToolButton:focus { border:2px solid #9be5ff; }
         QLabel[uiRole="annotationSection"] { color:#aed9ef; font-weight:600; padding-top:8px; }
         #auxChartControls QPushButton,#auxChartControls QToolButton,#specChartControls QPushButton,#specChartControls QToolButton { padding:1px 6px; }
         QPushButton[uiRole="segment"] { font-size:11px; padding:4px 9px; border-radius:2px; }

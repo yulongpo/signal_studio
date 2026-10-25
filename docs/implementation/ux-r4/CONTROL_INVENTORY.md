@@ -2,7 +2,7 @@
 
 | 目标 | objectName / 对应责任 |
 |---|---|
-| 对象与状态 | annotationIdentity、annotationSelectionSummary |
+| 对象与状态 | annotationIdentity、selectedCount |
 | 当前段 | annotationSegment、annotationPreviousSegment、annotationNextSegment |
 | 几何 / 草稿 | annotationStartMilliseconds、annotationEndMilliseconds、annotationLowerMHz、annotationUpperMHz、editAnnotationRange、cancelAnnotationGeometry |
 | 派生物理范围 | annotationRangeSummary |
