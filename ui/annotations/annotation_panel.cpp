@@ -100,6 +100,9 @@ QPushButton* button(QHBoxLayout* l, QString title, QString id,
                     std::function<void()> fn) {
   auto* b = new QPushButton(title);
   b->setObjectName(id);
+  b->setProperty("uiRole", "secondary");
+  b->setMinimumHeight(28);
+  b->setCursor(Qt::PointingHandCursor);
   l->addWidget(b);
   QObject::connect(b, &QPushButton::clicked, b, std::move(fn));
   return b;
@@ -129,7 +132,7 @@ class AnnotationTableModel final : public QAbstractTableModel {
                       int role) const override {
     if (orientation != Qt::Horizontal || role != Qt::DisplayRole) return {};
     return QStringList{
-        "",          "名称 / annotationId", "来源",       "当前段", "起始 / ms",
+        "",          "名称 / 类别", "来源",       "当前段", "起始 / ms",
         "结束 / ms", "中心 / MHz",          "带宽 / kHz", "mean",   "复核",
         "通道"}
         .value(column);
@@ -173,8 +176,7 @@ class AnnotationTableModel final : public QAbstractTableModel {
     const auto channel = channelCounts.find(a.id);
     switch (i.column()) {
       case 1:
-        return q(a.name) + "\n" + q(a.id).left(24) + " · r" +
-               QString::number(a.revisions.size());
+        return q(a.name) + "\n" + (a.classLabel ? q(*a.classLabel) : "类别未知");
       case 2:
         return sourceName(a.sourceKind);
       case 3:
@@ -697,11 +699,33 @@ void AnnotationPanel::buildInspector() {
   detail_ = new QLabel;
   detail_->setTextFormat(Qt::PlainText);
   detail_->setWordWrap(true);
+  detail_->setMinimumWidth(0);
+  detail_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
   detail_->setObjectName("annotationIdentity");
   details->addWidget(detail_);
+  auto* primary = new QVBoxLayout;
+  const auto primaryButton = [&](const QString& title, const QString& id,
+                                 std::function<void()> fn) {
+    auto* row = new QHBoxLayout;
+    auto* control = button(row, title, id, std::move(fn));
+    control->setProperty("uiRole", "primary");
+    primary->addLayout(row);
+  };
+  primaryButton("定位当前段", "annotationInspectorLocate", [this] {
+    if (const auto* file = session_.activeFile()) {
+      session_.focusMark(file->activeMarkId);
+      emit changed();
+    }
+  });
+  primaryButton("创建窄带通道…", "annotationInspectorCreateChannel", [this] {
+    emit createChannelRequested();
+  });
+  details->addLayout(primary);
+  auto* geometryTitle = new QLabel("当前段几何 · 文件时间 / 频率");
+  geometryTitle->setProperty("uiRole", "annotationSection");
+  details->addWidget(geometryTitle);
   segments_ = new QComboBox;
   segments_->setObjectName("annotationSegment");
-  details->addWidget(segments_);
   connect(segments_, &QComboBox::currentIndexChanged, this, [this](int i) {
     if (refreshing_ || i < 0) return;
     if (auto* f = session_.activeFile())
@@ -714,7 +738,6 @@ void AnnotationPanel::buildInspector() {
          [this] { selectAdjacentSegment(-1); });
   button(segmentNavigation, "下一段", "annotationNextSegment",
          [this] { selectAdjacentSegment(1); });
-  details->addLayout(segmentNavigation);
   auto* form = new QGridLayout;
   begin_ = new AdaptiveValueEdit(UnitKind::Scalar, 0);
   end_ = new AdaptiveValueEdit(UnitKind::Scalar, 1);
@@ -735,11 +758,17 @@ void AnnotationPanel::buildInspector() {
   form->addWidget(low_, 3, 0);
   form->addWidget(high_, 3, 1);
   details->addLayout(form);
+  rangeSummary_ = new QLabel;
+  rangeSummary_->setObjectName("annotationRangeSummary");
+  rangeSummary_->setWordWrap(true);
+  rangeSummary_->setMinimumWidth(0);
+  rangeSummary_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+  details->addWidget(rangeSummary_);
   auto* draftActions = new QHBoxLayout;
-  button(draftActions, "完整范围编辑…", "editAnnotationRange", [this] {
+  button(draftActions, "完整范围…", "editAnnotationRange", [this] {
     editRange();
   })->setProperty("preserveParameterDrafts", true);
-  button(draftActions, "撤销草稿 · Esc", "cancelAnnotationGeometry", [this] {
+  button(draftActions, "取消草稿 · Esc", "cancelAnnotationGeometry", [this] {
     discardDrafts();
     if (auto* file = session_.activeFile())
       session_.annotations().endRevision(*file);
@@ -757,6 +786,11 @@ void AnnotationPanel::buildInspector() {
     connect(fields[field], &AdaptiveValueEdit::valueCommitted, this,
             [this, field] { geometry(field); });
   }
+  auto* segmentTitle = new QLabel("段管理");
+  segmentTitle->setProperty("uiRole", "annotationSection");
+  details->addWidget(segmentTitle);
+  details->addLayout(segmentNavigation);
+  details->addWidget(segments_);
   auto* edit = new QHBoxLayout;
   button(edit, "恢复原始", "restoreAnnotationOrigin", [this] {
     if (auto* f = session_.activeFile())
@@ -796,12 +830,16 @@ void AnnotationPanel::buildInspector() {
                                                     {first->id, second->id}));
       }
   });
-  button(parts, "删除当前段", "deleteAnnotationSegment", [this] {
-    deleteSelected(true);
-  })->setProperty("preserveParameterDrafts", true);
   details->addLayout(parts);
+  auto* danger = new QHBoxLayout;
+  auto* deleteSegment = button(danger, "删除当前段…", "deleteAnnotationSegment", [this] {
+    deleteSelected(true);
+  });
+  deleteSegment->setProperty("uiRole", "destructive");
+  deleteSegment->setProperty("preserveParameterDrafts", true);
+  details->addLayout(danger);
   auto* unknown = new QHBoxLayout;
-  button(unknown, "采用观察范围（人工）", "adoptAnnotationObservation", [this] {
+  button(unknown, "采用观察范围", "adoptAnnotationObservation", [this] {
     if (auto* f = session_.activeFile())
       action(session_.annotations().adoptObservation(*f, f->activeMarkId));
   });
@@ -1565,14 +1603,41 @@ void AnnotationPanel::refreshInspector(const FileState* f) {
                   200;
     for (std::size_t i = offset; i < std::min(offset + 200, a->segments.size());
          ++i)
-      segments_->addItem(QString("段 %1 · %2–%3 samples")
+      segments_->addItem(QString("第 %1/%2 段")
                              .arg(i + 1)
-                             .arg(a->segments[i].range.time.begin)
-                             .arg(a->segments[i].range.time.end),
+                             .arg(a->segments.size()),
                          q(a->segments[i].id));
     segments_->setCurrentIndex(segments_->findData(q(a->activeSegmentId)));
   }
   const bool editable = a && session_.annotations().canEdit(*f, a->id);
+  const bool single = a && f->selectedMarkIds.size() == 1;
+  const auto enable = [&](const char* id, bool enabled, const QString& help) {
+    auto* control = inspector_->findChild<QPushButton*>(id);
+    control->setEnabled(enabled);
+    control->setToolTip(help);
+  };
+  enable("annotationInspectorLocate", a && (seg || a->observation),
+         "只定位当前对象；普通选择不会改变图谱范围");
+  enable("annotationInspectorCreateChannel", single && seg,
+         single && seg ? "从当前活动段创建通道；保留来源快照" :
+         "请仅选择一个有活动段的标记；时间未定位时使用图谱上的人工范围入口");
+  enable("annotationPreviousSegment", a && seg && seg != a->segments.data(),
+         "切换到上一活动段；首段不可继续向前");
+  enable("annotationNextSegment", a && seg && seg != &a->segments.back(),
+         "切换到下一活动段；末段不可继续向后");
+  enable("splitAnnotationSegment", editable && seg && seg->range.time.end-seg->range.time.begin>1,
+         "在当前段中点拆分；至少需要两个样本");
+  enable("mergeAnnotationSegments", editable && a->segments.size()>1,
+         "合并当前段与相邻段；至少需要两个活动段");
+  enable("deleteAnnotationSegment", editable && seg,
+         "软删除当前段；删除最后一段会删除对象，可以撤销");
+  enable("restoreAnnotationOrigin", editable && bool(a->originEvidence),
+         "恢复不可变原始几何与字段，产生新修订");
+  enable("addAnnotationSegment", editable, "把当前图谱范围作为人工活动段");
+  enable("adoptAnnotationObservation", editable && !seg && a->observation.has_value(),
+         "仅用于时间未定位对象；明确将观察窗口采用为人工活动段");
+  enable("editAnnotationNote", editable, "备注保留在修订历史中");
+  segments_->setEnabled(a && a->segments.size()>1);
   begin_->setEnabled(editable && seg);
   end_->setEnabled(editable && seg);
   low_->setEnabled(editable && (seg || a->observation));
@@ -1623,14 +1688,22 @@ void AnnotationPanel::refreshInspector(const FileState* f) {
   }
   detail_->setText(
       a ? q(a->name) + "\n" + sourceName(a->sourceKind) + " · " +
-              reviewName(a->reviewStatus) + "\n" + q(a->id) + " / " +
-              q(a->revisionId) + "\n" +
-              (a->classLabel ? "原始类别 " + q(*a->classLabel) : "类别未知") +
+              reviewName(a->reviewStatus) + " · " +
+              (a->classLabel ? q(*a->classLabel) : "类别未知") +
               (seg ? QString("\n当前第 %1/%2 段")
                          .arg(seg - a->segments.data() + 1)
                          .arg(a->segments.size())
-                   : QString("\n时间未定位；没有活动段"))
+                   : QString("\n时间未定位；没有活动段")) +
+              (f->selectedMarkIds.size()>1 ? QString("\n已选 %1 个 · 几何仅编辑当前对象")
+                  .arg(f->selectedMarkIds.size()) : QString{})
         : "选择标记查看来源 / 段 / 修订");
+  detail_->setToolTip(a ? q(a->name) : QString{});
+  rangeSummary_->setText(seg ? QString("持续 %1 ms · 带宽 %2 kHz\n%3 · Enter / Tab 提交；Esc 取消草稿")
+      .arg((seg->range.time.end-seg->range.time.begin)/f->metadata.sampleRateHz*1000,0,'g',12)
+      .arg((seg->range.frequency.upperHz-seg->range.frequency.lowerHz)/1000,0,'g',12)
+      .arg(seg->frequencyFrame == FrequencyFrame::RF ? "RF 频率" :
+           seg->frequencyFrame == FrequencyFrame::Baseband ? "基带频率" : "实数单边频率") :
+      "没有活动段；不能从观察窗口推断发射时间。");
   refreshEvidence(a);
 }
 void AnnotationPanel::refreshEvidence(const Annotation* annotation) {

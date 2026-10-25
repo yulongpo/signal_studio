@@ -1,6 +1,11 @@
 #include "ui/annotations/annotation_evidence_widget.h"
 
 #include <QDataStream>
+#include <QApplication>
+#include <QClipboard>
+#include <QDialog>
+#include <QPushButton>
+#include <QScrollArea>
 #include <QFont>
 #include <QGridLayout>
 #include <QJsonArray>
@@ -20,13 +25,14 @@
 #include <unordered_set>
 
 #include "domain/project.h"
+#include "infrastructure/annotation_json.h"
+#include "application/annotation_service.h"
 
 namespace signalstudio {
 namespace {
 
 constexpr std::size_t kRangePreviewCount = 4;
 constexpr std::size_t kWindowPreviewCount = 12;
-constexpr qsizetype kRawPreviewCharacters = 12000;
 
 QString text(const std::string& value) { return QString::fromUtf8(value); }
 
@@ -415,18 +421,33 @@ AnnotationEvidenceWidget::AnnotationEvidenceWidget(Mode mode, QWidget* parent)
   title_->setFont(font);
   context_ = wrappingLabel("annotationEvidenceContext", this);
   notice_ = wrappingLabel("annotationEvidenceNotice", this);
-  if (mode_ == Mode::Auxiliary) {
-    buildAuxiliary(layout);
-  } else {
-    layout->addWidget(title_);
-    layout->addWidget(context_);
-    layout->addWidget(notice_);
-    buildFacts(layout);
-  }
-  if (mode_ == Mode::Inspector) {
-    measuredTrace_ = new MeasuredEvidenceTrace(this);
-    layout->addWidget(measuredTrace_);
-  }
+  layout->addWidget(title_);
+  summary_ = wrappingLabel("annotationEvidenceSummary", this);
+  layout->addWidget(summary_);
+  auto* open = new QToolButton(this);
+  open->setObjectName("annotationEvidenceDetailsToggle");
+  open->setText("技术详情与原文…");
+  open->setProperty("uiRole", "tertiary");
+  open->setMinimumHeight(28);
+  layout->addWidget(open);
+  details_ = new QDialog(this);
+  details_->setObjectName("annotationEvidenceDetailsDialog");
+  details_->setWindowTitle("标记 · 来源证据与修订");
+  details_->resize(760, 820);
+  details_->setModal(false);
+  auto* dialogLayout = new QVBoxLayout(details_);
+  auto* scroll = new QScrollArea(details_);
+  scroll->setWidgetResizable(true);
+  auto* body = new QWidget;
+  auto* factsLayout = new QVBoxLayout(body);
+  factsLayout->addWidget(context_);
+  factsLayout->addWidget(notice_);
+  buildFacts(factsLayout);
+  measuredTrace_ = new MeasuredEvidenceTrace(body);
+  factsLayout->addWidget(measuredTrace_);
+  scroll->setWidget(body);
+  dialogLayout->addWidget(scroll);
+  connect(open, &QToolButton::clicked, this, &AnnotationEvidenceWidget::openDetails);
   rawToggle_ = new QToolButton(this);
   rawToggle_->setObjectName("annotationOriginalFieldsToggle");
   rawToggle_->setText("不可变原始字段");
@@ -439,18 +460,34 @@ AnnotationEvidenceWidget::AnnotationEvidenceWidget(Mode mode, QWidget* parent)
   // Keep expanded evidence readable when wrapped source paths make the
   // inspector taller than the viewport. A zero minimum can collapse the
   // editor instead of increasing the enclosing scroll area's content size.
-  rawFields_->setMinimumHeight(100);
-  rawFields_->setMaximumHeight(170);
+  rawFields_->setMinimumHeight(220);
   rawFields_->setMinimumWidth(0);
   rawFields_->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   rawFields_->hide();
-  layout->addWidget(rawToggle_);
-  layout->addWidget(rawFields_);
+  factsLayout->addWidget(rawToggle_);
+  factsLayout->addWidget(rawFields_);
+  auto* actions = new QHBoxLayout;
+  auto* copy = new QPushButton("复制完整证据", details_);
+  copy->setObjectName("annotationCopyEvidence");
+  actions->addWidget(copy);
+  connect(copy, &QPushButton::clicked, this, [this] {
+    QApplication::clipboard()->setText(rawFields_->toPlainText());
+  });
+  auto* close = new QPushButton("关闭", details_);
+  actions->addWidget(close);
+  connect(close, &QPushButton::clicked, details_, &QDialog::close);
+  dialogLayout->addLayout(actions);
   connect(rawToggle_, &QToolButton::toggled, this, [this](bool expanded) {
     rawFields_->setVisible(expanded);
     rawToggle_->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
   });
   clearEvidence();
+}
+
+void AnnotationEvidenceWidget::openDetails() {
+  details_->show();
+  details_->raise();
+  details_->activateWindow();
 }
 
 void AnnotationEvidenceWidget::buildFacts(QVBoxLayout* layout) {
@@ -486,120 +523,6 @@ void AnnotationEvidenceWidget::buildFacts(QVBoxLayout* layout) {
   layout->addWidget(scoreDefinition_);
 }
 
-void AnnotationEvidenceWidget::buildAuxiliary(QVBoxLayout* layout) {
-  auto* summary = new QWidget(this);
-  summary->setObjectName("annotationAuxiliaryEvidenceSummary");
-  summary->setMinimumWidth(0);
-  auto* columns = new QGridLayout(summary);
-  columns->setContentsMargins(0, 0, 0, 0);
-  columns->setHorizontalSpacing(18);
-  const auto column = [&](int index, const QString& name) {
-    auto* body = new QWidget(summary);
-    body->setObjectName(name);
-    body->setMinimumWidth(0);
-    body->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-    auto* contents = new QVBoxLayout(body);
-    contents->setContentsMargins(0, 0, 0, 0);
-    contents->setSpacing(5);
-    columns->addWidget(body, 0, index, Qt::AlignTop);
-    columns->setColumnStretch(index, 1);
-    return contents;
-  };
-  const auto heading = [&](QVBoxLayout* contents, const QString& caption,
-                           const QString& name) {
-    auto* label = wrappingLabel(name, this);
-    auto font = label->font();
-    font.setBold(true);
-    label->setFont(font);
-    label->setStyleSheet("color: #94d9df;");
-    setLabelText(label, caption);
-    contents->addWidget(label);
-  };
-  const auto facts = [](QVBoxLayout* contents) {
-    auto* rows = new QGridLayout;
-    rows->setColumnStretch(1, 1);
-    rows->setHorizontalSpacing(8);
-    rows->setVerticalSpacing(5);
-    contents->addLayout(rows);
-    return rows;
-  };
-
-  auto* time = column(0, "annotationAuxiliaryTimeSummary");
-  title_->setStyleSheet("color: #94d9df;");
-  time->addWidget(title_);
-  auto* timeFacts = facts(time);
-  addFact(timeFacts, Fact::Method, "原始精修", "annotationEvidenceMethod");
-  addFact(timeFacts, Fact::TimeBasis, "时间依据",
-          "annotationEvidenceTimeBasis");
-  time->addWidget(notice_);
-
-  auto* scores = column(1, "annotationAuxiliaryScoreSummary");
-  heading(scores, "保存分数 / 唯一窗口", "annotationAuxiliaryScoreHeading");
-  auto* scoreFacts = facts(scores);
-  addFact(scoreFacts, Fact::Mean, "mean", "annotationEvidenceMean");
-  auto* mean = values_[static_cast<std::size_t>(Fact::Mean)];
-  auto metricFont = mean->font();
-  metricFont.setPointSize(18);
-  mean->setFont(metricFont);
-  mean->setStyleSheet("color: #bfe9f5;");
-  addFact(scoreFacts, Fact::Maximum, "max", "annotationEvidenceMaximum");
-  addFact(scoreFacts, Fact::Windows, "unique windows",
-          "annotationEvidenceWindows");
-
-  auto* diagnostics = column(2, "annotationAuxiliaryDiagnosticSummary");
-  heading(diagnostics, "噪底 / 轨迹 / 回退", "annotationAuxiliaryNoiseHeading");
-  auto* diagnosticFacts = facts(diagnostics);
-  addFact(diagnosticFacts, Fact::Noise, "保存证据", "annotationEvidenceNoise");
-  addFact(diagnosticFacts, Fact::Reason, "回退 / 原因",
-          "annotationEvidenceReason");
-  measuredTrace_ = new MeasuredEvidenceTrace(this);
-  diagnostics->addWidget(measuredTrace_);
-  layout->addWidget(summary);
-
-  auto* detailsToggle = new QToolButton(this);
-  detailsToggle->setObjectName("annotationEvidenceDetailsToggle");
-  detailsToggle->setText("当前 / 原始 / 观察与来源详情");
-  detailsToggle->setCheckable(true);
-  detailsToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-  detailsToggle->setArrowType(Qt::RightArrow);
-  layout->addWidget(detailsToggle);
-  auto* details = new QWidget(this);
-  details->setObjectName("annotationAuxiliaryEvidenceDetails");
-  details->setMinimumWidth(0);
-  auto* detailsLayout = new QVBoxLayout(details);
-  detailsLayout->setContentsMargins(0, 0, 0, 0);
-  detailsLayout->setSpacing(7);
-  detailsLayout->addWidget(context_);
-  auto* detailFacts = facts(detailsLayout);
-  addFact(detailFacts, Fact::Uncertainty, "不确定度",
-          "annotationEvidenceUncertainty");
-  addFact(detailFacts, Fact::FrequencyBasis, "频率依据",
-          "annotationEvidenceFrequency");
-  addFact(detailFacts, Fact::CurrentRange, "当前范围",
-          "annotationEvidenceCurrentRange");
-  addFact(detailFacts, Fact::OriginalRange, "原始范围",
-          "annotationEvidenceOriginalRange");
-  addFact(detailFacts, Fact::Observation, "观察支持",
-          "annotationEvidenceObservation");
-  addFact(detailFacts, Fact::WindowIds, "窗口 IDs",
-          "annotationEvidenceWindowIds");
-  addFact(detailFacts, Fact::Class, "原始类别", "annotationEvidenceClass");
-  addFact(detailFacts, Fact::Format, "formatId", "annotationEvidenceFormat");
-  addFact(detailFacts, Fact::Origin, "originRef", "annotationEvidenceOrigin");
-  addFact(detailFacts, Fact::Coordinates, "坐标解释",
-          "annotationEvidenceCoordinates");
-  scoreDefinition_ = wrappingLabel("annotationEvidenceScoreDefinition", this);
-  detailsLayout->addWidget(scoreDefinition_);
-  details->hide();
-  layout->addWidget(details);
-  connect(
-      detailsToggle, &QToolButton::toggled, this,
-      [details, detailsToggle](bool expanded) {
-        details->setVisible(expanded);
-        detailsToggle->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
-      });
-}
-
 void AnnotationEvidenceWidget::addFact(QGridLayout* layout, Fact fact,
                                        const QString& caption,
                                        const QString& objectName) {
@@ -622,6 +545,7 @@ void AnnotationEvidenceWidget::setFact(Fact fact, const QString& value) {
 void AnnotationEvidenceWidget::clearEvidence() {
   if (empty_) return;
   empty_ = true;
+  details_->hide();
   displayKey_.clear();
   displayedOrigin_.reset();
   static_cast<MeasuredEvidenceTrace*>(measuredTrace_)->setEvidence({});
@@ -631,6 +555,7 @@ void AnnotationEvidenceWidget::clearEvidence() {
                             ? "选择一个标记查看时间、精修与已保存证据。"
                             : QString{});
   setLabelText(scoreDefinition_, {});
+  setLabelText(summary_, "选择标记后查看来源状态；技术信息按需展开。");
   for (auto* value : values_) setLabelText(value, "—");
   rawFields_->clear();
   rawToggle_->setEnabled(false);
@@ -666,15 +591,26 @@ void AnnotationEvidenceWidget::setAnnotation(const Annotation* annotation,
          << (source ? text(source->sourceHash) : QString{})
          << (source ? text(source->profileId) : QString{})
          << (source ? text(source->formatId) : QString{})
-         << (source ? text(source->originalPath) : QString{});
+         << (source ? text(source->originalPath) : QString{})
+         << bool(file && annotationSourceCurrent(*file, *annotation));
   if (!empty_ && key == displayKey_ &&
       displayedOrigin_ == annotation->originEvidence)
     return;
   empty_ = false;
+  // A context change must never leave a non-modal window showing old evidence.
+  details_->hide();
   displayKey_ = std::move(key);
   displayedOrigin_ = annotation->originEvidence;
-  setLabelText(title_,
-               (fixture ? "链路夹具 · " : "") + evidenceTitle(*annotation));
+  setLabelText(title_, "来源证据" + QString(fixture ? " · 交互夹具" : ""));
+  const auto* segment = activeSegment(*annotation);
+  const QString time = !segment ? "时间未定位"
+      : segment->timeQuality == TimeQuality::SampleLabel ? "样本标签"
+      : segment->timeQuality == TimeQuality::RoundedLabel ? "量化标签"
+      : segment->timeQuality == TimeQuality::Manual ? "人工指定"
+      : "估计时间";
+  setLabelText(summary_, sourceName(annotation->sourceKind) + " · " + time +
+      (!source ? " · 来源集合缺失" :
+       file && annotationSourceCurrent(*file, *annotation) ? " · 来源当前" : " · 来源已变化"));
   setLabelText(context_, sourceName(annotation->sourceKind) + " · " +
                              present(annotation->id) + "\nrevision " +
                              present(annotation->revisionId));
@@ -775,24 +711,25 @@ void AnnotationEvidenceWidget::showOriginEvidence(
            "\nfallbackReason: " + present(evidence->fallbackReason) +
            "\ncoordinateInterpretation: " +
            present(evidence->coordinateInterpretation) +
-           "\noriginalFieldsJson:\n" + fields.left(kRawPreviewCharacters);
+           "\noriginalFieldsJson:\n" + fields;
     if (!evidence->evidenceRefs.empty()) {
       raw += "\nevidenceRefs（仅保存引用，不触发重算或读取）:";
       for (std::size_t index = 0;
-           index < std::min(kWindowPreviewCount, evidence->evidenceRefs.size());
+           index < evidence->evidenceRefs.size();
            ++index)
         raw += "\n" + text(evidence->evidenceRefs[index]);
-      if (evidence->evidenceRefs.size() > kWindowPreviewCount)
-        raw += "\n…共 " + count(evidence->evidenceRefs.size()) + " 项引用";
     }
-    if (fields.size() > kRawPreviewCharacters)
-      raw += "\n…原始字段仅预览前 12000 字符；完整不可变快照保留在工程。";
   } else {
     raw += "\n暂无不可变原始字段；不反推或伪造来源。";
   }
   raw += QString("\nrevision 记录: %1\nreview 记录: %2")
              .arg(count(annotation.revisions.size()),
                   count(annotation.reviewHistory.size()));
+  if (source) raw += "\n完整来源原文:\n" + text(source->originalText);
+  // The pretty facts are previews; the copy surface retains every geometry,
+  // window ID, original field and revision, without silently truncating tokens.
+  raw += "\n完整标记记录（含不可变原始证据与修订）:\n" +
+         QString::fromUtf8(QJsonDocument(encodeAnnotation(annotation)).toJson());
   rawFields_->setPlainText(raw);
   rawToggle_->setEnabled(true);
 }

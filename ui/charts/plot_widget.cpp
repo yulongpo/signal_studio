@@ -2631,21 +2631,9 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
       if (hovered) {
         painter.setPen(QPen(QColor("#c4f7ff"), 1, Qt::DotLine));
         painter.drawRect(box.adjusted(2, 2, -2, -2));
-        const auto label = QString::fromStdString(mark.name) + " · 点击选中";
-        const double labelWidth =
-            std::ceil(QFontMetricsF(painter.font()).horizontalAdvance(label)) +
-            16;
-        const double left = std::clamp(
-            box.left() + 4, plot.left() + 3,
-            std::max(plot.left() + 3, plot.right() - labelWidth - 3));
-        const double top =
-            std::clamp(box.top() + 4, plot.top() + 3,
-                       std::max(plot.top() + 3, plot.bottom() - 21));
-        painter.fillRect(QRectF(left, top, labelWidth, 19), QColor("#10374f"));
-        painter.setPen(QColor("#95e3ff"));
-        painter.drawRect(QRectF(left + .5, top + .5, labelWidth - 1, 18));
-        painter.setPen(QColor("#e2f9ff"));
-        painter.drawText(QPointF(left + 8, top + 13), label);
+        // The full name and gesture hint already go through interactionHint
+        // into the existing readout/status area. Do not cover geometry or its
+        // eight handles with a second floating label (especially long names).
       }
       if (currentSegment && !creating_ && !detectionRoi_ &&
           session_.annotations().canEdit(*file, mark.id))

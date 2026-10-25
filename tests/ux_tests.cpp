@@ -12,6 +12,10 @@
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QToolButton>
+#include <QClipboard>
+#include <QDialog>
+#include <QPlainTextEdit>
+#include "ui/annotations/annotation_evidence_widget.h"
 
 #include "app/main_window.h"
 #include "infrastructure/annotation_json.h"
@@ -117,6 +121,78 @@ class UxTests : public QObject {
     QApplication::setFont(QFont("Microsoft YaHei UI", 10));
   }
   void init() { QSettings().clear(); }
+
+  void uxR4_evidenceDisclosureAndFullCopy() {
+    MainWindow window;
+    window.session().addDemoFile();
+    auto* file = window.session().activeFile();
+    const auto id = window.session().addMark({{1000, 4000}, {99.9e6,100.1e6}});
+    auto* mark = findAnnotation(*file,id);
+    QVERIFY(mark);
+    auto origin = std::make_shared<OriginEvidence>();
+    origin->originalFieldsJson = "{\"payload\":\"" + std::string(16000,'x') + "END_OF_ORIGINAL\"}";
+    origin->originalSegments = mark->segments;
+    origin->evidenceRefs = {"first", "last-complete-reference"};
+    mark->originEvidence = origin;
+    for(auto mode:{AnnotationEvidenceWidget::Mode::Inspector,
+                   AnnotationEvidenceWidget::Mode::Auxiliary}) {
+      AnnotationEvidenceWidget evidence(mode);
+      evidence.resize(360,200);
+      evidence.setAnnotation(mark,file);
+      evidence.show();
+      QTest::qWait(20);
+      auto* dialog = evidence.findChild<QDialog*>("annotationEvidenceDetailsDialog");
+      auto* raw = evidence.findChild<QPlainTextEdit*>("annotationEvidence");
+      QVERIFY(dialog && raw && !dialog->isVisible() && !raw->isVisible());
+      QVERIFY(!evidence.findChild<QLabel*>("annotationEvidenceSummary")->text().contains(QString::fromStdString(id)));
+      evidence.findChild<QToolButton*>("annotationEvidenceDetailsToggle")->click();
+      QVERIFY(dialog->isVisible());
+      evidence.findChild<QPushButton*>("annotationCopyEvidence")->click();
+      const auto copied=QApplication::clipboard()->text();
+      QVERIFY(copied.contains("END_OF_ORIGINAL"));
+      QVERIFY(copied.contains("last-complete-reference"));
+      QVERIFY(copied.contains(QString::fromStdString(id)));
+      QVERIFY(copied.contains("revisions"));
+      QCOMPARE(mark->originEvidence,origin);
+      evidence.setAnnotation(nullptr,file);
+      QVERIFY(!dialog->isVisible());
+    }
+  }
+
+  void uxR4_currentObjectAndActionStates() {
+    MainWindow window;
+    window.session().addDemoFile();
+    auto* file=window.session().activeFile();
+    const auto id=window.session().addMark({{1000,4000},{99.9e6,100.1e6}});
+    QVERIFY(window.session().annotations().addSegment(*file,id,{{5000,8000},{99.9e6,100.1e6}}).ok);
+    const auto other=window.session().addMark({{9000,11000},{100e6,100.2e6}});
+    const auto* mark=findAnnotation(*file,id);
+    QVERIFY(window.session().annotations().select(*file,{id},id,mark->segments.front().id).ok);
+    expose(window);
+    window.findChild<QPushButton*>("contextAnnotation")->click();
+    QVERIFY(window.findChild<QWidget*>("annotationPage")->isVisible());
+    auto* previous=window.findChild<QPushButton*>("annotationPreviousSegment");
+    auto* next=window.findChild<QPushButton*>("annotationNextSegment");
+    auto* create=window.findChild<QPushButton*>("annotationInspectorCreateChannel");
+    QVERIFY(!previous->isEnabled() && next->isEnabled() && create->isEnabled());
+    auto* identity=window.findChild<QLabel*>("annotationIdentity");
+    QVERIFY(!identity->text().contains(QString::fromStdString(id)));
+    const auto view=file->view;
+    next->click();
+    QVERIFY(previous->isEnabled() && !next->isEnabled());
+    QCOMPARE(file->view.time.begin,view.time.begin);
+    QCOMPARE(file->view.time.end,view.time.end);
+    QCOMPARE(file->view.frequency.lowerHz,view.frequency.lowerHz);
+    QCOMPARE(file->view.frequency.upperHz,view.frequency.upperHz);
+    window.session().selectMarks({id,other},id);
+    window.refresh();
+    QVERIFY(!create->isEnabled());
+    QVERIFY(identity->text().contains("已选 2"));
+    window.session().selectMarks({});
+    window.refresh();
+    QVERIFY(!create->isEnabled());
+    QVERIFY(!window.findChild<QPushButton*>("annotationInspectorLocate")->isEnabled());
+  }
 
   void uxD01_historicalDerivation() {
     QTemporaryDir directory;

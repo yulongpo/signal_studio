@@ -5167,15 +5167,9 @@ void UiTests::widebandFixtureTaskNativeRoundtrip() {
   QTest::mouseClick(evidenceMode, Qt::LeftButton);
   auto* evidence = window.findChild<QWidget*>("auxiliaryDetectionEvidence");
   QVERIFY(evidence && evidence->isVisible());
-  auto* timeSummary =
-      evidence->findChild<QWidget*>("annotationAuxiliaryTimeSummary");
-  auto* scoreSummary =
-      evidence->findChild<QWidget*>("annotationAuxiliaryScoreSummary");
-  auto* diagnostics =
-      evidence->findChild<QWidget*>("annotationAuxiliaryDiagnosticSummary");
-  QTRY_VERIFY(timeSummary && scoreSummary && diagnostics &&
-              timeSummary->x() < scoreSummary->x() &&
-              scoreSummary->x() < diagnostics->x());
+  auto* summary = evidence->findChild<QLabel*>("annotationEvidenceSummary");
+  QVERIFY(summary && summary->isVisible());
+  QVERIFY(summary->text().contains("时间未定位"));
   QVERIFY(evidence->findChild<QLabel*>("annotationEvidenceMean")
               ->text()
               .contains("0.95"));
@@ -5183,14 +5177,14 @@ void UiTests::widebandFixtureTaskNativeRoundtrip() {
               ->text()
               .contains("暂无"));
   auto* evidenceDetails =
-      evidence->findChild<QWidget*>("annotationAuxiliaryEvidenceDetails");
+      evidence->findChild<QDialog*>("annotationEvidenceDetailsDialog");
   auto* detailsToggle =
       evidence->findChild<QToolButton*>("annotationEvidenceDetailsToggle");
   QVERIFY(evidenceDetails && detailsToggle && !evidenceDetails->isVisible());
   detailsToggle->click();
   QVERIFY(evidenceDetails->isVisible());
   QCOMPARE(encodeAnnotation(file->marks[0]), annotationBeforeEvidence);
-  detailsToggle->click();
+  evidenceDetails->close();
   window.findChild<QPushButton*>("psdMode")->click();
   QVERIFY(!evidence->isVisible());
   const auto sourceFileId = file->metadata.id;

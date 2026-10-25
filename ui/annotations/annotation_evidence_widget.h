@@ -11,6 +11,7 @@ class QLabel;
 class QPlainTextEdit;
 class QToolButton;
 class QVBoxLayout;
+class QDialog;
 
 namespace signalstudio {
 
@@ -24,8 +25,7 @@ class AnnotationEvidenceWidget final : public QWidget {
   Q_OBJECT
 
  public:
-  // Auxiliary places the review summary in three columns. Its containing
-  // viewport still owns scrolling; full saved facts remain expandable.
+  // Both entry points share a short summary and a non-modal full-evidence view.
   enum class Mode { Inspector, Auxiliary };
 
   explicit AnnotationEvidenceWidget(QWidget* parent = nullptr);
@@ -56,7 +56,6 @@ class AnnotationEvidenceWidget final : public QWidget {
   };
 
   void buildFacts(QVBoxLayout*);
-  void buildAuxiliary(QVBoxLayout*);
   void addFact(QGridLayout*, Fact, const QString& caption,
                const QString& objectName);
   void setFact(Fact, const QString& value);
@@ -65,12 +64,15 @@ class AnnotationEvidenceWidget final : public QWidget {
                         double originalSampleRate);
   void showOriginEvidence(const Annotation&, const AnnotationSourceSet*);
   void showScores(const Annotation&, bool fixture);
+  void openDetails();
 
   Mode mode_ = Mode::Inspector;
   QLabel* title_ = nullptr;
   QLabel* context_ = nullptr;
   QLabel* notice_ = nullptr;
   QLabel* scoreDefinition_ = nullptr;
+  QLabel* summary_ = nullptr;
+  QDialog* details_ = nullptr;
   QToolButton* rawToggle_ = nullptr;
   QPlainTextEdit* rawFields_ = nullptr;
   QWidget* measuredTrace_ = nullptr;

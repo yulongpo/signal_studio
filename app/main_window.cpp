@@ -340,12 +340,21 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         QMenu { background:#1b2b41; border:1px solid #56718b; padding:5px; }
         QMenu::item { padding:9px 12px; min-width:200px; } QMenu::item:selected { background:#275475; }
         QMenu::item:disabled { color:#627a91; } QMenu::separator { height:1px; background:#375168; margin:4px; }
-        QPushButton,QToolButton { border:1px solid transparent; border-radius:4px; padding:5px 8px; background:transparent; color:#bdd5e9; }
-        QPushButton:hover,QToolButton:hover { background:#263d56; }
-        QPushButton:disabled,QToolButton:disabled { color:#5b7186; }
-        QPushButton:checked { background:#1b5883; color:#cdefff; }
+        QPushButton,QToolButton { border:1px solid #456078; border-radius:4px; padding:5px 8px; background:#1b2d41; color:#d3e3f1; }
+        QPushButton:hover,QToolButton:hover { background:#294963; border-color:#729bb7; }
+        QPushButton:pressed,QToolButton:pressed { background:#34617f; border-color:#9dddf5; }
+        QPushButton:checked,QToolButton:checked { background:#1b5883; border-color:#58c6ed; color:#e4f8ff; }
+        QPushButton:focus,QToolButton:focus { border:2px solid #9be5ff; }
+        QPushButton:disabled,QToolButton:disabled { color:#8799aa; border-color:#344354; background:#182331; }
         QPushButton[uiRole="outline"] { border:1px solid #37566c; }
         QPushButton[uiRole="primary"] { background:#1a4e76; border:1px solid #2b4055; color:#bdebff; }
+        QPushButton[uiRole="primary"]:hover { background:#266d96; border-color:#87d9fc; }
+        QPushButton[uiRole="destructive"] { color:#ffc3cd; background:#392534; border-color:#ad6576; }
+        QPushButton[uiRole="destructive"]:hover { background:#6e3346; border-color:#f49dae; }
+        QPushButton[uiRole="destructive"]:disabled { background:#24212b; color:#9a8491; border-color:#53404d; }
+        QToolButton[uiRole="tertiary"] { background:#182c3c; border-color:#3b596f; text-align:left; }
+        QLabel[uiRole="annotationSection"] { color:#aed9ef; font-weight:600; padding-top:8px; }
+        #auxChartControls QPushButton,#auxChartControls QToolButton,#specChartControls QPushButton,#specChartControls QToolButton { padding:1px 6px; }
         QPushButton[uiRole="segment"] { font-size:11px; padding:4px 9px; border-radius:2px; }
         QPushButton[uiRole="icon"] { color:#a4c1d8; font-size:15px; padding:0; }
         QComboBox,QDoubleSpinBox,QLineEdit { border:1px solid #314963; background:#0e1a2a; border-radius:4px; padding:5px 7px; font-size:11px; }
@@ -1385,6 +1394,7 @@ void MainWindow::buildWorkspace() {
   delete_->setProperty("preserveParameterDrafts", true);
   for (auto* action : {rename_, locate_, delete_})
     action->setProperty("uiRole", "outline");
+  delete_->setProperty("uiRole", "destructive");
   markRow->addStretch();
   annotationActions_ = markActions;
   annotationPage->addWidget(markActions);
@@ -2114,21 +2124,21 @@ void MainWindow::updateChartControls(bool narrow) {
     auto* stftHost=narrow?heat:spectrumControls_;
     if(!narrow){psdHost->addControl(psd_,"PSD N",100);stftHost->addControl(stft_,"STFT N",100);}
     psdHost->addControl(psdSourceControl_,"谱源",110);
-    psdHost->addControl(psdScope_,"范围",65);
+    psdHost->addControl(psdScope_,"范围",narrow?65:-1);
     psdHost->addControl(psdStatisticControl_,"统计",75);
     for(int i=0;i<3;++i){
       const QString title=i==0?"方法":i==1?"窗":"重叠 (%)";
-      psdHost->addControl(psdInline_[i],title,45-i*10);
-      stftHost->addControl(stftInline_[i],title,40-i*10);
+      psdHost->addControl(psdInline_[i],title,narrow?45-i*10:-1);
+      stftHost->addControl(stftInline_[i],title,narrow?40-i*10:-1);
     }
     psdHost->addPanel(psdParameters_,"PSD 高级参数");
     stftHost->addPanel(stftParameters_,"STFT 高级参数");
     stftHost->addControl(propertyPalette_,"色表",95);
-    stftHost->addControl(reference_,"参考",85);
-    stftHost->addControl(dynamic_,"动态",80);
+    stftHost->addControl(reference_,"参考",narrow?85:-1);
+    stftHost->addControl(dynamic_,"动态",narrow?80:-1);
     stftHost->addControl(autoPowerFit_,"自动适配电平",70);
-    stftHost->addControl(colorScale_,"色阶条",5);
-    if(!narrow){stftHost->addControl(freqMode_,"频率",15);stftHost->addControl(grid_,"网格",10);}
+    stftHost->addControl(colorScale_,"色阶条",narrow?5:-1);
+    if(!narrow){stftHost->addControl(freqMode_,"频率",-1);stftHost->addControl(grid_,"网格",-1);}
     else{
       // Overflow layers are owned by the main window, outside the workspace.
       // Resolve these singleton editors from their stable root after a page change.

@@ -73,6 +73,7 @@ class AnnotationPanel final : public QWidget {
   QLabel* count_ = nullptr;
   QCheckBox* selectAll_ = nullptr;
   QLabel* detail_ = nullptr;
+  QLabel* rangeSummary_ = nullptr;
   QLabel* error_ = nullptr;
   QWidget* inspector_ = nullptr;
   QWidget* layerBar_ = nullptr;

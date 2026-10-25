@@ -177,6 +177,16 @@ class ProjectTreePresentationDelegate final : public QStyledItemDelegate {
     if (active || current)
       painter->fillRect(QRect(rect.left(), rect.top() + 2, 3, rect.height() - 4),
                         QColor("#53bcf0"));
+    if (hovered) {
+      painter->setPen(QPen(QColor("#75c7e5"), 1, Qt::DotLine));
+      painter->setBrush(Qt::NoBrush);
+      painter->drawRect(rect.adjusted(1, 1, -1, -1));
+    }
+    if (style.state.testFlag(QStyle::State_HasFocus)) {
+      painter->setPen(QPen(QColor("#d0efff"), 1, Qt::DashLine));
+      painter->setBrush(Qt::NoBrush);
+      painter->drawRect(rect.adjusted(4, 3, -3, -3));
+    }
 
     QRect textRect = rect.adjusted(mark ? 20 : 9, 0, -7, 0);
     if (mark) {

@@ -118,6 +118,7 @@ class ChartControlStrip final : public QWidget {
     for(int i=0;i<static_cast<int>(items_.size());++i) {
       const auto& item=items_[i];
       if(!item.control||item.external||!wanted(item)) continue;
+      if(item.priority<0){advanced=true;continue;}
       if(item.caption&&!item.overflow)item.caption->setFixedWidth(captionWidth(item));
       fitEditor(item.control);
       required+=itemWidth(item)+5;candidates.push_back(i);
@@ -134,6 +135,8 @@ class ChartControlStrip final : public QWidget {
     const bool needMore=advanced||required>width();
     const int budget=std::max(0,width()-(needMore?moreWidth:0));
     std::vector<bool> overflow(items_.size(),false);
+    for(int i=0;i<static_cast<int>(items_.size());++i)
+      overflow[i]=items_[i].priority<0;
     for(int index:candidates) {if(required<=budget)break;overflow[index]=true;required-=itemWidth(items_[index])+5;}
     auto* focused=QApplication::focusWidget();
     auto* popup=QApplication::activePopupWidget();
