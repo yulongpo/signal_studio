@@ -1,0 +1,1 @@
+{"qt": "6.11.1", "platform": "windows", "cases": [{"sent": "first\nsecond", "received": "first\nsecond", "equal": true}, {"sent": "first\r\nsecond", "received": "first\r\nsecond", "equal": true}, {"sent": "first\rsecond\nthird", "received": "first\rsecond\nthird", "equal": true}]}

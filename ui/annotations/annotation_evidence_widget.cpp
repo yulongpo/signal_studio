@@ -497,6 +497,10 @@ AnnotationEvidenceWidget::AnnotationEvidenceWidget(Mode mode, QWidget* parent)
   connect(next, &QPushButton::clicked, this, [this] { showRawPage(rawPage_ + 1); });
   connect(find, &QPushButton::clicked, this, &AnnotationEvidenceWidget::findRawText);
   connect(rawSearch_, &QLineEdit::returnPressed, this, &AnnotationEvidenceWidget::findRawText);
+  connect(rawSearch_, &QLineEdit::textChanged, this, [this] {
+    rawSearchNeedle_.clear();
+    rawNextSearch_ = rawPageStart_;
+  });
   auto* actions = new QHBoxLayout;
   auto* copy = new QPushButton("复制完整证据", details_);
   copy->setAutoDefault(false);
@@ -521,6 +525,7 @@ AnnotationEvidenceWidget::AnnotationEvidenceWidget(Mode mode, QWidget* parent)
 void AnnotationEvidenceWidget::setFullText(QString value) {
   ++copyRequest_; // A pending retry must not publish evidence from an old context.
   fullText_ = std::move(value);
+  rawSearchNeedle_.clear();
   showRawPage(0);
 }
 
@@ -553,6 +558,8 @@ void AnnotationEvidenceWidget::showRawPage(qsizetype page) {
   if (begin > 0 && fullText_.at(begin).isLowSurrogate()) --begin;
   if (end < fullText_.size() && fullText_.at(end).isLowSurrogate()) ++end;
   rawPageStart_ = begin;
+  rawPageEnd_ = end;
+  rawNextSearch_ = begin;
   rawFields_->setPlainText(fullText_.mid(begin, end - begin));
   rawPageLabel_->setText(QString("第 %1/%2 页 · 全文 %3 字符；复制不受分页限制")
       .arg(rawPage_ + 1).arg(count).arg(fullText_.size()));
@@ -563,23 +570,36 @@ void AnnotationEvidenceWidget::showRawPage(qsizetype page) {
 void AnnotationEvidenceWidget::findRawText() {
   const auto needle = rawSearch_->text();
   if (needle.isEmpty()) return;
-  const auto offset = rawPageStart_;
-  const auto start = offset + rawFields_->textCursor().selectionEnd();
-  auto found = fullText_.indexOf(needle, start);
+  if (rawSearchNeedle_ != needle) {
+    rawSearchNeedle_ = needle;
+    rawNextSearch_ = rawPageStart_;
+  }
+  auto found = fullText_.indexOf(needle, rawNextSearch_);
   if (found < 0) found = fullText_.indexOf(needle);
   if (found < 0) { rawSearch_->setToolTip("全文中未找到该文本"); return; }
   showRawPage(found / kEvidencePageCharacters);
   // Show a complete match even when it straddles a page boundary, without
   // changing or truncating the full copy buffer.
   const auto pageBegin = rawPageStart_;
-  const auto local = found - pageBegin;
-  if (!rawFields_->toPlainText().contains(needle))
-    rawFields_->setPlainText(fullText_.mid(pageBegin, std::max(kEvidencePageCharacters, local + needle.size())));
+  const auto matchEnd = found + needle.size();
+  if (matchEnd > rawPageEnd_) {
+    rawPageEnd_ = matchEnd;
+    rawFields_->setPlainText(fullText_.mid(pageBegin, matchEnd - pageBegin));
+  }
+  // QTextDocument turns CRLF into one paragraph separator. Keep searching in
+  // the original buffer; convert only the selected page prefix to a document
+  // position. The original copy buffer and its line endings remain untouched.
+  auto prefix = fullText_.mid(pageBegin, found - pageBegin);
+  prefix.replace("\r\n", "\n");
+  auto displayedNeedle = needle;
+  displayedNeedle.replace("\r\n", "\n");
+  const auto local = prefix.size();
   QTextCursor cursor(rawFields_->document());
   cursor.setPosition(static_cast<int>(local));
-  cursor.setPosition(static_cast<int>(local + needle.size()), QTextCursor::KeepAnchor);
+  cursor.setPosition(static_cast<int>(local + displayedNeedle.size()), QTextCursor::KeepAnchor);
   rawFields_->setTextCursor(cursor);
   rawFields_->ensureCursorVisible();
+  rawNextSearch_ = matchEnd;
 }
 
 void AnnotationEvidenceWidget::openDetails() {

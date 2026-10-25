@@ -9,7 +9,7 @@
     "tail": true
   },
   "cpuDdcOutputSamples": 512,
-  "detailsScreenshot": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/07-full-evidence-dialog.png",
+  "detailsScreenshot": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/07-full-evidence-dialog.png",
   "fullCopyCharacters": 38987,
   "largeFrequencySceneIsSyntheticMetadata": true,
   "largeRfbenchValidationExecuted": false,
@@ -18,7 +18,7 @@
   "modelInferenceVerified": false,
   "ordinarySupplementalEntriesVerified": 2,
   "pass": true,
-  "projectPath": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/r4-native.ssproj",
+  "projectPath": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/r4-native.ssproj",
   "scenes": [
     {
       "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
@@ -336,7 +336,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/01-default.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/01-default.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -416,10 +416,10 @@
           "gpuTimestamps": false,
           "heatmapDrawCalls": 2,
           "heatmapUploadPreparation": {
-            "lastMs": 1.2048,
-            "maxMs": 1.2048,
+            "lastMs": 1.2634,
+            "maxMs": 1.2634,
             "samples": 1,
-            "totalMs": 1.2048
+            "totalMs": 1.2634
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -429,41 +429,41 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3543,
-            "maxMs": 3.0904,
+            "lastMs": 0.3811,
+            "maxMs": 2.2428,
             "samples": 12,
-            "totalMs": 8.986
+            "totalMs": 8.4055
           },
           "overlayPainter": {
-            "lastMs": 8.5341,
-            "maxMs": 9.173,
+            "lastMs": 8.7961,
+            "maxMs": 9.3217,
             "samples": 12,
-            "totalMs": 35.889300000000006
+            "totalMs": 34.71469999999999
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0038,
-            "maxMs": 0.3795,
+            "lastMs": 0.0048,
+            "maxMs": 0.2889,
             "samples": 12,
-            "totalMs": 0.8757999999999999
+            "totalMs": 0.8255
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 12.5823,
-            "maxMs": 14.6753,
+            "lastMs": 12.9819,
+            "maxMs": 12.9819,
             "samples": 14,
-            "totalMs": 94.6623
+            "totalMs": 92.1221
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0019,
-            "maxMs": 11.9271,
+            "lastMs": 0.0026,
+            "maxMs": 10.8797,
             "samples": 15,
-            "totalMs": 56.12830000000001
+            "totalMs": 53.636799999999994
           },
           "render": {
-            "lastMs": 0.0199,
-            "maxMs": 11.9851,
+            "lastMs": 0.0218,
+            "maxMs": 10.9639,
             "samples": 15,
-            "totalMs": 56.6866
+            "totalMs": 54.204
           },
           "renderInvocations": 15,
           "unit": "ms"
@@ -491,7 +491,7 @@
         "heatmapHeight": 430,
         "heatmapWidth": 750,
         "inverseCursorDrawCalls": 15,
-        "lastMatrixMs": 51.2598,
+        "lastMatrixMs": 52.2185,
         "matrixReductions": 0,
         "noiseBandwidthHz": 14655.593551538814,
         "overlayUploads": 12,
@@ -831,7 +831,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/02-long-name.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/02-long-name.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -911,10 +911,10 @@
           "gpuTimestamps": false,
           "heatmapDrawCalls": 4,
           "heatmapUploadPreparation": {
-            "lastMs": 1.2048,
-            "maxMs": 1.2048,
+            "lastMs": 1.2634,
+            "maxMs": 1.2634,
             "samples": 1,
-            "totalMs": 1.2048
+            "totalMs": 1.2634
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -924,41 +924,41 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.4004,
-            "maxMs": 3.0904,
+            "lastMs": 0.3755,
+            "maxMs": 2.2428,
             "samples": 13,
-            "totalMs": 9.3864
+            "totalMs": 8.781
           },
           "overlayPainter": {
-            "lastMs": 7.1128,
-            "maxMs": 9.173,
+            "lastMs": 9.324,
+            "maxMs": 9.324,
             "samples": 13,
-            "totalMs": 43.002100000000006
+            "totalMs": 44.03869999999999
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0036,
-            "maxMs": 0.3795,
+            "lastMs": 0.0052,
+            "maxMs": 0.2889,
             "samples": 13,
-            "totalMs": 0.8794
+            "totalMs": 0.8307
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 9.4154,
-            "maxMs": 14.6753,
+            "lastMs": 11.8927,
+            "maxMs": 12.9819,
             "samples": 15,
-            "totalMs": 104.07770000000001
+            "totalMs": 104.01480000000001
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0024,
-            "maxMs": 11.9271,
+            "lastMs": 0.0069,
+            "maxMs": 10.8797,
             "samples": 17,
-            "totalMs": 64.01050000000001
+            "totalMs": 63.759299999999996
           },
           "render": {
-            "lastMs": 0.0205,
-            "maxMs": 11.9851,
+            "lastMs": 0.0591,
+            "maxMs": 10.9639,
             "samples": 17,
-            "totalMs": 64.6095
+            "totalMs": 64.4059
           },
           "renderInvocations": 17,
           "unit": "ms"
@@ -986,7 +986,7 @@
         "heatmapHeight": 430,
         "heatmapWidth": 750,
         "inverseCursorDrawCalls": 17,
-        "lastMatrixMs": 51.2598,
+        "lastMatrixMs": 52.2185,
         "matrixReductions": 0,
         "noiseBandwidthHz": 14655.593551538814,
         "overlayUploads": 13,
@@ -1326,7 +1326,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/03-narrow-320-long-name.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/03-narrow-320-long-name.png",
       "propertyWidth": 320,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -1406,10 +1406,10 @@
           "gpuTimestamps": false,
           "heatmapDrawCalls": 9,
           "heatmapUploadPreparation": {
-            "lastMs": 1.1131,
-            "maxMs": 1.2048,
+            "lastMs": 1.2156,
+            "maxMs": 1.2634,
             "samples": 3,
-            "totalMs": 2.5014000000000003
+            "totalMs": 2.6749
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -1419,41 +1419,41 @@
           "lastRenderWidth": 1940,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3512,
-            "maxMs": 3.0904,
+            "lastMs": 0.3773,
+            "maxMs": 2.2428,
             "samples": 17,
-            "totalMs": 12.021500000000001
+            "totalMs": 11.691500000000001
           },
           "overlayPainter": {
-            "lastMs": 9.5195,
-            "maxMs": 9.5195,
+            "lastMs": 8.9591,
+            "maxMs": 9.324,
             "samples": 17,
-            "totalMs": 75.53830000000002
+            "totalMs": 77.0249
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0032,
-            "maxMs": 0.3795,
+            "lastMs": 0.0044,
+            "maxMs": 0.2889,
             "samples": 17,
-            "totalMs": 1.0636
+            "totalMs": 1.1140999999999999
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 13.7321,
-            "maxMs": 14.6753,
+            "lastMs": 13.4464,
+            "maxMs": 16.0898,
             "samples": 19,
-            "totalMs": 153.2045
+            "totalMs": 156.76810000000003
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0022,
-            "maxMs": 11.9271,
+            "lastMs": 0.0027,
+            "maxMs": 13.651,
             "samples": 22,
-            "totalMs": 103.52660000000002
+            "totalMs": 104.9849
           },
           "render": {
-            "lastMs": 0.0231,
-            "maxMs": 11.9851,
+            "lastMs": 0.0273,
+            "maxMs": 13.7238,
             "samples": 22,
-            "totalMs": 104.3269
+            "totalMs": 105.8625
           },
           "renderInvocations": 22,
           "unit": "ms"
@@ -1481,7 +1481,7 @@
         "heatmapHeight": 430,
         "heatmapWidth": 750,
         "inverseCursorDrawCalls": 22,
-        "lastMatrixMs": 51.2598,
+        "lastMatrixMs": 52.2185,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
         "overlayUploads": 17,
@@ -1821,7 +1821,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/04-expanded-650.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/04-expanded-650.png",
       "propertyWidth": 650,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -1901,10 +1901,10 @@
           "gpuTimestamps": false,
           "heatmapDrawCalls": 14,
           "heatmapUploadPreparation": {
-            "lastMs": 1.0997,
-            "maxMs": 1.2048,
+            "lastMs": 1.4992,
+            "maxMs": 1.4992,
             "samples": 5,
-            "totalMs": 3.7201
+            "totalMs": 4.276
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -1914,41 +1914,41 @@
           "lastRenderWidth": 1610,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.286,
-            "maxMs": 3.0904,
+            "lastMs": 0.4023,
+            "maxMs": 2.2428,
             "samples": 21,
-            "totalMs": 14.892900000000001
+            "totalMs": 14.416800000000002
           },
           "overlayPainter": {
-            "lastMs": 6.3008,
-            "maxMs": 9.5195,
+            "lastMs": 7.6752,
+            "maxMs": 9.324,
             "samples": 21,
-            "totalMs": 102.27380000000001
+            "totalMs": 108.51299999999999
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0034,
-            "maxMs": 0.3795,
+            "lastMs": 0.004,
+            "maxMs": 0.3149,
             "samples": 21,
-            "totalMs": 1.2319000000000002
+            "totalMs": 1.4418999999999997
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 10.0981,
-            "maxMs": 14.6753,
+            "lastMs": 12.7819,
+            "maxMs": 16.0898,
             "samples": 23,
-            "totalMs": 194.4913
+            "totalMs": 208.11490000000003
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0021,
-            "maxMs": 11.9271,
+            "lastMs": 0.0023,
+            "maxMs": 13.651,
             "samples": 27,
-            "totalMs": 137.01830000000004
+            "totalMs": 144.0414
           },
           "render": {
-            "lastMs": 0.0202,
-            "maxMs": 11.9851,
+            "lastMs": 0.0224,
+            "maxMs": 13.7238,
             "samples": 27,
-            "totalMs": 138.0118
+            "totalMs": 145.149
           },
           "renderInvocations": 27,
           "unit": "ms"
@@ -1976,7 +1976,7 @@
         "heatmapHeight": 430,
         "heatmapWidth": 750,
         "inverseCursorDrawCalls": 27,
-        "lastMatrixMs": 51.2598,
+        "lastMatrixMs": 52.2185,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
         "overlayUploads": 21,
@@ -2015,7 +2015,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/05-hidden.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/05-hidden.png",
       "propertyWidth": 38,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -2095,10 +2095,10 @@
           "gpuTimestamps": false,
           "heatmapDrawCalls": 22,
           "heatmapUploadPreparation": {
-            "lastMs": 0.897,
-            "maxMs": 1.2048,
+            "lastMs": 0.9518,
+            "maxMs": 1.4992,
             "samples": 9,
-            "totalMs": 5.8419
+            "totalMs": 6.6919
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -2108,41 +2108,41 @@
           "lastRenderWidth": 2227,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3617,
-            "maxMs": 3.0904,
+            "lastMs": 0.4528,
+            "maxMs": 2.3599,
             "samples": 28,
-            "totalMs": 21.009
+            "totalMs": 21.023400000000002
           },
           "overlayPainter": {
-            "lastMs": 10.1199,
-            "maxMs": 11.1909,
+            "lastMs": 11.331,
+            "maxMs": 11.331,
             "samples": 28,
-            "totalMs": 165.31350000000003
+            "totalMs": 174.24269999999999
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0056,
-            "maxMs": 0.4093,
+            "lastMs": 0.0047,
+            "maxMs": 0.5525,
             "samples": 28,
-            "totalMs": 1.9440000000000002
+            "totalMs": 2.2887999999999997
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 14.1473,
-            "maxMs": 18.7188,
+            "lastMs": 15.9799,
+            "maxMs": 18.1593,
             "samples": 30,
-            "totalMs": 288.3039999999999
+            "totalMs": 306.1792
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0019,
-            "maxMs": 15.7818,
+            "lastMs": 0.0023,
+            "maxMs": 14.8683,
             "samples": 35,
-            "totalMs": 215.44180000000003
+            "totalMs": 225.4654
           },
           "render": {
-            "lastMs": 0.019,
-            "maxMs": 15.8419,
+            "lastMs": 0.0227,
+            "maxMs": 14.9324,
             "samples": 35,
-            "totalMs": 216.8467
+            "totalMs": 226.95690000000002
           },
           "renderInvocations": 35,
           "unit": "ms"
@@ -2170,7 +2170,7 @@
         "heatmapHeight": 430,
         "heatmapWidth": 750,
         "inverseCursorDrawCalls": 35,
-        "lastMatrixMs": 51.2598,
+        "lastMatrixMs": 52.2185,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
         "overlayUploads": 28,
@@ -2510,7 +2510,7 @@
         "x": 36,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/06-located.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/06-located.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -2590,10 +2590,10 @@
           "gpuTimestamps": false,
           "heatmapDrawCalls": 33,
           "heatmapUploadPreparation": {
-            "lastMs": 0.9993,
-            "maxMs": 1.2048,
+            "lastMs": 0.993,
+            "maxMs": 1.4992,
             "samples": 13,
-            "totalMs": 8.4009
+            "totalMs": 9.3963
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -2603,41 +2603,41 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.4012,
-            "maxMs": 3.0904,
+            "lastMs": 0.3488,
+            "maxMs": 2.3599,
             "samples": 38,
-            "totalMs": 26.0659
+            "totalMs": 26.271599999999996
           },
           "overlayPainter": {
-            "lastMs": 5.2455,
-            "maxMs": 11.1909,
+            "lastMs": 5.6167,
+            "maxMs": 11.331,
             "samples": 38,
-            "totalMs": 235.7059
+            "totalMs": 252.20470000000003
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0038,
-            "maxMs": 0.4093,
+            "lastMs": 0.0042,
+            "maxMs": 0.5525,
             "samples": 38,
-            "totalMs": 2.0798
+            "totalMs": 2.4231000000000003
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 8.7524,
-            "maxMs": 18.7188,
+            "lastMs": 11.094,
+            "maxMs": 18.1593,
             "samples": 40,
-            "totalMs": 391.9829999999999
+            "totalMs": 421.9049
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0021,
-            "maxMs": 15.7818,
+            "lastMs": 0.0024,
+            "maxMs": 14.8683,
             "samples": 46,
-            "totalMs": 299.0821
+            "totalMs": 317.91509999999994
           },
           "render": {
-            "lastMs": 0.019,
-            "maxMs": 15.8419,
+            "lastMs": 0.0242,
+            "maxMs": 14.9324,
             "samples": 46,
-            "totalMs": 300.93839999999994
+            "totalMs": 319.9594
           },
           "renderInvocations": 46,
           "unit": "ms"
@@ -2665,7 +2665,7 @@
         "heatmapHeight": 430,
         "heatmapWidth": 750,
         "inverseCursorDrawCalls": 46,
-        "lastMatrixMs": 11.2477,
+        "lastMatrixMs": 11.8189,
         "matrixReductions": 1,
         "noiseBandwidthHz": 348.6426180736329,
         "overlayUploads": 38,
@@ -3005,7 +3005,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/08-edited-and-restored.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/08-edited-and-restored.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -3075,7 +3075,7 @@
           "yUnit": "MHz"
         },
         "binHz": 9765.625,
-        "colorTransformGenerations": 15,
+        "colorTransformGenerations": 14,
         "committedGeneration": 21,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -3083,12 +3083,12 @@
           "chartPaletteUploads": 2,
           "chartVertexUploads": 0,
           "gpuTimestamps": false,
-          "heatmapDrawCalls": 45,
+          "heatmapDrawCalls": 46,
           "heatmapUploadPreparation": {
-            "lastMs": 0.9348,
-            "maxMs": 1.2048,
-            "samples": 15,
-            "totalMs": 9.505999999999998
+            "lastMs": 0.9115,
+            "maxMs": 1.4992,
+            "samples": 14,
+            "totalMs": 10.3078
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -3098,43 +3098,43 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3503,
-            "maxMs": 3.0904,
-            "samples": 49,
-            "totalMs": 30.392200000000003
+            "lastMs": 0.3489,
+            "maxMs": 2.3599,
+            "samples": 50,
+            "totalMs": 30.712400000000002
           },
           "overlayPainter": {
-            "lastMs": 7.5993,
-            "maxMs": 11.1909,
-            "samples": 49,
-            "totalMs": 319.692
+            "lastMs": 7.9061,
+            "maxMs": 11.331,
+            "samples": 50,
+            "totalMs": 356.9493
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0045,
-            "maxMs": 0.4093,
-            "samples": 49,
-            "totalMs": 2.1245999999999996
+            "lastMs": 0.004,
+            "maxMs": 0.5525,
+            "samples": 50,
+            "totalMs": 2.481
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 9.8437,
-            "maxMs": 18.7188,
-            "samples": 51,
-            "totalMs": 505.19059999999985
+            "lastMs": 10.0603,
+            "maxMs": 18.1593,
+            "samples": 52,
+            "totalMs": 556.6710999999999
           },
           "paletteUploads": 2,
           "prepareUploads": {
             "lastMs": 0.0024,
-            "maxMs": 15.7818,
-            "samples": 58,
-            "totalMs": 392.565
+            "maxMs": 14.8683,
+            "samples": 59,
+            "totalMs": 433.18729999999994
           },
           "render": {
-            "lastMs": 0.0233,
-            "maxMs": 15.8419,
-            "samples": 58,
-            "totalMs": 394.81029999999987
+            "lastMs": 0.0218,
+            "maxMs": 14.9324,
+            "samples": 59,
+            "totalMs": 435.5931
           },
-          "renderInvocations": 58,
+          "renderInvocations": 59,
           "unit": "ms"
         },
         "cursorPinned": false,
@@ -3149,9 +3149,9 @@
         "framePsd": false,
         "generation": 21,
         "gpuChartDrawCalls": 0,
-        "gpuDataDrawCalls": 45,
+        "gpuDataDrawCalls": 46,
         "gpuDataRenderer": "QRhi shader / vertex buffer",
-        "gpuHeatmapDrawCalls": 45,
+        "gpuHeatmapDrawCalls": 46,
         "gpuPaletteUploads": 2,
         "gpuUploadsPending": false,
         "gpuVertexUploads": 0,
@@ -3159,11 +3159,11 @@
         "heatmapColorMapping": "QRhi fragment shader + LUT texture",
         "heatmapHeight": 430,
         "heatmapWidth": 750,
-        "inverseCursorDrawCalls": 58,
-        "lastMatrixMs": 82.3072,
+        "inverseCursorDrawCalls": 59,
+        "lastMatrixMs": 105.8602,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
-        "overlayUploads": 49,
+        "overlayUploads": 50,
         "paddedFrames": 0,
         "pinnedFrequencyHz": 0,
         "pinnedSourceSample": "0",
@@ -3178,8 +3178,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 15,
+        "staleDrops": 4,
+        "textureUploads": 14,
         "workerIdle": true
       },
       "scene": "08-edited-and-restored"
@@ -3500,7 +3500,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/09-time-unknown.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/09-time-unknown.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -3570,7 +3570,7 @@
           "yUnit": "MHz"
         },
         "binHz": 9765.625,
-        "colorTransformGenerations": 15,
+        "colorTransformGenerations": 14,
         "committedGeneration": 21,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -3578,12 +3578,12 @@
           "chartPaletteUploads": 2,
           "chartVertexUploads": 0,
           "gpuTimestamps": false,
-          "heatmapDrawCalls": 47,
+          "heatmapDrawCalls": 48,
           "heatmapUploadPreparation": {
-            "lastMs": 0.9348,
-            "maxMs": 1.2048,
-            "samples": 15,
-            "totalMs": 9.505999999999998
+            "lastMs": 0.9115,
+            "maxMs": 1.4992,
+            "samples": 14,
+            "totalMs": 10.3078
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -3593,43 +3593,43 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3322,
-            "maxMs": 3.0904,
-            "samples": 50,
-            "totalMs": 30.724400000000003
+            "lastMs": 0.4187,
+            "maxMs": 2.3599,
+            "samples": 51,
+            "totalMs": 31.131100000000004
           },
           "overlayPainter": {
-            "lastMs": 6.2292,
-            "maxMs": 11.1909,
-            "samples": 50,
-            "totalMs": 325.9212
+            "lastMs": 8.318,
+            "maxMs": 11.331,
+            "samples": 51,
+            "totalMs": 365.2673
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0032,
-            "maxMs": 0.4093,
-            "samples": 50,
-            "totalMs": 2.1277999999999997
+            "lastMs": 0.0043,
+            "maxMs": 0.5525,
+            "samples": 51,
+            "totalMs": 2.4853
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 8.4048,
-            "maxMs": 18.7188,
-            "samples": 52,
-            "totalMs": 513.5953999999998
+            "lastMs": 12.787,
+            "maxMs": 18.1593,
+            "samples": 53,
+            "totalMs": 569.4581
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0019,
-            "maxMs": 15.7818,
-            "samples": 60,
-            "totalMs": 399.49249999999995
+            "lastMs": 0.0026,
+            "maxMs": 14.8683,
+            "samples": 61,
+            "totalMs": 442.38769999999994
           },
           "render": {
-            "lastMs": 0.0194,
-            "maxMs": 15.8419,
-            "samples": 60,
-            "totalMs": 401.7789999999999
+            "lastMs": 0.025,
+            "maxMs": 14.9324,
+            "samples": 61,
+            "totalMs": 444.85269999999997
           },
-          "renderInvocations": 60,
+          "renderInvocations": 61,
           "unit": "ms"
         },
         "cursorPinned": false,
@@ -3644,9 +3644,9 @@
         "framePsd": false,
         "generation": 21,
         "gpuChartDrawCalls": 0,
-        "gpuDataDrawCalls": 47,
+        "gpuDataDrawCalls": 48,
         "gpuDataRenderer": "QRhi shader / vertex buffer",
-        "gpuHeatmapDrawCalls": 47,
+        "gpuHeatmapDrawCalls": 48,
         "gpuPaletteUploads": 2,
         "gpuUploadsPending": false,
         "gpuVertexUploads": 0,
@@ -3654,11 +3654,11 @@
         "heatmapColorMapping": "QRhi fragment shader + LUT texture",
         "heatmapHeight": 430,
         "heatmapWidth": 750,
-        "inverseCursorDrawCalls": 60,
-        "lastMatrixMs": 82.3072,
+        "inverseCursorDrawCalls": 61,
+        "lastMatrixMs": 105.8602,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
-        "overlayUploads": 50,
+        "overlayUploads": 51,
         "paddedFrames": 0,
         "pinnedFrequencyHz": 0,
         "pinnedSourceSample": "0",
@@ -3673,8 +3673,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 15,
+        "staleDrops": 4,
+        "textureUploads": 14,
         "workerIdle": true
       },
       "scene": "09-time-unknown"
@@ -3995,7 +3995,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/10-multi-selection.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/10-multi-selection.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -4065,7 +4065,7 @@
           "yUnit": "MHz"
         },
         "binHz": 9765.625,
-        "colorTransformGenerations": 15,
+        "colorTransformGenerations": 14,
         "committedGeneration": 21,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -4073,12 +4073,12 @@
           "chartPaletteUploads": 2,
           "chartVertexUploads": 0,
           "gpuTimestamps": false,
-          "heatmapDrawCalls": 50,
+          "heatmapDrawCalls": 51,
           "heatmapUploadPreparation": {
-            "lastMs": 0.9348,
-            "maxMs": 1.2048,
-            "samples": 15,
-            "totalMs": 9.505999999999998
+            "lastMs": 0.9115,
+            "maxMs": 1.4992,
+            "samples": 14,
+            "totalMs": 10.3078
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -4088,43 +4088,43 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3456,
-            "maxMs": 3.0904,
-            "samples": 52,
-            "totalMs": 31.409000000000002
+            "lastMs": 0.7597,
+            "maxMs": 2.3599,
+            "samples": 53,
+            "totalMs": 32.2984
           },
           "overlayPainter": {
-            "lastMs": 6.3337,
-            "maxMs": 11.1909,
-            "samples": 52,
-            "totalMs": 338.51320000000004
+            "lastMs": 7.5948,
+            "maxMs": 11.331,
+            "samples": 53,
+            "totalMs": 380.7112
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0038,
-            "maxMs": 0.4093,
-            "samples": 52,
-            "totalMs": 2.135
+            "lastMs": 0.0089,
+            "maxMs": 0.5525,
+            "samples": 53,
+            "totalMs": 2.4995000000000003
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 8.4573,
-            "maxMs": 18.7188,
-            "samples": 54,
-            "totalMs": 530.6352999999998
+            "lastMs": 11.0615,
+            "maxMs": 18.1593,
+            "samples": 55,
+            "totalMs": 591.8199
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0021,
-            "maxMs": 15.7818,
-            "samples": 63,
-            "totalMs": 413.5242999999999
+            "lastMs": 0.0023,
+            "maxMs": 14.8683,
+            "samples": 64,
+            "totalMs": 460.31289999999996
           },
           "render": {
-            "lastMs": 0.0207,
-            "maxMs": 15.8419,
-            "samples": 63,
-            "totalMs": 415.8760999999999
+            "lastMs": 0.0232,
+            "maxMs": 14.9324,
+            "samples": 64,
+            "totalMs": 462.87299999999993
           },
-          "renderInvocations": 63,
+          "renderInvocations": 64,
           "unit": "ms"
         },
         "cursorPinned": false,
@@ -4139,9 +4139,9 @@
         "framePsd": false,
         "generation": 21,
         "gpuChartDrawCalls": 0,
-        "gpuDataDrawCalls": 50,
+        "gpuDataDrawCalls": 51,
         "gpuDataRenderer": "QRhi shader / vertex buffer",
-        "gpuHeatmapDrawCalls": 50,
+        "gpuHeatmapDrawCalls": 51,
         "gpuPaletteUploads": 2,
         "gpuUploadsPending": false,
         "gpuVertexUploads": 0,
@@ -4149,11 +4149,11 @@
         "heatmapColorMapping": "QRhi fragment shader + LUT texture",
         "heatmapHeight": 430,
         "heatmapWidth": 750,
-        "inverseCursorDrawCalls": 63,
-        "lastMatrixMs": 82.3072,
+        "inverseCursorDrawCalls": 64,
+        "lastMatrixMs": 105.8602,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
-        "overlayUploads": 52,
+        "overlayUploads": 53,
         "paddedFrames": 0,
         "pinnedFrequencyHz": 0,
         "pinnedSourceSample": "0",
@@ -4168,8 +4168,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 15,
+        "staleDrops": 4,
+        "textureUploads": 14,
         "workerIdle": true
       },
       "scene": "10-multi-selection"
@@ -4189,7 +4189,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/11-no-selection.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/11-no-selection.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -4259,7 +4259,7 @@
           "yUnit": "MHz"
         },
         "binHz": 9765.625,
-        "colorTransformGenerations": 15,
+        "colorTransformGenerations": 14,
         "committedGeneration": 21,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -4267,12 +4267,12 @@
           "chartPaletteUploads": 2,
           "chartVertexUploads": 0,
           "gpuTimestamps": false,
-          "heatmapDrawCalls": 52,
+          "heatmapDrawCalls": 53,
           "heatmapUploadPreparation": {
-            "lastMs": 0.9348,
-            "maxMs": 1.2048,
-            "samples": 15,
-            "totalMs": 9.505999999999998
+            "lastMs": 0.9115,
+            "maxMs": 1.4992,
+            "samples": 14,
+            "totalMs": 10.3078
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -4282,43 +4282,43 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3366,
-            "maxMs": 3.0904,
-            "samples": 53,
-            "totalMs": 31.745600000000003
+            "lastMs": 0.3456,
+            "maxMs": 2.3599,
+            "samples": 54,
+            "totalMs": 32.644
           },
           "overlayPainter": {
-            "lastMs": 7.1499,
-            "maxMs": 11.1909,
-            "samples": 53,
-            "totalMs": 345.66310000000004
+            "lastMs": 9.7078,
+            "maxMs": 11.331,
+            "samples": 54,
+            "totalMs": 390.41900000000004
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0038,
-            "maxMs": 0.4093,
-            "samples": 53,
-            "totalMs": 2.1388
+            "lastMs": 0.0063,
+            "maxMs": 0.5525,
+            "samples": 54,
+            "totalMs": 2.5058000000000002
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 9.3286,
-            "maxMs": 18.7188,
-            "samples": 55,
-            "totalMs": 539.9638999999999
+            "lastMs": 12.5207,
+            "maxMs": 18.1593,
+            "samples": 56,
+            "totalMs": 604.3406
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0024,
-            "maxMs": 15.7818,
-            "samples": 65,
-            "totalMs": 421.37639999999993
+            "lastMs": 0.0025,
+            "maxMs": 14.8683,
+            "samples": 66,
+            "totalMs": 470.81049999999993
           },
           "render": {
-            "lastMs": 0.0221,
-            "maxMs": 15.8419,
-            "samples": 65,
-            "totalMs": 423.7707999999999
+            "lastMs": 0.0244,
+            "maxMs": 14.9324,
+            "samples": 66,
+            "totalMs": 473.43219999999997
           },
-          "renderInvocations": 65,
+          "renderInvocations": 66,
           "unit": "ms"
         },
         "cursorPinned": false,
@@ -4333,9 +4333,9 @@
         "framePsd": false,
         "generation": 21,
         "gpuChartDrawCalls": 0,
-        "gpuDataDrawCalls": 52,
+        "gpuDataDrawCalls": 53,
         "gpuDataRenderer": "QRhi shader / vertex buffer",
-        "gpuHeatmapDrawCalls": 52,
+        "gpuHeatmapDrawCalls": 53,
         "gpuPaletteUploads": 2,
         "gpuUploadsPending": false,
         "gpuVertexUploads": 0,
@@ -4343,11 +4343,11 @@
         "heatmapColorMapping": "QRhi fragment shader + LUT texture",
         "heatmapHeight": 430,
         "heatmapWidth": 750,
-        "inverseCursorDrawCalls": 65,
-        "lastMatrixMs": 82.3072,
+        "inverseCursorDrawCalls": 66,
+        "lastMatrixMs": 105.8602,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
-        "overlayUploads": 53,
+        "overlayUploads": 54,
         "paddedFrames": 0,
         "pinnedFrequencyHz": 0,
         "pinnedSourceSample": "0",
@@ -4362,8 +4362,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 15,
+        "staleDrops": 4,
+        "textureUploads": 14,
         "workerIdle": true
       },
       "scene": "11-no-selection"
@@ -4383,7 +4383,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/12-missing-source.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/12-missing-source.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -4453,7 +4453,7 @@
           "yUnit": "MHz"
         },
         "binHz": 9765.625,
-        "colorTransformGenerations": 15,
+        "colorTransformGenerations": 14,
         "committedGeneration": 21,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -4461,12 +4461,12 @@
           "chartPaletteUploads": 2,
           "chartVertexUploads": 0,
           "gpuTimestamps": false,
-          "heatmapDrawCalls": 55,
+          "heatmapDrawCalls": 56,
           "heatmapUploadPreparation": {
-            "lastMs": 0.9348,
-            "maxMs": 1.2048,
-            "samples": 15,
-            "totalMs": 9.505999999999998
+            "lastMs": 0.9115,
+            "maxMs": 1.4992,
+            "samples": 14,
+            "totalMs": 10.3078
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -4476,43 +4476,43 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3456,
-            "maxMs": 3.0904,
-            "samples": 55,
-            "totalMs": 32.435900000000004
+            "lastMs": 0.3243,
+            "maxMs": 2.3599,
+            "samples": 56,
+            "totalMs": 33.346
           },
           "overlayPainter": {
-            "lastMs": 7.9655,
-            "maxMs": 11.1909,
-            "samples": 55,
-            "totalMs": 360.7893000000001
+            "lastMs": 8.3803,
+            "maxMs": 11.331,
+            "samples": 56,
+            "totalMs": 407.6263
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.005,
-            "maxMs": 0.4093,
-            "samples": 55,
-            "totalMs": 2.1483
+            "lastMs": 0.004,
+            "maxMs": 0.5525,
+            "samples": 56,
+            "totalMs": 2.5138000000000003
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 10.229,
-            "maxMs": 18.7188,
-            "samples": 57,
-            "totalMs": 560.8114999999999
+            "lastMs": 10.6058,
+            "maxMs": 18.1593,
+            "samples": 58,
+            "totalMs": 626.0281
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0024,
-            "maxMs": 15.7818,
-            "samples": 68,
-            "totalMs": 438.21399999999994
+            "lastMs": 0.0026,
+            "maxMs": 14.8683,
+            "samples": 69,
+            "totalMs": 489.5127999999999
           },
           "render": {
-            "lastMs": 0.0227,
-            "maxMs": 15.8419,
-            "samples": 68,
-            "totalMs": 440.6847999999999
+            "lastMs": 0.0218,
+            "maxMs": 14.9324,
+            "samples": 69,
+            "totalMs": 492.2005
           },
-          "renderInvocations": 68,
+          "renderInvocations": 69,
           "unit": "ms"
         },
         "cursorPinned": false,
@@ -4527,9 +4527,9 @@
         "framePsd": false,
         "generation": 21,
         "gpuChartDrawCalls": 0,
-        "gpuDataDrawCalls": 55,
+        "gpuDataDrawCalls": 56,
         "gpuDataRenderer": "QRhi shader / vertex buffer",
-        "gpuHeatmapDrawCalls": 55,
+        "gpuHeatmapDrawCalls": 56,
         "gpuPaletteUploads": 2,
         "gpuUploadsPending": false,
         "gpuVertexUploads": 0,
@@ -4537,11 +4537,11 @@
         "heatmapColorMapping": "QRhi fragment shader + LUT texture",
         "heatmapHeight": 430,
         "heatmapWidth": 750,
-        "inverseCursorDrawCalls": 68,
-        "lastMatrixMs": 82.3072,
+        "inverseCursorDrawCalls": 69,
+        "lastMatrixMs": 105.8602,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
-        "overlayUploads": 55,
+        "overlayUploads": 56,
         "paddedFrames": 0,
         "pinnedFrequencyHz": 0,
         "pinnedSourceSample": "0",
@@ -4556,8 +4556,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 15,
+        "staleDrops": 4,
+        "textureUploads": 14,
         "workerIdle": true
       },
       "scene": "12-missing-source"
@@ -4878,7 +4878,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/13-manual-source.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/13-manual-source.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -4948,7 +4948,7 @@
           "yUnit": "MHz"
         },
         "binHz": 9765.625,
-        "colorTransformGenerations": 15,
+        "colorTransformGenerations": 14,
         "committedGeneration": 21,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -4956,12 +4956,12 @@
           "chartPaletteUploads": 2,
           "chartVertexUploads": 0,
           "gpuTimestamps": false,
-          "heatmapDrawCalls": 57,
+          "heatmapDrawCalls": 58,
           "heatmapUploadPreparation": {
-            "lastMs": 0.9348,
-            "maxMs": 1.2048,
-            "samples": 15,
-            "totalMs": 9.505999999999998
+            "lastMs": 0.9115,
+            "maxMs": 1.4992,
+            "samples": 14,
+            "totalMs": 10.3078
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -4971,43 +4971,43 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3484,
-            "maxMs": 3.0904,
-            "samples": 56,
-            "totalMs": 32.7843
+            "lastMs": 0.336,
+            "maxMs": 2.3599,
+            "samples": 57,
+            "totalMs": 33.681999999999995
           },
           "overlayPainter": {
-            "lastMs": 8.4076,
-            "maxMs": 11.1909,
-            "samples": 56,
-            "totalMs": 369.1969000000001
+            "lastMs": 7.8976,
+            "maxMs": 11.331,
+            "samples": 57,
+            "totalMs": 415.5239
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0055,
-            "maxMs": 0.4093,
-            "samples": 56,
-            "totalMs": 2.1538
+            "lastMs": 0.0042,
+            "maxMs": 0.5525,
+            "samples": 57,
+            "totalMs": 2.5180000000000002
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 11.1112,
-            "maxMs": 18.7188,
-            "samples": 58,
-            "totalMs": 571.9227
+            "lastMs": 11.5531,
+            "maxMs": 18.1593,
+            "samples": 59,
+            "totalMs": 637.5812
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0021,
-            "maxMs": 15.7818,
-            "samples": 70,
-            "totalMs": 447.4065999999999
+            "lastMs": 0.0022,
+            "maxMs": 14.8683,
+            "samples": 71,
+            "totalMs": 498.15989999999994
           },
           "render": {
-            "lastMs": 0.0236,
-            "maxMs": 15.8419,
-            "samples": 70,
-            "totalMs": 449.9274999999999
+            "lastMs": 0.0217,
+            "maxMs": 14.9324,
+            "samples": 71,
+            "totalMs": 500.8938
           },
-          "renderInvocations": 70,
+          "renderInvocations": 71,
           "unit": "ms"
         },
         "cursorPinned": false,
@@ -5022,9 +5022,9 @@
         "framePsd": false,
         "generation": 21,
         "gpuChartDrawCalls": 0,
-        "gpuDataDrawCalls": 57,
+        "gpuDataDrawCalls": 58,
         "gpuDataRenderer": "QRhi shader / vertex buffer",
-        "gpuHeatmapDrawCalls": 57,
+        "gpuHeatmapDrawCalls": 58,
         "gpuPaletteUploads": 2,
         "gpuUploadsPending": false,
         "gpuVertexUploads": 0,
@@ -5032,11 +5032,11 @@
         "heatmapColorMapping": "QRhi fragment shader + LUT texture",
         "heatmapHeight": 430,
         "heatmapWidth": 750,
-        "inverseCursorDrawCalls": 70,
-        "lastMatrixMs": 82.3072,
+        "inverseCursorDrawCalls": 71,
+        "lastMatrixMs": 105.8602,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
-        "overlayUploads": 56,
+        "overlayUploads": 57,
         "paddedFrames": 0,
         "pinnedFrequencyHz": 0,
         "pinnedSourceSample": "0",
@@ -5051,8 +5051,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 15,
+        "staleDrops": 4,
+        "textureUploads": 14,
         "workerIdle": true
       },
       "scene": "13-manual-source"
@@ -5373,7 +5373,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/14-imported-source.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/14-imported-source.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -5443,7 +5443,7 @@
           "yUnit": "MHz"
         },
         "binHz": 9765.625,
-        "colorTransformGenerations": 15,
+        "colorTransformGenerations": 14,
         "committedGeneration": 21,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -5451,12 +5451,12 @@
           "chartPaletteUploads": 2,
           "chartVertexUploads": 0,
           "gpuTimestamps": false,
-          "heatmapDrawCalls": 59,
+          "heatmapDrawCalls": 60,
           "heatmapUploadPreparation": {
-            "lastMs": 0.9348,
-            "maxMs": 1.2048,
-            "samples": 15,
-            "totalMs": 9.505999999999998
+            "lastMs": 0.9115,
+            "maxMs": 1.4992,
+            "samples": 14,
+            "totalMs": 10.3078
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -5466,43 +5466,43 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3763,
-            "maxMs": 3.0904,
-            "samples": 57,
-            "totalMs": 33.1606
+            "lastMs": 0.3508,
+            "maxMs": 2.3599,
+            "samples": 58,
+            "totalMs": 34.032799999999995
           },
           "overlayPainter": {
-            "lastMs": 6.861,
-            "maxMs": 11.1909,
-            "samples": 57,
-            "totalMs": 376.0579000000001
+            "lastMs": 7.2285,
+            "maxMs": 11.331,
+            "samples": 58,
+            "totalMs": 422.7524
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0043,
-            "maxMs": 0.4093,
-            "samples": 57,
-            "totalMs": 2.1581
+            "lastMs": 0.0044,
+            "maxMs": 0.5525,
+            "samples": 58,
+            "totalMs": 2.5224
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 9.2674,
-            "maxMs": 18.7188,
-            "samples": 59,
-            "totalMs": 581.1900999999999
+            "lastMs": 9.4615,
+            "maxMs": 18.1593,
+            "samples": 60,
+            "totalMs": 647.0427
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0023,
-            "maxMs": 15.7818,
-            "samples": 72,
-            "totalMs": 455.0914999999999
+            "lastMs": 0.0027,
+            "maxMs": 14.8683,
+            "samples": 73,
+            "totalMs": 506.13469999999995
           },
           "render": {
-            "lastMs": 0.021,
-            "maxMs": 15.8419,
-            "samples": 72,
-            "totalMs": 457.6606999999999
+            "lastMs": 0.0226,
+            "maxMs": 14.9324,
+            "samples": 73,
+            "totalMs": 508.9126
           },
-          "renderInvocations": 72,
+          "renderInvocations": 73,
           "unit": "ms"
         },
         "cursorPinned": false,
@@ -5517,9 +5517,9 @@
         "framePsd": false,
         "generation": 21,
         "gpuChartDrawCalls": 0,
-        "gpuDataDrawCalls": 59,
+        "gpuDataDrawCalls": 60,
         "gpuDataRenderer": "QRhi shader / vertex buffer",
-        "gpuHeatmapDrawCalls": 59,
+        "gpuHeatmapDrawCalls": 60,
         "gpuPaletteUploads": 2,
         "gpuUploadsPending": false,
         "gpuVertexUploads": 0,
@@ -5527,11 +5527,11 @@
         "heatmapColorMapping": "QRhi fragment shader + LUT texture",
         "heatmapHeight": 430,
         "heatmapWidth": 750,
-        "inverseCursorDrawCalls": 72,
-        "lastMatrixMs": 82.3072,
+        "inverseCursorDrawCalls": 73,
+        "lastMatrixMs": 105.8602,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
-        "overlayUploads": 57,
+        "overlayUploads": 58,
         "paddedFrames": 0,
         "pinnedFrequencyHz": 0,
         "pinnedSourceSample": "0",
@@ -5546,8 +5546,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 15,
+        "staleDrops": 4,
+        "textureUploads": 14,
         "workerIdle": true
       },
       "scene": "14-imported-source"
@@ -5868,7 +5868,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/15-auxiliary-evidence.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/15-auxiliary-evidence.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -5938,7 +5938,7 @@
           "yUnit": "MHz"
         },
         "binHz": 9765.625,
-        "colorTransformGenerations": 15,
+        "colorTransformGenerations": 14,
         "committedGeneration": 21,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -5948,10 +5948,10 @@
           "gpuTimestamps": false,
           "heatmapDrawCalls": 70,
           "heatmapUploadPreparation": {
-            "lastMs": 0.9348,
-            "maxMs": 1.2048,
-            "samples": 15,
-            "totalMs": 9.505999999999998
+            "lastMs": 0.9115,
+            "maxMs": 1.4992,
+            "samples": 14,
+            "totalMs": 10.3078
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -5961,41 +5961,41 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3768,
-            "maxMs": 3.0904,
+            "lastMs": 0.3394,
+            "maxMs": 2.3599,
             "samples": 67,
-            "totalMs": 37.50930000000001
+            "totalMs": 37.784499999999994
           },
           "overlayPainter": {
-            "lastMs": 7.8187,
-            "maxMs": 11.1909,
+            "lastMs": 8.8685,
+            "maxMs": 11.331,
             "samples": 67,
-            "totalMs": 457.81430000000006
+            "totalMs": 506.53079999999994
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0045,
-            "maxMs": 0.4093,
+            "lastMs": 0.0046,
+            "maxMs": 0.5525,
             "samples": 67,
-            "totalMs": 2.2109
+            "totalMs": 2.5690999999999997
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 10.1222,
-            "maxMs": 18.7188,
+            "lastMs": 11.2509,
+            "maxMs": 18.1593,
             "samples": 69,
-            "totalMs": 687.4564999999999
+            "totalMs": 755.218
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0023,
-            "maxMs": 15.7818,
+            "lastMs": 0.0022,
+            "maxMs": 14.8683,
             "samples": 83,
-            "totalMs": 545.5178999999998
+            "totalMs": 597.7597999999999
           },
           "render": {
-            "lastMs": 0.0257,
-            "maxMs": 15.8419,
+            "lastMs": 0.0255,
+            "maxMs": 14.9324,
             "samples": 83,
-            "totalMs": 548.3798999999999
+            "totalMs": 600.8252
           },
           "renderInvocations": 83,
           "unit": "ms"
@@ -6023,7 +6023,7 @@
         "heatmapHeight": 430,
         "heatmapWidth": 750,
         "inverseCursorDrawCalls": 83,
-        "lastMatrixMs": 82.3072,
+        "lastMatrixMs": 105.8602,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
         "overlayUploads": 67,
@@ -6041,8 +6041,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 15,
+        "staleDrops": 4,
+        "textureUploads": 14,
         "workerIdle": true
       },
       "scene": "15-auxiliary-evidence"
@@ -6363,7 +6363,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/16-psd.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/16-psd.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -6433,7 +6433,7 @@
           "yUnit": "MHz"
         },
         "binHz": 9765.625,
-        "colorTransformGenerations": 15,
+        "colorTransformGenerations": 14,
         "committedGeneration": 21,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -6443,10 +6443,10 @@
           "gpuTimestamps": false,
           "heatmapDrawCalls": 73,
           "heatmapUploadPreparation": {
-            "lastMs": 0.9348,
-            "maxMs": 1.2048,
-            "samples": 15,
-            "totalMs": 9.505999999999998
+            "lastMs": 0.9115,
+            "maxMs": 1.4992,
+            "samples": 14,
+            "totalMs": 10.3078
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -6456,41 +6456,41 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3353,
-            "maxMs": 3.0904,
+            "lastMs": 0.3847,
+            "maxMs": 2.3599,
             "samples": 69,
-            "totalMs": 38.21580000000001
+            "totalMs": 38.5077
           },
           "overlayPainter": {
-            "lastMs": 9.063,
-            "maxMs": 11.1909,
+            "lastMs": 8.5768,
+            "maxMs": 11.331,
             "samples": 69,
-            "totalMs": 476.18370000000004
+            "totalMs": 523.8516999999999
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0062,
-            "maxMs": 0.4093,
+            "lastMs": 0.0046,
+            "maxMs": 0.5525,
             "samples": 69,
-            "totalMs": 2.2211000000000003
+            "totalMs": 2.5803
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 11.4245,
-            "maxMs": 18.7188,
+            "lastMs": 10.9276,
+            "maxMs": 18.1593,
             "samples": 71,
-            "totalMs": 710.6104999999999
+            "totalMs": 778.2324
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0031,
-            "maxMs": 15.7818,
+            "lastMs": 0.0025,
+            "maxMs": 14.8683,
             "samples": 86,
-            "totalMs": 565.4028999999999
+            "totalMs": 616.7624999999999
           },
           "render": {
-            "lastMs": 0.0264,
-            "maxMs": 15.8419,
+            "lastMs": 0.0241,
+            "maxMs": 14.9324,
             "samples": 86,
-            "totalMs": 568.3369999999999
+            "totalMs": 619.9046
           },
           "renderInvocations": 86,
           "unit": "ms"
@@ -6518,7 +6518,7 @@
         "heatmapHeight": 430,
         "heatmapWidth": 750,
         "inverseCursorDrawCalls": 86,
-        "lastMatrixMs": 82.3072,
+        "lastMatrixMs": 105.8602,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
         "overlayUploads": 69,
@@ -6536,8 +6536,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 15,
+        "staleDrops": 4,
+        "textureUploads": 14,
         "workerIdle": true
       },
       "scene": "16-psd"
@@ -6858,7 +6858,7 @@
         "x": 40,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/17-waterfall.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/17-waterfall.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -6928,7 +6928,7 @@
           "yUnit": "ms"
         },
         "binHz": 9765.625,
-        "colorTransformGenerations": 16,
+        "colorTransformGenerations": 15,
         "committedGeneration": 22,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -6938,10 +6938,10 @@
           "gpuTimestamps": false,
           "heatmapDrawCalls": 75,
           "heatmapUploadPreparation": {
-            "lastMs": 0.9579,
-            "maxMs": 1.2048,
-            "samples": 16,
-            "totalMs": 10.463899999999999
+            "lastMs": 0.9659,
+            "maxMs": 1.4992,
+            "samples": 15,
+            "totalMs": 11.2737
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -6951,41 +6951,41 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.5231,
-            "maxMs": 3.0904,
+            "lastMs": 0.3933,
+            "maxMs": 2.3599,
             "samples": 71,
-            "totalMs": 39.09920000000001
+            "totalMs": 39.2338
           },
           "overlayPainter": {
-            "lastMs": 5.7338,
-            "maxMs": 11.1909,
+            "lastMs": 5.0894,
+            "maxMs": 11.331,
             "samples": 71,
-            "totalMs": 490.488
+            "totalMs": 535.6498999999999
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.003,
-            "maxMs": 0.4093,
+            "lastMs": 0.0038,
+            "maxMs": 0.5525,
             "samples": 71,
-            "totalMs": 2.2299
+            "totalMs": 2.5879
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 9.5591,
-            "maxMs": 18.7188,
+            "lastMs": 8.6095,
+            "maxMs": 18.1593,
             "samples": 73,
-            "totalMs": 731.1877
+            "totalMs": 795.7693
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0026,
-            "maxMs": 15.7818,
+            "lastMs": 0.0024,
+            "maxMs": 14.8683,
             "samples": 89,
-            "totalMs": 582.2615
+            "totalMs": 631.0865999999999
           },
           "render": {
-            "lastMs": 0.0228,
-            "maxMs": 15.8419,
+            "lastMs": 0.0219,
+            "maxMs": 14.9324,
             "samples": 89,
-            "totalMs": 585.2635999999998
+            "totalMs": 634.2951999999999
           },
           "renderInvocations": 89,
           "unit": "ms"
@@ -7013,7 +7013,7 @@
         "heatmapHeight": 430,
         "heatmapWidth": 750,
         "inverseCursorDrawCalls": 89,
-        "lastMatrixMs": 97.2807,
+        "lastMatrixMs": 78.3737,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
         "overlayUploads": 71,
@@ -7031,8 +7031,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 16,
+        "staleDrops": 4,
+        "textureUploads": 15,
         "workerIdle": true
       },
       "scene": "17-waterfall"
@@ -7353,7 +7353,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/18-tree-plot-table-linked.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/18-tree-plot-table-linked.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -7423,7 +7423,7 @@
           "yUnit": "MHz"
         },
         "binHz": 9765.625,
-        "colorTransformGenerations": 17,
+        "colorTransformGenerations": 16,
         "committedGeneration": 23,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -7433,10 +7433,10 @@
           "gpuTimestamps": false,
           "heatmapDrawCalls": 82,
           "heatmapUploadPreparation": {
-            "lastMs": 0.8199,
-            "maxMs": 1.2048,
-            "samples": 17,
-            "totalMs": 11.2838
+            "lastMs": 0.8836,
+            "maxMs": 1.4992,
+            "samples": 16,
+            "totalMs": 12.1573
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -7446,41 +7446,41 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3364,
-            "maxMs": 3.0904,
+            "lastMs": 0.3587,
+            "maxMs": 2.3599,
             "samples": 77,
-            "totalMs": 41.26420000000001
+            "totalMs": 41.49210000000001
           },
           "overlayPainter": {
-            "lastMs": 8.7701,
-            "maxMs": 11.1909,
+            "lastMs": 7.1849,
+            "maxMs": 11.331,
             "samples": 77,
-            "totalMs": 537.2709999999998
+            "totalMs": 580.4152
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0042,
-            "maxMs": 0.4093,
+            "lastMs": 0.0038,
+            "maxMs": 0.5525,
             "samples": 77,
-            "totalMs": 2.2541000000000007
+            "totalMs": 2.6151999999999997
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 11.7315,
-            "maxMs": 18.7188,
+            "lastMs": 9.73,
+            "maxMs": 18.1593,
             "samples": 79,
-            "totalMs": 793.7434999999999
+            "totalMs": 857.8915
           },
           "paletteUploads": 2,
           "prepareUploads": {
-            "lastMs": 0.0021,
-            "maxMs": 15.7818,
+            "lastMs": 0.0022,
+            "maxMs": 14.8683,
             "samples": 96,
-            "totalMs": 635.3845999999999
+            "totalMs": 682.8609999999998
           },
           "render": {
-            "lastMs": 0.0253,
-            "maxMs": 15.8419,
+            "lastMs": 0.0242,
+            "maxMs": 14.9324,
             "samples": 96,
-            "totalMs": 638.5515999999998
+            "totalMs": 686.2576
           },
           "renderInvocations": 96,
           "unit": "ms"
@@ -7508,7 +7508,7 @@
         "heatmapHeight": 430,
         "heatmapWidth": 750,
         "inverseCursorDrawCalls": 96,
-        "lastMatrixMs": 82.3072,
+        "lastMatrixMs": 105.8602,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
         "overlayUploads": 77,
@@ -7526,8 +7526,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 17,
+        "staleDrops": 4,
+        "textureUploads": 16,
         "workerIdle": true
       },
       "scene": "18-tree-plot-table-linked"
@@ -7547,7 +7547,201 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/19-dense-roi-long-file.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/19-dense-roi-long-file.png",
+      "propertyWidth": 390,
+      "render": {
+        "acceptedHeatmapPreview": false,
+        "actualFrameInputSamples": "2048",
+        "actualSpectralFrames": 389,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "axisLayout": {
+          "dpr": 1.5,
+          "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+          "header": {
+            "height": 0,
+            "width": 1854,
+            "x": 8,
+            "y": 4
+          },
+          "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+          "leftGainFrom88": 47,
+          "localBottom": 32,
+          "localLeft": 41,
+          "localTop": 12,
+          "logicalDpiX": 96,
+          "logicalDpiY": 96,
+          "mode": "CompactHeader",
+          "plot": {
+            "height": 623,
+            "width": 1807,
+            "x": 41,
+            "y": 12
+          },
+          "sharedLeft": 41,
+          "tickHeight": 16,
+          "tickLabelWidth": 26,
+          "widgetHeight": 667,
+          "widgetWidth": 1870,
+          "xOrigin": "",
+          "xTickBand": {
+            "height": 16,
+            "width": 1807,
+            "x": 41,
+            "y": 647
+          },
+          "xTicks": [
+            "0",
+            "4",
+            "8",
+            "12",
+            "16",
+            "20"
+          ],
+          "xTitle": "时间 (ms)",
+          "xTitleBand": {
+            "height": 0,
+            "width": 1807,
+            "x": 41,
+            "y": 666
+          },
+          "yOrigin": "",
+          "yTicks": [
+            "2490",
+            "2495",
+            "2500",
+            "2505",
+            "2510"
+          ],
+          "yTitle": "频率 (MHz)",
+          "yUnit": "MHz"
+        },
+        "binHz": 9765.625,
+        "colorTransformGenerations": 16,
+        "committedGeneration": 23,
+        "cpuWallTimings": {
+          "chartDrawCalls": 0,
+          "chartDrawCallsSkipped": 0,
+          "chartPaletteUploads": 2,
+          "chartVertexUploads": 0,
+          "gpuTimestamps": false,
+          "heatmapDrawCalls": 98,
+          "heatmapUploadPreparation": {
+            "lastMs": 0.8836,
+            "maxMs": 1.4992,
+            "samples": 16,
+            "totalMs": 12.1573
+          },
+          "lastChartDrawLoopIterations": 0,
+          "lastChartDrawRecordCount": 0,
+          "lastChartDrawStage": 0,
+          "lastChartVertexCount": 0,
+          "lastRenderHeight": 667,
+          "lastRenderWidth": 1870,
+          "measurement": "GUI-thread wall time measured with QElapsedTimer",
+          "overlayImagePreparation": {
+            "lastMs": 0.4517,
+            "maxMs": 2.3599,
+            "samples": 92,
+            "totalMs": 47.88470000000001
+          },
+          "overlayPainter": {
+            "lastMs": 10.6198,
+            "maxMs": 14.4626,
+            "samples": 92,
+            "totalMs": 745.0326000000001
+          },
+          "overlayUploadEnqueue": {
+            "lastMs": 0.0053,
+            "maxMs": 0.5525,
+            "samples": 92,
+            "totalMs": 2.6886
+          },
+          "paintEventIncludingQtSubmit": {
+            "lastMs": 13.5974,
+            "maxMs": 18.1593,
+            "samples": 94,
+            "totalMs": 1071.1091
+          },
+          "paletteUploads": 2,
+          "prepareUploads": {
+            "lastMs": 0.0025,
+            "maxMs": 15.833,
+            "samples": 112,
+            "totalMs": 869.9614999999999
+          },
+          "render": {
+            "lastMs": 0.0267,
+            "maxMs": 15.856,
+            "samples": 112,
+            "totalMs": 873.7541999999997
+          },
+          "renderInvocations": 112,
+          "unit": "ms"
+        },
+        "cursorPinned": true,
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi heatmap texture",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 322500,
+        "effectiveOverlap": 0.5,
+        "framePsd": true,
+        "generation": 23,
+        "gpuChartDrawCalls": 0,
+        "gpuDataDrawCalls": 98,
+        "gpuDataRenderer": "QRhi shader / vertex buffer",
+        "gpuHeatmapDrawCalls": 98,
+        "gpuPaletteUploads": 2,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 0,
+        "heatmapCacheHits": 10,
+        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+        "heatmapHeight": 430,
+        "heatmapWidth": 750,
+        "inverseCursorDrawCalls": 112,
+        "lastMatrixMs": 105.8602,
+        "matrixReductions": 1,
+        "noiseBandwidthHz": 14655.593551538814,
+        "overlayUploads": 92,
+        "paddedFrames": 0,
+        "pinnedFrequencyHz": 2502166934.189406,
+        "pinnedSourceSample": "100055",
+        "powerGenerations": 9,
+        "quality": "settled",
+        "requestedGeneration": 23,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "requiredSeconds": 0.0001024,
+        "samplePointCount": 0,
+        "samplePointsVisible": false,
+        "settled": true,
+        "sourcePoints": 796672,
+        "staleDrops": 4,
+        "textureUploads": 16,
+        "workerIdle": true
+      },
+      "scene": "19-dense-roi-long-file"
+    },
+    {
+      "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+      "captureMethod": "native QWidget grab with QRhi readback",
+      "identityText": "超长标记名称 · Long signal name / QPSK / 中文 English / 0123456789 / 现场样本\n算法 · 待判断 · 类别未知\n当前第 2/2 段",
+      "inspectorControls": [],
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "plotRect": {
+        "height": 623,
+        "width": 1807,
+        "x": 41,
+        "y": 12
+      },
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/20-palette-and-handles.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -7625,12 +7819,12 @@
           "chartPaletteUploads": 2,
           "chartVertexUploads": 0,
           "gpuTimestamps": false,
-          "heatmapDrawCalls": 98,
+          "heatmapDrawCalls": 102,
           "heatmapUploadPreparation": {
-            "lastMs": 0.8199,
-            "maxMs": 1.2048,
+            "lastMs": 0.8957,
+            "maxMs": 1.4992,
             "samples": 17,
-            "totalMs": 11.2838
+            "totalMs": 13.052999999999999
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -7640,43 +7834,43 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.4485,
-            "maxMs": 3.0904,
-            "samples": 92,
-            "totalMs": 46.943800000000024
+            "lastMs": 0.3614,
+            "maxMs": 2.3599,
+            "samples": 95,
+            "totalMs": 48.998700000000014
           },
           "overlayPainter": {
-            "lastMs": 9.1321,
-            "maxMs": 14.5804,
-            "samples": 92,
-            "totalMs": 699.7873
+            "lastMs": 9.4076,
+            "maxMs": 14.4626,
+            "samples": 95,
+            "totalMs": 773.2047000000001
           },
           "overlayUploadEnqueue": {
             "lastMs": 0.0043,
-            "maxMs": 0.4093,
-            "samples": 92,
-            "totalMs": 2.320700000000001
+            "maxMs": 0.5525,
+            "samples": 95,
+            "totalMs": 2.7027000000000005
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 12.003,
-            "maxMs": 18.7188,
-            "samples": 94,
-            "totalMs": 1005.7275
+            "lastMs": 13.5786,
+            "maxMs": 18.1593,
+            "samples": 97,
+            "totalMs": 1109.4407999999999
           },
-          "paletteUploads": 2,
+          "paletteUploads": 3,
           "prepareUploads": {
-            "lastMs": 0.0025,
-            "maxMs": 15.8817,
-            "samples": 112,
-            "totalMs": 820.4125
+            "lastMs": 0.0026,
+            "maxMs": 15.833,
+            "samples": 116,
+            "totalMs": 903.0240999999999
           },
           "render": {
-            "lastMs": 0.0241,
-            "maxMs": 15.9032,
-            "samples": 112,
-            "totalMs": 823.9986999999999
+            "lastMs": 0.0221,
+            "maxMs": 15.856,
+            "samples": 116,
+            "totalMs": 906.9324999999998
           },
-          "renderInvocations": 112,
+          "renderInvocations": 116,
           "unit": "ms"
         },
         "cursorPinned": true,
@@ -7691,21 +7885,21 @@
         "framePsd": true,
         "generation": 23,
         "gpuChartDrawCalls": 0,
-        "gpuDataDrawCalls": 98,
+        "gpuDataDrawCalls": 102,
         "gpuDataRenderer": "QRhi shader / vertex buffer",
-        "gpuHeatmapDrawCalls": 98,
-        "gpuPaletteUploads": 2,
+        "gpuHeatmapDrawCalls": 102,
+        "gpuPaletteUploads": 3,
         "gpuUploadsPending": false,
         "gpuVertexUploads": 0,
         "heatmapCacheHits": 10,
         "heatmapColorMapping": "QRhi fragment shader + LUT texture",
         "heatmapHeight": 430,
         "heatmapWidth": 750,
-        "inverseCursorDrawCalls": 112,
-        "lastMatrixMs": 82.3072,
+        "inverseCursorDrawCalls": 116,
+        "lastMatrixMs": 105.8602,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
-        "overlayUploads": 92,
+        "overlayUploads": 95,
         "paddedFrames": 0,
         "pinnedFrequencyHz": 2502166934.189406,
         "pinnedSourceSample": "100055",
@@ -7720,11 +7914,11 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
+        "staleDrops": 4,
         "textureUploads": 17,
         "workerIdle": true
       },
-      "scene": "19-dense-roi-long-file"
+      "scene": "20-palette-and-handles"
     },
     {
       "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
@@ -7741,7 +7935,7 @@
         "x": 41,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/20-palette-and-handles.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/21-reopened.png",
       "propertyWidth": 390,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -7812,200 +8006,6 @@
         },
         "binHz": 9765.625,
         "colorTransformGenerations": 18,
-        "committedGeneration": 23,
-        "cpuWallTimings": {
-          "chartDrawCalls": 0,
-          "chartDrawCallsSkipped": 0,
-          "chartPaletteUploads": 2,
-          "chartVertexUploads": 0,
-          "gpuTimestamps": false,
-          "heatmapDrawCalls": 102,
-          "heatmapUploadPreparation": {
-            "lastMs": 1.1494,
-            "maxMs": 1.2048,
-            "samples": 18,
-            "totalMs": 12.4332
-          },
-          "lastChartDrawLoopIterations": 0,
-          "lastChartDrawRecordCount": 0,
-          "lastChartDrawStage": 0,
-          "lastChartVertexCount": 0,
-          "lastRenderHeight": 667,
-          "lastRenderWidth": 1870,
-          "measurement": "GUI-thread wall time measured with QElapsedTimer",
-          "overlayImagePreparation": {
-            "lastMs": 0.3413,
-            "maxMs": 3.0904,
-            "samples": 95,
-            "totalMs": 48.053600000000024
-          },
-          "overlayPainter": {
-            "lastMs": 9.6436,
-            "maxMs": 14.5804,
-            "samples": 95,
-            "totalMs": 728.5491
-          },
-          "overlayUploadEnqueue": {
-            "lastMs": 0.0092,
-            "maxMs": 0.4093,
-            "samples": 95,
-            "totalMs": 2.3401000000000005
-          },
-          "paintEventIncludingQtSubmit": {
-            "lastMs": 14.1701,
-            "maxMs": 18.7188,
-            "samples": 97,
-            "totalMs": 1045.393
-          },
-          "paletteUploads": 3,
-          "prepareUploads": {
-            "lastMs": 0.0024,
-            "maxMs": 15.8817,
-            "samples": 116,
-            "totalMs": 854.5015000000001
-          },
-          "render": {
-            "lastMs": 0.0226,
-            "maxMs": 15.9032,
-            "samples": 116,
-            "totalMs": 858.2074999999999
-          },
-          "renderInvocations": 116,
-          "unit": "ms"
-        },
-        "cursorPinned": true,
-        "curveCacheHits": 0,
-        "curvePathElements": 0,
-        "curveRasterMethod": "QRhi heatmap texture",
-        "curveReductions": 0,
-        "curveSourceGenerations": 0,
-        "drawnLineSegments": 0,
-        "drawnPoints": 322500,
-        "effectiveOverlap": 0.5,
-        "framePsd": true,
-        "generation": 23,
-        "gpuChartDrawCalls": 0,
-        "gpuDataDrawCalls": 102,
-        "gpuDataRenderer": "QRhi shader / vertex buffer",
-        "gpuHeatmapDrawCalls": 102,
-        "gpuPaletteUploads": 3,
-        "gpuUploadsPending": false,
-        "gpuVertexUploads": 0,
-        "heatmapCacheHits": 10,
-        "heatmapColorMapping": "QRhi fragment shader + LUT texture",
-        "heatmapHeight": 430,
-        "heatmapWidth": 750,
-        "inverseCursorDrawCalls": 116,
-        "lastMatrixMs": 82.3072,
-        "matrixReductions": 1,
-        "noiseBandwidthHz": 14655.593551538814,
-        "overlayUploads": 95,
-        "paddedFrames": 0,
-        "pinnedFrequencyHz": 2502166934.189406,
-        "pinnedSourceSample": "100055",
-        "powerGenerations": 9,
-        "quality": "settled",
-        "requestedGeneration": 23,
-        "requestedHeatmapHeight": 430,
-        "requestedHeatmapWidth": 750,
-        "requestedPixels": 322500,
-        "requiredSeconds": 0.0001024,
-        "samplePointCount": 0,
-        "samplePointsVisible": false,
-        "settled": true,
-        "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 18,
-        "workerIdle": true
-      },
-      "scene": "20-palette-and-handles"
-    },
-    {
-      "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
-      "captureMethod": "native QWidget grab with QRhi readback",
-      "identityText": "超长标记名称 · Long signal name / QPSK / 中文 English / 0123456789 / 现场样本\n算法 · 待判断 · 类别未知\n当前第 2/2 段",
-      "inspectorControls": [],
-      "pixelSize": {
-        "height": 2160,
-        "width": 3840
-      },
-      "plotRect": {
-        "height": 623,
-        "width": 1807,
-        "x": 41,
-        "y": 12
-      },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/21-reopened.png",
-      "propertyWidth": 390,
-      "render": {
-        "acceptedHeatmapPreview": false,
-        "actualFrameInputSamples": "2048",
-        "actualSpectralFrames": 389,
-        "analysisError": "",
-        "analysisPoints": 2048,
-        "axisLayout": {
-          "dpr": 1.5,
-          "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
-          "header": {
-            "height": 0,
-            "width": 1854,
-            "x": 8,
-            "y": 4
-          },
-          "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
-          "leftGainFrom88": 47,
-          "localBottom": 32,
-          "localLeft": 41,
-          "localTop": 12,
-          "logicalDpiX": 96,
-          "logicalDpiY": 96,
-          "mode": "CompactHeader",
-          "plot": {
-            "height": 623,
-            "width": 1807,
-            "x": 41,
-            "y": 12
-          },
-          "sharedLeft": 41,
-          "tickHeight": 16,
-          "tickLabelWidth": 26,
-          "widgetHeight": 667,
-          "widgetWidth": 1870,
-          "xOrigin": "",
-          "xTickBand": {
-            "height": 16,
-            "width": 1807,
-            "x": 41,
-            "y": 647
-          },
-          "xTicks": [
-            "0",
-            "4",
-            "8",
-            "12",
-            "16",
-            "20"
-          ],
-          "xTitle": "时间 (ms)",
-          "xTitleBand": {
-            "height": 0,
-            "width": 1807,
-            "x": 41,
-            "y": 666
-          },
-          "yOrigin": "",
-          "yTicks": [
-            "2490",
-            "2495",
-            "2500",
-            "2505",
-            "2510"
-          ],
-          "yTitle": "频率 (MHz)",
-          "yUnit": "MHz"
-        },
-        "binHz": 9765.625,
-        "colorTransformGenerations": 19,
         "committedGeneration": 25,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -8015,10 +8015,10 @@
           "gpuTimestamps": false,
           "heatmapDrawCalls": 108,
           "heatmapUploadPreparation": {
-            "lastMs": 0.872,
-            "maxMs": 1.2048,
-            "samples": 19,
-            "totalMs": 13.3052
+            "lastMs": 0.9471,
+            "maxMs": 1.4992,
+            "samples": 18,
+            "totalMs": 14.0001
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -8028,41 +8028,41 @@
           "lastRenderWidth": 1870,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.3308,
-            "maxMs": 3.0904,
+            "lastMs": 0.5427,
+            "maxMs": 2.3599,
             "samples": 102,
-            "totalMs": 50.655700000000024
+            "totalMs": 51.78890000000001
           },
           "overlayPainter": {
-            "lastMs": 9.8763,
-            "maxMs": 14.5804,
+            "lastMs": 9.7169,
+            "maxMs": 14.4626,
             "samples": 102,
-            "totalMs": 790.8063999999998
+            "totalMs": 832.9398000000001
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0061,
-            "maxMs": 0.4093,
+            "lastMs": 0.0037,
+            "maxMs": 0.5525,
             "samples": 102,
-            "totalMs": 2.3739000000000003
+            "totalMs": 2.7316000000000007
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 13.5614,
-            "maxMs": 18.7188,
+            "lastMs": 13.4827,
+            "maxMs": 18.1593,
             "samples": 104,
-            "totalMs": 1128.6884
+            "totalMs": 1191.1245999999999
           },
           "paletteUploads": 3,
           "prepareUploads": {
             "lastMs": 0.0023,
-            "maxMs": 15.8817,
+            "maxMs": 15.833,
             "samples": 124,
-            "totalMs": 925.1415000000002
+            "totalMs": 972.0994999999999
           },
           "render": {
-            "lastMs": 0.0215,
-            "maxMs": 15.9032,
+            "lastMs": 0.0226,
+            "maxMs": 15.856,
             "samples": 124,
-            "totalMs": 929.0535999999998
+            "totalMs": 976.2004999999998
           },
           "renderInvocations": 124,
           "unit": "ms"
@@ -8090,7 +8090,7 @@
         "heatmapHeight": 430,
         "heatmapWidth": 750,
         "inverseCursorDrawCalls": 124,
-        "lastMatrixMs": 91.0709,
+        "lastMatrixMs": 98.4284,
         "matrixReductions": 1,
         "noiseBandwidthHz": 14655.593551538814,
         "overlayUploads": 102,
@@ -8108,8 +8108,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 796672,
-        "staleDrops": 3,
-        "textureUploads": 19,
+        "staleDrops": 4,
+        "textureUploads": 18,
         "workerIdle": true
       },
       "scene": "21-reopened"
@@ -8430,7 +8430,7 @@
         "x": 37,
         "y": 12
       },
-      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/restored-release-gpu/22-large-frequency-synthetic-metadata.png",
+      "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/search-fix-release-gpu/22-large-frequency-synthetic-metadata.png",
       "propertyWidth": 320,
       "render": {
         "acceptedHeatmapPreview": false,
@@ -8500,7 +8500,7 @@
           "yUnit": "Δ MHz"
         },
         "binHz": 488.28125,
-        "colorTransformGenerations": 23,
+        "colorTransformGenerations": 22,
         "committedGeneration": 30,
         "cpuWallTimings": {
           "chartDrawCalls": 0,
@@ -8510,10 +8510,10 @@
           "gpuTimestamps": false,
           "heatmapDrawCalls": 114,
           "heatmapUploadPreparation": {
-            "lastMs": 0.9612,
-            "maxMs": 1.2048,
-            "samples": 22,
-            "totalMs": 15.600699999999998
+            "lastMs": 1.0434,
+            "maxMs": 1.4992,
+            "samples": 21,
+            "totalMs": 16.1303
           },
           "lastChartDrawLoopIterations": 0,
           "lastChartDrawRecordCount": 0,
@@ -8523,41 +8523,41 @@
           "lastRenderWidth": 1940,
           "measurement": "GUI-thread wall time measured with QElapsedTimer",
           "overlayImagePreparation": {
-            "lastMs": 0.383,
-            "maxMs": 3.0904,
+            "lastMs": 0.3569,
+            "maxMs": 2.3599,
             "samples": 108,
-            "totalMs": 55.47050000000002
+            "totalMs": 55.55800000000002
           },
           "overlayPainter": {
-            "lastMs": 3.6269,
-            "maxMs": 14.5804,
+            "lastMs": 3.2008,
+            "maxMs": 14.4626,
             "samples": 108,
-            "totalMs": 810.5214999999997
+            "totalMs": 852.6320000000001
           },
           "overlayUploadEnqueue": {
-            "lastMs": 0.0041,
-            "maxMs": 0.4097,
+            "lastMs": 0.0038,
+            "maxMs": 0.5525,
             "samples": 108,
-            "totalMs": 2.8035
+            "totalMs": 3.2998000000000007
           },
           "paintEventIncludingQtSubmit": {
-            "lastMs": 7.4614,
-            "maxMs": 18.7188,
+            "lastMs": 7.0914,
+            "maxMs": 18.1593,
             "samples": 110,
-            "totalMs": 1171.4411000000002
+            "totalMs": 1238.7105
           },
           "paletteUploads": 4,
           "prepareUploads": {
-            "lastMs": 0.0021,
-            "maxMs": 15.8817,
+            "lastMs": 0.0024,
+            "maxMs": 15.833,
             "samples": 131,
-            "totalMs": 956.1864000000004
+            "totalMs": 1004.2842999999998
           },
           "render": {
-            "lastMs": 0.0215,
-            "maxMs": 15.9032,
+            "lastMs": 0.0222,
+            "maxMs": 15.856,
             "samples": 131,
-            "totalMs": 960.3646999999997
+            "totalMs": 1008.6945
           },
           "renderInvocations": 131,
           "unit": "ms"
@@ -8585,7 +8585,7 @@
         "heatmapHeight": 430,
         "heatmapWidth": 750,
         "inverseCursorDrawCalls": 131,
-        "lastMatrixMs": 4.3055,
+        "lastMatrixMs": 5.2004,
         "matrixReductions": 2,
         "noiseBandwidthHz": 732.7796775769407,
         "overlayUploads": 108,
@@ -8603,8 +8603,8 @@
         "samplePointsVisible": false,
         "settled": true,
         "sourcePoints": 16384,
-        "staleDrops": 4,
-        "textureUploads": 22,
+        "staleDrops": 5,
+        "textureUploads": 21,
         "workerIdle": true
       },
       "scene": "22-large-frequency-synthetic-metadata"
@@ -8659,7 +8659,7 @@
   "process": {
     "configuration": "Release",
     "exitCode": 0,
-    "elapsedSeconds": 22.014566,
+    "elapsedSeconds": 23.2543691,
     "systemOnlyPath": true,
     "dpiOverridesCleared": true,
     "timeoutSeconds": 300

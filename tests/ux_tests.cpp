@@ -283,6 +283,66 @@ class UxTests : public QObject {
     QVERIFY(evidence->findChild<QPlainTextEdit*>("auxiliaryAnnotationEvidence")->toPlainText().isEmpty());
   }
 
+  void uxR4_searchBoundaryAndOriginalNewlines() {
+    MainWindow window;window.session().addDemoFile();
+    auto* file=window.session().activeFile();
+    const auto id=window.session().addMark({{1000,4000},{99.9e6,100.1e6}});
+    auto* mark=findAnnotation(*file,id);QVERIFY(mark);
+    auto origin=std::make_shared<OriginEvidence>(*mark->originEvidence);
+    QString payload(140000,QLatin1Char('x'));
+    payload.replace(0,13,"PAYLOAD_BEGIN");
+    origin->originalFieldsJson=("{\r\n\"payload\":\""+payload+"\"\r\n}").toStdString();
+    mark->originEvidence=origin;
+    AnnotationEvidenceWidget evidence;
+    const auto open=[&] {
+      evidence.findChild<QToolButton*>("annotationEvidenceDetailsToggle")->click();
+      auto* toggle=evidence.findChild<QToolButton*>("annotationOriginalFieldsToggle");
+      if(!toggle->isChecked())toggle->click();
+    };
+    const auto fullCopy=[&] {
+      evidence.findChild<QPushButton*>("annotationCopyEvidence")->click();
+      return QApplication::clipboard()->text();
+    };
+    evidence.setAnnotation(mark,file);evidence.show();open();
+    const auto initial=fullCopy();
+    const auto payloadBegin=initial.indexOf("PAYLOAD_BEGIN");
+    QVERIFY(payloadBegin>0 && payloadBegin<65000);
+    const QString needle="BOUNDARY_NEEDLE";
+    payload.replace(100,needle.size(),needle);
+    payload.replace(65530-payloadBegin,needle.size(),needle);
+    auto revised=std::make_shared<OriginEvidence>(*origin);
+    revised->originalFieldsJson=("{\r\n\"payload\":\""+payload+"\"\r\n}").toStdString();
+    mark->originEvidence=revised;evidence.setAnnotation(mark,file);open();
+    auto* search=evidence.findChild<QLineEdit*>("annotationEvidenceSearch");
+    auto* raw=evidence.findChild<QPlainTextEdit*>("annotationEvidence");
+    const auto verifyAll=[&](const QString& word) {
+      const auto original=fullCopy();
+      QList<qsizetype> hits;
+      for(qsizetype at=original.indexOf(word);at>=0;at=original.indexOf(word,at+word.size()))hits.append(at);
+      QVERIFY(hits.size()>=2);
+      search->setText(word);
+      for(qsizetype i=0;i<=hits.size();++i) {
+        QTest::keyClick(search,Qt::Key_Return);
+        QCOMPARE(raw->textCursor().selectedText(),word);
+        QVERIFY(evidence.findChild<QLabel*>("annotationEvidencePage")->text()
+          .startsWith(QString("第 %1/").arg(hits[i%hits.size()]/65536+1)));
+      }
+      QCOMPARE(fullCopy(),original);
+    };
+    const auto boundaryCopy=fullCopy();
+    QCOMPARE(boundaryCopy.indexOf(needle,boundaryCopy.indexOf(needle)+needle.size()),qsizetype(65530));
+    verifyAll(needle);
+    for(const auto& text:QStringList{
+          "{\r\n\"a\":\"TARGET\",\r\n\"b\":\"TARGET\"\r\n}",
+          "{\r\n\"a\":\"TARGET\",\r\"b\":\"TARGET\",\n\"c\":\"TARGET\"\r\n}"}) {
+      auto sample=std::make_shared<OriginEvidence>(*origin);
+      sample->originalFieldsJson=text.toStdString();mark->originEvidence=sample;
+      evidence.setAnnotation(mark,file);open();
+      QVERIFY(fullCopy().contains(text));verifyAll("TARGET");
+      QVERIFY(fullCopy().contains(text));
+    }
+  }
+
   void uxD01_historicalDerivation() {
     QTemporaryDir directory;
     MainWindow window;

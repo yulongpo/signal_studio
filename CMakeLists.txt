@@ -480,7 +480,7 @@ if(SS_BUILD_TESTS)
     ss_add_ux_test(charts uxR02_chartSettingsStayStable uxA01_roiConfirmationAndEscape roundTwoNarrowbandPsdAndPages)
     ss_add_ux_test(annotation uxR4_evidenceDisclosureAndFullCopy
         uxR4_currentObjectAndActionStates uxR4_supplementalSourceAndPagedCopy
-        uxR4_auxiliaryDetailsCloseWithHiddenContext)
+        uxR4_auxiliaryDetailsCloseWithHiddenContext uxR4_searchBoundaryAndOriginalNewlines)
     ss_add_ux_test(layout uxR01_chartToolbarLayout uxR02_inspectorRouting
         uxR02_fileProperties uxR02_paletteWorkspaceOwnership
         uxR03_taskKeyboardAndDetails uxR03_taskRowActions uxR01_lateRunFilterPopupAndRefresh roundTwoFlatResponsiveControls)

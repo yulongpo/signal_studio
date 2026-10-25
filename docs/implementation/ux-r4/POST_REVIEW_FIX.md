@@ -54,6 +54,22 @@ Qt 原生日志包含 `OleSetClipboard` / `OpenClipboard` 失败，COM 错误 `0
 四组报告均记录 ordinarySupplementalEntriesVerified=2、largeRfbenchValidationExecuted=false。
 完整截图和报告已更新至 evidence 下四个对应目录；失败日志继续保留于 review-fix。
 
+## 二次独立复审的搜索边界
+
+`ecf203f` 的独立结论仍为 REJECTED，R4-IR-01 已关闭，新增 R4-IR-02 / R4-IR-03：
+同页重复词后的跨页命中和 CRLF 原文/文档位置偏移。报告保存在
+[review-history/ecf203f-REJECTED.md](review-history/ecf203f-REJECTED.md)。
+
+现按本次匹配的原文结束位置与当前实际页尾决定扩展，不再用 contains 判定；
+下一处查找在原始全文中独立记录，不反推控件位置；仅将本页匹配前缀中的 CRLF 映射为
+单文档分隔符后定位选区。全文缓冲与复制的原始换行不变。
+
+新增小型用例覆盖约 140k 合成文本中同页先前命中、65530 处跨页命中、全部连续命中与回绕，
+以及几十字符 CRLF / 混合换行的选区和完整复制。它们不是大型 RFbench 事件。
+Debug/Release annotation 各 5 个业务函数通过，受影响 CTest 各 5/5，UI 业务函数合计各 30 个。
+四组原生（各 21 主场景＋详情）和四次独立启动重新通过；主目录报告已更新到此最终版本。
+此轮原始日志见 [evidence/search-fix](evidence/search-fix/)。
+
 ## 发布门禁
 
 1. 固化最终本地精确 HEAD，由未参与实现的独立 Review Agent 重新全面审核。

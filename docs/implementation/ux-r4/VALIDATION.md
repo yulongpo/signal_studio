@@ -13,10 +13,10 @@
 
 | 配置 | 原生结果 | 证据 |
 |---|---|---|
-| Release D3D11 / RTX 5060 Laptop | 21 主窗口场景 + 详情，通过；22.01 s | [report](evidence/release-gpu/report.json) |
-| Release QWidget / QPainter | 21 主窗口场景 + 详情，通过；21.43 s | [report](evidence/release-software/report.json) |
-| Debug D3D11 / RTX 5060 Laptop | 21 主窗口场景 + 详情，通过；52.38 s | [report](evidence/debug-gpu/report.json) |
-| Debug QWidget / QPainter | 21 主窗口场景 + 详情，通过；56.08 s | [report](evidence/debug-software/report.json) |
+| Release D3D11 / RTX 5060 Laptop | 21 主窗口场景 + 详情，通过；23.25 s | [report](evidence/release-gpu/report.json) |
+| Release QWidget / QPainter | 21 主窗口场景 + 详情，通过；22.73 s | [report](evidence/release-software/report.json) |
+| Debug D3D11 / RTX 5060 Laptop | 21 主窗口场景 + 详情，通过；53.05 s | [report](evidence/debug-gpu/report.json) |
+| Debug QWidget / QPainter | 21 主窗口场景 + 详情，通过；56.46 s | [report](evidence/debug-software/report.json) |
 
 每组使用实际 20 MS/s / 400000 CF32 样本的图谱、原有真实标签和明确标注的交互夹具。
 最后一个大频率场景是 **999.999 GHz 合成元数据的 UI 压力夹具**，不证明此频率的 RF 分析精度。
@@ -55,7 +55,7 @@ SignalStudioUxTests 和 SignalStudioUiTests。相关 CTest 每配置共 12/12；
 | UI annotations 定向覆盖 | 1/1 | 11 业务用例；树/图/表、多段、颜色、几何、删除、草稿、TorchSig、worker 夹具保存重开 |
 | 参数/标记/标记持久化/标签/WAV/工程文件/工程树 | 7/7 | 标签各配置 32 pass，4 个符号链接场景因主机权限跳过；不隐瞒跳过 |
 
-修复后五组 Qt UI 日志每配置共 29 个业务函数（PASS 总数包含各程序 init/cleanup，不作为新增功能数）。
+最终五组 Qt UI 日志每配置共 30 个业务函数（PASS 总数包含各程序 init/cleanup，不作为新增功能数）。
 offscreen CTest 证明交互和状态，不证明硬件显示。真实硬件显示由上表四组原生报告单独证明。
 结果并非一次性全库矩阵；本轮只运行受影响范围。详细 CTest 和 Qt 日志在 [evidence/logs](evidence/logs/)。
 
@@ -81,6 +81,10 @@ offscreen CTest 证明交互和状态，不证明硬件显示。真实硬件显�
 7. 首次独立审核拒绝指出共享补充原文遗漏，已补全主/补充原文和元数据，增加普通导入与分页测试。
    用户随后明确不执行大型 RFbench 事件验证，该项保持未实测边界。修复版曾被系统 `OpenClipboard`
    错误 5 阻塞；用户恢复后系统探针和四组原生流程全部通过，失败与恢复记录均保留。
+8. 二次独立复审发现重复词跨页和 CRLF 搜索偏移，已按本次命中结束位置扩展视口，
+   并在原文缓冲中独立维护后续查找位置、映射 CRLF 到文档位置。小型合成跨界、连续、
+   回绕和混合换行用例通过，完整原文复制逐字保全；Qt 6.11.1 原生剪贴板 API 小样本也确认换行保全。
+   最终构建、每配置 5 组受影响 CTest、四组原生和四次独立启动再次通过，详见 evidence/search-fix。
 
 既有 Ubuntu、设备输入、现场 RF 精度和模型识别/解调限制不因本轮 UI 优化改变。
 独立审核及发布结果以提交外 `INDEPENDENT_REVIEW.md`、`PUBLISH_RECORD.json` 为准。

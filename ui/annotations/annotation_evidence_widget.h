@@ -84,6 +84,9 @@ class AnnotationEvidenceWidget final : public QWidget {
   QString fullText_;
   qsizetype rawPage_ = 0;
   qsizetype rawPageStart_ = 0;
+  qsizetype rawPageEnd_ = 0;
+  qsizetype rawNextSearch_ = 0;
+  QString rawSearchNeedle_;
   quint64 copyRequest_ = 0;
   QToolButton* rawToggle_ = nullptr;
   QPlainTextEdit* rawFields_ = nullptr;
