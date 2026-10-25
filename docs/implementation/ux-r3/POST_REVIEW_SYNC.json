@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "recordedUtc": "2026-10-24T18:08:18.5096060Z",
+  "status": "PUSHED_AND_VERIFIED",
+  "developmentBranch": "feature/ux-r3-optimization",
+  "target": "origin/rebuild/a143-native",
+  "sourceCodeHead": "bc22bd57458a9c3b0654aa38169dd9ef07c86ce2",
+  "reviewedHead": "1608c4c87dd102fbe21e01e0d83c5e606119d50e",
+  "localHead": "1608c4c87dd102fbe21e01e0d83c5e606119d50e",
+  "remoteBefore": "90be58e452f17b121028efc8b34af9be50a76e6e",
+  "remoteAfter": "1608c4c87dd102fbe21e01e0d83c5e606119d50e",
+  "normalNonForcePush": true,
+  "trackedWorktreeClean": true,
+  "freshFetchAndAncestryGatePassed": true,
+  "independentReviewer": {
+    "role": "independent Review subagent",
+    "name": "Boyle",
+    "agentId": "01a16ec2-65d4-7292-908f-d6b61237eccb",
+    "decision": "APPROVED",
+    "reportPath": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\INDEPENDENT_REVIEW.md",
+    "reportSha256": "d65fa9319a490fab0fd532e1f9401c844afbd77f7d5d4d2f35462e38bb9957ab"
+  },
+  "pushTranscript": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\logs\\approved-publication.txt",
+  "commitUrl": "https://github.com/yulongpo/signal_studio/commit/1608c4c87dd102fbe21e01e0d83c5e606119d50e",
+  "evidenceManifest": "docs/implementation/ux-r3/evidence/ARCHIVE_MANIFEST.json",
+  "finalBinaryIdentities": "docs/implementation/ux-r3/evidence/review-fixes/final-binary-identities-bc22bd5.json",
+  "reportAndSyncRecordArePostCommitLocalAttachments": true
+}

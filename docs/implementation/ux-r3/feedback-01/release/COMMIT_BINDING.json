@@ -1,0 +1,136 @@
+{
+  "checkedUtc": "2026-10-25T09:40:30.820993+00:00",
+  "head": "1d809b5a61a6fdfc52d648c152d5292e09392774",
+  "validatedSourceContentId": "698760c846b05b1cd2489bec1a3024de890c416ad0443ff53c91606bf4b7c745",
+  "sourceFiles": [
+    {
+      "path": "app/main_window.cpp",
+      "validatedWorktreeSha256": "a209e4c1013c15c2028c553ac06ff2fc0110549e916e11f465b79cb1afdd2819",
+      "headGitBlob": "02d92524afe3b2b27d01d620d53a048f7bee91ab",
+      "normalizedWorktreeGitBlob": "02d92524afe3b2b27d01d620d53a048f7bee91ab"
+    },
+    {
+      "path": "app/main.cpp",
+      "validatedWorktreeSha256": "d94000035eba493fbf09c898ee1006ad716e1f93f9ee91a688a98261e7044789",
+      "headGitBlob": "3f1fb6968214ca21e42d289d65d5aed5eb3e3e9b",
+      "normalizedWorktreeGitBlob": "3f1fb6968214ca21e42d289d65d5aed5eb3e3e9b"
+    },
+    {
+      "path": "infrastructure/label_discovery.cpp",
+      "validatedWorktreeSha256": "93a03f3bf5d15f89835b41535e957e3083f8c04c240c6667d6fa0884b20cd357",
+      "headGitBlob": "a1b790ca29855a0e3674132e7d4dc022f44ce88b",
+      "normalizedWorktreeGitBlob": "a1b790ca29855a0e3674132e7d4dc022f44ce88b"
+    },
+    {
+      "path": "infrastructure/label_discovery.h",
+      "validatedWorktreeSha256": "f8ef18412efe5228aecc604be5beef62db0e246228ff24d1d01a1d3046f74616",
+      "headGitBlob": "54714973fe0eb321189865bc743bafbd460de17f",
+      "normalizedWorktreeGitBlob": "54714973fe0eb321189865bc743bafbd460de17f"
+    },
+    {
+      "path": "scripts/verify-package.ps1",
+      "validatedWorktreeSha256": "dbd5a37d3836c84225e4bc219a926f11e20b82610560657ecc0fdb799fc26776",
+      "headGitBlob": "792501080ef496b1aa206e7f5d2a8efd8f6ccd9e",
+      "normalizedWorktreeGitBlob": "792501080ef496b1aa206e7f5d2a8efd8f6ccd9e"
+    },
+    {
+      "path": "tests/label_import_tests.cpp",
+      "validatedWorktreeSha256": "191935e396f2bed4cd439a7c5ff9ef81e8b00534ee11010bf6688262532f8861",
+      "headGitBlob": "6bb9599495e06e7b2948c913e6303ec5449f337e",
+      "normalizedWorktreeGitBlob": "6bb9599495e06e7b2948c913e6303ec5449f337e"
+    },
+    {
+      "path": "tests/narrowband_analysis_capture.h",
+      "validatedWorktreeSha256": "2aa8cd19e3789473a72bddb082d5b80882f2c258019ff98bc1aa650f34c13cad",
+      "headGitBlob": "119225202acbff3b37e1697fe16568775bdc39a7",
+      "normalizedWorktreeGitBlob": "119225202acbff3b37e1697fe16568775bdc39a7"
+    },
+    {
+      "path": "tests/narrowband_analysis_ui_tests.cpp",
+      "validatedWorktreeSha256": "4c5183f08f554e81dc0a5bf4a6fb2426f3607643cc5641301c7e24a820e82780",
+      "headGitBlob": "8867427c202be21d3fcbb760df0c6b7d9680a3d5",
+      "normalizedWorktreeGitBlob": "8867427c202be21d3fcbb760df0c6b7d9680a3d5"
+    },
+    {
+      "path": "tests/ui_capture.cpp",
+      "validatedWorktreeSha256": "1d6b61534772ac20375137b22f659a7039625033d6a922542479f890cf864777",
+      "headGitBlob": "bbb7276898d3a89286e126a5df327cc86d8e1820",
+      "normalizedWorktreeGitBlob": "bbb7276898d3a89286e126a5df327cc86d8e1820"
+    },
+    {
+      "path": "tests/ui_tests.cpp",
+      "validatedWorktreeSha256": "7eab2e6a449a05c584401987958cf03f52b045592fb4c84b581505a6fff27640",
+      "headGitBlob": "237dbaa3699d9531c93a95429542bd9f1c2a2e73",
+      "normalizedWorktreeGitBlob": "237dbaa3699d9531c93a95429542bd9f1c2a2e73"
+    },
+    {
+      "path": "tests/ux_r3_axis_tests.cpp",
+      "validatedWorktreeSha256": "f4f767713e9f78c73b243c8d2dd74a6a1c24acc6147748c25a84bfe61260b553",
+      "headGitBlob": "5b7d99219b0e37a684f9be0529b7592f2715268d",
+      "normalizedWorktreeGitBlob": "5b7d99219b0e37a684f9be0529b7592f2715268d"
+    },
+    {
+      "path": "tests/ux_r3_capture.h",
+      "validatedWorktreeSha256": "3723e571333bbe2628e77548a6ab4ff8bc09da5d52ddaff7793d8226ef2931ff",
+      "headGitBlob": "47b01b5a6a5ce7a8ed290397ba79072099e0c4c3",
+      "normalizedWorktreeGitBlob": "47b01b5a6a5ce7a8ed290397ba79072099e0c4c3"
+    },
+    {
+      "path": "tests/ux_r3_label_capture.h",
+      "validatedWorktreeSha256": "f4c378126d1d6e2af6a8b685c0cde962de48ad9d1062ef98bf3cbff711cf07b0",
+      "headGitBlob": "c729dbff378b6a7a1a2e4c651b50b64aaba91094",
+      "normalizedWorktreeGitBlob": "c729dbff378b6a7a1a2e4c651b50b64aaba91094"
+    },
+    {
+      "path": "tests/ux_r3_workflow_tests.cpp",
+      "validatedWorktreeSha256": "bf35e7af7514be96910cbf3517cf530229098f647c70b96322ac7996cf271810",
+      "headGitBlob": "3fceda3b52164240ea390250468e80259cbef08f",
+      "normalizedWorktreeGitBlob": "3fceda3b52164240ea390250468e80259cbef08f"
+    },
+    {
+      "path": "ui/annotations/annotation_panel.cpp",
+      "validatedWorktreeSha256": "8a51883e68f87f732fe088ca0f8d01b33bcfbad77caac0faaca978d89cef0a36",
+      "headGitBlob": "1189d4f958932efede63dee15dbf01bf901daca9",
+      "normalizedWorktreeGitBlob": "1189d4f958932efede63dee15dbf01bf901daca9"
+    },
+    {
+      "path": "ui/annotations/annotation_panel.h",
+      "validatedWorktreeSha256": "915cba524c45dbb4d8e9ffe2f2dfa010295d18d1caac6c9a97af9c8e85901c2c",
+      "headGitBlob": "b5e1673c8cf9315ce815f3f82ad6892ce1cec9c9",
+      "normalizedWorktreeGitBlob": "b5e1673c8cf9315ce815f3f82ad6892ce1cec9c9"
+    },
+    {
+      "path": "ui/charts/axis_description.h",
+      "validatedWorktreeSha256": "9025a3e182b18a668147560ab344ec4d604ee171e4872ede404b9804dfed99be",
+      "headGitBlob": "546266b3123b65d4fcdbb8a0c756ecdc245bdc30",
+      "normalizedWorktreeGitBlob": "546266b3123b65d4fcdbb8a0c756ecdc245bdc30"
+    },
+    {
+      "path": "ui/charts/axis_layout.h",
+      "validatedWorktreeSha256": "659b4bba11f233d4040406bf9bdcd99b7ecc9ce8124608ec39ad243cf6a37c5c",
+      "headGitBlob": "6401a3121b6eecf6b5c4ba24c211c23da02cb04f",
+      "normalizedWorktreeGitBlob": "6401a3121b6eecf6b5c4ba24c211c23da02cb04f"
+    },
+    {
+      "path": "ui/charts/plot_widget.cpp",
+      "validatedWorktreeSha256": "cc19b0a8ec5e2960c2842b12f1699d9507bbb09fcb1e0e3f8cb9702e63a6fa02",
+      "headGitBlob": "6e5cbf407379f551c6136d5d9bcc97798c68188d",
+      "normalizedWorktreeGitBlob": "6e5cbf407379f551c6136d5d9bcc97798c68188d"
+    },
+    {
+      "path": "ui/charts/plot_widget.h",
+      "validatedWorktreeSha256": "934ea7effb67df7c53f5a0224269d12cb3e2c19e4bdbc0cb09c37ab1182e5010",
+      "headGitBlob": "23188388c93ae0232cca32f188bc1734dc32ad2d",
+      "normalizedWorktreeGitBlob": "23188388c93ae0232cca32f188bc1734dc32ad2d"
+    },
+    {
+      "path": "ui/narrowband_workspace.cpp",
+      "validatedWorktreeSha256": "75d9bd2d57fcfdbad79adb6458d480da67bde37230e5f5a545e9819ebb46da54",
+      "headGitBlob": "ffd5ee2925ee59bc0394da667e013a93793e039d",
+      "normalizedWorktreeGitBlob": "ffd5ee2925ee59bc0394da667e013a93793e039d"
+    }
+  ],
+  "headEvidenceBlobsVerified": 193,
+  "binaryHashesVerified": 14,
+  "sourceNormalization": "Git clean filters/line ending normalization checked via hash-object --path; raw historical source SHA is worktree-specific. Evidence blobs preserve exact captured bytes."
+}

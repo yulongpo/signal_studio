@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "status": "PUSHED_AND_VERIFIED",
+  "verifiedUtc": "2026-10-25T09:47:02.4047469Z",
+  "reviewAgent": "01a171b8-c7d9-7b20-a41c-b6b3daf849ab",
+  "reviewDecision": "APPROVED",
+  "reviewedHead": "1d809b5a61a6fdfc52d648c152d5292e09392774",
+  "localHead": "1d809b5a61a6fdfc52d648c152d5292e09392774",
+  "remoteHead": "1d809b5a61a6fdfc52d648c152d5292e09392774",
+  "remoteBefore": "1608c4c87dd102fbe21e01e0d83c5e606119d50e",
+  "remote": "origin",
+  "branch": "rebuild/a143-native",
+  "localBranch": "feature/ux-r3-optimization",
+  "normalNonForcePush": true,
+  "trackedWorktreeClean": true,
+  "indexClean": true,
+  "preexistingUntrackedPreserved": true,
+  "reviewReport": "docs/implementation/ux-r3/feedback-01/release/INDEPENDENT_REVIEW.md",
+  "reviewReportSha256": "56d2bb941dec281a57d36348a07b10feaa4ec460dfb6acc2200c7013d1219c47",
+  "sourceContentId": "698760c846b05b1cd2489bec1a3024de890c416ad0443ff53c91606bf4b7c745",
+  "commitBinding": "COMMIT_BINDING.json",
+  "publishLog": "out/tasks/wideband-detection/UX-R3-FEEDBACK-01/logs/publish-approved-head-1d809b5.txt",
+  "validation": {
+    "DebugRelevantCtest": 14,
+    "ReleaseRelevantCtest": 14,
+    "nativeScenarios": 256,
+    "standaloneStartup": 8,
+    "legacyCli": 6,
+    "symlinkCasesSkipped": 4,
+    "scope": "Specified 4K/150%; historical 1600x900 issue retained"
+  }
+}
