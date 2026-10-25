@@ -662,7 +662,8 @@ axis_layout::Layout PlotWidget::axisLayout() const {
     for (const auto* peer : axisWidgets)
       if (peer != this && peer->kind_ != Kind::Navigation &&
           &peer->session_ == &session_ && peer->window() == window())
-        budget = axis_layout::sharedBudget(budget, peer->measuredAxes().budget);
+        budget = axis_layout::sharedBudget(budget, peer->measuredAxes().budget,
+            axisTitleMode_ == AxisTitleMode::CompactHeader);
   const auto* file = session_.activeFile();
   return axis_layout::arrange(size(), budget,
       kind_ == Kind::Main && file && file->display.colorScale ? 70 : 22);
@@ -677,6 +678,7 @@ void PlotWidget::refreshAxisLayouts() {
           static_cast<int>(std::ceil(budget.top + budget.bottom + 16))));
       peer->updateCurve();
       peer->repaintChart();
+      emit peer->axisDescriptionChanged();
     }
 }
 
@@ -698,7 +700,7 @@ void PlotWidget::releaseAxisLayouts() {
 void PlotWidget::setAxisTitleMode(AxisTitleMode mode) {
   if (kind_ == Kind::Navigation || axisTitleMode_ == mode) return;
   if (mode != AxisTitleMode::UnitAtTop && mode != AxisTitleMode::Header &&
-      mode != AxisTitleMode::Rotated) return;
+      mode != AxisTitleMode::Rotated && mode != AxisTitleMode::CompactHeader) return;
   for (auto* peer : axisWidgets)
     if (peer->kind_ != Kind::Navigation && &peer->session_ == &session_ &&
         peer->window() == window()) {
@@ -709,6 +711,27 @@ void PlotWidget::setAxisTitleMode(AxisTitleMode mode) {
   refreshAxisLayouts();
 }
 
+AxisDescription PlotWidget::axisDescription() const {
+  const auto& axes = measuredAxes();
+  const auto* file = session_.activeFile();
+  if (!file) return {};
+  const bool waterfall = kind_ == Kind::Main && file->display.mainMode == MainMode::Waterfall;
+  const bool psd = kind_ == Kind::Auxiliary && file->display.auxiliaryMode == AuxiliaryMode::Psd;
+  const auto physical = [&](const Axis& axis, bool frequency) {
+    return QString(frequency ? (file->display.absoluteFrequency ? "RF频率" : "基带频率") : "时间") +
+        (axis.relative ? " Δ" : "") + " (" + axis.unit.name + ")";
+  };
+  AxisDescription result;
+  result.xTitle = result.xShort = physical(axes.x, waterfall || psd);
+  result.yTitle = kind_ == Kind::Main ? physical(axes.y, !waterfall) : axes.labels.yTitle;
+  result.yShort = kind_ == Kind::Main ? result.yTitle
+      : psd ? QStringLiteral("PSD (%1)").arg(axes.labels.yUnit)
+            : axes.labels.yTitle;
+  result.xOrigin = axes.x.originLabel;
+  result.yOrigin = kind_ == Kind::Main ? axes.y.originLabel : QString{};
+  return result;
+}
+
 QJsonObject PlotWidget::axisLayoutStatistics() const {
   const auto layout = axisLayout();
   const auto& axes = measuredAxes();
@@ -717,7 +740,8 @@ QJsonObject PlotWidget::axisLayoutStatistics() const {
                        {"width", rect.width()}, {"height", rect.height()}};
   };
   return {{"mode", axisTitleMode_ == AxisTitleMode::UnitAtTop ? "A"
-                  : axisTitleMode_ == AxisTitleMode::Header ? "B" : "C"},
+                  : axisTitleMode_ == AxisTitleMode::Header ? "B"
+                  : axisTitleMode_ == AxisTitleMode::Rotated ? "C" : "CompactHeader"},
           {"plot", rectJson(plotRect())}, {"header", rectJson(layout.header)},
           {"xTickBand", rectJson(layout.xTicks)},
           {"xTitleBand", rectJson(layout.xTitle)},
@@ -727,6 +751,9 @@ QJsonObject PlotWidget::axisLayoutStatistics() const {
           {"leftGainFrom88", 88 - layout.budget.left},
           {"yTitle", axes.labels.yTitle}, {"yUnit", axes.labels.yUnit},
           {"xTitle", axes.labels.xTitle},
+          {"headerText", axisDescription().fullText()},
+          {"widgetWidth", width()}, {"widgetHeight", height()},
+          {"localTop", axes.budget.top}, {"localBottom", axes.budget.bottom},
           {"xTicks", QJsonArray::fromStringList(axes.labels.xTicks)},
           {"yTicks", QJsonArray::fromStringList(axes.labels.yTicks)},
           {"xOrigin", axes.x.originLabel},
@@ -1113,6 +1140,7 @@ void PlotWidget::cancelDetectionRoi() {
   emit statusMessage("检测 ROI 已取消；已恢复前一工具");
 }
 void PlotWidget::syncState() {
+  if (kind_ != Kind::Navigation) emit axisDescriptionChanged();
   const auto* file = session_.activeFile();
   const auto id = file ? file->metadata.id : std::string{};
   if (id != displayedFile_ ||
@@ -2455,8 +2483,9 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
       previousTop = top;
     }
   }
-  painter.drawText(layout.xTitle, Qt::AlignHCenter | Qt::AlignTop,
-                   axes.labels.xTitle);
+  if (axisTitleMode_ != AxisTitleMode::CompactHeader)
+    painter.drawText(layout.xTitle, Qt::AlignHCenter | Qt::AlignTop,
+                     axes.labels.xTitle);
   if (axisTitleMode_ == AxisTitleMode::Rotated) {
     painter.save();
     painter.translate(layout.rotatedTitle.left(), plot.bottom());
@@ -2464,7 +2493,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
     painter.drawText(QRectF(0, 0, plot.height(), layout.rotatedTitle.width()),
                      Qt::AlignCenter | Qt::TextWordWrap, axes.labels.yTitle);
     painter.restore();
-  } else {
+  } else if (axisTitleMode_ != AxisTitleMode::CompactHeader) {
     if (axisTitleMode_ == AxisTitleMode::Header)
       painter.fillRect(layout.header.adjusted(-4, -2, 4, 2), QColor("#102238"));
     painter.drawText(layout.header, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap,
@@ -2474,7 +2503,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
   int originRow = 0;
   for (const auto& label : {x.originLabel,
                            kind_ == Kind::Main ? y.originLabel : QString{}})
-    if (!label.isEmpty()) {
+    if (axisTitleMode_ != AxisTitleMode::CompactHeader && !label.isEmpty()) {
       const double top = plot.top() + 13 + originRow++ * 15;
       painter.fillRect(QRectF(plot.left() + 4, top - 10,
                               metrics.horizontalAdvance(label) + 10, 14),

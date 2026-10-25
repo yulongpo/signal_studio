@@ -8,6 +8,8 @@
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QFontMetricsF>
+#include <QSet>
 #include <QScrollArea>
 #include <QStackedWidget>
 #include <QTemporaryDir>
@@ -36,11 +38,143 @@ class NarrowbandAnalysisUiTests : public QObject {
     window.resize(2560,1440);window.show();window.refresh();
     QCoreApplication::processEvents();
   }
+  static QRectF layoutRect(const QJsonValue& value) {
+    const auto r=value.toObject();return {r["x"].toDouble(),r["y"].toDouble(),r["width"].toDouble(),r["height"].toDouble()};
+  }
+  void verifyCompactLayout(const QJsonObject& layout,NarrowbandWorkspace& workspace,bool requireGain=true) {
+    const auto name=layout["chart"].toString();auto* chart=workspace.findChild<QWidget*>(name);QVERIFY(chart);
+    const QRectF canvas(QPointF(),chart->size());const auto plot=layoutRect(layout["plotRect"]);
+    QVERIFY2(canvas.contains(plot),qPrintable(name));QCOMPARE(plot,chart->property("plotRect").toRectF());
+    const auto old=layoutRect(layout["baselinePlotRect"]);
+    QCOMPARE(old.width()*old.height(),layout["baselineArea"].toDouble());
+    QCOMPARE(plot.width()*plot.height()-old.width()*old.height(),layout["areaGain"].toDouble());
+    if(requireGain)QVERIFY2(layout["areaGain"].toDouble()>0,qPrintable(name));
+    QCOMPARE(layout["xTitleBand"].toInt(),0);QCOMPARE(layout["yTitleBand"].toInt(),0);
+    QFont tickFont;QVERIFY(tickFont.fromString(layout["tickFont"].toString()));const QFontMetricsF metrics(tickFont,chart);
+    QList<QRectF> occupied;
+    for(const auto* axis:{"xTicks","yTicks"}) {
+      const auto ticks=layout[axis].toArray();QVERIFY(ticks.size()>=2);QString previous;
+      for(const auto value:ticks) {
+        const auto tick=value.toObject();const auto ink=layoutRect(tick["inkRect"]);const auto text=tick["text"].toString();
+        const QPointF baseline(tick["baselineX"].toDouble(),tick["baselineY"].toDouble());
+        QVERIFY(ink.contains(metrics.tightBoundingRect(text).translated(baseline)));
+        QVERIFY2(canvas.contains(ink) && !plot.intersects(ink),qPrintable(name+": "+text));
+        for(const auto& other:occupied)QVERIFY2(!ink.intersects(other),qPrintable(name+": overlapping ticks"));
+        occupied.append(ink);QVERIFY(!text.isEmpty() && text!=previous);previous=text;
+      }
+    }
+    if(layout["equalAxisScale"].toBool()){QCOMPARE(plot.width(),plot.height());QCOMPARE(plot,chart->property("iqPlotRect").toRectF());}
+    if(!chart->property("heatmapDrawRect").toRectF().isEmpty())QCOMPARE(plot,chart->property("heatmapDrawRect").toRectF());
+    auto* label=workspace.findChild<QLabel*>(name+"AxisHeader");QVERIFY(label && label->isVisible());
+    QCOMPARE(label->parentWidget()->height(),30);QCOMPARE(label->toolTip(),chart->property("axisDescriptionText").toString());
+    QVERIFY(!label->toolTip().isEmpty());QVERIFY(label->width()>=label->minimumSizeHint().width());
+    const QFontMetricsF headerMetrics(label->font(),label);
+    QVERIFY2(headerMetrics.horizontalAdvance(label->text())<=label->contentsRect().width()+.5,qPrintable(name+": "+label->text()));
+    QVERIFY(headerMetrics.tightBoundingRect(label->text()).height()<=label->contentsRect().height()+.5);
+    const QRect labelRect(label->mapTo(label->parentWidget(),QPoint()),label->size());
+    for(auto* sibling:label->parentWidget()->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly))
+      if(sibling!=label && sibling->isVisible())QVERIFY(!labelRect.intersects(QRect(sibling->mapTo(label->parentWidget(),QPoint()),sibling->size())));
+  }
  private slots:
   void initTestCase() {
     qInfo("NARROWBAND_VALIDATION_NODE=%s",qPrintable(qEnvironmentVariable("SS_NARROWBAND_NODE")));
     qApp->setProperty("softwareRenderer",true);
     qApp->setProperty("uiStatePersistenceEnabled",false);
+  }
+  void compactAxesCoverEveryPageAndPreserveAnalysis() {
+    MainWindow window;populate(window,"qpsk-a35-awgn20.raw");
+    const auto id=window.session().createChannel("compact",window.session().activeFile()->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);
+    QVERIFY(!id.empty());window.refresh();auto* workspace=window.findChild<NarrowbandWorkspace*>();QVERIFY(workspace);
+    workspace->activatePage(NarrowbandPage::Constellation);
+    window.findChild<QComboBox*>("analysisSymbolRateMode")->setCurrentIndex(1);
+    window.findChild<QDoubleSpinBox*>("symbolRate")->setValue(625000);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult() && workspace->analysisResult()->eyeStatus==AnalysisStatus::Ready,15000);
+    const auto snapshot=workspace->analysisResult();const auto generation=workspace->renderStatistics().value("analysisGeneration");
+    QSet<QString> seen;QSet<int> modes;
+    for(const auto page:{NarrowbandPage::Observe,NarrowbandPage::Constellation,NarrowbandPage::Eye,NarrowbandPage::Recognition,NarrowbandPage::Demodulation}) {
+      workspace->activatePage(page);QTest::qWait(100);workspace->grab();
+      for(const auto value:workspace->renderStatistics()["chartLayouts"].toArray()) {
+        const auto layout=value.toObject();if(!layout["visible"].toBool())continue;
+        verifyCompactLayout(layout,*workspace);seen.insert(layout["chart"].toString());modes.insert(layout["mode"].toInt());
+      }
+      QCOMPARE(workspace->analysisResult().get(),snapshot.get());QCOMPARE(workspace->renderStatistics()["analysisGeneration"],generation);
+    }
+    QCOMPARE(seen.size(),10);QCOMPARE(modes.size(),6);
+    QVERIFY(window.findChild<QLabel*>("demodulationUnavailable")->text().contains("合成"));
+  }
+  void compactRfTicksKeepNarrowRangePrecision() {
+    MainWindow window;populate(window,"qpsk-a35-awgn20.raw");
+    const auto id=window.session().createChannel("rf-ticks",window.session().activeFile()->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);
+    QVERIFY(!id.empty());window.refresh();
+    auto* workspace=window.findChild<NarrowbandWorkspace*>();QVERIFY(workspace);
+    workspace->activatePage(NarrowbandPage::Observe);
+    auto* frequency=window.findChild<QComboBox*>("channelFrequencyMode");QVERIFY(frequency);frequency->setCurrentIndex(1);
+    window.session().activeChannel()->visibleBasebandFrequency={-.0005,.0005};window.refresh();
+    QCoreApplication::processEvents();workspace->grab();
+    int checked=0;
+    for(const auto value:workspace->renderStatistics()["chartLayouts"].toArray()) {
+      const auto layout=value.toObject();if(!layout["visible"].toBool())continue;
+      const bool spectrum=layout["chart"].toString()=="narrowbandPsdPanelChart";
+      const bool heatmap=layout["chart"].toString()=="narrowbandStftPanelChart";
+      if(!spectrum && !heatmap)continue;
+      const auto ticks=layout[spectrum?"xTicks":"yTicks"].toArray();QVERIFY(ticks.size()>=2);
+      QSet<QString> labels;
+      const double step=std::abs(ticks.last().toObject()["value"].toDouble()-ticks.first().toObject()["value"].toDouble())/(ticks.size()-1);
+      QVERIFY(step>0 && step<1e-8);
+      for(const auto tickValue:ticks) {
+        const auto tick=tickValue.toObject();const auto text=tick["text"].toString();
+        QVERIFY2(!labels.contains(text),qPrintable(text));labels.insert(text);
+        bool ok=false;const auto parsed=text.toDouble(&ok);QVERIFY(ok);
+        QVERIFY(std::abs(parsed-tick["value"].toDouble())<step*.1);
+      }
+      ++checked;
+    }
+    QCOMPARE(checked,2);
+  }
+
+  void compactAxesFontFrequencyAndTimeLabelsReuseCaches() {
+    MainWindow window;populate(window,"qpsk-a35-awgn20.raw");
+    const auto id=window.session().createChannel("compact-labels",window.session().activeFile()->activeMarkId,102e6,1e6,2e6,{1000,200000},ChannelFilter::Standard,false,true);
+    QVERIFY(!id.empty());window.refresh();auto* workspace=window.findChild<NarrowbandWorkspace*>();QVERIFY(workspace);
+    workspace->activatePage(NarrowbandPage::Constellation);
+    QTRY_VERIFY_WITH_TIMEOUT(workspace->analysisResult()!=nullptr,15000);
+    workspace->activatePage(NarrowbandPage::Observe);
+    QTRY_VERIFY_WITH_TIMEOUT(!workspace->renderStatistics()["pending"].toBool() && window.session().spectrogram(id)!=nullptr,15000);
+    QTest::qWait(200);
+    const auto before=workspace->renderStatistics();const auto snapshot=workspace->analysisResult();const auto spectrum=window.session().spectrogram(id);
+    auto* frequency=window.findChild<QComboBox*>("channelFrequencyMode");QVERIFY(frequency);frequency->setCurrentIndex(1);
+    auto* channel=window.session().activeChannel();channel->relativeTime=true;window.refresh();
+    auto* wave=window.findChild<QWidget*>("narrowbandWaveformPanelChart");auto* heat=window.findChild<QWidget*>("narrowbandStftPanelChart");QVERIFY(wave && heat);
+    const auto oldPlot=wave->property("plotRect").toRectF();
+    wave->setStyleSheet("background:#111e2e;font-family:Consolas;font-size:18px;");
+    QTest::qWait(100);workspace->grab();
+    QVERIFY(wave->property("plotRect").toRectF().left()>oldPlot.left());
+    QVERIFY(wave->property("axisDescriptionText").toString().contains("源样本 #1000"));
+    QVERIFY(wave->property("xAxisLabel").toString().contains("相对时间"));
+    QVERIFY(heat->property("yAxisLabel").toString().contains("RF"));
+    for(const auto value:workspace->renderStatistics()["chartLayouts"].toArray())
+      if(value.toObject()["visible"].toBool())verifyCompactLayout(value.toObject(),*workspace,false);
+    const auto after=workspace->renderStatistics();
+    for(const auto* key:{"requestGeneration","frameGeneration","psdGeneration","analysisGeneration","iqCacheHits","iqCacheMisses","iqCacheBytes"})QCOMPARE(after[key],before[key]);
+    QCOMPARE(workspace->analysisResult().get(),snapshot.get());QCOMPARE(window.session().spectrogram(id).get(),spectrum.get());
+    const auto plot=heat->property("plotRect").toRectF();QVERIFY(plot.width()>10);
+    const auto point=QPointF(plot.left()+plot.width()*.37,plot.top()+plot.height()*.61).toPoint();
+    const double x=(point.x()-plot.left())/plot.width(),y=(plot.bottom()-point.y())/plot.height();
+    const auto time=channel->visibleSourceTime;const auto frequencyRange=channel->visibleBasebandFrequency;
+    QTest::mouseClick(heat,Qt::LeftButton,Qt::NoModifier,point);
+    const auto cursor=window.session().linkedCursor(id);QVERIFY(cursor.pinned);
+    QCOMPARE(cursor.sourceSample,time.begin+static_cast<SampleIndex>(x*(time.end-time.begin)));
+    QVERIFY(std::abs(cursor.frequencyHz-(frequencyRange.lowerHz+y*(frequencyRange.upperHz-frequencyRange.lowerHz)))<1e-6);
+    const auto a=QPointF(plot.left()+plot.width()*.2,plot.top()+plot.height()*.25).toPoint();
+    const auto b=QPointF(plot.left()+plot.width()*.8,plot.top()+plot.height()*.75).toPoint();
+    QTest::mousePress(heat,Qt::LeftButton,Qt::NoModifier,a);QTest::mouseMove(heat,b);QTest::mouseRelease(heat,Qt::LeftButton,Qt::NoModifier,b);
+    const auto selected=window.session().activeChannel()->visibleSourceTime;
+    const auto expectedBegin=time.begin+static_cast<SampleIndex>((a.x()-plot.left())/plot.width()*(time.end-time.begin));
+    const auto expectedEnd=time.begin+static_cast<SampleIndex>((b.x()-plot.left())/plot.width()*(time.end-time.begin));
+    QVERIFY(std::abs(double(selected.begin)-double(expectedBegin))<=1);QVERIFY(std::abs(double(selected.end)-double(expectedEnd))<=1);
+    const auto selectedFrequency=window.session().activeChannel()->visibleBasebandFrequency;
+    QVERIFY(std::abs(selectedFrequency.lowerHz-(frequencyRange.upperHz-(b.y()-plot.top())/plot.height()*(frequencyRange.upperHz-frequencyRange.lowerHz)))<1e-6);
+    QVERIFY(std::abs(selectedFrequency.upperHz-(frequencyRange.upperHz-(a.y()-plot.top())/plot.height()*(frequencyRange.upperHz-frequencyRange.lowerHz)))<1e-6);
   }
   void independentPagesShareAnalysisAndKeepDisplayState() {
     MainWindow window; populate(window,"qpsk-a35-awgn20.raw");
@@ -167,10 +301,20 @@ class NarrowbandAnalysisUiTests : public QObject {
     const auto plot=chart->property("iqPlotRect").toRectF();QVERIFY(plot.width()>10);QCOMPARE(plot.width(),plot.height());
     const auto checkPointer=[&](QPoint pixel) {
       QTest::mouseMove(chart,pixel);QCoreApplication::processEvents();
-      if(!chart->property("iqReadoutValid").toBool())return false;
+      if(!chart->property("iqReadoutValid").toBool()) {
+        qWarning()<<"IQ pointer event missing"<<pixel<<chart->property("iqPointerPixel")<<chart->property("iqPlotRect");return false;
+      }
       const auto value=chart->property("iqReadout").toPointF();const auto low=chart->property("iqAxisMinimum").toDouble(),high=chart->property("iqAxisMaximum").toDouble();
-      return std::abs(value.x()-(low+(pixel.x()-plot.left())/plot.width()*(high-low)))<1e-9 &&
-             std::abs(value.y()-(high-(pixel.y()-plot.top())/plot.height()*(high-low)))<1e-9;
+      const auto currentPlot=chart->property("iqPlotRect").toRectF();
+      // QWidget QTest mouse movement uses the physical cursor. At DPR 1.5 an
+      // integer requested point can arrive at x+1/3. Validate that delivery,
+      // then retain the exact numeric inverse-mapping check on the actual event.
+      const auto delivered=chart->property("iqPointerPixel").toPointF();
+      if(QLineF(delivered,QPointF(pixel)).length()>1.1)return false;
+      const bool matched=std::abs(value.x()-(low+(delivered.x()-currentPlot.left())/currentPlot.width()*(high-low)))<1e-9 &&
+             std::abs(value.y()-(high-(delivered.y()-currentPlot.top())/currentPlot.height()*(high-low)))<1e-9;
+      if(!matched)qWarning()<<"IQ pointer mapping"<<pixel<<chart->property("iqPointerPixel")<<value<<currentPlot<<low<<high;
+      return matched;
     };
     const auto pixel=QPointF(plot.left()+plot.width()*.25,plot.top()+plot.height()*.75).toPoint();QVERIFY(checkPointer(pixel));
     QWheelEvent wheel(QPointF(pixel),QPointF(chart->mapToGlobal(pixel)),QPoint(),QPoint(0,120),Qt::NoButton,Qt::NoModifier,Qt::NoScrollPhase,false);

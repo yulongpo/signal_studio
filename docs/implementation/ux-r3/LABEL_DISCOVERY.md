@@ -1,5 +1,7 @@
 # UX-R3 G4 标签发现与字段映射
 
+2026-10-25 反馈修复更新：当前自动发现和反向定位均支持 `data/<同名>.wav` 与 `label/<同名>.txt`，保留 `.data`；同名 WAV/DATA 冲突需明确选择。文件菜单及底部统一标记记录均提供“导入标签…”。真实 WAV/TXT 的发现→预检已验证 10 对象/65 活动段；以下 G4 冻结内容属于历史记录，当前交付见 [feedback-01/DELIVERY.md](feedback-01/DELIVERY.md)。
+
 本文件记录 G4 子任务的实现合同和集成条件。实现只写入 `infrastructure/label_import.{h,cpp}`、`infrastructure/label_discovery.{h,cpp}`、`ui/label_mapping_dialog.{h,cpp}`、`tests/label_import_tests.cpp` 和本文件。CMake、MainWindow、domain 注册、工程格式和原生验收由主 Agent 统一处理。本文不代表构建、测试或实屏通过。
 
 ## 可核实的输入依据

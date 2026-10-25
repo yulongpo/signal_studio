@@ -1,0 +1,948 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure -R ^signal_studio_(wav|import|label_import|narrowband_analysis_ui|ui(_.*)?|ux_.*)$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 16
+      Start 16: signal_studio_label_import
+
+16: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioLabelImportTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/label-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+16: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+16: Test timeout computed to be: 10000000
+16: ********* Start testing of LabelImportTests *********
+16: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+16: PASS   : LabelImportTests::initTestCase()
+16: PASS   : LabelImportTests::manualTxtRequiresMappingAndPreviewIsBounded()
+16: PASS   : LabelImportTests::strictMatlabPairAndReverseLookup()
+16: PASS   : LabelImportTests::pairedGeneratorDiscoveryRoundtrip(wav-riff-layout)
+16: PASS   : LabelImportTests::pairedGeneratorDiscoveryRoundtrip(raw-data-retained)
+16: PASS   : LabelImportTests::wavUnknownLabelsRequireMappingAndBoundedPreview()
+16: PASS   : LabelImportTests::wavPairCollisionsRequireExplicitSelection()
+16: PASS   : LabelImportTests::wavPairCasingIsStrict(data-directory)
+16: PASS   : LabelImportTests::wavPairCasingIsStrict(label-directory)
+16: PASS   : LabelImportTests::wavPairCasingIsStrict(wav-suffix)
+16: PASS   : LabelImportTests::wavPairCasingIsStrict(txt-suffix)
+16: PASS   : LabelImportTests::wavPairCasingIsStrict(data-stem)
+16: PASS   : LabelImportTests::wavPairCasingIsStrict(label-stem)
+16: SKIP   : LabelImportTests::wavPairAliasesAreAmbiguous(wav-file) Creating filesystem symlinks is unavailable on this host
+16: D:\project\signal_studio_rebuild\tests\label_import_tests.cpp(410) : failure location
+16: SKIP   : LabelImportTests::wavPairAliasesAreAmbiguous(txt-file) Creating filesystem symlinks is unavailable on this host
+16: D:\project\signal_studio_rebuild\tests\label_import_tests.cpp(410) : failure location
+16: SKIP   : LabelImportTests::wavPairAliasesAreAmbiguous(data-directory) Creating filesystem symlinks is unavailable on this host
+16: D:\project\signal_studio_rebuild\tests\label_import_tests.cpp(410) : failure location
+16: SKIP   : LabelImportTests::wavPairAliasesAreAmbiguous(label-directory) Creating filesystem symlinks is unavailable on this host
+16: D:\project\signal_studio_rebuild\tests\label_import_tests.cpp(410) : failure location
+16: PASS   : LabelImportTests::casingAndMultipleCandidatesAreExplicit()
+16: PASS   : LabelImportTests::discoveryAndParserBudgetsAndCancellation()
+16: PASS   : LabelImportTests::mappedIndicesUnitsAndSavedMapping()
+16: PASS   : LabelImportTests::mappedRoundingFramesAndPhysicalRejection()
+16: PASS   : LabelImportTests::unknownTimeObservationAndClassOnlyAreNotRectangles()
+16: PASS   : LabelImportTests::generatorDiscoveryAndSafePublication()
+16: PASS   : LabelImportTests::incompleteEvidenceConfirmationCancellationDeduplicationAndUndo()
+16: PASS   : LabelImportTests::mappedProfileUsesAnnotationServiceAndProfileChangesRequireReview()
+16: PASS   : LabelImportTests::sigmfEmptyIsValidAndSupplementalConflictsRemainErrors()
+16: PASS   : LabelImportTests::generatorFixtureAndPhysicalBinding()
+16: PASS   : LabelImportTests::generatorRoundingAndRejectWholeBatch()
+16: PASS   : LabelImportTests::torchSigFixtureAndOrderIndependentMatching()
+16: PASS   : LabelImportTests::torchSigConflictsAndUnsupported()
+16: PASS   : LabelImportTests::codecFullRoundtripAndExports()
+16: PASS   : LabelImportTests::largeSharedAndRecordEvidenceRemainLossless()
+16: PASS   : LabelImportTests::normalizedBatchBudgetRejectsAtomically()
+16: PASS   : LabelImportTests::largeGeneratorRecordUsesSourceLineReference()
+16: QINFO  : LabelImportTests::actualTwoSourceAssets() Actual generator annotations 10 segments 65 source SHA256 "dcef967000723aff575aa98eb413f0aad3a14575f92c55a3cc6199484f793b83"
+16: QINFO  : LabelImportTests::actualTwoSourceAssets() Actual TorchSig annotations 4 source SHA256 "5efd03dae0f53002c8400ddc2ba65e367d7dde315b232a24cd77a2b1bd982a29"
+16: PASS   : LabelImportTests::actualTwoSourceAssets()
+16: PASS   : LabelImportTests::cleanupTestCase()
+16: Totals: 32 passed, 0 failed, 4 skipped, 0 blacklisted, 28945ms
+16: ********* Finished testing of LabelImportTests *********
+16: 
+ 1/14 Test #16: signal_studio_label_import .............   Passed   29.24 sec
+test 17
+      Start 17: signal_studio_wav
+
+17: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioWavTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/wav-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+17: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+17: Test timeout computed to be: 10000000
+17: ********* Start testing of WavInputTests *********
+17: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+17: PASS   : WavInputTests::initTestCase()
+17: PASS   : WavInputTests::noncanonicalLayoutAndReader()
+17: PASS   : WavInputTests::metadataAuthorityAndRawUnchanged()
+17: PASS   : WavInputTests::malformedAndUnsupported()
+17: PASS   : WavInputTests::boundedHeaderRead()
+17: QINFO  : WavInputTests::actualGeneratorGolden() Generator WAV golden: D:/coding/FFSCN_train2/broadband_signal_generation/test_sig2/data/20260728-025821-162_bw_20000000_sampleTime_0.8_rollOff_0.35.wav SHA256 88f96c6deab9e435db8f111463092fdae9b800aeb3cbccd82d7426551d52d9cd complex frames byte-compared 3072 metadata bytes read 44
+17: PASS   : WavInputTests::actualGeneratorGolden()
+17: PASS   : WavInputTests::cleanupTestCase()
+17: Totals: 7 passed, 0 failed, 0 skipped, 0 blacklisted, 894ms
+17: ********* Finished testing of WavInputTests *********
+17: 
+ 2/14 Test #17: signal_studio_wav ......................   Passed    1.16 sec
+test 18
+      Start 18: signal_studio_import
+
+18: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioImportTests.exe
+18: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+18: Test timeout computed to be: 120
+ 3/14 Test #18: signal_studio_import ...................   Passed    0.72 sec
+test 22
+      Start 22: signal_studio_ux_r3_axes
+
+22: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxR3AxisTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-r3-axes-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+22: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+22: Environment variables: 
+22:  QT_QPA_PLATFORM=offscreen
+22:  QT_SCALE_FACTOR=1.5
+22: Test timeout computed to be: 120
+22: ********* Start testing of UxR3AxisTests *********
+22: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+22: PASS   : UxR3AxisTests::initTestCase()
+22: PASS   : UxR3AxisTests::measuredInkAndIndependentBands()
+22: PASS   : UxR3AxisTests::largerFontsAndScientificTicksGrowBudget()
+22: PASS   : UxR3AxisTests::sharedGeometryAndModeSwitches()
+22: PASS   : UxR3AxisTests::compactHeaderRecoversActualPlotArea()
+22: PASS   : UxR3AxisTests::compactHeaderRetainsPhysicalDescription()
+22: PASS   : UxR3AxisTests::physicalAxesAndSourceUnits()
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(0-0)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(0-1)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(1-0)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(1-1)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(2-0)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(2-1)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(3-0)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(3-1)
+22: PASS   : UxR3AxisTests::auxiliaryWheelAndEscape()
+22: PASS   : UxR3AxisTests::cleanupTestCase()
+22: Totals: 17 passed, 0 failed, 0 skipped, 0 blacklisted, 925ms
+22: ********* Finished testing of UxR3AxisTests *********
+22: 
+ 4/14 Test #22: signal_studio_ux_r3_axes ...............   Passed    1.77 sec
+test 23
+      Start 23: signal_studio_ux_r3_workflows
+
+23: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxR3WorkflowTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-r3-workflows-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+23: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+23: Environment variables: 
+23:  QT_QPA_PLATFORM=offscreen
+23:  QT_SCALE_FACTOR=1.5
+23: Test timeout computed to be: 180
+23: ********* Start testing of UxR3WorkflowTests *********
+23: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+23: PASS   : UxR3WorkflowTests::initTestCase()
+23: PASS   : UxR3WorkflowTests::arbitraryDirectoryCreateAndDuplicateFailure()
+23: PASS   : UxR3WorkflowTests::titleDirtyTracksCommitButNotDraftOrRefresh()
+23: QWARN  : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-current-obstructed) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-current-obstructed)
+23: QWARN  : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-as-foreign-target) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-as-foreign-target)
+23: QWARN  : UxR3WorkflowTests::failedIoRetainsCommittedSession(open-corrupt-container) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(open-corrupt-container)
+23: PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(legacy-conversion-rejected)
+23: PASS   : UxR3WorkflowTests::saveAsReopenKeepsOriginalAndMovesSaveDestination()
+23: PASS   : UxR3WorkflowTests::relocateMissingSourceRejectsSameLengthWrongContent()
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-mapping) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-mapping)
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-preflight-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-preflight-preview) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-preflight-preview)
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-time-is-observation) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-time-is-observation) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-time-is-observation)
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-frequency-is-original-evidence) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-frequency-is-original-evidence) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-frequency-is-original-evidence)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-import) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(button-import)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-file) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-file)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-mapping) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-mapping) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-mapping)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-preview) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-preview)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-switch-file) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(button-switch-file)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-switch-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-switch-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-switch-preview) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(button-switch-preview)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-import) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(menu-import)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-file) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-file)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-mapping) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-mapping) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-mapping)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-preview) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-preview)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-switch-file) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(menu-switch-file)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-switch-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-switch-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-switch-preview) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(menu-switch-preview)
+23: QWARN  : UxR3WorkflowTests::noLabelsStillAllowsManualPlotCreation() This plugin does not support grabbing the mouse
+23: QWARN  : UxR3WorkflowTests::noLabelsStillAllowsManualPlotCreation() This plugin does not support grabbing the mouse
+23: PASS   : UxR3WorkflowTests::noLabelsStillAllowsManualPlotCreation()
+23: PASS   : UxR3WorkflowTests::cleanupTestCase()
+23: Totals: 27 passed, 0 failed, 0 skipped, 0 blacklisted, 118352ms
+23: ********* Finished testing of UxR3WorkflowTests *********
+23: 
+ 5/14 Test #23: signal_studio_ux_r3_workflows ..........   Passed  119.18 sec
+test 31
+      Start 31: signal_studio_narrowband_analysis_ui
+
+31: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioNarrowbandAnalysisUiTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/nb-analysis-ui-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+31: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+31: Environment variables: 
+31:  QT_QPA_PLATFORM=offscreen
+31:  QT_SCALE_FACTOR=1.5
+31: Test timeout computed to be: 480
+31: ********* Start testing of NarrowbandAnalysisUiTests *********
+31: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+31: QINFO  : NarrowbandAnalysisUiTests::initTestCase() NARROWBAND_VALIDATION_NODE=W8
+31: PASS   : NarrowbandAnalysisUiTests::initTestCase()
+31: PASS   : NarrowbandAnalysisUiTests::compactAxesCoverEveryPageAndPreserveAnalysis()
+31: PASS   : NarrowbandAnalysisUiTests::compactRfTicksKeepNarrowRangePrecision()
+31: QWARN  : NarrowbandAnalysisUiTests::compactAxesFontFrequencyAndTimeLabelsReuseCaches() This plugin does not support grabbing the mouse
+31: QWARN  : NarrowbandAnalysisUiTests::compactAxesFontFrequencyAndTimeLabelsReuseCaches() This plugin does not support grabbing the mouse
+31: QWARN  : NarrowbandAnalysisUiTests::compactAxesFontFrequencyAndTimeLabelsReuseCaches() This plugin does not support grabbing the mouse
+31: QWARN  : NarrowbandAnalysisUiTests::compactAxesFontFrequencyAndTimeLabelsReuseCaches() This plugin does not support grabbing the mouse
+31: PASS   : NarrowbandAnalysisUiTests::compactAxesFontFrequencyAndTimeLabelsReuseCaches()
+31: PASS   : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState()
+31: PASS   : NarrowbandAnalysisUiTests::conditionalDecisionsReferenceAndIqCoordinates()
+31: PASS   : NarrowbandAnalysisUiTests::pagePersistenceAndLegacyNames()
+31: QWARN  : NarrowbandAnalysisUiTests::samplingTransactionAndActualCreation() This plugin does not support propagateSizeHints()
+31: PASS   : NarrowbandAnalysisUiTests::samplingTransactionAndActualCreation()
+31: QWARN  : NarrowbandAnalysisUiTests::legacyEditKeepsRateAndDraft() This plugin does not support propagateSizeHints()
+31: PASS   : NarrowbandAnalysisUiTests::legacyEditKeepsRateAndDraft()
+31: PASS   : NarrowbandAnalysisUiTests::realRawPointsAndCancellation()
+31: PASS   : NarrowbandAnalysisUiTests::realEyeSymbolRateAndControls()
+31: PASS   : NarrowbandAnalysisUiTests::estimatedCandidatesAndManualTakeover()
+31: PASS   : NarrowbandAnalysisUiTests::realSynchronizationStagesAndManualCfo()
+31: PASS   : NarrowbandAnalysisUiTests::externalSourceChangeInvalidatesIdleAndPending()
+31: QWARN  : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CI16-RAW) This plugin does not support propagateSizeHints()
+31: PASS   : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CI16-RAW)
+31: QWARN  : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CF32-SigMF) This plugin does not support propagateSizeHints()
+31: PASS   : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CF32-SigMF)
+31: PASS   : NarrowbandAnalysisUiTests::cleanupTestCase()
+31: Totals: 17 passed, 0 failed, 0 skipped, 0 blacklisted, 102729ms
+31: ********* Finished testing of NarrowbandAnalysisUiTests *********
+31: 
+ 6/14 Test #31: signal_studio_narrowband_analysis_ui ...   Passed  103.61 sec
+test 33
+      Start 33: signal_studio_ux_detection
+
+33: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-detection-test-results-debug.txt" "-DSS_UI_CASES=uxD01_historicalDerivation;uxD02_viewSourceKeepsDraft;uxD01_topDerivationDiscardsCrossFileDraft;uxD03_crossFileCancellation;uxD03_activeTaskCancellationAndFrozenDisplay;uxD04_modelSpectrumMapping;uxD05_foldedParametersAndFirstScreen;uxD06_visibleRangeEntry;uxD08_preflightDetails" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+33: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+33: Environment variables: 
+33:  QT_QPA_PLATFORM=offscreen
+33:  QT_SCALE_FACTOR=1.5
+33: Test timeout computed to be: 480
+33: ********* Start testing of UxTests *********
+33: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+33: PASS   : UxTests::initTestCase()
+33: PASS   : UxTests::uxD01_historicalDerivation()
+33: PASS   : UxTests::uxD02_viewSourceKeepsDraft()
+33: PASS   : UxTests::uxD01_topDerivationDiscardsCrossFileDraft()
+33: PASS   : UxTests::uxD03_crossFileCancellation()
+33: QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() This plugin does not support propagateSizeHints()
+33: QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() This plugin does not support propagateSizeHints()
+33: QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() This plugin does not support propagateSizeHints()
+33: PASS   : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay()
+33: QWARN  : UxTests::uxD04_modelSpectrumMapping() This plugin does not support propagateSizeHints()
+33: QWARN  : UxTests::uxD04_modelSpectrumMapping() This plugin does not support propagateSizeHints()
+33: QWARN  : UxTests::uxD04_modelSpectrumMapping() This plugin does not support propagateSizeHints()
+33: QWARN  : UxTests::uxD04_modelSpectrumMapping() This plugin does not support propagateSizeHints()
+33: PASS   : UxTests::uxD04_modelSpectrumMapping()
+33: PASS   : UxTests::uxD05_foldedParametersAndFirstScreen()
+33: PASS   : UxTests::uxD06_visibleRangeEntry()
+33: PASS   : UxTests::uxD08_preflightDetails()
+33: PASS   : UxTests::cleanupTestCase()
+33: Totals: 11 passed, 0 failed, 0 skipped, 0 blacklisted, 36533ms
+33: ********* Finished testing of UxTests *********
+33: 
+ 7/14 Test #33: signal_studio_ux_detection .............   Passed   37.29 sec
+test 34
+      Start 34: signal_studio_ux_spectral
+
+34: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-spectral-test-results-debug.txt" "-DSS_UI_CASES=uxS01_methodHistory;uxS02_conditionalRows;uxS03_spectralIndependence;uxS03_framePsdPreservesSettings;uxS06_invalidDraftRecovery" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+34: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+34: Environment variables: 
+34:  QT_QPA_PLATFORM=offscreen
+34:  QT_SCALE_FACTOR=1.5
+34: Test timeout computed to be: 480
+34: ********* Start testing of UxTests *********
+34: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+34: PASS   : UxTests::initTestCase()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+34: PASS   : UxTests::uxS01_methodHistory()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+34: PASS   : UxTests::uxS02_conditionalRows()
+34: QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+34: QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+34: PASS   : UxTests::uxS03_spectralIndependence()
+34: PASS   : UxTests::uxS03_framePsdPreservesSettings()
+34: PASS   : UxTests::uxS06_invalidDraftRecovery()
+34: PASS   : UxTests::cleanupTestCase()
+34: Totals: 7 passed, 0 failed, 0 skipped, 0 blacklisted, 2506ms
+34: ********* Finished testing of UxTests *********
+34: 
+ 8/14 Test #34: signal_studio_ux_spectral ..............   Passed    2.81 sec
+test 35
+      Start 35: signal_studio_ux_charts
+
+35: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-charts-test-results-debug.txt" "-DSS_UI_CASES=uxR02_chartSettingsStayStable;uxA01_roiConfirmationAndEscape;roundTwoNarrowbandPsdAndPages" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+35: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+35: Environment variables: 
+35:  QT_QPA_PLATFORM=offscreen
+35:  QT_SCALE_FACTOR=1.5
+35: Test timeout computed to be: 480
+35: ********* Start testing of UxTests *********
+35: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+35: PASS   : UxTests::initTestCase()
+35: PASS   : UxTests::uxR02_chartSettingsStayStable()
+35: QWARN  : UxTests::uxA01_roiConfirmationAndEscape() This plugin does not support grabbing the mouse
+35: QWARN  : UxTests::uxA01_roiConfirmationAndEscape() This plugin does not support grabbing the mouse
+35: PASS   : UxTests::uxA01_roiConfirmationAndEscape()
+35: QWARN  : UxTests::roundTwoNarrowbandPsdAndPages() This plugin does not support grabbing the mouse
+35: QWARN  : UxTests::roundTwoNarrowbandPsdAndPages() This plugin does not support grabbing the mouse
+35: QWARN  : UxTests::roundTwoNarrowbandPsdAndPages() This plugin does not support grabbing the mouse
+35: QWARN  : UxTests::roundTwoNarrowbandPsdAndPages() This plugin does not support grabbing the mouse
+35: PASS   : UxTests::roundTwoNarrowbandPsdAndPages()
+35: PASS   : UxTests::cleanupTestCase()
+35: Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 17428ms
+35: ********* Finished testing of UxTests *********
+35: 
+ 9/14 Test #35: signal_studio_ux_charts ................   Passed   17.78 sec
+test 36
+      Start 36: signal_studio_ux_layout
+
+36: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-layout-test-results-debug.txt" "-DSS_UI_CASES=uxR01_chartToolbarLayout;uxR02_inspectorRouting;uxR02_fileProperties;uxR02_paletteWorkspaceOwnership;uxR03_taskKeyboardAndDetails;uxR03_taskRowActions;uxR01_lateRunFilterPopupAndRefresh;roundTwoFlatResponsiveControls" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+36: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+36: Environment variables: 
+36:  QT_QPA_PLATFORM=offscreen
+36:  QT_SCALE_FACTOR=1.5
+36: Test timeout computed to be: 480
+36: ********* Start testing of UxTests *********
+36: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+36: PASS   : UxTests::initTestCase()
+36: PASS   : UxTests::uxR01_chartToolbarLayout()
+36: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+36: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+36: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+36: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+36: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+36: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+36: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+36: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+36: PASS   : UxTests::uxR02_inspectorRouting()
+36: PASS   : UxTests::uxR02_fileProperties()
+36: PASS   : UxTests::uxR02_paletteWorkspaceOwnership()
+36: QWARN  : UxTests::uxR03_taskKeyboardAndDetails() This plugin does not support propagateSizeHints()
+36: QWARN  : UxTests::uxR03_taskKeyboardAndDetails() This plugin does not support propagateSizeHints()
+36: PASS   : UxTests::uxR03_taskKeyboardAndDetails()
+36: QWARN  : UxTests::uxR03_taskRowActions() This plugin does not support propagateSizeHints()
+36: PASS   : UxTests::uxR03_taskRowActions()
+36: QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support raise()
+36: QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support grabbing the keyboard
+36: QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support raise()
+36: QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support grabbing the keyboard
+36: PASS   : UxTests::uxR01_lateRunFilterPopupAndRefresh()
+36: PASS   : UxTests::roundTwoFlatResponsiveControls()
+36: PASS   : UxTests::cleanupTestCase()
+36: Totals: 10 passed, 0 failed, 0 skipped, 0 blacklisted, 27791ms
+36: ********* Finished testing of UxTests *********
+36: 
+10/14 Test #36: signal_studio_ux_layout ................   Passed   28.10 sec
+test 37
+      Start 37: signal_studio_ux_popovers
+
+37: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-popovers-test-results-debug.txt" "-DSS_UI_CASES=uxP01_popupDismissal;uxP02_popupChildrenAndGeometry;uxS06_popoverDraftPolicy" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+37: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+37: Environment variables: 
+37:  QT_QPA_PLATFORM=offscreen
+37:  QT_SCALE_FACTOR=1.5
+37: Test timeout computed to be: 480
+37: ********* Start testing of UxTests *********
+37: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+37: PASS   : UxTests::initTestCase()
+37: PASS   : UxTests::uxP01_popupDismissal()
+37: QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support raise()
+37: QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support grabbing the keyboard
+37: QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support raise()
+37: QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support grabbing the keyboard
+37: QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support raise()
+37: QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support grabbing the keyboard
+37: PASS   : UxTests::uxP02_popupChildrenAndGeometry()
+37: PASS   : UxTests::uxS06_popoverDraftPolicy()
+37: PASS   : UxTests::cleanupTestCase()
+37: Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 630ms
+37: ********* Finished testing of UxTests *********
+37: 
+11/14 Test #37: signal_studio_ux_popovers ..............   Passed    0.90 sec
+test 38
+      Start 38: signal_studio_ui
+
+38: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUiTests.exe" "-DSS_UI_CASES=workspaceLayout;globalDisplaySettingsApplyAcrossFiles;mainModeCoordinateDirection;continuousMarkCreation;escapeCancelsCreation;selectedMarkMovePreservesSpan;escapeRollsBackMarkMove;singleClickSelectsWithoutChangingView;boxZoomAndHistoryActions;emptyProjectAndFileActions;treeSelectionPreservesNodesAndShiftAnchor;displayChangeSurvivesPendingWheelCommit;largeSampleCoordinatePrecision;auxiliaryYAxisIsolationAndEscape;selectedMarkCornerAndEdgeResize;responsiveWorkspace;propertyFieldsFitSidebar;prototypeDisplayDefaultsAndOptions;paletteControlsStaySynchronized;narrowbandPaletteSelectionUpdatesStftCharts;widebandAuxiliaryRenderingAndGestures;narrowbandAuxiliaryRenderingAndGestures;widebandLinkedCursorsAndFrameSpectrum;narrowbandLinkedCursorsAndFrameSpectrum" "-DSS_UI_ALLOW_OVERRIDE=ON" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ui-geometry-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+38: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+38: Environment variables: 
+38:  QT_QPA_PLATFORM=offscreen
+38:  QT_SCALE_FACTOR=1.5
+38: Test timeout computed to be: 480
+38: ********* Start testing of UiTests *********
+38: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+38: PASS   : UiTests::initTestCase()
+38: PASS   : UiTests::workspaceLayout()
+38: PASS   : UiTests::globalDisplaySettingsApplyAcrossFiles()
+38: PASS   : UiTests::mainModeCoordinateDirection()
+38: QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::continuousMarkCreation()
+38: QWARN  : UiTests::escapeCancelsCreation() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::escapeCancelsCreation() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::escapeCancelsCreation()
+38: QWARN  : UiTests::selectedMarkMovePreservesSpan() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkMovePreservesSpan() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::selectedMarkMovePreservesSpan()
+38: QWARN  : UiTests::escapeRollsBackMarkMove() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::escapeRollsBackMarkMove() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::escapeRollsBackMarkMove()
+38: QWARN  : UiTests::singleClickSelectsWithoutChangingView() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::singleClickSelectsWithoutChangingView() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::singleClickSelectsWithoutChangingView()
+38: QWARN  : UiTests::boxZoomAndHistoryActions() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::boxZoomAndHistoryActions() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::boxZoomAndHistoryActions()
+38: QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+38: QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+38: QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+38: PASS   : UiTests::emptyProjectAndFileActions()
+38: PASS   : UiTests::treeSelectionPreservesNodesAndShiftAnchor()
+38: PASS   : UiTests::displayChangeSurvivesPendingWheelCommit()
+38: PASS   : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53)
+38: PASS   : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53)
+38: PASS   : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum)
+38: PASS   : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum)
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+38: PASS   : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude)
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+38: PASS   : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power)
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+38: PASS   : UiTests::selectedMarkCornerAndEdgeResize(time-frequency)
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+38: PASS   : UiTests::selectedMarkCornerAndEdgeResize(waterfall)
+38: PASS   : UiTests::responsiveWorkspace(4k-150-percent)
+38: PASS   : UiTests::propertyFieldsFitSidebar()
+38: PASS   : UiTests::prototypeDisplayDefaultsAndOptions()
+38: QWARN  : UiTests::paletteControlsStaySynchronized() This plugin does not support propagateSizeHints()
+38: PASS   : UiTests::paletteControlsStaySynchronized()
+38: PASS   : UiTests::narrowbandPaletteSelectionUpdatesStftCharts()
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::widebandAuxiliaryRenderingAndGestures()
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::narrowbandAuxiliaryRenderingAndGestures()
+38: QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::widebandLinkedCursorsAndFrameSpectrum()
+38: QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::narrowbandLinkedCursorsAndFrameSpectrum()
+38: PASS   : UiTests::cleanupTestCase()
+38: Totals: 31 passed, 0 failed, 0 skipped, 0 blacklisted, 130430ms
+38: ********* Finished testing of UiTests *********
+38: 
+12/14 Test #38: signal_studio_ui .......................   Passed  131.20 sec
+test 39
+      Start 39: signal_studio_ui_parameters
+
+39: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUiTests.exe" "-DSS_UI_CASES=powerInputsCommitAndFitReusesData;parameterDraftsRequireExplicitCommit;parameterInputsIgnoreWheel;pinnedAxisLabelsSurviveLeave;sharedInteractionFeedback;customWindowControls;initialFileViewShowsFirstFivePercentOrTenMilliseconds;panelRailsAndBottomTabs;sectionContextAndManualExpansion;panelMaximizeAndRestore;mainAxisWheelIsolationAndHistory;navigationClickPreservesSpanAndCancelsDrag;independentSpectralSettingsAndCustomRows;loadedPrefixStopAndRoundtrip;fileSwitchCancelsUnfinishedEdit;allResizeHandlesStayBounded;nativeProjectRoundtripAndInvalidImport;contextMenuActionsAndCoveredMarkSelection;unselectedMarkClickAndSubthresholdGesture;clippedMarkBorderMovesWithoutInventingHandle;captureLossAndDeactivationRollback;resetRestoresCompleteViewSnapshot;displayOnlyChangesPreserveBusinessViewAndPowerCache;renameUsesPlainTextAndEightyCharacterLimit;splitterKeyboardResetAndEscapeRollback;treeToPlotShiftSelectionPreservesAnchor;changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY;creationModeSurvivesMaximize;escapeCancelsGestureBeforeLeavingMaximize;addIqFileDialogCancelsAndImportsRealInt16Iq;importFormatAndAdaptiveDraft;importFloatingUnitsAndFailureRecovery;importTemplatesBatchAndSigmf;brandResourcesAndAbout;importRealFilesAndCancelPrefix;narrowbandDemoResourceAndFourPages;waveformBandwidthAndVisiblePaneStftSettings;uiStatePersistenceAndRecentProjects" "-DSS_UI_ALLOW_OVERRIDE=ON" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ui-parameters-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+39: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+39: Environment variables: 
+39:  QT_QPA_PLATFORM=offscreen
+39:  QT_SCALE_FACTOR=1.5
+39: Test timeout computed to be: 480
+39: ********* Start testing of UiTests *********
+39: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+39: PASS   : UiTests::initTestCase()
+39: PASS   : UiTests::powerInputsCommitAndFitReusesData()
+39: QWARN  : UiTests::parameterDraftsRequireExplicitCommit() This plugin does not support propagateSizeHints()
+39: PASS   : UiTests::parameterDraftsRequireExplicitCommit()
+39: QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support propagateSizeHints()
+39: QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support raise()
+39: QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support grabbing the keyboard
+39: QINFO  : UiTests::parameterInputsIgnoreWheel() Wheel protection checked 45 combos and 13 spin boxes, including dialogs and editors
+39: PASS   : UiTests::parameterInputsIgnoreWheel()
+39: QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+39: PASS   : UiTests::pinnedAxisLabelsSurviveLeave()
+39: QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+39: PASS   : UiTests::sharedInteractionFeedback()
+39: PASS   : UiTests::customWindowControls()
+39: PASS   : UiTests::initialFileViewShowsFirstFivePercentOrTenMilliseconds()
+39: PASS   : UiTests::panelRailsAndBottomTabs()
+39: QWARN  : UiTests::sectionContextAndManualExpansion() This plugin does not support propagateSizeHints()
+39: PASS   : UiTests::sectionContextAndManualExpansion()
+39: QINFO  : UiTests::panelMaximizeAndRestore() navPanel original QSize(1872, 82) restored QSize(1872, 82) graph sizes QList(82, 205, 969)
+39: QINFO  : UiTests::panelMaximizeAndRestore() auxPanel original QSize(1872, 205) restored QSize(1872, 205) graph sizes QList(82, 205, 969)
+39: QINFO  : UiTests::panelMaximizeAndRestore() specPanel original QSize(1872, 969) restored QSize(1872, 969) graph sizes QList(82, 205, 969)
+39: PASS   : UiTests::panelMaximizeAndRestore()
+39: PASS   : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x)
+39: PASS   : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y)
+39: PASS   : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x)
+39: PASS   : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y)
+39: QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+39: PASS   : UiTests::navigationClickPreservesSpanAndCancelsDrag()
+39: PASS   : UiTests::independentSpectralSettingsAndCustomRows()
+39: PASS   : UiTests::loadedPrefixStopAndRoundtrip()
+39: QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() This plugin does not support grabbing the mouse
+39: PASS   : UiTests::fileSwitchCancelsUnfinishedEdit()
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(tf-n)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(tf-ne)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(tf-e)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(tf-se)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(tf-s)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(tf-sw)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(tf-w)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(tf-nw)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(waterfall-n)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(waterfall-ne)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(waterfall-e)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(waterfall-se)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(waterfall-s)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(waterfall-sw)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(waterfall-w)
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) This plugin does not support grabbing the mouse
+39: PASS   : UiTests::allResizeHandlesStayBounded(waterfall-nw)
+39: QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() This plugin does not support propagateSizeHints()
+39: PASS   : UiTests::nativeProjectRoundtripAndInvalidImport()
+39: QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() This plugin does not support propagateSizeHints()
+39: PASS   : UiTests::contextMenuActionsAndCoveredMarkSelection()
+39: QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+39: PASS   : UiTests::unselectedMarkClickAndSubthresholdGesture()
+39: QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() This plugin does not support grabbing the mouse
+39: PASS   : UiTests::clippedMarkBorderMovesWithoutInventingHandle()
+39: QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+39: PASS   : UiTests::captureLossAndDeactivationRollback()
+39: PASS   : UiTests::resetRestoresCompleteViewSnapshot()
+39: PASS   : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache()
+39: QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+39: QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+39: QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+39: QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+39: PASS   : UiTests::renameUsesPlainTextAndEightyCharacterLimit()
+39: PASS   : UiTests::splitterKeyboardResetAndEscapeRollback()
+39: QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() This plugin does not support grabbing the mouse
+39: PASS   : UiTests::treeToPlotShiftSelectionPreservesAnchor()
+39: QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() This plugin does not support grabbing the mouse
+39: PASS   : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY()
+39: QWARN  : UiTests::creationModeSurvivesMaximize() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::creationModeSurvivesMaximize() This plugin does not support grabbing the mouse
+39: PASS   : UiTests::creationModeSurvivesMaximize()
+39: QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() This plugin does not support grabbing the mouse
+39: PASS   : UiTests::escapeCancelsGestureBeforeLeavingMaximize()
+39: PASS   : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq()
+39: PASS   : UiTests::importFormatAndAdaptiveDraft()
+39: PASS   : UiTests::importFloatingUnitsAndFailureRecovery()
+39: PASS   : UiTests::importTemplatesBatchAndSigmf()
+39: QWARN  : UiTests::brandResourcesAndAbout() This plugin does not support propagateSizeHints()
+39: PASS   : UiTests::brandResourcesAndAbout()
+39: PASS   : UiTests::importRealFilesAndCancelPrefix()
+39: PASS   : UiTests::narrowbandDemoResourceAndFourPages()
+39: PASS   : UiTests::waveformBandwidthAndVisiblePaneStftSettings()
+39: QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+39: QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support propagateSizeHints()
+39: PASS   : UiTests::uiStatePersistenceAndRecentProjects()
+39: PASS   : UiTests::cleanupTestCase()
+39: Totals: 58 passed, 0 failed, 0 skipped, 0 blacklisted, 309820ms
+39: ********* Finished testing of UiTests *********
+39: 
+13/14 Test #39: signal_studio_ui_parameters ............   Passed  310.16 sec
+test 40
+      Start 40: signal_studio_ui_annotations
+
+40: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUiTests.exe" "-DSS_UI_CASES=unifiedAnnotationDraftsAndSegmentSwitch;torchSigLabelsNativeRoundtrip;annotationTableBoundsAndIndependentSelection;widebandFixtureTaskNativeRoundtrip;widebandConfigurationCommittedDrafts;widebandRoiPreservesManualTool;widebandAnnotationSelectionAndOverlap;annotationSelectionAcrossPagesAndViews;annotationHoverProjectionAndNoCalculation;annotationCurrentSegmentGeometryAndHandles;annotationSelectionContextAndPublication;annotationTreeDemandLoadingAndViewOrder;annotationModifiedPlotClicksPreserveAnchorAndCurrent;annotationCheckboxShiftExtendsSelection;annotationHoverTargetsOnlyOneSegment;annotationTreeStructuralNavigationAndLocate;annotationTreeSourceColorsSurviveInteractionStates;annotationDirectTableDraftsAndPublication;annotationAtomicRangeAndUnknownFrequency;annotationDeletePreviewPreservesDraftAndChannels;annotationFileMenuCancelsWithoutSubmittingDrafts" "-DSS_UI_ALLOW_OVERRIDE=ON" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ui-annotations-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+40: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+40: Environment variables: 
+40:  QT_QPA_PLATFORM=offscreen
+40:  QT_SCALE_FACTOR=1.5
+40: Test timeout computed to be: 480
+40: ********* Start testing of UiTests *********
+40: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+40: PASS   : UiTests::initTestCase()
+40: QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+40: QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+40: QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+40: QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+40: QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+40: QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+40: PASS   : UiTests::unifiedAnnotationDraftsAndSegmentSwitch()
+40: PASS   : UiTests::torchSigLabelsNativeRoundtrip()
+40: PASS   : UiTests::annotationTableBoundsAndIndependentSelection()
+40: PASS   : UiTests::widebandFixtureTaskNativeRoundtrip()
+40: PASS   : UiTests::widebandConfigurationCommittedDrafts()
+40: QWARN  : UiTests::widebandRoiPreservesManualTool() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::widebandRoiPreservesManualTool() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::widebandRoiPreservesManualTool() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::widebandRoiPreservesManualTool() This plugin does not support grabbing the mouse
+40: PASS   : UiTests::widebandRoiPreservesManualTool()
+40: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support raise()
+40: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the keyboard
+40: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+40: PASS   : UiTests::widebandAnnotationSelectionAndOverlap()
+40: QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+40: PASS   : UiTests::annotationSelectionAcrossPagesAndViews()
+40: PASS   : UiTests::annotationHoverProjectionAndNoCalculation()
+40: PASS   : UiTests::annotationCurrentSegmentGeometryAndHandles()
+40: PASS   : UiTests::annotationSelectionContextAndPublication()
+40: PASS   : UiTests::annotationTreeDemandLoadingAndViewOrder()
+40: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+40: PASS   : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent()
+40: PASS   : UiTests::annotationCheckboxShiftExtendsSelection()
+40: PASS   : UiTests::annotationHoverTargetsOnlyOneSegment()
+40: PASS   : UiTests::annotationTreeStructuralNavigationAndLocate()
+40: PASS   : UiTests::annotationTreeSourceColorsSurviveInteractionStates()
+40: QWARN  : UiTests::annotationDirectTableDraftsAndPublication() QWidget::mapFrom(): parent must be in parent hierarchy
+40: PASS   : UiTests::annotationDirectTableDraftsAndPublication()
+40: QWARN  : UiTests::annotationAtomicRangeAndUnknownFrequency() This plugin does not support propagateSizeHints()
+40: QWARN  : UiTests::annotationAtomicRangeAndUnknownFrequency() This plugin does not support grabbing the mouse
+40: QWARN  : UiTests::annotationAtomicRangeAndUnknownFrequency() This plugin does not support grabbing the mouse
+40: PASS   : UiTests::annotationAtomicRangeAndUnknownFrequency()
+40: QWARN  : UiTests::annotationDeletePreviewPreservesDraftAndChannels() This plugin does not support propagateSizeHints()
+40: QWARN  : UiTests::annotationDeletePreviewPreservesDraftAndChannels() This plugin does not support propagateSizeHints()
+40: PASS   : UiTests::annotationDeletePreviewPreservesDraftAndChannels()
+40: QWARN  : UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() This plugin does not support raise()
+40: QWARN  : UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() This plugin does not support grabbing the keyboard
+40: QWARN  : UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() This plugin does not support propagateSizeHints()
+40: PASS   : UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts()
+40: PASS   : UiTests::cleanupTestCase()
+40: Totals: 23 passed, 0 failed, 0 skipped, 0 blacklisted, 143733ms
+40: ********* Finished testing of UiTests *********
+40: 
+14/14 Test #40: signal_studio_ui_annotations ...........   Passed  144.05 sec
+
+The following tests passed:
+	signal_studio_label_import
+	signal_studio_wav
+	signal_studio_import
+	signal_studio_ux_r3_axes
+	signal_studio_ux_r3_workflows
+	signal_studio_narrowband_analysis_ui
+	signal_studio_ux_detection
+	signal_studio_ux_spectral
+	signal_studio_ux_charts
+	signal_studio_ux_layout
+	signal_studio_ux_popovers
+	signal_studio_ui
+	signal_studio_ui_parameters
+	signal_studio_ui_annotations
+
+100% tests passed, 0 tests failed out of 14
+
+Label Time Summary:
+annotations    = 144.05 sec*proc (1 test)
+charts         =  17.78 sec*proc (1 test)
+detection      =  37.29 sec*proc (1 test)
+geometry       = 131.20 sec*proc (1 test)
+layout         =  28.10 sec*proc (1 test)
+parameters     = 310.16 sec*proc (1 test)
+popovers       =   0.90 sec*proc (1 test)
+spectral       =   2.81 sec*proc (1 test)
+ui             = 585.41 sec*proc (3 tests)
+wideband-ux    =  86.88 sec*proc (5 tests)
+
+Total Test time (real) = 928.00 sec

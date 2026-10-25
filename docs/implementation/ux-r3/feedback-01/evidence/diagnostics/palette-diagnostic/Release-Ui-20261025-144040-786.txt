@@ -1,0 +1,8 @@
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+PASS   : UiTests::initTestCase()
+FAIL!  : UiTests::narrowbandPaletteSelectionUpdatesStftCharts() 'paletteHost && paletteHost->isAncestorOf(palette)' returned FALSE. ()
+D:\project\signal_studio_rebuild\tests\ui_tests.cpp(2536) : failure location
+PASS   : UiTests::cleanupTestCase()
+Totals: 2 passed, 1 failed, 0 skipped, 0 blacklisted, 1395ms
+********* Finished testing of UiTests *********

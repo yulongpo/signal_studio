@@ -8,7 +8,7 @@
 
 namespace signalstudio::axis_layout {
 
-enum class TitleMode { UnitAtTop, Header, Rotated };
+enum class TitleMode { UnitAtTop, Header, Rotated, CompactHeader };
 
 // All distances are logical pixels. QFontMetricsF uses the actual widget paint
 // device; multiplying these distances by DPR would scale the margins twice.
@@ -42,19 +42,19 @@ inline Budget measure(const Labels& labels, const QFontMetricsF& metrics,
                       double widgetHeight) {
   Budget result;
   result.tickHeight = std::ceil(metrics.height());
-  result.titleHeight = result.tickHeight;
+  result.titleHeight = mode == TitleMode::CompactHeader ? 0 : result.tickHeight;
   for (const auto& tick : labels.yTicks)
     result.tickLabelWidth =
         std::max(result.tickLabelWidth, textWidth(metrics, tick));
-  result.bottom = xTickOffset(result) + result.tickHeight + 3 +
-                  result.titleHeight + 4;
+  result.bottom = xTickOffset(result) + result.tickHeight +
+                  (result.titleHeight > 0 ? 3 + result.titleHeight : 0) + 4;
   result.top = std::ceil(std::max(12.0, 8 + result.tickHeight / 2));
   if (mode == TitleMode::Rotated) {
     const auto title = metrics.boundingRect(
         QRectF(0, 0, std::max(1.0, widgetHeight - result.bottom - result.top), 10000),
         Qt::TextWordWrap, labels.yTitle);
     result.rotatedTitleWidth = std::ceil(title.height()) + 6;
-  } else {
+  } else if (mode != TitleMode::CompactHeader) {
     const auto title = mode == TitleMode::Header ? labels.yTitle : labels.yUnit;
     result.headerHeight = std::ceil(metrics.boundingRect(
         QRectF(0, 0, std::max(1.0, widgetWidth - 16), 10000),
@@ -63,15 +63,18 @@ inline Budget measure(const Labels& labels, const QFontMetricsF& metrics,
   // Reserve a usable Y-axis hit zone even for one-character tick labels.
   result.left = std::ceil(std::max(36.0, 8 + result.rotatedTitleWidth +
                                            result.tickLabelWidth + 7));
-  result.top = std::ceil(std::max(12.0, 4 + result.headerHeight +
-                                           result.tickHeight / 2 + 4));
+  result.top = std::ceil(std::max(12.0, result.headerHeight +
+      result.tickHeight / 2 + (mode == TitleMode::CompactHeader ? 4 : 8)));
   return result;
 }
 
-inline Budget sharedBudget(Budget first, const Budget& second) {
+inline Budget sharedBudget(Budget first, const Budget& second,
+                           bool leftOnly = false) {
   first.left = std::max(first.left, second.left);
-  first.top = std::max(first.top, second.top);
-  first.bottom = std::max(first.bottom, second.bottom);
+  if (!leftOnly) {
+    first.top = std::max(first.top, second.top);
+    first.bottom = std::max(first.bottom, second.bottom);
+  }
   return first;
 }
 

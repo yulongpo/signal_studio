@@ -5,8 +5,10 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QTemporaryDir>
+#include <QtEndian>
 #include <QtTest>
 #include <algorithm>
+#include <filesystem>
 #include <limits>
 
 #include "application/annotation_service.h"
@@ -95,6 +97,38 @@ FileMetadata matlabPair(QTemporaryDir& dir, const QByteArray& text) {
   write(dir.filePath("label/name.txt"), text);
   return target(dir.filePath("data/name.data"), 1000, 1000, 10000);
 }
+FileMetadata wavPair(QTemporaryDir& dir, const QByteArray& text,
+                     quint32 fs = 1000, quint32 count = 1000, double fc = 10000) {
+  QDir(dir.path()).mkpath("data");
+  QDir(dir.path()).mkpath("label");
+  // Noncanonical RIFF: JUNK before and after IQ. Discovery/prepare must retain
+  // the descriptor's layout, not count header/trailer bytes as raw IQ samples.
+  QByteArray header(56, '\0');
+  header.replace(0, 4, "RIFF");
+  qToLittleEndian<quint32>(56 + count * 4 + 12 - 8, header.data() + 4);
+  header.replace(8, 8, "WAVEfmt ");
+  qToLittleEndian<quint32>(16, header.data() + 16);
+  qToLittleEndian<quint16>(1, header.data() + 20);
+  qToLittleEndian<quint16>(2, header.data() + 22);
+  qToLittleEndian<quint32>(fs, header.data() + 24);
+  qToLittleEndian<quint32>(fs * 4, header.data() + 28);
+  qToLittleEndian<quint16>(4, header.data() + 32);
+  qToLittleEndian<quint16>(16, header.data() + 34);
+  header.replace(36, 4, "JUNK");
+  qToLittleEndian<quint32>(4, header.data() + 40);
+  header.replace(48, 4, "data");
+  qToLittleEndian<quint32>(count * 4, header.data() + 52);
+  const auto path = dir.filePath("data/name.wav");
+  write(path, header + QByteArray(count * 4, '\0') +
+                  QByteArray::fromHex("4a554e4b0400000000000000"));
+  write(dir.filePath("label/name.txt"), text);
+  WavDescriptor wav;
+  QString error;
+  if (!readWavDescriptor(path, wav, error)) qFatal("WAV fixture: %s", qPrintable(error));
+  auto metadata = target(path, wav.sampleRateHz, wav.sampleCount, fc);
+  metadata.sampleFormat = wav.format;
+  return metadata;
+}
 }  // namespace
 class LabelImportTests : public QObject {
   Q_OBJECT
@@ -153,8 +187,10 @@ class LabelImportTests : public QObject {
     QCOMPARE(found.candidates.size(), std::size_t{1});
     QCOMPARE(found.candidates[0].labelPath, dir.filePath("label/name.txt"));
     const auto reverse = discoverDataForLabel(dir.filePath("label/name.txt"));
-    QCOMPARE(reverse.state, LabelDiscoveryState::Found);
+    QCOMPARE(reverse.state, LabelDiscoveryState::NeedsMapping);
+    QCOMPARE(reverse.candidates.size(), std::size_t{1});
     QCOMPARE(reverse.candidates[0].dataPath, dir.filePath("data/name.data"));
+    QCOMPARE(reverse.candidates[0].profile, found.candidates[0].profile);
     FileState file;
     file.metadata = metadata;
     const auto blocked = prepareDiscoveredLabels(found.candidates[0], file);
@@ -165,6 +201,218 @@ class LabelImportTests : public QObject {
     QCOMPARE(discoverLabelCandidates(metadata).state, LabelDiscoveryState::NotFound);
     const auto stale = prepareDiscoveredLabels(found.candidates[0], file, 0, sampleMapping());
     QCOMPARE(stale.disposition, LabelImportDisposition::Rejected);
+  }
+
+  void pairedGeneratorDiscoveryRoundtrip_data() {
+    QTest::addColumn<bool>("wav");
+    QTest::newRow("wav-riff-layout") << true;
+    QTest::newRow("raw-data-retained") << false;
+  }
+
+  void pairedGeneratorDiscoveryRoundtrip() {
+    QFETCH(bool, wav);
+    QTemporaryDir dir;
+    const auto text = fixture("generator-60m-10ms.txt");
+    FileState file;
+    if (wav) {
+      file.metadata = wavPair(dir, text, 60000000, 600000, 0);
+      QCOMPARE(file.metadata.sampleFormat.headerBytes, quint64{56});
+      QCOMPARE(file.metadata.sampleFormat.trailerBytes, quint64{12});
+    } else {
+      file.metadata = matlabPair(dir, text);
+      sizeFile(dir.filePath("data/name.data"), 2400000);
+      file.metadata = target(dir.filePath("data/name.data"));
+    }
+    const auto forward = discoverLabelCandidates(file.metadata);
+    const auto reverse = discoverDataForLabel(dir.filePath("label/name.txt"));
+    QCOMPARE(forward.state, LabelDiscoveryState::Found);
+    QCOMPARE(reverse.state, LabelDiscoveryState::Found);
+    QCOMPARE(forward.candidates.size(), std::size_t{1});
+    QCOMPARE(reverse.candidates.size(), std::size_t{1});
+    const auto& candidate = reverse.candidates[0];
+    QCOMPARE(candidate.profile, LabelProfile::GeneratorText);
+    QCOMPARE(candidate.profile, forward.candidates[0].profile);
+    QCOMPARE(candidate.dataPath, forward.candidates[0].dataPath);
+    QCOMPARE(candidate.labelPath, forward.candidates[0].labelPath);
+    QCOMPARE(candidate.preview, forward.candidates[0].preview);
+    const auto prepared = prepareDiscoveredLabels(candidate, file, 7);
+    const auto fromData = prepareDiscoveredLabels(forward.candidates[0], file, 7);
+    QCOMPARE(prepared.disposition, LabelImportDisposition::Ready);
+    QCOMPARE(fromData.disposition, LabelImportDisposition::Ready);
+    QVERIFY(prepared.imported.sourceSet == fromData.imported.sourceSet);
+    QVERIFY(prepared.imported.sourceSet.sourceIdentity == annotationSourceIdentity(file.metadata, 7));
+    QCOMPARE(prepared.imported.annotations.size(), std::size_t{12});
+    std::size_t segments = 0;
+    for (const auto& annotation : prepared.imported.annotations) {
+      segments += annotation.segments.size();
+      QVERIFY(validateAnnotation(annotation, annotationBounds(file.metadata)).ok);
+    }
+    QCOMPARE(segments, std::size_t{17});
+    AnnotationService service;
+    QVERIFY(publishDiscoveredLabels(service, file, prepared, 7).ok);
+    QCOMPARE(file.marks.size(), std::size_t{12});
+    QCOMPARE(prepareDiscoveredLabels(forward.candidates[0], file, 7).disposition,
+             LabelImportDisposition::AlreadyImported);
+    const auto duplicate = publishDiscoveredLabels(service, file, fromData, 7);
+    QVERIFY(duplicate.ok && !duplicate.changed);
+    QVERIFY(service.undo(file).ok);
+    QVERIFY(file.marks.empty());
+  }
+
+  void wavUnknownLabelsRequireMappingAndBoundedPreview() {
+    QTemporaryDir dir;
+    FileState file;
+    file.metadata = wavPair(dir, "BPSK,1,10,-100,100\n");
+    const auto label = dir.filePath("label/name.txt");
+    const auto forward = discoverLabelCandidates(file.metadata);
+    const auto reverse = discoverDataForLabel(label);
+    QCOMPARE(forward.state, LabelDiscoveryState::NeedsMapping);
+    QCOMPARE(reverse.state, LabelDiscoveryState::NeedsMapping);
+    QCOMPARE(forward.candidates.size(), std::size_t{1});
+    QCOMPARE(reverse.candidates.size(), std::size_t{1});
+    for (const auto& candidate : {forward.candidates[0], reverse.candidates[0]}) {
+      QCOMPARE(candidate.profile, LabelProfile::MatlabDataTxt);
+      const auto blocked = prepareDiscoveredLabels(candidate, file);
+      QCOMPARE(blocked.disposition, LabelImportDisposition::NeedsMapping);
+      QVERIFY(blocked.imported.annotations.empty());
+      const auto mapped = prepareDiscoveredLabels(candidate, file, 0, sampleMapping());
+      QCOMPARE(mapped.disposition, LabelImportDisposition::Ready);
+      QCOMPARE(mapped.imported.annotations.size(), std::size_t{1});
+      const auto& range = mapped.imported.annotations[0].segments[0].range;
+      QVERIFY(range.time == (TimeRange{0, 10}));
+      QVERIFY(range.frequency == (FrequencyRange{9900, 10100}));
+      QVERIFY(mapped.imported.sourceSet.sourceIdentity.sampleFormat == file.metadata.sampleFormat);
+    }
+    write(label, QByteArray(64, ' ') + fixture("generator-60m-10ms.txt"));
+    LabelDiscoveryOptions options;
+    options.maximumPreviewBytes = 32;
+    const auto bounded = discoverLabelCandidates(file.metadata, options);
+    const auto boundedReverse = discoverDataForLabel(label, options);
+    // A whitespace-only preview of a larger source is neither Empty nor a
+    // license to read beyond the preview budget to guess its schema.
+    QCOMPARE(bounded.state, LabelDiscoveryState::NeedsMapping);
+    QCOMPARE(boundedReverse.state, LabelDiscoveryState::NeedsMapping);
+    QCOMPARE(bounded.candidates.size(), std::size_t{1});
+    QCOMPARE(boundedReverse.candidates.size(), std::size_t{1});
+    QCOMPARE(bounded.candidates[0].preview, QString(32, QLatin1Char(' ')));
+    QCOMPARE(boundedReverse.candidates[0].preview, bounded.candidates[0].preview);
+    for (const auto mode : {0, 1, 2}) {
+      options = {};
+      if (mode == 0) options.maximumDirectoryEntries = 1;
+      if (mode == 1) options.parsing.maximumBytes = 4;
+      if (mode == 2) options.parsing.cancelled = [] { return true; };
+      const auto expected = mode == 2 ? LabelDiscoveryState::Cancelled : LabelDiscoveryState::LimitExceeded;
+      const auto limitedForward = discoverLabelCandidates(file.metadata, options);
+      const auto limitedReverse = discoverDataForLabel(label, options);
+      QCOMPARE(limitedForward.state, expected);
+      QCOMPARE(limitedReverse.state, expected);
+      QVERIFY(limitedForward.candidates.empty() && limitedReverse.candidates.empty());
+    }
+    write(label, " \n\t");
+    QCOMPARE(discoverLabelCandidates(file.metadata).state, LabelDiscoveryState::Empty);
+    QCOMPARE(discoverDataForLabel(label).state, LabelDiscoveryState::Empty);
+  }
+
+  void wavPairCollisionsRequireExplicitSelection() {
+    QTemporaryDir dir;
+    FileState file;
+    file.metadata = wavPair(dir, fixture("generator-60m-10ms.txt"), 60000000, 600000, 0);
+    const auto label = dir.filePath("label/name.txt");
+    const auto raw = dir.filePath("data/name.data");
+    sizeFile(raw, 2400000);
+    const auto reverse = discoverDataForLabel(label);
+    QCOMPARE(reverse.state, LabelDiscoveryState::Ambiguous);
+    QCOMPARE(reverse.candidates.size(), std::size_t{2});
+    QStringList paths;
+    for (const auto& candidate : reverse.candidates) {
+      paths.push_back(candidate.dataPath);
+      QCOMPARE(candidate.profile, LabelProfile::GeneratorText);
+      FileState selected;
+      selected.metadata = candidate.dataPath == raw ? target(raw) : file.metadata;
+      QCOMPARE(prepareDiscoveredLabels(candidate, selected).disposition,
+               LabelImportDisposition::Ready);
+    }
+    QVERIFY(paths.contains(raw));
+    QVERIFY(paths.contains(dir.filePath("data/name.wav")));
+    QVERIFY(file.marks.empty());
+    QVERIFY(QFile::remove(raw));
+    write(dir.filePath("data/name.txt"), "BPSK,1,10,-100,100\n");
+    const auto forward = discoverLabelCandidates(file.metadata);
+    QCOMPARE(forward.state, LabelDiscoveryState::Ambiguous);
+    QCOMPARE(forward.candidates.size(), std::size_t{2});
+    for (const auto& candidate : forward.candidates) {
+      const bool known = candidate.labelPath == label;
+      QCOMPARE(candidate.profile, known ? LabelProfile::GeneratorText : LabelProfile::MatlabDataTxt);
+      QCOMPARE(prepareDiscoveredLabels(candidate, file).disposition,
+               known ? LabelImportDisposition::Ready : LabelImportDisposition::NeedsMapping);
+    }
+    // Neither a similar stem nor an adjacent label replaces the strict pair.
+    QVERIFY(QFile::rename(dir.filePath("data/name.wav"), dir.filePath("data/name-other.wav")));
+    const auto missing = discoverDataForLabel(label);
+    QCOMPARE(missing.state, LabelDiscoveryState::NotFound);
+    QVERIFY(missing.candidates.empty());
+    QCOMPARE(prepareDiscoveredLabels(reverse.candidates[0], file).disposition,
+             LabelImportDisposition::Rejected);
+  }
+
+  void wavPairCasingIsStrict_data() {
+    QTest::addColumn<QString>("before");
+    QTest::addColumn<QString>("after");
+    QTest::addColumn<QString>("dataPath");
+    QTest::addColumn<QString>("labelPath");
+    QTest::newRow("data-directory") << "data" << "Data" << "Data/name.wav" << "label/name.txt";
+    QTest::newRow("label-directory") << "label" << "Label" << "data/name.wav" << "Label/name.txt";
+    QTest::newRow("wav-suffix") << "data/name.wav" << "data/name.WAV" << "data/name.WAV" << "label/name.txt";
+    QTest::newRow("txt-suffix") << "label/name.txt" << "label/name.TXT" << "data/name.wav" << "label/name.TXT";
+    QTest::newRow("data-stem") << "data/name.wav" << "data/NAME.wav" << "data/NAME.wav" << "label/name.txt";
+    QTest::newRow("label-stem") << "label/name.txt" << "label/NAME.txt" << "data/name.wav" << "label/NAME.txt";
+  }
+
+  void wavPairCasingIsStrict() {
+    QFETCH(QString, before);
+    QFETCH(QString, after);
+    QFETCH(QString, dataPath);
+    QFETCH(QString, labelPath);
+    QTemporaryDir dir;
+    auto metadata = wavPair(dir, "BPSK,1,10,-100,100\n");
+    QDir base(dir.path());
+    QVERIFY(base.rename(before, "temporary"));
+    QVERIFY(base.rename("temporary", after));
+    metadata.path = dir.filePath(dataPath).toStdString();
+    const auto forward = discoverLabelCandidates(metadata);
+    const auto reverse = discoverDataForLabel(dir.filePath(labelPath));
+    QCOMPARE(forward.state, LabelDiscoveryState::Ambiguous);
+    QCOMPARE(reverse.state, LabelDiscoveryState::Ambiguous);
+    QVERIFY(forward.candidates.empty() && reverse.candidates.empty());
+  }
+
+  void wavPairAliasesAreAmbiguous_data() {
+    QTest::addColumn<QString>("relativePath");
+    QTest::newRow("wav-file") << "data/name.wav";
+    QTest::newRow("txt-file") << "label/name.txt";
+    QTest::newRow("data-directory") << "data";
+    QTest::newRow("label-directory") << "label";
+  }
+
+  void wavPairAliasesAreAmbiguous() {
+    QFETCH(QString, relativePath);
+    QTemporaryDir dir;
+    const auto metadata = wavPair(dir, "BPSK,1,10,-100,100\n");
+    const auto alias = dir.filePath(relativePath);
+    const auto destination = dir.filePath("relocated");
+    const bool directory = QFileInfo(alias).isDir();
+    QVERIFY(QDir(dir.path()).rename(relativePath, "relocated"));
+    std::error_code error;
+    const auto from = std::filesystem::path(destination.toStdWString());
+    const auto to = std::filesystem::path(alias.toStdWString());
+    if (directory) std::filesystem::create_directory_symlink(from, to, error);
+    else std::filesystem::create_symlink(from, to, error);
+    if (error) QSKIP("Creating filesystem symlinks is unavailable on this host");
+    const auto forward = discoverLabelCandidates(metadata);
+    const auto reverse = discoverDataForLabel(dir.filePath("label/name.txt"));
+    QCOMPARE(forward.state, LabelDiscoveryState::Ambiguous);
+    QCOMPARE(reverse.state, LabelDiscoveryState::Ambiguous);
+    QVERIFY(forward.candidates.empty() && reverse.candidates.empty());
   }
 
   void casingAndMultipleCandidatesAreExplicit() {
@@ -1026,14 +1274,43 @@ class LabelImportTests : public QObject {
       QSKIP("External generator M0 golden unavailable");
     WavDescriptor wav;
     QString error;
-    QVERIFY(readWavDescriptor(wavPath, wav, error));
+    QVERIFY2(readWavDescriptor(wavPath, wav, error), qPrintable(error));
     auto m = target(wavPath, wav.sampleRateHz, wav.sampleCount, 0);
     m.sampleFormat = wav.format;
+    QCOMPARE(m.sampleFormat.headerBytes, wav.dataOffset);
+    QCOMPARE(m.sampleFormat.trailerBytes, wav.fileBytes - wav.dataOffset - wav.dataBytes);
     const auto generator = importGeneratorLabels(txtPath, m);
     QVERIFY2(generator.ok(), qPrintable(generator.error));
     QCOMPARE(generator.annotations.size(), std::size_t{10});
     std::size_t segments = 0;
     for (const auto& a : generator.annotations) segments += a.segments.size();
+    QCOMPARE(segments, std::size_t{65});
+    FileState wavFile;
+    wavFile.metadata = m;
+    const auto forward = discoverLabelCandidates(m);
+    const auto reverse = discoverDataForLabel(txtPath);
+    QCOMPARE(forward.state, LabelDiscoveryState::Found);
+    QCOMPARE(reverse.state, LabelDiscoveryState::Found);
+    QCOMPARE(forward.candidates.size(), std::size_t{1});
+    QCOMPARE(reverse.candidates.size(), std::size_t{1});
+    for (const auto& candidate : {forward.candidates[0], reverse.candidates[0]}) {
+      QCOMPARE(candidate.profile, LabelProfile::GeneratorText);
+      QCOMPARE(candidate.dataPath, QFileInfo(wavPath).absoluteFilePath());
+      QCOMPARE(candidate.labelPath, QFileInfo(txtPath).absoluteFilePath());
+      const auto prepared = prepareDiscoveredLabels(candidate, wavFile);
+      QCOMPARE(prepared.disposition, LabelImportDisposition::Ready);
+      QVERIFY(prepared.imported.sourceSet == generator.sourceSet);
+      QVERIFY(prepared.imported.sourceSet.sourceIdentity == annotationSourceIdentity(m));
+      QCOMPARE(prepared.imported.annotations.size(), std::size_t{10});
+      std::size_t discoveredSegments = 0;
+      for (std::size_t i = 0; i < prepared.imported.annotations.size(); ++i) {
+        const auto& annotation = prepared.imported.annotations[i];
+        discoveredSegments += annotation.segments.size();
+        QCOMPARE(annotation.id, generator.annotations[i].id);
+        QVERIFY(annotation.segments == generator.annotations[i].segments);
+      }
+      QCOMPARE(discoveredSegments, std::size_t{65});
+    }
     qInfo() << "Actual generator annotations" << generator.annotations.size()
             << "segments" << segments << "source SHA256"
             << QString::fromStdString(generator.sourceSet.sourceHash);

@@ -977,6 +977,7 @@ void diagnoseMainHover(Capture& capture, QPoint target,
 #include "tests/annotation_channels_capture.h"
 #include "tests/wideband_ux_capture.h"
 #include "tests/ui_refinement_capture.h"
+#include "tests/ux_r3_label_capture.h"
 #include "tests/ux_r3_capture.h"
 
 }  // namespace

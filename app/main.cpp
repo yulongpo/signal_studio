@@ -82,7 +82,7 @@ int main(int argc,char* argv[]) {
     parser.addOption({"acceptance-symbol-rate","Explicit manual Rs hypothesis for packaged-demo rendering acceptance; not an estimate.","Hz"});
     parser.addOption({"verify-narrowband-analysis","Require real IQ, constellation, eye and carrier recovery in a saved --project."});
     parser.addOption({"renderer","QRhi API: auto, d3d11 (Windows), or opengl.","api","auto"});
-    parser.addOption({"axis-title-mode", "Y axis title layout: A unit at top, B header, C rotated.", "A|B|C", "A"});
+    parser.addOption({"axis-title-mode", "Axis title layout: compact (default), A unit at top, B header, C rotated.", "compact|A|B|C", "compact"});
     parser.addOption({"render-report","Write smoke-test renderer and cache evidence as JSON.","path"});parser.process(app);
     const bool interactiveLaunch = !parser.isSet("list-screens") && !parser.isSet("smoke-test") &&
         !parser.isSet("screenshot") && !parser.isSet("iq-interaction-test");
@@ -182,9 +182,9 @@ int main(int argc,char* argv[]) {
         window.session().activateFile(first);window.refresh();
     }
     const auto axisMode = parser.value("axis-title-mode");
-    if (axisMode != "A" && axisMode != "B" && axisMode != "C") { QTextStream(stderr) << "Invalid axis title mode\n"; return 2; }
+    if (axisMode != "compact" && axisMode != "A" && axisMode != "B" && axisMode != "C") { QTextStream(stderr) << "Invalid axis title mode\n"; return 2; }
     for (auto* plot : window.findChildren<signalstudio::PlotWidget*>())
-      plot->setAxisTitleMode(axisMode == "B" ? signalstudio::PlotWidget::AxisTitleMode::Header : axisMode == "C" ? signalstudio::PlotWidget::AxisTitleMode::Rotated : signalstudio::PlotWidget::AxisTitleMode::UnitAtTop);
+      plot->setAxisTitleMode(axisMode == "B" ? signalstudio::PlotWidget::AxisTitleMode::Header : axisMode == "C" ? signalstudio::PlotWidget::AxisTitleMode::Rotated : axisMode == "A" ? signalstudio::PlotWidget::AxisTitleMode::UnitAtTop : signalstudio::PlotWidget::AxisTitleMode::CompactHeader);
     const auto size=parser.value("size").split('x');if(size.size()!=2||size[0].toInt()<1050||size[1].toInt()<650){QTextStream(stderr)<<"Invalid --size: minimum 1050x650\n";return 2;}
     window.resize(size[0].toInt(),size[1].toInt());
     if(parser.isSet("project")&&!window.openProject(parser.value("project")))return 2;

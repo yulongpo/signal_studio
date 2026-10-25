@@ -9,6 +9,7 @@
 #include <QDoubleSpinBox>
 #include <QElapsedTimer>
 #include <QFile>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QLabel>
 #include <QLineEdit>
@@ -449,6 +450,83 @@ class UxR3WorkflowTests : public QObject {
       }
     }
     if (decision == "cancel-preview") QVERIFY(unspecifiedRejected && configured && previewSeen);
+  }
+
+  void manualLabelEntryPoints_data() {
+    QTest::addColumn<bool>("menu");
+    QTest::addColumn<QString>("decision");
+    for (bool menu : {false, true})
+      for (const auto& decision : {"import", "cancel-file", "cancel-mapping", "cancel-preview", "switch-file", "switch-preview"})
+        QTest::newRow(qPrintable(QString("%1-%2").arg(menu ? "menu" : "button", decision))) << menu << QString(decision);
+  }
+  void manualLabelEntryPoints() {
+    QFETCH(bool, menu); QFETCH(QString, decision);
+    QTemporaryDir directory; MainWindow window; QString error;
+    QVERIFY2(prepare(window, directory.path(), error), qPrintable(error)); show(window);
+    const auto sourceId = window.session().activeFile()->metadata.id;
+    const auto name = QString::fromStdString(window.session().activeFile()->metadata.name);
+    const auto labels = directory.filePath("label/manual.txt");
+    QVERIFY(writeBytes(labels, "QPSK -100000 100000\n"));
+    const LiveSnapshot before(window);
+    const bool oldNativeDialogs = qApp->testAttribute(Qt::AA_DontUseNativeDialogs);
+    qApp->setAttribute(Qt::AA_DontUseNativeDialogs, true);
+    struct Restore { bool value; ~Restore() { qApp->setAttribute(Qt::AA_DontUseNativeDialogs, value); } } restore{oldNativeDialogs};
+    auto* action = window.findChild<QAction*>("importLabelsAction");
+    auto* button = window.findChild<QPushButton*>("importLabels");
+    QVERIFY(action && button);
+    QCOMPARE(action->text(), QString("导入标签…")); QCOMPARE(button->text(), action->text());
+    if (!menu && !button->isVisible()) {
+      auto* tab = window.findChild<QPushButton*>("resultTab"); QVERIFY(tab); tab->click();
+    }
+    if (!menu) QVERIFY(reveal(button));
+    bool targetShown = false;
+    const auto perform = [&] {
+      std::vector<ModalScript::Step> steps;
+      steps.push_back({[](QDialog* dialog) { return dialog->objectName() == "importLabelFileDialog"; },
+        [&](QDialog* dialog) {
+          auto* chooser = qobject_cast<QFileDialog*>(dialog);
+          targetShown = chooser && chooser->windowTitle().contains(name);
+          if (!chooser || decision == "cancel-file") { dialog->reject(); return; }
+          if (decision == "switch-file") window.session().addDemoFile("other-target", 20e6, 100e6, .01);
+          chooser->selectFile(labels);
+          QMetaObject::invokeMethod(chooser, "accept", Qt::DirectConnection);
+        }});
+      if (decision != "cancel-file" && decision != "switch-file")
+        steps.push_back({[](QDialog* dialog) { return dialog->objectName() == "labelMappingDialog"; },
+          [&](QDialog* dialog) {
+            if (decision == "cancel-mapping" || !configureUnknownMapping(dialog, false)) { dialog->reject(); return; }
+            QTest::mouseClick(dialog->findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Ok), Qt::LeftButton);
+          }});
+      if (decision == "import" || decision == "cancel-preview" || decision == "switch-preview")
+        steps.push_back({[](QDialog* dialog) { return dialog->windowTitle() == "标签导入预览"; },
+          [&](QDialog* dialog) {
+            auto* target = dialog->findChild<QLabel*>("labelImportTarget");
+            targetShown &= target && target->text().contains(name);
+            if (decision == "switch-preview") window.session().addDemoFile("other-target", 20e6, 100e6, .01);
+            QTest::mouseClick(dialog->findChild<QDialogButtonBox*>()->button(
+                decision == "cancel-preview" ? QDialogButtonBox::Cancel : QDialogButtonBox::Ok), Qt::LeftButton);
+          }});
+      ModalScript script(std::move(steps));
+      if (menu) action->trigger(); else QTest::mouseClick(button, Qt::LeftButton);
+      return script.complete();
+    };
+    QVERIFY2(perform(), "Manual label file/mapping/preview flow failed");
+    QVERIFY(targetShown);
+    if (decision == "import") {
+      QCOMPARE(window.session().activeFile()->marks.size(), std::size_t{1});
+      QCOMPARE(window.session().activeFile()->sourceSets.size(), std::size_t{1});
+      const auto imported = ProjectStore::stateToken(window.session().project());
+      QVERIFY(perform()); QCOMPARE(ProjectStore::stateToken(window.session().project()), imported);
+      const auto saved = directory.filePath("manual.ssproj"); QVERIFY(window.saveProject(saved));
+      MainWindow reopened; QVERIFY(reopened.openProject(saved));
+      QCOMPARE(reopened.session().activeFile()->marks.size(), std::size_t{1});
+      QCOMPARE(reopened.session().activeFile()->sourceSets.size(), std::size_t{1});
+    } else if (decision.startsWith("cancel")) QVERIFY(before.sameSession(window));
+    else {
+      for (const auto& file : window.session().project().files)
+        if (file.metadata.id == sourceId) { QVERIFY(file.marks.empty()); QVERIFY(file.sourceSets.empty()); }
+      QVERIFY(window.session().activeFile()->sourceSets.empty());
+    }
   }
 
   void noLabelsStillAllowsManualPlotCreation() {

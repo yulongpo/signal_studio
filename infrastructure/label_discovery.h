@@ -27,12 +27,16 @@ struct LabelDiscoveryResult {
   QStringList inspectedDirectories;
 };
 
-// Bounded, nonrecursive, read-only. RAW format/Fs/Fc must already be supplied
-// by source import. No binary encoding is inferred from a .data suffix.
+// Bounded, nonrecursive, read-only. Supports data/<name>.wav or .data paired
+// with label/<name>.txt, alongside adjacent TXT and SigMF profiles. Physical
+// metadata (including WAV RIFF layout) must already be supplied by source import.
+// No binary encoding is inferred from a suffix.
 LabelDiscoveryResult discoverLabelCandidates(const FileMetadata&,
                                              const LabelDiscoveryOptions& = {});
-// Reverse lookup is only for label/<name>.txt -> data/<name>.data. The caller
-// still needs the ordinary source-import dialog to determine binary metadata.
+// Reverse lookup is only for label/<name>.txt -> data/<name>.wav or .data.
+// Multiple data matches are Ambiguous; unknown TXT is NeedsMapping. Candidate
+// profiles match forward discovery. The caller still needs source-import
+// preflight to determine physical metadata before preparing the chosen pair.
 LabelDiscoveryResult discoverDataForLabel(const QString&,
                                           const LabelDiscoveryOptions& = {});
 // Reuse only an unambiguous mapping for this exact label location and the

@@ -1,0 +1,82 @@
+{
+  "status": "passed",
+  "stage": "complete",
+  "steps": [
+    {
+      "finishedUtc": "2026-10-25T07:07:26.3322331Z",
+      "pass": true,
+      "name": "Debug-relevant-CTest-14"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:11:17.3632551Z",
+      "pass": true,
+      "name": "Release-native-axes-label-software"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:12:05.2536518Z",
+      "pass": true,
+      "name": "Release-native-narrowband-software"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:22:16.9295641Z",
+      "pass": true,
+      "name": "Debug-native-axes-label-gpu"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:23:28.5154891Z",
+      "pass": true,
+      "name": "Debug-native-narrowband-gpu"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:36:42.4951341Z",
+      "pass": true,
+      "name": "Debug-native-axes-label-software"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:38:16.6695647Z",
+      "pass": true,
+      "name": "Debug-native-narrowband-software"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:38:21.7413035Z",
+      "pass": true,
+      "name": "package-Debug-wideband-gpu"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:38:28.9367411Z",
+      "pass": true,
+      "name": "package-Debug-five-pages-gpu"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:38:33.4045107Z",
+      "pass": true,
+      "name": "package-Debug-wideband-software"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:38:42.3517059Z",
+      "pass": true,
+      "name": "package-Debug-five-pages-software"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:38:44.1423913Z",
+      "pass": true,
+      "name": "package-Release-wideband-gpu"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:38:46.2395370Z",
+      "pass": true,
+      "name": "package-Release-five-pages-gpu"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:38:47.7695912Z",
+      "pass": true,
+      "name": "package-Release-wideband-software"
+    },
+    {
+      "finishedUtc": "2026-10-25T07:38:51.3074554Z",
+      "pass": true,
+      "name": "package-Release-five-pages-software"
+    }
+  ],
+  "utc": "2026-10-25T07:38:51.3075125Z"
+}

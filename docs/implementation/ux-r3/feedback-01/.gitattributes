@@ -1,0 +1,4 @@
+# Archived hashes refer to captured bytes, including original line endings.
+evidence/** -text -whitespace
+# The historical snapshot report is itself referenced by an exact SHA-256.
+INDEPENDENT_REVIEW.md -text -whitespace

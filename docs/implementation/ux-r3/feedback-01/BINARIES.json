@@ -1,0 +1,86 @@
+[
+  {
+    "configuration": "debug",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudio.exe",
+    "bytes": 13791232,
+    "sha256": "8f7fe9339a4f6d246054dc08000ace7643e64d11613e1b52b340fe9a1cdfe3da"
+  },
+  {
+    "configuration": "debug",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+    "bytes": 16038912,
+    "sha256": "3631f3c665c990b00480b45357952f4ca90add1a4db111c2bed1c42e12128a9a"
+  },
+  {
+    "configuration": "debug",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiTests.exe",
+    "bytes": 15998464,
+    "sha256": "b2e67259775cb36a691789d3bcb6728e420aed5bef7c60fa52d061cc42fc4fc2"
+  },
+  {
+    "configuration": "debug",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioNarrowbandAnalysisUiTests.exe",
+    "bytes": 14116352,
+    "sha256": "76120679fff4c0560d3ca24ce42c5b9a9522ab5bed41f79a934b86d81a4d1186"
+  },
+  {
+    "configuration": "debug",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUxR3WorkflowTests.exe",
+    "bytes": 12569088,
+    "sha256": "c9d3dcad98eb0a5d3a64117bff93a2ca90d5bf244e6fd72c87e2f405d52d27ee"
+  },
+  {
+    "configuration": "debug",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUxR3AxisTests.exe",
+    "bytes": 12390912,
+    "sha256": "db513cce90b18305df10718c65f7124316e86feac38f64ff009d0dbcad975c2c"
+  },
+  {
+    "configuration": "debug",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioLabelImportTests.exe",
+    "bytes": 2205696,
+    "sha256": "864869479b7f87d50c82460d99e56b0fc601c59d2f8d92de2ac73269873a662b"
+  },
+  {
+    "configuration": "release",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe",
+    "bytes": 5245952,
+    "sha256": "f591abd083f49cc12bfdde1ce66ca91675d9fea1ed17e5b94545f7e0007b460a"
+  },
+  {
+    "configuration": "release",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+    "bytes": 6116864,
+    "sha256": "d0777092d72dbea46b091536a353367bb402a4fceaa7c8476501f1da1216b145"
+  },
+  {
+    "configuration": "release",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiTests.exe",
+    "bytes": 5863424,
+    "sha256": "36e20f448782db1695d2e61605030ec460fe827ae8eb2eae810e484e7ffa30df"
+  },
+  {
+    "configuration": "release",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioNarrowbandAnalysisUiTests.exe",
+    "bytes": 5318144,
+    "sha256": "843eaff3799c37a5374692fca4f23f232306950d8b96634d4f511381559615f9"
+  },
+  {
+    "configuration": "release",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUxR3WorkflowTests.exe",
+    "bytes": 4131840,
+    "sha256": "a0aa536e1749742de38e0f5561386045f2deef0b9e5c28b5116d27dff8677bdf"
+  },
+  {
+    "configuration": "release",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUxR3AxisTests.exe",
+    "bytes": 4086272,
+    "sha256": "aa3e5944028adac57d358e4322bf4bf4aed47ee38f340428dfa9f6b7d96ac4a8"
+  },
+  {
+    "configuration": "release",
+    "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioLabelImportTests.exe",
+    "bytes": 659456,
+    "sha256": "8882ae38247d815e039fdbf7c5a101925d22b187c6c740d023d1ca43ea9186f7"
+  }
+]

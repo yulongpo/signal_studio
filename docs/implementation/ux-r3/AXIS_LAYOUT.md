@@ -1,5 +1,7 @@
 # UX-R3 G3 坐标轴布局
 
+2026-10-25 反馈修复更新：当前默认改为 `CompactHeader`，X/Y 轴名、单位和原点说明放入现有标题栏；紧凑模式只共享主辅图左侧刻度预算。A/B/C 的枚举值及可选行为保留。以下 G3 冻结记录和原验收数字属于历史实现；当前实现、面积比较及验证见 [feedback-01/DELIVERY.md](feedback-01/DELIVERY.md)。
+
 本节点在 `feature/ux-r3-optimization` 共享工作区增量实现，实施写集为 `ui/charts/plot_widget.{h,cpp}`、`ui/charts/axis_layout.h`、`tests/ux_r3_axis_tests.cpp` 和本文；随后按单独分工新增 `tests/ux_r3_capture.h`。CMake、native header include、CLI 和既有 UI 测试适配由主 Agent 集成；没有改写 DSP 或用户原有未跟踪内容，没有提交、推送或切换分支。
 
 ## 实现冻结

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite name="NarrowbandAnalysisUiTests" timestamp="2026&#x002D;10&#x002D;25T14:30:04" hostname="HH&#x002D;laptop" tests="5" failures="0" errors="0" skipped="0" time="30.413">
+  <properties>
+    <property name="QTestVersion" value="6.11.1"/>
+    <property name="QtVersion" value="6.11.1"/>
+    <property name="QtBuild" value="Qt 6.11.1 (x86_64&#x002D;little_endian&#x002D;llp64 shared (dynamic) debug build; by MSVC 2022)"/>
+  </properties>
+  <testcase name="initTestCase" classname="NarrowbandAnalysisUiTests" time="0.000">
+    <system-out>
+      <![CDATA[NARROWBAND_VALIDATION_NODE=W8]]>
+    </system-out>
+  </testcase>
+  <testcase name="compactAxesCoverEveryPageAndPreserveAnalysis" classname="NarrowbandAnalysisUiTests" time="10.047"/>
+  <testcase name="compactAxesFontFrequencyAndTimeLabelsReuseCaches" classname="NarrowbandAnalysisUiTests" time="15.696">
+    <system-err>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+      <![CDATA[This plugin does not support grabbing the mouse]]>
+    </system-err>
+  </testcase>
+  <testcase name="compactRfTicksKeepNarrowRangePrecision" classname="NarrowbandAnalysisUiTests" time="4.660"/>
+  <testcase name="cleanupTestCase" classname="NarrowbandAnalysisUiTests" time="0.000"/>
+</testsuite>

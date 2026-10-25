@@ -1,0 +1,219 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure -R ^signal_studio_(wav|import|label_import|ux_r3_.*)$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 16
+    Start 16: signal_studio_label_import
+
+16: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioLabelImportTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/label-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+16: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+16: Test timeout computed to be: 10000000
+16: ********* Start testing of LabelImportTests *********
+16: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+16: PASS   : LabelImportTests::initTestCase()
+16: PASS   : LabelImportTests::manualTxtRequiresMappingAndPreviewIsBounded()
+16: PASS   : LabelImportTests::strictMatlabPairAndReverseLookup()
+16: PASS   : LabelImportTests::pairedGeneratorDiscoveryRoundtrip(wav-riff-layout)
+16: PASS   : LabelImportTests::pairedGeneratorDiscoveryRoundtrip(raw-data-retained)
+16: PASS   : LabelImportTests::wavUnknownLabelsRequireMappingAndBoundedPreview()
+16: PASS   : LabelImportTests::wavPairCollisionsRequireExplicitSelection()
+16: PASS   : LabelImportTests::wavPairCasingIsStrict(data-directory)
+16: PASS   : LabelImportTests::wavPairCasingIsStrict(label-directory)
+16: PASS   : LabelImportTests::wavPairCasingIsStrict(wav-suffix)
+16: PASS   : LabelImportTests::wavPairCasingIsStrict(txt-suffix)
+16: PASS   : LabelImportTests::wavPairCasingIsStrict(data-stem)
+16: PASS   : LabelImportTests::wavPairCasingIsStrict(label-stem)
+16: SKIP   : LabelImportTests::wavPairAliasesAreAmbiguous(wav-file) Creating filesystem symlinks is unavailable on this host
+16: D:\project\signal_studio_rebuild\tests\label_import_tests.cpp(410) : failure location
+16: SKIP   : LabelImportTests::wavPairAliasesAreAmbiguous(txt-file) Creating filesystem symlinks is unavailable on this host
+16: D:\project\signal_studio_rebuild\tests\label_import_tests.cpp(410) : failure location
+16: SKIP   : LabelImportTests::wavPairAliasesAreAmbiguous(data-directory) Creating filesystem symlinks is unavailable on this host
+16: D:\project\signal_studio_rebuild\tests\label_import_tests.cpp(410) : failure location
+16: SKIP   : LabelImportTests::wavPairAliasesAreAmbiguous(label-directory) Creating filesystem symlinks is unavailable on this host
+16: D:\project\signal_studio_rebuild\tests\label_import_tests.cpp(410) : failure location
+16: PASS   : LabelImportTests::casingAndMultipleCandidatesAreExplicit()
+16: PASS   : LabelImportTests::discoveryAndParserBudgetsAndCancellation()
+16: PASS   : LabelImportTests::mappedIndicesUnitsAndSavedMapping()
+16: PASS   : LabelImportTests::mappedRoundingFramesAndPhysicalRejection()
+16: PASS   : LabelImportTests::unknownTimeObservationAndClassOnlyAreNotRectangles()
+16: PASS   : LabelImportTests::generatorDiscoveryAndSafePublication()
+16: PASS   : LabelImportTests::incompleteEvidenceConfirmationCancellationDeduplicationAndUndo()
+16: PASS   : LabelImportTests::mappedProfileUsesAnnotationServiceAndProfileChangesRequireReview()
+16: PASS   : LabelImportTests::sigmfEmptyIsValidAndSupplementalConflictsRemainErrors()
+16: PASS   : LabelImportTests::generatorFixtureAndPhysicalBinding()
+16: PASS   : LabelImportTests::generatorRoundingAndRejectWholeBatch()
+16: PASS   : LabelImportTests::torchSigFixtureAndOrderIndependentMatching()
+16: PASS   : LabelImportTests::torchSigConflictsAndUnsupported()
+16: PASS   : LabelImportTests::codecFullRoundtripAndExports()
+16: PASS   : LabelImportTests::largeSharedAndRecordEvidenceRemainLossless()
+16: PASS   : LabelImportTests::normalizedBatchBudgetRejectsAtomically()
+16: PASS   : LabelImportTests::largeGeneratorRecordUsesSourceLineReference()
+16: QINFO  : LabelImportTests::actualTwoSourceAssets() Actual generator annotations 10 segments 65 source SHA256 "dcef967000723aff575aa98eb413f0aad3a14575f92c55a3cc6199484f793b83"
+16: QINFO  : LabelImportTests::actualTwoSourceAssets() Actual TorchSig annotations 4 source SHA256 "5efd03dae0f53002c8400ddc2ba65e367d7dde315b232a24cd77a2b1bd982a29"
+16: PASS   : LabelImportTests::actualTwoSourceAssets()
+16: PASS   : LabelImportTests::cleanupTestCase()
+16: Totals: 32 passed, 0 failed, 4 skipped, 0 blacklisted, 34129ms
+16: ********* Finished testing of LabelImportTests *********
+16: 
+1/5 Test #16: signal_studio_label_import .......   Passed   34.70 sec
+test 17
+    Start 17: signal_studio_wav
+
+17: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioWavTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/wav-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+17: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+17: Test timeout computed to be: 10000000
+17: ********* Start testing of WavInputTests *********
+17: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+17: PASS   : WavInputTests::initTestCase()
+17: PASS   : WavInputTests::noncanonicalLayoutAndReader()
+17: PASS   : WavInputTests::metadataAuthorityAndRawUnchanged()
+17: PASS   : WavInputTests::malformedAndUnsupported()
+17: PASS   : WavInputTests::boundedHeaderRead()
+17: QINFO  : WavInputTests::actualGeneratorGolden() Generator WAV golden: D:/coding/FFSCN_train2/broadband_signal_generation/test_sig2/data/20260728-025821-162_bw_20000000_sampleTime_0.8_rollOff_0.35.wav SHA256 88f96c6deab9e435db8f111463092fdae9b800aeb3cbccd82d7426551d52d9cd complex frames byte-compared 3072 metadata bytes read 44
+17: PASS   : WavInputTests::actualGeneratorGolden()
+17: PASS   : WavInputTests::cleanupTestCase()
+17: Totals: 7 passed, 0 failed, 0 skipped, 0 blacklisted, 1100ms
+17: ********* Finished testing of WavInputTests *********
+17: 
+2/5 Test #17: signal_studio_wav ................   Passed    1.57 sec
+test 18
+    Start 18: signal_studio_import
+
+18: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioImportTests.exe
+18: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+18: Test timeout computed to be: 120
+3/5 Test #18: signal_studio_import .............   Passed    1.15 sec
+test 22
+    Start 22: signal_studio_ux_r3_axes
+
+22: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxR3AxisTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-r3-axes-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+22: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+22: Environment variables: 
+22:  QT_QPA_PLATFORM=offscreen
+22:  QT_SCALE_FACTOR=1.5
+22: Test timeout computed to be: 120
+22: ********* Start testing of UxR3AxisTests *********
+22: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+22: PASS   : UxR3AxisTests::initTestCase()
+22: PASS   : UxR3AxisTests::measuredInkAndIndependentBands()
+22: PASS   : UxR3AxisTests::largerFontsAndScientificTicksGrowBudget()
+22: PASS   : UxR3AxisTests::sharedGeometryAndModeSwitches()
+22: PASS   : UxR3AxisTests::compactHeaderRecoversActualPlotArea()
+22: PASS   : UxR3AxisTests::compactHeaderRetainsPhysicalDescription()
+22: PASS   : UxR3AxisTests::physicalAxesAndSourceUnits()
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(0-0)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(0-1)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(1-0)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(1-1)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(2-0)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(2-1)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(3-0)
+22: PASS   : UxR3AxisTests::coordinateAndHitZones(3-1)
+22: PASS   : UxR3AxisTests::auxiliaryWheelAndEscape()
+22: PASS   : UxR3AxisTests::cleanupTestCase()
+22: Totals: 17 passed, 0 failed, 0 skipped, 0 blacklisted, 1436ms
+22: ********* Finished testing of UxR3AxisTests *********
+22: 
+4/5 Test #22: signal_studio_ux_r3_axes .........   Passed    1.95 sec
+test 23
+    Start 23: signal_studio_ux_r3_workflows
+
+23: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxR3WorkflowTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-r3-workflows-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+23: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+23: Environment variables: 
+23:  QT_QPA_PLATFORM=offscreen
+23:  QT_SCALE_FACTOR=1.5
+23: Test timeout computed to be: 180
+23: ********* Start testing of UxR3WorkflowTests *********
+23: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+23: PASS   : UxR3WorkflowTests::initTestCase()
+23: PASS   : UxR3WorkflowTests::arbitraryDirectoryCreateAndDuplicateFailure()
+23: PASS   : UxR3WorkflowTests::titleDirtyTracksCommitButNotDraftOrRefresh()
+23: QWARN  : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-current-obstructed) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-current-obstructed)
+23: QWARN  : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-as-foreign-target) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-as-foreign-target)
+23: QWARN  : UxR3WorkflowTests::failedIoRetainsCommittedSession(open-corrupt-container) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(open-corrupt-container)
+23: PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(legacy-conversion-rejected)
+23: PASS   : UxR3WorkflowTests::saveAsReopenKeepsOriginalAndMovesSaveDestination()
+23: PASS   : UxR3WorkflowTests::relocateMissingSourceRejectsSameLengthWrongContent()
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-mapping) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-mapping)
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-preflight-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-preflight-preview) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-preflight-preview)
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-time-is-observation) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-time-is-observation) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-time-is-observation)
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-frequency-is-original-evidence) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-frequency-is-original-evidence) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-frequency-is-original-evidence)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-import) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(button-import)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-file) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-file)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-mapping) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-mapping) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-mapping)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-preview) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(button-cancel-preview)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-switch-file) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(button-switch-file)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-switch-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-switch-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(button-switch-preview) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(button-switch-preview)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-import) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-import) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(menu-import)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-file) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-file)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-mapping) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-mapping) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-mapping)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-preview) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(menu-cancel-preview)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-switch-file) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(menu-switch-file)
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-switch-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-switch-preview) This plugin does not support propagateSizeHints()
+23: QWARN  : UxR3WorkflowTests::manualLabelEntryPoints(menu-switch-preview) This plugin does not support propagateSizeHints()
+23: PASS   : UxR3WorkflowTests::manualLabelEntryPoints(menu-switch-preview)
+23: QWARN  : UxR3WorkflowTests::noLabelsStillAllowsManualPlotCreation() This plugin does not support grabbing the mouse
+23: QWARN  : UxR3WorkflowTests::noLabelsStillAllowsManualPlotCreation() This plugin does not support grabbing the mouse
+23: PASS   : UxR3WorkflowTests::noLabelsStillAllowsManualPlotCreation()
+23: PASS   : UxR3WorkflowTests::cleanupTestCase()
+23: Totals: 27 passed, 0 failed, 0 skipped, 0 blacklisted, 96232ms
+23: ********* Finished testing of UxR3WorkflowTests *********
+23: 
+5/5 Test #23: signal_studio_ux_r3_workflows ....   Passed   97.22 sec
+
+The following tests passed:
+	signal_studio_label_import
+	signal_studio_wav
+	signal_studio_import
+	signal_studio_ux_r3_axes
+	signal_studio_ux_r3_workflows
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) = 136.62 sec

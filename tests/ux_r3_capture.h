@@ -100,7 +100,7 @@ int runUxR3Capture(const QString& outputDirectory, bool software) {
       {"qtVersion", QString::fromLatin1(qVersion())},
       {"binaryPath", QCoreApplication::applicationFilePath()},
       {"startedUtc", QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
-      {"expectedScenes", 24}, {"modelInferenceVerified", false},
+      {"expectedScenes", 32}, {"modelInferenceVerified", false},
       {"geometryBaseline", "previous fixed 88 logical-pixel left; no historical before-PNG is fabricated"},
       {"evidenceScope", "real IQ / native axis geometry and gestures; no RF accuracy claim"},
       {"reportPath", reportPath}, {"status", "running"}};
@@ -198,6 +198,10 @@ int runUxR3Capture(const QString& outputDirectory, bool software) {
       const auto* file = window.session().activeFile();
       return file && !file->metadata.demo && uxR3ImportedEvidence(*file).size() == 4;
     }, 20000), "UX-R3 expected the four actual labels to be discovered automatically");
+    stage = "manual-label-entries";
+    report["manualLabelEntries"] = uxR3ManualLabelEntryProbe(window, meta, run);
+    require(report["manualLabelEntries"].toObject()["pass"].toBool(),
+            report["manualLabelEntries"].toObject()["error"].toString());
     const auto imported = uxR3ImportedEvidence(*window.session().activeFile());
     const auto sourceSetCount = window.session().activeFile()->sourceSets.size();
     window.discoverLabels();
@@ -239,6 +243,7 @@ int runUxR3Capture(const QString& outputDirectory, bool software) {
       auto evidence = plot.axisLayoutStatistics();
       const auto layout = plot.axisLayout();
       const QFontMetricsF metrics(plot.font(), &plot);
+      const bool compact = plot.axisTitleMode() == PlotWidget::AxisTitleMode::CompactHeader;
       QJsonArray widths;
       double maximumWidth = 0;
       for (const auto& value : evidence["yTicks"].toArray()) {
@@ -254,8 +259,8 @@ int runUxR3Capture(const QString& outputDirectory, bool software) {
       evidence["tickBudgetFits"] = maximumWidth <= layout.plot.left() - 8 - 7 - titleWidth + .1;
       evidence["xBandsSeparate"] = layout.xTicks.bottom() <= layout.xTitle.top() &&
           layout.xTicks.top() > layout.plot.bottom() + metrics.height() / 2;
-      evidence["bottomTextInsideWidget"] = layout.xTitle.bottom() <= plot.height() + .1;
-      evidence["topTextSeparate"] = plot.axisTitleMode() == PlotWidget::AxisTitleMode::Rotated ||
+      evidence["bottomTextInsideWidget"] = (compact ? layout.xTicks.bottom() : layout.xTitle.bottom()) <= plot.height() + .1;
+      evidence["topTextSeparate"] = compact || plot.axisTitleMode() == PlotWidget::AxisTitleMode::Rotated ||
           layout.header.bottom() <= layout.plot.top() - metrics.height() / 2;
       evidence["xTitleFits"] = axis_layout::textWidth(metrics, evidence["xTitle"].toString()) <= layout.xTitle.width();
       const bool rotated = plot.axisTitleMode() == PlotWidget::AxisTitleMode::Rotated;
@@ -268,6 +273,20 @@ int runUxR3Capture(const QString& outputDirectory, bool software) {
       evidence["yTitleAvailableHeight"] = rotated ? layout.rotatedTitle.width() : layout.header.height();
       evidence["yTitleFits"] = titleBox.height() <=
           (rotated ? layout.rotatedTitle.width() : layout.header.height()) + .1;
+      if (compact) {
+        auto* header = window.findChild<QLabel*>(plot.objectName() == "mainPlot" ? "specAxisLabel" : "auxAxisHeader");
+        const auto shortText = plot.axisDescription().shortText();
+        evidence["externalHeaderVisible"] = header && header->isVisible();
+        evidence["externalHeaderText"] = header ? header->text() : QString{};
+        evidence["externalHeaderTooltip"] = header ? header->toolTip() : QString{};
+        evidence["externalHeaderWidth"] = header ? header->width() : 0;
+        const bool fits = header && header->isVisible() &&
+            header->fontMetrics().horizontalAdvance(header->text()) <= header->contentsRect().width() &&
+            header->toolTip() == plot.axisDescription().fullText() &&
+            (header->text() == shortText || header->text() == plot.axisDescription().fullText());
+        evidence["xTitleFits"] = fits && layout.xTitle.isEmpty();
+        evidence["yTitleFits"] = fits && layout.header.isEmpty();
+      }
       QJsonArray xInk;
       double previousRight = -1e100;
       bool xInside = true;
@@ -512,16 +531,16 @@ int runUxR3Capture(const QString& outputDirectory, bool software) {
       evidence["roiCancelAndHandleUndoPassed"] = true;
     };
 
-    for (int mode = 0; mode < 3; ++mode)
+    for (int mode = 0; mode < 4; ++mode)
       for (bool psd : {false, true})
         for (bool waterfall : {false, true})
           for (bool longTicks : {false, true}) {
             const QString name = QString("%1-%2-%3-%4")
-                .arg(QString(QChar('A' + mode)), psd ? "psd" : "waveform",
+                .arg(mode == 3 ? QString("CompactHeader") : QString(QChar('A' + mode)), psd ? "psd" : "waveform",
                      waterfall ? "waterfall" : "tf", longTicks ? "long" : "short");
             stage = name;
             QJsonObject entry{{"scene", name}, {"pass", false},
-                {"axisMode", QString(QChar('A' + mode))}, {"longTicks", longTicks},
+                {"axisMode", mode == 3 ? QString("CompactHeader") : QString(QChar('A' + mode))}, {"longTicks", longTicks},
                 {"auxiliaryMode", psd ? "psd" : "waveform"},
                 {"mainMode", waterfall ? "waterfall" : "time-frequency"}};
             QJsonArray gestures, coordinates;
@@ -576,6 +595,29 @@ int runUxR3Capture(const QString& outputDirectory, bool software) {
               const auto mainAxes = axisMeasure(*main), auxAxes = axisMeasure(*auxiliary);
               entry["mainAxes"] = mainAxes;
               entry["auxiliaryAxes"] = auxAxes;
+              if (mode == 3) {
+                const auto widgetSize = auxiliary->size();
+                const auto after = auxiliary->plotRect();
+                const int headerHeight = child<QWidget>(window, "auxChartHead")->height();
+                main->setAxisTitleMode(PlotWidget::AxisTitleMode::UnitAtTop);
+                const auto before = auxiliary->plotRect();
+                const auto beforeStats = auxiliary->axisLayoutStatistics();
+                main->setAxisTitleMode(PlotWidget::AxisTitleMode::CompactHeader);
+                require(auxiliary->size() == widgetSize && auxiliary->plotRect() == after &&
+                            child<QWidget>(window, "auxChartHead")->height() == headerHeight,
+                        "Compact comparison changed widget allocation or title-bar height");
+                const double gain = after.height() - before.height();
+                entry["compactAreaComparison"] = QJsonObject{
+                    {"sameWidgetSize", sizeJson(widgetSize)}, {"sameHeaderHeight", headerHeight},
+                    {"beforeA", beforeStats}, {"afterCompact", auxAxes},
+                    {"heightGainLogicalPx", gain},
+                    {"plotAreaGainPercent", 100.0 * (after.width() * after.height() /
+                         (before.width() * before.height()) - 1.0)},
+                    {"requiredGainLogicalPx", 2 * auxAxes["tickHeight"].toDouble()}};
+                require(gain >= 2 * auxAxes["tickHeight"].toDouble(),
+                        "Compact auxiliary plot did not recover two actual font line heights");
+                require(settled(), "Compact comparison did not settle");
+              }
               const double alignmentError = std::abs(mainAxes["plotInWindow"].toObject()["x"].toDouble() -
                   auxAxes["plotInWindow"].toObject()["x"].toDouble());
               entry["plotLeftAlignmentErrorLogicalPx"] = alignmentError;
@@ -687,7 +729,7 @@ int runUxR3Capture(const QString& outputDirectory, bool software) {
           comparisons.append(comparison);
         }
     report["axisComparisons"] = comparisons;
-    report["pass"] = failures == 0 && scenes.size() == 24;
+    report["pass"] = failures == 0 && scenes.size() == 32;
     exitCode = report["pass"].toBool() ? 0 : 1;
   } catch (const std::exception& exception) {
     report["error"] = QString::fromUtf8(exception.what());

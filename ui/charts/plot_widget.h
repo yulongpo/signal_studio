@@ -14,6 +14,7 @@
 
 #include "application/session.h"
 #include "ui/charts/axis_layout.h"
+#include "ui/charts/axis_description.h"
 #include "ui/charts/display_sampling.h"
 #include "ui/charts/interaction_feedback.h"
 
@@ -32,7 +33,7 @@ class PlotWidget : public QWidget {
   Q_PROPERTY(AxisTitleMode axisTitleMode READ axisTitleMode WRITE setAxisTitleMode)
  public:
   enum class Kind { Navigation, Auxiliary, Main };
-  enum class AxisTitleMode { UnitAtTop, Header, Rotated };
+  enum class AxisTitleMode { UnitAtTop, Header, Rotated, CompactHeader };
   Q_ENUM(AxisTitleMode)
   PlotWidget(Session& session, Kind kind, QWidget* parent = nullptr);
   ~PlotWidget() override;
@@ -40,6 +41,7 @@ class PlotWidget : public QWidget {
   AxisTitleMode axisTitleMode() const { return axisTitleMode_; }
   Q_INVOKABLE void setAxisTitleMode(AxisTitleMode mode);
   axis_layout::Layout axisLayout() const;
+  AxisDescription axisDescription() const;
   Q_INVOKABLE QJsonObject axisLayoutStatistics() const;
   QPointF toPixel(SampleIndex sample, double frequencyHz) const;
   void setCreating(bool enabled);
@@ -85,6 +87,7 @@ class PlotWidget : public QWidget {
   std::shared_ptr<const SpectrogramData> currentSpectrogram() const;
   std::shared_ptr<const SpectralFrame> currentPowerFrame() const;
  signals:
+  void axisDescriptionChanged();
   void stateChanged();
   void statusMessage(const QString& text);
   void markSelectionRequested(const QString& id,
@@ -125,7 +128,7 @@ class PlotWidget : public QWidget {
   void refreshAxisLayouts();
   mutable std::unique_ptr<AxisLayoutCache> axisLayoutCache_;
   std::optional<axis_layout::Budget> frozenAxisBudget_;
-  AxisTitleMode axisTitleMode_ = AxisTitleMode::UnitAtTop;
+  AxisTitleMode axisTitleMode_ = AxisTitleMode::CompactHeader;
   using Zone = chart_feedback::Zone;
   enum class Tool {
     ZoomBox,

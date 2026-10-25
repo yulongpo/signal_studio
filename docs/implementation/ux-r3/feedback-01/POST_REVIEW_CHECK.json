@@ -1,0 +1,16 @@
+{
+  "checkedUtc": "2026-10-25T07:51:48.388975+00:00",
+  "scope": "post-review local snapshot integrity; no release authorization",
+  "baseHead": "1608c4c87dd102fbe21e01e0d83c5e606119d50e",
+  "sourceContentId": "698760c846b05b1cd2489bec1a3024de890c416ad0443ff53c91606bf4b7c745",
+  "sourceFilesVerified": 21,
+  "archiveFilesVerified": 193,
+  "binaryHashesVerified": 14,
+  "reviewAgent": "01a171b8-c7d9-7b20-a41c-b6b3daf849ab",
+  "reviewDecision": "APPROVED",
+  "reviewScope": "LOCAL WORKTREE SNAPSHOT ONLY",
+  "reviewReportSha256": "c8f283d992922a69bbae2b3cb3eadec769b84a244a239b0d46616571afcc18aa",
+  "oldReviewReportPreserved": true,
+  "newCommits": [],
+  "remoteSyncPerformed": false
+}

@@ -523,20 +523,35 @@ void MainWindow::buildMenus() {
   action->setObjectName("openProjectJsonAction");
   auto* discover = file->addAction("重新发现当前信号标签…", this, [this] { discoverLabels(); });
   discover->setObjectName("discoverLabelsAction");
-  auto* fromLabel = file->addAction("从 DATA/TXT 标签定位信号…", this, [this] {
+  auto* importLabelsAction = file->addAction("导入标签…", this, [this] {
+    if (annotations_) annotations_->showImportLabelsDialog();
+  });
+  importLabelsAction->setObjectName("importLabelsAction");
+  auto* fromLabel = file->addAction("从标签定位 WAV / DATA 信号…", this, [this] {
     if (projectPath_.isEmpty() && session_.project().files.empty()) { log("请先新建或打开 .ssproj 工程"); return; }
     const auto path = QFileDialog::getOpenFileName(this, "选择 label/<name>.txt", {}, "文本标签 (*.txt)");
     if (path.isEmpty()) return;
     LabelDiscoveryResult reverse;
-    projectIo(this, "核对同名 DATA 配对…", [&](auto cancelled) {
+    projectIo(this, "核对同名 WAV / DATA 配对…", [&](auto cancelled) {
       LabelDiscoveryOptions options; options.parsing.cancelled = cancelled;
       reverse = discoverDataForLabel(path, options); return true;
     });
-    if (reverse.state != LabelDiscoveryState::Found || reverse.candidates.size() != 1) { QMessageBox::information(this, "未建立配对", reverse.message); return; }
+    if ((reverse.state != LabelDiscoveryState::Found && reverse.state != LabelDiscoveryState::Ambiguous &&
+         reverse.state != LabelDiscoveryState::NeedsMapping && reverse.state != LabelDiscoveryState::Empty) ||
+        reverse.candidates.empty()) { QMessageBox::information(this, "未建立配对", reverse.message); return; }
+    QString selectedData;
+    if (reverse.candidates.size() == 1) selectedData = reverse.candidates.front().dataPath;
+    else {
+      QStringList paths;
+      for (const auto& candidate : reverse.candidates) paths.append(candidate.dataPath);
+      bool ok = false;
+      selectedData = QInputDialog::getItem(this, "选择目标信号", "存在多个同名信号，请明确选择：", paths, 0, false, &ok);
+      if (!ok) return;
+    }
     auto* dialog = new SignalImportDialog(q(session_.project().name), this);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->commitSource = [this](FileState source, QString& why) { return addImportedSource(std::move(source), why); };
-    dialog->addPath(reverse.candidates.front().dataPath);
+    dialog->addPath(selectedData);
     dialog->open();
   });
   fromLabel->setObjectName("importDatasetFromLabelAction");
@@ -960,6 +975,19 @@ void MainWindow::buildWorkspace() {
           "8px;border-radius:3px;");
       header->addWidget(specMode_);
     }
+    if (index != 0) {
+      auto* axisHeader = new AxisHeaderLabel(head);
+      axisHeader->setObjectName(index == 1 ? "auxAxisHeader" : "specAxisLabel");
+      if (index == 2) specAxis_ = axisHeader;
+      header->addWidget(axisHeader);
+      auto* plot = plots[index];
+      const auto updateAxes = [plot, axisHeader] {
+        axisHeader->setDescription(plot->axisDescription());
+        axisHeader->setVisible(plot->axisTitleMode() == PlotWidget::AxisTitleMode::CompactHeader);
+      };
+      connect(plot, &PlotWidget::axisDescriptionChanged, axisHeader, updateAxes);
+      updateAxes();
+    }
     header->addStretch();
     if (index == 0) {
       navStatus_ = label({}, "navStatus", "tag");
@@ -978,10 +1006,6 @@ void MainWindow::buildWorkspace() {
       header->addWidget(auxStatus_);
     }
     if (index == 2) {
-      specAxis_ = label({}, "specAxisLabel", "hint");
-      specAxis_->setMinimumWidth(0);
-      specAxis_->setMaximumWidth(150);
-      header->addWidget(specAxis_);
       manualTool_ = push("▱ 持续标记", "manualTool", header);
       manualTool_->setCheckable(true);
       connect(manualTool_, &QPushButton::clicked, this, [this](bool enabled) {
@@ -1264,11 +1288,16 @@ void MainWindow::buildWorkspace() {
   sourceSummary_ = output("inspectorSourceSummary");
   sourceSummary_->setWordWrap(true);
   displayPage->addWidget(sourceSummary_);
-  auto* axisMode = combo("axisTitleMode", {"Y 轴单位顶置（A）", "完整轴标题带（B）", "传统旋转标题（C）"});
-  axisMode->setToolTip("刻度与标题独立布局；同时应用于宽带主图和辅助图。");
+  auto* axisMode = combo("axisTitleMode", {"Y 轴单位顶置（A）", "完整轴标题带（B）", "传统旋转标题（C）", "紧凑标题栏（默认）"});
+  axisMode->setCurrentIndex(static_cast<int>(PlotWidget::AxisTitleMode::CompactHeader));
+  axisMode->setToolTip("紧凑模式在现有标题栏显示轴名、单位和原点，为图谱保留更多空间；同时应用于宽带主图和辅助图。");
   displayPage->addWidget(axisMode);
   connect(axisMode, &QComboBox::activated, this, [this](int index) {
     main_->setAxisTitleMode(static_cast<PlotWidget::AxisTitleMode>(index));
+  });
+  connect(main_, &PlotWidget::axisDescriptionChanged, axisMode, [this, axisMode] {
+    const QSignalBlocker blocker(axisMode);
+    axisMode->setCurrentIndex(static_cast<int>(main_->axisTitleMode()));
   });
   filePropertiesButton_ = new QPushButton("文件属性 / 调整有效带宽…");
   filePropertiesButton_->setObjectName("fileProperties");
@@ -1974,7 +2003,16 @@ void MainWindow::buildChartControls() {
   auxiliaryControls_=attach(findChild<QWidget*>("auxChartHead"),"auxChartControls");
   spectrumControls_=attach(findChild<QWidget*>("specChartHead"),"specChartControls");
   auxiliaryControls_->setAuxiliaryStatus(auxStatus_);
-  spectrumControls_->setAuxiliaryStatus(specAxis_);
+  for (auto pair : {std::pair{auxiliary_, auxiliaryControls_}, std::pair{main_, spectrumControls_}}) {
+    auto* axes = new QLabel;
+    axes->setTextFormat(Qt::PlainText);
+    axes->setWordWrap(true);
+    axes->setObjectName(pair.first == main_ ? "mainAxisDetails" : "auxAxisDetails");
+    pair.second->addPanel(axes, "坐标轴说明");
+    const auto updateAxes = [plot = pair.first, axes] { axes->setText(plot->axisDescription().fullText()); };
+    connect(pair.first, &PlotWidget::axisDescriptionChanged, axes, updateAxes);
+    updateAxes();
+  }
   psdSettingsButton_=auxiliaryControls_->overflowButton();
   stftSettingsButton_=spectrumControls_->overflowButton();
   psdSettingsButton_->setObjectName("psdSettings");
@@ -2014,6 +2052,12 @@ void MainWindow::buildChartControls() {
     auto* head=layout->itemAt(0)->widget();
     head->setObjectName(panels[i]+"Head");
     narrowbandControls_[i]=attach(head,panels[i]+"Controls");
+    for (auto* candidate : head->findChildren<QLabel*>())
+      if (candidate->objectName().endsWith("AxisHeader")) {
+        auto* details = new AxisDetailsLabel(candidate);
+        details->setObjectName(panels[i]+"AxisDetails");
+        narrowbandControls_[i]->addPanel(details, "坐标轴说明");
+      }
   }
   auto* nbWave=narrowband_->findChild<QComboBox*>("narrowbandWaveformMode");field(nbWave,104);
   narrowbandControls_[0]->addControl(nbWave,"分量",100);
@@ -2047,7 +2091,7 @@ void MainWindow::buildChartControls() {
   field(narrowband_->findChild<QWidget*>("eyeTimingOffsetUi"),160);
   field(narrowband_->findChild<QWidget*>("analysisRrcRolloff"),130);
   eye->addPanel(narrowband_->findChild<QWidget*>("narrowbandEyeDisplaySettings"));
-  specMode_->setMaximumWidth(150);specAxis_->setMaximumWidth(100);
+  specMode_->setMaximumWidth(150);
   connect(narrowband_,&NarrowbandWorkspace::pageChanged,this,[this]{
     if(session_.project().narrowbandWorkspaceOpen)updateChartControls(true);
   });
@@ -3123,12 +3167,8 @@ void MainWindow::refresh() {
                          file->metadata.sampleRateHz) +
                   " s");
     auxStatus_->setText(auxiliary_->statusText());
-    const bool waterfall = display.mainMode == MainMode::Waterfall;
     specMode_->setText("正在框选信号 · 右键或 Esc 退出");
     specMode_->setVisible(main_->isCreating() && width() > 990);
-    specAxis_->setText(waterfall ? "X 频率 · Y 时间↓" : "X 时间 · Y 频率");
-    specAxis_->setToolTip(waterfall ? "X 轴：频率；Y 轴：时间；颜色：功率"
-                                    : "X 轴：时间；Y 轴：频率；颜色：功率");
     fileValues_[0]->setText(q(file->metadata.name));
     fileValues_[1]->setText(number(file->metadata.sampleRateHz / 1e6) +
                             " MS/s");

@@ -1,0 +1,15 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure -R ^signal_studio_(narrowband_analysis_ui|ui(_.*)?|ux_.*)$ -N
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+  Test #22: signal_studio_ux_r3_axes
+  Test #23: signal_studio_ux_r3_workflows
+  Test #31: signal_studio_narrowband_analysis_ui
+  Test #33: signal_studio_ux_detection
+  Test #34: signal_studio_ux_spectral
+  Test #35: signal_studio_ux_charts
+  Test #36: signal_studio_ux_layout
+  Test #37: signal_studio_ux_popovers
+  Test #38: signal_studio_ui
+  Test #39: signal_studio_ui_parameters
+  Test #40: signal_studio_ui_annotations
+
+Total Tests: 11

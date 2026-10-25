@@ -1840,7 +1840,8 @@ void UiTests::pinnedAxisLabelsSurviveLeave() {
   auto* workspace = window.findChild<NarrowbandWorkspace*>();
   QTRY_VERIFY_WITH_TIMEOUT(workspace->visibleChartsSettled(), 15000);
   auto* heat = window.findChild<QWidget*>("narrowbandStftPanelChart");
-  const QRectF nbPlot(66, 14, heat->width() - 82, heat->height() - 55);
+  const auto nbPlot = heat->property("plotRect").toRectF();
+  QVERIFY(nbPlot.width() > 10 && nbPlot.height() > 10);
   QTest::mouseClick(heat, Qt::LeftButton, Qt::NoModifier,
                     nbPlot.center().toPoint());
   QCoreApplication::sendEvent(heat, &leave);
@@ -1879,8 +1880,9 @@ void UiTests::sharedInteractionFeedback() {
        {"narrowbandWaveformPanelChart", "narrowbandPsdPanelChart",
         "narrowbandStftPanelChart"}) {
     auto* chart = window.findChild<QWidget*>(name);
-    const QRectF p(66, 14, chart->width() - 82, chart->height() - 55);
-    const QPoint axis(25, qRound(p.center().y()));
+    const auto p = chart->property("plotRect").toRectF();
+    QVERIFY(p.width() > 10 && p.height() > 10);
+    const QPoint axis(qRound(p.left() / 2), qRound(p.center().y()));
     QTest::mouseMove(chart, axis);
     QTest::qWait(20);
     QCOMPARE(chart->property("interactionZone"), wideZone);
@@ -2223,7 +2225,8 @@ void UiTests::narrowbandAuxiliaryRenderingAndGestures() {
           5'000);
       QVERIFY(surface->chartDrawCallCount() > 0);
     }
-    const QRectF plot(66, 14, chart->width() - 82, chart->height() - 55);
+    const auto plot = chart->property("plotRect").toRectF();
+    QVERIFY(plot.width() > 10 && plot.height() > 10);
     grid->setChecked(true);
     QTest::qWait(30);
     QVERIFY(traceCoversPlot(chartImage(chart), chart->size(), plot));
@@ -2424,7 +2427,8 @@ void UiTests::narrowbandLinkedCursorsAndFrameSpectrum() {
   const auto context = window.session().activeChannel()->id;
   const auto matrix = window.session().spectrogram(context);
   QVERIFY(matrix && !matrix->frames.empty());
-  const QRectF plot(66, 14, heat->width() - 82, heat->height() - 55);
+  const auto plot = heat->property("plotRect").toRectF();
+  QVERIFY(plot.width() > 10 && plot.height() > 10);
   movePlotMouse(heat, plot.center().toPoint());
   QTest::qWait(40);
   QTRY_VERIFY2_WITH_TIMEOUT(heat->property("cursorReadout").toString().contains(powerUnit(window.session().activeFile()->metadata)),qPrintable(QString("readout=%1 visible=%2 hover=%3 frames=%4").arg(heat->property("cursorReadout").toString()).arg(heat->isVisible()).arg(heat->property("hoverCursorVisible").toBool()).arg(matrix->frames.size())),3000);
@@ -2455,7 +2459,8 @@ void UiTests::narrowbandLinkedCursorsAndFrameSpectrum() {
   for (auto* chart : {wave, psd, heat})
     QVERIFY(chart->property("cursorPinned").toBool());
   const auto before = window.session().linkedCursor(context);
-  const QRectF psdPlot(66, 14, psd->width() - 82, psd->height() - 55);
+  const auto psdPlot = psd->property("plotRect").toRectF();
+  QVERIFY(psdPlot.width() > 10 && psdPlot.height() > 10);
   QTest::mouseClick(
       psd, Qt::LeftButton, Qt::NoModifier,
       (psdPlot.topLeft() + QPointF(psdPlot.width() * .75, 25)).toPoint());
@@ -2504,8 +2509,7 @@ void UiTests::narrowbandLinkedCursorsAndFrameSpectrum() {
 
 void UiTests::narrowbandPaletteSelectionUpdatesStftCharts() {
   MainWindow window;
-  window.resize(1600, 900);
-  window.show();
+  showWindow(window);
   window.openNarrowbandDemoProject();
 
   auto* palette = window.findChild<QComboBox*>("colormap");
@@ -2516,8 +2520,8 @@ void UiTests::narrowbandPaletteSelectionUpdatesStftCharts() {
   auto* recognition = window.findChild<QWidget*>("recognitionStftPanelChart");
   QVERIFY(palette && status && observation && modulation && recognition);
   QVERIFY(window.session().activeFile() && window.session().activeChannel());
-  QTRY_VERIFY_WITH_TIMEOUT(status->text().contains(QStringLiteral("真实 DDC")),
-                           15'000);
+  QTRY_VERIFY2_WITH_TIMEOUT(status->text().contains(QStringLiteral("真实 DDC")),
+                            qPrintable(status->text()), 15'000);
 
   const int originalPalette = palette->currentIndex();
   QCOMPARE(observation->property("paletteIndex").toInt(), originalPalette);
@@ -2528,7 +2532,8 @@ void UiTests::narrowbandPaletteSelectionUpdatesStftCharts() {
   QVERIFY(openInspectorPage(window, "Display"));
   QVERIFY(revealParameter(palette));
   auto* paletteHost = chartSettingsStrip(window,"stftSettings");
-  QVERIFY(paletteHost && paletteHost->isAncestorOf(palette));
+  QVERIFY(paletteHost && palette->property("chartControlOwner").value<QObject*>() == paletteHost);
+  QVERIFY(paletteHost->isAncestorOf(palette) || paletteHost->popoverFrame()->isAncestorOf(palette));
   QVERIFY(!palette->isEditable());
   QCOMPARE(window.findChildren<QComboBox*>("colormap").size(), 1);
   auto* paletteParent = palette->parentWidget();
@@ -4113,8 +4118,9 @@ void UiTests::narrowbandDemoResourceAndFourPages() {
                                           : "recognitionStftPanelChart";
       auto* heat = window.findChild<QWidget*>(QString::fromLatin1(heatName));
       auto* surface = heat->findChild<AcceleratedSurface*>();
-      const QRectF expected(66, 14, std::max(1, heat->width() - 82),
-                            std::max(1, heat->height() - 55));
+      const auto expected = heat->property("plotRect").toRectF();
+      QVERIFY(expected.width() > 10 && expected.height() > 10);
+      QVERIFY(heat->rect().contains(expected.toAlignedRect()));
       if(QGuiApplication::platformName()=="windows") {
         QVERIFY(surface);QTRY_COMPARE(surface->heatmapTargetRect(), expected);
       } else {

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "scope": "local uncommitted worktree snapshot; not release approval",
+  "createdUtc": "2026-10-25T07:42:46.6459238Z",
+  "head": "1608c4c87dd102fbe21e01e0d83c5e606119d50e",
+  "branch": "feature/ux-r3-optimization",
+  "sourceContentId": "698760c846b05b1cd2489bec1a3024de890c416ad0443ff53c91606bf4b7c745",
+  "files": [
+    {
+      "path": "app/main_window.cpp",
+      "bytes": 255782,
+      "sha256": "a209e4c1013c15c2028c553ac06ff2fc0110549e916e11f465b79cb1afdd2819"
+    },
+    {
+      "path": "app/main.cpp",
+      "bytes": 29696,
+      "sha256": "d94000035eba493fbf09c898ee1006ad716e1f93f9ee91a688a98261e7044789"
+    },
+    {
+      "path": "infrastructure/label_discovery.cpp",
+      "bytes": 19784,
+      "sha256": "93a03f3bf5d15f89835b41535e957e3083f8c04c240c6667d6fa0884b20cd357"
+    },
+    {
+      "path": "infrastructure/label_discovery.h",
+      "bytes": 3788,
+      "sha256": "f8ef18412efe5228aecc604be5beef62db0e246228ff24d1d01a1d3046f74616"
+    },
+    {
+      "path": "scripts/verify-package.ps1",
+      "bytes": 6366,
+      "sha256": "dbd5a37d3836c84225e4bc219a926f11e20b82610560657ecc0fdb799fc26776"
+    },
+    {
+      "path": "tests/label_import_tests.cpp",
+      "bytes": 66668,
+      "sha256": "191935e396f2bed4cd439a7c5ff9ef81e8b00534ee11010bf6688262532f8861"
+    },
+    {
+      "path": "tests/narrowband_analysis_capture.h",
+      "bytes": 32980,
+      "sha256": "2aa8cd19e3789473a72bddb082d5b80882f2c258019ff98bc1aa650f34c13cad"
+    },
+    {
+      "path": "tests/narrowband_analysis_ui_tests.cpp",
+      "bytes": 57663,
+      "sha256": "4c5183f08f554e81dc0a5bf4a6fb2426f3607643cc5641301c7e24a820e82780"
+    },
+    {
+      "path": "tests/ui_capture.cpp",
+      "bytes": 60179,
+      "sha256": "1d6b61534772ac20375137b22f659a7039625033d6a922542479f890cf864777"
+    },
+    {
+      "path": "tests/ui_tests.cpp",
+      "bytes": 255198,
+      "sha256": "7eab2e6a449a05c584401987958cf03f52b045592fb4c84b581505a6fff27640"
+    },
+    {
+      "path": "tests/ux_r3_axis_tests.cpp",
+      "bytes": 10910,
+      "sha256": "f4f767713e9f78c73b243c8d2dd74a6a1c24acc6147748c25a84bfe61260b553"
+    },
+    {
+      "path": "tests/ux_r3_capture.h",
+      "bytes": 46303,
+      "sha256": "3723e571333bbe2628e77548a6ab4ff8bc09da5d52ddaff7793d8226ef2931ff"
+    },
+    {
+      "path": "tests/ux_r3_label_capture.h",
+      "bytes": 26190,
+      "sha256": "f4c378126d1d6e2af6a8b685c0cde962de48ad9d1062ef98bf3cbff711cf07b0"
+    },
+    {
+      "path": "tests/ux_r3_workflow_tests.cpp",
+      "bytes": 30238,
+      "sha256": "bf35e7af7514be96910cbf3517cf530229098f647c70b96322ac7996cf271810"
+    },
+    {
+      "path": "ui/annotations/annotation_panel.cpp",
+      "bytes": 80839,
+      "sha256": "8a51883e68f87f732fe088ca0f8d01b33bcfbad77caac0faaca978d89cef0a36"
+    },
+    {
+      "path": "ui/annotations/annotation_panel.h",
+      "bytes": 3190,
+      "sha256": "915cba524c45dbb4d8e9ffe2f2dfa010295d18d1caac6c9a97af9c8e85901c2c"
+    },
+    {
+      "path": "ui/charts/axis_description.h",
+      "bytes": 3291,
+      "sha256": "9025a3e182b18a668147560ab344ec4d604ee171e4872ede404b9804dfed99be"
+    },
+    {
+      "path": "ui/charts/axis_layout.h",
+      "bytes": 4105,
+      "sha256": "659b4bba11f233d4040406bf9bdcd99b7ecc9ce8124608ec39ad243cf6a37c5c"
+    },
+    {
+      "path": "ui/charts/plot_widget.cpp",
+      "bytes": 166223,
+      "sha256": "cc19b0a8ec5e2960c2842b12f1699d9507bbb09fcb1e0e3f8cb9702e63a6fa02"
+    },
+    {
+      "path": "ui/charts/plot_widget.h",
+      "bytes": 9948,
+      "sha256": "934ea7effb67df7c53f5a0224269d12cb3e2c19e4bdbc0cb09c37ab1182e5010"
+    },
+    {
+      "path": "ui/narrowband_workspace.cpp",
+      "bytes": 222085,
+      "sha256": "75d9bd2d57fcfdbad79adb6458d480da67bde37230e5f5a545e9819ebb46da54"
+    }
+  ]
+}

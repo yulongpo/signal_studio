@@ -27,6 +27,52 @@ bool isNarrowbandAcceptanceScreen(QScreen* screen) {
         !identity["monitorDevicePath"].toString().isEmpty() && preferred["width"].toInt()==3840 && preferred["height"].toInt()==2160 &&
         displayPixelSize(screen)==QSize(3840,2160) && screen->geometry().size()==QSize(2560,1440) && std::abs(screen->devicePixelRatio()-1.5)<.001;
 }
+QJsonArray narrowbandCompactAxisChecks(NarrowbandWorkspace& workspace) {
+    const auto rectangle=[](const QJsonValue& value) {
+        const auto r=value.toObject();return QRectF(r["x"].toDouble(),r["y"].toDouble(),r["width"].toDouble(),r["height"].toDouble());
+    };
+    QJsonArray checks;
+    for(const auto entry:workspace.renderStatistics()["chartLayouts"].toArray()) {
+        auto layout=entry.toObject();if(!layout["visible"].toBool())continue;
+        const auto name=layout["chart"].toString();auto* chart=workspace.findChild<QWidget*>(name);
+        require(chart,"Compact chart not found: "+name);
+        const QRectF canvas(QPointF(),chart->size());const auto plot=rectangle(layout["plotRect"]);
+        const auto old=rectangle(layout["baselinePlotRect"]);
+        require(plot.width()>0 && plot.height()>0 && canvas.contains(plot),"Actual plot must fit: "+name);
+        require(plot==chart->property("plotRect").toRectF(),"Draw/hit-test plot must equal reported layout: "+name);
+        require(old.width()>0 && old.height()>0 && layout["areaGain"].toDouble()>0,"Same-size compact plot must gain area: "+name);
+        require(layout["xTitleBand"].toInt()==0 && layout["yTitleBand"].toInt()==0,"Canvas must have no axis title bands: "+name);
+        std::vector<QRectF> occupied;
+        for(const auto* axis:{"xTicks","yTicks"}) {
+            const auto ticks=layout[axis].toArray();require(ticks.size()>=2,"At least two visible physical ticks required: "+name);
+            QString previous;
+            for(const auto value:ticks) {
+                const auto tick=value.toObject();const auto ink=rectangle(tick["inkRect"]);
+                require(canvas.contains(ink) && !ink.intersects(plot),"Tick ink must fit outside plot: "+name);
+                require(!tick["text"].toString().isEmpty() && tick["text"].toString()!=previous,"Ticks must be distinct: "+name);
+                previous=tick["text"].toString();
+                for(const auto& other:occupied)require(!ink.intersects(other),"Tick ink must not overlap: "+name);
+                occupied.push_back(ink);
+            }
+        }
+        if(layout["equalAxisScale"].toBool())require(std::abs(plot.width()-plot.height())<1e-9 && plot==chart->property("iqPlotRect").toRectF(),"Equal scatter aspect required: "+name);
+        if(!chart->property("heatmapDrawRect").toRectF().isEmpty())require(chart->property("heatmapDrawRect").toRectF()==plot,"Heatmap must use actual compact plot: "+name);
+        auto* header=chart->parentWidget()->findChild<QWidget*>(chart->parentWidget()->objectName()+"Head");
+        auto* label=header?header->findChild<QLabel*>(name+"AxisHeader"):nullptr;
+        require(header && header->height()==30 && label && label->isVisible(),"Existing 30px header must contain axes: "+name);
+        require(label->toolTip()==chart->property("axisDescriptionText").toString() && !label->toolTip().isEmpty(),"Full axis semantics must be published: "+name);
+        const auto font=label->fontMetrics();
+        const auto textInk=font.tightBoundingRect(label->text());
+        require(std::max(font.horizontalAdvance(label->text()),textInk.width())<=label->contentsRect().width()+.5 && textInk.height()<=label->contentsRect().height()+.5,
+                "Axis header text and units must fit: "+name);
+        const QRect labelRect(label->mapTo(header,QPoint()),label->size());require(header->rect().contains(labelRect),"Axis header clipped: "+name);
+        for(auto* sibling:header->findChildren<QWidget*>(QString(),Qt::FindDirectChildrenOnly))
+            if(sibling!=label && sibling->isVisible())require(!labelRect.intersects(QRect(sibling->mapTo(header,QPoint()),sibling->size())),"Axis header overlaps title/controls: "+name);
+        layout["tickInkFits"]=true;layout["tickInkNoOverlap"]=true;layout["headerTextFits"]=true;layout["plotMappingConsistent"]=true;
+        checks.append(layout);
+    }
+    require(!checks.isEmpty(),"No visible narrowband charts were validated");return checks;
+}
 int runNarrowbandAnalysisCapture(const QString& directory,bool software,bool auxiliary) {
     QDir output(directory);require(QFileInfo(directory).isAbsolute() && output.mkpath("."),"An absolute fresh capture directory is required");
     const auto reportPath=output.filePath("narrowband-analysis-report.json");
@@ -57,7 +103,7 @@ int runNarrowbandAnalysisCapture(const QString& directory,bool software,bool aux
             require(software || (backend.contains("D3D11",Qt::CaseInsensitive) && !backend.contains("CPU",Qt::CaseInsensitive)),"D3D11 hardware backend is required");
             scenes.append(QJsonObject{{"scene",name},{"pass",true},{"png",path},{"pixelSize",sizeJson(capture.size())},
                 {"devicePixelRatio",capture.devicePixelRatioF()},{"analysis",narrowbandAnalysisEvidence(workspace->analysisResult().get())},
-                {"render",workspace->renderStatistics()},{"backend",backend}});
+                {"render",workspace->renderStatistics()},{"compactAxes",narrowbandCompactAxisChecks(*workspace)},{"backend",backend}});
         };
         const auto enter=[&](QObject& owner,const char* name,const QString& value) {
             auto* edit=child<QLineEdit>(owner,name);widebandScrollTo(edit);widebandNativeReachable(edit);
@@ -121,10 +167,11 @@ int runNarrowbandAnalysisCapture(const QString& directory,bool software,bool aux
             QWheelEvent wheel(QPointF(pixel),QPointF(constellation->mapToGlobal(pixel)),QPoint(),QPoint(0,120),Qt::NoButton,Qt::NoModifier,Qt::NoScrollPhase,false);
             QCoreApplication::sendEvent(constellation,&wheel);
             const auto pointer=pixel+QPoint(3,2);QTest::mouseMove(window.windowHandle(),constellation->mapTo(&window,pointer),10);QCoreApplication::processEvents();
+            const auto zoomedPlot=constellation->property("iqPlotRect").toRectF();
             const auto iq=constellation->property("iqReadout").toPointF();const double low=constellation->property("iqAxisMinimum").toDouble(),high=constellation->property("iqAxisMaximum").toDouble();
             require(!window.session().activeChannel()->analysis.constellationAutoScale && constellation->property("iqReadoutValid").toBool() &&
-                std::abs(iq.x()-(low+(pointer.x()-plot.left())/plot.width()*(high-low)))<1e-9 &&
-                std::abs(iq.y()-(high-(pointer.y()-plot.top())/plot.height()*(high-low)))<1e-9,"Native pointer must inverse-map the actual zoomed equal-aspect plot to numeric I/Q");
+                std::abs(iq.x()-(low+(pointer.x()-zoomedPlot.left())/zoomedPlot.width()*(high-low)))<1e-9 &&
+                std::abs(iq.y()-(high-(pointer.y()-zoomedPlot.top())/zoomedPlot.height()*(high-low)))<1e-9,"Native pointer must inverse-map the actual zoomed equal-aspect plot to numeric I/Q");
             require(workspace->analysisResult()==recovered && workspace->renderStatistics()["analysisGeneration"].toString()==recoveredGeneration,"Decision/reference/zoom must retain snapshot and request generation");
             scene(prefix+"-12-decision-iq-zoom");referenceVisible(false);
             require(constellation->property("referenceCellCount").toInt()==0 && constellation->property("decisionVisible").toBool() && workspace->analysisResult()==recovered,"Reference toggle only changes display");
@@ -200,7 +247,7 @@ int runNarrowbandFeedbackCapture(const QString& directory,const QString& sourceP
                 const auto picture=window.grab();const auto png=output.filePath(name+".png");
                 require(window.isFullScreen() && window.screen()==screen && window.size()==QSize(2560,1440) && picture.size()==QSize(3840,2160) && picture.save(png),"Actual 4K fullscreen capture required");
                 const auto backend=workspace->visibleBackendDescription();require(software || backend.contains("D3D11"),"Actual D3D11 required");
-                scenes.append(QJsonObject{{"name",name},{"png",png},{"pass",true},{"headerChecks",narrowbandFeedbackHeaders(window)},{"analysis",narrowbandAnalysisEvidence(workspace->analysisResult().get())},{"render",workspace->renderStatistics()},{"backend",backend}});
+                scenes.append(QJsonObject{{"name",name},{"png",png},{"pass",true},{"headerChecks",narrowbandFeedbackHeaders(window)},{"compactAxes",narrowbandCompactAxisChecks(*workspace)},{"analysis",narrowbandAnalysisEvidence(workspace->analysisResult().get())},{"render",workspace->renderStatistics()},{"backend",backend}});
             };
             require(settle(),"Raw source analysis unavailable");
             widebandNativeSelect(child<QComboBox>(window,"constellationAnalysisStage"),4);require(settle(),"Blocked stage unavailable");

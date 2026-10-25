@@ -32,6 +32,7 @@ class AnnotationPanel final : public QWidget {
   void discardDrafts();
   void editRange();
   void deleteSelected(bool currentSegmentOnly = false);
+  void showImportLabelsDialog();
   bool importLabels(const QString&, QString* error = nullptr,
                     bool preview = true);
  signals:

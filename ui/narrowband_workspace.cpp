@@ -5,6 +5,7 @@
 #include <chrono>
 #include "infrastructure/spectral_analysis.h"
 #include "ui/charts/cursor_overlay.h"
+#include "ui/charts/axis_description.h"
 #include "ui/charts/interaction_feedback.h"
 #include "ui/narrowband_workspace.h"
 #include "ui/source_units.h"
@@ -23,6 +24,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
+#include <QFontMetricsF>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QJsonArray>
@@ -34,6 +36,7 @@
 #include <QContextMenuEvent>
 #include <QPlainTextEdit>
 #include <QProgressBar>
+#include <QPointer>
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QScrollArea>
@@ -176,12 +179,85 @@ public:
             setProperty("yAxisLabel", QStringLiteral("Q (归一化)"));
         }
         setStyleSheet("background:#111e2e;");
+        refreshAxisDescription();
     }
     QRectF plotRect() const {
+        return axisLayout().plot;
+    }
+    // Same-size counterfactual of the previous title-column/title-band layout.
+    // It is evidence only: rendering and interaction always use plotRect().
+    QRectF baselinePlotRect() const {
         const QRectF base(66, 14, std::max(1, width() - 82), std::max(1, height() - 55));
         if (mode_ != ChartMode::Scatter) return base;
         const double side = std::max(1.0, std::min(base.width(), base.height()));
         return QRectF(base.center().x() - side / 2, base.center().y() - side / 2, side, side);
+    }
+    AxisDescription axisDescription() const {
+        if (mode_ == ChartMode::Navigation) return {};
+        AxisDescription description;
+        const bool frequencyX = mode_ == ChartMode::Spectrum;
+        const bool frequencyY = mode_ == ChartMode::Heatmap;
+        const bool timeX = mode_ == ChartMode::Curve || frequencyY || mode_ == ChartMode::Timeline;
+        if (frequencyX || frequencyY) {
+            const auto shortTitle = QStringLiteral("%1 (%2)")
+                .arg(frequencyAbsolute_ ? QStringLiteral("RF") : QStringLiteral("基带"), frequencyUnit_);
+            const auto origin = QStringLiteral("基带 0 Hz = RF %1 Hz").arg(frequencyCenterHz_, 0, 'g', 15);
+            if (frequencyX) { description.xTitle = frequencyAxisLabel_; description.xShort = shortTitle; description.xOrigin = origin; }
+            else { description.yTitle = frequencyAxisLabel_; description.yShort = shortTitle; description.yOrigin = origin; }
+        }
+        if (timeX) {
+            description.xTitle = timeAxisLabel_;
+            description.xShort = QStringLiteral("%1 (%2)").arg(relativeTime_ ? QStringLiteral("相对时间") : QStringLiteral("源时间"), timeUnit_);
+            description.xOrigin = QStringLiteral("时间零点：源样本 #%1 · Fs=%2 Hz").arg(relativeOrigin_).arg(sourceRate_, 0, 'g', 15);
+        }
+        if (!frequencyY) description.yTitle = description.yShort = yAxisLabel_;
+        if (mode_ == ChartMode::Spectrum)
+            description.yTitle = QStringLiteral("功率谱密度 (%1)").arg(yAxisLabel_);
+        if (mode_ == ChartMode::Scatter) {
+            description.xTitle = description.xShort = QStringLiteral("I (%1)").arg(yAxisLabel_);
+            description.yTitle = description.yShort = QStringLiteral("Q (%1)").arg(yAxisLabel_);
+        } else if (mode_ == ChartMode::Eye) {
+            description.xTitle = QStringLiteral("时间 (符号周期)"); description.xShort = QStringLiteral("时间 (UI)");
+            description.xOrigin = QStringLiteral("1 UI = 1 符号周期；折叠时间，不是源文件时间");
+        }
+        return description;
+    }
+    // This internal widget intentionally has no Q_OBJECT.
+    std::function<void(const AxisDescription&)> axisDescriptionChanged;
+    QJsonObject layoutStatistics() const {
+        const auto& layout = axisLayout();
+        const auto baseline = baselinePlotRect();
+        const auto rectangle = [](QRectF r) { return QJsonObject{{"x",r.x()},{"y",r.y()},{"width",r.width()},{"height",r.height()}}; };
+        const auto ticks = [&](const std::vector<AxisTick>& values) {
+            QJsonArray result;
+            for (const auto& tick : values) result.append(QJsonObject{{"text",tick.text},{"value",tick.value},
+                {"fraction",tick.fraction},{"inkRect",rectangle(tick.ink)},{"baselineX",tick.baseline.x()},{"baselineY",tick.baseline.y()}});
+            return result;
+        };
+        const auto description = axisDescription();
+        const auto area = layout.plot.width()*layout.plot.height(), oldArea = baseline.width()*baseline.height();
+        QJsonObject result{{"chart",objectName()},{"mode",static_cast<int>(mode_)},{"visible",isVisible()},
+            {"canvasWidth",width()},{"canvasHeight",height()},{"devicePixelRatio",devicePixelRatioF()},
+            {"plotRect",rectangle(layout.plot)},{"baselinePlotRect",rectangle(baseline)},
+            {"baselineModel","previous fixed 66/14/16/41 margins at current canvas size"},
+            {"plotArea",area},{"baselineArea",oldArea},{"areaGain",area-oldArea},{"areaGainFraction",area/oldArea-1},
+            {"xTickBand",rectangle(layout.xBand)},{"yTickBand",rectangle(layout.yBand)},
+            {"xTitleBand",0},{"yTitleBand",0},{"tickFont",layout.font.toString()},
+            {"xTicks",ticks(layout.xTicks)},{"yTicks",ticks(layout.yTicks)},
+            {"xAxisLabel",property("xAxisLabel").toString()},{"yAxisLabel",property("yAxisLabel").toString()},
+            {"axisFullText",description.fullText()},{"axisShortText",description.shortText()},
+            {"xOrigin",description.xOrigin},{"yOrigin",description.yOrigin},
+            {"equalAxisScale",mode_==ChartMode::Scatter},{"geometryRevision",QString::number(geometryRevision_)},
+            {"rasterRevision",rasterRevision_}};
+        if (auto* panel = parentWidget()) if (auto* header = panel->findChild<QWidget*>(panel->objectName()+"Head")) {
+            result["headerHeight"] = header->height();
+            if (auto* label = header->findChild<QLabel*>(objectName()+"AxisHeader")) {
+                result["headerAxisText"] = label->text(); result["headerAxisTooltip"] = label->toolTip();
+                result["headerAxisRect"] = rectangle(QRectF(label->mapTo(header,QPoint()),label->size()));
+                result["headerAxisMinimumWidth"] = label->minimumSizeHint().width();
+            }
+        }
+        return result;
     }
     void setSeries(std::vector<std::vector<float>> series, QString status = {}, QString summary = {}) {
         series_ = std::move(series); setStatus(std::move(status), std::move(summary));
@@ -194,6 +270,7 @@ public:
         invalidate();
     }
     void setFrequencyAxis(FrequencyRange range, double centerHz, bool absolute) {
+        if (frequencyRange_ == range && frequencyCenterHz_ == centerHz && frequencyAbsolute_ == absolute) return;
         frequencyRange_ = range;
         frequencyCenterHz_ = centerHz;
         frequencyAbsolute_ = absolute;
@@ -208,11 +285,12 @@ public:
                  QString::number((range.lowerHz + offset) / frequencyScale_, 'f', 3),
                  QString::number((range.upperHz + offset) / frequencyScale_, 'f', 3), frequencyUnit_);
         setProperty("frequencyAxisLabel", frequencyAxisLabel_);
-        if (mode_ == ChartMode::Spectrum) setProperty("xAxisLabel", frequencyAxisLabel_);
-        if (mode_ == ChartMode::Heatmap) setProperty("yAxisLabel", frequencyAxisLabel_);
-        invalidate();
+        refreshAxisDescription();
+        axisGeometryChanged();
     }
     void setTimeAxis(TimeRange range, double sampleRateHz, bool relative, SampleIndex origin = 0) {
+        if (timeSourceRange_ == range && sourceRate_ == sampleRateHz && relativeTime_ == relative && relativeOrigin_ == (relative ? origin : 0)) return;
+        relativeTime_ = relative;
         timeSourceRange_ = range; sourceRate_ = sampleRateHz; relativeOrigin_ = relative ? origin : 0;
         if (sampleRateHz <= 0 || range.end <= range.begin) return;
         timeStartSeconds_ = static_cast<double>(range.begin - relativeOrigin_) / sampleRateHz;
@@ -222,11 +300,14 @@ public:
         timeUnit_ = span < .001 ? QStringLiteral("µs") : span < 1.0 ? QStringLiteral("ms") : QStringLiteral("s");
         timeAxisLabel_ = QStringLiteral("%1 (%2)").arg(relative ? QStringLiteral("通道相对时间") : QStringLiteral("源文件时间"), timeUnit_);
         setProperty("timeAxisLabel", timeAxisLabel_);
-        if (mode_ == ChartMode::Curve || mode_ == ChartMode::Heatmap || mode_ == ChartMode::Timeline)
-            setProperty("xAxisLabel", timeAxisLabel_);
-        invalidate();
+        refreshAxisDescription();
+        axisGeometryChanged();
     }
-    void setSymbolPeriod(int periods) { symbolPeriods_ = std::clamp(periods, 1, 4); invalidate(); }
+    void setSymbolPeriod(int periods) {
+        periods = std::clamp(periods, 1, 4);
+        if (symbolPeriods_ == periods) return;
+        symbolPeriods_ = periods; axisGeometryChanged();
+    }
     void setGridVisible(bool visible) {
         if (gridVisible_ == visible) return;
         gridVisible_ = visible; setProperty("gridVisible", visible); invalidate();
@@ -253,9 +334,9 @@ public:
         if (!std::isfinite(minimum) || !std::isfinite(maximum) || minimum >= maximum) return;
         if (yAxisMinimum_ == minimum && yAxisMaximum_ == maximum && yAxisLabel_ == label) return;
         yAxisMinimum_ = minimum; yAxisMaximum_ = maximum; yAxisLabel_ = std::move(label);
-        setProperty("yAxisLabel", yAxisLabel_);
+        refreshAxisDescription();
         updateFitDiagnostics();
-        markGeometryDirty();
+        axisGeometryChanged();
     }
     void setRaster(QImage image, QString status = {}, QString revision = {}, QString summary = {}) {
         if (!image.isNull()) {
@@ -407,16 +488,20 @@ public:
     }
     bool event(QEvent* event) override {
         if(cursor_overlay::tooltip(this,event)) return true;
+        if (event->type() == QEvent::DevicePixelRatioChange) axisGeometryChanged();
         if (event->type() == QEvent::Leave) { hoverPosition_.reset();setProperty("iqReadoutValid",false); if (!dragging_) { hoverZone_ = chart_feedback::Zone::None; setCursor(Qt::ArrowCursor); setProperty("interactionZone",static_cast<int>(hoverZone_)); } invalidate(); }
         return QWidget::event(event);
     }
 protected:
+    void changeEvent(QEvent* event) override {
+        QWidget::changeEvent(event);
+        if (event->type() == QEvent::FontChange || event->type() == QEvent::StyleChange)
+            axisGeometryChanged();
+    }
     void resizeEvent(QResizeEvent* event) override {
         // Hidden pages receive data before their final layout size is known.
         // Reposition the same GPU texture when the chart becomes visible.
-        if (surface_ && !scalarRaster_.isNull())
-            surface_->setHeatmap(scalarRaster_, plotRect(), rasterRevision_, chart_palette::texture(palette_));
-        markGeometryDirty();
+        axisGeometryChanged();
         QWidget::resizeEvent(event);
     }
     void paintEvent(QPaintEvent* event) override {
@@ -510,6 +595,120 @@ protected:
         event->accept();
     }
 private:
+    struct AxisTick {
+        QString text;
+        double value = 0, fraction = 0;
+        QPointF baseline;
+        QRectF ink;
+    };
+    struct AxisLayout {
+        QRectF plot, xBand, yBand;
+        QFont font;
+        std::vector<AxisTick> xTicks, yTicks;
+    };
+    void refreshAxisDescription() {
+        const auto description = axisDescription();
+        setProperty("xAxisLabel", description.xTitle);
+        setProperty("yAxisLabel", mode_ == ChartMode::Spectrum ? yAxisLabel_ : description.yTitle);
+        setProperty("axisDescriptionText", mode_ == ChartMode::Navigation ? QString{} : description.fullText());
+        if (axisDescriptionChanged) axisDescriptionChanged(description);
+    }
+    void axisGeometryChanged() {
+        axisLayoutDirty_ = true;
+        const auto plot = plotRect();
+        setProperty("plotRect", plot);
+        if (mode_ == ChartMode::Scatter) setProperty("iqPlotRect", plot);
+        if (surface_ && !scalarRaster_.isNull())
+            surface_->setHeatmap(scalarRaster_, plot, rasterRevision_, chart_palette::texture(palette_));
+        markGeometryDirty();
+    }
+    std::pair<double, double> tickRange(bool horizontal) const {
+        if ((horizontal && mode_ == ChartMode::Spectrum) || (!horizontal && mode_ == ChartMode::Heatmap)) {
+            const auto offset = frequencyAbsolute_ ? frequencyCenterHz_ : 0.0;
+            return {(frequencyRange_.lowerHz+offset)/frequencyScale_, (frequencyRange_.upperHz+offset)/frequencyScale_};
+        }
+        if (!horizontal || mode_ == ChartMode::Scatter) return {yAxisMinimum_, yAxisMaximum_};
+        if (mode_ == ChartMode::Eye) return {0.0, static_cast<double>(symbolPeriods_)};
+        return {timeStartSeconds_/timeScale_, timeEndSeconds_/timeScale_};
+    }
+    static QString tickText(double value, double step) {
+        // Enough decimals to distinguish RF ticks even far from the origin.
+        // Fixed notation avoids wasting a wide ADC gutter on "-3.277e+04".
+        const int decimals = step > 0 ? std::clamp(static_cast<int>(std::ceil(-std::log10(step)))+1, 0, 12) : 4;
+        if (std::abs(value) < step*1e-8) value = 0;
+        if (std::abs(value) >= 1e8 || (step > 0 && step < 1e-8)) {
+            const double needed = step > 0 && value != 0
+                ? std::ceil(std::log10(std::abs(value)) - std::log10(step)) + 2 : 12;
+            const int precision = static_cast<int>(std::clamp(needed, 12.0, 17.0));
+            return QString::number(value, 'g', precision);
+        }
+        auto text = QString::number(value, 'f', decimals);
+        if (text.contains('.')) { while (text.endsWith('0')) text.chop(1); if (text.endsWith('.')) text.chop(1); }
+        return text;
+    }
+    const AxisLayout& axisLayout() const {
+        if (!axisLayoutDirty_ && axisLayoutSize_ == size() && axisLayoutDpr_ == devicePixelRatioF()) return axisLayout_;
+        axisLayoutDirty_ = false; axisLayoutSize_ = size(); axisLayoutDpr_ = devicePixelRatioF();
+        AxisLayout result; result.font = font(); result.font.setFamily(QStringLiteral("Consolas"));
+        if (mode_ == ChartMode::Navigation) { result.plot = baselinePlotRect(); axisLayout_ = std::move(result); return axisLayout_; }
+        const QFontMetricsF metrics(result.font, this);
+        constexpr double edge = 3.0, gap = 5.0;
+        const auto ink = [&](const QString& text) {
+            // Include bearings and antialiasing, rather than only advance width.
+            return metrics.tightBoundingRect(text).united(QRectF(0,-metrics.ascent(),metrics.horizontalAdvance(text),metrics.height())).adjusted(-1,-1,1,1);
+        };
+        const auto makeTicks = [&](bool horizontal, int count) {
+            std::vector<AxisTick> values;
+            const auto [low,high] = tickRange(horizontal);
+            for (int i=0; i<count; ++i) {
+                const double fraction = count > 1 ? double(i)/(count-1) : .5;
+                const double value = horizontal ? low+(high-low)*fraction : high-(high-low)*fraction;
+                const auto text = tickText(value,std::abs(high-low)/std::max(1,count-1));
+                values.push_back({text,value,fraction,{},ink(text)});
+            }
+            return values;
+        };
+        int xCount = 5, yCount = 5;
+        for (;;) {
+            result.xTicks = makeTicks(true,xCount); result.yTicks = makeTicks(false,yCount);
+            double yWidth = 0, yHeight = 0, xHeight = 0;
+            for (const auto& tick : result.yTicks) { yWidth = std::max(yWidth,tick.ink.width()); yHeight = std::max(yHeight,tick.ink.height()); }
+            for (const auto& tick : result.xTicks) xHeight = std::max(xHeight,tick.ink.height());
+            const double left = std::ceil(edge+yWidth+gap), top = std::ceil(edge+yHeight/2);
+            const double bottom = std::ceil(edge+std::max(gap+xHeight,yHeight/2));
+            result.plot = QRectF(left,top,std::max(1.0,width()-left-edge),std::max(1.0,height()-top-bottom));
+            if (mode_ == ChartMode::Scatter) {
+                const auto side = std::min(result.plot.width(),result.plot.height());
+                result.plot = QRectF(result.plot.center()-QPointF(side/2,side/2),QSizeF(side,side));
+            }
+            for (auto& tick : result.xTicks) {
+                const auto anchor = result.plot.left()+tick.fraction*result.plot.width();
+                // Endpoint ink stays inside the plot width, out of the Y gutter.
+                const auto x = std::clamp(anchor-tick.ink.width()/2,result.plot.left(),std::max(result.plot.left(),result.plot.right()-tick.ink.width()));
+                tick.baseline = QPointF(x-tick.ink.left(),result.plot.bottom()+gap-tick.ink.top());
+                tick.ink.translate(tick.baseline);
+            }
+            for (auto& tick : result.yTicks) {
+                const auto anchor = result.plot.top()+tick.fraction*result.plot.height();
+                tick.baseline = QPointF(result.plot.left()-gap-tick.ink.right(),anchor-tick.ink.center().y());
+                tick.ink.translate(tick.baseline);
+            }
+            const auto overlaps = [](const std::vector<AxisTick>& ticks) {
+                for (std::size_t i=1; i<ticks.size(); ++i)
+                    if (ticks[i-1].text == ticks[i].text ||
+                        ticks[i-1].ink.adjusted(-2,-2,2,2).intersects(ticks[i].ink)) return true;
+                return false;
+            };
+            const bool thinX = xCount>1 && overlaps(result.xTicks), thinY = yCount>1 && overlaps(result.yTicks);
+            if (!thinX && !thinY) break;
+            if (thinX) xCount = xCount==5 ? 3 : xCount-1;
+            if (thinY) yCount = yCount==5 ? 3 : yCount-1;
+        }
+        for (const auto& tick : result.xTicks) result.xBand = result.xBand.united(tick.ink);
+        for (const auto& tick : result.yTicks) result.yBand = result.yBand.united(tick.ink);
+        axisLayout_ = std::move(result);
+        return axisLayout_;
+    }
     void cancelReference() {
         if(referenceCancellation_)referenceCancellation_->store(true);
         if(referenceWorker_.joinable())referenceWorker_.join();
@@ -623,6 +822,7 @@ private:
         if (!software) rebuildGeometry();
         painter.setRenderHint(QPainter::Antialiasing, true);
         const QRectF rect = plotRect();
+        setProperty("plotRect",rect);
         if(mode_==ChartMode::Scatter)setProperty("iqPlotRect",rect);
         if(mode_==ChartMode::Heatmap)setProperty("heatmapDrawRect",raster_.isNull()?QRectF{}:rect);
         if (software)
@@ -647,56 +847,10 @@ private:
         }
         painter.setPen(QPen(QColor("#607a91"), 1)); painter.drawRect(rect);
         chart_feedback::drawAxisHighlight(painter, this->rect(), rect, hoverZone_);
-        painter.setFont(QFont("Consolas", 8)); painter.setPen(QColor("#86a4bd"));
-        for (int tick = 0; tick <= 4; ++tick) {
-            QString label;
-            if (mode_ == ChartMode::Curve || mode_ == ChartMode::Spectrum)
-                label = QString::number(yAxisMaximum_ - (yAxisMaximum_ - yAxisMinimum_) * tick / 4.0, 'g', 4);
-            else if (mode_ == ChartMode::Heatmap) {
-                const double value = frequencyRange_.upperHz - (frequencyRange_.upperHz - frequencyRange_.lowerHz) * tick / 4.0 +
-                    (frequencyAbsolute_ ? frequencyCenterHz_ : 0.0);
-                label = QString::number(value / frequencyScale_, 'g', 4);
-            } else if (mode_ == ChartMode::Scatter || mode_ == ChartMode::Eye)
-                label = QString::number(yAxisMaximum_-(yAxisMaximum_-yAxisMinimum_)*tick/4,'g',4);
-            else if (mode_ == ChartMode::Timeline)
-                label = QString::number(1.0 - tick * .25, 'g', 3);
-            if (!label.isEmpty()) painter.drawText(QRectF(0, rect.top() + rect.height() * tick / 4.0 - 8, 48, 16), Qt::AlignRight, label);
-        }
-        const QString verticalLabel = mode_ == ChartMode::Curve || mode_ == ChartMode::Spectrum ? yAxisLabel_ :
-            mode_ == ChartMode::Heatmap ? frequencyAxisLabel_ : mode_ == ChartMode::Scatter ? "Q ("+yAxisLabel_+")" :
-            mode_ == ChartMode::Eye ? yAxisLabel_ : QStringLiteral("置信度 (0–1)");
-        setProperty("yAxisLabel", verticalLabel);
-        if (!verticalLabel.isEmpty()) {
-            painter.save();
-            painter.translate(10, rect.center().y());
-            painter.rotate(-90);
-            painter.drawText(QRectF(-rect.height() / 2, -8, rect.height(), 16), Qt::AlignCenter, verticalLabel);
-            painter.restore();
-        }
-        for (int tick = 0; tick <= 4; ++tick) {
-            QString label;
-            if (mode_ == ChartMode::Spectrum) {
-                const double offset = frequencyAbsolute_ ? frequencyCenterHz_ : 0.0;
-                label = QString::number((frequencyRange_.lowerHz + offset +
-                    (frequencyRange_.upperHz - frequencyRange_.lowerHz) * tick / 4.0) / frequencyScale_, 'g', 4);
-            } else if (mode_ == ChartMode::Scatter)
-                label = QString::number(yAxisMinimum_+(yAxisMaximum_-yAxisMinimum_)*tick/4,'g',4);
-            else if (mode_ == ChartMode::Eye)
-                label = QString::number(symbolPeriods_ * tick / 4.0, 'g', 3);
-            else if (mode_ == ChartMode::Curve || mode_ == ChartMode::Heatmap || mode_ == ChartMode::Timeline) {
-                const double value = timeStartSeconds_ + (timeEndSeconds_ - timeStartSeconds_) * tick / 4.0;
-                label = QString::number(value / timeScale_, 'g', 4);
-            }
-            if (!label.isEmpty()) {
-                const double x = rect.left() + rect.width() * tick / 4.0;
-                painter.drawText(QRectF(x - 42, rect.bottom() + 1, 84, 14), Qt::AlignHCenter | Qt::AlignTop, label);
-            }
-        }
-        const QString horizontalLabel = mode_ == ChartMode::Spectrum ? frequencyAxisLabel_ :
-            mode_ == ChartMode::Scatter ? "I ("+yAxisLabel_+")" :
-            mode_ == ChartMode::Eye ? QStringLiteral("时间 (符号周期)") : timeAxisLabel_;
-        setProperty("xAxisLabel", horizontalLabel);
-        painter.drawText(QRectF(rect.left(), height() - 16, rect.width(), 14), Qt::AlignHCenter | Qt::AlignBottom, horizontalLabel);
+        const auto& axes = axisLayout();
+        painter.setFont(axes.font); painter.setPen(QColor("#86a4bd"));
+        for (const auto& tick : axes.yTicks) painter.drawText(tick.baseline,tick.text);
+        for (const auto& tick : axes.xTicks) painter.drawText(tick.baseline,tick.text);
         if (software && mode_ == ChartMode::Scatter) {
             painter.save(); painter.setClipRect(rect); painter.setPen(Qt::NoPen); painter.setBrush(QColor("#53c8f1"));
             int outside=0;
@@ -864,6 +1018,7 @@ private:
     LinkedCursorState pinnedCursor_;
     TimeRange timeSourceRange_;
     SampleIndex relativeOrigin_ = 0;
+    bool relativeTime_ = false;
     double sourceRate_ = 1;
     std::shared_ptr<const SpectrogramData> spectralData_;
     std::vector<SampleIndex> samplePositions_;
@@ -885,6 +1040,10 @@ private:
     }
     chart_feedback::Zone hoverZone_ = chart_feedback::Zone::None, dragZone_ = chart_feedback::Zone::None;
     ChartMode mode_;
+    mutable AxisLayout axisLayout_;
+    mutable bool axisLayoutDirty_ = true;
+    mutable QSize axisLayoutSize_;
+    mutable qreal axisLayoutDpr_ = 0;
     AcceleratedSurface* surface_ = nullptr;
     std::vector<std::vector<float>> series_;
     std::vector<std::complex<float>> points_;
@@ -938,8 +1097,17 @@ QWidget* plotPanel(const QString& title, const QString& id, ChartMode mode, Narr
     auto* layout = new QVBoxLayout(result); layout->setContentsMargins(1, 1, 1, 1); layout->setSpacing(0);
     auto* heading = new QWidget; heading->setObjectName(id + "Head"); heading->setProperty("uiRole", "chartHead"); heading->setFixedHeight(30);
     auto* row = new QHBoxLayout(heading); row->setContentsMargins(9, 0, 9, 0);
-    auto* name = textLabel(title, id + "Title"); name->setStyleSheet("font-weight:600;color:#d5e6f5;"); row->addWidget(name); row->addStretch();
+    auto* name = textLabel(title, id + "Title"); name->setWordWrap(false); name->setStyleSheet("font-weight:600;color:#d5e6f5;"); row->addWidget(name);
     layout->addWidget(heading); chart = new NarrowbandChart(mode); chart->setObjectName(id + QStringLiteral("Chart"));
+    if (mode != ChartMode::Navigation) {
+        auto* axes = new AxisHeaderLabel(heading); axes->setObjectName(chart->objectName()+"AxisHeader");
+        axes->setDescription(chart->axisDescription()); row->addWidget(axes);
+        chart->axisDescriptionChanged = [label=QPointer<AxisHeaderLabel>(axes)](const AxisDescription& description) {
+            if (label) label->setDescription(description);
+        };
+    }
+    // MainWindow replaces this spacer with its existing ChartControlStrip.
+    row->addStretch();
     layout->addWidget(chart, 1); return result;
 }
 
@@ -1133,8 +1301,12 @@ QJsonObject NarrowbandWorkspace::renderStatistics() const {
         {"gpuDataDrawCalls", static_cast<qint64>(visibleGpuDataDrawCalls())}, {"backend", visibleBackendDescription()}};
     result["inverseCursorDrawCalls"]=static_cast<qint64>(inverseCalls);
     result["analysisGeneration"]=QString::number(analysisGeneration_);
+    result["psdGeneration"]=QString::number(psdGeneration_);
     result["analysisPending"]=analysisPending_;
     result["pageIndex"]=currentPageIndex();
+    QJsonArray layouts;
+    for (const auto* chart : charts_) if (chart) layouts.append(chart->layoutStatistics());
+    result["chartLayouts"] = layouts;
     if (const auto* channel=session_.activeChannel()) {
         result["syncPanelExpanded"]=channel->syncPanelExpanded;
         result["constellationView"]=QJsonObject{{"pointBudget",channel->analysis.pointCount},
@@ -1847,7 +2019,8 @@ void NarrowbandWorkspace::buildPages() {
     };
     if (timeline_) timeline_->gesture = [this](QPointF a, QPointF, int wheel, bool selection) {
         if (recognitionSegments_.empty() || selection || wheel) return;
-        const auto fraction = std::clamp(a.x(), 0.0, 1.0);
+        const auto plot=timeline_->plotRect();
+        const auto fraction = std::clamp((a.x()*timeline_->width()-plot.left())/plot.width(), 0.0, 1.0);
         selectedRecognitionSegment_ = std::min(static_cast<int>(recognitionSegments_.size()) - 1,
             static_cast<int>(fraction * recognitionSegments_.size()));
         updateRecognitionDetail();

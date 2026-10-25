@@ -1,0 +1,362 @@
+[
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\A-psd-tf-long.png",
+    "bytes": 542143,
+    "sha256": "d3ee0eae17b80e24161d62a3a5fe8ad9a8166eca0fe457d71b0ba91e8bf1e268"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\A-psd-tf-short.png",
+    "bytes": 1359297,
+    "sha256": "3209a9027d3f6a8428a946f54ba59f5ad3164eed746b43cd537f5465fa6f80ee"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\A-psd-waterfall-long.png",
+    "bytes": 618670,
+    "sha256": "7d555e3215ba06aa467296300be595b635cea1bea217a9c3f213f285bc7c0ec9"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\A-psd-waterfall-short.png",
+    "bytes": 1901143,
+    "sha256": "9aa7207ab570278b08a6de2f00ffa4ccecd186889965ec9542fd2967c963b7ac"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\A-waveform-tf-long.png",
+    "bytes": 532706,
+    "sha256": "cdd4d8bfbf1406e2e8fff512cbe0a4c696e7967d49524384977c60199ea41a0b"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\A-waveform-tf-short.png",
+    "bytes": 1358657,
+    "sha256": "9944b7b29786cc0a692f6683f34df36d766cdd4687c4ec350fc41845f52891f7"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\A-waveform-waterfall-long.png",
+    "bytes": 607759,
+    "sha256": "5f677bb36e371ed58f82a9ba3145e898756061da9e76042553ab676d1acc9875"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\A-waveform-waterfall-short.png",
+    "bytes": 1891559,
+    "sha256": "8055bb08777c0d626f4d4a5a812edb995d469b4af15fd6fa9e65a71eb1371084"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\B-psd-tf-long.png",
+    "bytes": 545080,
+    "sha256": "895a0bc352f2209119ac16431da2a155298d4951b428de1f4eb432ee4e227742"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\B-psd-tf-short.png",
+    "bytes": 1363613,
+    "sha256": "208a544db6c15655745a49d936fb3a09e1a9dca4d132b278f057991668810a21"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\B-psd-waterfall-long.png",
+    "bytes": 621668,
+    "sha256": "0e39a88851e6507d0db0c265ba359b79d40f8427055d6f67ed437b9f57953989"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\B-psd-waterfall-short.png",
+    "bytes": 1904304,
+    "sha256": "416aa2f12ee0b5e05e4040c29fa73e6ff2063a2934c520b63a8bd18760cdb15d"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\B-waveform-tf-long.png",
+    "bytes": 535527,
+    "sha256": "0fe02efe4b06128c5f25f6e01726ba375ac1b8598364215e28e7bba615793f87"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\B-waveform-tf-short.png",
+    "bytes": 1350824,
+    "sha256": "a301aa3e2e4b3b9a44bd4509dedad7a2c21d2c0e27d35fe7cac68d6d24aefe06"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\B-waveform-waterfall-long.png",
+    "bytes": 610100,
+    "sha256": "fb2ad86093ef3b0ecd0faef045debc9d7fd3f7a45fa4f6164c478e8bb57bd2b9"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\B-waveform-waterfall-short.png",
+    "bytes": 1893852,
+    "sha256": "763e4ea5dcd53b402aaccb2f48e8d0b5bfdd7a9b49ff11b15049dd60ae5a4923"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\C-psd-tf-long.png",
+    "bytes": 544170,
+    "sha256": "108c9e11a9e1cb99ca5963650793b85c54185e8a455eb4237d32ec173d953431"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\C-psd-tf-short.png",
+    "bytes": 1370496,
+    "sha256": "a3f23f6c3c89808b76a40db234b87aeb26706b72d5ee91b5d0fe4f6b854f9a43"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\C-psd-waterfall-long.png",
+    "bytes": 625777,
+    "sha256": "9212402f455145082b15d98028ef60a28b3f2ffd75447668b09afa7e0934c321"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\C-psd-waterfall-short.png",
+    "bytes": 1896671,
+    "sha256": "b02a50869b23f798486284422e0cf70356a493a6c2415635bbdccf57f74eeabc"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\C-waveform-tf-long.png",
+    "bytes": 537670,
+    "sha256": "008ec6e947db210bf9b89f7928ecdc2d23c0780bec2a820b83fd316eada915c8"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\C-waveform-tf-short.png",
+    "bytes": 1359907,
+    "sha256": "e195c350a0d34656107f11113037c88f218fde633bdf72e77caab96b59ea9c81"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\C-waveform-waterfall-long.png",
+    "bytes": 614607,
+    "sha256": "46dede24850df879b07e58665016c09e6263ab021ca3c9b013c947c4c552f930"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\C-waveform-waterfall-short.png",
+    "bytes": 1889529,
+    "sha256": "bfec3e49d8ea72e6f31a047b9d7a7e790537101e22847d27cf95a0318ec4d138"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\CompactHeader-psd-tf-long.png",
+    "bytes": 554948,
+    "sha256": "e9585ad54c0247876adaac0f0acfff95efd381bbb356583e4b2b3fc469d571e4"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\CompactHeader-psd-tf-short.png",
+    "bytes": 1407623,
+    "sha256": "11d107948680e783a45c653b41ec790b421fb8c1fab7c4c4c3c3e1803f6d90cb"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\CompactHeader-psd-waterfall-long.png",
+    "bytes": 639917,
+    "sha256": "03d622f71e6e44d177540f47ffe6d0b3a8f344d81f7144917a9a7bd82d49e5be"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\CompactHeader-psd-waterfall-short.png",
+    "bytes": 1948826,
+    "sha256": "a98c9d06bb30b6099d9cb4fa8ea32e2a821128c1de076ba8200faa513ede8722"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\CompactHeader-waveform-tf-long.png",
+    "bytes": 545925,
+    "sha256": "3e75dd4ecf655b9e1b3869d0904ae26c5d637c44bfa01e3b0b2642a8ab6ad5af"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\CompactHeader-waveform-tf-short.png",
+    "bytes": 1394765,
+    "sha256": "118b721959f3f2ddc25918fa9c27191e9c65c974156b2e5c408e28bb430df522"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\CompactHeader-waveform-waterfall-long.png",
+    "bytes": 628858,
+    "sha256": "775776b61cac8b1c2ed8ccb64c075b583de5e6219be437e386a4fa75d46ca18c"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\CompactHeader-waveform-waterfall-short.png",
+    "bytes": 1938720,
+    "sha256": "59b0fcb61d706a1559e47cd34e4da4e8921b3f0bb1c3e7224d6319c51be41535"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-bottom-known-dedup-ok-file-picker.png",
+    "bytes": 41371,
+    "sha256": "7897f42261151db08ea7ff10c9692b96a469348a8d8265735353e3086891958f"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-bottom-known-dedup-ok-preview-ok.png",
+    "bytes": 63662,
+    "sha256": "5cc15ef6987dcb24cf7ef248996fe6cf76a44004169ad92ff43790adaadab9b0"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-bottom-unknown-mapping-cancel-file-picker.png",
+    "bytes": 34885,
+    "sha256": "cfc0a08c7f294c2ace95f89465fdc9c3a28bcc1d600edbfc35866fbcd03add13"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-bottom-unknown-mapping-cancel-mapping-cancel.png",
+    "bytes": 78808,
+    "sha256": "247076a198af56a7f1459da4487f8f4b719d3672900384146fa1c1075e600bd8"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-bottom-unknown-preview-cancel-file-picker.png",
+    "bytes": 34885,
+    "sha256": "cfc0a08c7f294c2ace95f89465fdc9c3a28bcc1d600edbfc35866fbcd03add13"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-bottom-unknown-preview-cancel-mapping-confirm.png",
+    "bytes": 80132,
+    "sha256": "ba825aa7d3208822cc74cc1798bfc655986d2155ba7dc2db05c6671aeca36af8"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-bottom-unknown-preview-cancel-preview-cancel.png",
+    "bytes": 55416,
+    "sha256": "e2d13fe39560bd26ac306b521dbf678992579ec4bf5520e164f71d2bca65a64a"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-menu-known-dedup-ok-file-picker.png",
+    "bytes": 41362,
+    "sha256": "a3644031fa9b7b656dd00215497f0a3a56a5254a63613cda992402c5f68e4f3f"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-menu-known-dedup-ok-preview-ok.png",
+    "bytes": 63662,
+    "sha256": "5cc15ef6987dcb24cf7ef248996fe6cf76a44004169ad92ff43790adaadab9b0"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-menu-unknown-mapping-cancel-file-picker.png",
+    "bytes": 34885,
+    "sha256": "cfc0a08c7f294c2ace95f89465fdc9c3a28bcc1d600edbfc35866fbcd03add13"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-menu-unknown-mapping-cancel-mapping-cancel.png",
+    "bytes": 78808,
+    "sha256": "247076a198af56a7f1459da4487f8f4b719d3672900384146fa1c1075e600bd8"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-menu-unknown-preview-cancel-file-picker.png",
+    "bytes": 34885,
+    "sha256": "cfc0a08c7f294c2ace95f89465fdc9c3a28bcc1d600edbfc35866fbcd03add13"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-menu-unknown-preview-cancel-mapping-confirm.png",
+    "bytes": 80132,
+    "sha256": "ba825aa7d3208822cc74cc1798bfc655986d2155ba7dc2db05c6671aeca36af8"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Debug-gpu\\diagnostics\\Debug-gpu-20261025-151205-265\\ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7\\manual-label-menu-unknown-preview-cancel-preview-cancel.png",
+    "bytes": 55416,
+    "sha256": "e2d13fe39560bd26ac306b521dbf678992579ec4bf5520e164f71d2bca65a64a"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-01-ddc.png",
+    "bytes": 281499,
+    "sha256": "3b014ee74afef3680b24a59531049c00e5d2c00f4641512c6fbd200081e364bd"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-02-raw.png",
+    "bytes": 312378,
+    "sha256": "9ac7736ebd1b90d70a52c259a23e9d980f04456ded77cea1c1190d93667d9bbc"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-03-manual-eye.png",
+    "bytes": 741091,
+    "sha256": "254d9d982369376b93750d87b9a493f4f7012c554b4eb32c1c3ee92c8799d027"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-04-recovered-constellation.png",
+    "bytes": 396727,
+    "sha256": "e1cabed46e8aa9a6ef4bb002662d72b3d1411bdbafb36cb7f6f2757cb39fb884"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-05-recovered-eye.png",
+    "bytes": 737478,
+    "sha256": "7556dd66c20872472c23d01eebc9b0d7825c4da5f86a8030e214b603d77754ed"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-06-recognition-unavailable.png",
+    "bytes": 448364,
+    "sha256": "e4ec03f99e92f97d57aec5e539a52309480aa8e6b50d83e6ed60dc83874797f1"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-07-demodulation-unavailable.png",
+    "bytes": 904246,
+    "sha256": "8de0e5610a448aca0e3ffe5f804c141e8a633f9b1efc720711eb5e34452f3132"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-08-reopened-eye.png",
+    "bytes": 734367,
+    "sha256": "96510eb474ca548a9d2cc125dde46d7856dd46a8da917adde023f5560d091bca"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-09-cancelled.png",
+    "bytes": 226114,
+    "sha256": "099fd7237a840d8f699d079ae94ad63182b7a0851197c1150b59cf04c9a57f9b"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-10-decision-unknown.png",
+    "bytes": 314914,
+    "sha256": "b4601110f0ba51a4cb92bd5ef9c697f165f3e8d453473952ba3cef7dd473f862"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-11-decision-reference.png",
+    "bytes": 406030,
+    "sha256": "ce6178f843d9e74ee92af0c6aca6ad0f8dd18f2a123fb9c7c04925ba2b9b77cf"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-12-decision-iq-zoom.png",
+    "bytes": 412121,
+    "sha256": "65f9abd553616a17d679cfda466e64de1fa3df1dd3074df774f37afff0166e57"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\cf32-13-decision-reference-off.png",
+    "bytes": 405460,
+    "sha256": "6452df78dbf1746fe6bff3700399d7b21a8ed3d50b87ee917338e54bb72e6945"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-01-ddc.png",
+    "bytes": 282780,
+    "sha256": "c4d4985e3540f1a6722e6739b34234913a84c3c132431b7d906f3a01bd9b354c"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-02-raw.png",
+    "bytes": 310837,
+    "sha256": "2df9a1f3f25cd8304499b6be7bca44a489982b231d00e1c7dea68a4332aac751"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-03-manual-eye.png",
+    "bytes": 739907,
+    "sha256": "e5436f831a98759a8537b0deb12eef1300ed13800aa665cffb6a68d48b732321"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-04-recovered-constellation.png",
+    "bytes": 377875,
+    "sha256": "be504136e0ee50312877fe51965eecf38df3b40d71e674249d446fb7d434e2a2"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-05-recovered-eye.png",
+    "bytes": 721012,
+    "sha256": "53d6a590eb8b8a8a600d704382adbed6d6b53c11ec7955a341f3b9b8f4d78187"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-06-recognition-unavailable.png",
+    "bytes": 428984,
+    "sha256": "695b81bc551e9ab536001f20d89973532764a00172e768afbefb4c74437a3f29"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-07-demodulation-unavailable.png",
+    "bytes": 885488,
+    "sha256": "06c967d1bb053fbe9f4ab830019ff76bc844d23ba0b0009d987a77b840c209d6"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-08-reopened-eye.png",
+    "bytes": 718596,
+    "sha256": "371b1433e51d9c03a5be7f39238835ce53fc288aca225040e641146df1eae804"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-09-cancelled.png",
+    "bytes": 224825,
+    "sha256": "549f9cc3f04779bb8f7c067dcbacac55f69b0254ddfb4975d9eec9459a50374d"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-10-decision-unknown.png",
+    "bytes": 313299,
+    "sha256": "bcdb4b61284d9ccef945d26cd0103d261fa01ae73f166ab2d4cfc1f0cf7ebad9"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-11-decision-reference.png",
+    "bytes": 387733,
+    "sha256": "8ff7387a705a42f6710483ca5d75796b0faea53b7ca9b291efcb08dc15c5d9b2"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-12-decision-iq-zoom.png",
+    "bytes": 392119,
+    "sha256": "856661ed74651098da6129425c648c486f1be35fd162a57ad10ba25ef54d6fc4"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Debug-gpu\\diagnostics\\native-20261025-152216-950-Debug\\ci16-13-decision-reference-off.png",
+    "bytes": 387145,
+    "sha256": "a603a2fb91faf78b204d2fae42165d30f4047b076c1172ba6c97f6315e58add8"
+  }
+]

@@ -18,6 +18,8 @@ class UxR3AxisTests : public QObject {
   void measuredInkAndIndependentBands();
   void largerFontsAndScientificTicksGrowBudget();
   void sharedGeometryAndModeSwitches();
+  void compactHeaderRecoversActualPlotArea();
+  void compactHeaderRetainsPhysicalDescription();
   void physicalAxesAndSourceUnits();
   void coordinateAndHitZones_data();
   void coordinateAndHitZones();
@@ -120,7 +122,7 @@ void UxR3AxisTests::physicalAxesAndSourceUnits() {
 void UxR3AxisTests::coordinateAndHitZones_data() {
   QTest::addColumn<bool>("waterfall");
   QTest::addColumn<int>("mode");
-  for (int mode = 0; mode < 3; ++mode)
+  for (int mode = 0; mode < 4; ++mode)
     for (bool waterfall : {false, true})
       QTest::newRow(qPrintable(QString("%1-%2").arg(mode).arg(waterfall)))
           << waterfall << mode;
@@ -188,6 +190,56 @@ void UxR3AxisTests::auxiliaryWheelAndEscape() {
   QCOMPARE(session.activeFile()->display.auxiliaryMin, minimum);
   QCOMPARE(session.activeFile()->display.auxiliaryMax, maximum);
   QCOMPARE(session.activeFile()->view, view);
+}
+
+void UxR3AxisTests::compactHeaderRecoversActualPlotArea() {
+  Session session;
+  session.addDemoFile();
+  QWidget host;
+  PlotWidget main(session, PlotWidget::Kind::Main, &host);
+  PlotWidget auxiliary(session, PlotWidget::Kind::Auxiliary, &host);
+  main.resize(1200, 700); auxiliary.resize(1200, 170);
+  QFont font("Consolas"); font.setPixelSize(12);
+  main.setFont(font); auxiliary.setFont(font);
+  QCOMPARE(main.axisTitleMode(), PlotWidget::AxisTitleMode::CompactHeader);
+  const auto state = session.activeFile()->view;
+  main.setAxisTitleMode(PlotWidget::AxisTitleMode::UnitAtTop);
+  const auto before = auxiliary.plotRect();
+  const auto line = auxiliary.axisLayout().budget.tickHeight;
+  main.setAxisTitleMode(PlotWidget::AxisTitleMode::CompactHeader);
+  const auto after = auxiliary.plotRect();
+  QVERIFY(after.height() - before.height() >= 2 * line);
+  QCOMPARE(after.width(), before.width());
+  QCOMPARE(session.activeFile()->view, state);
+  QVERIFY(auxiliary.axisLayout().header.isEmpty());
+  QVERIFY(auxiliary.axisLayout().xTitle.isEmpty());
+  QVERIFY(auxiliary.axisLayout().xTicks.bottom() < auxiliary.height());
+  font.setPixelSize(28); main.setFont(font);
+  QCOMPARE(auxiliary.plotRect().top(), after.top());
+  QCOMPARE(auxiliary.plotRect().height(), after.height());
+  QCOMPARE(main.plotRect().left(), auxiliary.plotRect().left());
+  QVERIFY(main.plotRect().top() > auxiliary.plotRect().top());
+}
+
+void UxR3AxisTests::compactHeaderRetainsPhysicalDescription() {
+  Session session; session.addDemoFile("RF", 20e6, 10e9, 2);
+  PlotWidget main(session, PlotWidget::Kind::Main);
+  main.resize(1200, 500);
+  session.activeFile()->display.absoluteFrequency = true;
+  session.activeFile()->view.frequency = {10e9, 10e9 + 20};
+  auto description = main.axisDescription();
+  QVERIFY(description.fullText().contains("RF"));
+  QVERIFY(description.fullText().contains("F₀"));
+  QVERIFY(description.fullText().contains("Hz"));
+  AxisHeaderLabel header;
+  header.setDescription(description);
+  header.resize(header.minimumSizeHint()); header.show();
+  QCoreApplication::processEvents();
+  QCOMPARE(header.text(), description.shortText());
+  QCOMPARE(header.toolTip(), description.fullText());
+  QVERIFY(header.width() >= header.fontMetrics().horizontalAdvance(header.text()));
+  session.activeFile()->display.absoluteFrequency = false;
+  QVERIFY(main.axisDescription().fullText().contains("基带"));
 }
 
 QTEST_MAIN(UxR3AxisTests)

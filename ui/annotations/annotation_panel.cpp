@@ -6,6 +6,7 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QFormLayout>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -523,12 +524,7 @@ void AnnotationPanel::buildFilters(QVBoxLayout* outer) {
   count_ = new QLabel;
   count_->setObjectName("annotationCounts");
   bar->addWidget(count_, 1);
-  button(bar, "标签预览…", "importLabels", [this] {
-    auto path = QFileDialog::getOpenFileName(
-        this, "导入指定两类原始标签", {},
-        "标签 (*.txt *.sigmf-meta *.sigmf-data *.json)");
-    if (!path.isEmpty()) importLabels(path);
-  });
+  button(bar, "导入标签…", "importLabels", [this] { showImportLabelsDialog(); });
   button(bar, "JSON", "exportAnnotationJson", [this] { exportFile(false); });
   button(bar, "CSV", "exportAnnotationCsv", [this] { exportFile(true); });
   outer->addLayout(bar);
@@ -1675,6 +1671,24 @@ void AnnotationPanel::exportFile(bool csv) {
     emit message(csv ? "已导出CSV；原始字段/完整修订仅JSON保留"
                      : "已导出标记JSON；这是工程交换格式，不是第三类源标签");
 }
+void AnnotationPanel::showImportLabelsDialog() {
+  const auto* target = session_.activeFile();
+  if (!target) { emit message("请先添加或选择目标信号，再导入标签"); return; }
+  const auto fileId = target->metadata.id;
+  const auto generation = session_.projectGeneration();
+  QFileDialog dialog(this, QString("导入标签 — 目标信号：%1").arg(q(target->metadata.name)),
+                     QFileInfo(q(target->metadata.path)).absolutePath(),
+                     "标签 (*.txt *.sigmf-meta *.sigmf-data *.json)");
+  dialog.setObjectName("importLabelFileDialog");
+  dialog.setFileMode(QFileDialog::ExistingFile);
+  if (dialog.exec() != QDialog::Accepted || dialog.selectedFiles().isEmpty()) return;
+  if (!session_.activeFile() || session_.activeFile()->metadata.id != fileId ||
+      session_.projectGeneration() != generation) {
+    emit message("目标信号已变化，标签导入已取消"); return;
+  }
+  importLabels(dialog.selectedFiles().front());
+}
+
 bool AnnotationPanel::importLabels(const QString& path, QString* error,
                                    bool preview) {
   auto* f = session_.activeFile();
@@ -1707,6 +1721,10 @@ bool AnnotationPanel::importLabels(const QString& path, QString* error,
   if (!f || f->metadata.id != metadata.id || generation != session_.projectGeneration()) { if (error) *error = "标签导入上下文已变化"; return false; }
   if (result.state == LabelImportState::Incomplete && result.incompleteRecords) {
     if (QMessageBox::question(this, "仅保存标签来源证据", result.error + "\n只保留原文、类别、映射和诊断，生成 0 个定位标记。继续？", QMessageBox::Yes | QMessageBox::Cancel) != QMessageBox::Yes) return false;
+    f = session_.activeFile();
+    if (!f || f->metadata.id != metadata.id || generation != session_.projectGeneration()) {
+      if (error) *error = "标签导入上下文已变化"; return false;
+    }
     const auto archived = session_.annotations().publishSourceSet(*f, result.sourceSet, {});
     if (error) *error = q(archived.error);
     emit message(archived.ok ? "已保存原始标签证据；0 个可定位标记" : q(archived.error));
@@ -1718,6 +1736,11 @@ bool AnnotationPanel::importLabels(const QString& path, QString* error,
     dialog.setWindowTitle("标签导入预览");
     dialog.resize(780, 570);
     auto* l = new QVBoxLayout(&dialog);
+    auto* target = new QLabel(QString("目标信号：%1\n%2").arg(q(metadata.name), q(metadata.path)));
+    target->setObjectName("labelImportTarget");
+    target->setTextFormat(Qt::PlainText);
+    target->setWordWrap(true);
+    l->addWidget(target);
     auto* report = new QPlainTextEdit;
     report->setReadOnly(true);
     report->setMaximumHeight(150);
@@ -1751,11 +1774,11 @@ bool AnnotationPanel::importLabels(const QString& path, QString* error,
       text +=
           QString(
               "绑定来源：%1\nFs %2 Hz · Fc %3 Hz · 物理 %4 / 可用 %5 samples\n")
-              .arg(q(f->metadata.path))
-              .arg(f->metadata.sampleRateHz, 0, 'g', 12)
-              .arg(f->metadata.centerFrequencyHz, 0, 'g', 12)
-              .arg(f->metadata.sampleCount)
-              .arg(availableSamples(f->metadata));
+              .arg(q(metadata.path))
+              .arg(metadata.sampleRateHz, 0, 'g', 12)
+              .arg(metadata.centerFrequencyHz, 0, 'g', 12)
+              .arg(metadata.sampleCount)
+              .arg(availableSamples(metadata));
       text += "保留全部原始字段；下表最多展示首200个对象，不截断实际导入。\n";
       report->setPlainText(text);
       const auto count = std::min<std::size_t>(200, result.annotations.size());
@@ -1766,11 +1789,11 @@ bool AnnotationPanel::importLabels(const QString& path, QString* error,
         const QString values[]{
             q(annotation.name), QString::number(annotation.segments.size()),
             segment
-                ? physicalRangeText(segment->range, f->metadata.sampleRateHz)
+                ? physicalRangeText(segment->range, metadata.sampleRateHz)
                 : "时间未定位",
             timeQualityName(segment ? segment->timeQuality
                                     : annotation.observationTimeQuality),
-            segment && segment->range.time.end > availableSamples(f->metadata)
+            segment && segment->range.time.end > availableSamples(metadata)
                 ? "包含尚未读入范围；保留原标签"
                 : "可用范围内"};
         for (int column = 0; column < 5; ++column)
@@ -1785,8 +1808,7 @@ bool AnnotationPanel::importLabels(const QString& path, QString* error,
     };
     show();
     connect(metaOnly, &QCheckBox::toggled, &dialog, [&](bool checked) {
-      result = importLabelSource(path, f->metadata,
-                                 session_.projectGeneration(), checked);
+      result = importLabelSource(path, metadata, generation, checked);
       show();
     });
     connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
@@ -1799,7 +1821,8 @@ bool AnnotationPanel::importLabels(const QString& path, QString* error,
     return false;
   }
   if (!session_.activeFile() ||
-      session_.activeFile()->metadata.id != result.sourceSet.fileId) {
+      session_.activeFile()->metadata.id != result.sourceSet.fileId ||
+      session_.projectGeneration() != generation) {
     if (error) *error = "目标文件已变化";
     return false;
   }

@@ -1,0 +1,971 @@
+{
+  "schemaVersion": 1,
+  "fileCount": 193,
+  "files": [
+    {
+      "path": "before-narrowband/diagnostics/native-20261025-140520-862-Release/ci16-01-ddc.png",
+      "bytes": 280353,
+      "sha256": "aeb89ba46869644bd5f43f17ed0f705cd63d5e8ca475e612358f27c52a841b87"
+    },
+    {
+      "path": "before-narrowband/diagnostics/native-20261025-140520-862-Release/ci16-04-recovered-constellation.png",
+      "bytes": 381225,
+      "sha256": "b70e4dd2383612e7a41eb5eec05161ce169c9d8c2aea7c161d9b481a88dd3b1f"
+    },
+    {
+      "path": "before-narrowband/diagnostics/native-20261025-140520-862-Release/ci16-05-recovered-eye.png",
+      "bytes": 714238,
+      "sha256": "524ef599d212722f970ea062523916f0682d01f5909e065783cada1c0e9af99c"
+    },
+    {
+      "path": "before-narrowband/diagnostics/native-20261025-140520-862-Release/narrowband-analysis-report.json",
+      "bytes": 97847,
+      "sha256": "21ca18670633ac3e93002ed44557a315c6dff510d272980c85f3c9c1a3fc9b87"
+    },
+    {
+      "path": "before/diagnostics/Release-gpu-20261025-140254-688/ux-r3-gpu-de0c9bdf-ab7f-41b2-afbe-3df46bd986a4/A-waveform-tf-short.png",
+      "bytes": 1359444,
+      "sha256": "865069500eeb6e7175cb9c7a8d46f75ba3be74cf99ff9000a1e8c78e3c468f2c"
+    },
+    {
+      "path": "before/diagnostics/Release-gpu-20261025-140254-688/ux-r3-gpu-de0c9bdf-ab7f-41b2-afbe-3df46bd986a4/ux-r3-report.json",
+      "bytes": 2523710,
+      "sha256": "4a0f45ef7e3ecfd4c0c727bdc6a1108047e742a1cc9cdb2067dc7b7a38e2b195"
+    },
+    {
+      "path": "diagnostics/Debug-gpu-all-native-pngs.json",
+      "bytes": 26147,
+      "sha256": "ed05687a9d8c37ccb6da616931c109b57f723c2b88b58fb5c23e8199d9ad3cd1"
+    },
+    {
+      "path": "diagnostics/Debug-software-all-native-pngs.json",
+      "bytes": 26975,
+      "sha256": "538ba9c9d88cea98d9f533e4ee474804cd0e05cddbc4c9471dcbb5428c759287"
+    },
+    {
+      "path": "diagnostics/Release-gpu-all-native-pngs.json",
+      "bytes": 25859,
+      "sha256": "7992bd9a40651f61d740af32a05727e7a1a857b17e14acb37edf5fe961598e7f"
+    },
+    {
+      "path": "diagnostics/Release-software-all-native-pngs.json",
+      "bytes": 27263,
+      "sha256": "b4e9636b4eaac7cba1e9a59702e72d11a35019252072b52a5befb4f24fedd0fa"
+    },
+    {
+      "path": "diagnostics/cli-Debug-A.json",
+      "bytes": 57612,
+      "sha256": "581d83325a3ffa752f2cf597cd36fa53b62e3f01e2dd1687ab57e5a4645701a2"
+    },
+    {
+      "path": "diagnostics/cli-Debug-A.process.log",
+      "bytes": 31993,
+      "sha256": "0af4435e0bae4ba566bf7390a56e091466c866d588c3ee103827102b791b957e"
+    },
+    {
+      "path": "diagnostics/cli-Debug-B.json",
+      "bytes": 57599,
+      "sha256": "21af28e40d8b7fe354971967c642efc70e0b2294484cf9ffbce1e0c4aa12c1a4"
+    },
+    {
+      "path": "diagnostics/cli-Debug-B.process.log",
+      "bytes": 31980,
+      "sha256": "645360fa1380ac3510b600614629f60074c55f89fa343d8bcc94de4e963140ed"
+    },
+    {
+      "path": "diagnostics/cli-Debug-C.json",
+      "bytes": 57634,
+      "sha256": "5a4f2178d0535fd0d38cee6848aa731d77335322498b77b30abfee3b15018543"
+    },
+    {
+      "path": "diagnostics/cli-Debug-C.process.log",
+      "bytes": 32015,
+      "sha256": "1057657c0c0dc47ddc9b9004349850013f61112426b19107eccfc19af5d1b787"
+    },
+    {
+      "path": "diagnostics/cli-Release-A.json",
+      "bytes": 57615,
+      "sha256": "e32d9c7591e0e25e5c7c6457165863056f6e364a7e8ef8de6ed67e5a229e4f75"
+    },
+    {
+      "path": "diagnostics/cli-Release-A.process.log",
+      "bytes": 31992,
+      "sha256": "6592b0bc4dfbf4a9b1fb02594bece20ce2d6c7f3f98014ddb1f708bdaa89abc1"
+    },
+    {
+      "path": "diagnostics/cli-Release-B.json",
+      "bytes": 57603,
+      "sha256": "72bd283ec089faf9aaa8d09d8e4272a2bb295841cb4c00d1840f32739ea5381e"
+    },
+    {
+      "path": "diagnostics/cli-Release-B.process.log",
+      "bytes": 31980,
+      "sha256": "21635e79cde34e39c29c900c1859e90433bc28209c3fdba1e0e0e47a8e675f2d"
+    },
+    {
+      "path": "diagnostics/cli-Release-C.json",
+      "bytes": 57635,
+      "sha256": "387ff6912ddc3dfdbfa47c564ddf7e4f53a4e13363d0bd016ac1cbd0e741aaae"
+    },
+    {
+      "path": "diagnostics/cli-Release-C.process.log",
+      "bytes": 32012,
+      "sha256": "1f05e9f8e07096bd5010c4ecd91074b0ca91a269c194c2a5f90493d60de8d69f"
+    },
+    {
+      "path": "diagnostics/debug-new-narrowband-final/Debug-Narrowband-20261025-142555-771.txt",
+      "bytes": 1231,
+      "sha256": "c5ccd9ba4fd7cd3c9995f5f5c2f997d59b143ac13d0e2aa2e2c27d98f9ffc642"
+    },
+    {
+      "path": "diagnostics/debug-new-narrowband-final/Debug-Narrowband-20261025-142555-771.txt.exit-code",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "diagnostics/debug-new-narrowband-final/Debug-Narrowband-20261025-142555-771.txt.xml",
+      "bytes": 1341,
+      "sha256": "24c6b032c2c002594e12f5fec840176ba9d69788ff8c4a87ad3937f4497cbefe"
+    },
+    {
+      "path": "diagnostics/debug-new-narrowband-r2/CRASH_ANALYSIS.md",
+      "bytes": 1322,
+      "sha256": "06c3ae750bd4ee2eba267eead4f5c0e33a9fb2840831ae65a28db8961d1adbaa"
+    },
+    {
+      "path": "diagnostics/debug-new-narrowband-r2/Debug-Narrowband-20261025-142005-655.txt",
+      "bytes": 330,
+      "sha256": "5fc8ea8b1c57b80ae9adf5d31dd82b7e22d2bf7849d831e317878e2a327fc39b"
+    },
+    {
+      "path": "diagnostics/debug-new-narrowband-r2/Debug-Narrowband-20261025-142005-655.txt.exit-code",
+      "bytes": 13,
+      "sha256": "0065eb2859d3d8935a9b67baade22b7fec608935486ce046841c2b5ab8133241"
+    },
+    {
+      "path": "diagnostics/debug-new-narrowband-r2/Debug-Narrowband-20261025-142005-655.txt.xml",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "diagnostics/debug-new-narrowband/Debug-Narrowband-20261025-141823-468.txt",
+      "bytes": 628,
+      "sha256": "9da26ed0e4615cfdb01d7e5440e15dcb170bc88277088f1651c55549805d25f7"
+    },
+    {
+      "path": "diagnostics/debug-new-narrowband/Debug-Narrowband-20261025-141823-468.txt.exit-code",
+      "bytes": 3,
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04"
+    },
+    {
+      "path": "diagnostics/debug-new-narrowband/Debug-Narrowband-20261025-141823-468.txt.xml",
+      "bytes": 982,
+      "sha256": "d3fae85907fe7dedeb22d425faeb03e7957e8e58ac4d1c1aee1a46c8d721d37e"
+    },
+    {
+      "path": "diagnostics/debug-review-fix/Debug-Narrowband-20261025-143003-540.txt",
+      "bytes": 1309,
+      "sha256": "a57fb683fdb8596902519e082491354c4c74b36e6aeb2329c754418da67de8ce"
+    },
+    {
+      "path": "diagnostics/debug-review-fix/Debug-Narrowband-20261025-143003-540.txt.exit-code",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "diagnostics/debug-review-fix/Debug-Narrowband-20261025-143003-540.txt.xml",
+      "bytes": 1453,
+      "sha256": "ee887413d3bea90ffe80ee71448cb9d02d2ceacf79484fd4eacf1a583daa4a0b"
+    },
+    {
+      "path": "diagnostics/package-Debug-five-pages-gpu.json",
+      "bytes": 76280,
+      "sha256": "ddbb8f09fa4b07843d549628bca5cfdb733cce0ee3623028306381224550c0e7"
+    },
+    {
+      "path": "diagnostics/package-Debug-five-pages-software.json",
+      "bytes": 71492,
+      "sha256": "23198a316f2b73c84418fc68f14530582040aa06424d66ce7c1af913dd3576a2"
+    },
+    {
+      "path": "diagnostics/package-Debug-wideband-gpu.json",
+      "bytes": 62363,
+      "sha256": "da017e7746b012cf7fd73579ae777828fd51d2c7665cb5a2cb881b4df878e833"
+    },
+    {
+      "path": "diagnostics/package-Debug-wideband-software.json",
+      "bytes": 57526,
+      "sha256": "e2076619263b0a12d090725f32ed3df108a3ac11ce39f1b81b69111eadd0e3fe"
+    },
+    {
+      "path": "diagnostics/package-Release-five-pages-gpu.json",
+      "bytes": 76268,
+      "sha256": "afdcadc28dfc623e49e326ec9af921a7e8f7eb18a472eb22b3a356c9ed845a97"
+    },
+    {
+      "path": "diagnostics/package-Release-five-pages-software.json",
+      "bytes": 71495,
+      "sha256": "e1d5db4cca487b301dba08401cc8a4f9e4e07e3a8b332e9f100c1a2410805f7f"
+    },
+    {
+      "path": "diagnostics/package-Release-wideband-gpu.json",
+      "bytes": 62343,
+      "sha256": "d3e3b52a118aaeef244092a185d5c4f91183c6ad4714876bc4309562387ca1a0"
+    },
+    {
+      "path": "diagnostics/package-Release-wideband-software.json",
+      "bytes": 57529,
+      "sha256": "0e9ae0aa6e1481a5b9115b21fdb44565cb1ee349faa17fd47d1c2a5cd71b738d"
+    },
+    {
+      "path": "diagnostics/package-final-Debug-five-pages-gpu.json",
+      "bytes": 76382,
+      "sha256": "0777e15068142728aa67a63655b527ac25b1a867e075893b87d1e8f375eeadb4"
+    },
+    {
+      "path": "diagnostics/package-final-Debug-five-pages-gpu.process.log",
+      "bytes": 42862,
+      "sha256": "23b7a7808cca38d41d29bdeabf3ed3ebae8e4dc51334303c65ae96488c12ec8a"
+    },
+    {
+      "path": "diagnostics/package-final-Debug-five-pages-software.json",
+      "bytes": 71600,
+      "sha256": "131d1a7bfdbcc4401f9b6cd17fd572b1b18ef4459987e2d401b268f5be6d916e"
+    },
+    {
+      "path": "diagnostics/package-final-Debug-five-pages-software.process.log",
+      "bytes": 39814,
+      "sha256": "bb169b80f030ed75fce32b1f9de1b3f3ba3a85a9dcce0f60e48beb03d457507d"
+    },
+    {
+      "path": "diagnostics/package-final-Debug-wideband-gpu.json",
+      "bytes": 62493,
+      "sha256": "529a2666fe18ef9587ae8831bf228576a97ac7a6176d45daa938f3b6507d42c7"
+    },
+    {
+      "path": "diagnostics/package-final-Debug-wideband-gpu.process.log",
+      "bytes": 35131,
+      "sha256": "a2d0a8170981761d17db28ed44e311d29e9ba8683a0c921821786953fff031e8"
+    },
+    {
+      "path": "diagnostics/package-final-Debug-wideband-software.json",
+      "bytes": 57631,
+      "sha256": "8559ba553189f1012aa3fe9f44b302ac4283e4a0342fe3cdf4ce0160990671ad"
+    },
+    {
+      "path": "diagnostics/package-final-Debug-wideband-software.process.log",
+      "bytes": 32000,
+      "sha256": "2dccc6b412627bec599f67211f0051cf078199dd9aaa7cae7bfba25b6d4dcf15"
+    },
+    {
+      "path": "diagnostics/package-final-Release-five-pages-gpu.json",
+      "bytes": 76391,
+      "sha256": "6cd7565586292a80e701e941ebb1cc605c2b8f43ff5bcfd0b2e4918f1582d66d"
+    },
+    {
+      "path": "diagnostics/package-final-Release-five-pages-gpu.process.log",
+      "bytes": 42861,
+      "sha256": "2a623674580a835fb64d89df19b608e1dd3cda6a529920fd48d420605d55ee4b"
+    },
+    {
+      "path": "diagnostics/package-final-Release-five-pages-software.json",
+      "bytes": 71602,
+      "sha256": "cdec678e8e37983b7d2c9cdccc6b3b64e119ac18743faab48b5ba6f99e8fb708"
+    },
+    {
+      "path": "diagnostics/package-final-Release-five-pages-software.process.log",
+      "bytes": 39812,
+      "sha256": "237f9c3c65bd1c31f6e15965856878fe85fe0915f302f9d66b1584f99e5c3708"
+    },
+    {
+      "path": "diagnostics/package-final-Release-wideband-gpu.json",
+      "bytes": 62460,
+      "sha256": "c3ecc2c501297b47b25a8db66fe06232ec1737f43f5fe8d217412dee34287160"
+    },
+    {
+      "path": "diagnostics/package-final-Release-wideband-gpu.process.log",
+      "bytes": 35094,
+      "sha256": "6c741ddc4daba1708d1498e95839fbbd3f1e786cc87bbcf2c22e6d878f8c6a92"
+    },
+    {
+      "path": "diagnostics/package-final-Release-wideband-software.json",
+      "bytes": 57649,
+      "sha256": "a0e4e1ab7f9fc122a73a8a8cd9032d6de5f5f098dd2aa95a3c5728272bd3f5d4"
+    },
+    {
+      "path": "diagnostics/package-final-Release-wideband-software.process.log",
+      "bytes": 32014,
+      "sha256": "b673e03717d3bea1d615cd6b3257829969cf2872c7c48537f0cd13e3e09b071b"
+    },
+    {
+      "path": "diagnostics/palette-diagnostic/Release-Ui-20261025-144040-786.txt",
+      "bytes": 576,
+      "sha256": "f9bdc7105c3d4cbabdf604864cf3414e6b75d193c4fcf76d76f76a4c1b8dc9cf"
+    },
+    {
+      "path": "diagnostics/palette-diagnostic/Release-Ui-20261025-144040-786.txt.exit-code",
+      "bytes": 3,
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04"
+    },
+    {
+      "path": "diagnostics/palette-diagnostic/Release-Ui-20261025-144040-786.txt.timing.jsonl",
+      "bytes": 133,
+      "sha256": "5bf49654e42aede46ecb627745d9f43f2cc3122151488760169812910be619fb"
+    },
+    {
+      "path": "diagnostics/palette-diagnostic/Release-Ui-20261025-144040-786.txt.xml",
+      "bytes": 877,
+      "sha256": "6e0a7484008417b3f1f563b7d7c76c6e6417f84fa311b342425a08e72eb5b4f9"
+    },
+    {
+      "path": "diagnostics/palette-fixed/Release-Ui-20261025-144246-815.txt",
+      "bytes": 427,
+      "sha256": "187c0dfab8d56f1a18d673d5d08ea4082950b203ee7a8c01dd34d4f99ce794a4"
+    },
+    {
+      "path": "diagnostics/palette-fixed/Release-Ui-20261025-144246-815.txt.exit-code",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "diagnostics/palette-fixed/Release-Ui-20261025-144246-815.txt.timing.jsonl",
+      "bytes": 133,
+      "sha256": "0005e5bb1d1a3544c05827178a697588ee853ef85ec89736bbaa55d8b9c9f586"
+    },
+    {
+      "path": "diagnostics/palette-fixed/Release-Ui-20261025-144246-815.txt.xml",
+      "bytes": 726,
+      "sha256": "8b9a910796114f4a368d1928e35e2360a2430abf3c2d68c8deee07b83f4eeebc"
+    },
+    {
+      "path": "diagnostics/pointer-diagnostic/Release-Narrowband-20261025-144039-257.txt",
+      "bytes": 956,
+      "sha256": "0b4b1d377be0812cdd7b49956368563fe6c772a5615a3a00e8ad6556e91b843e"
+    },
+    {
+      "path": "diagnostics/pointer-diagnostic/Release-Narrowband-20261025-144039-257.txt.exit-code",
+      "bytes": 3,
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04"
+    },
+    {
+      "path": "diagnostics/pointer-diagnostic/Release-Narrowband-20261025-144039-257.txt.xml",
+      "bytes": 1191,
+      "sha256": "6408a8a6c4c08ff6da50b93ffc04a1bb630b9a3eb98358e5f454bf0b1379f35b"
+    },
+    {
+      "path": "diagnostics/pointer-fixed/Release-Narrowband-20261025-144245-389.txt",
+      "bytes": 601,
+      "sha256": "9f4ca617098774d39b7e43ce41a92f7b6b6ad071debf50efc02f5bf0615446dc"
+    },
+    {
+      "path": "diagnostics/pointer-fixed/Release-Narrowband-20261025-144245-389.txt.exit-code",
+      "bytes": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "diagnostics/pointer-fixed/Release-Narrowband-20261025-144245-389.txt.xml",
+      "bytes": 900,
+      "sha256": "9e073b55ede006c13fbabc09e51eaf306b98873b56ebc009392c337e336e57b0"
+    },
+    {
+      "path": "diagnostics/remaining-status.json",
+      "bytes": 2186,
+      "sha256": "d3e50f53888012bdc1743babb03ac4b095935698f5d92ed4b13b204393614f84"
+    },
+    {
+      "path": "diagnostics/run-remaining.ps1",
+      "bytes": 3174,
+      "sha256": "8d59dc9fcad70d9d55d7e786bba2e8eb6af0305e85495fb76fb19f634ed892e9"
+    },
+    {
+      "path": "diagnostics/run-startup-final.ps1",
+      "bytes": 1348,
+      "sha256": "8038904efe7d5211f154325b4d0ad67f34bd6bed83dbda53023aa4da27a39af7"
+    },
+    {
+      "path": "diagnostics/startup-final-status.json",
+      "bytes": 1209,
+      "sha256": "91953351a99d0df779b9141e8adfcbfa6e0a0024915404fba3781120ee3748c3"
+    },
+    {
+      "path": "final-narrowband-release-r2/diagnostics/native-20261025-143438-283-Release/ci16-01-ddc.png",
+      "bytes": 282780,
+      "sha256": "c4d4985e3540f1a6722e6739b34234913a84c3c132431b7d906f3a01bd9b354c"
+    },
+    {
+      "path": "final-narrowband-release-r2/diagnostics/native-20261025-143438-283-Release/ci16-04-recovered-constellation.png",
+      "bytes": 378767,
+      "sha256": "fff8e4909d98e09761a8eb7f790e48e28ab32440367821e237825857f8dea2f2"
+    },
+    {
+      "path": "final-narrowband-release-r2/diagnostics/native-20261025-143438-283-Release/ci16-05-recovered-eye.png",
+      "bytes": 721728,
+      "sha256": "5b5b239efb01f7fa96928e3b21ee9ce97e0c923658cec525726e6a7c019f4858"
+    },
+    {
+      "path": "final-narrowband-release-r2/diagnostics/native-20261025-143438-283-Release/ci16-06-recognition-unavailable.png",
+      "bytes": 430265,
+      "sha256": "331a0fde781f1f1dfb0e54f3f3b70c1aacf68b832be2deb1e1480d79208d3694"
+    },
+    {
+      "path": "final-narrowband-release-r2/diagnostics/native-20261025-143438-283-Release/narrowband-analysis-report.json",
+      "bytes": 2035956,
+      "sha256": "b4defcd399acc2ad129378220c46a9ea3ce861a1034c9c28307592630e0c93bf"
+    },
+    {
+      "path": "final-release-r2/diagnostics/Release-gpu-20261025-143123-230/ux-r3-gpu-32077a6d-ee54-4c63-94e9-308982fd19ed/CompactHeader-psd-waterfall-long.png",
+      "bytes": 639917,
+      "sha256": "03d622f71e6e44d177540f47ffe6d0b3a8f344d81f7144917a9a7bd82d49e5be"
+    },
+    {
+      "path": "final-release-r2/diagnostics/Release-gpu-20261025-143123-230/ux-r3-gpu-32077a6d-ee54-4c63-94e9-308982fd19ed/CompactHeader-waveform-tf-short.png",
+      "bytes": 1394765,
+      "sha256": "118b721959f3f2ddc25918fa9c27191e9c65c974156b2e5c408e28bb430df522"
+    },
+    {
+      "path": "final-release-r2/diagnostics/Release-gpu-20261025-143123-230/ux-r3-gpu-32077a6d-ee54-4c63-94e9-308982fd19ed/manual-label-bottom-unknown-preview-cancel-file-picker.png",
+      "bytes": 35176,
+      "sha256": "eff512bccbbda2f9689f44e4d08359354708e2db939d7d7b51fe86ed8acb394d"
+    },
+    {
+      "path": "final-release-r2/diagnostics/Release-gpu-20261025-143123-230/ux-r3-gpu-32077a6d-ee54-4c63-94e9-308982fd19ed/manual-label-bottom-unknown-preview-cancel-mapping-confirm.png",
+      "bytes": 80371,
+      "sha256": "5a4727b060b0e9f3658b27ca5441e222b4c36b2086b8bd9d7592c4ae378ec390"
+    },
+    {
+      "path": "final-release-r2/diagnostics/Release-gpu-20261025-143123-230/ux-r3-gpu-32077a6d-ee54-4c63-94e9-308982fd19ed/manual-label-bottom-unknown-preview-cancel-preview-cancel.png",
+      "bytes": 55416,
+      "sha256": "e2d13fe39560bd26ac306b521dbf678992579ec4bf5520e164f71d2bca65a64a"
+    },
+    {
+      "path": "final-release-r2/diagnostics/Release-gpu-20261025-143123-230/ux-r3-gpu-32077a6d-ee54-4c63-94e9-308982fd19ed/manual-label-entry-report.json",
+      "bytes": 333229,
+      "sha256": "195b51687b9df3bae660b36df7ad4009c09a1b5a2495d4525ba4987f2c0dc15a"
+    },
+    {
+      "path": "final-release-r2/diagnostics/Release-gpu-20261025-143123-230/ux-r3-gpu-32077a6d-ee54-4c63-94e9-308982fd19ed/manual-label-menu-known-dedup-ok-file-picker.png",
+      "bytes": 40739,
+      "sha256": "94f8be6742ef028987de09e884f86b296f19b9e023f11c4e1efd1093519c82fe"
+    },
+    {
+      "path": "final-release-r2/diagnostics/Release-gpu-20261025-143123-230/ux-r3-gpu-32077a6d-ee54-4c63-94e9-308982fd19ed/manual-label-menu-known-dedup-ok-preview-ok.png",
+      "bytes": 63662,
+      "sha256": "5cc15ef6987dcb24cf7ef248996fe6cf76a44004169ad92ff43790adaadab9b0"
+    },
+    {
+      "path": "final-release-r2/diagnostics/Release-gpu-20261025-143123-230/ux-r3-gpu-32077a6d-ee54-4c63-94e9-308982fd19ed/ux-r3-report.json",
+      "bytes": 3866659,
+      "sha256": "9655b6fac5e7946aea53b2b6528cafee5d232d7b876570b7f9c524c9f296dcf9"
+    },
+    {
+      "path": "final-release/diagnostics/Release-gpu-20261025-142658-732/ux-r3-gpu-7084bb95-8ff4-4453-b22e-065ad32acee6/manual-label-entry-report.json",
+      "bytes": 37106,
+      "sha256": "ce3b2dd7e0926f823b32411f7c2e22d08af21781b191e62cbad2786b7247a06c"
+    },
+    {
+      "path": "logs/build-debug-canonical-display.txt",
+      "bytes": 10104,
+      "sha256": "2a030dee5d19233f88ae1ab95157c479a6faf30dbc9c98e296d6003c1b8b5573"
+    },
+    {
+      "path": "logs/build-debug-final.txt",
+      "bytes": 20590,
+      "sha256": "7d4689ce98cef08d1dc47b4fb65bd2a5876861e4ab1416a74d079865ddd8280d"
+    },
+    {
+      "path": "logs/build-debug-r2.txt",
+      "bytes": 21606,
+      "sha256": "9cc293d5e4b6ec933912e60aa54e187c42579d75e1893377bf012f35a39a3b26"
+    },
+    {
+      "path": "logs/build-debug-r3.txt",
+      "bytes": 12801,
+      "sha256": "71b1a7baf4283b5e92c250f9d33b64a4fb81aa4dcf2fd08587d690cecc1cd08b"
+    },
+    {
+      "path": "logs/build-debug-review-fix.txt",
+      "bytes": 15911,
+      "sha256": "bb93d174fed7526e227e4d6c0e663d8b026432f60e6c5ee2eef852eb1a6c0bed"
+    },
+    {
+      "path": "logs/build-debug-startup-default.txt",
+      "bytes": 5535,
+      "sha256": "96edc5f411107cfa24b2d75ba6436adcbe1cd9f3efc7e4bc0e1cce315056f369"
+    },
+    {
+      "path": "logs/build-debug-test-fixes.txt",
+      "bytes": 15893,
+      "sha256": "f0a66ccf9e558e9b735d46d808e603cbcbd5aae86684bca413acfcb23560addb"
+    },
+    {
+      "path": "logs/build-debug-ui-adapt.txt",
+      "bytes": 10189,
+      "sha256": "c563d033edd0130f96e0028e74c873cd94192fd482d3fa27157783b21c8ca962"
+    },
+    {
+      "path": "logs/build-debug.txt",
+      "bytes": 29422,
+      "sha256": "f60a868e1402eec544d27e8be5e83c1d628c22aefff5ebcfab140551e00640e5"
+    },
+    {
+      "path": "logs/build-release-canonical-display.txt",
+      "bytes": 9547,
+      "sha256": "2966145eb3aa2abf642059031c73629bcd5242effdc31d117e495b94b20d2e93"
+    },
+    {
+      "path": "logs/build-release-final.txt",
+      "bytes": 21255,
+      "sha256": "60d995fa8ab32f9e560f9daf40171ae56bcbf1d2be54fe1e438f8bde90c0ce4b"
+    },
+    {
+      "path": "logs/build-release-r2.txt",
+      "bytes": 20413,
+      "sha256": "2e1c37d043d7a8a40cc8db25356ae3646a555a9f64ca41ef3ebf418027240bbf"
+    },
+    {
+      "path": "logs/build-release-review-fix.txt",
+      "bytes": 16489,
+      "sha256": "0490ca6b6388230a8e15ef95d15b35d7053aa2872377d611acb4e4064db09e29"
+    },
+    {
+      "path": "logs/build-release-startup-default.txt",
+      "bytes": 4970,
+      "sha256": "1bede61f27a3dcb74b021808d80ee62bbcb97b218dc76cda0a9dcc31088b15aa"
+    },
+    {
+      "path": "logs/build-release-test-fixes.txt",
+      "bytes": 14771,
+      "sha256": "6b8b1a5f7b65cf61e295f25761cf9ee76fb0fad24ad68e6fb6a01e293fce776d"
+    },
+    {
+      "path": "logs/build-release-ui-adapt.txt",
+      "bytes": 26530,
+      "sha256": "1939e310ea1bd530ddb9c13753455d2cac59e567beba16cf0d64d1114502ef45"
+    },
+    {
+      "path": "logs/build-release-ui-diagnostics.txt",
+      "bytes": 14771,
+      "sha256": "07cb88d0331c6ba0a9a82c39625ae05126b5d04d3def5b6097848cb3e64ead9d"
+    },
+    {
+      "path": "logs/build-release.txt",
+      "bytes": 6721,
+      "sha256": "5fb8de828ef72aff4b3fe6eb2f45ae0988bda7caebd24faf09aa22adb1a9a0e3"
+    },
+    {
+      "path": "logs/cli-Debug-A.txt",
+      "bytes": 194,
+      "sha256": "80cd1695f7c1c5403a774a7c8cc4dc2ad04ec9affc9d475de8bf11022a67b8c8"
+    },
+    {
+      "path": "logs/cli-Debug-B.txt",
+      "bytes": 194,
+      "sha256": "80cd1695f7c1c5403a774a7c8cc4dc2ad04ec9affc9d475de8bf11022a67b8c8"
+    },
+    {
+      "path": "logs/cli-Debug-C.txt",
+      "bytes": 194,
+      "sha256": "80cd1695f7c1c5403a774a7c8cc4dc2ad04ec9affc9d475de8bf11022a67b8c8"
+    },
+    {
+      "path": "logs/cli-Release-A.txt",
+      "bytes": 196,
+      "sha256": "dea87f309542f796f16d4b5a00606f638ae2179e0dac651c504ec2b86999e7f3"
+    },
+    {
+      "path": "logs/cli-Release-B.txt",
+      "bytes": 196,
+      "sha256": "dea87f309542f796f16d4b5a00606f638ae2179e0dac651c504ec2b86999e7f3"
+    },
+    {
+      "path": "logs/cli-Release-C.txt",
+      "bytes": 196,
+      "sha256": "dea87f309542f796f16d4b5a00606f638ae2179e0dac651c504ec2b86999e7f3"
+    },
+    {
+      "path": "logs/native-final-Debug-gpu.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "logs/native-final-Debug-software.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "logs/native-final-Release-software.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "logs/native-final-narrowband-Debug-gpu.txt",
+      "bytes": 273,
+      "sha256": "9d9f339eff0125953d5b012852438e8d6e0f380a4bd025c39c0ca76b5e5c6ac8"
+    },
+    {
+      "path": "logs/native-final-narrowband-Debug-software.txt",
+      "bytes": 283,
+      "sha256": "4bbef54f63f5fe8924349b34705d5f36394b92a6cc72358392bc4233d4b93bf5"
+    },
+    {
+      "path": "logs/native-final-narrowband-Release-software.txt",
+      "bytes": 289,
+      "sha256": "7a852476158ee1a5a4bd65ea76d209f9f4ce6c92568919784b3ed3ee6d5dcd1b"
+    },
+    {
+      "path": "logs/native-narrowband-release-gpu-final-r2.txt",
+      "bytes": 271,
+      "sha256": "6d3200f70216d59bdb9367f605c837e2706fc289b1e4f4b9a1ed125018ac0267"
+    },
+    {
+      "path": "logs/native-narrowband-release-gpu-r1.txt",
+      "bytes": 263,
+      "sha256": "6dbc902c8c8ff66dbb7aaeebfea32ef84aec23a0ce42ef78f4d2b4e8a3fc16ae"
+    },
+    {
+      "path": "logs/native-release-gpu-final-r2.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "logs/native-release-gpu-final.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "logs/native-release-gpu-r1.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "logs/package-Debug-five-pages-gpu.txt",
+      "bytes": 198,
+      "sha256": "d830650056c3bbfaa004bf946d3a6d06f3d01c7cd6ee38c8ec7a83182559ebd5"
+    },
+    {
+      "path": "logs/package-Debug-five-pages-software.txt",
+      "bytes": 194,
+      "sha256": "80cd1695f7c1c5403a774a7c8cc4dc2ad04ec9affc9d475de8bf11022a67b8c8"
+    },
+    {
+      "path": "logs/package-Debug-wideband-gpu.txt",
+      "bytes": 198,
+      "sha256": "d830650056c3bbfaa004bf946d3a6d06f3d01c7cd6ee38c8ec7a83182559ebd5"
+    },
+    {
+      "path": "logs/package-Debug-wideband-software.txt",
+      "bytes": 194,
+      "sha256": "80cd1695f7c1c5403a774a7c8cc4dc2ad04ec9affc9d475de8bf11022a67b8c8"
+    },
+    {
+      "path": "logs/package-Release-five-pages-gpu.txt",
+      "bytes": 200,
+      "sha256": "bc0b3f81f6f03d6560fa0688cb0384b3cfec0681fa9fdc48a3cb12c49a753303"
+    },
+    {
+      "path": "logs/package-Release-five-pages-software.txt",
+      "bytes": 196,
+      "sha256": "dea87f309542f796f16d4b5a00606f638ae2179e0dac651c504ec2b86999e7f3"
+    },
+    {
+      "path": "logs/package-Release-wideband-gpu.txt",
+      "bytes": 200,
+      "sha256": "bc0b3f81f6f03d6560fa0688cb0384b3cfec0681fa9fdc48a3cb12c49a753303"
+    },
+    {
+      "path": "logs/package-Release-wideband-software.txt",
+      "bytes": 196,
+      "sha256": "dea87f309542f796f16d4b5a00606f638ae2179e0dac651c504ec2b86999e7f3"
+    },
+    {
+      "path": "logs/package-final-Debug-five-pages-gpu.txt",
+      "bytes": 198,
+      "sha256": "d830650056c3bbfaa004bf946d3a6d06f3d01c7cd6ee38c8ec7a83182559ebd5"
+    },
+    {
+      "path": "logs/package-final-Debug-five-pages-software.txt",
+      "bytes": 194,
+      "sha256": "80cd1695f7c1c5403a774a7c8cc4dc2ad04ec9affc9d475de8bf11022a67b8c8"
+    },
+    {
+      "path": "logs/package-final-Debug-wideband-gpu.txt",
+      "bytes": 198,
+      "sha256": "d830650056c3bbfaa004bf946d3a6d06f3d01c7cd6ee38c8ec7a83182559ebd5"
+    },
+    {
+      "path": "logs/package-final-Debug-wideband-software.txt",
+      "bytes": 194,
+      "sha256": "80cd1695f7c1c5403a774a7c8cc4dc2ad04ec9affc9d475de8bf11022a67b8c8"
+    },
+    {
+      "path": "logs/package-final-Release-five-pages-gpu.txt",
+      "bytes": 200,
+      "sha256": "bc0b3f81f6f03d6560fa0688cb0384b3cfec0681fa9fdc48a3cb12c49a753303"
+    },
+    {
+      "path": "logs/package-final-Release-five-pages-software.txt",
+      "bytes": 196,
+      "sha256": "dea87f309542f796f16d4b5a00606f638ae2179e0dac651c504ec2b86999e7f3"
+    },
+    {
+      "path": "logs/package-final-Release-wideband-gpu.txt",
+      "bytes": 200,
+      "sha256": "bc0b3f81f6f03d6560fa0688cb0384b3cfec0681fa9fdc48a3cb12c49a753303"
+    },
+    {
+      "path": "logs/package-final-Release-wideband-software.txt",
+      "bytes": 196,
+      "sha256": "dea87f309542f796f16d4b5a00606f638ae2179e0dac651c504ec2b86999e7f3"
+    },
+    {
+      "path": "logs/test-debug-core.txt",
+      "bytes": 17778,
+      "sha256": "c7992a081a7cb838320aac9f60d9efc49d88177a9454662dcaad6f43b045a99e"
+    },
+    {
+      "path": "logs/test-debug-serial-final-complete.txt",
+      "bytes": 84279,
+      "sha256": "e6259a0dc74e7445a27ff3759d651ac86050d294c069156dee0cade48b3833b6"
+    },
+    {
+      "path": "logs/test-release-core.txt",
+      "bytes": 17823,
+      "sha256": "06229235956470844bac175af25f9091fec43f57a8d757da82e4d29093af7bdb"
+    },
+    {
+      "path": "logs/test-release-geometry-canonical.txt",
+      "bytes": 12092,
+      "sha256": "94c058ebcec545e36c60d8237a662fe8c345a09da62bd9d419b26356fe228d76"
+    },
+    {
+      "path": "logs/test-release-serial-final.txt",
+      "bytes": 97968,
+      "sha256": "f16bd89d4023ee96145cf00e4ac10642cd0b43500d5420eb82e254e360236511"
+    },
+    {
+      "path": "logs/test-release-serial-r2.txt",
+      "bytes": 94787,
+      "sha256": "8c03c8ed24dfd243833e8d6b2d0535bedfed5c4cb1103d392eff06b250248ff3"
+    },
+    {
+      "path": "logs/test-release-ui-final.txt",
+      "bytes": 103475,
+      "sha256": "9ee1055861b5689ab96027aa823afaad126981a904d7a09617a072611ad48f4f"
+    },
+    {
+      "path": "logs/ui-test-list.txt",
+      "bytes": 666,
+      "sha256": "7993788e36a966bcccc6ba0ca5281a78976d8b04235ddd0726297deacc8decb8"
+    },
+    {
+      "path": "native-final-Debug-gpu/diagnostics/Debug-gpu-20261025-151205-265/ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7/CompactHeader-psd-waterfall-long.png",
+      "bytes": 639917,
+      "sha256": "03d622f71e6e44d177540f47ffe6d0b3a8f344d81f7144917a9a7bd82d49e5be"
+    },
+    {
+      "path": "native-final-Debug-gpu/diagnostics/Debug-gpu-20261025-151205-265/ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7/CompactHeader-waveform-tf-short.png",
+      "bytes": 1394765,
+      "sha256": "118b721959f3f2ddc25918fa9c27191e9c65c974156b2e5c408e28bb430df522"
+    },
+    {
+      "path": "native-final-Debug-gpu/diagnostics/Debug-gpu-20261025-151205-265/ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7/manual-label-bottom-unknown-preview-cancel-file-picker.png",
+      "bytes": 34885,
+      "sha256": "cfc0a08c7f294c2ace95f89465fdc9c3a28bcc1d600edbfc35866fbcd03add13"
+    },
+    {
+      "path": "native-final-Debug-gpu/diagnostics/Debug-gpu-20261025-151205-265/ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7/manual-label-bottom-unknown-preview-cancel-mapping-confirm.png",
+      "bytes": 80132,
+      "sha256": "ba825aa7d3208822cc74cc1798bfc655986d2155ba7dc2db05c6671aeca36af8"
+    },
+    {
+      "path": "native-final-Debug-gpu/diagnostics/Debug-gpu-20261025-151205-265/ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7/manual-label-bottom-unknown-preview-cancel-preview-cancel.png",
+      "bytes": 55416,
+      "sha256": "e2d13fe39560bd26ac306b521dbf678992579ec4bf5520e164f71d2bca65a64a"
+    },
+    {
+      "path": "native-final-Debug-gpu/diagnostics/Debug-gpu-20261025-151205-265/ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7/manual-label-entry-report.json",
+      "bytes": 333351,
+      "sha256": "503d60f3bf10be1e32f85e0d54dd7a891b735f21a9b27a51bff03ae275ebdd4e"
+    },
+    {
+      "path": "native-final-Debug-gpu/diagnostics/Debug-gpu-20261025-151205-265/ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7/manual-label-menu-known-dedup-ok-file-picker.png",
+      "bytes": 41362,
+      "sha256": "a3644031fa9b7b656dd00215497f0a3a56a5254a63613cda992402c5f68e4f3f"
+    },
+    {
+      "path": "native-final-Debug-gpu/diagnostics/Debug-gpu-20261025-151205-265/ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7/manual-label-menu-known-dedup-ok-preview-ok.png",
+      "bytes": 63662,
+      "sha256": "5cc15ef6987dcb24cf7ef248996fe6cf76a44004169ad92ff43790adaadab9b0"
+    },
+    {
+      "path": "native-final-Debug-gpu/diagnostics/Debug-gpu-20261025-151205-265/ux-r3-gpu-563d13c0-406f-4ea7-ac71-764e3474efd7/ux-r3-report.json",
+      "bytes": 3868046,
+      "sha256": "abad54eadb482489263e9f24903c8d7d84adec837e0f2e3518eb3b5865046de0"
+    },
+    {
+      "path": "native-final-Debug-software/diagnostics/Debug-software-20261025-152328-532/ux-r3-software-9fa35d0a-ffa9-49a5-ad6c-85d4a8b52673/CompactHeader-psd-waterfall-long.png",
+      "bytes": 664050,
+      "sha256": "cc8d1e08f9752fe9878c2fa448f14287d46f1ccdcdd463aee65b79ec3f07d3d2"
+    },
+    {
+      "path": "native-final-Debug-software/diagnostics/Debug-software-20261025-152328-532/ux-r3-software-9fa35d0a-ffa9-49a5-ad6c-85d4a8b52673/CompactHeader-waveform-tf-short.png",
+      "bytes": 1349490,
+      "sha256": "f197c7f8ea582e7969632f70f280d10c88f0f10b9519ef6f66bca0dbe44057de"
+    },
+    {
+      "path": "native-final-Debug-software/diagnostics/Debug-software-20261025-152328-532/ux-r3-software-9fa35d0a-ffa9-49a5-ad6c-85d4a8b52673/manual-label-bottom-unknown-preview-cancel-file-picker.png",
+      "bytes": 34867,
+      "sha256": "8302cb0ffc628245d01dd9dc800b89065955242d19f082420cfc30b2c7ad3930"
+    },
+    {
+      "path": "native-final-Debug-software/diagnostics/Debug-software-20261025-152328-532/ux-r3-software-9fa35d0a-ffa9-49a5-ad6c-85d4a8b52673/manual-label-bottom-unknown-preview-cancel-mapping-confirm.png",
+      "bytes": 80599,
+      "sha256": "d17e2dade07cfac21511ff6c21aac7e785a938f9862b7c1ea7688020b678675c"
+    },
+    {
+      "path": "native-final-Debug-software/diagnostics/Debug-software-20261025-152328-532/ux-r3-software-9fa35d0a-ffa9-49a5-ad6c-85d4a8b52673/manual-label-bottom-unknown-preview-cancel-preview-cancel.png",
+      "bytes": 55416,
+      "sha256": "e2d13fe39560bd26ac306b521dbf678992579ec4bf5520e164f71d2bca65a64a"
+    },
+    {
+      "path": "native-final-Debug-software/diagnostics/Debug-software-20261025-152328-532/ux-r3-software-9fa35d0a-ffa9-49a5-ad6c-85d4a8b52673/manual-label-entry-report.json",
+      "bytes": 333711,
+      "sha256": "6eb56a9449429ab6917375d9908ac8e79fb5a32ca67e861f69f8b1afccd22948"
+    },
+    {
+      "path": "native-final-Debug-software/diagnostics/Debug-software-20261025-152328-532/ux-r3-software-9fa35d0a-ffa9-49a5-ad6c-85d4a8b52673/manual-label-menu-known-dedup-ok-file-picker.png",
+      "bytes": 41362,
+      "sha256": "a3644031fa9b7b656dd00215497f0a3a56a5254a63613cda992402c5f68e4f3f"
+    },
+    {
+      "path": "native-final-Debug-software/diagnostics/Debug-software-20261025-152328-532/ux-r3-software-9fa35d0a-ffa9-49a5-ad6c-85d4a8b52673/manual-label-menu-known-dedup-ok-preview-ok.png",
+      "bytes": 63662,
+      "sha256": "5cc15ef6987dcb24cf7ef248996fe6cf76a44004169ad92ff43790adaadab9b0"
+    },
+    {
+      "path": "native-final-Debug-software/diagnostics/Debug-software-20261025-152328-532/ux-r3-software-9fa35d0a-ffa9-49a5-ad6c-85d4a8b52673/ux-r3-report.json",
+      "bytes": 3251821,
+      "sha256": "f5a38c515607a234cb868539fcfe4766d3d1e1e79539155c562c907989c6b5f0"
+    },
+    {
+      "path": "native-final-Release-software/diagnostics/Release-software-20261025-150726-364/ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7/CompactHeader-psd-waterfall-long.png",
+      "bytes": 664050,
+      "sha256": "cc8d1e08f9752fe9878c2fa448f14287d46f1ccdcdd463aee65b79ec3f07d3d2"
+    },
+    {
+      "path": "native-final-Release-software/diagnostics/Release-software-20261025-150726-364/ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7/CompactHeader-waveform-tf-short.png",
+      "bytes": 1349490,
+      "sha256": "f197c7f8ea582e7969632f70f280d10c88f0f10b9519ef6f66bca0dbe44057de"
+    },
+    {
+      "path": "native-final-Release-software/diagnostics/Release-software-20261025-150726-364/ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7/manual-label-bottom-unknown-preview-cancel-file-picker.png",
+      "bytes": 34901,
+      "sha256": "54ff57e9187fe04ef9bc18c9269d6c8c7e19a781bcde08ea7922dcd2d2dca599"
+    },
+    {
+      "path": "native-final-Release-software/diagnostics/Release-software-20261025-150726-364/ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7/manual-label-bottom-unknown-preview-cancel-mapping-confirm.png",
+      "bytes": 80523,
+      "sha256": "e098ef22158f0c6c8929d9d5a19f4a00292235b8aa4eae1a401009ac68d71bde"
+    },
+    {
+      "path": "native-final-Release-software/diagnostics/Release-software-20261025-150726-364/ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7/manual-label-bottom-unknown-preview-cancel-preview-cancel.png",
+      "bytes": 55416,
+      "sha256": "e2d13fe39560bd26ac306b521dbf678992579ec4bf5520e164f71d2bca65a64a"
+    },
+    {
+      "path": "native-final-Release-software/diagnostics/Release-software-20261025-150726-364/ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7/manual-label-entry-report.json",
+      "bytes": 333764,
+      "sha256": "ad165027c4d0daea3820ddeb6e3aae4422db60f34ae544ff4eec6dcf61f2856b"
+    },
+    {
+      "path": "native-final-Release-software/diagnostics/Release-software-20261025-150726-364/ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7/manual-label-menu-known-dedup-ok-file-picker.png",
+      "bytes": 41371,
+      "sha256": "7897f42261151db08ea7ff10c9692b96a469348a8d8265735353e3086891958f"
+    },
+    {
+      "path": "native-final-Release-software/diagnostics/Release-software-20261025-150726-364/ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7/manual-label-menu-known-dedup-ok-preview-ok.png",
+      "bytes": 63662,
+      "sha256": "5cc15ef6987dcb24cf7ef248996fe6cf76a44004169ad92ff43790adaadab9b0"
+    },
+    {
+      "path": "native-final-Release-software/diagnostics/Release-software-20261025-150726-364/ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7/ux-r3-report.json",
+      "bytes": 3251920,
+      "sha256": "0a42c152facdf4a0b8b48bcbe2194b7f46e1d93356968f2987b66ab30fb72919"
+    },
+    {
+      "path": "native-final-narrowband-Debug-gpu/diagnostics/native-20261025-152216-950-Debug/ci16-01-ddc.png",
+      "bytes": 282780,
+      "sha256": "c4d4985e3540f1a6722e6739b34234913a84c3c132431b7d906f3a01bd9b354c"
+    },
+    {
+      "path": "native-final-narrowband-Debug-gpu/diagnostics/native-20261025-152216-950-Debug/ci16-04-recovered-constellation.png",
+      "bytes": 377875,
+      "sha256": "be504136e0ee50312877fe51965eecf38df3b40d71e674249d446fb7d434e2a2"
+    },
+    {
+      "path": "native-final-narrowband-Debug-gpu/diagnostics/native-20261025-152216-950-Debug/ci16-05-recovered-eye.png",
+      "bytes": 721012,
+      "sha256": "53d6a590eb8b8a8a600d704382adbed6d6b53c11ec7955a341f3b9b8f4d78187"
+    },
+    {
+      "path": "native-final-narrowband-Debug-gpu/diagnostics/native-20261025-152216-950-Debug/ci16-06-recognition-unavailable.png",
+      "bytes": 428984,
+      "sha256": "695b81bc551e9ab536001f20d89973532764a00172e768afbefb4c74437a3f29"
+    },
+    {
+      "path": "native-final-narrowband-Debug-gpu/diagnostics/native-20261025-152216-950-Debug/narrowband-analysis-report.json",
+      "bytes": 2036055,
+      "sha256": "ef442db34e828eba55fac62e08711f5f7c262d64e7ab9217fe4d95f7e5128c58"
+    },
+    {
+      "path": "native-final-narrowband-Debug-software/diagnostics/native-20261025-153642-502-Debug/ci16-01-ddc.png",
+      "bytes": 385774,
+      "sha256": "90a14bdc0dff24f8dc5e4b01a190e65d42317e1674e8176bd7fba2aed689e7a8"
+    },
+    {
+      "path": "native-final-narrowband-Debug-software/diagnostics/native-20261025-153642-502-Debug/ci16-04-recovered-constellation.png",
+      "bytes": 361221,
+      "sha256": "c0a98d953a9b5467d40ac75cd45ccfef91f94ff1c6f0d9b356a7cea759de912e"
+    },
+    {
+      "path": "native-final-narrowband-Debug-software/diagnostics/native-20261025-153642-502-Debug/ci16-05-recovered-eye.png",
+      "bytes": 2191914,
+      "sha256": "8c88cbbeadfd4b86844b9849f154e962b175d6c4f5c23c97b29f5b58ddeb2666"
+    },
+    {
+      "path": "native-final-narrowband-Debug-software/diagnostics/native-20261025-153642-502-Debug/ci16-06-recognition-unavailable.png",
+      "bytes": 388799,
+      "sha256": "ca3bb6c9a99eeef4c322e958d7d1f9833c0279bab698594e14b929134cc8e739"
+    },
+    {
+      "path": "native-final-narrowband-Debug-software/diagnostics/native-20261025-153642-502-Debug/narrowband-analysis-report.json",
+      "bytes": 2033219,
+      "sha256": "7a13842757916feb014c936e199b165ac33894b9888b1cae37d5c4873f51f2d2"
+    },
+    {
+      "path": "native-final-narrowband-Release-software/diagnostics/native-20261025-151117-393-Release/ci16-01-ddc.png",
+      "bytes": 383973,
+      "sha256": "7f660e27aa481e94ed39d4891cb136b71f069c903243431c11bf5c4bcb5c41eb"
+    },
+    {
+      "path": "native-final-narrowband-Release-software/diagnostics/native-20261025-151117-393-Release/ci16-04-recovered-constellation.png",
+      "bytes": 361221,
+      "sha256": "c0a98d953a9b5467d40ac75cd45ccfef91f94ff1c6f0d9b356a7cea759de912e"
+    },
+    {
+      "path": "native-final-narrowband-Release-software/diagnostics/native-20261025-151117-393-Release/ci16-05-recovered-eye.png",
+      "bytes": 2191914,
+      "sha256": "8c88cbbeadfd4b86844b9849f154e962b175d6c4f5c23c97b29f5b58ddeb2666"
+    },
+    {
+      "path": "native-final-narrowband-Release-software/diagnostics/native-20261025-151117-393-Release/ci16-06-recognition-unavailable.png",
+      "bytes": 388799,
+      "sha256": "ca3bb6c9a99eeef4c322e958d7d1f9833c0279bab698594e14b929134cc8e739"
+    },
+    {
+      "path": "native-final-narrowband-Release-software/diagnostics/native-20261025-151117-393-Release/narrowband-analysis-report.json",
+      "bytes": 2033347,
+      "sha256": "d82deef0e085acadb1fb1ecdfff629e976db54a07dea8ff3fc3ce3ee590c0fcc"
+    }
+  ]
+}

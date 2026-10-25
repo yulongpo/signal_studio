@@ -1,0 +1,12 @@
+{
+  "checkedUtc": "2026-10-25T07:48:49.683051+00:00",
+  "baseHead": "1608c4c87dd102fbe21e01e0d83c5e606119d50e",
+  "sourceContentId": "698760c846b05b1cd2489bec1a3024de890c416ad0443ff53c91606bf4b7c745",
+  "sourceFilesVerified": 21,
+  "archivedFilesVerified": 193,
+  "binaryHashesVerified": 14,
+  "sourceUncommitted": true,
+  "newCommits": [],
+  "remoteSyncPerformed": false,
+  "scope": "integrity check only; independent review is separate"
+}

@@ -107,6 +107,26 @@ class Inspector {
   std::size_t entriesSeen_ = 0;
   std::map<QString, QStringList> cache_;
 };
+LabelCandidate textCandidate(const QString& data, const QString& label,
+                             const QString& preview) {
+  return {hasGeneratorLabelHeader(preview) ? LabelProfile::GeneratorText : LabelProfile::MatlabDataTxt,
+          data, label, {}, preview};
+}
+void describeUniqueCandidate(LabelDiscoveryResult& result, const LabelDiscoveryOptions& options) {
+  const auto& candidate = result.candidates.front();
+  if (candidate.profile == LabelProfile::MatlabDataTxt &&
+      QFileInfo(candidate.labelPath).size() <= options.maximumPreviewBytes &&
+      candidate.preview.trimmed().isEmpty()) {
+    result.state = LabelDiscoveryState::Empty;
+    result.message = "找到空 TXT，未生成标记；可手工创建或选择其它标签文件";
+    return;
+  }
+  result.state = candidate.profile == LabelProfile::MatlabDataTxt
+                     ? LabelDiscoveryState::NeedsMapping : LabelDiscoveryState::Found;
+  result.message = result.state == LabelDiscoveryState::NeedsMapping
+                       ? "同名配对已确认；TXT 字段含义未知，请配置字段映射"
+                       : "发现唯一可信 profile，仍需整批格式与物理校验";
+}
 void assess(LabelImportPlan& plan, const FileState& file) {
   const auto& current = plan.imported.sourceSet;
   for (const auto& previous : file.sourceSets) {
@@ -165,10 +185,12 @@ LabelDiscoveryResult discoverLabelCandidates(const FileMetadata& target,
     } else {
       const auto stem = data.completeBaseName();
       const QDir sourceDir(directory);
-      const bool matlab = sourceDir.dirName() == "data" && data.suffix() == "data";
+      const bool pairedSuffix = data.suffix() == "data" || data.suffix() == "wav";
+      const bool matlab = sourceDir.dirName() == "data" && pairedSuffix;
       if (!matlab && sourceDir.dirName().compare("data", Qt::CaseInsensitive) == 0 &&
-          data.suffix().compare("data", Qt::CaseInsensitive) == 0)
-        Inspector::fail(LabelDiscoveryState::Ambiguous, "data 目录或 .data 扩展名大小写不严格一致");
+          (data.suffix().compare("data", Qt::CaseInsensitive) == 0 ||
+           data.suffix().compare("wav", Qt::CaseInsensitive) == 0))
+        Inspector::fail(LabelDiscoveryState::Ambiguous, "data 目录或 .data/.wav 扩展名大小写不严格一致");
       QString sibling;
       if (matlab) {
         auto parent = sourceDir;
@@ -180,10 +202,7 @@ LabelDiscoveryResult discoverLabelCandidates(const FileMetadata& target,
       const auto adjacent = inspector.exact(directory, stem + ".txt");
       for (const auto& label : {sibling, adjacent}) {
         if (label.isEmpty()) continue;
-        const auto text = inspector.preview(label);
-        const bool generator = hasGeneratorLabelHeader(text);
-        result.candidates.push_back({generator ? LabelProfile::GeneratorText : LabelProfile::MatlabDataTxt,
-                                     data.absoluteFilePath(), label, {}, text});
+        result.candidates.push_back(textCandidate(data.absoluteFilePath(), label, inspector.preview(label)));
       }
     }
     result.inspectedDirectories = inspector.inspected;
@@ -194,19 +213,7 @@ LabelDiscoveryResult discoverLabelCandidates(const FileMetadata& target,
     } else if (result.candidates.empty()) {
       result.message = "未发现标签，可手工创建或选择标签文件";
     } else {
-      const auto& candidate = result.candidates.front();
-      if (candidate.profile == LabelProfile::MatlabDataTxt &&
-          QFileInfo(candidate.labelPath).size() <= options.maximumPreviewBytes &&
-          candidate.preview.trimmed().isEmpty()) {
-        result.state = LabelDiscoveryState::Empty;
-        result.message = "找到空 TXT，未生成标记；可手工创建或选择其它标签文件";
-        return result;
-      }
-      result.state = candidate.profile == LabelProfile::MatlabDataTxt
-                         ? LabelDiscoveryState::NeedsMapping : LabelDiscoveryState::Found;
-      result.message = result.state == LabelDiscoveryState::NeedsMapping
-                           ? "同名配对已确认；TXT 字段含义未知，请配置字段映射"
-                           : "发现唯一可信 profile，仍需整批格式与物理校验";
+      describeUniqueCandidate(result, options);
     }
   } catch (const DiscoveryAbort& e) {
     result.state = e.state;
@@ -227,19 +234,39 @@ LabelDiscoveryResult discoverDataForLabel(const QString& path,
     Inspector inspector(options);
     const QFileInfo label(path);
     auto directory = label.dir();
-    if (directory.dirName() != "label" || label.suffix() != "txt" || !label.isFile())
+    if (directory.dirName().compare("label", Qt::CaseInsensitive) != 0 ||
+        label.suffix().compare("txt", Qt::CaseInsensitive) != 0 ||
+        !label.isFile() || !label.isReadable())
       Inspector::fail(LabelDiscoveryState::Error, "反查只接受 label/<name>.txt");
+    if (directory.dirName() != "label" || label.suffix() != "txt")
+      Inspector::fail(LabelDiscoveryState::Ambiguous, "label 目录或 .txt 扩展名大小写不严格一致");
     inspector.exact(label.absolutePath(), label.fileName());
     directory.cdUp();
+    inspector.exact(directory.absolutePath(), "label");
     const auto dataDir = inspector.exact(directory.absolutePath(), "data");
-    const auto data = dataDir.isEmpty() ? QString() : inspector.exact(dataDir, label.completeBaseName() + ".data");
+    QStringList dataPaths;
+    if (!dataDir.isEmpty()) {
+      for (const auto& suffix : {QString(".wav"), QString(".data")}) {
+        const auto data = inspector.exact(dataDir, label.completeBaseName() + suffix);
+        if (data.isEmpty()) continue;
+        if (!QFileInfo(data).isFile() || !QFileInfo(data).isReadable())
+          Inspector::fail(LabelDiscoveryState::Error, "配对数据不是可读取文件");
+        dataPaths.push_back(data);
+      }
+    }
     result.inspectedDirectories = inspector.inspected;
-    if (data.isEmpty()) result.message = "未发现严格同名 data/<name>.data；不匹配其它数据";
-    else if (!QFileInfo(data).isFile()) Inspector::fail(LabelDiscoveryState::Error, "配对数据不是文件");
+    if (dataPaths.isEmpty()) result.message = "未发现严格同名 data/<name>.wav 或 .data；不匹配其它数据";
     else {
-      result.state = LabelDiscoveryState::Found;
-      result.candidates.push_back({LabelProfile::MatlabDataTxt, data, label.absoluteFilePath(), {}, inspector.preview(path)});
-      result.message = "已找到同名原始数据；请通过源导入预检确认编码及 Fs/Fc";
+      const auto preview = inspector.preview(label.absoluteFilePath());
+      for (const auto& data : dataPaths)
+        result.candidates.push_back(textCandidate(data, label.absoluteFilePath(), preview));
+      if (result.candidates.size() > 1) {
+        result.state = LabelDiscoveryState::Ambiguous;
+        result.message = "发现同名 .wav 和 .data，请显式选择数据源；未自动配对";
+      } else {
+        describeUniqueCandidate(result, options);
+        result.message += "；请通过源导入预检确认物理元数据及 Fs/Fc";
+      }
     }
     inspector.check();
   } catch (const DiscoveryAbort& e) {
