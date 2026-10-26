@@ -5,7 +5,7 @@
 | R6-0 | 完成：fetch并核对ec511662；原工程两份164/639失败manifest；本轮用户原IQ实际重跑相同失败；BUG02真实Qt/服务/保存重开诊断；Release测量入口构建通过 |
 | R6-1 | 基础修复与定向自检完成：D/R完整构建、各11核心+3生命周期/UX组通过；原IQ ROI/Sample短范围各15/15；原完整请求跨旧断点至200/639后主动取消。完整639同参及所有性能/质量终验仍待R6-7，不计成全量通过 |
 | R6-2 | profiling和重复短基线完成：ROI/Sample各5次完成；Debug5组、Release先4后3组通过。完整原请求已处理639/639窗，但ROI精修23/44因第二处容量不一致Failed；证据归档，未计成功。后续R6-3新构建Task测试已补测Release terminal异常保护 |
-| R6-3 | 实施中，不能称完成。有界 CPU FIR 与 CPU 资源测量仍以 3ff9a98 为准。`rebuild/cursor` 是计算速度替换线：本机探针见 LIBRARY_REPLACEMENT.md，主机 FFT 胜者是 oneMKL DFTI，设备上已有数据的变换胜者是 cuFFT。cuFFTDx 25.12.1 已下载但 nvcc 12.4 不能编译。最新预算/精度回退/崩溃清理与 GPU 数值验收仍未闭合 |
+| R6-3 | 实施中，不能称完成。`rebuild/cursor` 已把主机 STFT 和样本能量 FFT 接到 oneMKL，设备上装得下的分位接到 CUB，周期 FIR 接到可重放的 CUDA Graph。cuFFTDx 25.12.1 已下载但 nvcc 12.4 不能编译。最新预算/精度回退/崩溃清理、完整样本流回归和原 WAV 复验仍未闭合 |
 | R6-4 | 待实施：真实Engine batch能力/调度/降级/测量 |
 | R6-5 | 待实施：有界稳定轨迹事件、独立预览通道 |
 | R6-6 | 待实施：Qt增量预览/状态/选择及原生实屏 |

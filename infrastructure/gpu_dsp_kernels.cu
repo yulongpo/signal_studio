@@ -33,19 +33,23 @@ extern "C" __global__ void ss_fir_coeff(const float* h, float2* out, unsigned k,
   if (!isfinite(value) || (i >= taps && value != 0.f)) invalid(bad);
   out[i] = make_float2(value, 0.f);
 }
+struct FirLaunch {
+  unsigned rawCount, k, radius, count;
+  unsigned long long startModulo, contextN;
+  double fs, fc;
+};
 extern "C" __global__ void ss_fir_mix(const float2* raw, float2* work,
-    unsigned rawCount, unsigned k, unsigned long long startModulo,
-    unsigned long long contextN, double fs, double fc, unsigned* bad) {
+    const FirLaunch* launch, unsigned* bad) {
   unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned k = launch->k;
   if (i >= k) return;
-  if (i >= rawCount) { work[i] = make_float2(0.f, 0.f); return; }
+  if (i >= launch->rawCount) { work[i] = make_float2(0.f, 0.f); return; }
   float2 x = raw[i];
   if (!finite2(x)) invalid(bad);
-  const unsigned long long local = (startModulo + i) % contextN;
+  const unsigned long long local = (launch->startModulo + i) % launch->contextN;
   constexpr double tau = 6.283185307179586476925286766559;
-  double phase = fmod(-tau * fc * static_cast<double>(local) / fs, tau);
+  double phase = fmod(-tau * launch->fc * static_cast<double>(local) / launch->fs, tau);
   if (phase < 0) phase += tau;
-  // CPU periodicMixed rounds phase to float but evaluates sin/cos as double.
   double rounded = static_cast<double>(__double2float_rn(phase));
   float c = __double2float_rn(cos(rounded)), s = __double2float_rn(sin(rounded));
   float2 value = make_float2(x.x * c - x.y * s, x.x * s + x.y * c);
@@ -185,9 +189,11 @@ struct State {
   cudaStream_t stream=nullptr;cudaEvent_t first=nullptr,last=nullptr;
   void* pinned=nullptr;size_t pinnedBytes=0;
   struct Buffer {void* ptr=nullptr;size_t bytes=0;};
-  Buffer raw,work,coeff,filter,hann,weights,power,out,stats,bad,guards,temp,keys,hist;
+  Buffer raw,work,coeff,filter,hann,weights,power,out,stats,bad,guards,temp,keys,hist,launch;
   struct Plan{cufftHandle handle=0;unsigned n=0,batch=0; cufftType type=CUFFT_C2C;Buffer workspace;};
   std::vector<Plan> plans;FirFilter token;unsigned long long identity=ownerSequence++,generation=0;
+  cudaGraphExec_t firGraph=nullptr;unsigned graphK=0,graphRadius=0,graphCount=0,graphRaw=0;
+  void dropGraph()noexcept{if(firGraph)cudaGraphExecDestroy(firGraph);firGraph=nullptr;graphK=graphRadius=graphCount=graphRaw=0;}
   void cancel(){if(options.cancel&&options.cancel(options.cancelState))throw Problem(ErrorCode::Cancelled,"cancel","GPU DSP cancelled");}
   void release(Buffer& b)noexcept{if(b.ptr){cudaFree(b.ptr);t.device-=b.bytes;}b={};}
   void reserve(Buffer& b,size_t bytes){
@@ -208,7 +214,7 @@ struct State {
   void shape(std::uint64_t count){check(count&&count<=options.limits.maximumElements&&count<=(1U<<28),"shape","Element cap exceeded",ErrorCode::ResourceLimit);}
   void host(size_t bytes){check(bytes<=options.limits.hostBytes,"host","Atomic host output cap exceeded",ErrorCode::ResourceLimit);t.hostStaging=std::max(t.hostStaging,std::uint64_t(bytes));}
   void validate(){unsigned flag=0;download(&flag,bad.ptr,4);check(!flag,"numerical","Nonfinite GPU data or invalid padding/weights",ErrorCode::Numerical);cancel();}
-  void destroyPlan(Plan& p)noexcept{if(p.handle)cufftDestroy(p.handle);t.workspace-=p.workspace.bytes;release(p.workspace);p.handle=0;}
+  void destroyPlan(Plan& p)noexcept{dropGraph();if(p.handle)cufftDestroy(p.handle);t.workspace-=p.workspace.bytes;release(p.workspace);p.handle=0;}
   Plan& getPlan(unsigned n,unsigned batch,cufftType type){
     for(auto& p:plans)if(p.n==n&&p.batch==batch&&p.type==type)return p;
     auto at=Clock::now();if(plans.size()==options.limits.plans){destroyPlan(plans.front());plans.erase(plans.begin());}
@@ -222,8 +228,8 @@ struct State {
   void transform(Plan& p,Buffer& b,int direction){timed(t.fft,[&]{if(p.type==CUFFT_C2C)fftCheck(cufftExecC2C(p.handle,(cufftComplex*)b.ptr,(cufftComplex*)b.ptr,direction),"cufftExecC2C");else fftCheck(cufftExecZ2Z(p.handle,(cufftDoubleComplex*)b.ptr,(cufftDoubleComplex*)b.ptr,direction),"cufftExecZ2Z");});++t.execs;cancel();}
   ~State(){
     if(owner!=std::this_thread::get_id())std::terminate();if(!context)return;
-    if(cuCtxPushCurrent(context)==CUDA_SUCCESS){if(stream)cudaStreamSynchronize(stream);for(auto& p:plans)destroyPlan(p);
-      for(auto* b:{&raw,&work,&coeff,&filter,&hann,&weights,&power,&out,&stats,&bad,&guards,&temp,&keys,&hist})release(*b);
+    if(cuCtxPushCurrent(context)==CUDA_SUCCESS){if(stream)cudaStreamSynchronize(stream);dropGraph();for(auto& p:plans)destroyPlan(p);
+      for(auto* b:{&raw,&work,&coeff,&filter,&hann,&weights,&power,&out,&stats,&bad,&guards,&temp,&keys,&hist,&launch})release(*b);
       if(pinned)cudaFreeHost(pinned);if(first)cudaEventDestroy(first);if(last)cudaEventDestroy(last);if(stream)cudaStreamDestroy(stream);CUcontext old=nullptr;cuCtxPopCurrent(&old);}
     cuDevicePrimaryCtxRelease(device);
   }
@@ -265,12 +271,31 @@ int fir(void* state,const FirFilter* token,const void* raw,unsigned rawCount,std
   return invoke(state,error,[&](State& s){check(token&&raw&&energy&&token->owner==s.identity&&token->generation&&token->generation==s.token.generation&&token->fftSamples==s.token.fftSamples&&token->radius==s.token.radius,"FIR","Invalid/stale FIR token");
     unsigned k=token->fftSamples,radius=token->radius;s.shape(rawCount);
     check(count&&rawCount==count+2ULL*radius&&rawCount<=k&&contextN&&contextN<=std::uint64_t(INT64_MAX)&&std::isfinite(fs)&&fs>0&&std::isfinite(fc)&&std::abs(fc)<=fs,"FIR","Invalid FIR block/context");
-    s.host(count*(tap?12ULL:4ULL));s.reserve(s.raw,rawCount*8ULL);s.reserve(s.work,k*8ULL);s.reserve(s.out,count*4ULL);s.upload(s.raw,raw,rawCount*8ULL);
+    s.host(count*(tap?12ULL:4ULL));s.reserve(s.raw,rawCount*8ULL);s.reserve(s.work,k*8ULL);s.reserve(s.out,count*4ULL);s.reserve(s.launch,sizeof(FirLaunch));s.upload(s.raw,raw,rawCount*8ULL);
     auto mod=start%std::int64_t(contextN);if(mod<0)mod+=std::int64_t(contextN);
-    s.kernel([&]{ss_fir_mix<<<(k+255)/256,256,0,s.stream>>>((float2*)s.raw.ptr,(float2*)s.work.ptr,rawCount,k,mod,contextN,fs,fc,(unsigned*)s.bad.ptr);});
-    auto& plan=s.getPlan(k,1,CUFFT_C2C);s.transform(plan,s.work,CUFFT_FORWARD);
-    s.kernel([&]{ss_fir_multiply<<<(k+255)/256,256,0,s.stream>>>((float2*)s.work.ptr,(float2*)s.filter.ptr,k,(unsigned*)s.bad.ptr);});s.transform(plan,s.work,CUFFT_INVERSE);
-    s.kernel([&]{ss_fir_energy<<<(count+255)/256,256,0,s.stream>>>((float2*)s.work.ptr,(float*)s.out.ptr,k,radius,count,(unsigned*)s.bad.ptr);});s.validate();
+    FirLaunch hostLaunch{rawCount,k,radius,count,static_cast<unsigned long long>(mod),contextN,fs,fc};
+    s.upload(s.launch,&hostLaunch,sizeof(hostLaunch));
+    auto& plan=s.getPlan(k,1,CUFFT_C2C);
+    auto record=[&]{
+      ss_fir_mix<<<(k+255)/256,256,0,s.stream>>>((float2*)s.raw.ptr,(float2*)s.work.ptr,(FirLaunch*)s.launch.ptr,(unsigned*)s.bad.ptr);
+      fftCheck(cufftExecC2C(plan.handle,(cufftComplex*)s.work.ptr,(cufftComplex*)s.work.ptr,CUFFT_FORWARD),"cufftExecC2C");
+      ss_fir_multiply<<<(k+255)/256,256,0,s.stream>>>((float2*)s.work.ptr,(float2*)s.filter.ptr,k,(unsigned*)s.bad.ptr);
+      fftCheck(cufftExecC2C(plan.handle,(cufftComplex*)s.work.ptr,(cufftComplex*)s.work.ptr,CUFFT_INVERSE),"cufftExecC2C");
+      ss_fir_energy<<<(count+255)/256,256,0,s.stream>>>((float2*)s.work.ptr,(float*)s.out.ptr,k,radius,count,(unsigned*)s.bad.ptr);
+    };
+    if(!(s.firGraph&&s.graphK==k&&s.graphRadius==radius&&s.graphCount==count&&s.graphRaw==rawCount)){
+      s.dropGraph();
+      cudaGraph_t captured=nullptr;
+      cudaCheck(cudaStreamBeginCapture(s.stream,cudaStreamCaptureModeThreadLocal),"fir-capture");
+      try{record();}catch(...){cudaStreamEndCapture(s.stream,&captured);if(captured)cudaGraphDestroy(captured);throw;}
+      cudaCheck(cudaStreamEndCapture(s.stream,&captured),"fir-capture-end");
+      cudaCheck(cudaGraphInstantiate(&s.firGraph,captured,nullptr,nullptr,0),"fir-graph");
+      cudaGraphDestroy(captured);
+      s.graphK=k;s.graphRadius=radius;s.graphCount=count;s.graphRaw=rawCount;
+    }
+    s.cancel();
+    s.timed(s.t.kernels,[&]{cudaCheck(cudaGraphLaunch(s.firGraph,s.stream),"fir-graph-launch");});++s.t.launches;++s.t.execs;
+    s.validate();
     std::vector<float> values(count);std::vector<float2> iq(tap?count:0);s.download(values.data(),s.out.ptr,count*4ULL);
     if(tap)s.download(iq.data(),(float2*)s.work.ptr+2*radius,count*8ULL);s.cancel();std::memcpy(energy,values.data(),count*4ULL);if(tap)std::memcpy(tap,iq.data(),count*8ULL);});
 }
