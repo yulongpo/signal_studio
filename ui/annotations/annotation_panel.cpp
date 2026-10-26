@@ -509,7 +509,18 @@ AnnotationPanel::~AnnotationPanel() { qApp->removeEventFilter(this); }
 const std::vector<std::string>& AnnotationPanel::sortedVisibleIds() const {
   return model_->filteredIds;
 }
+void AnnotationPanel::applyOverlaySource(FileState& file, AnnotationSource source) {
+  std::array<bool, 3> visible{};
+  visible[static_cast<int>(source)] = true;
+  if (file.annotationLayers != visible) {
+    // Keep the v6 field readable for old projects; the current source tab is
+    // now its only UI authority. List/tree eligibility stays independent.
+    file.annotationLayers = visible;
+    session_.annotations().hover(file, {});
+  }
+}
 void AnnotationPanel::setSourceTab(AnnotationSource source, bool reconcile) {
+  if (auto* file = session_.activeFile()) applyOverlaySource(*file, source);
   if (source == sourceTab_ && table_ == tabs_[static_cast<int>(source)].table) {
     if (auto* file = session_.activeFile()) file->annotationFilter.source = static_cast<int>(source);
     return;
@@ -582,24 +593,6 @@ void AnnotationPanel::buildFilters(QVBoxLayout* outer) {
   bar->addWidget(minimumScore_);
   connect(minimumScore_, &QDoubleSpinBox::valueChanged, this,
           [this] { filterChanged(); });
-  layerBar_ = new QWidget;
-  auto* layerRow = new QHBoxLayout(layerBar_);
-  layerRow->setContentsMargins(0, 0, 0, 0);
-  layerRow->setSpacing(15);
-  for (int i = 0; i < 3; ++i) {
-    layers_[i] = new QCheckBox(sourceName(static_cast<AnnotationSource>(i)));
-    layers_[i]->setChecked(true);
-    layers_[i]->setObjectName(QString("annotationLayer%1").arg(i));
-    layerRow->addWidget(layers_[i]);
-    connect(layers_[i], &QCheckBox::toggled, this, [this, i](bool on) {
-      if (refreshing_) return;
-      if (auto* f = session_.activeFile()) {
-        f->annotationLayers[i] = on;
-        session_.annotations().reconcileSelection(*f);
-        emit changed();
-      }
-    });
-  }
   count_ = new QLabel;
   count_->setObjectName("annotationCounts");
   bar->addWidget(count_, 1);
@@ -1550,6 +1543,7 @@ void AnnotationPanel::refresh() {
     if (const auto* active = findAnnotation(*f, f->activeMarkId);
         active && active->sourceKind != sourceTab_)
       setSourceTab(active->sourceKind, false);
+  if (f) applyOverlaySource(*f, sourceTab_);
   if (cellDraft_) {
     if (f && annotationEditContextMatches(*f, cellDraft_->context,
                                           session_.projectGeneration())) {
@@ -1613,8 +1607,6 @@ void AnnotationPanel::refreshTableSelection(const FileState* file) {
   std::unordered_set<std::string> selected;
   if (file) {
     selected.insert(file->selectedMarkIds.begin(), file->selectedMarkIds.end());
-    for (int i = 0; i < 3; ++i)
-      layers_[i]->setChecked(file->annotationLayers[i]);
     for (int row = 0; row < model_->rowCount(); ++row) {
       const auto& id = model_->rows[static_cast<std::size_t>(row)]->id;
       if (selected.contains(id))
@@ -1672,9 +1664,13 @@ void AnnotationPanel::refreshTableSelection(const FileState* file) {
       if (!slot.pendingRunId.empty()) detectionText = "检测运行中 · 暂存结果未发布，不可转换为人工标记。";
       else if (slot.stale) detectionText = "结果待更新 · 请显式应用并重新检测；上次完整集合仅保留作回滚恢复。";
       else if (!slot.committedRunId.empty()) {
+        const auto published = std::count_if(file->marks.begin(), file->marks.end(),
+            [&](const auto& value) { return value.sourceKind == AnnotationSource::Algorithm &&
+                annotationInContext(*file, value) && value.originEvidence &&
+                value.originEvidence->runId == slot.committedRunId; });
         for (const auto& run : file->detectionRuns)
           if (run.request.runId == slot.committedRunId)
-            detectionText = (run.resultCount == 0 ? QString("已完成，未检出") : QString("当前检测：%1 · %2 个结果").arg(q(run.request.profile.name)).arg(run.resultCount)) +
+            detectionText = (published == 0 ? QString("已完成，未检出") : QString("当前检测：%1 · %2 个结果").arg(q(run.request.profile.name)).arg(published)) +
                 " · 本次范围外为未检测；新检测成功后整体替换。";
       }
     }

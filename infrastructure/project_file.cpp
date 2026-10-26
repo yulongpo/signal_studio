@@ -379,8 +379,17 @@ bool ProjectFileCodec::load(const QString& path, Project& target, QString& error
     const QDir root(QDir::isAbsolutePath(assetRef) ? assetRef : projectDir.filePath(assetRef));
     require(root.exists() && !QFileInfo(root.absolutePath()).isSymLink(), "伴随资产缺失或目录链接无效");
     const auto declaredAssets = verifyManifest(root, container["assets"]);
+    std::vector<std::string> liveRunIds;
+    for (const auto& value : container["assets"].toArray()) {
+      const auto entry = value.toObject();
+      if (entry["integrity"] == "detection-live-v1")
+        liveRunIds.push_back(entry["runId"].toString().toStdString());
+    }
     Project candidate;
-    require(container["state"].isObject() && ProjectStore::decodeDocument(container["state"].toObject(), root.filePath("state-v6.json"), candidate, error), error.isEmpty() ? "缺少工程状态" : error);
+    require(container["state"].isObject(), "缺少工程状态");
+    const bool decoded = ProjectStore::decodeDocument(container["state"].toObject(),
+        root.filePath("state-v6.json"), candidate, error, liveRunIds);
+    require(decoded, error.isEmpty() ? "工程状态解码失败" : error);
     candidate.projectId = id.toStdString();
     candidate.assetDirectory = root.absolutePath().toStdString();
     for (const auto& file : candidate.files) for (const auto& run : file.detectionRuns)

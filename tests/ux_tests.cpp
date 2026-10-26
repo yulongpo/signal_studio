@@ -18,6 +18,8 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QTableView>
+#include <QTreeWidget>
+#include <QTreeWidgetItemIterator>
 #include "ui/annotations/annotation_panel.h"
 #include "infrastructure/label_import.h"
 #include "ui/annotations/annotation_evidence_widget.h"

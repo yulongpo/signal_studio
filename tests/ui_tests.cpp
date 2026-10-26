@@ -55,6 +55,7 @@
 #include <memory>
 
 #include "app/main_window.h"
+#include "application/detection_result_service.h"
 #include "infrastructure/annotation_json.h"
 #include "infrastructure/project_file.h"
 #include "infrastructure/project_store.h"
@@ -403,6 +404,15 @@ ViewRange innerRange(const ViewRange& view) {
           {frequencyAt(view, .35), frequencyAt(view, .65)}};
 }
 
+QTableView* annotationUiTable(MainWindow&, AnnotationSource);
+QTableView* annotationUiActiveTable(MainWindow&);
+QTableView* annotationUiOpenSource(MainWindow&, AnnotationSource);
+QModelIndex annotationUiTableIndex(QTableView*, const std::string&, int);
+AnnotationResult annotationUiCheckManualCopy(const FileState&, const std::string&,
+                                             const std::string&);
+AnnotationResult annotationUiConvertToManual(MainWindow&, const std::string&,
+                                             std::string&);
+
 }  // namespace
 
 class DemoMainWindow final : public MainWindow {
@@ -541,11 +551,11 @@ void UiTests::workspaceLayout() {
   QVERIFY(navigation->isVisible());
   QVERIFY(auxiliary->isVisible());
   QVERIFY(main->isVisible());
-  QCOMPARE(window.findChild<QWidget*>("annotationLayerBar")->height(), 31);
+  QVERIFY(!window.findChild<QWidget*>("annotationLayerBar"));
   QCOMPARE(window.findChild<QWidget*>("bottomPanelResize")->height(), 5);
   QVERIFY2(widebandOriginalPlotBudget(main) >= kCollapsedWidebandPlotMinimum,
            "External chart allocation must retain the A1.4.3 budget after "
-           "the layers bar and resize handle; measured text bands are separate.");
+           "the resize handle; measured text bands are separate.");
   QTRY_VERIFY_WITH_TIMEOUT(main->isDisplaySettled(), 5000);
   const auto waveform = auxiliary->grab().toImage();
   QVERIFY(!waveform.isNull());
@@ -2579,7 +2589,8 @@ void UiTests::panelRailsAndBottomTabs() {
   QVERIFY(propOpen->isVisible());
   QTest::mouseClick(propOpen, Qt::LeftButton);
   QCOMPARE(properties->width(), 390);
-  for (const auto& tabName : {"resultTab", "taskTab", "logTab"}) {
+  for (const auto& tabName : {"importedLabelsTab", "manualAnnotationsTab",
+                             "detectionResultsTab", "taskTab", "logTab"}) {
     auto* tab = window.findChild<QAbstractButton*>(tabName);
     QVERIFY(tab);
     QTest::mouseClick(tab, Qt::LeftButton);
@@ -2587,6 +2598,10 @@ void UiTests::panelRailsAndBottomTabs() {
     QCOMPARE(bottom->height(), 260);
     QVERIFY(toggle->isChecked());
   }
+  QVERIFY(!window.findChild<QWidget*>("annotationTable"));
+  QVERIFY(!window.findChild<QWidget*>("resultTab"));
+  QVERIFY(!window.findChild<QWidget*>("annotationSourceFilter"));
+  QVERIFY(!window.findChild<QWidget*>("annotationRunFilter"));
   auto* logs = window.findChild<QPlainTextEdit*>("resultsPanel");
   QVERIFY(logs && logs->isVisible());
   QTest::mouseClick(toggle, Qt::LeftButton);
@@ -4711,13 +4726,25 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   const auto publication =
       window.session().annotations().publishSourceSet(*file, set, {unknown});
   QVERIFY2(publication.ok, publication.error.c_str());
+  const auto unknownBefore = encodeAnnotation(*findAnnotation(*file, unknown.id));
+  QVERIFY(!window.session().annotations().reviewBatch(
+      *file, {unknown.id}, ReviewStatus::Rejected).ok);
+  Channel deniedChannel;
+  QVERIFY(!window.session().annotations().bindChannelSource(
+      *file, deniedChannel, annotationChannelRequest(
+          *file, unknown.id, file->view.time,
+          window.session().projectGeneration())).ok);
+  std::string manualUnknown;
+  const auto converted = annotationUiConvertToManual(window, unknown.id, manualUnknown);
+  QVERIFY2(converted.ok, converted.error.c_str());
+  const auto conversionSnapshot = *findAnnotation(*file, manualUnknown)->conversionSnapshot;
   QVERIFY(window.session()
               .annotations()
-              .reviewBatch(*file, {unknown.id}, ReviewStatus::Rejected)
+              .reviewBatch(*file, {manualUnknown}, ReviewStatus::Rejected)
               .ok);
   QVERIFY(window.session()
               .annotations()
-              .select(*file, {annotationId, unknown.id}, unknown.id)
+              .select(*file, {annotationId, manualUnknown}, manualUnknown)
               .ok);
   file->metadata.availability.status = LoadStatus::Partial;
   file->metadata.availability.availableSamples = 1000;
@@ -4731,7 +4758,8 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   validation = channelDialog->findChild<QLabel*>("channelValidation");
   QVERIFY(source->currentData().toString().isEmpty() && !create->isEnabled());
   QCOMPARE(validation->property("field").toString(), QString("annotationId"));
-  source->setCurrentIndex(source->findData(QString::fromStdString(unknown.id)));
+  QVERIFY(source->findData(QString::fromStdString(unknown.id)) < 0);
+  source->setCurrentIndex(source->findData(QString::fromStdString(manualUnknown)));
   QCOMPARE(validation->property("field").toString(), QString("sourceTime"));
   QVERIFY(!create->isEnabled());
   channelBegin = static_cast<SampleTimeEdit*>(
@@ -4751,10 +4779,14 @@ void UiTests::unifiedAnnotationDraftsAndSegmentSwitch() {
   QCOMPARE(file->channels.back().sourceSnapshot->bindingKind,
            ChannelBindingKind::UserRange);
   QCOMPARE(file->channels.back().sourceTime, (TimeRange{0, 1000}));
-  QVERIFY(findAnnotation(*file, unknown.id)->segments.empty());
-  QCOMPARE(findAnnotation(*file, unknown.id)->observation, unknown.observation);
-  QCOMPARE(findAnnotation(*file, unknown.id)->reviewStatus,
+  QVERIFY(findAnnotation(*file, manualUnknown)->segments.empty());
+  QCOMPARE(findAnnotation(*file, manualUnknown)->observation, unknown.observation);
+  QCOMPARE(findAnnotation(*file, manualUnknown)->reviewStatus,
            ReviewStatus::Rejected);
+  QCOMPARE(file->channels.back().sourceSnapshot->sourceKind, AnnotationSource::Manual);
+  QCOMPARE(file->channels.back().sourceSnapshot->annotationId, manualUnknown);
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, unknown.id)), unknownBefore);
+  QVERIFY(*findAnnotation(*file, manualUnknown)->conversionSnapshot == conversionSnapshot);
 
   // Nine displayed MHz decimals cannot represent these physical edges. Default
   // validation, unrelated edits and an uncommitted draft must keep exact Hz.
@@ -4956,7 +4988,29 @@ void UiTests::torchSigLabelsNativeRoundtrip() {
   window.refresh();
   QVERIFY(openInspectorPage(window, "Annotation"));
   auto* editor = window.findChild<QLineEdit*>("annotationStartMilliseconds");
-  QVERIFY(editor && editor->isEnabled());
+  QVERIFY(editor && !editor->isEnabled());
+  QVERIFY(!window.session().annotations().rename(
+      *file, annotationId, "Must remain immutable", {}).ok);
+  std::string manualId;
+  const auto converted = annotationUiConvertToManual(window, annotationId, manualId);
+  QVERIFY2(converted.ok, converted.error.c_str());
+  const auto snapshot = *findAnnotation(*file, manualId)->conversionSnapshot;
+  QVERIFY(editor->isEnabled());
+  auto* table = annotationUiOpenSource(window, AnnotationSource::Manual);
+  QVERIFY(table);
+  const auto nameCell = annotationUiTableIndex(table, manualId, 1);
+  QVERIFY(nameCell.isValid() && (nameCell.flags() & Qt::ItemIsEditable));
+  table->setCurrentIndex(nameCell);
+  table->setFocus();
+  QTest::keyClick(table, Qt::Key_F2);
+  auto* nameEditor = window.findChild<QLineEdit*>("annotationTableEditor");
+  QVERIFY(nameEditor && nameEditor->isVisible());
+  QTest::keyClicks(nameEditor, "Independent manual label");
+  QTest::keyClick(nameEditor, Qt::Key_Return);
+  QCOMPARE(findAnnotation(*file, manualId)->name, std::string("Independent manual label"));
+  for (qsizetype i = 0; i < originalAnnotations.size(); ++i)
+    QCOMPARE(encodeAnnotation(file->marks[static_cast<std::size_t>(i)]),
+             originalAnnotations[i].toObject());
   QTemporaryDir directory;
   const auto path = directory.filePath("project.ssproj");
   phase("save-before");
@@ -4967,15 +5021,23 @@ void UiTests::torchSigLabelsNativeRoundtrip() {
   file = window.session().activeFile();
   QTRY_VERIFY_WITH_TIMEOUT(file->metadata.availability.status != LoadStatus::Loading, 10000);
   QCoreApplication::processEvents();
-  QCOMPARE(file->marks.size(), std::size_t{4});
-  QCOMPARE(file->sourceSets.size(), std::size_t{1});
-  for (std::size_t i = 0; i < file->marks.size(); ++i)
+  QCOMPARE(file->marks.size(), std::size_t{5});
+  QCOMPARE(file->sourceSets.size(), std::size_t{2});
+  for (std::size_t i = 0; i < std::size_t{4}; ++i)
     QCOMPARE(encodeAnnotation(file->marks[i]), originalAnnotations[static_cast<qsizetype>(i)].toObject());
   QCOMPARE(file->marks[0].id, annotationId);
   QCOMPARE(file->metadata.sampleCount, SampleIndex{400000});
   QCOMPARE(file->metadata.centerFrequencyHz, 2.5e9);
   QCOMPARE(file->marks[0].sourceKind, AnnotationSource::ImportedLabel);
   QVERIFY(file->marks[0].originEvidence);
+  const auto* manual = findAnnotation(*file, manualId);
+  QVERIFY(manual && manual->sourceKind == AnnotationSource::Manual);
+  QCOMPARE(manual->name, std::string("Independent manual label"));
+  QVERIFY(manual->conversionSnapshot && *manual->conversionSnapshot == snapshot);
+  QCOMPARE(encodeSourceSet(*findSourceSet(*file, snapshot.sourceSet.id)), originalSource);
+  QVERIFY(window.importLabels(meta, &error));
+  QCOMPARE(file->marks.size(), std::size_t{5});
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, annotationId)), originalAnnotations[0].toObject());
 }
 
 void UiTests::annotationTableBoundsAndIndependentSelection() {
@@ -4989,13 +5051,17 @@ void UiTests::annotationTableBoundsAndIndependentSelection() {
   window.session().selectMarks({"many-1199"}, "many-1199");
   showWindow(window);
   window.refresh();
-  auto* table = window.findChild<QTableView*>("annotationTable");
+  auto* table = annotationUiOpenSource(window, AnnotationSource::Manual);
   auto* tree = window.findChild<QTreeWidget*>("projectTree");
   QVERIFY(table && tree);
   QCOMPARE(table->model()->rowCount(), 200);
   QTRY_VERIFY(!tree->topLevelItem(0)->child(0)->isHidden());
   QVERIFY(descendantsOfType(tree->topLevelItem(0), "mark").size() <= 300);
-  window.findChild<QPushButton*>("annotationsNextPage")->click();
+  QCOMPARE(table->property("matchingAnnotationCount").toULongLong(), qulonglong{1200});
+  const auto previousPage = table->property("annotationPage").toULongLong();
+  QVERIFY(previousPage > 1);
+  window.findChild<QPushButton*>("annotationsPreviousPage")->click();
+  QCOMPARE(table->property("annotationPage").toULongLong(), previousPage - 1);
   QCOMPARE(table->model()->rowCount(), 200);
   QVERIFY(std::find(file->selectedMarkIds.begin(), file->selectedMarkIds.end(),
                     "many-1199") != file->selectedMarkIds.end());
@@ -5037,9 +5103,8 @@ void UiTests::widebandAnnotationSelectionAndOverlap() {
   auto* inspector = window.findChild<QComboBox*>("annotationSegment");
   auto* cardSegment = window.findChild<QComboBox*>("detectionActiveSegment");
   auto* range = window.findChild<QComboBox*>("detectionRangeOrigin");
-  auto* table = window.findChild<QTableView*>("annotationTable");
+  auto* table = annotationUiOpenSource(window, AnnotationSource::Manual);
   QVERIFY(plot && inspector && cardSegment && range && table);
-  window.findChild<QPushButton*>("resultTab")->click();
   QVERIFY(table->isVisible());
 
   // The second segment's left handle lies inside the first segment.
@@ -5086,12 +5151,14 @@ void UiTests::widebandAnnotationSelectionAndOverlap() {
   QVERIFY(window.findChild<QPushButton*>("annotationQualityMenu")->isEnabled());
   QVERIFY(window.findChild<QAction*>("acceptAnnotations")->isEnabled());
   // Checkbox toggles preserve the other selected row; ordinary clicks replace.
-  const auto firstCell = table->model()->index(0, 0);
+  const auto firstCell = annotationUiTableIndex(table, firstId, 0);
+  QVERIFY(firstCell.isValid());
   QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier,
                     table->visualRect(firstCell).center());
   QCOMPARE(file->selectedMarkIds.size(), std::size_t{1});
   QCOMPARE(file->selectedMarkIds.front(), lastId);
-  const auto lastCell = table->model()->index(1, 1);
+  const auto lastCell = annotationUiTableIndex(table, lastId, 1);
+  QVERIFY(lastCell.isValid());
   QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier,
                     table->visualRect(lastCell).center());
   QCOMPARE(file->selectedMarkIds, std::vector<std::string>{lastId});
@@ -5099,10 +5166,10 @@ void UiTests::widebandAnnotationSelectionAndOverlap() {
                     plot->toPixel(1500, 99.65e6).toPoint());
   QCOMPARE(file->selectedMarkIds.size(), std::size_t{0});
   QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier,
-                    table->visualRect(table->model()->index(1, 1)).center());
+                    table->visualRect(annotationUiTableIndex(table, lastId, 1)).center());
   QCOMPARE(file->selectedMarkIds, std::vector<std::string>{lastId});
   QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier,
-                    table->visualRect(table->model()->index(1, 0)).center());
+                    table->visualRect(annotationUiTableIndex(table, lastId, 0)).center());
   QCOMPARE(file->selectedMarkIds.size(), std::size_t{0});
   QVERIFY(openChartSettings(window, "displaySettings"));
   auto* frequency = window.findChild<QComboBox*>("freqMode");
@@ -5110,6 +5177,21 @@ void UiTests::widebandAnnotationSelectionAndOverlap() {
 }
 
 void UiTests::widebandFixtureTaskNativeRoundtrip() {
+  QTimer unexpectedModal;
+  QString modalFailure;
+  connect(&unexpectedModal, &QTimer::timeout, this, [&] {
+    if (auto* message = qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
+      modalFailure = message->windowTitle() + ": " + message->text();
+      qWarning().noquote() << modalFailure;
+      message->reject();
+    }
+  });
+  unexpectedModal.start(25);
+  const auto previousFixture = qApp->property("enableDetectionTestFixture");
+  qApp->setProperty("enableDetectionTestFixture", true);
+  const auto restoreFixture = qScopeGuard([&] {
+    qApp->setProperty("enableDetectionTestFixture", previousFixture);
+  });
   QTemporaryDir directory;
   const auto iqPath = directory.filePath("IQ_FS1Msps_FC100MHz.dat");
   QFile iq(iqPath);
@@ -5141,24 +5223,34 @@ void UiTests::widebandFixtureTaskNativeRoundtrip() {
   request.contextRange = request.requestedRange;
   request.rangeOrigin = "native-ui-fixture";
   QVERIFY2(panel->startRequest(request, error), qPrintable(error));
-  QTRY_VERIFY_WITH_TIMEOUT(
-      !file->detectionRuns.empty() &&
-          detectionIsTerminal(file->detectionRuns[0].lifecycle),
-      15000);
+  file = window.session().activeFile();
+  const auto committed = [&](const std::string& runId) {
+    const auto* current = window.session().activeFile();
+    const auto* slot = current ? currentDetectionSlot(
+        *current, current->metadata.sampleFormat.selectedChannel) : nullptr;
+    return slot && !slot->stale && slot->committedRunId == runId;
+  };
+  // Publication atomically replaces Project storage; never retain FileState*
+  // across start/poll boundaries or treat a terminal task as a committed result.
+  QTRY_VERIFY_WITH_TIMEOUT(committed(request.runId), 15000);
+  file = window.session().activeFile();
+  QCOMPARE(file->detectionRuns.size(), std::size_t{1});
   QCOMPARE(file->detectionRuns[0].lifecycle, DetectionLifecycle::Completed);
-  QTRY_VERIFY(!file->marks.empty());
+  QVERIFY(!file->marks.empty());
   QCOMPARE(file->marks[0].sourceKind, AnnotationSource::Algorithm);
   QVERIFY(file->marks[0].segments.empty() && file->marks[0].observation);
   const auto count = file->marks.size();
   const auto projectPath = directory.filePath("M2 task.ssproj");
-  QVERIFY(window.saveProject(projectPath));
-  QVERIFY(window.openProject(projectPath));
+  QVERIFY2(window.saveProject(projectPath), qPrintable(modalFailure));
+  QVERIFY2(window.openProject(projectPath), qPrintable(modalFailure));
   file = window.session().activeFile();
+  QTRY_COMPARE_WITH_TIMEOUT(file->metadata.availability.status, LoadStatus::Ready, 10000);
   QCOMPARE(file->detectionRuns.size(), std::size_t{1});
   QCOMPARE(file->detectionRuns[0].request.runId, request.runId);
   QCOMPARE(file->marks.size(), count);
   QCOMPARE(file->marks[0].sourceKind, AnnotationSource::Algorithm);
   const auto annotationBeforeEvidence = encodeAnnotation(file->marks[0]);
+  const auto algorithmId = file->marks[0].id;
   window.session().annotations().select(*file, {file->marks[0].id},
                                         file->marks[0].id);
   window.refresh();
@@ -5187,6 +5279,58 @@ void UiTests::widebandFixtureTaskNativeRoundtrip() {
   evidenceDetails->close();
   window.findChild<QPushButton*>("psdMode")->click();
   QVERIFY(!evidence->isVisible());
+
+  std::string manualId;
+  const auto converted = annotationUiConvertToManual(window, algorithmId, manualId);
+  QVERIFY2(converted.ok, converted.error.c_str());
+  const auto manualBeforeReplacement = encodeAnnotation(*findAnnotation(*file, manualId));
+  const auto snapshot = *findAnnotation(*file, manualId)->conversionSnapshot;
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, algorithmId)), annotationBeforeEvidence);
+  DetectionRequest replacement = request;
+  replacement.runId = "qt-fixture-replacement";
+  QTRY_VERIFY_WITH_TIMEOUT(window.session().activeFile()->metadata.availability.status == LoadStatus::Ready &&
+      availableSamples(window.session().activeFile()->metadata) > 0, 10000);
+  file = window.session().activeFile();
+  replacement.sourceIdentity = annotationSourceIdentity(
+      file->metadata, window.session().projectGeneration());
+  replacement.requestedRange.time = {0, 10000};
+  replacement.contextRange = replacement.requestedRange;
+  replacement.rangeOrigin = "native-ui-fixture-roi";
+  QVERIFY2(panel->startRequest(replacement, error), qPrintable(error));
+  file = window.session().activeFile();
+  QTRY_VERIFY_WITH_TIMEOUT(committed(replacement.runId), 15000);
+  file = window.session().activeFile();
+  QCOMPARE(file->detectionRuns.size(), std::size_t{1});
+  QCOMPARE(file->detectionRuns.front().request.runId, replacement.runId);
+  QVERIFY(!findAnnotation(*file, algorithmId));
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, manualId)), manualBeforeReplacement);
+  const auto* slot = currentDetectionSlot(*file, 0);
+  QVERIFY(slot);
+  QVERIFY(std::find(slot->retiredRunIds.begin(), slot->retiredRunIds.end(), request.runId)
+          != slot->retiredRunIds.end());
+  const auto resultCount = static_cast<std::size_t>(std::count_if(
+      file->marks.begin(), file->marks.end(), [](const Annotation& a) {
+        return !a.deleted && a.sourceKind == AnnotationSource::Algorithm;
+      }));
+  QCOMPARE(resultCount, static_cast<std::size_t>(file->detectionRuns.front().resultCount));
+  QVERIFY(resultCount > 0);
+  auto* results = annotationUiOpenSource(window, AnnotationSource::Algorithm);
+  QVERIFY(results);
+  QCOMPARE(results->property("matchingAnnotationCount").toULongLong(),
+           static_cast<qulonglong>(resultCount));
+  QVERIFY(!annotationUiTableIndex(results, algorithmId, 1).isValid());
+  QVERIFY2(window.saveProject(projectPath), qPrintable(modalFailure));
+  QVERIFY(window.openProject(projectPath));
+  file = window.session().activeFile();
+  QTRY_VERIFY_WITH_TIMEOUT(file->metadata.availability.status != LoadStatus::Loading, 10000);
+  QVERIFY(!findAnnotation(*file, algorithmId));
+  QCOMPARE(file->detectionRuns.size(), std::size_t{1});
+  QCOMPARE(file->detectionRuns.front().request.runId, replacement.runId);
+  const auto* manual = findAnnotation(*file, manualId);
+  QVERIFY(manual && manual->conversionSnapshot && *manual->conversionSnapshot == snapshot);
+  QVERIFY(window.session().annotations().rename(
+      *file, manualId, "Retained independent result", {}).ok);
+  QVERIFY(*findAnnotation(*file, manualId)->conversionSnapshot == snapshot);
   const auto sourceFileId = file->metadata.id;
   window.session().addDemoFile("other-file.iq", 1e6, 100e6, .02);
   window.refresh();
@@ -5194,7 +5338,7 @@ void UiTests::widebandFixtureTaskNativeRoundtrip() {
   auto* runTable = window.findChild<QListView*>("detectionRunList");
   QVERIFY(runTable && runTable->model()->rowCount() == 1);
   QCOMPARE(runTable->model()->index(0, 0).data(Qt::UserRole).toString(),
-           QString::fromStdString(request.runId));
+           QString::fromStdString(replacement.runId));
   QVERIFY(window.session().activateFile(sourceFileId));
   window.refresh();
 }
@@ -5441,8 +5585,7 @@ void UiTests::widebandRoiPreservesManualTool() {
   QCOMPARE(window.session().activeFile()->detectionRuns.size(), std::size_t{0});
 }
 #include "tests/annotation_interactions_tests.h"
-
-// Editing scenes reuse the synthetic fixtures defined by interaction scenes.
-#include "tests/annotation_editing_tests.h"
+// The four editing cases retain their Qt slot names and now live with the
+// source-aware interaction fixtures above. The pre-R5 editing header is unused.
 QTEST_MAIN(UiTests)
 #include "ui_tests.moc"

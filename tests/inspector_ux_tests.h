@@ -27,6 +27,9 @@ inline void UxTests::uxR02_inspectorRouting() {
   QVERIFY(page("contextDisplay"));
   QVERIFY(!window.findChild<QAbstractButton*>("contextChannel")->isEnabled());
   QVERIFY(!window.findChild<QPushButton*>("runWidebandDetection")->isVisible());
+  // Only the selected source tab is drawn/hit-testable. The routing checks
+  // below concern Manual rectangles, so explicitly expose that source first.
+  QTest::mouseClick(window.findChild<QAbstractButton*>("manualAnnotationsTab"), Qt::LeftButton);
   auto* plot = window.findChild<PlotWidget*>("mainPlot");
   const auto select = [&](const ViewRange& range) {
     QTest::mouseClick(plot, Qt::LeftButton, Qt::NoModifier,

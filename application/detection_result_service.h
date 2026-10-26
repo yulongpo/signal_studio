@@ -31,7 +31,8 @@ const CurrentDetectionSlot* currentDetectionSlot(const FileState&,
 AnnotationValidation validateCurrentDetectionSlots(const FileState&);
 // Call after legacy non-Manual user revisions have been preserved as Manual.
 // Missing fields are migrated on the temporary decoded FileState only.
-AnnotationValidation migrateLegacyDetectionSlots(FileState&);
+AnnotationValidation migrateLegacyDetectionSlots(
+    FileState&, const std::vector<std::string>& liveRunIds = {});
 
 class DetectionResultService {
  public:

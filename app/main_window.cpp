@@ -61,6 +61,8 @@
 #include <QVBoxLayout>
 #include <QWindow>
 #include <algorithm>
+#include <chrono>
+#include <thread>
 #include <cmath>
 #include <functional>
 #include <future>
@@ -1109,14 +1111,6 @@ void MainWindow::buildWorkspace() {
           &PlotWidget::cancelDetectionRoi);
   detectionRoiConfirmation_->resize(650, 40);
   detectionRoiConfirmation_->hide();
-  auto* layerBar = new QWidget;
-  layerBar->setObjectName("annotationLayerBar");
-  layerBar->setFixedHeight(31);
-  auto* layerRow = new QHBoxLayout(layerBar);
-  layerRow->setContentsMargins(8, 0, 8, 0);
-  layerRow->setSpacing(14);
-  graphLayout->addWidget(layerBar);
-
   bottomResize_ = new PanelResizeHandle(Qt::Vertical);
   bottomResize_->setObjectName("bottomPanelResize");
   center->addWidget(bottomResize_);
@@ -1141,7 +1135,7 @@ void MainWindow::buildWorkspace() {
       bottomTab_ = i;
       if (i < 3 && annotations_) annotations_->setSourceTab(static_cast<AnnotationSource>(i));
       resultToggle_->setChecked(true);
-      updateBottom();
+      refresh();
     });
   }
   tabRow->addStretch();
@@ -1169,7 +1163,6 @@ void MainWindow::buildWorkspace() {
   connect(annotations_, &AnnotationPanel::sourceTabChanged, this, [this](int source) {
     bottomTab_ = source;
   });
-  layerRow->addWidget(annotations_->layerWidget());
   connect(annotations_, &AnnotationPanel::changed, this, [this] { refresh(); });
   connect(annotations_, &AnnotationPanel::message, this, &MainWindow::log);
   connect(annotations_, &AnnotationPanel::createChannelRequested, this,
@@ -1491,7 +1484,6 @@ void MainWindow::buildWorkspace() {
         control));
   }
   freqMode_ = combo("freqMode", {"射频绝对频率", "基带相对频率"});
-  layerRow->addStretch();
   for (int i = 0; i < dynamic_->count(); ++i)
     dynamic_->setItemData(i, 20 + 20 * i);
   for (int i = 0; i < reference_->count(); ++i)
@@ -2265,10 +2257,12 @@ void MainWindow::rebuildTree() {
     actionRow->addWidget(counts,1);
     auto* all=push("全选","treeSelectAll",actionRow);
     auto* remove=push("删除","treeDeleteMarks",actionRow);
-    all->setToolTip("全选当前筛选的全部匹配标记");remove->setToolTip("预览并删除所选标记");
+    all->setToolTip("全选当前来源 Tab 筛选的全部匹配标记");remove->setToolTip("预览并删除所选标记");
     remove->setProperty("preserveParameterDrafts",true);
     all->setProperty("uiRole","outline");remove->setProperty("uiRole","outline");
-    all->setEnabled(count.matching!=0);remove->setEnabled(count.selected!=0);
+    all->setEnabled(!annotations_->sortedVisibleIds().empty());
+    remove->setEnabled(count.selected != 0 && std::all_of(file.selectedMarkIds.begin(), file.selectedMarkIds.end(),
+        [&](const auto& id) { return session_.annotations().canEdit(file, id); }));
     tree_->setItemWidget(actions, 0, controls);
     connect(all, &QPushButton::clicked, this, &MainWindow::selectAllMarks);
     connect(remove, &QPushButton::clicked, this, &MainWindow::deleteMarks);
@@ -2412,16 +2406,27 @@ std::vector<std::string> MainWindow::treeSelectionOrder() const {
   const auto* file = session_.activeFile();
   if (!file || !annotations_) return result;
   std::unordered_map<std::string, const Annotation*> byId;
-  for (const auto& annotation : file->marks)
-    byId.emplace(annotation.id, &annotation);
-  for (int kind = 0; kind < 3; ++kind)
-    for (const auto& id : annotations_->sortedVisibleIds()) {
-      const auto found = byId.find(id);
-      if (found != byId.end() &&
-          static_cast<int>(found->second->sourceKind) == kind &&
-          annotationSelectable(*file, *found->second))
-        result.push_back(id);
+  byId.reserve(file->marks.size());
+  for (const auto& value : file->marks) byId.emplace(value.id, &value);
+  // The tree exposes every source group. Only the currently projected source
+  // uses its table's query/sort; switching tabs cannot erase other groups.
+  for (int kind = 0; kind < 3; ++kind) {
+    if (kind == static_cast<int>(annotations_->sourceTab())) {
+      for (const auto& id : annotations_->sortedVisibleIds()) {
+        const auto found = byId.find(id);
+        if (found != byId.end() && annotationSelectable(*file, *found->second)) result.push_back(id);
+      }
+      continue;
     }
+    std::vector<const Annotation*> values;
+    for (const auto& value : file->marks)
+      if (static_cast<int>(value.sourceKind) == kind && annotationSelectable(*file, value))
+        values.push_back(&value);
+    std::sort(values.begin(), values.end(), [](const auto* a, const auto* b) {
+      return a->name == b->name ? a->id < b->id : a->name < b->name;
+    });
+    for (const auto* value : values) result.push_back(value->id);
+  }
   return result;
 }
 
@@ -2873,15 +2878,18 @@ void MainWindow::syncTreeState() {
       summary->setText(counts.selected?QString("已选 %1").arg(counts.selected):QString("%1 项").arg(counts.matching));
       summary->setToolTip(annotationCountText(file));
       controls->findChild<QPushButton*>("treeSelectAll")
-          ->setEnabled(counts.matching != 0);
+          ->setEnabled(!annotations_->sortedVisibleIds().empty());
       controls->findChild<QPushButton*>("treeDeleteMarks")
-          ->setEnabled(counts.selected != 0);
+          ->setEnabled(counts.selected != 0 && std::all_of(file.selectedMarkIds.begin(), file.selectedMarkIds.end(),
+              [&](const auto& id) { return session_.annotations().canEdit(file, id); }));
     }
     std::array<std::size_t, 3> matching{}, total{};
+    const auto order = treeSelectionOrder();
+    const std::unordered_set<std::string> matchingIds(order.begin(), order.end());
     for (const auto& annotation : file.marks) {
       const auto kind = static_cast<int>(annotation.sourceKind);
       if (annotationInContext(file, annotation)) ++total[kind];
-      if (annotationVisible(file, annotation)) ++matching[kind];
+      if (matchingIds.contains(annotation.id)) ++matching[kind];
     }
     for (int group = 1; group < marks->childCount(); ++group) {
       auto* node = marks->child(group);
@@ -5084,7 +5092,16 @@ bool MainWindow::saveProject(const QString& path) {
   cancelInteractions(false);
   QString error;
   auto candidate = session_.project();
-  if (!projectIo(this, "保存工程与伴随资产…", [&](auto cancelled) { return ProjectFileCodec::save(projectFile, candidate, error, saveMode, cancelled); })) {
+  if (!projectIo(this, "保存工程与伴随资产…", [&](auto cancelled) {
+        // Our own bounded background GC briefly owns the same root lock.
+        // Retry only that explicit contention in the IO worker, keeping the
+        // GUI responsive and the codec's fail-closed locking contract intact.
+        for (int attempt = 0; ; ++attempt) {
+          if (ProjectFileCodec::save(projectFile, candidate, error, saveMode, cancelled)) return true;
+          if (attempt >= 40 || cancelled() || !error.contains("正被保存/清理")) return false;
+          std::this_thread::sleep_for(std::chrono::milliseconds(25));
+        }
+      })) {
     QMessageBox::critical(this, "保存失败", error);
     return false;
   }

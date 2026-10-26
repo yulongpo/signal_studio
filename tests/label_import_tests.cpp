@@ -255,8 +255,41 @@ class LabelImportTests : public QObject {
              LabelImportDisposition::AlreadyImported);
     const auto duplicate = publishDiscoveredLabels(service, file, fromData, 7);
     QVERIFY(duplicate.ok && !duplicate.changed);
+    const auto importedJson = exportAnnotationsJson(file);
+    QCOMPARE(service.historySize(file), std::size_t{0});
+    QVERIFY(!service.undo(file).ok);
+    QVERIFY(!service.redo(file).ok);
+    QCOMPARE(exportAnnotationsJson(file), importedJson);
+    std::vector<std::string> sourceIds;
+    for (const auto& annotation : file.marks) {
+      sourceIds.push_back(annotation.id);
+      QVERIFY(!service.canEdit(file, annotation.id));
+    }
+    std::vector<std::string> createdIds;
+    const auto converted = service.convertToManual(file, sourceIds, {}, createdIds);
+    QVERIFY2(converted.ok, converted.error.c_str());
+    QCOMPARE(createdIds.size(), sourceIds.size());
+    QCOMPARE(file.marks.size(), std::size_t{24});
+    QCOMPARE(service.historySize(file), std::size_t{1});
     QVERIFY(service.undo(file).ok);
-    QVERIFY(file.marks.empty());
+    QCOMPARE(file.marks.size(), std::size_t{12});
+    QCOMPARE(file.sourceSets.size(), std::size_t{1});
+    QCOMPARE(exportAnnotationsJson(file), importedJson);
+    QVERIFY(service.redo(file).ok);
+    QCOMPARE(file.marks.size(), std::size_t{24});
+    for (std::size_t i = 0; i < sourceIds.size(); ++i) {
+      const auto* source = findAnnotation(file, sourceIds[i]);
+      const auto* copy = findAnnotation(file, createdIds[i]);
+      QVERIFY(source && copy && copy->sourceKind == AnnotationSource::Manual);
+      QVERIFY(copy->conversionSnapshot);
+      QCOMPARE(copy->conversionSnapshot->sourceAnnotationId, source->id);
+      QVERIFY(copy->conversionSnapshot->sourceOriginEvidence == *source->originEvidence);
+      QVERIFY(!service.canEdit(file, source->id) && service.canEdit(file, copy->id));
+    }
+    const auto duplicateAfterRedo = prepareDiscoveredLabels(forward.candidates[0], file, 7);
+    QCOMPARE(duplicateAfterRedo.disposition, LabelImportDisposition::AlreadyImported);
+    QVERIFY(!publishDiscoveredLabels(service, file, duplicateAfterRedo, 7).changed);
+    QCOMPARE(file.marks.size(), std::size_t{24});
   }
 
   void wavUnknownLabelsRequireMappingAndBoundedPreview() {
@@ -577,15 +610,27 @@ class LabelImportTests : public QObject {
     QVERIFY(!publishDiscoveredLabels(service, file, prepared, 8).ok);
     QVERIFY(file.marks.empty());
     QVERIFY(publishDiscoveredLabels(service, file, prepared, 7).ok);
-    QVERIFY(service.createManual(file, "Manual", {{0, 100}, {-100, 100}}).ok);
-    const auto count = file.marks.size();
+    const auto existingManual = service.createManual(file, "Manual", {{0, 100}, {-100, 100}});
+    QVERIFY(existingManual.ok);
+    const auto manualBefore = encodeAnnotation(*findAnnotation(file, existingManual.id));
     const auto annotationId = file.marks[0].id;
-    QVERIFY(service.rename(file, annotationId, "User revised", "keep").ok);
+    const auto sourceBefore = encodeAnnotation(*findAnnotation(file, annotationId));
+    QVERIFY(!service.rename(file, annotationId, "User revised", "keep").ok);
+    QCOMPARE(encodeAnnotation(*findAnnotation(file, annotationId)), sourceBefore);
+    std::vector<std::string> createdIds;
+    const auto converted = service.convertToManual(file, {annotationId}, {}, createdIds);
+    QVERIFY2(converted.ok, converted.error.c_str());
+    QCOMPARE(createdIds.size(), std::size_t{1});
+    const auto copyId = createdIds.front();
+    QVERIFY(service.rename(file, copyId, "User revised", "keep").ok);
+    const auto count = file.marks.size();
     const auto again = prepareDiscoveredLabels(discovered.candidates[0], file, 7);
     QCOMPARE(again.disposition, LabelImportDisposition::AlreadyImported);
     QVERIFY(!publishDiscoveredLabels(service, file, again, 7).changed);
     QCOMPARE(file.marks.size(), count);
-    QCOMPARE(findAnnotation(file, annotationId)->name, std::string("User revised"));
+    QCOMPARE(findAnnotation(file, copyId)->name, std::string("User revised"));
+    QCOMPARE(encodeAnnotation(*findAnnotation(file, annotationId)), sourceBefore);
+    QCOMPARE(encodeAnnotation(*findAnnotation(file, existingManual.id)), manualBefore);
     write(label, fixture("generator-60m-10ms.txt") + "\n");
     const auto changed = prepareDiscoveredLabels(discovered.candidates[0], file, 7);
     QCOMPARE(changed.disposition, LabelImportDisposition::SourceChanged);
@@ -599,6 +644,8 @@ class LabelImportTests : public QObject {
     auto metadataChanged = file;
     metadataChanged.metadata.availability.fingerprint = "different-data";
     QVERIFY(!publishDiscoveredLabels(service, metadataChanged, prepared, 7).ok);
+    QCOMPARE(encodeAnnotation(*findAnnotation(file, annotationId)), sourceBefore);
+    QCOMPARE(findAnnotation(file, copyId)->name, std::string("User revised"));
   }
 
   void incompleteEvidenceConfirmationCancellationDeduplicationAndUndo() {
@@ -655,9 +702,13 @@ class LabelImportTests : public QObject {
     QCOMPARE(again.disposition, LabelImportDisposition::AlreadyImported);
     QVERIFY(!publishDiscoveredLabels(service, file, again, 4).changed);
     QCOMPARE(file.sourceSets.size(), std::size_t{1});
-    QVERIFY(service.undo(file).ok);
-    QVERIFY(file.sourceSets.empty() && file.marks.empty());
-    QVERIFY(service.redo(file).ok);
+    const auto evidenceBefore = encodeSourceSet(file.sourceSets.front());
+    QCOMPARE(service.historySize(file), std::size_t{0});
+    QVERIFY(!service.undo(file).ok);
+    QVERIFY(!service.redo(file).ok);
+    QCOMPARE(file.sourceSets.size(), std::size_t{1});
+    QVERIFY(file.marks.empty());
+    QCOMPARE(encodeSourceSet(file.sourceSets.front()), evidenceBefore);
     QCOMPARE(file.sourceSets.front().id, sourceId);
     write(dir.filePath("label/name.txt"), "BPSK\nQAM\nFSK\n");
     const auto changed = prepareDiscoveredLabels(candidate, file, 4, restored);
@@ -665,6 +716,7 @@ class LabelImportTests : public QObject {
     QVERIFY(!publishDiscoveredLabels(service, file, changed, 4).ok);
     QCOMPARE(file.sourceSets.size(), std::size_t{1});
     QVERIFY(file.marks.empty());
+    QCOMPARE(encodeSourceSet(file.sourceSets.front()), evidenceBefore);
   }
 
   void mappedProfileUsesAnnotationServiceAndProfileChangesRequireReview() {
@@ -704,11 +756,27 @@ class LabelImportTests : public QObject {
     QCOMPARE(prepareDiscoveredLabels(candidate, file, 2, restored).disposition,
              LabelImportDisposition::AlreadyImported);
     file = snapshot;
-    QVERIFY(service.deleteBatch(file, {file.marks[0].id}).ok);
+    const auto sourceId = file.marks[0].id;
+    const auto sourceBefore = encodeAnnotation(file.marks[0]);
+    QVERIFY(!service.deleteBatch(file, {sourceId}).ok);
+    QCOMPARE(encodeAnnotation(*findAnnotation(file, sourceId)), sourceBefore);
+    std::vector<std::string> createdIds;
+    const auto converted = service.convertToManual(file, {sourceId}, {}, createdIds);
+    QVERIFY2(converted.ok, converted.error.c_str());
+    QCOMPARE(createdIds.size(), std::size_t{1});
+    const auto copyId = createdIds.front();
+    QVERIFY(service.deleteBatch(file, {copyId}).ok);
     const auto deleted = prepareDiscoveredLabels(candidate, file, 2, restored);
     QCOMPARE(deleted.disposition, LabelImportDisposition::AlreadyImported);
     QVERIFY(!publishDiscoveredLabels(service, file, deleted, 2).changed);
-    QVERIFY(file.marks[0].deleted);
+    QCOMPARE(file.marks.size(), std::size_t{2});
+    QVERIFY(findAnnotation(file, copyId)->deleted);
+    QCOMPARE(encodeAnnotation(*findAnnotation(file, sourceId)), sourceBefore);
+    QVERIFY(service.undo(file).ok);
+    QVERIFY(!findAnnotation(file, copyId)->deleted);
+    QVERIFY(service.redo(file).ok);
+    QVERIFY(findAnnotation(file, copyId)->deleted);
+    QCOMPARE(encodeAnnotation(*findAnnotation(file, sourceId)), sourceBefore);
   }
 
   void sigmfEmptyIsValidAndSupplementalConflictsRemainErrors() {

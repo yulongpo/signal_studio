@@ -1077,8 +1077,24 @@ AnnotationResult AnnotationService::convertToManual(
   }
   if (inputs.empty()) return success();
 
+  // Build the occupied identity set once for the whole transaction. Calling
+  // nextId for each copied segment would rescan all existing segments for
+  // every new ID and turn a multi-segment batch into quadratic work.
+  std::unordered_set<std::string> identities;
+  for (const auto& set : file.sourceSets) identities.insert(set.id);
+  for (const auto& value : file.marks) {
+    identities.insert(value.id);
+    for (const auto& segment : value.segments) identities.insert(segment.id);
+    for (const auto& revision : value.revisions) identities.insert(revision.id);
+  }
+  const auto freshId = [&](const std::string& prefix) {
+    for (;;) {
+      auto id = prefix + std::to_string(nextIdentifier_++);
+      if (identities.insert(id).second) return id;
+    }
+  };
   AnnotationSourceSet manualSet;
-  manualSet.id = nextId(file, "manual-conversion-");
+  manualSet.id = freshId("manual-conversion-");
   manualSet.fileId = file.metadata.id;
   manualSet.sampleChannel = file.metadata.sampleFormat.selectedChannel;
   manualSet.sourceKind = AnnotationSource::Manual;
@@ -1116,12 +1132,12 @@ AnnotationResult AnnotationService::convertToManual(
     if (input.segment) snapshot->convertedSegmentId = input.segment->id;
 
     Annotation copy;
-    copy.id = nextId(file, "annotation-");
+    copy.id = freshId("annotation-");
     copy.fileId = file.metadata.id;
     copy.sourceSetId = manualSet.id;
     copy.sourceKind = AnnotationSource::Manual;
     copy.originRecordId = source.originRecordId;
-    copy.revisionId = nextId(file, "revision-");
+    copy.revisionId = freshId("revision-");
     copy.name = source.name;
     copy.note = source.note;
     copy.classLabel = source.classLabel;
@@ -1135,7 +1151,7 @@ AnnotationResult AnnotationService::convertToManual(
     for (const auto& original : source.segments) {
       if (input.segment && original.id != input.segment->id) continue;
       auto part = original;
-      part.id = nextId(file, "segment-");
+      part.id = freshId("segment-");
       if (original.id == source.activeSegmentId || input.segment)
         copy.activeSegmentId = part.id;
       copy.segments.push_back(std::move(part));

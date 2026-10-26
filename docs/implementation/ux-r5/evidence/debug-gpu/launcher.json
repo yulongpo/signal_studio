@@ -1,0 +1,20 @@
+{
+  "pass": true,
+  "configuration": "Debug",
+  "softwareRenderer": false,
+  "binary": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+  "workingDirectory": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin",
+  "outputDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-debug-gpu-verified",
+  "startedUtc": "2026-10-26T08:56:22.5530551Z",
+  "timeoutSeconds": 480,
+  "systemOnlyPath": true,
+  "dpiOverridesCleared": true,
+  "buildExecuted": false,
+  "independentReviewPerformed": false,
+  "modelInferenceVerified": false,
+  "largeRfbenchValidationExecuted": false,
+  "elapsedSeconds": 217.1728987,
+  "processId": 41904,
+  "exitCode": 0,
+  "finishedUtc": "2026-10-26T08:59:59.7207284Z"
+}

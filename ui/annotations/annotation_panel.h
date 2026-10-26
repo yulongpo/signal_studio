@@ -25,7 +25,6 @@ class AnnotationPanel final : public QWidget {
   explicit AnnotationPanel(Session&, QWidget* parent = nullptr);
   ~AnnotationPanel() override;
   QWidget* inspectorWidget() const { return inspector_; }
-  QWidget* layerWidget() const { return layerBar_; }
   const std::vector<std::string>& sortedVisibleIds() const;
   void refresh();
   void revealActive();
@@ -62,6 +61,7 @@ class AnnotationPanel final : public QWidget {
   void action(const AnnotationResult&);
   void chooseRow(const QModelIndex&, Qt::KeyboardModifiers, bool toggle);
   void filterChanged();
+  void applyOverlaySource(FileState&, AnnotationSource);
   void geometry(int);
   void editCell(const QModelIndex&);
   bool finishCell(bool commit, bool focusTable = false);
@@ -85,7 +85,6 @@ class AnnotationPanel final : public QWidget {
   QComboBox* status_ = nullptr;
   QComboBox* segments_ = nullptr;
   QDoubleSpinBox* minimumScore_ = nullptr;
-  QCheckBox* layers_[3]{};
   QLabel* count_ = nullptr;
   QLabel* detectionStatus_ = nullptr;
   QCheckBox* selectAll_ = nullptr;
@@ -93,7 +92,6 @@ class AnnotationPanel final : public QWidget {
   QLabel* rangeSummary_ = nullptr;
   QLabel* error_ = nullptr;
   QWidget* inspector_ = nullptr;
-  QWidget* layerBar_ = nullptr;
   QWidget* geometryEditor_ = nullptr;
   QLabel* readOnlyRange_ = nullptr;
   AnnotationEvidenceWidget* evidencePanel_ = nullptr;

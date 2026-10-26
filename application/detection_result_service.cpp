@@ -109,13 +109,14 @@ bool revisedSource(const Annotation& a) {
   });
 }
 void retireScope(FileState& file, CurrentDetectionSlot& slot,
-                 const std::string& keepRun) {
+                 const std::string& keepRun,
+                 const std::string& pendingRun = {}) {
   std::unordered_set<std::string> sets, annotations;
   for (const auto& set : file.sourceSets)
     if (set.sourceKind == AnnotationSource::Algorithm &&
         set.sampleChannel == slot.sampleChannel && set.runId != keepRun) {
       sets.insert(set.id);
-      addId(slot.retiredRunIds, set.runId);
+      if (set.runId != pendingRun) addId(slot.retiredRunIds, set.runId);
     }
   for (const auto& a : file.marks)
     if (a.sourceKind == AnnotationSource::Algorithm && sets.contains(a.sourceSetId))
@@ -129,13 +130,13 @@ void retireScope(FileState& file, CurrentDetectionSlot& slot,
     }
   for (const auto& run : file.detectionRuns)
     if (run.request.sourceIdentity.selectedSampleChannel == slot.sampleChannel &&
-        run.request.runId != keepRun)
+        run.request.runId != keepRun && run.request.runId != pendingRun)
       addId(slot.retiredRunIds, run.request.runId);
   std::erase_if(file.marks, [&](const auto& a) { return annotations.contains(a.id); });
   std::erase_if(file.sourceSets, [&](const auto& s) { return sets.contains(s.id); });
   std::erase_if(file.detectionRuns, [&](const auto& run) {
     return run.request.sourceIdentity.selectedSampleChannel == slot.sampleChannel &&
-           run.request.runId != keepRun;
+           run.request.runId != keepRun && run.request.runId != pendingRun;
   });
   // Selection/draft IDs are session-only projections; retained Manual IDs stay.
   std::erase_if(file.selectedMarkIds, [&](const auto& id) {
@@ -266,7 +267,8 @@ AnnotationValidation validateCurrentDetectionSlots(const FileState& file) {
   return {};
 }
 
-AnnotationValidation migrateLegacyDetectionSlots(FileState& file) {
+AnnotationValidation migrateLegacyDetectionSlots(
+    FileState& file, const std::vector<std::string>& liveRunIds) {
   if (file.currentDetectionSlots) return validateCurrentDetectionSlots(file);
   FileState candidate = file;
   // The caller must preserve historical user edits before retiring any source.
@@ -291,6 +293,9 @@ AnnotationValidation migrateLegacyDetectionSlots(FileState& file) {
         return {false, "Legacy Algorithm source has no unambiguous durable run"};
       scopes.insert(set.sampleChannel);
     }
+  // Nothing to migrate: keep v6 documents without detection data canonical.
+  // Starting a new detection explicitly creates its first authoritative slot.
+  if (scopes.empty()) return {};
   candidate.currentDetectionSlots.emplace();
   for (const auto scope : scopes) {
     const DetectionRun* winner = nullptr;
@@ -317,17 +322,29 @@ AnnotationValidation migrateLegacyDetectionSlots(FileState& file) {
         tied = false;
       } else if (run.finishedAtMilliseconds == winner->finishedAtMilliseconds) tied = true;
     }
-    if (tied || (!winner && hasAlgorithm))
+    if (tied)
       return {false, "Legacy detection results are ambiguous; original data was not modified"};
     CurrentDetectionSlot slot;
     slot.sampleChannel = scope;
     slot.generation = 1;
     slot.committedRunId = winner ? winner->request.runId : std::string{};
-    slot.stale = !winner;
-    // A legacy save made while a single task was in flight may have no
-    // published Algorithm set. Keep that task as pending, without inventing
-    // a formal result or requiring a fabricated completion timestamp.
-    if (!winner && !hasAlgorithm) {
+    // Container live anchors are validated before this call. They remain
+    // authoritative if the worker has since completed/cancelled. For a bare
+    // v6 file, only an actually interrupted/live manifest supplies that hint.
+    for (const auto& run : candidate.detectionRuns) {
+      if (run.request.sourceIdentity.selectedSampleChannel != scope ||
+          run.request.runId == slot.committedRunId) continue;
+      const bool live = std::find(liveRunIds.begin(), liveRunIds.end(),
+                                  run.request.runId) != liveRunIds.end() ||
+                        run.recoverable || !detectionIsTerminal(run.lifecycle);
+      if (!live) continue;
+      if (!slot.pendingRunId.empty())
+        return {false, "Multiple anchored/live legacy tasks need an explicit recovery decision"};
+      slot.pendingRunId = run.request.runId;
+    }
+    if (!winner && !hasAlgorithm && slot.pendingRunId.empty()) {
+      // Preserve a single unpublished terminal task as evidence, not a formal
+      // result. Multiple terminal histories still need explicit adjudication.
       for (const auto& run : candidate.detectionRuns)
         if (run.request.sourceIdentity.selectedSampleChannel == scope) {
           if (!slot.pendingRunId.empty())
@@ -335,8 +352,10 @@ AnnotationValidation migrateLegacyDetectionSlots(FileState& file) {
           slot.pendingRunId = run.request.runId;
         }
     }
-    const auto keep = slot.committedRunId.empty() ? slot.pendingRunId : slot.committedRunId;
-    retireScope(candidate, slot, keep);
+    if (!winner && hasAlgorithm && slot.pendingRunId.empty())
+      return {false, "Legacy detection results are ambiguous; original data was not modified"};
+    slot.stale = !winner || !slot.pendingRunId.empty();
+    retireScope(candidate, slot, slot.committedRunId, slot.pendingRunId);
     candidate.currentDetectionSlots->push_back(std::move(slot));
   }
   std::sort(candidate.currentDetectionSlots->begin(), candidate.currentDetectionSlots->end(),
@@ -360,6 +379,7 @@ bool DetectionResultService::beginDetection(Project& project,
   if (const auto valid = migrateLegacyDetectionSlots(*file); !valid) {
     error = QString::fromStdString(valid.error); return false;
   }
+  if (!file->currentDetectionSlots) file->currentDetectionSlots.emplace();
   const auto channel = request.sourceIdentity.selectedSampleChannel;
   auto* slot = slotFor(*file, channel);
   if (!slot) {

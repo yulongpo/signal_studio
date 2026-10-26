@@ -1,0 +1,183 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure -R ^signal_studio_ux_(r5_ui|layout|annotation|popovers|charts)$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 38
+    Start 38: signal_studio_ux_charts
+
+38: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-charts-test-results-debug.txt" "-DSS_UI_CASES=uxR02_chartSettingsStayStable;uxA01_roiConfirmationAndEscape;roundTwoNarrowbandPsdAndPages" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+38: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+38: Environment variables: 
+38:  QT_QPA_PLATFORM=offscreen
+38:  QT_SCALE_FACTOR=1.5
+38: Test timeout computed to be: 480
+38: ********* Start testing of UxTests *********
+38: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+38: PASS   : UxTests::initTestCase()
+38: PASS   : UxTests::uxR02_chartSettingsStayStable()
+38: QWARN  : UxTests::uxA01_roiConfirmationAndEscape() This plugin does not support grabbing the mouse
+38: QWARN  : UxTests::uxA01_roiConfirmationAndEscape() This plugin does not support grabbing the mouse
+38: PASS   : UxTests::uxA01_roiConfirmationAndEscape()
+38: QWARN  : UxTests::roundTwoNarrowbandPsdAndPages() This plugin does not support grabbing the mouse
+38: QWARN  : UxTests::roundTwoNarrowbandPsdAndPages() This plugin does not support grabbing the mouse
+38: QWARN  : UxTests::roundTwoNarrowbandPsdAndPages() This plugin does not support grabbing the mouse
+38: QWARN  : UxTests::roundTwoNarrowbandPsdAndPages() This plugin does not support grabbing the mouse
+38: PASS   : UxTests::roundTwoNarrowbandPsdAndPages()
+38: PASS   : UxTests::cleanupTestCase()
+38: Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 35041ms
+38: ********* Finished testing of UxTests *********
+38: 
+1/5 Test #38: signal_studio_ux_charts ..........   Passed   36.21 sec
+test 39
+    Start 39: signal_studio_ux_annotation
+
+39: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-annotation-test-results-debug.txt" "-DSS_UI_CASES=uxR4_evidenceDisclosureAndFullCopy;uxR4_currentObjectAndActionStates;uxR4_supplementalSourceAndPagedCopy;uxR4_auxiliaryDetailsCloseWithHiddenContext;uxR4_searchBoundaryAndOriginalNewlines" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+39: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+39: Environment variables: 
+39:  QT_QPA_PLATFORM=offscreen
+39:  QT_SCALE_FACTOR=1.5
+39: Test timeout computed to be: 480
+39: ********* Start testing of UxTests *********
+39: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+39: PASS   : UxTests::initTestCase()
+39: QWARN  : UxTests::uxR4_evidenceDisclosureAndFullCopy() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_evidenceDisclosureAndFullCopy() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_evidenceDisclosureAndFullCopy() This plugin does not support raise()
+39: QWARN  : UxTests::uxR4_evidenceDisclosureAndFullCopy() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_evidenceDisclosureAndFullCopy() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_evidenceDisclosureAndFullCopy() This plugin does not support raise()
+39: PASS   : UxTests::uxR4_evidenceDisclosureAndFullCopy()
+39: PASS   : UxTests::uxR4_currentObjectAndActionStates()
+39: QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support raise()
+39: QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support raise()
+39: QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support raise()
+39: PASS   : UxTests::uxR4_supplementalSourceAndPagedCopy()
+39: QWARN  : UxTests::uxR4_auxiliaryDetailsCloseWithHiddenContext() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_auxiliaryDetailsCloseWithHiddenContext() This plugin does not support raise()
+39: PASS   : UxTests::uxR4_auxiliaryDetailsCloseWithHiddenContext()
+39: QWARN  : UxTests::uxR4_searchBoundaryAndOriginalNewlines() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_searchBoundaryAndOriginalNewlines() This plugin does not support propagateSizeHints()
+39: QWARN  : UxTests::uxR4_searchBoundaryAndOriginalNewlines() This plugin does not support raise()
+39: QWARN  : UxTests::uxR4_searchBoundaryAndOriginalNewlines() This plugin does not support raise()
+39: QWARN  : UxTests::uxR4_searchBoundaryAndOriginalNewlines() This plugin does not support raise()
+39: QWARN  : UxTests::uxR4_searchBoundaryAndOriginalNewlines() This plugin does not support raise()
+39: PASS   : UxTests::uxR4_searchBoundaryAndOriginalNewlines()
+39: PASS   : UxTests::cleanupTestCase()
+39: Totals: 7 passed, 0 failed, 0 skipped, 0 blacklisted, 17626ms
+39: ********* Finished testing of UxTests *********
+39: 
+2/5 Test #39: signal_studio_ux_annotation ......   Passed   18.07 sec
+test 40
+    Start 40: signal_studio_ux_r5_ui
+
+40: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-r5_ui-test-results-debug.txt" "-DSS_UI_CASES=uxR5_threeTabsReadOnlyAndConversion;uxR5_layersAndIndependentFilters;uxR5_crossViewAndUnknownObservation" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+40: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+40: Environment variables: 
+40:  QT_QPA_PLATFORM=offscreen
+40:  QT_SCALE_FACTOR=1.5
+40: Test timeout computed to be: 480
+40: ********* Start testing of UxTests *********
+40: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+40: PASS   : UxTests::initTestCase()
+40: QWARN  : UxTests::uxR5_threeTabsReadOnlyAndConversion() This plugin does not support grabbing the mouse
+40: QWARN  : UxTests::uxR5_threeTabsReadOnlyAndConversion() This plugin does not support grabbing the mouse
+40: PASS   : UxTests::uxR5_threeTabsReadOnlyAndConversion()
+40: PASS   : UxTests::uxR5_layersAndIndependentFilters()
+40: PASS   : UxTests::uxR5_crossViewAndUnknownObservation()
+40: PASS   : UxTests::cleanupTestCase()
+40: Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 14173ms
+40: ********* Finished testing of UxTests *********
+40: 
+3/5 Test #40: signal_studio_ux_r5_ui ...........   Passed   14.59 sec
+test 41
+    Start 41: signal_studio_ux_layout
+
+41: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-layout-test-results-debug.txt" "-DSS_UI_CASES=uxR01_chartToolbarLayout;uxR02_inspectorRouting;uxR02_fileProperties;uxR02_paletteWorkspaceOwnership;uxR03_taskKeyboardAndDetails;uxR03_taskRowActions;uxR01_lateRunFilterPopupAndRefresh;roundTwoFlatResponsiveControls" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+41: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+41: Environment variables: 
+41:  QT_QPA_PLATFORM=offscreen
+41:  QT_SCALE_FACTOR=1.5
+41: Test timeout computed to be: 480
+41: ********* Start testing of UxTests *********
+41: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+41: PASS   : UxTests::initTestCase()
+41: PASS   : UxTests::uxR01_chartToolbarLayout()
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: PASS   : UxTests::uxR02_inspectorRouting()
+41: PASS   : UxTests::uxR02_fileProperties()
+41: PASS   : UxTests::uxR02_paletteWorkspaceOwnership()
+41: QWARN  : UxTests::uxR03_taskKeyboardAndDetails() This plugin does not support propagateSizeHints()
+41: QWARN  : UxTests::uxR03_taskKeyboardAndDetails() This plugin does not support propagateSizeHints()
+41: PASS   : UxTests::uxR03_taskKeyboardAndDetails()
+41: QWARN  : UxTests::uxR03_taskRowActions() This plugin does not support propagateSizeHints()
+41: PASS   : UxTests::uxR03_taskRowActions()
+41: PASS   : UxTests::uxR01_lateRunFilterPopupAndRefresh()
+41: PASS   : UxTests::roundTwoFlatResponsiveControls()
+41: PASS   : UxTests::cleanupTestCase()
+41: Totals: 10 passed, 0 failed, 0 skipped, 0 blacklisted, 52000ms
+41: ********* Finished testing of UxTests *********
+41: 
+4/5 Test #41: signal_studio_ux_layout ..........   Passed   52.42 sec
+test 42
+    Start 42: signal_studio_ux_popovers
+
+42: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-popovers-test-results-debug.txt" "-DSS_UI_CASES=uxP01_popupDismissal;uxP02_popupChildrenAndGeometry;uxS06_popoverDraftPolicy" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+42: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+42: Environment variables: 
+42:  QT_QPA_PLATFORM=offscreen
+42:  QT_SCALE_FACTOR=1.5
+42: Test timeout computed to be: 480
+42: ********* Start testing of UxTests *********
+42: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+42: PASS   : UxTests::initTestCase()
+42: PASS   : UxTests::uxP01_popupDismissal()
+42: QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support raise()
+42: QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support grabbing the keyboard
+42: QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support raise()
+42: QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support grabbing the keyboard
+42: QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support raise()
+42: QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support grabbing the keyboard
+42: PASS   : UxTests::uxP02_popupChildrenAndGeometry()
+42: PASS   : UxTests::uxS06_popoverDraftPolicy()
+42: PASS   : UxTests::cleanupTestCase()
+42: Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 663ms
+42: ********* Finished testing of UxTests *********
+42: 
+5/5 Test #42: signal_studio_ux_popovers ........   Passed    1.11 sec
+
+The following tests passed:
+	signal_studio_ux_charts
+	signal_studio_ux_annotation
+	signal_studio_ux_r5_ui
+	signal_studio_ux_layout
+	signal_studio_ux_popovers
+
+100% tests passed, 0 tests failed out of 5
+
+Label Time Summary:
+annotation     =  18.07 sec*proc (1 test)
+charts         =  36.21 sec*proc (1 test)
+layout         =  52.42 sec*proc (1 test)
+popovers       =   1.11 sec*proc (1 test)
+r5_ui          =  14.59 sec*proc (1 test)
+wideband-ux    = 122.39 sec*proc (5 tests)
+
+Total Test time (real) = 122.42 sec

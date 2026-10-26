@@ -52,8 +52,10 @@ bool detectionRunAssetPaths(const QString& projectDirectory, const DetectionRun&
                             QStringList& paths, QString& error);
 
 // Called by ProjectFileCodec before exposing an external Reference. A root is
-// private only when first created at its owning .ssproj's canonical location;
-// once referenced/shared it can never be reclaimed as private automatically.
+// private only when first created at its owning .ssproj's canonical location.
+// Reference appends an immutable .detection-shared.json safety sidecar; it
+// never rewrites the pre-existing owner/container/state files. A shared root
+// can never be reclaimed as private automatically.
 bool recordDetectionAssetOwnership(const QString& ssprojPath,
                                    const QString& projectId,
                                    const QString& assetRoot,

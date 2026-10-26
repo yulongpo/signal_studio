@@ -241,7 +241,8 @@ void absoluteOnlySourceReference() {
 Project load(const QString& path) {
   QString error;
   Project project;
-  check(ProjectFileCodec::load(path, project, error), "Load: " + error);
+  const bool loaded = ProjectFileCodec::load(path, project, error);
+  check(loaded, "Load: " + error);
   return project;
 }
 void rejectedLoad(const QString& path, Project& target) {
@@ -316,6 +317,9 @@ void saveAsCopy() {
   const auto sourcePath = QDir(original).filePath("original.ssproj");
   save(sourcePath, project);
   const auto source = project;
+  // A Copy save also preserves any original legacy state file byte-for-byte.
+  const auto statePath = QDir(q(source.assetDirectory)).filePath("state-v6.json");
+  write(statePath, "Original legacy state bytes\r\n");
   const auto bytes = tree(original);
   project.name = "Independent copy";
   const auto copyPath = QDir(destination).filePath("copy.ssproj");
@@ -342,6 +346,10 @@ void saveAsReference() {
   const auto sourcePath = QDir(original).filePath("original.ssproj");
   save(sourcePath, project);
   const auto source = project;
+  // Reference may append its safety sidecar, but it must never overwrite this
+  // original legacy state with the new reference container's distinct state.
+  write(QDir(q(source.assetDirectory)).filePath("state-v6.json"),
+        "Original legacy state bytes\r\n");
   const auto bytes = tree(original);
   project.name = "Reference with a distinct container state";
   const auto referencePath = QDir(destination).filePath("reference.ssproj");
@@ -353,8 +361,27 @@ void saveAsReference() {
             reference.projectId == source.projectId &&
             object(referencePath)["assetMode"] == "reference",
         "Reference must point to the selected original asset root");
-  check(tree(original) == bytes,
-        "Save As Reference modified original bytes (including state-v6.json)");
+  sameExistingBytes(original, bytes, "Save As Reference including state-v6.json");
+  auto after = tree(original);
+  const auto sharedPath = QDir(original).relativeFilePath(
+      QDir(q(source.assetDirectory)).filePath(".detection-shared.json"));
+  check(!bytes.contains(sharedPath) && after.contains(sharedPath),
+        "Reference must append its shared-root safety declaration");
+  const auto shared = QJsonDocument::fromJson(after[sharedPath]).object();
+  check(shared["schema"] == "signal-studio-shared-detection-root-v1" && shared["shared"] == true,
+        "Reference shared-root sidecar is invalid");
+  after.remove(sharedPath);
+  check(after == bytes, "Reference added or removed files other than the single shared-root sidecar");
+  const auto sharedBytes = tree(original);
+  const auto secondPath = QDir(destination).filePath("second-reference.ssproj");
+  auto second = source;
+  save(secondPath, second, AssetSaveMode::Reference);
+  check(tree(original) == sharedBytes,
+        "A second Reference must not rewrite even the existing shared-root sidecar");
+  DetectionGcReport gc;
+  QString error;
+  check(collectRetiredDetectionAssets(sourcePath, gc, error) && !gc.privateRoot && gc.removedFiles == 0,
+        "Reference declaration did not permanently protect the original root from GC");
 }
 void relocateRealSource() {
   QTemporaryDir directory;
@@ -834,6 +861,54 @@ void killedPublisherRecovery() {
           return part.kind == DetectionCoverageKind::Unread;
         }), "Process interruption must recover verified post-save prefix and unread remainder");
 }
+void legacyMigrationMustCommitBeforeGc() {
+  QTemporaryDir directory;
+  auto project = fixture(directory.path(), true);
+  const auto path = directory.filePath("legacy-live.ssproj");
+  save(path, project);
+  const auto retiredManifest = QDir(q(project.assetDirectory)).filePath(
+      q(project.files.front().detectionRuns.front().manifestRelativePath));
+  startLive(project); advanceLive(project);
+  save(path, project, AssetSaveMode::Preserve);
+  const auto original = read(path);
+  auto migrated = load(path);
+  check(migrated.files.front().currentDetectionSlots &&
+        migrated.files.front().currentDetectionSlots->front().pendingRunId == "live-save-regression",
+        "Verified live anchor was not retained by migration");
+  DetectionGcReport report;
+  QString error;
+  check(collectRetiredDetectionAssets(path, report, error) && report.removedFiles == 0 &&
+        report.deferredRuns > 0 && QFileInfo::exists(retiredManifest) && read(path) == original,
+        "GC deleted a run still anchored by the committed legacy container");
+  save(path, migrated, AssetSaveMode::Preserve);
+  check(collectRetiredDetectionAssets(path, report, error) && report.removedRuns == 1 &&
+        !QFileInfo::exists(retiredManifest),
+        "GC did not collect the old run after explicit migration commit");
+  const auto reopened = load(path);
+  check(reopened.files.front().detectionRuns.size() == 1 &&
+        reopened.files.front().detectionRuns.front().chunks.size() == 1 &&
+        reopened.files.front().detectionRuns.front().recoverable,
+        "Migration commit/GC lost the real live prefix");
+}
+void ambiguousUnanchoredLegacyTasks() {
+  QTemporaryDir directory;
+  auto project = fixture(directory.path(), true);
+  const auto path = directory.filePath("ambiguous-unpublished.ssproj");
+  save(path, project);
+  auto second = project.files.front().detectionRuns.front();
+  second.request.runId = "another-unpublished-terminal";
+  second.chunks.clear(); second.resultCount = 0; second.manifestRelativePath.clear();
+  QString error;
+  check(writeDetectionRun(q(project.assetDirectory), second, error), error);
+  project.files.front().detectionRuns.push_back(second);
+  save(path, project, AssetSaveMode::Preserve);
+  const auto before = tree(directory.path());
+  const auto memoryBefore = memory(project);
+  const bool loaded = ProjectFileCodec::load(path, project, error);
+  check(!loaded && error.contains("Multiple unpublished legacy tasks") &&
+        memory(project) == memoryBefore && tree(directory.path()) == before,
+        "Unanchored legacy histories were guessed, modified, or failed without the real diagnostic: " + error);
+}
 void cancelledSave(CancelSaveAt when) {
   QTemporaryDir directory;
   auto project = fixture(directory.path());
@@ -896,6 +971,8 @@ int main(int argc, char** argv) {
       {"ordinary-save-renamed-copy-retains-root", [] { preserveAssetMode(false); }},
       {"ordinary-save-missing-original-is-explicit", preserveMissingTarget},
       {"killed-publisher-recovers-post-save-prefix", killedPublisherRecovery},
+      {"legacy-migration-commit-before-GC", legacyMigrationMustCommitBeforeGc},
+      {"legacy-unanchored-ambiguity-is-explicit", ambiguousUnanchoredLegacyTasks},
       {"direct-create-stable-id", directCreateAndStableId},
       {"annotation-channel-detection-roundtrip", evidenceRoundtrip},
       {"move-project-assets-and-raw", moveWholeProjectAndAssets},

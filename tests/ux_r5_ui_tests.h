@@ -98,13 +98,29 @@ inline void UxTests::uxR5_layersAndIndependentFilters() {
   expose(window);
   auto* panel = window.findChild<AnnotationPanel*>("annotationPanel");
   auto* file = window.session().activeFile();
+  for (const auto* name : {"annotationLayer0", "annotationLayer1", "annotationLayer2", "annotationLayerBar"})
+    QVERIFY(!window.findChild<QWidget*>(name));
+  const std::array<const char*, 3> buttons{"importedLabelsTab", "manualAnnotationsTab", "detectionResultsTab"};
+  const auto view = file->view;
+  auto* plot = window.findChild<PlotWidget*>("mainPlot");
+  QTest::mouseClick(window.findChild<QAbstractButton*>(buttons[0]), Qt::LeftButton);
+  QTest::qWait(30);  // Opening the bottom panel changes plot dimensions once.
+  QTRY_VERIFY_WITH_TIMEOUT(plot->isDisplaySettled(), 5000);
+  const auto calculations = plot->powerGenerationCount();
+  for (int source : {0, 1, 2, 0}) {
+    QTest::mouseClick(window.findChild<QAbstractButton*>(buttons[source]), Qt::LeftButton);
+    QCOMPARE(static_cast<int>(panel->sourceTab()), source);
+    for (int kind = 0; kind < 3; ++kind) {
+      QCOMPARE(file->annotationLayers[kind], kind == source);
+      QCOMPARE(annotationOverlayVisible(*file, *findAnnotation(*file, ids[kind])), kind == source);
+    }
+    QCOMPARE(file->view, view);
+  }
+  QCOMPARE(plot->powerGenerationCount(), calculations);
   QTest::mouseClick(window.findChild<QAbstractButton*>("importedLabelsTab"), Qt::LeftButton);
-  auto* layer = window.findChild<QCheckBox*>("annotationLayer0");
-  QVERIFY(layer);
-  layer->setChecked(false);
   auto* table = window.findChild<QTableView*>("importedLabelTable");
   QCOMPARE(table->model()->rowCount(), 1);
-  QVERIFY(!annotationOverlayVisible(*file, *findAnnotation(*file, ids[0])));
+  QVERIFY(annotationOverlayVisible(*file, *findAnnotation(*file, ids[0])));
   QVERIFY(annotationEligibleForTab(*file, *findAnnotation(*file, ids[0]), AnnotationSource::ImportedLabel));
   table->model()->setData(table->model()->index(0, 0), Qt::Checked, Qt::CheckStateRole);
   QCOMPARE(file->selectedMarkIds, std::vector<std::string>{ids[0]});
@@ -129,6 +145,26 @@ inline void UxTests::uxR5_crossViewAndUnknownObservation() {
   auto* file = window.session().activeFile();
   auto* panel = window.findChild<AnnotationPanel*>("annotationPanel");
   auto* algorithm = findAnnotation(*file, ids[2]);
+  window.session().selectMarks({ids[1]}, ids[1]);
+  window.refresh();
+  auto* tree = window.findChild<QTreeWidget*>("projectTree");
+  QVERIFY(tree);
+  QTreeWidgetItem* importedItem = nullptr;
+  const auto findImported = [&] {
+    for (QTreeWidgetItemIterator it(tree); *it; ++it)
+      if ((*it)->data(0, Qt::UserRole).toString() == "mark" &&
+          (*it)->data(0, Qt::UserRole+1).toString() == QString::fromStdString(ids[0])) return *it;
+    return static_cast<QTreeWidgetItem*>(nullptr);
+  };
+  // Tree projection is intentionally queued to avoid rebuilding during input.
+  QTRY_VERIFY_WITH_TIMEOUT((importedItem = findImported()) != nullptr, 3000);
+  for (auto* parent = importedItem->parent(); parent; parent=parent->parent()) parent->setExpanded(true);
+  tree->scrollToItem(importedItem);
+  const auto beforeTreeSelection = file->view;
+  QTest::mouseClick(tree->viewport(), Qt::LeftButton, Qt::NoModifier, tree->visualItemRect(importedItem).center());
+  QCOMPARE(file->activeMarkId, ids[0]);
+  QCOMPARE(panel->sourceTab(), AnnotationSource::ImportedLabel);
+  QCOMPARE(file->view, beforeTreeSelection);
   algorithm->observation = algorithm->segments.front().range;
   algorithm->segments.clear();
   algorithm->activeSegmentId.clear();

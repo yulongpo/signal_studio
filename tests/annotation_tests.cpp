@@ -932,7 +932,8 @@ void testUnifiedSelectionOrderFilterAndHover() {
   service.reconcileSelection(file);
   service.hover(file, target->id, target->activeSegmentId);
   check(file.selectedMarkIds == order && file.activeMarkId == order.back() &&
-            file.hoveredMarkId.empty() && annotationCounts(file).matching == 0 &&
+            file.hoveredMarkId.empty() && annotationCounts(file).matching == order.size() &&
+            annotationCounts(file).selected == order.size() &&
             annotationSelectable(file, *target) &&
             annotationEligibleForTab(file, *target, AnnotationSource::Algorithm) &&
             !annotationOverlayVisible(file, *target) && !annotationVisible(file, *target),

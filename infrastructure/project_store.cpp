@@ -1153,13 +1153,14 @@ bool ProjectStore::save(const QString& path, const Project& project,
 }
 
 bool ProjectStore::decodeDocument(const QJsonObject& document, const QString& path,
-                                  Project& target, QString& error) {
+                                  Project& target, QString& error,
+                                  const std::vector<std::string>& liveRunIds) {
   error.clear();
   try {
     auto parsed = decodeProject(document, path);
     require(migrateRevisedSourceAnnotations(parsed, error), error);
     for (auto& file : parsed.files) {
-      const auto migratedSlots = migrateLegacyDetectionSlots(file);
+      const auto migratedSlots = migrateLegacyDetectionSlots(file, liveRunIds);
       require(migratedSlots.ok, text(migratedSlots.error));
       const auto valid = validateFileAnnotations(file);
       require(valid.ok, text(valid.error));

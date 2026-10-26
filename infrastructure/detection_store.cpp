@@ -1083,6 +1083,8 @@ std::vector<DetectionRun> discoverDetectionRuns(const QString& directory,
   QSet<QString> ids;
   for (const auto& file : project.files) {
     if (!file.currentDetectionSlots) {
+      if (file.detectionRuns.empty() && std::none_of(file.sourceSets.begin(), file.sourceSets.end(),
+          [](const auto& set) { return set.sourceKind == AnnotationSource::Algorithm; })) continue;
       error = "旧工程必须先完成检测 slot 裁决，再恢复任务";
       return {};
     }
@@ -1135,6 +1137,7 @@ bool detectionRunAssetPaths(const QString& directory, const DetectionRun& run,
 
 namespace {
 constexpr auto ownerFile = ".detection-owner.json";
+constexpr auto sharedFile = ".detection-shared.json";
 bool linkInPath(QString path) {
   path = QDir::cleanPath(QFileInfo(path).absoluteFilePath());
   for (;;) {
@@ -1177,6 +1180,32 @@ void writeOwner(const QString& root, const QJsonObject& object) {
   require(output.open(QIODevice::WriteOnly) && output.write(bytes) == bytes.size() &&
               output.commit(), "资产所有权记录无法原子保存");
 }
+bool sharedRoot(const QString& root) {
+  const auto path = QDir(root).filePath(sharedFile);
+  if (!QFileInfo::exists(path) && !QFileInfo(path).isSymLink()) return false;
+  require(!linkInPath(path), "资产共享声明不得为链接");
+  QFile input(path);
+  require(input.open(QIODevice::ReadOnly) && input.size() <= 16384,
+          "资产共享声明无法读取；禁止 GC");
+  const auto object = parseObject(input.readAll());
+  require(input.error() == QFileDevice::NoError &&
+              object["schema"] == "signal-studio-shared-detection-root-v1" &&
+              object["shared"].isBool() && object["shared"].toBool(),
+          "资产共享声明无效；禁止 GC");
+  return true;
+}
+void declareSharedRoot(const QString& root) {
+  if (sharedRoot(root)) return;
+  // Append one immutable safety sidecar. Never rewrite owner/container/state
+  // bytes when another project begins to reference this root.
+  const auto bytes = QJsonDocument(QJsonObject{
+      {"schema", "signal-studio-shared-detection-root-v1"}, {"shared", true}})
+      .toJson(QJsonDocument::Compact);
+  QSaveFile output(QDir(root).filePath(sharedFile));
+  output.setDirectWriteFallback(false);
+  require(output.open(QIODevice::WriteOnly) && output.write(bytes) == bytes.size() &&
+              output.commit(), "资产共享声明无法原子发布");
+}
 }  // namespace
 
 bool recordDetectionAssetOwnership(const QString& path, const QString& id,
@@ -1197,13 +1226,16 @@ bool recordDetectionAssetOwnership(const QString& path, const QString& id,
       lock->setStaleLockTime(0);
       require(lock->tryLock(0), "资产根正在清理；稍后重试保存");
     }
+    if (reference) {
+      declareSharedRoot(assets);
+      error.clear(); return true;
+    }
     QJsonObject owner;
     if (QFileInfo::exists(marker)) owner = readOwner(assets);
     else owner = {{"schema", "signal-studio-private-detection-root-v1"},
                   {"projectId", id}, {"ownerPath", canonicalProject(path)},
-                  {"shared", reference}};
-    if (reference) owner["shared"] = true;
-    else {
+                  {"shared", false}};
+    {
       const auto expected = canonicalProject(path) + ".assets/" + id;
       require(QFileInfo(assets).canonicalFilePath().compare(
                   QFileInfo(expected).canonicalFilePath(), Qt::CaseInsensitive) == 0,
@@ -1243,6 +1275,7 @@ bool collectRetiredDetectionAssets(const QString& path, DetectionGcReport& repor
     QLockFile lock(QDir(root).filePath(".detection-gc.lock"));
     lock.setStaleLockTime(0);
     require(lock.tryLock(0), "GC 资产根正被引用/清理；稍后重试");
+    if (sharedRoot(root)) { error.clear(); return true; }
     const auto owner = readOwner(root);
     if (owner["shared"].toBool() || owner["projectId"] != id ||
         owner["ownerPath"].toString() != ownerPath) { error.clear(); return true; }
@@ -1253,9 +1286,16 @@ bool collectRetiredDetectionAssets(const QString& path, DetectionGcReport& repor
                 QFileInfo(text(project.assetDirectory)).canonicalFilePath() == QFileInfo(root).canonicalFilePath(),
             "GC 期间工程资产根已改变");
     report.privateRoot = true;
-    QSet<QString> referenced, retired;
+    QSet<QString> referenced, retired, declaredStorePaths;
+    for (const auto& value : container["assets"].toArray())
+      declaredStorePaths.insert(value.toObject()["path"].toString());
     for (const auto& file : project.files) {
-      require(file.currentDetectionSlots.has_value(), "旧工程尚未提交 slot 迁移；延后 GC");
+      if (!file.currentDetectionSlots) {
+        require(file.detectionRuns.empty() && std::none_of(file.sourceSets.begin(), file.sourceSets.end(),
+            [](const auto& set) { return set.sourceKind == AnnotationSource::Algorithm; }),
+            "旧工程尚未提交 slot 迁移；延后 GC");
+        continue;
+      }
       for (const auto& run : file.detectionRuns) referenced.insert(text(run.request.runId));
       for (const auto& set : file.sourceSets)
         if (!set.runId.empty()) referenced.insert(text(set.runId));
@@ -1270,6 +1310,10 @@ bool collectRetiredDetectionAssets(const QString& path, DetectionGcReport& repor
       if (referenced.contains(runId)) { ++report.deferredRuns; continue; }
       DetectionRequest key; key.runId = runId.toStdString();
       const auto relative = manifestPath(key);
+      // A read-only legacy migration is not a durable retirement. The raw
+      // committed container may still anchor that run even if the decoded
+      // candidate has already selected a newer slot. Wait for an actual save.
+      if (declaredStorePaths.contains(relative)) { ++report.deferredRuns; continue; }
       const auto manifest = QDir(root).filePath(relative);
       if (!QFileInfo::exists(manifest)) continue;
       if (visited++ >= maximumRuns) { ++report.deferredRuns; continue; }

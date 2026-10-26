@@ -1,0 +1,84 @@
+2026-10-26T09:00:01.007Z setup native monitor and isolated .ssproj
+2026-10-26T09:00:01.794Z await four actual labels from automatic queued discovery
+2026-10-26T09:00:01.933Z automatic discovery published four actual labels
+2026-10-26T09:00:02.100Z automatic label discovery and explicit repeat import verified
+2026-10-26T09:00:02.102Z click importedLabelsTab
+2026-10-26T09:00:02.268Z start actual pipeline-fixture-v1 worker ux-r5-pipeline-first
+2026-10-26T09:00:03.894Z 01-three-source-tabs begin
+2026-10-26T09:00:03.900Z click importedLabelsTab
+2026-10-26T09:00:04.006Z click manualAnnotationsTab
+2026-10-26T09:00:04.088Z click detectionResultsTab
+2026-10-26T09:00:04.182Z click taskTab
+2026-10-26T09:00:04.258Z click logTab
+2026-10-26T09:00:04.334Z click importedLabelsTab
+2026-10-26T09:00:05.237Z 01-three-source-tabs passed
+2026-10-26T09:00:05.251Z 02-readonly-native-input begin
+2026-10-26T09:00:06.922Z click detectionResultsTab
+2026-10-26T09:00:09.374Z 02-readonly-native-input passed
+2026-10-26T09:00:09.390Z 03-tab-exclusive-overlay-select-locate begin
+2026-10-26T09:00:09.392Z click importedLabelsTab
+2026-10-26T09:00:09.546Z click manualAnnotationsTab
+2026-10-26T09:00:09.629Z click detectionResultsTab
+2026-10-26T09:00:09.742Z click importedLabelsTab
+2026-10-26T09:00:10.036Z click annotationInspectorLocate
+2026-10-26T09:00:11.947Z 03-tab-exclusive-overlay-select-locate passed
+2026-10-26T09:00:11.965Z 04-single-convert-edit-dedup begin
+2026-10-26T09:00:12.092Z click convertAnnotationsToManual
+2026-10-26T09:00:12.316Z click undoAnnotations
+2026-10-26T09:00:12.515Z click redoAnnotations
+2026-10-26T09:00:12.702Z click importedLabelsTab
+2026-10-26T09:00:13.043Z click convertAnnotationsToManual
+2026-10-26T09:00:13.169Z click manualAnnotationsTab
+2026-10-26T09:00:13.540Z click undoAnnotations
+2026-10-26T09:00:13.638Z click redoAnnotations
+2026-10-26T09:00:14.813Z 04-single-convert-edit-dedup passed
+2026-10-26T09:00:14.826Z 05-multiple-convert-selection begin
+2026-10-26T09:00:14.833Z click importedLabelsTab
+2026-10-26T09:00:15.371Z click convertAnnotationsToManual
+2026-10-26T09:00:15.547Z click undoAnnotations
+2026-10-26T09:00:15.648Z click redoAnnotations
+2026-10-26T09:00:16.806Z 05-multiple-convert-selection passed
+2026-10-26T09:00:16.821Z 06-controlled-100-conversion begin
+2026-10-26T09:00:16.829Z click importedLabelsTab
+2026-10-26T09:00:19.195Z click convertAnnotationsToManual
+2026-10-26T09:00:19.446Z click undoAnnotations
+2026-10-26T09:00:19.572Z click redoAnnotations
+2026-10-26T09:00:19.730Z click importedLabelsTab
+2026-10-26T09:00:20.192Z click convertAnnotationsToManual
+2026-10-26T09:00:21.621Z 06-controlled-100-conversion passed
+2026-10-26T09:00:21.638Z 07-unknown-observation-conversion begin
+2026-10-26T09:00:21.647Z click detectionResultsTab
+2026-10-26T09:00:21.875Z click convertAnnotationsToManual
+2026-10-26T09:00:23.299Z 07-unknown-observation-conversion passed
+2026-10-26T09:00:23.318Z 08-cross-view-manual-channel-ddc begin
+2026-10-26T09:00:23.621Z click manualAnnotationsTab
+2026-10-26T09:00:24.665Z click annotationNextSegment
+2026-10-26T09:00:24.896Z click annotationPreviousSegment
+2026-10-26T09:00:25.245Z click annotationInspectorCreateChannel
+2026-10-26T09:00:26.938Z 08-cross-view-manual-channel-ddc passed
+2026-10-26T09:00:26.957Z 09-long-name-width-320 begin
+2026-10-26T09:00:29.192Z click annotationInspectorLocate
+2026-10-26T09:00:30.762Z 09-long-name-width-320 passed
+2026-10-26T09:00:30.783Z 10-long-name-width-650 begin
+2026-10-26T09:00:32.290Z click annotationInspectorLocate
+2026-10-26T09:00:33.743Z 10-long-name-width-650 passed
+2026-10-26T09:00:33.763Z 11-width-390-full-evidence-copy begin
+2026-10-26T09:00:35.355Z click annotationInspectorLocate
+2026-10-26T09:00:35.539Z click importedLabelsTab
+2026-10-26T09:00:37.292Z click detectionEvidenceMode
+2026-10-26T09:00:38.089Z click waveMode
+2026-10-26T09:00:38.339Z click manualAnnotationsTab
+2026-10-26T09:00:39.864Z 11-width-390-full-evidence-copy passed
+2026-10-26T09:00:39.891Z 12-configuration-results-stale begin
+2026-10-26T09:00:41.027Z click detectionResultsTab
+2026-10-26T09:00:42.216Z 12-configuration-results-stale passed
+2026-10-26T09:00:42.241Z 13-new-roi-publication-replaces begin
+2026-10-26T09:00:42.253Z start actual pipeline-fixture-v1 worker ux-r5-pipeline-replacement
+2026-10-26T09:00:43.755Z click manualAnnotationsTab
+2026-10-26T09:00:44.396Z click detectionResultsTab
+2026-10-26T09:00:45.590Z 13-new-roi-publication-replaces passed
+2026-10-26T09:00:45.613Z 14-durable-zero-publication begin
+2026-10-26T09:00:47.718Z 14-durable-zero-publication passed
+2026-10-26T09:00:47.745Z 15-save-reopen-no-old-run begin
+2026-10-26T09:00:47.762Z save through MainWindow .ssproj codec
+2026-10-26T09:00:50.287Z 15-save-reopen-no-old-run passed

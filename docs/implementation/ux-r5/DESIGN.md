@@ -8,7 +8,9 @@
 
 `AnnotationCapabilities` 为唯一用户写权限入口：Manual 且身份合法才能写、质量复核、删除和直接创建通道；另外两来源可查看/选择/定位/导出/转换。来源级导入管理、系统检测替换是独立事务，不由普通对象写 API 实现。图上只读对象没有控点和移动手势，仍有来源颜色、选择、悬停和定位。
 
-`annotationEligibleForTab` 不受图层开关影响；`annotationSelectable` 按上下文和过滤判断，不受图层影响；`annotationOverlayVisible` 额外检查叠加层。Tab 切换取来源交集；图/树选择自动指向所属 Tab。所有操作以 ID 为键，选择不缩放，定位才缩放。
+2026-10-26 用户补充明确覆盖原任务包的图层复选框方案：移除三个来源复选框及其独占 31 px 工具行；选中原始标签 / 人工标记 / 检测结果 Tab 后，时频图只绘制及命中该来源。后台任务和日志保持最近的业务来源。工程树仍可浏览三来源，选择树对象时切到对应 Tab。切换不会启动频谱重算或改变视窗。
+
+`annotationEligibleForTab` 与 `annotationSelectable` 不依赖叠加显示；`annotationOverlayVisible` 额外检查由当前 Tab 派生的唯一叠加来源。沿用 v6 的 `annotationLayers` 字段读取旧工程，UI 每次切换或恢复上下文时规范为一个来源，不增加 schema。Tab 切换取来源交集；所有操作以 ID 为键，选择不缩放，定位才缩放。
 
 ```mermaid
 flowchart LR

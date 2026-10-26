@@ -522,6 +522,10 @@ void testSerialization() {
   session.setAuxiliaryMode(AuxiliaryMode::Psd);
   session.setAuxiliaryRange(-110, -10, false);
   session.setPsdFromSelection(true);
+  // This is a current v6 canonical fixture, not a legacy migration fixture.
+  // Both explicit empty and absent optional R5 indices must remain canonical
+  // when no detection has run; exercise the two representations separately.
+  for (auto& file : session.project().files) file.currentDetectionSlots.emplace();
   QString error;
   check(ProjectStore::save(path, session.project(), error),
         "Valid native project must save");
@@ -574,6 +578,31 @@ void testSerialization() {
   check(ProjectStore::save(comparisonPath, loaded, error) &&
             readFile(comparisonPath) == sourceBytes,
         "Every serialized field must survive a canonical roundtrip");
+
+  // Exercise the missing-field compatibility path independently, retaining the
+  // exact canonical byte comparison for every other serialized field.
+  auto legacyRoot = QJsonDocument::fromJson(sourceBytes).object();
+  auto legacyFiles = legacyRoot["files"].toArray();
+  for (qsizetype i = 0; i < legacyFiles.size(); ++i) {
+    auto file = legacyFiles[i].toObject();
+    check(file.contains("currentDetectionSlots") && file["currentDetectionSlots"].isArray() &&
+              file["currentDetectionSlots"].toArray().isEmpty(),
+          "The current fixture must explicitly serialize its empty R5 slot index");
+    file.remove("currentDetectionSlots");
+    legacyFiles[i] = file;
+  }
+  legacyRoot["files"] = legacyFiles;
+  const auto legacyPath = directory.filePath(QStringLiteral("legacy-no-slots.json"));
+  writeFile(legacyPath, QJsonDocument(legacyRoot).toJson());
+  Project legacyLoaded;
+  check(ProjectStore::load(legacyPath, legacyLoaded, error),
+        "A legacy v6 project without optional R5 slots must still load");
+  for (const auto& file : legacyLoaded.files)
+    check(!file.currentDetectionSlots,
+          "No-run legacy files must retain an absent optional R5 slot index");
+  check(ProjectStore::save(comparisonPath, legacyLoaded, error) &&
+            readFile(comparisonPath) == readFile(legacyPath),
+        "Missing-slot compatibility must preserve all canonical serialized fields");
 
   Project edgeProject;
   FileState edgeFile;

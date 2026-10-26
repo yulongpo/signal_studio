@@ -27,6 +27,8 @@
 #include "infrastructure/project_file.h"
 #include "infrastructure/project_store.h"
 #include "infrastructure/source_loader.h"
+#include "infrastructure/channel_processor.h"
+#include "application/session.h"
 
 using namespace signalstudio;
 namespace {
@@ -494,6 +496,11 @@ void retiredChannelSnapshot() {
   channel.processingState = ChannelProcessingState::Ready;
   channel.sourceSnapshot = std::make_shared<const AnnotationChannelSnapshot>(snapshot);
   h.project.files[0].channels.push_back(channel);
+  ChannelDspPlan beforePlan;
+  ChannelSampleData beforeSamples;
+  QString dspError;
+  check(makeChannelDspPlan(h.project.files[0].metadata, channel, beforePlan, dspError) &&
+        processChannelSamples(h.project.files[0].metadata, channel, beforePlan, {0,16}, beforeSamples), dspError);
   h.save();
   auto b = h.durable("new"); h.publish(b);
   h.project.files[0].metadata.sampleFormat.selectedChannel = 1;
@@ -512,6 +519,24 @@ void retiredChannelSnapshot() {
   check(collectRetiredDetectionAssets(h.path, report, error), error);
   check(h.reopen().files[0].channels[0].sourceRelation == ChannelSourceRelation::Retired,
         "GC broke the self-contained retired channel snapshot");
+  auto boundMetadata = loaded.files[0].metadata;
+  // DDC reads the channel's explicitly captured IQ sample channel. Changing
+  // the wideband selection never rebinds this creation snapshot to channel 1.
+  boundMetadata.sampleFormat.selectedChannel = snapshot.sourceIdentity.selectedSampleChannel;
+  ChannelDspPlan afterPlan;
+  ChannelSampleData afterSamples;
+  check(makeChannelDspPlan(boundMetadata, retained, afterPlan, dspError) &&
+        processChannelSamples(boundMetadata, retained, afterPlan, {0,16}, afterSamples) &&
+        afterSamples.samples == beforeSamples.samples && afterSamples.samples.size() == 16,
+        "Retired channel's real CPU DDC changed after replacement/reopen/GC: " + dspError);
+  Session session;
+  session.replaceProject(loaded);
+  auto updated = session.project().files[0].channels[0];
+  updated.name = "retired channel remains configurable";
+  check(session.updateChannel(updated.id, updated), "Retired snapshot channel configuration was rejected");
+  auto invalid = session.project().files[0].channels[0];
+  invalid.annotationId = "unrelated-source";
+  check(!session.updateChannel(invalid.id, invalid), "Channel update silently rebound its immutable source identity");
 }
 void saveGcLockCompetition() {
   Harness h;

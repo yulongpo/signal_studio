@@ -298,7 +298,10 @@ if(SS_BUILD_TESTS)
     add_executable(SignalStudioUxR5CompatTests tests/ux_r5_compat_tests.cpp)
     target_link_libraries(SignalStudioUxR5CompatTests PRIVATE SignalStudioInfrastructure Qt6::Test)
     ss_target_defaults(SignalStudioUxR5CompatTests)
-    add_test(NAME signal_studio_ux_r5_compat COMMAND SignalStudioUxR5CompatTests)
+    add_test(NAME signal_studio_ux_r5_compat COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUxR5CompatTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ux-r5-compat-results-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     set_tests_properties(signal_studio_ux_r5_compat PROPERTIES TIMEOUT 120)
     add_executable(SignalStudioUxR5DetectionTests tests/ux_r5_detection_tests.cpp)
     target_link_libraries(SignalStudioUxR5DetectionTests PRIVATE SignalStudioInfrastructure Qt6::Core)

@@ -638,7 +638,8 @@ bool Session::updateChannel(const std::string& channelId,
   auto* file = fileForChannel(channelId);
   if (!file || replacement.id != channelId ||
       !validateChannelName(replacement.name) ||
-      !findMark(*file, replacement.sourceMarkId) ||
+      (!findMark(*file, replacement.sourceMarkId) &&
+       channelSourceRelation(*file, replacement) != ChannelSourceRelation::Retired) ||
       !std::isfinite(replacement.centerFrequencyHz) ||
       !std::isfinite(replacement.bandwidthHz) ||
       !std::isfinite(replacement.outputSampleRateHz) ||
@@ -660,6 +661,10 @@ bool Session::updateChannel(const std::string& channelId,
     return found == file->channels.end() ? nullptr : &*found;
   }();
   if (!old || replacement.sourceMarkId != old->sourceMarkId ||
+      replacement.annotationId != old->annotationId ||
+      replacement.segmentId != old->segmentId ||
+      replacement.revisionId != old->revisionId ||
+      replacement.sourceIdentity != old->sourceIdentity ||
       replacement.sourceTime != old->sourceTime ||
       replacement.wholeSource != old->wholeSource ||
       bool(replacement.sourceSnapshot) != bool(old->sourceSnapshot) ||

@@ -1,0 +1,20 @@
+{
+  "pass": true,
+  "configuration": "Debug",
+  "softwareRenderer": true,
+  "binary": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+  "workingDirectory": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin",
+  "outputDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-debug-software-verified",
+  "startedUtc": "2026-10-26T09:00:51.1492045Z",
+  "timeoutSeconds": 480,
+  "systemOnlyPath": true,
+  "dpiOverridesCleared": true,
+  "buildExecuted": false,
+  "independentReviewPerformed": false,
+  "modelInferenceVerified": false,
+  "largeRfbenchValidationExecuted": false,
+  "elapsedSeconds": 196.490435,
+  "processId": 6020,
+  "exitCode": 0,
+  "finishedUtc": "2026-10-26T09:04:07.6395452Z"
+}

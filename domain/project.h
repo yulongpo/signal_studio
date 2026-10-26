@@ -293,7 +293,7 @@ inline AnnotationCounts annotationCounts(const FileState& file) {
   AnnotationCounts counts;
   for (const auto& value : file.marks) {
     if (annotationInContext(file, value)) ++counts.total;
-    if (annotationVisible(file, value)) ++counts.matching;
+    if (annotationSelectable(file, value)) ++counts.matching;
   }
   counts.selected = file.selectedMarkIds.size();
   return counts;
