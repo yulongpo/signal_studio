@@ -10,8 +10,10 @@
 
 #include "domain/detection.h"
 #include "domain/project.h"
+#include "infrastructure/detection_profiling.h"
 
 namespace signalstudio {
+class DetectionWorkerClient;
 
 struct DetectionPublication {
   AnnotationSourceSet sourceSet;
@@ -53,8 +55,15 @@ class DetectionTaskManager {
     DetectionPublication publication;
     std::uint32_t executionBatchSize = 1;
     std::uint64_t publicationBytes = 65536, publicationBudgetBytes = 0;
+    std::unique_ptr<DetectionWorkerClient> worker;
+    DetectionProfiler profiling;
+    QJsonObject sourceProfile, workerDiagnostic, gpuProfile;
+    std::array<std::uint64_t,17> batches{};
+    qint64 firstDecodedCandidateMs=-1, frequencyReadyMs=-1;
+    QElapsedTimer clock;
   };
   void execute(const std::shared_ptr<Job>&);
+  std::string performanceSnapshot(const std::shared_ptr<Job>&) const;
   bool checkpoint(const std::shared_ptr<Job>&, QString& error);
   void finish(const std::shared_ptr<Job>&, DetectionLifecycle,
               const QString& error = {});

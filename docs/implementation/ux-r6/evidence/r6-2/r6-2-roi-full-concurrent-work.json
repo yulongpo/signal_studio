@@ -1,0 +1,6 @@
+{
+  "schema": "ux-r6-concurrent-work-note-v1",
+  "utc": "2026-10-26T14:50:55.8284658Z",
+  "run": "r6-2-baseline-roi-full",
+  "note": "After controlled short n5+n5 baselines, concurrent Debug build begins. Full-run wall time is completion/quality evidence, not an uncontended performance baseline."
+}

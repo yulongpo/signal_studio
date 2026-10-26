@@ -591,6 +591,7 @@ bool FixedDetectionSource::open(const FileMetadata& source, ViewRange requested,
                                 std::uint64_t generation) {
   reader_.reset();
   plan_ = {};
+  profiling_ = DetectionProfiler{};
   try {
     const bool planned = makeDetectionSourcePlan(
         source, requested, std::move(config), plan_, error, generation);
@@ -633,6 +634,7 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
                                      DetectionSpectrumFrame& target,
                                      QString& error,
                                      const DetectionSourceCancel& cancel) {
+  DetectionProfileScope frameProfile(profiling_,"frame-total");
   if (!sourceCurrent(error)) return false;
   if (index >= plan_.realFrameCount) {
     error = "真实检测帧索引越界";
@@ -652,9 +654,12 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
   inputHash.addData(QByteArray::fromStdString(
       sampleFormatKey(plan_.sourceIdentity.sampleFormat)));
   for (const auto& support : frame.mapping.fftSupports) {
-    if (!readTransformInput(*reader_, support, plan_, work, inputHash, error,
-                            cancel))
-      return false;
+    {
+      DetectionProfileScope readProfile(profiling_,"iq-read-and-input-hash");
+      if (!readTransformInput(*reader_, support, plan_, work, inputHash, error,cancel))
+        return false;
+    }
+    DetectionProfileScope fftProfile(profiling_,"window-fft-power");
     for (std::size_t i = 0; i < work.size(); ++i) work[i] *= hann_[i];
     if (!transform(work, cancel)) {
       error = "检测 FFT 已取消";
@@ -682,6 +687,7 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
     power = std::move(resampled);
   }
   frame.densityDb.resize(power.size());
+  QElapsedTimer densityTimer;densityTimer.start();
   const double records = frame.mapping.fftSupports.size();
   const double densityScale = plan_.sourceIdentity.sampleRateHz * hannEnergy_;
   for (std::size_t i = 0; i < power.size(); ++i) {
@@ -700,6 +706,7 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
         static_cast<float>(10 * std::log10(clampedPower / densityScale));
   }
   frame.mapping.inputHash = inputHash.result().toHex().toStdString();
+  profiling_.record("density-log",densityTimer.nsecsElapsed());
   if (!sourceCurrent(error)) return false;
   target = std::move(frame);
   error.clear();
@@ -735,6 +742,7 @@ bool FixedDetectionSource::readModelWindow(
     DetectionSpectrumFrame frame;
     if (!readFrame(window.firstFrameIndex + row, frame, error, cancel))
       return false;
+    DetectionProfileScope normalizeProfile(profiling_,"window-statistics");
     for (const float value : frame.densityDb) {
       const double deviation = value - mean;
       mean += deviation / ++count;
@@ -755,6 +763,7 @@ bool FixedDetectionSource::readModelWindow(
   window.epsilonGuardApplied =
       window.sampleStdDb < std::numeric_limits<float>::epsilon();
   window.normalizedTensor.reserve(values);
+  DetectionProfileScope normalizeProfile(profiling_,"normalize-and-tensor-hash");
   QCryptographicHash tensorHash(QCryptographicHash::Sha256);
   for (const float value : window.densityDb) {
     const float normalized =

@@ -21,3 +21,11 @@ Sample先记录LegacyExact黄金结果，分块实现须保留绝对样本、频
 现有FFSCN Engine实际profiles最大batch2、SCN物理batch1。候选1/2/4/8/16需查真实Engine形状和资源；不支持必须明确拒绝或降级，不能虚报GPU enqueue。若重建同权重FP32 Engine，必须另做原始head数值对照和检测质量/资源验证。默认配置由同设备测量决定，不预签性能收益。
 
 计时分别记录读取/STFT/归一化/传输/enqueue/同步/解码/跟踪/精修/融合/落盘/UI，CPU/RSS、GPU指标明确归因和采样范围。端到端首候选/首稳定/总时长及p50/p95以原始事件计算，不用显示GPU统计替代模型GPU。不进行大型RFbench事件矩阵。
+
+## R6-2 观测实现
+
+Domain的可选`DetectionRun.performanceJson`上限64KiB，持久化仍用run v2；旧文件缺字段不伪造测量。解码/编码检查profile schema和大小，失败不替换目标。固定32个聚合stage key只保留count/total/max/mean，没有每窗无限计时历史；端到端分位数由独立重复运行报告计算。worker stderr只保留末8KiB，主线程只读受mutex保护的有界快照；QProcess在producer线程创建、停止与销毁。
+
+FFSCN实际CUDA事件在同一stream记录H2D/enqueue/D2H四个边界，沿用原有最终同步；SCN逐项enqueue分别计数，不能混作物理batch。固定64个event容量覆盖最大16次物理调用，事件失败显式报错，不填估算GPU时间。Windows分别采样父/worker的CPU时间、RSS/峰值RSS/private bytes，nvidia-smi仅作为整卡聚合补充。正常完成先关闭worker stdin并等正常退出，取消及超时仍终止所属进程；观察到的exitCode/status与调用方主动终止分开记录。
+
+质量测量复用现有标签可信解析器，以物理RF/sample坐标裁剪到冻结请求。频率IoU0.3、事件时间IoU0.5先固定；最大基数二分匹配，不用预测反推真值或重复匹配同一标签。配对数量/内存封顶，超限明确unavailable，不截短结果；未知时间观察不加入事件集合。大样本坐标先做uint64差再转double，避免边界误差计算丢失单样本差。

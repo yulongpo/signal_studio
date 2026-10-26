@@ -267,6 +267,8 @@ bool selectDetectionSpectrum(std::span<const float> values, std::size_t bins,
 DetectionValidation validateDetectionRun(const DetectionRun& run) {
   if (const auto valid = validateDetectionRequest(run.request); !valid)
     return valid;
+  if (run.performanceJson.size() > 65536)
+    return {false, "Detection performance diagnostics exceed 64 KiB"};
   if (run.completedWindows > run.eligibleWindows ||
       run.refinedCandidates > run.totalRefinementCandidates ||
       run.totalRefinementCandidates > annotationSegmentBudget ||

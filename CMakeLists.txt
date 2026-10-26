@@ -124,6 +124,9 @@ add_library(SignalStudioInfrastructure STATIC
 set_target_properties(SignalStudioInfrastructure PROPERTIES AUTOMOC OFF)
 target_link_libraries(SignalStudioInfrastructure PUBLIC SignalStudioCore Qt6::Core)
 ss_target_defaults(SignalStudioInfrastructure)
+if(WIN32)
+    target_link_libraries(SignalStudioInfrastructure PRIVATE psapi)
+endif()
 
 # Headless production-pipeline measurements, with isolated output roots. This
 # does not replace native QWidget/QRhi acceptance or model-quality evaluation.
@@ -287,6 +290,11 @@ if(SS_BUILD_TESTS)
     endforeach()
     add_dependencies(SignalStudioDetectionTaskTests SignalStudio)
     add_executable(SignalStudioDetectionSourceTests tests/detection_source_tests.cpp)
+    add_executable(SignalStudioDetectionBenchmarkQualityTests tests/detection_benchmark_quality_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionBenchmarkQualityTests)
+    set_target_properties(SignalStudioDetectionBenchmarkQualityTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionBenchmarkQualityTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_benchmark_quality COMMAND SignalStudioDetectionBenchmarkQualityTests)
     ss_target_defaults(SignalStudioDetectionSourceTests)
     target_link_libraries(SignalStudioDetectionSourceTests PRIVATE SignalStudioInfrastructure Qt6::Test)
     target_compile_definitions(SignalStudioDetectionSourceTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

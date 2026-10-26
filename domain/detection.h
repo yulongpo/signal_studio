@@ -137,6 +137,8 @@ struct DetectionRun {
   std::string runtime;
   std::string manifestRelativePath;
   bool recoverable = false;
+  // Optional bounded diagnostic JSON, not part of source/result authority.
+  std::string performanceJson;
 };
 
 struct DetectionValidation {

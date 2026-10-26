@@ -19,6 +19,7 @@
 #include "infrastructure/detection_refined_publication.h"
 #include "infrastructure/detection_store.h"
 #include "infrastructure/detection_task.h"
+#include "tools/detection_benchmark/quality.h"
 
 #ifdef Q_OS_WIN
 #define NOMINMAX
@@ -43,9 +44,17 @@ QJsonObject memory() {
   usage.cb = sizeof(usage);
   if (GetProcessMemoryInfo(GetCurrentProcess(),
       reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&usage),sizeof(usage)))
-    return {{"rssBytes",double(usage.WorkingSetSize)},
+  {
+    QJsonObject value{{"rssBytes",double(usage.WorkingSetSize)},
         {"peakRssBytes",double(usage.PeakWorkingSetSize)},
         {"privateBytes",double(usage.PrivateUsage)}};
+    FILETIME created{},exited{},kernel{},user{};
+    if(GetProcessTimes(GetCurrentProcess(),&created,&exited,&kernel,&user)) {
+      const auto ticks=[](FILETIME time){return (quint64(time.dwHighDateTime)<<32)|time.dwLowDateTime;};
+      value["cpuMilliseconds"]=double(ticks(kernel)+ticks(user))/10000;
+    }
+    return value;
+  }
 #endif
   return {{"available",false}};
 }
@@ -64,6 +73,7 @@ int main(int argc, char** argv) {
       {"hop","Override frame interval in seconds","seconds"},
       {"limit-seconds","Restrict the requested range duration","seconds"},
       {"raw-head-budget-mib","Explicit independent raw-head disk quota; zero means legacy combined","MiB"},
+      {"labels","Trusted ordinary label file for fixed physical IoU metrics","path"},
       {"cancel-windows","Cancel after at least this many durable windows","count"},
       {"timeout","Cancel at this wall-clock deadline","seconds","900"}});
   args.process(app);
@@ -185,6 +195,8 @@ int main(int argc, char** argv) {
     std::size_t segments=0;
     for(const auto& annotation:publication.annotations) segments+=annotation.segments.size();
     report["segmentCount"]=double(segments);
+    if(args.isSet("labels"))
+      report["quality"]=benchmark::measureQuality(args.value("labels"),metadata,request,publication);
     report["elapsedMs"]=double(publicationMs);
     report["memoryAfter"]=memory();
     report["timedOut"]=timedOut;

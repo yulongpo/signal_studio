@@ -105,6 +105,48 @@ void testWholeRunRawHeadQuotaRejectsBeforeWorker() {
       tasks.snapshots().empty() && !QDir(directory.filePath("detections")).exists(),
       "Whole-run head quota must reject before creating a partial task or starting a worker: "+error);
 }
+void testProducerExceptionHasDurableFailureDiagnostics() {
+  QTemporaryDir directory;
+  const auto metadata=sourceFixture(directory);
+  const auto request=requestFixture(metadata,"producer-exception");
+  bool injected=false;
+  DetectionTaskManager tasks(workerPath(),[&](const QString& root,const DetectionRun& run,QString& error) {
+    if(!injected && run.lifecycle==DetectionLifecycle::Running && run.completedWindows>0) {
+      injected=true;throw std::runtime_error("injected producer checkpoint exception");
+    }
+    return writeDetectionRun(root,run,error);
+  });
+  QString error;
+  check(tasks.enqueue(directory.path(),metadata,request,error),error);
+  const auto terminal=waitForRun(tasks,request.runId);
+  const auto profiling=QJsonDocument::fromJson(QByteArray::fromStdString(terminal.performanceJson)).object();
+  check(injected && terminal.lifecycle==DetectionLifecycle::Failed &&
+      terminal.error.find("injected producer checkpoint exception")!=std::string::npos &&
+      profiling["worker"].toObject()["exitObserved"].toBool(),
+      "An exception must become a truthful durable failure, not terminate the GUI or lose worker diagnostics");
+  DetectionRun restored;
+  check(loadDetectionRun(directory.path(),QString::fromStdString(request.runId),restored,error) &&
+      restored.performanceJson==terminal.performanceJson,error);
+}
+void testTerminalPersistenceExceptionCannotEscapeThread() {
+  QTemporaryDir directory;
+  const auto metadata=sourceFixture(directory);
+  const auto request=requestFixture(metadata,"terminal-persistence-exception");
+  DetectionTaskManager tasks(workerPath(),[&](const QString& root,const DetectionRun& run,QString& error) {
+    if(run.lifecycle==DetectionLifecycle::Completed || run.lifecycle==DetectionLifecycle::Failed)
+      throw std::runtime_error("injected permanent terminal persistence exception");
+    return writeDetectionRun(root,run,error);
+  });
+  QString error;
+  check(tasks.enqueue(directory.path(),metadata,request,error),error);
+  const auto terminal=waitForRun(tasks,request.runId);
+  check(terminal.lifecycle==DetectionLifecycle::Failed &&
+      terminal.error.find("permanent terminal persistence exception")!=std::string::npos,
+      "A permanent terminal IO exception must report failure without escaping the producer thread");
+  DetectionPublication publication;
+  check(!tasks.takePublication(request.runId,publication),
+      "Unpersisted exception result must never become available for committed publication");
+}
 void testTaskRoundtrip() {
   QTemporaryDir directory;
   const auto metadata = sourceFixture(directory);
@@ -710,6 +752,8 @@ int main(int argc, char** argv) {
           "Usage: task-tests [--real-adaptation WAV output-directory]");
     testTaskRoundtrip();
     testWholeRunRawHeadQuotaRejectsBeforeWorker();
+    testProducerExceptionHasDurableFailureDiagnostics();
+    testTerminalPersistenceExceptionCannotEscapeThread();
     testFailuresAndGeneration();
     testAdaptedShortTaskSnapshot();
     testLargeFrameEvidenceUsesLocalStorage();

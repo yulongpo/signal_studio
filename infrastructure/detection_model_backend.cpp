@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -376,6 +377,10 @@ class DetectionModelBackend::Impl {
   decltype(&cudaStreamSynchronize) synchronize = nullptr;
   decltype(&cudaMemGetInfo) memoryInfo = nullptr;
   decltype(&cudaGetErrorString) errorString = nullptr;
+  decltype(&cudaEventCreate) createEvent = nullptr;
+  decltype(&cudaEventDestroy) destroyEvent = nullptr;
+  decltype(&cudaEventRecord) recordEvent = nullptr;
+  decltype(&cudaEventElapsedTime) elapsedEvent = nullptr;
   std::unique_ptr<nvinfer1::IRuntime> runtime;
   std::unique_ptr<nvinfer1::ICudaEngine> engine;
   std::unique_ptr<nvinfer1::IExecutionContext> context;
@@ -388,6 +393,8 @@ class DetectionModelBackend::Impl {
   std::uint32_t modelBins = 0, maximumFrames = 0;
   std::size_t workspaceBytes = 0;
   std::uint64_t streamDrainCount = 0;
+  std::array<cudaEvent_t,64> timingEvents{};
+  std::uint64_t physicalEnqueues = 0;
 
   class StreamDrain {
    public:
@@ -414,6 +421,7 @@ class DetectionModelBackend::Impl {
 
   ~Impl() {
     if (stream && synchronize) synchronize(stream);
+    for(auto event:timingEvents) if(event && destroyEvent) destroyEvent(event);
     context.reset();
     engine.reset();
     runtime.reset();
@@ -492,6 +500,10 @@ class DetectionModelBackend::Impl {
     SS_RESOLVE_CUDA(synchronize, "cudaStreamSynchronize");
     SS_RESOLVE_CUDA(memoryInfo, "cudaMemGetInfo");
     SS_RESOLVE_CUDA(errorString, "cudaGetErrorString");
+    SS_RESOLVE_CUDA(createEvent, "cudaEventCreate");
+    SS_RESOLVE_CUDA(destroyEvent, "cudaEventDestroy");
+    SS_RESOLVE_CUDA(recordEvent, "cudaEventRecord");
+    SS_RESOLVE_CUDA(elapsedEvent, "cudaEventElapsedTime");
 #undef SS_RESOLVE_CUDA
     using RuntimeFactory = void* (*)(void*, int32_t);
     using VersionFunction = int32_t (*)();
@@ -767,6 +779,9 @@ class DetectionModelBackend::Impl {
         {"engineBlobBytes", QString::number(engineBytes.size())},
         {"engineBlobBudgetBytes",
          QString::number(limits.maximumEngineBlobBytes)}};
+    for(auto& event:timingEvents)
+      if(!checkCuda(createEvent(&event),"cudaEventCreate timing",error)) return false;
+    evidence["cudaEventTiming"]=true;
     return true;
   }
 
@@ -778,10 +793,12 @@ class DetectionModelBackend::Impl {
     if (!batch || batch > logicalMaximumBatch || !frames ||
         frames > maximumFrames)
       return fail(error, "Actual model window exceeds its planned allocation");
+    QElapsedTimer adaptationTimer;adaptationTimer.start();
     std::vector<float> input;
     if (!prepareDetectionModelInput(request, sourceFrames, batch, input, error,
                                     frames))
       return false;
+    const double adaptationMs=adaptationTimer.nsecsElapsed()/1e6;
     const bool scn = request.profile.backend == DetectionBackendKind::Scn;
     const auto shape =
         scn ? nvinfer1::Dims4(1, 32768, 1, 1)
@@ -806,15 +823,23 @@ class DetectionModelBackend::Impl {
     const std::uint32_t calls = scn ? batch : 1;
     const auto inputElements = scn ? modelBins : input.size();
     const auto outputElements = scn ? output.width : elements;
+    double enqueueHostMs=0;
     for (std::uint32_t call = 0; call < calls; ++call) {
+      if(call*4+3>=timingEvents.size()) return fail(error,"CUDA timing call capacity exceeded");
+      if(!checkCuda(recordEvent(timingEvents[call*4],stream),"cudaEventRecord input",error)) return false;
       if (!checkCuda(copy(memory[0], input.data() + call * inputElements,
                           inputElements * sizeof(float), cudaMemcpyHostToDevice,
                           stream),
                      "cudaMemcpyAsync input", error))
         return false;
+      if(!checkCuda(recordEvent(timingEvents[call*4+1],stream),"cudaEventRecord enqueue start",error)) return false;
+      QElapsedTimer enqueueTimer;enqueueTimer.start();
       if (!context->enqueueV3(stream))
         return fail(error,
                     "TensorRT model enqueue failed: " + logger.lastError());
+      enqueueHostMs+=enqueueTimer.nsecsElapsed()/1e6;
+      ++physicalEnqueues;
+      if(!checkCuda(recordEvent(timingEvents[call*4+2],stream),"cudaEventRecord enqueue end",error)) return false;
       const auto offset = call * outputElements;
       const std::array<float*, 3> destinations{output.hm.data() + offset,
                                                output.bw.data() + offset,
@@ -828,13 +853,28 @@ class DetectionModelBackend::Impl {
         if (hooks.failAfterQueuedOutput && hooks.failAfterQueuedOutput(index))
           return fail(error, "Injected model failure after queued output copy");
       }
+      if(!checkCuda(recordEvent(timingEvents[call*4+3],stream),"cudaEventRecord output end",error)) return false;
     }
     if (!drain.complete(error)) return false;
+    std::array<double,3> gpuMs{};
+    for(std::uint32_t call=0;call<calls;++call)
+      for(std::size_t part=0;part<gpuMs.size();++part) {
+        float elapsed=0;
+        if(!checkCuda(elapsedEvent(&elapsed,timingEvents[call*4+part],timingEvents[call*4+part+1]),
+            "cudaEventElapsedTime",error)) return false;
+        if(!std::isfinite(elapsed) || elapsed<0) return fail(error,"CUDA event interval is not finite/nonnegative");
+        gpuMs[part]+=elapsed;
+      }
     for (const auto* head : {&output.hm, &output.bw, &output.off})
       if (!std::all_of(head->begin(), head->end(),
                        [](float value) { return std::isfinite(value); }))
         return fail(error, "Model returned a non-finite output head");
     result = std::move(output);
+    evidence["lastInference"]=QJsonObject{{"cudaEventIntervals",true},
+        {"h2dMs",gpuMs[0]},{"gpuStreamMs",gpuMs[1]},{"d2hMs",gpuMs[2]},
+        {"hostEnqueueMs",enqueueHostMs},{"inputAdaptationMs",adaptationMs},
+        {"physicalEnqueueCalls",int(calls)},{"logicalBatch",int(batch)}};
+    evidence["physicalEnqueueCount"]=QString::number(physicalEnqueues);
     evidence["lastActualFrames"] = static_cast<int>(frames);
     evidence["lastTensorFrames"] =
         static_cast<int>(detectionModelTensorFrames(request, frames));

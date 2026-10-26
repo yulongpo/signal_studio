@@ -537,6 +537,26 @@ void independentRawHeadBudgetsAndLegacyCompatibility() {
         "Independent disk quotas cannot bypass raw-head content integrity");
   }
 }
+void boundedPerformanceRoundtrip() {
+  QTemporaryDir directory;
+  auto run=fixture(directory.path(),"bounded-performance");
+  run.performanceJson=QJsonDocument(QJsonObject{{"schema","signal-studio-detection-profile-v1"},
+      {"pipelineStages",QJsonObject{{"read",QJsonObject{{"calls","2"},{"totalMs",1.25}}}}}})
+      .toJson(QJsonDocument::Compact).toStdString();
+  QString error;
+  check(writeDetectionRun(directory.path(),run,error),error);
+  DetectionRun restored;
+  check(loadDetectionRun(directory.path(),QString::fromStdString(run.request.runId),restored,error) &&
+      restored.performanceJson==run.performanceJson,error);
+  auto old=encodeDetectionRun(run);old.remove("performance");
+  check(decodeDetectionRun(old,restored,error) && restored.performanceJson.empty(),
+      "An old manifest cannot invent performance measurements");
+  auto malformed=encodeDetectionRun(run);malformed["performance"]=QJsonObject{{"schema","unknown"}};
+  check(!decodeDetectionRun(malformed,restored,error) && restored.performanceJson.empty(),
+      "Malformed profiling must not partially replace decoded run state");
+  malformed["performance"]=QJsonObject{{"schema","signal-studio-detection-profile-v1"},{"oversized",QString(65536,'x')}};
+  check(!decodeDetectionRun(malformed,restored,error),"Performance metadata must remain bounded");
+}
 void accumulatedReadsAndStreamingBudget() {
   QTemporaryDir directory;
   auto run = fixture(directory.path(), "streaming-budget");
@@ -578,6 +598,7 @@ int main(int argc, char** argv) {
     unpublishedChunksAndLargeIndices();
     adaptedHeadsSurviveReopen();
     independentRawHeadBudgetsAndLegacyCompatibility();
+    boundedPerformanceRoundtrip();
     accumulatedReadsAndStreamingBudget();
     std::cout << "Detection store boundary tests passed\n";
     return 0;

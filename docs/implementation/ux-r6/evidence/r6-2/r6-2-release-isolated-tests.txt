@@ -1,0 +1,12 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure -R ^signal_studio_detection_(store|model_backend|benchmark_quality)$
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+    Start  8: signal_studio_detection_model_backend
+1/3 Test  #8: signal_studio_detection_model_backend .......   Passed    0.20 sec
+    Start 10: signal_studio_detection_store
+2/3 Test #10: signal_studio_detection_store ...............   Passed    1.42 sec
+    Start 13: signal_studio_detection_benchmark_quality
+3/3 Test #13: signal_studio_detection_benchmark_quality ...   Passed    0.18 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   1.82 sec

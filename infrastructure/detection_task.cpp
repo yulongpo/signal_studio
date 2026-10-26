@@ -790,7 +790,12 @@ void DetectionTaskManager::pump() {
       continue;
     active_ = job;
     job->started = true;
-    thread_ = std::jthread([this, job] { execute(job); });
+    thread_ = std::jthread([this, job] {
+      try { execute(job); }
+      catch(const std::exception& exception) {
+        finish(job,DetectionLifecycle::Failed,"Unhandled detection stage exception: "+QString::fromUtf8(exception.what()));
+      } catch(...) { finish(job,DetectionLifecycle::Failed,"Unknown detection stage exception"); }
+    });
     break;
   }
 }
@@ -813,11 +818,29 @@ bool DetectionTaskManager::takePublication(const std::string& runId,
   }
   return false;
 }
+std::string DetectionTaskManager::performanceSnapshot(const std::shared_ptr<Job>& job) const {
+  // Called while mutex_ protects both the producer and UI snapshots.
+  QJsonObject batches;
+  for(std::size_t i=1;i<job->batches.size();++i)
+    if(job->batches[i]) batches[QString::number(i)]=QString::number(job->batches[i]);
+  return QJsonDocument(QJsonObject{
+      {"schema","signal-studio-detection-profile-v1"},
+      {"pipelineStages",job->profiling.snapshot()},{"sourceStages",job->sourceProfile},
+      {"logicalBatchDistribution",batches},{"gpu",job->gpuProfile},
+      {"worker",job->workerDiagnostic},
+      {"requestedBatch",int(job->run.request.parameters.batchSize)},
+      {"executionBatchLimit",int(job->executionBatchSize)},
+      {"firstDecodedCandidateMs",double(job->firstDecodedCandidateMs)},
+      {"frequencyTracksReadyMs",double(job->frequencyReadyMs)},
+      {"timingBoundary","host stage totals may nest; CUDA timings are stream-event intervals; not UI paint latency"}})
+      .toJson(QJsonDocument::Compact).toStdString();
+}
 bool DetectionTaskManager::checkpoint(const std::shared_ptr<Job>& job,
                                       QString& error) {
   DetectionRun run;
   {
     std::lock_guard lock(mutex_);
+    job->run.performanceJson=performanceSnapshot(job);
     run = job->run;
   }
   return persistRun_(job->directory, run, error);
@@ -825,12 +848,22 @@ bool DetectionTaskManager::checkpoint(const std::shared_ptr<Job>& job,
 void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
                                   DetectionLifecycle lifecycle,
                                   const QString& error) {
+  // QProcess is created, stopped and destroyed on the producer thread. Keep
+  // its observed exit/error separate from a caller-requested cancellation.
+  if(job->worker) {
+    job->worker->stop(lifecycle==DetectionLifecycle::Completed && !job->cancelled);
+    auto diagnostic=job->worker->diagnostics();
+    job->worker.reset();
+    const std::lock_guard lock(mutex_);
+    job->workerDiagnostic=std::move(diagnostic);
+  }
   DetectionRun terminal;
   {
     std::lock_guard lock(mutex_);
     // Cancellation is accepted before this commit point. Afterwards callers
     // receive false while the immutable terminal snapshot is being persisted.
     job->finishing = true;
+    job->run.performanceJson=performanceSnapshot(job);
     terminal = job->run;
     terminal.lifecycle =
         job->cancelled ? DetectionLifecycle::Cancelled : lifecycle;
@@ -890,7 +923,11 @@ void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
   }
   for (;;) {
     QString writeError;
-    const bool persisted = persistRun_(job->directory, terminal, writeError);
+    bool persisted=false;
+    try { persisted=persistRun_(job->directory,terminal,writeError); }
+    catch(const std::exception& exception) {
+      writeError="Terminal persistence exception: "+QString::fromUtf8(exception.what());
+    } catch(...) {writeError="Unknown terminal persistence exception";}
     std::lock_guard lock(mutex_);
     if (!persisted) {
       terminal.lifecycle = DetectionLifecycle::Failed;
@@ -916,6 +953,11 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   QString error;
   const auto request = job->run.request;
   const auto cancelled = [&] { return job->cancelled.load(); };
+  job->clock.start();
+  const auto measured=[&](const char* name,const auto& action) {
+    DetectionProfileScope timing(job->profiling,QString::fromLatin1(name),&mutex_);
+    return action();
+  };
   {
     std::lock_guard lock(mutex_);
     job->run.lifecycle = DetectionLifecycle::Validating;
@@ -965,9 +1007,10 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     finish(job, DetectionLifecycle::Failed, error);
     return;
   }
-  DetectionWorkerClient worker;
-  if (!worker.start(workerExecutable_, request, error, cancelled,
-                    job->executionBatchSize)) {
+  job->worker=std::make_unique<DetectionWorkerClient>();
+  auto& worker=*job->worker;
+  if (!measured("worker-start",[&] { return worker.start(workerExecutable_, request, error, cancelled,
+                    job->executionBatchSize); })) {
     finish(job, DetectionLifecycle::Failed, error);
     return;
   }
@@ -1011,7 +1054,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
          batch < job->executionBatchSize && index < plan.eligibleWindowCount;
          ++batch, ++index) {
       DetectionModelWindow window;
-      if (!source.readModelWindow(index, window, error, cancelled)) {
+      if (!measured("read-model-window",[&] { return source.readModelWindow(index, window, error, cancelled); })) {
         if (!cancelled()) {
           const auto path = QString::fromStdString(request.sourceIdentity.path);
           std::lock_guard lock(mutex_);
@@ -1035,6 +1078,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     }
     {
       std::lock_guard lock(mutex_);
+      job->sourceProfile=source.profiling();
       for (const auto& window : windows) {
         const auto end = window.firstFrameIndex + window.frames.size();
         job->run.readFrames +=
@@ -1048,7 +1092,11 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
                     window.reportRange);
       }
     }
-    if (!checkpoint(job, error)) {
+    {
+      const std::lock_guard lock(mutex_);
+      job->run.computationPhase="checkpoint";
+    }
+    if (!measured("checkpoint-metadata",[&] {return checkpoint(job,error);})) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
     }
@@ -1072,7 +1120,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       std::lock_guard lock(mutex_);
       job->run.computationPhase = "inference";
     }
-    if (!worker.exchange(std::move(packet), response, error, cancelled)) {
+    if (!measured("worker-roundtrip",[&] { return worker.exchange(std::move(packet), response, error, cancelled); })) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
     }
@@ -1091,6 +1139,15 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       return;
     }
     auto results = response.envelope["payload"].toObject()["windows"].toArray();
+    {
+      const std::lock_guard lock(mutex_);
+      if(windows.size()<job->batches.size()) ++job->batches[windows.size()];
+      job->workerDiagnostic=worker.diagnostics();
+      const auto last=response.envelope["payload"].toObject()["modelEvidence"].toObject()["lastInference"].toObject();
+      for(const auto* key:{"h2dMs","gpuStreamMs","d2hMs","hostEnqueueMs","inputAdaptationMs","physicalEnqueueCalls"})
+        if(last[key].isDouble()) job->gpuProfile[key]=job->gpuProfile[key].toDouble()+last[key].toDouble();
+      job->gpuProfile["cudaEventIntervals"]=last["cudaEventIntervals"].toBool();
+    }
     if (!fixture)
       preserveRuntimeEvidence(
           set,
@@ -1102,7 +1159,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         std::lock_guard lock(mutex_);
         job->run.computationPhase = "decoding";
       }
-      if (!decodeProductionResults(request, response, results, error) ||
+      if (!measured("decode-heads",[&] {return decodeProductionResults(request, response, results, error);}) ||
          (request.profile.backend == DetectionBackendKind::Scn &&
           !postprocessScnResults(windows, plan, request, results, mappings,
                                  error, cancelled))) {
@@ -1113,7 +1170,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         std::lock_guard lock(mutex_);
         job->run.computationPhase = "storing-heads";
       }
-      if (!storeDetectionHeadEvidence(job->directory, request, response, mappings, error)) {
+      if (!measured("store-raw-heads",[&] {return storeDetectionHeadEvidence(job->directory, request, response, mappings, error);})) {
         finish(job, DetectionLifecycle::Failed, error);
         return;
       }
@@ -1121,9 +1178,15 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         std::lock_guard lock(mutex_);
         job->run.computationPhase = "tracking";
       }
-      if (!projector.consume(results, mappings, error, cancelled)) {
+      if (!measured("track-windows",[&] {return projector.consume(results, mappings, error, cancelled);})) {
         finish(job, DetectionLifecycle::Failed, error);
         return;
+      }
+      {
+        const std::lock_guard lock(mutex_);
+        if(job->firstDecodedCandidateMs<0 && std::any_of(results.begin(),results.end(),
+            [](const auto& value){return !value.toObject()["candidates"].toArray().isEmpty();}))
+          job->firstDecodedCandidateMs=job->clock.elapsed();
       }
     }
     if (fixture && !appendFixtureAnnotations(
@@ -1159,7 +1222,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       job->run.computationPhase = "checkpoint";
       next.computationPhase = "checkpoint";
     }
-    if (!appendDetectionChunk(job->directory, next, results, mappings, error)) {
+    if (!measured("append-chunk-and-manifest",[&] {return appendDetectionChunk(job->directory, next, results, mappings, error);})) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
     }
@@ -1200,11 +1263,11 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       std::lock_guard lock(mutex_);
       job->run.computationPhase = "frequency";
     }
-    if (!projector.finish(tracks, error, cancelled) ||
+    if (!measured("finalize-frequency-tracks",[&] {return projector.finish(tracks, error, cancelled);}) ||
         (request.profile.backend != DetectionBackendKind::Scn &&
-         !applyDetectionFrequencyAnalysis(source, frequencyRequest, tracks,
+         !measured("frequency-analysis",[&] {return applyDetectionFrequencyAnalysis(source, frequencyRequest, tracks,
                                           frequencyEvidence, error,
-                                          cancelled)) ||
+                                          cancelled);})) ||
         !projectFrequencyTracks(request, set, tracks,
                                 job->publicationBudgetBytes / 2, publication,
                                 error)) {
@@ -1214,6 +1277,8 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     preserveFrequencyEvidence(publication, frequencyEvidence);
     {
       std::lock_guard lock(mutex_);
+      job->frequencyReadyMs=job->clock.elapsed();
+      job->sourceProfile=source.profiling();
       job->run.computationPhase = "refine";
       job->run.totalRefinementCandidates = publication.annotations.size();
     }
@@ -1226,11 +1291,11 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       job->run.refinedCandidates = done;
       job->run.totalRefinementCandidates = total;
     };
-    if (!applyDetectionTimeAnalysis(source, job->metadata, request, tracks,
+    if (!measured("time-refinement",[&] {return applyDetectionTimeAnalysis(source, job->metadata, request, tracks,
                                     publication, error, cancelled,
-                                    refinedProgress) ||
+                                    refinedProgress);}) ||
         !projector.attachWindowEvidence(publication, error) ||
-        !fuseDetectionPublication(request, publication, error, cancelled) ||
+        !measured("fuse-publication",[&] {return fuseDetectionPublication(request, publication, error, cancelled);}) ||
         !validateDetectionPublicationBudget(
             publication, job->publicationBudgetBytes / 2, error)) {
       finish(job, DetectionLifecycle::Failed, error);
@@ -1238,6 +1303,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     }
     {
       std::lock_guard lock(mutex_);
+      job->sourceProfile=source.profiling();
       job->run.computationPhase = "publishing";
     }
     // Final projections are durable before they are visible. Interrupted final
@@ -1257,7 +1323,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         std::lock_guard lock(mutex_);
         next = job->run;
       }
-      if (!appendDetectionChunk(job->directory, next, shard, {}, error)) {
+      if (!measured("flush-final-shards",[&] {return appendDetectionChunk(job->directory, next, shard, {}, error);})) {
         return false;
       }
       {

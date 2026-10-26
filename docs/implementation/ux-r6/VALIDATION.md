@@ -33,6 +33,16 @@
 
 已找到原WAV同名生成器TXT（13对象），频率坐标继续采用现有可信解析器 `generator FC - Fs/2 + bound Fc`，后续质量测量使用该依据，不能按预测结果反推标签。尚未在本节给出完整质量指标。
 
+## R6-2 测量实现与自检
+
+观测功能和固定物理匹配均实际编译执行，未改变模型权重/精度、FFT算术、阈值或精修算法。Debug选定7目标构建完成，5个定向CTest（model_backend/store/task/benchmark_quality/source）5/5，34.33s。新增行为验证覆盖：可选profile旧文件兼容/64KiB超限/坏schema原子拒绝；producer checkpoint抛异常转durable Failed；永久terminal写入抛异常只报Failed并禁止发布；最大匹配重配对、重复预测一对一、时间不相交/频率模式、2^54以上单样本差、观察不制造事件及物理裁剪/容量拒绝。
+
+Release首次profiling选定6目标构建通过，原4个定向组4/4（10.47s）；后来新增quality与terminal异常保护，quality/store/model_backend三个隔离目标重建和CTest3/3通过。最新terminal异常保护已在Debug执行，Release task重建/补测待完整长运行释放worker后执行，不能把此前4/4算成最新异常用例的Release执行。一次包含source目标的Release构建通过部署依赖尝试重链接正在运行的worker，实际LNK1104退出1；原日志保留，随后隔离3目标构建通过。不得把该失败说成首轮全过。
+
+真实模型短重复：ROI/Sample各5次、每次15/15完成，固定标签指标均为10/10匹配，原始measurement/progress/GPU CSV及launcher/summary归档 `evidence/r6-2/`。脚本由PowerShell/Python解析检查，且真实启动smoke成功。数据和方法边界见 PERFORMANCE；无并发构建的10次短基线与有并发构建的完整长请求分开。
+
+`r6-2-baseline-roi-full`为同一原WAV完整639窗请求，显式独立raw-head配额，其余模型/FFT/hop/ROI参数沿用；尚未结束时不能预记成功。已记录并发工作开始UTC，长运行只验证完成性与全范围标签质量，不作为受控优化前后性能对照。原始用户工程不写入，benchmark只在私有out任务目录发布检测资产。
+
 ## 尚未闭合
 
-完整原范围639窗口同参完成；批次1/2/4/8/16真实能力与吞吐/降级；分阶段计时及同设备p50/p95；0.1/1/10/60s分块数值/性能；多场景检出质量与轨迹；有界临时预览/增量UI；真实4K150 GPU/软件、最终回归、独立审核及安全发布均仍待后续节点。大型RFbench按要求不执行。
+完整原范围639窗口同参完成；最新terminal保护Release补测；批次1/2/4/8/16真实能力与吞吐/降级；优化后同设备p50/p95；0.1/1/10/60s分块数值/性能；多场景检出质量与轨迹；有界临时预览/增量UI；真实4K150 GPU/软件、最终回归、独立审核及安全发布均仍待后续节点。大型RFbench按要求不执行。

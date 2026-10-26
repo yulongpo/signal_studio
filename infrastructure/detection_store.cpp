@@ -688,7 +688,7 @@ QJsonObject encodeDetectionRun(const DetectionRun& run) {
                     {"relativePath", text(chunk.relativePath)},
                     {"sha256", text(chunk.sha256)},
                     {"resultCount", static_cast<int>(chunk.resultCount)}});
-  return {{"schema", "signal-studio-detection-run"},
+  QJsonObject encoded{{"schema", "signal-studio-detection-run"},
           {"version", 2},
           {"request", encodeDetectionRequest(run.request)},
           {"lifecycle", enumText(static_cast<int>(run.lifecycle), kLifecycles)},
@@ -710,6 +710,14 @@ QJsonObject encodeDetectionRun(const DetectionRun& run) {
           {"runtime", text(run.runtime)},
           {"manifestRelativePath", manifestPath(run.request)},
           {"recoverable", run.recoverable}};
+  if (!run.performanceJson.empty()) {
+    const auto document=QJsonDocument::fromJson(QByteArray::fromStdString(run.performanceJson));
+    require(run.performanceJson.size()<=65536 && document.isObject() &&
+        document.object()["schema"]=="signal-studio-detection-profile-v1",
+        "Invalid bounded detection performance diagnostics");
+    encoded["performance"]=document.object();
+  }
+  return encoded;
 }
 bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
                         QString& error) {
@@ -734,7 +742,7 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
                  "recoverable",
                  "computationPhase",
                  "refinedCandidates",
-                 "totalRefinementCandidates"});
+                 "totalRefinementCandidates", "performance"});
     require(o["schema"] == "signal-studio-detection-run" &&
                 (o["version"] == 1 || o["version"] == 2),
             "Unsupported detection run manifest version");
@@ -783,7 +791,7 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
     } else {
       require(!o.contains("computationPhase") &&
                   !o.contains("refinedCandidates") &&
-                  !o.contains("totalRefinementCandidates"),
+                  !o.contains("totalRefinementCandidates") && !o.contains("performance"),
               "Version 1 cannot contain version 2 progress fields");
     }
     run.startedAtMilliseconds =
@@ -795,6 +803,13 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
     run.runtime = string(o, "runtime", 1024);
     run.manifestRelativePath = string(o, "manifestRelativePath", 1024, true);
     run.recoverable = boolean(o, "recoverable");
+    if(o.contains("performance")) {
+      const auto performance=objectValue(o["performance"],"performance");
+      const auto bytes=QJsonDocument(performance).toJson(QJsonDocument::Compact);
+      require(bytes.size()<=65536 && performance["schema"]=="signal-studio-detection-profile-v1",
+          "Invalid bounded detection performance diagnostics");
+      run.performanceJson=bytes.toStdString();
+    }
     validateRun(run);
     return run;
   });

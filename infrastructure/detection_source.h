@@ -8,6 +8,7 @@
 
 #include "domain/project.h"
 #include "infrastructure/raw_sample_reader.h"
+#include "infrastructure/detection_profiling.h"
 
 namespace signalstudio {
 using DetectionSourceCancel = std::function<bool()>;
@@ -115,6 +116,7 @@ class FixedDetectionSource {
   bool open(const FileMetadata&, ViewRange requested, DetectionSourceConfig,
             QString& error, std::uint64_t projectGeneration = 0);
   const DetectionSourcePlan& plan() const { return plan_; }
+  QJsonObject profiling() const { return profiling_.snapshot(); }
   bool readFrame(std::uint64_t absoluteFrame, DetectionSpectrumFrame&,
                  QString& error, const DetectionSourceCancel& cancel = {});
   bool readModelWindow(std::uint64_t eligibleWindow, DetectionModelWindow&,
@@ -132,5 +134,6 @@ class FixedDetectionSource {
   QString path_, fingerprint_;
   std::vector<double> hann_;
   double hannEnergy_ = 0;
+  DetectionProfiler profiling_;
 };
 }  // namespace signalstudio
