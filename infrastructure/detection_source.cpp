@@ -667,7 +667,9 @@ QJsonObject FixedDetectionSource::gpuProfiling() const {
       {"ready",bool(gpu_)},{"device",QString::fromStdString(gpuCapabilities_.deviceName)},
       {"fallbackReason",QString::fromStdString(gpuFallback_).left(1024)},
       {"gpuFrames",qint64(gpuFrames_)},{"cpuFrames",qint64(cpuFrames_)},
-      {"gpuWindows",qint64(gpuWindows_)},{"cpuWindows",qint64(cpuWindows_)}};
+      {"gpuWindows",qint64(gpuWindows_)},{"cpuWindows",qint64(cpuWindows_)},
+      {"mklFrames",qint64(mklFrames_)},
+      {"mklDetail",QString::fromStdString(mkl_.detail()).left(1024)}};
   if (gpu_) {
     const auto& m = gpu_->metrics();
     result["metrics"] = QJsonObject{{"setupMs",m.setupMs},{"planMs",m.planMs},
@@ -758,7 +760,7 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
                         ComponentEncoding::Float32
                     ? "dBFS/Hz"
                     : "dB(unit^2/Hz)";
-  if (gpu_ && readGpuFrame(frame,error,cancel)) {
+  if (!suppressGpuFrame_ && gpu_ && readGpuFrame(frame,error,cancel)) {
     if (!sourceCurrent(error)) return false;
     ++gpuFrames_;
     target = std::move(frame);
@@ -782,7 +784,14 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
     }
     DetectionProfileScope fftProfile(profiling_,"window-fft-power");
     for (std::size_t i = 0; i < work.size(); ++i) work[i] *= hann_[i];
-    if (!transform(work, cancel)) {
+    if (hostMklFrame_) {
+      std::string why;
+      if (!mkl_.forward(work.data(), static_cast<std::uint32_t>(work.size()), why)) {
+        error = QString::fromStdString(why);
+        return false;
+      }
+      ++mklFrames_;
+    } else if (!transform(work, cancel)) {
       error = "检测 FFT 已取消";
       return false;
     }
@@ -857,6 +866,21 @@ bool FixedDetectionSource::readModelWindow(
   const auto values =
       std::size_t{plan_.config.fftSize} * plan_.actualWindowFrames;
   window.densityDb.reserve(values);
+  std::string mklError;
+  const bool hostCandidate = plan_.config.useHostMkl && plan_.transformBins >= 2048 &&
+                             std::has_single_bit(plan_.transformBins);
+  const bool hostMkl = hostCandidate && mkl_.prepare(plan_.transformBins, mklError);
+  if (hostCandidate && !hostMkl) gpuFallback_ = mklError;
+  const bool previousSuppress = suppressGpuFrame_;
+  const bool previousHost = hostMklFrame_;
+  // A missing oneMKL DLL stays on the handwritten transform. It does not
+  // upload the window frame by frame to recover a GPU STFT.
+  suppressGpuFrame_ = hostCandidate;
+  hostMklFrame_ = hostMkl;
+  const auto restoreHost = qScopeGuard([&] {
+    suppressGpuFrame_ = previousSuppress;
+    hostMklFrame_ = previousHost;
+  });
   double mean = 0, squareDeviation = 0;
   std::uint64_t count = 0;
   for (std::uint32_t row = 0; row < plan_.actualWindowFrames; ++row) {

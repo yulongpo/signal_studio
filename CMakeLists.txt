@@ -88,6 +88,7 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/annotation_store.cpp
     infrastructure/detection_source.cpp
     infrastructure/gpu_dsp.cpp
+    infrastructure/mkl_dft.cpp
     infrastructure/detection_sample_stream.cpp
     infrastructure/detection_sample_stream_scratch.cpp
     infrastructure/detection_sample_stream_scratch_recovery.cpp

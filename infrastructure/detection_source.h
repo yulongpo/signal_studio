@@ -10,6 +10,7 @@
 #include "infrastructure/raw_sample_reader.h"
 #include "infrastructure/detection_profiling.h"
 #include "infrastructure/gpu_dsp.h"
+#include "infrastructure/mkl_dft.h"
 
 namespace signalstudio {
 using DetectionSourceCancel = std::function<bool()>;
@@ -27,6 +28,9 @@ struct DetectionSourceConfig {
   std::uint64_t workingSetBudgetBytes = 256 * 1024 * 1024;
   std::uint64_t evidenceBudgetBytes = 32 * 1024 * 1024;
   std::uint32_t maximumCandidates = 512;
+  // Host-resident windows use oneMKL when the runtime is present. GPU upload
+  // of those same frames measured slower than the host transform.
+  bool useHostMkl = true;
 };
 
 struct DetectionFftSupport {
@@ -155,6 +159,10 @@ class FixedDetectionSource {
   gpu_dsp::Capabilities gpuCapabilities_;
   std::string gpuFallback_;
   std::uint64_t gpuFrames_ = 0, gpuWindows_ = 0, cpuFrames_ = 0, cpuWindows_ = 0;
+  std::uint64_t mklFrames_ = 0;
+  bool suppressGpuFrame_ = false;
+  bool hostMklFrame_ = false;
+  MklDft mkl_;
   // Last member: destroyed before the stable cancellation state it references.
   std::unique_ptr<gpu_dsp::Session> gpu_;
 };

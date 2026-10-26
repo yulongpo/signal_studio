@@ -102,20 +102,25 @@ class DetectionSourceTests : public QObject {
     });
     auto config=fixtureConfig(static_cast<std::uint32_t>(bins));
     config.inputAdaptationVersion=2;config.hopSeconds=.00025;
-    FixedDetectionSource cpu,gpu;QString error;
+    config.useHostMkl=false;
+    FixedDetectionSource cpu,host;QString error;
     QVERIFY2(cpu.open(metadata,physicalRequest(metadata),config,error),qPrintable(error));
-    config.preferGpu=true;
-    QVERIFY2(gpu.open(metadata,physicalRequest(metadata),config,error),qPrintable(error));
-    if(!gpu.gpuProfiling()["ready"].toBool()) {
-      const auto reason=QJsonDocument(gpu.gpuProfiling()).toJson(QJsonDocument::Compact);
-      if(qEnvironmentVariableIntValue("SS_REQUIRE_GPU_DSP")) QFAIL(reason.constData());
-      QSKIP(reason.constData());
-    }
+    config.useHostMkl=true;
+    const auto mkl = sourceRoot().filePath(
+        "out/toolchains/fft-libs/conda/Library/bin/mkl_rt.3.dll");
+    if (qEnvironmentVariableIsEmpty("SS_MKL_DLL") && QFileInfo::exists(mkl))
+      qputenv("SS_MKL_DLL", QFile::encodeName(mkl));
+    QVERIFY2(host.open(metadata,physicalRequest(metadata),config,error),qPrintable(error));
     double dbError=0,tensorError=0;
     for(const auto index:{std::uint64_t{0},cpu.plan().eligibleWindowCount-1}) {
       DetectionModelWindow expected,actual;
       QVERIFY2(cpu.readModelWindow(index,expected,error),qPrintable(error));
-      QVERIFY2(gpu.readModelWindow(index,actual,error),qPrintable(error));
+      QVERIFY2(host.readModelWindow(index,actual,error),qPrintable(error));
+      if (host.gpuProfiling()["mklFrames"].toInteger() == 0) {
+        const auto reason=QJsonDocument(host.gpuProfiling()).toJson(QJsonDocument::Compact);
+        if(qEnvironmentVariableIntValue("SS_REQUIRE_MKL")) QFAIL(reason.constData());
+        QSKIP(reason.constData());
+      }
       QCOMPARE(actual.densityDb.size(),expected.densityDb.size());
       QCOMPARE(actual.frames.size(),expected.frames.size());
       QCOMPARE(actual.epsilonGuardApplied,expected.epsilonGuardApplied);
@@ -130,12 +135,32 @@ class DetectionSourceTests : public QObject {
         tensorError=std::max(tensorError,std::abs(double(actual.normalizedTensor[i])-expected.normalizedTensor[i]));
       }
     }
-    qInfo() << "cuFFT/CUB versus unchanged CPU reference" << bins << dbError << tensorError
-            << QJsonDocument(gpu.gpuProfiling()).toJson(QJsonDocument::Compact);
+    qInfo() << "oneMKL versus handwritten CPU reference" << bins << dbError << tensorError
+            << QJsonDocument(host.gpuProfiling()).toJson(QJsonDocument::Compact);
     QVERIFY(dbError<3.8e-5); QVERIFY(tensorError<5e-6);
-    const auto profile=gpu.gpuProfiling();
-    QVERIFY(profile["gpuFrames"].toInteger()>0);QCOMPARE(profile["cpuFrames"].toInteger(),qint64{0});
-    QCOMPARE(profile["gpuWindows"].toInteger(),qint64{2});QCOMPARE(profile["cpuWindows"].toInteger(),qint64{0});
+    const auto profile=host.gpuProfiling();
+    QVERIFY(profile["mklFrames"].toInteger()>0);
+    QCOMPARE(profile["gpuFrames"].toInteger(),qint64{0});
+  }
+  void hostMklMissingStaysHandwritten() {
+    qunsetenv("SS_MKL_DLL");
+    QTemporaryDir directory;
+    auto metadata=source(directory,20000000,80000,[](std::uint64_t i) {
+      const double phase=2*std::numbers::pi*.01*double(i);
+      return std::complex<float>{float(std::cos(phase)),float(std::sin(phase))};
+    });
+    auto config=fixtureConfig(4096);
+    config.inputAdaptationVersion=2;config.hopSeconds=.00025;
+    config.useHostMkl=true;config.preferGpu=true;
+    FixedDetectionSource provider;QString error;
+    QVERIFY2(provider.open(metadata,physicalRequest(metadata),config,error),qPrintable(error));
+    DetectionModelWindow window;
+    QVERIFY2(provider.readModelWindow(0,window,error),qPrintable(error));
+    const auto profile=provider.gpuProfiling();
+    QCOMPARE(profile["mklFrames"].toInteger(),qint64{0});
+    QCOMPARE(profile["gpuFrames"].toInteger(),qint64{0});
+    QVERIFY(profile["cpuFrames"].toInteger()>0);
+    QVERIFY(!window.densityDb.empty());
   }
   void adaptiveShortRoiTailAndIrregularGrid() {
     QTemporaryDir directory;
