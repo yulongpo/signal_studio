@@ -1,0 +1,11 @@
+{
+  "baseline": "out\\tasks\\ux-r6\\diagnostics\\r6-2-baseline-sample-002\\run-01\\native",
+  "after": "out\\tasks\\ux-r6\\diagnostics\\r6-3-real-sample-fir-retry-cpu-01\\run-01\\native",
+  "windowsCompared": 15,
+  "sameWindows": true,
+  "tensorHashEqual": true,
+  "frameInputHashesEqual": true,
+  "newHashesComputed": false,
+  "sameObjectCount": true,
+  "observationGeometryEqual": true
+}

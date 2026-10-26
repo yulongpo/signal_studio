@@ -22,6 +22,7 @@ enum class DetectionLifecycle {
 };
 enum class DetectionSourceValidity { Current, Missing, Changed, Unsupported };
 enum class DetectionTimeStrategy { Sample, Roi, Coarse, None };
+enum class DetectionSampleEnergyMode { LegacyExact, Auto, StreamingFir };
 enum class DetectionCoverageKind {
   Read,
   Eligible,
@@ -77,6 +78,10 @@ struct DetectionRequest {
   // user analysis grid from the backend tensor grid.
   std::uint32_t inputAdaptationVersion = 2;
   DetectionSpectrumMode spectrumMode = DetectionSpectrumMode::ModelDefault;
+  DetectionSampleEnergyMode sampleEnergyMode = DetectionSampleEnergyMode::Auto;
+  bool gpuDspPreferred = true;
+  // Independent bounded temporary DSP storage, reclaimed before publication.
+  std::uint64_t sampleScratchBudgetBytes = 16ULL * 1024 * 1024 * 1024;
   std::string runId;
   std::optional<std::string> parentRunId;
   SourceIdentity sourceIdentity;

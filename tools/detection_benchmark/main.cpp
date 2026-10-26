@@ -73,6 +73,9 @@ int main(int argc, char** argv) {
       {"hop","Override frame interval in seconds","seconds"},
       {"limit-seconds","Restrict the requested range duration","seconds"},
       {"raw-head-budget-mib","Explicit independent raw-head disk quota; zero means legacy combined","MiB"},
+      {"sample-energy-mode","Override sample numerical route: auto/legacy/stream","name"},
+      {"dsp-compute","GPU preferred or CPU reference: gpu/cpu","name"},
+      {"sample-scratch-budget-mib","Bounded temporary DSP file quota (0..32768)","MiB"},
       {"labels","Trusted ordinary label file for fixed physical IoU metrics","path"},
       {"cancel-windows","Cancel after at least this many durable windows","count"},
       {"timeout","Cancel at this wall-clock deadline","seconds","900"}});
@@ -83,6 +86,7 @@ int main(int argc, char** argv) {
       {"binary",QCoreApplication::applicationFilePath()},
       {"startedUtc",QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)}};
   QString root;
+  bool outputReady=false;
   QElapsedTimer timer;
   timer.start();
   try {
@@ -92,6 +96,7 @@ int main(int argc, char** argv) {
     require(!directory.exists() || directory.entryList(QDir::AllEntries|QDir::NoDotAndDotDot).isEmpty(),
         "Output must be new or empty; evidence cannot be overwritten");
     require(directory.mkpath("."),"Cannot create benchmark output");
+    outputReady=true;
     QFile input(args.value("request"));
     require(input.open(QIODevice::ReadOnly) && input.size() <= 8*1024*1024,"Cannot read bounded request JSON");
     QJsonParseError parse;
@@ -120,6 +125,22 @@ int main(int argc, char** argv) {
       const auto mib=args.value("raw-head-budget-mib").toULongLong(&valid);
       require(valid && mib<=2048,"Raw-head quota must be 0..2048 MiB");
       request.rawHeadBudgetBytes=mib*1024*1024;
+    }
+    if(args.isSet("dsp-compute")) {
+      const auto compute = args.value("dsp-compute");
+      require(compute=="gpu" || compute=="cpu","Invalid DSP compute backend");
+      request.gpuDspPreferred = compute=="gpu";
+    }
+    if(args.isSet("sample-energy-mode")) {
+      const auto mode=args.value("sample-energy-mode");
+      require(mode=="auto" || mode=="legacy" || mode=="stream","Unknown Sample energy mode");
+      request.sampleEnergyMode=mode=="auto" ? DetectionSampleEnergyMode::Auto
+          : mode=="stream" ? DetectionSampleEnergyMode::StreamingFir : DetectionSampleEnergyMode::LegacyExact;
+    }
+    if(args.isSet("sample-scratch-budget-mib")) {
+      bool valid=false;const auto mib=args.value("sample-scratch-budget-mib").toULongLong(&valid);
+      require(valid && mib<=32768,"Sample temporary quota must be 0..32768 MiB");
+      request.sampleScratchBudgetBytes=mib*1024*1024;
     }
     if (args.isSet("limit-seconds")) {
       const double seconds = args.value("limit-seconds").toDouble();
@@ -191,6 +212,10 @@ int main(int argc, char** argv) {
     const bool available=manager.takePublication(request.runId,publication);
     report["run"]=encodeDetectionRun(terminal);
     report["publicationAvailable"]=available;
+    report["formalCommitPerformed"]=false;
+    report["publicationKind"]=terminal.lifecycle==DetectionLifecycle::Completed
+        ? "completed candidate for the formal transaction; headless tool does not edit a project"
+        : "durable prefix only; failure/cancellation cannot replace committed project results";
     report["annotationCount"]=double(publication.annotations.size());
     std::size_t segments=0;
     for(const auto& annotation:publication.annotations) segments+=annotation.segments.size();
@@ -213,7 +238,7 @@ int main(int argc, char** argv) {
     return report["pass"].toBool() ? 0 : 1;
   } catch(const std::exception& error) {
     report["error"]=QString::fromUtf8(error.what());report["elapsedMs"]=double(timer.elapsed());
-    if(!root.isEmpty()) save(QDir(root).filePath("measurement.json"),report);
+    if(outputReady) save(QDir(root).filePath("measurement.json"),report);
     std::cerr<<error.what()<<'\n';return 1;
   }
 }

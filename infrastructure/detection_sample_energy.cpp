@@ -176,10 +176,26 @@ bool detectionComplexTransform(std::span<Complex> samples, bool inverse,
   return true;
 }
 
+bool detectionBoundedRadixTwoTransform(std::vector<Complex>& samples,bool inverse,
+    std::uint64_t budget,QString& error,const DetectionSourceCancel& cancel) {
+  const auto size=samples.size();
+  if(!size || size>(1U<<20) || (size&(size-1)) ||
+      static_cast<long double>(size)*sizeof(Complex)+65536>budget) {
+    error="Bounded radix-two FFT length or working budget is invalid";return false;
+  }
+  for(const auto value:samples)
+    if(!std::isfinite(value.real()) || !std::isfinite(value.imag())) {
+      error="Bounded radix-two FFT input is not finite";return false;
+    }
+  if(stopped(cancel,error)) return false;
+  return radixTwo(samples,inverse,error,cancel);
+}
+
 bool detectionBandEnergy(std::vector<Complex> samples, double rate,
                          double center, double bandwidth,
                          std::vector<float>& output, std::uint64_t budget,
-                         QString& error, const DetectionSourceCancel& cancel) {
+                         QString& error, const DetectionSourceCancel& cancel,
+                         const DetectionFilteredSampleObserver& filteredObserver) {
   if (!std::isfinite(rate) || rate <= 0 || !std::isfinite(center) ||
       !std::isfinite(bandwidth) || bandwidth <= 0 || bandwidth > rate ||
       static_cast<long double>(samples.size()) *
@@ -213,6 +229,15 @@ bool detectionBandEnergy(std::vector<Complex> samples, double rate,
   }
   if (!detectionComplexTransform(samples, true, budget, error, cancel))
     return false;
+  if (filteredObserver) {
+    for (std::size_t first = 0; first < samples.size();) {
+      if (stopped(cancel, error)) return false;
+      const auto count = std::min<std::size_t>(131072, samples.size() - first);
+      if (!filteredObserver(first, std::span<const Complex>(samples).subspan(first, count), error))
+        return false;
+      first += count;
+    }
+  }
   std::vector<float> power(samples.size());
   for (std::size_t i = 0; i < samples.size(); ++i) {
     if ((i & 4095U) == 0 && stopped(cancel, error)) return false;

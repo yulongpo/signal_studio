@@ -134,12 +134,13 @@ std::vector<IndexRun> fineRuns(const std::vector<bool>& mask, std::size_t minOn,
   return runs;
 }
 
-void publishSegment(DetectionRefinementResult& result,
+bool publishSegment(DetectionRefinementResult& result,
                     const DetectionRefinementInput& input, ViewRange range,
                     TimeQuality timeQuality, FrequencyQuality frequencyQuality,
-                    SampleIndex uncertainty) {
+                    SampleIndex uncertainty,std::size_t maximum) {
   const auto clipped = intersect(range, input.publishBounds);
-  if (!validView(clipped)) return;
+  if (!validView(clipped)) return true;
+  if(result.activity.size()>=maximum) return false;
   Segment segment;
   segment.id =
       input.candidateId + "/activity/" + std::to_string(result.activity.size());
@@ -149,6 +150,7 @@ void publishSegment(DetectionRefinementResult& result,
   segment.uncertaintySamples = uncertainty;
   segment.clippedAtRoi = clipped != range;
   result.activity.push_back(std::move(segment));
+  return true;
 }
 
 DetectionRefinementResult invalidRefinement(DetectionRefinementResult result,
@@ -530,7 +532,8 @@ DetectionRefinementResult refineDetection(
       !std::isfinite(input.sampleRateHz) || input.sampleRateHz <= 0 ||
       !finiteIn(input.windowCoverage, 0, 1) || !options.workingCellBudget ||
       options.workingCellBudget > 256 * 1024 * 1024 ||
-      input.fallbackActivity.size() > annotationSegmentBudget)
+      options.maximumActivitySegments > annotationSegmentBudget ||
+      input.fallbackActivity.size() > options.maximumActivitySegments)
     return invalidRefinement(std::move(result),
                              "Invalid refinement input or bounds");
   for (const auto& segment : input.fallbackActivity)
@@ -676,9 +679,10 @@ DetectionRefinementResult refineDetection(
       const auto end = run.end == energy.power.size()
                            ? energy.supportEndSample
                            : energy.originSample + run.end * energy.stepSamples;
-      publishSegment(result, input, {{begin, end}, input.observation.frequency},
+      if(!publishSegment(result, input, {{begin, end}, input.observation.frequency},
                      TimeQuality::AlgorithmEstimated,
-                     FrequencyQuality::ModelEstimated, uncertainty);
+                     FrequencyQuality::ModelEstimated, uncertainty,options.maximumActivitySegments))
+        return invalidRefinement(std::move(result),"Activity output exceeds working budget");
     }
     if (result.activity.empty())
       return fallback(std::move(result), input,
@@ -871,14 +875,15 @@ DetectionRefinementResult refineDetection(
   for (const auto run : runs) {
     const auto first = crop.firstTime + run.begin;
     const auto last = crop.firstTime + run.end - 1;
-    publishSegment(
+    if(!publishSegment(
         result, input,
         {{spectrum.timeSlots[first].begin, spectrum.timeSlots[last].end},
          outputFrequency},
         TimeQuality::AlgorithmEstimated,
         result.method == RefineMethod::Roi ? FrequencyQuality::Refined
                                            : FrequencyQuality::ModelEstimated,
-        uncertainty);
+        uncertainty,options.maximumActivitySegments))
+      return invalidRefinement(std::move(result),"Activity output exceeds working budget");
   }
   if (result.activity.empty())
     return fallback(std::move(result), input,

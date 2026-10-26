@@ -314,12 +314,35 @@ void physicalEnergy() {
   require(output == std::vector<float>{23}, "Cancelled energy changed output");
 }
 }  // namespace
+void boundedPowerOfTwoBackend() {
+  for(const std::size_t size:{1U,2U,8U,64U,1024U,8192U,65536U}) {
+    std::vector<std::complex<float>> source(size);
+    for(std::size_t i=0;i<size;++i) source[i]={float(std::cos(2*std::numbers::pi*7*i/size)),
+        float(.3*std::sin(2*std::numbers::pi*13*i/size))};
+    auto exact=source,fast=source;QString error;
+    require(detectionComplexTransform(exact,false,8*1024*1024,error),"Legacy power-of-two reference failed");
+    require(detectionBoundedRadixTwoTransform(fast,false,8*1024*1024,error),"Bounded radix-two forward failed");
+    for(std::size_t i=0;i<size;++i)
+      require(std::abs(fast[i]-exact[i])/size<=2e-6,"New FIR FFT differs from native reference beyond normalized tolerance");
+    require(detectionBoundedRadixTwoTransform(fast,true,8*1024*1024,error),"Bounded radix-two inverse failed");
+    for(std::size_t i=0;i<size;++i)
+      require(std::abs(fast[i]-source[i])<=3e-6,"Bounded radix-two roundtrip failed");
+  }
+  std::vector<std::complex<float>> values(3,{1,2});const auto original=values;QString error;
+  require(!detectionBoundedRadixTwoTransform(values,false,8*1024*1024,error) && values==original,
+      "Non-power-of-two FIR plan must reject without changing input");
+  values.resize(2);const auto before=values;
+  require(!detectionBoundedRadixTwoTransform(values,false,1,error) && values==before,"FFT budget rejection changed input");
+  require(!detectionBoundedRadixTwoTransform(values,false,8*1024*1024,error,[]{return true;}) && values==before,
+      "Pre-cancelled FFT changed input");
+}
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   try {
     if (argc > 1) return fileParity(app.arguments());
     arbitraryTransform();
     physicalEnergy();
+    boundedPowerOfTwoBackend();
     std::cout << "Exact-length sample FFT/energy checks passed\n";
     return 0;
   } catch (const std::exception& error) {

@@ -2,6 +2,12 @@
 
 实施顺序为真实P0基线/修复 → 分阶段计时 → 流式Sample差分 → Engine能力内Batch → 有界轨迹事件 → 临时预览UI → 多场景性能/质量/原生 → 精确HEAD独立审核/发布。具体阶段状态见 EXECUTION_STATUS。
 
+## 2026-10-27 用户执行调整：GPU优先
+
+用户明确要求“为了最大程度上加速，所有运算优先使用GPU计算，除非开销不够”。本轮检测数值流水线据此调整：优先验证CUDA/cuFFT的FFT、频移、滤波、功率、密度/归一化及适合批量执行的统计；不再沿用原计划的CPU流式优先假设。现有CPU测量保留为同数据对照。小工作量或传输/启动成本超过收益、依赖/设备不支持、未满足精度合同的路径须保留明确CPU回退理由与实际计数。
+
+LegacyExact继续作为冻结数值对照。源STFT保持complex128/float64运算语义，FIR保持complex64/float32及既定误差、拓扑和精度回退门槛；模型权重及FP32精度保持。GPU显示、TensorRT推理、CUDA DSP分别记录，不能相互替代证据。新GPU模块动态可选加载，缺少运行库不应阻止既有Qt工作流启动。工程事务、来源完整性和有界队列合同继续有效。
+
 ## 数据与提交边界
 
 `RawSampleReader → FixedDetectionSource → isolated TensorRT worker → decode/tracker → frequency/refine/fuse → durable completed publication → UX-R5正式事务`。
@@ -29,3 +35,10 @@ Domain的可选`DetectionRun.performanceJson`上限64KiB，持久化仍用run v2
 FFSCN实际CUDA事件在同一stream记录H2D/enqueue/D2H四个边界，沿用原有最终同步；SCN逐项enqueue分别计数，不能混作物理batch。固定64个event容量覆盖最大16次物理调用，事件失败显式报错，不填估算GPU时间。Windows分别采样父/worker的CPU时间、RSS/峰值RSS/private bytes，nvidia-smi仅作为整卡聚合补充。正常完成先关闭worker stdin并等正常退出，取消及超时仍终止所属进程；观察到的exitCode/status与调用方主动终止分开记录。
 
 质量测量复用现有标签可信解析器，以物理RF/sample坐标裁剪到冻结请求。频率IoU0.3、事件时间IoU0.5先固定；最大基数二分匹配，不用预测反推真值或重复匹配同一标签。配对数量/内存封顶，超限明确unavailable，不截短结果；未知时间观察不加入事件集合。大样本坐标先做uint64差再转double，避免边界误差计算丢失单样本差。
+
+
+## 用户最新实现约束（2026-10-27）
+
+“所有运算优先使用GPU计算，除非开销不够”与“尽可能地不要自己造轮子”。据此将检测数值主路径改为可选 CUDA Runtime/cuFFT/CUB 模块，Qt 只做薄动态加载和现有数据语义适配。复用既有读取、Qt SHA、任务、持久化与精度回退；CPU 黄金算法保留。取消未发布的自建 Driver/PTX 框架草稿；不得用仅显示GPU或逻辑batch冒充实际GPU DSP。
+
+模块通过小型POD C ABI与Qt隔离，CUDA编译器及运行库在本机显式配置，普通C++20/Qt构建不依赖CUDA SDK。缺依赖、资源预算、精度或小任务开销触发明确CPU回退。DSP CUDA计时/字节/FFT执行与模型TensorRT、QRhi显示分别记录。当前接入仍待数值与真实样本验收，不代表可发布。

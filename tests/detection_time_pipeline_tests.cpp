@@ -331,7 +331,7 @@ void measuredFallbackKeepsBranchParameterScope() {
                                  8 * 1024 * 1024, publication, error),
           error);
     check(applyDetectionTimeAnalysis(source, metadata, request, {track},
-                                     publication, error),
+                                     publication, error,{}, {},directory.filePath("sample-scratch")),
           error);
     check(request.parameters == stored,
           "Physical fallback cannot alter stored parameters");
@@ -369,6 +369,40 @@ void measuredFallbackKeepsBranchParameterScope() {
               fallback["parameterPolicy"].toString().contains("fixed-default"),
           "Saved fallback evidence must name the actual fixed policy");
   }
+
+  // Freeze the same physical Sample candidate and inactive Coarse controls.
+  // A numerical route/resource fallback still needs a separately measured
+  // Coarse result; neither a FIR diagnostic nor nominal support is activity.
+  std::vector<Segment> legacyFallback;
+  for(const auto mode:{DetectionSampleEnergyMode::LegacyExact,DetectionSampleEnergyMode::Auto,
+      DetectionSampleEnergyMode::StreamingFir}) {
+    request.sampleEnergyMode=mode;
+    const auto annotation=apply(DetectionTimeStrategy::Sample,.050);
+    if(mode==DetectionSampleEnergyMode::LegacyExact) legacyFallback=annotation.segments;
+    check(annotation.segments==legacyFallback && annotation.originEvidence->refineStatus==RefineStatus::Fallback,
+        "Sample route must preserve the actual measured fallback for this short-run fixture");
+    const auto bounded=QJsonDocument::fromJson(QByteArray::fromStdString(annotation.originEvidence->originalFieldsJson))
+        .object()["timeAnalysis"].toObject()["boundedSample"].toObject();
+    if(mode!=DetectionSampleEnergyMode::LegacyExact)
+      check(bounded["requestedMode"].toInt(-1)==static_cast<int>(mode) &&
+          !bounded["nativeEnvelopeEstablished"].toBool(),
+          "Versioned Sample route must retain its actual numerical scope instead of claiming universal equivalence");
+  }
+  request.sampleScratchBudgetBytes=0;
+  const auto noScratch=apply(DetectionTimeStrategy::Sample,.050);
+  check(noScratch.segments==legacyFallback && noScratch.originEvidence->refineStatus==RefineStatus::Fallback,
+      "Zero temporary quota must keep a real measured fallback instead of fabricating fine activity");
+  request.sampleScratchBudgetBytes=16ULL*1024*1024*1024;
+  DetectionPublication cancelledPublication;
+  check(projectFrequencyTracks(request,empty.sourceSet,{track},8*1024*1024,cancelledPublication,error),error);
+  const auto beforeCancellation=encodeDetectionPublication(cancelledPublication);
+  int cancellationChecks=0;
+  check(!applyDetectionTimeAnalysis(source,metadata,request,{track},cancelledPublication,error,
+      [&]{return ++cancellationChecks>20;},{},directory.filePath("sample-scratch")) &&
+      encodeDetectionPublication(cancelledPublication)==beforeCancellation,
+      "Cancelled bounded Sample must leave the caller's complete publication unchanged");
+  check(QDir(directory.filePath("sample-scratch")).entryList(QDir::Dirs|QDir::Files|QDir::NoDotAndDotDot).isEmpty(),
+      "Sample scratch files must be reclaimed after success, quota fallback and cancellation");
 
   // A silent physical source must preserve both failed measurements without
   // publishing the nominal model support as an activity segment.
@@ -419,6 +453,36 @@ void measuredFallbackKeepsBranchParameterScope() {
   }
 }
 
+void spectrumCapacityMatchesActualConsumer() {
+  QTemporaryDir directory;
+  const auto path=directory.filePath("large-spectrum-shape.raw");
+  QFile file(path);check(file.open(QIODevice::WriteOnly),file.errorString());
+  const QByteArray silence(800000*4,'\0');check(file.write(silence)==silence.size(),file.errorString());file.close();
+  FileMetadata metadata;metadata.id="spectrum-budget";metadata.path=path.toStdString();
+  metadata.sampleRateHz=20e6;metadata.centerFrequencyHz=2.5e9;metadata.sampleCount=800000;metadata.demo=false;
+  metadata.availability.fingerprint=iqSourceFingerprint(path).toStdString();
+  DetectionRequest request;request.runId="spectrum-budget-run";
+  request.profile=*findDetectionProfile("pipeline-fixture-v1");
+  request.sourceIdentity=annotationSourceIdentity(metadata,943);
+  request.requestedRange=request.contextRange={{0,800000},{2.49e9,2.51e9}};
+  request.workingSetBudgetBytes=32*1024*1024;request.parameters.timeStrategy=DetectionTimeStrategy::Roi;
+  FixedDetectionSource source;DetectionSourceConfig config;config.profileId="fixed-grid-fixture-v1";
+  QString error;check(source.open(metadata,request.requestedRange,config,error,943),error);
+  DetectionRun run;run.request=request;DetectionPublication empty,publication;
+  check(recoverDetectionPublication(directory.path(),run,empty,error),error);
+  FrequencyTrack track;track.seedId="large-spectrum-budget";track.runId=request.runId;track.fileId=metadata.id;
+  track.frequency=track.originalFrequency=request.requestedRange.frequency;track.nominalSupport=track.actualSupport={0,800000};
+  check(projectFrequencyTracks(request,empty.sourceSet,{track},8*1024*1024,publication,error),error);
+  check(applyDetectionTimeAnalysis(source,metadata,request,{track},publication,error),
+      "A valid admitted spectrum must not later fail Sample's unrelated three-vector cell budget: "+error);
+  const auto time=QJsonDocument::fromJson(QByteArray::fromStdString(publication.annotations.front().originEvidence->originalFieldsJson))
+      .object()["timeAnalysis"].toObject();
+  const auto cells=time["stftInputCells"].toString().toULongLong();
+  check(cells>request.workingSetBudgetBytes*3/4/12 &&
+      time["stftWorkingCellBudget"].toString().toULongLong()>=cells && time["roiTimeThreshold"].isDouble(),
+      "The regression must exercise and measure a physical ROI larger than the old mismatched cell limit");
+  check(publication.annotations.front().segments.empty(),"Zero IQ must not acquire nominal-support activity");
+}
 void runFile(const QString& wav, const QString& output, const QString& strategy,
              bool shortProfile) {
   const auto started = std::chrono::steady_clock::now();
@@ -553,6 +617,7 @@ int main(int argc, char** argv) {
     else {
       refinementPublicationRoundtrip();
       measuredFallbackKeepsBranchParameterScope();
+      spectrumCapacityMatchesActualConsumer();
     }
     std::cout << "Time pipeline checks passed\n";
     return 0;

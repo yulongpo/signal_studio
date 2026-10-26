@@ -612,6 +612,12 @@ QJsonObject encodeDetectionRequest(const DetectionRequest& r) {
     value["spectrumMode"] = static_cast<int>(r.spectrumMode);
   if (r.rawHeadBudgetBytes)
     value["rawHeadBudgetBytes"] = decimal(r.rawHeadBudgetBytes);
+  if (r.gpuDspPreferred) value["gpuDspPreferred"] = true;
+  if(r.sampleEnergyMode!=DetectionSampleEnergyMode::LegacyExact ||
+      r.sampleScratchBudgetBytes!=16ULL*1024*1024*1024) {
+    value["sampleEnergyMode"]=static_cast<int>(r.sampleEnergyMode);
+    value["sampleScratchBudgetBytes"]=decimal(r.sampleScratchBudgetBytes);
+  }
   return value;
 }
 bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
@@ -621,7 +627,8 @@ bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
                  "profile", "parameters", "requestedRange", "contextRange",
                  "rangeOrigin", "sourceAnnotationId", "sourceRevisionId",
                  "modelManifestPath", "modelSha256", "workingSetBudgetBytes",
-                 "evidenceBudgetBytes", "spectrumMode", "rawHeadBudgetBytes"});
+                 "evidenceBudgetBytes", "spectrumMode", "rawHeadBudgetBytes",
+                 "sampleEnergyMode", "sampleScratchBudgetBytes", "gpuDspPreferred"});
     require(o["schemaVersion"] == 1 || o["schemaVersion"] == 2,
             "Unsupported detection request version");
     DetectionRequest r;
@@ -671,6 +678,14 @@ bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
         integer(o["evidenceBudgetBytes"], "evidenceBudgetBytes");
     r.rawHeadBudgetBytes = o.contains("rawHeadBudgetBytes")
         ? integer(o["rawHeadBudgetBytes"], "rawHeadBudgetBytes") : 0;
+    r.sampleEnergyMode=o.contains("sampleEnergyMode")
+        ? static_cast<DetectionSampleEnergyMode>(smallInteger(o,"sampleEnergyMode",2))
+        : DetectionSampleEnergyMode::LegacyExact;
+    require(!o.contains("gpuDspPreferred") || o["gpuDspPreferred"].isBool(),
+            "Invalid GPU DSP preference");
+    r.gpuDspPreferred = o["gpuDspPreferred"].toBool(false);
+    r.sampleScratchBudgetBytes=o.contains("sampleScratchBudgetBytes")
+        ? integer(o["sampleScratchBudgetBytes"],"sampleScratchBudgetBytes") : 16ULL*1024*1024*1024;
     validateRequest(r);
     return r;
   });

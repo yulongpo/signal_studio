@@ -81,6 +81,62 @@ double integratedPower(const DetectionSpectrumFrame& frame) {
 class DetectionSourceTests : public QObject {
   Q_OBJECT
  private slots:
+  void optionalGpuGolden_data() {
+    QTest::addColumn<int>("bins"); QTest::addColumn<bool>("zero");
+    QTest::newRow("production-65536") << 65536 << false;
+    QTest::newRow("irregular-3001") << 3001 << false;
+    QTest::newRow("zero-floor-4096") << 4096 << true;
+  }
+  void optionalGpuGolden() {
+    QFETCH(int,bins); QFETCH(bool,zero);
+    QTemporaryDir directory;
+    auto metadata=source(directory,20000000,400000,[zero](std::uint64_t i) {
+      if(zero) return std::complex<float>{};
+      auto bits=i+0x9e3779b97f4a7c15ULL;
+      bits=(bits^(bits>>30))*0xbf58476d1ce4e5b9ULL;
+      bits=(bits^(bits>>27))*0x94d049bb133111ebULL;
+      bits^=bits>>31;
+      const double phase=2*std::numbers::pi*.137*double(i);
+      return std::complex<float>{float(.6*std::cos(phase)+double(bits&65535)/65535-.5),
+          float(.6*std::sin(phase)+double((bits>>16)&65535)/65535-.5)};
+    });
+    auto config=fixtureConfig(static_cast<std::uint32_t>(bins));
+    config.inputAdaptationVersion=2;config.hopSeconds=.00025;
+    FixedDetectionSource cpu,gpu;QString error;
+    QVERIFY2(cpu.open(metadata,physicalRequest(metadata),config,error),qPrintable(error));
+    config.preferGpu=true;
+    QVERIFY2(gpu.open(metadata,physicalRequest(metadata),config,error),qPrintable(error));
+    if(!gpu.gpuProfiling()["ready"].toBool()) {
+      const auto reason=QJsonDocument(gpu.gpuProfiling()).toJson(QJsonDocument::Compact);
+      if(qEnvironmentVariableIntValue("SS_REQUIRE_GPU_DSP")) QFAIL(reason.constData());
+      QSKIP(reason.constData());
+    }
+    double dbError=0,tensorError=0;
+    for(const auto index:{std::uint64_t{0},cpu.plan().eligibleWindowCount-1}) {
+      DetectionModelWindow expected,actual;
+      QVERIFY2(cpu.readModelWindow(index,expected,error),qPrintable(error));
+      QVERIFY2(gpu.readModelWindow(index,actual,error),qPrintable(error));
+      QCOMPARE(actual.densityDb.size(),expected.densityDb.size());
+      QCOMPARE(actual.frames.size(),expected.frames.size());
+      QCOMPARE(actual.epsilonGuardApplied,expected.epsilonGuardApplied);
+      for(std::size_t row=0;row<actual.frames.size();++row) {
+        QCOMPARE(actual.frames[row].inputHash,expected.frames[row].inputHash);
+        QCOMPARE(actual.frames[row].fftSupports,expected.frames[row].fftSupports);
+        QCOMPARE(actual.frames[row].powerFloorBins,expected.frames[row].powerFloorBins);
+        QCOMPARE(actual.frames[row].densityUnderflowGuardBins,expected.frames[row].densityUnderflowGuardBins);
+      }
+      for(std::size_t i=0;i<actual.densityDb.size();++i) {
+        dbError=std::max(dbError,std::abs(double(actual.densityDb[i])-expected.densityDb[i]));
+        tensorError=std::max(tensorError,std::abs(double(actual.normalizedTensor[i])-expected.normalizedTensor[i]));
+      }
+    }
+    qInfo() << "cuFFT/CUB versus unchanged CPU reference" << bins << dbError << tensorError
+            << QJsonDocument(gpu.gpuProfiling()).toJson(QJsonDocument::Compact);
+    QVERIFY(dbError<3.8e-5); QVERIFY(tensorError<5e-6);
+    const auto profile=gpu.gpuProfiling();
+    QVERIFY(profile["gpuFrames"].toInteger()>0);QCOMPARE(profile["cpuFrames"].toInteger(),qint64{0});
+    QCOMPARE(profile["gpuWindows"].toInteger(),qint64{2});QCOMPARE(profile["cpuWindows"].toInteger(),qint64{0});
+  }
   void adaptiveShortRoiTailAndIrregularGrid() {
     QTemporaryDir directory;
     auto metadata = source(directory, 100000, 17, [](std::uint64_t) {

@@ -557,6 +557,42 @@ void boundedPerformanceRoundtrip() {
   malformed["performance"]=QJsonObject{{"schema","signal-studio-detection-profile-v1"},{"oversized",QString(65536,'x')}};
   check(!decodeDetectionRun(malformed,restored,error),"Performance metadata must remain bounded");
 }
+void sampleNumericalRouteCompatibility() {
+  QTemporaryDir directory;
+  auto run=fixture(directory.path(),"sample-numerical-route");
+  QString error;
+  for(const auto mode:{DetectionSampleEnergyMode::LegacyExact,DetectionSampleEnergyMode::Auto,DetectionSampleEnergyMode::StreamingFir}) {
+    run.request.sampleEnergyMode=mode;run.request.sampleScratchBudgetBytes=1024*1024;
+    DetectionRun restored;
+    check(decodeDetectionRun(encodeDetectionRun(run),restored,error) &&
+        restored.request.sampleEnergyMode==mode && restored.request.sampleScratchBudgetBytes==1024*1024,
+        "Frozen numerical route and explicit scratch quota must survive roundtrip: "+error);
+  }
+  auto old=encodeDetectionRun(run);auto request=old["request"].toObject();
+  request.remove("sampleEnergyMode");request.remove("sampleScratchBudgetBytes");
+  request.remove("gpuDspPreferred");old["request"]=request;
+  DetectionRun restored;
+  check(decodeDetectionRun(old,restored,error) && restored.request.sampleEnergyMode==DetectionSampleEnergyMode::LegacyExact && !restored.request.gpuDspPreferred,
+      "Historical runs must retain LegacyExact instead of silently adopting a new numerical method");
+  const auto unchanged=encodeDetectionRun(restored);
+    auto gpuRequest=request;
+    gpuRequest["gpuDspPreferred"]=true;
+    old["request"]=gpuRequest;
+    check(decodeDetectionRun(old,restored,error) && restored.request.gpuDspPreferred,
+        "Explicit GPU preference must survive request persistence");
+    gpuRequest["gpuDspPreferred"]="yes";old["request"]=gpuRequest;
+    const auto gpuUnchanged=encodeDetectionRun(restored);
+    check(!decodeDetectionRun(old,restored,error) && encodeDetectionRun(restored)==gpuUnchanged,
+        "Malformed GPU preference must not partially replace run state");
+    restored={};
+    old["request"]=request;
+    check(decodeDetectionRun(old,restored,error),"Restore legacy numerical request");
+  request["sampleEnergyMode"]=3;old["request"]=request;
+  check(!decodeDetectionRun(old,restored,error) && encodeDetectionRun(restored)==unchanged,
+      "Invalid numerical mode must not partially replace frozen run");
+  request["sampleEnergyMode"]=1;request["sampleScratchBudgetBytes"]="34359738369";old["request"]=request;
+  check(!decodeDetectionRun(old,restored,error),"Sample disk quota must remain bounded at 32 GiB");
+}
 void accumulatedReadsAndStreamingBudget() {
   QTemporaryDir directory;
   auto run = fixture(directory.path(), "streaming-budget");
@@ -599,6 +635,7 @@ int main(int argc, char** argv) {
     adaptedHeadsSurviveReopen();
     independentRawHeadBudgetsAndLegacyCompatibility();
     boundedPerformanceRoundtrip();
+    sampleNumericalRouteCompatibility();
     accumulatedReadsAndStreamingBudget();
     std::cout << "Detection store boundary tests passed\n";
     return 0;

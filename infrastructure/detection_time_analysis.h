@@ -12,6 +12,7 @@ bool applyDetectionTimeAnalysis(
     FixedDetectionSource&, const FileMetadata&, const DetectionRequest&,
     const std::vector<FrequencyTrack>&, DetectionPublication&, QString& error,
     const DetectionSourceCancel& cancelled = {},
-    const std::function<void(std::size_t, std::size_t)>& progress = {});
+    const std::function<void(std::size_t, std::size_t)>& progress = {},
+    const QString& privateScratchRoot = {});
 
 }  // namespace signalstudio

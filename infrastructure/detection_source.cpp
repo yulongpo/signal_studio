@@ -1,12 +1,16 @@
 #include "infrastructure/detection_source.h"
 
 #include <QCryptographicHash>
+#include <QCoreApplication>
+#include <QDir>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QtEndian>
+#include <QScopeGuard>
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cmath>
 #include <limits>
@@ -112,7 +116,7 @@ void validateSource(const FileMetadata& source, ViewRange request,
                 descriptor.format == source.sampleFormat,
             "检测源 WAV 的 Fs 或格式与容器冲突");
   }
-  const bool opened = reader.open(path, source.sampleFormat, error);
+  const bool opened = reader.open(path, source.sampleFormat, error,RawSampleReader::Access::Sequential);
   require(opened, error);
   require(reader.sampleCount() == source.sampleCount,
           "检测源物理样本数与元数据不一致");
@@ -319,10 +323,18 @@ bool transform(std::vector<std::complex<double>>& values,
   }
   return true;
 }
-void hashFloat(QCryptographicHash& hash, float value) {
-  char bytes[4];
-  qToLittleEndian(std::bit_cast<quint32>(value), bytes);
-  hash.addData(QByteArrayView(bytes, 4));
+void hashFloatBlock(QCryptographicHash& hash,std::span<const float> values) {
+  static_assert(sizeof(float)==4 && std::numeric_limits<float>::is_iec559);
+#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+  hash.addData(QByteArrayView(reinterpret_cast<const char*>(values.data()),qsizetype(values.size_bytes())));
+#else
+  std::array<char,16384> bytes{};
+  for(std::size_t first=0;first<values.size();) {
+    const auto count=std::min<std::size_t>(bytes.size()/4,values.size()-first);
+    for(std::size_t i=0;i<count;++i) qToLittleEndian(std::bit_cast<quint32>(values[first+i]),bytes.data()+i*4);
+    hash.addData(QByteArrayView(bytes.data(),qsizetype(count*4)));first+=count;
+  }
+#endif
 }
 void hashSupport(QCryptographicHash& hash, const DetectionFftSupport& support) {
   const auto bytes =
@@ -342,13 +354,14 @@ double inputScale(const SampleFormat& format) {
   normalized.normalizeIntegerAdc = true;
   return 1 / adcScale(normalized);
 }
+template<class Scalar>
 bool readTransformInput(RawSampleReader& reader,
                         const DetectionFftSupport& support,
                         const DetectionSourcePlan& plan,
-                        std::vector<std::complex<double>>& work,
+                        std::vector<std::complex<Scalar>>& work,
                         QCryptographicHash& hash, QString& error,
                         const DetectionSourceCancel& cancel) {
-  std::fill(work.begin(), work.end(), std::complex<double>{});
+  std::fill(work.begin(), work.end(), std::complex<Scalar>{});
   hashSupport(hash, support);
   const auto chunkSamples = std::min<std::uint64_t>(
       4194304, plan.config.readBlockBytes /
@@ -373,9 +386,10 @@ bool readTransformInput(RawSampleReader& reader,
       const float real = static_cast<float>(decoded[i].real() * scale);
       const float imaginary = static_cast<float>(decoded[i].imag() * scale);
       work[static_cast<std::size_t>(offset) + i] = {real, imaginary};
-      hashFloat(hash, real);
-      hashFloat(hash, imaginary);
+      decoded[i]={real,imaginary};
     }
+    // std::complex<float> guarantees interleaved array-oriented scalar access.
+    hashFloatBlock(hash,{reinterpret_cast<const float*>(decoded.data()),decoded.size()*2});
     first = end;
   }
   return true;
@@ -590,6 +604,11 @@ bool FixedDetectionSource::open(const FileMetadata& source, ViewRange requested,
                                 DetectionSourceConfig config, QString& error,
                                 std::uint64_t generation) {
   reader_.reset();
+  gpu_.reset();
+  gpuCancel_ = {};
+  gpuCapabilities_ = {};
+  gpuFallback_.clear();
+  gpuFrames_ = gpuWindows_ = cpuFrames_ = cpuWindows_ = 0;
   plan_ = {};
   profiling_ = DetectionProfiler{};
   try {
@@ -607,6 +626,19 @@ bool FixedDetectionSource::open(const FileMetadata& source, ViewRange requested,
       hann_[i] = .5 - .5 * std::cos(2 * std::numbers::pi * i / hann_.size());
       hannEnergy_ += hann_[i] * hann_[i];
     }
+    if (plan_.config.preferGpu) {
+      const QDir deployed(QCoreApplication::applicationDirPath());
+      gpu_dsp::Config gpuConfig;
+      gpuConfig.moduleLibrary = deployed.filePath("SignalStudioGpuDspCuda.dll").toStdString();
+      gpuConfig.cufftLibrary = deployed.filePath("cufft64_11.dll").toStdString();
+      const auto jit = deployed.filePath("nvJitLink_120_0.dll");
+      if (QFileInfo::exists(jit)) gpuConfig.nvJitLinkLibrary = jit.toStdString();
+      gpuConfig.limits.hostBytes = std::min<std::uint64_t>(64ULL<<20,plan_.config.workingSetBudgetBytes/4);
+      gpuConfig.cancelled = [this] { return gpuCancel_ && gpuCancel_(); };
+      gpu_dsp::Error gpuError;
+      gpu_ = gpu_dsp::Session::create(gpuConfig,gpuCapabilities_,gpuError);
+      if (!gpu_) gpuFallback_ = gpuError.stage + ": " + gpuError.detail;
+    } else gpuFallback_ = "CPU reference explicitly requested";
     error.clear();
     return true;
   } catch (const std::exception& exception) {
@@ -630,6 +662,84 @@ bool FixedDetectionSource::sourceCurrent(QString& error) const {
   }
   return true;
 }
+QJsonObject FixedDetectionSource::gpuProfiling() const {
+  QJsonObject result{{"preferred",plan_.config.preferGpu},
+      {"ready",bool(gpu_)},{"device",QString::fromStdString(gpuCapabilities_.deviceName)},
+      {"fallbackReason",QString::fromStdString(gpuFallback_).left(1024)},
+      {"gpuFrames",qint64(gpuFrames_)},{"cpuFrames",qint64(cpuFrames_)},
+      {"gpuWindows",qint64(gpuWindows_)},{"cpuWindows",qint64(cpuWindows_)}};
+  if (gpu_) {
+    const auto& m = gpu_->metrics();
+    result["metrics"] = QJsonObject{{"setupMs",m.setupMs},{"planMs",m.planMs},
+        {"h2dMs",m.h2dMs},{"fftMs",m.fftMs},{"kernelsMs",m.kernelsMs},
+        {"d2hMs",m.d2hMs},{"hostMs",m.totalHostMs},
+        {"h2dBytes",qint64(m.h2dBytes)},{"d2hBytes",qint64(m.d2hBytes)},
+        {"fftExecutions",qint64(m.fftExecutions)},
+        {"pointwiseKernelLaunches",qint64(m.kernelLaunches)},
+        {"sdkAlgorithmCalls",qint64(m.libraryAlgorithmCalls)},
+        {"devicePeakBytes",qint64(m.devicePeakBytes)},
+        {"workspaceBytes",qint64(m.workspaceBytes)},
+        {"pinnedBytes",qint64(m.pinnedBytes)},
+        {"timingMeaning",QString::fromStdString(m.timingMeaning)}};
+  }
+  return result;
+}
+bool FixedDetectionSource::withGpu(const DetectionSourceCancel& cancel,
+    const std::function<bool(gpu_dsp::Session*)>& operation) {
+  auto previous = std::move(gpuCancel_);
+  gpuCancel_ = cancel;
+  const auto restore = qScopeGuard([this,&previous] { gpuCancel_ = std::move(previous); });
+  return operation(gpu_.get());
+}
+bool FixedDetectionSource::readGpuFrame(DetectionSpectrumFrame& frame,
+    QString& error,const DetectionSourceCancel& cancel) {
+  const auto records = frame.mapping.fftSupports.size();
+  const auto elements = std::uint64_t(plan_.transformBins)*records;
+  // Tiny transforms cannot amortize upload/launch overhead. Preserve the exact
+  // existing CPU path and explicitly record why it was selected.
+  if (plan_.transformBins < 2048 || !records || elements > 8ULL*1024*1024 ||
+      plan_.estimatedPeakBytes > plan_.config.workingSetBudgetBytes ||
+      (elements+plan_.transformBins)*sizeof(std::complex<float>) >
+          plan_.config.workingSetBudgetBytes-plan_.estimatedPeakBytes) {
+    gpuFallback_ = "STFT size below GPU threshold or packed input exceeds working grant";
+    return false;
+  }
+  gpuCancel_ = cancel;
+  const auto clearCancel = qScopeGuard([this] { gpuCancel_ = {}; });
+  std::vector<std::complex<float>> packed;
+  packed.reserve(static_cast<std::size_t>(elements));
+  std::vector<std::complex<float>> work(plan_.transformBins);
+  QCryptographicHash hash(QCryptographicHash::Sha256);
+  hash.addData(QByteArray::fromStdString(sampleFormatKey(plan_.sourceIdentity.sampleFormat)));
+  for (const auto& support : frame.mapping.fftSupports) {
+    DetectionProfileScope reading(profiling_,"iq-read-and-input-hash");
+    if (!readTransformInput(*reader_,support,plan_,work,hash,error,cancel)) {
+      gpuFallback_ = "GPU input read failed: " + error.toStdString();
+      return false;
+    }
+    packed.insert(packed.end(),work.begin(),work.end());
+  }
+  gpu_dsp::StftInput input;
+  input.records = packed; input.hann = hann_;
+  input.transformBins = plan_.transformBins;
+  input.recordCount = static_cast<std::uint32_t>(records);
+  input.outputBins = plan_.config.fftSize;
+  input.sampleRateHz = plan_.sourceIdentity.sampleRateHz;
+  input.hannEnergy = hannEnergy_; input.recordDivisor = double(records);
+  std::vector<float> density(plan_.config.fftSize);
+  gpu_dsp::StftSummary summary;
+  gpu_dsp::Error failure;
+  DetectionProfileScope gpuProfile(profiling_,"gpu-stft");
+  if (!gpu_->stft(input,density,summary,failure)) {
+    gpuFallback_ = failure.stage + ": " + failure.detail;
+    return false;
+  }
+  frame.densityDb = std::move(density);
+  frame.mapping.powerFloorBins = summary.powerFloorBins;
+  frame.mapping.densityUnderflowGuardBins = summary.densityUnderflowGuardBins;
+  frame.mapping.inputHash = hash.result().toHex().toStdString();
+  error.clear(); return true;
+}
 bool FixedDetectionSource::readFrame(std::uint64_t index,
                                      DetectionSpectrumFrame& target,
                                      QString& error,
@@ -648,6 +758,17 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
                         ComponentEncoding::Float32
                     ? "dBFS/Hz"
                     : "dB(unit^2/Hz)";
+  if (gpu_ && readGpuFrame(frame,error,cancel)) {
+    if (!sourceCurrent(error)) return false;
+    ++gpuFrames_;
+    target = std::move(frame);
+    return true;
+  }
+  if (cancelled(cancel)) { error = "检测源计算已取消"; return false; }
+  // GPU output is unpublished on failure. Re-read the same physical support
+  // through the existing CPU reference, preserving hash and mapping semantics.
+  frame.mapping = frameMapping(index);
+  ++cpuFrames_;
   std::vector<std::complex<double>> work(plan_.transformBins);
   std::vector<double> power(plan_.transformBins, 0);
   QCryptographicHash inputHash(QCryptographicHash::Sha256);
@@ -743,11 +864,6 @@ bool FixedDetectionSource::readModelWindow(
     if (!readFrame(window.firstFrameIndex + row, frame, error, cancel))
       return false;
     DetectionProfileScope normalizeProfile(profiling_,"window-statistics");
-    for (const float value : frame.densityDb) {
-      const double deviation = value - mean;
-      mean += deviation / ++count;
-      squareDeviation += deviation * (value - mean);
-    }
     window.densityDb.insert(window.densityDb.end(), frame.densityDb.begin(),
                             frame.densityDb.end());
     window.densityUnderflowGuardApplied |=
@@ -755,22 +871,49 @@ bool FixedDetectionSource::readModelWindow(
     window.floorGuardApplied |= frame.mapping.powerFloorBins != 0;
     window.frames.push_back(std::move(frame.mapping));
   }
-  window.meanDb = mean;
-  window.sampleStdDb = std::sqrt(std::max(0.0, squareDeviation / (count - 1)));
-  window.normalizationStdDb =
-      std::max(window.sampleStdDb,
-               static_cast<double>(std::numeric_limits<float>::epsilon()));
-  window.epsilonGuardApplied =
-      window.sampleStdDb < std::numeric_limits<float>::epsilon();
-  window.normalizedTensor.reserve(values);
-  DetectionProfileScope normalizeProfile(profiling_,"normalize-and-tensor-hash");
-  QCryptographicHash tensorHash(QCryptographicHash::Sha256);
-  for (const float value : window.densityDb) {
-    const float normalized =
-        static_cast<float>((value - mean) / window.normalizationStdDb);
-    window.normalizedTensor.push_back(normalized);
-    hashFloat(tensorHash, normalized);
+  bool gpuNormalized = false;
+  if (gpu_ && values >= 65536) {
+    gpuCancel_ = cancel;
+    const auto clearCancel = qScopeGuard([this] { gpuCancel_ = {}; });
+    gpu_dsp::NormalizationSummary summary;
+    gpu_dsp::Error failure;
+    std::vector<float> normalized(values);
+    DetectionProfileScope gpuProfile(profiling_,"gpu-normalize");
+    if (gpu_->normalize(window.densityDb,normalized,summary,failure)) {
+      window.normalizedTensor = std::move(normalized);
+      window.meanDb = summary.mean;
+      window.sampleStdDb = summary.sampleStd;
+      window.normalizationStdDb = summary.normalizationStd;
+      window.epsilonGuardApplied = summary.epsilonGuardApplied;
+      gpuNormalized = true;
+      ++gpuWindows_;
+    } else gpuFallback_ = failure.stage + ": " + failure.detail;
   }
+  if (!gpuNormalized) {
+    if (cancelled(cancel)) { error = "检测模型输入计算已取消"; return false; }
+    ++cpuWindows_;
+    for (const float value : window.densityDb) {
+      const double deviation = value - mean;
+      mean += deviation / ++count;
+      squareDeviation += deviation * (value - mean);
+    }
+    window.meanDb = mean;
+    window.sampleStdDb = std::sqrt(std::max(0.0, squareDeviation / (count - 1)));
+    window.normalizationStdDb =
+        std::max(window.sampleStdDb,
+                 static_cast<double>(std::numeric_limits<float>::epsilon()));
+    window.epsilonGuardApplied =
+        window.sampleStdDb < std::numeric_limits<float>::epsilon();
+    window.normalizedTensor.reserve(values);
+    DetectionProfileScope normalizeProfile(profiling_,"normalize-and-tensor-hash");
+    for (const float value : window.densityDb) {
+      const float normalized =
+          static_cast<float>((value - mean) / window.normalizationStdDb);
+      window.normalizedTensor.push_back(normalized);
+    }
+  }
+  QCryptographicHash tensorHash(QCryptographicHash::Sha256);
+  hashFloatBlock(tensorHash,window.normalizedTensor);
   window.tensorHash = tensorHash.result().toHex().toStdString();
   window.actualContextRange = {window.frames.front().actualSamples.begin,
                                window.frames.back().actualSamples.end};

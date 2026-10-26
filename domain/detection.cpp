@@ -136,6 +136,9 @@ bool detectionTransitionAllowed(DetectionLifecycle from,
          to == DetectionLifecycle::Cancelled;
 }
 DetectionValidation validateDetectionRequest(const DetectionRequest& request) {
+  if(static_cast<int>(request.sampleEnergyMode)<0 || static_cast<int>(request.sampleEnergyMode)>2 ||
+      request.sampleScratchBudgetBytes>32ULL*1024*1024*1024)
+    return {false,"Invalid sample energy mode or bounded temporary storage quota"};
   const auto* profile = findDetectionProfile(request.profile.id);
   if (!profile || request.profile.version != profile->version ||
       request.profile.backend != profile->backend ||

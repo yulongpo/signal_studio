@@ -581,6 +581,16 @@ void windowScoresUseUniqueMaximumPerWindow() {
 
 }  // namespace
 
+void activityGrantRejectsAtomically() {
+  auto input=energyInput();turnOn(input,5,30);turnOn(input,40,65);
+  const auto parameters=fineParameters();
+  const auto original=refineDetection(input,parameters);
+  check(original.ok && original.activity.size()==2,"Output quota fixture must have two sustained activities");
+  DetectionRefinementOptions options;options.maximumActivitySegments=1;
+  const auto bounded=refineDetection(input,parameters,options);
+  check(!bounded.ok && bounded.activity.empty() && bounded.error=="Activity output exceeds working budget",
+      "Result grant must reject rather than allocate/truncate a partially visible activity list");
+}
 int main() {
   try {
     fineFilteringPrecedesGapMerging();
@@ -600,7 +610,8 @@ int main() {
     filesNeverCrossMatchAndFailuresRemainDenominator();
     evaluatorValidationAndSplitMergeTopology();
     windowScoresUseUniqueMaximumPerWindow();
-    std::cout << "Detection refinement tests: 17 groups passed\n";
+    activityGrantRejectsAtomically();
+    std::cout << "Detection refinement tests: 18 groups passed\n";
     return 0;
   } catch (const std::exception& exception) {
     std::cerr << exception.what() << '\n';

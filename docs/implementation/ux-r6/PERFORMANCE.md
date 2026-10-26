@@ -33,3 +33,26 @@ ROI各次实际CUDA stream区间合计512.90–518.68ms；Sample为510.38–516.
 首轮诊断的12.204s ROI：worker-start2836.9ms、模型窗读取1051.8ms、append/chunk/manifest720.4ms、checkpoint460.6ms、frequency622.3ms、time-refinement4528.2ms。源共计算1030帧，IQ读取/输入hash3396.3ms、FFT/power1370.2ms、density393.4ms；源、host和GPU区间存在嵌套，不能相加凑成总时长。数据指向重复源频谱计算及持久化读取成本，尚未实现或预签缓存、批次和分块收益。
 
 原始launcher、measurement、progress和GPU CSV在 `out/tasks/ux-r6/diagnostics/r6-2-baseline-{roi,sample}-002/`；归档见本节点evidence。CUDA event是流上的时间区间，不等于独占kernel活跃时间；worker CPU采样在退出前，未计析构末尾工作。
+
+## 完整0.8s的失败定位数据
+
+`r6-2-baseline-roi-full`实际处理639/639模型窗、320次物理enqueue，在ROI精修23/44候选因谱cell容量不一致失败；总1730925ms。GPU stream25181.8ms，读取模型窗47044.7ms、frequency24236.7ms、time-refinement108181.1ms；append-chunk/manifest981598.4ms和checkpoint490231.3ms合计约85%的总时长，说明重复校验历史前缀是优先处理的成本。具体阶段包含验证、JSON处理和CPU hash，不能把它全部称磁盘等待。没有以提高GPU batch就能解决整体耗时的证据。
+
+该长运行与后半段定向构建/测试有并发，且终态Failed，只作根因/资源归因与完整输入覆盖证据；不加入任何Completed p50/p95，也不作为提速分母。原始终态、进度、GPU采样及并发说明均保留。后续修正需以完整新运行实际闭合，前缀观察不可当成功结果。
+
+
+## R6-3 CPU 对照与实际采样率资源记录（GPU 接入之前）
+
+以下为本轮真实执行；数据来自 stateless 合成 IQ callback，不包含模型推理、真实 WAV 文件读取、Coarse 回退或 UI。原始报告、进程资源采样和 launcher 已归档至 `evidence/r6-3/r6-3-cpu-*`。CPU 既有算法保留为数值及性能对照；按用户 2026-10-27 新指令，后续主路径优先使用成熟 GPU SDK，不继续扩展自写 FFT/归约/排序。
+
+20MS/s、0.1s bursts、每配置独立进程 n=3：LegacyExact 为1156/1147/1185ms，p50=1156ms、线性插值p95=1182.1ms，峰值RSS最大37,257,216B；CPU FIR v2 为576/580/553ms，p50=576ms、p95=579.6ms，峰值RSS最大18,984,960B。两模式活动区间指标F1=1。此前 generic FFT 的单次FIR2903ms、Legacy1146ms同样保留，不能把弃用实现的失败测量丢弃。
+
+| 实际20MS/s长度 | continuous FIR(ms) | bursts FIR(ms) | 结论 |
+|---|---:|---:|---|
+| 1s / 20M样本 | 4655 | 4887 | 各n=1 |
+| 10s / 200M样本 | 47354 | 48587 | 各n=1 |
+| 60s / 1.2B样本 | 276945 | 291941 | 各n=1；scratch约9.6GB；峰值RSS不超过19,025,920B |
+
+bursts 各长度活动F1=1且通过局部精度门禁；continuous 各长度触发原有 burst/noise ratio 回退，`publicationEligible=false`，不能计为连续活动定位成功。该表仅证明实际Fs下有界执行/清理；Legacy在96MiB grant下1/10/60s均明确ResourceLimited（raw pass=false），没有完成耗时，不作为加速比分母。OS文件缓存不计入进程RSS，资源CSV保留VAS采样；不是现场RF或GPU证据。
+
+原 WAV .02s Auto 完成15/15、10对象/10活动段，几何与R6-2冻结Legacy一致。第一次显式FIR因缺少完整Legacy精度重试，仅6活动段、事件F1=.75，是质量失败，保留在 `evidence/r6-3/r6-3-real-sample-fir-short`。修复后补测和GPU精度/性能尚未完成时，不将其列为通过。

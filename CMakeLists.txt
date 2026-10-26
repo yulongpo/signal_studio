@@ -8,6 +8,8 @@ set(CMAKE_AUTOMOC ON)
 
 option(SS_BUILD_TESTS "Build the state, persistence, and Qt UI tests" ON)
 option(SS_DEPLOY_RUNTIME "Deploy the Qt runtime next to the Windows executable" ON)
+set(SS_GPU_DSP_RUNTIME_ROOT "$ENV{SS_GPU_DSP_RUNTIME_ROOT}" CACHE PATH
+    "Optional flat CUDA DSP module/cuFFT runtime staging directory")
 set(SS_QT_ROOT "$ENV{SS_QT_ROOT}" CACHE PATH "Qt 6.11 installation root")
 if(SS_QT_ROOT)
     list(PREPEND CMAKE_PREFIX_PATH "${SS_QT_ROOT}")
@@ -85,6 +87,10 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/annotation_migration.cpp
     infrastructure/annotation_store.cpp
     infrastructure/detection_source.cpp
+    infrastructure/gpu_dsp.cpp
+    infrastructure/detection_sample_stream.cpp
+    infrastructure/detection_sample_stream_scratch.cpp
+    infrastructure/detection_sample_stream_scratch_recovery.cpp
     infrastructure/detection_protocol.cpp
     infrastructure/detection_store.cpp
     infrastructure/detection_task.cpp
@@ -131,6 +137,10 @@ endif()
 # Headless production-pipeline measurements, with isolated output roots. This
 # does not replace native QWidget/QRhi acceptance or model-quality evaluation.
 add_executable(SignalStudioDetectionBenchmark tools/detection_benchmark/main.cpp)
+add_executable(SignalStudioSampleRefinementBenchmark tools/sample_refinement_benchmark/main.cpp)
+set_target_properties(SignalStudioSampleRefinementBenchmark PROPERTIES AUTOMOC OFF)
+ss_target_defaults(SignalStudioSampleRefinementBenchmark)
+target_link_libraries(SignalStudioSampleRefinementBenchmark PRIVATE SignalStudioInfrastructure)
 set_target_properties(SignalStudioDetectionBenchmark PROPERTIES AUTOMOC OFF)
 ss_target_defaults(SignalStudioDetectionBenchmark)
 target_link_libraries(SignalStudioDetectionBenchmark PRIVATE SignalStudioInfrastructure)
@@ -225,6 +235,18 @@ if(WIN32 AND SS_DEPLOY_RUNTIME)
         COMMENT "Deploying Qt and compiler runtime to the standalone output directory"
         VERBATIM
     )
+    if(SS_GPU_DSP_RUNTIME_ROOT)
+        foreach(_ss_gpu_dll IN ITEMS SignalStudioGpuDspCuda.dll cufft64_11.dll nvJitLink_120_0.dll)
+            if(NOT EXISTS "${SS_GPU_DSP_RUNTIME_ROOT}/${_ss_gpu_dll}")
+                message(FATAL_ERROR "Incomplete optional GPU DSP runtime: ${_ss_gpu_dll}")
+            endif()
+            add_custom_command(TARGET SignalStudio POST_BUILD
+                COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                    "${SS_GPU_DSP_RUNTIME_ROOT}/${_ss_gpu_dll}"
+                    "$<TARGET_FILE_DIR:SignalStudio>/${_ss_gpu_dll}"
+                VERBATIM)
+        endforeach()
+    endif()
 endif()
 
 if(SS_BUILD_TESTS)
@@ -258,6 +280,18 @@ if(SS_BUILD_TESTS)
     set_target_properties(SignalStudioDetectionSampleEnergyTests PROPERTIES AUTOMOC OFF)
     target_link_libraries(SignalStudioDetectionSampleEnergyTests PRIVATE SignalStudioInfrastructure)
     add_test(NAME signal_studio_detection_sample_energy COMMAND SignalStudioDetectionSampleEnergyTests)
+    add_executable(SignalStudioDetectionSampleStreamTests tests/detection_sample_stream_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionSampleStreamTests)
+    set_target_properties(SignalStudioDetectionSampleStreamTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionSampleStreamTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_sample_stream COMMAND SignalStudioDetectionSampleStreamTests --golden --long --run-budget)
+    set_tests_properties(signal_studio_detection_sample_stream PROPERTIES TIMEOUT 180)
+    add_executable(SignalStudioDetectionSampleRecoveryTests tests/detection_sample_stream_recovery_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionSampleRecoveryTests)
+    set_target_properties(SignalStudioDetectionSampleRecoveryTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionSampleRecoveryTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_sample_recovery COMMAND SignalStudioDetectionSampleRecoveryTests)
+    set_tests_properties(signal_studio_detection_sample_recovery PROPERTIES TIMEOUT 60 SKIP_RETURN_CODE 77)
     add_executable(SignalStudioDetectionPipelineTests tests/detection_pipeline_tests.cpp)
     ss_target_defaults(SignalStudioDetectionPipelineTests)
     set_target_properties(SignalStudioDetectionPipelineTests PROPERTIES AUTOMOC OFF)

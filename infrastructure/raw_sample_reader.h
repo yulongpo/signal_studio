@@ -10,10 +10,12 @@ bool describeRawFile(const QString& path,const SampleFormat& format,double fs,do
 // Read-only address mapping has no file-sized heap copy. Each decoded read is bounded.
 class RawSampleReader {
 public:
+    enum class Access { Mapped, Sequential };
     ~RawSampleReader();
-    bool open(const QString&,const SampleFormat&,QString&);
+    bool open(const QString&,const SampleFormat&,QString&,Access=Access::Mapped);
     std::uint64_t sampleCount() const {return count_;}
-    bool isOpen() const {return mapped_!=nullptr;}
+    bool isOpen() const {return file_.isOpen() && (mapped_ || access_==Access::Sequential);}
+    bool isMapped() const {return mapped_!=nullptr;}
     bool sampleAt(std::uint64_t,std::complex<double>&,QString* error=nullptr) const;
     bool read(TimeRange,std::vector<std::complex<float>>&,const std::function<bool()>& cancel={},QString* error=nullptr) const;
 private:
@@ -23,5 +25,6 @@ private:
     uchar* mapped_=nullptr;
     SampleFormat format_;
     std::uint64_t count_=0;
+    Access access_=Access::Mapped;
 };
 }

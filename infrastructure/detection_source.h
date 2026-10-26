@@ -9,11 +9,15 @@
 #include "domain/project.h"
 #include "infrastructure/raw_sample_reader.h"
 #include "infrastructure/detection_profiling.h"
+#include "infrastructure/gpu_dsp.h"
 
 namespace signalstudio {
 using DetectionSourceCancel = std::function<bool()>;
 
 struct DetectionSourceConfig {
+  // Pure source fixtures remain an explicit CPU reference; production requests
+  // enable GPU preference and retain bounded, reported CPU fallback.
+  bool preferGpu = false;
   std::uint32_t inputAdaptationVersion = 1;
   std::string profileId = "ffscn-gui-iq-v1";
   std::uint32_t profileVersion = 1;
@@ -113,10 +117,20 @@ std::uint32_t detectionExecutionBatchSize(const DetectionSourcePlan&,
 // runtime.
 class FixedDetectionSource {
  public:
+  FixedDetectionSource() = default;
+  FixedDetectionSource(const FixedDetectionSource&) = delete;
+  FixedDetectionSource& operator=(const FixedDetectionSource&) = delete;
+  bool withGpu(const DetectionSourceCancel&,
+               const std::function<bool(gpu_dsp::Session*)>&);
   bool open(const FileMetadata&, ViewRange requested, DetectionSourceConfig,
             QString& error, std::uint64_t projectGeneration = 0);
   const DetectionSourcePlan& plan() const { return plan_; }
-  QJsonObject profiling() const { return profiling_.snapshot(); }
+  QJsonObject profiling() const {
+    auto value = profiling_.snapshot();
+    value["gpuDsp"] = gpuProfiling();
+    return value;
+  }
+  QJsonObject gpuProfiling() const;
   bool readFrame(std::uint64_t absoluteFrame, DetectionSpectrumFrame&,
                  QString& error, const DetectionSourceCancel& cancel = {});
   bool readModelWindow(std::uint64_t eligibleWindow, DetectionModelWindow&,
@@ -129,11 +143,19 @@ class FixedDetectionSource {
   DetectionFrameMapping frameMapping(std::uint64_t absoluteFrame) const;
   std::uint64_t windowStart(std::uint64_t eligibleWindow) const;
   bool sourceCurrent(QString& error) const;
+  bool readGpuFrame(DetectionSpectrumFrame&, QString&,
+                    const DetectionSourceCancel&);
   DetectionSourcePlan plan_;
   std::unique_ptr<RawSampleReader> reader_;
   QString path_, fingerprint_;
   std::vector<double> hann_;
   double hannEnergy_ = 0;
   DetectionProfiler profiling_;
+  DetectionSourceCancel gpuCancel_;
+  gpu_dsp::Capabilities gpuCapabilities_;
+  std::string gpuFallback_;
+  std::uint64_t gpuFrames_ = 0, gpuWindows_ = 0, cpuFrames_ = 0, cpuWindows_ = 0;
+  // Last member: destroyed before the stable cancellation state it references.
+  std::unique_ptr<gpu_dsp::Session> gpu_;
 };
 }  // namespace signalstudio

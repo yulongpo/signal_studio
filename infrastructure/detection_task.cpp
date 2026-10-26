@@ -661,6 +661,7 @@ bool DetectionTaskManager::enqueue(const QString& directory,
     return false;
   }
   DetectionSourceConfig config;
+  config.preferGpu = request.gpuDspPreferred;
   config.inputAdaptationVersion = request.inputAdaptationVersion;
   config.profileId = request.profile.id;
   config.profileVersion = request.profile.version;
@@ -969,6 +970,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   }
   FixedDetectionSource source;
   DetectionSourceConfig config;
+  config.preferGpu = request.gpuDspPreferred;
   config.inputAdaptationVersion = request.inputAdaptationVersion;
   config.profileId = request.profile.id;
   config.profileVersion = request.profile.version;
@@ -1293,7 +1295,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     };
     if (!measured("time-refinement",[&] {return applyDetectionTimeAnalysis(source, job->metadata, request, tracks,
                                     publication, error, cancelled,
-                                    refinedProgress);}) ||
+                                    refinedProgress,QDir(job->directory).filePath("sample-scratch"));}) ||
         !projector.attachWindowEvidence(publication, error) ||
         !measured("fuse-publication",[&] {return fuseDetectionPublication(request, publication, error, cancelled);}) ||
         !validateDetectionPublicationBudget(

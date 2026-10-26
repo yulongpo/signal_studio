@@ -6,6 +6,9 @@ param(
   [ValidateSet('sample','roi','coarse','none')][string]$Strategy='roi',
   [ValidateRange(1,16)][int]$Batch=2,
   [ValidateRange(0,2048)][int]$RawHeadBudgetMiB=256,
+  [ValidateSet('request','auto','legacy','stream')][string]$SampleEnergyMode='request',
+  [ValidateRange(-1,32768)][int]$SampleScratchBudgetMiB=-1,
+  [ValidateSet('request','gpu','cpu')][string]$DspCompute='gpu',
   [ValidateRange(1,30)][int]$Repeat=5,
   [double]$LimitSeconds=0,
   [string]$Labels,
@@ -37,6 +40,9 @@ try {
     if($LimitSeconds -gt 0){$arguments+=@('--limit-seconds',$LimitSeconds.ToString('R',[Globalization.CultureInfo]::InvariantCulture))}
     if($Labels){$arguments+=@('--labels',('"{0}"' -f (Get-Item -LiteralPath $Labels).FullName))}
     if($CancelWindows){$arguments+=@('--cancel-windows',"$CancelWindows")}
+    if($DspCompute -ne 'request'){$arguments+=@('--dsp-compute',$DspCompute)}
+    if($SampleEnergyMode -ne 'request'){$arguments+=@('--sample-energy-mode',$SampleEnergyMode)}
+    if($SampleScratchBudgetMiB -ge 0){$arguments+=@('--sample-scratch-budget-mib',"$SampleScratchBudgetMiB")}
     $gpu=$null;$process=$null;$hardTimeout=$false
     $started=[DateTime]::UtcNow.ToString('o')
     try {
@@ -74,6 +80,7 @@ try {
   $env:PATH=$savedPath
   [ordered]@{schema='signal-studio-ux-r6-benchmark-launch-v1';configuration=$Configuration;repeat=$Repeat;
     request=$request;strategy=$Strategy;requestedBatch=$Batch;limitSeconds=$LimitSeconds;labels=$Labels;
+    dspCompute=$DspCompute;sampleEnergyMode=$SampleEnergyMode;sampleScratchBudgetMiB=$SampleScratchBudgetMiB;
     runs=$runs;largeRfbenchExecuted=$false;nativeUiVerified=$false;buildExecuted=$false;
     coldWarmBoundary='fresh isolated worker/model per run; OS caches may be warm; no concurrent benchmark runs'} |
     ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $output 'launcher.json') -Encoding utf8

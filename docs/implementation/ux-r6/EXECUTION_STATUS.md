@@ -4,8 +4,8 @@
 |---|---|
 | R6-0 | 完成：fetch并核对ec511662；原工程两份164/639失败manifest；本轮用户原IQ实际重跑相同失败；BUG02真实Qt/服务/保存重开诊断；Release测量入口构建通过 |
 | R6-1 | 基础修复与定向自检完成：D/R完整构建、各11核心+3生命周期/UX组通过；原IQ ROI/Sample短范围各15/15；原完整请求跨旧断点至200/639后主动取消。完整639同参及所有性能/质量终验仍待R6-7，不计成全量通过 |
-| R6-2 | profiling和重复短基线完成：实际CPU/源/CUDA/worker/持久化计时及固定物理标签匹配；ROI/Sample各5次完成；Debug5组通过，Release先4组后补3组通过。长原请求仍在运行，仅作完成/质量证据；Release最新terminal异常补测及完整全范围归档留待后续，详见VALIDATION |
-| R6-3 | 待实施：流式Sample及LegacyExact差分、0.1/1/10/60s |
+| R6-2 | profiling和重复短基线完成：ROI/Sample各5次完成；Debug5组、Release先4后3组通过。完整原请求已处理639/639窗，但ROI精修23/44因第二处容量不一致Failed；证据归档，未计成功。后续R6-3新构建Task测试已补测Release terminal异常保护 |
+| R6-3 | 实施中：有界CPU FIR/文件平滑/精确radix/状态机初版D/R7组通过；原生13Golden中2个raw反例保留，Auto13/13；20MS/s真实Fs的.1/1/10/60 CPU资源测量完成。FIR专用radix2已实测改善.1s；最新预算/精度回退/崩溃清理仍待最终重建复验。2026-10-27用户改为GPU优先，CUDA/cuFFT backend与接入继续实施，不能称本节点完成 |
 | R6-4 | 待实施：真实Engine batch能力/调度/降级/测量 |
 | R6-5 | 待实施：有界稳定轨迹事件、独立预览通道 |
 | R6-6 | 待实施：Qt增量预览/状态/选择及原生实屏 |

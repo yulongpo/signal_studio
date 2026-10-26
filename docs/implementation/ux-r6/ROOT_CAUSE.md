@@ -31,3 +31,13 @@ BUG02删除的只是 `annotationInContext` 中 `!slot.stale` 条件；其余comm
 本轮用户原IQ重跑：ROI短范围0.02s为15/15、11375ms、10对象/10活动段；Sample同范围为15/15、9472ms、10对象/10活动段。完整原请求另运行到200/639窗口后**主动取消**，179057ms，23个时间未定位前缀观察/0活动段，CLI原始pass=false、Cancelled，未把它算成完整成功。该试验证明跨过旧164预算故障点及取消路径，不证明完整0.8s任务成功。
 
 当前基础修复/定向自检完成，完整639窗口、各策略质量及全部R6性能/原生终验仍须后续实测闭合。任何缩短范围或取消试验均不代替该最终要求。原始失败日志保留，不将部分前缀当成功正式发布。
+
+## R6-2 完整范围发现的后续容量不一致
+
+同一用户原IQ、65536/0.25ms/batch2/ROI完整请求，新独立head配额已允许全部639/639模型窗持久化。之后在`refine`阶段第23/44候选失败，原始错误为`Spectrum ROI shape exceeds the working-cell budget`，总1730925ms，原CLI pass=false、Failed。完整head共125,632,512B（639×196608），并非GPU OOM或再次触发原32MiB combined配额。
+
+真实调用链：`readSpectrum`以float32矩阵`4*cells`加少量辅助空间准入；调用domain `refineDetection`时却沿用Sample的`working/12`格数限制。物理谱矩阵可满足读取层的字节限额，随后仍被domain `validateSpectrum` 拒绝，错误作为整个任务Failed返回。这是容量计算不一致，不能简单放开domain的安全守卫或减少频率/时间格来绕过。
+
+本地修正统一消费方实际内存账本：保留float32完整谱格、物理时间槽/频率边缘、源FFT峰值、固定ROI双线性resize及Coarse行/profile工作余量，计算有界谱cell容量；读取准入与传入domain的容量一致，原工作字节上限和256M-cell硬限继续保持。数值矩阵、插值、阈值和坐标不变；超限在读取前明确给出所需/允许格数，再走已有真实Coarse/Unknown流程。Sample转Coarse前释放已完成的能量向量，避免E与整谱重叠占用。新增定向用例覆盖“旧Sample格数上限不足、实际谱账本容纳”的零IQ物理矩阵，完整原范围复验仍待后续实际执行，不能预记成功。
+
+原失败的durable prefix可供显式恢复，但没有完成候选替换事务，不代表正式结果。证据在 `evidence/r6-3/full-roi-prefallback-failure/`，原工程只读。
