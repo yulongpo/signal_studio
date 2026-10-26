@@ -178,7 +178,7 @@ bool scanRuns(const Context& c,const Runtime& rt,detail::Scratch& files,SampleIn
   evidence(c,p,support,method,out);
   auto& e=out.refinement.evidence;
   double noise=0,burst=0;
-  if (!detail::exactQuantiles(files,c,p,noise,burst,f)) return false;
+  if (!detail::exactQuantiles(files,c,p,noise,burst,f,rt.gpu)) return false;
   e.noise=noise; e.burst=burst;
   const auto markFallback=[&](const char* why) {
     out.refinement.activity.clear(); out.refinement.status=RefineStatus::Fallback;

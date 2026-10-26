@@ -137,6 +137,22 @@ __global__ void ss_cub_normalized(const float* x,float* out,unsigned n,const dou
   unsigned i=blockIdx.x*blockDim.x+threadIdx.x;if(i>=n)return;
   float v=__double2float_rn((double(x[i])-stats[0])/stats[2]);if(!isfinite(v))invalid(bad);out[i]=v;
 }
+__global__ void ss_float_order(const float* x,unsigned* keys,unsigned n,unsigned* bad) {
+  unsigned i=blockIdx.x*blockDim.x+threadIdx.x;if(i>=n)return;
+  if(!isfinite(x[i])){invalid(bad);keys[i]=0;return;}
+  unsigned b=__float_as_uint(x[i]);
+  keys[i]=b&0x80000000U?~b:b^0x80000000U;
+}
+__global__ void ss_order_gather(const unsigned* sorted,const unsigned long long* ranks,float* out,unsigned n,unsigned count,unsigned* bad) {
+  unsigned i=blockIdx.x*blockDim.x+threadIdx.x;if(i>=count)return;
+  unsigned long long rank=ranks[i];
+  if(rank>=n){invalid(bad);return;}
+  unsigned key=sorted[rank];
+  unsigned bits=key&0x80000000U?key^0x80000000U:~key;
+  float value=__uint_as_float(bits);
+  if(!isfinite(value))invalid(bad);
+  out[i]=value;
+}
 __global__ void ss_radix_prefix_samples(const float* x,unsigned* keys,unsigned n,unsigned prefix,unsigned bytes,unsigned* bad) {
   unsigned i=blockIdx.x*blockDim.x+threadIdx.x;if(i>=n)return;
   if(!isfinite(x[i])){invalid(bad);keys[i]=256;return;}
@@ -290,13 +306,24 @@ int histogram(void* state,const float* input,unsigned n,const RadixPrefix* prefi
       s.timed(s.t.kernels,[&]{cudaCheck(cub::DeviceHistogram::HistogramEven(s.temp.ptr,bytes,(unsigned*)s.keys.ptr,(unsigned long long*)s.hist.ptr+lane*257,258,0U,257U,int(n),s.stream),"CUB integer histogram");});++s.t.sdkCalls;}
     s.validate();std::vector<std::uint64_t> counts(lanes*257);s.download(counts.data(),s.hist.ptr,counts.size()*8);s.cancel();for(unsigned lane=0;lane<lanes;++lane)std::memcpy(output+lane*256,counts.data()+lane*257,256*8);});
 }
+int select(void* state,const float* input,unsigned n,const unsigned long long* ranks,unsigned rankCount,float* output,abi::Failure* error)noexcept{
+  return invoke(state,error,[&](State& s){s.shape(n);check(input&&ranks&&output&&rankCount&&rankCount<=4,"select","Invalid order statistics");
+    for(unsigned i=0;i<rankCount;++i)check(ranks[i]<n,"select","Rank out of range");
+    s.host(rankCount*4ULL);s.reserve(s.raw,n*4ULL);s.reserve(s.keys,n*4ULL);s.reserve(s.hist,n*4ULL);s.reserve(s.coeff,rankCount*8ULL);s.reserve(s.out,rankCount*4ULL);
+    s.upload(s.raw,input,n*4ULL);s.upload(s.coeff,ranks,rankCount*8ULL);
+    s.kernel([&]{ss_float_order<<<(n+255)/256,256,0,s.stream>>>((float*)s.raw.ptr,(unsigned*)s.keys.ptr,n,(unsigned*)s.bad.ptr);});
+    size_t bytes=0;cudaCheck(cub::DeviceRadixSort::SortKeys(nullptr,bytes,(unsigned*)s.keys.ptr,(unsigned*)s.hist.ptr,int(n),0,32,s.stream),"CUB sort query");s.reserve(s.temp,bytes);
+    s.timed(s.t.kernels,[&]{cudaCheck(cub::DeviceRadixSort::SortKeys(s.temp.ptr,bytes,(unsigned*)s.keys.ptr,(unsigned*)s.hist.ptr,int(n),0,32,s.stream),"CUB sort");});++s.t.sdkCalls;
+    s.kernel([&]{ss_order_gather<<<1,32,0,s.stream>>>((unsigned*)s.hist.ptr,(unsigned long long*)s.coeff.ptr,(float*)s.out.ptr,n,rankCount,(unsigned*)s.bad.ptr);});
+    s.validate();std::vector<float> picked(rankCount);s.download(picked.data(),s.out.ptr,rankCount*4ULL);s.cancel();std::memcpy(output,picked.data(),rankCount*4ULL);});
+}
 int drain(void* opaque,abi::Failure* error)noexcept{
   auto* s=static_cast<State*>(opaque);
   try{check(s&&s->owner==std::this_thread::get_id(),"drain","Wrong owner thread",ErrorCode::WrongThread);Context current(s->context);cudaCheck(cudaStreamSynchronize(s->stream),"drain");if(error)*error={};return 1;}
   catch(const Problem& e){failure(error,e.code,e.stage,e.what());}catch(...){failure(error,ErrorCode::Driver,"drain","Drain failure");}return 0;
 }
 void telemetry(void* state,abi::Telemetry* out)noexcept{auto* s=static_cast<State*>(state);if(s&&out&&s->owner==std::this_thread::get_id()){*out=s->t;out->sdkTemporaryBytes=s->temp.bytes;}}
-const abi::Api api{abi::version,sizeof(abi::Api),create,destroy,prepare,fir,stft,normalize,histogram,drain,telemetry};
+const abi::Api api{abi::version,sizeof(abi::Api),create,destroy,prepare,fir,stft,normalize,histogram,select,drain,telemetry};
 }
 extern "C" __declspec(dllexport) const signalstudio::gpu_dsp::module_abi::Api* ssGpuDspGetApi(unsigned version)noexcept{
   return version==signalstudio::gpu_dsp::module_abi::version?&api:nullptr;

@@ -31,5 +31,6 @@ class Scratch {
   QString ownedPath_;
 };
 bool exactQuantiles(Scratch&, const Context&, const Plan&,
-                    double& noise, double& burst, Failure&);
+                    double& noise, double& burst, Failure&,
+                    gpu_dsp::Session* gpu = nullptr);
 } // namespace signalstudio::sample_stream::detail

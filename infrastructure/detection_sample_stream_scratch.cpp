@@ -149,7 +149,8 @@ bool Scratch::close(Failure& f) {
 }
 
 bool exactQuantiles(Scratch& files, const Context& c, const Plan& p,
-                    double& noise, double& burst, Failure& f) {
+                    double& noise, double& burst, Failure& f,
+                    gpu_dsp::Session* gpu) {
   struct Target { std::uint64_t rank; std::uint32_t prefix = 0; };
   std::array<Target,4> targets{};
   std::array<double,2> fractions{c.options.sampleNoiseQuantile,c.options.sampleBurstQuantile};
@@ -160,6 +161,34 @@ bool exactQuantiles(Scratch& files, const Context& c, const Plan& p,
     const auto b = static_cast<std::uint64_t>(std::ceil(position));
     targets[2*j].rank = a; targets[2*j+1].rank = b;
     weights[j] = static_cast<float>(position - static_cast<double>(a));
+  }
+  if (gpu && p.count > 0 && p.count <= gpu_dsp::Limits{}.maximumElements &&
+      p.count <= std::numeric_limits<unsigned>::max()) {
+    std::vector<float> values(static_cast<std::size_t>(p.count));
+    std::array<std::uint64_t, 4> ranks{};
+    for (std::size_t i = 0; i < ranks.size(); ++i) ranks[i] = targets[i].rank;
+    for (SampleIndex first = 0; first < p.count;) {
+      const auto count = static_cast<std::size_t>(std::min<SampleIndex>(p.outputBlockSamples, p.count - first));
+      if (!files.read(files.smooth, first, std::span<float>(values).subspan(static_cast<std::size_t>(first), count), f))
+        return false;
+      first += count;
+    }
+    std::array<float, 4> ends{};
+    gpu_dsp::Error gpuError;
+    if (gpu->selectOrderStatistics(values, ranks, ends, gpuError)) {
+      const auto interpolate = [&](std::size_t j) {
+        const float a = ends[2 * j], b = ends[2 * j + 1], w = weights[j];
+        volatile float difference = b - a;
+        if (w < .5f) { volatile float product = difference * w; volatile float v = a + product; return static_cast<double>(v); }
+        volatile float inverse = 1.f - w;
+        volatile float product = difference * inverse;
+        volatile float v = b - product; return static_cast<double>(v);
+      };
+      noise = interpolate(0); burst = interpolate(1);
+      if (!std::isfinite(noise) || !std::isfinite(burst))
+        return fail(f, ErrorCode::Numerical, "radix", "Exact interpolation overflow");
+      return true;
+    }
   }
   std::vector<float> block(p.outputBlockSamples);
   for (const unsigned shift : {24U,16U,8U,0U}) {

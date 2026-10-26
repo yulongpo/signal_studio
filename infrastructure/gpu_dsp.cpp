@@ -128,5 +128,15 @@ bool Session::radixHistogram(std::span<const float> input,std::span<const RadixP
   if(input.size()>std::numeric_limits<unsigned>::max() || prefixes.size()>4 || out.size()!=prefixes.size()*256){error={ErrorCode::InvalidInput,"radix","Shape mismatch"};return false;}
   module_abi::Failure f;const int ok=i.api->histogram(i.session,input.data(),unsigned(input.size()),prefixes.data(),unsigned(prefixes.size()),out.data(),&f);return i.done(ok,f,error);
 }
+bool Session::selectOrderStatistics(std::span<const float> values,std::span<const std::uint64_t> ranks,
+                                    std::span<float> orderStatistics,Error& error) {
+  auto& i=*impl_;if(!i.allowed(error))return false;
+  if(!i.api->select){error={ErrorCode::Unsupported,"select","GPU module has no order-statistic entry"};return false;}
+  if(values.size()>std::numeric_limits<unsigned>::max() || ranks.empty() || ranks.size()>4 || orderStatistics.size()!=ranks.size()){
+    error={ErrorCode::InvalidInput,"select","Shape mismatch"};return false;
+  }
+  module_abi::Failure f;const int ok=i.api->select(i.session,values.data(),unsigned(values.size()),ranks.data(),unsigned(ranks.size()),orderStatistics.data(),&f);
+  return i.done(ok,f,error);
+}
 bool Session::drain(Error& error) {auto& i=*impl_;if(!i.allowed(error))return false;module_abi::Failure f;return i.done(i.api->drain(i.session,&f),f,error);}
 } // namespace signalstudio::gpu_dsp

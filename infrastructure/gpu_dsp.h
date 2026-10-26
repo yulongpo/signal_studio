@@ -124,6 +124,10 @@ class Session final {
   // Finite inputs only. Output layout [prefixes.size(),256].
   bool radixHistogram(std::span<const float>, std::span<const RadixPrefix>,
                       std::span<std::uint64_t> counts, Error&);
+  // Ascending float order statistics. ranks are into the sorted series.
+  // Output values match the host radix conversion. Failure leaves output unchanged.
+  bool selectOrderStatistics(std::span<const float> values, std::span<const std::uint64_t> ranks,
+                             std::span<float> orderStatistics, Error&);
   // Drains in-flight work before staging/device resources can be released.
   // Cancellation is cooperative between bounded launches; no fake preemption.
   bool drain(Error&);
@@ -138,7 +142,7 @@ class Session final {
 
 // Small, versioned module ABI: POD only, no STL ownership crosses DLL boundaries.
 namespace signalstudio::gpu_dsp::module_abi {
-inline constexpr std::uint32_t version = 3;
+inline constexpr std::uint32_t version = 4;
 struct Failure { int code = 0; char stage[96]{}; char detail[2048]{}; };
 struct Options {
   Limits limits;
@@ -168,6 +172,7 @@ struct Api {
   int (*stft)(void*,const Stft*,float*,StftSummary*,Failure*) = nullptr;
   int (*normalize)(void*,const float*,std::uint32_t,float*,double*,Failure*) = nullptr;
   int (*histogram)(void*,const float*,std::uint32_t,const RadixPrefix*,std::uint32_t,std::uint64_t*,Failure*) = nullptr;
+  int (*select)(void*,const float*,std::uint32_t,const std::uint64_t*,std::uint32_t,float*,Failure*) = nullptr;
   int (*drain)(void*,Failure*) = nullptr;
   void (*telemetry)(void*,Telemetry*) = nullptr;
 };
