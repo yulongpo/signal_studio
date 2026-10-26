@@ -482,6 +482,61 @@ void adaptedHeadsSurviveReopen() {
           "Reopening adapted heads must detect changed immutable bytes");
   }
 }
+void independentRawHeadBudgetsAndLegacyCompatibility() {
+  // A complete 65536-bin head set is much larger than its JSON mapping. Keep
+  // the quotas distinct without accepting damaged evidence or partial commits.
+  for (const int policy : {0,1,2}) {
+    QTemporaryDir directory;
+    auto run=fixture(directory.path(),"raw-head-budget-"+std::to_string(policy));
+    run.request.profile=*findDetectionProfile("ffscn-gui-iq-v1");
+    run.request.evidenceBudgetBytes=policy==2 ? 1 : 8192;
+    const auto width=detectionModelInputBins(run.request)/4;
+    const auto rawBytes=3ULL*width*sizeof(float);
+    run.request.rawHeadBudgetBytes=policy==0 ? 0 : rawBytes;
+    DetectionWorkerPacket packet;
+    packet.envelope=workerEnvelope("batch","quota-check",0,
+        {{"headOrder",QJsonArray{"hm","bw","off"}},
+         {"modelEvidence",QJsonObject{{"fixture",true}}}},
+        QString::fromStdString(run.request.runId),run.request.sourceIdentity.projectGeneration,
+        QString::fromStdString(run.request.sourceIdentity.fileId));
+    attachFloat32Payload(packet,std::vector<float>(3*width,.25f),
+        {1,3,1,static_cast<int>(width)});
+    auto evidence=mappings();
+    QString error;
+    check(storeDetectionHeadEvidence(directory.path(),run.request,packet,evidence,error),error);
+    const auto requestJson=encodeDetectionRequest(run.request);
+    DetectionRequest restoredRequest;
+    check(decodeDetectionRequest(requestJson,restoredRequest,error) &&
+        restoredRequest.rawHeadBudgetBytes==run.request.rawHeadBudgetBytes,error);
+    if(policy==0) check(!requestJson.contains("rawHeadBudgetBytes"),
+        "Legacy combined requests must not acquire a new disk allowance on reopen");
+    const bool appended=appendDetectionChunk(directory.path(),run,results(),evidence,error);
+    if(policy!=1) {
+      check(!appended && error.contains(policy==0 ? "legacy combined" : "JSON evidence budget") &&
+          run.chunks.empty(),"Legacy combined and independent JSON quotas must still reject atomically");
+      continue;
+    }
+    check(appended,error);
+    DetectionRun restored;
+    check(loadDetectionRun(directory.path(),QString::fromStdString(run.request.runId),restored,error),error);
+    check(restored.request.evidenceBudgetBytes==8192 && restored.request.rawHeadBudgetBytes==rawBytes,
+        "JSON quota cannot grow just to fit independent disk heads");
+    auto secondEvidence=evidence;
+    auto second=secondEvidence[0].toObject();second["windowId"]="1";secondEvidence[0]=second;
+    auto secondResults=results();auto result=secondResults[0].toObject();result["windowId"]="1";secondResults[0]=result;
+    check(!appendDetectionChunk(directory.path(),run,secondResults,secondEvidence,error) &&
+        error.contains("independent disk evidence budget") && run.chunks.size()==1,
+        "Independent disk quota must reject a second reference without changing the committed prefix");
+    check(loadDetectionRun(directory.path(),QString::fromStdString(run.request.runId),restored,error) &&
+        restored.chunks.size()==1,error);
+    const auto head=evidence[0].toObject()["headEvidence"].toObject();
+    const auto headPath=directory.filePath(head["path"].toString());
+    auto raw=readFile(headPath);check(static_cast<std::uint64_t>(raw.size())==rawBytes,"Full heads must be retained");
+    raw[0]=char(raw[0]^1);writeFile(headPath,raw);
+    check(!loadDetectionRun(directory.path(),QString::fromStdString(run.request.runId),restored,error),
+        "Independent disk quotas cannot bypass raw-head content integrity");
+  }
+}
 void accumulatedReadsAndStreamingBudget() {
   QTemporaryDir directory;
   auto run = fixture(directory.path(), "streaming-budget");
@@ -522,6 +577,7 @@ int main(int argc, char** argv) {
     budgetsAndMalformedRequests();
     unpublishedChunksAndLargeIndices();
     adaptedHeadsSurviveReopen();
+    independentRawHeadBudgetsAndLegacyCompatibility();
     accumulatedReadsAndStreamingBudget();
     std::cout << "Detection store boundary tests passed\n";
     return 0;

@@ -12,7 +12,7 @@
 
 ## P0资源合同
 
-旧请求的32MiB combined证据政策继续按旧语义验证。新请求为完整raw-head磁盘资产增加单独显式配额，JSON mappings原配额保持，单分片/总JSON/头布局/内容SHA/原子写入仍受限。预先核算完整窗口数与预计raw-head字节，运行期仍逐片累计拒绝越界；resident工作集独立维持。具体新增字段和上限须随R6-1实际实现/测试更新。
+旧请求缺 `rawHeadBudgetBytes` 时解码为0，32MiB combined证据政策继续按旧语义验证。新请求该字段默认256MiB、上限2GiB，为完整raw-head磁盘资产单独设限，JSON mappings原配额保持；单片8MiB、总JSON256MiB、头布局/路径/内容SHA/原子写入仍受限。预先核算完整窗口数与精确raw-head字节及保守JSON观测映射上界，运行期仍逐片累计拒绝越界；resident工作集独立维持。测量入口可显式指定0=legacy combined，不能把新配额误称原请求没有变化。
 
 ## 数值和模型合同
 

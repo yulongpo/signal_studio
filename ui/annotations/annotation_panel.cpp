@@ -1661,18 +1661,28 @@ void AnnotationPanel::refreshTableSelection(const FileState* file) {
   if (file && file->currentDetectionSlots)
     for (const auto& slot : *file->currentDetectionSlots) {
       if (slot.sampleChannel != file->metadata.sampleFormat.selectedChannel) continue;
-      if (!slot.pendingRunId.empty()) detectionText = "检测运行中 · 暂存结果未发布，不可转换为人工标记。";
-      else if (slot.stale) detectionText = "结果待更新 · 请显式应用并重新检测；上次完整集合仅保留作回滚恢复。";
-      else if (!slot.committedRunId.empty()) {
+      if (!slot.committedRunId.empty()) {
         const auto published = std::count_if(file->marks.begin(), file->marks.end(),
             [&](const auto& value) { return value.sourceKind == AnnotationSource::Algorithm &&
                 annotationInContext(*file, value) && value.originEvidence &&
                 value.originEvidence->runId == slot.committedRunId; });
         for (const auto& run : file->detectionRuns)
           if (run.request.runId == slot.committedRunId)
-            detectionText = (published == 0 ? QString("已完成，未检出") : QString("当前检测：%1 · %2 个结果").arg(q(run.request.profile.name)).arg(published)) +
-                " · 本次范围外为未检测；新检测成功后整体替换。";
+            detectionText = published == 0 ? QString("已完成，未检出")
+                : QString("当前检测：%1 · %2 个结果").arg(q(run.request.profile.name)).arg(published);
+        if (!slot.pendingRunId.empty())
+          detectionText = "检测运行中 · 当前显示上次检测结果 · " + detectionText +
+              " · 暂存结果未发布；新检测完整成功后整体替换。";
+        else if (slot.stale)
+          detectionText = "结果待更新 · 当前显示上次检测结果 · " + detectionText +
+              " · 请显式应用并重新检测。";
+        else
+          detectionText += " · 本次范围外为未检测；新检测成功后整体替换。";
       }
+      else if (!slot.pendingRunId.empty())
+        detectionText = "检测运行中 · 尚无正式检测结果；暂存结果未发布，不可转换为人工标记。";
+      else if (slot.stale)
+        detectionText = "结果待更新 · 尚无正式检测结果；请显式应用并重新检测。";
     }
   detectionStatus_->setText(detectionText);
   findChild<QPushButton*>("annotationQualityMenu")

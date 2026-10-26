@@ -203,6 +203,7 @@ struct CurrentDetectionSlot {
   std::uint32_t sampleChannel = 0;
   std::string committedRunId;
   std::uint64_t generation = 0;
+  // The next configuration needs a run; the committed result stays viewable.
   bool stale = false;
   // Pending is not a formal result. Persist it to authorize crash recovery.
   std::string pendingRunId;
@@ -246,7 +247,7 @@ inline bool annotationInContext(const FileState& file,
       if (value.sourceKind == AnnotationSource::Algorithm && file.currentDetectionSlots) {
         for (const auto& slot : *file.currentDetectionSlots)
           if (slot.sampleChannel == source.sampleChannel)
-            return !slot.stale && !slot.committedRunId.empty() &&
+            return !slot.committedRunId.empty() &&
                    slot.committedRunId == source.runId;
         return false;
       }

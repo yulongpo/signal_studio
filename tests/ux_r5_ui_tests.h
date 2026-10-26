@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QDoubleSpinBox>
+
 namespace {
 std::array<std::string, 3> uxR5Seed(MainWindow& window) {
   window.session().addDemoFile();
@@ -136,6 +138,73 @@ inline void UxTests::uxR5_layersAndIndependentFilters() {
   QCOMPARE(panel->sourceTab(), AnnotationSource::ImportedLabel);
   QCOMPARE(filter->text(), QString("标签甲"));
   QCOMPARE(table->model()->rowCount(), 1);
+
+  // Controlled authoritative-slot projection. Durable save/reopen and atomic
+  // success/zero replacement are covered by the lifecycle and task tests.
+  const auto labelBefore = encodeAnnotation(*findAnnotation(*file, ids[0]));
+  const auto manualBefore = encodeAnnotation(*findAnnotation(*file, ids[1]));
+  auto* result = findAnnotation(*file, ids[2]);
+  auto* source = findSourceSet(*file, result->sourceSetId);
+  source->runId = "r6-visible-committed";
+  auto origin = std::make_shared<OriginEvidence>(*result->originEvidence);
+  origin->runId = source->runId;
+  origin->scoreMean = .9;
+  result->originEvidence = std::move(origin);
+  const auto resultBefore = encodeAnnotation(*result);
+  DetectionRun committed;
+  committed.request.runId = source->runId;
+  committed.request.sourceIdentity = source->sourceIdentity;
+  committed.request.profile = *findDetectionProfile("pipeline-fixture-v1");
+  committed.request.requestedRange = fullRange(file->metadata);
+  committed.request.contextRange = committed.request.requestedRange;
+  committed.lifecycle = DetectionLifecycle::Completed;
+  file->detectionRuns.push_back(committed);
+  CurrentDetectionSlot slot;
+  slot.sampleChannel = file->metadata.sampleFormat.selectedChannel;
+  slot.committedRunId = committed.request.runId;
+  slot.generation = 1;
+  slot.stale = true;
+  file->currentDetectionSlots = std::vector<CurrentDetectionSlot>{slot};
+  QTest::mouseClick(window.findChild<QAbstractButton*>("detectionResultsTab"), Qt::LeftButton);
+  window.refresh();
+  auto* results = window.findChild<QTableView*>("detectionResultTable");
+  QCOMPARE(results->model()->rowCount(), 1);
+  QCOMPARE(results->model()->index(0, 1).data(Qt::UserRole).toString(), QString::fromStdString(ids[2]));
+  QVERIFY(window.findChild<QLabel*>("currentDetectionStatus")->text().contains("当前显示上次检测结果"));
+  window.session().selectMarks({ids[2]}, ids[2]); window.refresh();
+  QVERIFY(annotationSelectable(*file, *result) && annotationOverlayVisible(*file, *result));
+  QVERIFY(!window.session().annotations().canEdit(*file, ids[2]));
+  QVERIFY(!window.session().annotations().capabilities(*file, ids[2]).createChannelDirectly);
+  filter->setText("无匹配");
+  QCOMPARE(results->model()->rowCount(), 0);
+  QVERIFY(annotationSelectable(*file, *result) && annotationOverlayVisible(*file, *result));
+  filter->clear();
+  auto* mean = window.findChild<QDoubleSpinBox*>("annotationMinimumMeanScore");
+  mean->setValue(1);
+  QCOMPARE(results->model()->rowCount(), 0);
+  QVERIFY(annotationSelectable(*file, *result) && annotationOverlayVisible(*file, *result));
+  mean->setValue(0);
+  QCOMPARE(results->model()->rowCount(), 1);
+  window.session().selectMarks({ids[2]}, ids[2]); window.refresh();
+  DetectionRun pending = committed;
+  pending.request.runId = "r6-visible-pending";
+  pending.lifecycle = DetectionLifecycle::Running;
+  file->detectionRuns.push_back(pending);
+  file->currentDetectionSlots->front().pendingRunId = pending.request.runId;
+  window.refresh();
+  QCOMPARE(results->model()->rowCount(), 1);
+  const auto running = window.findChild<QLabel*>("currentDetectionStatus")->text();
+  QVERIFY(running.contains("检测运行中") && running.contains("当前显示上次检测结果"));
+  QCOMPARE(file->selectedMarkIds, std::vector<std::string>{ids[2]});
+  for (int kind : {0, 1, 2}) {
+    QTest::mouseClick(window.findChild<QAbstractButton*>(buttons[kind]), Qt::LeftButton);
+    for (int sourceKind = 0; sourceKind < 3; ++sourceKind)
+      QCOMPARE(annotationOverlayVisible(*file, *findAnnotation(*file, ids[sourceKind])), sourceKind == kind);
+  }
+  QCOMPARE(results->model()->rowCount(), 1);
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, ids[0])), labelBefore);
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, ids[1])), manualBefore);
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, ids[2])), resultBefore);
 }
 
 inline void UxTests::uxR5_readOnlyMenusAndCommandGuards() {

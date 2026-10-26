@@ -529,9 +529,26 @@ quint64 verifyHeadEvidence(const QDir& root, const DetectionRequest& request,
   }
   return bytes;
 }
+void verifyEvidenceBudget(const DetectionRequest& request, quint64 mappingBytes,
+                          quint64 rawHeadBytes) {
+  if (request.rawHeadBudgetBytes == 0) {
+    require(rawHeadBytes <= request.evidenceBudgetBytes &&
+                mappingBytes <= request.evidenceBudgetBytes - rawHeadBytes,
+            QString("Detection mappings exceed evidence budget (legacy combined: JSON %1 + raw heads %2; limit %3)")
+                .arg(mappingBytes).arg(rawHeadBytes).arg(request.evidenceBudgetBytes));
+  } else {
+    require(mappingBytes <= request.evidenceBudgetBytes,
+            QString("Detection mappings exceed JSON evidence budget (required %1; limit %2)")
+                .arg(mappingBytes).arg(request.evidenceBudgetBytes));
+    require(rawHeadBytes <= request.rawHeadBudgetBytes,
+            QString("Raw model heads exceed independent disk evidence budget (required %1; limit %2)")
+                .arg(rawHeadBytes).arg(request.rawHeadBudgetBytes));
+  }
+}
 QJsonObject verifyChunk(const QDir& root, const DetectionRun& run,
                         const DetectionChunkReference& reference,
-                        quint64& totalBytes, quint64& evidenceBytes) {
+                        quint64& totalBytes, quint64& evidenceBytes,
+                        quint64& rawHeadBytes) {
   const auto bytes = readBounded(root, text(reference.relativePath));
   require(static_cast<std::uint64_t>(bytes.size()) <=
               (run.request.workingSetBudgetBytes - 65536) / 8,
@@ -560,15 +577,14 @@ QJsonObject verifyChunk(const QDir& root, const DetectionRun& run,
   validateRecords(mappings, run.request, true);
   evidenceBytes += static_cast<quint64>(
       QJsonDocument(mappings).toJson(QJsonDocument::Compact).size() - 2);
-  evidenceBytes += verifyHeadEvidence(root, run.request, mappings);
-  require(evidenceBytes <= run.request.evidenceBudgetBytes,
-          "Detection mappings exceed evidence budget");
+  rawHeadBytes += verifyHeadEvidence(root, run.request, mappings);
+  verifyEvidenceBudget(run.request, evidenceBytes, rawHeadBytes);
   return object;
 }
 void verifyChunks(const QDir& root, const DetectionRun& run) {
-  quint64 bytes = 0, evidence = 0;
+  quint64 bytes = 0, evidence = 0, rawHeads = 0;
   for (const auto& chunk : run.chunks)
-    verifyChunk(root, run, chunk, bytes, evidence);
+    verifyChunk(root, run, chunk, bytes, evidence, rawHeads);
 }
 }  // namespace
 
@@ -594,6 +610,8 @@ QJsonObject encodeDetectionRequest(const DetectionRequest& r) {
       {"evidenceBudgetBytes", decimal(r.evidenceBudgetBytes)}};
   if (r.inputAdaptationVersion >= 2)
     value["spectrumMode"] = static_cast<int>(r.spectrumMode);
+  if (r.rawHeadBudgetBytes)
+    value["rawHeadBudgetBytes"] = decimal(r.rawHeadBudgetBytes);
   return value;
 }
 bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
@@ -603,7 +621,7 @@ bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
                  "profile", "parameters", "requestedRange", "contextRange",
                  "rangeOrigin", "sourceAnnotationId", "sourceRevisionId",
                  "modelManifestPath", "modelSha256", "workingSetBudgetBytes",
-                 "evidenceBudgetBytes", "spectrumMode"});
+                 "evidenceBudgetBytes", "spectrumMode", "rawHeadBudgetBytes"});
     require(o["schemaVersion"] == 1 || o["schemaVersion"] == 2,
             "Unsupported detection request version");
     DetectionRequest r;
@@ -651,6 +669,8 @@ bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
         integer(o["workingSetBudgetBytes"], "workingSetBudgetBytes");
     r.evidenceBudgetBytes =
         integer(o["evidenceBudgetBytes"], "evidenceBudgetBytes");
+    r.rawHeadBudgetBytes = o.contains("rawHeadBudgetBytes")
+        ? integer(o["rawHeadBudgetBytes"], "rawHeadBudgetBytes") : 0;
     validateRequest(r);
     return r;
   });
@@ -748,7 +768,8 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
     run.resultCount = integer(o["resultCount"], "resultCount");
     if (o["version"] == 2) {
       run.computationPhase = string(o, "computationPhase", 32, true);
-      require(QStringList{"none", "reading", "inference", "frequency", "refine",
+      require(QStringList{"none", "reading", "inference", "decoding",
+                          "storing-heads", "tracking", "checkpoint", "frequency", "refine",
                           "publishing", "completed"}
                   .contains(text(run.computationPhase)),
               "Unknown detection computation phase");
@@ -837,9 +858,9 @@ bool appendDetectionChunk(const QString& directory, DetectionRun& run,
     validateRecords(mappings, run.request, true);
     const auto root = projectRoot(directory);
     prepareDirectory(root, runDirectory(run.request.runId));
-    quint64 totalBytes = 0, evidenceBytes = 0;
+    quint64 totalBytes = 0, evidenceBytes = 0, rawHeadBytes = 0;
     for (const auto& chunk : run.chunks)
-      verifyChunk(root, run, chunk, totalBytes, evidenceBytes);
+      verifyChunk(root, run, chunk, totalBytes, evidenceBytes, rawHeadBytes);
     const auto object =
         QJsonObject{{"schema", "signal-studio-detection-chunk"},
                     {"version", 1},
@@ -857,9 +878,8 @@ bool appendDetectionChunk(const QString& directory, DetectionRun& run,
             "Detection chunk/store exceeds its byte budget");
     evidenceBytes += static_cast<quint64>(
         QJsonDocument(mappings).toJson(QJsonDocument::Compact).size() - 2);
-    evidenceBytes += verifyHeadEvidence(root, run.request, mappings);
-    require(evidenceBytes <= run.request.evidenceBudgetBytes,
-            "Detection mappings exceed evidence budget");
+    rawHeadBytes += verifyHeadEvidence(root, run.request, mappings);
+    verifyEvidenceBudget(run.request, evidenceBytes, rawHeadBytes);
     const auto hash = digest(bytes);
     const auto relative = chunkPath(run.request, hash);
     if (QFileInfo::exists(root.filePath(relative)))
@@ -1057,7 +1077,7 @@ bool visitDetectionChunks(
   try {
     validateRun(run);
     const auto root = projectRoot(directory);
-    quint64 totalBytes = 0, evidenceBytes = 0;
+    quint64 totalBytes = 0, evidenceBytes = 0, rawHeadBytes = 0;
     for (const auto& reference : run.chunks) {
       const auto size =
           QFileInfo(root.filePath(text(reference.relativePath))).size();
@@ -1065,7 +1085,7 @@ bool visitDetectionChunks(
                               (run.request.workingSetBudgetBytes - 65536) / 8,
               "Detection shard parsing exceeds working set budget");
       const auto object =
-          verifyChunk(root, run, reference, totalBytes, evidenceBytes);
+          verifyChunk(root, run, reference, totalBytes, evidenceBytes, rawHeadBytes);
       if (!visitor(object, error)) return false;
     }
     error.clear();

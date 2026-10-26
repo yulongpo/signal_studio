@@ -1232,7 +1232,9 @@ void DetectionCard::refreshStatus() {
     const auto phase = text(run->computationPhase);
     const int step = phase == "completed"                           ? 4
                      : phase == "refine" || phase == "publishing"   ? 3
-                     : phase == "inference" || phase == "frequency" ? 2
+                     : phase == "inference" || phase == "frequency" ||
+                           phase == "decoding" || phase == "storing-heads" ||
+                           phase == "tracking" || phase == "checkpoint" ? 2
                      : phase == "reading"                           ? 1
                                                                     : 0;
     phaseBar_->show();

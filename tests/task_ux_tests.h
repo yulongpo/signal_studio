@@ -9,6 +9,8 @@
 #include <QScopeGuard>
 #include <QTextBrowser>
 #include <QTimer>
+#include <QtEndian>
+#include <cmath>
 #include "infrastructure/detection_store.h"
 
 inline void UxTests::uxR01_lateRunFilterPopupAndRefresh() {
@@ -18,8 +20,20 @@ inline void UxTests::uxR01_lateRunFilterPopupAndRefresh() {
   MainWindow window;
   QString issue;
   QVERIFY(window.createProject(directory.path(), "current-publication", &issue));
-  issue = addSource(window, directory.path(), "IQ_A_FS1Msps_FC100MHz.dat");
-  QVERIFY2(issue.isEmpty(), qPrintable(issue));
+  // A tone gives the synthetic pipeline worker nonempty results. Silence
+  // would make the result-preservation assertions pass with zero old rows.
+  QFile iq(directory.filePath("IQ_A_FS1Msps_FC100MHz.dat"));
+  QByteArray samples(20000 * 4, '\0');
+  for (int sample = 0; sample < 20000; ++sample) {
+    const double angle = 2 * 3.14159265358979323846 * .125 * sample;
+    qToLittleEndian<qint16>(static_cast<qint16>(12000 * std::cos(angle)), samples.data() + sample * 4);
+    qToLittleEndian<qint16>(static_cast<qint16>(12000 * std::sin(angle)), samples.data() + sample * 4 + 2);
+  }
+  QVERIFY(iq.open(QIODevice::WriteOnly));
+  QCOMPARE(iq.write(samples), qint64(samples.size()));
+  iq.close();
+  QVERIFY2(window.addIqFile(iq.fileName(), &issue), qPrintable(issue));
+  QTRY_COMPARE_WITH_TIMEOUT(window.session().activeFile()->metadata.availability.status, LoadStatus::Ready, 10000);
   expose(window);
   QTest::mouseClick(window.findChild<QAbstractButton*>("detectionResultsTab"), Qt::LeftButton);
   QVERIFY(!window.findChild<QWidget*>("annotationRunFilter"));
@@ -37,15 +51,56 @@ inline void UxTests::uxR01_lateRunFilterPopupAndRefresh() {
       currentDetectionSlot(*window.session().activeFile(), 0)->committedRunId == request.runId, 30000);
   auto* table = window.findChild<QTableView*>("detectionResultTable");
   const auto rows = table->model()->rowCount();
-  const auto firstId = rows ? table->model()->index(0,1).data(Qt::UserRole) : QVariant{};
+  QVERIFY(rows > 0);
+  const auto firstId = table->model()->index(0,1).data(Qt::UserRole);
   for (int refresh = 0; refresh < 5; ++refresh) window.refresh();
   QCOMPARE(table->model()->rowCount(), rows);
-  if (rows) QCOMPARE(table->model()->index(0,1).data(Qt::UserRole), firstId);
+  QCOMPARE(table->model()->index(0,1).data(Qt::UserRole), firstId);
   QCOMPARE(window.session().activeFile()->detectionRuns.size(), std::size_t(1));
+  auto* card = window.findChild<DetectionCard*>("detectionCard");
+  auto* score = card->findChild<AdaptiveValueEdit*>("detectionScoreThreshold");
+  QVERIFY(uxDetectionReveal(window, score));
+  window.session().selectMarks({firstId.toString().toStdString()});
+  window.refresh();
+  const auto selected = window.session().activeFile()->selectedMarkIds;
+  const auto oldResult = encodeAnnotation(*findAnnotation(*window.session().activeFile(), firstId.toString().toStdString()));
+  score->setFocus(); score->selectAll(); QTest::keyClicks(score, "0.55");
+  QVERIFY(score->property("parameterDraft").toBool());
+  window.refresh();
+  QCOMPARE(table->model()->rowCount(), rows);
+  QVERIFY(!currentDetectionSlot(*window.session().activeFile(), 0)->stale);
+  QTest::keyClick(score, Qt::Key_Escape);
+  QVERIFY(!score->property("parameterDraft").toBool());
+  QCOMPARE(table->model()->rowCount(), rows);
+  score->selectAll(); QTest::keyClicks(score, "0.55");
+  QTest::keyClick(score, Qt::Key_Return);
+  QVERIFY(currentDetectionSlot(*window.session().activeFile(), 0)->stale);
+  QCOMPARE(table->model()->rowCount(), rows);
+  QCOMPARE(table->model()->index(0,1).data(Qt::UserRole), firstId);
+  QCOMPARE(window.session().activeFile()->selectedMarkIds, selected);
+  auto* model = card->findChild<QComboBox*>("detectionModel");
+  model->setCurrentIndex(model->findData("scn-max-psd-v1"));
+  QCOMPARE(card->request().profile.id, std::string("scn-max-psd-v1"));
+  QCOMPARE(table->model()->rowCount(), rows);
   panel->markConfigurationStale();
-  QCOMPARE(table->model()->rowCount(), 0);
-  QVERIFY(window.findChild<QLabel*>("currentDetectionStatus")->text().contains("待更新"));
+  QCOMPARE(table->model()->rowCount(), rows);
+  const auto status = window.findChild<QLabel*>("currentDetectionStatus")->text();
+  QVERIFY(status.contains("待更新") && status.contains("当前显示上次检测结果"));
   QCOMPARE(currentDetectionSlot(*window.session().activeFile(), 0)->committedRunId, request.runId);
+  QCOMPARE(encodeAnnotation(*findAnnotation(*window.session().activeFile(), firstId.toString().toStdString())), oldResult);
+  QVERIFY(annotationOverlayVisible(*window.session().activeFile(), *findAnnotation(*window.session().activeFile(), firstId.toString().toStdString())));
+  for (const auto* tab : {"manualAnnotationsTab", "taskTab", "logTab", "detectionResultsTab"})
+    QTest::mouseClick(window.findChild<QAbstractButton*>(tab), Qt::LeftButton);
+  QCOMPARE(table->model()->rowCount(), rows);
+  const auto projectPath = directory.filePath("current-publication.ssproj");
+  QVERIFY(window.saveProject(projectPath));
+  QVERIFY(window.openProject(projectPath));
+  QTest::mouseClick(window.findChild<QAbstractButton*>("detectionResultsTab"), Qt::LeftButton);
+  window.refresh();
+  QCOMPARE(table->model()->rowCount(), rows);
+  QCOMPARE(table->model()->index(0,1).data(Qt::UserRole), firstId);
+  QVERIFY(currentDetectionSlot(*window.session().activeFile(), 0)->stale);
+  QCOMPARE(encodeAnnotation(*findAnnotation(*window.session().activeFile(), firstId.toString().toStdString())), oldResult);
 }
 
 inline void UxTests::uxD01_topDerivationDiscardsCrossFileDraft() {

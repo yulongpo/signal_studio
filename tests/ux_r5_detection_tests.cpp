@@ -214,6 +214,16 @@ void uniqueResult(const FileState& file, const std::string& id,
       check(run.request.runId == id, "Old algorithm run remains indexed");
     }
   check(sets == 1 && runs == 1, "Scope does not have one run/source set");
+  if (file.metadata.sampleFormat.selectedChannel == channel) {
+    std::size_t visible = 0;
+    for (const auto& a : file.marks)
+      if (a.sourceKind == AnnotationSource::Algorithm && annotationInContext(file, a)) {
+        ++visible;
+        check(a.originEvidence && a.originEvidence->runId == id,
+              "A pending/retired run is visible alongside the committed result");
+      }
+    check(visible == count, "Successful publication is not the complete visible result");
+  }
 }
 void aBAZeroRoiAndManualUndo() {
   Harness h;
@@ -285,14 +295,50 @@ void aBAZeroRoiAndManualUndo() {
 void failedCancelledLateAndIncomplete() {
   Harness h;
   auto original = h.durable("original"); h.publish(original);
+  const auto oldId = original.publication.annotations[0].id;
+  const auto oldObject = encodeAnnotation(*findAnnotation(h.project.files[0], oldId));
+  const auto oldSource = encodeSourceSet(*findSourceSet(h.project.files[0], original.publication.sourceSet.id));
+  const auto verifyOld = [&](const FileState& file) {
+    const auto* a = findAnnotation(file, oldId);
+    const auto* slot = currentDetectionSlot(file, 0);
+    check(slot && slot->committedRunId == "original" && algorithmCount(file) == 1 &&
+          a && annotationInContext(file, *a) && annotationSelectable(file, *a) &&
+          annotationEligibleForTab(file, *a, AnnotationSource::Algorithm) &&
+          annotationOverlayVisible(file, *a), "Last committed result disappeared before a successful replacement");
+    const auto* source = findSourceSet(file, a->sourceSetId);
+    check(source && encodeAnnotation(*a) == oldObject &&
+          encodeSourceSet(*source) == oldSource,
+          "A configuration/pending/failed operation changed immutable committed evidence");
+  };
+  check(h.annotations.select(h.project.files[0], {oldId}, oldId).ok, "Select committed result");
+  const auto committedGeneration = currentDetectionSlot(h.project.files[0], 0)->generation;
+  check(DetectionResultService::markStale(h.project, "file-a", 0), "Configuration did not become stale");
+  h.annotations.reconcileSelection(h.project.files[0]);
+  check(h.project.files[0].selectedMarkIds == std::vector<std::string>{oldId} &&
+        h.project.files[0].activeMarkId == oldId &&
+        currentDetectionSlot(h.project.files[0], 0)->generation == committedGeneration,
+        "Marking configuration stale changed selection or a committed-only generation");
+  verifyOld(h.project.files[0]);
+  h.save(); verifyOld(h.reopen().files[0]);
   auto next = h.durable("next"); h.pending(next);
-  check(!annotationInContext(h.project.files[0], *findAnnotation(h.project.files[0], original.publication.annotations[0].id)),
-        "Stale rollback results remain eligible for the current workspace");
+  verifyOld(h.project.files[0]);
+  verifyOld(h.reopen().files[0]);
+  // Even if a pending or retired projection reaches a consumer, the slot
+  // admits only the committed run; changing stale must not broaden authority.
+  auto projection = h.project.files[0];
+  projection.sourceSets.push_back(next.publication.sourceSet);
+  check(!annotationInContext(projection, next.publication.annotations[0]),
+        "Pending publication became eligible before commit");
+  projection.currentDetectionSlots->front().retiredRunIds.push_back("retired-result");
+  projection.sourceSets.back().runId = "retired-result";
+  check(!annotationInContext(projection, next.publication.annotations[0]),
+        "Retired publication became eligible through a stale slot");
   const auto disk = read(h.path);
   for (const auto state : {DetectionLifecycle::Running, DetectionLifecycle::Cancelled, DetectionLifecycle::Failed}) {
     auto wrong = next;
     wrong.run.lifecycle = state;
     check(!h.commit(wrong).committed && read(h.path) == disk, "Non-completed run changed the project");
+    verifyOld(h.project.files[0]);
   }
   auto wrong = next;
   wrong.run.completedWindows = 0;
@@ -308,16 +354,29 @@ void failedCancelledLateAndIncomplete() {
   check(!h.commit(wrong).committed, "Changed source was published");
   wrong = next; wrong.publication.annotations.clear();
   check(!h.commit(wrong).committed, "Partial publication differed from durable store but committed");
+  verifyOld(h.project.files[0]);
   DetectionResultService::abandonDetection(h.project, next.ticket);
   check(!h.commit(next).committed, "Cancelled pending ticket was accepted late");
+  verifyOld(h.project.files[0]);
   h.save();
   const auto loaded = h.reopen();
   const auto* slot = currentDetectionSlot(loaded.files[0], 0);
   check(slot && slot->committedRunId == "original" && slot->stale && algorithmCount(loaded.files[0]) == 1,
-        "Cancellation destroyed last complete rollback data");
+        "Cancellation destroyed the last committed result");
+  verifyOld(loaded.files[0]);
   QString error;
   const auto runs = discoverDetectionRuns(h.root(), loaded, error);
   check(error.isEmpty() && runs.size() == 1 && runs[0].request.runId == "original", "Cancelled run was recoverable");
+  // A parameter commit during a later run must still invalidate its ticket,
+  // retain the old visible result and reject a late successful publication.
+  auto superseded = h.durable("superseded"); h.pending(superseded);
+  const auto pendingGeneration = currentDetectionSlot(h.project.files[0], 0)->generation;
+  check(DetectionResultService::markStale(h.project, "file-a", 0), "Pending configuration commit was ignored");
+  check(currentDetectionSlot(h.project.files[0], 0)->pendingRunId.empty() &&
+        currentDetectionSlot(h.project.files[0], 0)->generation > pendingGeneration &&
+        !h.commit(superseded).committed, "Stale configuration accepted a superseded pending ticket");
+  verifyOld(h.project.files[0]);
+  h.save(); verifyOld(h.reopen().files[0]);
 }
 void filesAndChannels() {
   Harness h(2); h.addFile("file-b"); h.save();
@@ -330,6 +389,19 @@ void filesAndChannels() {
   uniqueResult(loaded.files[0], "a0-next"); uniqueResult(loaded.files[0], "a1", 1);
   uniqueResult(loaded.files[1], "b");
   check(exportAnnotationsJson(loaded.files[1]) == other, "Updating file A changed file B");
+  auto stale = loaded;
+  check(DetectionResultService::markStale(stale, "file-a", 0), "File/channel stale fixture failed");
+  auto& file = byId(stale, "file-a");
+  check(annotationInContext(file, *findAnnotation(file, next.publication.annotations[0].id)) &&
+        !annotationInContext(file, *findAnnotation(file, a1.publication.annotations[0].id)),
+        "Stale channel zero hid its result or exposed another IQ channel");
+  file.metadata.sampleFormat.selectedChannel = 1;
+  check(annotationInContext(file, *findAnnotation(file, a1.publication.annotations[0].id)) &&
+        !annotationInContext(file, *findAnnotation(file, next.publication.annotations[0].id)) &&
+        !currentDetectionSlot(file, 1)->stale,
+        "Changing stale scope altered another channel's authority");
+  check(annotationInContext(byId(stale, "file-b"), *findAnnotation(byId(stale, "file-b"), b.publication.annotations[0].id)) &&
+        !annotationInContext(file, b.publication.annotations[0]), "Stale scope leaked across files");
 }
 void faultBoundaries() {
   for (const auto point : {DetectionTransactionPoint::Stage, DetectionTransactionPoint::Persist,
@@ -351,6 +423,8 @@ void faultBoundaries() {
       const auto* slot = currentDetectionSlot(loaded.files[0], 0);
       check(slot && slot->committedRunId == "old" && slot->pendingRunId == "new" && algorithmCount(loaded.files[0]) == 1,
             "Fault reopening mixed formal results");
+      check(annotationInContext(loaded.files[0], *findAnnotation(loaded.files[0], a.publication.annotations[0].id)),
+            "Stage/persist/commit failure hid the old committed result after reopen");
       DetectionResultTicket recovery;
       QString error;
       check(DetectionResultService::prepareRecovery(loaded, b.run, generation + 1, recovery, error), error);
@@ -375,6 +449,8 @@ void runningSaveAndDurableRecovery() {
   check(byId(loaded, "file-a").detectionRuns.back().lifecycle == DetectionLifecycle::Interrupted,
         "Live save did not reopen as interrupted task evidence");
   check(algorithmCount(loaded.files[0]) == 1, "Live save published pending results");
+  check(annotationInContext(loaded.files[0], *findAnnotation(loaded.files[0], a.publication.annotations[0].id)),
+        "Interrupted pending task hid the last committed result after reopen");
   // Simulate the worker finishing after the live manifest was anchored.
   auto complete = h.durable("running", "scn-max-psd-v1", false, "file-a", 0,
                              {0, 32768}, pending.run.startedAtMilliseconds);

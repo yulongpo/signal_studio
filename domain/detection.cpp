@@ -194,7 +194,8 @@ DetectionValidation validateDetectionRequest(const DetectionRequest& request) {
     return {false, "Detection parameters are invalid"};
   if (request.workingSetBudgetBytes < 16 * 1024 * 1024 ||
       request.workingSetBudgetBytes > 1024ULL * 1024 * 1024 ||
-      request.evidenceBudgetBytes > 256 * 1024 * 1024)
+      request.evidenceBudgetBytes > 256 * 1024 * 1024 ||
+      request.rawHeadBudgetBytes > 2ULL * 1024 * 1024 * 1024)
     return {false, "Detection resource budget is invalid"};
   return {};
 }
@@ -274,6 +275,10 @@ DetectionValidation validateDetectionRun(const DetectionRun& run) {
     return {false, "Detection run counts exceed their coverage/budget"};
   if (run.computationPhase != "none" && run.computationPhase != "reading" &&
       run.computationPhase != "inference" &&
+      run.computationPhase != "decoding" &&
+      run.computationPhase != "storing-heads" &&
+      run.computationPhase != "tracking" &&
+      run.computationPhase != "checkpoint" &&
       run.computationPhase != "frequency" && run.computationPhase != "refine" &&
       run.computationPhase != "publishing" &&
       run.computationPhase != "completed")

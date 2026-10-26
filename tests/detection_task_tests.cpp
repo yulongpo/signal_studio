@@ -89,6 +89,22 @@ QString workerPath() {
          "/SignalStudioDetectionWorker";
 #endif
 }
+void testWholeRunRawHeadQuotaRejectsBeforeWorker() {
+  QTemporaryDir directory;
+  const auto metadata=sourceFixture(directory);
+  auto request=requestFixture(metadata,"head-quota-preflight");
+  request.profile=*findDetectionProfile("ffscn-gui-iq-v1");
+  request.profile.hopSeconds=.00025;
+  request.modelManifestPath="must-not-open-manifest.json";
+  request.modelSha256.assign(64,'a');
+  request.rawHeadBudgetBytes=3ULL*(request.profile.fftSize/4)*sizeof(float);
+  DetectionTaskManager tasks("must-not-start-worker");
+  QString error;
+  check(!tasks.enqueue(directory.path(),metadata,request,error) &&
+      error.contains("before inference") && error.contains("windows") &&
+      tasks.snapshots().empty() && !QDir(directory.filePath("detections")).exists(),
+      "Whole-run head quota must reject before creating a partial task or starting a worker: "+error);
+}
 void testTaskRoundtrip() {
   QTemporaryDir directory;
   const auto metadata = sourceFixture(directory);
@@ -693,6 +709,7 @@ int main(int argc, char** argv) {
     check(argc == 1,
           "Usage: task-tests [--real-adaptation WAV output-directory]");
     testTaskRoundtrip();
+    testWholeRunRawHeadQuotaRejectsBeforeWorker();
     testFailuresAndGeneration();
     testAdaptedShortTaskSnapshot();
     testLargeFrameEvidenceUsesLocalStorage();

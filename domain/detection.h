@@ -91,6 +91,9 @@ struct DetectionRequest {
   std::string modelSha256;
   std::uint64_t workingSetBudgetBytes = 256 * 1024 * 1024;
   std::uint64_t evidenceBudgetBytes = 32 * 1024 * 1024;
+  // Independent bounded on-disk raw heads; not resident JSON metadata. Zero
+  // retains the historical combined evidence quota when decoding old runs.
+  std::uint64_t rawHeadBudgetBytes = 256 * 1024 * 1024;
 };
 
 std::uint32_t detectionModelMinimumBins(const DetectionRequest&);

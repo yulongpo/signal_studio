@@ -1,0 +1,961 @@
+{
+    "annotationCount": 23,
+    "binary": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioDetectionBenchmark.exe",
+    "cancellationSent": true,
+    "elapsedMs": 179057,
+    "memoryAfter": {
+        "peakRssBytes": 52166656,
+        "privateBytes": 7335936,
+        "rssBytes": 19324928
+    },
+    "memoryBefore": {
+        "peakRssBytes": 13410304,
+        "privateBytes": 2400256,
+        "rssBytes": 13398016
+    },
+    "nativeUiVerified": false,
+    "originalRequest": {
+        "contextRange": {
+            "endSample": "16000000",
+            "frequencyFrame": "RF",
+            "frequencyLowerHz": -10000000,
+            "frequencyUpperHz": 10000000,
+            "startSample": "0"
+        },
+        "evidenceBudgetBytes": "33554432",
+        "modelManifestPath": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+        "modelSha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03",
+        "parameters": {
+            "bandwidthMarginDb": 6,
+            "batchSize": 2,
+            "coarseMinBurstSeconds": 0.01,
+            "coarseSplitGapSeconds": 0.02,
+            "maxMiss": 1,
+            "mergeFrequencyHz": 100000,
+            "minHits": 2,
+            "minOffSeconds": 0.01,
+            "minOnSeconds": 0.005,
+            "nmsIou": 0.3,
+            "sampleEdgeRatio": 0.6,
+            "scoreThreshold": 0.5,
+            "smoothSeconds": 0.001,
+            "splitBursts": true,
+            "timeStrategy": "roi",
+            "topK": 512
+        },
+        "parentRunId": null,
+        "profile": {
+            "backend": "TensorRt",
+            "fftSize": 65536,
+            "hopSeconds": 0.00025,
+            "id": "ffscn-gui-iq-v1",
+            "maximumPsdOnly": false,
+            "modelFrames": 10,
+            "modelHopFrames": 5,
+            "name": "FFSCN GUI IQ",
+            "status": "主线候选 / 需资产预检",
+            "supportsReal": false,
+            "version": 1
+        },
+        "rangeOrigin": "visible",
+        "requestedRange": {
+            "endSample": "16000000",
+            "frequencyFrame": "RF",
+            "frequencyLowerHz": -10000000,
+            "frequencyUpperHz": 10000000,
+            "startSample": "0"
+        },
+        "runId": "run-0c82d126-38e7-4b14-8778-491fc5c670f3",
+        "schemaVersion": 2,
+        "sourceAnnotationId": "",
+        "sourceIdentity": {
+            "availableSamples": "16000000",
+            "centerFrequencyHz": 0,
+            "contentHash": "",
+            "effectiveFrequency": {
+                "lowerHz": -10000000,
+                "upperHz": 10000000
+            },
+            "fileId": "file-1",
+            "formatRevision": "1",
+            "hashedRange": null,
+            "path": "D:/coding/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "physicalSamples": "16000000",
+            "projectGeneration": "2",
+            "quickFingerprint": "64000044/1785185462346",
+            "sampleFormat": {
+                "byteOrder": "le",
+                "channelLayout": "interleaved",
+                "channels": 1,
+                "encoding": "I16",
+                "headerBytes": "44",
+                "iqLayout": "iq",
+                "normalizeIntegerAdc": true,
+                "selectedChannel": 0,
+                "structure": "complex",
+                "trailerBytes": "0"
+            },
+            "sampleRateHz": 20000000,
+            "selectedSampleChannel": "0"
+        },
+        "sourceRevisionId": "",
+        "spectrumMode": 0,
+        "workingSetBudgetBytes": "268435456"
+    },
+    "pass": false,
+    "processId": 3984,
+    "publicationAvailable": true,
+    "request": {
+        "contextRange": {
+            "endSample": "16000000",
+            "frequencyFrame": "RF",
+            "frequencyLowerHz": -10000000,
+            "frequencyUpperHz": 10000000,
+            "startSample": "0"
+        },
+        "evidenceBudgetBytes": "33554432",
+        "modelManifestPath": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+        "modelSha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03",
+        "parameters": {
+            "bandwidthMarginDb": 6,
+            "batchSize": 2,
+            "coarseMinBurstSeconds": 0.01,
+            "coarseSplitGapSeconds": 0.02,
+            "maxMiss": 1,
+            "mergeFrequencyHz": 100000,
+            "minHits": 2,
+            "minOffSeconds": 0.01,
+            "minOnSeconds": 0.005,
+            "nmsIou": 0.3,
+            "sampleEdgeRatio": 0.6,
+            "scoreThreshold": 0.5,
+            "smoothSeconds": 0.001,
+            "splitBursts": true,
+            "timeStrategy": "roi",
+            "topK": 512
+        },
+        "parentRunId": null,
+        "profile": {
+            "backend": "TensorRt",
+            "fftSize": 65536,
+            "hopSeconds": 0.00025,
+            "id": "ffscn-gui-iq-v1",
+            "maximumPsdOnly": false,
+            "modelFrames": 10,
+            "modelHopFrames": 5,
+            "name": "FFSCN GUI IQ",
+            "status": "主线候选 / 需资产预检",
+            "supportsReal": false,
+            "version": 1
+        },
+        "rangeOrigin": "visible",
+        "rawHeadBudgetBytes": "268435456",
+        "requestedRange": {
+            "endSample": "16000000",
+            "frequencyFrame": "RF",
+            "frequencyLowerHz": -10000000,
+            "frequencyUpperHz": 10000000,
+            "startSample": "0"
+        },
+        "runId": "ux-r6-d0e1fd2a-d59d-4652-bc6d-4829ebd071be",
+        "schemaVersion": 2,
+        "sourceAnnotationId": "",
+        "sourceIdentity": {
+            "availableSamples": "16000000",
+            "centerFrequencyHz": 0,
+            "contentHash": "",
+            "effectiveFrequency": {
+                "lowerHz": -10000000,
+                "upperHz": 10000000
+            },
+            "fileId": "file-1",
+            "formatRevision": "1",
+            "hashedRange": null,
+            "path": "D:/coding/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "physicalSamples": "16000000",
+            "projectGeneration": "2",
+            "quickFingerprint": "64000044/1785185462346",
+            "sampleFormat": {
+                "byteOrder": "le",
+                "channelLayout": "interleaved",
+                "channels": 1,
+                "encoding": "I16",
+                "headerBytes": "44",
+                "iqLayout": "iq",
+                "normalizeIntegerAdc": true,
+                "selectedChannel": 0,
+                "structure": "complex",
+                "trailerBytes": "0"
+            },
+            "sampleRateHz": 20000000,
+            "selectedSampleChannel": "0"
+        },
+        "sourceRevisionId": "",
+        "spectrumMode": 0,
+        "workingSetBudgetBytes": "268435456"
+    },
+    "run": {
+        "chunks": [
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-2b170fd28326f9d10d0ffc899ee46c2eab7d90c23928d03bb98acb445a93f8e7.json",
+                "resultCount": 2,
+                "sequence": "0",
+                "sha256": "2b170fd28326f9d10d0ffc899ee46c2eab7d90c23928d03bb98acb445a93f8e7"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-15a8dd3a196e1b3d534159cdd7ec4a810e092c382e21b6d4fbeb14664893eb24.json",
+                "resultCount": 2,
+                "sequence": "1",
+                "sha256": "15a8dd3a196e1b3d534159cdd7ec4a810e092c382e21b6d4fbeb14664893eb24"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-d5a4c6e5c233e19da0fafd881643e0dceb6776fd699e06e317dda50537dc18f3.json",
+                "resultCount": 2,
+                "sequence": "2",
+                "sha256": "d5a4c6e5c233e19da0fafd881643e0dceb6776fd699e06e317dda50537dc18f3"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-0b1c83328640298006946e344c4ea635769bec65e150eff18b9d1bab4c4bf0d5.json",
+                "resultCount": 2,
+                "sequence": "3",
+                "sha256": "0b1c83328640298006946e344c4ea635769bec65e150eff18b9d1bab4c4bf0d5"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-05fbc314fc08ef30071c601e336d2e4de4d1ca93519e2c286c9d46576a7477c5.json",
+                "resultCount": 2,
+                "sequence": "4",
+                "sha256": "05fbc314fc08ef30071c601e336d2e4de4d1ca93519e2c286c9d46576a7477c5"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-c380b8e2089f62b7628c64c3911e1410cadd30e0599307e8f1f6b1c2ac081ed3.json",
+                "resultCount": 2,
+                "sequence": "5",
+                "sha256": "c380b8e2089f62b7628c64c3911e1410cadd30e0599307e8f1f6b1c2ac081ed3"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-19567ff2f1a66392a56496372eb076b3c4c9edb565b43a98944466cccbbc1040.json",
+                "resultCount": 2,
+                "sequence": "6",
+                "sha256": "19567ff2f1a66392a56496372eb076b3c4c9edb565b43a98944466cccbbc1040"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-b98261af9078572729b7f9eaa9018aaeab2bf68314e29b637bc28b8dc4226471.json",
+                "resultCount": 2,
+                "sequence": "7",
+                "sha256": "b98261af9078572729b7f9eaa9018aaeab2bf68314e29b637bc28b8dc4226471"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-2449f90b258d1c28a76b53b087ea169fda9eb5a44c5150f1ac28ecf0d95370ca.json",
+                "resultCount": 2,
+                "sequence": "8",
+                "sha256": "2449f90b258d1c28a76b53b087ea169fda9eb5a44c5150f1ac28ecf0d95370ca"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-e37f3c036749fb53128c16070364d904625436d9856bf770cba00e5d7ecd9b62.json",
+                "resultCount": 2,
+                "sequence": "9",
+                "sha256": "e37f3c036749fb53128c16070364d904625436d9856bf770cba00e5d7ecd9b62"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-affdfd52e904150b7b40b31e388b46eeff767f2d88ef08b208014a66fdeaf92d.json",
+                "resultCount": 2,
+                "sequence": "10",
+                "sha256": "affdfd52e904150b7b40b31e388b46eeff767f2d88ef08b208014a66fdeaf92d"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-4acc9e6b7f427e3aadc0de7ae0c1a4cc5190c5d34fc7ac09dcaf55ff3c7f0620.json",
+                "resultCount": 2,
+                "sequence": "11",
+                "sha256": "4acc9e6b7f427e3aadc0de7ae0c1a4cc5190c5d34fc7ac09dcaf55ff3c7f0620"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-e65d125e8df005fcda3098cc26c1838f8799316dbe09af23fd2b0572a2aed6e9.json",
+                "resultCount": 2,
+                "sequence": "12",
+                "sha256": "e65d125e8df005fcda3098cc26c1838f8799316dbe09af23fd2b0572a2aed6e9"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-bf850501a7096aa7ad4c07a8d59243dadb9b71e1074ae8e15eccafc0f8b95cb1.json",
+                "resultCount": 2,
+                "sequence": "13",
+                "sha256": "bf850501a7096aa7ad4c07a8d59243dadb9b71e1074ae8e15eccafc0f8b95cb1"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-5bef1c94b82ca90cc3acb3a796deb208641646b1443f915c501653696302fda1.json",
+                "resultCount": 2,
+                "sequence": "14",
+                "sha256": "5bef1c94b82ca90cc3acb3a796deb208641646b1443f915c501653696302fda1"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-759cdcd16481aab2ec21e9671eec3c8b4a3af0f6b0386d79b1fbb15f09fc1c7d.json",
+                "resultCount": 2,
+                "sequence": "15",
+                "sha256": "759cdcd16481aab2ec21e9671eec3c8b4a3af0f6b0386d79b1fbb15f09fc1c7d"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-5195d2e0b7deae4527c66cd4d16690823f6a8748d28b2962824b30a4aa409d72.json",
+                "resultCount": 2,
+                "sequence": "16",
+                "sha256": "5195d2e0b7deae4527c66cd4d16690823f6a8748d28b2962824b30a4aa409d72"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-c620cf3232ef671058d83f1368e4bae023c550e7c8e67d92d139f20ebe682db4.json",
+                "resultCount": 2,
+                "sequence": "17",
+                "sha256": "c620cf3232ef671058d83f1368e4bae023c550e7c8e67d92d139f20ebe682db4"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-213d883be46f8466ed749a65c7e1334a5b9a13480d3f571e556ebe424d5a262f.json",
+                "resultCount": 2,
+                "sequence": "18",
+                "sha256": "213d883be46f8466ed749a65c7e1334a5b9a13480d3f571e556ebe424d5a262f"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-fca04340e81921b233e6754801fc46a179e398adc6649dc4f61426cda1030668.json",
+                "resultCount": 2,
+                "sequence": "19",
+                "sha256": "fca04340e81921b233e6754801fc46a179e398adc6649dc4f61426cda1030668"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-ae28040d3f0c4315964793c96fd91f5ea04165fe032716b4b1543caf479151fa.json",
+                "resultCount": 2,
+                "sequence": "20",
+                "sha256": "ae28040d3f0c4315964793c96fd91f5ea04165fe032716b4b1543caf479151fa"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-cc80f5ec78d8df05aec75457e58009c22bba9c5850b985a0b6577947a9ca6200.json",
+                "resultCount": 2,
+                "sequence": "21",
+                "sha256": "cc80f5ec78d8df05aec75457e58009c22bba9c5850b985a0b6577947a9ca6200"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-316866e4e7c15bbfd571e0b8f87baa1fa1bc755af10ba161a4b0ed252ac0e9f1.json",
+                "resultCount": 2,
+                "sequence": "22",
+                "sha256": "316866e4e7c15bbfd571e0b8f87baa1fa1bc755af10ba161a4b0ed252ac0e9f1"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-ca684c18939171d530d13efc41e962d237d44599557ba8bfcbb58b4f6865da42.json",
+                "resultCount": 2,
+                "sequence": "23",
+                "sha256": "ca684c18939171d530d13efc41e962d237d44599557ba8bfcbb58b4f6865da42"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-392e2629cb22b58ab8d8edbbdef8ed905e1c657c774e25862041952c28fc1e44.json",
+                "resultCount": 2,
+                "sequence": "24",
+                "sha256": "392e2629cb22b58ab8d8edbbdef8ed905e1c657c774e25862041952c28fc1e44"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-154bfde944d5bb4d6328d8e348f1edf720f85264e103a20aa59c54b069b312af.json",
+                "resultCount": 2,
+                "sequence": "25",
+                "sha256": "154bfde944d5bb4d6328d8e348f1edf720f85264e103a20aa59c54b069b312af"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-127e1d883c34cb51de2cbc3e21774a40e83429400f3871d6d9c3a11820d1fa91.json",
+                "resultCount": 2,
+                "sequence": "26",
+                "sha256": "127e1d883c34cb51de2cbc3e21774a40e83429400f3871d6d9c3a11820d1fa91"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-31c4c2e744bebdec42d511b626525b944cbf91bcadca0468abc72e0de596a69f.json",
+                "resultCount": 2,
+                "sequence": "27",
+                "sha256": "31c4c2e744bebdec42d511b626525b944cbf91bcadca0468abc72e0de596a69f"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-98bfff876c7876f55ac60e6a2969d497ee1b687fd3bab98315ed29d4ab84d675.json",
+                "resultCount": 2,
+                "sequence": "28",
+                "sha256": "98bfff876c7876f55ac60e6a2969d497ee1b687fd3bab98315ed29d4ab84d675"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-74078800da8072ef380d6c26a634d7b1594ed8e1b48c8d18283a197f9935183b.json",
+                "resultCount": 2,
+                "sequence": "29",
+                "sha256": "74078800da8072ef380d6c26a634d7b1594ed8e1b48c8d18283a197f9935183b"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-dbd88893db4b18feebbf12c46c7df4db6c0fae79c5aed6a026e33cd09b749762.json",
+                "resultCount": 2,
+                "sequence": "30",
+                "sha256": "dbd88893db4b18feebbf12c46c7df4db6c0fae79c5aed6a026e33cd09b749762"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-32f7ad740c5c2b96a3780fb1a69a18837b5e6334f16a7014bd91ad1d39f59171.json",
+                "resultCount": 2,
+                "sequence": "31",
+                "sha256": "32f7ad740c5c2b96a3780fb1a69a18837b5e6334f16a7014bd91ad1d39f59171"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-430844e7ef6ff27bb38d8cf7e9c93ad008a922f443f0aeac3b18c91a1b9e5af2.json",
+                "resultCount": 2,
+                "sequence": "32",
+                "sha256": "430844e7ef6ff27bb38d8cf7e9c93ad008a922f443f0aeac3b18c91a1b9e5af2"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-c3d23996177ea5c8f1191f8e646920a0b8be9ed9d53a4c0fbba241f80b8c7ee9.json",
+                "resultCount": 2,
+                "sequence": "33",
+                "sha256": "c3d23996177ea5c8f1191f8e646920a0b8be9ed9d53a4c0fbba241f80b8c7ee9"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-060c56de084e54f777e5b497c3247d9059851f56c640591c2b21c96dcf8f9ab0.json",
+                "resultCount": 2,
+                "sequence": "34",
+                "sha256": "060c56de084e54f777e5b497c3247d9059851f56c640591c2b21c96dcf8f9ab0"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-12a69035bc17acf3fa9b7bd454a7bcb734cbc849aae4ee11bb4c11c92f27f5cf.json",
+                "resultCount": 2,
+                "sequence": "35",
+                "sha256": "12a69035bc17acf3fa9b7bd454a7bcb734cbc849aae4ee11bb4c11c92f27f5cf"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-88e76f2d95b89873d2cba8a5b25041e4abbb98e6815e5074e49d5b7dfc49d9c0.json",
+                "resultCount": 2,
+                "sequence": "36",
+                "sha256": "88e76f2d95b89873d2cba8a5b25041e4abbb98e6815e5074e49d5b7dfc49d9c0"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-7f40f8ba4006dd7849fe27008caef800a385822879177e56e6bfad4a7b2a2fe3.json",
+                "resultCount": 2,
+                "sequence": "37",
+                "sha256": "7f40f8ba4006dd7849fe27008caef800a385822879177e56e6bfad4a7b2a2fe3"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-b6c98b3115103610cc071e70ae7d57b9e850a730cb4645f5b48e2bdbdd0acf99.json",
+                "resultCount": 2,
+                "sequence": "38",
+                "sha256": "b6c98b3115103610cc071e70ae7d57b9e850a730cb4645f5b48e2bdbdd0acf99"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-93c5ae6789164e1c6fa1990aa39ea1567355424a7b076af8a42a74c3035b2c28.json",
+                "resultCount": 2,
+                "sequence": "39",
+                "sha256": "93c5ae6789164e1c6fa1990aa39ea1567355424a7b076af8a42a74c3035b2c28"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-90bf0f949eca66dd2360fff625ac1bec56b0ce37e356eeadb9e61e59639ad615.json",
+                "resultCount": 2,
+                "sequence": "40",
+                "sha256": "90bf0f949eca66dd2360fff625ac1bec56b0ce37e356eeadb9e61e59639ad615"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-c0e2b56de746d300678cd2ace7d347876afe637c4a961614d394bf247b3ae81a.json",
+                "resultCount": 2,
+                "sequence": "41",
+                "sha256": "c0e2b56de746d300678cd2ace7d347876afe637c4a961614d394bf247b3ae81a"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-d38260cee3273728e8f5a9c294c18da40ab66d420ea4fcdd7508593368a353e5.json",
+                "resultCount": 2,
+                "sequence": "42",
+                "sha256": "d38260cee3273728e8f5a9c294c18da40ab66d420ea4fcdd7508593368a353e5"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-db6036fa45f68564258fa25e000735b7921f559a6b300863e9cd7176350000cd.json",
+                "resultCount": 2,
+                "sequence": "43",
+                "sha256": "db6036fa45f68564258fa25e000735b7921f559a6b300863e9cd7176350000cd"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-ab337ffad9464000deed9782b6bb40946812601e262839e1bbb70678bb86f96d.json",
+                "resultCount": 2,
+                "sequence": "44",
+                "sha256": "ab337ffad9464000deed9782b6bb40946812601e262839e1bbb70678bb86f96d"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-76336c650ae1848283774d2ac66844d3984d6d61a20bea35868911090bdc1a49.json",
+                "resultCount": 2,
+                "sequence": "45",
+                "sha256": "76336c650ae1848283774d2ac66844d3984d6d61a20bea35868911090bdc1a49"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-0ab244af25950aa1fd3e9fe2a3e87b654e34f36ce4a9388fb0f4c90a9ce72dd8.json",
+                "resultCount": 2,
+                "sequence": "46",
+                "sha256": "0ab244af25950aa1fd3e9fe2a3e87b654e34f36ce4a9388fb0f4c90a9ce72dd8"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-81c99b8ee59e76559028718db54a6372efc7824238975b75280fd4b69aea33d6.json",
+                "resultCount": 2,
+                "sequence": "47",
+                "sha256": "81c99b8ee59e76559028718db54a6372efc7824238975b75280fd4b69aea33d6"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-480927388b911a67304496d7ee542732bccc8e5154ca7d5b1c661720b3a62cdf.json",
+                "resultCount": 2,
+                "sequence": "48",
+                "sha256": "480927388b911a67304496d7ee542732bccc8e5154ca7d5b1c661720b3a62cdf"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-d9720990d5da333985109377e95619976e824582dd18eff466bbff9fdea20b68.json",
+                "resultCount": 2,
+                "sequence": "49",
+                "sha256": "d9720990d5da333985109377e95619976e824582dd18eff466bbff9fdea20b68"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-f0a7f7aefcce0d65040c0388e664902f87971a5db14b43ed6b8aea3aad2f96e3.json",
+                "resultCount": 2,
+                "sequence": "50",
+                "sha256": "f0a7f7aefcce0d65040c0388e664902f87971a5db14b43ed6b8aea3aad2f96e3"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-99fee24d470b502a4fada00f449ebd9fb01e2e62356943f14435cf283b387c06.json",
+                "resultCount": 2,
+                "sequence": "51",
+                "sha256": "99fee24d470b502a4fada00f449ebd9fb01e2e62356943f14435cf283b387c06"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-1c039d47d0144dafe185b5e3aaeeafc4b3cf0381ba93222407b672b962070576.json",
+                "resultCount": 2,
+                "sequence": "52",
+                "sha256": "1c039d47d0144dafe185b5e3aaeeafc4b3cf0381ba93222407b672b962070576"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-5295c569929342c6387dd8179f351aed2c9661d44b7362699a356f6028caef8a.json",
+                "resultCount": 2,
+                "sequence": "53",
+                "sha256": "5295c569929342c6387dd8179f351aed2c9661d44b7362699a356f6028caef8a"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-bd45555b7db50242550b6231937a2fe569b95eff8b3b09e6dd0c0e80545f61b3.json",
+                "resultCount": 2,
+                "sequence": "54",
+                "sha256": "bd45555b7db50242550b6231937a2fe569b95eff8b3b09e6dd0c0e80545f61b3"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-bbc88c2217534374cb9e246339f00e40aa5f066837a8a16f1e7bf8b759655849.json",
+                "resultCount": 2,
+                "sequence": "55",
+                "sha256": "bbc88c2217534374cb9e246339f00e40aa5f066837a8a16f1e7bf8b759655849"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-1d10e5ad10ff6344925e43f0efde6f6b109758d797baadebf1e04681014b09a2.json",
+                "resultCount": 2,
+                "sequence": "56",
+                "sha256": "1d10e5ad10ff6344925e43f0efde6f6b109758d797baadebf1e04681014b09a2"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-aea69f18e0ba95780c02596281a3890c9f95699dcb9c23e25c4b488441e39436.json",
+                "resultCount": 2,
+                "sequence": "57",
+                "sha256": "aea69f18e0ba95780c02596281a3890c9f95699dcb9c23e25c4b488441e39436"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-305e4aa6b5454883698b893e206523d773f45d01b18fda7d9f51bc141ad5f123.json",
+                "resultCount": 2,
+                "sequence": "58",
+                "sha256": "305e4aa6b5454883698b893e206523d773f45d01b18fda7d9f51bc141ad5f123"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-aa816ef05771f49720bb0f9c22c1c94be0264a81864ced13fbd491b3ef5746c1.json",
+                "resultCount": 2,
+                "sequence": "59",
+                "sha256": "aa816ef05771f49720bb0f9c22c1c94be0264a81864ced13fbd491b3ef5746c1"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-1861933d96e2d2ad7ab1cd264ebc4883cea3dcc6e9b214b10e772a7045089f85.json",
+                "resultCount": 2,
+                "sequence": "60",
+                "sha256": "1861933d96e2d2ad7ab1cd264ebc4883cea3dcc6e9b214b10e772a7045089f85"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-513368df42e85d3eba51f06695a6d787fe7540eb79f79385b54e85cefdac2415.json",
+                "resultCount": 2,
+                "sequence": "61",
+                "sha256": "513368df42e85d3eba51f06695a6d787fe7540eb79f79385b54e85cefdac2415"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-3b53a3799288c5634fa6acafd6e1c2f50c094535643499bf556fb229dfd2443a.json",
+                "resultCount": 2,
+                "sequence": "62",
+                "sha256": "3b53a3799288c5634fa6acafd6e1c2f50c094535643499bf556fb229dfd2443a"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-a7e2936fdb16a086355fa7843058185a05ae7594dd8a05be2c866f382de30fa5.json",
+                "resultCount": 2,
+                "sequence": "63",
+                "sha256": "a7e2936fdb16a086355fa7843058185a05ae7594dd8a05be2c866f382de30fa5"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-110d5722217e51a2ac2e07e014a93b1e36203b6d3f4eaf78a895a5525a370750.json",
+                "resultCount": 2,
+                "sequence": "64",
+                "sha256": "110d5722217e51a2ac2e07e014a93b1e36203b6d3f4eaf78a895a5525a370750"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-4fd989c03c49563b29b0b88dff05c57c7e44c011e320d021e62bf760f797cbde.json",
+                "resultCount": 2,
+                "sequence": "65",
+                "sha256": "4fd989c03c49563b29b0b88dff05c57c7e44c011e320d021e62bf760f797cbde"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-0517f8a9d41fada9b2d9c0793f933969727e04f8b44bc51410414a8b32161096.json",
+                "resultCount": 2,
+                "sequence": "66",
+                "sha256": "0517f8a9d41fada9b2d9c0793f933969727e04f8b44bc51410414a8b32161096"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-2ac7baf04f385959aa1109a1bcbfb051b978e35f68e06cb78f7ea28625764318.json",
+                "resultCount": 2,
+                "sequence": "67",
+                "sha256": "2ac7baf04f385959aa1109a1bcbfb051b978e35f68e06cb78f7ea28625764318"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-4591ddc102d8cce287e719d7aacf9bb7e2dea94b9c8212333de3ec54ca66fa1d.json",
+                "resultCount": 2,
+                "sequence": "68",
+                "sha256": "4591ddc102d8cce287e719d7aacf9bb7e2dea94b9c8212333de3ec54ca66fa1d"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-fe161ce892255d32e45a1b16c7099d262987b2de7159b75902902df98e2a446e.json",
+                "resultCount": 2,
+                "sequence": "69",
+                "sha256": "fe161ce892255d32e45a1b16c7099d262987b2de7159b75902902df98e2a446e"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-cb8cfdf21cc27f3386b84ffcc614906cd60030d2279cccb03542412ac4cddb53.json",
+                "resultCount": 2,
+                "sequence": "70",
+                "sha256": "cb8cfdf21cc27f3386b84ffcc614906cd60030d2279cccb03542412ac4cddb53"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-264ba0cba039a5d2b2f9f583f9f7971be47d66655f4d20fe70a764cbf4e5d0ba.json",
+                "resultCount": 2,
+                "sequence": "71",
+                "sha256": "264ba0cba039a5d2b2f9f583f9f7971be47d66655f4d20fe70a764cbf4e5d0ba"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-69ec94452d1bb77426c966f2b943ab8faa9aecb0ccdf2e713c71ef732097dc4e.json",
+                "resultCount": 2,
+                "sequence": "72",
+                "sha256": "69ec94452d1bb77426c966f2b943ab8faa9aecb0ccdf2e713c71ef732097dc4e"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-e563634edf765f648d946f2a129344ebb0037c135fa09f4000b5305dbebd8e96.json",
+                "resultCount": 2,
+                "sequence": "73",
+                "sha256": "e563634edf765f648d946f2a129344ebb0037c135fa09f4000b5305dbebd8e96"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-b9f31f4f2f8ae64c5de5dfceb9309c5ad12d750e82ae7505ef17a6796b2258e7.json",
+                "resultCount": 2,
+                "sequence": "74",
+                "sha256": "b9f31f4f2f8ae64c5de5dfceb9309c5ad12d750e82ae7505ef17a6796b2258e7"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-a8b31a9634616931a78e337fed9815f4545b47a645faec77debbda8a3ed4faa4.json",
+                "resultCount": 2,
+                "sequence": "75",
+                "sha256": "a8b31a9634616931a78e337fed9815f4545b47a645faec77debbda8a3ed4faa4"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-d59470d5fbade58f446cdb9169c7e5855e5a40d1d3af6a7c2c113fe291f10a88.json",
+                "resultCount": 2,
+                "sequence": "76",
+                "sha256": "d59470d5fbade58f446cdb9169c7e5855e5a40d1d3af6a7c2c113fe291f10a88"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-fe85e31a5e819215592fe72f22deafdb4c178b8b6d5c311f58e2bd2e0f17623a.json",
+                "resultCount": 2,
+                "sequence": "77",
+                "sha256": "fe85e31a5e819215592fe72f22deafdb4c178b8b6d5c311f58e2bd2e0f17623a"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-d1c238a7f96a710e72c38edd5eed73cf60fe6c1c11fd9eaae5097da078e5c456.json",
+                "resultCount": 2,
+                "sequence": "78",
+                "sha256": "d1c238a7f96a710e72c38edd5eed73cf60fe6c1c11fd9eaae5097da078e5c456"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-592fd4134b137232e1ddd55f269329b7d7790d3ee7757df4b3d413f1c03cafd0.json",
+                "resultCount": 2,
+                "sequence": "79",
+                "sha256": "592fd4134b137232e1ddd55f269329b7d7790d3ee7757df4b3d413f1c03cafd0"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-0b3d1f5d71941c2c29fcb90517093246973a8e42ae6da9c4409c1f50ae652d91.json",
+                "resultCount": 2,
+                "sequence": "80",
+                "sha256": "0b3d1f5d71941c2c29fcb90517093246973a8e42ae6da9c4409c1f50ae652d91"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-5f0d3153798949699cfc55bea3ce091d982756b4a15a9bf3f787e418b9dffc20.json",
+                "resultCount": 2,
+                "sequence": "81",
+                "sha256": "5f0d3153798949699cfc55bea3ce091d982756b4a15a9bf3f787e418b9dffc20"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-4c2249b169950953fea142924ba57b9132f534c2691ece55baaf69af5c9ac6ce.json",
+                "resultCount": 2,
+                "sequence": "82",
+                "sha256": "4c2249b169950953fea142924ba57b9132f534c2691ece55baaf69af5c9ac6ce"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-e44cea2fb44de260555c577145b820e814acc77deb747627643b26138c69900a.json",
+                "resultCount": 2,
+                "sequence": "83",
+                "sha256": "e44cea2fb44de260555c577145b820e814acc77deb747627643b26138c69900a"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-a8b763dabfcef5693dc17ac47a7b9da601966dd2f57e2ec5519dfd3eebe60029.json",
+                "resultCount": 2,
+                "sequence": "84",
+                "sha256": "a8b763dabfcef5693dc17ac47a7b9da601966dd2f57e2ec5519dfd3eebe60029"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-1ff05120ddb152bba3c17beea0f9e1eaa537ddd8e8cd75238d15b1418f756af1.json",
+                "resultCount": 2,
+                "sequence": "85",
+                "sha256": "1ff05120ddb152bba3c17beea0f9e1eaa537ddd8e8cd75238d15b1418f756af1"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-7744111d9b46b74dde8c4a5be630847b0b5d44c323ad4a0b9313204139d57156.json",
+                "resultCount": 2,
+                "sequence": "86",
+                "sha256": "7744111d9b46b74dde8c4a5be630847b0b5d44c323ad4a0b9313204139d57156"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-667cd97658ffac09e36f683229b4c4c41144e298813a9154f1ab8898120342dd.json",
+                "resultCount": 2,
+                "sequence": "87",
+                "sha256": "667cd97658ffac09e36f683229b4c4c41144e298813a9154f1ab8898120342dd"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-409ef4c2d7924b26216884cb050988348a573074796ed1b021be2f9f14496218.json",
+                "resultCount": 2,
+                "sequence": "88",
+                "sha256": "409ef4c2d7924b26216884cb050988348a573074796ed1b021be2f9f14496218"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-b24e6b5ecc5997730794a3aa08b040b8bb3958feb54870ccbfebee7737e41d55.json",
+                "resultCount": 2,
+                "sequence": "89",
+                "sha256": "b24e6b5ecc5997730794a3aa08b040b8bb3958feb54870ccbfebee7737e41d55"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-934a8004a5dfb127ea45a6c0a8d28102aeafc2c0f6cd498cbd525b69ac1fd8f9.json",
+                "resultCount": 2,
+                "sequence": "90",
+                "sha256": "934a8004a5dfb127ea45a6c0a8d28102aeafc2c0f6cd498cbd525b69ac1fd8f9"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-b34d68ea6b9b90b0e16bda2bb82b3a09a9a36966575f5efaff8bde42b15a61bf.json",
+                "resultCount": 2,
+                "sequence": "91",
+                "sha256": "b34d68ea6b9b90b0e16bda2bb82b3a09a9a36966575f5efaff8bde42b15a61bf"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-5c1b2f3f4ccb5ffbda4fcd5d378653a417bf6a582a5902d7b0ef3faed73cea49.json",
+                "resultCount": 2,
+                "sequence": "92",
+                "sha256": "5c1b2f3f4ccb5ffbda4fcd5d378653a417bf6a582a5902d7b0ef3faed73cea49"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-175815fa1cfcb9b56f847f1155f850dfc1d7dab316530a4626f91baafca6a104.json",
+                "resultCount": 2,
+                "sequence": "93",
+                "sha256": "175815fa1cfcb9b56f847f1155f850dfc1d7dab316530a4626f91baafca6a104"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-8642d6fdde4886ee0f7c62f32d5742cf2d10cbc16dde3486b33f8bec54974cb3.json",
+                "resultCount": 2,
+                "sequence": "94",
+                "sha256": "8642d6fdde4886ee0f7c62f32d5742cf2d10cbc16dde3486b33f8bec54974cb3"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-89bd089b6640c357e43c6ff2f5edb0d434ea8477da0759d32dbda62c018782bc.json",
+                "resultCount": 2,
+                "sequence": "95",
+                "sha256": "89bd089b6640c357e43c6ff2f5edb0d434ea8477da0759d32dbda62c018782bc"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-4bc3f3c7127ac7ce524a3c9f93741921f8c883f29de038ffd4f5727797a37a6b.json",
+                "resultCount": 2,
+                "sequence": "96",
+                "sha256": "4bc3f3c7127ac7ce524a3c9f93741921f8c883f29de038ffd4f5727797a37a6b"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-772516a96167a77a3f8700dcc19af830cc5018d740b46946ff961add301937b9.json",
+                "resultCount": 2,
+                "sequence": "97",
+                "sha256": "772516a96167a77a3f8700dcc19af830cc5018d740b46946ff961add301937b9"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-db16d3fc5da2bf7da2c95839afea9bd04b7569687c38b39844529ff10097c4a9.json",
+                "resultCount": 2,
+                "sequence": "98",
+                "sha256": "db16d3fc5da2bf7da2c95839afea9bd04b7569687c38b39844529ff10097c4a9"
+            },
+            {
+                "relativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/chunk-10ac559a0a6deb44a441812ba0f585e6b5d8569168ddb4a8b02789594f2ad38c.json",
+                "resultCount": 2,
+                "sequence": "99",
+                "sha256": "10ac559a0a6deb44a441812ba0f585e6b5d8569168ddb4a8b02789594f2ad38c"
+            }
+        ],
+        "completedWindows": "200",
+        "computationPhase": "reading",
+        "coverage": [
+            {
+                "kind": "read",
+                "range": {
+                    "endSample": "5055268",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": -10000000,
+                    "frequencyUpperHz": 10000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            },
+            {
+                "kind": "eligible",
+                "range": {
+                    "endSample": "5025000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": -10000000,
+                    "frequencyUpperHz": 10000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            },
+            {
+                "kind": "completed",
+                "range": {
+                    "endSample": "5025000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": -10000000,
+                    "frequencyUpperHz": 10000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            },
+            {
+                "kind": "unread",
+                "range": {
+                    "endSample": "16000000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": -10000000,
+                    "frequencyUpperHz": 10000000,
+                    "startSample": "5025000"
+                },
+                "reason": "No completed model response was persisted for this range"
+            }
+        ],
+        "device": "NVIDIA GeForce RTX 5060 Laptop GPU",
+        "eligibleWindows": "639",
+        "error": "检测源读取取消或失败",
+        "finishedAtMilliseconds": "1793022036713",
+        "lifecycle": "Cancelled",
+        "manifestRelativePath": "detections/0ba00e94d0b91ab0cb4194ecc4c19f25519a508fda12369cdb22c109cbb47127/manifest.json",
+        "readFrames": "1005",
+        "recoverable": false,
+        "refinedCandidates": "0",
+        "request": {
+            "contextRange": {
+                "endSample": "16000000",
+                "frequencyFrame": "RF",
+                "frequencyLowerHz": -10000000,
+                "frequencyUpperHz": 10000000,
+                "startSample": "0"
+            },
+            "evidenceBudgetBytes": "33554432",
+            "modelManifestPath": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+            "modelSha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03",
+            "parameters": {
+                "bandwidthMarginDb": 6,
+                "batchSize": 2,
+                "coarseMinBurstSeconds": 0.01,
+                "coarseSplitGapSeconds": 0.02,
+                "maxMiss": 1,
+                "mergeFrequencyHz": 100000,
+                "minHits": 2,
+                "minOffSeconds": 0.01,
+                "minOnSeconds": 0.005,
+                "nmsIou": 0.3,
+                "sampleEdgeRatio": 0.6,
+                "scoreThreshold": 0.5,
+                "smoothSeconds": 0.001,
+                "splitBursts": true,
+                "timeStrategy": "roi",
+                "topK": 512
+            },
+            "parentRunId": null,
+            "profile": {
+                "backend": "TensorRt",
+                "fftSize": 65536,
+                "hopSeconds": 0.00025,
+                "id": "ffscn-gui-iq-v1",
+                "maximumPsdOnly": false,
+                "modelFrames": 10,
+                "modelHopFrames": 5,
+                "name": "FFSCN GUI IQ",
+                "status": "主线候选 / 需资产预检",
+                "supportsReal": false,
+                "version": 1
+            },
+            "rangeOrigin": "visible",
+            "rawHeadBudgetBytes": "268435456",
+            "requestedRange": {
+                "endSample": "16000000",
+                "frequencyFrame": "RF",
+                "frequencyLowerHz": -10000000,
+                "frequencyUpperHz": 10000000,
+                "startSample": "0"
+            },
+            "runId": "ux-r6-d0e1fd2a-d59d-4652-bc6d-4829ebd071be",
+            "schemaVersion": 2,
+            "sourceAnnotationId": "",
+            "sourceIdentity": {
+                "availableSamples": "16000000",
+                "centerFrequencyHz": 0,
+                "contentHash": "",
+                "effectiveFrequency": {
+                    "lowerHz": -10000000,
+                    "upperHz": 10000000
+                },
+                "fileId": "file-1",
+                "formatRevision": "1",
+                "hashedRange": null,
+                "path": "D:/coding/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+                "physicalSamples": "16000000",
+                "projectGeneration": "2",
+                "quickFingerprint": "64000044/1785185462346",
+                "sampleFormat": {
+                    "byteOrder": "le",
+                    "channelLayout": "interleaved",
+                    "channels": 1,
+                    "encoding": "I16",
+                    "headerBytes": "44",
+                    "iqLayout": "iq",
+                    "normalizeIntegerAdc": true,
+                    "selectedChannel": 0,
+                    "structure": "complex",
+                    "trailerBytes": "0"
+                },
+                "sampleRateHz": 20000000,
+                "selectedSampleChannel": "0"
+            },
+            "sourceRevisionId": "",
+            "spectrumMode": 0,
+            "workingSetBudgetBytes": "268435456"
+        },
+        "resultCount": "200",
+        "runtime": "10.11.0.33",
+        "schema": "signal-studio-detection-run",
+        "sourceValidity": "Current",
+        "startedAtMilliseconds": "1793021859643",
+        "totalRefinementCandidates": "0",
+        "version": 2
+    },
+    "schema": "signal-studio-detection-benchmark-v1",
+    "scope": "production headless pipeline; publication timing is not UI paint latency",
+    "segmentCount": 0,
+    "startedUtc": "2026-10-26T13:37:39.622Z",
+    "storedBytesBeforeFinalReport": "43123614",
+    "timedOut": false,
+    "windowsPerSecond": 1.1169627548769385
+}

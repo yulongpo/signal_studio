@@ -675,6 +675,22 @@ bool DetectionTaskManager::enqueue(const QString& directory,
   if (!makeDetectionSourcePlan(metadata, request.requestedRange, config, plan,
                                error, request.sourceIdentity.projectGeneration))
     return false;
+  // The model response footprint is exactly known before starting the worker.
+  // Keep it separate from bounded JSON control evidence and resident memory.
+  if (request.rawHeadBudgetBytes && plan.modelHeadBytesPerWindow &&
+      plan.eligibleWindowCount > request.rawHeadBudgetBytes / plan.modelHeadBytesPerWindow) {
+    error = QString("Raw model head disk budget rejected before inference: %1 windows x %2 bytes; limit %3 bytes. Reduce the range, increase the frame interval or explicitly provision a bounded artifact quota.")
+        .arg(plan.eligibleWindowCount).arg(plan.modelHeadBytesPerWindow)
+        .arg(request.rawHeadBudgetBytes);
+    return false;
+  }
+  if (request.rawHeadBudgetBytes && plan.estimatedWindowEvidenceBytes &&
+      plan.eligibleWindowCount > request.evidenceBudgetBytes / plan.estimatedWindowEvidenceBytes) {
+    error = QString("JSON observation evidence budget rejected before inference: up to %1 windows x %2 mapping bytes; limit %3 bytes. Reduce the range or explicitly provision bounded metadata storage.")
+        .arg(plan.eligibleWindowCount).arg(plan.estimatedWindowEvidenceBytes)
+        .arg(request.evidenceBudgetBytes);
+    return false;
+  }
   std::uint64_t pipelineReserve = 0;
   const auto executionBatch = detectionExecutionBatchSize(
       plan, request.parameters.batchSize, pipelineReserve);
@@ -1081,16 +1097,34 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
           response.envelope["payload"].toObject()["modelEvidence"].toObject());
     auto nextPublication = publication;
     auto nextPublicationBytes = job->publicationBytes;
-    if (!fixture &&
-        (!decodeProductionResults(request, response, results, error) ||
+    if (!fixture) {
+      {
+        std::lock_guard lock(mutex_);
+        job->run.computationPhase = "decoding";
+      }
+      if (!decodeProductionResults(request, response, results, error) ||
          (request.profile.backend == DetectionBackendKind::Scn &&
           !postprocessScnResults(windows, plan, request, results, mappings,
-                                 error, cancelled)) ||
-         !storeDetectionHeadEvidence(job->directory, request, response,
-                                     mappings, error) ||
-         !projector.consume(results, mappings, error, cancelled))) {
-      finish(job, DetectionLifecycle::Failed, error);
-      return;
+                                 error, cancelled))) {
+        finish(job, DetectionLifecycle::Failed, error);
+        return;
+      }
+      {
+        std::lock_guard lock(mutex_);
+        job->run.computationPhase = "storing-heads";
+      }
+      if (!storeDetectionHeadEvidence(job->directory, request, response, mappings, error)) {
+        finish(job, DetectionLifecycle::Failed, error);
+        return;
+      }
+      {
+        std::lock_guard lock(mutex_);
+        job->run.computationPhase = "tracking";
+      }
+      if (!projector.consume(results, mappings, error, cancelled)) {
+        finish(job, DetectionLifecycle::Failed, error);
+        return;
+      }
     }
     if (fixture && !appendFixtureAnnotations(
                        request, plan.eligibleWindowCount, windows, results,
@@ -1119,6 +1153,11 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     next.completedWindows += windows.size();
     for (const auto& window : windows) {
       addCoverage(next, DetectionCoverageKind::Completed, window.reportRange);
+    }
+    {
+      std::lock_guard lock(mutex_);
+      job->run.computationPhase = "checkpoint";
+      next.computationPhase = "checkpoint";
     }
     if (!appendDetectionChunk(job->directory, next, results, mappings, error)) {
       finish(job, DetectionLifecycle::Failed, error);

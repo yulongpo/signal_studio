@@ -63,6 +63,7 @@ int main(int argc, char** argv) {
       {"fft","Override analysis FFT size","bins"},
       {"hop","Override frame interval in seconds","seconds"},
       {"limit-seconds","Restrict the requested range duration","seconds"},
+      {"raw-head-budget-mib","Explicit independent raw-head disk quota; zero means legacy combined","MiB"},
       {"cancel-windows","Cancel after at least this many durable windows","count"},
       {"timeout","Cancel at this wall-clock deadline","seconds","900"}});
   args.process(app);
@@ -104,6 +105,12 @@ int main(int argc, char** argv) {
     if (args.isSet("batch")) request.parameters.batchSize = args.value("batch").toUInt();
     if (args.isSet("fft")) request.profile.fftSize = args.value("fft").toUInt();
     if (args.isSet("hop")) request.profile.hopSeconds = args.value("hop").toDouble();
+    if (args.isSet("raw-head-budget-mib")) {
+      bool valid=false;
+      const auto mib=args.value("raw-head-budget-mib").toULongLong(&valid);
+      require(valid && mib<=2048,"Raw-head quota must be 0..2048 MiB");
+      request.rawHeadBudgetBytes=mib*1024*1024;
+    }
     if (args.isSet("limit-seconds")) {
       const double seconds = args.value("limit-seconds").toDouble();
       require(std::isfinite(seconds) && seconds > 0,"Invalid range duration");
