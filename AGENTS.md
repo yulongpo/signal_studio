@@ -75,3 +75,10 @@
 - 每 FileId + IQ channel 唯一正式检测 slot；完整成功和零结果均整体替换，取消/失败/暂存不正式发布，参数提交后显示待更新。v6 可选扩展与受控历史迁移，不无损推测歧义旧工程。退役数据不可通过目录扫描复活；GC 仅在工程提交后后台有界处理私有无引用资产，Reference 外部数据不删。
 - 产物与审核规则见 `docs/implementation/ux-r5/`；本轮中间产物按任务书放 `out/tasks/ux-r5/`。独立未参与实现的 Review 对最终精确 HEAD 明确 APPROVED 前禁止任何远端写入；报告/发布记录在 `out/tasks/ux-r5/` 提交外。入口 `scripts/publish-ux-r5.ps1`。
 - 不重复大型 RFbench 事件验收，不批量计算文件指纹；产品既有来源/检测资产完整性校验保留。真实 Qt 原生、GPU/软件、受控 publication 和模型推理证据分别报告。
+
+## UX-R6 检测流水线
+
+- 本轮依据 `reference/ux-r6/` 四文件，主执行指令为 CODEX_MASTER_PROMPT；节点R6-0至R6-8，产物 `docs/implementation/ux-r6/`，中间产物 `out/tasks/ux-r6/`。
+- P0优先：从用户原工程/日志和实际推理确认约180窗口中断根因；不能猜OOM。配置stale仅提示待更新，不能使当前committed结果从表格/图谱/选择中消失；只有完整新结果含0原子提交后替换。物理来源/文件/通道/权威run隔离仍有效，pending/retired不能成为正式集合。
+- 实现有界Sample、Engine能力内Batch、有界轨迹事件与独立临时预览；精修前不可伪造活动段，不能静默丢窗/候选制造速度。实测前后性能、原始head/边界及质量，实际模型、合成/原始数据、GPU显示和CPU DSP分开报告。
+- 保留来源证据、人工副本、旧通道、工程原子提交/恢复/私有GC及产品完整性检查；不执行大型RFbench，不批量SHA。每节点自检后本地提交，全部完成后真正独立Review精确HEAD APPROVED且最新远端安全才正常推送；任何改动需重审，不能用主代理代签。

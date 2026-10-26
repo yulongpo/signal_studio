@@ -125,6 +125,16 @@ set_target_properties(SignalStudioInfrastructure PROPERTIES AUTOMOC OFF)
 target_link_libraries(SignalStudioInfrastructure PUBLIC SignalStudioCore Qt6::Core)
 ss_target_defaults(SignalStudioInfrastructure)
 
+# Headless production-pipeline measurements, with isolated output roots. This
+# does not replace native QWidget/QRhi acceptance or model-quality evaluation.
+add_executable(SignalStudioDetectionBenchmark tools/detection_benchmark/main.cpp)
+set_target_properties(SignalStudioDetectionBenchmark PROPERTIES AUTOMOC OFF)
+ss_target_defaults(SignalStudioDetectionBenchmark)
+target_link_libraries(SignalStudioDetectionBenchmark PRIVATE SignalStudioInfrastructure)
+if(WIN32)
+    target_link_libraries(SignalStudioDetectionBenchmark PRIVATE psapi)
+endif()
+
 execute_process(COMMAND git rev-parse --short HEAD WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     OUTPUT_VARIABLE SS_BUILD_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
 add_library(SignalStudioBrand STATIC ui/brand/brand_assets.cpp ui/brand/brand_assets.h
