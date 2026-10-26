@@ -1,0 +1,1 @@
+UX-R5 Debug software=True mode=ux-r5 : 15 native scenes checked. D:\project\signal_studio_rebuild\out\tasks\ux-r5\diagnostics\native-debug-software-verified-r3\report.json

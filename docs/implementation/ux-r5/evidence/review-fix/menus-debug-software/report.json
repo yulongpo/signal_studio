@@ -1,0 +1,5147 @@
+{
+  "binary": "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUiCapture.exe",
+  "coverageBoundaries": [
+    "Targeted menu regression on actual IQ, ordinary labels, Manual and actual fixture-worker sources",
+    "Three source kinds; global/tree/graph native popups; no clipboard, DDC or replacement revalidation claim",
+    "Full UX-R5 journeys and unchanged subsystem evidence are recorded separately"
+  ],
+  "fieldRfAccuracyVerified": false,
+  "finishedUtc": "2026-10-26T10:37:14.122Z",
+  "firstPublication": {
+    "canonicalReplayCount": 18,
+    "durableProtocolRecordCount": "19",
+    "execution": "actual worker, pipeline-fixture-v1; system integration only",
+    "manifestAndChunksVerifiedByProductStore": true,
+    "modelInferenceVerified": false,
+    "publicationSourceId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+    "run": {
+      "chunks": [
+        {
+          "relativePath": "detections/00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5/chunk-f9ba2168188fb4acae529e84b03df63ad75d8d2a801ea65c7d903952d181c525.json",
+          "resultCount": 2,
+          "sequence": "0",
+          "sha256": "f9ba2168188fb4acae529e84b03df63ad75d8d2a801ea65c7d903952d181c525"
+        },
+        {
+          "relativePath": "detections/00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5/chunk-9f2f29c873b268b06c87d0e4c699b443698075e7ef6f5bd3a3d6312419892b3f.json",
+          "resultCount": 2,
+          "sequence": "1",
+          "sha256": "9f2f29c873b268b06c87d0e4c699b443698075e7ef6f5bd3a3d6312419892b3f"
+        },
+        {
+          "relativePath": "detections/00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5/chunk-5c9082527d1b36ae7c64549d4abe3198918553c1bebd01496e5262308d3063a0.json",
+          "resultCount": 2,
+          "sequence": "2",
+          "sha256": "5c9082527d1b36ae7c64549d4abe3198918553c1bebd01496e5262308d3063a0"
+        },
+        {
+          "relativePath": "detections/00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5/chunk-f3588ce850372a128b356f2548f4202703fd929276d729f992b3a3a8fb584780.json",
+          "resultCount": 2,
+          "sequence": "3",
+          "sha256": "f3588ce850372a128b356f2548f4202703fd929276d729f992b3a3a8fb584780"
+        },
+        {
+          "relativePath": "detections/00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5/chunk-4d80186f78d006bf3f8408699a964b959eb982b2bdcff2cfbb9ce25604b46ca4.json",
+          "resultCount": 2,
+          "sequence": "4",
+          "sha256": "4d80186f78d006bf3f8408699a964b959eb982b2bdcff2cfbb9ce25604b46ca4"
+        },
+        {
+          "relativePath": "detections/00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5/chunk-4d287182a2e814ac736eebb9b46894b68bf5c9d93739c21951409663e19f553c.json",
+          "resultCount": 2,
+          "sequence": "5",
+          "sha256": "4d287182a2e814ac736eebb9b46894b68bf5c9d93739c21951409663e19f553c"
+        },
+        {
+          "relativePath": "detections/00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5/chunk-70847dd8dda4b98b632cd0a17c34e557cd2cf3296f0ec7abff24ae2bcbc68a29.json",
+          "resultCount": 2,
+          "sequence": "6",
+          "sha256": "70847dd8dda4b98b632cd0a17c34e557cd2cf3296f0ec7abff24ae2bcbc68a29"
+        },
+        {
+          "relativePath": "detections/00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5/chunk-db73a1d7dfbeed9e751b9e8d2d5d6a12476d8d3a2a5b9abd21696cc929420015.json",
+          "resultCount": 2,
+          "sequence": "7",
+          "sha256": "db73a1d7dfbeed9e751b9e8d2d5d6a12476d8d3a2a5b9abd21696cc929420015"
+        },
+        {
+          "relativePath": "detections/00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5/chunk-e1b0e97d7e9d52ae8ac3fe88c00fd7a678c472f623a925a57a8e91798ae1ec0f.json",
+          "resultCount": 2,
+          "sequence": "8",
+          "sha256": "e1b0e97d7e9d52ae8ac3fe88c00fd7a678c472f623a925a57a8e91798ae1ec0f"
+        },
+        {
+          "relativePath": "detections/00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5/chunk-e45b96de87411e0a186739b234a0c9cfffca6a556c5626bd9d76d726c1a7a45a.json",
+          "resultCount": 1,
+          "sequence": "9",
+          "sha256": "e45b96de87411e0a186739b234a0c9cfffca6a556c5626bd9d76d726c1a7a45a"
+        }
+      ],
+      "completedWindows": "19",
+      "computationPhase": "completed",
+      "coverage": [
+        {
+          "kind": "read",
+          "range": {
+            "endSample": "400000",
+            "frequencyFrame": "RF",
+            "frequencyLowerHz": 2490000000,
+            "frequencyUpperHz": 2510000000,
+            "startSample": "0"
+          },
+          "reason": ""
+        },
+        {
+          "kind": "eligible",
+          "range": {
+            "endSample": "400000",
+            "frequencyFrame": "RF",
+            "frequencyLowerHz": 2490000000,
+            "frequencyUpperHz": 2510000000,
+            "startSample": "0"
+          },
+          "reason": ""
+        },
+        {
+          "kind": "completed",
+          "range": {
+            "endSample": "400000",
+            "frequencyFrame": "RF",
+            "frequencyLowerHz": 2490000000,
+            "frequencyUpperHz": 2510000000,
+            "startSample": "0"
+          },
+          "reason": ""
+        }
+      ],
+      "device": "CPU spectrum / isolated worker",
+      "eligibleWindows": "19",
+      "error": "",
+      "finishedAtMilliseconds": "1793011025979",
+      "lifecycle": "Completed",
+      "manifestRelativePath": "detections/00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5/manifest.json",
+      "readFrames": "20",
+      "recoverable": false,
+      "refinedCandidates": "0",
+      "request": {
+        "contextRange": {
+          "endSample": "400000",
+          "frequencyFrame": "RF",
+          "frequencyLowerHz": 2490000000,
+          "frequencyUpperHz": 2510000000,
+          "startSample": "0"
+        },
+        "evidenceBudgetBytes": "33554432",
+        "modelManifestPath": "",
+        "modelSha256": "",
+        "parameters": {
+          "bandwidthMarginDb": 6,
+          "batchSize": 2,
+          "coarseMinBurstSeconds": 0.01,
+          "coarseSplitGapSeconds": 0.02,
+          "maxMiss": 1,
+          "mergeFrequencyHz": 0,
+          "minHits": 1,
+          "minOffSeconds": 0.01,
+          "minOnSeconds": 0.005,
+          "nmsIou": 0.3,
+          "sampleEdgeRatio": 0.6,
+          "scoreThreshold": 0.7,
+          "smoothSeconds": 0.001,
+          "splitBursts": true,
+          "timeStrategy": "none",
+          "topK": 512
+        },
+        "parentRunId": null,
+        "profile": {
+          "backend": "Fixture",
+          "fftSize": 2048,
+          "hopSeconds": 0.001,
+          "id": "pipeline-fixture-v1",
+          "maximumPsdOnly": false,
+          "modelFrames": 2,
+          "modelHopFrames": 1,
+          "name": "系统链路夹具 · 不是真实模型",
+          "status": "仅工程测试",
+          "supportsReal": false,
+          "version": 1
+        },
+        "rangeOrigin": "ux-r5-small-system-pipeline-fixture",
+        "requestedRange": {
+          "endSample": "400000",
+          "frequencyFrame": "RF",
+          "frequencyLowerHz": 2490000000,
+          "frequencyUpperHz": 2510000000,
+          "startSample": "0"
+        },
+        "runId": "ux-r5-pipeline-first",
+        "schemaVersion": 2,
+        "sourceAnnotationId": "",
+        "sourceIdentity": {
+          "availableSamples": "400000",
+          "centerFrequencyHz": 2500000000,
+          "contentHash": "",
+          "effectiveFrequency": {
+            "lowerHz": 2490000000,
+            "upperHz": 2510000000
+          },
+          "fileId": "file-1",
+          "formatRevision": "1",
+          "hashedRange": null,
+          "path": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-data",
+          "physicalSamples": "400000",
+          "projectGeneration": "2",
+          "quickFingerprint": "3200000/1791646403000",
+          "sampleFormat": {
+            "byteOrder": "le",
+            "channelLayout": "interleaved",
+            "channels": 1,
+            "encoding": "F32",
+            "headerBytes": "0",
+            "iqLayout": "iq",
+            "normalizeIntegerAdc": false,
+            "selectedChannel": 0,
+            "structure": "complex",
+            "trailerBytes": "0"
+          },
+          "sampleRateHz": 20000000,
+          "selectedSampleChannel": "0"
+        },
+        "sourceRevisionId": "",
+        "spectrumMode": 0,
+        "workingSetBudgetBytes": "268435456"
+      },
+      "resultCount": "19",
+      "runtime": "worker-v1",
+      "schema": "signal-studio-detection-run",
+      "sourceValidity": "Current",
+      "startedAtMilliseconds": "1793011023944",
+      "totalRefinementCandidates": "0",
+      "version": 2
+    },
+    "singleAuthoritySlot": true,
+    "taskListRunIds": [
+      "ux-r5-pipeline-first"
+    ]
+  },
+  "fullJourneyExecuted": false,
+  "independentReviewPerformed": false,
+  "labelImport": {
+    "actualImportedIds": [
+      "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:0",
+      "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1",
+      "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:2",
+      "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:3"
+    ],
+    "automaticCountVerified": 4,
+    "countAtIqHelperReturn": 0,
+    "elapsedMs": 464,
+    "expectedAutomaticCount": 4,
+    "explicitFallbackAttempted": false,
+    "explicitRepeatImportIdempotent": true,
+    "manualCountAfterDiscovery": 0,
+    "mode": "automatic queued discovery after actual IQ import",
+    "productLog": "18:37:00  信息  A1.4.3 工作区已就绪；可导入交替 int16 IQ 文件并生成真实图谱\n18:37:01  信息  已创建工程文件：D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/r5-native.ssproj\n18:37:02  信息  已导入 0000000.sigmf-data · CF32 · 400000 个可用样本\n18:37:02  信息  已自动导入 4 个标签 · D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-meta",
+    "sourceImportsOutsideManualUndo": true,
+    "sourceState": {
+      "activeMarkId": "",
+      "activeSegmentId": "",
+      "actualScreen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "preferredPixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      },
+      "annotationHandleCount": 0,
+      "backend": "QPainter 软件绘制",
+      "charts": [
+        {
+          "backend": "QPainter 软件绘制",
+          "objectName": "mainPlot",
+          "rect": {
+            "height": 934,
+            "width": 1870,
+            "x": 289,
+            "y": 414
+          },
+          "render": {
+            "acceptedHeatmapPreview": false,
+            "axisLayout": {
+              "dpr": 1.5,
+              "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+              "header": {
+                "height": 0,
+                "width": 1854,
+                "x": 8,
+                "y": 4
+              },
+              "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+              "leftGainFrom88": 47,
+              "localBottom": 32,
+              "localLeft": 41,
+              "localTop": 12,
+              "logicalDpiX": 96,
+              "logicalDpiY": 96,
+              "mode": "CompactHeader",
+              "plot": {
+                "height": 890,
+                "width": 1807,
+                "x": 41,
+                "y": 12
+              },
+              "sharedLeft": 41,
+              "tickHeight": 16,
+              "tickLabelWidth": 26,
+              "widgetHeight": 934,
+              "widgetWidth": 1870,
+              "xOrigin": "",
+              "xTickBand": {
+                "height": 16,
+                "width": 1807,
+                "x": 41,
+                "y": 914
+              },
+              "xTicks": [
+                "0",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10"
+              ],
+              "xTitle": "时间 (ms)",
+              "xTitleBand": {
+                "height": 0,
+                "width": 1807,
+                "x": 41,
+                "y": 933
+              },
+              "yOrigin": "",
+              "yTicks": [
+                "2490",
+                "2495",
+                "2500",
+                "2505",
+                "2510"
+              ],
+              "yTitle": "频率 (MHz)",
+              "yUnit": "MHz"
+            },
+            "colorTransformGenerations": 0,
+            "committedGeneration": 0,
+            "cpuWallTimings": {},
+            "cursorPinned": false,
+            "curveCacheHits": 0,
+            "curvePathElements": 0,
+            "curveRasterMethod": "QRhi heatmap texture",
+            "curveReductions": 0,
+            "curveSourceGenerations": 0,
+            "drawnLineSegments": 0,
+            "drawnPoints": 0,
+            "framePsd": false,
+            "generation": 5,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 0,
+            "gpuDataRenderer": "QPainter software fallback",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 0,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 0,
+            "heatmapColorMapping": "QImage color table software fallback",
+            "heatmapHeight": -1,
+            "heatmapWidth": -1,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 0,
+            "matrixReductions": 0,
+            "overlayUploads": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 2,
+            "quality": "settled",
+            "requestedGeneration": 5,
+            "requestedHeatmapHeight": 430,
+            "requestedHeatmapWidth": 750,
+            "requestedPixels": 322500,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": false,
+            "sourcePoints": 0,
+            "staleDrops": 1,
+            "textureUploads": 0,
+            "workerIdle": false
+          }
+        },
+        {
+          "backend": "QPainter 软件绘制",
+          "objectName": "auxPlot",
+          "rect": {
+            "height": 171,
+            "width": 1870,
+            "x": 289,
+            "y": 199
+          },
+          "render": {
+            "acceptedHeatmapPreview": false,
+            "axisLayout": {
+              "dpr": 1.5,
+              "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+              "header": {
+                "height": 0,
+                "width": 1854,
+                "x": 8,
+                "y": 4
+              },
+              "headerText": "X 时间 (ms) · Y 幅度 RMS（原始幅度）",
+              "leftGainFrom88": 47,
+              "localBottom": 32,
+              "localLeft": 36,
+              "localTop": 12,
+              "logicalDpiX": 96,
+              "logicalDpiY": 96,
+              "mode": "CompactHeader",
+              "plot": {
+                "height": 127,
+                "width": 1807,
+                "x": 41,
+                "y": 12
+              },
+              "sharedLeft": 41,
+              "tickHeight": 16,
+              "tickLabelWidth": 16,
+              "widgetHeight": 171,
+              "widgetWidth": 1870,
+              "xOrigin": "",
+              "xTickBand": {
+                "height": 16,
+                "width": 1807,
+                "x": 41,
+                "y": 151
+              },
+              "xTicks": [
+                "0",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10"
+              ],
+              "xTitle": "时间 (ms)",
+              "xTitleBand": {
+                "height": 0,
+                "width": 1807,
+                "x": 41,
+                "y": 170
+              },
+              "yOrigin": "",
+              "yTicks": [
+                "0.5",
+                "1.0",
+                "1.5",
+                "2.0",
+                "2.5"
+              ],
+              "yTitle": "幅度 RMS（原始幅度）",
+              "yUnit": "原始幅度"
+            },
+            "colorTransformGenerations": 0,
+            "committedGeneration": 9,
+            "cpuWallTimings": {},
+            "cursorPinned": false,
+            "curveCacheHits": 5,
+            "curvePathElements": 3614,
+            "curveRasterMethod": "QPainter::drawLines software fallback",
+            "curveReductions": 2,
+            "curveSourceGenerations": 4,
+            "drawnLineSegments": 3613,
+            "drawnPoints": 3614,
+            "framePsd": false,
+            "generation": 9,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 0,
+            "gpuDataRenderer": "QPainter software fallback",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 0,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 0,
+            "heatmapColorMapping": "QImage color table software fallback",
+            "heatmapHeight": -1,
+            "heatmapWidth": -1,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 0,
+            "matrixReductions": 0,
+            "overlayUploads": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 0,
+            "quality": "settled",
+            "requestedGeneration": 9,
+            "requestedHeatmapHeight": -1,
+            "requestedHeatmapWidth": -1,
+            "requestedPixels": 1,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 3614,
+            "staleDrops": 0,
+            "textureUploads": 0,
+            "workerIdle": true
+          }
+        },
+        {
+          "backend": "QPainter 软件绘制",
+          "objectName": "navigationPlot",
+          "rect": {
+            "height": 48,
+            "width": 1870,
+            "x": 289,
+            "y": 107
+          },
+          "render": {
+            "acceptedHeatmapPreview": false,
+            "axisLayout": {
+              "dpr": 1.5,
+              "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+              "header": {
+                "height": 0,
+                "width": 1854,
+                "x": 8,
+                "y": 4
+              },
+              "headerText": "X 时间 (ms) · Y 幅度 RMS（原始幅度）",
+              "leftGainFrom88": 47,
+              "localBottom": 32,
+              "localLeft": 36,
+              "localTop": 12,
+              "logicalDpiX": 96,
+              "logicalDpiY": 96,
+              "mode": "CompactHeader",
+              "plot": {
+                "height": 48,
+                "width": 1844,
+                "x": 13,
+                "y": 0
+              },
+              "sharedLeft": 41,
+              "tickHeight": 16,
+              "tickLabelWidth": 16,
+              "widgetHeight": 48,
+              "widgetWidth": 1870,
+              "xOrigin": "",
+              "xTickBand": {
+                "height": 16,
+                "width": 1807,
+                "x": 41,
+                "y": 28
+              },
+              "xTicks": [
+                "0",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10"
+              ],
+              "xTitle": "时间 (ms)",
+              "xTitleBand": {
+                "height": 0,
+                "width": 1807,
+                "x": 41,
+                "y": 47
+              },
+              "yOrigin": "",
+              "yTicks": [
+                "0.5",
+                "1.0",
+                "1.5",
+                "2.0",
+                "2.5"
+              ],
+              "yTitle": "幅度 RMS（原始幅度）",
+              "yUnit": "原始幅度"
+            },
+            "colorTransformGenerations": 0,
+            "committedGeneration": 4,
+            "cpuWallTimings": {},
+            "cursorPinned": false,
+            "curveCacheHits": 2,
+            "curvePathElements": 0,
+            "curveRasterMethod": "QPainter::drawLines software fallback",
+            "curveReductions": 0,
+            "curveSourceGenerations": 1,
+            "drawnLineSegments": 1562,
+            "drawnPoints": 3688,
+            "framePsd": false,
+            "generation": 4,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 0,
+            "gpuDataRenderer": "QPainter software fallback",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 0,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 0,
+            "heatmapColorMapping": "QImage color table software fallback",
+            "heatmapHeight": -1,
+            "heatmapWidth": -1,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 0,
+            "matrixReductions": 0,
+            "overlayUploads": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 0,
+            "quality": "settled",
+            "requestedGeneration": 4,
+            "requestedHeatmapHeight": -1,
+            "requestedHeatmapWidth": -1,
+            "requestedPixels": 1,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 3688,
+            "staleDrops": 0,
+            "textureUploads": 0,
+            "workerIdle": true
+          }
+        }
+      ],
+      "devicePixelRatio": 1.5,
+      "fileId": "file-1",
+      "fullScreen": true,
+      "inspectorIdentity": "选择标记查看来源 / 段 / 修订",
+      "logicalWindowSize": {
+        "height": 1440,
+        "width": 2560
+      },
+      "objects": [
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:0",
+          "kind": 0,
+          "originRecordId": "0",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1",
+          "kind": 0,
+          "originRecordId": "1",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:2",
+          "kind": 0,
+          "originRecordId": "2",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:3",
+          "kind": 0,
+          "originRecordId": "3",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        }
+      ],
+      "overlayIds": [
+        "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:0",
+        "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1",
+        "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:2",
+        "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:3"
+      ],
+      "plotRect": {
+        "height": 890,
+        "width": 1807,
+        "x": 41,
+        "y": 12
+      },
+      "rects": [
+        {
+          "enabled": true,
+          "objectName": "mainPlot",
+          "rect": {
+            "height": 934,
+            "width": 1870,
+            "x": 289,
+            "y": 414
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 934,
+            "width": 1870,
+            "x": 289,
+            "y": 414
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "projectTree",
+          "rect": {
+            "height": 365,
+            "width": 264,
+            "x": 7,
+            "y": 119
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 365,
+            "width": 264,
+            "x": 7,
+            "y": 119
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "properties",
+          "rect": {
+            "height": 1381,
+            "width": 390,
+            "x": 2170,
+            "y": 34
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 1381,
+            "width": 390,
+            "x": 2170,
+            "y": 34
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspector",
+          "rect": {
+            "height": 480,
+            "width": 640,
+            "x": 2170,
+            "y": 105
+          },
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "importedLabelsTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 291,
+            "y": 1387
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 291,
+            "y": 1387
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "manualAnnotationsTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 374,
+            "y": 1387
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 374,
+            "y": 1387
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "detectionResultsTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 457,
+            "y": 1387
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 457,
+            "y": 1387
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "taskTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 540,
+            "y": 1387
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 540,
+            "y": 1387
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "logTab",
+          "rect": {
+            "height": 26,
+            "width": 56,
+            "x": 623,
+            "y": 1387
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 56,
+            "x": 623,
+            "y": 1387
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "importedLabelTable",
+          "rect": {
+            "height": 480,
+            "width": 640,
+            "x": 289,
+            "y": 1473
+          },
+          "rows": 4,
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "manualAnnotationTable",
+          "rect": {
+            "height": 480,
+            "width": 640,
+            "x": 289,
+            "y": 1473
+          },
+          "rows": 0,
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "detectionResultTable",
+          "rect": {
+            "height": 480,
+            "width": 640,
+            "x": 289,
+            "y": 1473
+          },
+          "rows": 0,
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationIdentity",
+          "rect": {
+            "height": 480,
+            "width": 640,
+            "x": 2170,
+            "y": 105
+          },
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationReadOnlyRange",
+          "rect": {
+            "height": 480,
+            "width": 640,
+            "x": 2170,
+            "y": 105
+          },
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationGeometryEditor",
+          "rect": {
+            "height": 480,
+            "width": 640,
+            "x": 2170,
+            "y": 105
+          },
+          "visible": false
+        },
+        {
+          "enabled": false,
+          "objectName": "annotationInspectorLocate",
+          "rect": {
+            "height": 480,
+            "width": 640,
+            "x": 2170,
+            "y": 105
+          },
+          "visible": false
+        },
+        {
+          "enabled": false,
+          "objectName": "annotationInspectorConvert",
+          "rect": {
+            "height": 480,
+            "width": 640,
+            "x": 2170,
+            "y": 105
+          },
+          "visible": false
+        },
+        {
+          "enabled": false,
+          "objectName": "annotationInspectorCreateChannel",
+          "rect": {
+            "height": 480,
+            "width": 640,
+            "x": 2170,
+            "y": 105
+          },
+          "visible": false
+        },
+        {
+          "enabled": false,
+          "objectName": "convertAnnotationsToManual",
+          "rect": {
+            "height": 28,
+            "width": 45,
+            "x": 338,
+            "y": 1441
+          },
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationQuickFilter",
+          "rect": {
+            "height": 25,
+            "width": 58,
+            "x": 289,
+            "y": 1391
+          },
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "currentDetectionStatus",
+          "rect": {
+            "height": 15,
+            "width": 628,
+            "x": 289,
+            "y": 1422
+          },
+          "visible": false
+        }
+      ],
+      "render": {
+        "acceptedHeatmapPreview": false,
+        "axisLayout": {
+          "dpr": 1.5,
+          "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+          "header": {
+            "height": 0,
+            "width": 1854,
+            "x": 8,
+            "y": 4
+          },
+          "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+          "leftGainFrom88": 47,
+          "localBottom": 32,
+          "localLeft": 41,
+          "localTop": 12,
+          "logicalDpiX": 96,
+          "logicalDpiY": 96,
+          "mode": "CompactHeader",
+          "plot": {
+            "height": 890,
+            "width": 1807,
+            "x": 41,
+            "y": 12
+          },
+          "sharedLeft": 41,
+          "tickHeight": 16,
+          "tickLabelWidth": 26,
+          "widgetHeight": 934,
+          "widgetWidth": 1870,
+          "xOrigin": "",
+          "xTickBand": {
+            "height": 16,
+            "width": 1807,
+            "x": 41,
+            "y": 914
+          },
+          "xTicks": [
+            "0",
+            "2",
+            "4",
+            "6",
+            "8",
+            "10"
+          ],
+          "xTitle": "时间 (ms)",
+          "xTitleBand": {
+            "height": 0,
+            "width": 1807,
+            "x": 41,
+            "y": 933
+          },
+          "yOrigin": "",
+          "yTicks": [
+            "2490",
+            "2495",
+            "2500",
+            "2505",
+            "2510"
+          ],
+          "yTitle": "频率 (MHz)",
+          "yUnit": "MHz"
+        },
+        "colorTransformGenerations": 0,
+        "committedGeneration": 0,
+        "cpuWallTimings": {},
+        "cursorPinned": false,
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi heatmap texture",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 0,
+        "framePsd": false,
+        "generation": 5,
+        "gpuChartDrawCalls": 0,
+        "gpuDataDrawCalls": 0,
+        "gpuDataRenderer": "QPainter software fallback",
+        "gpuHeatmapDrawCalls": 0,
+        "gpuPaletteUploads": 0,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 0,
+        "heatmapCacheHits": 0,
+        "heatmapColorMapping": "QImage color table software fallback",
+        "heatmapHeight": -1,
+        "heatmapWidth": -1,
+        "inverseCursorDrawCalls": 0,
+        "lastMatrixMs": 0,
+        "matrixReductions": 0,
+        "overlayUploads": 0,
+        "pinnedFrequencyHz": 0,
+        "pinnedSourceSample": "0",
+        "powerGenerations": 2,
+        "quality": "settled",
+        "requestedGeneration": 5,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "samplePointCount": 0,
+        "samplePointsVisible": false,
+        "settled": false,
+        "sourcePoints": 0,
+        "staleDrops": 1,
+        "textureUploads": 0,
+        "workerIdle": false
+      },
+      "sampleChannel": 0,
+      "selectedIds": [],
+      "sourceIds": [
+        {
+          "fileId": "file-1",
+          "id": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "kind": 0,
+          "runId": "",
+          "sampleChannel": 0
+        }
+      ]
+    },
+    "timeoutMs": 20000,
+    "undoCommandsAfterDiscovery": 0
+  },
+  "largeRfbenchValidationExecuted": false,
+  "lastScene": "menu-manual",
+  "lastStep": "menu-manual passed",
+  "menuRegressionVerified": true,
+  "mode": "ux-r5-menus",
+  "modelInferenceVerified": false,
+  "pass": true,
+  "platform": "windows",
+  "projectPath": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/r5-native.ssproj",
+  "qtVersion": "6.11.1",
+  "role": "implementation/test harness",
+  "scenes": [
+    {
+      "activeMarkId": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1",
+      "activeSegmentId": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1:s0",
+      "actualScreen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "preferredPixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      },
+      "annotationHandleCount": 0,
+      "backend": "QPainter 软件绘制",
+      "captureMethod": "native QWidget grab with QRhi readback",
+      "charts": [
+        {
+          "backend": "QPainter 软件绘制",
+          "objectName": "mainPlot",
+          "rect": {
+            "height": 698,
+            "width": 1870,
+            "x": 289,
+            "y": 414
+          },
+          "render": {
+            "acceptedHeatmapPreview": false,
+            "actualFrameInputSamples": "2048",
+            "actualSpectralFrames": 194,
+            "analysisError": "",
+            "analysisPoints": 2048,
+            "axisLayout": {
+              "dpr": 1.5,
+              "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+              "header": {
+                "height": 0,
+                "width": 1854,
+                "x": 8,
+                "y": 4
+              },
+              "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+              "leftGainFrom88": 47,
+              "localBottom": 32,
+              "localLeft": 41,
+              "localTop": 12,
+              "logicalDpiX": 96,
+              "logicalDpiY": 96,
+              "mode": "CompactHeader",
+              "plot": {
+                "height": 654,
+                "width": 1807,
+                "x": 41,
+                "y": 12
+              },
+              "sharedLeft": 41,
+              "tickHeight": 16,
+              "tickLabelWidth": 26,
+              "widgetHeight": 698,
+              "widgetWidth": 1870,
+              "xOrigin": "",
+              "xTickBand": {
+                "height": 16,
+                "width": 1807,
+                "x": 41,
+                "y": 678
+              },
+              "xTicks": [
+                "0",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10"
+              ],
+              "xTitle": "时间 (ms)",
+              "xTitleBand": {
+                "height": 0,
+                "width": 1807,
+                "x": 41,
+                "y": 697
+              },
+              "yOrigin": "",
+              "yTicks": [
+                "2490",
+                "2495",
+                "2500",
+                "2505",
+                "2510"
+              ],
+              "yTitle": "频率 (MHz)",
+              "yUnit": "MHz"
+            },
+            "binHz": 9765.625,
+            "colorTransformGenerations": 3,
+            "committedGeneration": 7,
+            "cpuWallTimings": {},
+            "cursorPinned": false,
+            "curveCacheHits": 0,
+            "curvePathElements": 0,
+            "curveRasterMethod": "QRhi heatmap texture",
+            "curveReductions": 0,
+            "curveSourceGenerations": 0,
+            "drawnLineSegments": 0,
+            "drawnPoints": 322500,
+            "effectiveOverlap": 0.5,
+            "framePsd": false,
+            "generation": 7,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 0,
+            "gpuDataRenderer": "QPainter software fallback",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 0,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 1,
+            "heatmapColorMapping": "QImage color table software fallback",
+            "heatmapHeight": 430,
+            "heatmapWidth": 750,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 741.6202,
+            "matrixReductions": 1,
+            "noiseBandwidthHz": 14655.593551538814,
+            "overlayUploads": 0,
+            "paddedFrames": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 2,
+            "quality": "settled",
+            "requestedGeneration": 7,
+            "requestedHeatmapHeight": 430,
+            "requestedHeatmapWidth": 750,
+            "requestedPixels": 322500,
+            "requiredSeconds": 0.0001024,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 397312,
+            "staleDrops": 1,
+            "textureUploads": 0,
+            "workerIdle": true
+          }
+        },
+        {
+          "backend": "QPainter 软件绘制",
+          "objectName": "auxPlot",
+          "rect": {
+            "height": 171,
+            "width": 1870,
+            "x": 289,
+            "y": 199
+          },
+          "render": {
+            "acceptedHeatmapPreview": false,
+            "actualFrameInputSamples": "2048",
+            "actualSpectralFrames": 194,
+            "analysisError": "",
+            "analysisPoints": 2048,
+            "axisLayout": {
+              "dpr": 1.5,
+              "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+              "header": {
+                "height": 0,
+                "width": 1854,
+                "x": 8,
+                "y": 4
+              },
+              "headerText": "X 时间 (ms) · Y 幅度 RMS（原始幅度）",
+              "leftGainFrom88": 47,
+              "localBottom": 32,
+              "localLeft": 36,
+              "localTop": 12,
+              "logicalDpiX": 96,
+              "logicalDpiY": 96,
+              "mode": "CompactHeader",
+              "plot": {
+                "height": 127,
+                "width": 1807,
+                "x": 41,
+                "y": 12
+              },
+              "sharedLeft": 41,
+              "tickHeight": 16,
+              "tickLabelWidth": 16,
+              "widgetHeight": 171,
+              "widgetWidth": 1870,
+              "xOrigin": "",
+              "xTickBand": {
+                "height": 16,
+                "width": 1807,
+                "x": 41,
+                "y": 151
+              },
+              "xTicks": [
+                "0",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10"
+              ],
+              "xTitle": "时间 (ms)",
+              "xTitleBand": {
+                "height": 0,
+                "width": 1807,
+                "x": 41,
+                "y": 170
+              },
+              "yOrigin": "",
+              "yTicks": [
+                "0.5",
+                "1.0",
+                "1.5",
+                "2.0",
+                "2.5"
+              ],
+              "yTitle": "幅度 RMS（原始幅度）",
+              "yUnit": "原始幅度"
+            },
+            "binHz": 9765.625,
+            "colorTransformGenerations": 0,
+            "committedGeneration": 9,
+            "cpuWallTimings": {},
+            "cursorPinned": false,
+            "curveCacheHits": 28,
+            "curvePathElements": 3614,
+            "curveRasterMethod": "QPainter::drawLines software fallback",
+            "curveReductions": 2,
+            "curveSourceGenerations": 4,
+            "drawnLineSegments": 3613,
+            "drawnPoints": 3614,
+            "effectiveOverlap": 0.5,
+            "framePsd": false,
+            "generation": 9,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 0,
+            "gpuDataRenderer": "QPainter software fallback",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 0,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 0,
+            "heatmapColorMapping": "QImage color table software fallback",
+            "heatmapHeight": -1,
+            "heatmapWidth": -1,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 0,
+            "matrixReductions": 0,
+            "noiseBandwidthHz": 14655.593551538814,
+            "overlayUploads": 0,
+            "paddedFrames": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 0,
+            "quality": "settled",
+            "requestedGeneration": 9,
+            "requestedHeatmapHeight": -1,
+            "requestedHeatmapWidth": -1,
+            "requestedPixels": 1,
+            "requiredSeconds": 0.0001024,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 3614,
+            "staleDrops": 0,
+            "textureUploads": 0,
+            "workerIdle": true
+          }
+        },
+        {
+          "backend": "QPainter 软件绘制",
+          "objectName": "navigationPlot",
+          "rect": {
+            "height": 48,
+            "width": 1870,
+            "x": 289,
+            "y": 107
+          },
+          "render": {
+            "acceptedHeatmapPreview": false,
+            "actualFrameInputSamples": "2048",
+            "actualSpectralFrames": 194,
+            "analysisError": "",
+            "analysisPoints": 2048,
+            "axisLayout": {
+              "dpr": 1.5,
+              "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+              "header": {
+                "height": 0,
+                "width": 1854,
+                "x": 8,
+                "y": 4
+              },
+              "headerText": "X 时间 (ms) · Y 幅度 RMS（原始幅度）",
+              "leftGainFrom88": 47,
+              "localBottom": 32,
+              "localLeft": 36,
+              "localTop": 12,
+              "logicalDpiX": 96,
+              "logicalDpiY": 96,
+              "mode": "CompactHeader",
+              "plot": {
+                "height": 48,
+                "width": 1844,
+                "x": 13,
+                "y": 0
+              },
+              "sharedLeft": 41,
+              "tickHeight": 16,
+              "tickLabelWidth": 16,
+              "widgetHeight": 48,
+              "widgetWidth": 1870,
+              "xOrigin": "",
+              "xTickBand": {
+                "height": 16,
+                "width": 1807,
+                "x": 41,
+                "y": 28
+              },
+              "xTicks": [
+                "0",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10"
+              ],
+              "xTitle": "时间 (ms)",
+              "xTitleBand": {
+                "height": 0,
+                "width": 1807,
+                "x": 41,
+                "y": 47
+              },
+              "yOrigin": "",
+              "yTicks": [
+                "0.5",
+                "1.0",
+                "1.5",
+                "2.0",
+                "2.5"
+              ],
+              "yTitle": "幅度 RMS（原始幅度）",
+              "yUnit": "原始幅度"
+            },
+            "binHz": 9765.625,
+            "colorTransformGenerations": 0,
+            "committedGeneration": 4,
+            "cpuWallTimings": {},
+            "cursorPinned": false,
+            "curveCacheHits": 14,
+            "curvePathElements": 0,
+            "curveRasterMethod": "QPainter::drawLines software fallback",
+            "curveReductions": 0,
+            "curveSourceGenerations": 1,
+            "drawnLineSegments": 1562,
+            "drawnPoints": 3688,
+            "effectiveOverlap": 0.5,
+            "framePsd": false,
+            "generation": 4,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 0,
+            "gpuDataRenderer": "QPainter software fallback",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 0,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 0,
+            "heatmapColorMapping": "QImage color table software fallback",
+            "heatmapHeight": -1,
+            "heatmapWidth": -1,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 0,
+            "matrixReductions": 0,
+            "noiseBandwidthHz": 14655.593551538814,
+            "overlayUploads": 0,
+            "paddedFrames": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 0,
+            "quality": "settled",
+            "requestedGeneration": 4,
+            "requestedHeatmapHeight": -1,
+            "requestedHeatmapWidth": -1,
+            "requestedPixels": 1,
+            "requiredSeconds": 0.0001024,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 3688,
+            "staleDrops": 0,
+            "textureUploads": 0,
+            "workerIdle": true
+          }
+        }
+      ],
+      "devicePixelRatio": 1.5,
+      "facts": {
+        "capabilities": {
+          "editable": false,
+          "globalAndInspectorActionsChecked": true,
+          "graphMenuActionsChecked": true,
+          "graphMenuShownHere": false,
+          "treePopupAndDirectCommandCoveredByQtTest": true
+        },
+        "popups": {
+          "global": {
+            "actualScreen": {
+              "availableLogicalGeometry": {
+                "height": 1392,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "connectedIndex": 2,
+              "deviceName": "\\\\.\\DISPLAY6",
+              "devicePath": "\\\\.\\DISPLAY6",
+              "devicePixelRatio": 1.5,
+              "friendlyName": "Redmi 27 NU",
+              "identityMethod": "Windows active DisplayConfig source/target",
+              "logicalDpi": 96,
+              "logicalGeometry": {
+                "height": 1440,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+              "name": "Redmi 27 NU",
+              "outputTechnology": 5,
+              "physicalDpi": 109.05000625015624,
+              "pixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "preferredPixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "primary": false
+            },
+            "deleteEnabled": false,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/menu-imported-global-menu.png",
+            "renameEnabled": false
+          },
+          "graph": {
+            "actualScreen": {
+              "availableLogicalGeometry": {
+                "height": 1392,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "connectedIndex": 2,
+              "deviceName": "\\\\.\\DISPLAY6",
+              "devicePath": "\\\\.\\DISPLAY6",
+              "devicePixelRatio": 1.5,
+              "friendlyName": "Redmi 27 NU",
+              "identityMethod": "Windows active DisplayConfig source/target",
+              "logicalDpi": 96,
+              "logicalGeometry": {
+                "height": 1440,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+              "name": "Redmi 27 NU",
+              "outputTechnology": 5,
+              "physicalDpi": 109.05000625015624,
+              "pixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "preferredPixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "primary": false
+            },
+            "deleteEnabled": false,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/menu-imported-graph-menu.png",
+            "renameEnabled": false
+          },
+          "input": "QWindow menu-bar click, Win32 SendInput context clicks to verified foreground test window, native Escape",
+          "tree": {
+            "actualScreen": {
+              "availableLogicalGeometry": {
+                "height": 1392,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "connectedIndex": 2,
+              "deviceName": "\\\\.\\DISPLAY6",
+              "devicePath": "\\\\.\\DISPLAY6",
+              "devicePixelRatio": 1.5,
+              "friendlyName": "Redmi 27 NU",
+              "identityMethod": "Windows active DisplayConfig source/target",
+              "logicalDpi": 96,
+              "logicalGeometry": {
+                "height": 1440,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+              "name": "Redmi 27 NU",
+              "outputTechnology": 5,
+              "physicalDpi": 109.05000625015624,
+              "pixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "preferredPixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "primary": false
+            },
+            "deleteEnabled": false,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/menu-imported-tree-menu.png",
+            "renameEnabled": false
+          }
+        },
+        "sourceId": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1",
+        "sourceKind": 0,
+        "sourceUnchanged": true
+      },
+      "fileId": "file-1",
+      "fullScreen": true,
+      "inspectorIdentity": "2gmsk\n原始标签 · 待判断 · 2gmsk\n当前第 1/1 段",
+      "logicalWindowSize": {
+        "height": 1440,
+        "width": 2560
+      },
+      "matrix": [
+        "RD-01",
+        "RD-02",
+        "RD-04"
+      ],
+      "memory": {
+        "peakRssBytes": 277839872,
+        "pid": 44216,
+        "privateBytes": 162914304,
+        "rssBytes": 266375168
+      },
+      "nativeJourneyElapsedMs": 2446,
+      "nativeWindowVisibleAnd4kClientVerified": true,
+      "objects": [
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:0",
+          "kind": 0,
+          "originRecordId": "0",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1",
+          "kind": 0,
+          "originRecordId": "1",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:2",
+          "kind": 0,
+          "originRecordId": "2",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:3",
+          "kind": 0,
+          "originRecordId": "3",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "annotation-2",
+          "kind": 1,
+          "originRecordId": "annotation-2",
+          "segmentCount": 1,
+          "sourceSetId": "manual:file-1:ch0",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "detection:db581d50c1ce8649c3cb1e23b62a43abec9e6e96ddcb2abfdb4af0d94d2abe66",
+          "kind": 2,
+          "originRecordId": "detection:db581d50c1ce8649c3cb1e23b62a43abec9e6e96ddcb2abfdb4af0d94d2abe66",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:970bd5271ed8e15f84319ffed8e318a325d79e02598c0a40fa7814a61ee31b22",
+          "kind": 2,
+          "originRecordId": "detection:970bd5271ed8e15f84319ffed8e318a325d79e02598c0a40fa7814a61ee31b22",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:3dfaedbc231224f1ed0cec7685a6b8cf8b2df48be955007e4e6d2d22543fb8e6",
+          "kind": 2,
+          "originRecordId": "detection:3dfaedbc231224f1ed0cec7685a6b8cf8b2df48be955007e4e6d2d22543fb8e6",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:91254dbf8b8511d9625efde4eb226729cbaa996c8cf78d333c41f03c8f4c4473",
+          "kind": 2,
+          "originRecordId": "detection:91254dbf8b8511d9625efde4eb226729cbaa996c8cf78d333c41f03c8f4c4473",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:ad9e52468a73d76898453c475762049c0d91bc8093e027a3da7c56d51169deec",
+          "kind": 2,
+          "originRecordId": "detection:ad9e52468a73d76898453c475762049c0d91bc8093e027a3da7c56d51169deec",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:b3b575d9b0ad4a46df1c4e33e22f304eb042080f72c83a44ffb6e142b4c2dd4b",
+          "kind": 2,
+          "originRecordId": "detection:b3b575d9b0ad4a46df1c4e33e22f304eb042080f72c83a44ffb6e142b4c2dd4b",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:85df07b635b5ec347d13ed630c0dbd2946aa05d64aadad181d08a60deeba07ca",
+          "kind": 2,
+          "originRecordId": "detection:85df07b635b5ec347d13ed630c0dbd2946aa05d64aadad181d08a60deeba07ca",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:3fcbf7272472d05e6344ecb14fe49afea6a07ecbe7c5304929e1e147872992bd",
+          "kind": 2,
+          "originRecordId": "detection:3fcbf7272472d05e6344ecb14fe49afea6a07ecbe7c5304929e1e147872992bd",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:057e5b06d8ca322a148255f04410cc35999d3a59cbee69f42a50666f28da01d3",
+          "kind": 2,
+          "originRecordId": "detection:057e5b06d8ca322a148255f04410cc35999d3a59cbee69f42a50666f28da01d3",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:d7b43e3394c46e170a25b32ce396d58eb6db7a4ecdadd11e652193ab06bf6bc8",
+          "kind": 2,
+          "originRecordId": "detection:d7b43e3394c46e170a25b32ce396d58eb6db7a4ecdadd11e652193ab06bf6bc8",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:37d75fa1d66ab6eaf3af836e8804635518e6a0398fe5cb2fc334a11a23a799ba",
+          "kind": 2,
+          "originRecordId": "detection:37d75fa1d66ab6eaf3af836e8804635518e6a0398fe5cb2fc334a11a23a799ba",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:b82b5fb65e611fec01a5f5bc7c05b76afe84763593e37104af4f3ff923fb06ae",
+          "kind": 2,
+          "originRecordId": "detection:b82b5fb65e611fec01a5f5bc7c05b76afe84763593e37104af4f3ff923fb06ae",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:db8d728d272cd24c942a68093fb5e966ce2ab0fbb8787165b0907559e402933b",
+          "kind": 2,
+          "originRecordId": "detection:db8d728d272cd24c942a68093fb5e966ce2ab0fbb8787165b0907559e402933b",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:405646ec1d5d1bf7d3a37cdfa7466d7109e6c3924f01a6af5f123afd6c08dc70",
+          "kind": 2,
+          "originRecordId": "detection:405646ec1d5d1bf7d3a37cdfa7466d7109e6c3924f01a6af5f123afd6c08dc70",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:986c3370e84f2b2999e2c1cdedc02fe483e4c3968db6ca382c2691388dbe45a1",
+          "kind": 2,
+          "originRecordId": "detection:986c3370e84f2b2999e2c1cdedc02fe483e4c3968db6ca382c2691388dbe45a1",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:3aa7ada938da054079b15ef73addea26ed9e06d60f64ccf494234e0f143c0368",
+          "kind": 2,
+          "originRecordId": "detection:3aa7ada938da054079b15ef73addea26ed9e06d60f64ccf494234e0f143c0368",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:eb61cfd7fb9a46f392123a5e37443308be8cceb026f787044a4ea0a9d1af5f1a",
+          "kind": 2,
+          "originRecordId": "detection:eb61cfd7fb9a46f392123a5e37443308be8cceb026f787044a4ea0a9d1af5f1a",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:93ae7d5b1075be9fc14241f7e72a4a2c2b58766edf33ba6f8b1d44064805dec5",
+          "kind": 2,
+          "originRecordId": "detection:93ae7d5b1075be9fc14241f7e72a4a2c2b58766edf33ba6f8b1d44064805dec5",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        }
+      ],
+      "overlayIds": [
+        "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:0",
+        "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1",
+        "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:2",
+        "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:3"
+      ],
+      "pass": true,
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "plotRect": {
+        "height": 654,
+        "width": 1807,
+        "x": 41,
+        "y": 12
+      },
+      "png": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/menu-imported.png",
+      "rects": [
+        {
+          "enabled": true,
+          "objectName": "mainPlot",
+          "rect": {
+            "height": 698,
+            "width": 1870,
+            "x": 289,
+            "y": 414
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 698,
+            "width": 1870,
+            "x": 289,
+            "y": 414
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "projectTree",
+          "rect": {
+            "height": 897,
+            "width": 264,
+            "x": 7,
+            "y": 119
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 897,
+            "width": 264,
+            "x": 7,
+            "y": 119
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "properties",
+          "rect": {
+            "height": 1381,
+            "width": 390,
+            "x": 2170,
+            "y": 34
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 1381,
+            "width": 390,
+            "x": 2170,
+            "y": 34
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspector",
+          "rect": {
+            "height": 438,
+            "width": 370,
+            "x": 2180,
+            "y": 115
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 438,
+            "width": 370,
+            "x": 2180,
+            "y": 115
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "importedLabelsTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 291,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 291,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "manualAnnotationsTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 374,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 374,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "detectionResultsTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 457,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 457,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "taskTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 540,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 540,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "logTab",
+          "rect": {
+            "height": 26,
+            "width": 56,
+            "x": 623,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 56,
+            "x": 623,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "importedLabelTable",
+          "rect": {
+            "height": 158,
+            "width": 1870,
+            "x": 289,
+            "y": 1253
+          },
+          "rows": 4,
+          "visible": true,
+          "visibleRect": {
+            "height": 158,
+            "width": 1870,
+            "x": 289,
+            "y": 1253
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "manualAnnotationTable",
+          "rect": {
+            "height": 158,
+            "width": 1870,
+            "x": 289,
+            "y": 1253
+          },
+          "rows": 1,
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "detectionResultTable",
+          "rect": {
+            "height": 480,
+            "width": 640,
+            "x": 289,
+            "y": 1253
+          },
+          "rows": 0,
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationIdentity",
+          "rect": {
+            "height": 48,
+            "width": 350,
+            "x": 2190,
+            "y": 119
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 48,
+            "width": 350,
+            "x": 2190,
+            "y": 119
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationReadOnlyRange",
+          "rect": {
+            "height": 32,
+            "width": 350,
+            "x": 2190,
+            "y": 271
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 32,
+            "width": 350,
+            "x": 2190,
+            "y": 271
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationGeometryEditor",
+          "rect": {
+            "height": 126,
+            "width": 350,
+            "x": 2190,
+            "y": 271
+          },
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorLocate",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 173
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 173
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorConvert",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 207
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 207
+          }
+        },
+        {
+          "enabled": false,
+          "objectName": "annotationInspectorCreateChannel",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 175
+          },
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "convertAnnotationsToManual",
+          "rect": {
+            "height": 28,
+            "width": 102,
+            "x": 383,
+            "y": 1221
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 28,
+            "width": 102,
+            "x": 383,
+            "y": 1221
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationQuickFilter",
+          "rect": {
+            "height": 29,
+            "width": 105,
+            "x": 289,
+            "y": 1188
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 29,
+            "width": 105,
+            "x": 289,
+            "y": 1188
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "currentDetectionStatus",
+          "rect": {
+            "height": 15,
+            "width": 628,
+            "x": 289,
+            "y": 1220
+          },
+          "visible": false
+        }
+      ],
+      "render": {
+        "acceptedHeatmapPreview": false,
+        "actualFrameInputSamples": "2048",
+        "actualSpectralFrames": 194,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "axisLayout": {
+          "dpr": 1.5,
+          "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+          "header": {
+            "height": 0,
+            "width": 1854,
+            "x": 8,
+            "y": 4
+          },
+          "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+          "leftGainFrom88": 47,
+          "localBottom": 32,
+          "localLeft": 41,
+          "localTop": 12,
+          "logicalDpiX": 96,
+          "logicalDpiY": 96,
+          "mode": "CompactHeader",
+          "plot": {
+            "height": 654,
+            "width": 1807,
+            "x": 41,
+            "y": 12
+          },
+          "sharedLeft": 41,
+          "tickHeight": 16,
+          "tickLabelWidth": 26,
+          "widgetHeight": 698,
+          "widgetWidth": 1870,
+          "xOrigin": "",
+          "xTickBand": {
+            "height": 16,
+            "width": 1807,
+            "x": 41,
+            "y": 678
+          },
+          "xTicks": [
+            "0",
+            "2",
+            "4",
+            "6",
+            "8",
+            "10"
+          ],
+          "xTitle": "时间 (ms)",
+          "xTitleBand": {
+            "height": 0,
+            "width": 1807,
+            "x": 41,
+            "y": 697
+          },
+          "yOrigin": "",
+          "yTicks": [
+            "2490",
+            "2495",
+            "2500",
+            "2505",
+            "2510"
+          ],
+          "yTitle": "频率 (MHz)",
+          "yUnit": "MHz"
+        },
+        "binHz": 9765.625,
+        "colorTransformGenerations": 3,
+        "committedGeneration": 7,
+        "cpuWallTimings": {},
+        "cursorPinned": false,
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi heatmap texture",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 322500,
+        "effectiveOverlap": 0.5,
+        "framePsd": false,
+        "generation": 7,
+        "gpuChartDrawCalls": 0,
+        "gpuDataDrawCalls": 0,
+        "gpuDataRenderer": "QPainter software fallback",
+        "gpuHeatmapDrawCalls": 0,
+        "gpuPaletteUploads": 0,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 0,
+        "heatmapCacheHits": 1,
+        "heatmapColorMapping": "QImage color table software fallback",
+        "heatmapHeight": 430,
+        "heatmapWidth": 750,
+        "inverseCursorDrawCalls": 0,
+        "lastMatrixMs": 741.6202,
+        "matrixReductions": 1,
+        "noiseBandwidthHz": 14655.593551538814,
+        "overlayUploads": 0,
+        "paddedFrames": 0,
+        "pinnedFrequencyHz": 0,
+        "pinnedSourceSample": "0",
+        "powerGenerations": 2,
+        "quality": "settled",
+        "requestedGeneration": 7,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "requiredSeconds": 0.0001024,
+        "samplePointCount": 0,
+        "samplePointsVisible": false,
+        "settled": true,
+        "sourcePoints": 397312,
+        "staleDrops": 1,
+        "textureUploads": 0,
+        "workerIdle": true
+      },
+      "sampleChannel": 0,
+      "scene": "menu-imported",
+      "selectedIds": [
+        "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1"
+      ],
+      "sourceIds": [
+        {
+          "fileId": "file-1",
+          "id": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "kind": 0,
+          "runId": "",
+          "sampleChannel": 0
+        },
+        {
+          "fileId": "file-1",
+          "id": "manual:file-1:ch0",
+          "kind": 1,
+          "runId": "",
+          "sampleChannel": 0
+        },
+        {
+          "fileId": "file-1",
+          "id": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "kind": 2,
+          "runId": "ux-r5-pipeline-first",
+          "sampleChannel": 0
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "activeMarkId": "detection:db581d50c1ce8649c3cb1e23b62a43abec9e6e96ddcb2abfdb4af0d94d2abe66",
+      "activeSegmentId": "",
+      "actualScreen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "preferredPixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      },
+      "annotationHandleCount": 0,
+      "backend": "QPainter 软件绘制",
+      "captureMethod": "native QWidget grab with QRhi readback",
+      "charts": [
+        {
+          "backend": "QPainter 软件绘制",
+          "objectName": "mainPlot",
+          "rect": {
+            "height": 698,
+            "width": 1870,
+            "x": 289,
+            "y": 414
+          },
+          "render": {
+            "acceptedHeatmapPreview": false,
+            "actualFrameInputSamples": "2048",
+            "actualSpectralFrames": 194,
+            "analysisError": "",
+            "analysisPoints": 2048,
+            "axisLayout": {
+              "dpr": 1.5,
+              "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+              "header": {
+                "height": 0,
+                "width": 1854,
+                "x": 8,
+                "y": 4
+              },
+              "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+              "leftGainFrom88": 47,
+              "localBottom": 32,
+              "localLeft": 41,
+              "localTop": 12,
+              "logicalDpiX": 96,
+              "logicalDpiY": 96,
+              "mode": "CompactHeader",
+              "plot": {
+                "height": 654,
+                "width": 1807,
+                "x": 41,
+                "y": 12
+              },
+              "sharedLeft": 41,
+              "tickHeight": 16,
+              "tickLabelWidth": 26,
+              "widgetHeight": 698,
+              "widgetWidth": 1870,
+              "xOrigin": "",
+              "xTickBand": {
+                "height": 16,
+                "width": 1807,
+                "x": 41,
+                "y": 678
+              },
+              "xTicks": [
+                "0",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10"
+              ],
+              "xTitle": "时间 (ms)",
+              "xTitleBand": {
+                "height": 0,
+                "width": 1807,
+                "x": 41,
+                "y": 697
+              },
+              "yOrigin": "",
+              "yTicks": [
+                "2490",
+                "2495",
+                "2500",
+                "2505",
+                "2510"
+              ],
+              "yTitle": "频率 (MHz)",
+              "yUnit": "MHz"
+            },
+            "binHz": 9765.625,
+            "colorTransformGenerations": 3,
+            "committedGeneration": 7,
+            "cpuWallTimings": {},
+            "cursorPinned": false,
+            "curveCacheHits": 0,
+            "curvePathElements": 0,
+            "curveRasterMethod": "QRhi heatmap texture",
+            "curveReductions": 0,
+            "curveSourceGenerations": 0,
+            "drawnLineSegments": 0,
+            "drawnPoints": 322500,
+            "effectiveOverlap": 0.5,
+            "framePsd": false,
+            "generation": 7,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 0,
+            "gpuDataRenderer": "QPainter software fallback",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 0,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 1,
+            "heatmapColorMapping": "QImage color table software fallback",
+            "heatmapHeight": 430,
+            "heatmapWidth": 750,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 741.6202,
+            "matrixReductions": 1,
+            "noiseBandwidthHz": 14655.593551538814,
+            "overlayUploads": 0,
+            "paddedFrames": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 2,
+            "quality": "settled",
+            "requestedGeneration": 7,
+            "requestedHeatmapHeight": 430,
+            "requestedHeatmapWidth": 750,
+            "requestedPixels": 322500,
+            "requiredSeconds": 0.0001024,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 397312,
+            "staleDrops": 1,
+            "textureUploads": 0,
+            "workerIdle": true
+          }
+        },
+        {
+          "backend": "QPainter 软件绘制",
+          "objectName": "auxPlot",
+          "rect": {
+            "height": 171,
+            "width": 1870,
+            "x": 289,
+            "y": 199
+          },
+          "render": {
+            "acceptedHeatmapPreview": false,
+            "actualFrameInputSamples": "2048",
+            "actualSpectralFrames": 194,
+            "analysisError": "",
+            "analysisPoints": 2048,
+            "axisLayout": {
+              "dpr": 1.5,
+              "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+              "header": {
+                "height": 0,
+                "width": 1854,
+                "x": 8,
+                "y": 4
+              },
+              "headerText": "X 时间 (ms) · Y 幅度 RMS（原始幅度）",
+              "leftGainFrom88": 47,
+              "localBottom": 32,
+              "localLeft": 36,
+              "localTop": 12,
+              "logicalDpiX": 96,
+              "logicalDpiY": 96,
+              "mode": "CompactHeader",
+              "plot": {
+                "height": 127,
+                "width": 1807,
+                "x": 41,
+                "y": 12
+              },
+              "sharedLeft": 41,
+              "tickHeight": 16,
+              "tickLabelWidth": 16,
+              "widgetHeight": 171,
+              "widgetWidth": 1870,
+              "xOrigin": "",
+              "xTickBand": {
+                "height": 16,
+                "width": 1807,
+                "x": 41,
+                "y": 151
+              },
+              "xTicks": [
+                "0",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10"
+              ],
+              "xTitle": "时间 (ms)",
+              "xTitleBand": {
+                "height": 0,
+                "width": 1807,
+                "x": 41,
+                "y": 170
+              },
+              "yOrigin": "",
+              "yTicks": [
+                "0.5",
+                "1.0",
+                "1.5",
+                "2.0",
+                "2.5"
+              ],
+              "yTitle": "幅度 RMS（原始幅度）",
+              "yUnit": "原始幅度"
+            },
+            "binHz": 9765.625,
+            "colorTransformGenerations": 0,
+            "committedGeneration": 9,
+            "cpuWallTimings": {},
+            "cursorPinned": false,
+            "curveCacheHits": 35,
+            "curvePathElements": 3614,
+            "curveRasterMethod": "QPainter::drawLines software fallback",
+            "curveReductions": 2,
+            "curveSourceGenerations": 4,
+            "drawnLineSegments": 3613,
+            "drawnPoints": 3614,
+            "effectiveOverlap": 0.5,
+            "framePsd": false,
+            "generation": 9,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 0,
+            "gpuDataRenderer": "QPainter software fallback",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 0,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 0,
+            "heatmapColorMapping": "QImage color table software fallback",
+            "heatmapHeight": -1,
+            "heatmapWidth": -1,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 0,
+            "matrixReductions": 0,
+            "noiseBandwidthHz": 14655.593551538814,
+            "overlayUploads": 0,
+            "paddedFrames": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 0,
+            "quality": "settled",
+            "requestedGeneration": 9,
+            "requestedHeatmapHeight": -1,
+            "requestedHeatmapWidth": -1,
+            "requestedPixels": 1,
+            "requiredSeconds": 0.0001024,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 3614,
+            "staleDrops": 0,
+            "textureUploads": 0,
+            "workerIdle": true
+          }
+        },
+        {
+          "backend": "QPainter 软件绘制",
+          "objectName": "navigationPlot",
+          "rect": {
+            "height": 48,
+            "width": 1870,
+            "x": 289,
+            "y": 107
+          },
+          "render": {
+            "acceptedHeatmapPreview": false,
+            "actualFrameInputSamples": "2048",
+            "actualSpectralFrames": 194,
+            "analysisError": "",
+            "analysisPoints": 2048,
+            "axisLayout": {
+              "dpr": 1.5,
+              "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+              "header": {
+                "height": 0,
+                "width": 1854,
+                "x": 8,
+                "y": 4
+              },
+              "headerText": "X 时间 (ms) · Y 幅度 RMS（原始幅度）",
+              "leftGainFrom88": 47,
+              "localBottom": 32,
+              "localLeft": 36,
+              "localTop": 12,
+              "logicalDpiX": 96,
+              "logicalDpiY": 96,
+              "mode": "CompactHeader",
+              "plot": {
+                "height": 48,
+                "width": 1844,
+                "x": 13,
+                "y": 0
+              },
+              "sharedLeft": 41,
+              "tickHeight": 16,
+              "tickLabelWidth": 16,
+              "widgetHeight": 48,
+              "widgetWidth": 1870,
+              "xOrigin": "",
+              "xTickBand": {
+                "height": 16,
+                "width": 1807,
+                "x": 41,
+                "y": 28
+              },
+              "xTicks": [
+                "0",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10"
+              ],
+              "xTitle": "时间 (ms)",
+              "xTitleBand": {
+                "height": 0,
+                "width": 1807,
+                "x": 41,
+                "y": 47
+              },
+              "yOrigin": "",
+              "yTicks": [
+                "0.5",
+                "1.0",
+                "1.5",
+                "2.0",
+                "2.5"
+              ],
+              "yTitle": "幅度 RMS（原始幅度）",
+              "yUnit": "原始幅度"
+            },
+            "binHz": 9765.625,
+            "colorTransformGenerations": 0,
+            "committedGeneration": 4,
+            "cpuWallTimings": {},
+            "cursorPinned": false,
+            "curveCacheHits": 19,
+            "curvePathElements": 0,
+            "curveRasterMethod": "QPainter::drawLines software fallback",
+            "curveReductions": 0,
+            "curveSourceGenerations": 1,
+            "drawnLineSegments": 1562,
+            "drawnPoints": 3688,
+            "effectiveOverlap": 0.5,
+            "framePsd": false,
+            "generation": 4,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 0,
+            "gpuDataRenderer": "QPainter software fallback",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 0,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 0,
+            "heatmapColorMapping": "QImage color table software fallback",
+            "heatmapHeight": -1,
+            "heatmapWidth": -1,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 0,
+            "matrixReductions": 0,
+            "noiseBandwidthHz": 14655.593551538814,
+            "overlayUploads": 0,
+            "paddedFrames": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 0,
+            "quality": "settled",
+            "requestedGeneration": 4,
+            "requestedHeatmapHeight": -1,
+            "requestedHeatmapWidth": -1,
+            "requestedPixels": 1,
+            "requiredSeconds": 0.0001024,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 3688,
+            "staleDrops": 0,
+            "textureUploads": 0,
+            "workerIdle": true
+          }
+        }
+      ],
+      "devicePixelRatio": 1.5,
+      "facts": {
+        "capabilities": {
+          "editable": false,
+          "globalAndInspectorActionsChecked": true,
+          "graphMenuActionsChecked": true,
+          "graphMenuShownHere": false,
+          "treePopupAndDirectCommandCoveredByQtTest": true
+        },
+        "popups": {
+          "global": {
+            "actualScreen": {
+              "availableLogicalGeometry": {
+                "height": 1392,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "connectedIndex": 2,
+              "deviceName": "\\\\.\\DISPLAY6",
+              "devicePath": "\\\\.\\DISPLAY6",
+              "devicePixelRatio": 1.5,
+              "friendlyName": "Redmi 27 NU",
+              "identityMethod": "Windows active DisplayConfig source/target",
+              "logicalDpi": 96,
+              "logicalGeometry": {
+                "height": 1440,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+              "name": "Redmi 27 NU",
+              "outputTechnology": 5,
+              "physicalDpi": 109.05000625015624,
+              "pixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "preferredPixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "primary": false
+            },
+            "deleteEnabled": false,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/menu-algorithm-global-menu.png",
+            "renameEnabled": false
+          },
+          "graph": {
+            "actualScreen": {
+              "availableLogicalGeometry": {
+                "height": 1392,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "connectedIndex": 2,
+              "deviceName": "\\\\.\\DISPLAY6",
+              "devicePath": "\\\\.\\DISPLAY6",
+              "devicePixelRatio": 1.5,
+              "friendlyName": "Redmi 27 NU",
+              "identityMethod": "Windows active DisplayConfig source/target",
+              "logicalDpi": 96,
+              "logicalGeometry": {
+                "height": 1440,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+              "name": "Redmi 27 NU",
+              "outputTechnology": 5,
+              "physicalDpi": 109.05000625015624,
+              "pixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "preferredPixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "primary": false
+            },
+            "deleteEnabled": false,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/menu-algorithm-graph-menu.png",
+            "renameEnabled": false
+          },
+          "input": "QWindow menu-bar click, Win32 SendInput context clicks to verified foreground test window, native Escape",
+          "tree": {
+            "actualScreen": {
+              "availableLogicalGeometry": {
+                "height": 1392,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "connectedIndex": 2,
+              "deviceName": "\\\\.\\DISPLAY6",
+              "devicePath": "\\\\.\\DISPLAY6",
+              "devicePixelRatio": 1.5,
+              "friendlyName": "Redmi 27 NU",
+              "identityMethod": "Windows active DisplayConfig source/target",
+              "logicalDpi": 96,
+              "logicalGeometry": {
+                "height": 1440,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+              "name": "Redmi 27 NU",
+              "outputTechnology": 5,
+              "physicalDpi": 109.05000625015624,
+              "pixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "preferredPixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "primary": false
+            },
+            "deleteEnabled": false,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/menu-algorithm-tree-menu.png",
+            "renameEnabled": false
+          }
+        },
+        "sourceId": "detection:db581d50c1ce8649c3cb1e23b62a43abec9e6e96ddcb2abfdb4af0d94d2abe66",
+        "sourceKind": 2,
+        "sourceUnchanged": true
+      },
+      "fileId": "file-1",
+      "fullScreen": true,
+      "inspectorIdentity": "系统链路夹具（非模型）\n检测结果 · 待判断 · 类别未知\n时间未定位；没有活动段",
+      "logicalWindowSize": {
+        "height": 1440,
+        "width": 2560
+      },
+      "matrix": [
+        "RD-01",
+        "RD-02",
+        "RD-04"
+      ],
+      "memory": {
+        "peakRssBytes": 280379392,
+        "pid": 44216,
+        "privateBytes": 165244928,
+        "rssBytes": 268636160
+      },
+      "nativeJourneyElapsedMs": 2336,
+      "nativeWindowVisibleAnd4kClientVerified": true,
+      "objects": [
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:0",
+          "kind": 0,
+          "originRecordId": "0",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1",
+          "kind": 0,
+          "originRecordId": "1",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:2",
+          "kind": 0,
+          "originRecordId": "2",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:3",
+          "kind": 0,
+          "originRecordId": "3",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "annotation-2",
+          "kind": 1,
+          "originRecordId": "annotation-2",
+          "segmentCount": 1,
+          "sourceSetId": "manual:file-1:ch0",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "detection:db581d50c1ce8649c3cb1e23b62a43abec9e6e96ddcb2abfdb4af0d94d2abe66",
+          "kind": 2,
+          "originRecordId": "detection:db581d50c1ce8649c3cb1e23b62a43abec9e6e96ddcb2abfdb4af0d94d2abe66",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:970bd5271ed8e15f84319ffed8e318a325d79e02598c0a40fa7814a61ee31b22",
+          "kind": 2,
+          "originRecordId": "detection:970bd5271ed8e15f84319ffed8e318a325d79e02598c0a40fa7814a61ee31b22",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:3dfaedbc231224f1ed0cec7685a6b8cf8b2df48be955007e4e6d2d22543fb8e6",
+          "kind": 2,
+          "originRecordId": "detection:3dfaedbc231224f1ed0cec7685a6b8cf8b2df48be955007e4e6d2d22543fb8e6",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:91254dbf8b8511d9625efde4eb226729cbaa996c8cf78d333c41f03c8f4c4473",
+          "kind": 2,
+          "originRecordId": "detection:91254dbf8b8511d9625efde4eb226729cbaa996c8cf78d333c41f03c8f4c4473",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:ad9e52468a73d76898453c475762049c0d91bc8093e027a3da7c56d51169deec",
+          "kind": 2,
+          "originRecordId": "detection:ad9e52468a73d76898453c475762049c0d91bc8093e027a3da7c56d51169deec",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:b3b575d9b0ad4a46df1c4e33e22f304eb042080f72c83a44ffb6e142b4c2dd4b",
+          "kind": 2,
+          "originRecordId": "detection:b3b575d9b0ad4a46df1c4e33e22f304eb042080f72c83a44ffb6e142b4c2dd4b",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:85df07b635b5ec347d13ed630c0dbd2946aa05d64aadad181d08a60deeba07ca",
+          "kind": 2,
+          "originRecordId": "detection:85df07b635b5ec347d13ed630c0dbd2946aa05d64aadad181d08a60deeba07ca",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:3fcbf7272472d05e6344ecb14fe49afea6a07ecbe7c5304929e1e147872992bd",
+          "kind": 2,
+          "originRecordId": "detection:3fcbf7272472d05e6344ecb14fe49afea6a07ecbe7c5304929e1e147872992bd",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:057e5b06d8ca322a148255f04410cc35999d3a59cbee69f42a50666f28da01d3",
+          "kind": 2,
+          "originRecordId": "detection:057e5b06d8ca322a148255f04410cc35999d3a59cbee69f42a50666f28da01d3",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:d7b43e3394c46e170a25b32ce396d58eb6db7a4ecdadd11e652193ab06bf6bc8",
+          "kind": 2,
+          "originRecordId": "detection:d7b43e3394c46e170a25b32ce396d58eb6db7a4ecdadd11e652193ab06bf6bc8",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:37d75fa1d66ab6eaf3af836e8804635518e6a0398fe5cb2fc334a11a23a799ba",
+          "kind": 2,
+          "originRecordId": "detection:37d75fa1d66ab6eaf3af836e8804635518e6a0398fe5cb2fc334a11a23a799ba",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:b82b5fb65e611fec01a5f5bc7c05b76afe84763593e37104af4f3ff923fb06ae",
+          "kind": 2,
+          "originRecordId": "detection:b82b5fb65e611fec01a5f5bc7c05b76afe84763593e37104af4f3ff923fb06ae",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:db8d728d272cd24c942a68093fb5e966ce2ab0fbb8787165b0907559e402933b",
+          "kind": 2,
+          "originRecordId": "detection:db8d728d272cd24c942a68093fb5e966ce2ab0fbb8787165b0907559e402933b",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:405646ec1d5d1bf7d3a37cdfa7466d7109e6c3924f01a6af5f123afd6c08dc70",
+          "kind": 2,
+          "originRecordId": "detection:405646ec1d5d1bf7d3a37cdfa7466d7109e6c3924f01a6af5f123afd6c08dc70",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:986c3370e84f2b2999e2c1cdedc02fe483e4c3968db6ca382c2691388dbe45a1",
+          "kind": 2,
+          "originRecordId": "detection:986c3370e84f2b2999e2c1cdedc02fe483e4c3968db6ca382c2691388dbe45a1",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:3aa7ada938da054079b15ef73addea26ed9e06d60f64ccf494234e0f143c0368",
+          "kind": 2,
+          "originRecordId": "detection:3aa7ada938da054079b15ef73addea26ed9e06d60f64ccf494234e0f143c0368",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:eb61cfd7fb9a46f392123a5e37443308be8cceb026f787044a4ea0a9d1af5f1a",
+          "kind": 2,
+          "originRecordId": "detection:eb61cfd7fb9a46f392123a5e37443308be8cceb026f787044a4ea0a9d1af5f1a",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:93ae7d5b1075be9fc14241f7e72a4a2c2b58766edf33ba6f8b1d44064805dec5",
+          "kind": 2,
+          "originRecordId": "detection:93ae7d5b1075be9fc14241f7e72a4a2c2b58766edf33ba6f8b1d44064805dec5",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        }
+      ],
+      "overlayIds": [
+        "detection:db581d50c1ce8649c3cb1e23b62a43abec9e6e96ddcb2abfdb4af0d94d2abe66",
+        "detection:970bd5271ed8e15f84319ffed8e318a325d79e02598c0a40fa7814a61ee31b22",
+        "detection:3dfaedbc231224f1ed0cec7685a6b8cf8b2df48be955007e4e6d2d22543fb8e6",
+        "detection:91254dbf8b8511d9625efde4eb226729cbaa996c8cf78d333c41f03c8f4c4473",
+        "detection:ad9e52468a73d76898453c475762049c0d91bc8093e027a3da7c56d51169deec",
+        "detection:b3b575d9b0ad4a46df1c4e33e22f304eb042080f72c83a44ffb6e142b4c2dd4b",
+        "detection:85df07b635b5ec347d13ed630c0dbd2946aa05d64aadad181d08a60deeba07ca",
+        "detection:3fcbf7272472d05e6344ecb14fe49afea6a07ecbe7c5304929e1e147872992bd",
+        "detection:057e5b06d8ca322a148255f04410cc35999d3a59cbee69f42a50666f28da01d3",
+        "detection:d7b43e3394c46e170a25b32ce396d58eb6db7a4ecdadd11e652193ab06bf6bc8",
+        "detection:37d75fa1d66ab6eaf3af836e8804635518e6a0398fe5cb2fc334a11a23a799ba",
+        "detection:b82b5fb65e611fec01a5f5bc7c05b76afe84763593e37104af4f3ff923fb06ae",
+        "detection:db8d728d272cd24c942a68093fb5e966ce2ab0fbb8787165b0907559e402933b",
+        "detection:405646ec1d5d1bf7d3a37cdfa7466d7109e6c3924f01a6af5f123afd6c08dc70",
+        "detection:986c3370e84f2b2999e2c1cdedc02fe483e4c3968db6ca382c2691388dbe45a1",
+        "detection:3aa7ada938da054079b15ef73addea26ed9e06d60f64ccf494234e0f143c0368",
+        "detection:eb61cfd7fb9a46f392123a5e37443308be8cceb026f787044a4ea0a9d1af5f1a",
+        "detection:93ae7d5b1075be9fc14241f7e72a4a2c2b58766edf33ba6f8b1d44064805dec5"
+      ],
+      "pass": true,
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "plotRect": {
+        "height": 654,
+        "width": 1807,
+        "x": 41,
+        "y": 12
+      },
+      "png": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/menu-algorithm.png",
+      "rects": [
+        {
+          "enabled": true,
+          "objectName": "mainPlot",
+          "rect": {
+            "height": 698,
+            "width": 1870,
+            "x": 289,
+            "y": 414
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 698,
+            "width": 1870,
+            "x": 289,
+            "y": 414
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "projectTree",
+          "rect": {
+            "height": 897,
+            "width": 264,
+            "x": 7,
+            "y": 119
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 897,
+            "width": 264,
+            "x": 7,
+            "y": 119
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "properties",
+          "rect": {
+            "height": 1381,
+            "width": 390,
+            "x": 2170,
+            "y": 34
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 1381,
+            "width": 390,
+            "x": 2170,
+            "y": 34
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspector",
+          "rect": {
+            "height": 422,
+            "width": 370,
+            "x": 2180,
+            "y": 115
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 422,
+            "width": 370,
+            "x": 2180,
+            "y": 115
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "importedLabelsTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 291,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 291,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "manualAnnotationsTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 374,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 374,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "detectionResultsTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 457,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 457,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "taskTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 540,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 540,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "logTab",
+          "rect": {
+            "height": 26,
+            "width": 56,
+            "x": 623,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 56,
+            "x": 623,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "importedLabelTable",
+          "rect": {
+            "height": 158,
+            "width": 1870,
+            "x": 289,
+            "y": 1277
+          },
+          "rows": 4,
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "manualAnnotationTable",
+          "rect": {
+            "height": 158,
+            "width": 1870,
+            "x": 289,
+            "y": 1277
+          },
+          "rows": 1,
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "detectionResultTable",
+          "rect": {
+            "height": 134,
+            "width": 1870,
+            "x": 289,
+            "y": 1277
+          },
+          "rows": 18,
+          "visible": true,
+          "visibleRect": {
+            "height": 134,
+            "width": 1870,
+            "x": 289,
+            "y": 1277
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationIdentity",
+          "rect": {
+            "height": 48,
+            "width": 350,
+            "x": 2190,
+            "y": 119
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 48,
+            "width": 350,
+            "x": 2190,
+            "y": 119
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationReadOnlyRange",
+          "rect": {
+            "height": 32,
+            "width": 350,
+            "x": 2190,
+            "y": 271
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 32,
+            "width": 350,
+            "x": 2190,
+            "y": 271
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationGeometryEditor",
+          "rect": {
+            "height": 126,
+            "width": 350,
+            "x": 2190,
+            "y": 271
+          },
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorLocate",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 173
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 173
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorConvert",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 207
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 207
+          }
+        },
+        {
+          "enabled": false,
+          "objectName": "annotationInspectorCreateChannel",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 175
+          },
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "convertAnnotationsToManual",
+          "rect": {
+            "height": 28,
+            "width": 102,
+            "x": 383,
+            "y": 1245
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 28,
+            "width": 102,
+            "x": 383,
+            "y": 1245
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationQuickFilter",
+          "rect": {
+            "height": 29,
+            "width": 105,
+            "x": 289,
+            "y": 1190
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 29,
+            "width": 105,
+            "x": 289,
+            "y": 1190
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "currentDetectionStatus",
+          "rect": {
+            "height": 16,
+            "width": 1870,
+            "x": 289,
+            "y": 1225
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 16,
+            "width": 1870,
+            "x": 289,
+            "y": 1225
+          }
+        }
+      ],
+      "render": {
+        "acceptedHeatmapPreview": false,
+        "actualFrameInputSamples": "2048",
+        "actualSpectralFrames": 194,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "axisLayout": {
+          "dpr": 1.5,
+          "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+          "header": {
+            "height": 0,
+            "width": 1854,
+            "x": 8,
+            "y": 4
+          },
+          "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+          "leftGainFrom88": 47,
+          "localBottom": 32,
+          "localLeft": 41,
+          "localTop": 12,
+          "logicalDpiX": 96,
+          "logicalDpiY": 96,
+          "mode": "CompactHeader",
+          "plot": {
+            "height": 654,
+            "width": 1807,
+            "x": 41,
+            "y": 12
+          },
+          "sharedLeft": 41,
+          "tickHeight": 16,
+          "tickLabelWidth": 26,
+          "widgetHeight": 698,
+          "widgetWidth": 1870,
+          "xOrigin": "",
+          "xTickBand": {
+            "height": 16,
+            "width": 1807,
+            "x": 41,
+            "y": 678
+          },
+          "xTicks": [
+            "0",
+            "2",
+            "4",
+            "6",
+            "8",
+            "10"
+          ],
+          "xTitle": "时间 (ms)",
+          "xTitleBand": {
+            "height": 0,
+            "width": 1807,
+            "x": 41,
+            "y": 697
+          },
+          "yOrigin": "",
+          "yTicks": [
+            "2490",
+            "2495",
+            "2500",
+            "2505",
+            "2510"
+          ],
+          "yTitle": "频率 (MHz)",
+          "yUnit": "MHz"
+        },
+        "binHz": 9765.625,
+        "colorTransformGenerations": 3,
+        "committedGeneration": 7,
+        "cpuWallTimings": {},
+        "cursorPinned": false,
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi heatmap texture",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 322500,
+        "effectiveOverlap": 0.5,
+        "framePsd": false,
+        "generation": 7,
+        "gpuChartDrawCalls": 0,
+        "gpuDataDrawCalls": 0,
+        "gpuDataRenderer": "QPainter software fallback",
+        "gpuHeatmapDrawCalls": 0,
+        "gpuPaletteUploads": 0,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 0,
+        "heatmapCacheHits": 1,
+        "heatmapColorMapping": "QImage color table software fallback",
+        "heatmapHeight": 430,
+        "heatmapWidth": 750,
+        "inverseCursorDrawCalls": 0,
+        "lastMatrixMs": 741.6202,
+        "matrixReductions": 1,
+        "noiseBandwidthHz": 14655.593551538814,
+        "overlayUploads": 0,
+        "paddedFrames": 0,
+        "pinnedFrequencyHz": 0,
+        "pinnedSourceSample": "0",
+        "powerGenerations": 2,
+        "quality": "settled",
+        "requestedGeneration": 7,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "requiredSeconds": 0.0001024,
+        "samplePointCount": 0,
+        "samplePointsVisible": false,
+        "settled": true,
+        "sourcePoints": 397312,
+        "staleDrops": 1,
+        "textureUploads": 0,
+        "workerIdle": true
+      },
+      "sampleChannel": 0,
+      "scene": "menu-algorithm",
+      "selectedIds": [
+        "detection:db581d50c1ce8649c3cb1e23b62a43abec9e6e96ddcb2abfdb4af0d94d2abe66"
+      ],
+      "sourceIds": [
+        {
+          "fileId": "file-1",
+          "id": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "kind": 0,
+          "runId": "",
+          "sampleChannel": 0
+        },
+        {
+          "fileId": "file-1",
+          "id": "manual:file-1:ch0",
+          "kind": 1,
+          "runId": "",
+          "sampleChannel": 0
+        },
+        {
+          "fileId": "file-1",
+          "id": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "kind": 2,
+          "runId": "ux-r5-pipeline-first",
+          "sampleChannel": 0
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "activeMarkId": "annotation-2",
+      "activeSegmentId": "segment-1",
+      "actualScreen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "preferredPixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      },
+      "annotationHandleCount": 8,
+      "backend": "QPainter 软件绘制",
+      "captureMethod": "native QWidget grab with QRhi readback",
+      "charts": [
+        {
+          "backend": "QPainter 软件绘制",
+          "objectName": "mainPlot",
+          "rect": {
+            "height": 698,
+            "width": 1870,
+            "x": 289,
+            "y": 414
+          },
+          "render": {
+            "acceptedHeatmapPreview": false,
+            "actualFrameInputSamples": "2048",
+            "actualSpectralFrames": 194,
+            "analysisError": "",
+            "analysisPoints": 2048,
+            "axisLayout": {
+              "dpr": 1.5,
+              "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+              "header": {
+                "height": 0,
+                "width": 1854,
+                "x": 8,
+                "y": 4
+              },
+              "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+              "leftGainFrom88": 47,
+              "localBottom": 32,
+              "localLeft": 41,
+              "localTop": 12,
+              "logicalDpiX": 96,
+              "logicalDpiY": 96,
+              "mode": "CompactHeader",
+              "plot": {
+                "height": 654,
+                "width": 1807,
+                "x": 41,
+                "y": 12
+              },
+              "sharedLeft": 41,
+              "tickHeight": 16,
+              "tickLabelWidth": 26,
+              "widgetHeight": 698,
+              "widgetWidth": 1870,
+              "xOrigin": "",
+              "xTickBand": {
+                "height": 16,
+                "width": 1807,
+                "x": 41,
+                "y": 678
+              },
+              "xTicks": [
+                "0",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10"
+              ],
+              "xTitle": "时间 (ms)",
+              "xTitleBand": {
+                "height": 0,
+                "width": 1807,
+                "x": 41,
+                "y": 697
+              },
+              "yOrigin": "",
+              "yTicks": [
+                "2490",
+                "2495",
+                "2500",
+                "2505",
+                "2510"
+              ],
+              "yTitle": "频率 (MHz)",
+              "yUnit": "MHz"
+            },
+            "binHz": 9765.625,
+            "colorTransformGenerations": 3,
+            "committedGeneration": 7,
+            "cpuWallTimings": {},
+            "cursorPinned": false,
+            "curveCacheHits": 0,
+            "curvePathElements": 0,
+            "curveRasterMethod": "QRhi heatmap texture",
+            "curveReductions": 0,
+            "curveSourceGenerations": 0,
+            "drawnLineSegments": 0,
+            "drawnPoints": 322500,
+            "effectiveOverlap": 0.5,
+            "framePsd": false,
+            "generation": 7,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 0,
+            "gpuDataRenderer": "QPainter software fallback",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 0,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 1,
+            "heatmapColorMapping": "QImage color table software fallback",
+            "heatmapHeight": 430,
+            "heatmapWidth": 750,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 741.6202,
+            "matrixReductions": 1,
+            "noiseBandwidthHz": 14655.593551538814,
+            "overlayUploads": 0,
+            "paddedFrames": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 2,
+            "quality": "settled",
+            "requestedGeneration": 7,
+            "requestedHeatmapHeight": 430,
+            "requestedHeatmapWidth": 750,
+            "requestedPixels": 322500,
+            "requiredSeconds": 0.0001024,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 397312,
+            "staleDrops": 1,
+            "textureUploads": 0,
+            "workerIdle": true
+          }
+        },
+        {
+          "backend": "QPainter 软件绘制",
+          "objectName": "auxPlot",
+          "rect": {
+            "height": 171,
+            "width": 1870,
+            "x": 289,
+            "y": 199
+          },
+          "render": {
+            "acceptedHeatmapPreview": false,
+            "actualFrameInputSamples": "2048",
+            "actualSpectralFrames": 194,
+            "analysisError": "",
+            "analysisPoints": 2048,
+            "axisLayout": {
+              "dpr": 1.5,
+              "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+              "header": {
+                "height": 0,
+                "width": 1854,
+                "x": 8,
+                "y": 4
+              },
+              "headerText": "X 时间 (ms) · Y 幅度 RMS（原始幅度）",
+              "leftGainFrom88": 47,
+              "localBottom": 32,
+              "localLeft": 36,
+              "localTop": 12,
+              "logicalDpiX": 96,
+              "logicalDpiY": 96,
+              "mode": "CompactHeader",
+              "plot": {
+                "height": 127,
+                "width": 1807,
+                "x": 41,
+                "y": 12
+              },
+              "sharedLeft": 41,
+              "tickHeight": 16,
+              "tickLabelWidth": 16,
+              "widgetHeight": 171,
+              "widgetWidth": 1870,
+              "xOrigin": "",
+              "xTickBand": {
+                "height": 16,
+                "width": 1807,
+                "x": 41,
+                "y": 151
+              },
+              "xTicks": [
+                "0",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10"
+              ],
+              "xTitle": "时间 (ms)",
+              "xTitleBand": {
+                "height": 0,
+                "width": 1807,
+                "x": 41,
+                "y": 170
+              },
+              "yOrigin": "",
+              "yTicks": [
+                "0.5",
+                "1.0",
+                "1.5",
+                "2.0",
+                "2.5"
+              ],
+              "yTitle": "幅度 RMS（原始幅度）",
+              "yUnit": "原始幅度"
+            },
+            "binHz": 9765.625,
+            "colorTransformGenerations": 0,
+            "committedGeneration": 9,
+            "cpuWallTimings": {},
+            "cursorPinned": false,
+            "curveCacheHits": 42,
+            "curvePathElements": 3614,
+            "curveRasterMethod": "QPainter::drawLines software fallback",
+            "curveReductions": 2,
+            "curveSourceGenerations": 4,
+            "drawnLineSegments": 3613,
+            "drawnPoints": 3614,
+            "effectiveOverlap": 0.5,
+            "framePsd": false,
+            "generation": 9,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 0,
+            "gpuDataRenderer": "QPainter software fallback",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 0,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 0,
+            "heatmapColorMapping": "QImage color table software fallback",
+            "heatmapHeight": -1,
+            "heatmapWidth": -1,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 0,
+            "matrixReductions": 0,
+            "noiseBandwidthHz": 14655.593551538814,
+            "overlayUploads": 0,
+            "paddedFrames": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 0,
+            "quality": "settled",
+            "requestedGeneration": 9,
+            "requestedHeatmapHeight": -1,
+            "requestedHeatmapWidth": -1,
+            "requestedPixels": 1,
+            "requiredSeconds": 0.0001024,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 3614,
+            "staleDrops": 0,
+            "textureUploads": 0,
+            "workerIdle": true
+          }
+        },
+        {
+          "backend": "QPainter 软件绘制",
+          "objectName": "navigationPlot",
+          "rect": {
+            "height": 48,
+            "width": 1870,
+            "x": 289,
+            "y": 107
+          },
+          "render": {
+            "acceptedHeatmapPreview": false,
+            "actualFrameInputSamples": "2048",
+            "actualSpectralFrames": 194,
+            "analysisError": "",
+            "analysisPoints": 2048,
+            "axisLayout": {
+              "dpr": 1.5,
+              "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+              "header": {
+                "height": 0,
+                "width": 1854,
+                "x": 8,
+                "y": 4
+              },
+              "headerText": "X 时间 (ms) · Y 幅度 RMS（原始幅度）",
+              "leftGainFrom88": 47,
+              "localBottom": 32,
+              "localLeft": 36,
+              "localTop": 12,
+              "logicalDpiX": 96,
+              "logicalDpiY": 96,
+              "mode": "CompactHeader",
+              "plot": {
+                "height": 48,
+                "width": 1844,
+                "x": 13,
+                "y": 0
+              },
+              "sharedLeft": 41,
+              "tickHeight": 16,
+              "tickLabelWidth": 16,
+              "widgetHeight": 48,
+              "widgetWidth": 1870,
+              "xOrigin": "",
+              "xTickBand": {
+                "height": 16,
+                "width": 1807,
+                "x": 41,
+                "y": 28
+              },
+              "xTicks": [
+                "0",
+                "2",
+                "4",
+                "6",
+                "8",
+                "10"
+              ],
+              "xTitle": "时间 (ms)",
+              "xTitleBand": {
+                "height": 0,
+                "width": 1807,
+                "x": 41,
+                "y": 47
+              },
+              "yOrigin": "",
+              "yTicks": [
+                "0.5",
+                "1.0",
+                "1.5",
+                "2.0",
+                "2.5"
+              ],
+              "yTitle": "幅度 RMS（原始幅度）",
+              "yUnit": "原始幅度"
+            },
+            "binHz": 9765.625,
+            "colorTransformGenerations": 0,
+            "committedGeneration": 4,
+            "cpuWallTimings": {},
+            "cursorPinned": false,
+            "curveCacheHits": 24,
+            "curvePathElements": 0,
+            "curveRasterMethod": "QPainter::drawLines software fallback",
+            "curveReductions": 0,
+            "curveSourceGenerations": 1,
+            "drawnLineSegments": 1562,
+            "drawnPoints": 3688,
+            "effectiveOverlap": 0.5,
+            "framePsd": false,
+            "generation": 4,
+            "gpuChartDrawCalls": 0,
+            "gpuDataDrawCalls": 0,
+            "gpuDataRenderer": "QPainter software fallback",
+            "gpuHeatmapDrawCalls": 0,
+            "gpuPaletteUploads": 0,
+            "gpuUploadsPending": false,
+            "gpuVertexUploads": 0,
+            "heatmapCacheHits": 0,
+            "heatmapColorMapping": "QImage color table software fallback",
+            "heatmapHeight": -1,
+            "heatmapWidth": -1,
+            "inverseCursorDrawCalls": 0,
+            "lastMatrixMs": 0,
+            "matrixReductions": 0,
+            "noiseBandwidthHz": 14655.593551538814,
+            "overlayUploads": 0,
+            "paddedFrames": 0,
+            "pinnedFrequencyHz": 0,
+            "pinnedSourceSample": "0",
+            "powerGenerations": 0,
+            "quality": "settled",
+            "requestedGeneration": 4,
+            "requestedHeatmapHeight": -1,
+            "requestedHeatmapWidth": -1,
+            "requestedPixels": 1,
+            "requiredSeconds": 0.0001024,
+            "samplePointCount": 0,
+            "samplePointsVisible": false,
+            "settled": true,
+            "sourcePoints": 3688,
+            "staleDrops": 0,
+            "textureUploads": 0,
+            "workerIdle": true
+          }
+        }
+      ],
+      "devicePixelRatio": 1.5,
+      "facts": {
+        "capabilities": {
+          "editable": true,
+          "globalAndInspectorActionsChecked": true,
+          "graphMenuActionsChecked": true,
+          "graphMenuShownHere": false,
+          "treePopupAndDirectCommandCoveredByQtTest": true
+        },
+        "popups": {
+          "global": {
+            "actualScreen": {
+              "availableLogicalGeometry": {
+                "height": 1392,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "connectedIndex": 2,
+              "deviceName": "\\\\.\\DISPLAY6",
+              "devicePath": "\\\\.\\DISPLAY6",
+              "devicePixelRatio": 1.5,
+              "friendlyName": "Redmi 27 NU",
+              "identityMethod": "Windows active DisplayConfig source/target",
+              "logicalDpi": 96,
+              "logicalGeometry": {
+                "height": 1440,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+              "name": "Redmi 27 NU",
+              "outputTechnology": 5,
+              "physicalDpi": 109.05000625015624,
+              "pixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "preferredPixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "primary": false
+            },
+            "deleteEnabled": true,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/menu-manual-global-menu.png",
+            "renameEnabled": true
+          },
+          "graph": {
+            "actualScreen": {
+              "availableLogicalGeometry": {
+                "height": 1392,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "connectedIndex": 2,
+              "deviceName": "\\\\.\\DISPLAY6",
+              "devicePath": "\\\\.\\DISPLAY6",
+              "devicePixelRatio": 1.5,
+              "friendlyName": "Redmi 27 NU",
+              "identityMethod": "Windows active DisplayConfig source/target",
+              "logicalDpi": 96,
+              "logicalGeometry": {
+                "height": 1440,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+              "name": "Redmi 27 NU",
+              "outputTechnology": 5,
+              "physicalDpi": 109.05000625015624,
+              "pixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "preferredPixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "primary": false
+            },
+            "deleteEnabled": true,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/menu-manual-graph-menu.png",
+            "renameEnabled": true
+          },
+          "input": "QWindow menu-bar click, Win32 SendInput context clicks to verified foreground test window, native Escape",
+          "tree": {
+            "actualScreen": {
+              "availableLogicalGeometry": {
+                "height": 1392,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "connectedIndex": 2,
+              "deviceName": "\\\\.\\DISPLAY6",
+              "devicePath": "\\\\.\\DISPLAY6",
+              "devicePixelRatio": 1.5,
+              "friendlyName": "Redmi 27 NU",
+              "identityMethod": "Windows active DisplayConfig source/target",
+              "logicalDpi": 96,
+              "logicalGeometry": {
+                "height": 1440,
+                "width": 2560,
+                "x": 2560,
+                "y": 0
+              },
+              "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+              "name": "Redmi 27 NU",
+              "outputTechnology": 5,
+              "physicalDpi": 109.05000625015624,
+              "pixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "preferredPixelSize": {
+                "height": 2160,
+                "width": 3840
+              },
+              "primary": false
+            },
+            "deleteEnabled": true,
+            "png": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/menu-manual-tree-menu.png",
+            "renameEnabled": true
+          }
+        },
+        "sourceId": "annotation-2",
+        "sourceKind": 1,
+        "sourceUnchanged": true
+      },
+      "fileId": "file-1",
+      "fullScreen": true,
+      "inspectorIdentity": "2gmsk\n人工标记 · 已采纳 · 类别未知\n当前第 1/1 段",
+      "logicalWindowSize": {
+        "height": 1440,
+        "width": 2560
+      },
+      "matrix": [
+        "RD-01",
+        "RD-02",
+        "RD-04"
+      ],
+      "memory": {
+        "peakRssBytes": 280604672,
+        "pid": 44216,
+        "privateBytes": 165244928,
+        "rssBytes": 268853248
+      },
+      "nativeJourneyElapsedMs": 2263,
+      "nativeWindowVisibleAnd4kClientVerified": true,
+      "objects": [
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:0",
+          "kind": 0,
+          "originRecordId": "0",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:1",
+          "kind": 0,
+          "originRecordId": "1",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:2",
+          "kind": 0,
+          "originRecordId": "2",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "ann-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07:3",
+          "kind": 0,
+          "originRecordId": "3",
+          "segmentCount": 1,
+          "sourceSetId": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "annotation-2",
+          "kind": 1,
+          "originRecordId": "annotation-2",
+          "segmentCount": 1,
+          "sourceSetId": "manual:file-1:ch0",
+          "timeUnknown": false
+        },
+        {
+          "deleted": false,
+          "id": "detection:db581d50c1ce8649c3cb1e23b62a43abec9e6e96ddcb2abfdb4af0d94d2abe66",
+          "kind": 2,
+          "originRecordId": "detection:db581d50c1ce8649c3cb1e23b62a43abec9e6e96ddcb2abfdb4af0d94d2abe66",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:970bd5271ed8e15f84319ffed8e318a325d79e02598c0a40fa7814a61ee31b22",
+          "kind": 2,
+          "originRecordId": "detection:970bd5271ed8e15f84319ffed8e318a325d79e02598c0a40fa7814a61ee31b22",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:3dfaedbc231224f1ed0cec7685a6b8cf8b2df48be955007e4e6d2d22543fb8e6",
+          "kind": 2,
+          "originRecordId": "detection:3dfaedbc231224f1ed0cec7685a6b8cf8b2df48be955007e4e6d2d22543fb8e6",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:91254dbf8b8511d9625efde4eb226729cbaa996c8cf78d333c41f03c8f4c4473",
+          "kind": 2,
+          "originRecordId": "detection:91254dbf8b8511d9625efde4eb226729cbaa996c8cf78d333c41f03c8f4c4473",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:ad9e52468a73d76898453c475762049c0d91bc8093e027a3da7c56d51169deec",
+          "kind": 2,
+          "originRecordId": "detection:ad9e52468a73d76898453c475762049c0d91bc8093e027a3da7c56d51169deec",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:b3b575d9b0ad4a46df1c4e33e22f304eb042080f72c83a44ffb6e142b4c2dd4b",
+          "kind": 2,
+          "originRecordId": "detection:b3b575d9b0ad4a46df1c4e33e22f304eb042080f72c83a44ffb6e142b4c2dd4b",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:85df07b635b5ec347d13ed630c0dbd2946aa05d64aadad181d08a60deeba07ca",
+          "kind": 2,
+          "originRecordId": "detection:85df07b635b5ec347d13ed630c0dbd2946aa05d64aadad181d08a60deeba07ca",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:3fcbf7272472d05e6344ecb14fe49afea6a07ecbe7c5304929e1e147872992bd",
+          "kind": 2,
+          "originRecordId": "detection:3fcbf7272472d05e6344ecb14fe49afea6a07ecbe7c5304929e1e147872992bd",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:057e5b06d8ca322a148255f04410cc35999d3a59cbee69f42a50666f28da01d3",
+          "kind": 2,
+          "originRecordId": "detection:057e5b06d8ca322a148255f04410cc35999d3a59cbee69f42a50666f28da01d3",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:d7b43e3394c46e170a25b32ce396d58eb6db7a4ecdadd11e652193ab06bf6bc8",
+          "kind": 2,
+          "originRecordId": "detection:d7b43e3394c46e170a25b32ce396d58eb6db7a4ecdadd11e652193ab06bf6bc8",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:37d75fa1d66ab6eaf3af836e8804635518e6a0398fe5cb2fc334a11a23a799ba",
+          "kind": 2,
+          "originRecordId": "detection:37d75fa1d66ab6eaf3af836e8804635518e6a0398fe5cb2fc334a11a23a799ba",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:b82b5fb65e611fec01a5f5bc7c05b76afe84763593e37104af4f3ff923fb06ae",
+          "kind": 2,
+          "originRecordId": "detection:b82b5fb65e611fec01a5f5bc7c05b76afe84763593e37104af4f3ff923fb06ae",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:db8d728d272cd24c942a68093fb5e966ce2ab0fbb8787165b0907559e402933b",
+          "kind": 2,
+          "originRecordId": "detection:db8d728d272cd24c942a68093fb5e966ce2ab0fbb8787165b0907559e402933b",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:405646ec1d5d1bf7d3a37cdfa7466d7109e6c3924f01a6af5f123afd6c08dc70",
+          "kind": 2,
+          "originRecordId": "detection:405646ec1d5d1bf7d3a37cdfa7466d7109e6c3924f01a6af5f123afd6c08dc70",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:986c3370e84f2b2999e2c1cdedc02fe483e4c3968db6ca382c2691388dbe45a1",
+          "kind": 2,
+          "originRecordId": "detection:986c3370e84f2b2999e2c1cdedc02fe483e4c3968db6ca382c2691388dbe45a1",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:3aa7ada938da054079b15ef73addea26ed9e06d60f64ccf494234e0f143c0368",
+          "kind": 2,
+          "originRecordId": "detection:3aa7ada938da054079b15ef73addea26ed9e06d60f64ccf494234e0f143c0368",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:eb61cfd7fb9a46f392123a5e37443308be8cceb026f787044a4ea0a9d1af5f1a",
+          "kind": 2,
+          "originRecordId": "detection:eb61cfd7fb9a46f392123a5e37443308be8cceb026f787044a4ea0a9d1af5f1a",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        },
+        {
+          "deleted": false,
+          "id": "detection:93ae7d5b1075be9fc14241f7e72a4a2c2b58766edf33ba6f8b1d44064805dec5",
+          "kind": 2,
+          "originRecordId": "detection:93ae7d5b1075be9fc14241f7e72a4a2c2b58766edf33ba6f8b1d44064805dec5",
+          "segmentCount": 0,
+          "sourceSetId": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "timeUnknown": true
+        }
+      ],
+      "overlayIds": [
+        "annotation-2"
+      ],
+      "pass": true,
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "plotRect": {
+        "height": 654,
+        "width": 1807,
+        "x": 41,
+        "y": 12
+      },
+      "png": "D:/project/signal_studio_rebuild/out/tasks/ux-r5/diagnostics/menus-debug-software-r3-verified/menu-manual.png",
+      "rects": [
+        {
+          "enabled": true,
+          "objectName": "mainPlot",
+          "rect": {
+            "height": 698,
+            "width": 1870,
+            "x": 289,
+            "y": 414
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 698,
+            "width": 1870,
+            "x": 289,
+            "y": 414
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "projectTree",
+          "rect": {
+            "height": 897,
+            "width": 264,
+            "x": 7,
+            "y": 119
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 897,
+            "width": 264,
+            "x": 7,
+            "y": 119
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "properties",
+          "rect": {
+            "height": 1381,
+            "width": 390,
+            "x": 2170,
+            "y": 34
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 1381,
+            "width": 390,
+            "x": 2170,
+            "y": 34
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspector",
+          "rect": {
+            "height": 736,
+            "width": 370,
+            "x": 2180,
+            "y": 115
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 736,
+            "width": 370,
+            "x": 2180,
+            "y": 115
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "importedLabelsTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 291,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 291,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "manualAnnotationsTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 374,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 374,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "detectionResultsTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 457,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 457,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "taskTab",
+          "rect": {
+            "height": 26,
+            "width": 80,
+            "x": 540,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 80,
+            "x": 540,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "logTab",
+          "rect": {
+            "height": 26,
+            "width": 56,
+            "x": 623,
+            "y": 1156
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 26,
+            "width": 56,
+            "x": 623,
+            "y": 1156
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "importedLabelTable",
+          "rect": {
+            "height": 158,
+            "width": 1870,
+            "x": 289,
+            "y": 1253
+          },
+          "rows": 4,
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "manualAnnotationTable",
+          "rect": {
+            "height": 158,
+            "width": 1870,
+            "x": 289,
+            "y": 1253
+          },
+          "rows": 1,
+          "visible": true,
+          "visibleRect": {
+            "height": 158,
+            "width": 1870,
+            "x": 289,
+            "y": 1253
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "detectionResultTable",
+          "rect": {
+            "height": 134,
+            "width": 1870,
+            "x": 289,
+            "y": 1253
+          },
+          "rows": 18,
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationIdentity",
+          "rect": {
+            "height": 48,
+            "width": 350,
+            "x": 2190,
+            "y": 119
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 48,
+            "width": 350,
+            "x": 2190,
+            "y": 119
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationReadOnlyRange",
+          "rect": {
+            "height": 32,
+            "width": 350,
+            "x": 2190,
+            "y": 271
+          },
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationGeometryEditor",
+          "rect": {
+            "height": 126,
+            "width": 350,
+            "x": 2190,
+            "y": 271
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 126,
+            "width": 350,
+            "x": 2190,
+            "y": 271
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorLocate",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 173
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 173
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorConvert",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 207
+          },
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationInspectorCreateChannel",
+          "rect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 207
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 28,
+            "width": 350,
+            "x": 2190,
+            "y": 207
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "convertAnnotationsToManual",
+          "rect": {
+            "height": 28,
+            "width": 102,
+            "x": 383,
+            "y": 1245
+          },
+          "visible": false
+        },
+        {
+          "enabled": true,
+          "objectName": "annotationQuickFilter",
+          "rect": {
+            "height": 29,
+            "width": 105,
+            "x": 289,
+            "y": 1188
+          },
+          "visible": true,
+          "visibleRect": {
+            "height": 29,
+            "width": 105,
+            "x": 289,
+            "y": 1188
+          }
+        },
+        {
+          "enabled": true,
+          "objectName": "currentDetectionStatus",
+          "rect": {
+            "height": 16,
+            "width": 1870,
+            "x": 289,
+            "y": 1225
+          },
+          "visible": false
+        }
+      ],
+      "render": {
+        "acceptedHeatmapPreview": false,
+        "actualFrameInputSamples": "2048",
+        "actualSpectralFrames": 194,
+        "analysisError": "",
+        "analysisPoints": 2048,
+        "axisLayout": {
+          "dpr": 1.5,
+          "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+          "header": {
+            "height": 0,
+            "width": 1854,
+            "x": 8,
+            "y": 4
+          },
+          "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+          "leftGainFrom88": 47,
+          "localBottom": 32,
+          "localLeft": 41,
+          "localTop": 12,
+          "logicalDpiX": 96,
+          "logicalDpiY": 96,
+          "mode": "CompactHeader",
+          "plot": {
+            "height": 654,
+            "width": 1807,
+            "x": 41,
+            "y": 12
+          },
+          "sharedLeft": 41,
+          "tickHeight": 16,
+          "tickLabelWidth": 26,
+          "widgetHeight": 698,
+          "widgetWidth": 1870,
+          "xOrigin": "",
+          "xTickBand": {
+            "height": 16,
+            "width": 1807,
+            "x": 41,
+            "y": 678
+          },
+          "xTicks": [
+            "0",
+            "2",
+            "4",
+            "6",
+            "8",
+            "10"
+          ],
+          "xTitle": "时间 (ms)",
+          "xTitleBand": {
+            "height": 0,
+            "width": 1807,
+            "x": 41,
+            "y": 697
+          },
+          "yOrigin": "",
+          "yTicks": [
+            "2490",
+            "2495",
+            "2500",
+            "2505",
+            "2510"
+          ],
+          "yTitle": "频率 (MHz)",
+          "yUnit": "MHz"
+        },
+        "binHz": 9765.625,
+        "colorTransformGenerations": 3,
+        "committedGeneration": 7,
+        "cpuWallTimings": {},
+        "cursorPinned": false,
+        "curveCacheHits": 0,
+        "curvePathElements": 0,
+        "curveRasterMethod": "QRhi heatmap texture",
+        "curveReductions": 0,
+        "curveSourceGenerations": 0,
+        "drawnLineSegments": 0,
+        "drawnPoints": 322500,
+        "effectiveOverlap": 0.5,
+        "framePsd": false,
+        "generation": 7,
+        "gpuChartDrawCalls": 0,
+        "gpuDataDrawCalls": 0,
+        "gpuDataRenderer": "QPainter software fallback",
+        "gpuHeatmapDrawCalls": 0,
+        "gpuPaletteUploads": 0,
+        "gpuUploadsPending": false,
+        "gpuVertexUploads": 0,
+        "heatmapCacheHits": 1,
+        "heatmapColorMapping": "QImage color table software fallback",
+        "heatmapHeight": 430,
+        "heatmapWidth": 750,
+        "inverseCursorDrawCalls": 0,
+        "lastMatrixMs": 741.6202,
+        "matrixReductions": 1,
+        "noiseBandwidthHz": 14655.593551538814,
+        "overlayUploads": 0,
+        "paddedFrames": 0,
+        "pinnedFrequencyHz": 0,
+        "pinnedSourceSample": "0",
+        "powerGenerations": 2,
+        "quality": "settled",
+        "requestedGeneration": 7,
+        "requestedHeatmapHeight": 430,
+        "requestedHeatmapWidth": 750,
+        "requestedPixels": 322500,
+        "requiredSeconds": 0.0001024,
+        "samplePointCount": 0,
+        "samplePointsVisible": false,
+        "settled": true,
+        "sourcePoints": 397312,
+        "staleDrops": 1,
+        "textureUploads": 0,
+        "workerIdle": true
+      },
+      "sampleChannel": 0,
+      "scene": "menu-manual",
+      "selectedIds": [
+        "annotation-2"
+      ],
+      "sourceIds": [
+        {
+          "fileId": "file-1",
+          "id": "source-a6ceb67e224ec4b04ac94a15bac35e944835bffe468625be4c4b518c09065d07",
+          "kind": 0,
+          "runId": "",
+          "sampleChannel": 0
+        },
+        {
+          "fileId": "file-1",
+          "id": "manual:file-1:ch0",
+          "kind": 1,
+          "runId": "",
+          "sampleChannel": 0
+        },
+        {
+          "fileId": "file-1",
+          "id": "run:00280cd43cf4e6e23526e3297490d7f94ceee0d310aa775ce840448c721d05d5",
+          "kind": 2,
+          "runId": "ux-r5-pipeline-first",
+          "sampleChannel": 0
+        }
+      ],
+      "status": "passed"
+    }
+  ],
+  "screen": {
+    "availableLogicalGeometry": {
+      "height": 1392,
+      "width": 2560,
+      "x": 2560,
+      "y": 0
+    },
+    "connectedIndex": 2,
+    "deviceName": "\\\\.\\DISPLAY6",
+    "devicePath": "\\\\.\\DISPLAY6",
+    "devicePixelRatio": 1.5,
+    "friendlyName": "Redmi 27 NU",
+    "identityMethod": "Windows active DisplayConfig source/target",
+    "logicalDpi": 96,
+    "logicalGeometry": {
+      "height": 1440,
+      "width": 2560,
+      "x": 2560,
+      "y": 0
+    },
+    "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+    "name": "Redmi 27 NU",
+    "outputTechnology": 5,
+    "physicalDpi": 109.05000625015624,
+    "pixelSize": {
+      "height": 2160,
+      "width": 3840
+    },
+    "preferredPixelSize": {
+      "height": 2160,
+      "width": 3840
+    },
+    "primary": false
+  },
+  "screenCandidates": [
+    {
+      "availableLogicalGeometry": {
+        "height": 1392,
+        "width": 2560,
+        "x": 2560,
+        "y": 0
+      },
+      "connectedIndex": 2,
+      "deviceName": "\\\\.\\DISPLAY6",
+      "devicePath": "\\\\.\\DISPLAY6",
+      "devicePixelRatio": 1.5,
+      "friendlyName": "Redmi 27 NU",
+      "identityMethod": "Windows active DisplayConfig source/target",
+      "logicalDpi": 96,
+      "logicalGeometry": {
+        "height": 1440,
+        "width": 2560,
+        "x": 2560,
+        "y": 0
+      },
+      "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+      "name": "Redmi 27 NU",
+      "outputTechnology": 5,
+      "physicalDpi": 109.05000625015624,
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "preferredPixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "primary": false
+    }
+  ],
+  "screens": [
+    {
+      "availableLogicalGeometry": {
+        "height": 1019,
+        "width": 1707,
+        "x": 0,
+        "y": 0
+      },
+      "connectedIndex": 1,
+      "deviceName": "\\\\.\\DISPLAY1",
+      "devicePath": "\\\\.\\DISPLAY1",
+      "devicePixelRatio": 1.5,
+      "friendlyName": "TL160ADMP36",
+      "identityMethod": "Windows active DisplayConfig source/target",
+      "logicalDpi": 96,
+      "logicalGeometry": {
+        "height": 1067,
+        "width": 1707,
+        "x": 0,
+        "y": 0
+      },
+      "monitorDevicePath": "\\\\?\\DISPLAY#TMA2068#5&a55c4b7&0&UID512#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+      "name": "TL160ADMP36",
+      "outputTechnology": -2147483648,
+      "physicalDpi": 125.86483316481294,
+      "pixelSize": {
+        "height": 1600,
+        "width": 2560
+      },
+      "preferredPixelSize": {
+        "height": 1600,
+        "width": 2560
+      },
+      "primary": true
+    },
+    {
+      "availableLogicalGeometry": {
+        "height": 1392,
+        "width": 2560,
+        "x": 2560,
+        "y": 0
+      },
+      "connectedIndex": 2,
+      "deviceName": "\\\\.\\DISPLAY6",
+      "devicePath": "\\\\.\\DISPLAY6",
+      "devicePixelRatio": 1.5,
+      "friendlyName": "Redmi 27 NU",
+      "identityMethod": "Windows active DisplayConfig source/target",
+      "logicalDpi": 96,
+      "logicalGeometry": {
+        "height": 1440,
+        "width": 2560,
+        "x": 2560,
+        "y": 0
+      },
+      "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+      "name": "Redmi 27 NU",
+      "outputTechnology": 5,
+      "physicalDpi": 109.05000625015624,
+      "pixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "preferredPixelSize": {
+        "height": 2160,
+        "width": 3840
+      },
+      "primary": false
+    }
+  ],
+  "softwareRenderer": true,
+  "source": {
+    "centerFrequencyHz": 2500000000,
+    "dataPath": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-data",
+    "decodedCompleteFrames": "400000",
+    "fieldRfAcquisition": false,
+    "format": "CF32",
+    "formatKey": "CF32/1/1/1/0/0/0/0/0",
+    "metaPath": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.sigmf-meta",
+    "metadataProvenance": "SigMF 1.0.0",
+    "navigationEnvelopePoints": 1563,
+    "physicalSamples": "400000",
+    "provenance": "TorchSig-generated sample; real file import and CPU DSP, synthetic signal",
+    "sampleRateHz": 20000000,
+    "supplementalPath": "D:/project/signal_studio_rebuild/resources/sigmf_data_demo/0000000.json"
+  },
+  "startedUtc": "2026-10-26T10:37:00.474Z",
+  "status": "passed",
+  "nativePass": true,
+  "scriptVerification": {
+    "pass": true,
+    "coreScenes": 3,
+    "actualScreenChecked": true,
+    "sourceIdsAndRectsChecked": true,
+    "rendererDrawsAndUploadsChecked": true,
+    "independentReviewPerformed": false
+  },
+  "process": {
+    "pass": true,
+    "configuration": "Debug",
+    "softwareRenderer": true,
+    "binary": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+    "workingDirectory": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin",
+    "outputDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\menus-debug-software-r3-verified",
+    "startedUtc": "2026-10-26T10:36:58.4448360Z",
+    "timeoutSeconds": 480,
+    "systemOnlyPath": true,
+    "dpiOverridesCleared": true,
+    "buildExecuted": false,
+    "independentReviewPerformed": false,
+    "modelInferenceVerified": false,
+    "largeRfbenchValidationExecuted": false,
+    "elapsedSeconds": 16.4724182,
+    "processId": 44216,
+    "exitCode": 0,
+    "finishedUtc": "2026-10-26T10:37:14.9171056Z"
+  }
+}

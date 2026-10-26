@@ -248,7 +248,7 @@
     "heatmapHeight": 430,
     "heatmapWidth": 750,
     "inverseCursorDrawCalls": 0,
-    "lastMatrixMs": 110.3934,
+    "lastMatrixMs": 114.1235,
     "matrixReductions": 0,
     "noiseBandwidthHz": 29311.187103077627,
     "overlayUploads": 0,
@@ -2001,7 +2001,7 @@
   },
   "overlayReusesHeatmap": true,
   "overlaySettled": true,
-  "overlayVerificationMilliseconds": 95,
+  "overlayVerificationMilliseconds": 94,
   "pass": true,
   "powerGenerations": 6,
   "screen": {

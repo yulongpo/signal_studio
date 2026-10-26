@@ -1,0 +1,15 @@
+2026-10-26T10:36:10.445Z setup native monitor and isolated .ssproj
+2026-10-26T10:36:12.356Z await four actual labels from automatic queued discovery
+2026-10-26T10:36:12.749Z automatic discovery published four actual labels
+2026-10-26T10:36:13.154Z automatic label discovery and explicit repeat import verified
+2026-10-26T10:36:13.160Z click importedLabelsTab
+2026-10-26T10:36:13.685Z start actual pipeline-fixture-v1 worker ux-r5-pipeline-first
+2026-10-26T10:36:16.902Z menu-imported begin
+2026-10-26T10:36:16.910Z click importedLabelsTab
+2026-10-26T10:36:19.136Z menu-imported passed
+2026-10-26T10:36:19.159Z menu-algorithm begin
+2026-10-26T10:36:19.170Z click detectionResultsTab
+2026-10-26T10:36:21.192Z menu-algorithm passed
+2026-10-26T10:36:21.218Z menu-manual begin
+2026-10-26T10:36:21.232Z click manualAnnotationsTab
+2026-10-26T10:36:23.157Z menu-manual passed

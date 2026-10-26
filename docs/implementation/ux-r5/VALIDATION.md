@@ -16,32 +16,34 @@
 
 以上日志均位于 `out/tasks/ux-r5/logs/`，保留 CTest 输出及 QtTest 真实失败/跳过。LabelImport 的 4 个目录符号链接数据行在本机因创建符号链接权限跳过；其余标签用例实际执行。拒绝来源链接、路径越界、私有 GC 的其他隔离测试不因此删除。
 
+首轮独立审核的菜单权限整改后，Debug/Release 完整构建、5组 UX及20个旧 UI函数重新通过，日志为 `*-review-fix-{build,ux-5,ui-20}.txt`。R5 UI 组新增 `uxR5_readOnlyMenusAndCommandGuards`，现在4个业务函数（Qt totals6），检查全部菜单/按钮和直接命令，Manual 正向及混合删除拒绝。核心/存储源码未改，沿用前述12组的实际结果。菜单探针最终增量构建日志为 `*-native-visible-menu-build.txt`；完整原生最终目录 `native-*-verified-r3`，菜单专项 `menus-*-r3-verified`，生产独立启动 `package-*-r2`。细节见 `REVIEW_FIXES.md`。
+
 ## 原生 Qt
 
-入口 `scripts/verify-ux-r5.ps1`，不在探针中配置或构建。它从 `_bin` 部署目录、系统专用 PATH 启动实际 Qt 窗口，清除 DPI 覆盖，用 QWindow 实际鼠标/键盘、实际 Windows 显示器和 QWidget/QRhi 回读截图；不使用 offscreen 或超大窗口替代。Debug/Release、GPU/软件四次均15/15通过，共60个主场景及16张补充窗口截图；归档76张 PNG、完整报告/步骤/launcher，索引为 `evidence/INDEX.json`。
+入口 `scripts/verify-ux-r5.ps1`，不在探针中配置或构建。它从 `_bin` 部署目录、系统专用 PATH 启动实际 Qt 窗口，清除 DPI 覆盖，用 QWindow 实际鼠标/键盘、实际 Windows 显示器和 QWidget/QRhi 回读截图；不使用 offscreen 或超大窗口替代。Debug/Release、GPU/软件四次均15/15通过，共60个完整旅程主场景及16张补充窗口截图。四配置 `-MenusOnly` 各3/3，另有12张来源主场景和36张实际菜单图；合计归档124张 PNG、完整报告/步骤/launcher，索引为 `evidence/INDEX.json`。
 
-| 配置 | 原生主场景 | 生产程序独立启动 | 实际显示 |
-|---|---|---|---|
-| Release GPU | 15/15 | PASS | QRhi D3D11 / AMD Radeon(TM) 880M Graphics |
-| Debug GPU | 15/15 | PASS | QRhi D3D11 / AMD Radeon(TM) 880M Graphics |
-| Release 软件 | 15/15 | PASS | QWidget / QPainter |
-| Debug 软件 | 15/15 | PASS | QWidget / QPainter |
+| 配置 | 原生完整旅程 | 实际菜单专项 | 生产程序独立启动 | 实际显示 |
+|---|---|---|---|---|
+| Release GPU | 15/15 | 3/3 | PASS | QRhi D3D11 / AMD Radeon(TM) 880M Graphics |
+| Debug GPU | 15/15 | 3/3 | PASS | QRhi D3D11 / AMD Radeon(TM) 880M Graphics |
+| Release 软件 | 15/15 | 3/3 | PASS | QWidget / QPainter |
+| Debug 软件 | 15/15 | 3/3 | PASS | QWidget / QPainter |
 
 独立启动使用 `scripts/verify-package.ps1`，实际运行 `SignalStudio.exe`，不是以测试探针代替生产程序。完整报告在 `evidence/packages/`；四次均为对应部署目录 + 系统专用 PATH，硬件/软件路径符合请求。实际屏幕身份由上述原生旅程单独证明。
 
 每次完整运行 15 场景：三来源 Tab；原始/算法键鼠只读；Tab 唯一叠加与定位；单条转换编辑去重；多选转换；生成器 TXT 100 对象/200 段原子转换、撤销重做；未知时间保持观察；树/图/表/Inspector 与真实 CPU DDC512；320/650 侧栏；390 侧栏及主/补充原文完整复制与搜索；配置待更新；ROI 新结果整体替换；完整零结果发布；工程保存重开且旧结果不复活。
 
-实际探针识别 Redmi 27 NU，连接序号 2，`\\.\DISPLAY6`，3840×2160，Qt 2560×1440，DPR 1.5。每场景报告保留原生 monitorDevicePath、实际 DPI、全屏窗口身份、来源/选中/overlay ID、可见控件几何和各图谱 renderer 计数。GPU 成功要求非 CPU D3D11 和实际纹理/顶点数据绘制；软件明确标注 QWidget/QPainter，GPU 数据绘制计数为零。
+实际探针识别 Redmi 27 NU，连接序号 2，`\\.\DISPLAY6`，3840×2160，Qt 2560×1440，DPR 1.5。每场景报告保留原生 monitorDevicePath、实际 DPI、全屏窗口身份、来源/选中/overlay ID、可见控件几何和各图谱 renderer 计数；最终补测还用 Win32 核对真实窗口可见和物理客户区3840×2160。GPU 成功要求非 CPU D3D11 和实际纹理/顶点数据绘制；软件明确标注 QWidget/QPainter，GPU 数据绘制计数为零。
 
-场景报告的 `nativeJourneyElapsedMs` 包含交互、等待稳定和截图，不能当算法耗时。100 对象的 `conversionResponseMs` 测量整个按钮动作助手，包含诊断检查点写盘、滚动定位、原生输入与同步刷新，不能解释为独立应用主线程卡顿时长或纯转换计算时延。Release GPU/软件分别192/250 ms，Debug GPU/软件分别2101/1796 ms；对应进程峰值 RSS 为1363.2/240.1/1418.1/273.1 MiB。GPU 场景包含 Qt 图形资源和实屏回读。原始 before/after/privateBytes 见索引，不声称 Debug 达到200ms或全配置低内存目标。这是代表性本地样本/探针测量，不作为大型 RFbench 或所有硬件性能结论。
+场景报告的 `nativeJourneyElapsedMs` 包含交互、等待稳定和截图，不能当算法耗时。100 对象的 `conversionResponseMs` 测量整个按钮动作助手，包含诊断检查点写盘、滚动定位、原生输入与同步刷新，不能解释为独立应用主线程卡顿时长或纯转换计算时延。最终 `-r3` Release GPU/软件分别114/146 ms，Debug GPU/软件分别855/915 ms；对应场景记录的进程峰值 RSS 为1374.4/239.9/1417.9/276.5 MiB。GPU 场景包含 Qt 图形资源和实屏回读。原始 before/after/privateBytes 见索引，不声称 Debug 达到200ms或全配置低内存目标。这是代表性本地样本/探针测量，不作为大型 RFbench 或所有硬件性能结论。
 
 ## P0 需求与实际验证入口
 
 | 需求 | 可审查证据 |
 |---|---|
-| UI-01/02/04/05/06 | R5 UI 三用例、旧 UI20，原生 01/03/05/08–11；真实三表和已移除旧入口断言 |
+| UI-01/02/04/05/06 | R5 UI（原3个业务函数和整改新增菜单函数）、旧 UI20，原生 01/03/05/08–11；真实三表和已移除旧入口断言 |
 | UI-03（用户覆盖） | `uxR5_layersAndIndependentFilters`、`annotationSelectionAcrossPagesAndViews`、原生03：没有3个 checkbox，Tab 派生唯一叠加，不重算频谱，树保全其他来源 |
-| RD-01/02/03/04/05 | service19 中逐类普通写 API 拒绝和混合批次原子性；旧 UI20 名称/属性/几何/段/删除/菜单取消；原生02/04 |
+| RD-01/02/03/04/05 | service19 中逐类普通写 API 拒绝和混合批次原子性；`uxR5_readOnlyMenusAndCommandGuards` 树 popup/图谱/全局/右侧和直接命令；旧 UI20 名称/属性/几何/段/删除/菜单取消；原生02/04及四配置各3来源实际菜单专项 |
 | CV-01/02/04/05/07 | service19、兼容4、旧UI、原生04/05/07/13：快照不变、当前段/全段、未知时间、去重及源退役后继续人工编辑 |
 | CV-03/06/08 | service19 的10/100、无效/预算整批拒绝、撤销/重做；compat 100 副本删源后保存重开；原生06/15 |
 | RP-01/02/03/08 | lifecycle11 的 SCN→FFSCN→SCN、零结果和 ROI；原生 fixture worker 正常及 ROI 发布，受控 SCN 格式零结果，原生13/14 |
@@ -65,6 +67,6 @@
 
 `out/tasks/ux-r5/diagnostics/`、`logs/` 保留全部首轮失败。主要包括：异步标签发布检查过早；底部默认 Tab 折叠未展开；fixture 发布修订封套与原始 replay 比较；工程树只投影当前页来源；原生树行被外层滚动区裁剪；测试名称超过已有80字符约束；辅助原文控件名称差异；旧测试仍要求直接编辑/撤销导入；旧工程 live pending 迁移、Reference owner 改写及未保存迁移 GC；移除图层后旧测试仍期望命中隐藏来源；任务列表异步刷新等待缺失；历史 JSON 预检助手不适用于带检测资产的 `.ssproj`，已改为实际 MainWindow 保存/打开。另有并发验证占用 worker 导致一次链接失败，以及脚本转发 regex 管道失败。修复或调整调度后补测独立记录，未删除失败或将不同批次混称一次全部通过。
 
-系统剪贴板恢复后 `clipboard-restored-probe.json` 记录 OpenClipboard 成功，原生完整复制验证使用实际系统剪贴板，未以替代缓冲区充当成功。
+系统剪贴板两次恢复探针 `clipboard-restored-probe.json`、`clipboard-restored-r2-probe.json` 记录 OpenClipboard 成功。Debug GPU `-r2` 的再次拒绝访问、第11场景失败及恢复后新目录补测分开保存；菜单专项的键盘菜单键/前台失败及外层退出码误判亦保留，见 `REVIEW_FIXES.md`。完整复制验证使用实际系统剪贴板，未以替代缓冲区充当成功。
 
 最终构建/测试/四组原生与独立启动已闭合，未经独立 Review 不能发布。独立判决和推送结果以提交外报告及远端实际 HEAD 为准，不由实施记录预签。

@@ -1,13 +1,13 @@
 {
   "schema": "signal-studio-ux-r5-validation-index-v1",
-  "date": "2026-10-26T09:05:30.4454846Z",
+  "date": "2026-10-26T10:42:24.1710845Z",
   "native": [
     {
       "name": "release-gpu",
       "pass": true,
       "scenes": 15,
       "screenshots": 19,
-      "originalDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-release-gpu-verified",
+      "originalDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-release-gpu-verified-r3",
       "archiveDirectory": "docs/implementation/ux-r5/evidence/release-gpu",
       "screen": {
         "availableLogicalGeometry": {
@@ -44,19 +44,19 @@
         "primary": false
       },
       "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
-      "elapsedSeconds": 62.941616,
-      "conversionActionHelperMs": 192,
+      "elapsedSeconds": 39.8981353,
+      "conversionActionHelperMs": 114,
       "memoryBefore": {
-        "peakRssBytes": 1429438464,
-        "pid": 61040,
-        "privateBytes": 1269510144,
-        "rssBytes": 1372692480
+        "peakRssBytes": 1441202176,
+        "pid": 27668,
+        "privateBytes": 1277788160,
+        "rssBytes": 1382838272
       },
       "memoryAfter": {
-        "peakRssBytes": 1429438464,
-        "pid": 61040,
-        "privateBytes": 1271271424,
-        "rssBytes": 1376272384
+        "peakRssBytes": 1441202176,
+        "pid": 27668,
+        "privateBytes": 1280290816,
+        "rssBytes": 1386278912
       }
     },
     {
@@ -64,7 +64,7 @@
       "pass": true,
       "scenes": 15,
       "screenshots": 19,
-      "originalDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-debug-gpu-verified",
+      "originalDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-debug-gpu-verified-r3",
       "archiveDirectory": "docs/implementation/ux-r5/evidence/debug-gpu",
       "screen": {
         "availableLogicalGeometry": {
@@ -101,19 +101,19 @@
         "primary": false
       },
       "backend": "QRhi D3D11 | AMD Radeon(TM) 880M Graphics | vendor=0x1002 device=0x150e",
-      "elapsedSeconds": 217.1728987,
-      "conversionActionHelperMs": 2101,
+      "elapsedSeconds": 113.0003483,
+      "conversionActionHelperMs": 855,
       "memoryBefore": {
-        "peakRssBytes": 1486979072,
-        "pid": 41904,
-        "privateBytes": 1280475136,
-        "rssBytes": 1387278336
+        "peakRssBytes": 1486802944,
+        "pid": 59204,
+        "privateBytes": 1275691008,
+        "rssBytes": 1410224128
       },
       "memoryAfter": {
-        "peakRssBytes": 1486979072,
-        "pid": 41904,
-        "privateBytes": 1286803456,
-        "rssBytes": 1393422336
+        "peakRssBytes": 1486802944,
+        "pid": 59204,
+        "privateBytes": 1282998272,
+        "rssBytes": 1415299072
       }
     },
     {
@@ -121,7 +121,7 @@
       "pass": true,
       "scenes": 15,
       "screenshots": 19,
-      "originalDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-release-software-verified",
+      "originalDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-release-software-verified-r3",
       "archiveDirectory": "docs/implementation/ux-r5/evidence/release-software",
       "screen": {
         "availableLogicalGeometry": {
@@ -158,19 +158,19 @@
         "primary": false
       },
       "backend": "QPainter 软件绘制",
-      "elapsedSeconds": 50.8654256,
-      "conversionActionHelperMs": 250,
+      "elapsedSeconds": 32.3018203,
+      "conversionActionHelperMs": 146,
       "memoryBefore": {
-        "peakRssBytes": 251772928,
-        "pid": 22364,
-        "privateBytes": 133025792,
-        "rssBytes": 208093184
+        "peakRssBytes": 251592704,
+        "pid": 30920,
+        "privateBytes": 132427776,
+        "rssBytes": 208097280
       },
       "memoryAfter": {
-        "peakRssBytes": 251772928,
-        "pid": 22364,
-        "privateBytes": 138825728,
-        "rssBytes": 213458944
+        "peakRssBytes": 251592704,
+        "pid": 30920,
+        "privateBytes": 136978432,
+        "rssBytes": 213311488
       }
     },
     {
@@ -178,7 +178,7 @@
       "pass": true,
       "scenes": 15,
       "screenshots": 19,
-      "originalDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-debug-software-verified",
+      "originalDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-debug-software-verified-r3",
       "archiveDirectory": "docs/implementation/ux-r5/evidence/debug-software",
       "screen": {
         "availableLogicalGeometry": {
@@ -215,19 +215,193 @@
         "primary": false
       },
       "backend": "QPainter 软件绘制",
-      "elapsedSeconds": 196.490435,
-      "conversionActionHelperMs": 1796,
+      "elapsedSeconds": 107.4441304,
+      "conversionActionHelperMs": 915,
       "memoryBefore": {
-        "peakRssBytes": 286400512,
-        "pid": 6020,
-        "privateBytes": 140890112,
-        "rssBytes": 242622464
+        "peakRssBytes": 289955840,
+        "pid": 44016,
+        "privateBytes": 141529088,
+        "rssBytes": 245379072
       },
       "memoryAfter": {
-        "peakRssBytes": 286400512,
-        "pid": 6020,
-        "privateBytes": 148725760,
-        "rssBytes": 247599104
+        "peakRssBytes": 289955840,
+        "pid": 44016,
+        "privateBytes": 148541440,
+        "rssBytes": 252305408
+      }
+    }
+  ],
+  "nativeMenus": [
+    {
+      "name": "release-gpu",
+      "pass": true,
+      "scenes": 3,
+      "screenshots": 12,
+      "originalDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\menus-release-gpu-r3-verified",
+      "archiveDirectory": "docs/implementation/ux-r5/evidence/review-fix/menus-release-gpu",
+      "fullJourneyExecuted": false,
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "preferredPixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      }
+    },
+    {
+      "name": "debug-gpu",
+      "pass": true,
+      "scenes": 3,
+      "screenshots": 12,
+      "originalDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\menus-debug-gpu-r3-verified",
+      "archiveDirectory": "docs/implementation/ux-r5/evidence/review-fix/menus-debug-gpu",
+      "fullJourneyExecuted": false,
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "preferredPixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      }
+    },
+    {
+      "name": "release-software",
+      "pass": true,
+      "scenes": 3,
+      "screenshots": 12,
+      "originalDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\menus-release-software-r3-verified",
+      "archiveDirectory": "docs/implementation/ux-r5/evidence/review-fix/menus-release-software",
+      "fullJourneyExecuted": false,
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "preferredPixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
+      }
+    },
+    {
+      "name": "debug-software",
+      "pass": true,
+      "scenes": 3,
+      "screenshots": 12,
+      "originalDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\menus-debug-software-r3-verified",
+      "archiveDirectory": "docs/implementation/ux-r5/evidence/review-fix/menus-debug-software",
+      "fullJourneyExecuted": false,
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "connectedIndex": 2,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 2560,
+          "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "preferredPixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": false
       }
     }
   ],
@@ -235,24 +409,28 @@
     {
       "name": "release-gpu",
       "pass": true,
+      "originalReport": "out/tasks/ux-r5/diagnostics/package-release-gpu-r2.json",
       "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe",
       "hardwareRenderer": true
     },
     {
       "name": "debug-gpu",
       "pass": true,
+      "originalReport": "out/tasks/ux-r5/diagnostics/package-debug-gpu-r2.json",
       "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudio.exe",
       "hardwareRenderer": true
     },
     {
       "name": "release-software",
       "pass": true,
+      "originalReport": "out/tasks/ux-r5/diagnostics/package-release-software-r2.json",
       "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe",
       "hardwareRenderer": false
     },
     {
       "name": "debug-software",
       "pass": true,
+      "originalReport": "out/tasks/ux-r5/diagnostics/package-debug-software-r2.json",
       "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudio.exe",
       "hardwareRenderer": false
     }

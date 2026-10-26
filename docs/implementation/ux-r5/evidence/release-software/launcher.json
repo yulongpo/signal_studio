@@ -4,8 +4,8 @@
   "softwareRenderer": true,
   "binary": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
   "workingDirectory": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin",
-  "outputDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-release-software-verified",
-  "startedUtc": "2026-10-26T09:00:00.0940610Z",
+  "outputDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-release-software-verified-r3",
+  "startedUtc": "2026-10-26T10:39:48.3130223Z",
   "timeoutSeconds": 480,
   "systemOnlyPath": true,
   "dpiOverridesCleared": true,
@@ -13,8 +13,8 @@
   "independentReviewPerformed": false,
   "modelInferenceVerified": false,
   "largeRfbenchValidationExecuted": false,
-  "elapsedSeconds": 50.8654256,
-  "processId": 22364,
+  "elapsedSeconds": 32.3018203,
+  "processId": 30920,
   "exitCode": 0,
-  "finishedUtc": "2026-10-26T09:00:50.9591684Z"
+  "finishedUtc": "2026-10-26T10:40:20.6147586Z"
 }

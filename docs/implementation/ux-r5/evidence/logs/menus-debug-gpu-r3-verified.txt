@@ -1,0 +1,1 @@
+UX-R5 Debug software=False mode=ux-r5-menus : 3 native scenes checked. D:\project\signal_studio_rebuild\out\tasks\ux-r5\diagnostics\menus-debug-gpu-r3-verified\report.json

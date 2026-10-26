@@ -3460,12 +3460,16 @@ QMenu* PlotWidget::createContextMenu(const QPoint& point) {
       addMarkChoices(menu, overlaps, Qt::NoModifier);
     }
     if (file && findMark(*file, file->activeMarkId)) {
+      const auto capabilities = session_.annotations().capabilities(*file, file->activeMarkId);
       auto* channel = menu->addAction("创建窄带通道…");
       channel->setObjectName("contextCreateChannelAction");
+      channel->setEnabled(capabilities.createChannelDirectly || capabilities.convertToManual);
+      if (!capabilities.createChannelDirectly) channel->setText("转换并创建窄带通道…");
       connect(channel, &QAction::triggered, this,
               &PlotWidget::annotationChannelRequested);
       auto* rename = menu->addAction("重命名当前标记");
       rename->setObjectName("contextRenameAction");
+      rename->setEnabled(capabilities.editMetadata);
       connect(rename, &QAction::triggered, this,
               &PlotWidget::markRenameRequested);
       auto* locate = menu->addAction("定位当前标记");
@@ -3478,6 +3482,10 @@ QMenu* PlotWidget::createContextMenu(const QPoint& point) {
       auto* remove = menu->addAction(
           QString("删除所选标记 (%1)").arg(file->selectedMarkIds.size()));
       remove->setObjectName("contextDeleteAction");
+      remove->setEnabled(!file->selectedMarkIds.empty() &&
+          std::all_of(file->selectedMarkIds.begin(), file->selectedMarkIds.end(), [&](const auto& id) {
+            return session_.annotations().capabilities(*file, id).deleteAnnotation;
+          }));
       connect(remove, &QAction::triggered, this,
               &PlotWidget::markDeleteRequested);
     }

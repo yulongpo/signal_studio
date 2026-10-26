@@ -3,6 +3,7 @@ param(
     [ValidateSet('Debug','Release')][string]$Configuration = 'Release',
     [Parameter(Mandatory)][string]$OutputDirectory,
     [switch]$SoftwareRenderer,
+    [switch]$MenusOnly,
     [ValidateRange(60,900)][int]$TimeoutSeconds = 480
 )
 
@@ -41,6 +42,7 @@ $expectedScenes = @(
     '14-durable-zero-publication',
     '15-save-reopen-no-old-run'
 )
+if ($MenusOnly) { $expectedScenes = @('menu-imported','menu-algorithm','menu-manual') }
 $names = @(
     'PATH','QT_PLUGIN_PATH','QT_QPA_PLATFORM_PLUGIN_PATH','QML2_IMPORT_PATH','QML_IMPORT_PATH',
     'QT_QPA_PLATFORM','QT_SCALE_FACTOR','QT_SCREEN_SCALE_FACTORS','QT_FONT_DPI',
@@ -136,10 +138,13 @@ try {
     Save-Launcher
     # Quote this one Windows path argument; do not interpolate command text into
     # another shell. Launch from the deployed bin with an isolated system PATH.
-    $nativeArgs = @('--ux-r5', ('"{0}"' -f $output))
+    $entryMode = if ($MenusOnly) { '--ux-r5-menus' } else { '--ux-r5' }
+    $nativeArgs = @($entryMode, ('"{0}"' -f $output))
     if ($SoftwareRenderer) { $nativeArgs += '--software-renderer' }
+    # This is the explicitly requested visible native UI acceptance window.
+    # Normal startup also permits real foreground-gated OS context clicks.
     $process = Start-Process -FilePath $exe -ArgumentList $nativeArgs -WorkingDirectory $workingDirectory `
-        -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $output 'process.txt') `
+        -WindowStyle Normal -PassThru -RedirectStandardOutput (Join-Path $output 'process.txt') `
         -RedirectStandardError (Join-Path $output 'stderr.txt')
     $launcher['processId'] = $process.Id
     Save-Launcher
@@ -156,7 +161,8 @@ try {
     }
     $result = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
     $result | Add-Member -NotePropertyName nativePass -NotePropertyValue ([bool]$result.pass) -Force
-    if ($code -ne 0 -or -not $result.pass -or $result.mode -ne 'ux-r5') {
+    $expectedMode = if ($MenusOnly) { 'ux-r5-menus' } else { 'ux-r5' }
+    if ($code -ne 0 -or -not $result.pass -or $result.mode -ne $expectedMode) {
         throw "UX-R5 native failure: $($result.error), scene=$($result.lastScene), step=$($result.lastStep)."
     }
     if ($result.platform -ne 'windows' -or [bool]$result.softwareRenderer -ne [bool]$SoftwareRenderer) {
@@ -169,7 +175,7 @@ try {
         throw 'Selected screen differs from the unique actual candidate.'
     }
     $scenes = @($result.scenes)
-    if ($scenes.Count -ne $expectedScenes.Count) { throw 'Expected exactly the 15 UX-R5 core scenes.' }
+    if ($scenes.Count -ne $expectedScenes.Count) { throw 'Unexpected UX-R5 scene count for this mode.' }
     for ($index = 0; $index -lt $expectedScenes.Count; $index++) {
         $scene = $scenes[$index]
         if ($scene.scene -ne $expectedScenes[$index] -or -not $scene.pass -or $scene.status -ne 'passed') {
@@ -184,6 +190,7 @@ try {
             $scene.logicalWindowSize.width -ne 2560 -or $scene.logicalWindowSize.height -ne 1440 -or
             $scene.pixelSize.width -ne 3840 -or $scene.pixelSize.height -ne 2160 -or
             [Math]::Abs([double]$scene.devicePixelRatio - 1.5) -gt .001 -or
+            -not $scene.nativeWindowVisibleAnd4kClientVerified -or
             $scene.captureMethod -ne 'native QWidget grab with QRhi readback') {
             throw "Actual screen/window/readback evidence changed in $($scene.scene)."
         }
@@ -209,6 +216,18 @@ try {
             }
         }
     }
+    if ($MenusOnly) {
+        if (-not $result.menuRegressionVerified -or $result.fullJourneyExecuted -ne $false) { throw 'Missing targeted menu proof' }
+        foreach ($scene in $scenes) {
+            $editable = $scene.facts.sourceKind -eq 1
+            if (-not $scene.facts.sourceUnchanged) { throw 'Native menu changed a source' }
+            foreach ($popup in @($scene.facts.popups.global,$scene.facts.popups.tree,$scene.facts.popups.graph)) {
+                Assert-EvidenceFile $popup.png 'Actual native menu popup'
+                Assert-ActualScreen $popup.actualScreen 'Actual menu screen'
+                if ([bool]$popup.renameEnabled -ne $editable -or [bool]$popup.deleteEnabled -ne $editable) { throw 'Native menu capability mismatch' }
+            }
+        }
+    } else {
     if ($result.cpuDdcOutputSamples -ne 512 -or -not $result.manualChannelSnapshotReopened -or
         -not $result.saveReopenVerified -or -not $result.noRetiredRunDiscovery -or
         $result.fullCopyCharacters -le 16000 -or $result.ordinarySupplementalEntriesVerified -ne 2 -or
@@ -246,13 +265,14 @@ try {
         Assert-ActualScreen $entry.actualScreen 'Evidence details screen'
         if (-not $entry.completePrimary -or -not $entry.sourceHashAndPathPresent) { throw 'Incomplete original evidence copy.' }
     }
+    }
     $launcher['pass'] = $true
     $result | Add-Member -NotePropertyName scriptVerification -NotePropertyValue ([ordered]@{
         pass = $true; coreScenes = $scenes.Count; actualScreenChecked = $true
         sourceIdsAndRectsChecked = $true; rendererDrawsAndUploadsChecked = $true
         independentReviewPerformed = $false
     }) -Force
-    Write-Host "UX-R5 $Configuration software=$([bool]$SoftwareRenderer): 15 native scenes, durable replacement, DDC512 and reopen checked. $reportPath"
+    Write-Host "UX-R5 $Configuration software=$([bool]$SoftwareRenderer) mode=$expectedMode : $($scenes.Count) native scenes checked. $reportPath"
 } catch {
     $failure = $_.Exception.Message
     $launcher['error'] = $failure

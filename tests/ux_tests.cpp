@@ -14,6 +14,8 @@
 #include <QToolButton>
 #include <QClipboard>
 #include <QDialog>
+#include <QInputDialog>
+#include <QMenu>
 #include <QPlainTextEdit>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -99,6 +101,7 @@ class UxTests : public QObject {
  private slots:
   void uxR5_threeTabsReadOnlyAndConversion();
   void uxR5_layersAndIndependentFilters();
+  void uxR5_readOnlyMenusAndCommandGuards();
   void uxR5_crossViewAndUnknownObservation();
   void uxP01_popupDismissal();
   void uxP02_popupChildrenAndGeometry();

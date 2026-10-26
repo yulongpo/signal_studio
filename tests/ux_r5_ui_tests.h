@@ -138,6 +138,90 @@ inline void UxTests::uxR5_layersAndIndependentFilters() {
   QCOMPARE(table->model()->rowCount(), 1);
 }
 
+inline void UxTests::uxR5_readOnlyMenusAndCommandGuards() {
+  MainWindow window;
+  const auto ids = uxR5Seed(window);
+  expose(window);
+  auto* plot = window.findChild<PlotWidget*>("mainPlot");
+  auto* tree = window.findChild<QTreeWidget*>("projectTree");
+  auto* globalRename = window.findChild<QAction*>("renameMarkAction");
+  auto* globalDelete = window.findChild<QAction*>("deleteMarksAction");
+  QVERIFY(plot && tree && globalRename && globalDelete);
+  const auto actionEnabled = [](QMenu* menu, const char* name) {
+    auto* action = menu->findChild<QAction*>(name);
+    return action && action->isEnabled();
+  };
+  for (int source : {0, 2, 1}) {
+    window.session().selectMarks({ids[source]}, ids[source]);
+    window.refresh();
+    const bool editable = source == 1;
+    auto* file = window.session().activeFile();
+    const auto before = encodeAnnotation(*findAnnotation(*file, ids[source]));
+    QCOMPARE(globalRename->isEnabled(), editable);
+    QCOMPARE(globalDelete->isEnabled(), editable);
+    QCOMPARE(window.findChild<QPushButton*>("renameMark")->isEnabled(), editable);
+    QCOMPARE(window.findChild<QPushButton*>("deleteMarks")->isEnabled(), editable);
+    QCOMPARE(window.findChild<QPushButton*>("treeDeleteMarks")->isEnabled(), editable);
+    auto* plotMenu = plot->createContextMenu(plot->plotRect().center().toPoint());
+    QCOMPARE(actionEnabled(plotMenu, "contextRenameAction"), editable);
+    QCOMPARE(actionEnabled(plotMenu, "contextDeleteAction"), editable);
+    delete plotMenu;
+
+    const auto treeItem = [&]() -> QTreeWidgetItem* {
+      for (QTreeWidgetItemIterator it(tree); *it; ++it)
+        if ((*it)->data(0, Qt::UserRole).toString() == "mark" &&
+            (*it)->data(0, Qt::UserRole+1).toString() == QString::fromStdString(ids[source])) return *it;
+      return nullptr;
+    };
+    QTRY_VERIFY_WITH_TIMEOUT(treeItem(), 3000);
+    auto* item = treeItem();
+    for (auto* parent = item->parent(); parent; parent = parent->parent()) parent->setExpanded(true);
+    bool treeMenuSeen = false, treeRenameEnabled = false, treeDeleteEnabled = false;
+    QTimer inspectTreeMenu;
+    QObject::connect(&inspectTreeMenu, &QTimer::timeout, &window, [&] {
+      auto* menu = window.findChild<QMenu*>("annotationTreeContextMenu");
+      if (!menu || !menu->isVisible()) return;
+      treeMenuSeen = true;
+      treeRenameEnabled = actionEnabled(menu, "annotationTreeRenameAction");
+      treeDeleteEnabled = actionEnabled(menu, "annotationTreeDeleteAction");
+      menu->close();
+    });
+    inspectTreeMenu.start(5);
+    tree->customContextMenuRequested(tree->visualItemRect(item).center());
+    inspectTreeMenu.stop();
+    QVERIFY(treeMenuSeen);
+    QCOMPARE(treeRenameEnabled, editable);
+    QCOMPARE(treeDeleteEnabled, editable);
+
+    // Bypass disabled QAction presentation and exercise the connected command.
+    // A readonly source must return before constructing any editable dialog.
+    bool renameDialogSeen = false;
+    QTimer inspectRename;
+    QObject::connect(&inspectRename, &QTimer::timeout, &window, [&] {
+      if (auto* dialog = qobject_cast<QInputDialog*>(QApplication::activeModalWidget())) {
+        renameDialogSeen = true;
+        dialog->reject();
+      }
+    });
+    inspectRename.start(5);
+    plot->markRenameRequested();
+    inspectRename.stop();
+    QCOMPARE(renameDialogSeen, editable);
+    QCOMPARE(encodeAnnotation(*findAnnotation(*file, ids[source])), before);
+    if (!editable) {
+      plot->markDeleteRequested();
+      QCOMPARE(encodeAnnotation(*findAnnotation(*file, ids[source])), before);
+    }
+  }
+  window.session().selectMarks({ids[1], ids[0]}, ids[1]);
+  window.refresh();
+  QVERIFY(!globalDelete->isEnabled());
+  QVERIFY(!window.findChild<QPushButton*>("deleteMarks")->isEnabled());
+  auto* mixedMenu = plot->createContextMenu(plot->plotRect().center().toPoint());
+  QVERIFY(!actionEnabled(mixedMenu, "contextDeleteAction"));
+  delete mixedMenu;
+}
+
 inline void UxTests::uxR5_crossViewAndUnknownObservation() {
   MainWindow window;
   const auto ids = uxR5Seed(window);

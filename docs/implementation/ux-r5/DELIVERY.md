@@ -24,13 +24,14 @@
 
 ## 验证与复现
 
-`VALIDATION.md` 逐项映射 P0、原始日志、数据和限制。Debug/Release 各18组相关 CTest 通过（其中旧 UI 每配置20个业务函数）；4组原生各15场景及4次生产程序独立启动通过。全部76张原生截图、完整报告和成功日志见 `evidence/INDEX.json`；本机原始失败尝试、项目/伴随资产保留在 `out/tasks/ux-r5/`。
+`VALIDATION.md` 逐项映射 P0、原始日志、数据和限制。Debug/Release 各18组相关 CTest 通过（其中旧 UI 每配置20个业务函数）；菜单修复后受影响5组 UX和20个旧 UI函数均补测通过。4组原生完整旅程各15场景、菜单专项各3场景及4次生产程序独立启动通过。全部124张原生截图、完整报告和成功日志见 `evidence/INDEX.json`；本机原始失败尝试、项目/伴随资产保留在 `out/tasks/ux-r5/`。
 
 ```powershell
 ./scripts/build.ps1 -Configuration Debug -Action Build
 ./scripts/build.ps1 -Configuration Release -Action Build
 ./scripts/verify-ux-r5.ps1 -Configuration Release -OutputDirectory out/tasks/ux-r5/new-native-gpu
 ./scripts/verify-ux-r5.ps1 -Configuration Release -SoftwareRenderer -OutputDirectory out/tasks/ux-r5/new-native-software
+./scripts/verify-ux-r5.ps1 -Configuration Release -MenusOnly -OutputDirectory out/tasks/ux-r5/new-native-menus
 ```
 
 每次原生验证须使用新目录，脚本不覆盖历史证据。Debug 对应替换 Configuration。真实实屏必须匹配当次唯一4K/150%探针；不能用其他屏上的大窗口代替。完整相关 CTest 的实际调用及20个旧 UI 函数清单保留在最终日志中。
@@ -56,3 +57,5 @@ Reference 追加不可变共享声明后保守禁用该根的回收，可能保�
 脚本再次 fetch、校验精确 HEAD 和祖先关系、正常定向推送，并读取远端 SHA。结果写 `out/tasks/ux-r5/PUBLISH_RECORD.json`。远端变化须安全整合、受影响补验及重新独立审核；禁止强推，禁止主代理代审。发布是否完成由该实际记录与远端 HEAD 共同证明，实施日志不能替代批准。
 
 用户原有未跟踪的 UX-R3 promotion、UX-R4 审核/发布记录及 reference ZIP 保留，不属于本轮提交。
+
+首轮独立审核对 `b5376d1` 的菜单权限问题给出 REJECTED，未据此推送。整改与新补测见 `REVIEW_FIXES.md`；最终报告必须重新绑定整改后的 HEAD。

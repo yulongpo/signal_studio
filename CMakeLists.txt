@@ -504,7 +504,8 @@ if(SS_BUILD_TESTS)
         uxR4_currentObjectAndActionStates uxR4_supplementalSourceAndPagedCopy
         uxR4_auxiliaryDetailsCloseWithHiddenContext uxR4_searchBoundaryAndOriginalNewlines)
     ss_add_ux_test(r5_ui uxR5_threeTabsReadOnlyAndConversion
-        uxR5_layersAndIndependentFilters uxR5_crossViewAndUnknownObservation)
+        uxR5_layersAndIndependentFilters uxR5_crossViewAndUnknownObservation
+        uxR5_readOnlyMenusAndCommandGuards)
     ss_add_ux_test(layout uxR01_chartToolbarLayout uxR02_inspectorRouting
         uxR02_fileProperties uxR02_paletteWorkspaceOwnership
         uxR03_taskKeyboardAndDetails uxR03_taskRowActions uxR01_lateRunFilterPopupAndRefresh roundTwoFlatResponsiveControls)

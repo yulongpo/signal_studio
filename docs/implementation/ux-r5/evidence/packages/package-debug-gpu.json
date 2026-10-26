@@ -107,41 +107,41 @@
       "lastRenderWidth": 1870,
       "measurement": "GUI-thread wall time measured with QElapsedTimer",
       "overlayImagePreparation": {
-        "lastMs": 0.1018,
-        "maxMs": 0.5815,
+        "lastMs": 0.0958,
+        "maxMs": 0.51,
         "samples": 6,
-        "totalMs": 1.1798000000000002
+        "totalMs": 1.0289000000000001
       },
       "overlayPainter": {
-        "lastMs": 41.9052,
-        "maxMs": 41.9052,
+        "lastMs": 26.2114,
+        "maxMs": 26.2114,
         "samples": 6,
-        "totalMs": 134.2628
+        "totalMs": 81.1958
       },
       "overlayUploadEnqueue": {
-        "lastMs": 0.0721,
-        "maxMs": 0.3513,
+        "lastMs": 0.0235,
+        "maxMs": 0.4707,
         "samples": 6,
-        "totalMs": 0.8734999999999999
+        "totalMs": 0.8142000000000001
       },
       "paintEventIncludingQtSubmit": {
-        "lastMs": 0.9153,
-        "maxMs": 46.062,
+        "lastMs": 0.504,
+        "maxMs": 27.8281,
         "samples": 10,
-        "totalMs": 156.93550000000002
+        "totalMs": 97.1724
       },
       "paletteUploads": 1,
       "prepareUploads": {
-        "lastMs": 0.0135,
-        "maxMs": 43.0449,
+        "lastMs": 0.0137,
+        "maxMs": 26.8477,
         "samples": 11,
-        "totalMs": 141.8751
+        "totalMs": 86.60000000000001
       },
       "render": {
-        "lastMs": 0.0888,
-        "maxMs": 43.6572,
+        "lastMs": 0.0893,
+        "maxMs": 27.0252,
         "samples": 11,
-        "totalMs": 144.2258
+        "totalMs": 88.0439
       },
       "renderInvocations": 11,
       "unit": "ms"
@@ -291,10 +291,10 @@
       "gpuTimestamps": false,
       "heatmapDrawCalls": 3,
       "heatmapUploadPreparation": {
-        "lastMs": 3.0751,
-        "maxMs": 3.0751,
+        "lastMs": 1.8634,
+        "maxMs": 1.8634,
         "samples": 1,
-        "totalMs": 3.0751
+        "totalMs": 1.8634
       },
       "lastChartDrawLoopIterations": 0,
       "lastChartDrawRecordCount": 0,
@@ -304,41 +304,41 @@
       "lastRenderWidth": 1870,
       "measurement": "GUI-thread wall time measured with QElapsedTimer",
       "overlayImagePreparation": {
-        "lastMs": 0.949,
-        "maxMs": 3.915,
+        "lastMs": 0.5121,
+        "maxMs": 3.0366,
         "samples": 7,
-        "totalMs": 9.9035
+        "totalMs": 7.8134
       },
       "overlayPainter": {
-        "lastMs": 23.3211,
-        "maxMs": 23.5536,
+        "lastMs": 10.7214,
+        "maxMs": 17.8482,
         "samples": 7,
-        "totalMs": 109.7616
+        "totalMs": 66.32820000000001
       },
       "overlayUploadEnqueue": {
-        "lastMs": 0.0379,
-        "maxMs": 0.5096,
+        "lastMs": 0.0271,
+        "maxMs": 0.3726,
         "samples": 7,
-        "totalMs": 1.0507000000000002
+        "totalMs": 0.7906
       },
       "paintEventIncludingQtSubmit": {
-        "lastMs": 30.2975,
-        "maxMs": 44.1888,
+        "lastMs": 15.3757,
+        "maxMs": 44.0375,
         "samples": 8,
-        "totalMs": 207.3415
+        "totalMs": 137.9609
       },
       "paletteUploads": 1,
       "prepareUploads": {
-        "lastMs": 0.0148,
-        "maxMs": 25.4227,
+        "lastMs": 0.015,
+        "maxMs": 23.4446,
         "samples": 9,
-        "totalMs": 137.33710000000002
+        "totalMs": 86.24380000000001
       },
       "render": {
-        "lastMs": 0.0884,
-        "maxMs": 25.6712,
+        "lastMs": 0.0975,
+        "maxMs": 23.7721,
         "samples": 9,
-        "totalMs": 139.2533
+        "totalMs": 87.4745
       },
       "renderInvocations": 9,
       "unit": "ms"
@@ -366,7 +366,7 @@
     "heatmapHeight": 430,
     "heatmapWidth": 750,
     "inverseCursorDrawCalls": 9,
-    "lastMatrixMs": 612.0739,
+    "lastMatrixMs": 301.212,
     "matrixReductions": 0,
     "noiseBandwidthHz": 29311.187103077627,
     "overlayUploads": 7,
@@ -2092,41 +2092,41 @@
       "lastRenderWidth": 1870,
       "measurement": "GUI-thread wall time measured with QElapsedTimer",
       "overlayImagePreparation": {
-        "lastMs": 0.0299,
-        "maxMs": 0.1942,
+        "lastMs": 0.0908,
+        "maxMs": 0.1567,
         "samples": 6,
-        "totalMs": 0.3292
+        "totalMs": 0.3981
       },
       "overlayPainter": {
-        "lastMs": 2.9216,
-        "maxMs": 8.7874,
+        "lastMs": 2.7239,
+        "maxMs": 8.3265,
         "samples": 6,
-        "totalMs": 25.267899999999997
+        "totalMs": 21.0296
       },
       "overlayUploadEnqueue": {
-        "lastMs": 0.0416,
-        "maxMs": 1.2405,
+        "lastMs": 0.0351,
+        "maxMs": 1.4367,
         "samples": 6,
-        "totalMs": 1.8609
+        "totalMs": 1.7291
       },
       "paintEventIncludingQtSubmit": {
-        "lastMs": 3.9532,
-        "maxMs": 14.7446,
+        "lastMs": 3.4579,
+        "maxMs": 14.4,
         "samples": 8,
-        "totalMs": 38.386900000000004
+        "totalMs": 31.470599999999997
       },
       "paletteUploads": 1,
       "prepareUploads": {
-        "lastMs": 0.0184,
-        "maxMs": 10.3158,
+        "lastMs": 0.0136,
+        "maxMs": 10.4372,
         "samples": 9,
-        "totalMs": 28.003799999999995
+        "totalMs": 23.9141
       },
       "render": {
-        "lastMs": 0.0945,
-        "maxMs": 10.6386,
+        "lastMs": 0.082,
+        "maxMs": 10.841,
         "samples": 9,
-        "totalMs": 29.4574
+        "totalMs": 24.953500000000002
       },
       "renderInvocations": 9,
       "unit": "ms"
@@ -2178,7 +2178,7 @@
   },
   "overlayReusesHeatmap": true,
   "overlaySettled": true,
-  "overlayVerificationMilliseconds": 832,
+  "overlayVerificationMilliseconds": 411,
   "pass": true,
   "powerGenerations": 6,
   "screen": {

@@ -87,6 +87,94 @@ struct UxR5NativeCapture {
     return child<AnnotationPanel>(window, "annotationPanel");
   }
   PlotWidget* plot() const { return child<PlotWidget>(window, "mainPlot"); }
+  QJsonObject menuCapabilities(bool editable) const {
+    for (const auto* id : {"renameMarkAction","deleteMarksAction"})
+      require(child<QAction>(window,id)->isEnabled() == editable,"Global annotation command capability mismatch");
+    for (const auto* id : {"renameMark","deleteMarks","treeDeleteMarks"})
+      require(child<QPushButton>(window,id)->isEnabled() == editable,"Annotation button capability mismatch");
+    auto* menu = plot()->createContextMenu(plot()->plotRect().center().toPoint());
+    const bool rename = child<QAction>(*menu,"contextRenameAction")->isEnabled();
+    const bool remove = child<QAction>(*menu,"contextDeleteAction")->isEnabled();
+    delete menu;
+    require(rename == editable && remove == editable,"Graph context command capability mismatch");
+    return {{"editable",editable},{"globalAndInspectorActionsChecked",true},
+        {"graphMenuActionsChecked",true},{"graphMenuShownHere",false},
+        {"treePopupAndDirectCommandCoveredByQtTest",true}};
+  }
+  QJsonObject nativeMenuPopups(bool editable, const QString& prefix) {
+    const auto nativeContextClick = [&](QWidget* target, QPoint point) {
+#ifdef Q_OS_WIN
+      const auto native = reinterpret_cast<HWND>(window.winId());
+      require(waitUntil([&] { SetForegroundWindow(native); return GetForegroundWindow() == native && IsWindowVisible(native); },3000),
+          "Context click target is not the visible foreground test window");
+      const auto local = target->mapTo(&window,point);
+      POINT physical{LONG(std::lround(local.x()*window.devicePixelRatioF())),
+                     LONG(std::lround(local.y()*window.devicePixelRatioF()))};
+      require(ClientToScreen(native,&physical) && SetCursorPos(physical.x,physical.y),"Cannot position native context click");
+      INPUT events[2]{};
+      events[0].type = events[1].type = INPUT_MOUSE;
+      events[0].mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
+      events[1].mi.dwFlags = MOUSEEVENTF_RIGHTUP;
+      require(SendInput(2,events,sizeof(INPUT)) == 2,"Native context click was not delivered");
+#else
+      Q_UNUSED(target); Q_UNUSED(point);
+      require(false,"Native context clicks require Windows");
+#endif
+    };
+    const auto inspect = [&](const char* menuName, const char* renameName,
+                             const char* deleteName, const QString& suffix,
+                             const std::function<void()>& trigger) {
+      bool seen = false;
+      QString failure;
+      QJsonObject facts;
+      QTimer driver;
+      QObject::connect(&driver,&QTimer::timeout,&window,[&] {
+        auto* menu = window.findChild<QMenu*>(menuName);
+        if (!menu || !menu->isVisible() || seen) return;
+        seen = true;
+        auto* rename = menu->findChild<QAction*>(renameName);
+        auto* remove = menu->findChild<QAction*>(deleteName);
+        if (!rename || !remove || rename->isEnabled() != editable || remove->isEnabled() != editable)
+          failure = "Actual popup command capability mismatch";
+        if (menu->screen() != screen || !menu->windowHandle()) failure = "Popup left the native acceptance screen";
+        const auto path = output.filePath(prefix+suffix+".png");
+        if (!menu->grab().save(path)) failure = "Cannot retain native popup";
+        facts = {{"renameEnabled",rename && rename->isEnabled()},
+            {"deleteEnabled",remove && remove->isEnabled()}, {"png",path},
+            {"actualScreen",uxR3ScreenIdentity(menu->screen())}};
+        if (menu->windowHandle()) QTest::keyClick(menu->windowHandle(),Qt::Key_Escape);
+        else menu->close();
+      });
+      driver.start(10);
+      trigger();
+      const bool opened = waitUntil([&] { return seen; },3000);
+      driver.stop();
+      require(opened && failure.isEmpty(),"Native menu did not pass: "+QString(menuName)+" "+failure);
+      return facts;
+    };
+    auto* edit = window.menuBar()->actions().at(1)->menu();
+    edit->setObjectName("uxR5NativeEditMenu");
+    auto global = inspect("uxR5NativeEditMenu","renameMarkAction","deleteMarksAction","-global-menu",[&] {
+      const auto point = window.menuBar()->actionGeometry(edit->menuAction()).center();
+      QTest::mouseClick(window.windowHandle(),Qt::LeftButton,Qt::NoModifier,window.menuBar()->mapTo(&window,point));
+    });
+    auto* tree = child<QTreeWidget>(window,"projectTree");
+    auto* item = interactionTreeItem(*tree,file().activeMarkId);
+    require(item,"Selected source is absent from native menu tree");
+    for (auto* parent=item->parent();parent;parent=parent->parent()) parent->setExpanded(true);
+    tree->scrollToItem(item);
+    tree->setCurrentItem(item,0,QItemSelectionModel::NoUpdate);
+    tree->setFocus();
+    auto treeFacts = inspect("annotationTreeContextMenu","annotationTreeRenameAction","annotationTreeDeleteAction","-tree-menu",[&] {
+      nativeContextClick(tree->viewport(),tree->visualItemRect(item).center());
+    });
+    plot()->setFocus();
+    auto graph = inspect("chartContextMenu","contextRenameAction","contextDeleteAction","-graph-menu",[&] {
+      nativeContextClick(plot(),plot()->plotRect().center().toPoint());
+    });
+    return {{"global",global},{"tree",treeFacts},{"graph",graph},
+        {"input","QWindow menu-bar click, Win32 SendInput context clicks to verified foreground test window, native Escape"}};
+  }
   QString projectPath() const { return output.filePath("r5-native.ssproj"); }
   QString assetRoot() const {
     return ProjectFileCodec::assetDirectory(projectPath(), window.session().project());
@@ -247,6 +335,13 @@ struct UxR5NativeCapture {
     try {
       auto facts = action();
       settle();
+#ifdef Q_OS_WIN
+      RECT nativeClient{};
+      require(IsWindowVisible(reinterpret_cast<HWND>(window.winId())) &&
+          GetClientRect(reinterpret_cast<HWND>(window.winId()),&nativeClient) &&
+          nativeClient.right-nativeClient.left == 3840 && nativeClient.bottom-nativeClient.top == 2160,
+          "Native Win32 window is hidden or its physical client is not 4K");
+#endif
       require(screen && nativeAcceptanceScreen() == screen && window.screen() == screen &&
           window.windowHandle()->screen() == screen && window.isFullScreen() &&
           window.size() == QSize(2560,1440) &&
@@ -268,6 +363,7 @@ struct UxR5NativeCapture {
       entry["png"] = path;
       entry["pixelSize"] = sizeJson(pixels.size());
       entry["captureMethod"] = "native QWidget grab with QRhi readback";
+      entry["nativeWindowVisibleAnd4kClientVerified"] = true;
       entry["nativeJourneyElapsedMs"] = sceneTime.elapsed();
       entry["memory"] = finalProcessMemory();
       scenes[index] = entry;
@@ -390,7 +486,7 @@ struct UxR5NativeCapture {
   }
 };
 
-int runUxR5Capture(const QString& directory, bool software) {
+int runUxR5Capture(const QString& directory, bool software, bool menusOnly = false) {
   QDir output(directory);
   if (!QFileInfo(directory).isAbsolute() || !output.mkpath(".") ||
       QFileInfo::exists(output.filePath("report.json")) ||
@@ -410,7 +506,7 @@ int runUxR5Capture(const QString& directory, bool software) {
   MainWindow window;
   UxR5NativeCapture capture{window,output,software};
   auto& report = capture.report;
-  report = {{"pass",false}, {"mode","ux-r5"}, {"role","implementation/test harness"},
+  report = {{"pass",false}, {"mode",menusOnly ? "ux-r5-menus" : "ux-r5"}, {"role","implementation/test harness"},
       {"softwareRenderer",software}, {"platform",QGuiApplication::platformName()},
       {"binary",QCoreApplication::applicationFilePath()}, {"qtVersion",QString::fromLatin1(qVersion())},
       {"startedUtc",QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
@@ -423,6 +519,10 @@ int runUxR5Capture(const QString& directory, bool software) {
           "Zero-result replacement uses a controlled durable SCN-profile publication; no model execution",
           "Service write-API denial, legacy Algorithm-bound channels, codec migration, fault injection, multi-file/channel isolation and model accuracy belong to separate tests",
           "Implementation/test evidence only; final independent Review and build execution are external"}}};
+  if (menusOnly) report["coverageBoundaries"] = QJsonArray{
+      "Targeted menu regression on actual IQ, ordinary labels, Manual and actual fixture-worker sources",
+      "Three source kinds; global/tree/graph native popups; no clipboard, DDC or replacement revalidation claim",
+      "Full UX-R5 journeys and unchanged subsystem evidence are recorded separately"};
   try {
     capture.step("setup native monitor and isolated .ssproj");
     require(QGuiApplication::platformName() == "windows", "UX-R5 requires native Windows Qt");
@@ -522,6 +622,27 @@ int runUxR5Capture(const QString& directory, bool software) {
     report["firstPublication"] = capture.pipeline("ux-r5-pipeline-first",{0,400000});
     const auto firstAlgorithms = uxR5CaptureLiveIds(capture.file(),AnnotationSource::Algorithm);
     const auto firstSources = uxR5CaptureSources(capture.file());
+    if (menusOnly) {
+      const std::array<std::pair<AnnotationSource,std::string>,3> values{{
+          {AnnotationSource::ImportedLabel,labels.front()}, {AnnotationSource::Algorithm,firstAlgorithms.front()},
+          {AnnotationSource::Manual,manualSeed}}};
+      for (const auto& [source,id] : values) {
+        const auto name = source == AnnotationSource::ImportedLabel ? QString("menu-imported")
+            : source == AnnotationSource::Algorithm ? QString("menu-algorithm") : QString("menu-manual");
+        capture.scene(name,{"RD-01","RD-02","RD-04"},[&] {
+          capture.row(source,id);
+          const auto before = encodeAnnotation(*findAnnotation(capture.file(),id));
+          const auto capabilities = capture.menuCapabilities(source == AnnotationSource::Manual);
+          const auto popups = capture.nativeMenuPopups(source == AnnotationSource::Manual,name);
+          require(encodeAnnotation(*findAnnotation(capture.file(),id)) == before,"Menu checks changed the selected source");
+          return QJsonObject{{"sourceId",uxR5CaptureText(id)},{"sourceKind",int(source)},
+              {"capabilities",capabilities},{"popups",popups},{"sourceUnchanged",true}};
+        });
+      }
+      require(capture.scenes.size() == 3,"Native menu scene count changed");
+      report["menuRegressionVerified"] = true;
+      report["fullJourneyExecuted"] = false;
+    } else {
     std::string singleCopy, observationCopy;
     std::vector<std::string> bulkCopies, batchIds;
     std::string batchSourceId;
@@ -576,6 +697,7 @@ int runUxR5Capture(const QString& directory, bool software) {
         widebandShowInspector(window,"contextAnnotation");
         require(child<QWidget>(window,"annotationReadOnlyRange")->isVisible() &&
             !child<QWidget>(window,"annotationGeometryEditor")->isVisible(),"Read-only inspector exposed editors");
+        const auto menuPermissions = capture.menuCapabilities(false);
         capture.settle(); capture.plot()->repaint();
         require(capture.plot()->property("annotationHandleCount").isValid() &&
             capture.plot()->property("annotationHandleCount").toInt() == 0,"Read-only selection has editable handles");
@@ -599,7 +721,8 @@ int runUxR5Capture(const QString& directory, bool software) {
             uxR5CaptureSources(capture.file()) == before,"Readonly drag/F2/Delete changed a source or opened an editor: "+unexpectedModal);
         results.append(QJsonObject{{"id",uxR5CaptureText(id)}, {"handles",0},
             {"centerDrag",pointJson(center)}, {"edgeDrag",pointJson(edge)},
-            {"geometryEvidenceRevisionsUnchanged",true},{"f2AndDeleteRejected",true}});
+            {"geometryEvidenceRevisionsUnchanged",true},{"f2AndDeleteRejected",true},
+            {"menuCapabilities",menuPermissions}});
       }
       require(uxR5CaptureSources(capture.file()) == firstSources,"Read-only source evidence drifted");
       return QJsonObject{{"sources",results},{"serviceApiDenialCoveredHere",false}};
@@ -666,6 +789,7 @@ int runUxR5Capture(const QString& directory, bool software) {
           "Repeated conversion was not a no-op");
       capture.row(AnnotationSource::Manual,singleCopy);
       widebandShowInspector(window,"contextAnnotation");
+      capture.menuCapabilities(true);
       const auto original = *findAnnotation(capture.file(),singleCopy)->originEvidence;
       const auto segment = *activeSegment(*findAnnotation(capture.file(),singleCopy));
       const auto next = segment.range.time.begin+2000;
@@ -1208,6 +1332,7 @@ int runUxR5Capture(const QString& directory, bool software) {
       return result;
     });
     require(capture.scenes.size() == 15,"Core UX-R5 scene count changed unexpectedly");
+    }
     report["pass"] = true;
   } catch (const std::exception& error) {
     report["error"] = QString::fromUtf8(error.what());

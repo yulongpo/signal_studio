@@ -994,6 +994,8 @@ int main(int argc, char* argv[]) {
   const auto arguments = app.arguments();
   if (arguments.size() >= 3 && arguments.at(1) == "--ux-r5")
     return runUxR5Capture(arguments.at(2), arguments.contains("--software-renderer"));
+  if (arguments.size() >= 3 && arguments.at(1) == "--ux-r5-menus")
+    return runUxR5Capture(arguments.at(2), arguments.contains("--software-renderer"),true);
   if (arguments.size() >= 3 && arguments.at(1) == "--ux-r4")
     return runUxR4Capture(arguments.at(2), arguments.contains("--baseline"),
                          arguments.contains("--software-renderer"));

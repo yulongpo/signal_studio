@@ -153,6 +153,7 @@ class MainWindow : public QMainWindow {
   void selectAllMarks();
   void locateMark();
   void deleteMarks();
+  bool canDeleteSelectedAnnotations() const;
   void renameMark();
   void showAddFileDialog();
   void showNewProjectDialog();
@@ -255,6 +256,7 @@ class MainWindow : public QMainWindow {
   QPlainTextEdit* results_ = nullptr;
   QAction *removeAction_ = nullptr, *saveAction_ = nullptr,
           *addSignalAction_ = nullptr, *deleteAction_ = nullptr,
+          *renameAction_ = nullptr,
           *backAction_ = nullptr, *forwardAction_ = nullptr;
   QMenu* recentProjectsMenu_ = nullptr;
   QTimer* rightSidebarSaveTimer_ = nullptr;

@@ -664,7 +664,8 @@ void MainWindow::buildMenus() {
       edit->addAction("删除所选标记", this, &MainWindow::deleteMarks);
   deleteAction_->setObjectName("deleteMarksAction");
   deleteAction_->setShortcut(QKeySequence::Delete);
-  edit->addAction("重命名当前标记", this, &MainWindow::renameMark);
+  renameAction_ = edit->addAction("重命名当前标记", this, &MainWindow::renameMark);
+  renameAction_->setObjectName("renameMarkAction");
   auto* view = menuBar()->addMenu("视图(&V)");
   backAction_ = view->addAction("视图后退", this, [this] {
     cancelInteractions();
@@ -1750,14 +1751,23 @@ void MainWindow::buildWorkspace() {
                       id.toStdString()) == f->selectedMarkIds.end())
           selectMark(id, Qt::NoModifier);
         QMenu menu(this);
+        menu.setObjectName("annotationTreeContextMenu");
+        const auto* activeFile = session_.activeFile();
+        const auto capabilities = session_.annotations().capabilities(*activeFile, activeFile->activeMarkId);
         auto* create = menu.addAction("创建窄带通道…", this,
                                       [this] { showChannelDialog(); });
         create->setObjectName("annotationTreeCreateChannelAction");
-        menu.addAction("重命名当前标记", this, &MainWindow::renameMark);
+        create->setEnabled(capabilities.createChannelDirectly || capabilities.convertToManual);
+        if (!capabilities.createChannelDirectly) create->setText("转换并创建窄带通道…");
+        auto* rename = menu.addAction("重命名当前标记", this, &MainWindow::renameMark);
+        rename->setObjectName("annotationTreeRenameAction");
+        rename->setEnabled(capabilities.editMetadata);
         menu.addAction("定位当前标记", this, &MainWindow::locateMark);
-        menu.addAction(QString("删除所选标记 (%1)")
+        auto* remove = menu.addAction(QString("删除所选标记 (%1)")
                            .arg(session_.activeFile()->selectedMarkIds.size()),
                        this, &MainWindow::deleteMarks);
+        remove->setObjectName("annotationTreeDeleteAction");
+        remove->setEnabled(canDeleteSelectedAnnotations());
         menu.addSeparator();
         menu.addAction(backAction_);
         menu.addAction(forwardAction_);
@@ -2261,8 +2271,7 @@ void MainWindow::rebuildTree() {
     remove->setProperty("preserveParameterDrafts",true);
     all->setProperty("uiRole","outline");remove->setProperty("uiRole","outline");
     all->setEnabled(!annotations_->sortedVisibleIds().empty());
-    remove->setEnabled(count.selected != 0 && std::all_of(file.selectedMarkIds.begin(), file.selectedMarkIds.end(),
-        [&](const auto& id) { return session_.annotations().canEdit(file, id); }));
+    remove->setEnabled(canDeleteSelectedAnnotations());
     tree_->setItemWidget(actions, 0, controls);
     connect(all, &QPushButton::clicked, this, &MainWindow::selectAllMarks);
     connect(remove, &QPushButton::clicked, this, &MainWindow::deleteMarks);
@@ -2880,8 +2889,7 @@ void MainWindow::syncTreeState() {
       controls->findChild<QPushButton*>("treeSelectAll")
           ->setEnabled(!annotations_->sortedVisibleIds().empty());
       controls->findChild<QPushButton*>("treeDeleteMarks")
-          ->setEnabled(counts.selected != 0 && std::all_of(file.selectedMarkIds.begin(), file.selectedMarkIds.end(),
-              [&](const auto& id) { return session_.annotations().canEdit(file, id); }));
+          ->setEnabled(canDeleteSelectedAnnotations());
     }
     std::array<std::size_t, 3> matching{}, total{};
     const auto order = treeSelectionOrder();
@@ -3057,7 +3065,8 @@ void MainWindow::refresh() {
   saveAction_->setEnabled(!projectPath_.isEmpty() ||
                           !session_.project().files.empty());
   removeAction_->setEnabled(file != nullptr);
-  deleteAction_->setEnabled(file && !file->selectedMarkIds.empty());
+  deleteAction_->setEnabled(canDeleteSelectedAnnotations());
+  renameAction_->setEnabled(file && session_.annotations().capabilities(*file, file->activeMarkId).editMetadata);
   backAction_->setEnabled(session_.canBack());
   forwardAction_->setEnabled(session_.canForward());
   empty_->setVisible(!file);
@@ -3240,10 +3249,9 @@ void MainWindow::refresh() {
                                        .arg(mark->segments.size())
                              : mark ? QString(" · 时间未定位 / 0 段")
                                     : QString{}));
-    rename_->setEnabled(mark &&
-                        session_.annotations().canEdit(*file, mark->id));
+    rename_->setEnabled(mark && session_.annotations().capabilities(*file, mark->id).editMetadata);
     locate_->setEnabled(mark != nullptr);
-    delete_->setEnabled(!file->selectedMarkIds.empty());
+    delete_->setEnabled(canDeleteSelectedAnnotations());
     if (cursorFileId_ != q(file->metadata.id)) {
       cursorFileId_ = q(file->metadata.id);
       cursorSample_ = file->view.time.begin +
@@ -4710,12 +4718,22 @@ void MainWindow::cancelInteractions(bool exitCreating) {
   if (graphs_) static_cast<PrototypeSplitter*>(graphs_)->cancel();
 }
 void MainWindow::deleteMarks() {
+  if (!canDeleteSelectedAnnotations()) return;
   if (annotations_) annotations_->deleteSelected();
 }
+bool MainWindow::canDeleteSelectedAnnotations() const {
+  const auto* file = session_.activeFile();
+  return file && !file->selectedMarkIds.empty() &&
+      std::all_of(file->selectedMarkIds.begin(), file->selectedMarkIds.end(), [&](const auto& id) {
+        return session_.annotations().capabilities(*file, id).deleteAnnotation;
+      });
+}
 void MainWindow::renameMark() {
-  cancelInteractions(false);
   auto* file = session_.activeFile();
-  if (!file) return;
+  if (!file || !session_.annotations().capabilities(*file, file->activeMarkId).editMetadata) return;
+  cancelInteractions(false);
+  file = session_.activeFile();
+  if (!file || !session_.annotations().capabilities(*file, file->activeMarkId).editMetadata) return;
   auto* mark = findMark(*file, file->activeMarkId);
   if (!mark) return;
   const auto context =
