@@ -1,9 +1,11 @@
 #include "infrastructure/detection_sample_energy.h"
+#include "infrastructure/mkl_dft.h"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <numbers>
 
 namespace signalstudio {
@@ -156,12 +158,13 @@ bool mixedTransform(std::span<Complex> values, bool inverse, QString& error,
 bool detectionComplexTransform(std::span<Complex> samples, bool inverse,
                                std::uint64_t budget, QString& error,
                                const DetectionSourceCancel& cancel) {
-  const auto leaf = largestLeaf(samples.size());
-  const auto scratch = leaf > 13 ? convolutionLength(leaf) : 0;
-  const auto bytes =
-      static_cast<long double>(samples.size()) * (sizeof(Complex) + 1.0 / 8) +
-      static_cast<long double>(scratch) * 2 * sizeof(Complex) + 65536;
-  if (samples.empty() || bytes > budget || (leaf > 13 && !scratch)) {
+  if (samples.empty() || samples.size() > std::numeric_limits<std::uint32_t>::max()) {
+    error = "Sample FFT length exceeds oneMKL descriptor range";
+    return false;
+  }
+  const auto minimum =
+      static_cast<long double>(samples.size()) * sizeof(Complex) + 65536;
+  if (minimum > budget) {
     error = "Exact-length sample FFT exceeds the working memory budget";
     return false;
   }
@@ -170,6 +173,29 @@ bool detectionComplexTransform(std::span<Complex> samples, bool inverse,
       error = "Sample FFT input is not finite";
       return false;
     }
+  static std::mutex mklMutex;
+  static MklDft mkl;
+  std::string why;
+  {
+    std::lock_guard<std::mutex> lock(mklMutex);
+    if (mkl.transform(samples.data(), static_cast<std::uint32_t>(samples.size()), inverse, why)) {
+      error.clear();
+      return true;
+    }
+  }
+  if (why != "missing") {
+    error = QString::fromStdString(why);
+    return false;
+  }
+  const auto leaf = largestLeaf(samples.size());
+  const auto scratch = leaf > 13 ? convolutionLength(leaf) : 0;
+  const auto bytes =
+      static_cast<long double>(samples.size()) * (sizeof(Complex) + 1.0 / 8) +
+      static_cast<long double>(scratch) * 2 * sizeof(Complex) + 65536;
+  if (bytes > budget || (leaf > 13 && !scratch)) {
+    error = "Exact-length sample FFT exceeds the working memory budget";
+    return false;
+  }
   if (!mixedTransform(samples, inverse, error, cancel)) return false;
   if (inverse)
     for (auto& value : samples) value /= static_cast<float>(samples.size());
