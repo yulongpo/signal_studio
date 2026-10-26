@@ -32,11 +32,14 @@
 #include <QVBoxLayout>
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <deque>
+#include <utility>
 
 #include "infrastructure/detection_model_snapshot.h"
 #include "infrastructure/detection_store.h"
+#include "infrastructure/project_file.h"
 #include "infrastructure/source_loader.h"
 #include "ui/detection/detection_phase.h"
 
@@ -130,7 +133,7 @@ struct RunCard {
                   published = 0, started = 0, finished = 0, refined = 0,
                   refinementTotal = 0;
     std::size_t coverageCount = 0, chunkCount = 0;
-    bool recoverable = false;
+    bool recoverable = false, stale = false;
     bool operator==(const Signature&) const = default;
   };
   QString id, title, sourcePath, error;
@@ -141,6 +144,7 @@ struct RunCard {
 };
 RunCard::Signature cardSignature(const FileState& file, const DetectionRun& run,
                                  std::uint64_t published) {
+  const auto* slot = currentDetectionSlot(file, run.request.sourceIdentity.selectedSampleChannel);
   return {q(file.metadata.name),
           q(run.error),
           q(run.computationPhase),
@@ -157,7 +161,8 @@ RunCard::Signature cardSignature(const FileState& file, const DetectionRun& run,
           run.totalRefinementCandidates,
           run.coverage.size(),
           run.chunks.size(),
-          run.recoverable};
+          run.recoverable,
+          slot && slot->committedRunId == run.request.runId && slot->stale};
 }
 RunCard makeCard(const FileState& file, const DetectionRun& run,
                  std::uint64_t published) {
@@ -179,9 +184,17 @@ RunCard makeCard(const FileState& file, const DetectionRun& run,
           .arg(run.eligibleWindows)
           .arg(run.refinedCandidates)
           .arg(run.totalRefinementCandidates),
-      QString("结果 %1 · 已发布 %2 个对象")
+      QString("结果记录 %1 · 已发布 %2 个对象")
           .arg(run.resultCount)
           .arg(published)};
+  if (card.signature.stale)
+    card.facts.back() += " · 待更新（上次冻结配置）";
+  else if (run.lifecycle == DetectionLifecycle::Completed && !published) {
+    const auto* slot = currentDetectionSlot(file, request.sourceIdentity.selectedSampleChannel);
+    card.facts.back() += run.resultCount == 0 ? " · 完成但未检出"
+        : slot && slot->committedRunId == request.runId ? " · 当前无标记"
+                                                      : " · 待提交";
+  }
   QString reason;
   if (!run.error.empty()) {
     reason = q(run.error);
@@ -658,10 +671,44 @@ bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
     error = "检测仅接受当前工程中真实文件的来源快照";
     return false;
   }
+  const auto path = projectFilePath_ ? projectFilePath_() : QString{};
+  if (path.isEmpty() || !QFileInfo::exists(path)) {
+    error = "检测事务需要当前已保存 .ssproj 的实际文件路径";
+    return false;
+  }
   if (!freezeDetectionModelSnapshot(request, error)) return false;
+  const auto id = request.runId;
   if (!tasks_->enqueue(projectDirectory_(), file->metadata, std::move(request),
                        error))
     return false;
+  const auto snapshots = tasks_->snapshots();
+  const auto queued = std::find_if(snapshots.begin(), snapshots.end(),
+      [&](const auto& run) { return run.request.runId == id; });
+  Project candidate = session_.project();
+  DetectionResultTicket ticket;
+  if (queued == snapshots.end() ||
+      !DetectionResultService::beginDetection(candidate, queued->request,
+          session_.projectGeneration(), ticket, error)) {
+    tasks_->cancel(id);
+    return false;
+  }
+  for (auto& source : candidate.files)
+    if (source.metadata.id == ticket.fileId) source.detectionRuns.push_back(*queued);
+  if (!ProjectFileCodec::save(path, candidate, error)) {
+    tasks_->cancel(id);
+    return false;
+  }
+  if (generation_ != session_.projectGeneration()) {
+    tasks_->cancelGeneration(generation_);
+    generation_ = session_.projectGeneration();
+    tickets_.clear();
+  }
+  session_.project() = std::move(candidate);
+  // Superseded requests may finish, but only the newest ticket can publish.
+  for (const auto& [oldId, oldTicket] : tickets_)
+    if (oldTicket.fileId == ticket.fileId && oldTicket.sampleChannel == ticket.sampleChannel)
+      tasks_->cancel(oldId);
+  tickets_[id] = std::move(ticket);
   tasks_->pump();
   poll();
   return true;
@@ -684,11 +731,16 @@ void DetectionPanel::poll() {
   if (generation_ != session_.projectGeneration()) {
     tasks_->cancelGeneration(generation_);
     generation_ = session_.projectGeneration();
+    tickets_.clear();
   }
+  scheduleGc();
   tasks_->pump();
   bool changedState = false;
   for (auto& run : tasks_->snapshots()) {
     if (run.request.sourceIdentity.projectGeneration != generation_) continue;
+    const auto ticketEntry = tickets_.find(run.request.runId);
+    if (ticketEntry == tickets_.end()) continue;
+    const auto ticket = ticketEntry->second;
     auto file = std::find_if(
         session_.project().files.begin(), session_.project().files.end(),
         [&](const auto& value) {
@@ -697,21 +749,42 @@ void DetectionPanel::poll() {
     if (file == session_.project().files.end()) {
       tasks_->invalidateSource(run.request.runId,
                                DetectionSourceValidity::Missing);
+      tickets_.erase(ticketEntry);
       continue;
     }
     const auto& source = run.request.sourceIdentity;
     if (!QFileInfo::exists(q(source.path))) {
       run.sourceValidity = DetectionSourceValidity::Missing;
-    } else if (file->metadata.path != source.path ||
-               file->metadata.sampleFormat != source.sampleFormat ||
+    } else {
+      auto format = file->metadata.sampleFormat;
+      format.selectedChannel = source.selectedSampleChannel;
+      if (file->metadata.path != source.path ||
+               format != source.sampleFormat ||
                file->metadata.sampleRateHz != source.sampleRateHz ||
                file->metadata.centerFrequencyHz != source.centerFrequencyHz ||
                iqSourceFingerprint(q(source.path)).toStdString() !=
                    source.quickFingerprint) {
-      run.sourceValidity = DetectionSourceValidity::Changed;
+        run.sourceValidity = DetectionSourceValidity::Changed;
+      }
     }
-    if (run.sourceValidity != DetectionSourceValidity::Current)
+    const auto* slot = currentDetectionSlot(*file, ticket.sampleChannel);
+    if (!slot || slot->generation != ticket.slotGeneration ||
+        slot->pendingRunId != ticket.runId) {
+      tasks_->cancel(run.request.runId);
+      tickets_.erase(ticketEntry);
+      continue;
+    }
+    if (run.sourceValidity != DetectionSourceValidity::Current ||
+        (detectionIsTerminal(run.lifecycle) && run.lifecycle != DetectionLifecycle::Completed)) {
       tasks_->invalidateSource(run.request.runId, run.sourceValidity);
+      DetectionResultService::abandonDetection(session_.project(), ticket);
+      emit message(run.sourceValidity != DetectionSourceValidity::Current
+          ? "来源已变化：未发布本次检测，上次正式结果待更新"
+          : stateName(run.lifecycle) + "：未发布部分结果，上次正式结果待更新。" + q(run.error));
+      tickets_.erase(ticketEntry);
+      changedState = true;
+      continue;
+    }
     auto current =
         std::find_if(file->detectionRuns.begin(), file->detectionRuns.end(),
                      [&](const auto& value) {
@@ -723,21 +796,49 @@ void DetectionPanel::poll() {
       *current = run;
     DetectionPublication publication;
     if (tasks_->takePublication(run.request.runId, publication)) {
-      if (run.sourceValidity != DetectionSourceValidity::Current) {
-        emit message("来源已变化：已落盘证据保留，重新核验来源后再恢复标记");
-        changedState = true;
-        continue;
-      }
-      const auto result = session_.annotations().publishSourceSet(
-          *file, std::move(publication.sourceSet),
-          std::move(publication.annotations));
-      emit message(result.ok ? "检测已落盘，结果来源集合已发布；请复核活动段"
-                             : q(result.error));
+      const auto path = projectFilePath_ ? projectFilePath_() : QString{};
+      const auto result = DetectionResultService::replaceCurrentDetection(
+          session_.project(), session_.annotations(), ticket,
+          session_.projectGeneration(), run, std::move(publication), path);
+      emit message(result ? "检测事务已保存并整体替换；ROI 外未检测，0 检出同样清空旧结果"
+                          : "检测未提交，保留上次正式集合：" + result.error);
+      tickets_.erase(run.request.runId);
+      if (result) scheduleGc(path);
       changedState = true;
     }
   }
   if (refreshRunList(changedState)) emit runProgressChanged();
   if (changedState) emit changed();
+}
+
+void DetectionPanel::markConfigurationStale() {
+  const auto* file = session_.activeFile();
+  if (!file) return;
+  const auto id = file->metadata.id;
+  const auto channel = file->metadata.sampleFormat.selectedChannel;
+  for (const auto& [runId, ticket] : tickets_)
+    if (ticket.fileId == id && ticket.sampleChannel == channel) tasks_->cancel(runId);
+  if (DetectionResultService::markStale(session_.project(), id, channel)) {
+    refresh();
+    emit changed();
+  }
+}
+
+void DetectionPanel::scheduleGc(const QString& path) {
+  if (!path.isEmpty()) pendingGcPath_ = path;
+  if (gc_.valid()) {
+    if (gc_.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready) return;
+    const auto error = gc_.get();
+    if (!error.isEmpty()) emit message("旧检测资产清理已延后：" + error);
+  }
+  if (pendingGcPath_.isEmpty()) return;
+  const auto target = std::exchange(pendingGcPath_, QString{});
+  gc_ = std::async(std::launch::async, [target] {
+    QString error;
+    DetectionGcReport report;
+    collectRetiredDetectionAssets(target, report, error);
+    return error;
+  });
 }
 
 void DetectionPanel::refresh() { refreshRunList(true); }
@@ -941,16 +1042,15 @@ void DetectionPanel::discoverRecoverable() {
   auto* file = session_.activeFile();
   if (!file || projectDirectory_().isEmpty()) return;
   QString error;
-  const auto runs = discoverDetectionRuns(projectDirectory_(), error);
+  const auto runs = discoverDetectionRuns(projectDirectory_(), session_.project(), error);
   if (!error.isEmpty()) emit message(error);
   std::vector<DetectionRun> missing;
-  for (const auto& run : runs)
-    if (run.request.sourceIdentity.fileId == file->metadata.id &&
-        std::none_of(file->detectionRuns.begin(), file->detectionRuns.end(),
-                     [&](const auto& value) {
-                       return value.request.runId == run.request.runId;
-                     }))
+  for (const auto& run : runs) {
+    const auto* slot = currentDetectionSlot(*file, run.request.sourceIdentity.selectedSampleChannel);
+    if (run.request.sourceIdentity.fileId == file->metadata.id && slot &&
+        slot->pendingRunId == run.request.runId && run.lifecycle == DetectionLifecycle::Completed)
       missing.push_back(run);
+  }
   if (missing.empty()) {
     emit message("没有当前文件可恢复的未引用运行");
     return;
@@ -959,8 +1059,8 @@ void DetectionPanel::discoverRecoverable() {
           this, "恢复运行索引",
           QString(
               "发现 %1 "
-              "个已校验的未引用运行。恢复运行和已完成窗口的来源集合；不续算、"
-              "不改变已有修订。是否恢复？")
+              "个权威 pending slot 中已完成的运行。原子保存并整体替换对应样本通道的"
+              "正式结果；未完成、取消和退役运行不能恢复。是否恢复？")
               .arg(missing.size())) != QMessageBox::Yes)
     return;
   for (const auto& run : missing) {
@@ -973,19 +1073,23 @@ void DetectionPanel::discoverRecoverable() {
       continue;
     }
     DetectionPublication publication;
+    DetectionResultTicket ticket;
+    if (!DetectionResultService::prepareRecovery(session_.project(), run,
+        session_.projectGeneration(), ticket, error)) { emit message(error); continue; }
     if (!recoverDetectionPublication(projectDirectory_(), run, publication,
                                      error)) {
       emit message(error);
       continue;
     }
-    const auto published = session_.annotations().publishSourceSet(
-        *file, std::move(publication.sourceSet),
-        std::move(publication.annotations));
-    if (!published.ok) {
-      emit message(q(published.error));
+    const auto path = projectFilePath_ ? projectFilePath_() : QString{};
+    const auto published = DetectionResultService::replaceCurrentDetection(
+        session_.project(), session_.annotations(), ticket,
+        session_.projectGeneration(), run, std::move(publication), path);
+    if (!published) {
+      emit message(published.error);
       continue;
     }
-    file->detectionRuns.push_back(run);
+    scheduleGc(path);
   }
   refresh();
   emit changed();

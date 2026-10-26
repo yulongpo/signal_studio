@@ -17,6 +17,8 @@
 #include <QPlainTextEdit>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QTableView>
+#include "ui/annotations/annotation_panel.h"
 #include "infrastructure/label_import.h"
 #include "ui/annotations/annotation_evidence_widget.h"
 
@@ -93,6 +95,9 @@ class UxTests : public QObject {
  private:
   QTemporaryDir settings_;
  private slots:
+  void uxR5_threeTabsReadOnlyAndConversion();
+  void uxR5_layersAndIndependentFilters();
+  void uxR5_crossViewAndUnknownObservation();
   void uxP01_popupDismissal();
   void uxP02_popupChildrenAndGeometry();
   void uxS06_popoverDraftPolicy();
@@ -521,6 +526,7 @@ class UxTests : public QObject {
 #include "inspector_ux_tests.h"
 #include "detection_card_ux_tests.h"
 #include "task_ux_tests.h"
+#include "ux_r5_ui_tests.h"
 
 QTEST_MAIN(UxTests)
 #include "ux_tests.moc"

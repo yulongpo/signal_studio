@@ -35,8 +35,15 @@ inline bool rangeInside(const ViewRange& inner, const ViewRange& outer) {
 inline constexpr std::size_t annotationSegmentBudget = 100'000;
 inline constexpr std::size_t annotationCommandBudget = 40;
 inline constexpr std::size_t annotationCommandByteBudget = 128 * 1024 * 1024;
+inline constexpr std::size_t annotationMetadataByteBudget = 32 * 1024 * 1024;
 
 enum class AnnotationSource { ImportedLabel, Manual, Algorithm };
+struct AnnotationCapabilities {
+  bool view = false, select = false, locate = false, exportData = false;
+  bool convertToManual = false, editGeometry = false, editMetadata = false;
+  bool manageSegments = false, review = false, deleteAnnotation = false;
+  bool createChannelDirectly = false;
+};
 enum class ReviewStatus { Pending, Accepted, Rejected };
 enum class FrequencyFrame { RF, Baseband, RealOneSided };
 enum class TimeQuality {
@@ -64,7 +71,8 @@ enum class ChannelSourceRelation {
   Missing,
   Rejected,
   Unconfirmed,
-  LegacyNeedsReview
+  LegacyNeedsReview,
+  Retired
 };
 
 struct Segment {
@@ -150,6 +158,28 @@ struct ReviewDecision {
   bool operator==(const ReviewDecision&) const = default;
 };
 
+// A value-only, self-contained record of the source at conversion time. Freeze
+// it behind shared_ptr<const ...>; neither source retirement nor manual edits
+// change it. Source IDs are evidence, not references required for loading.
+struct ManualConversionSnapshot {
+  std::string sourceAnnotationId, sourceRevisionId, sourceOriginRecordId;
+  AnnotationSource sourceKind = AnnotationSource::ImportedLabel;
+  AnnotationSourceSet sourceSet;
+  std::string sourceName, sourceNote;
+  std::optional<std::string> sourceClassLabel;
+  std::vector<Segment> sourceSegments;
+  std::optional<ViewRange> sourceObservation;
+  FrequencyFrame sourceObservationFrequencyFrame = FrequencyFrame::RF;
+  TimeQuality sourceObservationTimeQuality = TimeQuality::Unknown;
+  std::string sourceActiveSegmentId;
+  ReviewStatus sourceReviewStatus = ReviewStatus::Pending;
+  OriginEvidence sourceOriginEvidence;
+  // Deduplication distinguishes all segments from a specific selected segment.
+  bool currentSegmentOnly = false;
+  std::string convertedSegmentId;
+  bool operator==(const ManualConversionSnapshot&) const = default;
+};
+
 struct Annotation {
   std::string id, name;
   // Compatibility projection only. v5 persistence uses segments/observation.
@@ -163,6 +193,7 @@ struct Annotation {
   FrequencyFrame observationFrequencyFrame = FrequencyFrame::RF;
   TimeQuality observationTimeQuality = TimeQuality::Unknown;
   std::shared_ptr<const OriginEvidence> originEvidence;
+  std::shared_ptr<const ManualConversionSnapshot> conversionSnapshot;
   ReviewStatus reviewStatus = ReviewStatus::Pending;
   std::string reviewRevisionId;
   std::vector<ReviewDecision> reviewHistory;

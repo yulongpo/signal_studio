@@ -710,6 +710,7 @@ void DetectionCard::rejectControl(QLineEdit* edit, const QString& error,
 
 void DetectionCard::saveConfiguration(DetectionRequest value) {
   configuration_ = std::move(value);
+  emit configurationCommitted();
   profileConfigurations_[configurationKey(configuration_)] = configuration_;
   refreshTiming();
   refreshBranchState();
@@ -730,6 +731,7 @@ void DetectionCard::switchProfile() {
   for (auto* widget : findChildren<QWidget*>())
     if (auto* draft = dynamic_cast<ParameterDraft*>(widget)) draft->discard();
   configuration_ = found->second;
+  emit configurationCommitted();
   loadControls();
   refresh();
 }
@@ -1197,6 +1199,12 @@ void DetectionCard::refreshStatus() {
   const bool otherFile =
       activeRun && activeRun->request.sourceIdentity.fileId != source_.fileId;
   run_->setEnabled(issue.isEmpty() && !activeRun);
+  bool hasCommittedResult = false;
+  if (const auto* file = session_.activeFile(); file && file->currentDetectionSlots)
+    for (const auto& slot : *file->currentDetectionSlots)
+      hasCommittedResult |= slot.sampleChannel == file->metadata.sampleFormat.selectedChannel && !slot.committedRunId.empty();
+  run_->setText(hasCommittedResult ? "应用并重新检测" : "开始检测");
+  run_->setToolTip("显式启动检测；完整成功后整体替换当前文件和样本通道的旧结果，0 检出同样清空。");
   cancel_->setEnabled(focusedRun &&
                       focusedRun->lifecycle != DetectionLifecycle::Cancelling);
   cancel_->setToolTip(focusedRun ? "取消运行 " + text(focusedRun->request.runId)

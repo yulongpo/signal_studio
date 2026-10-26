@@ -25,6 +25,7 @@
 #include <QScreen>
 #include <QSignalBlocker>
 #include <QStyledItemDelegate>
+#include <QStackedWidget>
 #include <QTableView>
 #include <QTableWidget>
 #include <QTimer>
@@ -48,8 +49,8 @@ namespace {
 QString q(const std::string& s) { return QString::fromUtf8(s); }
 QString sourceName(AnnotationSource s) {
   return s == AnnotationSource::ImportedLabel ? "原始标签"
-         : s == AnnotationSource::Manual      ? "手动"
-                                              : "算法";
+         : s == AnnotationSource::Manual      ? "人工标记"
+                                              : "检测结果";
 }
 QString reviewName(ReviewStatus s) {
   return s == ReviewStatus::Accepted   ? "已采纳"
@@ -118,6 +119,8 @@ class AnnotationTableModel final : public QAbstractTableModel {
   std::unordered_set<std::string> selectedIds;
   std::function<void()> selectionChanged;
   std::size_t total = 0;
+  AnnotationSource source = AnnotationSource::ImportedLabel;
+  QString query;
   int order = 1;
   Qt::SortOrder direction = Qt::AscendingOrder;
   explicit AnnotationTableModel(Session& s, QObject* parent)
@@ -131,11 +134,13 @@ class AnnotationTableModel final : public QAbstractTableModel {
   QVariant headerData(int column, Qt::Orientation orientation,
                       int role) const override {
     if (orientation != Qt::Horizontal || role != Qt::DisplayRole) return {};
-    return QStringList{
+    auto headers = QStringList{
         "",          "名称 / 类别", "来源",       "当前段", "起始 / ms",
         "结束 / ms", "中心 / MHz",          "带宽 / kHz", "mean",   "复核",
-        "通道"}
-        .value(column);
+        "通道"};
+    headers[2] = source == AnnotationSource::Manual ? "备注" :
+                 source == AnnotationSource::Algorithm ? "算法 / 覆盖" : "标签来源";
+    return headers.value(column);
   }
   QVariant data(const QModelIndex& i, int role) const override {
     if (!i.isValid() || i.row() >= rowCount()) return {};
@@ -178,6 +183,11 @@ class AnnotationTableModel final : public QAbstractTableModel {
       case 1:
         return q(a.name) + "\n" + (a.classLabel ? q(*a.classLabel) : "类别未知");
       case 2:
+        if (source == AnnotationSource::Manual) return q(a.note);
+        if (const auto* set = findSourceSet(*file, a.sourceSetId))
+          return source == AnnotationSource::Algorithm
+                     ? q(set->profileId) + "\n" + q(set->coordinateInterpretation)
+                     : q(set->formatId) + "\n" + QFileInfo(q(set->originalPath)).fileName();
         return sourceName(a.sourceKind);
       case 3:
         return segment ? QString("第 %1/%2 段")
@@ -255,7 +265,10 @@ class AnnotationTableModel final : public QAbstractTableModel {
       selectedIds.insert(file->selectedMarkIds.begin(),
                          file->selectedMarkIds.end());
       for (const auto& a : file->marks)
-        if (annotationVisible(*file, a)) rows.push_back(&a);
+        if (annotationEligibleForTab(*file, a, source) &&
+            (query.isEmpty() || q(a.name).contains(query, Qt::CaseInsensitive) ||
+             (a.classLabel && q(*a.classLabel).contains(query, Qt::CaseInsensitive))))
+          rows.push_back(&a);
       for (const auto& channel : file->channels)
         ++channelCounts[channel.annotationId.empty() ? channel.sourceMarkId
                                                      : channel.annotationId];
@@ -467,7 +480,28 @@ AnnotationPanel::AnnotationPanel(Session& s, QWidget* parent)
   outer->setSpacing(4);
   buildFilters(outer);
   buildReviewBar(outer);
-  buildTable(outer);
+  tablePages_ = new QStackedWidget;
+  tablePages_->setObjectName("annotationSourcePages");
+  for (int kind = 0; kind < 3; ++kind) {
+    auto* page = new QWidget;
+    page->setObjectName(QStringList{"importedLabelPage", "manualAnnotationPage", "detectionResultPage"}[kind]);
+    auto* pageLayout = new QVBoxLayout(page);
+    pageLayout->setContentsMargins(0, 0, 0, 0);
+    buildTable(pageLayout);
+    table_->setObjectName(QStringList{"importedLabelTable", "manualAnnotationTable", "detectionResultTable"}[kind]);
+    model_->source = static_cast<AnnotationSource>(kind);
+    table_->setColumnHidden(8, kind != 2);
+    table_->setColumnHidden(9, kind != 1);
+    table_->setColumnHidden(10, kind != 1);
+    tabs_[kind].table = table_;
+    tabs_[kind].model = model_;
+    tabs_[kind].selectAll = selectAll_;
+    tablePages_->addWidget(page);
+  }
+  outer->addWidget(tablePages_, 1);
+  table_ = tabs_[0].table;
+  model_ = tabs_[0].model;
+  selectAll_ = tabs_[0].selectAll;
   buildInspector();
   qApp->installEventFilter(this);
 }
@@ -475,24 +509,69 @@ AnnotationPanel::~AnnotationPanel() { qApp->removeEventFilter(this); }
 const std::vector<std::string>& AnnotationPanel::sortedVisibleIds() const {
   return model_->filteredIds;
 }
+void AnnotationPanel::setSourceTab(AnnotationSource source, bool reconcile) {
+  if (source == sourceTab_ && table_ == tabs_[static_cast<int>(source)].table) {
+    if (auto* file = session_.activeFile()) file->annotationFilter.source = static_cast<int>(source);
+    return;
+  }
+  discardDrafts();
+  auto& previous = tabs_[static_cast<int>(sourceTab_)];
+  previous.page = page_;
+  previous.query = query_->text();
+  if (auto* file = session_.activeFile()) previous.filter = file->annotationFilter;
+  sourceTab_ = source;
+  auto& next = tabs_[static_cast<int>(source)];
+  table_ = next.table;
+  model_ = next.model;
+  selectAll_ = next.selectAll;
+  page_ = next.page;
+  const QSignalBlocker queryBlock(query_), statusBlock(status_), scoreBlock(minimumScore_);
+  query_->setText(next.query);
+  status_->setCurrentIndex(next.filter.review + 1);
+  minimumScore_->setValue(next.filter.minimumMean);
+  if (auto* file = session_.activeFile()) {
+    file->annotationFilter = next.filter;
+    file->annotationFilter.source = static_cast<int>(source);
+    if (reconcile) {
+      std::vector<std::string> ids;
+      for (const auto& id : file->selectedMarkIds)
+        if (const auto* a = findAnnotation(*file, id); a && annotationEligibleForTab(*file, *a, source)) ids.push_back(id);
+      const auto active = std::find(ids.begin(), ids.end(), file->activeMarkId) != ids.end() ? file->activeMarkId : std::string{};
+      session_.selectMarks(std::move(ids), active);
+    }
+  }
+  tablePages_->setCurrentIndex(static_cast<int>(source));
+  displayedActiveId_.clear();
+  emit sourceTabChanged(static_cast<int>(source));
+}
+void AnnotationPanel::convertSelected(bool currentSegmentOnly,
+                                      bool allowExplicitDuplicate) {
+  auto* file = session_.activeFile();
+  if (!file || sourceTab_ == AnnotationSource::Manual) return;
+  std::vector<std::string> created;
+  const auto result = session_.annotations().convertToManual(
+      *file, file->selectedMarkIds,
+      {currentSegmentOnly, allowExplicitDuplicate}, created);
+  if (result && !created.empty()) {
+    setSourceTab(AnnotationSource::Manual, false);
+    session_.selectMarks(created, created.front());
+    revealActive();
+  }
+  action(result);
+}
 void AnnotationPanel::buildFilters(QVBoxLayout* outer) {
   auto* bar = new QHBoxLayout;
-  source_ = new QComboBox;
-  source_->setObjectName("annotationSourceFilter");
-  source_->addItems({"全部来源", "原始标签", "手动", "算法"});
-  bar->addWidget(source_);
+  query_ = new QLineEdit;
+  query_->setObjectName("annotationQuickFilter");
+  query_->setPlaceholderText("筛选名称 / 类别");
+  query_->setMaximumWidth(200);
+  bar->addWidget(query_);
+  connect(query_, &QLineEdit::textChanged, this, [this] { filterChanged(); });
   status_ = new QComboBox;
   status_->setObjectName("annotationReviewFilter");
   status_->addItems({"全部质量", "待判断", "已采纳", "已忽略"});
   bar->addWidget(status_);
-  run_ = new QComboBox;
-  run_->setObjectName("annotationRunFilter");
-  run_->setAccessibleName("按检测运行筛选");
-  // Use list-item sizing for dynamic IDs. The menu-style combo delegate can
-  // add its reserved menu width again after the popup is constrained by QSS.
-  run_->setItemDelegate(new QStyledItemDelegate(run_));
-  run_->addItem("全部运行", QString{});
-  bar->addWidget(run_);
+  connect(status_, &QComboBox::currentIndexChanged, this, [this] { filterChanged(); });
   minimumScore_ = new ParameterDoubleSpinBox;
   minimumScore_->setObjectName("annotationMinimumMeanScore");
   minimumScore_->setRange(0, 1);
@@ -501,8 +580,6 @@ void AnnotationPanel::buildFilters(QVBoxLayout* outer) {
   minimumScore_->setPrefix("mean ≥ ");
   minimumScore_->setValue(0);
   bar->addWidget(minimumScore_);
-  connect(run_, &QComboBox::currentIndexChanged, this,
-          [this] { filterChanged(); });
   connect(minimumScore_, &QDoubleSpinBox::valueChanged, this,
           [this] { filterChanged(); });
   layerBar_ = new QWidget;
@@ -530,6 +607,11 @@ void AnnotationPanel::buildFilters(QVBoxLayout* outer) {
   button(bar, "JSON", "exportAnnotationJson", [this] { exportFile(false); });
   button(bar, "CSV", "exportAnnotationCsv", [this] { exportFile(true); });
   outer->addLayout(bar);
+  detectionStatus_ = new QLabel;
+  detectionStatus_->setObjectName("currentDetectionStatus");
+  detectionStatus_->setWordWrap(true);
+  detectionStatus_->setTextFormat(Qt::PlainText);
+  outer->addWidget(detectionStatus_);
 }
 
 void AnnotationPanel::buildReviewBar(QVBoxLayout* outer) {
@@ -539,6 +621,27 @@ void AnnotationPanel::buildReviewBar(QVBoxLayout* outer) {
       session_.focusMark(file->activeMarkId);
       emit changed();
     }
+  });
+  auto* convert = button(review, "转换为人工标记", "convertAnnotationsToManual",
+                         [this] { convertSelected(); });
+  auto* conversionMenu = new QMenu(convert);
+  conversionMenu->addAction("所选对象的全部段", this, [this] { convertSelected(); });
+  conversionMenu->addAction("仅所选对象的当前段", this, [this] { convertSelected(true); });
+  conversionMenu->addAction("明确再次创建独立副本…", this, [this] {
+    if (QMessageBox::question(this, "再次转换", "为已转换的来源再创建独立人工副本？") == QMessageBox::Yes)
+      convertSelected(false, true);
+  });
+  auto* options = button(review, "转换选项…", "manualConversionOptions", [] {});
+  options->setMenu(conversionMenu);
+  button(review, "新建人工标记", "newManualAnnotation", [this] {
+    if (auto* file = session_.activeFile()) action(session_.annotations().createManual(*file, "人工标记", file->view));
+  });
+  button(review, "创建窄带通道…", "manualCreateChannel", [this] { emit createChannelRequested(); });
+  button(review, "选择本页", "selectAnnotationPage", [this] {
+    std::vector<std::string> ids;
+    for (const auto* row : model_->rows) ids.push_back(row->id);
+    session_.selectMarks(ids, ids.empty() ? std::string{} : ids.front());
+    emit changed();
   });
   button(review, "删除所选标记", "deleteSelectedAnnotations", [this] {
     deleteSelected();
@@ -599,7 +702,6 @@ void AnnotationPanel::buildTable(QVBoxLayout* outer) {
     emit changed();
   };
   view->editCell = [this](const QModelIndex& index) { editCell(index); };
-  table_->setObjectName("annotationTable");
   table_->installEventFilter(this);
   table_->viewport()->installEventFilter(this);
   model_ = new AnnotationTableModel(session_, table_);
@@ -626,14 +728,16 @@ void AnnotationPanel::buildTable(QVBoxLayout* outer) {
                 emit changed();
               }
             });
-            menu.addAction("编辑当前范围…", this, &AnnotationPanel::editRange);
-            auto* channel =
-                menu.addAction("创建窄带通道…", this,
-                               &AnnotationPanel::createChannelRequested);
-            channel->setObjectName("annotationTableCreateChannelAction");
-            auto* remove = menu.addAction("删除所选标记…", this,
-                                          [this] { deleteSelected(); });
-            remove->setObjectName("annotationTableDeleteAction");
+            const bool editable = session_.annotations().canEdit(*file, id);
+            if (editable) {
+              menu.addAction("编辑当前范围…", this, &AnnotationPanel::editRange);
+              auto* channel = menu.addAction("创建窄带通道…", this, &AnnotationPanel::createChannelRequested);
+              channel->setObjectName("annotationTableCreateChannelAction");
+              auto* remove = menu.addAction("删除所选标记…", this, [this] { deleteSelected(); });
+              remove->setObjectName("annotationTableDeleteAction");
+            } else {
+              menu.addAction("转换为人工标记", this, [this] { convertSelected(); });
+            }
             menu.exec(table_->viewport()->mapToGlobal(point));
           });
   table_->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -685,10 +789,6 @@ void AnnotationPanel::buildTable(QVBoxLayout* outer) {
             revealActive();
             emit changed();
           });
-  connect(source_, &QComboBox::currentIndexChanged, this,
-          [this] { filterChanged(); });
-  connect(status_, &QComboBox::currentIndexChanged, this,
-          [this] { filterChanged(); });
 }
 
 void AnnotationPanel::buildInspector() {
@@ -720,6 +820,7 @@ void AnnotationPanel::buildInspector() {
   primaryButton("创建窄带通道…", "annotationInspectorCreateChannel", [this] {
     emit createChannelRequested();
   });
+  primaryButton("转换为人工标记", "annotationInspectorConvert", [this] { convertSelected(); });
   details->addLayout(primary);
   auto* geometryTitle = new QLabel("当前段几何 · 文件时间 / 频率");
   geometryTitle->setProperty("uiRole", "annotationSection");
@@ -757,7 +858,15 @@ void AnnotationPanel::buildInspector() {
   form->addWidget(new QLabel("上边界 / MHz"), 2, 1);
   form->addWidget(low_, 3, 0);
   form->addWidget(high_, 3, 1);
-  details->addLayout(form);
+  geometryEditor_ = new QWidget;
+  geometryEditor_->setObjectName("annotationGeometryEditor");
+  geometryEditor_->setLayout(form);
+  details->addWidget(geometryEditor_);
+  readOnlyRange_ = new QLabel;
+  readOnlyRange_->setObjectName("annotationReadOnlyRange");
+  readOnlyRange_->setWordWrap(true);
+  readOnlyRange_->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  details->addWidget(readOnlyRange_);
   rangeSummary_ = new QLabel;
   rangeSummary_->setObjectName("annotationRangeSummary");
   rangeSummary_->setWordWrap(true);
@@ -1285,6 +1394,7 @@ void AnnotationPanel::editRange() {
 }
 
 void AnnotationPanel::deleteSelected(bool currentSegmentOnly) {
+  if (sourceTab_ != AnnotationSource::Manual) return;
   auto* file = session_.activeFile();
   if (!file) return;
   session_.annotations().reconcileSelection(*file);
@@ -1302,7 +1412,7 @@ void AnnotationPanel::deleteSelected(bool currentSegmentOnly) {
                             ? std::vector<std::string>{active->id}
                             : file->selectedMarkIds) {
     const auto* annotation = findAnnotation(*file, id);
-    if (!annotation || !annotationVisible(*file, *annotation)) continue;
+    if (!annotation || !annotationEligibleForTab(*file, *annotation, sourceTab_)) continue;
     targets.emplace_back(id, annotation->revisionId);
     segmentCount +=
         currentSegmentOnly && !lastSegment ? 1 : annotation->segments.size();
@@ -1368,7 +1478,7 @@ void AnnotationPanel::deleteSelected(bool currentSegmentOnly) {
   std::vector<std::string> ids;
   for (const auto& [id, revision] : targets) {
     const auto* annotation = findAnnotation(*file, id);
-    if (!annotation || !annotationVisible(*file, *annotation) ||
+    if (!annotation || !annotationEligibleForTab(*file, *annotation, sourceTab_) ||
         annotation->revisionId != revision) {
       emit message("删除目标或修订已改变，请重新预览。");
       return;
@@ -1436,6 +1546,10 @@ void AnnotationPanel::refresh() {
   refreshing_ = true;
   auto* f = session_.activeFile();
   if (f) session_.annotations().reconcileSelection(*f);
+  if (f)
+    if (const auto* active = findAnnotation(*f, f->activeMarkId);
+        active && active->sourceKind != sourceTab_)
+      setSourceTab(active->sourceKind, false);
   if (cellDraft_) {
     if (f && annotationEditContextMatches(*f, cellDraft_->context,
                                           session_.projectGeneration())) {
@@ -1451,57 +1565,16 @@ void AnnotationPanel::refresh() {
                std::to_string(f->metadata.sampleFormat.selectedChannel)
          : "");
   if (filterContext_ != context) {
-    const QSignalBlocker sourceBlock(source_), statusBlock(status_),
+    const QSignalBlocker statusBlock(status_),
         scoreBlock(minimumScore_);
-    source_->setCurrentIndex(f ? f->annotationFilter.source + 1 : 0);
+    if (f) { f->annotationFilter.source = static_cast<int>(sourceTab_); f->annotationFilter.runId.clear(); }
     status_->setCurrentIndex(f ? f->annotationFilter.review + 1 : 0);
     minimumScore_->setValue(f ? std::max(0.0, f->annotationFilter.minimumMean)
                               : 0);
     filterContext_ = context;
     page_ = 0;
   }
-  const auto runId = f ? q(f->annotationFilter.runId) : QString{};
-  {
-    const QSignalBlocker block(run_);
-    QStringList ids{QString{}, "__no_run__"};
-    if (f)
-      for (const auto& sourceSet : f->sourceSets)
-        if (!sourceSet.runId.empty() && !ids.contains(q(sourceSet.runId)))
-          ids.push_back(q(sourceSet.runId));
-    bool samePrefix = run_->count() <= ids.size();
-    for (int index = 0; samePrefix && index < run_->count(); ++index)
-      samePrefix = run_->itemData(index).toString() == ids[index];
-    // Ordinary refresh and appended publications keep the same popup model
-    // and persistent rows, including the user's current hover/keyboard row.
-    if (!samePrefix) run_->clear();
-    for (int index = run_->count(); index < ids.size(); ++index) {
-      const auto text = index == 0 ? QString("全部运行")
-                        : index == 1 ? QString("非算法来源") : ids[index];
-      run_->addItem(text, ids[index]);
-      run_->setItemData(index, text, Qt::ToolTipRole);
-    }
-    const int selected = std::max(0, run_->findData(runId));
-    if (run_->currentIndex() != selected) run_->setCurrentIndex(selected);
-    run_->view()->ensurePolished();
-    // Include the actual delegate's check/icon/style margins, not just the
-    // text advance. The collapsed editor can retain its compact width.
-    int popupWidth = run_->width();
-    QStyleOptionViewItem option;
-    option.initFrom(run_->view());
-    option.font = run_->font();
-    option.fontMetrics = QFontMetrics(option.font);
-    for (int index = 0; index < run_->count(); ++index) {
-      const auto item = run_->model()->index(index, run_->modelColumn(), run_->rootModelIndex());
-      popupWidth = std::max(popupWidth,
-          run_->view()->itemDelegate()->sizeHint(option, item).width() + 24);
-      popupWidth = std::max(popupWidth,
-          run_->fontMetrics().horizontalAdvance(run_->itemText(index)) + 40);
-    }
-    if (auto* screen = run_->screen())
-      popupWidth = std::min(popupWidth, std::max(1, screen->availableGeometry().width() - 16));
-    if (run_->view()->minimumWidth() != popupWidth) run_->view()->setMinimumWidth(popupWidth);
-    run_->setToolTip(runId.isEmpty() ? QString("按检测运行筛选") : run_->currentText());
-  }
+  model_->query = query_->text().trimmed();
   model_->update(
       page_, revealActive_ ||
                  (f ? f->activeMarkId : std::string{}) != displayedActiveId_);
@@ -1517,11 +1590,18 @@ void AnnotationPanel::refresh() {
 void AnnotationPanel::filterChanged() {
   if (refreshing_) return;
   if (auto* file = session_.activeFile()) {
-    file->annotationFilter.source = source_->currentIndex() - 1;
+    file->annotationFilter.source = static_cast<int>(sourceTab_);
     file->annotationFilter.review = status_->currentIndex() - 1;
-    file->annotationFilter.runId = run_->currentData().toString().toStdString();
+    file->annotationFilter.runId.clear();
     file->annotationFilter.minimumMean = minimumScore_->value();
-    session_.annotations().reconcileSelection(*file);
+    std::vector<std::string> ids;
+    for (const auto& id : file->selectedMarkIds)
+      if (const auto* a = findAnnotation(*file, id);
+          a && annotationEligibleForTab(*file, *a, sourceTab_) &&
+          (query_->text().trimmed().isEmpty() || q(a->name).contains(query_->text().trimmed(), Qt::CaseInsensitive) ||
+           (a->classLabel && q(*a->classLabel).contains(query_->text().trimmed(), Qt::CaseInsensitive))))
+        ids.push_back(id);
+    session_.selectMarks(ids, std::find(ids.begin(), ids.end(), file->activeMarkId) != ids.end() ? file->activeMarkId : std::string{});
   }
   page_ = 0;
   emit changed();
@@ -1559,12 +1639,51 @@ void AnnotationPanel::refreshTableSelection(const FileState* file) {
                             : selected.size() == model_->filteredIds.size()
                                 ? Qt::Checked
                                 : Qt::PartiallyChecked);
-  const auto counts = file ? annotationCounts(*file) : AnnotationCounts{};
+  AnnotationCounts counts;
+  if (file) {
+    for (const auto& a : file->marks)
+      if (a.sourceKind == sourceTab_ && annotationInContext(*file, a)) ++counts.total;
+    counts.matching = model_->total;
+    for (const auto& id : file->selectedMarkIds)
+      if (const auto* a = findAnnotation(*file, id); a && a->sourceKind == sourceTab_) ++counts.selected;
+  }
+  const bool manual = sourceTab_ == AnnotationSource::Manual;
+  bool allEditable = manual && counts.selected > 0;
+  if (file) for (const auto& id : file->selectedMarkIds)
+    allEditable = allEditable && session_.annotations().canEdit(*file, id);
+  for (const auto* id : {"deleteSelectedAnnotations", "annotationQualityMenu", "undoAnnotations", "redoAnnotations", "newManualAnnotation", "manualCreateChannel"})
+    findChild<QPushButton*>(id)->setVisible(manual);
+  findChild<QPushButton*>("deleteSelectedAnnotations")->setEnabled(allEditable);
+  findChild<QPushButton*>("undoAnnotations")->setEnabled(file && session_.annotations().canUndo(*file));
+  findChild<QPushButton*>("redoAnnotations")->setEnabled(file && session_.annotations().canRedo(*file));
+  findChild<QPushButton*>("manualCreateChannel")->setEnabled(allEditable && counts.selected == 1);
+  for (const auto* id : {"convertAnnotationsToManual", "manualConversionOptions"}) {
+    findChild<QPushButton*>(id)->setVisible(!manual);
+    findChild<QPushButton*>(id)->setEnabled(counts.selected > 0);
+  }
+  findChild<QPushButton*>("importLabels")->setVisible(sourceTab_ == AnnotationSource::ImportedLabel);
+  status_->setVisible(manual);
+  minimumScore_->setVisible(sourceTab_ == AnnotationSource::Algorithm);
+  detectionStatus_->setVisible(sourceTab_ == AnnotationSource::Algorithm);
+  QString detectionText = "尚未运行检测；结果完整成功发布后显示。";
+  if (file && file->currentDetectionSlots)
+    for (const auto& slot : *file->currentDetectionSlots) {
+      if (slot.sampleChannel != file->metadata.sampleFormat.selectedChannel) continue;
+      if (!slot.pendingRunId.empty()) detectionText = "检测运行中 · 暂存结果未发布，不可转换为人工标记。";
+      else if (slot.stale) detectionText = "结果待更新 · 请显式应用并重新检测；上次完整集合仅保留作回滚恢复。";
+      else if (!slot.committedRunId.empty()) {
+        for (const auto& run : file->detectionRuns)
+          if (run.request.runId == slot.committedRunId)
+            detectionText = (run.resultCount == 0 ? QString("已完成，未检出") : QString("当前检测：%1 · %2 个结果").arg(q(run.request.profile.name)).arg(run.resultCount)) +
+                " · 本次范围外为未检测；新检测成功后整体替换。";
+      }
+    }
+  detectionStatus_->setText(detectionText);
   findChild<QPushButton*>("annotationQualityMenu")
-      ->setEnabled(counts.selected != 0);
+      ->setEnabled(allEditable);
   for (const auto* name :
        {"acceptAnnotations", "rejectAnnotations", "clearAnnotationReview"})
-    findChild<QAction*>(name)->setEnabled(counts.selected != 0);
+    findChild<QAction*>(name)->setEnabled(allEditable);
   count_->setText(
       QString("匹配 %1 / 总数 %2 / 已选 %3 · 页 %4/%5")
           .arg(counts.matching)
@@ -1618,9 +1737,22 @@ void AnnotationPanel::refreshInspector(const FileState* f) {
   };
   enable("annotationInspectorLocate", a && (seg || a->observation),
          "只定位当前对象；普通选择不会改变图谱范围");
-  enable("annotationInspectorCreateChannel", single && seg,
+  enable("annotationInspectorCreateChannel", editable && single && seg,
          single && seg ? "从当前活动段创建通道；保留来源快照" :
          "请仅选择一个有活动段的标记；时间未定位时使用图谱上的人工范围入口");
+  inspector_->findChild<QPushButton*>("annotationInspectorCreateChannel")->setVisible(!a || a->sourceKind == AnnotationSource::Manual);
+  auto* convert = inspector_->findChild<QPushButton*>("annotationInspectorConvert");
+  convert->setVisible(a && a->sourceKind != AnnotationSource::Manual);
+  convert->setEnabled(a && annotationSourceCurrent(*f, *a));
+  geometryEditor_->setVisible(editable);
+  readOnlyRange_->setVisible(a && !editable);
+  readOnlyRange_->setText(a ? QString("只读 · 转换为人工标记后可编辑\n%1")
+      .arg(seg ? physicalRangeText(seg->range, f->metadata.sampleRateHz) :
+           a->observation ? QString("时间未定位 · %1–%2 MHz")
+             .arg(a->observation->frequency.lowerHz/1e6,0,'g',12)
+             .arg(a->observation->frequency.upperHz/1e6,0,'g',12) : QString("无范围")) : QString{});
+  for (const auto* id : {"splitAnnotationSegment", "mergeAnnotationSegments", "deleteAnnotationSegment", "restoreAnnotationOrigin", "addAnnotationSegment", "adoptAnnotationObservation", "editAnnotationNote", "editAnnotationRange", "cancelAnnotationGeometry"})
+    inspector_->findChild<QPushButton*>(id)->setVisible(editable);
   enable("annotationPreviousSegment", a && seg && seg != a->segments.data(),
          "切换到上一活动段；首段不可继续向前");
   enable("annotationNextSegment", a && seg && seg != &a->segments.back(),
@@ -1698,7 +1830,7 @@ void AnnotationPanel::refreshInspector(const FileState* f) {
                   .arg(f->selectedMarkIds.size()) : QString{})
         : "选择标记查看来源 / 段 / 修订");
   detail_->setToolTip(a ? q(a->name) : QString{});
-  rangeSummary_->setText(seg ? QString("持续 %1 ms · 带宽 %2 kHz\n%3 · Enter / Tab 提交；Esc 取消草稿")
+  rangeSummary_->setText(seg ? QString("持续 %1 ms · 带宽 %2 kHz\n%3")
       .arg((seg->range.time.end-seg->range.time.begin)/f->metadata.sampleRateHz*1000,0,'g',12)
       .arg((seg->range.frequency.upperHz-seg->range.frequency.lowerHz)/1000,0,'g',12)
       .arg(seg->frequencyFrame == FrequencyFrame::RF ? "RF 频率" :
@@ -1735,7 +1867,10 @@ void AnnotationPanel::exportFile(bool csv) {
       csv ? "CSV每活动段一行；不保存完整原始字段/修订证据" : "无损标记JSON导出",
       csv ? "annotations.csv" : "annotations.json");
   if (path.isEmpty()) return;
-  const auto bytes = csv ? exportAnnotationsCsv(*f) : exportAnnotationsJson(*f);
+  auto projection = *f;
+  const std::unordered_set<std::string> ids(model_->filteredIds.begin(), model_->filteredIds.end());
+  std::erase_if(projection.marks, [&](const auto& a) { return !ids.contains(a.id); });
+  const auto bytes = csv ? exportAnnotationsCsv(projection) : exportAnnotationsJson(projection);
   QSaveFile out(path);
   if (!out.open(QIODevice::WriteOnly) || out.write(bytes) != bytes.size() ||
       !out.commit())

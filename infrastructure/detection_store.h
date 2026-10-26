@@ -3,10 +3,11 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
+#include <QStringList>
 #include <functional>
 #include <vector>
 
-#include "domain/detection.h"
+#include "domain/project.h"
 #include "infrastructure/detection_protocol.h"
 
 namespace signalstudio {
@@ -43,5 +44,32 @@ bool visitDetectionChunks(
     QString& error);
 std::vector<DetectionRun> discoverDetectionRuns(const QString& projectDirectory,
                                                 QString& error);
+// Production recovery only follows committed/pending IDs, never old directory
+// entries. In particular, a retired/corrupt orphan cannot poison discovery.
+std::vector<DetectionRun> discoverDetectionRuns(const QString& projectDirectory,
+                                               const Project&, QString& error);
+bool detectionRunAssetPaths(const QString& projectDirectory, const DetectionRun&,
+                            QStringList& paths, QString& error);
+
+// Called by ProjectFileCodec before exposing an external Reference. A root is
+// private only when first created at its owning .ssproj's canonical location;
+// once referenced/shared it can never be reclaimed as private automatically.
+bool recordDetectionAssetOwnership(const QString& ssprojPath,
+                                   const QString& projectId,
+                                   const QString& assetRoot,
+                                   bool newlyCreated, bool reference,
+                                   QString& error,
+                                   bool rootLockHeld = false);
+struct DetectionGcReport {
+  std::uint32_t removedFiles = 0, removedRuns = 0, deferredRuns = 0;
+  bool privateRoot = false;
+};
+// Intended for a background worker. Reads the committed .ssproj, locks the
+// private root, and visits only explicit retired IDs. No directory-tree scan.
+// Oversized runs stay deferred; no partial budget truncation deletes a run.
+bool collectRetiredDetectionAssets(const QString& ssprojPath,
+                                   DetectionGcReport&, QString& error,
+                                   std::uint32_t maximumRuns = 4,
+                                   std::uint32_t maximumFiles = 256);
 
 }  // namespace signalstudio

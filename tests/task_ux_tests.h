@@ -12,60 +12,40 @@
 #include "infrastructure/detection_store.h"
 
 inline void UxTests::uxR01_lateRunFilterPopupAndRefresh() {
+  // UX-R5 removes the historical run-filter popup. Preserve this regression's
+  // late-publication/refresh purpose on the authoritative current-result page.
   QTemporaryDir directory;
   MainWindow window;
   QString issue;
-  QVERIFY(window.createProject(directory.path(), "run-filter", &issue));
+  QVERIFY(window.createProject(directory.path(), "current-publication", &issue));
   issue = addSource(window, directory.path(), "IQ_A_FS1Msps_FC100MHz.dat");
   QVERIFY2(issue.isEmpty(), qPrintable(issue));
   expose(window);
-  QTest::mouseClick(window.findChild<QAbstractButton*>("resultTab"), Qt::LeftButton);
-  auto* filter = window.findChild<QComboBox*>("annotationRunFilter");
-  QVERIFY(filter && filter->isVisible());
-  QCOMPARE(filter->count(), 2);
-  const auto open = [&] {
-    QTest::mouseClick(filter, Qt::LeftButton, Qt::NoModifier, QPoint(filter->width() - 8, filter->height() / 2));
-  };
-  open();
-  QTRY_VERIFY(filter->view()->isVisible());
-  QTest::keyClick(filter->view(), Qt::Key_Escape);
-  QTRY_VERIFY(!filter->view()->isVisible());
-  auto* source = window.session().activeFile();
+  QTest::mouseClick(window.findChild<QAbstractButton*>("detectionResultsTab"), Qt::LeftButton);
+  QVERIFY(!window.findChild<QWidget*>("annotationRunFilter"));
+  const auto source = window.session().activeFile()->metadata;
   DetectionRequest request;
-  // Wider than the first-show editor, while fitting the offscreen plugin's
-  // small virtual popup screen. Native capture also checks full UUID IDs.
-  request.runId = "ux-filter-run-0123456789";
-  request.sourceIdentity = annotationSourceIdentity(source->metadata, window.session().projectGeneration());
+  request.runId = "ux-current-run-0123456789";
+  request.sourceIdentity = annotationSourceIdentity(source, window.session().projectGeneration());
   request.profile = *findDetectionProfile("pipeline-fixture-v1");
-  request.requestedRange = fullRange(source->metadata);
+  request.requestedRange = fullRange(source);
   request.contextRange = request.requestedRange;
   request.rangeOrigin = "available-file";
   auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
   QVERIFY2(panel->startRequest(request, issue), qPrintable(issue));
-  QTRY_VERIFY_WITH_TIMEOUT(filter->findData(QString::fromStdString(request.runId)) >= 2, 15000);
-  open();
-  auto* view = filter->view();
-  QTRY_VERIFY(view->isVisible());
-  const QPersistentModelIndex row(filter->model()->index(filter->findData(QString::fromStdString(request.runId)), 0));
-  view->scrollTo(row);
-  QTRY_VERIFY2(view->viewport()->rect().contains(view->visualRect(row)),
-      qPrintable(QString("row %1x%2; viewport %3x%4; view min %5; popup %6x%7")
-          .arg(view->visualRect(row).width()).arg(view->visualRect(row).height())
-          .arg(view->viewport()->width()).arg(view->viewport()->height())
-          .arg(view->minimumWidth()).arg(view->window()->width()).arg(view->window()->height())));
-  const auto tooltip = row.data(Qt::ToolTipRole).toString();
-  QCOMPARE(tooltip, QString::fromStdString(request.runId));
-  QTest::keyClick(view, Qt::Key_End);
-  QCOMPARE(view->currentIndex(), QModelIndex(row));
+  QTRY_VERIFY_WITH_TIMEOUT(currentDetectionSlot(*window.session().activeFile(), 0) &&
+      currentDetectionSlot(*window.session().activeFile(), 0)->committedRunId == request.runId, 30000);
+  auto* table = window.findChild<QTableView*>("detectionResultTable");
+  const auto rows = table->model()->rowCount();
+  const auto firstId = rows ? table->model()->index(0,1).data(Qt::UserRole) : QVariant{};
   for (int refresh = 0; refresh < 5; ++refresh) window.refresh();
-  QVERIFY(row.isValid() && view->isVisible());
-  QCOMPARE(view->currentIndex(), QModelIndex(row));
-  QCOMPARE(row.data(Qt::UserRole).toString(), QString::fromStdString(request.runId));
-  QVERIFY(view->viewport()->rect().contains(view->visualRect(row)));
-  QTest::qWait(QApplication::doubleClickInterval() + 50);
-  QTest::mouseClick(view->viewport(), Qt::LeftButton, Qt::NoModifier, view->visualRect(row).center());
-  QTRY_VERIFY(!view->isVisible());
-  QCOMPARE(source->annotationFilter.runId, request.runId);
+  QCOMPARE(table->model()->rowCount(), rows);
+  if (rows) QCOMPARE(table->model()->index(0,1).data(Qt::UserRole), firstId);
+  QCOMPARE(window.session().activeFile()->detectionRuns.size(), std::size_t(1));
+  panel->markConfigurationStale();
+  QCOMPARE(table->model()->rowCount(), 0);
+  QVERIFY(window.findChild<QLabel*>("currentDetectionStatus")->text().contains("待更新"));
+  QCOMPARE(currentDetectionSlot(*window.session().activeFile(), 0)->committedRunId, request.runId);
 }
 
 inline void UxTests::uxD01_topDerivationDiscardsCrossFileDraft() {

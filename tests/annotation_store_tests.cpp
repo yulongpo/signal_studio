@@ -4,6 +4,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QTemporaryDir>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -14,6 +15,8 @@
 #include "application/annotation_service.h"
 #include "application/session.h"
 #include "infrastructure/annotation_json.h"
+#include "infrastructure/detection_projection.h"
+#include "infrastructure/detection_store.h"
 #include "infrastructure/project_store.h"
 
 using namespace signalstudio;
@@ -152,31 +155,93 @@ void testUserRangeRoundtripAndMalformedBinding() {
   auto project = projectFixture();
   auto& file = project.files.front();
   file.metadata.availability = {1000, LoadStatus::Partial, 0, {}, {}};
+  file.metadata.availability.fingerprint = "controlled-user-range-fixture";
   AnnotationService service;
-  AnnotationSourceSet set;
-  set.id = "unknown-set";
-  set.fileId = file.metadata.id;
-  set.sourceKind = AnnotationSource::Algorithm;
-  set.formatId = "detection-v1";
-  set.sourceIdentity = annotationSourceIdentity(file.metadata);
-  Annotation annotation;
-  annotation.id = "unknown";
-  annotation.fileId = file.metadata.id;
-  annotation.sourceSetId = set.id;
-  annotation.originRecordId = "record";
-  annotation.name = "frequency observation";
-  annotation.sourceKind = set.sourceKind;
-  annotation.observation = geometry(700, 900);
-  auto evidence = std::make_shared<OriginEvidence>();
-  evidence->formatId = set.formatId;
-  evidence->originalObservation = annotation.observation;
-  annotation.originEvidence = evidence;
-  const auto published = service.publishSourceSet(file, set, {annotation});
+  // Controlled durable Algorithm observation, not model inference or a
+  // historical migration fixture. Publish a complete run/current slot so the
+  // persistence regression can focus on Manual conversion and UserRange.
+  DetectionRun run;
+  run.request.runId = "user-range-run";
+  run.request.profile = *findDetectionProfile("scn-max-psd-v1");
+  run.request.profile.fftSize = 2048;
+  run.request.profile.modelFrames = run.request.profile.modelHopFrames = 1;
+  run.request.sourceIdentity = annotationSourceIdentity(file.metadata);
+  run.request.requestedRange = geometry(700, 900);
+  run.request.contextRange = fullRange(file.metadata);
+  run.request.rangeOrigin = "selection";
+  run.lifecycle = DetectionLifecycle::Running;
+  run.startedAtMilliseconds = 1;
+  run.readFrames = run.eligibleWindows = run.completedWindows = 1;
+  run.coverage = {{DetectionCoverageKind::Read, run.request.contextRange, "controlled fixture"},
+                  {DetectionCoverageKind::Eligible, run.request.requestedRange, {}},
+                  {DetectionCoverageKind::Completed, run.request.requestedRange, {}}};
+  QString error;
+  DetectionPublication publication;
+  check(recoverDetectionPublication(directory.path(), run, publication, error), error);
+  FrequencyTrack track;
+  track.seedId = "unknown-time-track";
+  track.runId = run.request.runId;
+  track.fileId = file.metadata.id;
+  track.frequency = track.originalFrequency = track.originalFrequencyEnvelope = geometry().frequency;
+  track.nominalSupport = track.actualSupport = geometry(700, 900).time;
+  track.scoreMean = track.scoreMax = .9;
+  track.hits = track.windowDenominator = 1;
+  track.windowCoverage = 1;
+  track.windows.push_back({"0", 0, .9, track.actualSupport, track.actualSupport,
+                           {{track.frequency, 900, 1100, .9, 1000}}});
+  const auto originalSet = publication.sourceSet;
+  check(projectFrequencyTracks(run.request, originalSet, {track},
+                                16 * 1024 * 1024, publication, error), error);
+  auto records = encodeDetectionPublication(publication);
+  records.append(QJsonObject{{"kind", "frequency-publication-end-v1"},
+                             {"count", QString::number(publication.annotations.size())}});
+  check(appendDetectionChunk(directory.path(), run, records, {}, error), error);
+  run.lifecycle = DetectionLifecycle::Completed;
+  run.computationPhase = "completed";
+  run.finishedAtMilliseconds = 2;
+  check(writeDetectionRun(directory.path(), run, error), error);
+  check(recoverDetectionPublication(directory.path(), run, publication, error), error);
+  check(publication.annotations.size() == 1 && publication.annotations[0].segments.empty() &&
+            publication.annotations[0].observation == geometry(700, 900),
+        "Controlled Algorithm fixture must remain an unknown-time frequency observation");
+  const auto published = service.publishSourceSet(file, publication.sourceSet, publication.annotations);
   check(published.ok,
         "UserRange fixture failed: " + QString::fromStdString(published.error));
+  file.detectionRuns.push_back(run);
+  CurrentDetectionSlot slot;
+  slot.sampleChannel = file.metadata.sampleFormat.selectedChannel;
+  slot.committedRunId = run.request.runId;
+  slot.generation = 1;
+  slot.stale = false;
+  file.currentDetectionSlots = std::vector<CurrentDetectionSlot>{slot};
+  const auto source = *findAnnotation(file, publication.annotations[0].id);
+  const auto sourceJson = encodeAnnotation(source);
+  auto request = annotationChannelRequest(file, source.id, {100, 600});
+  Channel rejectedChannel;
+  const auto historyBefore = service.historySize(file);
+  check(historyBefore == 0 && !service.canEdit(file, source.id) &&
+            !service.reviewBatch(file, {source.id}, ReviewStatus::Rejected) &&
+            !service.confirmSegment(file, source.id, "missing") &&
+            !service.deleteBatch(file, {source.id}) &&
+            !prepareAnnotationChannel(file, request, rejectedChannel) &&
+            !service.bindChannelSource(file, rejectedChannel, request) &&
+            !rejectedChannel.sourceSnapshot && service.historySize(file) == historyBefore &&
+            encodeAnnotation(*findAnnotation(file, source.id)) == sourceJson,
+        "Algorithm quality/channel APIs must reject without changing source evidence or Manual history");
+  std::vector<std::string> copies;
+  const auto converted = service.convertToManual(file, {source.id}, {}, copies);
+  check(converted.ok && converted.changed && copies.size() == 1 &&
+            service.historySize(file) == historyBefore + 1,
+        "UserRange source requires one explicit Manual conversion");
+  const auto annotation = *findAnnotation(file, copies[0]);
+  check(annotation.sourceKind == AnnotationSource::Manual && annotation.conversionSnapshot &&
+            annotation.conversionSnapshot->sourceKind == AnnotationSource::Algorithm &&
+            annotation.conversionSnapshot->sourceOriginEvidence == *source.originEvidence &&
+            encodeAnnotation(*findAnnotation(file, source.id)) == sourceJson,
+        "Manual observation must keep a complete immutable Algorithm snapshot and leave its source unchanged");
   check(service.reviewBatch(file, {annotation.id}, ReviewStatus::Rejected).ok,
         "UserRange ignored-quality fixture failed");
-  auto request = annotationChannelRequest(file, annotation.id, {100, 600});
+  request = annotationChannelRequest(file, annotation.id, {100, 600});
   Channel channel;
   channel.id = "user-range-channel";
   check(service.bindChannelSource(file, channel, request).ok,
@@ -185,15 +250,19 @@ void testUserRangeRoundtripAndMalformedBinding() {
   channel.visibleBasebandFrequency = {-channel.outputSampleRateHz / 2,
                                       channel.outputSampleRateHz / 2};
   file.channels.push_back(channel);
-  QString error;
   check(ProjectStore::save(path, project, error), error);
   Project loaded;
   check(ProjectStore::load(path, loaded, error), error);
   const auto& reopened = loaded.files.front();
+  const auto* reopenedCopy = findAnnotation(reopened, annotation.id);
+  const auto* reopenedSource = findAnnotation(reopened, source.id);
   check(
-      reopened.marks.front().segments.empty() &&
-          reopened.marks.front().observation == annotation.observation &&
-          reopened.marks.front().reviewStatus == ReviewStatus::Rejected &&
+      reopenedCopy && reopenedSource && reopenedCopy->segments.empty() &&
+          reopenedCopy->observation == annotation.observation &&
+          reopenedCopy->reviewStatus == ReviewStatus::Rejected &&
+          reopenedCopy->conversionSnapshot &&
+          *reopenedCopy->conversionSnapshot == *annotation.conversionSnapshot &&
+          encodeAnnotation(*reopenedSource) == sourceJson && !service.canEdit(reopened, source.id) &&
           *reopened.channels.front().sourceSnapshot ==
               *channel.sourceSnapshot &&
           reopened.channels.front().sourceRelation ==
@@ -412,18 +481,22 @@ void testUint64AndPartial() {
 
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
-  try {
-    testRevisionSnapshotsAndSoftDelete();
-    testLocatedFrequencyBoundsAndAtomicLoad();
-    testUserRangeRoundtripAndMalformedBinding();
-    testChannelNameCreationEditingAndPersistence();
-    testShardIntegrityAndAtomicLoad();
-    testUint64AndPartial();
-    std::cout
-        << "PASS v6 bindings, failure atomicity, "
-           "shard integrity, uint64/Partial\n";
-  } catch (const std::exception& error) {
-    std::cerr << "FAIL " << error.what() << '\n';
-    return 1;
+  const std::vector<std::pair<const char*, std::function<void()>>> tests{
+      {"revision snapshots and soft deletion", testRevisionSnapshotsAndSoftDelete},
+      {"located frequency bounds and atomic load", testLocatedFrequencyBoundsAndAtomicLoad},
+      {"converted UserRange roundtrip and malformed binding", testUserRangeRoundtripAndMalformedBinding},
+      {"channel Unicode creation editing and persistence", testChannelNameCreationEditingAndPersistence},
+      {"shard integrity and atomic load", testShardIntegrityAndAtomicLoad},
+      {"uint64 precision and Partial", testUint64AndPartial}};
+  int failures = 0;
+  for (const auto& [name, test] : tests) {
+    try {
+      test();
+      std::cout << "PASS " << name << '\n';
+    } catch (const std::exception& error) {
+      ++failures;
+      std::cerr << "FAIL " << name << ": " << error.what() << '\n';
+    }
   }
+  return failures == 0 ? 0 : 1;
 }

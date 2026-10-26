@@ -197,6 +197,21 @@ struct AnnotationViewFilter {
   double minimumMean = 0;
 };
 
+// FileId is supplied by the owning FileState. A present (even empty) vector
+// is the authoritative index; absence means a legacy v6 project to migrate.
+struct CurrentDetectionSlot {
+  std::uint32_t sampleChannel = 0;
+  std::string committedRunId;
+  std::uint64_t generation = 0;
+  bool stale = false;
+  // Pending is not a formal result. Persist it to authorize crash recovery.
+  std::string pendingRunId;
+  std::vector<std::string> retiredRunIds;
+  // Only IDs needed by retained channel snapshots; never historical geometry.
+  std::vector<std::string> retiredAnnotationIds;
+  bool operator==(const CurrentDetectionSlot&) const = default;
+};
+
 struct FileState {
   FileMetadata metadata;
   ViewRange view;
@@ -213,6 +228,7 @@ struct FileState {
       navigationEnvelope;  // Session-only; rebuilt by actual source scanning.
   std::vector<AnnotationSourceSet> sourceSets;
   std::vector<DetectionRun> detectionRuns;
+  std::optional<std::vector<CurrentDetectionSlot>> currentDetectionSlots;
   std::string activeSegmentId, revisionEditingAnnotationId,
       revisionEditingBaseRevisionId;
   std::array<bool, 3> annotationLayers{true, true, true};
@@ -224,17 +240,24 @@ inline bool annotationInContext(const FileState& file,
       (!value.fileId.empty() && value.fileId != file.metadata.id))
     return false;
   for (const auto& source : file.sourceSets)
-    if (source.id == value.sourceSetId)
-      return !source.deleted &&
-             source.sampleChannel == file.metadata.sampleFormat.selectedChannel;
+    if (source.id == value.sourceSetId) {
+      if (source.deleted || source.sampleChannel != file.metadata.sampleFormat.selectedChannel)
+        return false;
+      if (value.sourceKind == AnnotationSource::Algorithm && file.currentDetectionSlots) {
+        for (const auto& slot : *file.currentDetectionSlots)
+          if (slot.sampleChannel == source.sampleChannel)
+            return !slot.stale && !slot.committedRunId.empty() &&
+                   slot.committedRunId == source.runId;
+        return false;
+      }
+      return true;
+    }
   return value.sourceSetId.empty();  // Unmigrated legacy projection.
 }
-inline bool annotationVisible(const FileState& file, const Annotation& value) {
+inline bool annotationMatchesFilter(const FileState& file,
+                                    const Annotation& value) {
   const auto& filter = file.annotationFilter;
   return annotationInContext(file, value) &&
-         file.annotationLayers[static_cast<int>(value.sourceKind)] &&
-         (filter.source < 0 ||
-          filter.source == static_cast<int>(value.sourceKind)) &&
          (filter.review < 0 ||
           filter.review == static_cast<int>(value.reviewStatus)) &&
          (filter.runId.empty() ||
@@ -245,6 +268,23 @@ inline bool annotationVisible(const FileState& file, const Annotation& value) {
          (filter.minimumMean <= 0 ||
           (value.originEvidence && value.originEvidence->scoreMean &&
            *value.originEvidence->scoreMean >= filter.minimumMean));
+}
+inline bool annotationEligibleForTab(const FileState& file,
+                                     const Annotation& value,
+                                     AnnotationSource source) {
+  return value.sourceKind == source && annotationMatchesFilter(file, value);
+}
+inline bool annotationSelectable(const FileState& file,
+                                  const Annotation& value) {
+  return annotationInContext(file, value);
+}
+inline bool annotationOverlayVisible(const FileState& file,
+                                      const Annotation& value) {
+  return annotationInContext(file, value) &&
+         file.annotationLayers[static_cast<int>(value.sourceKind)];
+}
+inline bool annotationVisible(const FileState& file, const Annotation& value) {
+  return annotationOverlayVisible(file, value);
 }
 struct AnnotationCounts {
   std::size_t total = 0, matching = 0, selected = 0;

@@ -13,6 +13,7 @@ class QCheckBox;
 class QVBoxLayout;
 class QDoubleSpinBox;
 class QLineEdit;
+class QStackedWidget;
 namespace signalstudio {
 class UnsignedValueEdit;
 class AdaptiveValueEdit;
@@ -35,11 +36,16 @@ class AnnotationPanel final : public QWidget {
   void showImportLabelsDialog();
   bool importLabels(const QString&, QString* error = nullptr,
                     bool preview = true);
+  void setSourceTab(AnnotationSource, bool reconcile = true);
+  AnnotationSource sourceTab() const { return sourceTab_; }
+  void convertSelected(bool currentSegmentOnly = false,
+                       bool allowExplicitDuplicate = false);
  signals:
   void changed();
   void hoverChanged(const QString& id, const QString& segmentId);
   void message(const QString&);
   void createChannelRequested();
+  void sourceTabChanged(int source);
 
  protected:
   bool eventFilter(QObject*, QEvent*) override;
@@ -64,19 +70,32 @@ class AnnotationPanel final : public QWidget {
   Session& session_;
   AnnotationTableModel* model_ = nullptr;
   QTableView* table_ = nullptr;
-  QComboBox* source_ = nullptr;
+  AnnotationSource sourceTab_ = AnnotationSource::ImportedLabel;
+  QStackedWidget* tablePages_ = nullptr;
+  struct TabState {
+    QTableView* table = nullptr;
+    AnnotationTableModel* model = nullptr;
+    QCheckBox* selectAll = nullptr;
+    std::size_t page = 0;
+    AnnotationViewFilter filter;
+    QString query;
+  };
+  std::array<TabState, 3> tabs_{};
+  QLineEdit* query_ = nullptr;
   QComboBox* status_ = nullptr;
   QComboBox* segments_ = nullptr;
-  QComboBox* run_ = nullptr;
   QDoubleSpinBox* minimumScore_ = nullptr;
   QCheckBox* layers_[3]{};
   QLabel* count_ = nullptr;
+  QLabel* detectionStatus_ = nullptr;
   QCheckBox* selectAll_ = nullptr;
   QLabel* detail_ = nullptr;
   QLabel* rangeSummary_ = nullptr;
   QLabel* error_ = nullptr;
   QWidget* inspector_ = nullptr;
   QWidget* layerBar_ = nullptr;
+  QWidget* geometryEditor_ = nullptr;
+  QLabel* readOnlyRange_ = nullptr;
   AnnotationEvidenceWidget* evidencePanel_ = nullptr;
   AdaptiveValueEdit* begin_ = nullptr;
   AdaptiveValueEdit* end_ = nullptr;

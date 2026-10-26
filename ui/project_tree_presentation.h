@@ -104,6 +104,7 @@ inline QString relationText(ChannelSourceRelation relation) {
     case ChannelSourceRelation::Rejected: return QStringLiteral("来源质量：已忽略");
     case ChannelSourceRelation::Unconfirmed: return QStringLiteral("旧版段确认记录；保留创建快照");
     case ChannelSourceRelation::LegacyNeedsReview: return QStringLiteral("旧版来源待复核");
+    case ChannelSourceRelation::Retired: return QStringLiteral("关联检测结果已退役，使用创建快照");
   }
   return {};
 }
@@ -118,6 +119,7 @@ inline QStringList channelBadges(const FileState& file, const Channel& channel) 
     case ChannelSourceRelation::Rejected: badges << "已忽略"; break;
     case ChannelSourceRelation::Unconfirmed: badges << "复核"; break;
     case ChannelSourceRelation::LegacyNeedsReview: badges << "旧版"; break;
+    case ChannelSourceRelation::Retired: badges << "来源退役"; break;
   }
   switch (channel.processingState) {
     case ChannelProcessingState::Ready: break;

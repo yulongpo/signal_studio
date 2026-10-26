@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QLockFile>
 #include <QMap>
 #include <QRegularExpression>
 #include <QSaveFile>
@@ -82,31 +83,34 @@ QString runManifest(const QString& id) {
 QString requestHash(const DetectionRun& run) {
   return hash(QJsonDocument(encodeDetectionRequest(run.request)).toJson(QJsonDocument::Compact));
 }
-QJsonArray manifest(const QDir& root, const Project& project) {
+QJsonArray manifest(const QDir& root, const Project& project, const QJsonObject& payload) {
   QJsonArray result;
   quint64 budget = 0;
   QMap<QString, const DetectionRun*> runs;
-  QSet<QString> runDirectories;
+  QSet<QString> reachable;
   for (const auto& file : project.files) for (const auto& run : file.detectionRuns) {
     const auto path = runManifest(q(run.request.runId));
     require(!runs.contains(path), "重复的检测运行身份");
     runs.insert(path, &run);
-    runDirectories.insert(path.section('/', 0, 1));
+    QStringList paths;
+    QString error;
+    require(detectionRunAssetPaths(root.absolutePath(), run, paths, error), error);
+    for (const auto& asset : paths) reachable.insert(asset);
   }
-  for (const auto& folder : {QString("annotations"), QString("detections")}) {
-    QDirIterator it(root.filePath(folder), QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
-    while (it.hasNext()) {
-      const auto path = it.next();
-      const auto relative = root.relativeFilePath(path);
-      if (folder == "detections") {
-        if (!runDirectories.contains(relative.section('/', 0, 1))) continue;
-        const auto name = relative.section('/', 2);
-        // Runtime scratch files are not published evidence. Only the store's
-        // atomic index and content-addressed chunks/heads are project assets.
-        if (!QRegularExpression("\\A(?:manifest\\.json|chunk-[0-9a-f]{64}\\.json|heads-[0-9a-f]{64}\\.f32)\\z").match(name).hasMatch()) continue;
-      } else if (!relative.endsWith(".json")) continue;
-      safeAsset(root, relative);
-      budget += static_cast<quint64>(it.fileInfo().size());
+  for (const auto& value : payload["files"].toArray()) {
+    const auto index = value.toObject()["annotationStore"].toObject();
+    for (const auto& key : {QString("shards"), QString("sourceSets")})
+      for (const auto& ref : index[key].toArray())
+        if (ref.toObject().contains("path")) reachable.insert(ref.toObject()["path"].toString());
+  }
+  // Follow current indexes only: old annotation snapshots and abandoned
+  // shards are not formal project references and are not copied by Save As.
+  auto ordered = reachable.values();
+  std::sort(ordered.begin(), ordered.end());
+  for (const auto& relative : ordered) {
+      const auto path = safeAsset(root, relative);
+      const QFileInfo info(path);
+      budget += static_cast<quint64>(info.size());
       require(result.size() < 20000 && budget <= 2ull * 1024 * 1024 * 1024,
               "伴随资产超过 20000 文件或 2 GiB 校验预算");
       if (runs.contains(relative)) {
@@ -130,8 +134,7 @@ QJsonArray manifest(const QDir& root, const Project& project) {
         }
       }
       result.append(QJsonObject{{"assetId", hash(relative.toUtf8())}, {"path", relative},
-          {"bytes", QString::number(it.fileInfo().size())}, {"sha256", fileHash(path)}});
-    }
+          {"bytes", QString::number(info.size())}, {"sha256", fileHash(path)}});
   }
   return result;
 }
@@ -206,19 +209,21 @@ QSet<QString> verifyManifest(const QDir& root, const QJsonValue& value) {
 }
 void copyDetectionAssets(const Project& project, const QString& from, const QDir& to) {
   if (QDir(from).absolutePath().compare(to.absolutePath(), Qt::CaseInsensitive) == 0) return;
+  QLockFile sourceLock(QDir(from).filePath(".detection-gc.lock"));
+  sourceLock.setStaleLockTime(0);
+  require(sourceLock.tryLock(0), "复制来源资产根正被保存/清理；稍后重试");
   for (const auto& file : project.files) for (const auto& run : file.detectionRuns) {
     QString error;
     DetectionRun checked;
     require(loadDetectionRun(from, q(run.request.runId), checked, error), error);
-    const auto relative = "detections/" + hash(QByteArray::fromStdString(run.request.runId));
-    QDirIterator it(QDir(from).filePath(relative), QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    QStringList paths;
+    require(detectionRunAssetPaths(from, checked, paths, error), error);
     int count = 0;
     quint64 bytes = 0;
-    while (it.hasNext()) {
-      const auto source = it.next();
-      const auto name = QDir(from).relativeFilePath(source);
+    for (const auto& name : paths) {
+      const auto source = QDir(from).filePath(name);
       safeAsset(QDir(from), name);
-      bytes += static_cast<quint64>(it.fileInfo().size());
+      bytes += static_cast<quint64>(QFileInfo(source).size());
       require(++count <= 20000 && bytes <= 2ull * 1024 * 1024 * 1024, "检测资产超过复制预算");
       const auto destination = to.filePath(name);
       require(QDir().mkpath(QFileInfo(destination).absolutePath()), "无法创建目标资产目录");
@@ -259,7 +264,8 @@ QString ProjectFileCodec::assetDirectory(const QString& path, const Project& pro
   return QFileInfo(path).absoluteFilePath() + ".assets/" + q(project.projectId);
 }
 
-bool ProjectFileCodec::save(const QString& path, Project& project, QString& error, AssetSaveMode mode, std::function<bool()> cancelled) {
+bool ProjectFileCodec::save(const QString& path, Project& project, QString& error, AssetSaveMode mode, std::function<bool()> cancelled,
+                            std::function<bool()> beforeCommit) {
   CancellationScope cancellationScope(std::move(cancelled));
   error.clear();
   try {
@@ -298,7 +304,16 @@ bool ProjectFileCodec::save(const QString& path, Project& project, QString& erro
         assets = previousAssets;
       } else assets = QFileInfo(path).absoluteFilePath() + ".assets/" + q(candidate.projectId);
     }
+    const bool newAssetRoot = !QDir(assets).exists();
     require(QDir().mkpath(assets) && !QFileInfo(assets).isSymLink(), "无法创建工程伴随资产目录");
+    // The lock spans ownership, reachable-asset copy, manifest construction,
+    // QSaveFile publication and the candidate swap. GC and Reference sharing
+    // cannot observe an old index and then race a newer project commit.
+    QLockFile rootLock(QDir(assets).filePath(".detection-gc.lock"));
+    rootLock.setStaleLockTime(0);
+    require(rootLock.tryLock(0), "工程资产根正被保存/清理；稍后重试");
+    require(recordDetectionAssetOwnership(path, q(candidate.projectId), assets,
+        newAssetRoot, effectiveMode == AssetSaveMode::Reference, error, true), error);
     const QDir root(assets);
     if (!previousAssets.isEmpty()) copyDetectionAssets(candidate, previousAssets, root);
     QJsonArray references;
@@ -334,13 +349,14 @@ bool ProjectFileCodec::save(const QString& path, Project& project, QString& erro
     const QJsonObject container{{"magic", "SignalStudioProject"}, {"schemaVersion", 1},
         {"projectId", q(candidate.projectId)}, {"assetDirectory", assetsRef},
         {"assetMode", effectiveMode == AssetSaveMode::Reference ? "reference" : "copy"},
-        {"assets", manifest(root, candidate)}, {"sourceReferences", references}, {"state", payload}};
+        {"assets", manifest(root, candidate, payload)}, {"sourceReferences", references}, {"state", payload}};
     const auto bytes = QJsonDocument(container).toJson(QJsonDocument::Indented);
     require(bytes.size() <= 32 * 1024 * 1024, "工程超过 32 MiB");
     QSaveFile output(path);
     require(output.open(QIODevice::WriteOnly) && output.write(bytes) == bytes.size(), "工程写入失败：" + output.errorString());
     // The last cancellation check precedes the atomic publication point.
     require(true, {});
+    require(!beforeCommit || beforeCommit(), "Injected project atomic commit failure");
     if (!output.commit()) throw std::runtime_error(("工程原子保存失败：" + output.errorString()).toUtf8().constData());
     candidate.assetDirectory = root.absolutePath().toStdString();
     project = std::move(candidate);

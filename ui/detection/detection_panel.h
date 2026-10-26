@@ -2,11 +2,13 @@
 
 #include <QWidget>
 #include <functional>
+#include <future>
 #include <memory>
 #include <optional>
 #include <unordered_map>
 
 #include "application/session.h"
+#include "application/detection_result_service.h"
 #include "infrastructure/detection_task.h"
 
 class QLabel;
@@ -28,6 +30,11 @@ class DetectionPanel : public QWidget {
   void openRunSource(const QString& runId);
   void deriveRun(const QString& runId);
   void refresh();
+  void setProjectFilePathProvider(std::function<QString()> provider) {
+    projectFilePath_ = std::move(provider);
+  }
+  // Connect only committed algorithm/parameter changes, not draft refreshes.
+  void markConfigurationStale();
   DetectionTaskManager& tasks() { return *tasks_; }
 
  signals:
@@ -44,6 +51,7 @@ class DetectionPanel : public QWidget {
   void showSelectedDetails();
   void showRunDetails(const QString& runId);
   void discoverRecoverable();
+  void scheduleGc(const QString& path = {});
   const DetectionRun* selectedRun() const;
   const DetectionRun* findRun(const QString& runId) const;
   bool refreshRunList(bool refreshPublicationCounts);
@@ -56,6 +64,10 @@ class DetectionPanel : public QWidget {
   };
   Session& session_;
   std::function<QString()> projectDirectory_;
+  std::function<QString()> projectFilePath_;
+  std::unordered_map<std::string, DetectionResultTicket> tickets_;
+  std::future<QString> gc_;
+  QString pendingGcPath_;
   std::unique_ptr<DetectionTaskManager> tasks_;
   std::uint64_t generation_ = 0;
   QLabel* summary_ = nullptr;

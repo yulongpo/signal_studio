@@ -16,8 +16,10 @@
 #include <utility>
 
 #include "application/annotation_service.h"
+#include "application/detection_result_service.h"
 #include "domain/power_display.h"
 #include "infrastructure/annotation_json.h"
+#include "infrastructure/annotation_migration.h"
 #include "infrastructure/annotation_store.h"
 #include "infrastructure/detection_store.h"
 #include "infrastructure/sample_format_json.h"
@@ -417,6 +419,8 @@ DisplaySettings decodeDisplay(const QJsonValue& value) {
 QJsonObject encodeProject(const Project& project, const QString& path, bool writeAssets = true) {
   QJsonArray files;
   for (const auto& file : project.files) {
+    const auto validSlots = validateCurrentDetectionSlots(file);
+    require(validSlots.ok, text(validSlots.error));
     const auto& metadata = file.metadata;
     QJsonObject annotationIndex;
     QString annotationError;
@@ -564,6 +568,22 @@ QJsonObject encodeProject(const Project& project, const QString& path, bool writ
               file.annotationFilter.minimumMean}}},
         {QStringLiteral("selectedMarkIds"), selected},
         {QStringLiteral("activeMarkId"), text(file.activeMarkId)}});
+    if (file.currentDetectionSlots) {
+      QJsonArray slotData;
+      for (const auto& slot : *file.currentDetectionSlots) {
+        QJsonArray retired, retiredAnnotations;
+        for (const auto& id : slot.retiredRunIds) retired.append(text(id));
+        for (const auto& id : slot.retiredAnnotationIds) retiredAnnotations.append(text(id));
+        slotData.append(QJsonObject{{"sampleChannel", static_cast<int>(slot.sampleChannel)},
+            {"committedRunId", text(slot.committedRunId)},
+            {"generation", QString::number(slot.generation)}, {"stale", slot.stale},
+            {"pendingRunId", text(slot.pendingRunId)}, {"retiredRunIds", retired},
+            {"retiredAnnotationIds", retiredAnnotations}});
+      }
+      auto encodedFile = files.last().toObject();
+      encodedFile["currentDetectionSlots"] = slotData;
+      files[files.size() - 1] = encodedFile;
+    }
   }
   return {{QStringLiteral("schema"),
            QStringLiteral("signal-studio-native-project")},
@@ -649,6 +669,33 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
             QStringLiteral("可用前缀超出物理文件"));
     file.metadata.availability.fingerprint =
         utf8(string(metadata, "sourceFingerprint", 200, true));
+    // Install optional authority before reading channels/annotation snapshots.
+    if (data.contains("currentDetectionSlots")) {
+      file.currentDetectionSlots.emplace();
+      for (const auto& value : array(data, "currentDetectionSlots", 4096)) {
+        const auto encoded = object(value, "currentDetectionSlot");
+        CurrentDetectionSlot slot;
+        const auto channel = number(encoded, "sampleChannel");
+        require(channel >= 0 && channel < file.metadata.sampleFormat.channels &&
+                    std::floor(channel) == channel, "检测 slot 样本通道无效");
+        slot.sampleChannel = static_cast<std::uint32_t>(channel);
+        slot.committedRunId = utf8(string(encoded, "committedRunId", 128, true));
+        slot.generation = sampleIndex(encoded, "generation");
+        slot.stale = boolean(encoded, "stale");
+        if (encoded.contains("pendingRunId"))
+          slot.pendingRunId = utf8(string(encoded, "pendingRunId", 128, true));
+        for (const auto& value : array(encoded, "retiredRunIds", 100000)) {
+          require(value.isString(), "退役 run ID 须为字符串");
+          slot.retiredRunIds.push_back(utf8(value.toString()));
+        }
+        if (encoded.contains("retiredAnnotationIds"))
+          for (const auto& value : array(encoded, "retiredAnnotationIds", 100000)) {
+            require(value.isString(), "退役通道来源 ID 须为字符串");
+            slot.retiredAnnotationIds.push_back(utf8(value.toString()));
+          }
+        file.currentDetectionSlots->push_back(std::move(slot));
+      }
+    }
     file.display = decodeDisplay(data.value(QStringLiteral("display")));
     const auto d = data["display"].toObject();
     require(d.contains("psdSettings") && d.contains("spectrogramSettings"),
@@ -714,7 +761,11 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
       const auto channelData = object(channelValue, QStringLiteral("channel"));
       const auto id = string(channelData, "id", 100);
       const auto sourceId = string(channelData, "sourceMarkId", 100);
-      require(!channelIds.contains(id) && markIds.contains(sourceId),
+      const bool retiredSource = file.currentDetectionSlots && std::any_of(
+          file.currentDetectionSlots->begin(), file.currentDetectionSlots->end(),
+          [&](const auto& slot) { return std::find(slot.retiredAnnotationIds.begin(),
+              slot.retiredAnnotationIds.end(), utf8(sourceId)) != slot.retiredAnnotationIds.end(); });
+      require(!channelIds.contains(id) && (markIds.contains(sourceId) || retiredSource),
               QStringLiteral("窄带通道 id 或源标记引用无效"));
       channelIds.insert(id);
       Channel channel;
@@ -1106,6 +1157,14 @@ bool ProjectStore::decodeDocument(const QJsonObject& document, const QString& pa
   error.clear();
   try {
     auto parsed = decodeProject(document, path);
+    require(migrateRevisedSourceAnnotations(parsed, error), error);
+    for (auto& file : parsed.files) {
+      const auto migratedSlots = migrateLegacyDetectionSlots(file);
+      require(migratedSlots.ok, text(migratedSlots.error));
+      const auto valid = validateFileAnnotations(file);
+      require(valid.ok, text(valid.error));
+      refreshChannelSourceRelations(file);
+    }
     target = std::move(parsed);
     return true;
   } catch (const InvalidProject& invalid) {
@@ -1139,8 +1198,7 @@ bool ProjectStore::load(const QString& path, Project& target, QString& error) {
     return false;
   }
   try {
-    auto parsed = decodeProject(document.object(), path);
-    target = std::move(parsed);
+    return decodeDocument(document.object(), path, target, error);
   } catch (const InvalidProject& invalid) {
     error = invalid.message;
     return false;

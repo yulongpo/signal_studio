@@ -78,9 +78,11 @@ set_target_properties(SignalStudioCore PROPERTIES AUTOMOC OFF)
 ss_target_defaults(SignalStudioCore)
 
 add_library(SignalStudioInfrastructure STATIC
+    application/detection_result_service.cpp
     infrastructure/wav_metadata.cpp
     infrastructure/label_import.cpp
     infrastructure/annotation_json.cpp
+    infrastructure/annotation_migration.cpp
     infrastructure/annotation_store.cpp
     infrastructure/detection_source.cpp
     infrastructure/detection_protocol.cpp
@@ -287,6 +289,23 @@ if(SS_BUILD_TESTS)
     set_target_properties(SignalStudioAnnotationTests PROPERTIES AUTOMOC OFF)
     ss_target_defaults(SignalStudioAnnotationTests)
     add_test(NAME signal_studio_annotations COMMAND SignalStudioAnnotationTests)
+    add_executable(SignalStudioUxR5AnnotationTests tests/ux_r5_annotation_tests.cpp)
+    target_link_libraries(SignalStudioUxR5AnnotationTests PRIVATE SignalStudioCore)
+    set_target_properties(SignalStudioUxR5AnnotationTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioUxR5AnnotationTests)
+    add_test(NAME signal_studio_ux_r5_annotations COMMAND SignalStudioUxR5AnnotationTests)
+    set_tests_properties(signal_studio_ux_r5_annotations PROPERTIES TIMEOUT 60)
+    add_executable(SignalStudioUxR5CompatTests tests/ux_r5_compat_tests.cpp)
+    target_link_libraries(SignalStudioUxR5CompatTests PRIVATE SignalStudioInfrastructure Qt6::Test)
+    ss_target_defaults(SignalStudioUxR5CompatTests)
+    add_test(NAME signal_studio_ux_r5_compat COMMAND SignalStudioUxR5CompatTests)
+    set_tests_properties(signal_studio_ux_r5_compat PROPERTIES TIMEOUT 120)
+    add_executable(SignalStudioUxR5DetectionTests tests/ux_r5_detection_tests.cpp)
+    target_link_libraries(SignalStudioUxR5DetectionTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    set_target_properties(SignalStudioUxR5DetectionTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioUxR5DetectionTests)
+    add_test(NAME signal_studio_ux_r5_detection COMMAND SignalStudioUxR5DetectionTests)
+    set_tests_properties(signal_studio_ux_r5_detection PROPERTIES TIMEOUT 120)
     add_executable(SignalStudioAnnotationStoreTests tests/annotation_store_tests.cpp)
     target_link_libraries(SignalStudioAnnotationStoreTests PRIVATE SignalStudioInfrastructure Qt6::Core)
     set_target_properties(SignalStudioAnnotationStoreTests PROPERTIES AUTOMOC OFF)
@@ -481,6 +500,8 @@ if(SS_BUILD_TESTS)
     ss_add_ux_test(annotation uxR4_evidenceDisclosureAndFullCopy
         uxR4_currentObjectAndActionStates uxR4_supplementalSourceAndPagedCopy
         uxR4_auxiliaryDetailsCloseWithHiddenContext uxR4_searchBoundaryAndOriginalNewlines)
+    ss_add_ux_test(r5_ui uxR5_threeTabsReadOnlyAndConversion
+        uxR5_layersAndIndependentFilters uxR5_crossViewAndUnknownObservation)
     ss_add_ux_test(layout uxR01_chartToolbarLayout uxR02_inspectorRouting
         uxR02_fileProperties uxR02_paletteWorkspaceOwnership
         uxR03_taskKeyboardAndDetails uxR03_taskRowActions uxR01_lateRunFilterPopupAndRefresh roundTwoFlatResponsiveControls)

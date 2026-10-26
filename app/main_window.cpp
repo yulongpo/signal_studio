@@ -181,6 +181,8 @@ QString channelRelationLabel(ChannelSourceRelation relation) {
       return "旧版段确认记录；保留创建快照";
     case ChannelSourceRelation::LegacyNeedsReview:
       return "旧版来源待复核";
+    case ChannelSourceRelation::Retired:
+      return "关联检测结果已退役，使用创建快照";
   }
   return "来源待复核";
 }
@@ -1129,14 +1131,15 @@ void MainWindow::buildWorkspace() {
   auto* tabRow = new QHBoxLayout(tabs);
   tabRow->setContentsMargins(8, 0, 8, 0);
   tabRow->setSpacing(3);
-  const std::array<QString, 3> tabNames{"统一标记记录", "后台任务", "日志"},
-      tabIds{"resultTab", "taskTab", "logTab"};
-  for (int i = 0; i < 3; ++i) {
+  const std::array<QString, 5> tabNames{"原始标签", "人工标记", "检测结果", "后台任务", "日志"},
+      tabIds{"importedLabelsTab", "manualAnnotationsTab", "detectionResultsTab", "taskTab", "logTab"};
+  for (int i = 0; i < 5; ++i) {
     bottomButtons_[i] = push(tabNames[i], tabIds[i], tabRow);
     bottomButtons_[i]->setCheckable(true);
     connect(bottomButtons_[i], &QPushButton::clicked, this, [this, i] {
       cancelInteractions(false);
       bottomTab_ = i;
+      if (i < 3 && annotations_) annotations_->setSourceTab(static_cast<AnnotationSource>(i));
       resultToggle_->setChecked(true);
       updateBottom();
     });
@@ -1163,6 +1166,9 @@ void MainWindow::buildWorkspace() {
   results_->setReadOnly(true);
   results_->setMaximumBlockCount(300);
   annotations_ = new AnnotationPanel(session_);
+  connect(annotations_, &AnnotationPanel::sourceTabChanged, this, [this](int source) {
+    bottomTab_ = source;
+  });
   layerRow->addWidget(annotations_->layerWidget());
   connect(annotations_, &AnnotationPanel::changed, this, [this] { refresh(); });
   connect(annotations_, &AnnotationPanel::message, this, &MainWindow::log);
@@ -1181,6 +1187,7 @@ void MainWindow::buildWorkspace() {
   detection_ = new DetectionPanel(session_, [this] {
     return projectAssetDirectory();
   });
+  detection_->setProjectFilePathProvider([this] { return projectPath_; });
   connect(detection_, &DetectionPanel::changed, this, [this] { refresh(); });
   connect(detection_, &DetectionPanel::message, this, &MainWindow::log);
   connect(detection_, &DetectionPanel::configurationRequested, this,
@@ -1359,6 +1366,8 @@ void MainWindow::buildWorkspace() {
           sharedPsdFromSelectionPreference_ && hasActiveSegment(*file);
     refresh();
   });
+  connect(detectionCard_, &DetectionCard::configurationCommitted,
+          detection_, &DetectionPanel::markConfigurationStale);
   connect(detectionCard_, &DetectionCard::requestSubmitted, this,
           [this](const DetectionRequest& request) {
             QString error;
@@ -1376,7 +1385,7 @@ void MainWindow::buildWorkspace() {
   connect(detectionCard_, &DetectionCard::focusRunningRunRequested, this,
           [this](const QString& runId) {
             detection_->openRunSource(runId);
-            bottomTab_ = 1;
+            bottomTab_ = 3;
             resultToggle_->setChecked(true);
             updateBottom();
           });
@@ -1594,7 +1603,7 @@ void MainWindow::buildWorkspace() {
               QTimer::singleShot(0, this, [this, id] {
                 cancelInteractions();
                 detection_->openRunSource(id);
-                bottomTab_ = 1;
+                bottomTab_ = 3;
                 resultToggle_->setChecked(true);
                 updateBottom();
               });
@@ -2410,7 +2419,7 @@ std::vector<std::string> MainWindow::treeSelectionOrder() const {
       const auto found = byId.find(id);
       if (found != byId.end() &&
           static_cast<int>(found->second->sourceKind) == kind &&
-          annotationVisible(*file, *found->second))
+          annotationSelectable(*file, *found->second))
         result.push_back(id);
     }
   return result;
@@ -2454,7 +2463,8 @@ void MainWindow::restoreUiState() {
   resultToggle_->setChecked(
       settings.value(QStringLiteral("resultsExpanded"), false).toBool());
   bottomTab_ =
-      std::clamp(settings.value(QStringLiteral("bottomTab"), 0).toInt(), 0, 2);
+      std::clamp(settings.value(QStringLiteral("annotationSourceTab"), 0).toInt(), 0, 4);
+  if (annotations_ && bottomTab_ < 3) annotations_->setSourceTab(static_cast<AnnotationSource>(bottomTab_));
   auxiliaryEvidenceVisible_ =
       settings.value("auxiliaryEvidenceVisible", false).toBool();
   resourceWidth_ =
@@ -2489,7 +2499,7 @@ void MainWindow::saveUiState() {
                     propertiesCollapsed_);
   settings.setValue(QStringLiteral("resultsExpanded"),
                     resultToggle_->isChecked());
-  settings.setValue(QStringLiteral("bottomTab"), bottomTab_);
+  settings.setValue(QStringLiteral("annotationSourceTab"), bottomTab_);
   settings.setValue("auxiliaryEvidenceVisible", auxiliaryEvidenceVisible_);
   settings.setValue("resourceWidth", resourceWidth_);
   settings.setValue("propertyWidth", propertyWidth_);
@@ -3277,7 +3287,13 @@ void MainWindow::locateActiveChannelSource() {
   const auto fileId = file->metadata.id;
   const auto markId = channel->sourceMarkId;
   cancelInteractions(false);
-  if (!session_.activateFile(fileId) || !session_.focusMark(markId)) return;
+  const auto snapshot = channel->sourceSnapshot;
+  if (!session_.activateFile(fileId)) return;
+  if (!session_.focusMark(markId)) {
+    if (!snapshot) return;
+    session_.setView(snapshot->range);
+    log("原检测标记已退役；按通道创建快照定位来源 IQ。");
+  }
   session_.project().narrowbandWorkspaceOpen = false;
   workspaceStack_->setCurrentIndex(0);
   refresh();
@@ -3304,6 +3320,25 @@ void MainWindow::showChannelDialog(const QString& channelId) {
     original = *found;
   }
   if (!file) return;
+  if (!editing) {
+    const auto* source = findAnnotation(*file, file->activeMarkId);
+    if (source && source->sourceKind != AnnotationSource::Manual && file->selectedMarkIds.size() == 1) {
+      const auto sourceId = source->id;
+      const auto sourceRevision = source->revisionId;
+      const auto sourceFileId = file->metadata.id;
+      const auto sourceGeneration = session_.projectGeneration();
+      if (QMessageBox::question(this, "转换并创建通道", "此来源只读。先创建独立人工标记副本，再配置窄带通道？") != QMessageBox::Yes) return;
+      file = session_.activeFile();
+      const auto* current = file ? findAnnotation(*file, sourceId) : nullptr;
+      if (!current || file->metadata.id != sourceFileId || session_.projectGeneration() != sourceGeneration || current->revisionId != sourceRevision) return;
+      std::vector<std::string> created;
+      const auto converted = session_.annotations().convertToManual(*file, {sourceId}, {}, created);
+      if (!converted || created.empty()) { log(q(converted.error)); return; }
+      annotations_->setSourceTab(AnnotationSource::Manual, false);
+      session_.selectMarks(created, created.front());
+      refresh();
+    }
+  }
   const auto fileId = file->metadata.id;
   const auto generation = session_.projectGeneration();
   const auto sampleChannel = file->metadata.sampleFormat.selectedChannel;
@@ -3328,7 +3363,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
   outer->setSpacing(9);
   auto* intro = label(
       editing ? "保留创建时不可变来源快照；参数作为一次配置事务应用。"
-              : "三类来源使用同一通道配置；质量标记可选，不作为创建前置条件。",
+              : "从人工标记创建通道；只读标签及检测结果须先显式转换。质量标记可选。",
       {}, "help");
   intro->setWordWrap(true);
   outer->addWidget(intro);
@@ -3351,6 +3386,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
       QString{});
   const auto addSource = [&](const Annotation& annotation) {
     if (!annotationInContext(*file, annotation) ||
+        (!editing && !session_.annotations().canEdit(*file, annotation.id)) ||
         sourceMark->findData(q(annotation.id)) >= 0)
       return;
     const auto kind = annotation.sourceKind == AnnotationSource::Manual ? "手动"
@@ -3946,9 +3982,9 @@ void MainWindow::updateBottom() {
   bottom_->setFixedHeight(open ? bottomHeight_ : 29);
   if (bottomResize_) bottomResize_->setVisible(open);
   bottomContent_->setVisible(open);
-  bottomContent_->setCurrentIndex(bottomTab_);
+  bottomContent_->setCurrentIndex(bottomTab_ < 3 ? 0 : bottomTab_ - 2);
   resultToggle_->setText(open ? "⌄" : "⌃");
-  for (int i = 0; i < 3; ++i) bottomButtons_[i]->setChecked(i == bottomTab_);
+  for (int i = 0; i < 5; ++i) bottomButtons_[i]->setChecked(i == bottomTab_);
   const auto* file = session_.activeFile();
   resultSummary_->setText(file ? QString("%1    标记 %2 个，通道 %3 个。")
                                      .arg(q(file->metadata.name))
@@ -4548,6 +4584,11 @@ void MainWindow::selectMark(const QString& id, Qt::KeyboardModifiers modifiers,
   if (id.isEmpty()) {
     session_.selectMarks({});
   } else {
+    if (const auto* target = findAnnotation(*file, id.toStdString())) {
+      if (target->sourceKind != annotations_->sourceTab())
+        annotations_->setSourceTab(target->sourceKind);
+      annotations_->refresh();
+    }
     const auto mode = modifiers & Qt::ShiftModifier
                           ? modifiers & Qt::ControlModifier
                                 ? AnnotationSelectionMode::ExtendRange
@@ -4555,9 +4596,11 @@ void MainWindow::selectMark(const QString& id, Qt::KeyboardModifiers modifiers,
                       : modifiers & Qt::ControlModifier
                           ? AnnotationSelectionMode::Toggle
                           : AnnotationSelectionMode::Replace;
+    auto order = fromTree ? treeSelectionOrder() : annotations_->sortedVisibleIds();
+    if (std::find(order.begin(), order.end(), id.toStdString()) == order.end())
+      order.push_back(id.toStdString());
     result = session_.annotations().chooseSelection(
-        *file, id.toStdString(), mode,
-        fromTree ? treeSelectionOrder() : annotations_->sortedVisibleIds(),
+        *file, id.toStdString(), mode, order,
         segmentId.toStdString());
   }
   if (!result.ok) log(q(result.error));

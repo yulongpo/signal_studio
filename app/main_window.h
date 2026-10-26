@@ -231,7 +231,7 @@ class MainWindow : public QMainWindow {
   QDoubleSpinBox* effectiveBandwidth_ = nullptr;
   QCheckBox *grid_ = nullptr, *colorScale_ = nullptr;
   std::array<QPushButton*, 2> auxiliaryButtons_{}, mainButtons_{};
-  std::array<QPushButton*, 3> bottomButtons_{};
+  std::array<QPushButton*, 5> bottomButtons_{};
   std::array<QLabel*, 4> fileValues_{};
   std::array<QLabel*, 6> channelValues_{};
   QLabel *channelRevision_ = nullptr, *channelRelation_ = nullptr;

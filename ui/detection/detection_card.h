@@ -45,6 +45,7 @@ class DetectionCard : public QWidget {
   void requestSubmitted(const DetectionRequest&);
   void roiSelectionRequested();
   void selectionChanged();
+  void configurationCommitted();
   void cancelRunRequested(const QString& runId);
   void focusRunningRunRequested(const QString& runId);
   void message(const QString&);

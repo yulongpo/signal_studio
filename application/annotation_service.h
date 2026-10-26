@@ -16,6 +16,11 @@ struct AnnotationResult {
   explicit operator bool() const { return ok; }
 };
 
+struct ManualConversionOptions {
+  bool currentSegmentOnly = false;
+  bool allowExplicitDuplicate = false;
+};
+
 struct AnnotationChannelRequest {
   std::string annotationId, segmentId, name;
   ChannelBindingKind bindingKind = ChannelBindingKind::LocatedSegment;
@@ -62,6 +67,8 @@ AnnotationSourceSet* findSourceSet(FileState&, const std::string& id);
 const AnnotationSourceSet* findSourceSet(const FileState&,
                                          const std::string& id);
 bool annotationSourceCurrent(const FileState&, const Annotation&);
+AnnotationCapabilities annotationCapabilities(const FileState&,
+                                               const Annotation&);
 ChannelSourceRelation channelSourceRelation(const FileState&, const Channel&);
 void refreshChannelSourceRelations(FileState&);
 AnnotationValidation validateFileAnnotations(const FileState&);
@@ -78,6 +85,15 @@ class AnnotationService {
   // identity is idempotent; conflicting IDs never overwrite old objects.
   AnnotationResult publishSourceSet(FileState&, AnnotationSourceSet,
                                     std::vector<Annotation>);
+  // All inputs are validated before publication. Existing live copies of the
+  // same source/revision/segment mode are skipped unless explicitly duplicated.
+  // createdIds contains only new IDs, and is empty on failure or a no-op.
+  AnnotationResult convertToManual(FileState&,
+                                    const std::vector<std::string>& sourceIds,
+                                    const ManualConversionOptions&,
+                                    std::vector<std::string>& createdIds);
+  AnnotationCapabilities capabilities(const FileState&,
+                                        const std::string& annotationId) const;
   AnnotationResult beginRevision(FileState&, const std::string& annotationId);
   void endRevision(FileState&);
   bool canEdit(const FileState&, const std::string& annotationId) const;
@@ -128,7 +144,8 @@ class AnnotationService {
                           std::string activeId = {},
                           std::string segmentId = {});
   // The complete order of the initiating view includes unloaded/page-external
-  // objects. Selection is always intersected with the current context/filter.
+  // objects. Selection is intersected with the legal file/channel context;
+  // table filtering/tab intersections belong to the initiating UI's ID order.
   AnnotationResult chooseSelection(FileState&, const std::string& id,
                                    AnnotationSelectionMode,
                                    const std::vector<std::string>& orderedIds,

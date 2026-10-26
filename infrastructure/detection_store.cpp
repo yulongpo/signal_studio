@@ -5,6 +5,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
+#include <QLockFile>
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QSet>
@@ -13,9 +14,18 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <stdexcept>
 
 #include "infrastructure/annotation_json.h"
+#include "infrastructure/project_file.h"
+
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 namespace signalstudio {
 namespace {
@@ -1063,6 +1073,236 @@ bool visitDetectionChunks(
   } catch (const std::exception& exception) {
     error = QString::fromUtf8(exception.what());
     return false;
+  }
+}
+
+std::vector<DetectionRun> discoverDetectionRuns(const QString& directory,
+                                               const Project& project,
+                                               QString& error) {
+  std::vector<DetectionRun> result;
+  QSet<QString> ids;
+  for (const auto& file : project.files) {
+    if (!file.currentDetectionSlots) {
+      error = "旧工程必须先完成检测 slot 裁决，再恢复任务";
+      return {};
+    }
+    for (const auto& slot : *file.currentDetectionSlots) {
+      for (const auto& id : {slot.committedRunId, slot.pendingRunId}) {
+        if (id.empty() || ids.contains(text(id))) continue;
+        if (std::find(slot.retiredRunIds.begin(), slot.retiredRunIds.end(), id) !=
+            slot.retiredRunIds.end()) {
+          error = "权威检测索引同时包含退役运行"; return {};
+        }
+        DetectionRun run;
+        if (!loadDetectionRun(directory, text(id), run, error)) return {};
+        if (run.request.sourceIdentity.fileId != file.metadata.id ||
+            run.request.sourceIdentity.selectedSampleChannel != slot.sampleChannel) {
+          error = "恢复运行与权威 slot 作用域不同"; return {};
+        }
+        ids.insert(text(id));
+        result.push_back(std::move(run));
+      }
+    }
+  }
+  error.clear();
+  return result;
+}
+
+bool detectionRunAssetPaths(const QString& directory, const DetectionRun& run,
+                            QStringList& target, QString& error) {
+  QStringList paths{manifestPath(run.request)};
+  QSet<QString> seen;
+  for (const auto& chunk : run.chunks) {
+    paths.push_back(text(chunk.relativePath));
+    seen.insert(text(chunk.relativePath));
+  }
+  const bool valid = visitDetectionChunks(directory, run,
+      [&](const QJsonObject& chunk, QString&) {
+        for (const auto& value : chunk["mappings"].toArray()) {
+          const auto reference = value.toObject()["headEvidence"].toObject();
+          const auto path = reference["path"].toString();
+          if (!path.isEmpty() && !seen.contains(path)) {
+            paths.push_back(path);
+            seen.insert(path);
+          }
+        }
+        return true;
+      }, error);
+  if (!valid) return false;
+  target = std::move(paths);
+  return true;
+}
+
+namespace {
+constexpr auto ownerFile = ".detection-owner.json";
+bool linkInPath(QString path) {
+  path = QDir::cleanPath(QFileInfo(path).absoluteFilePath());
+  for (;;) {
+    const QFileInfo info(path);
+    if (info.isSymLink()) return true;
+#ifdef Q_OS_WIN
+    const auto attributes = GetFileAttributesW(
+        reinterpret_cast<const wchar_t*>(path.utf16()));
+    if (attributes != INVALID_FILE_ATTRIBUTES &&
+        (attributes & FILE_ATTRIBUTE_REPARSE_POINT)) return true;
+#endif
+    const auto parent = info.absolutePath();
+    if (parent == path) break;
+    path = parent;
+  }
+  return false;
+}
+QString canonicalProject(const QString& path) {
+  require(!linkInPath(path), "工程或资产路径含链接/reparse point；禁止 GC");
+  const QFileInfo info(path);
+  const auto parent = info.absoluteDir().canonicalPath();
+  require(!parent.isEmpty(), "工程父目录不存在");
+  return QDir(parent).filePath(info.fileName());
+}
+QJsonObject readOwner(const QString& root) {
+  const auto path = QDir(root).filePath(ownerFile);
+  require(!linkInPath(path), "资产所有权文件不得为链接");
+  QFile input(path);
+  require(input.open(QIODevice::ReadOnly) && input.size() <= 16384,
+          "资产所有权文件不可用；延后 GC");
+  const auto object = parseObject(input.readAll());
+  require(input.error() == QFileDevice::NoError &&
+              object["schema"] == "signal-studio-private-detection-root-v1" &&
+              object["shared"].isBool(), "资产所有权文件无效");
+  return object;
+}
+void writeOwner(const QString& root, const QJsonObject& object) {
+  QSaveFile output(QDir(root).filePath(ownerFile));
+  const auto bytes = QJsonDocument(object).toJson(QJsonDocument::Compact);
+  require(output.open(QIODevice::WriteOnly) && output.write(bytes) == bytes.size() &&
+              output.commit(), "资产所有权记录无法原子保存");
+}
+}  // namespace
+
+bool recordDetectionAssetOwnership(const QString& path, const QString& id,
+                                   const QString& assets, bool newlyCreated,
+                                   bool reference, QString& error,
+                                   bool rootLockHeld) {
+  try {
+    // An unproven pre-existing root stays unowned. Reference makes even an
+    // unowned root permanently shared before the referencing project commits.
+    const auto marker = QDir(assets).filePath(ownerFile);
+    if (!reference && (!newlyCreated || QFileInfo::exists(marker))) {
+      error.clear(); return true;
+    }
+    require(!linkInPath(assets), "资产根含链接/reparse point；无法声明所有权");
+    std::unique_ptr<QLockFile> lock;
+    if (!rootLockHeld) {
+      lock = std::make_unique<QLockFile>(QDir(assets).filePath(".detection-gc.lock"));
+      lock->setStaleLockTime(0);
+      require(lock->tryLock(0), "资产根正在清理；稍后重试保存");
+    }
+    QJsonObject owner;
+    if (QFileInfo::exists(marker)) owner = readOwner(assets);
+    else owner = {{"schema", "signal-studio-private-detection-root-v1"},
+                  {"projectId", id}, {"ownerPath", canonicalProject(path)},
+                  {"shared", reference}};
+    if (reference) owner["shared"] = true;
+    else {
+      const auto expected = canonicalProject(path) + ".assets/" + id;
+      require(QFileInfo(assets).canonicalFilePath().compare(
+                  QFileInfo(expected).canonicalFilePath(), Qt::CaseInsensitive) == 0,
+              "私有资产根不在本工程 canonical 目录");
+    }
+    writeOwner(assets, owner);
+    error.clear(); return true;
+  } catch (const std::exception& e) {
+    error = QString::fromUtf8(e.what()); return false;
+  }
+}
+
+bool collectRetiredDetectionAssets(const QString& path, DetectionGcReport& report,
+                                   QString& error, std::uint32_t maximumRuns,
+                                   std::uint32_t maximumFiles) {
+  report = {};
+  try {
+    require(maximumRuns > 0 && maximumRuns <= 64 && maximumFiles > 0 &&
+                maximumFiles <= 20000, "GC 预算无效");
+    const auto ownerPath = canonicalProject(path);
+    QFile input(ownerPath);
+    require(input.open(QIODevice::ReadOnly) && input.size() <= 32 * 1024 * 1024,
+            "GC 需要已提交的真实 .ssproj");
+    const auto container = parseObject(input.readAll());
+    require(container["magic"] == "SignalStudioProject" && container["schemaVersion"] == 1,
+            "GC 工程身份无效");
+    if (container["assetMode"] != "copy") { error.clear(); return true; }
+    const auto id = container["projectId"].toString();
+    const auto ref = container["assetDirectory"].toString();
+    const auto root = QDir::isAbsolutePath(ref) ? ref : QFileInfo(ownerPath).absoluteDir().filePath(ref);
+    const auto expected = ownerPath + ".assets/" + id;
+    require(!id.isEmpty() && !ref.isEmpty() && !linkInPath(root) &&
+                QFileInfo(root).canonicalFilePath() == QFileInfo(expected).canonicalFilePath() &&
+                !QFileInfo(root).canonicalFilePath().isEmpty(),
+            "GC 仅允许本工程自有 canonical 资产根");
+    if (!QFileInfo::exists(QDir(root).filePath(ownerFile))) { error.clear(); return true; }
+    QLockFile lock(QDir(root).filePath(".detection-gc.lock"));
+    lock.setStaleLockTime(0);
+    require(lock.tryLock(0), "GC 资产根正被引用/清理；稍后重试");
+    const auto owner = readOwner(root);
+    if (owner["shared"].toBool() || owner["projectId"] != id ||
+        owner["ownerPath"].toString() != ownerPath) { error.clear(); return true; }
+    Project project;
+    require(ProjectFileCodec::load(ownerPath, project, error), error);
+    // Detect a concurrent project/root switch before touching any old file.
+    require(project.projectId == id.toStdString() &&
+                QFileInfo(text(project.assetDirectory)).canonicalFilePath() == QFileInfo(root).canonicalFilePath(),
+            "GC 期间工程资产根已改变");
+    report.privateRoot = true;
+    QSet<QString> referenced, retired;
+    for (const auto& file : project.files) {
+      require(file.currentDetectionSlots.has_value(), "旧工程尚未提交 slot 迁移；延后 GC");
+      for (const auto& run : file.detectionRuns) referenced.insert(text(run.request.runId));
+      for (const auto& set : file.sourceSets)
+        if (!set.runId.empty()) referenced.insert(text(set.runId));
+      for (const auto& slot : *file.currentDetectionSlots) {
+        if (!slot.committedRunId.empty()) referenced.insert(text(slot.committedRunId));
+        if (!slot.pendingRunId.empty()) referenced.insert(text(slot.pendingRunId));
+        for (const auto& run : slot.retiredRunIds) retired.insert(text(run));
+      }
+    }
+    std::uint32_t visited = 0;
+    for (const auto& runId : retired) {
+      if (referenced.contains(runId)) { ++report.deferredRuns; continue; }
+      DetectionRequest key; key.runId = runId.toStdString();
+      const auto relative = manifestPath(key);
+      const auto manifest = QDir(root).filePath(relative);
+      if (!QFileInfo::exists(manifest)) continue;
+      if (visited++ >= maximumRuns) { ++report.deferredRuns; continue; }
+      require(!linkInPath(manifest), "GC run 路径含链接/reparse point");
+      DetectionRun run;
+      const auto store = projectRoot(root);
+      require(decodeDetectionRun(parseObject(readBounded(store, relative)), run, error), error);
+      if (run.request.runId != runId.toStdString() ||
+          (run.lifecycle != DetectionLifecycle::Completed &&
+           run.lifecycle != DetectionLifecycle::Failed &&
+           run.lifecycle != DetectionLifecycle::Cancelled) ||
+          run.chunks.size() >= maximumFiles) { ++report.deferredRuns; continue; }
+      QStringList paths;
+      if (!detectionRunAssetPaths(root, run, paths, error)) {
+        ++report.deferredRuns; continue;  // Already interrupted GC: keep garbage safely.
+      }
+      if (paths.size() > maximumFiles - report.removedFiles) { ++report.deferredRuns; continue; }
+      for (const auto& asset : paths) {
+        require(asset.startsWith(runDirectory(run.request.runId) + '/') &&
+                    !linkInPath(QDir(root).filePath(asset)), "GC 资产路径越界或含链接");
+      }
+      // The manifest is last. Only enumerated, validated store files are
+      // removed; IQ/TXT/model/scratch files are never deletion candidates.
+      for (qsizetype i = paths.size() - 1; i >= 0; --i) {
+        require(QFile::remove(QDir(root).filePath(paths[i])), "GC 文件删除失败；新工程仍已提交");
+        ++report.removedFiles;
+      }
+      QDir(root).rmdir(runDirectory(run.request.runId));
+      ++report.removedRuns;
+    }
+    error.clear(); return true;
+  } catch (const std::exception& e) {
+    error = QString::fromUtf8(e.what()); return false;
   }
 }
 }  // namespace signalstudio
