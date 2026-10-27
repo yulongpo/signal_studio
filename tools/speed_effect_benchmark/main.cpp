@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
     const auto mkl = QStringLiteral(
         "D:/project/signal_studio_rebuild/out/toolchains/fft-libs/conda/Library/bin/mkl_rt.3.dll");
     std::cout << "path\tlength\tlibrary\tms\n";
-    qunsetenv("SS_MKL_DLL");
+    qputenv("SS_MKL_DLL", "off");
     std::uint64_t handwrittenMklFrames = 0, mklFrames = 0;
     const auto handwrittenWindow = timeWindows(false, metadata, 20, handwrittenMklFrames);
     const auto handwrittenEnergy64k = timeEnergy(65536, 5);

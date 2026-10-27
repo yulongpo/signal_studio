@@ -55,4 +55,14 @@ ROI各次实际CUDA stream区间合计512.90–518.68ms；Sample为510.38–516.
 
 bursts 各长度活动F1=1且通过局部精度门禁；continuous 各长度触发原有 burst/noise ratio 回退，`publicationEligible=false`，不能计为连续活动定位成功。该表仅证明实际Fs下有界执行/清理；Legacy在96MiB grant下1/10/60s均明确ResourceLimited（raw pass=false），没有完成耗时，不作为加速比分母。OS文件缓存不计入进程RSS，资源CSV保留VAS采样；不是现场RF或GPU证据。
 
-原 WAV .02s Auto 完成15/15、10对象/10活动段，几何与R6-2冻结Legacy一致。第一次显式FIR因缺少完整Legacy精度重试，仅6活动段、事件F1=.75，是质量失败，保留在 `evidence/r6-3/r6-3-real-sample-fir-short`。修复后补测和GPU精度/性能尚未完成时，不将其列为通过。
+原 WAV .02s Auto 完成15/15、10对象/10活动段，几何与R6-2冻结Legacy一致。第一次显式FIR因缺少完整Legacy精度重试，仅6活动段、事件F1=.75，是质量失败，保留在 `evidence/r6-3/r6-3-real-sample-fir-short`。
+
+## R6-3 定向补测（2026-10-27）
+
+oneMKL 发布路径固定 `MKL_NUM_THREADS=1` 且 `MKL_DYNAMIC=FALSE`，并调用 `MKL_Set_Threading_Layer(INTEL)`、`MKL_Set_Num_Threads(1)`。`mklDetail` 含 `threads=1`。运行时只加载可执行目录中的 `mkl_rt.3.dll` 及同目录预加载的 DFT 依赖，不搜索当前目录。`SS_MKL_DLL` 仅作探针：绝对路径，或 `off` 强制手写变换。65536×10 短窗相对手写约 1.14 倍，不记成流水线加速。
+
+首轮把 `mkl_set_dynamic` 放在线程层装载前，Release 样本流/能量/时间管线/来源测试在 `MKL_SET_DYNAMIC` 访问违例。改为先预加载同目录依赖再选择 Intel 线程层后，同一组测试通过：`signal_studio_detection_sample_energy`、`sample_stream`、`sample_recovery`、`time_pipeline`，以及来源测试中的密度差 0、`threads=1`、部署目录加载和 `off` 回退。
+
+原 WAV 0.02s 显式 FIR（`stream`）新运行：Completed 15/15，13996ms，10 对象/10 活动段，活动 F1=1，频率 F1=1。证据 `evidence/r6-3/r6-3-real-sample-fir-short-02/`。启动器因重定向前的 `WaitForExit(int)` 没读到进程退出码而把 pass 写成 false；`measurement.pass` 为 true。旧 F1=0.75 记录不删。
+
+完整 639 窗 ROI、同一原请求和 256MiB head 配额：Completed 639/639，精修 44/44，总 1965150ms，44 对象/44 活动段。活动事件 F1=0.871（tp 37 / fp 7 / fn 4，真值 41）；频率-only F1=0.456（tp 13 / fp 31 / fn 0，真值 13）。物理 enqueue 320 次，CUDA stream 区间合计约 27453ms。证据 `evidence/r6-3/r6-3-full-roi-completion-01/`。谱 cell 容量错误没有再现。这是一次新的完成运行，不用 1730925ms 的失败运行当加速分母，也不把短窗 1.14 倍写成端到端加速。n=1。启动器退出码同样未被旧脚本记下。

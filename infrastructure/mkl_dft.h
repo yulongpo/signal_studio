@@ -6,8 +6,10 @@
 
 namespace signalstudio {
 
-// Host-side oneMKL DFTI. The DLL is optional. A missing library leaves the
-// caller on the existing handwritten transform.
+// Host-side oneMKL DFTI pinned to one thread. The product runtime loads
+// mkl_rt.3.dll only from the executable directory. SS_MKL_DLL is a probe
+// override: an absolute path, or "off" to keep the handwritten transform.
+// A missing library leaves the caller on that handwritten transform.
 class MklDft {
  public:
   MklDft();
@@ -42,6 +44,7 @@ class MklDft {
   Execute inverse_ = nullptr;
   Release release_ = nullptr;
   std::string detail_;
+  std::string runtimeDetail_;
   bool load(std::string& error);
 };
 

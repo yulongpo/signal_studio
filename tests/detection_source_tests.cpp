@@ -1,3 +1,4 @@
+#include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDir>
@@ -140,10 +141,11 @@ class DetectionSourceTests : public QObject {
     QVERIFY(dbError<3.8e-5); QVERIFY(tensorError<5e-6);
     const auto profile=host.gpuProfiling();
     QVERIFY(profile["mklFrames"].toInteger()>0);
+    QVERIFY(profile["mklDetail"].toString().contains("threads=1"));
     QCOMPARE(profile["gpuFrames"].toInteger(),qint64{0});
   }
   void hostMklMissingStaysHandwritten() {
-    qunsetenv("SS_MKL_DLL");
+    qputenv("SS_MKL_DLL", "off");
     QTemporaryDir directory;
     auto metadata=source(directory,20000000,80000,[](std::uint64_t i) {
       const double phase=2*std::numbers::pi*.01*double(i);
@@ -160,7 +162,31 @@ class DetectionSourceTests : public QObject {
     QCOMPARE(profile["mklFrames"].toInteger(),qint64{0});
     QCOMPARE(profile["gpuFrames"].toInteger(),qint64{0});
     QVERIFY(profile["cpuFrames"].toInteger()>0);
+    QVERIFY(profile["mklDetail"].toString().contains("probe disabled"));
     QVERIFY(!window.densityDb.empty());
+  }
+  void deployedMklPinsOneThread() {
+    qunsetenv("SS_MKL_DLL");
+    if (!QFileInfo::exists(QCoreApplication::applicationDirPath() + "/mkl_rt.3.dll"))
+      QSKIP("oneMKL runtime is not staged beside the test executable");
+    QTemporaryDir directory;
+    auto metadata = source(directory, 20000000, 80000, [](std::uint64_t i) {
+      const double phase = 2 * std::numbers::pi * .01 * double(i);
+      return std::complex<float>{float(std::cos(phase)), float(std::sin(phase))};
+    });
+    auto config = fixtureConfig(4096);
+    config.inputAdaptationVersion = 2;
+    config.hopSeconds = .00025;
+    config.useHostMkl = true;
+    FixedDetectionSource provider;
+    QString error;
+    QVERIFY2(provider.open(metadata, physicalRequest(metadata), config, error), qPrintable(error));
+    DetectionModelWindow window;
+    QVERIFY2(provider.readModelWindow(0, window, error), qPrintable(error));
+    const auto profile = provider.gpuProfiling();
+    QVERIFY(profile["mklFrames"].toInteger() > 0);
+    QVERIFY(profile["mklDetail"].toString().contains("threads=1"));
+    QVERIFY(profile["mklDetail"].toString().contains("mkl_rt.3.dll"));
   }
   void adaptiveShortRoiTailAndIrregularGrid() {
     QTemporaryDir directory;

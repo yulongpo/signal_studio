@@ -1,0 +1,627 @@
+{
+    "annotationCount": 10,
+    "binary": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioDetectionBenchmark.exe",
+    "cancellationSent": false,
+    "elapsedMs": 13996,
+    "formalCommitPerformed": false,
+    "memoryAfter": {
+        "cpuMilliseconds": 5421.875,
+        "peakRssBytes": 103788544,
+        "privateBytes": 49086464,
+        "rssBytes": 78049280
+    },
+    "memoryBefore": {
+        "cpuMilliseconds": 109.375,
+        "peakRssBytes": 13520896,
+        "privateBytes": 2473984,
+        "rssBytes": 13520896
+    },
+    "nativeUiVerified": false,
+    "originalRequest": {
+        "contextRange": {
+            "endSample": "16000000",
+            "frequencyFrame": "RF",
+            "frequencyLowerHz": -10000000,
+            "frequencyUpperHz": 10000000,
+            "startSample": "0"
+        },
+        "evidenceBudgetBytes": "33554432",
+        "modelManifestPath": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+        "modelSha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03",
+        "parameters": {
+            "bandwidthMarginDb": 6,
+            "batchSize": 2,
+            "coarseMinBurstSeconds": 0.01,
+            "coarseSplitGapSeconds": 0.02,
+            "maxMiss": 1,
+            "mergeFrequencyHz": 100000,
+            "minHits": 2,
+            "minOffSeconds": 0.01,
+            "minOnSeconds": 0.005,
+            "nmsIou": 0.3,
+            "sampleEdgeRatio": 0.6,
+            "scoreThreshold": 0.5,
+            "smoothSeconds": 0.001,
+            "splitBursts": true,
+            "timeStrategy": "roi",
+            "topK": 512
+        },
+        "parentRunId": null,
+        "profile": {
+            "backend": "TensorRt",
+            "fftSize": 65536,
+            "hopSeconds": 0.00025,
+            "id": "ffscn-gui-iq-v1",
+            "maximumPsdOnly": false,
+            "modelFrames": 10,
+            "modelHopFrames": 5,
+            "name": "FFSCN GUI IQ",
+            "status": "主线候选 / 需资产预检",
+            "supportsReal": false,
+            "version": 1
+        },
+        "rangeOrigin": "visible",
+        "requestedRange": {
+            "endSample": "16000000",
+            "frequencyFrame": "RF",
+            "frequencyLowerHz": -10000000,
+            "frequencyUpperHz": 10000000,
+            "startSample": "0"
+        },
+        "runId": "run-0c82d126-38e7-4b14-8778-491fc5c670f3",
+        "schemaVersion": 2,
+        "sourceAnnotationId": "",
+        "sourceIdentity": {
+            "availableSamples": "16000000",
+            "centerFrequencyHz": 0,
+            "contentHash": "",
+            "effectiveFrequency": {
+                "lowerHz": -10000000,
+                "upperHz": 10000000
+            },
+            "fileId": "file-1",
+            "formatRevision": "1",
+            "hashedRange": null,
+            "path": "D:/coding/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "physicalSamples": "16000000",
+            "projectGeneration": "2",
+            "quickFingerprint": "64000044/1785185462346",
+            "sampleFormat": {
+                "byteOrder": "le",
+                "channelLayout": "interleaved",
+                "channels": 1,
+                "encoding": "I16",
+                "headerBytes": "44",
+                "iqLayout": "iq",
+                "normalizeIntegerAdc": true,
+                "selectedChannel": 0,
+                "structure": "complex",
+                "trailerBytes": "0"
+            },
+            "sampleRateHz": 20000000,
+            "selectedSampleChannel": "0"
+        },
+        "sourceRevisionId": "",
+        "spectrumMode": 0,
+        "workingSetBudgetBytes": "268435456"
+    },
+    "pass": true,
+    "processId": 42096,
+    "publicationAvailable": true,
+    "publicationKind": "completed candidate for the formal transaction; headless tool does not edit a project",
+    "quality": {
+        "activityEvents": {
+            "available": true,
+            "f1": 1,
+            "fn": 0,
+            "fp": 0,
+            "frequencyIouThreshold": 0.3,
+            "matchedFrequencyBoundaryMaximumHz": 47115.021484375,
+            "matchedFrequencyBoundaryMeanHz": 14300.37421875,
+            "matchedTimeBoundaryMaximumSeconds": 0.0006155,
+            "matchedTimeBoundaryMeanSeconds": 0.00029027499999999994,
+            "matching": "maximum-cardinality bipartite; geometry order; no class prediction assumed",
+            "precision": 1,
+            "predicted": 10,
+            "recall": 1,
+            "timeIouThreshold": 0.5,
+            "tp": 10,
+            "truth": 10
+        },
+        "available": true,
+        "boundary": "physical bounds clipped to request; frequency-only observations are never activity events; not modulation or field-RF accuracy",
+        "frequencyOnly": {
+            "available": true,
+            "f1": 1,
+            "fn": 0,
+            "fp": 0,
+            "frequencyIouThreshold": 0.3,
+            "matchedFrequencyBoundaryMaximumHz": 47115.021484375,
+            "matchedFrequencyBoundaryMeanHz": 14300.37421875,
+            "matchedTimeBoundaryMaximumSeconds": 0,
+            "matchedTimeBoundaryMeanSeconds": 0,
+            "matching": "maximum-cardinality bipartite; geometry order; no class prediction assumed",
+            "precision": 1,
+            "predicted": 10,
+            "recall": 1,
+            "timeIouThreshold": 0,
+            "tp": 10,
+            "truth": 10
+        },
+        "labelPath": "D:/project/signal_studio_rebuild/docs/implementation/ux-r6/evidence/fixtures/20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+        "parser": "generator-txt-v1"
+    },
+    "request": {
+        "contextRange": {
+            "endSample": "16000000",
+            "frequencyFrame": "RF",
+            "frequencyLowerHz": -10000000,
+            "frequencyUpperHz": 10000000,
+            "startSample": "0"
+        },
+        "evidenceBudgetBytes": "33554432",
+        "gpuDspPreferred": true,
+        "modelManifestPath": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+        "modelSha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03",
+        "parameters": {
+            "bandwidthMarginDb": 6,
+            "batchSize": 2,
+            "coarseMinBurstSeconds": 0.01,
+            "coarseSplitGapSeconds": 0.02,
+            "maxMiss": 1,
+            "mergeFrequencyHz": 100000,
+            "minHits": 2,
+            "minOffSeconds": 0.01,
+            "minOnSeconds": 0.005,
+            "nmsIou": 0.3,
+            "sampleEdgeRatio": 0.6,
+            "scoreThreshold": 0.5,
+            "smoothSeconds": 0.001,
+            "splitBursts": true,
+            "timeStrategy": "sample",
+            "topK": 512
+        },
+        "parentRunId": null,
+        "profile": {
+            "backend": "TensorRt",
+            "fftSize": 65536,
+            "hopSeconds": 0.00025,
+            "id": "ffscn-gui-iq-v1",
+            "maximumPsdOnly": false,
+            "modelFrames": 10,
+            "modelHopFrames": 5,
+            "name": "FFSCN GUI IQ",
+            "status": "主线候选 / 需资产预检",
+            "supportsReal": false,
+            "version": 1
+        },
+        "rangeOrigin": "visible",
+        "rawHeadBudgetBytes": "268435456",
+        "requestedRange": {
+            "endSample": "400000",
+            "frequencyFrame": "RF",
+            "frequencyLowerHz": -10000000,
+            "frequencyUpperHz": 10000000,
+            "startSample": "0"
+        },
+        "runId": "ux-r6-75ec18f4-99db-4238-a93f-f77abcc0dcf6",
+        "sampleEnergyMode": 2,
+        "sampleScratchBudgetBytes": "17179869184",
+        "schemaVersion": 2,
+        "sourceAnnotationId": "",
+        "sourceIdentity": {
+            "availableSamples": "16000000",
+            "centerFrequencyHz": 0,
+            "contentHash": "",
+            "effectiveFrequency": {
+                "lowerHz": -10000000,
+                "upperHz": 10000000
+            },
+            "fileId": "file-1",
+            "formatRevision": "1",
+            "hashedRange": null,
+            "path": "D:/coding/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+            "physicalSamples": "16000000",
+            "projectGeneration": "2",
+            "quickFingerprint": "64000044/1785185462346",
+            "sampleFormat": {
+                "byteOrder": "le",
+                "channelLayout": "interleaved",
+                "channels": 1,
+                "encoding": "I16",
+                "headerBytes": "44",
+                "iqLayout": "iq",
+                "normalizeIntegerAdc": true,
+                "selectedChannel": 0,
+                "structure": "complex",
+                "trailerBytes": "0"
+            },
+            "sampleRateHz": 20000000,
+            "selectedSampleChannel": "0"
+        },
+        "sourceRevisionId": "",
+        "spectrumMode": 0,
+        "workingSetBudgetBytes": "268435456"
+    },
+    "run": {
+        "chunks": [
+            {
+                "relativePath": "detections/16ff2759235d2ea3914e751f84902051390ae72ca6ea9f1ea7f55510b5ffdce8/chunk-ba0201b61469e1600313393449a255132443dbd0a095844ce0f46571ebf2d688.json",
+                "resultCount": 2,
+                "sequence": "0",
+                "sha256": "ba0201b61469e1600313393449a255132443dbd0a095844ce0f46571ebf2d688"
+            },
+            {
+                "relativePath": "detections/16ff2759235d2ea3914e751f84902051390ae72ca6ea9f1ea7f55510b5ffdce8/chunk-404bac10faee99504f7b12b4b1da14f08a4fe614e56cc0381553c49ebdcbc0df.json",
+                "resultCount": 2,
+                "sequence": "1",
+                "sha256": "404bac10faee99504f7b12b4b1da14f08a4fe614e56cc0381553c49ebdcbc0df"
+            },
+            {
+                "relativePath": "detections/16ff2759235d2ea3914e751f84902051390ae72ca6ea9f1ea7f55510b5ffdce8/chunk-126d1efffb677f32e2dd6d00fa1bf3a29a0e34a3cc718c4026e8456aa067bc54.json",
+                "resultCount": 2,
+                "sequence": "2",
+                "sha256": "126d1efffb677f32e2dd6d00fa1bf3a29a0e34a3cc718c4026e8456aa067bc54"
+            },
+            {
+                "relativePath": "detections/16ff2759235d2ea3914e751f84902051390ae72ca6ea9f1ea7f55510b5ffdce8/chunk-ae8c394aaecda61bbbd7921e7451b2c9d84c636db4dd54b4bf1e256e30b47d4c.json",
+                "resultCount": 2,
+                "sequence": "3",
+                "sha256": "ae8c394aaecda61bbbd7921e7451b2c9d84c636db4dd54b4bf1e256e30b47d4c"
+            },
+            {
+                "relativePath": "detections/16ff2759235d2ea3914e751f84902051390ae72ca6ea9f1ea7f55510b5ffdce8/chunk-f86be939267daa79a82e82d4d8dc5d7b13a7ca8ebb446feaf25635846d48d5cd.json",
+                "resultCount": 2,
+                "sequence": "4",
+                "sha256": "f86be939267daa79a82e82d4d8dc5d7b13a7ca8ebb446feaf25635846d48d5cd"
+            },
+            {
+                "relativePath": "detections/16ff2759235d2ea3914e751f84902051390ae72ca6ea9f1ea7f55510b5ffdce8/chunk-2eba7019837ba244b7686e76aa58dd9cf5bd51399b408a9e3181985655bd3f1a.json",
+                "resultCount": 2,
+                "sequence": "5",
+                "sha256": "2eba7019837ba244b7686e76aa58dd9cf5bd51399b408a9e3181985655bd3f1a"
+            },
+            {
+                "relativePath": "detections/16ff2759235d2ea3914e751f84902051390ae72ca6ea9f1ea7f55510b5ffdce8/chunk-0196309234a3b9196b320344a5513dee5007f7d14996ca0f483fc35dc98a56fc.json",
+                "resultCount": 2,
+                "sequence": "6",
+                "sha256": "0196309234a3b9196b320344a5513dee5007f7d14996ca0f483fc35dc98a56fc"
+            },
+            {
+                "relativePath": "detections/16ff2759235d2ea3914e751f84902051390ae72ca6ea9f1ea7f55510b5ffdce8/chunk-bf290b4bbb67331473b314f836b98bdc4f736fd1e8227c0aaf93fa8ac0269074.json",
+                "resultCount": 1,
+                "sequence": "7",
+                "sha256": "bf290b4bbb67331473b314f836b98bdc4f736fd1e8227c0aaf93fa8ac0269074"
+            },
+            {
+                "relativePath": "detections/16ff2759235d2ea3914e751f84902051390ae72ca6ea9f1ea7f55510b5ffdce8/chunk-1f688497eacfd2d8dc20628f9ee09b561cb30c0bd810d0fb054d4b57524fcc0c.json",
+                "resultCount": 11,
+                "sequence": "8",
+                "sha256": "1f688497eacfd2d8dc20628f9ee09b561cb30c0bd810d0fb054d4b57524fcc0c"
+            }
+        ],
+        "completedWindows": "15",
+        "computationPhase": "completed",
+        "coverage": [
+            {
+                "kind": "read",
+                "range": {
+                    "endSample": "430268",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": -10000000,
+                    "frequencyUpperHz": 10000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            },
+            {
+                "kind": "eligible",
+                "range": {
+                    "endSample": "400000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": -10000000,
+                    "frequencyUpperHz": 10000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            },
+            {
+                "kind": "completed",
+                "range": {
+                    "endSample": "400000",
+                    "frequencyFrame": "RF",
+                    "frequencyLowerHz": -10000000,
+                    "frequencyUpperHz": 10000000,
+                    "startSample": "0"
+                },
+                "reason": ""
+            }
+        ],
+        "device": "NVIDIA GeForce RTX 5060 Laptop GPU",
+        "eligibleWindows": "15",
+        "error": "",
+        "finishedAtMilliseconds": "1793072411056",
+        "lifecycle": "Completed",
+        "manifestRelativePath": "detections/16ff2759235d2ea3914e751f84902051390ae72ca6ea9f1ea7f55510b5ffdce8/manifest.json",
+        "performance": {
+            "executionBatchLimit": 2,
+            "firstDecodedCandidateMs": 5733,
+            "frequencyTracksReadyMs": 9797,
+            "gpu": {
+                "cudaEventIntervals": true,
+                "d2hMs": 23.462400570511818,
+                "gpuStreamMs": 640.0543403625488,
+                "h2dMs": 6.498911917209625,
+                "hostEnqueueMs": 117.1052,
+                "inputAdaptationMs": 9.5929,
+                "physicalEnqueueCalls": 8
+            },
+            "logicalBatchDistribution": {
+                "1": "1",
+                "2": "7"
+            },
+            "pipelineStages": {
+                "append-chunk-and-manifest": {
+                    "calls": "8",
+                    "maximumMs": 153.0314,
+                    "meanMs": 95.9906,
+                    "totalMs": 767.9248
+                },
+                "checkpoint-metadata": {
+                    "calls": "8",
+                    "maximumMs": 75.8227,
+                    "meanMs": 44.7780875,
+                    "totalMs": 358.2247
+                },
+                "decode-heads": {
+                    "calls": "8",
+                    "maximumMs": 2.3063,
+                    "meanMs": 2.0997,
+                    "totalMs": 16.7976
+                },
+                "finalize-frequency-tracks": {
+                    "calls": "1",
+                    "maximumMs": 0.0778,
+                    "meanMs": 0.0778,
+                    "totalMs": 0.0778
+                },
+                "flush-final-shards": {
+                    "calls": "1",
+                    "maximumMs": 170.4495,
+                    "meanMs": 170.4495,
+                    "totalMs": 170.4495
+                },
+                "frequency-analysis": {
+                    "calls": "1",
+                    "maximumMs": 661.7315,
+                    "meanMs": 661.7315,
+                    "totalMs": 661.7315
+                },
+                "fuse-publication": {
+                    "calls": "1",
+                    "maximumMs": 0.0599,
+                    "meanMs": 0.0599,
+                    "totalMs": 0.0599
+                },
+                "read-model-window": {
+                    "calls": "15",
+                    "maximumMs": 2259.1324,
+                    "meanMs": 213.0553866666667,
+                    "totalMs": 3195.8308
+                },
+                "store-raw-heads": {
+                    "calls": "8",
+                    "maximumMs": 13.7921,
+                    "meanMs": 11.8728875,
+                    "totalMs": 94.9831
+                },
+                "time-refinement": {
+                    "calls": "1",
+                    "maximumMs": 3691.5055,
+                    "meanMs": 3691.5055,
+                    "totalMs": 3691.5055
+                },
+                "track-windows": {
+                    "calls": "8",
+                    "maximumMs": 0.7333,
+                    "meanMs": 0.603025,
+                    "totalMs": 4.8242
+                },
+                "worker-roundtrip": {
+                    "calls": "8",
+                    "maximumMs": 197.4173,
+                    "meanMs": 164.8083125,
+                    "totalMs": 1318.4665
+                },
+                "worker-start": {
+                    "calls": "1",
+                    "maximumMs": 3104.9321,
+                    "meanMs": 3104.9321,
+                    "totalMs": 3104.9321
+                }
+            },
+            "requestedBatch": 2,
+            "schema": "signal-studio-detection-profile-v1",
+            "sourceStages": {
+                "density-log": {
+                    "calls": "230",
+                    "maximumMs": 0.7296,
+                    "meanMs": 0.39980260869565215,
+                    "totalMs": 91.9546
+                },
+                "frame-total": {
+                    "calls": "230",
+                    "maximumMs": 11.7302,
+                    "meanMs": 5.223025652173914,
+                    "totalMs": 1201.2959
+                },
+                "gpuDsp": {
+                    "cpuFrames": 230,
+                    "cpuWindows": 15,
+                    "device": "",
+                    "fallbackReason": "runtime-library: Cannot load library D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\cufft64_11.dll: 找不到指定的模块。",
+                    "gpuFrames": 0,
+                    "gpuWindows": 0,
+                    "mklDetail": "oneMKL threads=1; D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\mkl_rt.3.dll",
+                    "mklFrames": 150,
+                    "preferred": true,
+                    "ready": false
+                },
+                "iq-read-and-input-hash": {
+                    "calls": "230",
+                    "maximumMs": 5.7963,
+                    "meanMs": 3.369538260869565,
+                    "totalMs": 774.9938
+                },
+                "normalize-and-tensor-hash": {
+                    "calls": "15",
+                    "maximumMs": 1.2111,
+                    "meanMs": 0.8584733333333333,
+                    "totalMs": 12.8771
+                },
+                "window-fft-power": {
+                    "calls": "230",
+                    "maximumMs": 3.5617,
+                    "meanMs": 0.8619573913043479,
+                    "totalMs": 198.2502
+                },
+                "window-statistics": {
+                    "calls": "150",
+                    "maximumMs": 0.1636,
+                    "meanMs": 0.04265666666666667,
+                    "totalMs": 6.3985
+                }
+            },
+            "timingBoundary": "host stage totals may nest; CUDA timings are stream-event intervals; not UI paint latency",
+            "worker": {
+                "bytesRead": "2969925",
+                "bytesWritten": "39327405",
+                "exchanges": "10",
+                "exitCode": 0,
+                "exitObserved": true,
+                "exitStatus": "normal",
+                "gracefulRequested": true,
+                "processId": 69732,
+                "resource": {
+                    "available": true,
+                    "cpuMilliseconds": 4187.5,
+                    "peakRssBytes": 335847424,
+                    "privateBytes": 444354560,
+                    "rssBytes": 297381888
+                },
+                "state": 0,
+                "stderrTail": "",
+                "terminationRequested": false
+            }
+        },
+        "readFrames": "80",
+        "recoverable": false,
+        "refinedCandidates": "10",
+        "request": {
+            "contextRange": {
+                "endSample": "430268",
+                "frequencyFrame": "RF",
+                "frequencyLowerHz": -10000000,
+                "frequencyUpperHz": 10000000,
+                "startSample": "0"
+            },
+            "evidenceBudgetBytes": "33554432",
+            "gpuDspPreferred": true,
+            "modelManifestPath": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/detection-models/ffscn-gui-iq-v1/manifest.json",
+            "modelSha256": "4e14e422e7966eb6f554e322c2d390534650e1b8dd0cee6e04f2ed4305cefc03",
+            "parameters": {
+                "bandwidthMarginDb": 6,
+                "batchSize": 2,
+                "coarseMinBurstSeconds": 0.01,
+                "coarseSplitGapSeconds": 0.02,
+                "maxMiss": 1,
+                "mergeFrequencyHz": 100000,
+                "minHits": 2,
+                "minOffSeconds": 0.01,
+                "minOnSeconds": 0.005,
+                "nmsIou": 0.3,
+                "sampleEdgeRatio": 0.6,
+                "scoreThreshold": 0.5,
+                "smoothSeconds": 0.001,
+                "splitBursts": true,
+                "timeStrategy": "sample",
+                "topK": 512
+            },
+            "parentRunId": null,
+            "profile": {
+                "backend": "TensorRt",
+                "fftSize": 65536,
+                "hopSeconds": 0.00025,
+                "id": "ffscn-gui-iq-v1",
+                "maximumPsdOnly": false,
+                "modelFrames": 10,
+                "modelHopFrames": 5,
+                "name": "FFSCN GUI IQ",
+                "status": "主线候选 / 需资产预检",
+                "supportsReal": false,
+                "version": 1
+            },
+            "rangeOrigin": "visible",
+            "rawHeadBudgetBytes": "268435456",
+            "requestedRange": {
+                "endSample": "400000",
+                "frequencyFrame": "RF",
+                "frequencyLowerHz": -10000000,
+                "frequencyUpperHz": 10000000,
+                "startSample": "0"
+            },
+            "runId": "ux-r6-75ec18f4-99db-4238-a93f-f77abcc0dcf6",
+            "sampleEnergyMode": 2,
+            "sampleScratchBudgetBytes": "17179869184",
+            "schemaVersion": 2,
+            "sourceAnnotationId": "",
+            "sourceIdentity": {
+                "availableSamples": "16000000",
+                "centerFrequencyHz": 0,
+                "contentHash": "",
+                "effectiveFrequency": {
+                    "lowerHz": -10000000,
+                    "upperHz": 10000000
+                },
+                "fileId": "file-1",
+                "formatRevision": "1",
+                "hashedRange": null,
+                "path": "D:/coding/FFSCN_train2/FFSCN_TEST_GUI/test_data/data/20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.wav",
+                "physicalSamples": "16000000",
+                "projectGeneration": "2",
+                "quickFingerprint": "64000044/1785185462346",
+                "sampleFormat": {
+                    "byteOrder": "le",
+                    "channelLayout": "interleaved",
+                    "channels": 1,
+                    "encoding": "I16",
+                    "headerBytes": "44",
+                    "iqLayout": "iq",
+                    "normalizeIntegerAdc": true,
+                    "selectedChannel": 0,
+                    "structure": "complex",
+                    "trailerBytes": "0"
+                },
+                "sampleRateHz": 20000000,
+                "selectedSampleChannel": "0"
+            },
+            "sourceRevisionId": "",
+            "spectrumMode": 0,
+            "workingSetBudgetBytes": "268435456"
+        },
+        "resultCount": "26",
+        "runtime": "10.11.0.33",
+        "schema": "signal-studio-detection-run",
+        "sourceValidity": "Current",
+        "startedAtMilliseconds": "1793072397176",
+        "totalRefinementCandidates": "10",
+        "version": 2
+    },
+    "schema": "signal-studio-detection-benchmark-v1",
+    "scope": "production headless pipeline; publication timing is not UI paint latency",
+    "segmentCount": 10,
+    "startedUtc": "2026-10-27T03:39:57.156Z",
+    "storedBytesBeforeFinalReport": "3886754",
+    "timedOut": false,
+    "windowsPerSecond": 1.0717347813661047
+}

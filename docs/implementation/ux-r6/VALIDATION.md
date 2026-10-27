@@ -43,6 +43,10 @@ Release首次profiling选定6目标构建通过，原4个定向组4/4（10.47s�
 
 `r6-2-baseline-roi-full`为同一原WAV完整639窗请求，显式独立raw-head配额，其余模型/FFT/hop/ROI参数沿用；尚未结束时不能预记成功。已记录并发工作开始UTC，长运行只验证完成性与全范围标签质量，不作为受控优化前后性能对照。原始用户工程不写入，benchmark只在私有out任务目录发布检测资产。
 
+## R6-3 定向闭合（2026-10-27）
+
+Release 重新执行样本能量、样本流（`--golden --long --run-budget`）、恢复、时间管线和来源 oneMKL 对照。首轮在 `MKL_SET_DYNAMIC` 崩溃，修复线程层装载顺序后这 5 组通过。STFT 密度差实测为 0，低于 `3.8e-5` dB。原 WAV 0.02s 显式 FIR 与完整 639 窗 ROI 的原始 measurement 见 `evidence/r6-3/r6-3-real-sample-fir-short-02/` 和 `r6-3-full-roi-completion-01/`。完整 ROI 为 Completed 639/639、精修 44/44；活动 F1=0.871 不是全检通过，留给 R6-7 的质量结论。启动器 pass 字段因退出码未采集而为 false，不以该字段否定 `measurement.pass=true`。
+
 ## 尚未闭合
 
-完整原范围639窗口同参完成；最新terminal保护Release补测；批次1/2/4/8/16真实能力与吞吐/降级；优化后同设备p50/p95；0.1/1/10/60s分块数值/性能；多场景检出质量与轨迹；有界临时预览/增量UI；真实4K150 GPU/软件、最终回归、独立审核及安全发布均仍待后续节点。大型RFbench按要求不执行。
+批次 1/2/4/8/16 真实能力与吞吐/降级；优化后同设备 p50/p95；多场景检出质量与轨迹；有界临时预览/增量 UI；真实 4K/150% GPU/软件、最终回归、独立审核及安全发布仍待后续节点。大型 RFbench 按要求不执行。

@@ -1,6 +1,6 @@
 # 计算速度库替换合同
 
-分支 `rebuild/cursor`，基线 `3ff9a98`。R6-3 仍未完成。本文件只记录本机探针、胜者和后续阶段的通过条件。
+分支 `rebuild/cursor`，基线 `3ff9a98`。2026-10-27 起产品路径把 oneMKL 固定为 1 个线程；65536×10 的 1.14 倍只属于这个短窗，不是流水线加速。R6-3 的样本流和原 WAV 完成性见 EXECUTION_STATUS，p50/p95 仍不在本文。本文件只记录本机探针、胜者和后续阶段的通过条件。
 
 探针程序是 [tools/fft_speed_probe/main.cu](../../../tools/fft_speed_probe/main.cu)，脚本是 [scripts/probe-fft-speed.ps1](../../../scripts/probe-fft-speed.ps1)。原始行在 [evidence/fft-speed-probe/stdout.jsonl](evidence/fft-speed-probe/stdout.jsonl)。设备是 NVIDIA GeForce RTX 5060 Laptop GPU，计算能力 12.0，驱动 591.84。编译器是 CUDA 12.4 nvcc 加 Visual Studio 2019 Build Tools。计时是执行中位数，不含计划时间；GPU 执行时间来自 CUDA event。
 

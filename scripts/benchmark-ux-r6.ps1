@@ -58,6 +58,8 @@ try {
           $hardTimeout=$true;$process.Kill($true);$process.WaitForExit();break
         }
       }
+      # WaitForExit(int) can return before a redirected process publishes ExitCode.
+      if(-not $hardTimeout) { $null = $process.WaitForExit() }
       $exit=$process.ExitCode
       $path=Join-Path $native 'measurement.json'
       $measurement=if(Test-Path -LiteralPath $path){Get-Content -LiteralPath $path -Raw | ConvertFrom-Json}else{$null}
