@@ -73,6 +73,19 @@ void shapeFiniteAndBudget() {
   check(!prepareDetectionModelInput(snapshot, input, 0, output, error) &&
             output == std::vector<float>{42},
         "Zero batch must fail atomically");
+  snapshot.parameters.batchSize = 4;
+  std::vector<float> four(input.size() * 4, .125f);
+  check(prepareDetectionModelInput(snapshot, four, 4, output, error) &&
+            output.size() == four.size(),
+        "Execution tier 4 must be accepted before an engine profile clamp");
+  std::vector<float> three(input.size() * 3, .125f);
+  check(prepareDetectionModelInput(snapshot, three, 3, output, error),
+        "A partial group below the requested tier must still be prepared");
+  output = {42};
+  check(!prepareDetectionModelInput(snapshot, four, 8, output, error) &&
+            output == std::vector<float>{42},
+        "An infer batch above the requested tier must fail atomically");
+  snapshot.parameters.batchSize = 2;
   snapshot.workingSetBudgetBytes = 1;
   check(!prepareDetectionModelInput(snapshot, input, 1, output, error) &&
             output == std::vector<float>{42},

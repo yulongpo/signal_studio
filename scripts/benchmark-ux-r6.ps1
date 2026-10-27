@@ -59,16 +59,22 @@ try {
         }
       }
       # WaitForExit(int) can return before a redirected process publishes ExitCode.
-      if(-not $hardTimeout) { $null = $process.WaitForExit() }
-      $exit=$process.ExitCode
+      if(-not $hardTimeout) { $null = $process.WaitForExit(); $process.Refresh() }
       $path=Join-Path $native 'measurement.json'
       $measurement=if(Test-Path -LiteralPath $path){Get-Content -LiteralPath $path -Raw | ConvertFrom-Json}else{$null}
       $observed=if($measurement.run){$measurement.run.lifecycle}elseif($measurement.error){'Rejected'}else{'Missing'}
+      $exit=$process.ExitCode
+      $exitSource='process'
+      if($null -eq $exit) {
+        $exitSource='measurement'
+        if($measurement -and $measurement.pass -eq $true -and $observed -eq 'Completed') { $exit = 0 }
+        elseif($observed -in @('Failed','Cancelled','Rejected')) { $exit = 1 }
+      }
       $pass=-not $hardTimeout -and $observed -eq $ExpectedLifecycle -and
           (($observed -eq 'Completed' -and $exit -eq 0 -and $measurement.pass) -or
            ($observed -ne 'Completed' -and $exit -ne 0))
       $runs+=[ordered]@{index=$index;pass=$pass;expectedLifecycle=$ExpectedLifecycle;observedLifecycle=$observed;
-        exitCode=$exit;hardTimeout=$hardTimeout;processId=$process.Id;executable=$exe;workingDirectory=$working;
+        exitCode=$exit;exitCodeSource=$exitSource;hardTimeout=$hardTimeout;processId=$process.Id;executable=$exe;workingDirectory=$working;
         arguments=$arguments;systemOnlyPath=$true;measurement=$path;gpuCsv=(Join-Path $case 'gpu.csv');
         gpuMonitorAvailable=[bool]$gpu;startedUtc=$started;finishedUtc=[DateTime]::UtcNow.ToString('o');
         gpuLocalUtcOffsetMinutes=[DateTimeOffset]::Now.Offset.TotalMinutes}

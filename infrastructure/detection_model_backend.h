@@ -21,6 +21,7 @@ struct DetectionModelOutput {
 };
 
 struct DetectionModelResourceLimits {
+  // Only 1, 2, 4, 8 and 16 are accepted. The installed engine may use fewer.
   std::uint32_t maximumExecutionBatch = 2;
   std::uint64_t maximumEngineBlobBytes = 128ULL * 1024 * 1024;
   std::uint64_t maximumDeviceBytes = 4ULL * 1024 * 1024 * 1024;

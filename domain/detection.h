@@ -59,6 +59,21 @@ struct DetectionParameters {
   bool operator==(const DetectionParameters&) const = default;
 };
 
+// Physical execution candidates. Values outside this set are rejected. An
+// installed engine may support only a prefix; the runtime records that.
+inline bool isDetectionExecutionBatchTier(std::uint32_t batch) {
+  switch (batch) {
+    case 1:
+    case 2:
+    case 4:
+    case 8:
+    case 16:
+      return true;
+    default:
+      return false;
+  }
+}
+
 struct DetectionProfile {
   std::string id;
   std::uint32_t version = 1;

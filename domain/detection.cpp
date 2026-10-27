@@ -182,9 +182,9 @@ DetectionValidation validateDetectionRequest(const DetectionRequest& request) {
     return {false, "Detection context range exceeds its source snapshot"};
   const auto& parameters = request.parameters;
   if (!finiteBetween(parameters.scoreThreshold, 0, 1) ||
-      !finiteBetween(parameters.nmsIou, 0, 1) || !parameters.topK ||
-      parameters.topK > 512 || !parameters.batchSize ||
-      parameters.batchSize > 2 || !parameters.minHits ||
+      !finiteBetween(parameters.nmsIou, 0, 1) ||       !parameters.topK ||
+      parameters.topK > 512 ||
+      !isDetectionExecutionBatchTier(parameters.batchSize) || !parameters.minHits ||
       parameters.minHits > 10000 || parameters.maxMiss > 10000 ||
       !finiteBetween(parameters.mergeFrequencyHz, 0, source.sampleRateHz) ||
       !finiteBetween(parameters.bandwidthMarginDb, 0, 100) ||

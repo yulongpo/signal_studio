@@ -603,7 +603,7 @@ void DetectionCard::setupAdvanced(QVBoxLayout* layout) {
   rows->setContentsMargins(0, 0, 0, 0);
   rows->setSpacing(8);
   auto* batch = addUnsigned(
-      "detectionBatchSize", "batch", 2, 1,
+      "detectionBatchSize", "batch", 16, 1,
       [](const auto& value) { return value.parameters.batchSize; },
       [](auto& value, auto number) {
         value.parameters.batchSize = static_cast<std::uint32_t>(number);
@@ -1291,7 +1291,8 @@ QString DetectionCard::configurationError(const DetectionRequest& value) const {
   }
   const auto& p = value.parameters;
   if (!p.topK || p.topK > 512) return "topK 须为 1–512";
-  if (!p.batchSize || p.batchSize > 2) return "batch 须为 1–2";
+  if (!isDetectionExecutionBatchTier(p.batchSize))
+    return "batch 须为 1、2、4、8 或 16";
   if (!p.minHits || p.minHits > 10000 || p.maxMiss > 10000)
     return "minHits 须为 1–10000，maxMiss 须为 0–10000";
   if (source_.sampleRateHz > 0 && p.mergeFrequencyHz > source_.sampleRateHz)

@@ -222,7 +222,7 @@ int main(int argc, char** argv) {
     const auto args = app.arguments();
     const auto batch = args.value(2).toUInt(&valid);
     if (argc != 3 || args.value(1) != "--maximum-execution-batch" || !valid ||
-        batch < 1 || batch > 2)
+        !isDetectionExecutionBatchTier(batch))
       return 4;
     limits.maximumExecutionBatch = batch;
   }

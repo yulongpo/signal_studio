@@ -66,3 +66,17 @@ oneMKL 发布路径固定 `MKL_NUM_THREADS=1` 且 `MKL_DYNAMIC=FALSE`，并调�
 原 WAV 0.02s 显式 FIR（`stream`）新运行：Completed 15/15，13996ms，10 对象/10 活动段，活动 F1=1，频率 F1=1。证据 `evidence/r6-3/r6-3-real-sample-fir-short-02/`。启动器因重定向前的 `WaitForExit(int)` 没读到进程退出码而把 pass 写成 false；`measurement.pass` 为 true。旧 F1=0.75 记录不删。
 
 完整 639 窗 ROI、同一原请求和 256MiB head 配额：Completed 639/639，精修 44/44，总 1965150ms，44 对象/44 活动段。活动事件 F1=0.871（tp 37 / fp 7 / fn 4，真值 41）；频率-only F1=0.456（tp 13 / fp 31 / fn 0，真值 13）。物理 enqueue 320 次，CUDA stream 区间合计约 27453ms。证据 `evidence/r6-3/r6-3-full-roi-completion-01/`。谱 cell 容量错误没有再现。这是一次新的完成运行，不用 1730925ms 的失败运行当加速分母，也不把短窗 1.14 倍写成端到端加速。n=1。启动器退出码同样未被旧脚本记下。
+
+## R6-4 真实 Engine batch（2026-10-27，Release，RTX 5060 Laptop）
+
+同一原 WAV、0.02s、ROI、FFSCN 65536/0.25ms。每个档位一次，n=1。profile 支持的档位是 1 和 2。显示用的 Direct3D 不在这次 headless 推理里；nvidia-smi 是整卡采样。
+
+| 请求 | 实际物理 batch | enqueue | 总时长 ms | 首候选 ms | 整卡 memory.used 峰 MiB | 说明 |
+|---|---:|---|---:|---:|---:|---|
+| 1 | 1 | 15×1 | 15781 | 5143 | 2600 | profile 含 1 |
+| 2 | 2 | 7×2 + 1×1 | 14510 | 5303 | 3046 | profile 最大档 |
+| 4 | 2 | 7×2 + 1×1 | 14770 | 5272 | 3046 | 降到 2，未重建 Engine |
+| 8 | 2 | 7×2 + 1×1 | 14580 | 5306 | 3046 | 降到 2 |
+| 16 | 2 | 7×2 + 1×1 | 15259 | 见 16b | 3044 | 用户 16；32MiB payload 先把 worker limit 降到 8，Engine 再选物理 batch 2 |
+
+4/8/16 的第一次尝试在约 12ms 被 `batchSize is outside its integer budget` 拒绝，因为解码上限仍是 2。上限改为 16 后，请求能到达 Engine，并写下降级原因。做不到物理 batch 16。SCN 代码路径仍是物理 batch 1、多次 enqueue 分开计数；这次没有另开 SCN 计时。默认档保持 2。原始 measurement 在 `out/tasks/ux-r6/diagnostics/r6-4-tier-*` 与 `r6-4-tierb-*`。

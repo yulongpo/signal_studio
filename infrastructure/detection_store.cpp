@@ -191,7 +191,7 @@ DetectionParameters parametersValue(const QJsonValue& value) {
   p.scoreThreshold = number(o, "scoreThreshold");
   p.nmsIou = number(o, "nmsIou");
   p.topK = smallInteger(o, "topK", 512);
-  p.batchSize = smallInteger(o, "batchSize", 2);
+  p.batchSize = smallInteger(o, "batchSize", 16);
   p.minHits = smallInteger(o, "minHits", 10000);
   p.maxMiss = smallInteger(o, "maxMiss", 10000);
   p.mergeFrequencyHz = number(o, "mergeFrequencyHz");

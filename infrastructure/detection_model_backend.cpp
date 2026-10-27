@@ -127,7 +127,7 @@ bool prepareDetectionModelInput(const DetectionRequest& request,
   const bool scn = request.profile.backend == DetectionBackendKind::Scn;
   if ((request.profile.id != "ffscn-gui-iq-v1" &&
        request.profile.id != "scn-max-psd-v1") ||
-      batch == 0 || batch > 2 || batch > request.parameters.batchSize)
+      batch == 0 || batch > 16 || batch > request.parameters.batchSize)
     return fail(error, "Model profile or batch is unsupported");
   const auto* registered = findDetectionProfile(request.profile.id);
   if (!registered || request.profile.version != registered->version ||
@@ -246,7 +246,7 @@ bool validateDetectionModelPackage(const DetectionRequest& request,
   if (!registered || request.profile.version != registered->version ||
       request.profile.backend != registered->backend ||
       request.profile.maximumPsdOnly != registered->maximumPsdOnly ||
-      request.parameters.batchSize < 1 || request.parameters.batchSize > 2)
+      !isDetectionExecutionBatchTier(request.parameters.batchSize))
     return fail(error, "Production model request shape is not registered");
   const auto directory =
       QDir(modelRoot).filePath(QString::fromStdString(request.profile.id));
@@ -342,6 +342,7 @@ class DetectionModelBackend::Impl {
   DetectionModelResourceLimits limits;
   DetectionModelRuntimeHooks hooks;
   bool retryableResourceFailure = false;
+  std::uint32_t attemptedExecutionBatch = 0;
 #ifdef SS_DETECTION_TENSORRT
   class Logger final : public nvinfer1::ILogger {
    public:
@@ -547,6 +548,7 @@ class DetectionModelBackend::Impl {
     const bool scn = request.profile.backend == DetectionBackendKind::Scn;
     logicalMaximumBatch =
         std::min(request.parameters.batchSize, limits.maximumExecutionBatch);
+    attemptedExecutionBatch = logicalMaximumBatch;
     const auto physicalBatch = scn ? 1 : logicalMaximumBatch;
     modelBins = detectionModelInputBins(request);
     const auto hop =
@@ -613,38 +615,81 @@ class DetectionModelBackend::Impl {
             nvinfer1::TensorFormat::kLINEAR)
       return fail(error,
                   "Engine input is not the frozen contiguous float32 tensor");
+    const auto fitsTier = [&](int tier) {
+      const auto candidate = scn
+                                 ? nvinfer1::Dims4(1, 32768, 1, 1)
+                                 : nvinfer1::Dims4(tier, 1,
+                                                   detectionModelTensorFrames(
+                                                       request, maximumFrames),
+                                                   modelBins);
+      for (int profile = 0; profile < engine->getNbOptimizationProfiles();
+           ++profile) {
+        const auto minimum = engine->getProfileShape(
+            inputUtf8.constData(), profile, nvinfer1::OptProfileSelector::kMIN);
+        const auto maximum = engine->getProfileShape(
+            inputUtf8.constData(), profile, nvinfer1::OptProfileSelector::kMAX);
+        bool fits = minimum.nbDims == 4 && maximum.nbDims == 4;
+        for (int dimension = 0; fits && dimension < 4; ++dimension)
+          fits = candidate.d[dimension] >= minimum.d[dimension] &&
+                 candidate.d[dimension] <= maximum.d[dimension];
+        if (fits) return profile;
+      }
+      return -1;
+    };
+    QJsonArray supportedTiers;
+    int profileMaximumBatch = 0;
+    if (scn) {
+      if (fitsTier(1) >= 0) {
+        supportedTiers.append(1);
+        profileMaximumBatch = 1;
+      }
+    } else {
+      for (const int tier : {1, 2, 4, 8, 16}) {
+        if (fitsTier(tier) >= 0) {
+          supportedTiers.append(tier);
+          profileMaximumBatch = tier;
+        }
+      }
+    }
+    const int workerLimit = static_cast<int>(logicalMaximumBatch);
+    const int userRequested = static_cast<int>(request.parameters.batchSize);
+    QString profileReason;
+    if (!profileMaximumBatch)
+      return fail(error,
+                  "Installed model package has no optimization profile for "
+                  "execution batch 1, 2, 4, 8 or 16 at this tensor shape");
+    if (scn && userRequested > 1) {
+      profileReason =
+          QString("SCN physical batch is 1; user batch %1 is %2 separate "
+                  "enqueueV3 calls, not one physical batch")
+              .arg(userRequested)
+              .arg(workerLimit);
+    } else if (!scn && workerLimit > profileMaximumBatch) {
+      logicalMaximumBatch = static_cast<std::uint32_t>(profileMaximumBatch);
+      attemptedExecutionBatch = logicalMaximumBatch;
+      profileReason =
+          QString("Engine optimization profile maximum batch is %1; user batch "
+                  "%2 with worker limit %3 selected physical batch %1. The "
+                  "installed engine was not rebuilt.")
+              .arg(profileMaximumBatch)
+              .arg(userRequested)
+              .arg(workerLimit);
+    }
     maximumBatch = scn ? 1 : logicalMaximumBatch;
     const auto shape = scn ? nvinfer1::Dims4(maximumBatch, 32768, 1, 1)
                            : nvinfer1::Dims4(maximumBatch, 1,
                                              detectionModelTensorFrames(
                                                  request, maximumFrames),
                                              modelBins);
-    int selectedProfile = -1;
-    for (int profile = 0; profile < engine->getNbOptimizationProfiles();
-         ++profile) {
-      const auto minimum = engine->getProfileShape(
-          inputUtf8.constData(), profile, nvinfer1::OptProfileSelector::kMIN);
-      const auto maximum = engine->getProfileShape(
-          inputUtf8.constData(), profile, nvinfer1::OptProfileSelector::kMAX);
-      bool fits = minimum.nbDims == 4 && maximum.nbDims == 4;
-      for (int dimension = 0; fits && dimension < 4; ++dimension)
-        fits = shape.d[dimension] >= minimum.d[dimension] &&
-               shape.d[dimension] <= maximum.d[dimension];
-      if (fits) {
-        selectedProfile = profile;
-        break;
-      }
-    }
-    if (selectedProfile < 0) {
-      retryableResourceFailure = true;
+    const int selectedProfile = fitsTier(static_cast<int>(maximumBatch));
+    if (selectedProfile < 0)
       return fail(error,
                   QString("Installed model package cannot execute the actual "
-                          "tensor [%1,%2,%3,%4]; rebuild its resource profiles")
+                          "tensor [%1,%2,%3,%4]")
                       .arg(shape.d[0])
                       .arg(shape.d[1])
                       .arg(shape.d[2])
                       .arg(shape.d[3]));
-    }
     if (!checkCuda(createStream(&stream), "cudaStreamCreate", error) ||
         !context->setOptimizationProfileAsync(selectedProfile, stream) ||
         !checkCuda(synchronize(stream), "profile initialization", error))
@@ -746,6 +791,10 @@ class DetectionModelBackend::Impl {
         {"engineMaximumBatch", static_cast<int>(maximumBatch)},
         {"optimizationProfile", selectedProfile},
         {"logicalMaximumBatch", static_cast<int>(logicalMaximumBatch)},
+        {"physicalBatch", static_cast<int>(maximumBatch)},
+        {"profileMaximumBatch", profileMaximumBatch},
+        {"profileSupportedTiers", supportedTiers},
+        {"batchProfileReason", profileReason},
         {"requestedMaximumBatch",
          static_cast<int>(request.parameters.batchSize)},
         {"modelInputKind",
@@ -909,12 +958,13 @@ QJsonObject DetectionModelBackend::evidence() const {
 bool DetectionModelBackend::load(const DetectionRequest& request,
                                  QString& error) {
   reset();
-  if (!limits_.maximumExecutionBatch || limits_.maximumExecutionBatch > 2)
-    return fail(error, "Execution batch resource limit must be one or two");
+  if (!isDetectionExecutionBatchTier(limits_.maximumExecutionBatch) ||
+      !isDetectionExecutionBatchTier(request.parameters.batchSize))
+    return fail(error, "Execution batch must be 1, 2, 4, 8 or 16");
   QString batchFallbackReason;
   for (auto batch = std::min(request.parameters.batchSize,
                              limits_.maximumExecutionBatch);
-       batch > 0; --batch) {
+       batch > 0; batch = batch == 1 ? 0 : batch / 2) {
     auto candidate = std::make_unique<Impl>();
     candidate->request = request;
     candidate->limits = limits_;
@@ -925,8 +975,13 @@ bool DetectionModelBackend::load(const DetectionRequest& request,
       return false;
 #ifdef SS_DETECTION_TENSORRT
     if (!candidate->initialize(QFileInfo(modelRoot_).absolutePath(), error)) {
-      if (batch > 1 && candidate->retryableResourceFailure) {
+      const auto attempted = candidate->attemptedExecutionBatch
+                                 ? candidate->attemptedExecutionBatch
+                                 : batch;
+      if (attempted > 1 && candidate->retryableResourceFailure) {
         batchFallbackReason = error;
+        // The for-loop halves this value, so the next attempt is the tier below.
+        batch = attempted;
         continue;
       }
       return false;
