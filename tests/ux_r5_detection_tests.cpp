@@ -791,6 +791,34 @@ void explicitRedetectClearsWithoutRestoring() {
   check(nonAlgorithm(h.project.files[0]) == preserved,
         "Preview presentation wrote into file marks");
 }
+void latestSequencePerTrackWithoutUi() {
+  std::vector<PreviewTrackEvent> events(4);
+  events[0].trackId = "a";
+  events[0].sequence = 1;
+  events[0].frequency = {1, 2};
+  events[0].observedSupport = {0, 10};
+  events[1].trackId = "b";
+  events[1].sequence = 4;
+  events[1].frequency = {3, 4};
+  events[1].observedSupport = {10, 20};
+  events[2].trackId = "a";
+  events[2].sequence = 5;
+  events[2].frequency = {5, 6};
+  events[2].observedSupport = {0, 30};
+  events[3].trackId = "a";
+  events[3].sequence = 2;
+  events[3].frequency = {9, 9};
+  events[3].observedSupport = {0, 1};
+  const auto latest = latestPreviewEvents(events);
+  check(latest.size() == 2, "Each trackId keeps one preview event");
+  check(latest[0].trackId == "a" && latest[0].sequence == 5 &&
+            latest[0].frequency == FrequencyRange{5, 6} &&
+            latest[0].observedSupport == TimeRange{0, 30},
+        "A track separated by other events must keep its greatest sequence");
+  check(latest[1].trackId == "b" && latest[1].sequence == 4 &&
+            latest[1].frequency == FrequencyRange{3, 4},
+        "An intervening track must remain when the latest geometry is chosen");
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -807,7 +835,8 @@ int main(int argc, char** argv) {
       {"retired-channel-snapshot-and-GC", retiredChannelSnapshot},
       {"save-GC-real-lock-competition", saveGcLockCompetition},
       {"transaction-metadata-count-segment-budgets", transactionBudgetRejection},
-      {"explicit-redetect-clears-without-restore", explicitRedetectClearsWithoutRestoring}};
+      {"explicit-redetect-clears-without-restore", explicitRedetectClearsWithoutRestoring},
+      {"latest-sequence-per-track", latestSequencePerTrackWithoutUi}};
   int failed = 0;
   for (const auto& [name, test] : cases) {
     try { test(); std::cout << "PASS " << name << '\n'; }

@@ -180,6 +180,12 @@ bool inject(const DetectionTransactionOptions& options,
 }
 }  // namespace
 
+bool detectionTicketMatches(const Project& project, const FileState& file,
+                            const DetectionResultTicket& ticket,
+                            std::uint64_t generation, const DetectionRun& run) {
+  return ticketMatches(project, file, ticket, generation, run);
+}
+
 const CurrentDetectionSlot* currentDetectionSlot(const FileState& file,
                                                  std::uint32_t channel) {
   if (file.currentDetectionSlots)

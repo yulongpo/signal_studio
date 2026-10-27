@@ -57,6 +57,8 @@ class MainWindow : public QMainWindow {
   bool addIqFile(const QString& path, QString* error = nullptr);
   bool addImportedSource(FileState file, QString& error);
   bool saveProject(const QString& path);
+  bool allowProjectMutation(QString* error = nullptr);
+  void applyDetectionPresentation();
   bool importLegacyProject(const QString& legacy, const QString& destination, QString* error = nullptr);
   bool relocateSource(const QString& fileId, const QString& path, QString* error = nullptr);
   bool isProjectDirty() const;

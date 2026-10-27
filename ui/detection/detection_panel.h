@@ -2,10 +2,13 @@
 
 #include <QStringList>
 #include <QWidget>
+#include <atomic>
 #include <functional>
 #include <future>
 #include <memory>
+#include <mutex>
 #include <optional>
+#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -39,12 +42,25 @@ class DetectionPanel : public QWidget {
   void setProjectFilePathProvider(std::function<QString()> provider) {
     projectFilePath_ = std::move(provider);
   }
+  void setStartSaveFault(bool fail) { startSaveFault_ = fail; }
+  void setPublicationFault(DetectionTransactionOptions options) {
+    publicationFault_ = std::move(options);
+  }
+  void setPublicationGate(std::shared_ptr<std::atomic<bool>> gate) {
+    publicationGate_ = std::move(gate);
+  }
+  bool projectCommitInProgress() const { return commitInFlight_; }
+  bool publicationCommitInProgress() const {
+    return commitInFlight_ && publicationCommit_;
+  }
   // Connect only committed algorithm/parameter changes, not draft refreshes.
   void markConfigurationStale();
   DetectionTaskManager& tasks() { return *tasks_; }
 
  signals:
   void changed();
+  void presentationRequested();
+  void commitSettled(bool publication, bool installed);
   void message(const QString&);
   void configurationRequested(const DetectionRun* parentRun);
   void runProgressChanged();
@@ -53,7 +69,15 @@ class DetectionPanel : public QWidget {
   void previewSelectionDropped(const QStringList& trackIds);
 
  private:
+  struct StartCommit;
+  struct PublishCommit;
   void poll();
+  void finishStartCommit(const std::shared_ptr<StartCommit>&);
+  void finishPublicationCommit(const std::shared_ptr<PublishCommit>&);
+  void launchCommitWorker(std::function<void()> body);
+  void beginPublicationCommit(DetectionResultTicket ticket, DetectionRun run,
+                              DetectionPublication publication);
+  void releaseCommitLock();
   void cancelSelected();
   void cancelRun(const QString& runId);
   void showSelectedDetails();
@@ -102,6 +126,17 @@ class DetectionPanel : public QWidget {
   std::size_t previewCount_ = 0;
   bool previewSealed_ = false;
   std::string previewFile_;
+  bool commitInFlight_ = false;
+  bool publicationCommit_ = false;
+  bool startSaveFault_ = false;
+  std::atomic<bool> shuttingDown_{false};
+  std::string commitScope_;
+  std::string committingRunId_;
+  DetectionTransactionOptions publicationFault_;
+  std::shared_ptr<std::atomic<bool>> publicationGate_;
+  std::mutex commitThreadMutex_;
+  std::vector<std::thread> commitThreads_;
+  qint64 lastRejectMessageMs_ = 0;
  public:
   const DetectionPreviewSnapshot& livePreview() const { return livePreview_; }
 };

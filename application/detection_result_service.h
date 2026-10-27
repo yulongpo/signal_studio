@@ -30,6 +30,10 @@ struct DetectionCommitResult {
 
 const CurrentDetectionSlot* currentDetectionSlot(const FileState&,
                                                 std::uint32_t sampleChannel);
+// Live session check used when a background publication save finishes.
+bool detectionTicketMatches(const Project&, const FileState&,
+                            const DetectionResultTicket&,
+                            std::uint64_t projectGeneration, const DetectionRun&);
 // This validates only the authority/reference graph, also during a live save.
 AnnotationValidation validateCurrentDetectionSlots(const FileState&);
 // Call after legacy non-Manual user revisions have been preserved as Manual.
@@ -80,6 +84,26 @@ inline std::vector<std::string> detectionPreviewTrackIds(
     if (std::find(ids.begin(), ids.end(), event.trackId) == ids.end())
       ids.push_back(event.trackId);
   return ids;
+}
+
+// One rectangle per trackId: the event with the greatest sequence. Folding
+// only adjacent duplicates leaves an older box when another track sits between
+// two updates of the same id.
+inline std::vector<PreviewTrackEvent> latestPreviewEvents(
+    const std::vector<PreviewTrackEvent>& events) {
+  std::vector<PreviewTrackEvent> latest;
+  latest.reserve(events.size());
+  for (const auto& event : events) {
+    const auto existing =
+        std::find_if(latest.begin(), latest.end(), [&](const auto& item) {
+          return item.trackId == event.trackId;
+        });
+    if (existing == latest.end())
+      latest.push_back(event);
+    else if (event.sequence >= existing->sequence)
+      *existing = event;
+  }
+  return latest;
 }
 
 // Terminal runs and a disabled intermediate-result option hide dashed

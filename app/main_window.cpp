@@ -89,6 +89,7 @@
 #include "ui/controls/sample_time_edit.h"
 #include "ui/custom_combo.h"
 #include "ui/detection/detection_card.h"
+#include "application/detection_result_service.h"
 #include "ui/detection/detection_panel.h"
 #include "ui/detection/ffscn_engine_dialog.h"
 #include "ui/detection/ffscn_engine_switch_dialog.h"
@@ -1221,6 +1222,8 @@ void MainWindow::buildWorkspace() {
   });
   detection_->setProjectFilePathProvider([this] { return projectPath_; });
   connect(detection_, &DetectionPanel::changed, this, [this] { refresh(); });
+  connect(detection_, &DetectionPanel::presentationRequested, this,
+          &MainWindow::applyDetectionPresentation);
   connect(detection_, &DetectionPanel::message, this, &MainWindow::log);
   connect(detection_, &DetectionPanel::configurationRequested, this,
           &MainWindow::openWidebandDetection);
@@ -1261,31 +1264,21 @@ void MainWindow::buildWorkspace() {
           });
   connect(detection_, &DetectionPanel::previewChanged, this, [this] {
     const auto& preview = detection_->livePreview();
+    const auto latest = latestPreviewEvents(preview.events);
     std::vector<ChartPreviewTrack> tracks;
-    tracks.reserve(preview.events.size());
-    std::string previous;
-    for (const auto& event : preview.events) {
-      if (event.trackId == previous) {
-        if (!tracks.empty()) {
-          tracks.back().time = event.observedSupport;
-          tracks.back().frequency = event.frequency;
-          tracks.back().timeLocalized = event.timeLocalized;
-        }
-        continue;
-      }
-      previous = event.trackId;
+    tracks.reserve(latest.size());
+    for (const auto& event : latest)
       tracks.push_back({event.trackId, event.observedSupport, event.frequency,
                         event.timeLocalized});
-    }
     const auto shown = tracks.size();
     if (main_) main_->setDetectionPreview(std::move(tracks), preview.dropped);
     if (annotations_) {
-      const QString note = preview.events.empty()
+      const QString note = shown == 0
           ? QString{}
           : QString("预览 %1 条 · 时间未定位 · 不能转换为人工标记或创建窄带")
                 .arg(shown);
       annotations_->setDetectionPreviewNote(
-          preview.dropped ? note + QString(" · 已丢弃 %1 条最旧预览").arg(preview.dropped)
+          preview.dropped ? note + QString(" · 已丢弃 %1 条旧事件").arg(preview.dropped)
                           : note);
     }
   });
@@ -1469,7 +1462,6 @@ void MainWindow::buildWorkspace() {
           [this](const DetectionRequest& request) {
             QString error;
             if (!detection_->startRequest(request, error)) log(error);
-            refresh();
           });
   connect(detectionCard_, &DetectionCard::roiSelectionRequested, this,
           &MainWindow::beginDetectionRoi);
@@ -3105,6 +3097,43 @@ void MainWindow::revealTreeAnnotation() {
     treeRevealPending_ = false;
     return;
   }
+}
+
+bool MainWindow::allowProjectMutation(QString* error) {
+  std::string blocked;
+  if (session_.acceptProjectWrite(blocked)) return true;
+  if (error && error->isEmpty()) *error = QString::fromStdString(blocked);
+  return false;
+}
+
+void MainWindow::applyDetectionPresentation() {
+  if (destroying_) return;
+  if (annotations_ && detection_)
+    annotations_->setDetectionClearanceNote(detection_->clearanceNoteForActive());
+  if (annotations_) annotations_->refresh();
+  if (detection_) detection_->refresh();
+  if (detectionCard_) detectionCard_->refresh();
+  updateTree();
+  if (!main_ || !detection_) return;
+  const auto& preview = detection_->livePreview();
+  const auto latest = latestPreviewEvents(preview.events);
+  std::vector<ChartPreviewTrack> tracks;
+  tracks.reserve(latest.size());
+  for (const auto& event : latest)
+    tracks.push_back({event.trackId, event.observedSupport, event.frequency,
+                      event.timeLocalized});
+  const auto shown = tracks.size();
+  main_->setDetectionPreview(std::move(tracks), preview.dropped);
+  if (annotations_) {
+    const QString note = shown == 0
+        ? QString{}
+        : QString("预览 %1 条 · 时间未定位 · 不能转换为人工标记或创建窄带")
+              .arg(shown);
+    annotations_->setDetectionPreviewNote(
+        preview.dropped ? note + QString(" · 已丢弃 %1 条旧事件").arg(preview.dropped)
+                        : note);
+  }
+  main_->invalidateAnnotationOverlay();
 }
 
 void MainWindow::refreshAnnotationHover() {
@@ -4942,6 +4971,7 @@ void MainWindow::showNewProjectDialog() {
 
 bool MainWindow::createProject(const QString& parentDirectory,
                                const QString& projectName, QString* error) {
+  if (!allowProjectMutation(error)) return false;
   auto setError = [error](const QString& message) {
     if (error) *error = message;
   };
@@ -5072,6 +5102,7 @@ void MainWindow::showAddFileDialog() {
 }
 
 bool MainWindow::addImportedSource(FileState file, QString& error) {
+  if (!allowProjectMutation(&error)) return false;
   if (!availableSamples(file.metadata) ||
       file.metadata.availability.status == LoadStatus::Failed) {
     error = "没有可用的完整样本帧";
@@ -5119,6 +5150,7 @@ bool MainWindow::addImportedSource(FileState file, QString& error) {
 }
 
 bool MainWindow::addIqFile(const QString& path, QString* error) {
+  if (!allowProjectMutation(error)) return false;
   if (path.endsWith(".wav", Qt::CaseInsensitive)) {
     if (error)
       *error =
@@ -5166,6 +5198,7 @@ bool MainWindow::addIqFile(const QString& path, QString* error) {
 }
 
 bool MainWindow::openProject(const QString& path) {
+  if (!allowProjectMutation()) return false;
   cancelInteractions();
   Project candidate;
   QString error;
@@ -5195,6 +5228,7 @@ bool MainWindow::openProject(const QString& path) {
   return true;
 }
 bool MainWindow::saveProject(const QString& path) {
+  if (!allowProjectMutation()) return false;
   const QString projectFile = QFileInfo(path).absoluteFilePath();
   const bool currentPath = !projectPath_.isEmpty() &&
       QFileInfo(projectPath_).absoluteFilePath().compare(projectFile, Qt::CaseInsensitive) == 0;
@@ -5313,6 +5347,7 @@ void MainWindow::importLegacyProjectDialog() {
   if (!target.isEmpty() && !importLegacyProject(path, target, &error)) QMessageBox::warning(this, "转换失败", error);
 }
 void MainWindow::closeProject() {
+  if (!allowProjectMutation()) return;
   if (!confirmProjectTransition()) return;
   cancelInteractions();
   sourceLoads_.clear();
@@ -5336,6 +5371,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
   QMainWindow::closeEvent(event);
 }
 bool MainWindow::relocateSource(const QString& fileId, const QString& path, QString* error) {
+  if (!allowProjectMutation(error)) return false;
   for (auto& f : session_.project().files) if (q(f.metadata.id) == fileId) {
     QString why;
     if (!ProjectFileCodec::relocate(f.metadata, path, why)) { if (error) *error = why; return false; }
@@ -5429,6 +5465,7 @@ void MainWindow::log(const QString& message) {
 namespace signalstudio {
 bool MainWindow::importLabels(const QString& path, QString* error,
                               bool preview) {
+  if (!preview && !allowProjectMutation(error)) return false;
   return annotations_ && annotations_->importLabels(path, error, preview);
 }
 

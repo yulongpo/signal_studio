@@ -780,6 +780,16 @@ std::size_t AnnotationService::commandBytes(const Command& command) {
   if (command.createdSourceSet) cost += sourceSetCost(*command.createdSourceSet);
   return cost.memory;
 }
+std::optional<AnnotationResult> AnnotationService::blockedWrite() const {
+  if (!writeGuard_) return std::nullopt;
+  std::string error;
+  if (writeGuard_(error)) return std::nullopt;
+  if (error.empty()) error = "检测结果正在提交，请稍后再试";
+  return fail(std::move(error));
+}
+void AnnotationService::notifyWrote() {
+  if (wrote_) wrote_();
+}
 void AnnotationService::record(FileState& file, Command command) {
   auto& history = histories_[file.metadata.id];
   for (const auto& discarded : history.future) history.bytes -= discarded.bytes;
@@ -792,12 +802,14 @@ void AnnotationService::record(FileState& file, Command command) {
     history.bytes -= history.past.front().bytes;
     history.past.erase(history.past.begin());
   }
+  notifyWrote();
 }
 
 AnnotationResult AnnotationService::createManual(FileState& file,
                                                  std::string name,
                                                  ViewRange range,
                                                  std::string actor) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   Segment segment;
   segment.id = nextId(file, "segment-");
   segment.range = range;
@@ -875,6 +887,7 @@ AnnotationResult AnnotationService::createManual(FileState& file,
 AnnotationResult AnnotationService::publishSourceSet(
     FileState& file, AnnotationSourceSet set,
     std::vector<Annotation> annotations) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   if (!validId(set.id) || set.fileId != file.metadata.id ||
       set.sourceIdentity.fileId != file.metadata.id ||
       set.sampleChannel >= file.metadata.sampleFormat.channels ||
@@ -934,22 +947,25 @@ AnnotationResult AnnotationService::publishSourceSet(
       return fail("File activity segment budget exceeded (100000)");
     count += annotation.segments.size();
   }
-  Command command;
-  command.createdSourceSet = set;
-  for (const auto& annotation : annotations) {
-    Patch patch;
-    patch.annotationId = annotation.id;
-    patch.created = true;
-    patch.createdAnnotation = annotation;
-    patch.after = state(annotation);
-    command.patches.push_back(std::move(patch));
-  }
   const auto id = set.id;
   const auto source = set.sourceKind;
-  if (source != AnnotationSource::Algorithm &&
-      commandBytes(command) > annotationCommandByteBudget)
-    return fail(
-        "Atomic import exceeds the annotation command memory budget (128 MiB)");
+  Command command;
+  // Algorithm publication is not undoable and skips the command budget, so it
+  // does not copy each annotation into command.patches. Manual undo is unchanged.
+  if (source != AnnotationSource::Algorithm) {
+    command.createdSourceSet = set;
+    for (const auto& annotation : annotations) {
+      Patch patch;
+      patch.annotationId = annotation.id;
+      patch.created = true;
+      patch.createdAnnotation = annotation;
+      patch.after = state(annotation);
+      command.patches.push_back(std::move(patch));
+    }
+    if (commandBytes(command) > annotationCommandByteBudget)
+      return fail(
+          "Atomic import exceeds the annotation command memory budget (128 MiB)");
+  }
   // Allocate publication/history storage before making any object visible.
   file.sourceSets.reserve(file.sourceSets.size() + 1);
   file.marks.reserve(file.marks.size() + annotations.size());
@@ -964,6 +980,7 @@ AnnotationResult AnnotationService::publishSourceSet(
   // Source imports and worker publications are source-management operations,
   // outside the manual undo stack. Conversion publishes a new Manual set.
   if (source == AnnotationSource::Manual) record(file, std::move(command));
+  else notifyWrote();
   refreshChannelSourceRelations(file);
   return success(id, true);
 }
@@ -974,6 +991,7 @@ AnnotationResult AnnotationService::convertToManual(
     std::vector<std::string>& createdIds) {
   createdIds.clear();
   if (sourceIds.empty()) return success();
+  if (const auto blocked = blockedWrite()) return *blocked;
   std::string formatError;
   if (!validateSampleFormat(file.metadata.sampleFormat, formatError))
     return fail("Conversion source format is invalid: " + formatError, "source");
@@ -1190,6 +1208,7 @@ AnnotationResult AnnotationService::convertToManual(
 
 AnnotationResult AnnotationService::beginRevision(FileState& file,
                                                   const std::string& id) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   if (!canEdit(file, id))
     return fail("Only a Manual annotation with a current identity can be edited");
   const auto* annotation = findAnnotation(file, id);
@@ -1200,6 +1219,7 @@ AnnotationResult AnnotationService::beginRevision(FileState& file,
   return success(id);
 }
 void AnnotationService::endRevision(FileState& file) {
+  if (blockedWrite()) return;
   file.revisionEditingAnnotationId.clear();
   file.revisionEditingBaseRevisionId.clear();
 }
@@ -1218,6 +1238,7 @@ AnnotationResult AnnotationService::commit(FileState& file,
                                            const Annotation& before,
                                            Annotation after, std::string action,
                                            std::string actor) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   if (!canEdit(file, before.id) || after.sourceKind != AnnotationSource::Manual)
     return fail("Only a Manual annotation with a current identity can be edited");
   auto initial = difference(before, after);
@@ -1563,6 +1584,7 @@ AnnotationResult AnnotationService::confirmSegment(FileState& file,
                                                    const std::string& id,
                                                    const std::string& segmentId,
                                                    std::string actor) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   if (!capabilities(file, id).review)
     return fail("Only a Manual annotation with a current identity can be reviewed");
   auto* annotation = findAnnotation(file, id);
@@ -1614,6 +1636,7 @@ AnnotationResult AnnotationService::confirmSegment(FileState& file,
 AnnotationResult AnnotationService::reviewBatch(
     FileState& file, const std::vector<std::string>& ids, ReviewStatus status,
     std::string actor, std::string note) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   if (note.size() > 4096) return fail("Review note exceeds its budget");
   if (status != ReviewStatus::Pending && status != ReviewStatus::Accepted &&
       status != ReviewStatus::Rejected)
@@ -1658,6 +1681,7 @@ AnnotationResult AnnotationService::reviewBatch(
 }
 AnnotationResult AnnotationService::deleteBatch(
     FileState& file, const std::vector<std::string>& ids, std::string actor) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   std::unordered_set<std::string> selected;
   std::vector<Annotation> after;
   Command command;
@@ -2116,6 +2140,7 @@ AnnotationResult AnnotationService::applyCommand(FileState& file,
   return success({}, true);
 }
 AnnotationResult AnnotationService::undo(FileState& file) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   auto found = histories_.find(file.metadata.id);
   if (found == histories_.end() || found->second.past.empty())
     return fail("No annotation command to undo");
@@ -2128,6 +2153,7 @@ AnnotationResult AnnotationService::undo(FileState& file) {
   return result;
 }
 AnnotationResult AnnotationService::redo(FileState& file) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   auto found = histories_.find(file.metadata.id);
   if (found == histories_.end() || found->second.future.empty())
     return fail("No annotation command to redo");

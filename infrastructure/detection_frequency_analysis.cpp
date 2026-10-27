@@ -1,4 +1,7 @@
 #include "infrastructure/detection_frequency_analysis.h"
+#include "infrastructure/detection_spectrum_spool.h"
+
+#include <memory>
 
 #include <QCryptographicHash>
 #include <QStorageInfo>
@@ -56,14 +59,6 @@ FrequencyRange binEdges(std::size_t first, std::size_t last, double origin,
   return {origin + static_cast<double>(first) * step - .5 * step,
           origin + static_cast<double>(last) * step + .5 * step};
 }
-std::uint32_t orderedFloatBits(float value) {
-  const auto bits = std::bit_cast<std::uint32_t>(value);
-  return bits & 0x80000000U ? ~bits : bits ^ 0x80000000U;
-}
-float floatFromOrderedBits(std::uint32_t ordered) {
-  const auto bits = ordered & 0x80000000U ? ordered ^ 0x80000000U : ~ordered;
-  return std::bit_cast<float>(bits);
-}
 std::string spectrumHash(std::span<const double> values) {
   QCryptographicHash hash(QCryptographicHash::Sha256);
   for (const auto value : values) {
@@ -105,130 +100,6 @@ FrameInterval trackFrames(const FrequencyTrack& track,
   }
   return {first, end};
 }
-
-class SpectrumSpool {
- public:
-  bool create(FixedDetectionSource& source, FrameInterval frames,
-              std::uint64_t byteBudget, QString& error,
-              const DetectionSourceCancel& cancel) {
-    firstFrame_ = frames.first;
-    frameCount_ = frames.end - frames.first;
-    bins_ = source.plan().config.fftSize;
-    if (frameCount_ > byteBudget / (bins_ * sizeof(float)))
-      return fail(error, "frequency-spool-disk-budget-exceeded");
-    const auto bytes = frameCount_ * bins_ * sizeof(float);
-    if (!file_.open())
-      return fail(error, "frequency-spool-open-failed: " + file_.errorString());
-    const QStorageInfo storage(file_.fileName());
-    if (storage.isValid() && storage.isReady() &&
-        storage.bytesAvailable() >= 0 &&
-        static_cast<std::uint64_t>(storage.bytesAvailable()) <
-            bytes + 64 * 1024 * 1024)
-      return fail(error, "frequency-spool-insufficient-free-disk");
-    QByteArray encoded(static_cast<qsizetype>(bins_ * sizeof(float)), '\0');
-    for (auto frameIndex = frames.first; frameIndex < frames.end;
-         ++frameIndex) {
-      if (stopped(cancel, error)) return false;
-      DetectionSpectrumFrame frame;
-      if (!source.readFrame(frameIndex, frame, error, cancel)) return false;
-      if (frame.densityDb.size() != bins_)
-        return fail(error, "frequency-spool-frame-shape-mismatch");
-      for (std::size_t bin = 0; bin < bins_; ++bin) {
-        if (!std::isfinite(frame.densityDb[bin]))
-          return fail(error, "frequency-spool-nonfinite-db");
-        qToLittleEndian(std::bit_cast<std::uint32_t>(frame.densityDb[bin]),
-                        encoded.data() + bin * sizeof(float));
-      }
-      if (file_.write(encoded) != encoded.size())
-        return fail(error,
-                    "frequency-spool-write-failed: " + file_.errorString());
-    }
-    if (!file_.flush() || file_.size() != static_cast<qint64>(bytes))
-      return fail(error, "frequency-spool-size-or-flush-failed");
-    return true;
-  }
-
-  bool percentile(double& result, QString& error,
-                  const DetectionSourceCancel& cancel) {
-    const auto count = frameCount_ * bins_;
-    if (!count) return fail(error, "frequency-spool-empty-percentile");
-    const double fractionalRank = .1 * static_cast<double>(count - 1);
-    std::array<std::uint64_t, 2> ranks{
-        static_cast<std::uint64_t>(std::floor(fractionalRank)),
-        static_cast<std::uint64_t>(std::ceil(fractionalRank))};
-    std::array<std::uint32_t, 2> prefixes{};
-    QByteArray block(static_cast<qsizetype>(kReadBlockBytes), '\0');
-    for (int shift = 24; shift >= 0; shift -= 8) {
-      std::array<std::array<std::uint64_t, 256>, 2> histogram{};
-      const auto mask = shift == 24 ? 0U : ~0U << (shift + 8);
-      if (!file_.seek(0)) return fail(error, "frequency-spool-seek-failed");
-      for (std::uint64_t offset = 0; offset < count * sizeof(float);) {
-        if (stopped(cancel, error)) return false;
-        const auto size = static_cast<qint64>(
-            std::min(kReadBlockBytes, count * sizeof(float) - offset));
-        if (file_.read(block.data(), size) != size)
-          return fail(error, "frequency-spool-radix-read-failed");
-        for (qint64 position = 0; position < size; position += sizeof(float)) {
-          const auto bits =
-              qFromLittleEndian<std::uint32_t>(block.data() + position);
-          const auto ordered = orderedFloatBits(std::bit_cast<float>(bits));
-          const auto bucket = (ordered >> shift) & 255U;
-          for (std::size_t rank = 0; rank < ranks.size(); ++rank)
-            if ((ordered & mask) == prefixes[rank]) ++histogram[rank][bucket];
-        }
-        offset += static_cast<std::uint64_t>(size);
-      }
-      for (std::size_t rank = 0; rank < ranks.size(); ++rank) {
-        std::size_t bucket = 0;
-        while (bucket < 256 && ranks[rank] >= histogram[rank][bucket]) {
-          ranks[rank] -= histogram[rank][bucket];
-          ++bucket;
-        }
-        if (bucket == 256)
-          return fail(error, "frequency-spool-radix-rank-inconsistent");
-        prefixes[rank] |= static_cast<std::uint32_t>(bucket) << shift;
-      }
-    }
-    const float lower = floatFromOrderedBits(prefixes[0]);
-    const float upper = floatFromOrderedBits(prefixes[1]);
-    const float difference = upper - lower;
-    const double gamma = fractionalRank - std::floor(fractionalRank);
-    // NumPy 2.4's np.percentile(float32, Python scalar 10) uses weak scalar
-    // promotion: each subtraction/product/addition rounds to float32. The
-    // upper-end interpolation avoids cancellation for gamma >= one half.
-    const float weight = static_cast<float>(gamma >= .5 ? 1 - gamma : gamma);
-    const float product = difference * weight;
-    const float interpolated = gamma >= .5 ? upper - product : lower + product;
-    result = interpolated;
-    return !stopped(cancel, error);
-  }
-
-  bool mean(FrameInterval frames, std::vector<double>& meanDb, QString& error,
-            const DetectionSourceCancel& cancel) {
-    meanDb.assign(bins_, 0);
-    QByteArray bytes(static_cast<qsizetype>(bins_ * sizeof(float)), '\0');
-    if (!file_.seek(static_cast<qint64>((frames.first - firstFrame_) * bins_ *
-                                        sizeof(float))))
-      return fail(error, "frequency-spool-track-seek-failed");
-    for (auto index = frames.first; index < frames.end; ++index) {
-      if (stopped(cancel, error)) return false;
-      if (file_.read(bytes.data(), bytes.size()) != bytes.size())
-        return fail(error, "frequency-spool-track-read-failed");
-      for (std::size_t bin = 0; bin < bins_; ++bin) {
-        const auto bits = qFromLittleEndian<std::uint32_t>(bytes.data() +
-                                                           bin * sizeof(float));
-        meanDb[bin] += std::bit_cast<float>(bits);
-      }
-    }
-    for (auto& value : meanDb) value /= frames.end - frames.first;
-    return true;
-  }
-
- private:
-  QTemporaryFile file_;
-  std::uint64_t firstFrame_ = 0, frameCount_ = 0;
-  std::size_t bins_ = 0;
-};
 
 bool validateRequest(const DetectionSourcePlan& plan,
                      const DetectionRequest& request,
@@ -381,6 +252,7 @@ bool applyDetectionFrequencyAnalysis(
     std::uint64_t accumulatedValues = 0;
     const bool scn = request.profile.backend == DetectionBackendKind::Scn;
     if (!scn && request.parameters.bandwidthMarginDb == 0) {
+      source.clearFrequencySpool();
       for (const auto& track : tracks) {
         if (stopped(cancel, error)) return false;
         DetectionFrequencyEvidence result;
@@ -395,17 +267,23 @@ bool applyDetectionFrequencyAnalysis(
       error.clear();
       return true;
     }
-    SpectrumSpool spool;
+    std::unique_ptr<SpectrumSpool> spool;
     double globalFloor = 0;
     if (!scn) {
+      // Drop any spool from an unfinished attempt before publishing a new one.
+      source.clearFrequencySpool();
       const auto budget =
           std::min(kMaximumSpoolBytes,
                    request.workingSetBudgetBytes > kMaximumSpoolBytes / 64
                        ? kMaximumSpoolBytes
                        : request.workingSetBudgetBytes * 64);
-      if (!spool.create(source, globalFrames, budget, error, cancel) ||
-          !spool.percentile(globalFloor, error, cancel))
+      spool = std::make_unique<SpectrumSpool>();
+      if (!spool->create(source, globalFrames.first, globalFrames.end, budget,
+                         error, cancel) ||
+          !spool->percentile(globalFloor, error, cancel))
         return false;
+    } else {
+      source.clearFrequencySpool();
     }
     std::vector<FrequencyRange> occupancy;
     if (scn) {
@@ -424,7 +302,8 @@ bool applyDetectionFrequencyAnalysis(
       DetectionFrequencyEvidence result;
       std::vector<double> meanDb;
       if (!scn) {
-        if (!spool.mean(frames, meanDb, error, cancel)) return false;
+        if (!spool->mean(frames.first, frames.end, meanDb, error, cancel))
+          return false;
         if (frameCount >= 3) {
           if (!refineGuiFrequencySpectrum(
                   meanDb, track.frequency, plan.frequencyFirstBinHz,
@@ -503,6 +382,7 @@ bool applyDetectionFrequencyAnalysis(
     for (std::size_t i = 0; i < tracks.size(); ++i)
       tracks[i].frequency = results[i].frequency;
     output = std::move(results);
+    if (spool) source.adoptFrequencySpool(std::move(spool));
     error.clear();
     return true;
   } catch (const std::bad_alloc&) {

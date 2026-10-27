@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+#include <string>
 #include <unordered_map>
 
 #include "application/annotation_service.h"
@@ -78,6 +80,12 @@ class Session {
   bool channelBack();
   bool channelForward();
   void replaceProject(Project project);
+  // Empty when a detection commit may still replace this project. Callers that
+  // edit marks, the view, or the project file stop instead of racing that save.
+  bool acceptProjectWrite(std::string& error) const;
+  void setProjectWriteGuard(std::function<bool(std::string&)> guard);
+  std::uint64_t contentEpoch() const { return contentEpoch_; }
+  void noteProjectWrite() { ++contentEpoch_; }
   const LinkedCursorState& linkedCursor(const std::string& context) const;
   void pinCursor(const std::string& context, SampleIndex sample,
                  double frequencyHz, bool selectFrame,
@@ -98,6 +106,8 @@ class Session {
   std::string nextId(const std::string& prefix);
   Project project_;
   std::uint64_t projectGeneration_ = 1;
+  std::uint64_t contentEpoch_ = 1;
+  std::function<bool(std::string&)> projectWriteGuard_;
   std::unordered_map<std::string, History> histories_;
   struct ChannelHistory {
     std::vector<ChannelViewSnapshot> past, future;

@@ -65,6 +65,12 @@ SampleIndex offsetSample(SampleIndex origin, long double offset,
 double seconds(SampleIndex sample, double sampleRate) {
   return static_cast<double>(sample) / sampleRate;
 }
+bool rangeOutsideView(const ViewRange& range, const ViewRange& view) {
+  return range.time.end <= view.time.begin ||
+         range.time.begin >= view.time.end ||
+         range.frequency.upperHz <= view.frequency.lowerHz ||
+         range.frequency.lowerHz >= view.frequency.upperHz;
+}
 double randomValue(double x) {
   const double n = std::sin(x * 92.743 + 12.41) * 143758.327;
   return n - std::floor(n);
@@ -1070,6 +1076,12 @@ void PlotWidget::setDetectionPreview(std::vector<ChartPreviewTrack> tracks,
               QString::fromStdString(selectedPreviewId_));
   // Overlay only. Clearing or updating dashed boxes must not rebuild the
   // spectrogram.
+  if (kind_ != Kind::Main) return;
+  if (surface_ && !softwareFallback_) surface_->invalidateOverlay();
+  QWidget::update();
+}
+void PlotWidget::invalidateAnnotationOverlay() {
+  // Same overlay entry as setDetectionPreview. Do not rebuild the spectrogram.
   if (kind_ != Kind::Main) return;
   if (surface_ && !softwareFallback_) surface_->invalidateOverlay();
   QWidget::update();
@@ -2599,9 +2611,41 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
   painter.save();
   painter.setClipRect(plot);
   painter.setFont(canvasFont(11, true));
+  if (kind_ == Kind::Main) visibleAnnotationRects_ = 0;
+  // Segment bodies only. Axes, hover chrome, and dashed previews keep their
+  // own pens; this hint is restored before those later draws.
+  painter.setRenderHint(QPainter::Antialiasing, false);
   const std::unordered_set<std::string> selectedIds(
       file->selectedMarkIds.begin(), file->selectedMarkIds.end());
   int handleCount = 0;
+  std::vector<QRectF> batchedRects;
+  QPen batchedPen;
+  QBrush batchedBrush;
+  bool haveBatch = false;
+  const auto flushBatchedRects = [&] {
+    if (!haveBatch || batchedRects.empty()) {
+      batchedRects.clear();
+      haveBatch = false;
+      return;
+    }
+    painter.setPen(batchedPen);
+    painter.setBrush(batchedBrush);
+    painter.drawRects(batchedRects.data(),
+                      static_cast<int>(batchedRects.size()));
+    batchedRects.clear();
+    haveBatch = false;
+  };
+  const auto addBatchedRect = [&](const QPen& pen, const QBrush& brush,
+                                  const QRectF& rect) {
+    if (haveBatch && (pen != batchedPen || brush != batchedBrush))
+      flushBatchedRects();
+    if (!haveBatch) {
+      batchedPen = pen;
+      batchedBrush = brush;
+      haveBatch = true;
+    }
+    batchedRects.push_back(rect);
+  };
   for (const auto& mark : file->marks) {
     if (!annotationVisible(*file, mark)) continue;
     const bool selected = selectedIds.contains(mark.id);
@@ -2612,6 +2656,11 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
         mark.sourceKind == AnnotationSource::ImportedLabel ? QColor("#65d2bd")
         : mark.sourceKind == AnnotationSource::Manual      ? QColor("#edc56d")
                                                            : QColor("#51c4e9");
+    auto plainFill = sourceColor;
+    plainFill.setAlpha(selected ? 46 : 23);
+    QPen plainPen(sourceColor, selected ? 2 : 1);
+    if (!selected) plainPen.setDashPattern({5, 3});
+    const QBrush plainBrush(plainFill);
     for (std::size_t index = 0;
          index < std::max<std::size_t>(1, mark.segments.size()); ++index) {
       const auto* segment =
@@ -2627,11 +2676,19 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
       const auto& range = editing   ? gesture_->draft
                           : segment ? segment->range
                                     : *mark.observation;
+      if (rangeOutsideView(range, view)) continue;
       const bool currentSegment =
           current && (!segment || segment->id == file->activeSegmentId);
       const auto box = markRect(range);
       if (box.isEmpty() || !box.intersects(plot)) continue;
+      ++visibleAnnotationRects_;
+      const bool decorated = hovered || currentSegment || !segment;
+      if (!decorated) {
+        addBatchedRect(plainPen, plainBrush, box);
+        continue;
+      }
       if (hovered) {
+        flushBatchedRects();
         painter.setBrush(Qt::NoBrush);
         for (const int thickness : {10, 6}) {
           painter.setPen(QPen(QColor(230, 251, 255, thickness == 10 ? 12 : 24),
@@ -2641,17 +2698,17 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
       }
       auto fill = sourceColor;
       fill.setAlpha(currentSegment ? 61 : selected ? 46 : 23);
-      painter.setBrush(fill);
       QPen sourcePen(sourceColor, currentSegment ? 3 : selected ? 2 : 1);
       if (!selected) sourcePen.setDashPattern({5, 3});
-      painter.setPen(sourcePen);
+      const QBrush sourceBrush = segment
+                                     ? QBrush(fill)
+                                     : QBrush(sourceColor, Qt::BDiagPattern);
+      addBatchedRect(sourcePen, sourceBrush, box);
+      flushBatchedRects();
       if (!segment) {
-        painter.setBrush(QBrush(sourceColor, Qt::BDiagPattern));
-        painter.drawRect(box);
+        painter.setPen(sourcePen);
         painter.drawText(box.adjusted(5, 5, -5, -5),
                          Qt::AlignTop | Qt::AlignLeft, "时间未定位 / 观察窗口");
-      } else {
-        painter.drawRect(box);
       }
       // Neutral outlines communicate state while the inner source stroke keeps
       // the three provenance colors visible in every selection state.
@@ -2683,6 +2740,8 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
         }
     }
   }
+  flushBatchedRects();
+  painter.setRenderHint(QPainter::Antialiasing, true);
   setProperty("annotationHandleCount", handleCount);
   setProperty("activeAnnotationId", QString::fromStdString(file->activeMarkId));
   setProperty("activeAnnotationSegmentId",

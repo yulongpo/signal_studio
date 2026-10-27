@@ -14,7 +14,9 @@
 #include <stdexcept>
 
 #include "application/annotation_service.h"
+#include "domain/detection_refinement.h"
 #include "infrastructure/detection_frequency_analysis.h"
+#include "infrastructure/detection_time_analysis.h"
 
 using namespace signalstudio;
 namespace {
@@ -329,6 +331,118 @@ void excludedShortInputHasNoFrequencyResults() {
   check(evidence.empty() && tracks.empty(),
         "excluded short input completes without invented frequency evidence");
 }
+
+struct FrameCounts {
+  qint64 cpu = 0, gpu = 0, mkl = 0;
+  bool operator==(const FrameCounts&) const = default;
+};
+FrameCounts frameCounts(const FixedDetectionSource& source) {
+  const auto profile = source.gpuProfiling();
+  return {profile["cpuFrames"].toInteger(), profile["gpuFrames"].toInteger(),
+          profile["mklFrames"].toInteger()};
+}
+bool sameMapping(const DetectionFrameMapping& a, const DetectionFrameMapping& b) {
+  return a.frameIndex == b.frameIndex && a.slotSamples == b.slotSamples &&
+         a.actualSamples == b.actualSamples && a.validSamples == b.validSamples &&
+         a.paddedSamples == b.paddedSamples &&
+         a.powerFloorBins == b.powerFloorBins &&
+         a.densityUnderflowGuardBins == b.densityUnderflowGuardBins &&
+         a.fftSupports == b.fftSupports && a.inputHash == b.inputHash &&
+         !a.inputHash.empty();
+}
+bool sameSpectrum(const DetectionSpectrumFrame& a, const DetectionSpectrumFrame& b) {
+  return a.densityDb == b.densityDb &&
+         a.frequencyFirstBinHz == b.frequencyFirstBinHz &&
+         a.frequencyStepHz == b.frequencyStepHz && a.units == b.units &&
+         sameMapping(a.mapping, b.mapping);
+}
+DetectionSpectrumRoi readTrackSpectrum(FixedDetectionSource& source,
+                                       const FrequencyTrack& track,
+                                       const DetectionRequest& request) {
+  DetectionSpectrumRoi spectrum;
+  std::uint64_t consumed = 0;
+  std::size_t cellBudget = 0;
+  QString error;
+  success(readSpectrum(source, track, spectrum,
+                       request.workingSetBudgetBytes * 3 / 4, consumed,
+                       cellBudget, error),
+          error);
+  return spectrum;
+}
+void expectSameRoi(const DetectionSpectrumRoi& direct,
+                   const DetectionSpectrumRoi& replayed) {
+  if (direct.powerDb != replayed.powerDb ||
+      direct.timeSlots != replayed.timeSlots) {
+    throw std::runtime_error(
+        "spool replay spectrum differs from direct readSpectrum: power " +
+        std::to_string(direct.powerDb.size()) + " vs " +
+        std::to_string(replayed.powerDb.size()) + ", slots " +
+        std::to_string(direct.timeSlots.size()) + " vs " +
+        std::to_string(replayed.timeSlots.size()));
+  }
+  check(!direct.powerDb.empty() && !direct.timeSlots.empty(),
+        "short FFSCN spectrum must contain frames");
+}
+void ffscnSpoolReplayMatchesDirectSpectrum() {
+  QTemporaryDir directory;
+  auto metadata = writeSource(directory);
+  auto request = requestFor(metadata, DetectionBackendKind::TensorRt);
+  request.profile.id = "ffscn-gui-iq-v1";
+  const auto range = fixtureFullRange(metadata);
+  FixedDetectionSource direct, replay;
+  QString error;
+  success(direct.open(metadata, range, sourceConfig(), error), error);
+  success(replay.open(metadata, range, sourceConfig(), error), error);
+  const auto track = trackFor(request, {0, metadata.sampleCount});
+  const auto directSpectrum = readTrackSpectrum(direct, track, request);
+  check(direct.replayedSpectrumFrames() == 0,
+        "readSpectrum without frequency analysis does not use a spool");
+  std::vector<FrequencyTrack> tracks{track};
+  std::vector<DetectionFrequencyEvidence> evidence;
+  success(applyDetectionFrequencyAnalysis(replay, request, tracks, evidence,
+                                          error),
+          error);
+  check(evidence.size() == 1, "FFSCN frequency analysis published evidence");
+  const auto& plan = replay.plan();
+  const auto first = std::min(plan.realFrameCount,
+                              track.nominalSupport.begin / plan.hopSamples);
+  const auto end = std::min(
+      plan.realFrameCount, track.nominalSupport.end / plan.hopSamples +
+                               (track.nominalSupport.end % plan.hopSamples != 0));
+  check(first < end && replay.frequencySpoolCovers(first, end),
+        "FFSCN frequency analysis keeps a spool over the refinement frames");
+  const auto during = frameCounts(replay);
+  const auto replayedBefore = replay.replayedSpectrumFrames();
+  const auto replaySpectrum = readTrackSpectrum(replay, track, request);
+  const auto after = frameCounts(replay);
+  expectSameRoi(directSpectrum, replaySpectrum);
+  check(replay.replayedSpectrumFrames() - replayedBefore ==
+            replaySpectrum.timeSlots.size(),
+        "covered frames are read back from the frequency spool");
+  check(during == after, "spool replay does not recompute CPU, GPU, or MKL frames");
+}
+void repeatedReadFrameReusesCachedSpectrum() {
+  QTemporaryDir directory;
+  auto metadata = writeSource(directory);
+  FixedDetectionSource provider;
+  QString error;
+  success(provider.open(metadata, fixtureFullRange(metadata), sourceConfig(),
+                        error),
+          error);
+  const auto before = frameCounts(provider);
+  DetectionSpectrumFrame first;
+  success(provider.readFrame(0, first, error), error);
+  const auto once = frameCounts(provider);
+  check(once.cpu + once.gpu > before.cpu + before.gpu,
+        "first readFrame computes on CPU or GPU");
+  DetectionSpectrumFrame second;
+  success(provider.readFrame(0, second, error), error);
+  const auto twice = frameCounts(provider);
+  check(twice == once,
+        "cached readFrame does not increase CPU, GPU, or MKL frame counts");
+  check(sameSpectrum(first, second),
+        "cached readFrame keeps the spectrum, mapping, and hash");
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -340,6 +454,8 @@ int main(int argc, char** argv) {
     scnUsesUniqueMeanNoiseAndMaximumGate();
     failureAndCancellationPublishNothing();
     excludedShortInputHasNoFrequencyResults();
+    ffscnSpoolReplayMatchesDirectSpectrum();
+    repeatedReadFrameReusesCachedSpectrum();
     std::cout << "frequency analysis checks passed\n";
     return 0;
   } catch (const std::exception& error) {

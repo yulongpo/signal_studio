@@ -27,6 +27,8 @@
 #include <QStyledItemDelegate>
 #include <QTextBrowser>
 #include <QTextDocument>
+#include <QDateTime>
+#include <QPointer>
 #include <QTimer>
 #include <QToolButton>
 #include <QToolTip>
@@ -541,6 +543,20 @@ DetectionPanel::DetectionPanel(Session& session,
       tasks_(std::make_unique<DetectionTaskManager>(workerPath())),
       generation_(session.projectGeneration()),
       listGeneration_(session.projectGeneration()) {
+  session_.setProjectWriteGuard([this](std::string& error) {
+    if (!commitInFlight_) return true;
+    error = "检测结果正在提交，请稍后再试";
+    const auto now = QDateTime::currentMSecsSinceEpoch();
+    if (now - lastRejectMessageMs_ > 1000) {
+      lastRejectMessageMs_ = now;
+      emit message(QString::fromStdString(error));
+    }
+    return false;
+  });
+  session_.annotations().setWriteGuard([this](std::string& error) {
+    return session_.acceptProjectWrite(error);
+  });
+  session_.annotations().setWroteNotifier([this] { session_.noteProjectWrite(); });
   setObjectName("detectionPanel");
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(8, 4, 8, 4);
@@ -668,7 +684,57 @@ DetectionPanel::DetectionPanel(Session& session,
   connect(timer_, &QTimer::timeout, this, &DetectionPanel::poll);
   timer_->start();
 }
-DetectionPanel::~DetectionPanel() = default;
+DetectionPanel::~DetectionPanel() {
+  shuttingDown_.store(true);
+  std::vector<std::thread> threads;
+  {
+    std::lock_guard lock(commitThreadMutex_);
+    threads.swap(commitThreads_);
+  }
+  for (auto& thread : threads)
+    if (thread.joinable()) thread.join();
+}
+
+struct DetectionPanel::StartCommit {
+  Project candidate;
+  DetectionResultTicket ticket;
+  DetectionRequest request;
+  FileMetadata metadata;
+  QString directory;
+  QString path;
+  QString error;
+  bool ok = false;
+  bool clearedPrevious = false;
+  bool failSave = false;
+  DetectionRun staged;
+  std::uint64_t epoch = 0;
+  std::uint64_t generation = 0;
+  std::string runId;
+  std::string scope;
+};
+struct DetectionPanel::PublishCommit {
+  Project project;
+  DetectionResultTicket ticket;
+  DetectionRun run;
+  DetectionPublication publication;
+  DetectionTransactionOptions options;
+  QString path;
+  DetectionCommitResult result;
+  std::uint64_t epoch = 0;
+  std::uint64_t generation = 0;
+  std::shared_ptr<std::atomic<bool>> gate;
+};
+
+void DetectionPanel::launchCommitWorker(std::function<void()> body) {
+  std::lock_guard lock(commitThreadMutex_);
+  commitThreads_.emplace_back(std::move(body));
+}
+void DetectionPanel::releaseCommitLock() {
+  commitInFlight_ = false;
+  publicationCommit_ = false;
+  commitScope_.clear();
+  committingRunId_.clear();
+}
 
 bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
   const auto* file = session_.activeFile();
@@ -684,54 +750,129 @@ bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
     error = "检测事务需要当前已保存 .ssproj 的实际文件路径";
     return false;
   }
-  if (!freezeDetectionModelSnapshot(request, error)) return false;
-  const auto id = request.runId;
-  if (!tasks_->enqueue(projectDirectory_(), file->metadata, std::move(request),
-                       error))
-    return false;
-  const auto snapshots = tasks_->snapshots();
-  const auto queued = std::find_if(snapshots.begin(), snapshots.end(),
-      [&](const auto& run) { return run.request.runId == id; });
-  Project candidate = session_.project();
-  DetectionResultTicket ticket;
-  if (queued == snapshots.end() ||
-      !DetectionResultService::beginDetection(candidate, queued->request,
-          session_.projectGeneration(), ticket, error)) {
-    tasks_->cancel(id);
+  if (commitInFlight_) {
+    error = QStringLiteral("检测结果正在提交，请稍后再试");
+    emit message(error);
     return false;
   }
+  if (!freezeDetectionModelSnapshot(request, error)) return false;
+  QueuedDetectionRun prepared;
+  if (!tasks_->prepareQueuedRun(projectDirectory_(), file->metadata,
+                                request, prepared, error) ||
+      !tasks_->canEnqueue(prepared.run.request.runId, error))
+    return false;
+  Project candidate = session_.project();
+  DetectionResultTicket ticket;
+  if (!DetectionResultService::beginDetection(
+          candidate, prepared.run.request, session_.projectGeneration(),
+          ticket, error))
+    return false;
   for (auto& source : candidate.files)
-    if (source.metadata.id == ticket.fileId) source.detectionRuns.push_back(*queued);
+    if (source.metadata.id == ticket.fileId)
+      source.detectionRuns.push_back(prepared.run);
   bool clearedPrevious = false;
   if (!DetectionResultService::clearCommittedDetection(
           candidate, ticket.fileId, ticket.sampleChannel, clearedPrevious,
-          error)) {
-    tasks_->cancel(id);
+          error))
     return false;
+  auto job = std::make_shared<StartCommit>();
+  job->candidate = std::move(candidate);
+  job->ticket = std::move(ticket);
+  job->request = prepared.run.request;
+  job->metadata = file->metadata;
+  job->directory = projectDirectory_();
+  job->path = path;
+  job->clearedPrevious = clearedPrevious;
+  job->failSave = startSaveFault_;
+  job->staged = prepared.run;
+  job->epoch = session_.contentEpoch();
+  job->generation = session_.projectGeneration();
+  job->runId = job->request.runId;
+  job->scope = detectionScopeKey(job->ticket.fileId, job->ticket.sampleChannel);
+  commitInFlight_ = true;
+  publicationCommit_ = false;
+  commitScope_ = job->scope;
+  committingRunId_.clear();
+  QPointer<DetectionPanel> self(this);
+  auto* stopping = &shuttingDown_;
+  launchCommitWorker([self, job, stopping] {
+    if (!self || stopping->load()) return;
+    if (job->failSave) {
+      job->ok = false;
+      job->error = QStringLiteral("检测事务保存失败");
+    } else if (!self->tasks().persistQueuedRun(job->directory, job->staged,
+                                               job->error)) {
+      job->ok = false;
+    } else {
+      job->ok = false;
+      for (int attempt = 0; attempt < 40; ++attempt) {
+        if (ProjectFileCodec::save(job->path, job->candidate, job->error)) {
+          job->ok = true;
+          break;
+        }
+        if (!job->error.contains(QStringLiteral("正被保存/清理"))) break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+      }
+    }
+    if (!self || stopping->load()) return;
+    QMetaObject::invokeMethod(
+        self.data(),
+        [self, job] {
+          if (self) self->finishStartCommit(job);
+        },
+        Qt::QueuedConnection);
+  });
+  return true;
+}
+
+void DetectionPanel::finishStartCommit(const std::shared_ptr<StartCommit>& job) {
+  const auto finish = [&](bool installed) {
+    releaseCommitLock();
+    emit commitSettled(false, installed);
+  };
+  if (!job || !job->ok) {
+    emit message(QStringLiteral("检测事务保存失败，已保留上次正式结果：") +
+                 (job ? job->error : QString{}));
+    finish(false);
+    return;
   }
-  if (!ProjectFileCodec::save(path, candidate, error)) {
-    tasks_->cancel(id);
-    return false;
+  auto* live = session_.activeFile();
+  const bool sameProject = session_.contentEpoch() == job->epoch &&
+                           session_.projectGeneration() == job->generation &&
+                           live && live->metadata.id == job->ticket.fileId;
+  if (!sameProject) {
+    emit message(QStringLiteral("检测事务已丢弃，提交期间工程已变化"));
+    finish(false);
+    return;
+  }
+  session_.project() = std::move(job->candidate);
+  session_.noteProjectWrite();
+  QString error;
+  if (!tasks_->enqueue(job->directory, job->metadata, job->request, error)) {
+    emit message(QStringLiteral("检测任务未能启动：") + error);
+    emit presentationRequested();
+    finish(false);
+    return;
   }
   if (generation_ != session_.projectGeneration()) {
     tasks_->cancelGeneration(generation_);
     generation_ = session_.projectGeneration();
     tickets_.clear();
   }
-  session_.project() = std::move(candidate);
-  // Superseded requests may finish, but only the newest ticket can publish.
   for (const auto& [oldId, oldTicket] : tickets_)
-    if (oldTicket.fileId == ticket.fileId && oldTicket.sampleChannel == ticket.sampleChannel)
+    if (oldTicket.fileId == job->ticket.fileId &&
+        oldTicket.sampleChannel == job->ticket.sampleChannel)
       tasks_->cancel(oldId);
-  const auto scope = detectionScopeKey(ticket.fileId, ticket.sampleChannel);
-  tickets_[id] = std::move(ticket);
-  if (clearedPrevious) {
-    clearedScopes_.insert(scope);
+  // Ticket before pump: this callback must not start a run poll cannot match.
+  tickets_[job->runId] = job->ticket;
+  if (job->clearedPrevious) {
+    clearedScopes_.insert(job->scope);
     emit message(clearedDetectionResultNote());
   }
   tasks_->pump();
-  poll();
-  return true;
+  releaseCommitLock();
+  emit presentationRequested();
+  emit commitSettled(false, true);
 }
 
 void DetectionPanel::configure(const DetectionRun* parentRun) {
@@ -748,7 +889,7 @@ void DetectionPanel::configure(const DetectionRun* parentRun) {
                                                    : nullptr);
 }
 void DetectionPanel::poll() {
-  if (generation_ != session_.projectGeneration()) {
+  if (!commitInFlight_ && generation_ != session_.projectGeneration()) {
     tasks_->cancelGeneration(generation_);
     generation_ = session_.projectGeneration();
     tickets_.clear();
@@ -756,6 +897,23 @@ void DetectionPanel::poll() {
   scheduleGc();
   tasks_->pump();
   bool changedState = false;
+  if (commitInFlight_) {
+    if (refreshRunList(false)) emit runProgressChanged();
+    const auto* active = session_.activeFile();
+    auto preview = active ? tasks_->previewFor(active->metadata.id, generation_)
+                          : DetectionPreviewSnapshot{};
+    bool terminal = false;
+    if (!preview.runId.empty()) {
+      terminal = true;
+      for (const auto& run : tasks_->snapshots())
+        if (run.request.runId == preview.runId) {
+          terminal = detectionIsTerminal(run.lifecycle);
+          break;
+        }
+    }
+    presentLivePreview(std::move(preview), terminal);
+    return;
+  }
   for (auto& run : tasks_->snapshots()) {
     if (run.request.sourceIdentity.projectGeneration != generation_) continue;
     const auto ticketEntry = tickets_.find(run.request.runId);
@@ -822,20 +980,8 @@ void DetectionPanel::poll() {
       *current = run;
     DetectionPublication publication;
     if (tasks_->takePublication(run.request.runId, publication)) {
-      const auto path = projectFilePath_ ? projectFilePath_() : QString{};
-      const auto result = DetectionResultService::replaceCurrentDetection(
-          session_.project(), session_.annotations(), ticket,
-          session_.projectGeneration(), run, std::move(publication), path);
-      const auto scope = detectionScopeKey(ticket.fileId, ticket.sampleChannel);
-      const bool cleared = clearedScopes_.contains(scope);
-      if (result) clearedScopes_.erase(scope);
-      emit message(result ? "检测事务已保存并整体替换；ROI 外未检测，0 检出同样清空旧结果"
-                   : cleared ? "检测未提交。" + clearedDetectionResultNote() +
-                                   "：" + result.error
-                             : "检测未提交，保留上次正式集合：" + result.error);
-      tickets_.erase(run.request.runId);
-      if (result) scheduleGc(path);
-      changedState = true;
+      beginPublicationCommit(ticket, run, std::move(publication));
+      break;
     }
   }
   if (refreshRunList(changedState)) emit runProgressChanged();
@@ -855,7 +1001,96 @@ void DetectionPanel::poll() {
   presentLivePreview(std::move(preview), terminal);
 }
 
+void DetectionPanel::beginPublicationCommit(DetectionResultTicket ticket,
+                                             DetectionRun run,
+                                             DetectionPublication publication) {
+  auto job = std::make_shared<PublishCommit>();
+  job->project = session_.project();
+  job->ticket = std::move(ticket);
+  job->run = std::move(run);
+  job->publication = std::move(publication);
+  job->options = publicationFault_;
+  job->path = projectFilePath_ ? projectFilePath_() : QString{};
+  job->epoch = session_.contentEpoch();
+  job->generation = session_.projectGeneration();
+  job->gate = publicationGate_;
+  commitInFlight_ = true;
+  publicationCommit_ = true;
+  commitScope_ = detectionScopeKey(job->ticket.fileId, job->ticket.sampleChannel);
+  committingRunId_ = job->run.request.runId;
+  QPointer<DetectionPanel> self(this);
+  auto* stopping = &shuttingDown_;
+  launchCommitWorker([self, job, stopping] {
+    if (job->gate) {
+      while (!job->gate->load(std::memory_order_acquire)) {
+        if (stopping->load()) return;
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      }
+    }
+    if (stopping->load()) return;
+    for (int attempt = 0; attempt < 40; ++attempt) {
+      AnnotationService staging;
+      auto publication = job->publication;
+      auto project = job->project;
+      job->result = DetectionResultService::replaceCurrentDetection(
+          project, staging, job->ticket, job->generation, job->run,
+          std::move(publication), job->path, job->options);
+      if (job->result) {
+        job->project = std::move(project);
+        break;
+      }
+      if (!job->result.error.contains(QStringLiteral("正被保存/清理"))) break;
+      std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    }
+    if (!self || stopping->load()) return;
+    QMetaObject::invokeMethod(
+        self.data(),
+        [self, job] {
+          if (self) self->finishPublicationCommit(job);
+        },
+        Qt::QueuedConnection);
+  });
+}
+
+void DetectionPanel::finishPublicationCommit(
+    const std::shared_ptr<PublishCommit>& job) {
+  const auto scope =
+      detectionScopeKey(job->ticket.fileId, job->ticket.sampleChannel);
+  const bool cleared = clearedScopes_.contains(scope);
+  const FileState* liveFile = nullptr;
+  for (const auto& file : session_.project().files)
+    if (file.metadata.id == job->ticket.fileId) liveFile = &file;
+  const bool epochOk = session_.contentEpoch() == job->epoch &&
+                       session_.projectGeneration() == job->generation;
+  const bool ticketOk =
+      liveFile && detectionTicketMatches(session_.project(), *liveFile,
+                                         job->ticket, job->generation, job->run);
+  const bool installed = static_cast<bool>(job->result) && epochOk && ticketOk;
+  if (installed) {
+    session_.project() = std::move(job->project);
+    session_.noteProjectWrite();
+    clearedScopes_.erase(scope);
+    scheduleGc(job->path);
+    emit message(QStringLiteral(
+        "检测事务已保存并整体替换；ROI 外未检测，0 检出同样清空旧结果"));
+  } else if (!epochOk || (job->result && !ticketOk)) {
+    emit message(QStringLiteral("检测事务已丢弃，提交期间工程已变化"));
+  } else {
+    emit message(cleared ? "检测未提交。" + clearedDetectionResultNote() +
+                               "：" + job->result.error
+                         : "检测未提交，保留上次正式集合：" + job->result.error);
+  }
+  tickets_.erase(job->ticket.runId);
+  releaseCommitLock();
+  auto raw = rawPreview_;
+  if (raw.runId.empty()) raw.runId = job->run.request.runId;
+  presentLivePreview(std::move(raw), true);
+  emit presentationRequested();
+  emit commitSettled(true, installed);
+}
+
 void DetectionPanel::presentLivePreview(DetectionPreviewSnapshot raw, bool terminal) {
+  if (publicationCommit_ && raw.runId == committingRunId_) terminal = false;
   rawPreview_ = std::move(raw);
   rawPreviewTerminal_ = terminal;
   const auto presented =
@@ -867,7 +1102,9 @@ void DetectionPanel::presentLivePreview(DetectionPreviewSnapshot raw, bool termi
   for (const auto& id : previousIds)
     if (std::find(visibleIds.begin(), visibleIds.end(), id) == visibleIds.end())
       dropped.push_back(q(id));
-  const auto token = preview.events.empty() ? 0 : preview.events.back().sequence;
+  std::uint64_t token = 0;
+  for (const auto& event : preview.events)
+    token = std::max(token, event.sequence);
   if (token != previewToken_ || preview.sealed != previewSealed_ ||
       preview.dropped != previewDropped_ || preview.events.size() != previewCount_ ||
       preview.fileId != previewFile_) {
@@ -898,6 +1135,10 @@ QString DetectionPanel::clearanceNoteForActive() const {
 }
 
 void DetectionPanel::markConfigurationStale() {
+  if (commitInFlight_) {
+    emit message(QStringLiteral("检测结果正在提交，请稍后再试"));
+    return;
+  }
   const auto* file = session_.activeFile();
   if (!file) return;
   const auto id = file->metadata.id;
@@ -1125,6 +1366,10 @@ void DetectionPanel::showRunDetails(const QString& runId) {
   dialog.exec();
 }
 void DetectionPanel::discoverRecoverable() {
+  if (commitInFlight_) {
+    emit message(QStringLiteral("检测结果正在提交，请稍后再试"));
+    return;
+  }
   auto* file = session_.activeFile();
   if (!file || projectDirectory_().isEmpty()) return;
   QString error;

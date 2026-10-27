@@ -114,6 +114,8 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/ffscn_engine_package.cpp
     infrastructure/ffscn_engine_package.h
     infrastructure/detection_frequency_analysis.cpp
+    infrastructure/detection_spectrum_spool.cpp
+    infrastructure/detection_spectrum_spool.h
     infrastructure/detection_sample_energy.cpp
     infrastructure/detection_time_analysis.cpp
     infrastructure/detection_refined_publication.cpp

@@ -6,6 +6,7 @@
 #include <limits>
 #include <optional>
 #include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 
@@ -307,6 +308,9 @@ struct FrequencyTracker::State {
   std::vector<FrequencyTrack> closed;
   std::unordered_set<std::string> windowIds;
   std::vector<PreviewTrackEvent> preview;
+  // Latest geometry for tracks that are still on screen. Log eviction does not
+  // erase this map; Merged removes the absorbed trackId.
+  std::unordered_map<std::string, PreviewTrackEvent> visiblePreview;
   std::uint64_t processed = 0;
   std::uint64_t previewSequence = 0;
   std::uint64_t droppedPreview = 0;
@@ -322,6 +326,10 @@ void FrequencyTracker::rememberPreview(State& state, PreviewTrackEvent event) {
   }
   event.sequence = ++state.previewSequence;
   event.timeLocalized = false;
+  if (event.phase == PreviewTrackPhase::Merged && !event.absorbedId.empty() &&
+      event.absorbedId != event.trackId)
+    state.visiblePreview.erase(event.absorbedId);
+  state.visiblePreview.insert_or_assign(event.trackId, event);
   state.preview.push_back(std::move(event));
 }
 FrequencyTracker::FrequencyTracker() = default;
@@ -348,6 +356,16 @@ std::size_t FrequencyTracker::retainedTracks() const {
 const std::vector<PreviewTrackEvent>& FrequencyTracker::previewEvents() const {
   static const std::vector<PreviewTrackEvent> empty;
   return state_ ? state_->preview : empty;
+}
+std::vector<PreviewTrackEvent> FrequencyTracker::visiblePreviewEvents() const {
+  std::vector<PreviewTrackEvent> events;
+  if (!state_) return events;
+  events.reserve(state_->visiblePreview.size());
+  for (const auto& item : state_->visiblePreview) events.push_back(item.second);
+  std::sort(events.begin(), events.end(), [](const auto& a, const auto& b) {
+    return std::tuple{a.sequence, a.trackId} < std::tuple{b.sequence, b.trackId};
+  });
+  return events;
 }
 std::uint64_t FrequencyTracker::droppedPreviewEvents() const {
   return state_ ? state_->droppedPreview : 0;

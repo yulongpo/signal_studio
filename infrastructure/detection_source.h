@@ -117,11 +117,15 @@ std::uint32_t detectionExecutionBatchSize(const DetectionSourcePlan&,
                                           std::uint32_t requestedBatch,
                                           std::uint64_t& reservedBytes);
 
+class SpectrumSpool;
+struct DetectionFrameCache;
+
 // Full-band source DSP, independent of display-frame reduction and model
 // runtime.
 class FixedDetectionSource {
  public:
-  FixedDetectionSource() = default;
+  FixedDetectionSource();
+  ~FixedDetectionSource();
   FixedDetectionSource(const FixedDetectionSource&) = delete;
   FixedDetectionSource& operator=(const FixedDetectionSource&) = delete;
   bool withGpu(const DetectionSourceCancel&,
@@ -142,6 +146,20 @@ class FixedDetectionSource {
                        const DetectionSourceCancel& cancel = {});
   bool streamWindows(const std::function<bool(const DetectionModelWindow&)>&,
                      QString& error, const DetectionSourceCancel& cancel = {});
+  // FFSCN frequency analysis keeps its full-frame spool here until close or a
+  // failed rebuild. SCN and a zero bandwidth margin do not install one.
+  void adoptFrequencySpool(std::unique_ptr<SpectrumSpool> spool);
+  void clearFrequencySpool();
+  bool frequencySpoolCovers(std::uint64_t firstFrame,
+                            std::uint64_t endFrame) const;
+  bool replayFrequencyFrame(std::uint64_t absoluteFrame,
+                            std::vector<float>& densityDb,
+                            TimeRange& slotSamples, bool& ioFailure,
+                            QString& error,
+                            const DetectionSourceCancel& cancel = {});
+  std::uint64_t replayedSpectrumFrames() const {
+    return replayedSpectrumFrames_;
+  }
 
  private:
   DetectionFrameMapping frameMapping(std::uint64_t absoluteFrame) const;
@@ -149,6 +167,14 @@ class FixedDetectionSource {
   bool sourceCurrent(QString& error) const;
   bool readGpuFrame(DetectionSpectrumFrame&, QString&,
                     const DetectionSourceCancel&);
+  enum class CachedFrameTake { Miss, Hit, Rejected };
+  CachedFrameTake takeCachedFrame(std::uint64_t index,
+                                  DetectionSpectrumFrame& target,
+                                  QString& error,
+                                  const DetectionSourceCancel& cancel);
+  void rememberFrame(std::uint64_t index, const DetectionSpectrumFrame& frame);
+  void clearFrameCache();
+  std::uint64_t frameCacheBudget() const;
   DetectionSourcePlan plan_;
   std::unique_ptr<RawSampleReader> reader_;
   QString path_, fingerprint_;
@@ -163,6 +189,9 @@ class FixedDetectionSource {
   bool suppressGpuFrame_ = false;
   bool hostMklFrame_ = false;
   MklDft mkl_;
+  std::unique_ptr<SpectrumSpool> frequencySpool_;
+  std::unique_ptr<DetectionFrameCache> frameCache_;
+  std::uint64_t replayedSpectrumFrames_ = 0;
   // Last member: destroyed before the stable cancellation state it references.
   std::unique_ptr<gpu_dsp::Session> gpu_;
 };

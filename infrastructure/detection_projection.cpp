@@ -233,6 +233,11 @@ bool DetectionResultProjector::sealPreview(bool finalized, QString& error) {
 std::vector<PreviewTrackEvent> DetectionResultProjector::previewEvents() const {
   return initialized_ ? tracker_.previewEvents() : std::vector<PreviewTrackEvent>{};
 }
+std::vector<PreviewTrackEvent> DetectionResultProjector::visiblePreviewEvents()
+    const {
+  return initialized_ ? tracker_.visiblePreviewEvents()
+                      : std::vector<PreviewTrackEvent>{};
+}
 std::uint64_t DetectionResultProjector::droppedPreviewEvents() const {
   return initialized_ ? tracker_.droppedPreviewEvents() : 0;
 }

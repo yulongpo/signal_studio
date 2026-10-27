@@ -133,7 +133,7 @@ QJsonObject energyTrace(const DetectionEnergySeries& series,
           {"points", points}};
 }
 
-bool readSpectrum(FixedDetectionSource& source, const FrequencyTrack& track,
+bool readSpectrumBody(FixedDetectionSource& source, const FrequencyTrack& track,
                   DetectionSpectrumRoi& spectrum, std::uint64_t budget,
                   std::uint64_t& consumedCells, std::size_t& cellBudget,QString& error,
                   const DetectionSourceCancel& cancel) {
@@ -177,6 +177,35 @@ bool readSpectrum(FixedDetectionSource& source, const FrequencyTrack& track,
     spectrum.frequencyEdgesHz.push_back(plan.frequencyFirstBinHz +
                                         (static_cast<double>(bin) - .5) *
                                             plan.frequencyStepHz);
+  // One densityDb record per real frame. Do not treat a model-window tensor
+  // as a single-frame spectrum. A short file read falls back to readFrame.
+  bool useSpool = source.frequencySpoolCovers(first, end);
+  if (useSpool) {
+    for (auto frameIndex = first; frameIndex < end; ++frameIndex) {
+      std::vector<float> density;
+      TimeRange slot;
+      bool ioFailure = false;
+      const bool read = source.replayFrequencyFrame(
+          frameIndex, density, slot, ioFailure, error, cancel);
+      const bool usable =
+          read && density.size() == plan.config.fftSize &&
+          std::all_of(density.begin(), density.end(),
+                      [](float value) { return std::isfinite(value); });
+      if (!usable) {
+        if (!read && !ioFailure) return false;
+        spectrum.timeSlots.clear();
+        spectrum.powerDb.clear();
+        error.clear();
+        useSpool = false;
+        break;
+      }
+      spectrum.timeSlots.push_back(slot);
+      spectrum.powerDb.insert(spectrum.powerDb.end(),
+                              density.begin() + firstBin,
+                              density.begin() + lastBin + 1);
+    }
+    if (useSpool) return true;
+  }
   for (auto frameIndex = first; frameIndex < end; ++frameIndex) {
     DetectionSpectrumFrame frame;
     if (!source.readFrame(frameIndex, frame, error, cancel)) return false;
@@ -358,6 +387,14 @@ bool boundedSample(FixedDetectionSource& source,const FileMetadata& metadata,con
   return true;
 }
 }  // namespace
+
+bool readSpectrum(FixedDetectionSource& source, const FrequencyTrack& track,
+                  DetectionSpectrumRoi& spectrum, std::uint64_t budget,
+                  std::uint64_t& consumedCells, std::size_t& cellBudget,
+                  QString& error, const DetectionSourceCancel& cancel) {
+  return readSpectrumBody(source, track, spectrum, budget, consumedCells,
+                          cellBudget, error, cancel);
+}
 
 bool applyDetectionTimeAnalysis(
     FixedDetectionSource& source, const FileMetadata& metadata,

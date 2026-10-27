@@ -640,9 +640,11 @@ DetectionTaskManager::~DetectionTaskManager() {
   for (const auto& job : jobs_) job->cancelled = true;
   if (thread_.joinable()) thread_.join();
 }
-bool DetectionTaskManager::enqueue(const QString& directory,
-                                   const FileMetadata& metadata,
-                                   DetectionRequest request, QString& error) {
+bool DetectionTaskManager::prepareQueuedRun(const QString& directory,
+                                            const FileMetadata& metadata,
+                                            DetectionRequest request,
+                                            QueuedDetectionRun& prepared,
+                                            QString& error) const {
   const auto valid = validateDetectionRequest(request);
   if (!valid || !QDir(directory).exists()) {
     error = valid ? "Create or save a project directory before detection"
@@ -709,13 +711,53 @@ bool DetectionTaskManager::enqueue(const QString& directory,
                 plan.contextRange.end)},
       {metadata.centerFrequencyHz - metadata.sampleRateHz / 2,
        metadata.centerFrequencyHz + metadata.sampleRateHz / 2}};
+  if (request.sourceIdentity.quickFingerprint.empty())
+    request.sourceIdentity.quickFingerprint =
+        iqSourceFingerprint(QString::fromStdString(metadata.path)).toStdString();
+  prepared = {};
+  prepared.executionBatchSize = executionBatch;
+  prepared.publicationBudgetBytes =
+      request.workingSetBudgetBytes - pipelineReserve;
+  prepared.run.request = std::move(request);
+  prepared.run.device = "CPU spectrum / isolated worker";
+  prepared.run.runtime = "worker-v1";
+  error.clear();
+  return true;
+}
+bool DetectionTaskManager::persistQueuedRun(const QString& directory,
+                                            const DetectionRun& run,
+                                            QString& error) const {
+  return persistRun_(directory, run, error);
+}
+bool DetectionTaskManager::canEnqueue(const std::string& runId,
+                                      QString& error) const {
   std::lock_guard lock(mutex_);
   const auto queued = std::count_if(
       jobs_.begin(), jobs_.end(),
       [](const auto& job) { return !detectionIsTerminal(job->run.lifecycle); });
   if (queued >= 32 || jobs_.size() >= 4096 ||
       std::any_of(jobs_.begin(), jobs_.end(), [&](const auto& job) {
-        return job->run.request.runId == request.runId;
+        return job->run.request.runId == runId;
+      })) {
+    error = "Task queue is full or the run ID already exists";
+    return false;
+  }
+  return true;
+}
+bool DetectionTaskManager::enqueue(const QString& directory,
+                                   const FileMetadata& metadata,
+                                   DetectionRequest request, QString& error) {
+  QueuedDetectionRun prepared;
+  if (!prepareQueuedRun(directory, metadata, std::move(request), prepared,
+                        error))
+    return false;
+  std::lock_guard lock(mutex_);
+  const auto queued = std::count_if(
+      jobs_.begin(), jobs_.end(),
+      [](const auto& job) { return !detectionIsTerminal(job->run.lifecycle); });
+  if (queued >= 32 || jobs_.size() >= 4096 ||
+      std::any_of(jobs_.begin(), jobs_.end(), [&](const auto& job) {
+        return job->run.request.runId == prepared.run.request.runId;
       })) {
     error = "Task queue is full or the run ID already exists";
     return false;
@@ -723,18 +765,11 @@ bool DetectionTaskManager::enqueue(const QString& directory,
   auto job = std::make_shared<Job>();
   job->directory = directory;
   job->metadata = metadata;
-  job->executionBatchSize = executionBatch;
-  job->publicationBudgetBytes = request.workingSetBudgetBytes - pipelineReserve;
-  if (request.sourceIdentity.quickFingerprint.empty()) {
-    request.sourceIdentity.quickFingerprint =
-        iqSourceFingerprint(QString::fromStdString(metadata.path))
-            .toStdString();
-    job->metadata.availability.fingerprint =
-        request.sourceIdentity.quickFingerprint;
-  }
-  job->run.request = std::move(request);
-  job->run.device = "CPU spectrum / isolated worker";
-  job->run.runtime = "worker-v1";
+  job->executionBatchSize = prepared.executionBatchSize;
+  job->publicationBudgetBytes = prepared.publicationBudgetBytes;
+  job->metadata.availability.fingerprint =
+      prepared.run.request.sourceIdentity.quickFingerprint;
+  job->run = std::move(prepared.run);
   if (!persistRun_(directory, job->run, error)) return false;
   jobs_.push_back(std::move(job));
   return true;
@@ -1057,7 +1092,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     job->preview.runId = request.runId;
     job->preview.fileId = request.sourceIdentity.fileId;
     job->preview.projectGeneration = request.sourceIdentity.projectGeneration;
-    job->preview.events = projector.previewEvents();
+    job->preview.events = projector.visiblePreviewEvents();
     job->preview.dropped = projector.droppedPreviewEvents();
   };
   const auto previewGuard = qScopeGuard([&] {
@@ -1076,7 +1111,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       job->preview.events.clear();
       job->preview.dropped = 0;
     } else {
-      job->preview.events = projector.previewEvents();
+      job->preview.events = projector.visiblePreviewEvents();
       job->preview.dropped = projector.droppedPreviewEvents();
     }
   });
@@ -1321,8 +1356,14 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       std::lock_guard lock(mutex_);
       job->run.computationPhase = "frequency";
     }
-    if (!measured("finalize-frequency-tracks",[&] {return projector.finish(tracks, error, cancelled);}) ||
-        (request.profile.backend != DetectionBackendKind::Scn &&
+    if (!measured("finalize-frequency-tracks",[&] {return projector.finish(tracks, error, cancelled);})) {
+      finish(job, DetectionLifecycle::Failed, error);
+      return;
+    }
+    // Finish fuses tracks after the last window publish. Show survivor boxes
+    // through refinement; the terminal guard still clears dashed previews.
+    publishPreview();
+    if ((request.profile.backend != DetectionBackendKind::Scn &&
          !measured("frequency-analysis",[&] {return applyDetectionFrequencyAnalysis(source, frequencyRequest, tracks,
                                           frequencyEvidence, error,
                                           cancelled);})) ||

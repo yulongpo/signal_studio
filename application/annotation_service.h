@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -164,6 +165,13 @@ class AnnotationService {
   std::size_t historySize(const FileState&) const;
   void clear();
   void clear(const std::string& fileId);
+  // Reject mark edits while a detection commit still owns the project file.
+  void setWriteGuard(std::function<bool(std::string&)> guard) {
+    writeGuard_ = std::move(guard);
+  }
+  void setWroteNotifier(std::function<void()> notifier) {
+    wrote_ = std::move(notifier);
+  }
 
  private:
   struct State {
@@ -191,6 +199,10 @@ class AnnotationService {
   };
   std::unordered_map<std::string, History> histories_;
   std::uint64_t nextIdentifier_ = 1;
+  std::function<bool(std::string&)> writeGuard_;
+  std::function<void()> wrote_;
+  std::optional<AnnotationResult> blockedWrite() const;
+  void notifyWrote();
 
   std::string nextId(const FileState&, const std::string& prefix);
   static State state(const Annotation&);

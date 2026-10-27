@@ -153,6 +153,8 @@ struct PreviewTrackEvent {
 // atomic; retries/foreign scope/out-of-order windows fail without mutation.
 // finish may also be called after cancellation for explicit partial recovery.
 // Preview events are a side channel and are not frequency-track results.
+// previewEvents() is the bounded log. visiblePreviewEvents() keeps the latest
+// geometry of each remaining track and is not evicted with that log.
 class FrequencyTracker {
  public:
   FrequencyTracker();
@@ -169,6 +171,9 @@ class FrequencyTracker {
               const PostprocessCancellation& cancelled = {});
   bool sealPreview(bool finalized, std::string& error);
   const std::vector<PreviewTrackEvent>& previewEvents() const;
+  // One current geometry per remaining trackId, sorted by sequence. A Merged
+  // event stores the survivor envelope and removes absorbedId.
+  std::vector<PreviewTrackEvent> visiblePreviewEvents() const;
   std::uint64_t droppedPreviewEvents() const;
   std::uint64_t processedWindows() const;
   std::size_t retainedTracks() const;

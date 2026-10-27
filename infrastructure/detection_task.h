@@ -16,6 +16,11 @@
 namespace signalstudio {
 class DetectionWorkerClient;
 
+struct QueuedDetectionRun {
+  DetectionRun run;
+  std::uint32_t executionBatchSize = 1;
+  std::uint64_t publicationBudgetBytes = 0;
+};
 struct DetectionPublication {
   AnnotationSourceSet sourceSet;
   std::vector<Annotation> annotations;
@@ -41,6 +46,16 @@ class DetectionTaskManager {
   explicit DetectionTaskManager(QString workerExecutable,
                                 PersistRun persistRun = {});
   ~DetectionTaskManager();
+  // Validates and fills the queued run without persisting it or starting it.
+  // startRequest saves that run, then enqueue() persists and queues the same
+  // request only after the project file commit succeeds.
+  bool prepareQueuedRun(const QString& projectDirectory, const FileMetadata&,
+                        DetectionRequest, QueuedDetectionRun&,
+                        QString& error) const;
+  bool canEnqueue(const std::string& runId, QString& error) const;
+  // Writes the run manifest without queueing it. Project save reads it back.
+  bool persistQueuedRun(const QString& projectDirectory, const DetectionRun&,
+                        QString& error) const;
   bool enqueue(const QString& projectDirectory, const FileMetadata&,
                DetectionRequest, QString& error);
   bool cancel(const std::string& runId);

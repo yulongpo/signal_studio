@@ -1,4 +1,9 @@
 #include "infrastructure/detection_source.h"
+#include "infrastructure/detection_spectrum_spool.h"
+
+#include <list>
+#include <unordered_map>
+#include <utility>
 
 #include <QCryptographicHash>
 #include <QCoreApplication>
@@ -603,6 +608,132 @@ bool makeDetectionSourcePlan(const FileMetadata& source, ViewRange requested,
   }
 }
 
+
+struct DetectionFrameCache {
+  struct Entry {
+    DetectionSpectrumFrame frame;
+    bool suppressGpu = false;
+    bool hostMkl = false;
+    std::uint64_t bytes = 0;
+  };
+  std::list<std::pair<std::uint64_t, Entry>> order;
+  std::unordered_map<std::uint64_t,
+                     std::list<std::pair<std::uint64_t, Entry>>::iterator>
+      index;
+  std::uint64_t bytes = 0;
+};
+
+namespace {
+std::uint64_t cachedSpectrumBytes(const DetectionSpectrumFrame& frame) {
+  std::uint64_t bytes = frame.densityDb.size() * sizeof(float);
+  bytes += frame.mapping.fftSupports.size() * sizeof(DetectionFftSupport);
+  bytes += frame.mapping.inputHash.size();
+  return std::max<std::uint64_t>(bytes, 1);
+}
+}  // namespace
+
+FixedDetectionSource::FixedDetectionSource() = default;
+FixedDetectionSource::~FixedDetectionSource() = default;
+
+void FixedDetectionSource::adoptFrequencySpool(
+    std::unique_ptr<SpectrumSpool> spool) {
+  frequencySpool_ = std::move(spool);
+}
+
+void FixedDetectionSource::clearFrequencySpool() {
+  frequencySpool_.reset();
+  replayedSpectrumFrames_ = 0;
+}
+
+bool FixedDetectionSource::frequencySpoolCovers(std::uint64_t first,
+                                               std::uint64_t end) const {
+  return frequencySpool_ && frequencySpool_->covers(first, end);
+}
+
+bool FixedDetectionSource::replayFrequencyFrame(
+    std::uint64_t index, std::vector<float>& densityDb, TimeRange& slotSamples,
+    bool& ioFailure, QString& error, const DetectionSourceCancel& cancel) {
+  ioFailure = false;
+  if (cancelled(cancel)) {
+    error = "检测源计算已取消";
+    return false;
+  }
+  if (!sourceCurrent(error)) return false;
+  if (!frequencySpool_ ||
+      !frequencySpool_->readDensity(index, densityDb, error)) {
+    ioFailure = true;
+    if (error.isEmpty()) error = "frequency-spool-frame-read-failed";
+    return false;
+  }
+  slotSamples = frameMapping(index).slotSamples;
+  ++replayedSpectrumFrames_;
+  return true;
+}
+
+void FixedDetectionSource::clearFrameCache() { frameCache_.reset(); }
+
+std::uint64_t FixedDetectionSource::frameCacheBudget() const {
+  constexpr std::uint64_t kMaximumFrameCacheBytes = 32ULL * 1024ULL * 1024ULL;
+  return std::min(kMaximumFrameCacheBytes,
+                  plan_.config.workingSetBudgetBytes / 8);
+}
+
+FixedDetectionSource::CachedFrameTake FixedDetectionSource::takeCachedFrame(
+    std::uint64_t index, DetectionSpectrumFrame& target, QString& error,
+    const DetectionSourceCancel& cancel) {
+  if (!frameCache_) return CachedFrameTake::Miss;
+  const auto found = frameCache_->index.find(index);
+  if (found == frameCache_->index.end()) return CachedFrameTake::Miss;
+  const auto& entry = found->second->second;
+  // Model-window reads suppress GPU and may use oneMKL. A later plain
+  // readFrame has to recompute so its spectrum matches that call.
+  if (entry.suppressGpu != suppressGpuFrame_ ||
+      entry.hostMkl != hostMklFrame_)
+    return CachedFrameTake::Miss;
+  if (cancelled(cancel)) {
+    error = "检测源计算已取消";
+    return CachedFrameTake::Rejected;
+  }
+  if (!sourceCurrent(error)) return CachedFrameTake::Rejected;
+  const auto it = found->second;
+  frameCache_->order.splice(frameCache_->order.begin(), frameCache_->order,
+                            it);
+  target = it->second.frame;
+  error.clear();
+  return CachedFrameTake::Hit;
+}
+
+void FixedDetectionSource::rememberFrame(std::uint64_t index,
+                                        const DetectionSpectrumFrame& frame) {
+  const auto budget = frameCacheBudget();
+  const auto bytes = cachedSpectrumBytes(frame);
+  if (frameCache_) {
+    const auto found = frameCache_->index.find(index);
+    if (found != frameCache_->index.end()) {
+      frameCache_->bytes -= found->second->second.bytes;
+      frameCache_->order.erase(found->second);
+      frameCache_->index.erase(found);
+    }
+  }
+  if (budget == 0 || bytes > budget) return;
+  if (!frameCache_) frameCache_ = std::make_unique<DetectionFrameCache>();
+  while (!frameCache_->order.empty() &&
+         frameCache_->bytes + bytes > budget) {
+    auto& oldest = frameCache_->order.back();
+    frameCache_->bytes -= oldest.second.bytes;
+    frameCache_->index.erase(oldest.first);
+    frameCache_->order.pop_back();
+  }
+  DetectionFrameCache::Entry entry;
+  entry.frame = frame;
+  entry.suppressGpu = suppressGpuFrame_;
+  entry.hostMkl = hostMklFrame_;
+  entry.bytes = bytes;
+  frameCache_->order.emplace_front(index, std::move(entry));
+  frameCache_->index[index] = frameCache_->order.begin();
+  frameCache_->bytes += bytes;
+}
+
 bool FixedDetectionSource::open(const FileMetadata& source, ViewRange requested,
                                 DetectionSourceConfig config, QString& error,
                                 std::uint64_t generation) {
@@ -614,6 +745,8 @@ bool FixedDetectionSource::open(const FileMetadata& source, ViewRange requested,
   gpuFrames_ = gpuWindows_ = cpuFrames_ = cpuWindows_ = 0;
   plan_ = {};
   profiling_ = DetectionProfiler{};
+  clearFrequencySpool();
+  clearFrameCache();
   try {
     const bool planned = makeDetectionSourcePlan(
         source, requested, std::move(config), plan_, error, generation);
@@ -646,6 +779,8 @@ bool FixedDetectionSource::open(const FileMetadata& source, ViewRange requested,
     return true;
   } catch (const std::exception& exception) {
     reader_.reset();
+    clearFrequencySpool();
+    clearFrameCache();
     error = QString::fromUtf8(exception.what());
     if (error.isEmpty()) error = "检测源校验失败";
     return false;
@@ -755,6 +890,14 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
     error = "真实检测帧索引越界";
     return false;
   }
+  switch (takeCachedFrame(index, target, error, cancel)) {
+    case CachedFrameTake::Hit:
+      return true;
+    case CachedFrameTake::Rejected:
+      return false;
+    case CachedFrameTake::Miss:
+      break;
+  }
   DetectionSpectrumFrame frame;
   frame.mapping = frameMapping(index);
   frame.frequencyFirstBinHz = plan_.frequencyFirstBinHz;
@@ -766,6 +909,7 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
   if (!suppressGpuFrame_ && gpu_ && readGpuFrame(frame,error,cancel)) {
     if (!sourceCurrent(error)) return false;
     ++gpuFrames_;
+    rememberFrame(index, frame);
     target = std::move(frame);
     return true;
   }
@@ -841,6 +985,7 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
   frame.mapping.inputHash = inputHash.result().toHex().toStdString();
   profiling_.record("density-log",densityTimer.nsecsElapsed());
   if (!sourceCurrent(error)) return false;
+  rememberFrame(index, frame);
   target = std::move(frame);
   error.clear();
   return true;

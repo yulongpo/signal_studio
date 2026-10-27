@@ -42,8 +42,10 @@ bool refineGuiFrequencySpectrum(std::span<const double> meanDb,
                                 const DetectionSourceCancel& cancel = {});
 
 // Re-reads real DSP frames; model-window overlap never multiplies a frame's
-// weight. GUI global percentile uses an auto-removing disk spool capped at
+// weight. GUI global percentile uses a disk spool capped at
 // min(64 * workingSetBudgetBytes, 16 GiB), with 4 MiB radix-read blocks.
+// A successful non-SCN spool stays on the source until close or that analysis
+// fails. Zero margin and SCN do not create one.
 // Frequency updates and evidence publish atomically after all tracks succeed.
 // nominalSupport remains observation context, never transmission timing.
 bool applyDetectionFrequencyAnalysis(

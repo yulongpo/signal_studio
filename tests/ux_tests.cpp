@@ -123,6 +123,8 @@ class UxTests : public QObject {
   void uxR03_taskRowActions();
   void uxD03_activeTaskCancellationAndFrozenDisplay();
   void uxD09_intermediatePreviewAndRedetectClear();
+  void uxR6_commitOverlaySkipsHeatmap();
+  void uxR6_commitFailureKeepsPreviousResult();
   void uxD01_topDerivationDiscardsCrossFileDraft();
   void uxR01_lateRunFilterPopupAndRefresh();
   void roundTwoFlatResponsiveControls();

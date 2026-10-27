@@ -543,6 +543,84 @@ void previewQueueDropsOldestWithoutTruncatingFormalTracks() {
   check(tracks.size() == 1 && tracks[0].hits == 4,
         "Dropping preview events must not truncate the formal track");
 }
+void closedPreviewSurvivesLogEviction() {
+  auto config = trackerConfig(6);
+  config.minHits = 1;
+  config.maxMiss = 0;
+  config.mergeToleranceHz = 0;
+  config.fragmentGapSamples = 0;
+  config.limits.maximumPreviewEvents = 2;
+  auto model = tracker(config);
+  consume(model, window(0, {candidate(-40, -30, .8, 8)}));
+  consume(model, window(1, {candidate(-38, -28, .8, 8)}));
+  const auto established = model.visiblePreviewEvents();
+  check(established.size() == 1, "One signal must expose one visible preview");
+  const auto closedId = established.front().trackId;
+  const auto droppedBefore = model.droppedPreviewEvents();
+  consume(model, window(2, {candidate(30, 40, .8, 40)}));
+  consume(model, window(3, {candidate(70, 80, .8, 52)}));
+  consume(model, window(4, {candidate(100, 110, .8, 60)}));
+  check(model.previewEvents().size() == 2 &&
+            model.droppedPreviewEvents() > droppedBefore,
+        "The preview log must stay capped at 2 and count dropped old events");
+  for (const auto& event : model.previewEvents())
+    check(event.trackId != closedId,
+          "Filling the log must evict the closed track's events");
+  const auto visible = model.visiblePreviewEvents();
+  const auto kept = std::find_if(
+      visible.begin(), visible.end(),
+      [&](const auto& event) { return event.trackId == closedId; });
+  check(kept != visible.end() && kept->phase == PreviewTrackPhase::Closed &&
+            near(kept->frequency.lowerHz, -39) &&
+            near(kept->frequency.upperHz, -29) &&
+            kept->observedSupport == TimeRange{0, 15},
+        "Evicting old log events must keep the closed track's last geometry");
+  const auto tracks = finish(model);
+  const auto formal = std::find_if(
+      tracks.begin(), tracks.end(),
+      [&](const auto& track) { return track.previewId == closedId; });
+  check(formal != tracks.end() && formal->hits == 2 && tracks.size() == 4,
+        "Dropping preview events must not truncate the formal track");
+}
+void fusedPreviewKeepsOnlySurvivorEnvelope() {
+  auto config = trackerConfig(4);
+  config.minHits = 1;
+  config.maxMiss = 1;
+  config.mergeToleranceHz = 0;
+  config.fragmentGapSamples = 5;
+  auto model = tracker(config);
+  consume(model, window(0, {candidate(0, 10, .8, 32)}));
+  consume(model, window(1));
+  consume(model, window(2));
+  consume(model, window(3, {candidate(2, 12, .8, 36)}));
+  const auto before = model.visiblePreviewEvents();
+  check(before.size() == 2, "Two fusible tracks must both stay visible before finish");
+  std::string survivor, absorbed;
+  for (const auto& event : before) {
+    if (event.observedSupport.begin == 0) survivor = event.trackId;
+    if (event.observedSupport.begin == 15) absorbed = event.trackId;
+  }
+  check(!survivor.empty() && !absorbed.empty() && survivor != absorbed,
+        "Fusion setup must identify the earlier and later tracks");
+  const auto result = finish(model);
+  const auto visible = model.visiblePreviewEvents();
+  check(visible.size() == 1 && visible.front().trackId == survivor &&
+            visible.front().phase == PreviewTrackPhase::Merged &&
+            visible.front().frequency == FrequencyRange{0, 12} &&
+            visible.front().observedSupport == TimeRange{0, 25},
+        "Fusion must leave only the survivor, with frequency and time envelopes");
+  for (const auto& event : visible)
+    check(event.trackId != absorbed, "The absorbed track must leave the visible preview");
+  check(result.size() == 1 && result[0].previewId == survivor &&
+            result[0].frequency == FrequencyRange{0, 12} &&
+            result[0].nominalSupport == TimeRange{0, 25},
+        "Formal fusion must keep the survivor id and the same envelopes");
+  bool absorbedInLog = false;
+  for (const auto& event : model.previewEvents())
+    if (event.trackId == absorbed) absorbedInLog = true;
+  check(absorbedInLog,
+        "The bounded log still records the absorbed track; only the visible set drops it");
+}
 void scnUnavailableAndInvalidSamples() {
   std::vector<float> average(32, std::numeric_limits<float>::quiet_NaN());
   std::vector<float> maximum(32, 100);
@@ -588,8 +666,10 @@ int main() {
     sameSignalKeepsOnePreviewIdentity();
     distinctSignalsDoNotMergeWithoutAnExistingRule();
     previewQueueDropsOldestWithoutTruncatingFormalTracks();
+    closedPreviewSurvivesLogEviction();
+    fusedPreviewKeepsOnlySurvivorEnvelope();
     scnUnavailableAndInvalidSamples();
-    std::cout << "Detection postprocess tests: 14 groups passed\n";
+    std::cout << "Detection postprocess tests: 16 groups passed\n";
     return 0;
   } catch (const std::exception& exception) {
     std::cerr << exception.what() << '\n';

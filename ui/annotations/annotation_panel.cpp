@@ -89,6 +89,44 @@ std::optional<FrequencyRange> rowFrequency(const Annotation& value) {
              ? std::optional<FrequencyRange>{value.observation->frequency}
              : std::nullopt;
 }
+struct AnnotationPageRow {
+  std::string id;
+  std::string name;
+  std::optional<std::string> classLabel;
+  std::string note;
+  std::string sourceSetId;
+  AnnotationSource sourceKind = AnnotationSource::Manual;
+  ReviewStatus reviewStatus = ReviewStatus::Pending;
+  std::size_t segmentCount = 0;
+  std::size_t activeSegmentNumber = 0;
+  std::optional<ViewRange> activeRange;
+  std::optional<FrequencyRange> observationFrequency;
+  std::optional<double> scoreMean;
+};
+AnnotationPageRow pageRowFrom(const Annotation& annotation) {
+  AnnotationPageRow row;
+  row.id = annotation.id;
+  row.name = annotation.name;
+  row.classLabel = annotation.classLabel;
+  row.note = annotation.note;
+  row.sourceSetId = annotation.sourceSetId;
+  row.sourceKind = annotation.sourceKind;
+  row.reviewStatus = annotation.reviewStatus;
+  row.segmentCount = annotation.segments.size();
+  if (const auto* segment = activeSegment(annotation)) {
+    row.activeSegmentNumber =
+        static_cast<std::size_t>(segment - annotation.segments.data()) + 1;
+    row.activeRange = segment->range;
+  } else if (annotation.observation)
+    row.observationFrequency = annotation.observation->frequency;
+  if (annotation.originEvidence)
+    row.scoreMean = annotation.originEvidence->scoreMean;
+  return row;
+}
+std::optional<FrequencyRange> pageFrequency(const AnnotationPageRow& row) {
+  if (row.activeRange) return row.activeRange->frequency;
+  return row.observationFrequency;
+}
 AnnotationSelectionMode selectionMode(Qt::KeyboardModifiers modifiers) {
   if (modifiers & Qt::ShiftModifier)
     return modifiers & Qt::ControlModifier
@@ -112,8 +150,8 @@ QPushButton* button(QHBoxLayout* l, QString title, QString id,
 class AnnotationTableModel final : public QAbstractTableModel {
  public:
   Session& session;
-  std::vector<const Annotation*> rows;
-  std::vector<Annotation> snapshots;
+  std::vector<const AnnotationPageRow*> rows;
+  std::vector<AnnotationPageRow> snapshots;
   std::vector<std::string> filteredIds;
   std::unordered_map<std::string, int> channelCounts;
   std::unordered_set<std::string> selectedIds;
@@ -158,8 +196,8 @@ class AnnotationTableModel final : public QAbstractTableModel {
     if (role == Qt::ToolTipRole)
       return q(a.id) + "\n" + q(a.sourceSetId) + "\n" +
              (a.classLabel ? q(*a.classLabel) : "类别未知") + "\n" +
-             (activeSegment(a) ? "几何列仅显示当前活动段；其它段不计入范围"
-                               : "时间未定位；观察窗口不作为活动段");
+             (a.activeRange ? "几何列仅显示当前活动段；其它段不计入范围"
+                            : "时间未定位；观察窗口不作为活动段");
     if (role == Qt::ForegroundRole)
       return QColor(a.sourceKind == AnnotationSource::ImportedLabel ? "#65d2bd"
                     : a.sourceKind == AnnotationSource::Manual      ? "#edc56d"
@@ -176,8 +214,7 @@ class AnnotationTableModel final : public QAbstractTableModel {
       return font;
     }
     if (role != Qt::DisplayRole) return {};
-    const auto* segment = activeSegment(a);
-    const auto frequency = rowFrequency(a);
+    const auto frequency = pageFrequency(a);
     const auto channel = channelCounts.find(a.id);
     switch (i.column()) {
       case 1:
@@ -190,17 +227,17 @@ class AnnotationTableModel final : public QAbstractTableModel {
                      : q(set->formatId) + "\n" + QFileInfo(q(set->originalPath)).fileName();
         return sourceName(a.sourceKind);
       case 3:
-        return segment ? QString("第 %1/%2 段")
-                             .arg(segment - a.segments.data() + 1)
-                             .arg(a.segments.size())
-                       : QString("时间未定位");
+        return a.activeRange ? QString("第 %1/%2 段")
+                                   .arg(a.activeSegmentNumber)
+                                   .arg(a.segmentCount)
+                             : QString("时间未定位");
       case 4:
       case 5:
-        return segment
+        return a.activeRange
                    ? QString::number(
                          static_cast<double>(i.column() == 4
-                                                 ? segment->range.time.begin
-                                                 : segment->range.time.end) /
+                                                 ? a.activeRange->time.begin
+                                                 : a.activeRange->time.end) /
                              file->metadata.sampleRateHz * 1000,
                          'g', 10)
                    : QString("—");
@@ -215,9 +252,7 @@ class AnnotationTableModel final : public QAbstractTableModel {
                                'g', 9)
                          : QString("—");
       case 8:
-        return a.originEvidence && a.originEvidence->scoreMean
-                   ? QString::number(*a.originEvidence->scoreMean, 'g', 4)
-                   : QString("—");
+        return a.scoreMean ? QString::number(*a.scoreMean, 'g', 4) : QString("—");
       case 9:
         return reviewName(a.reviewStatus);
       case 10:
@@ -237,9 +272,9 @@ class AnnotationTableModel final : public QAbstractTableModel {
     if (session.annotations().canEdit(*file, annotation.id) &&
         (index.column() == 1 ||
          ((index.column() == 4 || index.column() == 5) &&
-          activeSegment(annotation)) ||
+          annotation.activeRange) ||
          ((index.column() == 6 || index.column() == 7) &&
-          rowFrequency(annotation))))
+          pageFrequency(annotation))))
       flags |= Qt::ItemIsEditable;
     return flags;
   }
@@ -261,6 +296,7 @@ class AnnotationTableModel final : public QAbstractTableModel {
     rows.clear();
     channelCounts.clear();
     selectedIds.clear();
+    std::vector<const Annotation*> ranked;
     if (const auto* file = session.activeFile()) {
       selectedIds.insert(file->selectedMarkIds.begin(),
                          file->selectedMarkIds.end());
@@ -268,12 +304,12 @@ class AnnotationTableModel final : public QAbstractTableModel {
         if (annotationEligibleForTab(*file, a, source) &&
             (query.isEmpty() || q(a.name).contains(query, Qt::CaseInsensitive) ||
              (a.classLabel && q(*a.classLabel).contains(query, Qt::CaseInsensitive))))
-          rows.push_back(&a);
+          ranked.push_back(&a);
       for (const auto& channel : file->channels)
         ++channelCounts[channel.annotationId.empty() ? channel.sourceMarkId
                                                      : channel.annotationId];
     }
-    std::stable_sort(rows.begin(), rows.end(), [&](auto* a, auto* b) {
+    std::stable_sort(ranked.begin(), ranked.end(), [&](auto* a, auto* b) {
       const auto number =
           [&](const Annotation& value) -> std::optional<double> {
         const auto* segment = activeSegment(value);
@@ -329,10 +365,10 @@ class AnnotationTableModel final : public QAbstractTableModel {
       if (comparison == 0) return a->id < b->id;
       return direction == Qt::AscendingOrder ? comparison < 0 : comparison > 0;
     });
-    total = rows.size();
+    total = ranked.size();
     filteredIds.clear();
     filteredIds.reserve(total);
-    for (const auto* annotation : rows) filteredIds.push_back(annotation->id);
+    for (const auto* annotation : ranked) filteredIds.push_back(annotation->id);
     if (revealActive)
       if (const auto* file = session.activeFile()) {
         const auto active = std::find(filteredIds.begin(), filteredIds.end(),
@@ -343,16 +379,14 @@ class AnnotationTableModel final : public QAbstractTableModel {
     page = std::min(page, total == 0 ? std::size_t{0} : (total - 1) / 200);
     const auto offset = std::min(page * 200, total);
     const auto finish = std::min(offset + 200, total);
-    rows = std::vector<const Annotation*>(
-        rows.begin() + static_cast<std::ptrdiff_t>(offset),
-        rows.begin() + static_cast<std::ptrdiff_t>(finish));
-    // A worker can reallocate file.marks while an editor keeps this page
-    // visible. Keep only the displayed page as stable snapshots until refresh.
+    // A worker can reallocate file.marks while this page stays visible.
+    // Keep the columns the table reads, not every segment or origin document.
     snapshots.clear();
-    snapshots.reserve(rows.size());
-    for (const auto* annotation : rows) snapshots.push_back(*annotation);
-    rows.clear();
-    for (const auto& annotation : snapshots) rows.push_back(&annotation);
+    snapshots.reserve(finish - offset);
+    for (std::size_t index = offset; index < finish; ++index)
+      snapshots.push_back(pageRowFrom(*ranked[index]));
+    rows.reserve(snapshots.size());
+    for (const auto& snapshot : snapshots) rows.push_back(&snapshot);
     endResetModel();
   }
 };

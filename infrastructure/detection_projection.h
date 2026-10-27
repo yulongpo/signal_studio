@@ -25,6 +25,7 @@ class DetectionResultProjector {
               const PostprocessCancellation& cancelled = {});
   bool sealPreview(bool finalized, QString& error);
   std::vector<PreviewTrackEvent> previewEvents() const;
+  std::vector<PreviewTrackEvent> visiblePreviewEvents() const;
   std::uint64_t droppedPreviewEvents() const;
   bool attachWindowEvidence(DetectionPublication&, QString& error) const;
 

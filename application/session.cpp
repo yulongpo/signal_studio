@@ -155,7 +155,16 @@ const Channel* Session::activeChannel() const {
   return found == file->channels.end() ? nullptr : &*found;
 }
 
+bool Session::acceptProjectWrite(std::string& error) const {
+  if (!projectWriteGuard_) return true;
+  return projectWriteGuard_(error);
+}
+void Session::setProjectWriteGuard(std::function<bool(std::string&)> guard) {
+  projectWriteGuard_ = std::move(guard);
+}
+
 void Session::newProject() {
+  if (std::string blocked; !acceptProjectWrite(blocked)) return;
   ++projectGeneration_;
   annotations_.clear();
   project_ = Project{};
@@ -192,6 +201,7 @@ std::string Session::addDemoFile() {
 }
 
 std::string Session::addDemoFile(FileMetadata metadata) {
+  if (std::string blocked; !acceptProjectWrite(blocked)) return {};
   if (metadata.name.empty() || metadata.sampleCount == 0 ||
       !std::isfinite(metadata.sampleRateHz) || metadata.sampleRateHz <= 0 ||
       !std::isfinite(metadata.centerFrequencyHz))
@@ -257,6 +267,9 @@ bool Session::activateFile(const std::string& id) {
           project_.files.begin(), project_.files.end(),
           [&](const FileState& file) { return file.metadata.id == id; }))
     return false;
+  if (project_.activeFileId != id) {
+    if (std::string blocked; !acceptProjectWrite(blocked)) return false;
+  }
   if (auto* previous = activeFile()) {
     annotations_.endRevision(*previous);
     annotations_.hover(*previous);
@@ -272,6 +285,7 @@ bool Session::activateFile(const std::string& id) {
 }
 
 bool Session::removeActiveFile() {
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   const auto found = std::find_if(
       project_.files.begin(), project_.files.end(), [&](const FileState& file) {
         return file.metadata.id == project_.activeFileId;
@@ -396,8 +410,10 @@ bool Session::setView(ViewRange range, bool record) {
   range = clampRange(range, file->metadata, file->display.stftSize,
                      file->display.psdSize);
   if (file->view == range) return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   const auto previous = snapshot();
   file->view = range;
+  noteProjectWrite();
   if (record) commitViewChange(previous);
   return true;
 }
@@ -435,6 +451,7 @@ bool Session::setAuxiliaryMode(AuxiliaryMode mode) {
   if (!file || file->display.auxiliaryMode == mode) return false;
   if (mode != AuxiliaryMode::Waveform && mode != AuxiliaryMode::Psd)
     return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   saveActiveAuxiliary(file->display);
   file->display.auxiliaryMode = mode;
   loadActiveAuxiliary(file->display);
@@ -454,6 +471,7 @@ bool Session::setAuxiliaryRange(double minimum, double maximum, bool record) {
   if (range.first == file->display.auxiliaryMin &&
       range.second == file->display.auxiliaryMax)
     return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   const auto previous = snapshot();
   file->display.auxiliaryMin = range.first;
   file->display.auxiliaryMax = range.second;
@@ -486,6 +504,7 @@ bool Session::restoreSnapshot(const ViewSnapshot& previous) {
   const auto psd =
       clampAuxiliary(previous.psdMin, previous.psdMax, AuxiliaryMode::Psd);
   if (!validPsdRange(psd.first, psd.second)) return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   file->view = clampRange(previous.view, file->metadata, file->display.stftSize,
                           file->display.psdSize);
   file->display.waveformMin = wave.first;
@@ -514,6 +533,7 @@ bool Session::commitViewChange(const ViewSnapshot& previous) {
 bool Session::back() {
   auto* file = activeFile();
   if (!file || !canBack()) return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   auto& history = histories_.at(file->metadata.id);
   pushBounded(history.future, snapshot());
   restoreSnapshot(history.past.back());
@@ -524,6 +544,7 @@ bool Session::back() {
 bool Session::forward() {
   auto* file = activeFile();
   if (!file || !canForward()) return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   auto& history = histories_.at(file->metadata.id);
   pushBounded(history.past, snapshot());
   restoreSnapshot(history.future.back());
@@ -548,6 +569,7 @@ bool Session::canForward() const {
 void Session::resetView() {
   auto* file = activeFile();
   if (!file) return;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return;
   const auto previous = snapshot();
   file->view = defaultView(file->metadata, file->display.stftSize,
                            file->display.psdSize);
@@ -740,6 +762,7 @@ bool Session::setChannelView(TimeRange sourceTime,
   if (sourceTime == channel->visibleSourceTime &&
       basebandFrequency == channel->visibleBasebandFrequency)
     return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   const auto before = channelViewSnapshot();
   channel->visibleSourceTime = sourceTime;
   channel->visibleBasebandFrequency = basebandFrequency;
@@ -879,6 +902,7 @@ bool Session::channelForward() {
 }
 
 void Session::replaceProject(Project project) {
+  if (std::string blocked; !acceptProjectWrite(blocked)) return;
   for (auto& file : project.files) {
     const auto migrated = attachLegacyAnnotations(file);
     if (!migrated.ok) return;
@@ -896,6 +920,7 @@ void Session::replaceProject(Project project) {
 
 bool Session::setPowerDisplayRange(PowerDisplayRange range) {
   if (!range.valid() || !activeFile()) return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   for (auto& file : project_.files) {
     file.display.referenceLevelDb = range.referenceLevelDb;
     file.display.dynamicRangeDb = range.dynamicRangeDb;

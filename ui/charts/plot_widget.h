@@ -72,6 +72,7 @@ class PlotWidget : public QWidget {
   void setCursorCoordinates(SampleIndex sample, double frequencyHz);
   void setHoveredMark(const QString& id, const QString& segmentId = {});
   void refreshAnnotationOverlay();
+  void invalidateAnnotationOverlay();
   void setDetectionPreview(std::vector<ChartPreviewTrack> tracks, std::uint64_t dropped);
   void selectDetectionPreview(const QString& id);
   QString selectedDetectionPreview() const;
@@ -83,6 +84,8 @@ class PlotWidget : public QWidget {
   quint64 textureUploadCount() const;
   quint64 completedFrameCount() const;
   quint64 powerGenerationCount() const { return powerGenerations_; }
+  QString cachedPowerKey() const { return powerKey_; }
+  int visibleAnnotationRectCount() const { return visibleAnnotationRects_; }
   qsizetype drawnPointCount() const;
   qsizetype sourcePointCount() const;
   QString renderQuality() const;
@@ -227,6 +230,7 @@ class PlotWidget : public QWidget {
   std::optional<ViewSnapshot> wheelBase_;
   WheelAxis wheelAxis_ = WheelAxis::Time;
   QString powerKey_, colorKey_;
+  int visibleAnnotationRects_ = 0;
   QString requestedPowerKey_;
   std::shared_ptr<HeatmapPayload> renderedPower_;
   std::deque<std::shared_ptr<HeatmapPayload>> powerCache_;
