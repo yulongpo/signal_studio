@@ -1227,6 +1227,38 @@ void MainWindow::buildWorkspace() {
   connect(detection_, &DetectionPanel::runProgressChanged, this, [this] {
     if (detectionCard_) detectionCard_->refresh();
   });
+  connect(detection_, &DetectionPanel::previewSelectionDropped, this,
+          [this](const QStringList& ids) {
+            auto* file = session_.activeFile();
+            if (!file) return;
+            bool dropped = false;
+            for (const auto& id : ids) {
+              const auto text = id.toStdString();
+              if (findMark(*file, text)) continue;
+              if (std::erase(file->selectedMarkIds, text) != 0) dropped = true;
+              if (file->activeMarkId == text) {
+                file->activeMarkId.clear();
+                file->activeSegmentId.clear();
+                dropped = true;
+              }
+              if (file->hoveredMarkId == text) {
+                file->hoveredMarkId.clear();
+                file->hoveredSegmentId.clear();
+                dropped = true;
+              }
+              if (file->selectionAnchorId == text) {
+                file->selectionAnchorId.clear();
+                dropped = true;
+              }
+            }
+            if (dropped && file->activeMarkId.empty() &&
+                !file->selectedMarkIds.empty()) {
+              file->activeMarkId = file->selectedMarkIds.front();
+              if (const auto* active = findMark(*file, file->activeMarkId))
+                file->activeSegmentId = active->activeSegmentId;
+            }
+            if (dropped) refreshAnnotationHover();
+          });
   connect(detection_, &DetectionPanel::previewChanged, this, [this] {
     const auto& preview = detection_->livePreview();
     std::vector<ChartPreviewTrack> tracks;
@@ -1430,6 +1462,9 @@ void MainWindow::buildWorkspace() {
   });
   connect(detectionCard_, &DetectionCard::configurationCommitted,
           detection_, &DetectionPanel::markConfigurationStale);
+  connect(detectionCard_, &DetectionCard::intermediateResultsToggled, detection_,
+          &DetectionPanel::setShowIntermediateResults);
+  detection_->setShowIntermediateResults(detectionCard_->showIntermediateResults());
   connect(detectionCard_, &DetectionCard::requestSubmitted, this,
           [this](const DetectionRequest& request) {
             QString error;
@@ -4048,6 +4083,8 @@ void MainWindow::showInspectorPage(int page, bool intentional) {
       !session_.project().narrowbandWorkspaceOpen && !propertiesCollapsed_ && width() > 1150);
 }
 void MainWindow::updateBottom() {
+  if (annotations_ && detection_)
+    annotations_->setDetectionClearanceNote(detection_->clearanceNoteForActive());
   if (annotations_) annotations_->refresh();
   if (auxiliaryEvidence_) {
     if (auxiliaryEvidenceVisible_) {

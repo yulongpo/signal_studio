@@ -73,6 +73,8 @@ class PlotWidget : public QWidget {
   void setHoveredMark(const QString& id, const QString& segmentId = {});
   void refreshAnnotationOverlay();
   void setDetectionPreview(std::vector<ChartPreviewTrack> tracks, std::uint64_t dropped);
+  void selectDetectionPreview(const QString& id);
+  QString selectedDetectionPreview() const;
   QString statusText() const;
   QString tipText() const;
   QMenu* createContextMenu(const QPoint& position);
@@ -217,6 +219,7 @@ class PlotWidget : public QWidget {
   bool releasing_ = false;
   std::optional<DetectionRoiDraft> detectionRoi_;
   std::vector<ChartPreviewTrack> detectionPreview_;
+  std::string selectedPreviewId_;
   std::uint64_t detectionPreviewDropped_ = 0;
   std::optional<Gesture> gesture_;
   QTimer wheelTimer_;

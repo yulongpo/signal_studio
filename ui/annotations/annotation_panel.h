@@ -37,6 +37,7 @@ class AnnotationPanel final : public QWidget {
                     bool preview = true);
   void setSourceTab(AnnotationSource, bool reconcile = true);
   void setDetectionPreviewNote(const QString& note);
+  void setDetectionClearanceNote(const QString& note);
   AnnotationSource sourceTab() const { return sourceTab_; }
   void convertSelected(bool currentSegmentOnly = false,
                        bool allowExplicitDuplicate = false);
@@ -89,6 +90,7 @@ class AnnotationPanel final : public QWidget {
   QLabel* count_ = nullptr;
   QLabel* detectionStatus_ = nullptr;
   QString detectionPreviewNote_;
+  QString detectionClearanceNote_;
   QCheckBox* selectAll_ = nullptr;
   QLabel* detail_ = nullptr;
   QLabel* rangeSummary_ = nullptr;

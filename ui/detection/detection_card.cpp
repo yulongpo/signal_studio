@@ -16,7 +16,9 @@
 #include <QSizePolicy>
 #include <QStyle>
 #include <QToolButton>
+#include <QSettings>
 #include <QUuid>
+#include <QWheelEvent>
 #include <QVBoxLayout>
 #include <algorithm>
 #include <bit>
@@ -143,6 +145,14 @@ QString lifecycleText(DetectionLifecycle state) {
   }
   return "未知";
 }
+
+class NoWheelCheckBox : public QCheckBox {
+ public:
+  using QCheckBox::QCheckBox;
+
+ protected:
+  void wheelEvent(QWheelEvent* event) override { event->ignore(); }
+};
 
 QWidget* foldableFields(const QString& title, QWidget* body, bool expanded,
                         const char* name, QWidget* parent) {
@@ -624,6 +634,26 @@ void DetectionCard::setupAdvanced(QVBoxLayout* layout) {
   auto* merge = addParameter("detectionMergeFrequencyHz", "merge / Hz",
                              &DetectionParameters::mergeFrequencyHz, 1e12);
   rows->addWidget(pairedFields("最多漏检", miss, "合并频差 / Hz", merge));
+  const bool restoreIntermediate =
+      qApp->property("uiStatePersistenceEnabled").toBool() &&
+      QSettings().contains(QStringLiteral("detection/showIntermediateResults"));
+  const bool showIntermediate =
+      !restoreIntermediate ||
+      QSettings().value(QStringLiteral("detection/showIntermediateResults"), true)
+          .toBool();
+  showIntermediate_ = new NoWheelCheckBox("显示中间结果", body);
+  showIntermediate_->setObjectName("showIntermediateDetectionResults");
+  showIntermediate_->setChecked(showIntermediate);
+  showIntermediate_->setToolTip(
+      "勾选后，检测进行中在时频图和检测结果中显示虚线中间框。"
+      "取消勾选则进行中不显示。检测完成、失败、取消或中断后都会自动清除这些中间框。");
+  rows->addWidget(showIntermediate_);
+  connect(showIntermediate_, &QCheckBox::toggled, this, [this](bool shown) {
+    if (qApp->property("uiStatePersistenceEnabled").toBool())
+      QSettings().setValue(QStringLiteral("detection/showIntermediateResults"),
+                           shown);
+    emit intermediateResultsToggled(shown);
+  });
   layout->addWidget(foldableFields("高级资源参数", body, false,
                                    "detectionResourceParameters", this));
 }
@@ -867,6 +897,10 @@ ViewRange DetectionCard::availableRange() const {
   return {{0, source_.availableSamples},
           {source_.centerFrequencyHz - source_.sampleRateHz / 2,
            source_.centerFrequencyHz + source_.sampleRateHz / 2}};
+}
+
+bool DetectionCard::showIntermediateResults() const {
+  return showIntermediate_ && showIntermediate_->isChecked();
 }
 
 DetectionRequest DetectionCard::request() const {
@@ -1204,7 +1238,9 @@ void DetectionCard::refreshStatus() {
     for (const auto& slot : *file->currentDetectionSlots)
       hasCommittedResult |= slot.sampleChannel == file->metadata.sampleFormat.selectedChannel && !slot.committedRunId.empty();
   run_->setText(hasCommittedResult ? "应用并重新检测" : "开始检测");
-  run_->setToolTip("显式启动检测；完整成功后整体替换当前文件和样本通道的旧结果，0 检出同样清空。");
+  run_->setToolTip(
+      "显式开始检测或重新检测。点击后立即清除当前文件和样本通道的正式检测结果，"
+      "失败或取消不会恢复。修改参数、模型或引擎不会清除已提交结果。");
   cancel_->setEnabled(focusedRun &&
                       focusedRun->lifecycle != DetectionLifecycle::Cancelling);
   cancel_->setToolTip(focusedRun ? "取消运行 " + text(focusedRun->request.runId)

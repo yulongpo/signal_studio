@@ -1,6 +1,11 @@
 #pragma once
 
+#include <QElapsedTimer>
+#include <QCheckBox>
 #include <QDialog>
+#include <QLabel>
+#include <QtEndian>
+#include <QWheelEvent>
 #include <QFileDialog>
 #include <QCryptographicHash>
 #include <QJsonDocument>
@@ -512,4 +517,178 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
   QCOMPARE(idleContainer["assetMode"].toString(),QString("reference"));
   QCOMPARE(idleContainer["assetDirectory"],referenceBeforeSave["assetDirectory"]);
   QVERIFY(!QFileInfo::exists(referenceProject+".assets"));
+}
+
+inline void UxTests::uxD09_intermediatePreviewAndRedetectClear() {
+  const auto previousFixture = qApp->property("enableDetectionTestFixture");
+  qApp->setProperty("enableDetectionTestFixture", true);
+  const auto restore = qScopeGuard([&] {
+    qApp->setProperty("enableDetectionTestFixture", previousFixture);
+  });
+  QTemporaryDir directory;
+  MainWindow window;
+  QString issue;
+  QVERIFY(window.createProject(directory.path(), "preview-clear", &issue));
+  const auto path = directory.filePath("IQ_A_FS1Msps_FC100MHz.dat");
+  QFile iq(path);
+  QVERIFY(iq.open(QIODevice::WriteOnly));
+  QByteArray samples(20000 * 4, '\0');
+  for (int sample = 0; sample < 20000; ++sample) {
+    const double angle = 2 * 3.14159265358979323846 * .125 * sample;
+    qToLittleEndian<qint16>(static_cast<qint16>(12000 * std::cos(angle)),
+                            samples.data() + sample * 4);
+    qToLittleEndian<qint16>(static_cast<qint16>(12000 * std::sin(angle)),
+                            samples.data() + sample * 4 + 2);
+  }
+  QCOMPARE(iq.write(samples), qint64(samples.size()));
+  iq.close();
+  QVERIFY2(window.addIqFile(path, &issue), qPrintable(issue));
+  QTRY_COMPARE_WITH_TIMEOUT(
+      window.session().activeFile()->metadata.availability.status, LoadStatus::Ready,
+      10000);
+  expose(window);
+  QTest::mouseClick(window.findChild<QAbstractButton*>("detectionResultsTab"),
+                    Qt::LeftButton);
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  auto* plot = window.findChild<PlotWidget*>("mainPlot");
+  auto* status = window.findChild<QLabel*>("currentDetectionStatus");
+  auto* card = window.findChild<DetectionCard*>("detectionCard");
+  QVERIFY(panel && plot && status && card);
+  QVERIFY(uxDetectionPage(window));
+  DetectionRequest request;
+  request.runId = "preview-clear-initial";
+  request.sourceIdentity = annotationSourceIdentity(
+      window.session().activeFile()->metadata, window.session().projectGeneration());
+  request.profile = *findDetectionProfile("pipeline-fixture-v1");
+  request.requestedRange = fullRange(window.session().activeFile()->metadata);
+  request.contextRange = request.requestedRange;
+  request.rangeOrigin = "available-file";
+  QVERIFY2(panel->startRequest(request, issue), qPrintable(issue));
+  const auto committed = [&](const std::string& runId) {
+    const auto* current = window.session().activeFile();
+    const auto* slot = current ? currentDetectionSlot(
+        *current, current->metadata.sampleFormat.selectedChannel) : nullptr;
+    return slot && !slot->stale && slot->committedRunId == runId;
+  };
+  QTRY_VERIFY_WITH_TIMEOUT(committed(request.runId), 20000);
+  auto* file = window.session().activeFile();
+  std::vector<std::string> formalIds;
+  for (const auto& mark : file->marks)
+    if (mark.sourceKind == AnnotationSource::Algorithm &&
+        annotationInContext(*file, mark))
+      formalIds.push_back(mark.id);
+  QVERIFY(!formalIds.empty());
+  const auto manualId = window.session().addMark(
+      {{100, 400}, {99.9e6, 100.05e6}});
+  QVERIFY(findAnnotation(*file, manualId) &&
+          findAnnotation(*file, manualId)->sourceKind == AnnotationSource::Manual);
+  const auto manualBefore = encodeAnnotation(*findAnnotation(*file, manualId));
+  auto* timer = panel->findChild<QTimer*>("detectionTaskPoll");
+  QVERIFY(timer);
+  timer->stop();
+  const auto generations = plot->powerGenerationCount();
+  DetectionPreviewSnapshot preview;
+  preview.runId = "preview-run";
+  preview.fileId = file->metadata.id;
+  preview.events.push_back({});
+  preview.events.back().trackId = "preview-track";
+  preview.events.back().sequence = 1;
+  preview.events.back().observedSupport = {1000, 5000};
+  preview.events.back().frequency = {99.9e6, 100.1e6};
+  preview.dropped = 2;
+  file->selectedMarkIds = {formalIds.front(), "preview-track"};
+  file->activeMarkId = "preview-track";
+  file->hoveredMarkId = "preview-track";
+  panel->presentLivePreview(preview, false);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 1);
+  QVERIFY(status->text().contains("预览"));
+  plot->selectDetectionPreview("preview-track");
+  QCOMPARE(plot->selectedDetectionPreview(), QString("preview-track"));
+  panel->presentLivePreview(preview, true);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QCOMPARE(plot->selectedDetectionPreview(), QString());
+  QVERIFY(!status->text().contains("预览"));
+  QCOMPARE(file->activeMarkId, formalIds.front());
+  QCOMPARE(file->hoveredMarkId, std::string{});
+  QVERIFY(std::find(file->selectedMarkIds.begin(), file->selectedMarkIds.end(),
+                    "preview-track") == file->selectedMarkIds.end());
+  QVERIFY(std::find(file->selectedMarkIds.begin(), file->selectedMarkIds.end(),
+                    formalIds.front()) != file->selectedMarkIds.end());
+  QVERIFY(findAnnotation(*file, formalIds.front()));
+  QVERIFY(findAnnotation(*file, manualId));
+  QCOMPARE(plot->powerGenerationCount(), generations);
+  panel->presentLivePreview(preview, false);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 1);
+  QVERIFY(uxDetectionFold(window, "detectionResourceParametersToggle"));
+  auto* box = window.findChild<QCheckBox*>("showIntermediateDetectionResults");
+  QVERIFY(uxDetectionReveal(window, box));
+  QCOMPARE(box->text(), QString("显示中间结果"));
+  QVERIFY(box->isChecked());
+  const QPointF center(box->rect().center());
+  QWheelEvent wheel(center, box->mapToGlobal(center.toPoint()), QPoint(),
+                    QPoint(0, 120), Qt::NoButton, Qt::NoModifier,
+                    Qt::NoScrollPhase, false);
+  QCoreApplication::sendEvent(box, &wheel);
+  QVERIFY(box->isChecked());
+  box->setChecked(false);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QVERIFY(!status->text().contains("预览"));
+  box->setChecked(true);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 1);
+  QVERIFY(status->text().contains("预览"));
+  auto* model = card->findChild<QComboBox*>("detectionModel");
+  QVERIFY(model);
+  model->setCurrentIndex(model->findData("scn-max-psd-v1"));
+  file = window.session().activeFile();
+  QVERIFY(findAnnotation(*file, formalIds.front()));
+  QVERIFY(findAnnotation(*file, manualId));
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, manualId)), manualBefore);
+  model->setCurrentIndex(model->findData("pipeline-fixture-v1"));
+  QVERIFY(findAnnotation(*window.session().activeFile(), formalIds.front()));
+  auto* run = window.findChild<QPushButton*>("runWidebandDetection");
+  QVERIFY2(run && run->isVisible() && run->isEnabled(),
+           run ? qPrintable(run->text()) : "missing run button");
+  QVERIFY(run->text().contains("重新检测"));
+  QTest::mouseClick(run, Qt::LeftButton);
+  file = window.session().activeFile();
+  const auto* slot = currentDetectionSlot(
+      *file, file->metadata.sampleFormat.selectedChannel);
+  QVERIFY2(slot && slot->committedRunId.empty() && !slot->pendingRunId.empty(),
+           qPrintable(status->text()));
+  for (const auto& id : formalIds) QVERIFY(!findAnnotation(*file, id));
+  QVERIFY(findAnnotation(*file, manualId));
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, manualId)), manualBefore);
+  QVERIFY(status->text().contains("已清除当前通道上次正式检测结果"));
+  QVERIFY(status->text().contains("不会恢复"));
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QCOMPARE(plot->powerGenerationCount(), generations);
+  const auto pendingId = slot->pendingRunId;
+  panel->tasks().cancel(pendingId);
+  timer->start();
+  bool cancelledWithoutRestore = false;
+  QElapsedTimer wait;
+  wait.start();
+  while (wait.elapsed() < 20000) {
+    QTest::qWait(50);
+    file = window.session().activeFile();
+    const auto* now = currentDetectionSlot(
+        *file, file->metadata.sampleFormat.selectedChannel);
+    if (now && now->pendingRunId.empty() && now->committedRunId.empty()) {
+      cancelledWithoutRestore = true;
+      break;
+    }
+    if (now && now->committedRunId == pendingId) break;
+  }
+  QVERIFY2(cancelledWithoutRestore, qPrintable(status->text()));
+  file = window.session().activeFile();
+  for (const auto& id : formalIds) QVERIFY(!findAnnotation(*file, id));
+  std::size_t algorithm = 0;
+  for (const auto& mark : file->marks)
+    if (mark.sourceKind == AnnotationSource::Algorithm) ++algorithm;
+  QCOMPARE(algorithm, std::size_t{0});
+  QVERIFY(findAnnotation(*file, manualId));
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, manualId)), manualBefore);
+  QVERIFY(status->text().contains("已清除当前通道上次正式检测结果"));
+  QVERIFY(status->text().contains("不会恢复"));
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
 }

@@ -602,6 +602,7 @@ if(SS_BUILD_TESTS)
     ss_add_ux_test(detection uxD01_historicalDerivation uxD02_viewSourceKeepsDraft
         uxD01_topDerivationDiscardsCrossFileDraft
         uxD03_crossFileCancellation uxD03_activeTaskCancellationAndFrozenDisplay
+        uxD09_intermediatePreviewAndRedetectClear
         uxD04_modelSpectrumMapping uxD05_foldedParametersAndFirstScreen
         uxD06_visibleRangeEntry uxD08_preflightDetails)
     ss_add_ux_test(spectral uxS01_methodHistory uxS02_conditionalRows

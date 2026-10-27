@@ -1540,6 +1540,11 @@ void AnnotationPanel::setDetectionPreviewNote(const QString& note) {
   detectionPreviewNote_ = note;
   if (sourceTab_ == AnnotationSource::Algorithm) refresh();
 }
+void AnnotationPanel::setDetectionClearanceNote(const QString& note) {
+  if (note == detectionClearanceNote_) return;
+  detectionClearanceNote_ = note;
+  if (sourceTab_ == AnnotationSource::Algorithm) refresh();
+}
 void AnnotationPanel::refresh() {
   refreshing_ = true;
   auto* f = session_.activeFile();
@@ -1688,6 +1693,16 @@ void AnnotationPanel::refreshTableSelection(const FileState* file) {
         detectionText = "检测运行中 · 尚无正式检测结果；暂存结果未发布，不可转换为人工标记。";
         else if (slot.stale)
           detectionText = "结果待更新 · 尚无正式检测结果；请显式应用并重新检测。";
+    }
+  if (!detectionClearanceNote_.isEmpty() && file && file->currentDetectionSlots)
+    for (const auto& slot : *file->currentDetectionSlots) {
+      if (slot.sampleChannel != file->metadata.sampleFormat.selectedChannel ||
+          !slot.committedRunId.empty())
+        continue;
+      detectionText = slot.pendingRunId.empty()
+                          ? detectionClearanceNote_
+                          : QString("检测运行中 · %1").arg(detectionClearanceNote_);
+      break;
     }
   if (!detectionPreviewNote_.isEmpty())
     detectionText += QString(" · %1").arg(detectionPreviewNote_);

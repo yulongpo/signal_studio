@@ -38,11 +38,13 @@ class DetectionCard : public QWidget {
   void useVisibleRange();
   void focusRun(const QString& runId);
   DetectionRequest request() const;
+  bool showIntermediateResults() const;
   QString validationError() const;
   QWidget* actionsWidget() const { return actions_; }
 
  signals:
   void requestSubmitted(const DetectionRequest&);
+  void intermediateResultsToggled(bool shown);
   void roiSelectionRequested();
   void selectionChanged();
   void configurationCommitted();
@@ -144,6 +146,7 @@ class DetectionCard : public QWidget {
   QWidget* marginFields_ = nullptr;
   QButtonGroup* strategies_ = nullptr;
   QCheckBox* splitBursts_ = nullptr;
+  QCheckBox* showIntermediate_ = nullptr;
   QPushButton* selectRoi_ = nullptr;
   QWidget* actions_ = nullptr;
   QPushButton* run_ = nullptr;

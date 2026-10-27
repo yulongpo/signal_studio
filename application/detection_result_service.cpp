@@ -426,6 +426,31 @@ bool DetectionResultService::prepareRecovery(Project& project, const DetectionRu
   error.clear();
   return true;
 }
+bool DetectionResultService::clearCommittedDetection(
+    Project& project, const std::string& fileId, std::uint32_t channel,
+    bool& clearedPrevious, QString& error) {
+  clearedPrevious = false;
+  auto* file = fileFor(project, fileId);
+  if (!file) {
+    error = "检测文件不存在";
+    return false;
+  }
+  auto* slot = slotFor(*file, channel);
+  if (!slot || slot->committedRunId.empty()) {
+    error.clear();
+    return true;
+  }
+  retireScope(*file, *slot, {}, slot->pendingRunId);
+  slot->committedRunId.clear();
+  slot->stale = true;
+  if (const auto valid = validateCurrentDetectionSlots(*file); !valid) {
+    error = QString::fromStdString(valid.error);
+    return false;
+  }
+  clearedPrevious = true;
+  error.clear();
+  return true;
+}
 void DetectionResultService::abandonDetection(Project& project, const DetectionResultTicket& ticket) {
   auto* file = fileFor(project, ticket.fileId);
   auto* slot = file ? slotFor(*file, ticket.sampleChannel) : nullptr;

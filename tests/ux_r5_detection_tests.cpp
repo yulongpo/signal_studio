@@ -684,6 +684,113 @@ void transactionBudgetRejection() {
   check(currentDetectionSlot(reopened.files[0], 0)->committedRunId == "old" &&
         algorithmCount(reopened.files[0]) == 1, "Budget rejection lost last complete formal result");
 }
+void explicitRedetectClearsWithoutRestoring() {
+  Harness h;
+  auto& file = h.project.files[0];
+  AnnotationSourceSet labels;
+  labels.id = "controlled-label-set";
+  labels.fileId = file.metadata.id;
+  labels.sourceKind = AnnotationSource::ImportedLabel;
+  labels.sourceIdentity = annotationSourceIdentity(file.metadata, generation);
+  labels.formatId = labels.parserId = "controlled-label-fixture";
+  labels.parserVersion = "1";
+  labels.originalText = "small controlled original label";
+  labels.sourceHash = QCryptographicHash::hash(
+      QByteArray::fromStdString(labels.originalText), QCryptographicHash::Sha256)
+      .toHex().toStdString();
+  Annotation label("controlled-label", "keep original", {{400, 800}, {99.8e6, 99.9e6}});
+  label.fileId = file.metadata.id;
+  label.sourceSetId = labels.id;
+  label.sourceKind = AnnotationSource::ImportedLabel;
+  label.segments.front().confirmed = false;
+  label.reviewStatus = ReviewStatus::Pending;
+  label.revisions.clear();
+  label.reviewHistory.clear();
+  auto origin = std::make_shared<OriginEvidence>(*label.originEvidence);
+  origin->formatId = "generator-txt-v1";
+  origin->originalSegments = label.segments;
+  label.originEvidence = std::move(origin);
+  check(h.annotations.publishSourceSet(file, labels, {label}).ok, "Imported fixture failed");
+  check(h.annotations.createManual(file, "keep manual", {{100, 300}, {99.9e6, 100.1e6}}).ok,
+        "Manual fixture failed");
+  const auto preserved = nonAlgorithm(file);
+  auto original = h.durable("original");
+  h.publish(original);
+  const auto oldId = original.publication.annotations[0].id;
+  check(h.annotations.select(h.project.files[0], {oldId}, oldId).ok, "Select committed result");
+  check(DetectionResultService::markStale(h.project, "file-a", 0), "Configuration did not become stale");
+  check(algorithmCount(h.project.files[0]) == 1 &&
+            h.project.files[0].activeMarkId == oldId,
+        "Parameter stale cleared formal results or selection");
+  auto next = h.durable("next");
+  h.pending(next);
+  check(algorithmCount(h.project.files[0]) == 1 &&
+            currentDetectionSlot(h.project.files[0], 0)->committedRunId == "original",
+        "Starting a pending slot alone cleared the committed result");
+  bool cleared = false;
+  QString error;
+  check(DetectionResultService::clearCommittedDetection(
+            h.project, "file-a", 0, cleared, error),
+        error);
+  check(cleared, "Explicit redetect did not report that a formal result was cleared");
+  check(algorithmCount(h.project.files[0]) == 0 && !findAnnotation(h.project.files[0], oldId),
+        "Formal detection result remained after explicit redetect");
+  check(nonAlgorithm(h.project.files[0]) == preserved,
+        "Explicit redetect removed a manual mark or raw label");
+  check(h.project.files[0].activeMarkId != oldId &&
+            std::find(h.project.files[0].selectedMarkIds.begin(),
+                      h.project.files[0].selectedMarkIds.end(),
+                      oldId) == h.project.files[0].selectedMarkIds.end(),
+        "Selection still hits the cleared formal result");
+  const auto* slot = currentDetectionSlot(h.project.files[0], 0);
+  check(slot && slot->committedRunId.empty() && slot->pendingRunId == "next" && slot->stale,
+        "Explicit clear did not leave the new run pending without a committed result");
+  DetectionResultService::abandonDetection(h.project, next.ticket);
+  check(algorithmCount(h.project.files[0]) == 0 && nonAlgorithm(h.project.files[0]) == preserved,
+        "Failure or cancel restored the cleared formal result");
+  slot = currentDetectionSlot(h.project.files[0], 0);
+  check(slot && slot->committedRunId.empty() && slot->pendingRunId.empty(),
+        "Abandon restored a committed run");
+  h.save();
+  const auto reopened = h.reopen();
+  check(algorithmCount(reopened.files[0]) == 0 && nonAlgorithm(reopened.files[0]) == preserved,
+        "Reopen restored formal results or changed manual/raw labels");
+  cleared = true;
+  check(DetectionResultService::clearCommittedDetection(
+            h.project, "file-a", 0, cleared, error) &&
+            !cleared,
+        "Clearing an empty detection scope reported a previous result");
+  DetectionPreviewSnapshot raw;
+  raw.runId = "preview-run";
+  raw.dropped = 4;
+  raw.events.push_back({});
+  raw.events.back().trackId = "preview-track";
+  raw.events.back().sequence = 1;
+  raw.events.push_back(raw.events.back());
+  raw.events.back().sequence = 2;
+  const auto shown = presentDetectionPreview(raw, false, true);
+  check(shown.visible.events.size() == 2 && shown.visible.dropped == 4 &&
+            shown.hiddenTrackIds.empty(),
+        "In-progress preview was hidden while the option was on");
+  const auto hidden = presentDetectionPreview(raw, false, false);
+  check(hidden.visible.events.empty() && hidden.visible.dropped == 0 &&
+            hidden.hiddenTrackIds.size() == 1 &&
+            hidden.hiddenTrackIds.front() == "preview-track",
+        "Unchecked intermediate option still exposed a dashed preview");
+  for (const auto state : {DetectionLifecycle::Completed, DetectionLifecycle::Failed,
+                           DetectionLifecycle::Cancelled, DetectionLifecycle::Interrupted}) {
+    check(detectionIsTerminal(state), "Terminal detection state was not recognized");
+    const auto done = presentDetectionPreview(raw, true, true);
+    check(done.visible.events.empty() && done.visible.dropped == 0 && done.visible.sealed &&
+              done.hiddenTrackIds.size() == 1,
+          "Terminal state kept a dashed preview");
+  }
+  check(!detectionIsTerminal(DetectionLifecycle::Running) &&
+            !detectionIsTerminal(DetectionLifecycle::Cancelling),
+        "A running detection was treated as terminal");
+  check(nonAlgorithm(h.project.files[0]) == preserved,
+        "Preview presentation wrote into file marks");
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -699,7 +806,8 @@ int main(int argc, char** argv) {
       {"legacy-multi-run-and-ambiguous-timestamps", legacyMultiRunAdjudicationAndAmbiguity},
       {"retired-channel-snapshot-and-GC", retiredChannelSnapshot},
       {"save-GC-real-lock-competition", saveGcLockCompetition},
-      {"transaction-metadata-count-segment-budgets", transactionBudgetRejection}};
+      {"transaction-metadata-count-segment-budgets", transactionBudgetRejection},
+      {"explicit-redetect-clears-without-restore", explicitRedetectClearsWithoutRestoring}};
   int failed = 0;
   for (const auto& [name, test] : cases) {
     try { test(); std::cout << "PASS " << name << '\n'; }

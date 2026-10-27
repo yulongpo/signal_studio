@@ -1064,9 +1064,21 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     if (fixture) return;
     QString ignored;
     projector.sealPreview(previewFinal, ignored);
-    publishPreview();
     std::lock_guard lock(mutex_);
+    job->preview.runId = request.runId;
+    job->preview.fileId = request.sourceIdentity.fileId;
+    job->preview.projectGeneration = request.sourceIdentity.projectGeneration;
     job->preview.sealed = true;
+    // finish() has already stored a terminal lifecycle on the normal return
+    // path. An exception can seal before that assignment; the panel still
+    // hides previews once the lifecycle becomes terminal.
+    if (detectionIsTerminal(job->run.lifecycle)) {
+      job->preview.events.clear();
+      job->preview.dropped = 0;
+    } else {
+      job->preview.events = projector.previewEvents();
+      job->preview.dropped = projector.droppedPreviewEvents();
+    }
   });
   if (!fixture && !projector.reset(request, plan.eligibleWindowCount,
                                    job->publicationBudgetBytes / 4, error)) {

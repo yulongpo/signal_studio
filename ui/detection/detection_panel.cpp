@@ -21,6 +21,7 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QSettings>
 #include <QStyle>
 #include <QStyleOptionButton>
 #include <QStyledItemDelegate>
@@ -46,6 +47,12 @@
 namespace signalstudio {
 namespace {
 QString q(const std::string& value) { return QString::fromUtf8(value); }
+std::string detectionScopeKey(const std::string& fileId, std::uint32_t channel) {
+  return fileId + ":" + std::to_string(channel);
+}
+QString clearedDetectionResultNote() {
+  return QStringLiteral("已清除当前通道上次正式检测结果；失败或取消不会恢复");
+}
 QString stateName(DetectionLifecycle state) {
   switch (state) {
     case DetectionLifecycle::Queued:
@@ -656,6 +663,7 @@ DetectionPanel::DetectionPanel(Session& session,
   layout->addWidget(list_, 1);
   updateSelectionActions();
   timer_ = new QTimer(this);
+  timer_->setObjectName("detectionTaskPoll");
   timer_->setInterval(100);
   connect(timer_, &QTimer::timeout, this, &DetectionPanel::poll);
   timer_->start();
@@ -694,6 +702,13 @@ bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
   }
   for (auto& source : candidate.files)
     if (source.metadata.id == ticket.fileId) source.detectionRuns.push_back(*queued);
+  bool clearedPrevious = false;
+  if (!DetectionResultService::clearCommittedDetection(
+          candidate, ticket.fileId, ticket.sampleChannel, clearedPrevious,
+          error)) {
+    tasks_->cancel(id);
+    return false;
+  }
   if (!ProjectFileCodec::save(path, candidate, error)) {
     tasks_->cancel(id);
     return false;
@@ -708,7 +723,12 @@ bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
   for (const auto& [oldId, oldTicket] : tickets_)
     if (oldTicket.fileId == ticket.fileId && oldTicket.sampleChannel == ticket.sampleChannel)
       tasks_->cancel(oldId);
+  const auto scope = detectionScopeKey(ticket.fileId, ticket.sampleChannel);
   tickets_[id] = std::move(ticket);
+  if (clearedPrevious) {
+    clearedScopes_.insert(scope);
+    emit message(clearedDetectionResultNote());
+  }
   tasks_->pump();
   poll();
   return true;
@@ -778,9 +798,15 @@ void DetectionPanel::poll() {
         (detectionIsTerminal(run.lifecycle) && run.lifecycle != DetectionLifecycle::Completed)) {
       tasks_->invalidateSource(run.request.runId, run.sourceValidity);
       DetectionResultService::abandonDetection(session_.project(), ticket);
+      const bool cleared = clearedScopes_.contains(
+          detectionScopeKey(ticket.fileId, ticket.sampleChannel));
+      const QString kept = cleared
+          ? clearedDetectionResultNote()
+          : QStringLiteral("上次正式结果待更新");
       emit message(run.sourceValidity != DetectionSourceValidity::Current
-          ? "来源已变化：未发布本次检测，上次正式结果待更新"
-          : stateName(run.lifecycle) + "：未发布部分结果，上次正式结果待更新。" + q(run.error));
+          ? "来源已变化：未发布本次检测，" + kept
+          : stateName(run.lifecycle) + "：未发布部分结果，" + kept + "。" +
+                q(run.error));
       tickets_.erase(ticketEntry);
       changedState = true;
       continue;
@@ -800,8 +826,13 @@ void DetectionPanel::poll() {
       const auto result = DetectionResultService::replaceCurrentDetection(
           session_.project(), session_.annotations(), ticket,
           session_.projectGeneration(), run, std::move(publication), path);
+      const auto scope = detectionScopeKey(ticket.fileId, ticket.sampleChannel);
+      const bool cleared = clearedScopes_.contains(scope);
+      if (result) clearedScopes_.erase(scope);
       emit message(result ? "检测事务已保存并整体替换；ROI 外未检测，0 检出同样清空旧结果"
-                          : "检测未提交，保留上次正式集合：" + result.error);
+                   : cleared ? "检测未提交。" + clearedDetectionResultNote() +
+                                   "：" + result.error
+                             : "检测未提交，保留上次正式集合：" + result.error);
       tickets_.erase(run.request.runId);
       if (result) scheduleGc(path);
       changedState = true;
@@ -812,18 +843,58 @@ void DetectionPanel::poll() {
   const auto* active = session_.activeFile();
   auto preview = active ? tasks_->previewFor(active->metadata.id, generation_)
                         : DetectionPreviewSnapshot{};
+  bool terminal = false;
+  if (!preview.runId.empty()) {
+    terminal = true;
+    for (const auto& run : tasks_->snapshots())
+      if (run.request.runId == preview.runId) {
+        terminal = detectionIsTerminal(run.lifecycle);
+        break;
+      }
+  }
+  presentLivePreview(std::move(preview), terminal);
+}
+
+void DetectionPanel::presentLivePreview(DetectionPreviewSnapshot raw, bool terminal) {
+  rawPreview_ = std::move(raw);
+  rawPreviewTerminal_ = terminal;
+  const auto presented =
+      presentDetectionPreview(rawPreview_, rawPreviewTerminal_, showIntermediate_);
+  const auto& preview = presented.visible;
+  const auto previousIds = detectionPreviewTrackIds(livePreview_);
+  const auto visibleIds = detectionPreviewTrackIds(preview);
+  QStringList dropped;
+  for (const auto& id : previousIds)
+    if (std::find(visibleIds.begin(), visibleIds.end(), id) == visibleIds.end())
+      dropped.push_back(q(id));
   const auto token = preview.events.empty() ? 0 : preview.events.back().sequence;
   if (token != previewToken_ || preview.sealed != previewSealed_ ||
       preview.dropped != previewDropped_ || preview.events.size() != previewCount_ ||
-      (active ? active->metadata.id : std::string{}) != previewFile_) {
+      preview.fileId != previewFile_) {
     previewToken_ = token;
     previewSealed_ = preview.sealed;
     previewDropped_ = preview.dropped;
     previewCount_ = preview.events.size();
-    previewFile_ = active ? active->metadata.id : std::string{};
-    livePreview_ = std::move(preview);
+    previewFile_ = preview.fileId;
+    livePreview_ = preview;
     emit previewChanged();
   }
+  if (!dropped.isEmpty()) emit previewSelectionDropped(dropped);
+}
+
+void DetectionPanel::setShowIntermediateResults(bool show) {
+  if (showIntermediate_ == show) return;
+  showIntermediate_ = show;
+  presentLivePreview(rawPreview_, rawPreviewTerminal_);
+}
+
+QString DetectionPanel::clearanceNoteForActive() const {
+  const auto* file = session_.activeFile();
+  if (!file) return {};
+  return clearedScopes_.contains(detectionScopeKey(
+             file->metadata.id, file->metadata.sampleFormat.selectedChannel))
+             ? clearedDetectionResultNote()
+             : QString{};
 }
 
 void DetectionPanel::markConfigurationStale() {

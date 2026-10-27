@@ -1,11 +1,13 @@
 #pragma once
 
+#include <QStringList>
 #include <QWidget>
 #include <functional>
 #include <future>
 #include <memory>
 #include <optional>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "application/session.h"
 #include "application/detection_result_service.h"
@@ -30,6 +32,10 @@ class DetectionPanel : public QWidget {
   void openRunSource(const QString& runId);
   void deriveRun(const QString& runId);
   void refresh();
+  void presentLivePreview(DetectionPreviewSnapshot raw, bool terminal);
+  void setShowIntermediateResults(bool show);
+  bool showIntermediateResults() const { return showIntermediate_; }
+  QString clearanceNoteForActive() const;
   void setProjectFilePathProvider(std::function<QString()> provider) {
     projectFilePath_ = std::move(provider);
   }
@@ -44,6 +50,7 @@ class DetectionPanel : public QWidget {
   void runProgressChanged();
   void runFocused(const QString& runId);
   void previewChanged();
+  void previewSelectionDropped(const QStringList& trackIds);
 
  private:
   void poll();
@@ -86,6 +93,10 @@ class DetectionPanel : public QWidget {
   std::uint64_t listGeneration_ = 0;
   QTimer* timer_ = nullptr;
   DetectionPreviewSnapshot livePreview_;
+  DetectionPreviewSnapshot rawPreview_;
+  bool rawPreviewTerminal_ = false;
+  bool showIntermediate_ = true;
+  std::unordered_set<std::string> clearedScopes_;
   std::uint64_t previewToken_ = 0;
   std::uint64_t previewDropped_ = 0;
   std::size_t previewCount_ = 0;

@@ -1061,7 +1061,33 @@ void PlotWidget::setDetectionPreview(std::vector<ChartPreviewTrack> tracks,
                                      std::uint64_t dropped) {
   detectionPreview_ = std::move(tracks);
   detectionPreviewDropped_ = dropped;
-  if (kind_ == Kind::Main) repaintChart();
+  if (!selectedPreviewId_.empty() &&
+      std::none_of(detectionPreview_.begin(), detectionPreview_.end(),
+                   [&](const auto& track) { return track.id == selectedPreviewId_; }))
+    selectedPreviewId_.clear();
+  setProperty("detectionPreviewCount", static_cast<int>(detectionPreview_.size()));
+  setProperty("selectedDetectionPreviewId",
+              QString::fromStdString(selectedPreviewId_));
+  // Overlay only. Clearing or updating dashed boxes must not rebuild the
+  // spectrogram.
+  if (kind_ != Kind::Main) return;
+  if (surface_ && !softwareFallback_) surface_->invalidateOverlay();
+  QWidget::update();
+}
+void PlotWidget::selectDetectionPreview(const QString& id) {
+  const auto text = id.toStdString();
+  if (!text.empty() &&
+      std::none_of(detectionPreview_.begin(), detectionPreview_.end(),
+                   [&](const auto& track) { return track.id == text; }))
+    return;
+  selectedPreviewId_ = text;
+  setProperty("selectedDetectionPreviewId", id);
+  if (kind_ != Kind::Main) return;
+  if (surface_ && !softwareFallback_) surface_->invalidateOverlay();
+  QWidget::update();
+}
+QString PlotWidget::selectedDetectionPreview() const {
+  return QString::fromStdString(selectedPreviewId_);
 }
 void PlotWidget::refreshAnnotationOverlay() {
   const auto* file = session_.activeFile();

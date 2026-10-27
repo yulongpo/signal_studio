@@ -1,7 +1,10 @@
 #pragma once
 
 #include <QString>
+#include <algorithm>
 #include <functional>
+#include <string>
+#include <vector>
 #include "application/annotation_service.h"
 #include "infrastructure/detection_task.h"
 
@@ -47,6 +50,12 @@ class DetectionResultService {
   static void abandonDetection(Project&, const DetectionResultTicket&);
   static bool markStale(Project&, const std::string& fileId,
                         std::uint32_t sampleChannel);
+  // Explicit detect/redetect only. Removes the committed formal result for
+  // this file and sample channel before the new run is saved. Manual marks
+  // and imported labels stay. Failure does not restore the removed result.
+  static bool clearCommittedDetection(Project&, const std::string& fileId,
+                                      std::uint32_t sampleChannel,
+                                      bool& clearedPrevious, QString& error);
 
   // Stage on a fresh Project -> verify durable run/shards -> atomic .ssproj
   // save -> noexcept move into the caller. Never uses Session::replaceProject
@@ -57,4 +66,35 @@ class DetectionResultService {
       DetectionPublication, const QString& ssprojPath,
       const DetectionTransactionOptions& = {});
 };
+
+struct DetectionPreviewPresentation {
+  DetectionPreviewSnapshot visible;
+  std::vector<std::string> hiddenTrackIds;
+};
+
+inline std::vector<std::string> detectionPreviewTrackIds(
+    const DetectionPreviewSnapshot& preview) {
+  std::vector<std::string> ids;
+  ids.reserve(preview.events.size());
+  for (const auto& event : preview.events)
+    if (std::find(ids.begin(), ids.end(), event.trackId) == ids.end())
+      ids.push_back(event.trackId);
+  return ids;
+}
+
+// Terminal runs and a disabled intermediate-result option hide dashed
+// previews. The snapshot is not written into file marks.
+inline DetectionPreviewPresentation presentDetectionPreview(
+    const DetectionPreviewSnapshot& raw, bool terminal,
+    bool showIntermediate) {
+  DetectionPreviewPresentation result;
+  result.visible = raw;
+  if (terminal || !showIntermediate) {
+    result.hiddenTrackIds = detectionPreviewTrackIds(raw);
+    result.visible.events.clear();
+    result.visible.dropped = 0;
+    if (terminal) result.visible.sealed = true;
+  }
+  return result;
+}
 }  // namespace signalstudio
