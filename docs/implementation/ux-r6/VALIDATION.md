@@ -51,6 +51,12 @@ Release 重新执行样本能量、样本流（`--golden --long --run-budget`）
 
 批次 1/2/4/8/16 的 FFSCN 实测见 PERFORMANCE 的 R6-4 节。优化后同设备 p50/p95、多场景检出质量、预览 UI 的 4K/150% GPU/软件、最终回归、独立审核及安全发布仍待后续节点。大型 RFbench 按要求不执行。
 
+## R6-6 预览界面与 4K 屏（2026-10-27）
+
+检测结果 Tab 的状态行在有预览时附加“预览 N 条 · 时间未定位 · 不能转换为人工标记或创建窄带”。时间图只在算法来源层叠加虚线观察带，命中测试仍只看正式标记。切文件或工程代次后 `previewFor` 不返回旧 run。参数草稿仍只把正式结果标成待更新。
+
+原生烟测命令是 `--demo-data --smoke-test --screen 4k --full-screen --verify-4k-150`，分别加 `--require-gpu` 和 `--software-renderer`。两次退出码都是 0。屏幕是 Redmi 27 NU / DISPLAY6 / 连接序号 2 / 3840×2160 / 1.5。GPU 报告后端是 `QRhi D3D11 | AMD Radeon(TM) 880M Graphics`，主图 `textureUploads=1`。软件报告后端是 `QPainter 软件绘制`，`hardwareRenderer=false`。原始 JSON 在 `out/tasks/ux-r6/diagnostics/r6-6-native/`。演示 IQ 烟测没有检测预览对象，所以没有在这块屏上拍到预览框。
+
 ## R6-5 轨迹预览（2026-10-27）
 
 `signal_studio_detection_postprocess` Release 通过，输出 `Detection postprocess tests: 14 groups passed`。覆盖同一信号跨窗保持一个 ID、接近信号在现有规则不合并时保持两个 ID、队列上限 2 时丢弃最旧且正式轨迹仍为 4 次命中、成功封存 Finalized、取消封存 Closed。这些事件不进入正式 publication。

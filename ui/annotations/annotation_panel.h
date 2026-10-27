@@ -36,6 +36,7 @@ class AnnotationPanel final : public QWidget {
   bool importLabels(const QString&, QString* error = nullptr,
                     bool preview = true);
   void setSourceTab(AnnotationSource, bool reconcile = true);
+  void setDetectionPreviewNote(const QString& note);
   AnnotationSource sourceTab() const { return sourceTab_; }
   void convertSelected(bool currentSegmentOnly = false,
                        bool allowExplicitDuplicate = false);
@@ -87,6 +88,7 @@ class AnnotationPanel final : public QWidget {
   QDoubleSpinBox* minimumScore_ = nullptr;
   QLabel* count_ = nullptr;
   QLabel* detectionStatus_ = nullptr;
+  QString detectionPreviewNote_;
   QCheckBox* selectAll_ = nullptr;
   QLabel* detail_ = nullptr;
   QLabel* rangeSummary_ = nullptr;

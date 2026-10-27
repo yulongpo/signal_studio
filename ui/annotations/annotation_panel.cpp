@@ -1535,6 +1535,11 @@ void AnnotationPanel::geometry(int field) {
   }
   queueRefresh();
 }
+void AnnotationPanel::setDetectionPreviewNote(const QString& note) {
+  if (note == detectionPreviewNote_) return;
+  detectionPreviewNote_ = note;
+  if (sourceTab_ == AnnotationSource::Algorithm) refresh();
+}
 void AnnotationPanel::refresh() {
   refreshing_ = true;
   auto* f = session_.activeFile();
@@ -1681,9 +1686,11 @@ void AnnotationPanel::refreshTableSelection(const FileState* file) {
       }
       else if (!slot.pendingRunId.empty())
         detectionText = "检测运行中 · 尚无正式检测结果；暂存结果未发布，不可转换为人工标记。";
-      else if (slot.stale)
-        detectionText = "结果待更新 · 尚无正式检测结果；请显式应用并重新检测。";
+        else if (slot.stale)
+          detectionText = "结果待更新 · 尚无正式检测结果；请显式应用并重新检测。";
     }
+  if (!detectionPreviewNote_.isEmpty())
+    detectionText += QString(" · %1").arg(detectionPreviewNote_);
   detectionStatus_->setText(detectionText);
   findChild<QPushButton*>("annotationQualityMenu")
       ->setEnabled(allEditable);

@@ -43,6 +43,7 @@ class DetectionPanel : public QWidget {
   void configurationRequested(const DetectionRun* parentRun);
   void runProgressChanged();
   void runFocused(const QString& runId);
+  void previewChanged();
 
  private:
   void poll();
@@ -84,5 +85,13 @@ class DetectionPanel : public QWidget {
   std::unordered_map<std::string, PublishedCounts> publishedCounts_;
   std::uint64_t listGeneration_ = 0;
   QTimer* timer_ = nullptr;
+  DetectionPreviewSnapshot livePreview_;
+  std::uint64_t previewToken_ = 0;
+  std::uint64_t previewDropped_ = 0;
+  std::size_t previewCount_ = 0;
+  bool previewSealed_ = false;
+  std::string previewFile_;
+ public:
+  const DetectionPreviewSnapshot& livePreview() const { return livePreview_; }
 };
 }  // namespace signalstudio

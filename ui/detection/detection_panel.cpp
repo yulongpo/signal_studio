@@ -809,6 +809,21 @@ void DetectionPanel::poll() {
   }
   if (refreshRunList(changedState)) emit runProgressChanged();
   if (changedState) emit changed();
+  const auto* active = session_.activeFile();
+  auto preview = active ? tasks_->previewFor(active->metadata.id, generation_)
+                        : DetectionPreviewSnapshot{};
+  const auto token = preview.events.empty() ? 0 : preview.events.back().sequence;
+  if (token != previewToken_ || preview.sealed != previewSealed_ ||
+      preview.dropped != previewDropped_ || preview.events.size() != previewCount_ ||
+      (active ? active->metadata.id : std::string{}) != previewFile_) {
+    previewToken_ = token;
+    previewSealed_ = preview.sealed;
+    previewDropped_ = preview.dropped;
+    previewCount_ = preview.events.size();
+    previewFile_ = active ? active->metadata.id : std::string{};
+    livePreview_ = std::move(preview);
+    emit previewChanged();
+  }
 }
 
 void DetectionPanel::markConfigurationStale() {

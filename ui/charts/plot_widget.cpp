@@ -1057,6 +1057,12 @@ void PlotWidget::setHoveredMark(const QString& id, const QString& segmentId) {
       emit annotationHoverChanged();
     }
 }
+void PlotWidget::setDetectionPreview(std::vector<ChartPreviewTrack> tracks,
+                                     std::uint64_t dropped) {
+  detectionPreview_ = std::move(tracks);
+  detectionPreviewDropped_ = dropped;
+  if (kind_ == Kind::Main) repaintChart();
+}
 void PlotWidget::refreshAnnotationOverlay() {
   const auto* file = session_.activeFile();
   setProperty("hoveredAnnotationId",
@@ -2698,6 +2704,32 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
       painter.drawText(label.adjusted(7, 0, -7, 0), Qt::AlignVCenter,
                        roiMetrics.elidedText(text, Qt::ElideRight,
                                              std::max(1.0, labelWidth - 14)));
+    }
+  }
+  if (kind_ == Kind::Main &&
+      file->annotationLayers[static_cast<int>(AnnotationSource::Algorithm)] &&
+      !detectionPreview_.empty()) {
+    painter.setFont(canvasFont(11, true));
+    for (const auto& preview : detectionPreview_) {
+      if (preview.time.end <= preview.time.begin) continue;
+      const auto box = markRect({preview.time, preview.frequency});
+      if (box.isEmpty() || !box.intersects(plot)) continue;
+      QColor color("#c9a6ff");
+      color.setAlpha(36);
+      painter.setBrush(QBrush(color, Qt::BDiagPattern));
+      QPen pen(QColor("#c9a6ff"), 1, Qt::DashLine);
+      painter.setPen(pen);
+      painter.drawRect(box);
+      painter.setPen(QColor("#f3e9ff"));
+      painter.drawText(box.adjusted(4, 3, -4, -3), Qt::AlignTop | Qt::AlignLeft,
+                       preview.timeLocalized ? "预览" : "预览 · 时间未定位");
+    }
+    if (detectionPreviewDropped_) {
+      const QString dropped =
+          QString("预览队列已丢弃 %1 条最旧事件").arg(detectionPreviewDropped_);
+      painter.setPen(QColor("#f3e9ff"));
+      painter.drawText(plot.adjusted(8, 8, -8, -8), Qt::AlignBottom | Qt::AlignLeft,
+                       dropped);
     }
   }
   painter.restore();

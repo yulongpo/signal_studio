@@ -1189,6 +1189,36 @@ void MainWindow::buildWorkspace() {
   connect(detection_, &DetectionPanel::runProgressChanged, this, [this] {
     if (detectionCard_) detectionCard_->refresh();
   });
+  connect(detection_, &DetectionPanel::previewChanged, this, [this] {
+    const auto& preview = detection_->livePreview();
+    std::vector<ChartPreviewTrack> tracks;
+    tracks.reserve(preview.events.size());
+    std::string previous;
+    for (const auto& event : preview.events) {
+      if (event.trackId == previous) {
+        if (!tracks.empty()) {
+          tracks.back().time = event.observedSupport;
+          tracks.back().frequency = event.frequency;
+          tracks.back().timeLocalized = event.timeLocalized;
+        }
+        continue;
+      }
+      previous = event.trackId;
+      tracks.push_back({event.trackId, event.observedSupport, event.frequency,
+                        event.timeLocalized});
+    }
+    const auto shown = tracks.size();
+    if (main_) main_->setDetectionPreview(std::move(tracks), preview.dropped);
+    if (annotations_) {
+      const QString note = preview.events.empty()
+          ? QString{}
+          : QString("预览 %1 条 · 时间未定位 · 不能转换为人工标记或创建窄带")
+                .arg(shown);
+      annotations_->setDetectionPreviewNote(
+          preview.dropped ? note + QString(" · 已丢弃 %1 条最旧预览").arg(preview.dropped)
+                          : note);
+    }
+  });
   connect(detection_, &DetectionPanel::runFocused, this,
           [this](const QString& id) {
             if (detectionCard_) {
