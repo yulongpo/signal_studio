@@ -92,6 +92,7 @@ class MainWindow : public QMainWindow {
   void toggleWindowState();
   void updateWindowControls();
   void openWidebandDetection(const DetectionRun* parentRun = nullptr);
+  void openFfscnEngineTool();
   void beginDetectionRoi();
   void updateDetectionRoiConfirmation();
   void rememberNormalGeometry();

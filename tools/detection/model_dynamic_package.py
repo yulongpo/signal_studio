@@ -91,7 +91,13 @@ def export_dynamic(model, destination: Path) -> dict:
 
 
 def build_engine(trt, onnx_path: Path, destination: Path, profiles: list,
-                 workspace_mib: int) -> dict:
+                 workspace_mib: int, *, precision: str = "FP32") -> dict:
+    """Build one explicit-batch engine. FP32 stays the production default.
+
+    FP16 is opt-in. INT8 is never enabled; this project has no calibration set.
+    """
+    if precision not in ("FP32", "FP16"):
+        raise ValueError("Only FP32 and explicit FP16 engines are supported")
     logger = trt.Logger(trt.Logger.WARNING)
     builder = trt.Builder(logger)
     network = builder.create_network(1 << int(
@@ -105,6 +111,13 @@ def build_engine(trt, onnx_path: Path, destination: Path, profiles: list,
                                  workspace_mib * 1024 * 1024)
     config.clear_flag(trt.BuilderFlag.TF32)
     config.clear_flag(trt.BuilderFlag.FP16)
+    int8 = getattr(trt.BuilderFlag, "INT8", None)
+    if int8 is not None:
+        config.clear_flag(int8)
+    if precision == "FP16":
+        if not getattr(builder, "platform_has_fast_fp16", True):
+            raise RuntimeError("TensorRT reports no FP16 support on this GPU")
+        config.set_flag(trt.BuilderFlag.FP16)
     cache_path = destination.with_suffix(".timing-cache")
     cache = config.create_timing_cache(
         cache_path.read_bytes() if cache_path.exists() else b"")
@@ -126,8 +139,8 @@ def build_engine(trt, onnx_path: Path, destination: Path, profiles: list,
     temporary.replace(destination)
     cache_path.write_bytes(bytes(config.get_timing_cache().serialize()))
     return {**asset_entry(destination), "seconds": time.monotonic() - started,
-            "tf32": False, "fp16": False, "workspaceMiB": workspace_mib,
-            "profiles": profiles}
+            "tf32": False, "fp16": precision == "FP16", "precision": precision,
+            "workspaceMiB": workspace_mib, "profiles": profiles}
 
 
 class DynamicRunner:

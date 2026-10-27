@@ -184,6 +184,8 @@ set(SS_UI_SOURCES
     ui/detection/detection_card.h
     ui/detection/detection_panel.cpp
     ui/detection/detection_panel.h
+    ui/detection/ffscn_engine_dialog.cpp
+    ui/detection/ffscn_engine_dialog.h
     ui/annotations/annotation_panel.cpp
     ui/annotations/annotation_panel.h
     ui/annotations/annotation_evidence_widget.cpp
@@ -277,6 +279,19 @@ if(SS_BUILD_TESTS)
         "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/parameter-input-$<LOWER_CASE:$<CONFIG>>.txt"
         -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     set_tests_properties(signal_studio_parameter_input PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 60)
+    add_executable(SignalStudioFfscnEngineDialogTests
+        tests/ffscn_engine_dialog_tests.cpp
+        ui/detection/ffscn_engine_dialog.cpp
+        ui/detection/ffscn_engine_dialog.h)
+    target_link_libraries(SignalStudioFfscnEngineDialogTests PRIVATE
+        Qt6::Widgets Qt6::Test)
+    ss_target_defaults(SignalStudioFfscnEngineDialogTests)
+    add_test(NAME signal_studio_ffscn_engine_dialog COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioFfscnEngineDialogTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ffscn-engine-dialog-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_ffscn_engine_dialog PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 60)
     add_executable(SignalStudioDetectionRefinedFusionTests tests/detection_refined_fusion_tests.cpp)
     ss_target_defaults(SignalStudioDetectionRefinedFusionTests)

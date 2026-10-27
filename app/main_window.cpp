@@ -90,6 +90,7 @@
 #include "ui/custom_combo.h"
 #include "ui/detection/detection_card.h"
 #include "ui/detection/detection_panel.h"
+#include "ui/detection/ffscn_engine_dialog.h"
 #include "ui/import/signal_import_dialog.h"
 #include "ui/narrowband_workspace.h"
 #include "ui/parameter_input.h"
@@ -471,6 +472,18 @@ MainWindow::~MainWindow() {
   delete takeCentralWidget();
 }
 
+void MainWindow::openFfscnEngineTool() {
+  if (auto* existing = findChild<FfscnEngineDialog*>("ffscnEngineDialog")) {
+    existing->show();
+    existing->raise();
+    existing->activateWindow();
+    return;
+  }
+  auto* dialog = new FfscnEngineDialog(this);
+  dialog->setAttribute(Qt::WA_DeleteOnClose);
+  dialog->show();
+}
+
 void MainWindow::buildMenus() {
   menuBar()->setFixedHeight(34);
   menuBar()->setNativeMenuBar(false);
@@ -705,13 +718,15 @@ void MainWindow::buildMenus() {
   auto* roiAction = analysis->addAction("选择检测 ROI…", this,
                                         &MainWindow::beginDetectionRoi);
   roiAction->setObjectName("widebandDetectionRoiAction");
-  auto* about = menuBar()
-                    ->addMenu("工具(&T)")
-                    ->addAction("关于 Signal Studio", this, [this] {
-                      auto* dialog = BrandAssets::aboutDialog(this);
-                      dialog->setAttribute(Qt::WA_DeleteOnClose);
-                      dialog->open();
-                    });
+  auto* tools = menuBar()->addMenu("工具(&T)");
+  auto* engineTool = tools->addAction("FFSCN 引擎转换…", this,
+                                      &MainWindow::openFfscnEngineTool);
+  engineTool->setObjectName("ffscnEngineToolAction");
+  auto* about = tools->addAction("关于 Signal Studio", this, [this] {
+    auto* dialog = BrandAssets::aboutDialog(this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->open();
+  });
   about->setObjectName("aboutSignalStudioAction");
   auto* help = menuBar()->addMenu("帮助(&H)");
   auto* interactions = help->addAction("鼠标交互帮助");
