@@ -111,6 +111,8 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/detection_worker_client.cpp
     infrastructure/detection_projection.cpp
     infrastructure/detection_model_snapshot.cpp
+    infrastructure/ffscn_engine_package.cpp
+    infrastructure/ffscn_engine_package.h
     infrastructure/detection_frequency_analysis.cpp
     infrastructure/detection_sample_energy.cpp
     infrastructure/detection_time_analysis.cpp
@@ -186,6 +188,8 @@ set(SS_UI_SOURCES
     ui/detection/detection_panel.h
     ui/detection/ffscn_engine_dialog.cpp
     ui/detection/ffscn_engine_dialog.h
+    ui/detection/ffscn_engine_switch_dialog.cpp
+    ui/detection/ffscn_engine_switch_dialog.h
     ui/annotations/annotation_panel.cpp
     ui/annotations/annotation_panel.h
     ui/annotations/annotation_evidence_widget.cpp
@@ -293,6 +297,14 @@ if(SS_BUILD_TESTS)
         -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     set_tests_properties(signal_studio_ffscn_engine_dialog PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 60)
+    add_executable(SignalStudioFfscnEngineSwitchTests
+        tests/ffscn_engine_switch_tests.cpp)
+    target_link_libraries(SignalStudioFfscnEngineSwitchTests PRIVATE
+        SignalStudioInfrastructure Qt6::Test)
+    ss_target_defaults(SignalStudioFfscnEngineSwitchTests)
+    add_test(NAME signal_studio_ffscn_engine_switch
+        COMMAND SignalStudioFfscnEngineSwitchTests)
+    set_tests_properties(signal_studio_ffscn_engine_switch PROPERTIES TIMEOUT 60)
     add_executable(SignalStudioDetectionRefinedFusionTests tests/detection_refined_fusion_tests.cpp)
     ss_target_defaults(SignalStudioDetectionRefinedFusionTests)
     set_target_properties(SignalStudioDetectionRefinedFusionTests PROPERTIES AUTOMOC OFF)

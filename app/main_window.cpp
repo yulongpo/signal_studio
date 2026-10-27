@@ -91,6 +91,7 @@
 #include "ui/detection/detection_card.h"
 #include "ui/detection/detection_panel.h"
 #include "ui/detection/ffscn_engine_dialog.h"
+#include "ui/detection/ffscn_engine_switch_dialog.h"
 #include "ui/import/signal_import_dialog.h"
 #include "ui/narrowband_workspace.h"
 #include "ui/parameter_input.h"
@@ -484,6 +485,25 @@ void MainWindow::openFfscnEngineTool() {
   dialog->show();
 }
 
+void MainWindow::openFfscnEngineSwitch() {
+  if (detectionAssetsInUse()) {
+    QMessageBox::warning(
+        this, "暂不能切换 FFSCN 引擎",
+        "检测仍在进行。请等待当前任务结束或取消完成后再切换。"
+        "正在运行的任务不会改用新引擎。");
+    return;
+  }
+  FfscnEngineSwitchDialog dialog(this);
+  dialog.setBusyCheck([this] { return detectionAssetsInUse(); });
+  connect(&dialog, &FfscnEngineSwitchDialog::engineActivated, this,
+          [this](const QString& directory, const QString& engineSha) {
+            log(QString("已切换 FFSCN 引擎：%1（引擎 %2）。"
+                        "已有检测结果保持不变，下次完整检测成功后才会替换。")
+                    .arg(directory, engineSha));
+          });
+  dialog.exec();
+}
+
 void MainWindow::buildMenus() {
   menuBar()->setFixedHeight(34);
   menuBar()->setNativeMenuBar(false);
@@ -722,6 +742,9 @@ void MainWindow::buildMenus() {
   auto* engineTool = tools->addAction("FFSCN 引擎转换…", this,
                                       &MainWindow::openFfscnEngineTool);
   engineTool->setObjectName("ffscnEngineToolAction");
+  auto* switchEngine = tools->addAction("切换 FFSCN 引擎…", this,
+                                        &MainWindow::openFfscnEngineSwitch);
+  switchEngine->setObjectName("ffscnEngineSwitchAction");
   auto* about = tools->addAction("关于 Signal Studio", this, [this] {
     auto* dialog = BrandAssets::aboutDialog(this);
     dialog->setAttribute(Qt::WA_DeleteOnClose);

@@ -53,6 +53,14 @@ bool prepareDetectionModelInput(const DetectionRequest& request,
                                 const std::vector<float>& sourceFrames,
                                 std::uint32_t batch, std::vector<float>& input,
                                 QString& error, std::uint32_t actualFrames = 0);
+// packageDirectory is the profile directory itself (the folder that contains
+// manifest.json), not the detection-models root.
+bool validateDetectionModelPackageDirectory(const DetectionRequest& request,
+                                            const QString& packageDirectory,
+                                            QJsonObject& manifest,
+                                            QString& error);
+// FFSCN uses the active-package record under modelRoot when one has been
+// published. Other profiles stay in modelRoot/<profileId>.
 bool validateDetectionModelPackage(const DetectionRequest& request,
                                    const QString& modelRoot,
                                    QJsonObject& manifest, QString& error);

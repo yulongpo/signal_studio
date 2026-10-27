@@ -1,5 +1,7 @@
 #include "infrastructure/detection_model_snapshot.h"
 
+#include "infrastructure/ffscn_engine_package.h"
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -15,9 +17,14 @@ bool freezeDetectionModelSnapshot(DetectionRequest& request, QString& error) {
     error = "实验配置的 131072 输入尚未通过原张量对照，不能作为正式检测运行";
     return false;
   }
-  const QDir root(QCoreApplication::applicationDirPath() + "/detection-models");
-  const auto path = root.filePath(QString::fromStdString(request.profile.id) +
-                                  "/manifest.json");
+  const auto modelRoot =
+      QDir(QCoreApplication::applicationDirPath()).filePath("detection-models");
+  QString directory;
+  if (!resolveDetectionPackageDirectory(
+          modelRoot, QString::fromStdString(request.profile.id), directory,
+          error))
+    return false;
+  const auto path = QDir(directory).filePath("manifest.json");
   QFile file(path);
   if (!file.open(QIODevice::ReadOnly) || file.size() <= 0 ||
       file.size() > 65536) {

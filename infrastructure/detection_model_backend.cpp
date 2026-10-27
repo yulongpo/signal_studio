@@ -27,10 +27,6 @@ static_assert(NV_TENSORRT_MAJOR == 10 && NV_TENSORRT_MINOR == 11 &&
 namespace signalstudio {
 namespace {
 constexpr qint64 kMaximumEngineBytes = 128 * 1024 * 1024;
-constexpr auto kFfscnSha =
-    "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81";
-constexpr auto kScnSha =
-    "ae89d04332758d466846b71afc849c446500a82a8bd74fd8c671927247746627";
 constexpr auto kTrtSha =
     "d100ec93e5abf56f8d2dafb69cde536c4f9fbb4748a5746a74b7009f6894ce67";
 constexpr auto kCudaSha =
@@ -55,19 +51,6 @@ QString fileHash(const QString& path, qint64 maximum, QString& error) {
     return {};
   }
   return QString::fromLatin1(hash.result().toHex());
-}
-
-bool plainFileName(const QString& name) {
-  return !name.isEmpty() && name != "." && name != ".." &&
-         !name.contains('/') && !name.contains('\\') && !name.contains(':');
-}
-
-bool sameShape(const QJsonArray& array, const std::array<int, 4>& shape) {
-  if (array.size() != 4) return false;
-  for (int index = 0; index < 4; ++index)
-    if (!array[index].isDouble() || array[index].toDouble() != shape[index])
-      return false;
-  return true;
 }
 
 void interpolateFrequency(const float* source, std::size_t bins, float* target,
@@ -229,108 +212,6 @@ bool prepareDetectionModelInput(const DetectionRequest& request,
     }
   }
   input = std::move(prepared);
-  return true;
-}
-
-bool validateDetectionModelPackage(const DetectionRequest& request,
-                                   const QString& modelRoot,
-                                   QJsonObject& manifest, QString& error) {
-  if (request.profile.backend == DetectionBackendKind::Experimental17)
-    return fail(error,
-                "FFSCN 17-order 131072-bin numerical parity is unvalidated; "
-                "this experimental profile cannot start production inference");
-  if (request.profile.id != "ffscn-gui-iq-v1" &&
-      request.profile.id != "scn-max-psd-v1")
-    return fail(error, "No production model package exists for this profile");
-  const auto* registered = findDetectionProfile(request.profile.id);
-  if (!registered || request.profile.version != registered->version ||
-      request.profile.backend != registered->backend ||
-      request.profile.maximumPsdOnly != registered->maximumPsdOnly ||
-      !isDetectionExecutionBatchTier(request.parameters.batchSize))
-    return fail(error, "Production model request shape is not registered");
-  const auto directory =
-      QDir(modelRoot).filePath(QString::fromStdString(request.profile.id));
-  const auto path = QDir(directory).filePath("manifest.json");
-  QFile file(path);
-  if (!file.open(QIODevice::ReadOnly) || file.size() <= 0 ||
-      file.size() > 1024 * 1024)
-    return fail(error, "Model manifest is missing or exceeds 1 MiB: " + path);
-  const auto bytes = file.readAll();
-  const auto document = QJsonDocument::fromJson(bytes);
-  if (!document.isObject()) return fail(error, "Model manifest is not JSON");
-  const auto object = document.object();
-  const bool scn = request.profile.id == "scn-max-psd-v1";
-  const auto engine = object["engine"].toObject();
-  const auto runtime = object["runtime"].toObject();
-  const auto input = object["input"].toObject();
-  const auto heads = object["heads"].toArray();
-  const auto capability = runtime["computeCapability"].toArray();
-  const std::array<int, 4> minimum = scn ? std::array<int, 4>{1, 32768, 1, 1}
-                                         : std::array<int, 4>{1, 1, 10, 65536};
-  auto maximum = minimum;
-  maximum[0] = scn ? 1 : 2;
-  const bool dynamic =
-      !scn && object["schema"] == "signalstudio-detection-model-package-v2" &&
-      object["adaptationVersion"] == 2 &&
-      object["checkpointSha256"] ==
-          "acd997957dd85b7fc560897874b575d4776e80270d7e377d1de7559e513e40e0";
-  const auto declaredMin = input["minShape"].toArray();
-  const auto declaredMax = input["maxShape"].toArray();
-  const bool dynamicShape =
-      dynamic && declaredMin == QJsonArray{1, 1, 1, 2048} &&
-      input["downNums"] == 11 && input["frequencyPowerOfTwo"] == true &&
-      declaredMax.size() == 4 && declaredMax[0].toInt() >= 1 &&
-      declaredMax[1] == 1 && declaredMax[2].toInt() >= 1 &&
-      declaredMax[3].toInt() >= 2048;
-  if ((!dynamic &&
-       object["schema"] != "signalstudio-detection-model-package-v1") ||
-      object["profileId"] != QString::fromStdString(request.profile.id) ||
-      object["profileVersion"].toDouble() != request.profile.version ||
-      object["precision"] != "FP32" || runtime["tensorRt"] != "10.11.0.33" ||
-      runtime["cudaRuntime"].toInt() != 12090 ||
-      runtime["hardwareCompatibility"] != "none" ||
-      runtime["versionCompatible"] != false ||
-      capability != QJsonArray{12, 0} ||
-      runtime["gpu"] != "NVIDIA GeForce RTX 5060 Laptop GPU" ||
-      input["dtype"] != "float32" || input["layout"] != "contiguous-NCHW" ||
-      input["name"] != (scn ? "resnet_32_input:0" : "spectrum") ||
-      (dynamic ? !dynamicShape
-               : (!sameShape(declaredMin, minimum) ||
-                  !sameShape(declaredMax, maximum))) ||
-      heads.size() != 3 || !plainFileName(engine["path"].toString()) ||
-      (!dynamic && engine["sha256"] != (scn ? kScnSha : kFfscnSha)))
-    return fail(error,
-                "Model manifest identity/runtime/precision/shape differs "
-                "from the frozen production contract");
-  const QStringList names =
-      scn ? QStringList{"Identity_1:0", "Identity:0", "Identity_2:0"}
-          : QStringList{"hm", "bw", "off"};
-  for (int index = 0; index < 3; ++index) {
-    const auto head = heads[index].toObject();
-    const auto shape = scn ? std::array<int, 4>{0, 8192, 1, 1}
-                           : std::array<int, 4>{0, 1, 1, 16384};
-    if (head["semantic"] != QStringList{"hm", "bw", "off"}[index] ||
-        head["name"] != names[index] || head["dtype"] != "float32" ||
-        (dynamic
-             ? (head["shape"] != QJsonArray{0, 1, 1, 0} || head["stride"] != 4)
-             : !sameShape(head["shape"].toArray(), shape)))
-      return fail(error, "Model output head contract is invalid");
-  }
-  if (request.modelSha256.empty() ||
-      request.modelSha256 != engine["sha256"].toString().toStdString())
-    return fail(error, "Immutable request model SHA differs from its package");
-  const auto enginePath = QDir(directory).filePath(engine["path"].toString());
-  const auto hash = fileHash(enginePath, kMaximumEngineBytes, error);
-  if (hash.isEmpty() || hash != engine["sha256"].toString())
-    return fail(error,
-                "Model engine SHA-256 does not match its frozen identity");
-  if (engine["bytes"].toDouble() != QFileInfo(enginePath).size())
-    return fail(error, "Model engine byte length differs from its manifest");
-  QJsonObject checked = object;
-  checked["manifestSha256"] = QString::fromLatin1(
-      QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex());
-  checked["engineAbsolutePath"] = QFileInfo(enginePath).absoluteFilePath();
-  manifest = std::move(checked);
   return true;
 }
 
@@ -777,7 +658,9 @@ class DetectionModelBackend::Impl {
     }
     evidence = {
         {"backend", scn ? "scn-tensorrt" : "ffscn-tensorrt"},
-        {"modelSha256", manifest["engine"].toObject()["sha256"]},
+        {"modelSha256", manifest["loadedEngineSha256"]},
+        {"checkpointSha256", manifest["loadedCheckpointSha256"]},
+        {"engineAbsolutePath", manifest["engineAbsolutePath"]},
         {"manifestSha256", manifest["manifestSha256"]},
         {"profileId", QString::fromStdString(request.profile.id)},
         {"profileVersion", static_cast<int>(request.profile.version)},

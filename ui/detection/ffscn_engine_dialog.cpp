@@ -187,7 +187,9 @@ void FfscnEngineDialog::buildUi() {
       "必须显式选择；不支持 INT8。频率点数保持 2 的幂且至少 2048，网络 "
       "down_nums=11。引擎只写入所选输出目录，不会替换已部署的 detection-models "
       "包。推理设备是 NVIDIA GeForce RTX 5060（SM 12.0），不使用 AMD "
-      "显示 GPU。若 TensorRT 或 CUDA 无法构建，下面会显示具体错误。");
+      "显示 GPU。若 TensorRT 或 CUDA 无法构建，下面会显示具体错误。"
+      "要让下次检测使用新引擎，请在工具菜单中选择「切换 FFSCN 引擎」；"
+      "本窗口不会替换已部署的包。");
   help->setObjectName("ffscnEngineHelp");
   help->setWordWrap(true);
   help->setProperty("uiRole", "help");
