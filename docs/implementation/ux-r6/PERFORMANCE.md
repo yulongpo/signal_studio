@@ -80,3 +80,15 @@ oneMKL 发布路径固定 `MKL_NUM_THREADS=1` 且 `MKL_DYNAMIC=FALSE`，并调�
 | 16 | 2 | 7×2 + 1×1 | 15259 | 见 16b | 3044 | 用户 16；32MiB payload 先把 worker limit 降到 8，Engine 再选物理 batch 2 |
 
 4/8/16 的第一次尝试在约 12ms 被 `batchSize is outside its integer budget` 拒绝，因为解码上限仍是 2。上限改为 16 后，请求能到达 Engine，并写下降级原因。做不到物理 batch 16。SCN 代码路径仍是物理 batch 1、多次 enqueue 分开计数；这次没有另开 SCN 计时。默认档保持 2。原始 measurement 在 `out/tasks/ux-r6/diagnostics/r6-4-tier-*` 与 `r6-4-tierb-*`。
+
+## R6-7 短重复（2026-10-27，Release，无并发构建）
+
+同一原 WAV、0.02s、batch 2。分位数对 3 个真实完成值作线性插值，n 很小。完整 639 窗仍只用 R6-3 的一次 1965150 ms，不并进这组 p50。另有一组 ROI/FIR 重复和 Debug 编译同时进行，墙钟约 23–28 s / 20 s，不作为干净样本。
+
+| 策略 | n | 总时长 ms | p50 / p95 ms | 活动 F1 | 首候选约 ms | worker 峰值 RSS |
+|---|---:|---|---|---:|---|---|
+| ROI | 3 | 13952, 13960, 14065 | 13960 / 14054.5 | 1 | 5110–5213 | 335794176–335843328 B |
+| Sample 显式 FIR | 3 | 16021, 16823, 17153 | 16823 / 17120 | 1 | 5256–5354 | 336084992–336240640 B |
+| ROI 在第 5 窗请求取消 | 1 | 8199 | n=1 | 不计算 | — | Cancelled，实际完成 6 窗 |
+
+CUDA 区间和整卡显存仍在各次 measurement / gpu.csv，不把 AMD 显示烟测混进这张表。

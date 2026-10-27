@@ -57,6 +57,14 @@ Release 重新执行样本能量、样本流（`--golden --long --run-budget`）
 
 原生烟测命令是 `--demo-data --smoke-test --screen 4k --full-screen --verify-4k-150`，分别加 `--require-gpu` 和 `--software-renderer`。两次退出码都是 0。屏幕是 Redmi 27 NU / DISPLAY6 / 连接序号 2 / 3840×2160 / 1.5。GPU 报告后端是 `QRhi D3D11 | AMD Radeon(TM) 880M Graphics`，主图 `textureUploads=1`。软件报告后端是 `QPainter 软件绘制`，`hardwareRenderer=false`。原始 JSON 在 `out/tasks/ux-r6/diagnostics/r6-6-native/`。演示 IQ 烟测没有检测预览对象，所以没有在这块屏上拍到预览框。
 
+## R6-7 回归（2026-10-27）
+
+Debug 与 Release 用同一组正则各跑 19 项，都是 19/19。范围是检测后处理、模型后端、任务、存储、协议、管线、来源、样本能量/流/恢复、时间管线、精修、融合、质量、注释、注释存储和 UX-R5 三组。Release 约 65 s，Debug 约 204 s。这组不并入 R6-3 的定向通过。
+
+Release UI 第一次直接调用 CTest 时缺少字体目录，geometry/parameters/annotations 大面积失败，该轮作废。补上 `QT_QPA_FONTDIR` 为 Windows Fonts 后：`signal_studio_ui_annotations` 通过；`signal_studio_ui` 失败 `singleClickSelectsWithoutChangingView` 和 `paletteControlsStaySynchronized`；`signal_studio_ui_parameters` 失败 `contextMenuActionsAndCoveredMarkSelection` 和 `unselectedMarkClickAndSubthresholdGesture`。Debug UI 没有跑。
+
+合成样本流在上述 19 项里重新执行，包含 low-snr、稀疏突发和全零输入。这不是跳频或现场 RF 矩阵。取消、worker 失败和检查点失败没有新的注入实验；任务测试与一次 headless 取消重新通过。大型 RFbench 未跑。
+
 ## R6-5 轨迹预览（2026-10-27）
 
 `signal_studio_detection_postprocess` Release 通过，输出 `Detection postprocess tests: 14 groups passed`。覆盖同一信号跨窗保持一个 ID、接近信号在现有规则不合并时保持两个 ID、队列上限 2 时丢弃最旧且正式轨迹仍为 4 次命中、成功封存 Finalized、取消封存 Closed。这些事件不进入正式 publication。

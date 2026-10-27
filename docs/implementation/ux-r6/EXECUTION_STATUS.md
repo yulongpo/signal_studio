@@ -9,7 +9,7 @@
 | R6-4 | 定向完成。FFSCN profile 只含 batch 1 和 2。0.02s ROI：batch1 为 15 次 enqueue、15781ms；batch2 为 7 次 batch2 加 1 次 batch1、14510ms。4/8/16 降到物理 batch 2，引擎未重建。用户 batch 16 先受 32MiB host payload 限到 worker limit 8，再降到 2。首次 4/8/16 被 JSON 上限 2 拒绝，放宽到 16 后才进入降级。SCN 物理 batch 仍为 1，本节点未另跑 SCN 计时。默认档保持 2。显存是整卡 nvidia-smi，不是 worker 独占，也不含这次 headless 运行的 Qt 显示 GPU |
 | R6-5 | 定向完成，无 Qt。预览事件有稳定 trackId、递增 revision，以及 Created/Updated/Stable/Closed/Merged/Finalized。队列超限丢最旧并计数，不截断正式轨迹。未精修对象 timeLocalized=false。取消封存为 Closed，成功为 Finalized。同一信号跨窗更新同一 ID；无现有合并规则时接近的两条轨迹不合并。Release `signal_studio_detection_postprocess` 14 组通过。预览不写入 file.marks |
 | R6-6 | 预览进入检测结果状态行和时间图：只在算法来源层绘制，标签为“预览 · 时间未定位”，不进入命中选择、人工转换或 DDC。轮询约 10 Hz，且不因此重算 IQ 频谱。2026-10-27 Release 全屏烟测在 Redmi 27 NU、连接 2、DISPLAY6、3840×2160、DPR 1.5、逻辑 2560×1440：GPU 为 QRhi D3D11 / AMD Radeon 880M，主图 textureUploads=1，pass=true；软件回退为 QPainter，hardwareRenderer=false，pass=true。这是显示 GPU，不是 RTX 推理。这次烟测没有跑出一条活动预览框 |
-| R6-7 | 待实施：D/R回归、多场景性能/质量/取消/恢复、截图/独立启动 |
+| R6-7 | Debug/Release 各 19/19：检测、存储、任务、来源、样本流和 UX-R5 注释组通过，与 R6-3 的定向通过分开。Release UI 在补上系统字体后 geometry 2 失败、parameters 2 失败、annotations 通过；无字体的首轮不计入。Debug UI 未跑。干净的 0.02s n=3：ROI p50/p95 13960/14054.5 ms，活动 F1=1；显式 FIR p50/p95 16823/17120 ms，活动 F1=1。完整 639 窗仍是 R6-3 的 n=1。取消 1 次为 Cancelled、6 窗、8199 ms。合成样本流含低 SNR、稀疏突发和全零，不是现场 RF。大型 RFbench 未跑 |
 | R6-8 | 未审核、未推送；最终HEAD须由未参与实现的独立Review明确APPROVED |
 
 任何阶段实际失败、跳过和未验证边界独立记录，不把上一版本测试说成本轮新执行。reference任务包原文是范围依据，不能按现有完成量缩小成功条件。
