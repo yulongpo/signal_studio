@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "domain/detection.h"
+#include "domain/detection_postprocess.h"
 #include "domain/project.h"
 #include "infrastructure/detection_profiling.h"
 
@@ -18,6 +19,14 @@ class DetectionWorkerClient;
 struct DetectionPublication {
   AnnotationSourceSet sourceSet;
   std::vector<Annotation> annotations;
+};
+struct DetectionPreviewSnapshot {
+  std::string runId;
+  std::string fileId;
+  std::uint64_t projectGeneration = 0;
+  std::vector<PreviewTrackEvent> events;
+  std::uint64_t dropped = 0;
+  bool sealed = false;
 };
 bool recoverDetectionPublication(const QString& projectDirectory,
                                  const DetectionRun&, DetectionPublication&,
@@ -40,6 +49,9 @@ class DetectionTaskManager {
   void pump();
   std::vector<DetectionRun> snapshots() const;
   bool takePublication(const std::string& runId, DetectionPublication&);
+  // Live preview only. It is not written into file marks or the project file.
+  DetectionPreviewSnapshot previewFor(const std::string& fileId,
+                                      std::uint64_t projectGeneration) const;
 
  private:
   struct Job {
@@ -57,7 +69,8 @@ class DetectionTaskManager {
     std::uint64_t publicationBytes = 65536, publicationBudgetBytes = 0;
     std::unique_ptr<DetectionWorkerClient> worker;
     DetectionProfiler profiling;
-    QJsonObject sourceProfile, workerDiagnostic, gpuProfile;
+    QJsonObject sourceProfile, workerDiagnostic, gpuProfile, modelProfile;
+    DetectionPreviewSnapshot preview;
     std::array<std::uint64_t,17> batches{};
     qint64 firstDecodedCandidateMs=-1, frequencyReadyMs=-1;
     QElapsedTimer clock;

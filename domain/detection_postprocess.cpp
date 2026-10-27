@@ -131,6 +131,7 @@ CarrierSimilarity sameCarrier(FrequencyRange a, FrequencyRange b,
 struct OnlineTrack {
   FrequencyTrack result;
   std::uint32_t misses = 0;
+  bool previewStable = false;
   long double lowerSum = 0, upperSum = 0, scoreSum = 0;
 };
 struct AssociationPair {
@@ -176,7 +177,8 @@ bool validateConfig(const FrequencyTrackerConfig& config, std::string& error) {
       limits.maximumAssociationPairs == 0 ||
       limits.maximumAssociationPairs > 4000000 ||
       limits.maximumAssociationComparisons == 0 ||
-      limits.maximumFusionComparisons == 0 || limits.residentByteBudget < 4096)
+      limits.maximumFusionComparisons == 0 || limits.residentByteBudget < 4096 ||
+      !limits.maximumPreviewEvents || limits.maximumPreviewEvents > 65536)
     return fail(error, "invalid-tracker-resource-limits");
   return true;
 }
@@ -304,10 +306,24 @@ struct FrequencyTracker::State {
   std::vector<OnlineTrack> active;
   std::vector<FrequencyTrack> closed;
   std::unordered_set<std::string> windowIds;
+  std::vector<PreviewTrackEvent> preview;
   std::uint64_t processed = 0;
+  std::uint64_t previewSequence = 0;
+  std::uint64_t droppedPreview = 0;
   std::size_t bandCount = 0, windowEvidenceCount = 0, idBytes = 0;
   TimeRange previousNominal;
+  bool previewSealed = false;
 };
+void FrequencyTracker::rememberPreview(State& state, PreviewTrackEvent event) {
+  if (state.previewSealed) return;
+  if (state.preview.size() >= state.config.limits.maximumPreviewEvents) {
+    state.preview.erase(state.preview.begin());
+    ++state.droppedPreview;
+  }
+  event.sequence = ++state.previewSequence;
+  event.timeLocalized = false;
+  state.preview.push_back(std::move(event));
+}
 FrequencyTracker::FrequencyTracker() = default;
 FrequencyTracker::~FrequencyTracker() = default;
 FrequencyTracker::FrequencyTracker(FrequencyTracker&&) noexcept = default;
@@ -329,11 +345,41 @@ std::uint64_t FrequencyTracker::processedWindows() const {
 std::size_t FrequencyTracker::retainedTracks() const {
   return state_ ? state_->active.size() + state_->closed.size() : 0;
 }
+const std::vector<PreviewTrackEvent>& FrequencyTracker::previewEvents() const {
+  static const std::vector<PreviewTrackEvent> empty;
+  return state_ ? state_->preview : empty;
+}
+std::uint64_t FrequencyTracker::droppedPreviewEvents() const {
+  return state_ ? state_->droppedPreview : 0;
+}
+bool FrequencyTracker::sealPreview(bool finalized, std::string& error) {
+  if (!state_) return fail(error, "tracker-not-initialized");
+  if (state_->previewSealed) return fail(error, "preview-already-sealed");
+  const auto emit = [&](FrequencyTrack& track, PreviewTrackPhase phase) {
+    if (track.previewId.empty()) track.previewId = track.seedId;
+    ++track.previewRevision;
+    rememberPreview(*state_, {track.previewId, {}, track.previewRevision, 0, phase,
+                              track.runId, track.fileId, track.frequency, false,
+                              track.hits, track.nominalSupport});
+  };
+  if (finalized) {
+    for (auto& track : state_->active) emit(track.result, PreviewTrackPhase::Finalized);
+    for (auto& track : state_->closed)
+      if (track.hits >= state_->config.minHits)
+        emit(track, PreviewTrackPhase::Finalized);
+  } else {
+    for (auto& track : state_->active) emit(track.result, PreviewTrackPhase::Closed);
+  }
+  state_->previewSealed = true;
+  error.clear();
+  return true;
+}
 
 bool FrequencyTracker::consume(const WindowObservation& window,
                                std::string& error,
                                const PostprocessCancellation& cancelled) {
   if (!state_) return fail(error, "tracker-not-initialized");
+  if (state_->previewSealed) return fail(error, "preview-sealed");
   const auto& config = state_->config;
   const auto& limits = config.limits;
   if (window.runId != config.runId || window.fileId != config.fileId ||
@@ -436,13 +482,32 @@ bool FrequencyTracker::consume(const WindowObservation& window,
         static_cast<double>(result.hits) / result.windowDenominator;
     track.result.frequency = track.result.originalFrequency;
     track.misses = 0;
+    ++result.previewRevision;
+    rememberPreview(*next, {result.previewId, {}, result.previewRevision, 0,
+                            PreviewTrackPhase::Updated, result.runId,
+                            result.fileId, result.frequency, false, result.hits,
+                            result.nominalSupport});
+    if (!track.previewStable && result.hits >= config.minHits) {
+      track.previewStable = true;
+      ++result.previewRevision;
+      rememberPreview(*next, {result.previewId, {}, result.previewRevision, 0,
+                              PreviewTrackPhase::Stable, result.runId,
+                              result.fileId, result.frequency, false, result.hits,
+                              result.nominalSupport});
+    }
     matchedTracks[pair.track] = true;
     matchedBands[pair.candidate] = true;
   }
   for (std::size_t i = next->active.size(); i-- > 0;) {
     if (matchedTracks[i]) continue;
     if (++next->active[i].misses <= config.maxMiss) continue;
-    next->closed.push_back(std::move(next->active[i].result));
+    auto& closing = next->active[i].result;
+    ++closing.previewRevision;
+    rememberPreview(*next, {closing.previewId, {}, closing.previewRevision, 0,
+                            PreviewTrackPhase::Closed, closing.runId,
+                            closing.fileId, closing.frequency, false, closing.hits,
+                            closing.nominalSupport});
+    next->closed.push_back(std::move(closing));
     next->active.erase(next->active.begin() + i);
   }
   for (std::size_t i = 0; i < bands.size(); ++i) {
@@ -450,6 +515,8 @@ bool FrequencyTracker::consume(const WindowObservation& window,
     if (matchedBands[i]) continue;
     FrequencyTrack track;
     track.seedId = seedId(window, bands[i].peakIndex);
+    track.previewId = track.seedId;
+    track.previewRevision = 1;
     track.runId = config.runId;
     track.fileId = config.fileId;
     track.frequency = bands[i].frequency;
@@ -458,8 +525,24 @@ bool FrequencyTracker::consume(const WindowObservation& window,
     track.windowDenominator = config.totalAnalysisWindows;
     track.windows.push_back(evidence(i));
     summarize(track);
-    next->active.push_back({std::move(track), 0, bands[i].frequency.lowerHz,
-                            bands[i].frequency.upperHz, bands[i].score});
+    const auto stableNow = track.hits >= config.minHits;
+    if (stableNow) track.previewRevision = 2;
+    OnlineTrack created;
+    created.result = std::move(track);
+    created.previewStable = stableNow;
+    created.lowerSum = bands[i].frequency.lowerHz;
+    created.upperSum = bands[i].frequency.upperHz;
+    created.scoreSum = bands[i].score;
+    rememberPreview(*next, {created.result.previewId, {}, 1, 0,
+                            PreviewTrackPhase::Created, created.result.runId,
+                            created.result.fileId, created.result.frequency, false,
+                            created.result.hits, created.result.nominalSupport});
+    if (stableNow)
+      rememberPreview(*next, {created.result.previewId, {}, 2, 0,
+                              PreviewTrackPhase::Stable, created.result.runId,
+                              created.result.fileId, created.result.frequency, false,
+                              created.result.hits, created.result.nominalSupport});
+    next->active.push_back(std::move(created));
   }
   if (next->active.size() > limits.maximumActiveTracks ||
       next->active.size() + next->closed.size() > limits.maximumTracks)
@@ -478,7 +561,7 @@ bool FrequencyTracker::consume(const WindowObservation& window,
 
 bool FrequencyTracker::finish(std::vector<FrequencyTrack>& output,
                               std::string& error,
-                              const PostprocessCancellation& cancelled) const {
+                              const PostprocessCancellation& cancelled) {
   if (!state_) return fail(error, "tracker-not-initialized");
   if (stop(cancelled, error)) return false;
   const auto& config = state_->config;
@@ -541,7 +624,15 @@ bool FrequencyTracker::finish(std::vector<FrequencyTrack>& output,
       }
       if (!best) break;
       const auto i = std::get<6>(*best), j = std::get<7>(*best);
+      const auto absorbed = tracks[j].previewId.empty() ? tracks[j].seedId
+                                                        : tracks[j].previewId;
       mergeTracks(tracks[i], tracks[j]);
+      if (tracks[i].previewId.empty()) tracks[i].previewId = tracks[i].seedId;
+      ++tracks[i].previewRevision;
+      rememberPreview(*state_, {tracks[i].previewId, absorbed, tracks[i].previewRevision,
+                                0, PreviewTrackPhase::Merged, tracks[i].runId,
+                                tracks[i].fileId, tracks[i].frequency, false,
+                                tracks[i].hits, tracks[i].nominalSupport});
       tracks.erase(tracks.begin() + j);
     }
     return true;

@@ -1,5 +1,6 @@
 #include "infrastructure/detection_task.h"
 
+#include <QScopeGuard>
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDir>
@@ -806,6 +807,16 @@ std::vector<DetectionRun> DetectionTaskManager::snapshots() const {
   for (const auto& job : jobs_) result.push_back(job->run);
   return result;
 }
+DetectionPreviewSnapshot DetectionTaskManager::previewFor(
+    const std::string& fileId, std::uint64_t projectGeneration) const {
+  std::lock_guard lock(mutex_);
+  for (auto it = jobs_.rbegin(); it != jobs_.rend(); ++it) {
+    const auto& identity = (*it)->run.request.sourceIdentity;
+    if (identity.fileId == fileId && identity.projectGeneration == projectGeneration)
+      return (*it)->preview;
+  }
+  return {};
+}
 bool DetectionTaskManager::takePublication(const std::string& runId,
                                            DetectionPublication& publication) {
   std::lock_guard lock(mutex_);
@@ -828,6 +839,7 @@ std::string DetectionTaskManager::performanceSnapshot(const std::shared_ptr<Job>
       {"schema","signal-studio-detection-profile-v1"},
       {"pipelineStages",job->profiling.snapshot()},{"sourceStages",job->sourceProfile},
       {"logicalBatchDistribution",batches},{"gpu",job->gpuProfile},
+      {"modelProfile",job->modelProfile},
       {"worker",job->workerDiagnostic},
       {"requestedBatch",int(job->run.request.parameters.batchSize)},
       {"executionBatchLimit",int(job->executionBatchSize)},
@@ -1024,7 +1036,38 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   publication.sourceSet = sourceSetForRequest(request);
   auto& set = publication.sourceSet;
   const bool fixture = request.profile.backend == DetectionBackendKind::Fixture;
+  if (!fixture) {
+    const auto model = worker.evidence();
+    QJsonObject profile;
+    for (const char* key : {"profileSupportedTiers", "profileMaximumBatch",
+                            "physicalBatch", "logicalMaximumBatch",
+                            "batchProfileReason", "engineMaximumBatch",
+                            "optimizationProfile", "batchAdaptationReason",
+                            "requestedMaximumBatch"})
+      if (model.contains(QLatin1String(key)))
+        profile.insert(QLatin1String(key), model.value(QLatin1String(key)));
+    std::lock_guard lock(mutex_);
+    job->modelProfile = profile;
+  }
   DetectionResultProjector projector;
+  bool previewFinal = false;
+  const auto publishPreview = [&] {
+    if (fixture) return;
+    std::lock_guard lock(mutex_);
+    job->preview.runId = request.runId;
+    job->preview.fileId = request.sourceIdentity.fileId;
+    job->preview.projectGeneration = request.sourceIdentity.projectGeneration;
+    job->preview.events = projector.previewEvents();
+    job->preview.dropped = projector.droppedPreviewEvents();
+  };
+  const auto previewGuard = qScopeGuard([&] {
+    if (fixture) return;
+    QString ignored;
+    projector.sealPreview(previewFinal, ignored);
+    publishPreview();
+    std::lock_guard lock(mutex_);
+    job->preview.sealed = true;
+  });
   if (!fixture && !projector.reset(request, plan.eligibleWindowCount,
                                    job->publicationBudgetBytes / 4, error)) {
     finish(job, DetectionLifecycle::Failed, error);
@@ -1184,6 +1227,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         finish(job, DetectionLifecycle::Failed, error);
         return;
       }
+      publishPreview();
       {
         const std::lock_guard lock(mutex_);
         if(job->firstDecodedCandidateMs<0 && std::any_of(results.begin(),results.end(),
@@ -1372,6 +1416,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       job->publication = std::move(publication);
     }
   }
+  previewFinal = true;
   finish(job, DetectionLifecycle::Completed);
 }
 }  // namespace signalstudio

@@ -76,7 +76,7 @@ void consume(FrequencyTracker& tracker, const WindowObservation& observation) {
   std::string error;
   check(tracker.consume(observation, error), error.c_str());
 }
-std::vector<FrequencyTrack> finish(const FrequencyTracker& tracker) {
+std::vector<FrequencyTrack> finish(FrequencyTracker& tracker) {
   std::string error;
   std::vector<FrequencyTrack> result;
   check(tracker.finish(result, error), error.c_str());
@@ -479,6 +479,70 @@ void scnMinimumNoiseAndMaximumOnlyEdges() {
         "All fused occupancy must mask noise points, independently of UI "
         "filtering");
 }
+void sameSignalKeepsOnePreviewIdentity() {
+  auto config = trackerConfig(4);
+  config.minHits = 2;
+  auto model = tracker(config);
+  consume(model, window(0, {candidate(-20, -10)}));
+  consume(model, window(1, {candidate(-20, -10)}));
+  const auto& events = model.previewEvents();
+  check(events.size() >= 3, "Creation, update and stable must be visible");
+  check(events[0].phase == PreviewTrackPhase::Created &&
+            events[1].phase == PreviewTrackPhase::Updated &&
+            events[2].phase == PreviewTrackPhase::Stable,
+        "One physical signal must move Created, Updated, then Stable");
+  check(events[0].trackId == events[1].trackId &&
+            events[1].trackId == events[2].trackId &&
+            events[0].revision == 1 && events[1].revision == 2 &&
+            events[2].revision == 3 && events[2].sequence > events[1].sequence,
+        "Cross-batch updates must keep one track id and increase revision");
+  check(!events[0].timeLocalized && !events[2].timeLocalized &&
+            model.droppedPreviewEvents() == 0,
+        "Unrefined preview must stay time-unlocalized and bounded");
+  auto tracks = finish(model);
+  check(tracks.size() == 1 && tracks[0].previewId == events[0].trackId,
+        "Formal finish must keep the same signal identity");
+  std::string error;
+  check(model.sealPreview(true, error), error.c_str());
+  check(model.previewEvents().back().phase == PreviewTrackPhase::Finalized,
+        "Successful seal must finalize the preview");
+  check(!model.sealPreview(false, error), "A sealed preview cannot be sealed again");
+}
+void distinctSignalsDoNotMergeWithoutAnExistingRule() {
+  auto config = trackerConfig(3);
+  config.minHits = 1;
+  config.mergeToleranceHz = 0;
+  config.fragmentGapSamples = 0;
+  auto model = tracker(config);
+  consume(model, window(0, {candidate(-40, -30, .8, 8), candidate(30, 40, .8, 40)}));
+  consume(model, window(1, {candidate(-36, -26, .8, 8), candidate(26, 36, .8, 40)}));
+  auto tracks = finish(model);
+  check(tracks.size() == 2, "Approaching signals must stay distinct");
+  std::size_t merged = 0;
+  for (const auto& event : model.previewEvents())
+    if (event.phase == PreviewTrackPhase::Merged) ++merged;
+  check(merged == 0, "No existing association may invent a merge");
+  std::string error;
+  check(model.sealPreview(false, error), error.c_str());
+  check(model.previewEvents().back().phase == PreviewTrackPhase::Closed,
+        "Cancellation must seal the preview instead of finalizing it");
+  for (const auto& event : model.previewEvents())
+    check(event.phase != PreviewTrackPhase::Finalized,
+          "A sealed failure must not finalize preview tracks");
+}
+void previewQueueDropsOldestWithoutTruncatingFormalTracks() {
+  auto config = trackerConfig(6);
+  config.minHits = 1;
+  config.limits.maximumPreviewEvents = 2;
+  auto model = tracker(config);
+  for (std::uint64_t ordinal = 0; ordinal < 4; ++ordinal)
+    consume(model, window(ordinal, {candidate(-5, 5)}));
+  check(model.previewEvents().size() == 2 && model.droppedPreviewEvents() >= 2,
+        "The preview queue must drop the oldest events and count them");
+  auto tracks = finish(model);
+  check(tracks.size() == 1 && tracks[0].hits == 4,
+        "Dropping preview events must not truncate the formal track");
+}
 void scnUnavailableAndInvalidSamples() {
   std::vector<float> average(32, std::numeric_limits<float>::quiet_NaN());
   std::vector<float> maximum(32, 100);
@@ -521,8 +585,11 @@ int main() {
     frequencyFusionKeepsAllRawEvidence();
     trackingLimitsAndCancellationAreAtomic();
     scnMinimumNoiseAndMaximumOnlyEdges();
+    sameSignalKeepsOnePreviewIdentity();
+    distinctSignalsDoNotMergeWithoutAnExistingRule();
+    previewQueueDropsOldestWithoutTruncatingFormalTracks();
     scnUnavailableAndInvalidSamples();
-    std::cout << "Detection postprocess tests: 11 groups passed\n";
+    std::cout << "Detection postprocess tests: 14 groups passed\n";
     return 0;
   } catch (const std::exception& exception) {
     std::cerr << exception.what() << '\n';

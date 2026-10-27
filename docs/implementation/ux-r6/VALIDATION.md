@@ -49,4 +49,8 @@ Release 重新执行样本能量、样本流（`--golden --long --run-budget`）
 
 ## 尚未闭合
 
-批次 1/2/4/8/16 真实能力与吞吐/降级；优化后同设备 p50/p95；多场景检出质量与轨迹；有界临时预览/增量 UI；真实 4K/150% GPU/软件、最终回归、独立审核及安全发布仍待后续节点。大型 RFbench 按要求不执行。
+批次 1/2/4/8/16 的 FFSCN 实测见 PERFORMANCE 的 R6-4 节。优化后同设备 p50/p95、多场景检出质量、预览 UI 的 4K/150% GPU/软件、最终回归、独立审核及安全发布仍待后续节点。大型 RFbench 按要求不执行。
+
+## R6-5 轨迹预览（2026-10-27）
+
+`signal_studio_detection_postprocess` Release 通过，输出 `Detection postprocess tests: 14 groups passed`。覆盖同一信号跨窗保持一个 ID、接近信号在现有规则不合并时保持两个 ID、队列上限 2 时丢弃最旧且正式轨迹仍为 4 次命中、成功封存 Finalized、取消封存 Closed。这些事件不进入正式 publication。

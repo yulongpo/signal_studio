@@ -83,6 +83,9 @@ struct FrequencyTrack {
   std::uint64_t hits = 0;
   std::uint64_t windowDenominator = 0;
   double windowCoverage = 0;
+  // Runtime preview identity. Not part of the persisted publication record.
+  std::string previewId;
+  std::uint64_t previewRevision = 0;
 };
 struct WindowObservation {
   std::string runId, fileId, windowId;
@@ -103,6 +106,7 @@ struct FrequencyTrackerLimits {
   std::uint64_t maximumFusionComparisons = 4000000;
   std::uint64_t residentByteBudget = 32 * 1024 * 1024;
   std::size_t maximumIdBytes = 256;
+  std::size_t maximumPreviewEvents = 1024;
 };
 struct FrequencyTrackerConfig {
   std::string runId, fileId;
@@ -121,9 +125,34 @@ struct FrequencyTrackerConfig {
   FrequencyTrackerLimits limits;
 };
 
+enum class PreviewTrackPhase {
+  Created,
+  Updated,
+  Stable,
+  Closed,
+  Merged,
+  Finalized
+};
+struct PreviewTrackEvent {
+  std::string trackId;
+  std::string absorbedId;
+  std::uint64_t revision = 0;
+  std::uint64_t sequence = 0;
+  PreviewTrackPhase phase = PreviewTrackPhase::Created;
+  std::string runId, fileId;
+  FrequencyRange frequency;
+  // False until a later time-refinement stage publishes activity. Preview
+  // events never invent an activity interval.
+  bool timeLocalized = false;
+  std::uint64_t hits = 0;
+  // Windows observed so far. This is not an activity interval.
+  TimeRange observedSupport{};
+};
+
 // A bounded deterministic single-run tracker. Each successful consume is
 // atomic; retries/foreign scope/out-of-order windows fail without mutation.
 // finish may also be called after cancellation for explicit partial recovery.
+// Preview events are a side channel and are not frequency-track results.
 class FrequencyTracker {
  public:
   FrequencyTracker();
@@ -137,12 +166,16 @@ class FrequencyTracker {
   bool consume(const WindowObservation&, std::string& error,
                const PostprocessCancellation& cancelled = {});
   bool finish(std::vector<FrequencyTrack>&, std::string& error,
-              const PostprocessCancellation& cancelled = {}) const;
+              const PostprocessCancellation& cancelled = {});
+  bool sealPreview(bool finalized, std::string& error);
+  const std::vector<PreviewTrackEvent>& previewEvents() const;
+  std::uint64_t droppedPreviewEvents() const;
   std::uint64_t processedWindows() const;
   std::size_t retainedTracks() const;
 
  private:
   struct State;
+  static void rememberPreview(State&, PreviewTrackEvent);
   std::unique_ptr<State> state_;
 };
 

@@ -22,7 +22,10 @@ class DetectionResultProjector {
   bool consume(const QJsonArray& results, const QJsonArray& mappings,
                QString& error, const PostprocessCancellation& cancelled = {});
   bool finish(std::vector<FrequencyTrack>&, QString& error,
-              const PostprocessCancellation& cancelled = {}) const;
+              const PostprocessCancellation& cancelled = {});
+  bool sealPreview(bool finalized, QString& error);
+  std::vector<PreviewTrackEvent> previewEvents() const;
+  std::uint64_t droppedPreviewEvents() const;
   bool attachWindowEvidence(DetectionPublication&, QString& error) const;
 
  private:

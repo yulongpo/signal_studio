@@ -209,7 +209,7 @@ bool DetectionResultProjector::consume(
 
 bool DetectionResultProjector::finish(
     std::vector<FrequencyTrack>& tracks, QString& error,
-    const PostprocessCancellation& cancelled) const {
+    const PostprocessCancellation& cancelled) {
   if (!initialized_) {
     tracks.clear();
     return true;
@@ -220,6 +220,21 @@ bool DetectionResultProjector::finish(
     return false;
   }
   return true;
+}
+bool DetectionResultProjector::sealPreview(bool finalized, QString& error) {
+  if (!initialized_) return true;
+  std::string issue;
+  if (!tracker_.sealPreview(finalized, issue)) {
+    error = QString::fromStdString(issue);
+    return false;
+  }
+  return true;
+}
+std::vector<PreviewTrackEvent> DetectionResultProjector::previewEvents() const {
+  return initialized_ ? tracker_.previewEvents() : std::vector<PreviewTrackEvent>{};
+}
+std::uint64_t DetectionResultProjector::droppedPreviewEvents() const {
+  return initialized_ ? tracker_.droppedPreviewEvents() : 0;
 }
 
 std::string detectionTrackRecordId(const std::string& seedId) {
