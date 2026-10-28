@@ -1,209 +1,206 @@
-"""Summarize SS-DE-RPO matrix and benchmark launches.
+"""Compare real cold/resident launches without filling absent stages or times.
 
-Missing numbers stay null. A failed run is not a speedup denominator.
-Warm speedup requires residentApplication and distinct Worker process ids.
-Three fresh processes are not warm.
+Resident samples require one parent, an excluded warmup and distinct Workers.
+Host stages may overlap. GPU memory samples cover the whole device/display.
 """
 import argparse
+import csv
 import json
+import math
 import statistics
+from collections import defaultdict
 from pathlib import Path
-
-
-BUCKETS = {
-    "synthetic-iq": "syntheticIq",
-    "original-iq": "originalIq",
-    "original-iq-source-plan": "originalIq",
-    "fixture-worker": "fixtureWorker",
-    "tensorrt": "tensorrt",
-    "qrhi": "qrhi",
-    "software-fallback": "softwareFallback",
-}
 
 
 def read_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8-sig"))
 
 
-def linear_stats(values):
-    clean = []
-    for value in values:
-        if isinstance(value, bool) or not isinstance(value, (int, float)):
-            continue
-        if value != value:
-            continue
-        clean.append(float(value))
-    clean.sort()
-    if not clean:
-        return {"available": False, "n": 0, "minimum": None, "maximum": None,
-                "mean": None, "p50": None, "p95": None}
+def number(value):
+    if isinstance(value, bool):
+        return None
+    try:
+        result = float(value)
+        return result if math.isfinite(result) else None
+    except (TypeError, ValueError):
+        return None
 
+
+def stats(values):
+    clean = sorted(v for item in values if (v := number(item)) is not None)
+    if not clean:
+        return {"n": 0, "mean": None, "minimum": None, "maximum": None, "p50": None, "p95": None}
     def quantile(q):
         position = q * (len(clean) - 1)
         lower = int(position)
         upper = min(lower + 1, len(clean) - 1)
         return clean[lower] + (clean[upper] - clean[lower]) * (position - lower)
-
-    return {"available": True, "n": len(clean), "minimum": clean[0], "maximum": clean[-1],
-            "mean": statistics.mean(clean), "p50": quantile(0.5), "p95": quantile(0.95)}
-
-
-def refuse_main_out(path):
-    full = str(Path(path).resolve()).replace("/", "\\").lower()
-    banned = "d:\\project\\signal_studio_rebuild\\out"
-    if full == banned or full.startswith(banned + "\\"):
-        raise SystemExit(f"refusing to write the main worktree out directory: {path}")
+    return {"n": len(clean), "mean": statistics.mean(clean), "minimum": clean[0],
+            "maximum": clean[-1], "p50": quantile(.5), "p95": quantile(.95)}
 
 
-def finite_elapsed(value):
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    if value != value:
-        return None
-    return float(value)
+def output_path(path):
+    result = Path(path).resolve()
+    root = Path(__file__).resolve().parents[1] / "out/tasks/ss-de-rpo"
+    if not result.is_relative_to(root.resolve()):
+        raise SystemExit(f"output must be below {root}")
+    result.parent.mkdir(parents=True, exist_ok=True)
+    return result
 
 
-def measurement_elapsed(path):
+def signature(launch, measurement):
+    run = measurement.get("run", {})
+    request = run.get("request", {})
+    source = dict(request.get("sourceIdentity", {}))
+    for key in ("projectGeneration", "fileId"):
+        source.pop(key, None)
+    if source.get("path"):
+        source["path"] = source["path"].replace("\\", "/").casefold()
+    profile = request.get("profile", {})
+    return {
+        "configuration": launch.get("configuration"), "native": launch.get("native", False),
+        "device": run.get("device"), "runtime": run.get("runtime"), "source": source,
+        "modelSha256": request.get("modelSha256"),
+        "profile": {k: v for k, v in profile.items() if k not in ("status", "name")},
+        "parameters": request.get("parameters"), "requestedRange": request.get("requestedRange"),
+        "contextRange": request.get("contextRange"), "spectrumMode": request.get("spectrumMode"),
+        "workingSetBudgetBytes": request.get("workingSetBudgetBytes"),
+        "evidenceBudgetBytes": request.get("evidenceBudgetBytes"),
+        "retainRawModelOutput": request.get("retainRawModelOutput"),
+        "completedWindows": run.get("completedWindows"), "eligibleWindows": run.get("eligibleWindows"),
+        "dspRoute": run.get("performance", {}).get("sourceStages", {}).get("gpuDsp", {}).get("stftRoute")}
+
+
+def resource_summary(path):
     if not path or not Path(path).is_file():
         return None
-    try:
-        return finite_elapsed(read_json(path).get("elapsedMs"))
-    except (OSError, json.JSONDecodeError):
-        return None
+    groups, private, cpu = defaultdict(float), defaultdict(float), defaultdict(float)
+    gpu, utilization, free = [], [], []
+    with Path(path).open(encoding="utf-8-sig", newline="") as stream:
+        for row in csv.DictReader(stream):
+            stamp = row["utc"]
+            groups[stamp] += number(row.get("workingSet64")) or 0
+            private[stamp] += number(row.get("privateMemorySize64")) or 0
+            pid = row.get("processId")
+            cpu[pid] = max(cpu[pid], number(row.get("totalProcessorTimeMs")) or 0)
+            gpu.append(number(row.get("gpuUsedMiB")))
+            utilization.append(number(row.get("gpuUtilizationPercent")))
+            free.append(number(row.get("volumeAvailableBytes")))
+    free = [v for v in free if v is not None]
+    return {"path": str(Path(path).resolve()), "sampleCount": len(groups),
+            "processTreeSampledRssPeakBytes": max(groups.values(), default=None),
+            "processTreeSampledPrivatePeakBytes": max(private.values(), default=None),
+            "observedProcessCpuMs": sum(cpu.values()) if cpu else None,
+            "wholeDeviceUsedMiB": stats(gpu), "wholeDeviceUtilizationPercent": stats(utilization),
+            "wholeVolumeFreeMinBytes": min(free, default=None),
+            "wholeVolumeObservedFreeRangeBytes": max(free) - min(free) if free else None}
 
 
-def speedup(baseline_values, new_values, comparable, reason):
-    if not comparable:
-        return {"available": False, "ratio": None, "reason": reason}
-    base = linear_stats(baseline_values)
-    new = linear_stats(new_values)
-    if not base["available"] or not new["available"] or not new["mean"]:
-        return {"available": False, "ratio": None,
-                "reason": "one side has no finite elapsed samples; missing data was not replaced with 0"}
-    return {"available": True, "ratio": base["mean"] / new["mean"],
-            "baselineMeanMs": base["mean"], "newMeanMs": new["mean"],
-            "reason": "mean(baseline) / mean(new) over passed runs only"}
+def load_sample(launch, row):
+    path = row.get("measurement")
+    measurement = read_json(path) if path and Path(path).is_file() else {}
+    run = measurement.get("run", {})
+    passed = (row.get("pass") is True and measurement.get("pass") is True
+              and run.get("lifecycle") == "Completed"
+              and measurement.get("formalCommitPerformed") is True
+              and measurement.get("formalProjectReopened") is True
+              and run.get("completedWindows") == run.get("eligibleWindows")
+              and number(measurement.get("elapsedMs")) is not None)
+    performance = run.get("performance", {})
+    marks = {m["name"]: int(m["steadyNs"]) for m in performance.get("timeline", {}).get("marks", [])}
+    origin = number(measurement.get("clickSteadyNs"))
+    offsets = {k: (v - origin) / 1e6 for k, v in marks.items()} if origin else {}
+    return {"pass": passed, "measurement": path, "elapsedMs": measurement.get("elapsedMs"),
+            "clickToFirstInferenceMs": measurement.get("clickToFirstInferenceMs"),
+            "clickToFormalMs": measurement.get("clickToFormalMs"), "signature": signature(launch, measurement),
+            "timelineFromClickMs": offsets,
+            "pipelineStages": {k: v.get("totalMs") for k, v in performance.get("pipelineStages", {}).items()},
+            "sourceStages": {k: v.get("totalMs") for k, v in performance.get("sourceStages", {}).items()
+                             if isinstance(v, dict) and "totalMs" in v},
+            "tensorRtInference": performance.get("tensorRtInference", {}),
+            "modelProfile": performance.get("modelProfile", {}),
+            "resources": resource_summary(row.get("resourceCsv"))}
 
 
-def empty_classes():
-    return {name: [] for name in
-            ("syntheticIq", "originalIq", "fixtureWorker", "tensorrt", "qrhi",
-             "softwareFallback", "unclassified")}
+def load_launch(path):
+    launch = read_json(path)
+    cold = [load_sample(launch, row) for row in launch.get("coldRuns", [])]
+    block, resident, warm = launch.get("warm", {}), {}, []
+    if block.get("summary") and Path(block["summary"]).is_file():
+        resident = read_json(block["summary"])
+        warm = [load_sample(launch, row) for row in resident.get("runs", [])]
+    ids = [str(i) for i in block.get("workerProcessIds", [])]
+    warm_valid = (block.get("status") == "PASS" and block.get("residentApplication") is True
+                  and not block.get("newProcessPerRun") and not block.get("relabelledFreshProcess")
+                  and resident.get("applicationResident") is True and resident.get("independentWorkerPerRun") is True
+                  and resident.get("pass") is True and len(ids) == 4 and len(set(ids)) == 4
+                  and len([r for r in resident.get("rows", []) if r.get("excludedWarmup") is True]) == 1
+                  and len(warm) == 3 and all(r["pass"] for r in warm))
+    cold_valid = (len(cold) == 3 and all(r["pass"] for r in cold)
+                  and all(r.get("newProcessPerRun") is True and not r.get("residentApplication")
+                          for r in launch.get("coldRuns", [])))
+    return {"path": str(Path(path).resolve()), "sourceHead": launch.get("sourceHead"),
+            "coldValid": cold_valid, "warmValid": warm_valid, "cold": cold, "warm": warm,
+            "residentWorkerIds": ids, "residentParentId": resident.get("processId"), "screen": resident.get("screen"),
+            "residentResources": resource_summary(block.get("resourceCsv")),
+            "resourceSamplingBoundary": launch.get("resourceSamplingBoundary"),
+            "osCacheState": launch.get("osCacheState"), "modelInitializationState": launch.get("modelInitializationState")}
 
 
-def stamp_or_none(value):
-    # A missing pipeline or business stamp stays null. One is never copied
-    # into the other.
-    if value is None or value == "":
-        return None
-    return value
+def summarize_rows(rows):
+    result = {key: stats(row.get(key) for row in rows if row["pass"]) for key in
+              ("elapsedMs", "clickToFirstInferenceMs", "clickToFormalMs")}
+    for group in ("pipelineStages", "sourceStages", "timelineFromClickMs", "tensorRtInference"):
+        keys = sorted({k for r in rows if r["pass"] for k in r[group]})
+        result[group] = {k: stats(r[group].get(k) for r in rows if r["pass"])
+                         for k in keys if k != "cudaEventIntervals"}
+    return result
 
 
-def add_run(classes, run):
-    bucket = BUCKETS.get(run.get("evidenceClass") or "", "unclassified")
-    classes[bucket].append({
-        "pass": run.get("pass") is True,
-        "elapsedMs": measurement_elapsed(run.get("measurement")),
-        "residentApplication": run.get("residentApplication") is True,
-        "newProcessPerRun": run.get("newProcessPerRun") is True,
-        "workerProcessIds": run.get("workerProcessIds") or [],
-        "status": run.get("status"),
-        "t_pipeline_terminal": stamp_or_none(run.get("t_pipeline_terminal")),
-        "t_terminal": stamp_or_none(run.get("t_terminal")),
-    })
+def compare(base, new, mode):
+    valid = base[mode + "Valid"] and new[mode + "Valid"]
+    b, n = base[mode], new[mode]
+    signatures = [r["signature"] for r in b + n]
+    mismatch = sorted({key for s in signatures[1:] for key in signatures[0]
+                       if s.get(key) != signatures[0][key]}) if signatures else []
+    comparable = valid and not mismatch
+    bs, ns = summarize_rows(b), summarize_rows(n)
+    ratios = {}
+    for metric in ("elapsedMs", "clickToFirstInferenceMs", "clickToFormalMs"):
+        denominator = ns[metric]["mean"]
+        ratios[metric] = (bs[metric]["mean"] / denominator if comparable and denominator
+                          and bs[metric]["mean"] is not None else None)
+    return {"available": comparable, "ratio": ratios["elapsedMs"],
+            "reason": "three passed comparable samples per side; baseline mean/new mean" if comparable else
+                      "missing/failed evidence or different inputs/configuration; no ratio calculated",
+            "signatureDifferences": mismatch, "baseline": bs, "new": ns, "speedup": ratios}
 
 
 def summarize(args):
-    refuse_main_out(args.output)
-    output = Path(args.output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    matrices = [{"path": str(Path(path).resolve()), "payload": read_json(path)}
-                for path in args.matrix]
-    launches = []
-    classes = empty_classes()
-    warm_blocks = []
-    for path in args.benchmark:
-        payload = read_json(path)
-        launches.append(str(Path(path).resolve()))
-        for run in payload.get("coldRuns") or []:
-            add_run(classes, run)
-        if payload.get("warm"):
-            warm_blocks.append(payload["warm"])
-
-    baseline = read_json(args.baseline) if args.baseline else None
-    baseline_elapsed = []
-    baseline_failed = False
-    if baseline:
-        for run in baseline.get("runs") or []:
-            elapsed = finite_elapsed(run.get("elapsedMs"))
-            passed = run.get("pass") is True and run.get("lifecycle") in (None, "Completed")
-            if not passed or elapsed is None:
-                baseline_failed = True
-                continue
-            baseline_elapsed.append(elapsed)
-
-    tensorrt = classes["tensorrt"]
-    passed_cold = [row["elapsedMs"] for row in tensorrt
-                   if row["pass"] and isinstance(row["elapsedMs"], float)]
-    cold_failed = any(not row["pass"] or row["elapsedMs"] is None for row in tensorrt)
-    cold_relabelled = any(row["residentApplication"] for row in tensorrt)
-    if not tensorrt or cold_failed or cold_relabelled or baseline_failed or not baseline_elapsed:
-        cold_comparable = False
-        cold_reason = "cold speedup needs a passed baseline and passed new TensorRT cold runs with finite elapsedMs"
-    else:
-        cold_comparable = True
-        cold_reason = "cold fresh-process comparison; not a warm resident comparison"
-
-    warm_ids = []
-    for block in warm_blocks:
-        warm_ids.extend(str(item) for item in (block.get("workerProcessIds") or []))
-    warm_distinct = len(set(warm_ids)) >= 3 and len(warm_ids) >= 3
-    warm_ok = bool(warm_blocks) and warm_distinct and all(
-        block.get("residentApplication") is True and block.get("status") == "PASS"
-        and block.get("relabelledFreshProcess") is not True
-        and block.get("newProcessPerRun") is not True
-        for block in warm_blocks)
-    warm_reason = ("resident warm comparison" if warm_ok else
-                   "warm speedup requires one resident --resident-repeat parent and distinct Worker process ids; a new process is not warm")
-
-    summary = {
-        "schema": "signal-studio-ss-de-rpo-summary-v1",
-        "percentileMethod": "linear interpolation; null when n=0; no zero-fill",
-        "matrices": [{"path": item["path"], "schema": item["payload"].get("schema"),
-                      "allowGpu": item["payload"].get("allowGpu"),
-                      "nativeR19Pass": item["payload"].get("nativeR19Pass", False)}
-                     for item in matrices],
-        "launches": launches,
-        "baseline": None if baseline is None else {
-            "schema": baseline.get("schema"),
-            "applicationCold": baseline.get("applicationCold"),
-            "osCacheState": baseline.get("osCacheState"),
-            "elapsed": linear_stats(baseline_elapsed),
-            "failedRunExcluded": baseline_failed,
-        },
-        "evidence": {key: {"n": len(rows), "elapsed": linear_stats(
-            [row["elapsedMs"] for row in rows if isinstance(row["elapsedMs"], float)])}
-                     for key, rows in classes.items()},
-        "coldSpeedup": speedup(baseline_elapsed, passed_cold, cold_comparable, cold_reason),
-        "warmSpeedup": speedup(baseline_elapsed, [], False if not warm_ok else False, warm_reason),
-        "boundaries": {
-            "syntheticIq": "synthetic IQ is not original IQ",
-            "originalIq": "manifest SourcePlan or the recorded real wav request",
-            "fixtureWorker": "fixture worker is not TensorRT",
-            "tensorrt": "true TensorRT forward only when the launcher evidenceClass is tensorrt",
-            "qrhi": "native QRhi display, not offscreen Qt",
-            "softwareFallback": "software renderer, recorded separately from QRhi",
-            "offscreenPaint": "offscreen visible-paint p95 is not native R-19 PASS",
-        },
-    }
-    # Warm timings are absent until a resident harness records them. Do not
-    # reuse cold elapsedMs as the warm side.
-    if warm_ok:
-        summary["warmSpeedup"] = {"available": False, "ratio": None,
-                                  "reason": "resident flags passed but this launcher has no separate warm elapsed samples"}
+    output = output_path(args.output)
+    launches = [load_launch(path) for path in args.benchmark]
+    baseline = load_launch(args.baseline) if args.baseline else None
+    comparisons = [{"new": launch["path"], "cold": compare(baseline, launch, "cold"),
+                    "warm": compare(baseline, launch, "warm")} for launch in launches] if baseline else []
+    matrices = []
+    for path in args.matrix:
+        matrix = read_json(path)
+        gates = [r for r in matrix.get("rows", []) if not r.get("parent") and
+                 (r.get("id", "").startswith("R-") or r.get("id", "").startswith("CTest-"))]
+        matrices.append({"path": str(Path(path).resolve()), "nativeR19Pass": matrix.get("nativeR19Pass"),
+                         "gates": [{k: r.get(k) for k in ("id", "status", "detail")} for r in gates],
+                         "allRecordedGatesPass": bool(gates) and all(r["status"] == "PASS" for r in gates)})
+    summary = {"schema": "signal-studio-ss-de-rpo-summary-v2", "percentileMethod": "linear interpolation; no zero fill",
+               "matrices": matrices, "baseline": baseline, "launches": launches, "comparisons": comparisons,
+               "boundaries": {
+                   "cold": "new QApplication per trial; click after source/chart settle; OS cache not flushed",
+                   "resident": "one QApplication/MainWindow; excluded warmup; fresh Worker/model/context every run",
+                   "stages": "parent monotonic observations; host totals can overlap/nest; absent stages stay absent",
+                   "resources": "sampled root+direct Workers; CPU includes process life/load; whole GPU including display; volume includes other writers",
+                   "quality": "recorded IQ is separate from synthetic Golden, fault injection and field RF accuracy"}}
     output.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({"output": str(output), "coldSpeedup": summary["coldSpeedup"]["available"],
-                      "warmSpeedup": summary["warmSpeedup"]["available"]}, ensure_ascii=False))
+    print(json.dumps({"output": str(output), "comparisons": [
+        {"cold": row["cold"]["available"], "warm": row["warm"]["available"]} for row in comparisons]}))
 
 
 def main():

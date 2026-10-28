@@ -1227,6 +1227,11 @@ void DetectionCard::refreshSource() {
     inputPolicy_->setContext(key);
     contextKey_ = key;
     displayRunId_.clear();
+    startLatchActive_ = false;
+    startLatchRunId_.clear();
+    startLatchSteadyNs_ = 0;
+    startNotice_.clear();
+    startNoticeInputKey_.clear();
     ++statusGeneration_;
     requestedRoi_.reset();
     segmentAnnotationId_.clear();
@@ -1639,6 +1644,10 @@ void DetectionCard::publishDiagnosticInputs(bool force) {
   // That must not schedule another source plan.
   if (!changed && !force) return;
   if (changed) {
+    if (!startNotice_.isEmpty() && key != startNoticeInputKey_) {
+      startNotice_.clear();
+      startNoticeInputKey_.clear();
+    }
     diagnosticKey_ = key;
     diagnosticKeyReady_ = true;
     planIssue_.clear();
@@ -1722,6 +1731,11 @@ void DetectionCard::updateShortStatus() {
   if (preparing) {
     preflight_->setText(detectionPhaseText("preparing"));
     preflight_->setToolTip(QStringLiteral("启动已受理，正在准备检测"));
+  } else if (!activeRun && issue.isEmpty() && !startNotice_.isEmpty()) {
+    // A retryable start error is presentation state, not a validation error.
+    // Background planning/progress refreshes must not erase it or lock retry.
+    preflight_->setText(startNotice_);
+    preflight_->setToolTip(startNotice_);
   }
   if (preflight_->property("preflightOk").toBool() != issue.isEmpty()) {
     preflight_->setProperty("preflightOk", issue.isEmpty());
@@ -2030,6 +2044,8 @@ void DetectionCard::noteStartRejected(const std::string& runId,
   startLatchActive_ = false;
   ++statusGeneration_;
   planIssue_.clear();
+  startNotice_ = notice;
+  startNoticeInputKey_ = diagnosticInputKey();
   refreshStatus();
   if (preflight_ && !notice.isEmpty()) {
     preflight_->setText(notice);
@@ -2091,6 +2107,8 @@ void DetectionCard::submit() {
       "run-" + QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString();
   displayRunId_ = value.runId;
   startLatchRunId_ = value.runId;
+  startNotice_.clear();
+  startNoticeInputKey_.clear();
   startLatchActive_ = true;
   ++statusGeneration_;
   startLatchSteadyNs_ = steadyClockNanoseconds();

@@ -196,6 +196,7 @@ class DetectionCard : public QWidget {
   bool diagnosticDetailReady_ = false;
   std::uint64_t diagnosticGeneration_ = 0;
   QString planIssue_;
+  QString startNotice_, startNoticeInputKey_;
   QString appliedTimingKey_;
   std::unique_ptr<DetectionDiagnosticWorker> diagnosticWorker_;
   std::vector<ParameterControl> parameters_;

@@ -29,6 +29,7 @@ class SsDeRpoStartTests : public QObject {
 
  private slots:
   void staleRejectionDoesNotUnlockTheCard();
+  void switchingSourceDropsProvisionalUiState();
   void preparingCancelReachesThePanelBeforePublish();
   void provisionalCancelBeforePublishKeepsFormalResult();
   void cancelAfterCommittedStartCancelsQueuedRun();
@@ -173,12 +174,65 @@ void SsDeRpoStartTests::staleRejectionDoesNotUnlockTheCard() {
   QVERIFY(!cancel->isEnabled());
   auto* preflight = card->findChild<QLabel*>("detectionPreflight");
   QVERIFY(preflight);
+  card->refresh();
+  QTest::qWait(100);
+  card->refresh();
   QVERIFY2(preflight->text().contains(QStringLiteral("检测事务保存失败")),
            qPrintable(preflight->text()));
   QVERIFY2(preflight->text().contains(QStringLiteral("上次正式结果仍在")),
            qPrintable(preflight->text()));
   QVERIFY(!preflight->text().contains(QStringLiteral("旧回调")));
   QVERIFY(!preflight->text().contains(QStringLiteral("配置就绪")));
+  const auto firstId = card->startLatchRunId();
+  run->click();
+  QVERIFY(card->startLatchActive());
+  QVERIFY(card->startLatchRunId() != firstId);
+  QTRY_VERIFY_WITH_TIMEOUT(!card->startLatchActive(), 10000);
+  QVERIFY(run->isEnabled());
+}
+
+void SsDeRpoStartTests::switchingSourceDropsProvisionalUiState() {
+  armFixture();
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  MainWindow window;
+  QString error;
+  QVERIFY2(prepareProject(directory, window, error), qPrintable(error));
+  const auto first = window.session().activeFile()->metadata.id;
+  const auto path = directory.filePath("second_FS1Msps_FC100MHz.dat");
+  QVERIFY2(writeIq(path, error), qPrintable(error));
+  QVERIFY2(window.addIqFile(path, &error), qPrintable(error));
+  QTRY_VERIFY_WITH_TIMEOUT(window.session().activeFile()->metadata.availability.status == LoadStatus::Ready, 10000);
+  const auto second = window.session().activeFile()->metadata.id;
+  QVERIFY(first != second);
+  QVERIFY(window.session().activateFile(first));
+  window.refresh();
+  auto* card = window.findChild<DetectionCard*>("detectionCard");
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  auto* run = window.findChild<QPushButton*>("runWidebandDetection");
+  auto* model = card ? card->findChild<QComboBox*>("detectionModel") : nullptr;
+  auto* range = card ? card->findChild<QComboBox*>("detectionRangeOrigin") : nullptr;
+  QVERIFY(card && panel && run && model && range);
+  model->setCurrentIndex(model->findData("pipeline-fixture-v1"));
+  range->setCurrentIndex(range->findData("available-file"));
+  // Keep preparation pending at the card boundary. The real atomic project
+  // commit locks source navigation; its cancellation is exercised below.
+  QObject::disconnect(card, &DetectionCard::requestSubmitted, nullptr, nullptr);
+  run->click();
+  const auto id = QString::fromStdString(card->startLatchRunId());
+  QVERIFY(!id.isEmpty());
+  QVERIFY(card->startLatchActive());
+  QVERIFY(window.session().activateFile(second));
+  window.refresh();
+  QVERIFY(!card->startLatchActive());
+  card->noteStartRejected(id.toStdString(), QStringLiteral("上次正式结果仍在"));
+  card->refresh();
+  auto* preflight = card->findChild<QLabel*>("detectionPreflight");
+  QVERIFY(preflight);
+  QVERIFY(!preflight->text().contains(QStringLiteral("上次正式结果仍在")));
+  QCOMPARE(window.session().activeFile()->metadata.id, second);
+  QVERIFY(!card->startLatchActive());
+  QVERIFY(run->isEnabled());
 }
 
 void SsDeRpoStartTests::preparingCancelReachesThePanelBeforePublish() {

@@ -75,12 +75,13 @@ function Start-ResourceSampler([string]$CsvPath, [int]$RootProcessId) {
         $gpuValues = @(& $gpuProbe.Source --query-gpu=index,name,memory.used,utilization.gpu --format=csv,noheader,nounits 2>$null |
           Select-Object -First 1 | ForEach-Object { $_ -split ',\s*' })
       }
+      $sampleUtc = [DateTime]::UtcNow.ToString('o')
       foreach ($name in $Names) {
         foreach ($process in @(Get-Process -Name $name -ErrorAction SilentlyContinue)) {
           if ($process.Id -ne $RootProcessId -and $process.Id -notin $children) { continue }
           try {
             $rows += [pscustomobject]@{
-              utc = [DateTime]::UtcNow.ToString('o')
+              utc = $sampleUtc
               processName = $process.ProcessName
               processId = $process.Id
               workingSet64 = $process.WorkingSet64
