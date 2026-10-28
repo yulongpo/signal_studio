@@ -62,6 +62,10 @@ class DetectionPanel : public QWidget {
   bool publicationCommitInProgress() const {
     return commitInFlight_ && publicationCommit_;
   }
+  // Last startRequest that armed a start transaction. Read these only after
+  // that call returns true; a later rejection does not clear them.
+  const std::string& acceptedRunId() const { return acceptedRunId_; }
+  std::uint64_t acceptedSteadyNs() const { return acceptedSteadyNs_; }
   // Connect only committed algorithm/parameter changes, not draft refreshes.
   void markConfigurationStale();
   DetectionTaskManager& tasks() { return *tasks_; }
@@ -76,6 +80,10 @@ class DetectionPanel : public QWidget {
   void runFocused(const QString& runId);
   void previewChanged();
   void previewSelectionDropped(const QStringList& trackIds);
+  // GUI thread. Start was hidden, then rejected before publication
+  // (preflight, save, or a generation change). The card latch lives on
+  // DetectionCard; main_window connects this to noteStartRejected.
+  void startRejected(QString runId, QString message);
 
  private:
   struct StartCommit;
@@ -93,6 +101,7 @@ class DetectionPanel : public QWidget {
   bool publicationGenerationCurrent(std::uint64_t epoch, std::uint64_t generation,
                                     const std::string& fileId) const;
   void releaseCommitLock();
+  QString commitBusyMessage() const;
   void clearUnpublishedPreview(const std::string& fileId, std::uint32_t channel);
   void suppressFormalDisplay(const std::string& fileId, std::uint32_t channel);
   void restoreFormalDisplay(const std::string& fileId);
@@ -153,6 +162,8 @@ class DetectionPanel : public QWidget {
   bool viewScopeReady_ = false;
   bool commitInFlight_ = false;
   bool publicationCommit_ = false;
+  std::string acceptedRunId_;
+  std::uint64_t acceptedSteadyNs_ = 0;
   bool startSaveFault_ = false;
   std::atomic<bool> shuttingDown_{false};
   std::string commitScope_;

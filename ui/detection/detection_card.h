@@ -45,6 +45,16 @@ class DetectionCard : public QWidget {
   DetectionRequest request() const;
   bool showIntermediateResults() const;
   QString validationError() const;
+  // Drops the provisional latch only when runId is the one submit() armed.
+  // The panel cannot see this latch. main_window must call this when
+  // DetectionPanel::startRequest returns false, and must connect
+  // DetectionPanel::startRejected to this method.
+  void noteStartRejected(const std::string& runId, const QString& message);
+  bool startLatchActive() const { return startLatchActive_; }
+  const std::string& startLatchRunId() const { return startLatchRunId_; }
+  // steady_clock nanoseconds taken after local validation, before
+  // requestSubmitted. This is t_click. The panel stamps t_accepted itself.
+  std::uint64_t startLatchSteadyNs() const { return startLatchSteadyNs_; }
   QWidget* actionsWidget() const { return actions_; }
 
  signals:
@@ -94,6 +104,7 @@ class DetectionCard : public QWidget {
   void publishDiagnosticInputs(bool force);
   void ensureDiagnosticWorker();
   void updateShortStatus();
+  void releaseStartLatchIfRunVisible();
   void applyDiagnosticReport(std::uint64_t generation,
                              DetectionDiagnosticReport report);
   DetectionDiagnosticInput captureDiagnosticInput() const;
@@ -149,6 +160,9 @@ class DetectionCard : public QWidget {
   std::array<QLabel*, 5> phaseSteps_{};
   QWidget* phaseBar_ = nullptr;
   std::string displayRunId_;
+  bool startLatchActive_ = false;
+  std::string startLatchRunId_;
+  std::uint64_t startLatchSteadyNs_ = 0;
   AdaptiveValueEdit* hopMilliseconds_ = nullptr;
   AdaptiveValueEdit* noiseMargin_ = nullptr;
   AdaptiveValueEdit* edgeFraction_ = nullptr;

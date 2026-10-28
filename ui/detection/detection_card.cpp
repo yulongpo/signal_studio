@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMetaObject>
+#include <QPointer>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QSizePolicy>
@@ -25,7 +26,9 @@
 #include <QVBoxLayout>
 #include <algorithm>
 #include <bit>
+#include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <condition_variable>
 #include <limits>
 #include <mutex>
@@ -45,6 +48,12 @@
 namespace signalstudio {
 namespace {
 QString text(const std::string& value) { return QString::fromUtf8(value); }
+
+std::uint64_t steadyClockNanoseconds() {
+  const auto now = std::chrono::steady_clock::now().time_since_epoch();
+  return static_cast<std::uint64_t>(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(now).count());
+}
 
 QString number(double value) { return QString::number(value, 'g', 9); }
 
@@ -1655,9 +1664,23 @@ void DetectionCard::applyDiagnosticReport(std::uint64_t generation,
   updateShortStatus();
 }
 
+void DetectionCard::releaseStartLatchIfRunVisible() {
+  if (!startLatchActive_ || startLatchRunId_.empty()) return;
+  for (const auto& file : session_.project().files)
+    for (const auto& run : file.detectionRuns)
+      if (run.request.runId == startLatchRunId_) {
+        // The persisted run now owns the button. A later terminal state can
+        // enable it again. Rejection before save never inserts this id.
+        startLatchActive_ = false;
+        return;
+      }
+}
+
 void DetectionCard::updateShortStatus() {
   if (!preflight_) return;
+  releaseStartLatchIfRunVisible();
   const auto* activeRun = unfinishedRun();
+  const bool preparing = startLatchActive_ && activeRun == nullptr;
   const bool draft = hasDraft();
   draftNote_->setVisible(draft);
   draftNote_->setText(draft ? "草稿待提交 · Enter / Tab / 应用内点击" : "");
@@ -1680,6 +1703,8 @@ void DetectionCard::updateShortStatus() {
     preflight_->setToolTip(issue);
   else if (!diagnosticDetailReady_)
     preflight_->setToolTip(QStringLiteral("配置就绪 · 可运行"));
+  if (preparing && issue.isEmpty())
+    preflight_->setText(detectionPhaseText("preparing"));
   if (preflight_->property("preflightOk").toBool() != issue.isEmpty()) {
     preflight_->setProperty("preflightOk", issue.isEmpty());
     refreshStyle(preflight_);
@@ -1687,15 +1712,22 @@ void DetectionCard::updateShortStatus() {
   const auto* focusedRun = focusedUnfinished();
   const bool otherFile =
       activeRun && activeRun->request.sourceIdentity.fileId != source_.fileId;
-  run_->setEnabled(issue.isEmpty() && !activeRun);
+  // A provisional latch with no unfinished run is the gap before the task
+  // exists. Do not turn the button back on in that gap.
+  run_->setEnabled(issue.isEmpty() && !activeRun && !preparing);
   bool hasCommittedResult = false;
   if (const auto* file = session_.activeFile(); file && file->currentDetectionSlots)
     for (const auto& slot : *file->currentDetectionSlots)
       hasCommittedResult |= slot.sampleChannel == file->metadata.sampleFormat.selectedChannel && !slot.committedRunId.empty();
-  run_->setText(hasCommittedResult ? "应用并重新检测" : "开始检测");
+  run_->setText(preparing
+                    ? detectionPhaseText("preparing")
+                    : (hasCommittedResult ? QStringLiteral("应用并重新检测")
+                                          : QStringLiteral("开始检测")));
   run_->setToolTip(
-      "显式开始检测或重新检测。进行中仍显示当前通道上次正式结果；取消、失败或中断不会替换它。"
-      "只有新检测完整成功，包括 0 条，才整体替换。修改参数、模型或引擎不会清除已提交结果。");
+      "显式开始检测或重新检测。接受新检测会丢弃本文件、本 IQ 通道的上次正式结果，"
+      "失败或取消也不会恢复；其它文件和通道不受影响。"
+      "修改参数、模型或引擎不会清除已提交结果。"
+      "保存前被拒绝的启动会恢复被临时隐藏的正式结果。");
   cancel_->setEnabled(focusedRun &&
                       focusedRun->lifecycle != DetectionLifecycle::Cancelling);
   cancel_->setToolTip(focusedRun ? "取消运行 " + text(focusedRun->request.runId)
@@ -1719,7 +1751,12 @@ void DetectionCard::updateShortStatus() {
     }
   }
   selectRoi_->setEnabled(metadata_ && availableSamples(*metadata_) > 0);
-  if (const auto* run = latestRun()) {
+  if (preparing) {
+    phaseBar_->hide();
+    runSummary_->setText(detectionPhaseText("preparing"));
+    runSummary_->setToolTip(QStringLiteral("启动已受理，正在准备检测"));
+    runSummary_->show();
+  } else if (const auto* run = latestRun()) {
     const auto phase = text(run->computationPhase);
     const int step = phase == "completed"                           ? 4
                      : phase == "refine" || phase == "publishing"   ? 3
@@ -1951,7 +1988,48 @@ void DetectionCard::focusRun(const QString& runId) {
   refreshStatus();
 }
 
+void DetectionCard::noteStartRejected(const std::string& runId,
+                                      const QString& notice) {
+  if (QThread::currentThread() != thread()) {
+    QPointer<DetectionCard> self(this);
+    const auto id = runId;
+    const auto text = notice;
+    QMetaObject::invokeMethod(
+        this,
+        [self, id, text] {
+          if (self) self->noteStartRejected(id, text);
+        },
+        Qt::QueuedConnection);
+    return;
+  }
+  if (!startLatchActive_ || runId != startLatchRunId_) return;
+  startLatchActive_ = false;
+  if (!notice.isEmpty()) emit message(notice);
+  refreshStatus();
+  if (preflight_ && !notice.isEmpty()) {
+    preflight_->setText(notice);
+    preflight_->setToolTip(notice);
+  }
+}
+
 void DetectionCard::submit() {
+  if (QThread::currentThread() != thread()) {
+    QPointer<DetectionCard> self(this);
+    QMetaObject::invokeMethod(
+        this,
+        [self] {
+          if (self) self->submit();
+        },
+        Qt::QueuedConnection);
+    return;
+  }
+  // A click that is still inside this function, and any later click while
+  // the provisional run has not been rejected or persisted, must not emit
+  // again. The message is the prepare wait, not a publication wait.
+  if (startLatchActive_) {
+    emit message(QStringLiteral("检测正在准备，请稍候"));
+    return;
+  }
   // Enter/Tab/application clicks are the only commit paths. Running also
   // commits any remaining drafts. The source plan, disk query, and evidence
   // budget stay on the detection commit worker; this click only rejects
@@ -1980,9 +2058,20 @@ void DetectionCard::submit() {
     emit message("本工程已有未完成任务；当前参数用于下一次运行");
     return;
   }
+  if (startLatchActive_) {
+    emit message(QStringLiteral("检测正在准备，请稍候"));
+    return;
+  }
   value.runId =
       "run-" + QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString();
   displayRunId_ = value.runId;
+  startLatchRunId_ = value.runId;
+  startLatchActive_ = true;
+  startLatchSteadyNs_ = steadyClockNanoseconds();
+  const auto preparing = detectionPhaseText("preparing");
+  run_->setEnabled(false);
+  run_->setText(preparing);
+  if (preflight_) preflight_->setText(preparing);
   emit requestSubmitted(value);
   refreshStatus();
 }

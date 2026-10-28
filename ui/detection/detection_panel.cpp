@@ -52,6 +52,11 @@
 namespace signalstudio {
 namespace {
 QString q(const std::string& value) { return QString::fromUtf8(value); }
+std::uint64_t steadyClockNanoseconds() {
+  const auto now = std::chrono::steady_clock::now().time_since_epoch();
+  return static_cast<std::uint64_t>(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(now).count());
+}
 std::string detectionScopeKey(const std::string& fileId, std::uint32_t channel) {
   return fileId + ":" + std::to_string(channel);
 }
@@ -562,7 +567,9 @@ DetectionPanel::DetectionPanel(Session& session,
       listGeneration_(session.projectGeneration()) {
   session_.setProjectWriteGuard([this](std::string& error) {
     if (!commitInFlight_) return true;
-    error = "检测结果正在提交，请稍后再试";
+    // Publication is the only writer that uses the result-commit sentence.
+    // A start transaction still in flight is still preparing.
+    error = commitBusyMessage().toStdString();
     const auto now = QDateTime::currentMSecsSinceEpoch();
     if (now - lastRejectMessageMs_ > 1000) {
       lastRejectMessageMs_ = now;
@@ -756,6 +763,10 @@ void DetectionPanel::releaseCommitLock() {
   commitScope_.clear();
   committingRunId_.clear();
 }
+QString DetectionPanel::commitBusyMessage() const {
+  return publicationCommit_ ? QStringLiteral("检测结果正在提交，请稍后再试")
+                            : QStringLiteral("检测正在准备，请稍候");
+}
 
 bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
   const auto* file = session_.activeFile();
@@ -772,7 +783,7 @@ bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
     return false;
   }
   if (commitInFlight_) {
-    error = QStringLiteral("检测结果正在提交，请稍后再试");
+    error = commitBusyMessage();
     emit message(error);
     return false;
   }
@@ -796,6 +807,8 @@ bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
   publicationCommit_ = false;
   commitScope_ = job->scope;
   committingRunId_.clear();
+  acceptedRunId_ = job->runId;
+  acceptedSteadyNs_ = steadyClockNanoseconds();
   QPointer<DetectionPanel> self(this);
   auto* stopping = &shuttingDown_;
   // Plan, disk budget, manifest, and project save continue on this worker.
@@ -888,6 +901,13 @@ void DetectionPanel::runStartCommit(const std::shared_ptr<StartCommit>& job) {
 }
 
 void DetectionPanel::finishStartCommit(const std::shared_ptr<StartCommit>& job) {
+  const QString submittedRunId = [&] {
+    if (job) {
+      const auto& id = !job->runId.empty() ? job->runId : job->request.runId;
+      if (!id.empty()) return q(id);
+    }
+    return q(acceptedRunId_);
+  }();
   const auto finish = [&](bool installed) {
     releaseCommitLock();
     emit commitSettled(false, installed);
@@ -897,15 +917,22 @@ void DetectionPanel::finishStartCommit(const std::shared_ptr<StartCommit>& job) 
     return job ? job->metadata.id : std::string{};
   }();
   const auto restoreIdle = [&] { restoreFormalDisplay(fileId); };
-  if (!job || job->rejectedBeforeSave || !job->ok) {
-    if (job && job->rejectedBeforeSave)
-      emit message(job->error);
-    else {
-      emit message(QStringLiteral("检测事务保存失败，") + formalResultKeptNote() +
-                   QStringLiteral("：") + (job ? job->error : QString{}));
-    }
+  // Message stays before restore, matching the previous log order.
+  // startRejected is after the lock drops, so noteStartRejected can enable
+  // the button without overlapping this transaction.
+  const auto failStart = [&](const QString& text) {
+    if (!text.isEmpty()) emit message(text);
     restoreIdle();
     finish(false);
+    emit startRejected(submittedRunId, text);
+  };
+  if (!job || job->rejectedBeforeSave || !job->ok) {
+    const auto text =
+        job && job->rejectedBeforeSave
+            ? job->error
+            : QStringLiteral("检测事务保存失败，") + formalResultKeptNote() +
+                  QStringLiteral("：") + (job ? job->error : QString{});
+    failStart(text);
     return;
   }
   const auto* live = session_.activeFile();
@@ -918,17 +945,18 @@ void DetectionPanel::finishStartCommit(const std::shared_ptr<StartCommit>& job) 
     if (!job->priorProject.isEmpty() &&
         !restoreProjectFile(job->path, job->priorProject, restoreError))
       job->error = restoreError;
-    emit message(QStringLiteral("检测事务已丢弃，提交期间工程已变化。") +
-                 formalResultKeptNote());
-    restoreIdle();
-    finish(false);
+    const auto text = QStringLiteral("检测事务已丢弃，提交期间工程已变化。") +
+                      formalResultKeptNote();
+    failStart(text);
     return;
   }
   if (!job->published) {
-    emit message(job->error);
+    const auto text = job->error;
+    if (!text.isEmpty()) emit message(text);
     restoreIdle();
     emit presentationRequested();
     finish(false);
+    emit startRejected(submittedRunId, text);
     return;
   }
   session_.project() = std::move(job->baseline);
@@ -1404,7 +1432,7 @@ QString DetectionPanel::clearanceNoteForActive() const {
 
 void DetectionPanel::markConfigurationStale() {
   if (commitInFlight_) {
-    emit message(QStringLiteral("检测结果正在提交，请稍后再试"));
+    emit message(commitBusyMessage());
     return;
   }
   const auto* file = session_.activeFile();
@@ -1635,7 +1663,7 @@ void DetectionPanel::showRunDetails(const QString& runId) {
 }
 void DetectionPanel::discoverRecoverable() {
   if (commitInFlight_) {
-    emit message(QStringLiteral("检测结果正在提交，请稍后再试"));
+    emit message(commitBusyMessage());
     return;
   }
   auto* file = session_.activeFile();
