@@ -30,3 +30,14 @@ H registry: `f30cc2da-9fec-4346-a70b-c04fe649bbbd`, grok-4.7-build-fast / xhigh,
 H1 session f30cc2da-9fec-4346-a70b-c04fe649bbbd returned FAIL on daa30e8. Its blocked initial terminal attempt and resumed strict-read session are preserved; neither is PASS. H1 had no implementation role. C3 was a separate implementation session after that finding.
 
 Fresh H2 registry: `2b00ed27-ef2d-46fc-a634-177bd25e1df9`, Fast/xhigh, strict read_file/grep/list_dir only. It starts after the final correction/evidence commit; actual identity, final verdict and timestamps live outside Git in agents/results/H2/session.json and H_FINAL_REVIEW.md. H1 archive remains H_REVIEW_daa30e8_FAIL.md.
+
+H2 actually returned FAIL on83e365f; archive H_REVIEW_83e365f_FAIL.md. Follow-up real Fast/xhigh sessions:
+
+| Role | Actual session | Worktree/branch | Result |
+|---|---|---|---|
+| C4 source loads |262fafd1-78ac-4d08-89ab-8059a6c9c65d|continue-c/codex/ss-de-rpo-c|513eb516, red/green and complete isolated start pass|
+| G3 read-only QA |e8834ab1-a3eb-4e2b-8f68-457c0d940b0c|main frozen83e365f|additional P0/P1, no implementation/no approval|
+| C5 narrowband |93b69d90-5e43-4fd4-8feb-a6e8db36513e|continue-g/codex/ss-de-rpo-c5|641a58d, actual controls red/green pass|
+| C6 selection |1cddc34c-1313-46e7-85b1-ed1cfd230707|continue-a/codex/ss-de-rpo-c6|4111778, core/annotation red/green pass|
+
+Main4898fa4 integrates follow-up UI/IO/shutdown fixes. Per-session self-check logs are also copied to main out/tasks/ss-de-rpo/agents/results/<role>/self-checks. H3 identity47a5ed7d-45e5-4295-b60a-963249590ef1 is RESERVED, not started before the final evidence commit. Its actual read-only Fast/xhigh session/final verdict will live outside Git; no role here can substitute for that PASS.

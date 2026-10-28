@@ -1,6 +1,6 @@
 # SS-DE-RPO 续作验收矩阵
 
-统一入口：`scripts/verify-ss-de-rpo.ps1`，最终证据 `out/tasks/ss-de-rpo/N4/final-acceptance-06/`。R-01～R-20 均 PASS。GPU、原始 IQ、合成 IQ、fixture、QRhi 和软件回退按各自证据层级记录；单个纯逻辑 PASS 不代表真实硬件 PASS。
+统一入口scripts/verify-ss-de-rpo.ps1；当前最终代码4898fa4，证据out/tasks/ss-de-rpo/N4/final-acceptance-07/。R-01～R-20全部PASS。GPU、原始IQ、合成、fixture、QRhi和软件回退按各自层级记录，单个纯逻辑PASS不代表真实硬件PASS。
 
 | 用例 | 状态 | 证据范围 |
 |---|---|---|
@@ -25,10 +25,10 @@
 | R-19 | PASS | 原生 4K/150% 20 次准备反馈；Paint dispatch 完成 p95 |
 | R-20 | PASS | 工程、标记、窄带、PSD/STFT/瀑布完整回归；QRhi 与软件独立部署 |
 
-最终代码（75cf063）的 Debug 完整 CTest 一次60/60，988.28 s；Release 一次60/60，292.53 s。此轮不复用旧GUI覆盖。启动集成套件10个Qt行，包含原子接受后切换上下文、替换工程、守卫冻结和模态重命名期间Project替换。先前Debug的中断/超时及补测、H1的FAIL、05主动中断均按原记录保留，不与此轮混称。
+当前代码Debug完整CTest一次60/60，1052.54秒；Release一次60/60，294.04秒。启动16Qt总行（14业务/数据及初始化/收尾）。新完整GUI覆盖不复用旧运行。此前失败、120秒超时及中断保持原档，不与此轮混称。
 
-原生反馈：Debug 6.4826 ms、Release 37.6025 ms，均 n=20，低于 100 ms。边界为 QWidget Paint dispatch 完成；handler、queued callback 独立保留，不包含 DWM/扫描输出。五次连点分别 18/6 ms，仅一个请求。实际屏幕 Redmi 27 NU、连接2、DISPLAY6、3840×2160、DPR1.5、逻辑全屏2560×1440。
+原生准备反馈各20次，Paint dispatch完成p95：Debug6.95432ms、Release54.4546ms；handler32.3385/22.6245ms，queued callback108.553/82.4116ms单独保留。Paint目标100ms通过，不包含DWM/扫描输出。实际唯一Redmi27NU，连接2/DISPLAY6、3840×2160/DPR1.5、逻辑全屏2560×1440。宽带及窄带演示5页在Debug/Release的GPU与软件独立部署均通过；推理GPU和显示GPU分别记录。
 
-原始 IQ 的大用例保存其实际执行版本，并经统一入口重新确认处理路径源码一致；不声称所有大用例在最终 UI 文档提交后重新运行。60 s/20 MS/s 合成持续输入完成有界执行与 scratch 归还，Sample publicationEligible=false，必须采用已记录的 measured-coarse fallback。该项不计作 Sample 精度或现场 RF 验收。
+原始20/159/363/2044在4898fa4全部重跑，完成窗口等于eligible，持久发布、恢复比较、工程重开均成功，未放宽headless来源身份规则。Raw-head ON20窗口实际3932160字节。已有60秒/20MS/s专用DSP helper执行证据保留原版本：publicationEligible=false、明确coarse fallback，不计作Sample精度或现场RF成功。本轮SampleGolden与真实模型Golden独立通过。
 
-所有历史失败、超时和中断保留。H1在daa30e8发现的P0/P1已修复，见REVIEW_FIX_CLOSURE.md。最终H2独立审查及远端发布事实以提交外记录为准。
+H1/H2 FAIL及后续只读QA问题已按REVIEW_FIX_CLOSURE.md修复并补验。最终新的H3独立审查与远端事实只由提交外精确HEAD记录证明，此表不预先授予发布批准。
