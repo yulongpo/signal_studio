@@ -12,7 +12,7 @@ Grok CLI 1.0.70 supports model `grok-4.7-build-fast` and effort `xhigh`, labelle
 
 | Node | State | Exit evidence |
 |---|---|---|
-| N0 contract / baseline | IN_PROGRESS | contract, preserved old evidence, comparable baseline |
+| N0 contract / baseline | INITIAL_BASELINE_COMPLETE | contract, preserved old evidence, Release RPO 2/2, original IQ Sample cold x3; warm comparison remains in N4 |
 | N1 resource / Sample | NOT_STARTED | live budget path, low-resource and long Sample checks |
 | N2 start / cancellation / timeline | NOT_STARTED | provisional cancel, race handling, complete marks |
 | N3 tracking / publication / preparation | NOT_STARTED | oracle equivalence, real publication, cache invalidation |
