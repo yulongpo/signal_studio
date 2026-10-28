@@ -476,7 +476,13 @@ class UxR3WorkflowTests : public QObject {
     QVERIFY(action && button);
     QCOMPARE(action->text(), QString("导入标签…")); QCOMPARE(button->text(), action->text());
     if (!menu && !button->isVisible()) {
-      auto* tab = window.findChild<QPushButton*>("resultTab"); QVERIFY(tab); tab->click();
+      // UX-R5 retired the mixed resultTab. Label import is on the imported-label source tab.
+      auto* tab = window.findChild<QPushButton*>("importedLabelsTab");
+      QVERIFY2(tab, "Imported-label source tab is missing");
+      QVERIFY(window.findChild<QPushButton*>("manualAnnotationsTab"));
+      QVERIFY(window.findChild<QPushButton*>("detectionResultsTab"));
+      QVERIFY(!window.findChild<QWidget*>("resultTab"));
+      tab->click();
     }
     if (!menu) QVERIFY(reveal(button));
     bool targetShown = false;
@@ -514,6 +520,7 @@ class UxR3WorkflowTests : public QObject {
     QVERIFY(targetShown);
     if (decision == "import") {
       QCOMPARE(window.session().activeFile()->marks.size(), std::size_t{1});
+      QCOMPARE(window.session().activeFile()->marks.front().sourceKind, AnnotationSource::ImportedLabel);
       QCOMPARE(window.session().activeFile()->sourceSets.size(), std::size_t{1});
       const auto imported = ProjectStore::stateToken(window.session().project());
       QVERIFY(perform()); QCOMPARE(ProjectStore::stateToken(window.session().project()), imported);
