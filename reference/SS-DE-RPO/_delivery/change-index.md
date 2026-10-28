@@ -1,6 +1,6 @@
 # SS-DE-RPO continuation change index
 
-Baseline: `7220b2e`. Product implementation ends at `e5ae911`; acceptance/reproduction tools are committed in `11c3b1c`. The final delivery commit adds measured reports. Independent H review and push records reference its exact SHA outside Git.
+Baseline: `7220b2e`. Product implementation ends at `75cf063` after the independent H1 correction; acceptance/reproduction tools are committed in `11c3b1c`. The final delivery commit adds measured reports. Independent H review and push records reference its exact SHA outside Git.
 
 | Owner / commits | Integrated behavior | Primary evidence |
 |---|---|---|
@@ -18,3 +18,5 @@ Baseline: `7220b2e`. Product implementation ends at `e5ae911`; acceptance/reprod
 All A–G continuation sessions are real independent Grok CLI sessions using grok-4.7-build-fast / xhigh. G's resumed session remains the same session. Roles, actual IDs, worktrees, authored commits and raw session records are indexed in continuation-agent-roster.md. Main owns integration and all deployment/GPU serialization; no subagent pushed.
 
 No project schema upgrade, mathematical model change, raised contiguous-allocation constant, silent raw-head disablement, dropped window or preview-based formal truncation is part of this continuation. Initial failures, watchdog timeouts, interrupted attempts and directed supplements are retained with their own boundaries. Final review and publication status must be read from the external exact-HEAD records.
+
+Correction after H1 FAIL: C3 73dab0d/merge310a6db guards Session channel/serialized navigation. Main2c25f75 prevents post-atomic rollback and closes caller/sidebar/workspace/demo bypasses;75cf063 resolves modal rename against the latest Project and rechecks demo confirmation. Source guards are tested by frozen state tokens, forced accepted-context/replacement-project cases and a modal Project-swap regression (start suite10Qt rows). Full current Debug/Release CTest each60/60, final-acceptance-06; final performance summary-02 supersedes prior timings. The original H1 FAIL and05 deliberate interruption are retained. Read-only Grok invocation now restricts tools to read_file/grep/list_dir rather than depending on headless plan shell approval.

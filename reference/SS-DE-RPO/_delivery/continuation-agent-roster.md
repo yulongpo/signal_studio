@@ -17,6 +17,8 @@ All sessions use grok-4.7-build-fast / xhigh (Extra High), as explicitly selecte
 | C2 | df11fca6-6172-4a1f-a955-935fdc710525 | D:\project\ss-de-rpo-wt\continue-c | FINISHED | 7d208ccc4c27604adcd8b1ecdd7643ef192fefb1 |
 | G2 | 2c7af937-bc18-49b0-b875-4af63daf3926 | D:\project\ss-de-rpo-wt\continue-g | FINISHED | dc9843eb10bf6426d7a838c489830398bb9c8c47 |
 | D3 | f8e249f0-59d0-47d9-bbe5-71ca6402bd93 | D:\project\ss-de-rpo-wt\baseline-observed | FINISHED | 43719408932b96976fc835546640d8a67a441c95 |
+| C3 | 55436e73-801a-4dab-877e-34b8b838f04a | D:\project\ss-de-rpo-wt\continue-c | FINISHED | 73dab0dfd3b4dea714e2fd14115db8a713a05c00 |
+
 
 Per-session prompt, model, effort, CLI path, start/end times, base/final commits and raw transcript are in out/tasks/ss-de-rpo/agents/results/. Owned files and checks are in each committed agent handoff. G resumed its original session after reaching the turn limit; this is not represented as a new independent reviewer.
 
@@ -24,3 +26,7 @@ D3 owns an observability-only baseline branch at 7220b2e, never merged into the 
 
 
 H registry: `f30cc2da-9fec-4346-a70b-c04fe649bbbd`, grok-4.7-build-fast / xhigh, read-only final gate. This registry reserves the identity; actual execution and conclusion must be read from the external session/review record.
+
+H1 session f30cc2da-9fec-4346-a70b-c04fe649bbbd returned FAIL on daa30e8. Its blocked initial terminal attempt and resumed strict-read session are preserved; neither is PASS. H1 had no implementation role. C3 was a separate implementation session after that finding.
+
+Fresh H2 registry: `2b00ed27-ef2d-46fc-a634-177bd25e1df9`, Fast/xhigh, strict read_file/grep/list_dir only. It starts after the final correction/evidence commit; actual identity, final verdict and timestamps live outside Git in agents/results/H2/session.json and H_FINAL_REVIEW.md. H1 archive remains H_REVIEW_daa30e8_FAIL.md.

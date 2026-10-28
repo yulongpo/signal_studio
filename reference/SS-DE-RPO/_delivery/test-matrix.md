@@ -1,6 +1,6 @@
 # SS-DE-RPO 续作验收矩阵
 
-统一入口：`scripts/verify-ss-de-rpo.ps1`，最终证据 `out/tasks/ss-de-rpo/N4/final-acceptance-04/`。R-01～R-20 均 PASS。GPU、原始 IQ、合成 IQ、fixture、QRhi 和软件回退按各自证据层级记录；单个纯逻辑 PASS 不代表真实硬件 PASS。
+统一入口：`scripts/verify-ss-de-rpo.ps1`，最终证据 `out/tasks/ss-de-rpo/N4/final-acceptance-06/`。R-01～R-20 均 PASS。GPU、原始 IQ、合成 IQ、fixture、QRhi 和软件回退按各自证据层级记录；单个纯逻辑 PASS 不代表真实硬件 PASS。
 
 | 用例 | 状态 | 证据范围 |
 |---|---|---|
@@ -25,10 +25,10 @@
 | R-19 | PASS | 原生 4K/150% 20 次准备反馈；Paint dispatch 完成 p95 |
 | R-20 | PASS | 工程、标记、窄带、PSD/STFT/瀑布完整回归；QRhi 与软件独立部署 |
 
-Release 完整 CTest：60/60，298.99 s，一次全部通过。Debug：56 项在中断前通过，工作流原 180 s 超时，最后三项未完成；四项补测均通过，覆盖当前注册的 60 项。工作流 27 个 Qt 行完整通过 136.51 s；主 UI/参数/标记三组分别 109.40/338.81/234.38 s，保留 480 s UI 终止保护。`current-ctest-evidence/debug.json` 记录原失败、缺失与补测，重新核对产品/测试源码和构建定义。不能将 Debug 描述成一次完整全过。
+最终代码（75cf063）的 Debug 完整 CTest 一次60/60，988.28 s；Release 一次60/60，292.53 s。此轮不复用旧GUI覆盖。启动集成套件10个Qt行，包含原子接受后切换上下文、替换工程、守卫冻结和模态重命名期间Project替换。先前Debug的中断/超时及补测、H1的FAIL、05主动中断均按原记录保留，不与此轮混称。
 
-原生反馈：Debug 7.63922 ms、Release 43.7656 ms，均 n=20，低于 100 ms。边界为 QWidget Paint dispatch 完成；handler、queued callback 独立保留，不包含 DWM/扫描输出。五次连点分别 37/7 ms，仅一个请求。实际屏幕 Redmi 27 NU、连接2、DISPLAY6、3840×2160、DPR1.5、逻辑全屏2560×1440。
+原生反馈：Debug 6.4826 ms、Release 37.6025 ms，均 n=20，低于 100 ms。边界为 QWidget Paint dispatch 完成；handler、queued callback 独立保留，不包含 DWM/扫描输出。五次连点分别 18/6 ms，仅一个请求。实际屏幕 Redmi 27 NU、连接2、DISPLAY6、3840×2160、DPR1.5、逻辑全屏2560×1440。
 
 原始 IQ 的大用例保存其实际执行版本，并经统一入口重新确认处理路径源码一致；不声称所有大用例在最终 UI 文档提交后重新运行。60 s/20 MS/s 合成持续输入完成有界执行与 scratch 归还，Sample publicationEligible=false，必须采用已记录的 measured-coarse fallback。该项不计作 Sample 精度或现场 RF 验收。
 
-所有历史失败、超时和中断保留。最终独立 H 审查及远端发布事实以提交外记录为准。
+所有历史失败、超时和中断保留。H1在daa30e8发现的P0/P1已修复，见REVIEW_FIX_CLOSURE.md。最终H2独立审查及远端发布事实以提交外记录为准。
