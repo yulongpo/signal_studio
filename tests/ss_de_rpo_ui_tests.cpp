@@ -8,6 +8,9 @@
 #include <QGuiApplication>
 #include <QLabel>
 #include <QPushButton>
+#include <QPointer>
+#include <QTimer>
+#include <QScopeGuard>
 #include <QScreen>
 #include <QTemporaryDir>
 #include <QtEndian>
@@ -24,6 +27,7 @@
 #include "app/main_window.h"
 #include "ui/detection/detection_card.h"
 #include "ui/detection/detection_panel.h"
+#include "ui/display_target.h"
 
 using namespace signalstudio;
 
@@ -50,25 +54,50 @@ int exercisePlannedProvisionalCancel(Panel& panel, const QString& runId) {
   }
 }
 
+class FeedbackApplication : public QApplication {
+ public:
+  using QApplication::QApplication;
+  std::function<void(QObject*)> afterPaint;
+  bool notify(QObject* receiver, QEvent* event) override {
+    const bool paint = event->type() == QEvent::Paint;
+    QPointer<QObject> watched = paint ? receiver : nullptr;
+    const bool handled = QApplication::notify(receiver, event);
+    if (watched && afterPaint) afterPaint(watched.data());
+    return handled;
+  }
+};
+
 class VisiblePreparingPaint : public QObject {
  public:
   QElapsedTimer timer;
   bool armed = false;
   qint64 paintNs = -1;
+  qint64 entryNs = -1, queuedNs = -1;
+  std::uint64_t generation = 0;
+  void arm() { ++generation; paintNs = entryNs = queuedNs = -1; armed = true; timer.start(); }
+  void completed(QObject* watched) {
+    if (!armed || entryNs < 0 || !preparing(watched)) return;
+    paintNs = timer.nsecsElapsed();
+    armed = false;
+    const auto sample = generation;
+    QTimer::singleShot(0, this, [this, sample] {
+      if (generation == sample) queuedNs = timer.nsecsElapsed();
+    });
+  }
+  static bool preparing(QObject* watched) {
+    const auto* widget = qobject_cast<const QWidget*>(watched);
+    if (!widget || !widget->isVisible()) return false;
+    if (const auto* button = qobject_cast<const QPushButton*>(widget))
+      return button->text().contains(QStringLiteral("准备检测中"));
+    if (const auto* label = qobject_cast<const QLabel*>(widget))
+      return label->text().contains(QStringLiteral("准备检测中"));
+    return false;
+  }
 
  protected:
   bool eventFilter(QObject* watched, QEvent* event) override {
-    if (!armed || event->type() != QEvent::Paint) return false;
-    const auto* widget = qobject_cast<const QWidget*>(watched);
-    if (!widget || !widget->isVisible()) return false;
-    QString text;
-    if (const auto* button = qobject_cast<const QPushButton*>(widget))
-      text = button->text();
-    else if (const auto* label = qobject_cast<const QLabel*>(widget))
-      text = label->text();
-    if (!text.contains(QStringLiteral("准备检测中"))) return false;
-    paintNs = timer.nsecsElapsed();
-    armed = false;
+    if (armed && entryNs < 0 && event->type() == QEvent::Paint && preparing(watched))
+      entryNs = timer.nsecsElapsed();
     return false;
   }
 };
@@ -113,7 +142,18 @@ bool prepareCard(QTemporaryDir& directory, MainWindow& window, QString& error) {
   if (!window.createProject(directory.path(), "ss-de-rpo-ui", &error) ||
       !window.addIqFile(iqPath, &error))
     return false;
-  window.show();
+  if (QGuiApplication::platformName() == "windows") {
+    auto* screen = nativeAcceptanceScreen();
+    if (!screen) { error = "Need one actual 4K/150% native screen"; return false; }
+    showFullScreenOnScreen(window, screen);
+    if (!QTest::qWaitFor([&] { return window.isFullScreen() && window.size() == QSize(2560,1440); }, 10000)) {
+      error = "Native fullscreen did not settle";
+      return false;
+    }
+  } else {
+    window.resize(2560,1440);
+    window.show();
+  }
   const auto ready = QTest::qWaitFor(
       [&] {
         const auto* file = window.session().activeFile();
@@ -252,12 +292,15 @@ void SsDeRpoUiTests::doubleClickArmsOneStart() {
   run->click();
   const auto elapsedMs = timer.elapsed();
   for (int extra = 0; extra < 4 && card->startLatchActive(); ++extra) run->click();
+  const auto burstMs = timer.elapsed();
   qInfo().nospace() << "R-08 click handler returned in " << elapsedMs
                     << " ms; emissions=" << emissions
+                    << " clickBurstMs=" << burstMs
                     << " latch=" << card->startLatchActive();
   if (emissions == 0 && preflight)
     QFAIL(qPrintable(QStringLiteral("start did not arm: ") + preflight->text()));
   QCOMPARE(emissions, 1);
+  QVERIFY2(burstMs < 100, "Five click attempts must occur within 100 ms");
   QVERIFY(preparing);
   QVERIFY2(elapsedMs < 1000, "the click handler blocked for more than one second");
 }
@@ -283,20 +326,21 @@ void SsDeRpoUiTests::repeatedVisiblePreparingPaintP95() {
   panel->setStartCommitGate(gate);
 
   VisiblePreparingPaint paint;
+  auto* application = static_cast<FeedbackApplication*>(qApp);
+  application->afterPaint = [&](QObject* widget) { paint.completed(widget); };
+  const auto clearObserver = qScopeGuard([&] { application->afterPaint = {}; });
   run->installEventFilter(&paint);
   preflight->installEventFilter(&paint);
   constexpr int kRepeats = 20;
   std::vector<qint64> paintNs;
-  std::vector<qint64> handlerNs;
+  std::vector<qint64> handlerNs, queuedNs, paintBodyNs;
   paintNs.reserve(kRepeats);
   handlerNs.reserve(kRepeats);
   for (int index = 0; index < kRepeats; ++index) {
     QVERIFY2(!panel->projectCommitInProgress() && !panel->startCommitGateBlocked() &&
                  !card->startLatchActive(),
              "previous StartCommit is still active; this click would not be a fresh detection");
-    paint.paintNs = -1;
-    paint.armed = true;
-    paint.timer.start();
+    paint.arm();
     QElapsedTimer handler;
     handler.start();
     run->click();
@@ -317,12 +361,17 @@ void SsDeRpoUiTests::repeatedVisiblePreparingPaintP95() {
         },
         20000);
     QVERIFY2(idle, "cancel did not finish the StartCommit before the next sample");
+    paintBodyNs.push_back(paint.paintNs - paint.entryNs);
+    if (paint.queuedNs >= 0) queuedNs.push_back(paint.queuedNs);
   }
   const auto paintP95 = percentileMs(paintNs, 0.95);
   const auto handlerP95 = percentileMs(handlerNs, 0.95);
   qInfo().nospace() << "R-19 metric=visible-paint n=" << kRepeats
                     << " paintP95Ms=" << paintP95 << " handlerP95Ms=" << handlerP95
                     << " targetMs=100 " << qPrintable(gExposureNote);
+  qInfo() << "R-19 boundary=widget-paint-dispatch-completed; compositor/scanout-not-instrumented"
+          << "paintBodyP95Ms=" << percentileMs(paintBodyNs, .95)
+          << "queuedCallbackP95Ms=" << (queuedNs.empty() ? -1 : percentileMs(queuedNs, .95));
   QVERIFY2(paintNs.size() == static_cast<std::size_t>(kRepeats), "a paint sample is missing");
   QVERIFY2(paintP95 < 100.0,
            qPrintable(QStringLiteral("R-19 visible preparing paint p95 is %1 ms, target 100 ms")
@@ -419,5 +468,5 @@ void SsDeRpoUiTests::synchronousRejectionKeepsTheError() {
   QVERIFY(!preflight->text().contains(QStringLiteral("配置就绪")));
 }
 
-QTEST_MAIN(SsDeRpoUiTests)
+QTEST_MAIN_WRAPPER(SsDeRpoUiTests, QTEST_QAPP_SETUP(FeedbackApplication) QTEST_DISABLE_KEYPAD_NAVIGATION)
 #include "ss_de_rpo_ui_tests.moc"

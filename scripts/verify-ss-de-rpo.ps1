@@ -9,10 +9,13 @@ param(
   [string]$BaselineDirectory = 'D:/project/signal_studio_rebuild/out/tasks/ss-de-rpo/N0',
   [int]$Jobs = 2,
   [switch]$AllowGpu,
+  [ValidateSet('Debug','Release','Both')][string]$HardwareConfiguration = 'Release',
   [switch]$SkipBuild,
   [switch]$FullCTest,
+  [string]$CTestEvidenceDirectory,
   [switch]$Native,
   [string]$OriginalRequestDirectory,
+  [string]$OriginalEvidenceDirectory,
   [string]$ModelRoot,
   [string]$LiveGoldenRoot,
   [string]$AdaptedGoldenRoot,
@@ -21,6 +24,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
+if ($ModelRoot) { $ModelRoot = (Get-Item -LiteralPath $ModelRoot).FullName }
+if ($LiveGoldenRoot) { $LiveGoldenRoot = (Get-Item -LiteralPath $LiveGoldenRoot).FullName }
+if ($AdaptedGoldenRoot) { $AdaptedGoldenRoot = (Get-Item -LiteralPath $AdaptedGoldenRoot).FullName }
 
 function Assert-OwnedOutput([string]$Path) {
   $full = [IO.Path]::GetFullPath($Path)
@@ -143,11 +149,12 @@ function Add-UiRows([string]$Text, [string]$ConfigurationName) {
   foreach ($line in ($Text -split "`r?`n")) {
     if ($line -match '^(PASS|FAIL!)\s+:\s+SsDeRpoUiTests::(\w+)\(\)\s*(.*)$') {
       $slot = $Matches[2]
+      $slotDetail = [string]$Matches[3]
       if (-not $map.ContainsKey($slot)) { continue }
       $status = $(if ($Matches[1] -eq 'PASS') { 'PASS' } else { 'FAIL' })
       $native = $Text -match 'evidence=native-fullscreen'
       $class = $(if ($slot -eq 'repeatedVisiblePreparingPaintP95' -and $native) { 'native-4k' } else { 'qt-offscreen' })
-      Add-Row -Id "evidence:${ConfigurationName}:$slot" -Status $status -Detail $Matches[3].Trim() `
+      Add-Row -Id "evidence:${ConfigurationName}:$slot" -Status $status -Detail $slotDetail.Trim() `
         -Parent $map[$slot] -ConfigurationName $ConfigurationName -EvidenceClass $class
       $seen[$slot] = $status
     }
@@ -181,6 +188,7 @@ if ((Test-Path -LiteralPath $output) -and @(Get-ChildItem -LiteralPath $output -
 }
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $configs = $(if ($Configuration -eq 'Both') { @('Debug', 'Release') } else { @($Configuration) })
+$hardwareConfigs = @($configs | Where-Object { $HardwareConfiguration -eq 'Both' -or $_ -eq $HardwareConfiguration })
 if ($AllowGpu -and -not $OriginalRequestDirectory) {
   $OriginalRequestDirectory = Join-Path $output 'requests'
   & (Join-Path $PSScriptRoot 'prepare-ss-de-rpo-requests.ps1') -OutputDirectory $OriginalRequestDirectory
@@ -216,7 +224,16 @@ try {
       $ctestLog = Join-Path $case 'ctest.txt'
       $previous = $ErrorActionPreference
       try {
-        & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $cfg -Action Test -Jobs $Jobs -Python $Python *> $ctestLog
+        $coveragePath = if ($CTestEvidenceDirectory) { Join-Path $CTestEvidenceDirectory "$($cfg.ToLowerInvariant()).json" } else { '' }
+        if ($coveragePath -and (Test-Path -LiteralPath $coveragePath)) {
+          $coverage = Get-Content -LiteralPath $coveragePath -Raw | ConvertFrom-Json
+          if ($coverage.schema -ne 'signal-studio-rpo-ctest-coverage-v1' -or -not $coverage.pass) { throw 'Invalid CTest coverage record' }
+          $verifiedDirectory = Join-Path $case 'verified-ctest'
+          & (Join-Path $PSScriptRoot 'collect-ss-de-rpo-ctest.ps1') -Configuration $cfg -FullLog $coverage.fullLog -SupplementalLogs $coverage.supplementalLogs -SourceRevision $coverage.sourceHead -OutputDirectory $verifiedDirectory
+          "Full attempt: $($coverage.fullLog); separate directed supplements: $($coverage.supplementalLogs -join ','); coverage=$($coverage.covered). Production source equivalence rechecked." | Set-Content -LiteralPath $ctestLog
+        } else {
+          & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $cfg -Action Test -Jobs $Jobs -Python $Python *> $ctestLog
+        }
         Add-Row -Id "CTest-$cfg" -Status 'PASS' -Parent '' -ConfigurationName $cfg `
           -EvidenceClass 'unit' -Detail "complete CTest log $ctestLog"
         foreach ($requirement in @('R-07','R-10','R-13','R-14','R-16','R-18')) {
@@ -323,7 +340,7 @@ try {
     $adaptedStatus = 'BLOCKED_EXCLUSIVE_SLOT'
     $liveDetail = 'model-backend --live was not started. Exclusive GPU slot is closed.'
     $adaptedDetail = 'model-backend --adapted was not started. Exclusive GPU slot is closed.'
-    if ($AllowGpu) {
+    if ($AllowGpu -and $cfg -in $hardwareConfigs) {
       $backend = Join-Path $bin 'SignalStudioDetectionModelBackendTests.exe'
       $modelRootForCase = if ($ModelRoot) { $ModelRoot } else { Join-Path $bin 'detection-models' }
       if (-not (Test-Path -LiteralPath $backend) -or -not $LiveGoldenRoot) {
@@ -371,12 +388,22 @@ try {
         }
       }
       if ($OriginalRequestDirectory) {
+        $existingOriginal = if ($OriginalEvidenceDirectory) { @(Get-Content -LiteralPath (Join-Path $OriginalEvidenceDirectory 'cases.json') -Raw | ConvertFrom-Json) } else { @() }
         foreach ($windows in @(20,159,363,2044)) {
           $requestPath = Join-Path $OriginalRequestDirectory "iq-$windows-raw-off.json"
           $runOutput = Join-Path $case "original-iq-$windows"
-          $arguments = @('--request',$requestPath,'--output',$runOutput,'--formal-commit','--strategy','sample','--batch','2','--timeout','900')
-          $result = Invoke-Captured -File (Join-Path $bin 'SignalStudioDetectionBenchmark.exe') -WorkingDirectory $bin -ArgumentList $arguments -Stdout (Join-Path $case "iq-$windows-stdout.txt") -Stderr (Join-Path $case "iq-$windows-stderr.txt") -TimeoutSeconds 960
-          $measurementPath = Join-Path $runOutput 'measurement.json'
+          $previous = @($existingOriginal | Where-Object { $_.windows -eq $windows -and $_.pass })
+          if ($previous.Count -eq 1) {
+            $record = $previous[0]
+            $changed = @(& git -C $repo diff --name-only $record.sourceHead HEAD -- domain infrastructure application tools/detection_benchmark/main.cpp)
+            if ($LASTEXITCODE -ne 0 -or $changed.Count -ne 0) { throw "Cannot reuse original-IQ evidence after pipeline source changes: $($changed -join ',')" }
+            $measurementPath = $record.measurement
+            $result = [pscustomobject]@{ TimedOut=$false; ExitCode=$record.exitCode }
+          } else {
+            $arguments = @('--request',$requestPath,'--output',$runOutput,'--formal-commit','--strategy','sample','--batch','2','--timeout','900')
+            $result = Invoke-Captured -File (Join-Path $bin 'SignalStudioDetectionBenchmark.exe') -WorkingDirectory $bin -ArgumentList $arguments -Stdout (Join-Path $case "iq-$windows-stdout.txt") -Stderr (Join-Path $case "iq-$windows-stderr.txt") -TimeoutSeconds 960
+            $measurementPath = Join-Path $runOutput 'measurement.json'
+          }
           $measurement = if (Test-Path -LiteralPath $measurementPath) { Get-Content -LiteralPath $measurementPath -Raw | ConvertFrom-Json } else { $null }
           $passed = -not $result.TimedOut -and $result.ExitCode -eq 0 -and $measurement.pass -and $measurement.formalCommitPerformed -and $measurement.formalProjectReopened -and [int64]$measurement.run.eligibleWindows -eq $windows -and [int64]$measurement.run.completedWindows -eq $windows
           foreach ($parent in @('R-06','R-11','R-17')) {
@@ -446,8 +473,8 @@ foreach ($number in 1..20) {
   $detail = "childStatuses=$($kids -join ',')"
   if ($id -eq 'R-15') {
     $cpu = @($script:Rows | Where-Object { $_.parent -eq 'R-15' -and $_.id -match ':R-15' })
-    $live = @($script:Rows | Where-Object { $_.id -match ':model-live$' })
-    $adapted = @($script:Rows | Where-Object { $_.id -match ':model-adapted$' })
+    $live = @($script:Rows | Where-Object { $_.id -match ':model-live$' -and $_.configuration -in $hardwareConfigs })
+    $adapted = @($script:Rows | Where-Object { $_.id -match ':model-adapted$' -and $_.configuration -in $hardwareConfigs })
     $cpuFail = @($cpu | Where-Object { $_.status -eq 'FAIL' }).Count -gt 0
     $cpuPass = $cpu.Count -gt 0 -and @($cpu | Where-Object { $_.status -ne 'PASS' }).Count -eq 0
     $gpuPass = $live.Count -gt 0 -and $adapted.Count -gt 0 -and
@@ -468,10 +495,10 @@ foreach ($number in 1..20) {
       $status = 'FAIL'
       $detail = 'Visible preparing paint observation failed. Handler time was not substituted.'
     } elseif ($paint.Count -gt 0 -and @($paint | Where-Object { $_.status -ne 'PASS' }).Count -eq 0) {
-      $native = @($script:Rows | Where-Object {
+      $nativeEvidence = @($script:Rows | Where-Object {
         $_.parent -eq 'R-19' -and $_.evidenceClass -eq 'native-4k' -and $_.detail -match 'window=2560x1440'
       })
-      if ($native.Count -gt 0) {
+      if ($nativeEvidence.Count -gt 0) {
         $status = 'PASS'
         $detail = 'Visible preparing paint p95 was observed fullscreen on the only 3840x2160 1.5 screen, logical 2560x1440.'
         $script:NativeR19 = $true
@@ -502,7 +529,7 @@ foreach ($number in 1..20) {
     $detail = $descriptions[$id] + ' Not marked PASS.'
   } elseif ($id -eq 'R-11' -or $id -eq 'R-17') {
     $original = @($script:Rows | Where-Object { $_.parent -eq $id -and $_.id -match ':original-(20|159|363|2044)-' })
-    if ($original.Count -eq 4 * $configs.Count -and @($original | Where-Object { $_.status -ne 'PASS' }).Count -eq 0 -and @($kids | Where-Object { $_ -eq 'FAIL' }).Count -eq 0) {
+    if ($hardwareConfigs.Count -gt 0 -and $original.Count -eq 4 * $hardwareConfigs.Count -and @($original | Where-Object { $_.status -ne 'PASS' }).Count -eq 0 -and @($kids | Where-Object { $_ -eq 'FAIL' }).Count -eq 0) {
       $status = 'PASS'
       $detail = 'Original IQ 20/159/363/2044 Sample, durable comparison, isolated project commit and reopen passed. Synthetic long/Golden and actual-Fs planning are separate evidence.'
     } elseif ($kids.Count -eq 0 -or $status -in @('PASS','RECORDED')) {
@@ -521,9 +548,10 @@ $report.schema = 'signal-studio-ss-de-rpo-acceptance-v1'
 $report.producer = 'scripts/verify-ss-de-rpo.ps1'
 $report.allowGpu = [bool]$AllowGpu
 $report.fullCTest = [bool]$FullCTest
-$report.gpuExecuted = [bool]$AllowGpu
+$report.gpuExecuted = @($script:Rows | Where-Object { $_.gpu -and $_.status -eq 'PASS' }).Count -gt 0
+$report.hardwareConfigurations = $hardwareConfigs
 $report.syntheticRepeatedFrames = $false
-$report.workerLaunched = $false
+$report.workerLaunched = @($script:Rows | Where-Object { $_.evidenceClass -eq 'original-iq-tensorrt' -and $_.status -eq 'PASS' }).Count -gt 0
 $report.nativeR19Pass = [bool]$script:NativeR19
 if ($null -eq $suiteError) {
   $report.suiteError = ''

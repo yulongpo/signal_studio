@@ -451,7 +451,10 @@ if(SS_BUILD_TESTS)
     ss_add_graphics_shaders(SignalStudioSsDeRpoUiTests signalstudio_ss_de_rpo_ui_shaders)
     ss_add_ui_assets(SignalStudioSsDeRpoUiTests)
     add_dependencies(SignalStudioSsDeRpoUiTests SignalStudio)
-    add_test(NAME signal_studio_ss_de_rpo_ui COMMAND SignalStudioSsDeRpoUiTests)
+    add_test(NAME signal_studio_ss_de_rpo_ui COMMAND ${CMAKE_COMMAND}
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioSsDeRpoUiTests>"
+        "-DSS_UI_LOG=${CMAKE_CURRENT_BINARY_DIR}/ss-de-rpo-ui-$<CONFIG>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     set_tests_properties(signal_studio_ss_de_rpo_ui PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 120)
     add_executable(SignalStudioSsDeRpoStartTests tests/ss_de_rpo_start_tests.cpp ${SS_UI_SOURCES})
@@ -463,7 +466,10 @@ if(SS_BUILD_TESTS)
     ss_add_graphics_shaders(SignalStudioSsDeRpoStartTests signalstudio_ss_de_rpo_start_shaders)
     ss_add_ui_assets(SignalStudioSsDeRpoStartTests)
     add_dependencies(SignalStudioSsDeRpoStartTests SignalStudio)
-    add_test(NAME signal_studio_ss_de_rpo_start COMMAND SignalStudioSsDeRpoStartTests)
+    add_test(NAME signal_studio_ss_de_rpo_start COMMAND ${CMAKE_COMMAND}
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioSsDeRpoStartTests>"
+        "-DSS_UI_LOG=${CMAKE_CURRENT_BINARY_DIR}/ss-de-rpo-start-$<CONFIG>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     set_tests_properties(signal_studio_ss_de_rpo_start PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 120)
     add_executable(SignalStudioDetectionSourceTests tests/detection_source_tests.cpp)
