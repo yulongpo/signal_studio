@@ -1506,7 +1506,14 @@ void MainWindow::buildWorkspace() {
   connect(detectionCard_, &DetectionCard::requestSubmitted, this,
           [this](const DetectionRequest& request) {
             QString error;
-            if (!detection_->startRequest(request, error)) log(error);
+            if (!detection_->startRequest(request, error)) {
+              detectionCard_->noteStartRejected(request.runId, error);
+              log(error);
+            }
+          });
+  connect(detection_, &DetectionPanel::startRejected, this,
+          [this](const QString& runId, const QString& message) {
+            detectionCard_->noteStartRejected(runId.toStdString(), message);
           });
   connect(detectionCard_, &DetectionCard::roiSelectionRequested, this,
           &MainWindow::beginDetectionRoi);

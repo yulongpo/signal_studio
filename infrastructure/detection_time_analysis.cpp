@@ -19,8 +19,6 @@ namespace signalstudio {
 namespace {
 constexpr std::uint64_t kReadSamples = 131072;
 constexpr std::size_t kTracePoints = 512;
-// M1 contract work-unit ceiling. Not a RAM grant. Local until domain/detection.h publishes it.
-constexpr std::uint64_t kSampleWorkUnitCellCeiling = 256ull * 1024ull * 1024ull;
 // Controlled 20 MS/s .1s measurements favor FIR above this short-context range;
 // uncertainty still retries complete Legacy within its original working grant.
 constexpr SampleIndex kAutoExactSamples=1U<<20;

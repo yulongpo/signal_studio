@@ -809,6 +809,9 @@ bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
   committingRunId_.clear();
   acceptedRunId_ = job->runId;
   acceptedSteadyNs_ = steadyClockNanoseconds();
+  // Buffer t_accepted before the commit worker queues the run. queuePreparedRun
+  // holds the task mutex across PersistRun, so this must not run from that callback.
+  tasks_->noteSteadyMark(acceptedRunId_, "t_accepted", acceptedSteadyNs_);
   QPointer<DetectionPanel> self(this);
   auto* stopping = &shuttingDown_;
   // Plan, disk budget, manifest, and project save continue on this worker.

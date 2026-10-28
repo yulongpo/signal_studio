@@ -684,16 +684,16 @@ class DetectionModelBackend::Impl {
     // Workspace of the profile-clamped shape is the fixed reserve. A smaller
     // tier is measured on its own shape before batch 1 is rejected.
     std::uint64_t reserveBytes = static_cast<std::uint64_t>(workspace);
-    auto selected = selectBatch(reserveBytes);
-    if (selected == 0 && maximumBatch > 1) {
+    auto vramTier = selectBatch(reserveBytes);
+    if (vramTier == 0 && maximumBatch > 1) {
       std::int64_t oneWorkspace = 0;
       if (!bindPhysicalBatch(1, oneWorkspace)) return false;
       boundBatch = 1;
       workspace = oneWorkspace;
       reserveBytes = static_cast<std::uint64_t>(oneWorkspace);
-      selected = selectBatch(reserveBytes);
+      vramTier = selectBatch(reserveBytes);
     }
-    if (selected == 0) {
+    if (vramTier == 0) {
       // Batch 1 does not fit. A smaller worker limit cannot make a legal tier
       // below 1, so this is a hard load failure rather than another downgrade.
       retryableResourceFailure = false;
@@ -703,7 +703,7 @@ class DetectionModelBackend::Impl {
     for (int index = supportedTiers.size() - 1; index >= 0; --index) {
       const auto tier =
           static_cast<std::uint32_t>(supportedTiers.at(index).toInt());
-      if (tier <= selected && isDetectionExecutionBatchTier(tier)) {
+      if (tier <= vramTier && isDetectionExecutionBatchTier(tier)) {
         chosen = tier;
         break;
       }

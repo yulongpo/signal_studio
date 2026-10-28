@@ -39,10 +39,6 @@ std::uint64_t largestLeaf(std::uint64_t n) {
   }
   return 1;
 }
-// Same values as M1 contract section 1. Local until domain/detection.h publishes them.
-// The contiguous cap bounds one allocation. It is not a RAM grant limit.
-constexpr std::uint64_t kSampleContiguousAllocationCapBytes=1024ull*1024ull*1024ull;
-constexpr std::size_t kSampleWorkUnitCellCeiling=256u*1024u*1024u;
 QString timeRefineGrantDetail(std::uint64_t requested,std::uint64_t available) {
   return QString("phase=time-refine requested=%1 available=%2")
       .arg(static_cast<qulonglong>(requested)).arg(static_cast<qulonglong>(available));

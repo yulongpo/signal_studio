@@ -2004,7 +2004,6 @@ void DetectionCard::noteStartRejected(const std::string& runId,
   }
   if (!startLatchActive_ || runId != startLatchRunId_) return;
   startLatchActive_ = false;
-  if (!notice.isEmpty()) emit message(notice);
   refreshStatus();
   if (preflight_ && !notice.isEmpty()) {
     preflight_->setText(notice);
