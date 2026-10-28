@@ -1,0 +1,71 @@
+package:
+  id: SS-DE-RPO
+  title_cn: Signal Studio 检测引擎可靠性与性能优化
+  title_en: Detection Engine Reliability & Performance Optimization
+  version: '2.0'
+  dated: '2026-10-28'
+  repo: 'https://github.com/yulongpo/signal_studio.git'
+  target_branch: 'rebuild/cursor'
+  historical_review_head: '82935ab34ec6126707da152bf46d1f352458ab0c'
+  root_relative_path: 'reference/SS-DE-RPO'
+  startup_prompt: 'reference/SS-DE-RPO/00_START_PROMPT.md'
+  master_prompt: 'reference/SS-DE-RPO/01_MASTER_AGENT_PROMPT.md'
+  delivery_dir: 'reference/SS-DE-RPO/_delivery'
+  true_subagents_required: 8
+  force_push_allowed: false
+agents:
+  A:
+    role: resource_policy
+    prompt: 'reference/SS-DE-RPO/agents/AGENT_A_RESOURCE.md'
+  B:
+    role: sample_refinement
+    prompt: 'reference/SS-DE-RPO/agents/AGENT_B_SAMPLE.md'
+  C:
+    role: ui_lifecycle
+    prompt: 'reference/SS-DE-RPO/agents/AGENT_C_UI.md'
+  D:
+    role: execution_engine
+    prompt: 'reference/SS-DE-RPO/agents/AGENT_D_ENGINE.md'
+  E:
+    role: tracking_and_durable_publication
+    prompt: 'reference/SS-DE-RPO/agents/AGENT_E_PUBLICATION.md'
+  F:
+    role: cuda_tensorrt_runtime
+    prompt: 'reference/SS-DE-RPO/agents/AGENT_F_GPU.md'
+  G:
+    role: qa_and_benchmarks
+    prompt: 'reference/SS-DE-RPO/agents/AGENT_G_QA.md'
+  H:
+    role: read_only_independent_review
+    prompt: 'reference/SS-DE-RPO/agents/AGENT_H_REVIEW.md'
+waves:
+  - id: M0
+    concurrent: [A, C, E, F, G]
+    gate: baseline_checked
+  - id: M1
+    owner: MAIN
+    gate: 'reference/SS-DE-RPO/_delivery/M1_CONTRACT.md'
+  - id: M2
+    concurrent: [A, B, C, D, E, F, G]
+    gate: all_p0_fixes_with_tests
+  - id: M3
+    concurrent: [B, D, E, F, G]
+    gate: performance_comparison
+  - id: M4
+    owner: MAIN
+    gate: integration_debug_release_and_real_tests
+  - id: M5
+    concurrent: [H]
+    gate: independent_report
+  - id: M6
+    owner: MAIN
+    gate: non_force_push_if_no_blockers
+acceptance:
+  - no_nested_budget_mismatch
+  - ui_starting_feedback_and_single_run
+  - truly_durable_publication
+  - profile_bound_tensorrt_batch
+  - measured_first_inference_timeline
+  - sample_and_tracking_long_duration_tests
+  - ux_r6_current_branch_semantics_preserved
+  - independent_read_only_review
