@@ -6,6 +6,11 @@
 #include <QJsonObject>
 #include <QLabel>
 #include <QMessageBox>
+#include <QInputDialog>
+#include <QMenu>
+#include <QTreeWidget>
+#include <QElapsedTimer>
+#include <QPointer>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QTemporaryDir>
@@ -37,6 +42,7 @@ class SsDeRpoStartTests : public QObject {
   void cancelAfterCommittedStartCancelsQueuedRun();
   void acceptedStartContextChangeNeverRestoresFormal_data();
   void acceptedStartContextChangeNeverRestoresFormal();
+  void renameResolvesChannelAfterModalProjectSwap();
 };
 
 void armFixture() { qApp->setProperty("enableDetectionTestFixture", true); }
@@ -496,6 +502,81 @@ void SsDeRpoStartTests::acceptedStartContextChangeNeverRestoresFormal() {
   QVERIFY(found != reopened.files.end());
   const auto* saved = currentDetectionSlot(*found, 0);
   QVERIFY(saved && saved->committedRunId.empty() && saved->suppressFormalResults);
+}
+
+void SsDeRpoStartTests::renameResolvesChannelAfterModalProjectSwap() {
+  armFixture();
+  QTemporaryDir directory;
+  MainWindow window;
+  QString error;
+  QVERIFY2(prepareProject(directory, window, error), qPrintable(error));
+  const auto mark = window.session().addMark({{100, 10000}, {99.9e6, 100.1e6}});
+  QVERIFY(!mark.empty());
+  window.session().selectMarks({mark}, mark);
+  QVERIFY(window.session().createChannelFromActiveMark());
+  const auto id = window.session().activeChannel()->id;
+  window.refresh();
+  auto* tree = window.findChild<QTreeWidget*>("projectTree");
+  QVERIFY(tree);
+  QTreeWidgetItem* target = nullptr;
+  QTRY_VERIFY_WITH_TIMEOUT(([&] {
+    for (auto* item : tree->findItems("*", Qt::MatchWildcard | Qt::MatchRecursive))
+      if (item->data(0, Qt::UserRole).toString() == "channel" &&
+          item->data(0, Qt::UserRole + 1).toString().toStdString() == id) {
+        target = item;
+        return true;
+      }
+    return false;
+  })(), 5000);
+  tree->expandAll();
+  tree->scrollToItem(target);
+  const auto point = tree->visualItemRect(target).center();
+  bool opened = false, swapped = false, timedOut = false;
+  QElapsedTimer elapsed;
+  elapsed.start();
+  QTimer driver;
+  connect(&driver, &QTimer::timeout, &window, [&] {
+    if (elapsed.elapsed() > 10000) {
+      timedOut = true;
+      if (auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget())) dialog->reject();
+      if (auto* popup = qobject_cast<QMenu*>(QApplication::activePopupWidget())) popup->close();
+      return;
+    }
+    if (auto* input = qobject_cast<QInputDialog*>(QApplication::activeModalWidget())) {
+      // Background publication replaces the Project without changing its
+      // identity. Preserve a concurrent channel field when applying the name.
+      auto replacement = window.session().project();
+      for (auto& file : replacement.files)
+        for (auto& channel : file.channels)
+          if (channel.id == id) channel.psdAxisMinimum = -137.25;
+      window.session().project() = std::move(replacement);
+      swapped = true;
+      input->setTextValue("Renamed after publication");
+      input->accept();
+      return;
+    }
+    if (!opened)
+      if (auto* menu = qobject_cast<QMenu*>(QApplication::activePopupWidget()))
+        for (auto* action : menu->actions())
+          if (action->text().contains(QStringLiteral("重命名通道"))) {
+            opened = true;
+            const auto position = menu->actionGeometry(action).center();
+            QTimer::singleShot(0, &window, [popup = QPointer<QMenu>(menu), position] {
+              if (popup) QTest::mouseClick(popup, Qt::LeftButton, Qt::NoModifier, position);
+            });
+            return;
+          }
+  });
+  driver.start(10);
+  QVERIFY(QMetaObject::invokeMethod(tree, "customContextMenuRequested", Qt::DirectConnection, Q_ARG(QPoint, point)));
+  driver.stop();
+  QVERIFY(!timedOut && opened && swapped);
+  auto* file = window.session().fileForChannel(id);
+  QVERIFY(file);
+  const auto found = std::find_if(file->channels.begin(), file->channels.end(), [&](const auto& channel) { return channel.id == id; });
+  QVERIFY(found != file->channels.end());
+  QCOMPARE(found->name, std::string("Renamed after publication"));
+  QCOMPARE(found->psdAxisMinimum, -137.25);
 }
 
 QTEST_MAIN(SsDeRpoStartTests)

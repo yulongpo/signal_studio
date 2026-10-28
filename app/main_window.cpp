@@ -1838,13 +1838,24 @@ void MainWindow::buildWorkspace() {
                                      return value.id == channelId.toStdString();
                                    });
             if (it == file->channels.end()) return;
+            const auto renameGeneration = session_.projectGeneration();
             bool ok = false;
             const auto name =
                 QInputDialog::getText(this, "重命名窄带通道", "通道名称",
                                       QLineEdit::Normal, q(it->name), &ok)
                     .trimmed();
             if (ok && !name.isEmpty() && name.size() <= 80) {
-              auto updated = *it;
+              // A publication may replace the Project while this modal runs.
+              // Resolve the channel again instead of retaining its iterator.
+              if (!allowProjectMutation() ||
+                  session_.projectGeneration() != renameGeneration) return;
+              auto* currentFile = session_.fileForChannel(channelId.toStdString());
+              if (!currentFile) return;
+              const auto current = std::find_if(
+                  currentFile->channels.begin(), currentFile->channels.end(),
+                  [&](const Channel& value) { return value.id == channelId.toStdString(); });
+              if (current == currentFile->channels.end()) return;
+              auto updated = *current;
               updated.name = name.toStdString();
               if (!session_.updateChannel(updated.id, updated)) return;
               refresh();
@@ -5063,11 +5074,15 @@ bool MainWindow::createProject(const QString& parentDirectory,
 }
 
 void MainWindow::openDemoProject() {
+  if (!allowProjectMutation()) return;
   if ((!projectPath_.isEmpty() || !session_.project().files.empty()) &&
       QMessageBox::question(this, "打开演示工程",
                             "打开演示工程会切换当前工程，继续吗？") !=
           QMessageBox::Yes)
     return;
+  // The confirmation above enters a nested event loop; a background detection
+  // can begin its atomic publication before the user answers.
+  if (!allowProjectMutation()) return;
   cancelInteractions();
   if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
   session_.newProject();
@@ -5104,6 +5119,7 @@ void MainWindow::openNarrowbandDemoProject() {
     return;
   }
 
+  if (!allowProjectMutation()) return;
   cancelInteractions();
   if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
   session_.newProject();
