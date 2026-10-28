@@ -85,7 +85,20 @@ class DetectionPanel : public QWidget {
   void setCancelAfterStartCommitForTest(bool cancel) {
     cancelAfterStartCommit_.store(cancel, std::memory_order_release);
   }
-  bool projectCommitInProgress() const { return commitInFlight_; }
+  bool projectCommitInProgress() const {
+    return commitInFlight_ || projectIoInFlight_;
+  }
+  // GUI-thread lease for a user-initiated project save. Completed Workers keep
+  // their publication queued until the save has installed its own metadata.
+  bool beginProjectIo(QString& error);
+  void endProjectIo();
+  bool hasPendingPublications() const { return !tickets_.empty(); }
+  bool publicationUiCheckPendingForTest() const {
+    return publicationUiCheckPending_.load(std::memory_order_acquire);
+  }
+  bool lastPublicationCommitReleasedForTest() const {
+    return lastPublicationCommit_.expired();
+  }
   bool publicationCommitInProgress() const {
     return commitInFlight_ && publicationCommit_;
   }
@@ -157,6 +170,7 @@ class DetectionPanel : public QWidget {
   std::function<QString()> projectDirectory_;
   std::function<QString()> projectFilePath_;
   std::unordered_map<std::string, DetectionResultTicket> tickets_;
+  std::weak_ptr<PublishCommit> lastPublicationCommit_;
   std::future<QString> gc_;
   QString pendingGcPath_;
   std::unique_ptr<DetectionTaskManager> tasks_;
@@ -192,11 +206,13 @@ class DetectionPanel : public QWidget {
   std::uint64_t viewedGeneration_ = 0;
   bool viewScopeReady_ = false;
   bool commitInFlight_ = false;
+  bool projectIoInFlight_ = false;
   bool publicationCommit_ = false;
   std::string acceptedRunId_;
   std::uint64_t acceptedSteadyNs_ = 0;
   bool startSaveFault_ = false;
   std::atomic<bool> shuttingDown_{false};
+  std::atomic<bool> publicationUiCheckPending_{false};
   std::string commitScope_;
   std::string committingRunId_;
   DetectionTransactionOptions publicationFault_;

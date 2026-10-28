@@ -3154,9 +3154,15 @@ void PlotWidget::mousePressEvent(QMouseEvent* event) {
             : Tool::PanTime;
   else if (hit.selected &&
            !(event->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier))) {
-    if (hit.id != file->activeMarkId)
-      session_.annotations().select(*file, file->selectedMarkIds, hit.id,
-                                    hit.segmentId);
+    if (hit.id != file->activeMarkId) {
+      const auto selected = session_.annotations().select(
+          *file, file->selectedMarkIds, hit.id, hit.segmentId);
+      if (!selected) { emit statusMessage(QString::fromStdString(selected.error)); return; }
+    }
+    std::string blocked;
+    if (!session_.acceptProjectWrite(blocked)) {
+      emit statusMessage(QString::fromStdString(blocked)); return;
+    }
     gesture.tool = Tool::MarkEdit;
     gesture.markId = hit.id;
     gesture.edges = hit.edges;
@@ -3747,8 +3753,9 @@ void PlotWidget::keyPressEvent(QKeyEvent* event) {
               ? file->activeMarkId
           : ids.empty() ? std::string{}
                         : ids.front();
-      session_.selectMarks(ids, active);
-      emit stateChanged();
+      const auto selected = session_.selectMarks(ids, active);
+      if (selected) emit stateChanged();
+      else emit statusMessage(QString::fromStdString(selected.error));
     }
     event->accept();
   } else

@@ -554,16 +554,27 @@ void AnnotationPanel::applyOverlaySource(FileState& file, AnnotationSource sourc
   std::array<bool, 3> visible{};
   visible[static_cast<int>(source)] = true;
   if (file.annotationLayers != visible) {
+    std::string blocked;
+    if (!session_.acceptProjectWrite(blocked)) return;
     // Keep the v6 field readable for old projects; the current source tab is
     // now its only UI authority. List/tree eligibility stays independent.
     file.annotationLayers = visible;
     session_.annotations().hover(file, {});
+    session_.noteProjectWrite();
   }
 }
 void AnnotationPanel::setSourceTab(AnnotationSource source, bool reconcile) {
+  if (auto* file = session_.activeFile(); file &&
+      (source != sourceTab_ || file->annotationFilter.source != static_cast<int>(source))) {
+    std::string blocked;
+    if (!session_.acceptProjectWrite(blocked)) { emit message(q(blocked)); return; }
+  }
   if (auto* file = session_.activeFile()) applyOverlaySource(*file, source);
   if (source == sourceTab_ && table_ == tabs_[static_cast<int>(source)].table) {
-    if (auto* file = session_.activeFile()) file->annotationFilter.source = static_cast<int>(source);
+    if (auto* file = session_.activeFile(); file && file->annotationFilter.source != static_cast<int>(source)) {
+      file->annotationFilter.source = static_cast<int>(source);
+      session_.noteProjectWrite();
+    }
     return;
   }
   discardDrafts();
@@ -582,8 +593,12 @@ void AnnotationPanel::setSourceTab(AnnotationSource source, bool reconcile) {
   status_->setCurrentIndex(next.filter.review + 1);
   minimumScore_->setValue(next.filter.minimumMean);
   if (auto* file = session_.activeFile()) {
+    const auto priorFilter = file->annotationFilter;
     file->annotationFilter = next.filter;
     file->annotationFilter.source = static_cast<int>(source);
+    if (file->annotationFilter.source != priorFilter.source || file->annotationFilter.review != priorFilter.review ||
+        file->annotationFilter.runId != priorFilter.runId || file->annotationFilter.minimumMean != priorFilter.minimumMean)
+      session_.noteProjectWrite();
     if (reconcile) {
       std::vector<std::string> ids;
       for (const auto& id : file->selectedMarkIds)
@@ -674,8 +689,7 @@ void AnnotationPanel::buildReviewBar(QVBoxLayout* outer) {
   button(review, "选择本页", "selectAnnotationPage", [this] {
     std::vector<std::string> ids;
     for (const auto* row : model_->rows) ids.push_back(row->id);
-    session_.selectMarks(ids, ids.empty() ? std::string{} : ids.front());
-    emit changed();
+    action(session_.selectMarks(ids, ids.empty() ? std::string{} : ids.front()));
   });
   button(review, "删除所选标记", "deleteSelectedAnnotations", [this] {
     deleteSelected();
@@ -716,8 +730,7 @@ void AnnotationPanel::buildReviewBar(QVBoxLayout* outer) {
       action(session_.annotations().redo(*f));
   });
   button(review, "清选", "clearAnnotationSelection", [this] {
-    session_.selectMarks({});
-    emit changed();
+    action(session_.selectMarks({}));
   });
   review->addStretch();
   button(review, "上一页", "annotationsPreviousPage", [this] {
@@ -738,8 +751,8 @@ void AnnotationPanel::buildTable(QVBoxLayout* outer) {
                         Qt::KeyboardModifiers modifiers,
                         bool toggle) { chooseRow(index, modifiers, toggle); };
   view->locate = [this](const QModelIndex& index) {
-    session_.focusMark(
-        model_->data(index, Qt::UserRole).toString().toStdString());
+    if (!session_.focusMark(
+        model_->data(index, Qt::UserRole).toString().toStdString())) return;
     revealActive();
     emit changed();
   };
@@ -827,8 +840,7 @@ void AnnotationPanel::buildTable(QVBoxLayout* outer) {
             ? file->activeMarkId
         : ids.empty() ? std::string{}
                       : ids.front();
-    session_.selectMarks(ids, active);
-    emit changed();
+    action(session_.selectMarks(ids, active));
   });
   table_->setSortingEnabled(false);
   table_->setAlternatingRowColors(true);
@@ -1113,14 +1125,14 @@ bool AnnotationPanel::eventFilter(QObject* watched, QEvent* event) {
       return true;
     }
     if (key->matches(QKeySequence::SelectAll)) {
-      session_.selectMarks(
+      const auto selected = session_.selectMarks(
           model_->filteredIds,
           std::find(model_->filteredIds.begin(), model_->filteredIds.end(),
                     file->activeMarkId) != model_->filteredIds.end()
               ? file->activeMarkId
           : model_->filteredIds.empty() ? std::string{}
                                         : model_->filteredIds.front());
-      emit changed();
+      action(selected);
       return true;
     }
     const auto current =
@@ -1189,6 +1201,8 @@ void AnnotationPanel::queueRefresh() {
 }
 
 void AnnotationPanel::editCell(const QModelIndex& index) {
+  std::string blocked;
+  if (!session_.acceptProjectWrite(blocked)) { emit message(q(blocked)); return; }
   if (!index.isValid() || !(index.flags() & Qt::ItemIsEditable)) return;
   const auto id = index.data(Qt::UserRole).toString().toStdString();
   const int column = index.column();
@@ -1197,7 +1211,8 @@ void AnnotationPanel::editCell(const QModelIndex& index) {
   const auto* annotation = file ? findAnnotation(*file, id) : nullptr;
   if (!annotation || !session_.annotations().canEdit(*file, id)) return;
   if (file->activeMarkId != id) {
-    session_.annotations().select(*file, {id}, id);
+    const auto selected = session_.annotations().select(*file, {id}, id);
+    if (!selected) { action(selected); return; }
     queueRefresh();
   }
   const auto* segment = activeSegment(*annotation);
@@ -1455,7 +1470,9 @@ void AnnotationPanel::deleteSelected(bool currentSegmentOnly) {
   if (sourceTab_ == AnnotationSource::Algorithm && currentSegmentOnly) return;
   auto* file = session_.activeFile();
   if (!file) return;
-  session_.annotations().reconcileSelection(*file);
+  if (const auto selection = session_.annotations().reconcileSelection(*file); !selection) {
+    action(selection); return;
+  }
   const auto generation = session_.projectGeneration();
   const auto fileId = file->metadata.id;
   const auto sampleChannel = file->metadata.sampleFormat.selectedChannel;
@@ -1555,7 +1572,9 @@ void AnnotationPanel::setSelectedPlotHidden(bool hidden) {
   if (sourceTab_ != AnnotationSource::Algorithm) return;
   auto* file = session_.activeFile();
   if (!file) return;
-  session_.annotations().reconcileSelection(*file);
+  if (const auto selection = session_.annotations().reconcileSelection(*file); !selection) {
+    action(selection); return;
+  }
   std::vector<std::string> ids;
   for (const auto& id : file->selectedMarkIds) {
     const auto* annotation = findAnnotation(*file, id);
@@ -1655,7 +1674,15 @@ void AnnotationPanel::refresh() {
   if (filterContext_ != context) {
     const QSignalBlocker statusBlock(status_),
         scoreBlock(minimumScore_);
-    if (f) { f->annotationFilter.source = static_cast<int>(sourceTab_); f->annotationFilter.runId.clear(); }
+    if (f && (f->annotationFilter.source != static_cast<int>(sourceTab_) ||
+              !f->annotationFilter.runId.empty())) {
+      std::string blocked;
+      if (session_.acceptProjectWrite(blocked)) {
+        f->annotationFilter.source = static_cast<int>(sourceTab_);
+        f->annotationFilter.runId.clear();
+        session_.noteProjectWrite();
+      }
+    }
     status_->setCurrentIndex(f ? f->annotationFilter.review + 1 : 0);
     minimumScore_->setValue(f ? std::max(0.0, f->annotationFilter.minimumMean)
                               : 0);
@@ -1678,10 +1705,23 @@ void AnnotationPanel::refresh() {
 void AnnotationPanel::filterChanged() {
   if (refreshing_) return;
   if (auto* file = session_.activeFile()) {
+    std::string blocked;
+    if (!session_.acceptProjectWrite(blocked)) {
+      const QSignalBlocker statusBlock(status_), scoreBlock(minimumScore_);
+      status_->setCurrentIndex(file->annotationFilter.review + 1);
+      minimumScore_->setValue(file->annotationFilter.minimumMean);
+      emit message(q(blocked));
+      queueRefresh();
+      return;
+    }
+    const auto priorFilter = file->annotationFilter;
     file->annotationFilter.source = static_cast<int>(sourceTab_);
     file->annotationFilter.review = status_->currentIndex() - 1;
     file->annotationFilter.runId.clear();
     file->annotationFilter.minimumMean = minimumScore_->value();
+    if (file->annotationFilter.source != priorFilter.source || file->annotationFilter.review != priorFilter.review ||
+        file->annotationFilter.runId != priorFilter.runId || file->annotationFilter.minimumMean != priorFilter.minimumMean)
+      session_.noteProjectWrite();
     std::vector<std::string> ids;
     for (const auto& id : file->selectedMarkIds)
       if (const auto* a = findAnnotation(*file, id);

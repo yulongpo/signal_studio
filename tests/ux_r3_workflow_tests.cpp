@@ -15,9 +15,11 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QProgressDialog>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSettings>
+#include <QScopeGuard>
 #include <QSpinBox>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -29,8 +31,10 @@
 #include "app/main_window.h"
 #include "application/annotation_service.h"
 #include "infrastructure/project_store.h"
+#include "infrastructure/label_discovery.h"
 #include "ui/charts/plot_widget.h"
 #include "ui/label_mapping_dialog.h"
+#include "ui/detection/detection_panel.h"
 
 using namespace signalstudio;
 
@@ -301,6 +305,84 @@ class UxR3WorkflowTests : public QObject {
     if (operation != "save") QCOMPARE(readBytes(originalPath), originalBytes);
   }
 
+  void projectSaveSerializesNestedWriters_data() {
+    QTest::addColumn<bool>("failSave");
+    QTest::newRow("successful-save") << false;
+    QTest::newRow("failed-save") << true;
+  }
+  void projectSaveSerializesNestedWriters() {
+    QFETCH(bool, failSave);
+    QTemporaryDir directory; MainWindow window; QString error;
+    QVERIFY2(prepare(window, directory.path(), error), qPrintable(error));
+    auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+    QVERIFY(panel);
+    bool observed = false, guarded = false, nestedRejected = false;
+    QTimer::singleShot(0, &window, [&] {
+      observed = panel->projectCommitInProgress();
+      std::string why;
+      guarded = !window.session().acceptProjectWrite(why) && !why.empty();
+      nestedRejected = !window.saveProject(directory.filePath("nested.ssproj"));
+    });
+    std::vector<ModalScript::Step> steps;
+    if (failSave) steps.push_back(ModalScript::acknowledge("保存失败"));
+    ModalScript modals(std::move(steps));
+    const bool saved = window.saveProject(failSave ? directory.path() : directory.filePath("live.ssproj"));
+    QCOMPARE(saved, !failSave);
+    QVERIFY(modals.complete());
+    QVERIFY(observed && guarded && nestedRejected);
+    QVERIFY(!panel->projectCommitInProgress());
+    QVERIFY(!QFileInfo::exists(directory.filePath("nested.ssproj")));
+    std::string why;
+    QVERIFY(window.session().acceptProjectWrite(why));
+  }
+
+  void saveAsRechecksWriteGuardAfterDialogs_data() {
+    QTest::addColumn<QString>("stage");
+    for (const auto* stage : {"entry", "file-dialog", "confirmation"})
+      QTest::newRow(stage) << QString::fromLatin1(stage);
+  }
+  void saveAsRechecksWriteGuardAfterDialogs() {
+    QFETCH(QString, stage);
+    QTemporaryDir directory; MainWindow window; QString error;
+    QVERIFY2(prepare(window, directory.path(), error), qPrintable(error));
+    auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+    auto* saveAs = window.findChild<QAction*>("saveProjectAsAction");
+    QVERIFY(panel && saveAs);
+    const auto destination = directory.filePath("must-not-save.ssproj");
+    const LiveSnapshot before(window);
+    bool held = false;
+    const auto acquire = [&] { held = panel->beginProjectIo(error); };
+    const bool nativeDisabled = qApp->testAttribute(Qt::AA_DontUseNativeDialogs);
+    qApp->setAttribute(Qt::AA_DontUseNativeDialogs);
+    const auto release = qScopeGuard([&] {
+      if (held) panel->endProjectIo();
+      qApp->setAttribute(Qt::AA_DontUseNativeDialogs, nativeDisabled);
+    });
+    std::vector<ModalScript::Step> steps;
+    if (stage == "entry") acquire();
+    else {
+      steps.push_back({[](QDialog* dialog) { return qobject_cast<QFileDialog*>(dialog); },
+        [&](QDialog* dialog) {
+          if (stage == "file-dialog") acquire();
+          auto* files = qobject_cast<QFileDialog*>(dialog);
+          files->selectFile(destination);
+          dialog->accept();
+        }});
+      if (stage == "confirmation") steps.push_back({
+        [](QDialog* dialog) { return dialog->windowTitle() == "伴随资产"; },
+        [&](QDialog* dialog) {
+          acquire();
+          qobject_cast<QMessageBox*>(dialog)->button(QMessageBox::No)->click();
+        }});
+    }
+    ModalScript modals(std::move(steps));
+    saveAs->trigger();
+    QVERIFY(modals.complete());
+    QVERIFY(held);
+    QVERIFY(before.sameSession(window));
+    QVERIFY(!QFileInfo::exists(destination));
+  }
+
   void saveAsReopenKeepsOriginalAndMovesSaveDestination() {
     QTemporaryDir directory; MainWindow window; QString error;
     QVERIFY2(prepare(window, directory.path(), error), qPrintable(error)); show(window);
@@ -450,6 +532,114 @@ class UxR3WorkflowTests : public QObject {
       }
     }
     if (decision == "cancel-preview") QVERIFY(unspecifiedRejected && configured && previewSeen);
+  }
+
+  void discoveryResolvesFileAfterModalSnapshot_data() {
+    QTest::addColumn<QString>("decision");
+    for (const auto* decision : {"preview", "replacement-project", "reload", "compare"})
+      QTest::newRow(decision) << QString::fromLatin1(decision);
+  }
+  void discoveryResolvesFileAfterModalSnapshot() {
+    QFETCH(QString, decision);
+    QTemporaryDir directory; MainWindow window; QString error;
+    QVERIFY2(prepare(window, directory.path(), error), qPrintable(error));
+    show(window);
+    const auto generation = window.session().projectGeneration();
+    const auto fileId = window.session().activeFile()->metadata.id;
+    const auto labels = directory.filePath("label/capture.txt");
+    const QByteArray oldText("QPSK -100000 100000\n");
+    const QByteArray newText("BPSK -120000 120000\n");
+    const bool changedSource = decision == "reload" || decision == "compare";
+    if (changedSource) {
+      QVERIFY(writeBytes(labels, oldText));
+      LabelFieldMapping mapping;
+      mapping.delimiter = LabelDelimiter::Whitespace;
+      mapping.classColumn = 0;
+      mapping.timeUnit = LabelTimeUnit::Unknown;
+      mapping.lowerColumn = 1; mapping.upperColumn = 2;
+      mapping.frequencyLayout = LabelFrequencyLayout::Edges;
+      mapping.frequencyUnit = LabelFrequencyUnit::Hz;
+      mapping.frequencyReference = LabelFrequencyReference::Baseband;
+      auto* file = window.session().activeFile();
+      const auto candidates = discoverLabelCandidates(file->metadata);
+      QCOMPARE(candidates.candidates.size(), std::size_t{1});
+      const auto plan = prepareDiscoveredLabels(candidates.candidates.front(), *file,
+                                                generation, mapping);
+      const auto imported = publishDiscoveredLabels(window.session().annotations(),
+                                                    *file, plan, generation);
+      QVERIFY2(imported.ok, imported.error.c_str());
+      QCOMPARE(file->sourceSets.size(), std::size_t{1});
+    }
+    QVERIFY(writeBytes(labels, newText));
+    bool swapped = false, compared = false;
+    const auto swapSnapshot = [&] {
+      // The same assignment as a settled publication: generation stays stable
+      // but every old FileState iterator is invalidated by the new vector.
+      auto replacement = window.session().project();
+      auto& file = replacement.files.front();
+      file.metadata.name = "live-after-publication";
+      file.display.psdSize = 512;
+      if (decision == "replacement-project")
+        window.session().replaceProject(std::move(replacement));
+      else {
+        window.session().project() = std::move(replacement);
+        window.session().noteProjectWrite();
+      }
+      swapped = true;
+    };
+    std::vector<ModalScript::Step> steps;
+    if (!changedSource) steps.push_back({
+      [](QDialog* dialog) { return dialog->objectName() == "labelMappingDialog"; },
+      [&](QDialog* dialog) {
+        if (!configureUnknownMapping(dialog, false)) { dialog->reject(); return; }
+        auto* buttons = dialog->findChild<QDialogButtonBox*>();
+        if (buttons) buttons->button(QDialogButtonBox::Ok)->click();
+      }});
+    steps.push_back({
+      [changedSource](QDialog* dialog) {
+        return qobject_cast<QMessageBox*>(dialog) && dialog->windowTitle() ==
+            (changedSource ? QStringLiteral("标签来源已变化") : QStringLiteral("标签导入预览"));
+      },
+      [&](QDialog* dialog) {
+        swapSnapshot();
+        auto* prompt = qobject_cast<QMessageBox*>(dialog);
+        if (!changedSource) { prompt->button(QMessageBox::Yes)->click(); return; }
+        for (auto* button : prompt->buttons()) {
+          if (button->text() == (decision == "compare" ? "比对原始内容" : "载入新版本")) {
+            button->click(); return;
+          }
+        }
+        prompt->reject();
+      }});
+    if (decision == "compare") steps.push_back({
+      [](QDialog* dialog) { return dialog->windowTitle() == "标签来源比对（只读）"; },
+      [&](QDialog* dialog) {
+        auto* text = dialog->findChild<QPlainTextEdit*>();
+        compared = text && text->isReadOnly() &&
+            text->toPlainText().contains(QString::fromUtf8(oldText).trimmed()) &&
+            text->toPlainText().contains(QString::fromUtf8(newText).trimmed());
+        dialog->accept();
+      }});
+    ModalScript script(std::move(steps));
+    window.discoverLabels();
+    QVERIFY2(script.complete(), "Missing expected label modal or unexpected modal");
+    QVERIFY(swapped);
+    QCOMPARE(window.session().projectGeneration(),
+             generation + (decision == "replacement-project" ? 1 : 0));
+    const auto* file = window.session().activeFile();
+    QVERIFY(file && file->metadata.id == fileId);
+    QCOMPARE(file->metadata.name, std::string("live-after-publication"));
+    QCOMPARE(file->display.psdSize, std::uint32_t{512});
+    if (decision == "replacement-project") {
+      QVERIFY(file->sourceSets.empty());
+    } else if (decision == "compare") {
+      QVERIFY(compared);
+      QCOMPARE(file->sourceSets.size(), std::size_t{1});
+      QCOMPARE(file->sourceSets.front().originalText, oldText.toStdString());
+    } else {
+      QCOMPARE(file->sourceSets.size(), changedSource ? std::size_t{2} : std::size_t{1});
+      QCOMPARE(file->sourceSets.back().originalText, newText.toStdString());
+    }
   }
 
   void manualLabelEntryPoints_data() {

@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QComboBox>
+#include <QDoubleSpinBox>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -12,6 +13,7 @@
 #include <QElapsedTimer>
 #include <QPointer>
 #include <QPushButton>
+#include <QScopeGuard>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -26,6 +28,7 @@
 #include "infrastructure/annotation_json.h"
 #include "ui/detection/detection_card.h"
 #include "ui/detection/detection_panel.h"
+#include "ui/annotations/annotation_panel.h"
 #include "infrastructure/project_file.h"
 #include "infrastructure/project_store.h"
 
@@ -46,9 +49,13 @@ class SsDeRpoStartTests : public QObject {
   void sourceLoadSurvivesStartCommitInstall();
   void sourceLoadSurvivesPublicationCommitInstall();
   void cancelledStartCommitAppliesFinishedSourceLoad();
+  void completedWorkerWaitsForProjectIoLease();
+  void closingWhilePublicationWaitsForGuiDoesNotDeadlock();
+  void annotationControlsLeaveTheLockedProjectUntouched();
 };
 
 void armFixture() { qApp->setProperty("enableDetectionTestFixture", true); }
+
 
 void rejectUnexpectedModals(QTimer& timer, QString& failure) {
   QObject::connect(&timer, &QTimer::timeout, &timer, [&] {
@@ -505,6 +512,111 @@ void SsDeRpoStartTests::acceptedStartContextChangeNeverRestoresFormal() {
   QVERIFY(found != reopened.files.end());
   const auto* saved = currentDetectionSlot(*found, 0);
   QVERIFY(saved && saved->committedRunId.empty() && saved->suppressFormalResults);
+}
+
+void SsDeRpoStartTests::completedWorkerWaitsForProjectIoLease() {
+  armFixture();
+  QTemporaryDir directory;
+  MainWindow window;
+  QString error;
+  QVERIFY2(prepareProject(directory, window, error), qPrintable(error));
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  QVERIFY(panel);
+  bool held = false;
+  bool leaseAccepted = false;
+  auto release = qScopeGuard([&] { if (held) panel->endProjectIo(); });
+  QObject::connect(panel, &DetectionPanel::commitSettled, &window,
+      [&](bool publication, bool installed) {
+        if (!publication && installed) {
+          leaseAccepted = panel->beginProjectIo(error);
+          held = leaseAccepted;
+        }
+      });
+  QVERIFY2(panel->startRequest(fixtureRequest(window, "save-lease"), error), qPrintable(error));
+  QTRY_VERIFY_WITH_TIMEOUT(leaseAccepted, 20000);
+  QTRY_VERIFY_WITH_TIMEOUT(snapshotRun(*panel, "save-lease") &&
+      snapshotRun(*panel, "save-lease")->lifecycle == DetectionLifecycle::Completed, 30000);
+  // Exercise several real timer polls after Worker completion. Publication
+  // stays in the task manager; no snapshot or shard is consumed by the lease.
+  QTest::qWait(250);
+  QVERIFY(panel->projectCommitInProgress());
+  QVERIFY(!panel->publicationCommitInProgress());
+  QVERIFY(panel->hasPendingPublications());
+  QVERIFY(activeSlot(window) && activeSlot(window)->committedRunId.empty());
+  QVERIFY(!panel->startRequest(fixtureRequest(window, "rejected-save-lease"), error));
+  QCOMPARE(panel->acceptedRunId(), std::string("save-lease"));
+  panel->endProjectIo(); held = false;
+  QTRY_VERIFY_WITH_TIMEOUT(activeSlot(window) &&
+      activeSlot(window)->committedRunId == "save-lease", 30000);
+  QVERIFY(!panel->projectCommitInProgress());
+  QVERIFY(!panel->hasPendingPublications());
+  QTRY_VERIFY(panel->lastPublicationCommitReleasedForTest());
+}
+
+void SsDeRpoStartTests::closingWhilePublicationWaitsForGuiDoesNotDeadlock() {
+  armFixture();
+  QTemporaryDir directory;
+  auto window = std::make_unique<MainWindow>();
+  QString error;
+  QVERIFY2(prepareProject(directory, *window, error), qPrintable(error));
+  auto* panel = window->findChild<DetectionPanel*>("detectionPanel");
+  QVERIFY(panel);
+  auto gate = std::make_shared<std::atomic<bool>>(false);
+  panel->setPublicationGate(gate);
+  QVERIFY2(panel->startRequest(fixtureRequest(*window, "close-at-ui-check"), error),
+           qPrintable(error));
+  QTRY_VERIFY_WITH_TIMEOUT(panel->publicationCommitInProgress(), 30000);
+  gate->store(true);
+  QElapsedTimer wait;
+  wait.start();
+  // Deliberately keep the GUI from dispatching the queued context check. This
+  // bounded test barrier places destruction at the old join/invoke deadlock.
+  while (!panel->publicationUiCheckPendingForTest() && wait.elapsed() < 5000)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  QVERIFY(panel->publicationUiCheckPendingForTest());
+  QElapsedTimer closing;
+  closing.start();
+  window.reset();
+  QVERIFY2(closing.elapsed() < 5000, "GUI shutdown did not release publication context wait");
+}
+
+void SsDeRpoStartTests::annotationControlsLeaveTheLockedProjectUntouched() {
+  armFixture();
+  QTemporaryDir directory;
+  MainWindow window;
+  QString error;
+  QVERIFY2(prepareProject(directory, window, error), qPrintable(error));
+  const auto mark = window.session().addMark({{1000, 5000}, {99.9e6, 100.1e6}});
+  QVERIFY(!mark.empty());
+  auto* annotations = window.findChild<AnnotationPanel*>();
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  QVERIFY(annotations && panel);
+  annotations->setSourceTab(AnnotationSource::Manual);
+  QVERIFY(window.session().selectMarks({mark}, mark));
+  window.refresh();
+  auto* status = window.findChild<QComboBox*>("annotationReviewFilter");
+  auto* score = window.findChild<QDoubleSpinBox*>("annotationMinimumMeanScore");
+  auto* clear = window.findChild<QPushButton*>("clearAnnotationSelection");
+  QVERIFY(status && score && clear);
+  QVERIFY(panel->beginProjectIo(error));
+  const auto release = qScopeGuard([&] { panel->endProjectIo(); });
+  const auto before = ProjectStore::stateToken(window.session().project());
+  const auto epoch = window.session().contentEpoch();
+  annotations->setSourceTab(AnnotationSource::Algorithm);
+  status->setCurrentIndex(2);
+  score->setValue(0.7);
+  clear->click();
+  QCoreApplication::processEvents();
+  QCOMPARE(annotations->sourceTab(), AnnotationSource::Manual);
+  QCOMPARE(ProjectStore::stateToken(window.session().project()), before);
+  QCOMPARE(window.session().contentEpoch(), epoch);
+  QCOMPARE(status->currentIndex(), 0);
+  QCOMPARE(score->value(), 0.0);
+  panel->endProjectIo();
+  status->setCurrentIndex(2);
+  QCOMPARE(window.session().activeFile()->annotationFilter.review, 1);
+  annotations->setSourceTab(AnnotationSource::Algorithm);
+  QCOMPARE(annotations->sourceTab(), AnnotationSource::Algorithm);
 }
 
 FileState* fileById(MainWindow& window, const std::string& id) {

@@ -570,7 +570,7 @@ DetectionPanel::DetectionPanel(Session& session,
       generation_(session.projectGeneration()),
       listGeneration_(session.projectGeneration()) {
   session_.setProjectWriteGuard([this](std::string& error) {
-    if (!commitInFlight_) return true;
+    if (!projectCommitInProgress()) return true;
     // Publication is the only writer that uses the result-commit sentence.
     // A start transaction still in flight is still preparing.
     error = commitBusyMessage().toStdString();
@@ -780,8 +780,23 @@ void DetectionPanel::releaseCommitLock() {
   committingRunId_.clear();
 }
 QString DetectionPanel::commitBusyMessage() const {
+  if (projectIoInFlight_) return QStringLiteral("工程正在保存，请稍后再试");
   return publicationCommit_ ? QStringLiteral("检测结果正在提交，请稍后再试")
                             : QStringLiteral("检测正在准备，请稍候");
+}
+
+bool DetectionPanel::beginProjectIo(QString& error) {
+  if (projectCommitInProgress()) {
+    error = commitBusyMessage();
+    return false;
+  }
+  projectIoInFlight_ = true;
+  error.clear();
+  return true;
+}
+
+void DetectionPanel::endProjectIo() {
+  projectIoInFlight_ = false;
 }
 
 void DetectionPanel::noteRunMark(const std::string& runId, const char* name,
@@ -819,7 +834,7 @@ bool DetectionPanel::startRequest(DetectionRequest request, QString& error,
     error = "检测事务需要当前已保存 .ssproj 的实际文件路径";
     return false;
   }
-  if (commitInFlight_) {
+  if (projectCommitInProgress()) {
     error = commitBusyMessage();
     emit message(error);
     return false;
@@ -1164,7 +1179,7 @@ void DetectionPanel::configure(const DetectionRun* parentRun) {
                                                    : nullptr);
 }
 void DetectionPanel::poll() {
-  if (!commitInFlight_ && generation_ != session_.projectGeneration()) {
+  if (!projectCommitInProgress() && generation_ != session_.projectGeneration()) {
     tasks_->cancelGeneration(generation_);
     generation_ = session_.projectGeneration();
     tickets_.clear();
@@ -1179,7 +1194,7 @@ void DetectionPanel::poll() {
   tasks_->pump();
   noteObservedTerminals();
   bool changedState = false;
-  if (commitInFlight_) {
+  if (projectCommitInProgress()) {
     if (refreshRunList(false)) emit runProgressChanged();
     publishPolledPreview();
     return;
@@ -1370,6 +1385,7 @@ void DetectionPanel::beginPublicationCommit(DetectionResultTicket ticket,
                                              DetectionRun run,
                                              DetectionPublication publication) {
   auto job = std::make_shared<PublishCommit>();
+  lastPublicationCommit_ = job;
   job->project = session_.project();
   job->ticket = std::move(ticket);
   job->run = std::move(run);
@@ -1385,28 +1401,41 @@ void DetectionPanel::beginPublicationCommit(DetectionResultTicket ticket,
   committingRunId_ = job->run.request.runId;
   QPointer<DetectionPanel> self(this);
   auto* stopping = &shuttingDown_;
+  const std::weak_ptr<PublishCommit> weakJob = job;
   const auto priorObserver = job->options.publicationStage;
-  job->options.publicationStage = [self, job, priorObserver](DetectionPublicationStage stage) {
-    if (self) self->tasks_->noteSteadyMark(job->run.request.runId,
+  job->options.publicationStage = [self, weakJob, priorObserver](DetectionPublicationStage stage) {
+    const auto current = weakJob.lock();
+    if (self && current) self->tasks_->noteSteadyMark(current->run.request.runId,
         stage == DetectionPublicationStage::Recovered ? "t_recovery_ready" : "t_compare_ready",
         steadyClockNanoseconds());
     if (priorObserver) priorObserver(stage);
   };
-  job->options.stillCurrent = [self, job, stopping] {
-    if (!self || stopping->load()) return false;
+  job->options.stillCurrent = [self, weakJob, stopping] {
+    const auto job = weakJob.lock();
+    if (!job || !self || stopping->load()) return false;
     if (QThread::currentThread() == self->thread())
       return self->publicationGenerationCurrent(job->epoch, job->generation,
                                                 job->ticket.fileId);
-    bool matched = false;
+    // The GUI destructor joins this worker. A blocking queued invocation can
+    // otherwise wait forever for the very GUI thread that is joining it.
+    // Own the answer across both threads, and let shutdown abandon the wait.
+    const auto matched = std::make_shared<std::atomic<int>>(-1);
+    self->publicationUiCheckPending_.store(true, std::memory_order_release);
     const bool invoked = QMetaObject::invokeMethod(
         self.data(),
-        [self, job, &matched] {
-          if (!self) return;
-          matched = self->publicationGenerationCurrent(
-              job->epoch, job->generation, job->ticket.fileId);
+        [self, job, matched] {
+          const bool current = self && !self->shuttingDown_.load() &&
+              self->publicationGenerationCurrent(job->epoch, job->generation,
+                                                  job->ticket.fileId);
+          matched->store(current ? 1 : 0, std::memory_order_release);
         },
-        Qt::BlockingQueuedConnection);
-    return invoked && matched;
+        Qt::QueuedConnection);
+    while (invoked && matched->load(std::memory_order_acquire) < 0 &&
+           !stopping->load(std::memory_order_acquire))
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    if (self) self->publicationUiCheckPending_.store(false, std::memory_order_release);
+    return invoked && !stopping->load(std::memory_order_acquire) &&
+           matched->load(std::memory_order_acquire) == 1;
   };
   launchCommitWorker([self, job, stopping] {
     if (job->gate) {
