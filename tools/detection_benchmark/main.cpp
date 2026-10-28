@@ -64,11 +64,7 @@ QJsonObject memory() {
 }
 }
 
-int main(int argc, char** argv) {
-  QCoreApplication app(argc,argv);
-  QCoreApplication::setOrganizationName("Signal Studio");
-  QCoreApplication::setApplicationName("SignalStudio");
-  signalstudio::RuntimeLog::install();
+int runBenchmark(const QStringList& arguments) {
   QCommandLineParser args;
   args.setApplicationDescription("Isolated real detection pipeline benchmark; never edits the source project");
   args.addHelpOption();
@@ -86,8 +82,9 @@ int main(int argc, char** argv) {
       {"labels","Trusted ordinary label file for fixed physical IoU metrics","path"},
       {"cancel-windows","Cancel after at least this many durable windows","count"},
       {"formal-commit","Create an isolated project and validate/commit the durable publication"},
+      {"resident-repeat","Run one excluded warmup and N measured re-detections in one resident application; each has an independent Worker","count"},
       {"timeout","Cancel at this wall-clock deadline","seconds","900"}});
-  args.process(app);
+  args.process(arguments);
   QJsonObject report{{"schema","signal-studio-detection-benchmark-v1"},
       {"pass",false},{"nativeUiVerified",false},
       {"scope","production headless pipeline; publication timing is not UI paint latency"},
@@ -306,5 +303,64 @@ int main(int argc, char** argv) {
     report["error"]=QString::fromUtf8(error.what());report["elapsedMs"]=double(timer.elapsed());
     if(outputReady) save(QDir(root).filePath("measurement.json"),report);
     std::cerr<<error.what()<<'\n';return 1;
+  }
+}
+
+int main(int argc, char** argv) {
+  QCoreApplication app(argc, argv);
+  QCoreApplication::setOrganizationName("Signal Studio");
+  QCoreApplication::setApplicationName("SignalStudio");
+  signalstudio::RuntimeLog::install();
+  auto arguments = app.arguments();
+  const auto repeatIndex = arguments.indexOf("--resident-repeat");
+  if (repeatIndex < 0) return runBenchmark(arguments);
+  try {
+    bool valid = false;
+    const auto repeats = arguments.value(repeatIndex + 1).toInt(&valid);
+    require(valid && repeats >= 1 && repeats <= 30,
+            "Resident repeat must be 1..30");
+    arguments.removeAt(repeatIndex + 1);
+    arguments.removeAt(repeatIndex);
+    auto outputIndex = arguments.indexOf("--output");
+    if (outputIndex < 0) outputIndex = arguments.indexOf("-o");
+    require(outputIndex >= 0 && outputIndex + 1 < arguments.size(),
+            "Resident repeat needs --output");
+    const auto outputRoot = QFileInfo(arguments[outputIndex + 1]).absoluteFilePath();
+    QDir root(outputRoot);
+    require(!root.exists() || root.entryList(QDir::AllEntries | QDir::NoDotAndDotDot).isEmpty(),
+            "Resident output must be new or empty");
+    require(root.mkpath("."), "Cannot create resident output");
+    QJsonObject summary{{"schema", "signalstudio-resident-benchmark-v1"},
+                        {"applicationResident", true}, {"nativeUiVerified", false},
+                        {"workerReused", false}, {"engineContextReused", false},
+                        {"processId", static_cast<qint64>(app.applicationPid())},
+                        {"warmupExcluded", true}, {"pass", true}};
+    QJsonArray runs;
+    for (int index = 0; index <= repeats; ++index) {
+      const auto name = index == 0 ? QString("warmup")
+                                  : QString("run-%1").arg(index, 2, 10, QChar('0'));
+      auto one = arguments;
+      one[outputIndex + 1] = root.filePath(name);
+      const auto exitCode = runBenchmark(one);
+      const auto measurement = QDir(one[outputIndex + 1]).filePath("measurement.json");
+      QFile file(measurement);
+      QJsonObject record;
+      if (file.open(QIODevice::ReadOnly))
+        record = QJsonDocument::fromJson(file.readAll()).object();
+      const auto passed = exitCode == 0 && record["pass"].toBool();
+      const QJsonObject item{{"measurement", measurement}, {"exitCode", exitCode},
+                             {"pass", passed}, {"elapsedMs", record["elapsedMs"]}};
+      if (index == 0) summary["warmup"] = item;
+      else runs.append(item);
+      summary["runs"] = runs;
+      summary["pass"] = summary["pass"].toBool() && passed;
+      save(root.filePath("resident-summary.json"), summary);
+      if (!passed) return 1;
+      QCoreApplication::processEvents();
+    }
+    return 0;
+  } catch (const std::exception& error) {
+    std::cerr << error.what() << '\n';
+    return 1;
   }
 }
