@@ -258,6 +258,21 @@ void validationIsStrictAndEmptyInputIsExplicit() {
         "An empty scope must explicitly produce no events");
 }
 
+void sparseFrequencyIndexAvoidsCartesianLimit() {
+  std::vector<DetectionRefinedEvent> input;
+  for (std::size_t i = 0; i < 3072; ++i)
+    input.push_back(event("sparse-" + std::to_string(i), i, 0, 10,
+                          static_cast<double>(i * 10), static_cast<double>(i * 10 + 1)));
+  auto config = options();
+  config.maximumPairComparisons = 1;
+  std::vector<DetectionRefinedFusion> output;
+  DetectionRefinedFusionSummary summary;
+  std::string error;
+  check(fuseRefinedDetectionEvents(input, config, output, summary, error) &&
+            output.size() == input.size() && summary.pairComparisons == 0 &&
+            summary.mergedPairs == 0,
+        "Disjoint frequency intervals must not spend the 4.7M Cartesian comparison budget");
+}
 }  // namespace
 
 int main() {
@@ -271,7 +286,8 @@ int main() {
     qualitiesAndOutputOrderRemainPhysical();
     budgetsAndCancellationAreAtomic();
     validationIsStrictAndEmptyInputIsExplicit();
-    std::cout << "Detection refined fusion tests: 9 groups passed\n";
+    sparseFrequencyIndexAvoidsCartesianLimit();
+    std::cout << "Detection refined fusion tests: 10 groups passed\n";
     return 0;
   } catch (const std::exception& exception) {
     std::cerr << exception.what() << '\n';

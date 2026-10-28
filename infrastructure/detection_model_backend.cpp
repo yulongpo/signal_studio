@@ -257,7 +257,8 @@ class DetectionModelBackend::Impl {
     if (!hooks.cancelled || !hooks.cancelled()) return false;
     retryableResourceFailure = false;
     injectedAllocationFailure = false;
-    return fail(error, detectionExecutionCancelledMessage());
+    fail(error, detectionExecutionCancelledMessage());
+    return true;
   }
 #ifdef SS_DETECTION_TENSORRT
   class Logger final : public nvinfer1::ILogger {

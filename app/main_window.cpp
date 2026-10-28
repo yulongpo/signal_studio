@@ -1506,7 +1506,7 @@ void MainWindow::buildWorkspace() {
   connect(detectionCard_, &DetectionCard::requestSubmitted, this,
           [this](const DetectionRequest& request) {
             QString error;
-            if (!detection_->startRequest(request, error)) {
+            if (!detection_->startRequest(request, error, detectionCard_->startLatchSteadyNs())) {
               detectionCard_->noteStartRejected(request.runId, error);
               log(error);
             }
@@ -1519,7 +1519,7 @@ void MainWindow::buildWorkspace() {
           &MainWindow::beginDetectionRoi);
   connect(detectionCard_, &DetectionCard::cancelRunRequested, this,
           [this](const QString& runId) {
-            detection_->tasks().cancel(runId.toStdString());
+            detection_->cancelRun(runId);
             detection_->refresh();
             detectionCard_->refresh();
           });

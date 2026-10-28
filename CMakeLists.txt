@@ -375,6 +375,11 @@ if(SS_BUILD_TESTS)
     set_target_properties(SignalStudioDetectionPostprocessTests PROPERTIES AUTOMOC OFF)
     target_link_libraries(SignalStudioDetectionPostprocessTests PRIVATE SignalStudioCore)
     add_test(NAME signal_studio_detection_postprocess COMMAND SignalStudioDetectionPostprocessTests)
+    add_executable(SignalStudioSsDeRpoTrackingTests tests/ss_de_rpo_tracking_tests.cpp)
+    ss_target_defaults(SignalStudioSsDeRpoTrackingTests)
+    set_target_properties(SignalStudioSsDeRpoTrackingTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioSsDeRpoTrackingTests PRIVATE SignalStudioCore)
+    add_test(NAME signal_studio_ss_de_rpo_tracking COMMAND SignalStudioSsDeRpoTrackingTests)
     add_executable(SignalStudioDetectionModelBackendTests tests/detection_model_backend_tests.cpp)
     ss_target_defaults(SignalStudioDetectionModelBackendTests)
     set_target_properties(SignalStudioDetectionModelBackendTests PROPERTIES AUTOMOC OFF)
@@ -423,6 +428,18 @@ if(SS_BUILD_TESTS)
     add_dependencies(SignalStudioSsDeRpoUiTests SignalStudio)
     add_test(NAME signal_studio_ss_de_rpo_ui COMMAND SignalStudioSsDeRpoUiTests)
     set_tests_properties(signal_studio_ss_de_rpo_ui PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 120)
+    add_executable(SignalStudioSsDeRpoStartTests tests/ss_de_rpo_start_tests.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioSsDeRpoStartTests PRIVATE
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
+        Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioSsDeRpoStartTests)
+    target_compile_definitions(SignalStudioSsDeRpoStartTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    ss_add_graphics_shaders(SignalStudioSsDeRpoStartTests signalstudio_ss_de_rpo_start_shaders)
+    ss_add_ui_assets(SignalStudioSsDeRpoStartTests)
+    add_dependencies(SignalStudioSsDeRpoStartTests SignalStudio)
+    add_test(NAME signal_studio_ss_de_rpo_start COMMAND SignalStudioSsDeRpoStartTests)
+    set_tests_properties(signal_studio_ss_de_rpo_start PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 120)
     add_executable(SignalStudioDetectionSourceTests tests/detection_source_tests.cpp)
     ss_stage_mkl_runtime(SignalStudioDetectionSourceTests)
@@ -731,7 +748,8 @@ if(SS_BUILD_TESTS)
         add_dependencies(SignalStudioUiTests SignalStudio)
         add_dependencies(SignalStudioUiCapture SignalStudio)
         foreach(test_target IN ITEMS SignalStudioDetectionSourceTests SignalStudioLabelImportTests SignalStudioWavTests
-                SignalStudioImportTests SignalStudioUiTests SignalStudioUxTests SignalStudioUiCapture)
+                SignalStudioImportTests SignalStudioUiTests SignalStudioUxTests SignalStudioUiCapture
+                SignalStudioSsDeRpoUiTests SignalStudioSsDeRpoStartTests)
             add_dependencies(${test_target} SignalStudio)
             add_custom_command(TARGET ${test_target} POST_BUILD
                 COMMAND "${CMAKE_COMMAND}" -E copy_if_different

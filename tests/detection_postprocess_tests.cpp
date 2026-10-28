@@ -439,8 +439,8 @@ void trackingLimitsAndCancellationAreAtomic() {
   config.limits.maximumFusionComparisons = 1;
   auto fusionBound = tracker(config);
   check(!fusionBound.consume(
-            window(0, {candidate(-60, -50, .8, 16), candidate(0, 10, .8, 32),
-                       candidate(50, 60, .8, 48)}),
+            window(0, {candidate(0, 10, .8, 16), candidate(9, 19, .8, 32),
+                       candidate(18, 28, .8, 48)}),
             error) &&
             fusionBound.processedWindows() == 0 &&
             fusionBound.retainedTracks() == 0 &&
@@ -647,7 +647,7 @@ void sealedBurstsDoNotReenterFusion() {
   consume(model, window(5, {candidate(40, 42, .8, 60), candidate(80, 82, .8, 61)}));
   const auto afterGap = model.frameStats();
   check(afterGap.sealed && afterGap.sealedTracks == 30 && afterGap.openTracks == 2 &&
-            afterGap.comparisons == 1,
+            afterGap.comparisons == 0,
         "The second burst must not compare the sealed first burst");
   const auto result = finish(model);
   check(result.size() == 32, "Each burst remains its own tracks");
