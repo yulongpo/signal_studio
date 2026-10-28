@@ -4,6 +4,8 @@
 #include "infrastructure/detection_spectrum_spool.h"
 
 #include <list>
+#include <mutex>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 
@@ -99,7 +101,8 @@ void validateConfig(const DetectionSourceConfig& config,
 }
 void validateSource(const FileMetadata& source, ViewRange request,
                     RawSampleReader& reader, QString& error,
-                    QString& fingerprint) {
+                    QString& fingerprint, const DetectionSourceCancel& cancel) {
+  if (cancelled(cancel)) invalid(QStringLiteral("Cancelled during source validation"));
   require(source.sampleFormat.structure == SampleStructure::ComplexIQ,
           "复数 IQ profile 不接受实数 ADC");
   require(!source.id.empty() && source.sampleCount > 0 &&
@@ -111,7 +114,9 @@ void validateSource(const FileMetadata& source, ViewRange request,
   require(source.availability.availableSamples <= source.sampleCount,
           "可用前缀超出物理样本范围");
   const auto path = canonicalPath(source.path);
+  if (cancelled(cancel)) invalid(QStringLiteral("Cancelled during source validation"));
   fingerprint = iqSourceFingerprint(path);
+  if (cancelled(cancel)) invalid(QStringLiteral("Cancelled during source validation"));
   if (!source.availability.fingerprint.empty())
     require(fingerprint.toStdString() == source.availability.fingerprint,
             "检测源与已读前缀的物理文件身份不一致");
@@ -123,7 +128,9 @@ void validateSource(const FileMetadata& source, ViewRange request,
                 descriptor.format == source.sampleFormat,
             "检测源 WAV 的 Fs 或格式与容器冲突");
   }
+  if (cancelled(cancel)) invalid(QStringLiteral("Cancelled during source validation"));
   const bool opened = reader.open(path, source.sampleFormat, error,RawSampleReader::Access::Sequential);
+  if (cancelled(cancel)) invalid(QStringLiteral("Cancelled during source validation"));
   require(opened, error);
   require(reader.sampleCount() == source.sampleCount,
           "检测源物理样本数与元数据不一致");
@@ -138,6 +145,7 @@ void validateSource(const FileMetadata& source, ViewRange request,
               request.frequency.lowerHz >= lower &&
               request.frequency.upperHz <= upper,
           "检测频率 ROI 超出物理 Nyquist 频段");
+  if (cancelled(cancel)) invalid(QStringLiteral("Cancelled during source validation"));
   require(iqSourceFingerprint(path) == fingerprint,
           "检测源在打开过程中发生变化");
 }
@@ -512,13 +520,193 @@ std::uint32_t detectionExecutionBatchSize(const DetectionSourcePlan& plan,
   return 0;
 }
 
+namespace {
+struct SourcePlanCache {
+  std::mutex mutex;
+  std::list<std::pair<std::string, DetectionSourcePlan>> entries;
+  DetectionSourcePlanCacheStats stats{};
+};
+
+SourcePlanCache& sourcePlanCache() {
+  static SourcePlanCache cache;
+  cache.stats.capacity = kDetectionSourcePlanCacheCapacity;
+  return cache;
+}
+
+void appendCacheText(std::string& key, const std::string& text) {
+  key.push_back('|');
+  key.append(std::to_string(text.size()));
+  key.push_back(':');
+  key.append(text);
+}
+
+void appendCacheUnsigned(std::string& key, std::uint64_t value) {
+  key.push_back('|');
+  key.append(std::to_string(value));
+}
+
+void appendCacheDouble(std::string& key, double value) {
+  appendCacheUnsigned(key, std::bit_cast<std::uint64_t>(value));
+}
+
+std::string sourcePlanCacheKey(const FileMetadata& source, ViewRange requested,
+                               const DetectionSourceConfig& config,
+                               std::uint64_t generation) {
+  std::string key = "source-plan-v1";
+  appendCacheText(key, source.id);
+  appendCacheText(key, source.path);
+  appendCacheDouble(key, source.sampleRateHz);
+  appendCacheDouble(key, source.centerFrequencyHz);
+  appendCacheDouble(key, source.effectiveBandwidthHz);
+  appendCacheUnsigned(key, source.sampleCount);
+  appendCacheUnsigned(key, static_cast<std::uint64_t>(source.availability.status));
+  appendCacheUnsigned(key, source.availability.availableSamples);
+  appendCacheUnsigned(key, source.availability.generation);
+  appendCacheText(key, source.availability.fingerprint);
+  appendCacheUnsigned(key, availableSamples(source));
+  const auto& format = source.sampleFormat;
+  appendCacheUnsigned(key, static_cast<std::uint64_t>(format.structure));
+  appendCacheUnsigned(key, static_cast<std::uint64_t>(format.componentEncoding));
+  appendCacheUnsigned(key, static_cast<std::uint64_t>(format.byteOrder));
+  appendCacheUnsigned(key, static_cast<std::uint64_t>(format.iqLayout));
+  appendCacheUnsigned(key, format.channels);
+  appendCacheUnsigned(key, format.selectedChannel);
+  appendCacheUnsigned(key, static_cast<std::uint64_t>(format.channelLayout));
+  appendCacheUnsigned(key, format.headerBytes);
+  appendCacheUnsigned(key, format.trailerBytes);
+  appendCacheUnsigned(key, format.normalizeIntegerAdc ? 1 : 0);
+  appendCacheUnsigned(key, requested.time.begin);
+  appendCacheUnsigned(key, requested.time.end);
+  appendCacheDouble(key, requested.frequency.lowerHz);
+  appendCacheDouble(key, requested.frequency.upperHz);
+  appendCacheUnsigned(key, generation);
+  appendCacheUnsigned(key, config.preferGpu ? 1 : 0);
+  appendCacheUnsigned(key, config.inputAdaptationVersion);
+  appendCacheText(key, config.profileId);
+  appendCacheUnsigned(key, config.profileVersion);
+  appendCacheUnsigned(key, config.fftSize);
+  appendCacheUnsigned(key, config.modelFrames);
+  appendCacheUnsigned(key, config.modelHopFrames);
+  appendCacheDouble(key, config.hopSeconds);
+  appendCacheUnsigned(key, config.readBlockBytes);
+  appendCacheUnsigned(key, config.workingSetBudgetBytes);
+  appendCacheUnsigned(key, config.evidenceBudgetBytes);
+  appendCacheUnsigned(key, config.rawHeadBudgetBytes);
+  appendCacheUnsigned(key, config.legacyCombinedRawHeads ? 1 : 0);
+  appendCacheUnsigned(key, config.maximumCandidates);
+  appendCacheUnsigned(key, config.useHostMkl ? 1 : 0);
+  return key;
+}
+
+std::optional<DetectionSourcePlan> takeCachedSourcePlan(const std::string& key) {
+  auto& cache = sourcePlanCache();
+  std::lock_guard lock(cache.mutex);
+  cache.stats.capacity = kDetectionSourcePlanCacheCapacity;
+  for (auto it = cache.entries.begin(); it != cache.entries.end(); ++it) {
+    if (it->first != key) continue;
+    cache.entries.splice(cache.entries.begin(), cache.entries, it);
+    ++cache.stats.hits;
+    return cache.entries.front().second;
+  }
+  return std::nullopt;
+}
+
+void noteSourcePlanCacheMiss() {
+  auto& cache = sourcePlanCache();
+  std::lock_guard lock(cache.mutex);
+  ++cache.stats.misses;
+}
+
+void storeCachedSourcePlan(const std::string& key, const DetectionSourcePlan& plan) {
+  auto& cache = sourcePlanCache();
+  std::lock_guard lock(cache.mutex);
+  cache.stats.capacity = kDetectionSourcePlanCacheCapacity;
+  for (auto it = cache.entries.begin(); it != cache.entries.end(); ++it) {
+    if (it->first != key) continue;
+    it->second = plan;
+    cache.entries.splice(cache.entries.begin(), cache.entries, it);
+    ++cache.stats.stores;
+    return;
+  }
+  cache.entries.emplace_front(key, plan);
+  while (cache.entries.size() > kDetectionSourcePlanCacheCapacity)
+    cache.entries.pop_back();
+  ++cache.stats.stores;
+  cache.stats.retained = cache.entries.size();
+}
+}  // namespace
+
+DetectionSourcePlanCacheStats detectionSourcePlanCacheStatsForTest() {
+  auto& cache = sourcePlanCache();
+  std::lock_guard lock(cache.mutex);
+  cache.stats.capacity = kDetectionSourcePlanCacheCapacity;
+  cache.stats.retained = cache.entries.size();
+  return cache.stats;
+}
+
+void clearDetectionSourcePlanCacheForTest() {
+  auto& cache = sourcePlanCache();
+  std::lock_guard lock(cache.mutex);
+  cache.entries.clear();
+  cache.stats = {};
+  cache.stats.capacity = kDetectionSourcePlanCacheCapacity;
+}
+
+bool detectionPreparedSourcePlanMatches(const FileMetadata& source,
+                                        ViewRange requested,
+                                        const DetectionSourceConfig& config,
+                                        std::uint64_t generation,
+                                        const DetectionSourcePlan& plan) {
+  if (!(plan.config == config) || !(plan.requestedRange == requested))
+    return false;
+  // quickFingerprint is the live file size/mtime. prepare stores the plan
+  // before queue copies that fingerprint onto the job, and open() writes it
+  // again after this check. It is not part of the reusable grid identity.
+  auto plannedIdentity = plan.sourceIdentity;
+  auto liveIdentity = annotationSourceIdentity(source, generation);
+  plannedIdentity.quickFingerprint.clear();
+  liveIdentity.quickFingerprint.clear();
+  if (!(plannedIdentity == liveIdentity)) return false;
+  const auto& identity = plan.sourceIdentity;
+  const double hop = std::floor(identity.sampleRateHz * config.hopSeconds);
+  if (!(hop >= 1.0) ||
+      plan.hopSamples != static_cast<std::uint64_t>(hop))
+    return false;
+  const auto bins = config.inputAdaptationVersion == 2
+                        ? std::bit_ceil(config.fftSize)
+                        : config.fftSize;
+  if (plan.transformBins != bins) return false;
+  const double first =
+      identity.centerFrequencyHz - identity.sampleRateHz / 2.0;
+  const double step =
+      identity.sampleRateHz / static_cast<double>(config.fftSize);
+  return plan.frequencyFirstBinHz == first && plan.frequencyStepHz == step;
+}
+
 bool makeDetectionSourcePlan(const FileMetadata& source, ViewRange requested,
                              DetectionSourceConfig config,
                              DetectionSourcePlan& target, QString& error,
-                             std::uint64_t generation) {
+                             std::uint64_t generation,
+                             const DetectionSourceCancel& cancel) {
+  const auto stop = [&] {
+    if (!cancelled(cancel)) return false;
+    error = QStringLiteral("Cancelled during source planning");
+    return true;
+  };
+  if (stop()) return false;
   try {
     validatePlanMetadata(source, requested);
+    if (stop()) return false;
     validateConfig(config, source);
+    if (stop()) return false;
+    const auto key = sourcePlanCacheKey(source, requested, config, generation);
+    if (stop()) return false;
+    if (auto cached = takeCachedSourcePlan(key)) {
+      target = std::move(*cached);
+      error.clear();
+      return true;
+    }
+    noteSourcePlanCacheMiss();
     DetectionSourcePlan plan;
     plan.config = std::move(config);
     plan.sourceIdentity = annotationSourceIdentity(source, generation);
@@ -564,9 +752,11 @@ bool makeDetectionSourcePlan(const FileMetadata& source, ViewRange requested,
                         plan.actualWindowFrames - 1;
       for (const auto window :
            {std::uint64_t{0}, plan.eligibleWindowCount - 1}) {
+        if (stop()) return false;
         std::uint64_t bytes = 4096;
         const auto start = windowStartForPlan(plan, window);
         for (std::uint32_t row = 0; row < plan.actualWindowFrames; ++row) {
+          if (stop()) return false;
           const auto anchor = (start + row) * plan.hopSamples;
           const auto slotLength =
               plan.config.inputAdaptationVersion == 2
@@ -607,6 +797,8 @@ bool makeDetectionSourcePlan(const FileMetadata& source, ViewRange requested,
       plan.contextRange = {frameMappingForPlan(plan, first).actualSamples.begin,
                            frameMappingForPlan(plan, last).actualSamples.end};
     }
+    if (stop()) return false;
+    storeCachedSourcePlan(key, plan);
     target = std::move(plan);
     error.clear();
     return true;
@@ -745,7 +937,9 @@ void FixedDetectionSource::rememberFrame(std::uint64_t index,
 
 bool FixedDetectionSource::open(const FileMetadata& source, ViewRange requested,
                                 DetectionSourceConfig config, QString& error,
-                                std::uint64_t generation) {
+                                std::uint64_t generation,
+                                const DetectionSourceCancel& cancel,
+                                const DetectionSourcePlan* prepared) {
   reader_.reset();
   gpu_.reset();
   gpuCancel_ = {};
@@ -759,12 +953,31 @@ bool FixedDetectionSource::open(const FileMetadata& source, ViewRange requested,
   profiling_ = DetectionProfiler{};
   clearFrequencySpool();
   clearFrameCache();
+  if (cancelled(cancel)) {
+    error = QStringLiteral("Cancelled during source validation");
+    return false;
+  }
   try {
-    const bool planned = makeDetectionSourcePlan(
-        source, requested, std::move(config), plan_, error, generation);
-    require(planned, error);
+    if (prepared) {
+      if (!detectionPreparedSourcePlanMatches(source, requested, config,
+                                              generation, *prepared)) {
+        error = QStringLiteral(
+            "Prepared source plan no longer matches the source, channel, "
+            "prefix, grid, model, or config");
+        return false;
+      }
+      if (cancelled(cancel)) {
+        error = QStringLiteral("Cancelled during source validation");
+        return false;
+      }
+      plan_ = *prepared;
+    } else {
+      const bool planned = makeDetectionSourcePlan(
+          source, requested, config, plan_, error, generation, cancel);
+      require(planned, error);
+    }
     auto reader = std::make_unique<RawSampleReader>();
-    validateSource(source, requested, *reader, error, fingerprint_);
+    validateSource(source, requested, *reader, error, fingerprint_, cancel);
     path_ = canonicalPath(source.path);
     plan_.sourceIdentity.quickFingerprint = fingerprint_.toStdString();
     reader_ = std::move(reader);

@@ -18,6 +18,9 @@ struct DetectionParentClockStamp {
   std::uint64_t steadyNanoseconds = 0;
 };
 
+// One QProcess per client. Callers construct a new client for each run and
+// stop() ends that process. This type does not retain a worker, engine, or
+// CUDA context for a later run.
 class DetectionWorkerClient {
  public:
   ~DetectionWorkerClient();
