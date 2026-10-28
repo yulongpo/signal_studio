@@ -74,6 +74,13 @@ class DetectionPanel : public QWidget {
   bool startCommitGateBlocked() const {
     return startCommitGateBlocked_.load(std::memory_order_acquire);
   }
+  // Test seam after the atomic start acceptance, before the GUI installs it.
+  void setStartCompletionGateForTest(std::shared_ptr<std::atomic<bool>> gate) {
+    startCompletionGate_ = std::move(gate);
+  }
+  bool startCompletionGateBlockedForTest() const {
+    return startCompletionGateBlocked_.load(std::memory_order_acquire);
+  }
   // Test seam. After publishPendingStart succeeds, cancel the queued run.
   void setCancelAfterStartCommitForTest(bool cancel) {
     cancelAfterStartCommit_.store(cancel, std::memory_order_release);
@@ -196,6 +203,8 @@ class DetectionPanel : public QWidget {
   std::shared_ptr<std::atomic<bool>> publicationGate_;
   std::shared_ptr<std::atomic<bool>> startCommitGate_;
   std::atomic<bool> startCommitGateBlocked_{false};
+  std::shared_ptr<std::atomic<bool>> startCompletionGate_;
+  std::atomic<bool> startCompletionGateBlocked_{false};
   std::atomic<bool> cancelAfterStartCommit_{false};
   std::shared_ptr<StartToken> activeStart_;
   std::unordered_set<std::string> businessTerminalNoted_;

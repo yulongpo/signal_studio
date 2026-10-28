@@ -434,6 +434,7 @@ bool Session::setPsdFromSelection(bool enabled) {
   const auto* mark = findMark(*file, file->activeMarkId);
   if (enabled && (!mark || mark->deleted || !activeSegment(*mark)))
     return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   file->display.psdFromSelection = enabled;
   file->display.psd.scope = enabled ? PsdScope::SourceMark : PsdScope::Visible;
   return true;
@@ -450,6 +451,7 @@ bool Session::setEffectiveBandwidthHz(double bandwidthHz) {
       bandwidthHz < file->metadata.sampleRateHz / 65536.0 ||
       bandwidthHz == file->metadata.effectiveBandwidthHz)
     return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   file->metadata.effectiveBandwidthHz = bandwidthHz;
   file->view = clampRange(file->view, file->metadata, file->display.stftSize,
                           file->display.psdSize);

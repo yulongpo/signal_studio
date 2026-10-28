@@ -741,7 +741,6 @@ struct DetectionPanel::StartCommit {
   QString directory;
   QString path;
   QString error;
-  QByteArray priorProject;
   bool ok = false;
   bool failSave = false;
   bool rejectedBeforeSave = false;
@@ -753,6 +752,7 @@ struct DetectionPanel::StartCommit {
   std::string scope;
   std::shared_ptr<StartToken> token;
   std::shared_ptr<std::atomic<bool>> startGate;
+  std::shared_ptr<std::atomic<bool>> completionGate;
   std::vector<std::pair<const char*, std::uint64_t>> marks;
 };
 struct DetectionPanel::PublishCommit {
@@ -843,6 +843,7 @@ bool DetectionPanel::startRequest(DetectionRequest request, QString& error,
   job->token = std::make_shared<StartToken>();
   job->token->runId = job->runId;
   job->startGate = startCommitGate_;
+  job->completionGate = startCompletionGate_;
   activeStart_ = job->token;
   commitInFlight_ = true;
   publicationCommit_ = false;
@@ -978,9 +979,6 @@ void DetectionPanel::runStartCommit(const std::shared_ptr<StartCommit>& job) {
     rejectCancel();
     return;
   }
-  QFile priorFile(job->path);
-  if (priorFile.open(QIODevice::ReadOnly)) job->priorProject = priorFile.readAll();
-  priorFile.close();
   // False from cancellation or a generation change both refuse the atomic
   // project write. publishPendingStart then leaves the previous file bytes.
   const auto stillCurrent = [this, job, stopping] {
@@ -1033,6 +1031,13 @@ void DetectionPanel::runStartCommit(const std::shared_ptr<StartCommit>& job) {
     cancelQueued = cancelQueued || job->token->cancelled;
   }
   if (cancelQueued) tasks_->cancel(job->runId);
+  if (job->completionGate) {
+    startCompletionGateBlocked_.store(true, std::memory_order_release);
+    while (!job->completionGate->load(std::memory_order_acquire) &&
+           !shuttingDown_.load(std::memory_order_acquire))
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    startCompletionGateBlocked_.store(false, std::memory_order_release);
+  }
 }
 
 void DetectionPanel::finishStartCommit(const std::shared_ptr<StartCommit>& job) {
@@ -1079,18 +1084,37 @@ void DetectionPanel::finishStartCommit(const std::shared_ptr<StartCommit>& job) 
     return;
   }
   const auto* live = session_.activeFile();
-  const bool stillCurrent = session_.contentEpoch() == job->epoch &&
-                            session_.projectGeneration() == job->generation &&
-                            live && live->metadata.id == job->ticket.fileId;
+  const bool sameProject = session_.contentEpoch() == job->epoch &&
+                           session_.projectGeneration() == job->generation;
+  const bool stillCurrent = sameProject && live &&
+                            live->metadata.id == job->ticket.fileId &&
+                            session_.project().activeChannelId == job->baseline.activeChannelId &&
+                            session_.project().narrowbandWorkspaceOpen == job->baseline.narrowbandWorkspaceOpen;
   if (!stillCurrent) {
     if (!job->runId.empty()) tasks_->cancel(job->runId);
-    QString restoreError;
-    if (!job->priorProject.isEmpty() &&
-        !restoreProjectFile(job->path, job->priorProject, restoreError))
-      job->error = restoreError;
-    const auto text = QStringLiteral("检测事务已丢弃，提交期间工程已变化。") +
-                      formalResultKeptNote();
-    failStart(text);
+    // Atomic acceptance is final. Never write the pre-start project back or
+    // restore its formal display after a late context change. Normal channel
+    // navigation is guarded; preserve the current selection even if another
+    // controller has nevertheless changed it before this queued callback.
+    const bool installClearance = job->published && sameProject;
+    if (installClearance) {
+      const auto activeFileId = session_.project().activeFileId;
+      const auto activeChannelId = session_.project().activeChannelId;
+      const auto narrowbandOpen = session_.project().narrowbandWorkspaceOpen;
+      session_.project() = std::move(job->baseline);
+      session_.project().activeFileId = activeFileId;
+      session_.project().activeChannelId = activeChannelId;
+      session_.project().narrowbandWorkspaceOpen = narrowbandOpen;
+      session_.noteProjectWrite();
+    }
+    tasks_->discardPendingSteadyMarks(submittedRunId.toStdString());
+    const auto text = job->published
+        ? QStringLiteral("检测启动已提交，上下文已变化，已取消该次检测。")
+        : QStringLiteral("检测启动未提交，上下文已变化，已丢弃该次准备。");
+    emit message(text);
+    finish(installClearance);
+    emit presentationRequested();
+    emit startRejected(submittedRunId, text);
     return;
   }
   if (!job->published) {

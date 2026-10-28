@@ -1002,6 +1002,11 @@ void testProjectWriteGuardBlocksChannelEdits() {
     expectFrozen(message);
   };
 
+  rejectWrite([&] { return !session.setPsdFromSelection(true); },
+              "Rejecting guard must block serialized PSD source scope changes");
+  rejectWrite([&] { return !session.setEffectiveBandwidthHz(
+                          session.activeFile()->metadata.effectiveBandwidthHz * .8); },
+              "Rejecting guard must block effective bandwidth changes");
   rejectWrite([&] { return !session.activateChannel(channelC); },
               "Rejecting guard must block cross-file channel activation");
   rejectWrite([&] { return !session.activateChannel(channelB); },

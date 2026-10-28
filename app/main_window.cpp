@@ -966,6 +966,7 @@ void MainWindow::buildWorkspace() {
                               if (channel) showChannelDialog(q(channel->id));
                             },
                             [this] {
+                              if (!allowProjectMutation()) { refresh(); return; }
                               session_.project().narrowbandWorkspaceOpen =
                                   false;
                               workspaceStack_->setCurrentIndex(0);
@@ -975,6 +976,7 @@ void MainWindow::buildWorkspace() {
                             [this](const QString& message) { log(message); });
   center->addWidget(workspaceStack_, 1);
   connect(workMode, &QPushButton::clicked, this, [this, workMode] {
+    if (!allowProjectMutation()) { refresh(); return; }
     if (workMode->isChecked()) {
       session_.project().narrowbandWorkspaceOpen = false;
       workspaceStack_->setCurrentIndex(0);
@@ -1775,9 +1777,10 @@ void MainWindow::buildWorkspace() {
   connect(tree_, &QTreeWidget::itemDoubleClicked, this,
           [this](QTreeWidgetItem* item, int) {
             if (item->data(0, Qt::UserRole).toString() == "mark") {
+              if (!allowProjectMutation()) return;
               cancelInteractions();
-              session_.focusMark(
-                  item->data(0, Qt::UserRole + 1).toString().toStdString());
+              if (!session_.focusMark(
+                  item->data(0, Qt::UserRole + 1).toString().toStdString())) return;
               session_.project().narrowbandWorkspaceOpen = false;
               workspaceStack_->setCurrentIndex(0);
               refresh();
@@ -1823,10 +1826,11 @@ void MainWindow::buildWorkspace() {
           menu.addAction("修改通道参数…", this,
                          [this, channelId] { showChannelDialog(channelId); });
           menu.addAction("定位来源标记", this, [this, channelId] {
-            session_.activateChannel(channelId.toStdString());
+            if (!session_.activateChannel(channelId.toStdString())) return;
             locateActiveChannelSource();
           });
           menu.addAction("重命名通道…", this, [this, channelId] {
+            if (!allowProjectMutation()) return;
             auto* file = session_.fileForChannel(channelId.toStdString());
             if (!file) return;
             auto it = std::find_if(file->channels.begin(), file->channels.end(),
@@ -1842,11 +1846,12 @@ void MainWindow::buildWorkspace() {
             if (ok && !name.isEmpty() && name.size() <= 80) {
               auto updated = *it;
               updated.name = name.toStdString();
-              session_.updateChannel(updated.id, updated);
+              if (!session_.updateChannel(updated.id, updated)) return;
               refresh();
             }
           });
           menu.addAction("删除通道…", this, [this, channelId] {
+            if (!allowProjectMutation()) return;
             auto* file = session_.fileForChannel(channelId.toStdString());
             if (!file) return;
             const auto* channel = [&]() -> const Channel* {
@@ -1859,7 +1864,7 @@ void MainWindow::buildWorkspace() {
                                       "删除通道“" + q(channel->name) + "”？") !=
                     QMessageBox::Yes)
               return;
-            session_.removeChannel(channelId.toStdString());
+            if (!session_.removeChannel(channelId.toStdString())) return;
             refresh();
             log("已删除窄带通道");
           });
@@ -1870,7 +1875,7 @@ void MainWindow::buildWorkspace() {
           const auto fileId = item->data(0, Qt::UserRole + 1).toString();
           QMenu menu(this);
           menu.addAction("打开宽带工作区", this, [this, fileId] {
-            session_.activateFile(fileId.toStdString());
+            if (!session_.activateFile(fileId.toStdString())) return;
             session_.project().narrowbandWorkspaceOpen = false;
             refresh();
           });
@@ -1982,6 +1987,7 @@ void MainWindow::buildWorkspace() {
     if (refreshing_) return;
     auto* file = session_.activeFile();
     if (!file) return;
+    if (!allowProjectMutation()) { refresh(); return; }
     auto* control = psd ? psdParameters_ : stftParameters_;
     if (session_.project().narrowbandWorkspaceOpen &&
         session_.activeChannel()) {
@@ -2010,6 +2016,7 @@ void MainWindow::buildWorkspace() {
     if (refreshing_) return;
     auto* f = session_.activeFile();
     if (!f || f->metadata.availability.status == LoadStatus::Loading) return;
+    if (!allowProjectMutation()) { refresh(); return; }
     const bool narrow =
         session_.project().narrowbandWorkspaceOpen && session_.activeChannel();
     if (narrow && sender() == freqMode_) {
@@ -4646,8 +4653,9 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
           tree_->setFocus(Qt::MouseFocusReason);
           selectMark(id, mouse->modifiers(), {}, true);
         } else if (event->type() == QEvent::MouseButtonDblClick) {
+          if (!allowProjectMutation()) return true;
           cancelInteractions(false);
-          session_.focusMark(id.toStdString());
+          if (!session_.focusMark(id.toStdString())) return true;
           session_.project().narrowbandWorkspaceOpen = false;
           workspaceStack_->setCurrentIndex(0);
           annotations_->revealActive();
@@ -5074,6 +5082,7 @@ void MainWindow::openDemoProject() {
 }
 
 void MainWindow::openNarrowbandDemoProject() {
+  if (!allowProjectMutation()) return;
   if ((!projectPath_.isEmpty() || !session_.project().files.empty()) &&
       QMessageBox::question(this, "打开窄带演示工程",
                             "打开窄带演示工程会切换当前工程，继续吗？") !=

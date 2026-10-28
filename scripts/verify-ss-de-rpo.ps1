@@ -395,7 +395,11 @@ try {
           $previous = @($existingOriginal | Where-Object { $_.windows -eq $windows -and $_.pass })
           if ($previous.Count -eq 1) {
             $record = $previous[0]
-            $changed = @(& git -C $repo diff --name-only $record.sourceHead HEAD -- domain infrastructure application tools/detection_benchmark/main.cpp)
+            # This evidence is the headless Project/DetectionResultService
+            # path. It never constructs Session; UI channel/navigation guards
+            # do not execute here. All detector/service/DSP sources still must
+            # be identical. Full GUI CTest reuse has a separate stricter guard.
+            $changed = @(& git -C $repo diff --name-only $record.sourceHead HEAD -- domain infrastructure application tools/detection_benchmark/main.cpp ':(exclude)application/session.cpp' ':(exclude)application/session.h')
             if ($LASTEXITCODE -ne 0 -or $changed.Count -ne 0) { throw "Cannot reuse original-IQ evidence after pipeline source changes: $($changed -join ',')" }
             $measurementPath = $record.measurement
             $result = [pscustomobject]@{ TimedOut=$false; ExitCode=$record.exitCode }

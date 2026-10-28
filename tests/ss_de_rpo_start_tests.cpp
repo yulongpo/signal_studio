@@ -13,6 +13,7 @@
 #include <QtEndian>
 #include <QTest>
 
+#include <algorithm>
 #include <map>
 #include <optional>
 
@@ -21,6 +22,7 @@
 #include "ui/detection/detection_card.h"
 #include "ui/detection/detection_panel.h"
 #include "infrastructure/project_file.h"
+#include "infrastructure/project_store.h"
 
 using namespace signalstudio;
 
@@ -33,6 +35,8 @@ class SsDeRpoStartTests : public QObject {
   void preparingCancelReachesThePanelBeforePublish();
   void provisionalCancelBeforePublishKeepsFormalResult();
   void cancelAfterCommittedStartCancelsQueuedRun();
+  void acceptedStartContextChangeNeverRestoresFormal_data();
+  void acceptedStartContextChangeNeverRestoresFormal();
 };
 
 void armFixture() { qApp->setProperty("enableDetectionTestFixture", true); }
@@ -401,6 +405,97 @@ void SsDeRpoStartTests::cancelAfterCommittedStartCancelsQueuedRun() {
   const auto* savedSlot = currentDetectionSlot(reopened.files.front(), 0);
   QVERIFY(savedSlot && savedSlot->committedRunId.empty());
   QVERIFY(savedSlot->suppressFormalResults);
+}
+
+void SsDeRpoStartTests::acceptedStartContextChangeNeverRestoresFormal_data() {
+  QTest::addColumn<bool>("newProject");
+  QTest::newRow("late-channel-context") << false;
+  QTest::newRow("replacement-project") << true;
+}
+
+void SsDeRpoStartTests::acceptedStartContextChangeNeverRestoresFormal() {
+  QFETCH(bool, newProject);
+  armFixture();
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  MainWindow window;
+  QString error;
+  QVERIFY2(prepareProject(directory, window, error), qPrintable(error));
+  const auto sourceId = window.session().activeFile()->metadata.id;
+  const auto iqPath = directory.filePath("other_FS1Msps_FC100MHz.dat");
+  QVERIFY2(writeIq(iqPath, error), qPrintable(error));
+  QVERIFY2(window.addIqFile(iqPath, &error), qPrintable(error));
+  QTRY_VERIFY_WITH_TIMEOUT(window.session().activeFile()->metadata.availability.status == LoadStatus::Ready, 10000);
+  const auto otherId = window.session().activeFile()->metadata.id;
+  const auto mark = window.session().addMark({{100, 10000}, {99.9e6, 100.1e6}});
+  QVERIFY(!mark.empty());
+  window.session().selectMarks({mark}, mark);
+  QVERIFY(window.session().createChannelFromActiveMark());
+  const auto channelId = window.session().activeChannel()->id;
+  QVERIFY(window.session().activateFile(sourceId));
+  window.refresh();
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  QVERIFY(panel);
+  QVERIFY2(panel->startRequest(fixtureRequest(window, "formal-seed"), error), qPrintable(error));
+  QTRY_VERIFY_WITH_TIMEOUT(activeSlot(window) && activeSlot(window)->committedRunId == "formal-seed", 30000);
+  QVERIFY(!formalAnnotations(window).isEmpty());
+
+  auto gate = std::make_shared<std::atomic<bool>>(false);
+  panel->setStartCompletionGateForTest(gate);
+  QVERIFY2(panel->startRequest(fixtureRequest(window, "accepted-context-change"), error), qPrintable(error));
+  QTRY_VERIFY_WITH_TIMEOUT(panel->startCompletionGateBlockedForTest(), 20000);
+  QVERIFY(panel->projectCommitInProgress());
+  const auto originalBandwidth = window.session().activeFile()->metadata.effectiveBandwidthHz;
+  QVERIFY(!window.session().setEffectiveBandwidthHz(originalBandwidth * 0.8));
+  QCOMPARE(window.session().activeFile()->metadata.effectiveBandwidthHz, originalBandwidth);
+  const auto originalFrequencyMode = window.session().activeFile()->display.absoluteFrequency;
+  auto* frequencyMode = window.findChild<QComboBox*>("freqMode");
+  QVERIFY(frequencyMode);
+  frequencyMode->setCurrentIndex(1 - frequencyMode->currentIndex());
+  QCOMPARE(window.session().activeFile()->display.absoluteFrequency, originalFrequencyMode);
+  // This is the real user route from the independent review. It must now be
+  // blocked throughout the transaction, including after atomic acceptance.
+  QVERIFY(!window.session().activateChannel(channelId));
+  QCOMPARE(window.session().project().activeFileId, sourceId);
+
+  QByteArray replacementToken;
+  if (newProject) {
+    // Model a forced controller replacement after acceptance, bypassing the
+    // ordinary write guard to exercise the stale callback defense as well.
+    Project replacement;
+    replacement.name = "replacement-context";
+    replacement.projectId = "replacement-context-project";
+    window.session().setProjectWriteGuard({});
+    window.session().replaceProject(std::move(replacement));
+    replacementToken = ProjectStore::stateToken(window.session().project());
+  } else {
+    window.session().project().activeFileId = otherId;
+    window.session().project().activeChannelId = channelId;
+    window.session().project().narrowbandWorkspaceOpen = true;
+  }
+  gate->store(true);
+  QTRY_VERIFY_WITH_TIMEOUT(!panel->projectCommitInProgress(), 20000);
+  const auto run = snapshotRun(*panel, "accepted-context-change");
+  QVERIFY(run && (run->lifecycle == DetectionLifecycle::Cancelled || run->lifecycle == DetectionLifecycle::Cancelling));
+  if (newProject) {
+    QCOMPARE(ProjectStore::stateToken(window.session().project()), replacementToken);
+  } else {
+    QCOMPARE(window.session().project().activeFileId, otherId);
+    QCOMPARE(window.session().project().activeChannelId, channelId);
+    const auto& files = window.session().project().files;
+    const auto found = std::find_if(files.begin(), files.end(), [&](const auto& f) { return f.metadata.id == sourceId; });
+    QVERIFY(found != files.end());
+    const auto* cleared = currentDetectionSlot(*found, 0);
+    QVERIFY(cleared && cleared->committedRunId.empty() && cleared->suppressFormalResults);
+  }
+  const auto paths = QDir(directory.path()).entryList({"*.ssproj"}, QDir::Files);
+  QCOMPARE(paths.size(), 1);
+  Project reopened;
+  QVERIFY2(ProjectFileCodec::load(directory.filePath(paths.front()), reopened, error), qPrintable(error));
+  const auto found = std::find_if(reopened.files.begin(), reopened.files.end(), [&](const auto& f) { return f.metadata.id == sourceId; });
+  QVERIFY(found != reopened.files.end());
+  const auto* saved = currentDetectionSlot(*found, 0);
+  QVERIFY(saved && saved->committedRunId.empty() && saved->suppressFormalResults);
 }
 
 QTEST_MAIN(SsDeRpoStartTests)

@@ -1,0 +1,15 @@
+# H review correction node
+
+Independent H review of daa30e8599e4ca76dbbb05967338fb1f813290f2 returned FAIL. The original report is preserved outside Git at out/tasks/ss-de-rpo/H_REVIEW_daa30e8_FAIL.md. No push followed that review.
+
+H found a P0 post-atomic rollback through channel navigation and a P1 lost channel edit/delete. Real new integration rows reproduced the missing guard (7 previous Qt rows passed,2 new rows failed). New Grok C3 session55436e73-801a-4dab-877e-34b8b838f04a independently implemented Session channel CRUD/navigation/view/history guards in73dab0d, merged310a6db. Its own core evidence and caller audit are in agents/C/REVIEW_FIX.md.
+
+Main removes the StartCommit prior-project copy/rollback entirely. A published start whose GUI callback is stale cancels its queued run and never restores old disk bytes or old formal display. Within the same epoch/generation it installs accepted clearance while preserving the currently selected file/channel/workspace. A replacement project is untouched. Unpublished stale preparation is discarded without changing the new context. A bounded test gate after atomic acceptance deterministically exercises both late-context cases; it releases on shutdown.
+
+Main also guards direct sidebar/configuration/workspace writes and stops context-menu actions when Session rejects them. PSD scope/effective bandwidth now respect the same guard. A blocked delete does not log success. Ordinary unlocked channel behavior, source snapshots, geometry, DSP, request defaults and format remain unchanged.
+
+Current full Debug/Release All builds passed. Debug start suite9/9Qt rows plus core pass; Release directed Start/core2/2 (14.55/0.68s) pass. New core assertions additionally verify PSD scope/effective bandwidth remain frozen. Original guard failure and all prior failing/partial attempts remain.
+
+Because Session/UI production source changed, previous complete CTest coverage is not reused. A fresh full60/60 invocation in both configurations, native/model checks and a serialized native performance comparison are required before a new final commit/review. The earlier04 matrix and11c3 performance remain historical evidence until superseded. Headless original-IQ/math evidence uses no Session object: reuse exempts only application/session.cpp/.h, still checks every other detector/domain/infrastructure/result-service/benchmark source. Full GUI CTest retains the stricter production-identity guard.
+
+The read-only Grok launcher now exposes only read_file,grep,list_dir with explicit read/search permission. The first H headless-plan terminal permission block and the real independent FAIL are preserved separately; neither is approval. The next final HEAD requires a fresh independent H2 session and a new exact-SHA publication record.

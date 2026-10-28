@@ -30,7 +30,14 @@ $arguments=@('--model','grok-4.7-build-fast','--reasoning-effort','xhigh',
     '--max-turns',"$MaxTurns")
 if ($Resume) { $arguments+=@('--resume',$SessionId) }
 else { $arguments+=@('--session-id',$SessionId) }
-if ($ReadOnly) { $arguments+=@('--permission-mode','plan') }
+if ($ReadOnly) {
+    # Headless plan mode cannot prompt for a generic terminal command. Expose
+    # only actual read/search tools; a reviewer cannot edit or execute shell.
+    $arguments+=@('--permission-mode','plan','--tools','read_file,grep,list_dir',
+        '--allow','Read','--allow','Grep')
+    $record.readOnlyTools=@('read_file','grep','list_dir')
+    $record | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $OutputDirectory 'session.json') -Encoding utf8
+}
 else { $arguments+=@('--always-approve','--no-plan') }
 try {
     & $grok @arguments 1> (Join-Path $OutputDirectory 'transcript.jsonl') 2> (Join-Path $OutputDirectory 'stderr.txt')
