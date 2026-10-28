@@ -19,6 +19,8 @@ namespace signalstudio {
 namespace {
 constexpr std::uint64_t kReadSamples = 131072;
 constexpr std::size_t kTracePoints = 512;
+// M1 contract work-unit ceiling. Not a RAM grant. Local until domain/detection.h publishes it.
+constexpr std::uint64_t kSampleWorkUnitCellCeiling = 256ull * 1024ull * 1024ull;
 // Controlled 20 MS/s .1s measurements favor FIR above this short-context range;
 // uncertainty still retries complete Legacy within its original working grant.
 constexpr SampleIndex kAutoExactSamples=1U<<20;
@@ -335,6 +337,7 @@ bool boundedSample(FixedDetectionSource& source,const FileMetadata& metadata,con
   // FIR K/C/radius remain fixed and bounded. Precision fallback may use the
   // SAME full working grant previously available to LegacyExact, after FIR
   // workspace and scratch have been released, to avoid unnecessary degradation.
+  // Grants above 1 GiB are legal. Exact residency is capped separately in makePlan.
   runtime.memoryGrantBytes=working;
   runtime.resultByteGrant=std::min<std::uint64_t>(runtime.memoryGrantBytes/4,16ULL*1024*1024);
   const auto encodedReadBudget=std::min<std::uint64_t>(16ULL*1024*1024,runtime.memoryGrantBytes/8);
@@ -466,7 +469,9 @@ bool applyDetectionTimeAnalysis(
     input.observation = {track->nominalSupport, track->frequency};
     input.publishBounds = request.requestedRange;
     DetectionRefinementOptions options;
-    options.workingCellBudget = static_cast<std::size_t>(working / 12);
+    // Cell count, not bytes. An 8 GiB working set (6 GiB working) must not pass 512 Mi cells.
+    options.workingCellBudget = static_cast<std::size_t>(
+        std::min<std::uint64_t>(working / 12, kSampleWorkUnitCellCeiling));
     options.cancelled = cancel;
     QJsonObject trace;
     QJsonObject streamEvidence;
