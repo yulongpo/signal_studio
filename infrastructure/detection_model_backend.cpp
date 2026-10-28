@@ -246,7 +246,19 @@ class DetectionModelBackend::Impl {
   DetectionModelResourceLimits limits;
   DetectionModelRuntimeHooks hooks;
   bool retryableResourceFailure = false;
+  bool injectedAllocationFailure = false;
   std::uint32_t attemptedExecutionBatch = 0;
+  std::uint64_t neededDeviceBytes = 0;
+  std::uint64_t accountedFreeDeviceBytes = 0;
+  std::uint64_t accountedTotalDeviceBytes = 0;
+  std::uint64_t accountedReservedDeviceBytes = 0;
+
+  bool stopIfCancelled(QString& error) {
+    if (!hooks.cancelled || !hooks.cancelled()) return false;
+    retryableResourceFailure = false;
+    injectedAllocationFailure = false;
+    return fail(error, detectionExecutionCancelledMessage());
+  }
 #ifdef SS_DETECTION_TENSORRT
   class Logger final : public nvinfer1::ILogger {
    public:
@@ -282,6 +294,9 @@ class DetectionModelBackend::Impl {
   decltype(&cudaStreamSynchronize) synchronize = nullptr;
   decltype(&cudaMemGetInfo) memoryInfo = nullptr;
   decltype(&cudaGetErrorString) errorString = nullptr;
+  decltype(&cudaGetLastError) lastError = nullptr;
+  int boundDevice = -1;
+  bool deviceBound = false;
   decltype(&cudaEventCreate) createEvent = nullptr;
   decltype(&cudaEventDestroy) destroyEvent = nullptr;
   decltype(&cudaEventRecord) recordEvent = nullptr;
@@ -307,8 +322,11 @@ class DetectionModelBackend::Impl {
     ~StreamDrain() {
       // This scope is destroyed before any host buffers used by asynchronous
       // transfers. Preserve the original failure; cleanup cannot overwrite it.
+      // A sticky CUDA error would make the drain return without waiting.
       if (!completed_) {
-        owner_.synchronize(owner_.stream);
+        if (owner_.lastError) owner_.lastError();
+        if (owner_.synchronize && owner_.stream)
+          owner_.synchronize(owner_.stream);
         ++owner_.streamDrainCount;
       }
     }
@@ -324,20 +342,48 @@ class DetectionModelBackend::Impl {
     bool completed_ = false;
   };
 
-  ~Impl() {
-    if (stream && synchronize) synchronize(stream);
-    for(auto event:timingEvents) if(event && destroyEvent) destroyEvent(event);
+  void releaseCudaResources() {
+    // Clear a sticky allocation error first. Otherwise cudaFree/synchronize
+    // can return that error and leave the earlier buffers allocated. Bind the
+    // device that owns the buffers, destroy the context that aliases the
+    // workspace, then free every pointer. Idempotent.
+    if (lastError) lastError();
+    if (deviceBound && setDevice && boundDevice >= 0) {
+      setDevice(boundDevice);
+      if (lastError) lastError();
+    }
+    if (stream && synchronize) {
+      synchronize(stream);
+      if (lastError) lastError();
+    }
+    for (auto& event : timingEvents) {
+      if (event && destroyEvent) destroyEvent(event);
+      event = nullptr;
+    }
     context.reset();
     engine.reset();
     runtime.reset();
-    for (void* value : memory)
-      if (value && release) release(value);
-    if (stream && destroyStream) destroyStream(stream);
+    if (release) {
+      for (auto& value : memory) {
+        if (!value) continue;
+        release(value);
+        value = nullptr;
+        if (lastError) lastError();
+      }
+    }
+    if (stream && destroyStream) {
+      destroyStream(stream);
+      stream = nullptr;
+      if (lastError) lastError();
+    }
   }
+
+  ~Impl() { releaseCudaResources(); }
 
   bool checkCuda(cudaError_t status, const char* operation, QString& error) {
     if (status == cudaSuccess) return true;
     if (status == cudaErrorMemoryAllocation) retryableResourceFailure = true;
+    if (lastError) lastError();
     return fail(error, QString::fromLatin1(operation) + ": " +
                            QString::fromUtf8(errorString(status)));
   }
@@ -405,6 +451,7 @@ class DetectionModelBackend::Impl {
     SS_RESOLVE_CUDA(synchronize, "cudaStreamSynchronize");
     SS_RESOLVE_CUDA(memoryInfo, "cudaMemGetInfo");
     SS_RESOLVE_CUDA(errorString, "cudaGetErrorString");
+    SS_RESOLVE_CUDA(lastError, "cudaGetLastError");
     SS_RESOLVE_CUDA(createEvent, "cudaEventCreate");
     SS_RESOLVE_CUDA(destroyEvent, "cudaEventDestroy");
     SS_RESOLVE_CUDA(recordEvent, "cudaEventRecord");
@@ -449,6 +496,8 @@ class DetectionModelBackend::Impl {
                   "Engine requires NVIDIA GeForce RTX 5060 Laptop GPU "
                   "SM 12.0; no automatic model/runtime fallback exists");
     if (!checkCuda(setDevice(selected), "cudaSetDevice", error)) return false;
+    boundDevice = selected;
+    deviceBound = true;
     const bool scn = request.profile.backend == DetectionBackendKind::Scn;
     logicalMaximumBatch =
         std::min(request.parameters.batchSize, limits.maximumExecutionBatch);
@@ -483,6 +532,7 @@ class DetectionModelBackend::Impl {
     if (!checkCuda(memoryInfo(&initialFreeBytes, &initialTotalBytes),
                    "cudaMemGetInfo before model", error))
       return false;
+    if (stopIfCancelled(error)) return false;
     const auto enginePath = manifest["engineAbsolutePath"].toString();
     QFile file(enginePath);
     if (!file.open(QIODevice::ReadOnly))
@@ -650,12 +700,10 @@ class DetectionModelBackend::Impl {
     std::uint64_t bytesPerUnitBatch = 0;
     if (!unitDeviceBytes(modelBins,
                          detectionModelTensorFrames(request, maximumFrames),
-                         bytesPerUnitBatch))
-      return fail(error,
-                  QString("Execution batch 1 does not fit available VRAM: "
-                          "needed bytes overflow, free %1 bytes")
-                      .arg(QString::number(
-                          static_cast<qulonglong>(freeBytes))));
+                         bytesPerUnitBatch)) {
+      retryableResourceFailure = false;
+      return fail(error, detectionBatchOneUnfitMessage(true, 0, freeBytes));
+    }
     const auto positiveBatch = [](int value) -> std::uint32_t {
       return value > 0 ? static_cast<std::uint32_t>(value) : 0;
     };
@@ -666,19 +714,11 @@ class DetectionModelBackend::Impl {
           static_cast<std::uint64_t>(freeBytes), reserve);
     };
     const auto failUnfit = [&](std::uint64_t reserve) {
-      if (bytesPerUnitBatch >
-          std::numeric_limits<std::uint64_t>::max() - reserve)
-        return fail(error,
-                    QString("Execution batch 1 does not fit available VRAM: "
-                            "needed bytes overflow, free %1 bytes")
-                        .arg(QString::number(
-                            static_cast<qulonglong>(freeBytes))));
-      return fail(error,
-                  QString("Execution batch 1 does not fit available VRAM: "
-                          "needed %1 bytes, free %2 bytes")
-                      .arg(QString::number(bytesPerUnitBatch + reserve))
-                      .arg(QString::number(
-                          static_cast<qulonglong>(freeBytes))));
+      std::uint64_t needed = 0;
+      const bool fits = detectionExecutionNeededBytes(
+          1, bytesPerUnitBatch, reserve, needed);
+      return fail(error, detectionBatchOneUnfitMessage(!fits, needed,
+                                                       freeBytes));
     };
     // Profile maximum is known, and this cudaMemGetInfo call succeeded.
     // Workspace of the profile-clamped shape is the fixed reserve. A smaller
@@ -720,32 +760,93 @@ class DetectionModelBackend::Impl {
               std::numeric_limits<std::uint64_t>::max() - reserveBytes;
       return fail(error,
                   QString("No profile-supported execution batch fits available "
-                          "VRAM: needed %1 bytes, free %2 bytes")
+                          "VRAM: needed %1 bytes, free %2 bytes. The load is "
+                          "rejected and no window is skipped.")
                       .arg(fits ? QString::number(bytesPerUnitBatch * smallest +
                                                   reserveBytes)
                                 : QString("overflow"))
                       .arg(QString::number(
                           static_cast<qulonglong>(freeBytes))));
     }
-    if (!scn) {
-      if (chosen != logicalMaximumBatch) {
-        if (!profileReason.isEmpty()) profileReason += "; ";
-        profileReason +=
-            QString("Available VRAM selected physical batch %1 (profile maximum "
-                    "%2, free %3 bytes, %4 bytes/batch, reserve %5 bytes)")
-                .arg(chosen)
-                .arg(profileMaximumBatch)
-                .arg(QString::number(static_cast<qulonglong>(freeBytes)))
-                .arg(QString::number(bytesPerUnitBatch))
-                .arg(QString::number(reserveBytes));
-        logicalMaximumBatch = chosen;
-      }
-      attemptedExecutionBatch = chosen;
+    const auto previousLogical = logicalMaximumBatch;
+    logicalMaximumBatch = detectionReportedLogicalBatch(
+        scn, logicalMaximumBatch, chosen);
+    if (!scn && logicalMaximumBatch != previousLogical) {
+      if (!profileReason.isEmpty()) profileReason += "; ";
+      profileReason +=
+          QString("Available VRAM selected physical batch %1 (profile maximum "
+                  "%2, free %3 bytes, %4 bytes/batch, reserve %5 bytes)")
+              .arg(chosen)
+              .arg(profileMaximumBatch)
+              .arg(QString::number(static_cast<qulonglong>(freeBytes)))
+              .arg(QString::number(bytesPerUnitBatch))
+              .arg(QString::number(reserveBytes));
     }
+    if (!scn) attemptedExecutionBatch = chosen;
     if (chosen != boundBatch && !bindPhysicalBatch(chosen, workspace))
       return false;
     maximumBatch = chosen;
     workspaceBytes = static_cast<std::size_t>(workspace);
+    accountedFreeDeviceBytes = static_cast<std::uint64_t>(freeBytes);
+    accountedTotalDeviceBytes = static_cast<std::uint64_t>(totalBytes);
+    accountedReservedDeviceBytes = static_cast<std::uint64_t>(workspace);
+    bool neededFits = false;
+    {
+      std::uint64_t needed = 0;
+      neededFits = detectionExecutionNeededBytes(
+          maximumBatch, bytesPerUnitBatch, accountedReservedDeviceBytes,
+          needed);
+      neededDeviceBytes = neededFits ? needed : 0;
+    }
+    DetectionProfileExtent profileExtent;
+    profileExtent.profileIndex = activeProfile;
+    {
+      const auto capture = [&](nvinfer1::OptProfileSelector selector,
+                               std::int64_t* destination) {
+        const auto dims = engine->getProfileShape(
+            inputUtf8.constData(), activeProfile, selector);
+        if (dims.nbDims != 4)
+          return fail(error, "Engine optimization profile shape is not rank 4");
+        std::int64_t raw[4]{};
+        for (int index = 0; index < 4; ++index)
+          raw[index] = static_cast<std::int64_t>(dims.d[index]);
+        if (!copyDetectionProfileDims(4, raw, destination))
+          return fail(error, "Engine optimization profile shape is not rank 4");
+        return true;
+      };
+      if (!capture(nvinfer1::OptProfileSelector::kMIN, profileExtent.minimum) ||
+          !capture(nvinfer1::OptProfileSelector::kOPT, profileExtent.optimum) ||
+          !capture(nvinfer1::OptProfileSelector::kMAX, profileExtent.maximum))
+        return false;
+      profileExtent.known = true;
+    }
+    if (stopIfCancelled(error)) return false;
+    if (accountedFreeDeviceBytes != 0 &&
+        (!neededFits || neededDeviceBytes > accountedFreeDeviceBytes)) {
+      // Final workspace can differ from the reserve used to pick the tier.
+      // Reject this shape before cudaMalloc. Batch 1 ends the load.
+      attemptedExecutionBatch = maximumBatch;
+      retryableResourceFailure = maximumBatch > 1;
+      injectedAllocationFailure = false;
+      const auto next = nextDetectionWorkerLimitAfterResourceFailure(
+          maximumBatch, retryableResourceFailure);
+      return fail(error, detectionBatchFitMessage(
+                             "Execution batch does not fit available VRAM",
+                             maximumBatch, neededDeviceBytes,
+                             accountedFreeDeviceBytes, next));
+    }
+    if (hooks.failDeviceAllocation &&
+        hooks.failDeviceAllocation(maximumBatch, neededDeviceBytes)) {
+      attemptedExecutionBatch = maximumBatch;
+      injectedAllocationFailure = true;
+      retryableResourceFailure = true;
+      const auto next = nextDetectionWorkerLimitAfterResourceFailure(
+          maximumBatch, maximumBatch > 1);
+      return fail(error,
+                  detectionBatchFitMessage("Injected device allocation failure",
+                                           maximumBatch, neededDeviceBytes,
+                                           accountedFreeDeviceBytes, next));
+    }
     const std::size_t inputBytes =
         static_cast<std::size_t>(maximumBatch) * modelBins *
         detectionModelTensorFrames(request, maximumFrames) * sizeof(float);
@@ -796,10 +897,19 @@ class DetectionModelBackend::Impl {
     const std::array<std::size_t, 5> sizes{inputBytes, headBytes, headBytes,
                                            headBytes,
                                            static_cast<std::size_t>(workspace)};
-    for (std::size_t index = 0; index < memory.size(); ++index)
-      if (sizes[index] && !checkCuda(allocate(&memory[index], sizes[index]),
-                                     "cudaMalloc", error))
+    for (std::size_t index = 0; index < memory.size(); ++index) {
+      if (!sizes[index]) continue;
+      void* allocated = nullptr;
+      const auto status = allocate(&allocated, sizes[index]);
+      if (!checkCuda(status, "cudaMalloc", error)) {
+        // Ignore a pointer written by a failed cudaMalloc. The physical tier
+        // is what the next legal downshift must shrink.
+        memory[index] = nullptr;
+        attemptedExecutionBatch = maximumBatch;
         return false;
+      }
+      memory[index] = allocated;
+    }
     context->setDeviceMemoryV2(memory[4], static_cast<int64_t>(workspace));
     if (!context->setTensorAddress(inputUtf8.constData(), memory[0]))
       return fail(error, "Cannot bind the bounded model input/workspace");
@@ -871,6 +981,16 @@ class DetectionModelBackend::Impl {
         {"engineBlobBytes", QString::number(engineBytes.size())},
         {"engineBlobBudgetBytes",
          QString::number(limits.maximumEngineBlobBytes)}};
+    DetectionDeviceAccount account;
+    account.cudaDeviceIndex = selected;
+    account.requestedBatch = request.parameters.batchSize;
+    account.logicalBatch = logicalMaximumBatch;
+    account.physicalBatch = maximumBatch;
+    account.freeDeviceBytes = accountedFreeDeviceBytes;
+    account.totalDeviceBytes = accountedTotalDeviceBytes;
+    account.reservedDeviceBytes = accountedReservedDeviceBytes;
+    account.neededDeviceBytes = neededDeviceBytes;
+    writeDetectionDeviceEvidence(evidence, account, profileExtent);
     for(auto& event:timingEvents)
       if(!checkCuda(createEvent(&event),"cudaEventCreate timing",error)) return false;
     evidence["cudaEventTiming"]=true;
@@ -880,6 +1000,7 @@ class DetectionModelBackend::Impl {
   bool forward(const std::vector<float>& sourceFrames, std::uint32_t batch,
                DetectionModelOutput& result, QString& error,
                std::uint32_t actualFrames) {
+    if (stopIfCancelled(error)) return false;
     const auto frames =
         actualFrames ? actualFrames : request.profile.modelFrames;
     if (!batch || batch > logicalMaximumBatch || !frames ||
@@ -917,6 +1038,7 @@ class DetectionModelBackend::Impl {
     const auto outputElements = scn ? output.width : elements;
     double enqueueHostMs=0;
     for (std::uint32_t call = 0; call < calls; ++call) {
+      if (stopIfCancelled(error)) return false;
       if(call*4+3>=timingEvents.size()) return fail(error,"CUDA timing call capacity exceeded");
       if(!checkCuda(recordEvent(timingEvents[call*4],stream),"cudaEventRecord input",error)) return false;
       if (!checkCuda(copy(memory[0], input.data() + call * inputElements,
@@ -1021,16 +1143,22 @@ bool DetectionModelBackend::load(const DetectionRequest& request,
       const auto attempted = candidate->attemptedExecutionBatch
                                  ? candidate->attemptedExecutionBatch
                                  : batch;
-      if (attempted > 1 && candidate->retryableResourceFailure) {
+      const auto next = nextDetectionWorkerLimitAfterResourceFailure(
+          attempted, candidate->retryableResourceFailure);
+      if (next != 0) {
         batchFallbackReason = error;
-        // The for-loop halves this value, so the next attempt is the tier below.
+        // The for-loop halves this value. next is attempted / 2.
         batch = attempted;
         continue;
       }
       return false;
     }
-    if (!batchFallbackReason.isEmpty())
+    if (!batchFallbackReason.isEmpty()) {
       candidate->evidence["batchAdaptationReason"] = batchFallbackReason;
+      if (detectionAdaptationWasInjected(batchFallbackReason))
+        candidate->evidence["allocationFailureKind"] =
+            QStringLiteral("injected");
+    }
     impl_ = std::move(candidate);
     error.clear();
     return true;
@@ -1040,7 +1168,9 @@ bool DetectionModelBackend::load(const DetectionRequest& request,
                 "production inference is unavailable");
 #endif
   }
-  return fail(error, "No execution batch fits the installed model resources");
+  return fail(error,
+              "No execution batch fits the installed model resources. The load "
+              "is rejected and no window is skipped.");
 }
 bool DetectionModelBackend::infer(const std::vector<float>& sourceFrames,
                                   std::uint32_t batch,
