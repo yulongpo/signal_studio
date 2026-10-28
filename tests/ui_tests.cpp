@@ -413,6 +413,48 @@ AnnotationResult annotationUiCheckManualCopy(const FileState&, const std::string
 AnnotationResult annotationUiConvertToManual(MainWindow&, const std::string&,
                                              std::string&);
 
+// UX-R5 hit testing draws only the active source tab. Manual marks added
+// through Session stay hidden until that tab is selected.
+bool activateManualOverlay(MainWindow& window) {
+  if (!annotationUiOpenSource(window, AnnotationSource::Manual)) return false;
+  const auto* panel = window.findChild<AnnotationPanel*>("annotationPanel");
+  const auto* file = window.session().activeFile();
+  if (!panel || !file || panel->sourceTab() != AnnotationSource::Manual)
+    return false;
+  const auto& layers = file->annotationLayers;
+  return layers[static_cast<int>(AnnotationSource::Manual)] &&
+         !layers[static_cast<int>(AnnotationSource::ImportedLabel)] &&
+         !layers[static_cast<int>(AnnotationSource::Algorithm)];
+}
+
+ChartControlStrip* chartControlOwner(QWidget* widget) {
+  return widget ? dynamic_cast<ChartControlStrip*>(
+                      widget->property("chartControlOwner").value<QObject*>())
+                : nullptr;
+}
+
+bool chartControlHosted(ChartControlStrip* strip, QWidget* widget) {
+  return strip && widget &&
+         (strip->isAncestorOf(widget) ||
+          (strip->popoverFrame() && strip->popoverFrame()->isAncestorOf(widget)));
+}
+
+// Open the strip's real overflow entry when the editor has left the inline row.
+bool revealChartControl(ChartControlStrip* strip, QWidget* widget) {
+  if (!strip || !widget) return false;
+  QCoreApplication::processEvents();
+  if (!widget->isVisible()) {
+    auto* entry = strip->overflowButton();
+    if (!strip->isVisible() || !entry || !entry->isVisible() || !entry->isEnabled())
+      return false;
+    if (!strip->popoverFrame() || !strip->popoverFrame()->isVisible())
+      QTest::mouseClick(entry, Qt::LeftButton);
+    QCoreApplication::processEvents();
+  }
+  return revealParameter(widget) && widget->width() > 0 && widget->height() > 0 &&
+         chartControlHosted(strip, widget);
+}
+
 }  // namespace
 
 class DemoMainWindow final : public MainWindow {
@@ -769,7 +811,7 @@ void UiTests::singleClickSelectsWithoutChangingView() {
   const auto view = window.session().activeFile()->view;
   const auto id = window.session().addMark(innerRange(view));
   window.session().selectMarks({});
-  window.refresh();
+  QVERIFY(activateManualOverlay(window));
   QTest::mouseClick(plot, Qt::LeftButton, Qt::NoModifier,
                     pointAt(plot, view, .35, .5));
   QVERIFY(window.session().activeFile()->activeMarkId == id);
@@ -1988,14 +2030,61 @@ void UiTests::paletteControlsStaySynchronized() {
   QCOMPARE(window.findChildren<QComboBox*>("colormap").size(), 1);
   QVERIFY(!window.findChild<QComboBox*>("palette"));
   auto* spectrumHeader = window.findChild<QWidget*>("specChartHead");
-  QVERIFY(spectrumHeader);
-  QVERIFY(revealParameter(header) && rangeTag->isVisible() && maximize->isVisible());
-  const QRect paletteRect(header->mapTo(spectrumHeader, QPoint()), header->size());
-  const QRect rangeRect(rangeTag->mapTo(spectrumHeader, QPoint()), rangeTag->size());
-  const QRect maximizeRect(maximize->mapTo(spectrumHeader, QPoint()), maximize->size());
-  QVERIFY(paletteRect.right() < rangeRect.left());
-  QVERIFY(rangeRect.right() < maximizeRect.left());
+  auto* dynamic = window.findChild<QComboBox*>("dynamic");
+  QVERIFY(spectrumHeader && dynamic);
+  QCoreApplication::processEvents();
+  auto* strip = chartControlOwner(header);
+  QVERIFY(strip && chartControlOwner(dynamic) == strip);
+  QVERIFY(spectrumHeader->isAncestorOf(strip));
+  QVERIFY(revealChartControl(strip, header));
+  QVERIFY(revealChartControl(strip, dynamic));
+  QVERIFY(revealChartControl(strip, rangeTag));
+  QVERIFY(revealParameter(maximize));
+  QVERIFY(header->isVisible() && rangeTag->isVisible() && maximize->isVisible());
+  const auto mapped = [](QWidget* widget, QWidget* container) {
+    return QRect(widget->mapTo(container, QPoint()), widget->size());
+  };
+  QVERIFY(spectrumHeader->isAncestorOf(maximize));
+  const QRect maximizeRect = mapped(maximize, spectrumHeader);
+  QVERIFY(spectrumHeader->rect().contains(maximizeRect));
   QVERIFY(maximizeRect.right() < spectrumHeader->width());
+  if (spectrumHeader->isAncestorOf(header)) {
+    const QRect paletteRect = mapped(header, spectrumHeader);
+    QVERIFY(spectrumHeader->rect().contains(paletteRect));
+    QVERIFY(paletteRect.right() < maximizeRect.left());
+  }
+  if (spectrumHeader->isAncestorOf(rangeTag)) {
+    const QRect rangeRect = mapped(rangeTag, spectrumHeader);
+    QVERIFY(spectrumHeader->rect().contains(rangeRect));
+    QVERIFY(rangeRect.right() < maximizeRect.left());
+    if (spectrumHeader->isAncestorOf(header))
+      QVERIFY(mapped(header, spectrumHeader).right() < rangeRect.left());
+  }
+  auto* popover = strip->popoverFrame();
+  if (!strip->isAncestorOf(header)) {
+    QVERIFY(popover && popover->isVisible() && popover->isAncestorOf(header));
+    const QRect paletteRect = mapped(header, popover);
+    QVERIFY(paletteRect.width() > 0 && paletteRect.height() > 0);
+  }
+  if (!strip->isAncestorOf(rangeTag)) {
+    QVERIFY(popover && popover->isVisible() && popover->isAncestorOf(rangeTag));
+    auto* row = rangeTag->parentWidget();
+    QVERIFY(row && row->isAncestorOf(dynamic));
+    const QRect labelRect = mapped(rangeTag, row);
+    const QRect editorRect = mapped(dynamic, row);
+    QVERIFY(row->rect().contains(labelRect));
+    QVERIFY(row->rect().contains(editorRect));
+    QVERIFY(labelRect.right() <= editorRect.left());
+  }
+  if (!strip->isAncestorOf(header) && !strip->isAncestorOf(rangeTag))
+    QVERIFY(mapped(header, popover).top() < mapped(rangeTag, popover).top());
+  if (!strip->isAncestorOf(header) || !strip->isAncestorOf(rangeTag)) {
+    auto* entry = strip->overflowButton();
+    QVERIFY(entry && entry->isVisible() && spectrumHeader->isAncestorOf(entry));
+    const QRect entryRect = mapped(entry, spectrumHeader);
+    QVERIFY(spectrumHeader->rect().contains(entryRect));
+    QVERIFY(entryRect.right() <= maximizeRect.left());
+  }
   const QStringList expectedPalettes{"Turbo",   "Viridis",         "Gray",
                                      "Plasma",  "Inferno",         "Magma",
                                      "Cividis", "CoolEdit Classic"};
@@ -2062,8 +2151,9 @@ void UiTests::paletteControlsStaySynchronized() {
   const auto channelId = window.session().activeChannel()->id;
   window.session().project().narrowbandWorkspaceOpen = false;
   window.refresh();
-  QVERIFY(revealParameter(header));
-  QVERIFY(spectrumHeader->isAncestorOf(header));
+  auto* widebandStrip = chartControlOwner(header);
+  QVERIFY(widebandStrip && spectrumHeader->isAncestorOf(widebandStrip));
+  QVERIFY(revealChartControl(widebandStrip, header));
   header->setCurrentIndex(static_cast<int>(Palette::Gray));
   QVERIFY(window.session().activateChannel(channelId));
   window.session().project().narrowbandWorkspaceOpen = true;
@@ -2071,9 +2161,9 @@ void UiTests::paletteControlsStaySynchronized() {
   QCOMPARE(window.session().activeFile()->display.palette, Palette::Gray);
   QCOMPARE(header->currentIndex(), static_cast<int>(Palette::Gray));
   QVERIFY(openInspectorPage(window, "Display"));
-  QVERIFY(revealParameter(header));
   auto* paletteHost = chartSettingsStrip(window,"stftSettings");
-  QVERIFY(paletteHost && paletteHost->isAncestorOf(header));
+  QVERIFY(paletteHost && chartControlOwner(header) == paletteHost);
+  QVERIFY(revealChartControl(paletteHost, header));
   QCOMPARE(window.findChild<QComboBox*>("colormap"), header);
   for (const auto* id : {"narrowbandStftPanelChart", "narrowbandModulationStftChart",
                           "recognitionStftPanelChart"}) {
@@ -3186,7 +3276,7 @@ void UiTests::contextMenuActionsAndCoveredMarkSelection() {
   const auto lower = window.session().addMark(innerRange(view));
   window.session().addMark(innerRange(view));
   window.session().selectMarks({});
-  window.refresh();
+  QVERIFY(activateManualOverlay(window));
   std::unique_ptr<QMenu> menu(
       plot->createContextMenu(pointAt(plot, view, .35, .5)));
   auto* toggle = menu->findChild<QAction*>("contextMarkToggle");
@@ -3225,7 +3315,7 @@ void UiTests::unselectedMarkClickAndSubthresholdGesture() {
   const auto range = innerRange(view);
   const auto id = window.session().addMark(range);
   window.session().selectMarks({});
-  window.refresh();
+  QVERIFY(activateManualOverlay(window));
   const auto center = pointAt(plot, view, .35, .5);
   QTest::mouseClick(plot, Qt::LeftButton, Qt::NoModifier, center);
   QVERIFY(window.session().activeFile()->activeMarkId == id);
