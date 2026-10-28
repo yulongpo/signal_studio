@@ -108,6 +108,7 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/detection_protocol.cpp
     infrastructure/detection_store.cpp
     infrastructure/detection_task.cpp
+    infrastructure/detection_resource_diagnostics.cpp
     infrastructure/runtime_log.cpp
     infrastructure/detection_worker_client.cpp
     infrastructure/detection_projection.cpp
@@ -401,6 +402,16 @@ if(SS_BUILD_TESTS)
     target_link_libraries(SignalStudioSsDeRpoLogicTests PRIVATE SignalStudioInfrastructure)
     add_test(NAME signal_studio_ss_de_rpo_logic COMMAND SignalStudioSsDeRpoLogicTests)
     set_tests_properties(signal_studio_ss_de_rpo_logic PROPERTIES TIMEOUT 60)
+    add_executable(SignalStudioSsDeRpoResourceTests tests/ss_de_rpo_resource_tests.cpp)
+    ss_target_defaults(SignalStudioSsDeRpoResourceTests)
+    set_target_properties(SignalStudioSsDeRpoResourceTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioSsDeRpoResourceTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_ss_de_rpo_resource COMMAND SignalStudioSsDeRpoResourceTests)
+    add_executable(SignalStudioSsDeRpoGpuTests tests/ss_de_rpo_gpu_tests.cpp)
+    ss_target_defaults(SignalStudioSsDeRpoGpuTests)
+    set_target_properties(SignalStudioSsDeRpoGpuTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioSsDeRpoGpuTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_ss_de_rpo_gpu COMMAND SignalStudioSsDeRpoGpuTests)
     add_executable(SignalStudioSsDeRpoUiTests tests/ss_de_rpo_ui_tests.cpp ${SS_UI_SOURCES})
     target_link_libraries(SignalStudioSsDeRpoUiTests PRIVATE
         SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test

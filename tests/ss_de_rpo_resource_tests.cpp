@@ -1,7 +1,8 @@
 // Runtime resource snapshot and phase-overlap disk ledger.
-// Standalone main. Links domain/detection.cpp only. Does not start a GPU,
-// a worker, or a Qt application.
+// Standalone main. Pure budget/probe tests plus Qt JSON diagnostics.
+// Does not start a GPU, a worker, or a Qt application.
 #include "domain/detection.h"
+#include "infrastructure/detection_resource_diagnostics.h"
 
 #include <cstdint>
 #include <iostream>

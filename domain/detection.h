@@ -322,17 +322,6 @@ DiskLedgerEvaluation evaluatePhaseOverlapDiskLedger(
 
 DiskVolumeBudget diskBudgetFromVolumeProbe(const VolumeResourceProbe& probe);
 
-// Optional performanceJson extension. Does not change the profile schema.
-// Byte counts are decimal strings. On failure, merged is left unchanged.
-// An empty performanceJson becomes a schema object plus "resources".
-// D's performanceSnapshot rebuilds performanceJson and drops unknown keys
-// until it inserts this object; this function does not edit detection_task.
-bool mergeRuntimeResourceDiagnostics(const std::string& performanceJson,
-                                     const RuntimeResourceSnapshot& snapshot,
-                                     const DiskLedgerEvaluation* ledger,
-                                     const ResourceDecision* sampleDecision,
-                                     std::string& merged, std::string& error);
-
 // Empty path uses the current directory. A missing volume leaves the disk
 // target in place so a default can still be formed.
 std::uint64_t detectionPhysicalMemoryBytes();
