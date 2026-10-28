@@ -267,7 +267,10 @@ bool Session::activateFile(const std::string& id) {
           project_.files.begin(), project_.files.end(),
           [&](const FileState& file) { return file.metadata.id == id; }))
     return false;
-  if (project_.activeFileId != id) {
+  // Re-selecting the open file still clears the active channel and closes the
+  // narrowband workspace. Those fields are serialized navigation.
+  if (project_.activeFileId != id || !project_.activeChannelId.empty() ||
+      project_.narrowbandWorkspaceOpen) {
     if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   }
   if (auto* previous = activeFile()) {
@@ -350,6 +353,13 @@ DeleteResult Session::deleteSelectedMarks(bool removeChannels) {
   if (!file) return {};
   const auto selected = file->selectedMarkIds;
   std::unordered_set<std::string> ids(selected.begin(), selected.end());
+  if (removeChannels &&
+      std::any_of(file->channels.begin(), file->channels.end(),
+                  [&](const Channel& channel) {
+                    return ids.contains(channel.sourceMarkId);
+                  })) {
+    if (std::string blocked; !acceptProjectWrite(blocked)) return {};
+  }
   const auto result = annotations_.deleteBatch(*file, selected);
   if (!result.ok) return {};
   int removed = 0;
@@ -586,9 +596,10 @@ bool Session::createChannelFromActiveMark() {
   auto* file = activeFile();
   if (!file || file->selectedMarkIds.size() != 1) return false;
   if (std::any_of(file->marks.begin(), file->marks.end(),
-                  [](const Annotation& mark) { return mark.fileId.empty(); }) &&
-      !attachLegacyAnnotations(*file).ok)
-    return false;
+                  [](const Annotation& mark) { return mark.fileId.empty(); })) {
+    if (std::string blocked; !acceptProjectWrite(blocked)) return false;
+    if (!attachLegacyAnnotations(*file).ok) return false;
+  }
   auto request = annotationChannelRequest(*file, file->activeMarkId,
                                           file->view.time, projectGeneration_);
   request.name = numbered("Channel ", file->channels.size() + 1);
@@ -607,6 +618,8 @@ AnnotationResult Session::createAnnotationChannel(
           annotations_.bindChannelSource(*file, channel, request);
       !bound)
     return bound;
+  if (std::string blocked; !acceptProjectWrite(blocked))
+    return {false, false, {}, std::move(blocked), "project"};
   channel.id = nextId("channel-");
   channel.processingState = ChannelProcessingState::Ready;
   channel.configVersion = 1;
@@ -638,9 +651,10 @@ std::string Session::createChannel(const std::string& name,
       !std::isfinite(bandwidthHz) || bandwidthHz <= 0)
     return {};
   if (std::any_of(file->marks.begin(), file->marks.end(),
-                  [](const Annotation& mark) { return mark.fileId.empty(); }) &&
-      !attachLegacyAnnotations(*file).ok)
-    return {};
+                  [](const Annotation& mark) { return mark.fileId.empty(); })) {
+    if (std::string blocked; !acceptProjectWrite(blocked)) return {};
+    if (!attachLegacyAnnotations(*file).ok) return {};
+  }
   auto request = annotationChannelRequest(*file, sourceMarkId, file->view.time,
                                           projectGeneration_);
   request.name = name;
@@ -696,6 +710,7 @@ bool Session::updateChannel(const std::string& channelId,
   auto value = replacement;
   if (old->configVersion == std::numeric_limits<std::uint64_t>::max())
     return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   value.configVersion = old->configVersion + 1;
   value.processingState = ChannelProcessingState::Ready;
   *old = std::move(value);
@@ -707,6 +722,7 @@ bool Session::updateChannel(const std::string& channelId,
 bool Session::removeChannel(const std::string& channelId) {
   auto* file = fileForChannel(channelId);
   if (!file) return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   std::erase_if(file->channels, [&](const Channel& channel) {
     return channel.id == channelId;
   });
@@ -722,6 +738,11 @@ bool Session::removeChannel(const std::string& channelId) {
 bool Session::activateChannel(const std::string& channelId) {
   auto* file = fileForChannel(channelId);
   if (!file) return false;
+  if (project_.activeFileId == file->metadata.id &&
+      project_.activeChannelId == channelId &&
+      project_.narrowbandWorkspaceOpen)
+    return true;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   project_.activeFileId = file->metadata.id;
   project_.activeChannelId = channelId;
   project_.narrowbandWorkspaceOpen = true;
@@ -780,6 +801,7 @@ bool Session::setChannelAmplitudeRange(double minimum, double maximum,
       channel->waveformAxisMaximum == maximum &&
       channel->waveformAutoScale == autoScale)
     return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   const auto before = channelViewSnapshot();
   channel->waveformAxisMinimum = minimum;
   channel->waveformAxisMaximum = maximum;
@@ -793,6 +815,7 @@ bool Session::setChannelPsdRange(double minimum, double maximum, bool record) {
   if (!channel || !validPsdRange(minimum, maximum)) return false;
   if (channel->psdAxisMinimum == minimum && channel->psdAxisMaximum == maximum)
     return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   const auto before = channelViewSnapshot();
   channel->psdAxisMinimum = minimum;
   channel->psdAxisMaximum = maximum;
@@ -834,8 +857,19 @@ bool Session::restoreChannelViewSnapshot(const ChannelViewSnapshot& snapshot) {
       std::clamp(snapshot.basebandFrequency.upperHz, frequencyLower, half);
   if (sampleBegin >= sampleEnd || frequencyLower >= frequencyUpper)
     return false;
-  channel->visibleSourceTime = {sampleBegin, sampleEnd};
-  channel->visibleBasebandFrequency = {frequencyLower, frequencyUpper};
+  const TimeRange nextTime{sampleBegin, sampleEnd};
+  const FrequencyRange nextFrequency{frequencyLower, frequencyUpper};
+  if (channel->visibleSourceTime == nextTime &&
+      channel->visibleBasebandFrequency == nextFrequency &&
+      channel->waveformAxisMinimum == snapshot.waveformAxisMinimum &&
+      channel->waveformAxisMaximum == snapshot.waveformAxisMaximum &&
+      channel->waveformAutoScale == snapshot.waveformAutoScale &&
+      channel->psdAxisMinimum == snapshot.psdAxisMinimum &&
+      channel->psdAxisMaximum == snapshot.psdAxisMaximum)
+    return true;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
+  channel->visibleSourceTime = nextTime;
+  channel->visibleBasebandFrequency = nextFrequency;
   channel->waveformAxisMinimum = snapshot.waveformAxisMinimum;
   channel->waveformAxisMaximum = snapshot.waveformAxisMaximum;
   channel->waveformAutoScale = snapshot.waveformAutoScale;
@@ -881,6 +915,7 @@ bool Session::channelBack() {
   if (!channel) return false;
   auto& history = channelHistories_[channel->id];
   if (history.past.empty()) return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   history.future.push_back(current);
   if (history.future.size() > 40) history.future.erase(history.future.begin());
   const auto target = history.past.back();
@@ -894,6 +929,7 @@ bool Session::channelForward() {
   if (!channel) return false;
   auto& history = channelHistories_[channel->id];
   if (history.future.empty()) return false;
+  if (std::string blocked; !acceptProjectWrite(blocked)) return false;
   history.past.push_back(current);
   if (history.past.size() > 40) history.past.erase(history.past.begin());
   const auto target = history.future.back();
