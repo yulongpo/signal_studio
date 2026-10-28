@@ -1157,6 +1157,251 @@ void testProjectWriteGuardBlocksChannelEdits() {
         "Released same-file activation must still clear channel navigation");
 }
 
+void testProjectWriteGuardBlocksSelection() {
+  Session session;
+  seedPrototypeFiles(session);
+  const auto markA =
+      session.addMark({{7'600'000'000, 8'400'000'000}, {96e6, 110e6}});
+  const auto markB =
+      session.addMark({{8'000'000'000, 8'880'000'000}, {100e6, 114e6}});
+  const auto markC =
+      session.addMark({{8'900'000'000, 9'200'000'000}, {102e6, 108e6}});
+  check(!markA.empty() && !markB.empty() && !markC.empty(),
+        "Selection guard fixture must create three marks");
+  auto* file = session.activeFile();
+  const auto* created = findMark(*file, markA);
+  check(created && created->segments.size() == 1, "Mark A must start with one segment");
+  const auto firstSegment = created->segments.front().id;
+  check(session.annotations().splitSegment(*file, markA, firstSegment, 8'000'000'000).ok,
+        "Selection guard fixture must split mark A");
+  const auto* split = findMark(*file, markA);
+  check(split && split->segments.size() == 2, "Split must expose two segments");
+  const auto secondSegment = split->segments[1].id;
+  check(session.annotations().select(*file, {markA}, markA, firstSegment).ok,
+        "Selection guard fixture must select the first segment");
+  check(session.annotations().beginRevision(*file, markA).ok,
+        "Selection guard fixture must open a revision edit");
+  check(session.setPsdFromSelection(true), "Selection guard fixture must enable PSD scope");
+  session.annotations().reconcileSelection(*file);
+  check(file->selectionSampleChannel && file->activeMarkId == markA &&
+            file->activeSegmentId == firstSegment &&
+            file->revisionEditingAnnotationId == markA &&
+            file->display.psdFromSelection,
+        "Selection guard fixture must commit its selection context");
+
+  bool reject = true;
+  int guardCalls = 0;
+  int notes = 0;
+  session.setProjectWriteGuard([&](std::string& error) {
+    ++guardCalls;
+    if (reject) error = "detection commit";
+    return !reject;
+  });
+  session.annotations().setWroteNotifier([&] {
+    ++notes;
+    session.noteProjectWrite();
+  });
+  const auto token = ProjectStore::stateToken(session.project());
+  const auto generation = session.projectGeneration();
+  const auto epoch = session.contentEpoch();
+  const auto revisionId = findMark(*file, markA)->revisionId;
+  const auto revisionCount = findMark(*file, markA)->revisions.size();
+  const auto range = findMark(*file, markA)->range;
+  const auto selected = file->selectedMarkIds;
+  const auto anchor = file->selectionAnchorId;
+  const auto editing = file->revisionEditingAnnotationId;
+  const auto view = file->view;
+  const auto markCount = file->marks.size();
+  const std::vector<std::string> order{markA, markB, markC};
+  auto expectFrozen = [&](const char* message) {
+    check(ProjectStore::stateToken(session.project()) == token, message);
+    check(session.projectGeneration() == generation &&
+              session.contentEpoch() == epoch && notes == 0,
+          message);
+    const auto* current = session.activeFile();
+    const auto* mark = findMark(*current, markA);
+    check(current && mark && current->marks.size() == markCount && !mark->deleted &&
+              mark->revisionId == revisionId && mark->revisions.size() == revisionCount &&
+              mark->activeSegmentId == firstSegment && mark->range == range &&
+              current->selectedMarkIds == selected && current->activeMarkId == markA &&
+              current->activeSegmentId == firstSegment &&
+              current->selectionAnchorId == anchor &&
+              current->revisionEditingAnnotationId == editing &&
+              current->display.psdFromSelection && current->view == view,
+          message);
+  };
+  auto rejectWrite = [&](const auto& operation, const char* message) {
+    const auto calls = guardCalls;
+    check(operation(), message);
+    check(guardCalls == calls + 1, message);
+    expectFrozen(message);
+  };
+  auto leaveWrite = [&](const auto& operation, const char* message) {
+    const auto calls = guardCalls;
+    check(operation(), message);
+    check(guardCalls == calls, message);
+    expectFrozen(message);
+  };
+
+  rejectWrite(
+      [&] {
+        session.selectMarks({markB}, markB);
+        return session.activeFile()->activeMarkId == markA &&
+               session.activeFile()->selectedMarkIds == selected;
+      },
+      "Rejecting guard must block Session selection changes");
+  rejectWrite(
+      [&] {
+        const auto denied =
+            session.annotations().select(*session.activeFile(), {markC}, markC);
+        return !denied.ok && denied.error == "detection commit";
+      },
+      "Rejecting guard must block a direct selection change");
+  rejectWrite(
+      [&] {
+        const auto denied = session.annotations().chooseSelection(
+            *session.activeFile(), markC, AnnotationSelectionMode::Range, order);
+        return !denied.ok && denied.error == "detection commit";
+      },
+      "Rejecting guard must block range selection");
+  rejectWrite(
+      [&] {
+        const auto denied = session.annotations().chooseSelection(
+            *session.activeFile(), markB, AnnotationSelectionMode::Toggle, order);
+        return !denied.ok && denied.error == "detection commit";
+      },
+      "Rejecting guard must block toggle selection");
+  rejectWrite(
+      [&] {
+        const auto denied = session.annotations().select(*session.activeFile(), {});
+        return !denied.ok && denied.error == "detection commit" &&
+               !session.activeFile()->selectedMarkIds.empty() &&
+               session.activeFile()->display.psdFromSelection;
+      },
+      "Rejecting guard must block clearing the selection");
+  rejectWrite(
+      [&] {
+        const auto denied = session.annotations().select(
+            *session.activeFile(), {markA}, markA, secondSegment);
+        const auto* mark = findMark(*session.activeFile(), markA);
+        return !denied.ok && denied.error == "detection commit" && mark &&
+               mark->activeSegmentId == firstSegment && mark->range == range &&
+               mark->revisionId == revisionId;
+      },
+      "Rejecting guard must block an active segment switch");
+  rejectWrite(
+      [&] {
+        return !session.focusMark(markB) && session.activeFile()->view == view &&
+               session.activeFile()->activeMarkId == markA;
+      },
+      "Rejecting guard must stop focus before selection or the view changes");
+  rejectWrite(
+      [&] {
+        const auto deleted = session.deleteSelectedMarks(false);
+        const auto* mark = findMark(*session.activeFile(), markA);
+        return deleted.marks == 0 && deleted.channels == 0 && mark && !mark->deleted;
+      },
+      "Rejecting guard must block deleting the selected mark");
+  leaveWrite(
+      [&] {
+        const auto denied = session.annotations().select(*session.activeFile(), {markA},
+                                                         "missing-mark");
+        return !denied.ok && denied.error != "detection commit";
+      },
+      "Invalid selection must fail without the project write guard");
+  const auto hoverCalls = guardCalls;
+  check(session.annotations().hover(*session.activeFile(), markB),
+        "Hover must update while the project write guard rejects");
+  check(guardCalls == hoverCalls && session.activeFile()->hoveredMarkId == markB,
+        "Hover must not consult the project write guard");
+  expectFrozen("Hover must leave the serialized project unchanged");
+  leaveWrite(
+      [&] {
+        session.annotations().reconcileSelection(*session.activeFile());
+        return session.activeFile()->activeMarkId == markA &&
+               session.activeFile()->hoveredMarkId == markB;
+      },
+      "Clean reconcile must not consult the project write guard");
+
+  file->metadata.sampleFormat.selectedChannel = 1;
+  const auto mismatched = ProjectStore::stateToken(session.project());
+  const auto mismatchCalls = guardCalls;
+  const auto hovered = file->hoveredMarkId;
+  session.annotations().reconcileSelection(*file);
+  check(ProjectStore::stateToken(session.project()) == mismatched &&
+            file->selectedMarkIds == selected && file->activeMarkId == markA &&
+            file->hoveredMarkId == hovered && file->revisionEditingAnnotationId == editing &&
+            guardCalls == mismatchCalls + 1 && session.contentEpoch() == epoch,
+        "Rejecting guard must block channel-mismatch selection cleanup");
+  file->metadata.sampleFormat.selectedChannel = 0;
+  expectFrozen("Restoring the sample channel must restore the serialized project");
+
+  reject = false;
+  const auto selectNotes = notes;
+  const auto selectEpoch = session.contentEpoch();
+  session.selectMarks({markB}, markB);
+  check(session.activeFile()->activeMarkId == markB &&
+            session.activeFile()->selectedMarkIds == std::vector<std::string>{markB} &&
+            notes == selectNotes + 1 &&
+            session.contentEpoch() == selectEpoch + 1,
+        "Released guard must apply Session selection and notify once");
+  const auto repeatNotes = notes;
+  const auto repeatEpoch = session.contentEpoch();
+  const auto repeat =
+      session.annotations().select(*session.activeFile(), {markB}, markB);
+  check(repeat.ok && !repeat.changed && notes == repeatNotes &&
+            session.contentEpoch() == repeatEpoch,
+        "Repeating the current selection must not inflate the content epoch");
+  const auto rangeNotes = notes;
+  const auto ranged = session.annotations().chooseSelection(
+      *session.activeFile(), markC, AnnotationSelectionMode::Range, order);
+  check(ranged.ok && ranged.changed && notes == rangeNotes + 1 &&
+            session.activeFile()->selectionAnchorId == markB &&
+            session.activeFile()->selectedMarkIds.size() == 2,
+        "Released guard must apply range selection and notify once");
+  const auto toggleNotes = notes;
+  const auto toggled = session.annotations().chooseSelection(
+      *session.activeFile(), markA, AnnotationSelectionMode::Toggle, order);
+  check(toggled.ok && toggled.changed && notes == toggleNotes + 1 &&
+            std::find(session.activeFile()->selectedMarkIds.begin(),
+                      session.activeFile()->selectedMarkIds.end(),
+                      markA) != session.activeFile()->selectedMarkIds.end(),
+        "Released guard must apply toggle selection and notify once");
+  const auto segmentRevision = findMark(*session.activeFile(), markA)->revisionId;
+  const auto segmentCount = findMark(*session.activeFile(), markA)->revisions.size();
+  const auto segmentNotes = notes;
+  const auto switched = session.annotations().select(*session.activeFile(), {markA},
+                                                     markA, secondSegment);
+  check(switched.ok && switched.changed && notes == segmentNotes + 1 &&
+            findMark(*session.activeFile(), markA)->activeSegmentId == secondSegment &&
+            findMark(*session.activeFile(), markA)->revisionId == segmentRevision &&
+            findMark(*session.activeFile(), markA)->revisions.size() == segmentCount,
+        "Released segment switch must notify once without a new revision");
+  check(session.setPsdFromSelection(true), "Released guard must allow PSD selection scope");
+  const auto clearNotes = notes;
+  const auto cleared = session.annotations().select(*session.activeFile(), {});
+  check(cleared.ok && cleared.changed && notes == clearNotes + 1 &&
+            session.activeFile()->selectedMarkIds.empty() &&
+            !session.activeFile()->display.psdFromSelection,
+        "Released guard must clear the selection, PSD scope, and notify once");
+  const auto createNotes = notes;
+  const auto createEpoch = session.contentEpoch();
+  const auto createdId =
+      session.addMark({{9'300'000'000, 9'500'000'000}, {103e6, 107e6}});
+  check(!createdId.empty() && session.activeFile()->activeMarkId == createdId &&
+            notes == createNotes + 1 &&
+            session.contentEpoch() == createEpoch + 1,
+        "Creating a mark must notify once for the command and its selection");
+  const auto focusNotes = notes;
+  const auto focusEpoch = session.contentEpoch();
+  const auto viewBeforeFocus = session.activeFile()->view;
+  check(session.focusMark(markB) && session.activeFile()->activeMarkId == markB &&
+            session.activeFile()->view != viewBeforeFocus &&
+            notes == focusNotes + 1 &&
+            session.contentEpoch() == focusEpoch + 2,
+        "Focus must notify once for selection and once for the view change");
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -1185,6 +1430,8 @@ int main(int argc, char* argv[]) {
     testInt16IqFilePipeline();
     std::cout << "PASS int16 IQ metadata, mapped reads, waveform, Welch PSD "
                  "and STFT\n";
+    testProjectWriteGuardBlocksSelection();
+    std::cout << "PASS project write guard blocks persisted selection\n";
   } catch (const std::exception& error) {
     std::cerr << "FAIL " << error.what() << '\n';
     return 1;
