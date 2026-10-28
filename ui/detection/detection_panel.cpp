@@ -66,6 +66,63 @@ QString formalResultKeptNote() {
 QString formalResultDiscardedNote() {
   return QStringLiteral("已丢弃的正式结果不会恢复");
 }
+QString provisionalCancelNote() {
+  return QStringLiteral("检测已取消，上次正式结果仍在");
+}
+
+// D adds an optional std::function<bool()> that returns true when this start
+// must stop. Until that parameter exists, the same predicate is checked at
+// each staged boundary below.
+template <typename Request>
+auto freezeModelSnapshot(Request& request, QString& error,
+                         const std::function<bool()>& cancelled, int)
+    -> decltype(freezeDetectionModelSnapshot(request, error, cancelled)) {
+  return freezeDetectionModelSnapshot(request, error, cancelled);
+}
+template <typename Request>
+bool freezeModelSnapshot(Request& request, QString& error,
+                         const std::function<bool()>& cancelled, long) {
+  if (cancelled && cancelled()) {
+    error = provisionalCancelNote();
+    return false;
+  }
+  if (!freezeDetectionModelSnapshot(request, error)) return false;
+  if (cancelled && cancelled()) {
+    error = provisionalCancelNote();
+    return false;
+  }
+  return true;
+}
+template <typename Tasks, typename Request>
+auto prepareRun(Tasks& tasks, const QString& directory,
+                const FileMetadata& metadata, Request&& request,
+                QueuedDetectionRun& prepared, QString& error,
+                const std::function<bool()>& cancelled, int)
+    -> decltype(tasks.prepareQueuedRun(directory, metadata,
+                                       std::forward<Request>(request), prepared,
+                                       error, cancelled)) {
+  return tasks.prepareQueuedRun(directory, metadata,
+                                std::forward<Request>(request), prepared, error,
+                                cancelled);
+}
+template <typename Tasks, typename Request>
+bool prepareRun(Tasks& tasks, const QString& directory,
+                const FileMetadata& metadata, Request&& request,
+                QueuedDetectionRun& prepared, QString& error,
+                const std::function<bool()>& cancelled, long) {
+  if (cancelled && cancelled()) {
+    error = provisionalCancelNote();
+    return false;
+  }
+  if (!tasks.prepareQueuedRun(directory, metadata, std::forward<Request>(request),
+                              prepared, error))
+    return false;
+  if (cancelled && cancelled()) {
+    error = provisionalCancelNote();
+    return false;
+  }
+  return true;
+}
 bool restoreProjectFile(const QString& path, const QByteArray& bytes, QString& error) {
   QSaveFile output(path);
   if (!output.open(QIODevice::WriteOnly) || output.write(bytes) != bytes.size() ||
@@ -708,6 +765,15 @@ DetectionPanel::DetectionPanel(Session& session,
   connect(timer_, &QTimer::timeout, this, &DetectionPanel::poll);
   timer_->start();
 }
+
+struct DetectionPanel::StartToken {
+  std::mutex decision;
+  bool cancelled = false;
+  bool committed = false;
+  std::atomic<bool> stop{false};
+  std::string runId;
+};
+
 DetectionPanel::~DetectionPanel() {
   shuttingDown_.store(true);
   std::vector<std::thread> threads;
@@ -738,6 +804,9 @@ struct DetectionPanel::StartCommit {
   std::uint64_t generation = 0;
   std::string runId;
   std::string scope;
+  std::shared_ptr<StartToken> token;
+  std::shared_ptr<std::atomic<bool>> startGate;
+  std::vector<std::pair<const char*, std::uint64_t>> marks;
 };
 struct DetectionPanel::PublishCommit {
   Project project;
@@ -768,7 +837,28 @@ QString DetectionPanel::commitBusyMessage() const {
                             : QStringLiteral("检测正在准备，请稍候");
 }
 
-bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
+void DetectionPanel::noteRunMark(const std::string& runId, const char* name,
+                                 std::uint64_t steadyNanoseconds) {
+  if (!tasks_ || runId.empty() || name == nullptr || name[0] == '\0' ||
+      steadyNanoseconds == 0)
+    return;
+  tasks_->noteSteadyMark(runId, name, steadyNanoseconds);
+}
+void DetectionPanel::noteBusinessTerminal(const std::string& runId) {
+  if (runId.empty() || !businessTerminalNoted_.insert(runId).second) return;
+  noteRunMark(runId, "t_terminal", steadyClockNanoseconds());
+}
+void DetectionPanel::noteObservedTerminals() {
+  for (const auto& run : tasks_->snapshots()) {
+    if (run.lifecycle == DetectionLifecycle::Completed ||
+        !detectionIsTerminal(run.lifecycle))
+      continue;
+    noteBusinessTerminal(run.request.runId);
+  }
+}
+
+bool DetectionPanel::startRequest(DetectionRequest request, QString& error,
+                                  std::uint64_t clickSteadyNs) {
   const auto* file = session_.activeFile();
   if (!file || file->metadata.demo ||
       request.sourceIdentity.projectGeneration !=
@@ -803,14 +893,20 @@ bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
   job->generation = session_.projectGeneration();
   job->runId = job->request.runId;
   job->scope = detectionScopeKey(fileId, channel);
+  job->token = std::make_shared<StartToken>();
+  job->token->runId = job->runId;
+  job->startGate = startCommitGate_;
+  activeStart_ = job->token;
   commitInFlight_ = true;
   publicationCommit_ = false;
   commitScope_ = job->scope;
   committingRunId_.clear();
   acceptedRunId_ = job->runId;
   acceptedSteadyNs_ = steadyClockNanoseconds();
-  // Buffer t_accepted before the commit worker queues the run. queuePreparedRun
+  // Buffer these before the commit worker queues the run. queuePreparedRun
   // holds the task mutex across PersistRun, so this must not run from that callback.
+  if (clickSteadyNs != 0)
+    tasks_->noteSteadyMark(acceptedRunId_, "t_click", clickSteadyNs);
   tasks_->noteSteadyMark(acceptedRunId_, "t_accepted", acceptedSteadyNs_);
   QPointer<DetectionPanel> self(this);
   auto* stopping = &shuttingDown_;
@@ -833,29 +929,60 @@ bool DetectionPanel::startRequest(DetectionRequest request, QString& error) {
 
 void DetectionPanel::runStartCommit(const std::shared_ptr<StartCommit>& job) {
   if (!job || shuttingDown_.load()) return;
+  auto* stopping = &shuttingDown_;
+  const std::function<bool()> cancelled = [job, stopping] {
+    return stopping->load(std::memory_order_acquire) ||
+           (job->token && job->token->stop.load(std::memory_order_acquire));
+  };
   auto reject = [&](QString text) {
     job->ok = false;
     job->rejectedBeforeSave = true;
     job->error = std::move(text);
+  };
+  auto rejectCancel = [&] {
+    job->ok = false;
+    job->rejectedBeforeSave = true;
+    job->error = provisionalCancelNote();
   };
   if (job->failSave) {
     job->ok = false;
     job->error = QStringLiteral("检测事务保存失败");
     return;
   }
-  QString error;
-  if (!freezeDetectionModelSnapshot(job->request, error)) {
-    reject(std::move(error));
-    return;
-  }
-  QueuedDetectionRun prepared;
-  if (!tasks_->prepareQueuedRun(job->directory, job->metadata, job->request,
-                                prepared, error) ||
-      !tasks_->canEnqueue(prepared.run.request.runId, error)) {
-    reject(std::move(error));
-    return;
-  }
   if (shuttingDown_.load()) return;
+  if (cancelled()) {
+    rejectCancel();
+    return;
+  }
+  QString error;
+  if (!freezeModelSnapshot(job->request, error, cancelled, 0)) {
+    if (shuttingDown_.load()) return;
+    if (cancelled()) rejectCancel();
+    else reject(std::move(error));
+    return;
+  }
+  job->marks.emplace_back("t_model_snapshot_ready", steadyClockNanoseconds());
+  if (shuttingDown_.load()) return;
+  if (cancelled()) {
+    rejectCancel();
+    return;
+  }
+  job->marks.emplace_back("t_preflight_start", steadyClockNanoseconds());
+  QueuedDetectionRun prepared;
+  if (!prepareRun(*tasks_, job->directory, job->metadata, job->request, prepared,
+                  error, cancelled, 0) ||
+      !tasks_->canEnqueue(prepared.run.request.runId, error)) {
+    if (shuttingDown_.load()) return;
+    if (cancelled()) rejectCancel();
+    else reject(std::move(error));
+    return;
+  }
+  job->marks.emplace_back("t_preflight_end", steadyClockNanoseconds());
+  if (shuttingDown_.load()) return;
+  if (cancelled()) {
+    rejectCancel();
+    return;
+  }
   Project candidate = job->baseline;
   DetectionResultTicket ticket;
   if (!DetectionResultService::beginDetection(
@@ -871,25 +998,62 @@ void DetectionPanel::runStartCommit(const std::shared_ptr<StartCommit>& job) {
   job->request = prepared.run.request;
   job->staged = prepared.run;
   job->runId = job->request.runId;
+  if (job->token) job->token->runId = job->runId;
+  if (shuttingDown_.load()) return;
+  if (cancelled()) {
+    rejectCancel();
+    return;
+  }
   if (!tasks_->persistQueuedRun(job->directory, job->staged, error)) {
     job->ok = false;
     job->error = std::move(error);
     return;
   }
+  job->marks.emplace_back("t_manifest_committed", steadyClockNanoseconds());
+  if (job->startGate) {
+    startCommitGateBlocked_.store(true, std::memory_order_release);
+    while (!job->startGate->load(std::memory_order_acquire)) {
+      if (shuttingDown_.load()) {
+        startCommitGateBlocked_.store(false, std::memory_order_release);
+        return;
+      }
+      if (cancelled()) {
+        startCommitGateBlocked_.store(false, std::memory_order_release);
+        rejectCancel();
+        return;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    startCommitGateBlocked_.store(false, std::memory_order_release);
+  }
   if (shuttingDown_.load()) return;
+  if (cancelled()) {
+    rejectCancel();
+    return;
+  }
   QFile priorFile(job->path);
   if (priorFile.open(QIODevice::ReadOnly)) job->priorProject = priorFile.readAll();
   priorFile.close();
-  const auto stillCurrent = [this, job] {
-    return !shuttingDown_.load() && session_.contentEpoch() == job->epoch &&
+  // False from cancellation or a generation change both refuse the atomic
+  // project write. publishPendingStart then leaves the previous file bytes.
+  const auto stillCurrent = [this, job, stopping] {
+    if (stopping->load(std::memory_order_acquire)) return false;
+    if (job->token && job->token->stop.load(std::memory_order_acquire))
+      return false;
+    return session_.contentEpoch() == job->epoch &&
            session_.projectGeneration() == job->generation;
   };
   bool published = false;
   for (int attempt = 0; attempt < 40 && !shuttingDown_.load(); ++attempt) {
+    if (cancelled()) break;
     error.clear();
     published = DetectionResultService::publishPendingStart(
         job->baseline, job->candidate, stillCurrent,
         [&](QString& queueError) {
+          if (cancelled()) {
+            queueError = provisionalCancelNote();
+            return false;
+          }
           return tasks_->queuePreparedRun(job->directory, job->metadata,
                                           prepared, queueError);
         },
@@ -898,12 +1062,36 @@ void DetectionPanel::runStartCommit(const std::shared_ptr<StartCommit>& job) {
     std::this_thread::sleep_for(std::chrono::milliseconds(25));
   }
   if (shuttingDown_.load() && !published) return;
+  if (!published && cancelled()) {
+    rejectCancel();
+    return;
+  }
   job->ok = true;
   job->published = published;
-  if (!published) job->error = std::move(error);
+  if (!published) {
+    job->error = std::move(error);
+    return;
+  }
+  for (const auto& mark : job->marks)
+    noteRunMark(job->runId, mark.first, mark.second);
+  noteRunMark(job->runId, "t_start_project_commit", steadyClockNanoseconds());
+  bool cancelQueued = cancelAfterStartCommit_.load(std::memory_order_acquire);
+  if (job->token) {
+    std::lock_guard lock(job->token->decision);
+    job->token->committed = true;
+    cancelQueued = cancelQueued || job->token->cancelled;
+  }
+  if (cancelQueued) tasks_->cancel(job->runId);
 }
 
 void DetectionPanel::finishStartCommit(const std::shared_ptr<StartCommit>& job) {
+  struct ResetStart {
+    DetectionPanel* panel;
+    std::shared_ptr<StartToken> token;
+    ~ResetStart() {
+      if (token && panel->activeStart_ == token) panel->activeStart_.reset();
+    }
+  } resetStart{this, job ? job->token : nullptr};
   const QString submittedRunId = [&] {
     if (job) {
       const auto& id = !job->runId.empty() ? job->runId : job->request.runId;
@@ -976,6 +1164,9 @@ void DetectionPanel::finishStartCommit(const std::shared_ptr<StartCommit>& job) 
   // Ticket before pump: this callback must not start a run poll cannot match.
   tickets_[job->runId] = job->ticket;
   tasks_->pump();
+  // A start cancelled after the project commit is already terminal here.
+  // Completed runs stay unmarked until their publication decision.
+  noteObservedTerminals();
   releaseCommitLock();
   publishPolledPreview();
   emit presentationRequested();
@@ -1009,6 +1200,7 @@ void DetectionPanel::poll() {
   }
   scheduleGc();
   tasks_->pump();
+  noteObservedTerminals();
   bool changedState = false;
   if (commitInFlight_) {
     if (refreshRunList(false)) emit runProgressChanged();
@@ -1216,8 +1408,16 @@ void DetectionPanel::beginPublicationCommit(DetectionResultTicket ticket,
   committingRunId_ = job->run.request.runId;
   QPointer<DetectionPanel> self(this);
   auto* stopping = &shuttingDown_;
-  job->options.stillCurrent = [self, job, stopping] {
+  auto recoveryNoted = std::make_shared<std::atomic<bool>>(false);
+  job->options.stillCurrent = [self, job, stopping, recoveryNoted] {
     if (!self || stopping->load()) return false;
+    // replaceCurrentDetection asks stillCurrent only after durable recovery
+    // and the publication compare have both succeeded.
+    if (!recoveryNoted->exchange(true)) {
+      const auto ns = steadyClockNanoseconds();
+      self->tasks_->noteSteadyMark(job->run.request.runId, "t_recovery_ready", ns);
+      self->tasks_->noteSteadyMark(job->run.request.runId, "t_compare_ready", ns);
+    }
     if (QThread::currentThread() == self->thread())
       return self->publicationGenerationCurrent(job->epoch, job->generation,
                                                 job->ticket.fileId);
@@ -1294,6 +1494,10 @@ void DetectionPanel::finishPublicationCommit(
   if (installed) {
     session_.project() = std::move(job->project);
     session_.noteProjectWrite();
+    const auto committedNs = steadyClockNanoseconds();
+    noteRunMark(job->run.request.runId, "t_project_commit", committedNs);
+    noteRunMark(job->run.request.runId, "t_durable_publication",
+                steadyClockNanoseconds());
     scheduleGc(job->path);
     emit message(QStringLiteral(
         "检测事务已保存并整体替换；ROI 外未检测，0 检出同样清空旧结果"));
@@ -1311,6 +1515,7 @@ void DetectionPanel::finishPublicationCommit(
                  QStringLiteral("：") + job->result.error);
   }
   tickets_.erase(job->ticket.runId);
+  noteBusinessTerminal(job->run.request.runId);
   releaseCommitLock();
   auto raw = rawPreview_;
   if (raw.runId.empty()) raw.runId = job->run.request.runId;
@@ -1615,12 +1820,23 @@ void DetectionPanel::cancelSelected() {
   if (const auto* run = selectedRun()) cancelRun(q(run->request.runId));
 }
 void DetectionPanel::cancelRun(const QString& runId) {
+  if (runId.isEmpty()) return;
+  const auto id = runId.toStdString();
+  bool cancelQueued = false;
+  if (activeStart_ && activeStart_->runId == id) {
+    std::lock_guard lock(activeStart_->decision);
+    activeStart_->cancelled = true;
+    activeStart_->stop.store(true, std::memory_order_release);
+    cancelQueued = activeStart_->committed;
+  }
+  if (cancelQueued) tasks_->cancel(id);
   const auto* run = findRun(runId);
-  if (!run || detectionIsTerminal(run->lifecycle)) return;
-  // Keep the target independent of current selection and active-file changes.
-  const auto id = run->request.runId;
-  tasks_->cancel(id);
-  poll();
+  if (run && !detectionIsTerminal(run->lifecycle)) {
+    if (!cancelQueued || run->request.runId != id) tasks_->cancel(run->request.runId);
+    poll();
+    return;
+  }
+  if (cancelQueued) poll();
 }
 void DetectionPanel::showSelectedDetails() {
   if (const auto* run = selectedRun()) showRunDetails(q(run->request.runId));
