@@ -383,4 +383,98 @@ DetectionValidation validateDetectionRun(const DetectionRun& run,
       return {false, "Invalid or duplicate detection result chunk"};
   return {};
 }
+
+namespace {
+std::string formatDecisionMessage(const char* phase, const char* resource,
+                                  const char* unit, std::uint64_t needed,
+                                  std::uint64_t available, std::uint64_t reserve,
+                                  std::uint64_t granted,
+                                  const std::string& fallback) {
+  return std::string("phase=") + phase + " resource=" + resource +
+         " unit=" + unit + " needed=" + std::to_string(needed) +
+         " available=" + std::to_string(available) +
+         " reserve=" + std::to_string(reserve) +
+         " granted=" + std::to_string(granted) + " fallback=" + fallback;
+}
+}  // namespace
+
+bool checkedMulU64(std::uint64_t a, std::uint64_t b, std::uint64_t& out) {
+  if (a != 0 && b > std::numeric_limits<std::uint64_t>::max() / a) {
+    out = 0;
+    return false;
+  }
+  out = a * b;
+  return true;
+}
+
+ResourceDecision decideSamplePhaseBudget(std::uint64_t authorizedRamBytes,
+                                         std::uint64_t estimatedChunkResidentBytes,
+                                         std::size_t plannedCells) {
+  constexpr const char* kPhase = "time-refine";
+  ResourceDecision decision;
+  decision.phase = kPhase;
+  decision.reserve = 0;
+  if (authorizedRamBytes == 0) {
+    decision.kind = ResourceDecisionKind::Rejected;
+    decision.errorCode = "sample.invalid-context";
+    decision.resource = "ram";
+    decision.requested = estimatedChunkResidentBytes;
+    decision.available = 0;
+    decision.granted = 0;
+    decision.message = formatDecisionMessage(
+        kPhase, "ram", "bytes", estimatedChunkResidentBytes, 0, 0, 0,
+        "reject sample.invalid-context");
+    return decision;
+  }
+  if (plannedCells > kSampleWorkUnitCellCeiling) {
+    const auto requested = static_cast<std::uint64_t>(plannedCells);
+    const auto ceiling = static_cast<std::uint64_t>(kSampleWorkUnitCellCeiling);
+    decision.kind = ResourceDecisionKind::Rejected;
+    decision.errorCode = "sample.work-unit-ceiling";
+    decision.resource = "work-unit";
+    decision.requested = requested;
+    decision.available = ceiling;
+    decision.granted = 0;
+    decision.message = formatDecisionMessage(
+        kPhase, "work-unit", "cells", requested, ceiling, 0, 0,
+        "reject sample.work-unit-ceiling");
+    return decision;
+  }
+  if (estimatedChunkResidentBytes > authorizedRamBytes) {
+    decision.kind = ResourceDecisionKind::Rejected;
+    decision.errorCode = "sample.chunk-exceeds-grant";
+    decision.resource = "ram";
+    decision.requested = estimatedChunkResidentBytes;
+    decision.available = authorizedRamBytes;
+    decision.granted = 0;
+    decision.message = formatDecisionMessage(
+        kPhase, "ram", "bytes", estimatedChunkResidentBytes, authorizedRamBytes,
+        0, 0, "reject sample.chunk-exceeds-grant");
+    return decision;
+  }
+  if (estimatedChunkResidentBytes > kSampleContiguousAllocationCapBytes) {
+    decision.kind = ResourceDecisionKind::Adapted;
+    decision.errorCode = "sample.grant-exceeds-contiguous-cap";
+    decision.resource = "ram";
+    decision.requested = estimatedChunkResidentBytes;
+    decision.available = authorizedRamBytes;
+    decision.granted = kSampleContiguousAllocationCapBytes;
+    decision.message = formatDecisionMessage(
+        kPhase, "ram", "bytes", estimatedChunkResidentBytes, authorizedRamBytes,
+        0, kSampleContiguousAllocationCapBytes,
+        "planner must chunk; not a hard failure of the whole job");
+    return decision;
+  }
+  decision.kind = ResourceDecisionKind::Accepted;
+  decision.errorCode.clear();
+  decision.resource = "ram";
+  decision.requested = estimatedChunkResidentBytes;
+  decision.available = authorizedRamBytes;
+  decision.granted = estimatedChunkResidentBytes;
+  decision.message = formatDecisionMessage(
+      kPhase, "ram", "bytes", estimatedChunkResidentBytes, authorizedRamBytes, 0,
+      estimatedChunkResidentBytes,
+      "none; a larger authorization is a ceiling, not a single allocation");
+  return decision;
+}
 }  // namespace signalstudio
