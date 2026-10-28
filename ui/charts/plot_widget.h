@@ -33,6 +33,7 @@ struct ChartPreviewTrack {
   TimeRange time{};
   FrequencyRange frequency{};
   bool timeLocalized = false;
+  bool unpublished = false;
 };
 
 class PlotWidget : public QWidget {
@@ -74,6 +75,10 @@ class PlotWidget : public QWidget {
   void refreshAnnotationOverlay();
   void invalidateAnnotationOverlay();
   void setDetectionPreview(std::vector<ChartPreviewTrack> tracks, std::uint64_t dropped);
+  // Hides the current channel's committed detection marks on this plot and in
+  // its hit testing. The project slot and annotationVisible stay unchanged.
+  void setFormalDetectionSuppressed(bool suppressed);
+  bool formalDetectionSuppressed() const { return formalDetectionSuppressed_; }
   void selectDetectionPreview(const QString& id);
   QString selectedDetectionPreview() const;
   QString statusText() const;
@@ -99,6 +104,14 @@ class PlotWidget : public QWidget {
   bool isDisplaySettled() const;
   std::shared_ptr<const SpectrogramData> currentSpectrogram() const;
   std::shared_ptr<const SpectralFrame> currentPowerFrame() const;
+  struct Hit {
+    std::string id;
+    int edges = 0;
+    bool selected = false;
+    std::string segmentId;
+  };
+  // Preview tracks are not marks. A hit returns only a formal annotation id.
+  Hit hitMark(QPointF) const;
  signals:
   void axisDescriptionChanged();
   void stateChanged();
@@ -170,12 +183,6 @@ class PlotWidget : public QWidget {
     MainMode mainMode = MainMode::TimeFrequency;
     AuxiliaryMode auxiliaryMode = AuxiliaryMode::Waveform;
   };
-  struct Hit {
-    std::string id;
-    int edges = 0;
-    bool selected = false;
-    std::string segmentId;
-  };
   struct DetectionRoiDraft {
     std::string fileId;
     std::uint64_t projectGeneration = 0;
@@ -194,7 +201,7 @@ class PlotWidget : public QWidget {
   bool detectionRoiContextMatches() const;
   std::optional<ViewRange> detectionRoiRange(const Gesture& gesture) const;
   QRectF markRect(const ViewRange&) const;
-  Hit hitMark(QPointF) const;
+  bool showsMark(const FileState&, const Annotation&) const;
   std::vector<Hit> markChoicesAt(QPointF) const;
   std::vector<std::string> marksAt(QPointF) const;
   void addMarkChoices(QMenu*, const std::vector<Hit>&, Qt::KeyboardModifiers);
@@ -222,6 +229,7 @@ class PlotWidget : public QWidget {
   bool releasing_ = false;
   std::optional<DetectionRoiDraft> detectionRoi_;
   std::vector<ChartPreviewTrack> detectionPreview_;
+  bool formalDetectionSuppressed_ = false;
   std::string selectedPreviewId_;
   std::uint64_t detectionPreviewDropped_ = 0;
   std::optional<Gesture> gesture_;

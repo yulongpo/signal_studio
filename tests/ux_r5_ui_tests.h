@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDoubleSpinBox>
+#include <QTimer>
 
 namespace {
 std::array<std::string, 3> uxR5Seed(MainWindow& window) {
@@ -338,4 +339,98 @@ inline void UxTests::uxR5_crossViewAndUnknownObservation() {
   QVERIFY(converted && converted->segments.empty() && converted->observation);
   QCOMPARE(converted->observation->time, observedTime);
   QCOMPARE(file->view, range);
+}
+
+inline void UxTests::uxR5_algorithmResultHideAndDelete() {
+  MainWindow window;
+  const auto ids = uxR5Seed(window);
+  QVERIFY(!ids[2].empty());
+  expose(window);
+  auto* file = window.session().activeFile();
+  const auto labelBefore = encodeAnnotation(*findAnnotation(*file, ids[0]));
+  const auto manualBefore = encodeAnnotation(*findAnnotation(*file, ids[1]));
+  const auto markCount = file->marks.size();
+  QTest::mouseClick(window.findChild<QAbstractButton*>("importedLabelsTab"),
+                    Qt::LeftButton);
+  QVERIFY(!window.findChild<QPushButton*>("hideSelectedAnnotations")->isVisible());
+  QVERIFY(!window.findChild<QPushButton*>("showSelectedAnnotations")->isVisible());
+  QVERIFY(!window.findChild<QPushButton*>("deleteSelectedAnnotations")->isVisible());
+  QVERIFY(!window.findChild<QPushButton*>("newManualAnnotation")->isVisible());
+  QVERIFY(!window.findChild<QPushButton*>("annotationQualityMenu")->isVisible());
+  QTest::mouseClick(window.findChild<QAbstractButton*>("manualAnnotationsTab"),
+                    Qt::LeftButton);
+  QVERIFY(window.findChild<QPushButton*>("deleteSelectedAnnotations")->isVisible());
+  QVERIFY(window.findChild<QPushButton*>("newManualAnnotation")->isVisible());
+  QVERIFY(window.findChild<QPushButton*>("annotationQualityMenu")->isVisible());
+  QVERIFY(!window.findChild<QPushButton*>("hideSelectedAnnotations")->isVisible());
+  QVERIFY(!window.findChild<QPushButton*>("showSelectedAnnotations")->isVisible());
+
+  QTest::mouseClick(window.findChild<QAbstractButton*>("detectionResultsTab"),
+                    Qt::LeftButton);
+  auto* results = window.findChild<QTableView*>("detectionResultTable");
+  auto* hide = window.findChild<QPushButton*>("hideSelectedAnnotations");
+  auto* show = window.findChild<QPushButton*>("showSelectedAnnotations");
+  auto* remove = window.findChild<QPushButton*>("deleteSelectedAnnotations");
+  QVERIFY(results && hide && show && remove);
+  QCOMPARE(results->model()->rowCount(), 1);
+  QVERIFY(hide->isVisible() && show->isVisible() && remove->isVisible());
+  QVERIFY(!hide->isEnabled() && !show->isEnabled() && !remove->isEnabled());
+  QVERIFY(!window.findChild<QPushButton*>("newManualAnnotation")->isVisible());
+  QVERIFY(!window.findChild<QPushButton*>("annotationQualityMenu")->isVisible());
+  window.session().selectMarks({ids[2]}, ids[2]);
+  window.refresh();
+  window.findChild<QPushButton*>("contextAnnotation")->click();
+  QVERIFY(window.findChild<QLabel*>("annotationReadOnlyRange")->isVisible());
+  QVERIFY(!window.findChild<QWidget*>("annotationGeometryEditor")->isVisible());
+  QVERIFY(!window.session().annotations().canEdit(*file, ids[2]));
+  QVERIFY(!window.session().annotations().capabilities(*file, ids[2]).deleteAnnotation);
+  QVERIFY(!window.session().annotations().capabilities(*file, ids[2]).review);
+  QVERIFY(!window.findChild<QAction*>("deleteMarksAction")->isEnabled());
+  QVERIFY(!window.findChild<QPushButton*>("deleteMarks")->isEnabled());
+  QVERIFY(hide->isEnabled() && show->isEnabled() && remove->isEnabled());
+  QVERIFY(annotationVisible(*file, *findAnnotation(*file, ids[2])));
+  const auto resultBefore = encodeAnnotation(*findAnnotation(*file, ids[2]));
+
+  QTest::mouseClick(hide, Qt::LeftButton);
+  QVERIFY(findAnnotation(*file, ids[2])->plotHidden);
+  QVERIFY(!annotationVisible(*file, *findAnnotation(*file, ids[2])));
+  QVERIFY(annotationEligibleForTab(*file, *findAnnotation(*file, ids[2]),
+                                   AnnotationSource::Algorithm));
+  QCOMPARE(results->model()->rowCount(), 1);
+  QVERIFY(results->model()->index(0, 2).data().toString().contains("已隐藏"));
+  QVERIFY(encodeAnnotation(*findAnnotation(*file, ids[2])).contains("plotHidden"));
+  QCOMPARE(file->marks.size(), markCount);
+  QVERIFY(!window.session().annotations().canEdit(*file, ids[2]));
+  QTest::mouseClick(show, Qt::LeftButton);
+  QVERIFY(!findAnnotation(*file, ids[2])->plotHidden);
+  QVERIFY(annotationVisible(*file, *findAnnotation(*file, ids[2])));
+  QVERIFY(!results->model()->index(0, 2).data().toString().contains("已隐藏"));
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, ids[2])), resultBefore);
+
+  bool confirmed = false;
+  QTimer::singleShot(0, &window, [&] {
+    auto* dialog = window.findChild<QDialog*>("annotationDeleteDialog");
+    auto* confirm = dialog ? dialog->findChild<QPushButton*>("deleteAnnotationsConfirm")
+                           : nullptr;
+    if (confirm) {
+      confirmed = true;
+      confirm->click();
+    }
+  });
+  QTest::mouseClick(remove, Qt::LeftButton);
+  QVERIFY(confirmed);
+  QVERIFY(findAnnotation(*file, ids[2])->deleted);
+  QCOMPARE(results->model()->rowCount(), 0);
+  QCOMPARE(file->marks.size(), markCount);
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, ids[0])), labelBefore);
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, ids[1])), manualBefore);
+  QTest::mouseClick(window.findChild<QPushButton*>("undoAnnotations"),
+                    Qt::LeftButton);
+  QVERIFY(!findAnnotation(*file, ids[2])->deleted);
+  QVERIFY(annotationInContext(*file, *findAnnotation(*file, ids[2])));
+  QCOMPARE(results->model()->rowCount(), 1);
+  QTest::mouseClick(window.findChild<QPushButton*>("redoAnnotations"),
+                    Qt::LeftButton);
+  QVERIFY(findAnnotation(*file, ids[2])->deleted);
+  QCOMPARE(results->model()->rowCount(), 0);
 }

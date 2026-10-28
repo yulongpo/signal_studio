@@ -22,6 +22,18 @@ bool stopped(const DetectionSourceCancel& cancel, QString& error) {
   error = "Cancelled during exact-length sample FFT";
   return true;
 }
+void markFailure(DetectionFailureCode* slot, DetectionFailureCode code) {
+  if (slot) *slot = code;
+}
+QString energyWorkingSetError(long double required, std::uint64_t allowed) {
+  const auto bytes =
+      required > static_cast<long double>(std::numeric_limits<quint64>::max())
+          ? std::numeric_limits<quint64>::max()
+          : static_cast<quint64>(std::ceil(required));
+  return QString("Energy working-set exceeded: requiredBytes=%1 allowedBytes=%2")
+      .arg(qulonglong(bytes))
+      .arg(qulonglong(allowed));
+}
 std::size_t radix(std::size_t size) {
   for (const auto factor : {2U, 3U, 5U, 7U, 11U, 13U})
     if (size % factor == 0) return factor;
@@ -157,20 +169,24 @@ bool mixedTransform(std::span<Complex> values, bool inverse, QString& error,
 
 bool detectionComplexTransform(std::span<Complex> samples, bool inverse,
                                std::uint64_t budget, QString& error,
-                               const DetectionSourceCancel& cancel) {
+                               const DetectionSourceCancel& cancel,
+                               DetectionFailureCode* failure) {
   if (samples.empty() || samples.size() > std::numeric_limits<std::uint32_t>::max()) {
     error = "Sample FFT length exceeds oneMKL descriptor range";
+    markFailure(failure, DetectionFailureCode::HardFailure);
     return false;
   }
   const auto minimum =
       static_cast<long double>(samples.size()) * sizeof(Complex) + 65536;
   if (minimum > budget) {
-    error = "Exact-length sample FFT exceeds the working memory budget";
+    error = energyWorkingSetError(minimum, budget);
+    markFailure(failure, DetectionFailureCode::ResourceLimit);
     return false;
   }
   for (const auto value : samples)
     if (!std::isfinite(value.real()) || !std::isfinite(value.imag())) {
       error = "Sample FFT input is not finite";
+      markFailure(failure, DetectionFailureCode::HardFailure);
       return false;
     }
   static std::mutex mklMutex;
@@ -180,11 +196,13 @@ bool detectionComplexTransform(std::span<Complex> samples, bool inverse,
     std::lock_guard<std::mutex> lock(mklMutex);
     if (mkl.transform(samples.data(), static_cast<std::uint32_t>(samples.size()), inverse, why)) {
       error.clear();
+      markFailure(failure, DetectionFailureCode::None);
       return true;
     }
   }
   if (why != "missing") {
     error = QString::fromStdString(why);
+    markFailure(failure, DetectionFailureCode::HardFailure);
     return false;
   }
   const auto leaf = largestLeaf(samples.size());
@@ -192,53 +210,92 @@ bool detectionComplexTransform(std::span<Complex> samples, bool inverse,
   const auto bytes =
       static_cast<long double>(samples.size()) * (sizeof(Complex) + 1.0 / 8) +
       static_cast<long double>(scratch) * 2 * sizeof(Complex) + 65536;
-  if (bytes > budget || (leaf > 13 && !scratch)) {
-    error = "Exact-length sample FFT exceeds the working memory budget";
+  if (leaf > 13 && !scratch) {
+    error = "Exact-length sample FFT scratch length is unavailable";
+    markFailure(failure, DetectionFailureCode::HardFailure);
     return false;
   }
-  if (!mixedTransform(samples, inverse, error, cancel)) return false;
+  if (bytes > budget) {
+    error = energyWorkingSetError(bytes, budget);
+    markFailure(failure, DetectionFailureCode::ResourceLimit);
+    return false;
+  }
+  if (!mixedTransform(samples, inverse, error, cancel)) {
+    markFailure(failure, cancel && cancel() ? DetectionFailureCode::Cancelled
+                                            : DetectionFailureCode::HardFailure);
+    return false;
+  }
   if (inverse)
     for (auto& value : samples) value /= static_cast<float>(samples.size());
+  markFailure(failure, DetectionFailureCode::None);
   return true;
 }
 
 bool detectionBoundedRadixTwoTransform(std::vector<Complex>& samples,bool inverse,
-    std::uint64_t budget,QString& error,const DetectionSourceCancel& cancel) {
+    std::uint64_t budget,QString& error,const DetectionSourceCancel& cancel,
+    DetectionFailureCode* failure) {
   const auto size=samples.size();
-  if(!size || size>(1U<<20) || (size&(size-1)) ||
-      static_cast<long double>(size)*sizeof(Complex)+65536>budget) {
-    error="Bounded radix-two FFT length or working budget is invalid";return false;
+  const auto required=static_cast<long double>(size)*sizeof(Complex)+65536;
+  if(!size || size>(1U<<20) || (size&(size-1))) {
+    error="Bounded radix-two FFT length is invalid";
+    markFailure(failure, DetectionFailureCode::HardFailure);
+    return false;
+  }
+  if(required>budget) {
+    error=energyWorkingSetError(required, budget);
+    markFailure(failure, DetectionFailureCode::ResourceLimit);
+    return false;
   }
   for(const auto value:samples)
     if(!std::isfinite(value.real()) || !std::isfinite(value.imag())) {
-      error="Bounded radix-two FFT input is not finite";return false;
+      error="Bounded radix-two FFT input is not finite";
+      markFailure(failure, DetectionFailureCode::HardFailure);
+      return false;
     }
-  if(stopped(cancel,error)) return false;
-  return radixTwo(samples,inverse,error,cancel);
+  if(stopped(cancel,error)) {
+    markFailure(failure, DetectionFailureCode::Cancelled);
+    return false;
+  }
+  if(!radixTwo(samples,inverse,error,cancel)) {
+    markFailure(failure, cancel && cancel() ? DetectionFailureCode::Cancelled
+                                            : DetectionFailureCode::HardFailure);
+    return false;
+  }
+  markFailure(failure, DetectionFailureCode::None);
+  return true;
 }
 
 bool detectionBandEnergy(std::vector<Complex> samples, double rate,
                          double center, double bandwidth,
                          std::vector<float>& output, std::uint64_t budget,
                          QString& error, const DetectionSourceCancel& cancel,
-                         const DetectionFilteredSampleObserver& filteredObserver) {
+                         const DetectionFilteredSampleObserver& filteredObserver,
+                         DetectionFailureCode* failure) {
+  const auto required = static_cast<long double>(samples.size()) *
+                            (sizeof(Complex) + sizeof(float)) +
+                        65536;
   if (!std::isfinite(rate) || rate <= 0 || !std::isfinite(center) ||
-      !std::isfinite(bandwidth) || bandwidth <= 0 || bandwidth > rate ||
-      static_cast<long double>(samples.size()) *
-                  (sizeof(Complex) + sizeof(float)) +
-              65536 >
-          budget) {
-    error = "Sample energy input or working budget is invalid";
+      !std::isfinite(bandwidth) || bandwidth <= 0 || bandwidth > rate) {
+    error = "Sample energy input is invalid";
+    markFailure(failure, DetectionFailureCode::HardFailure);
+    return false;
+  }
+  if (required > budget) {
+    error = energyWorkingSetError(required, budget);
+    markFailure(failure, DetectionFailureCode::ResourceLimit);
     return false;
   }
   for (std::size_t i = 0; i < samples.size(); ++i) {
-    if ((i & 4095U) == 0 && stopped(cancel, error)) return false;
+    if ((i & 4095U) == 0 && stopped(cancel, error)) {
+      markFailure(failure, DetectionFailureCode::Cancelled);
+      return false;
+    }
     // Same relative phase and complex64 oscillator contract as the reference.
     double phase = std::fmod(-kTau * center * i / rate, kTau);
     if (phase < 0) phase += kTau;
     samples[i] *= unit(static_cast<float>(phase));
   }
-  if (!detectionComplexTransform(samples, false, budget, error, cancel))
+  if (!detectionComplexTransform(samples, false, budget, error, cancel, failure))
     return false;
   const double cutoff = bandwidth / 2;
   const double taper = std::max(bandwidth * .25, 1.0);
@@ -253,28 +310,38 @@ bool detectionBandEnergy(std::vector<Complex> samples, double rate,
           .5 * (1 + std::cos(std::numbers::pi * (frequency - cutoff) / taper));
     samples[i] *= static_cast<float>(gain);
   }
-  if (!detectionComplexTransform(samples, true, budget, error, cancel))
+  if (!detectionComplexTransform(samples, true, budget, error, cancel, failure))
     return false;
   if (filteredObserver) {
     for (std::size_t first = 0; first < samples.size();) {
-      if (stopped(cancel, error)) return false;
-      const auto count = std::min<std::size_t>(131072, samples.size() - first);
-      if (!filteredObserver(first, std::span<const Complex>(samples).subspan(first, count), error))
+      if (stopped(cancel, error)) {
+        markFailure(failure, DetectionFailureCode::Cancelled);
         return false;
+      }
+      const auto count = std::min<std::size_t>(131072, samples.size() - first);
+      if (!filteredObserver(first, std::span<const Complex>(samples).subspan(first, count), error)) {
+        markFailure(failure, DetectionFailureCode::HardFailure);
+        return false;
+      }
       first += count;
     }
   }
   std::vector<float> power(samples.size());
   for (std::size_t i = 0; i < samples.size(); ++i) {
-    if ((i & 4095U) == 0 && stopped(cancel, error)) return false;
+    if ((i & 4095U) == 0 && stopped(cancel, error)) {
+      markFailure(failure, DetectionFailureCode::Cancelled);
+      return false;
+    }
     const float value = std::norm(samples[i]);
     if (!std::isfinite(value)) {
       error = "Sample energy output is not finite";
+      markFailure(failure, DetectionFailureCode::HardFailure);
       return false;
     }
     power[i] = value;
   }
   output = std::move(power);
+  markFailure(failure, DetectionFailureCode::None);
   return true;
 }
 }  // namespace signalstudio

@@ -96,11 +96,12 @@ struct WindowObservation {
   std::vector<DecodedCandidate> candidates;
 };
 struct FrequencyTrackerLimits {
-  std::size_t maximumWindows = 100000;
+  // 262144 windows is 65.536 s at 0.25 ms, above 60 s and below the one-million cap.
+  std::size_t maximumWindows = 262144;
   std::size_t maximumCandidatesPerWindow = 512;
   std::size_t maximumActiveTracks = 4096;
   std::size_t maximumTracks = 32768;
-  std::size_t maximumEvidenceBands = 100000;
+  std::size_t maximumEvidenceBands = 262144;
   std::size_t maximumAssociationPairs = 262144;
   std::uint64_t maximumAssociationComparisons = 4000000;
   std::uint64_t maximumFusionComparisons = 4000000;
@@ -149,9 +150,19 @@ struct PreviewTrackEvent {
   TimeRange observedSupport{};
 };
 
+// Last committed frame. Comparisons count only that frame's open set.
+struct FrequencyTrackerFrameStats {
+  std::size_t openTracks = 0;
+  std::size_t sealedTracks = 0;
+  std::uint64_t comparisons = 0;
+  bool sealed = false;
+  bool fused = false;
+};
+
 // A bounded deterministic single-run tracker. Each successful consume is
 // atomic; retries/foreign scope/out-of-order windows fail without mutation.
-// finish may also be called after cancellation for explicit partial recovery.
+// Each frame fuses only tracks that are still inside the burst interval.
+// finish seals those open tracks and does not scan already sealed history.
 // Preview events are a side channel and are not frequency-track results.
 // previewEvents() is the bounded log. visiblePreviewEvents() keeps the latest
 // geometry of each remaining track and is not evicted with that log.
@@ -175,6 +186,7 @@ class FrequencyTracker {
   // event stores the survivor envelope and removes absorbedId.
   std::vector<PreviewTrackEvent> visiblePreviewEvents() const;
   std::uint64_t droppedPreviewEvents() const;
+  FrequencyTrackerFrameStats frameStats() const;
   std::uint64_t processedWindows() const;
   std::size_t retainedTracks() const;
 

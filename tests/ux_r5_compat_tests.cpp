@@ -137,6 +137,36 @@ class UxR5CompatTests : public QObject {
     QVERIFY(!decodeAnnotation(json, file.metadata, target, error));
     QCOMPARE(encodeAnnotation(target), before);
   }
+  void algorithmPlotHiddenOmittedUnlessTrue() {
+    auto project = fixture(AnnotationSource::Algorithm);
+    QVERIFY(!project.files.empty());
+    auto& file = project.files.front();
+    auto* annotation = &file.marks.front();
+    QVERIFY(!annotation->plotHidden);
+    auto encoded = encodeAnnotation(*annotation);
+    QVERIFY(!encoded.contains("plotHidden"));
+    annotation->plotHidden = true;
+    encoded = encodeAnnotation(*annotation);
+    QCOMPARE(encoded.value("plotHidden").toBool(), true);
+    Annotation decoded;
+    QString error;
+    QVERIFY2(decodeAnnotation(encoded, file.metadata, decoded, error),
+             qPrintable(error));
+    QVERIFY(decoded.plotHidden);
+    encoded.remove("plotHidden");
+    QVERIFY2(decodeAnnotation(encoded, file.metadata, decoded, error),
+             qPrintable(error));
+    QVERIFY(!decoded.plotHidden);
+    encoded.insert("plotHidden", false);
+    QVERIFY2(decodeAnnotation(encoded, file.metadata, decoded, error),
+             qPrintable(error));
+    QVERIFY(!decoded.plotHidden);
+    QVERIFY(!encodeAnnotation(decoded).contains("plotHidden"));
+    const auto preserved = encodeAnnotation(decoded);
+    encoded.insert("plotHidden", QString("yes"));
+    QVERIFY(!decodeAnnotation(encoded, file.metadata, decoded, error));
+    QCOMPARE(encodeAnnotation(decoded), preserved);
+  }
 };
 QTEST_GUILESS_MAIN(UxR5CompatTests)
 #include "ux_r5_compat_tests.moc"

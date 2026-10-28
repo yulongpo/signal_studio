@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <thread>
 #include <vector>
 
@@ -15,6 +16,18 @@
 
 namespace signalstudio {
 class DetectionWorkerClient;
+struct DetectionSourcePlan;
+
+// Rejects before inference when retained raw heads exceed the configured quota
+// or the free space on the project volume. The quota ceiling is that free
+// space. An explicit raw-head quota, the legacy combined ledger, and the JSON
+// observation budget are still checked. Automatic retention writes the accepted
+// byte count into request.rawHeadBudgetBytes.
+QString applyDetectionEvidencePreflight(const QString& projectDirectory,
+                                        const DetectionSourcePlan& plan,
+                                        DetectionRequest& request);
+void setDetectionVolumeFreeBytesProbeForTest(
+    std::function<std::optional<std::uint64_t>(const QString& path)> probe);
 
 struct QueuedDetectionRun {
   DetectionRun run;
@@ -32,10 +45,20 @@ struct DetectionPreviewSnapshot {
   std::vector<PreviewTrackEvent> events;
   std::uint64_t dropped = 0;
   bool sealed = false;
+  // Failure, cancellation, and interruption keep this preview visible.
+  bool unpublished = false;
 };
+inline bool detectionPrefixRecoveryWouldRepeatFusion(const std::string& error) {
+  return error.find("frequency-fusion-comparison-limit-exceeded") != std::string::npos;
+}
 bool recoverDetectionPublication(const QString& projectDirectory,
                                  const DetectionRun&, DetectionPublication&,
                                  QString& error);
+
+// Writes TensorRT CUDA-event timings as tensorRtInference. QRhi display and
+// CUDA DSP are not stored in that object. The legacy "gpu" key is not written.
+QJsonObject bindDetectionPerformanceTimings(QJsonObject performance,
+                                           const QJsonObject& tensorRtCudaEvents);
 
 // One producer and one worker request in flight. The UI polls lightweight run
 // snapshots; spectrum tensors never accumulate in the GUI event queue.
@@ -47,8 +70,9 @@ class DetectionTaskManager {
                                 PersistRun persistRun = {});
   ~DetectionTaskManager();
   // Validates and fills the queued run without persisting it or starting it.
-  // startRequest saves that run, then enqueue() persists and queues the same
-  // request only after the project file commit succeeds.
+  // The detection panel runs this, the project save, and the disk budget
+  // check off the UI thread. enqueue() persists and queues only after that
+  // project commit succeeds.
   bool prepareQueuedRun(const QString& projectDirectory, const FileMetadata&,
                         DetectionRequest, QueuedDetectionRun&,
                         QString& error) const;
@@ -58,15 +82,36 @@ class DetectionTaskManager {
                         QString& error) const;
   bool enqueue(const QString& projectDirectory, const FileMetadata&,
                DetectionRequest, QString& error);
+  // Queues a run already accepted by prepareQueuedRun. Does not plan again.
+  bool queuePreparedRun(const QString& projectDirectory, const FileMetadata&,
+                        QueuedDetectionRun, QString& error);
   bool cancel(const std::string& runId);
   void invalidateSource(const std::string& runId, DetectionSourceValidity);
   void cancelGeneration(std::uint64_t generation);
   void pump();
+  // Both callbacks run without mutex_ and must not call back into this
+  // manager. Production leaves them empty. beforePumpJoin runs only after the
+  // task mutex is released and before joining a producer that already
+  // finished. beforeProducerTerminalLock runs after finish() and before the
+  // terminal preview lock.
+  void bindSchedulingProbeForTest(
+      std::function<void()> beforeProducerTerminalLock,
+      std::function<void()> beforePumpJoin);
   std::vector<DetectionRun> snapshots() const;
   bool takePublication(const std::string& runId, DetectionPublication&);
-  // Live preview only. It is not written into file marks or the project file.
+  // Session preview only. It does not start a worker, persist the run, or
+  // write file marks. Later jobs stay later in previewFor's scan.
+  void retainPreview(DetectionRun run, DetectionPreviewSnapshot preview);
+  // Latest live preview for this file, IQ channel, and project generation.
+  // A newer job on another channel is ignored. The snapshot has no channel;
+  // callers still match runId against snapshots() before drawing it.
   DetectionPreviewSnapshot previewFor(const std::string& fileId,
+                                      std::uint32_t sampleChannel,
                                       std::uint64_t projectGeneration) const;
+  // Drops a retained unpublished preview for this file, channel, and generation.
+  void discardUnpublishedPreview(const std::string& fileId,
+                                 std::uint32_t sampleChannel,
+                                 std::uint64_t projectGeneration);
 
  private:
   struct Job {
@@ -87,6 +132,12 @@ class DetectionTaskManager {
     QJsonObject sourceProfile, workerDiagnostic, gpuProfile, modelProfile;
     DetectionPreviewSnapshot preview;
     std::array<std::uint64_t,17> batches{};
+    std::size_t openTracks = 0;
+    std::size_t sealedTracks = 0;
+    std::uint64_t frameComparisons = 0;
+    bool frameSealed = false;
+    bool frameFused = false;
+    std::uint32_t checkpointBatch = 0;
     qint64 firstDecodedCandidateMs=-1, frequencyReadyMs=-1;
     QElapsedTimer clock;
   };
@@ -101,6 +152,8 @@ class DetectionTaskManager {
   std::vector<std::shared_ptr<Job>> jobs_;
   std::shared_ptr<Job> active_;
   std::jthread thread_;
+  std::function<void()> beforeProducerTerminalLock_;
+  std::function<void()> beforePumpJoin_;
 };
 
 }  // namespace signalstudio

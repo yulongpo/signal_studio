@@ -46,9 +46,8 @@ class ScratchGrant {
  private:
   std::uint64_t held_=0;bool invalid_=false;
 };
-bool resourceFallback(const QString& error) {
-  return error.contains("working budget") ||
-         error.contains("working memory budget");
+bool resourceFallback(DetectionFailureCode code) {
+  return code == DetectionFailureCode::ResourceLimit;
 }
 
 bool stopped(const DetectionSourceCancel& cancel, QString& error) {
@@ -136,7 +135,9 @@ QJsonObject energyTrace(const DetectionEnergySeries& series,
 bool readSpectrumBody(FixedDetectionSource& source, const FrequencyTrack& track,
                   DetectionSpectrumRoi& spectrum, std::uint64_t budget,
                   std::uint64_t& consumedCells, std::size_t& cellBudget,QString& error,
-                  const DetectionSourceCancel& cancel) {
+                  const DetectionSourceCancel& cancel,
+                  DetectionFailureCode& code) {
+  code = DetectionFailureCode::HardFailure;
   const auto& plan = source.plan();
   const auto index = [&](double hz) {
     return static_cast<std::size_t>(std::clamp(
@@ -159,10 +160,26 @@ bool readSpectrumBody(FixedDetectionSource& source, const FrequencyTrack& track,
       static_cast<long double>(end-first)*52+4*1048576;
   cellBudget=auxiliary>=budget ? 0 : static_cast<std::size_t>(std::min<long double>(
       256ULL*1024*1024,(budget-auxiliary)/sizeof(float)));
-  if (first >= end || static_cast<long double>(end-first)*width>cellBudget) {
-    error = QString("Physical STFT ROI needs %1 cells; capacity %2 cells within %3 bytes working budget; reduce range or increase interval")
-        .arg(QString::number(static_cast<long double>(end-first)*width,'f',0))
-        .arg(qulonglong(cellBudget)).arg(qulonglong(budget));
+  const auto times = end > first ? end - first : 0;
+  const auto edgeCount = width + 1;
+  const double firstHz = plan.frequencyFirstBinHz +
+                         (static_cast<double>(firstBin) - .5) * plan.frequencyStepHz;
+  const double lastHz = plan.frequencyFirstBinHz +
+                        (static_cast<double>(lastBin + 1) - .5) * plan.frequencyStepHz;
+  const auto requiredCells = static_cast<long double>(times) * width;
+  if (first >= end) {
+    error = "Physical STFT ROI has no real frames";
+    return false;
+  }
+  if (requiredCells > cellBudget) {
+    code = DetectionFailureCode::WorkingCellLimit;
+    error = QString("Spectrum capacity rejected: times=%1 frequencyEdges=%2 requiredCells=%3 allowedCells=%4 frequencyEdgeHz=%5..%6")
+                .arg(qulonglong(times))
+                .arg(qulonglong(edgeCount))
+                .arg(QString::number(requiredCells, 'f', 0))
+                .arg(qulonglong(cellBudget))
+                .arg(firstHz, 0, 'g', 12)
+                .arg(lastHz, 0, 'g', 12);
     return false;
   }
   const auto cells = (end - first) * width;
@@ -196,6 +213,7 @@ bool readSpectrumBody(FixedDetectionSource& source, const FrequencyTrack& track,
         spectrum.timeSlots.clear();
         spectrum.powerDb.clear();
         error.clear();
+        code = DetectionFailureCode::HardFailure;
         useSpool = false;
         break;
       }
@@ -214,13 +232,16 @@ bool readSpectrumBody(FixedDetectionSource& source, const FrequencyTrack& track,
                             frame.densityDb.begin() + firstBin,
                             frame.densityDb.begin() + lastBin + 1);
   }
+  code = DetectionFailureCode::None;
   return true;
 }
 
 bool readEnergy(const FileMetadata& metadata, const FrequencyTrack& track,
                 const DetectionRequest& request, DetectionEnergySeries& series,
                 std::uint64_t budget, std::uint64_t& consumedCells,
-                QString& error, const DetectionSourceCancel& cancel) {
+                QString& error, const DetectionSourceCancel& cancel,
+                DetectionFailureCode& code) {
+  code = DetectionFailureCode::HardFailure;
   const auto margin =
       static_cast<SampleIndex>(std::floor(.008 * metadata.sampleRateHz));
   const auto begin = track.nominalSupport.begin > margin
@@ -234,8 +255,16 @@ bool readEnergy(const FileMetadata& metadata, const FrequencyTrack& track,
   const auto count = end - begin;
   // During filtering IQ and float32 power coexist; during domain refinement
   // energy, smoothed energy and a quantile copy coexist. Reserve the larger.
-  if (begin >= end || static_cast<long double>(count) * 12 + 2097152 > budget) {
-    error = "Exact sample search context exceeds the working budget";
+  const auto requiredBytes = static_cast<long double>(count) * 12 + 2097152;
+  if (begin >= end) {
+    error = "Exact sample search context is empty";
+    return false;
+  }
+  if (requiredBytes > budget) {
+    code = DetectionFailureCode::ResourceLimit;
+    error = QString("Energy working-set exceeded: requiredBytes=%1 allowedBytes=%2")
+                .arg(QString::number(requiredBytes, 'f', 0))
+                .arg(qulonglong(budget));
     return false;
   }
   if (count > (std::uint64_t{1} << 34) - consumedCells) {
@@ -260,12 +289,18 @@ bool readEnergy(const FileMetadata& metadata, const FrequencyTrack& track,
   series.stepSamples = 1;
   series.filterSupportSamples = count;
   series.energyMethod = "cpu-exact-length-complex64-raised-cosine-fft-v1";
-  return detectionBandEnergy(
+  DetectionFailureCode bandCode = DetectionFailureCode::HardFailure;
+  const auto measured = detectionBandEnergy(
       std::move(samples), metadata.sampleRateHz,
       (track.frequency.lowerHz + track.frequency.upperHz) / 2 -
           metadata.centerFrequencyHz,
       track.frequency.upperHz - track.frequency.lowerHz, series.power, budget,
-      error, cancel);
+      error, cancel, {}, &bandCode);
+  code = measured ? DetectionFailureCode::None
+                  : bandCode == DetectionFailureCode::None
+                        ? DetectionFailureCode::HardFailure
+                        : bandCode;
+  return measured;
 }
 
 bool boundedSample(FixedDetectionSource& source,const FileMetadata& metadata,const FrequencyTrack& track,
@@ -295,6 +330,7 @@ bool boundedSample(FixedDetectionSource& source,const FileMetadata& metadata,con
   // diagnostic instead of an eligible LegacyExact result.
   config.mode=stream::Mode::Auto;
   config.scratchBudgetBytes=request.sampleScratchBudgetBytes;
+  config.scratchFreeFloorBytes=0;
   stream::Runtime runtime;
   // FIR K/C/radius remain fixed and bounded. Precision fallback may use the
   // SAME full working grant previously available to LegacyExact, after FIR
@@ -391,9 +427,13 @@ bool boundedSample(FixedDetectionSource& source,const FileMetadata& metadata,con
 bool readSpectrum(FixedDetectionSource& source, const FrequencyTrack& track,
                   DetectionSpectrumRoi& spectrum, std::uint64_t budget,
                   std::uint64_t& consumedCells, std::size_t& cellBudget,
-                  QString& error, const DetectionSourceCancel& cancel) {
-  return readSpectrumBody(source, track, spectrum, budget, consumedCells,
-                          cellBudget, error, cancel);
+                  QString& error, const DetectionSourceCancel& cancel,
+                  DetectionFailureCode* failure) {
+  DetectionFailureCode code = DetectionFailureCode::HardFailure;
+  const auto ok = readSpectrumBody(source, track, spectrum, budget, consumedCells,
+                                   cellBudget, error, cancel, code);
+  if (failure) *failure = ok ? DetectionFailureCode::None : code;
+  return ok;
 }
 
 bool applyDetectionTimeAnalysis(
@@ -456,10 +496,11 @@ bool applyDetectionTimeAnalysis(
       }
     } else if (request.parameters.timeStrategy == DetectionTimeStrategy::Sample) {
       input.energy.emplace();
+      DetectionFailureCode energyCode = DetectionFailureCode::HardFailure;
       if (!readEnergy(metadata, *track, request, *input.energy, working,
-                      totalCells, fallbackError, cancel)) {
+                      totalCells, fallbackError, cancel, energyCode)) {
         if (stopped(cancel, error)) return false;
-        if (!resourceFallback(fallbackError)) {
+        if (!resourceFallback(energyCode)) {
           error = fallbackError;
           return false;
         }
@@ -472,10 +513,11 @@ bool applyDetectionTimeAnalysis(
                request.parameters.timeStrategy ==
                    DetectionTimeStrategy::Coarse) {
       input.spectrum.emplace();
+      DetectionFailureCode spectrumCode = DetectionFailureCode::HardFailure;
       if (!readSpectrum(source, *track, *input.spectrum, working, totalCells,spectrumCellBudget,
-                        fallbackError, cancel)) {
+                        fallbackError, cancel, &spectrumCode)) {
         if (stopped(cancel, error)) return false;
-        if (!resourceFallback(fallbackError)) {
+        if (!resourceFallback(spectrumCode)) {
           error = fallbackError;
           return false;
         }
@@ -506,10 +548,11 @@ bool applyDetectionTimeAnalysis(
       if (!input.spectrum) {
         input.spectrum.emplace();
         QString spectrumError;
+        DetectionFailureCode spectrumCode = DetectionFailureCode::HardFailure;
         if (!readSpectrum(source, *track, *input.spectrum, working, totalCells,spectrumCellBudget,
-                          spectrumError, cancel)) {
+                          spectrumError, cancel, &spectrumCode)) {
           if (stopped(cancel, error)) return false;
-          if (!resourceFallback(spectrumError)) {
+          if (!resourceFallback(spectrumCode)) {
             error = spectrumError;
             return false;
           }

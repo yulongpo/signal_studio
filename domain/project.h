@@ -234,6 +234,9 @@ struct FileState {
       revisionEditingBaseRevisionId;
   std::array<bool, 3> annotationLayers{true, true, true};
   AnnotationViewFilter annotationFilter;
+  // Session-only. Hides this channel's committed algorithm marks from the
+  // detection-result table while a new run owns the display. Not persisted.
+  std::optional<std::uint32_t> suppressCommittedDetectionChannel;
 };
 inline bool annotationInContext(const FileState& file,
                                 const Annotation& value) {
@@ -273,6 +276,11 @@ inline bool annotationMatchesFilter(const FileState& file,
 inline bool annotationEligibleForTab(const FileState& file,
                                      const Annotation& value,
                                      AnnotationSource source) {
+  if (source == AnnotationSource::Algorithm &&
+      file.suppressCommittedDetectionChannel &&
+      *file.suppressCommittedDetectionChannel ==
+          file.metadata.sampleFormat.selectedChannel)
+    return false;
   return value.sourceKind == source && annotationMatchesFilter(file, value);
 }
 inline bool annotationSelectable(const FileState& file,
@@ -285,7 +293,8 @@ inline bool annotationOverlayVisible(const FileState& file,
          file.annotationLayers[static_cast<int>(value.sourceKind)];
 }
 inline bool annotationVisible(const FileState& file, const Annotation& value) {
-  return annotationOverlayVisible(file, value);
+  // plotHidden keeps the detection-table row. Drawing and hit testing skip it.
+  return annotationOverlayVisible(file, value) && !value.plotHidden;
 }
 struct AnnotationCounts {
   std::size_t total = 0, matching = 0, selected = 0;

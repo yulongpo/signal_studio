@@ -27,6 +27,11 @@ struct DetectionSourceConfig {
   std::uint64_t readBlockBytes = 4 * 1024 * 1024;
   std::uint64_t workingSetBudgetBytes = 256 * 1024 * 1024;
   std::uint64_t evidenceBudgetBytes = 32 * 1024 * 1024;
+  // Zero together with legacyCombinedRawHeads keeps one window's raw head
+  // inside the JSON evidence budget. A new request that does not retain heads
+  // sets the flag false so that unsaved .f32 payload is not charged.
+  std::uint64_t rawHeadBudgetBytes = 0;
+  bool legacyCombinedRawHeads = true;
   std::uint32_t maximumCandidates = 512;
   // Host-resident windows use oneMKL when the runtime is present. GPU upload
   // of those same frames measured slower than the host transform.
@@ -186,8 +191,12 @@ class FixedDetectionSource {
   std::string gpuFallback_;
   std::uint64_t gpuFrames_ = 0, gpuWindows_ = 0, cpuFrames_ = 0, cpuWindows_ = 0;
   std::uint64_t mklFrames_ = 0;
+  std::string stftRoute_ = "unselected";
+  std::string stftSuppressedReason_;
+  bool modelWindowStftLocked_ = false;
   bool suppressGpuFrame_ = false;
   bool hostMklFrame_ = false;
+  void notePlainStftRoute(bool usedGpu);
   MklDft mkl_;
   std::unique_ptr<SpectrumSpool> frequencySpool_;
   std::unique_ptr<DetectionFrameCache> frameCache_;

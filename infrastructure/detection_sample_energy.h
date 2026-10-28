@@ -6,6 +6,7 @@
 #include <span>
 #include <vector>
 
+#include "domain/detection_refinement.h"
 #include "infrastructure/detection_source.h"
 
 namespace signalstudio {
@@ -20,19 +21,22 @@ bool detectionBandEnergy(std::vector<std::complex<float>> samples,
                          double bandwidthHz, std::vector<float>& output,
                          std::uint64_t workingByteBudget, QString& error,
                          const DetectionSourceCancel& cancelled = {},
-                         const DetectionFilteredSampleObserver& filteredObserver = {});
+                         const DetectionFilteredSampleObserver& filteredObserver = {},
+                         DetectionFailureCode* failure = nullptr);
 
 // Exposed for numerical verification; transforms in place and normalizes the
 // inverse. Invalid length/resource limits fail before changing the data.
 bool detectionComplexTransform(std::span<std::complex<float>> samples,
                                bool inverse, std::uint64_t workingByteBudget,
                                QString& error,
-                               const DetectionSourceCancel& cancelled = {});
+                               const DetectionSourceCancel& cancelled = {},
+                               DetectionFailureCode* failure = nullptr);
 
 // Fixed-workspace FIR backend only. Different float32 operation order from
 // LegacyExact; its callers must retain versioned numerical comparisons.
 bool detectionBoundedRadixTwoTransform(std::vector<std::complex<float>>& samples,
     bool inverse,std::uint64_t workingByteBudget,QString& error,
-    const DetectionSourceCancel& cancelled = {});
+    const DetectionSourceCancel& cancelled = {},
+    DetectionFailureCode* failure = nullptr);
 
 }  // namespace signalstudio

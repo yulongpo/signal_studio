@@ -27,6 +27,7 @@ class DetectionResultProjector {
   std::vector<PreviewTrackEvent> previewEvents() const;
   std::vector<PreviewTrackEvent> visiblePreviewEvents() const;
   std::uint64_t droppedPreviewEvents() const;
+  FrequencyTrackerFrameStats frameStats() const;
   bool attachWindowEvidence(DetectionPublication&, QString& error) const;
 
  private:

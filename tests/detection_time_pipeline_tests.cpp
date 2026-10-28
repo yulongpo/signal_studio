@@ -16,7 +16,9 @@
 #include <thread>
 
 #include "application/annotation_service.h"
+#include "domain/detection_refinement.h"
 #include "infrastructure/annotation_json.h"
+#include "infrastructure/detection_sample_stream.h"
 #include "infrastructure/annotation_store.h"
 #include "infrastructure/detection_model_snapshot.h"
 #include "infrastructure/detection_projection.h"
@@ -483,6 +485,124 @@ void spectrumCapacityMatchesActualConsumer() {
       "The regression must exercise and measure a physical ROI larger than the old mismatched cell limit");
   check(publication.annotations.front().segments.empty(),"Zero IQ must not acquire nominal-support activity");
 }
+
+void workingCellLimitDoesNotForgeActivity() {
+  DetectionRequest defaults;
+  sample_stream::Config scratch;
+  check(defaults.sampleScratchBudgetBytes == detectionDiskBudgetDefaultBytes({}) &&
+            scratch.scratchBudgetBytes == 16ULL * 1024 * 1024 * 1024 &&
+            scratch.scratchFreeFloorBytes == 0,
+        "Sample scratch request default follows free disk; the stream floor is remaining space");
+  Segment forged;
+  forged.id = "nominal-support";
+  forged.range = {{0, 40}, {0, 10}};
+  forged.timeQuality = TimeQuality::WindowObservation;
+  DetectionRefinementInput energy;
+  energy.candidateId = "energy-cells";
+  energy.sampleRateHz = 1000;
+  energy.windowCoverage = 1;
+  energy.observation = {{0, 20}, {0, 10}};
+  energy.publishBounds = energy.observation;
+  energy.fallbackActivity = {forged};
+  energy.energy = DetectionEnergySeries{0, 1, 20, 1, std::vector<float>(20, 1.f), "test"};
+  DetectionRefinementOptions options;
+  options.workingCellBudget = 4;
+  DetectionParameters parameters;
+  parameters.timeStrategy = DetectionTimeStrategy::Sample;
+  parameters.smoothSeconds = 0;
+  parameters.minOnSeconds = 0;
+  parameters.minOffSeconds = 0;
+  const auto energyResult = refineDetection(energy, parameters, options);
+  check(!energyResult.ok && energyResult.activity.empty() &&
+            energyResult.failureCode == DetectionFailureCode::WorkingCellLimit &&
+            energyResult.error.find("requiredCells=20") != std::string::npos &&
+            energyResult.error.find("allowedCells=4") != std::string::npos,
+        QString::fromStdString(energyResult.error));
+
+  DetectionRefinementInput spectral;
+  spectral.candidateId = "spectrum-cells";
+  spectral.sampleRateHz = 1000;
+  spectral.windowCoverage = 1;
+  spectral.observation = {{100, 104}, {100, 103}};
+  spectral.publishBounds = spectral.observation;
+  spectral.fallbackActivity = {forged};
+  DetectionSpectrumRoi roi;
+  for (std::size_t i = 0; i < 4; ++i) roi.timeSlots.push_back({100 + i, 101 + i});
+  for (std::size_t i = 0; i < 4; ++i) roi.frequencyEdgesHz.push_back(100. + i);
+  roi.powerDb.assign(12, -100.f);
+  spectral.spectrum = roi;
+  options.workingCellBudget = 8;
+  parameters.timeStrategy = DetectionTimeStrategy::Coarse;
+  const auto spectrumResult = refineDetection(spectral, parameters, options);
+  check(!spectrumResult.ok && spectrumResult.activity.empty() &&
+            spectrumResult.failureCode == DetectionFailureCode::WorkingCellLimit &&
+            spectrumResult.error.find("times=4") != std::string::npos &&
+            spectrumResult.error.find("frequencyEdges=4") != std::string::npos &&
+            spectrumResult.error.find("requiredCells=12") != std::string::npos &&
+            spectrumResult.error.find("allowedCells=8") != std::string::npos &&
+            spectrumResult.error.find("frequencyEdgeHz=") != std::string::npos,
+        QString::fromStdString(spectrumResult.error));
+
+  QTemporaryDir directory;
+  const auto path = directory.filePath("cell-limit.raw");
+  QFile file(path);
+  check(file.open(QIODevice::WriteOnly), file.errorString());
+  const QByteArray silence(100000 * 4, '\0');
+  check(file.write(silence) == silence.size(), file.errorString());
+  file.close();
+  FileMetadata metadata;
+  metadata.id = "cell-limit";
+  metadata.path = path.toStdString();
+  metadata.sampleRateHz = 20e6;
+  metadata.centerFrequencyHz = 2.5e9;
+  metadata.sampleCount = 100000;
+  metadata.demo = false;
+  metadata.availability.fingerprint = iqSourceFingerprint(path).toStdString();
+  DetectionRequest request;
+  request.runId = "cell-limit-run";
+  request.profile = *findDetectionProfile("pipeline-fixture-v1");
+  request.sourceIdentity = annotationSourceIdentity(metadata, 944);
+  request.requestedRange = request.contextRange = {{0, 100000}, {2.49e9, 2.51e9}};
+  request.workingSetBudgetBytes = 16 * 1024 * 1024;
+  request.parameters.timeStrategy = DetectionTimeStrategy::Roi;
+  FixedDetectionSource source;
+  DetectionSourceConfig config;
+  config.profileId = "fixed-grid-fixture-v1";
+  QString error;
+  check(source.open(metadata, request.requestedRange, config, error, 944), error);
+  DetectionRun run;
+  run.request = request;
+  DetectionPublication empty, publication;
+  check(recoverDetectionPublication(directory.path(), run, empty, error), error);
+  FrequencyTrack track;
+  track.seedId = "cell-limit-track";
+  track.runId = request.runId;
+  track.fileId = metadata.id;
+  track.frequency = track.originalFrequency = request.requestedRange.frequency;
+  track.nominalSupport = track.actualSupport = {0, 100000};
+  check(projectFrequencyTracks(request, empty.sourceSet, {track}, 8 * 1024 * 1024,
+                               publication, error),
+        error);
+  DetectionFailureCode code = DetectionFailureCode::None;
+  std::uint64_t consumed = 0;
+  std::size_t cellBudget = 0;
+  DetectionSpectrumRoi rejected;
+  check(!readSpectrum(source, track, rejected, request.workingSetBudgetBytes * 3 / 4,
+                      consumed, cellBudget, error, {}, &code) &&
+            code == DetectionFailureCode::WorkingCellLimit &&
+            error.contains("times=") && error.contains("frequencyEdges=") &&
+            error.contains("requiredCells=") && error.contains("allowedCells=") &&
+            error.contains("frequencyEdgeHz=") && !error.contains("working budget"),
+        error);
+  const auto before = encodeDetectionPublication(publication);
+  check(!applyDetectionTimeAnalysis(source, metadata, request, {track}, publication,
+                                    error) &&
+            encodeDetectionPublication(publication) == before &&
+            error.contains("times=") && error.contains("requiredCells=") &&
+            error.contains("allowedCells=") && !error.contains("working budget"),
+        error);
+}
+
 void runFile(const QString& wav, const QString& output, const QString& strategy,
              bool shortProfile) {
   const auto started = std::chrono::steady_clock::now();
@@ -618,6 +738,7 @@ int main(int argc, char** argv) {
       refinementPublicationRoundtrip();
       measuredFallbackKeepsBranchParameterScope();
       spectrumCapacityMatchesActualConsumer();
+      workingCellLimitDoesNotForgeActivity();
     }
     std::cout << "Time pipeline checks passed\n";
     return 0;

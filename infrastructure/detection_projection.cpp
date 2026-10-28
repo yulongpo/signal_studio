@@ -241,6 +241,9 @@ std::vector<PreviewTrackEvent> DetectionResultProjector::visiblePreviewEvents()
 std::uint64_t DetectionResultProjector::droppedPreviewEvents() const {
   return initialized_ ? tracker_.droppedPreviewEvents() : 0;
 }
+FrequencyTrackerFrameStats DetectionResultProjector::frameStats() const {
+  return initialized_ ? tracker_.frameStats() : FrequencyTrackerFrameStats{};
+}
 
 std::string detectionTrackRecordId(const std::string& seedId) {
   return seedId.size() <= 128 ? seedId : "track:" + hash(seedId);

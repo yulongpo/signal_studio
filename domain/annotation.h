@@ -200,6 +200,9 @@ struct Annotation {
   std::vector<AnnotationRevision> revisions;
   std::vector<std::string> derivedFrom;
   bool deleted = false;
+  // Display-only. Absent or false in saved projects. Hidden results stay in
+  // the detection table and can be shown again.
+  bool plotHidden = false;
 
   Annotation() = default;
   Annotation(std::string id, std::string name, ViewRange range);

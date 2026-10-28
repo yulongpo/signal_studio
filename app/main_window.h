@@ -94,6 +94,7 @@ class MainWindow : public QMainWindow {
   void toggleWindowState();
   void updateWindowControls();
   void openWidebandDetection(const DetectionRun* parentRun = nullptr);
+  void openDetectionResourceOptions();
   void openFfscnEngineTool();
   void openFfscnEngineSwitch();
   void beginDetectionRoi();
@@ -171,6 +172,7 @@ class MainWindow : public QMainWindow {
   void updateBottom();
   void updateCursor(SampleIndex sample, double frequencyHz);
   void log(const QString& message);
+  void syncFormalDetectionSuppression();
   QPushButton* autoPowerFit_ = nullptr;
   std::shared_ptr<const SpectrogramData> powerFitHeatmap_;
   std::shared_ptr<const SpectralFrame> powerFitPsd_;

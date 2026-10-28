@@ -63,6 +63,7 @@ class AnnotationPanel final : public QWidget {
   void action(const AnnotationResult&);
   void chooseRow(const QModelIndex&, Qt::KeyboardModifiers, bool toggle);
   void filterChanged();
+  void setSelectedPlotHidden(bool hidden);
   void applyOverlaySource(FileState&, AnnotationSource);
   void geometry(int);
   void editCell(const QModelIndex&);

@@ -428,20 +428,31 @@ void trackingLimitsAndCancellationAreAtomic() {
   config = trackerConfig(2);
   config.limits.maximumAssociationPairs = 1;
   auto pairBound = tracker(config);
+  // The carriers do not overlap, so this frame's open-set fusion leaves both.
+  // The next candidate matches both and must stop at the explicit pair cap.
   consume(pairBound,
-          window(0, {candidate(0, 20, .8, 32), candidate(10, 30, .8, 40)}));
-  check(!pairBound.consume(window(1, {candidate(5, 25)}), error) &&
+          window(0, {candidate(0, 10, .8, 32), candidate(12, 22, .8, 40)}));
+  check(!pairBound.consume(window(1, {candidate(2, 20)}), error) &&
             pairBound.processedWindows() == 1,
         "Dense association pairs must be explicitly bounded");
   config = trackerConfig(1);
   config.limits.maximumFusionComparisons = 1;
   auto fusionBound = tracker(config);
-  consume(fusionBound,
-          window(0, {candidate(-60, -50, .8, 16), candidate(0, 10, .8, 32),
-                     candidate(50, 60, .8, 48)}));
-  check(
-      !fusionBound.finish(sentinel, error) && sentinel[0].seedId == "unchanged",
-      "Excessive final fusion work fails without partial output");
+  check(!fusionBound.consume(
+            window(0, {candidate(-60, -50, .8, 16), candidate(0, 10, .8, 32),
+                       candidate(50, 60, .8, 48)}),
+            error) &&
+            fusionBound.processedWindows() == 0 &&
+            fusionBound.retainedTracks() == 0 &&
+            error.find("frequency-fusion-comparison-limit-exceeded") == 0 &&
+            error.find("open=") != std::string::npos &&
+            error.find("sealed=") != std::string::npos &&
+            error.find("comparisons=") != std::string::npos,
+        "An open set whose comparisons exceed the explicit limit of 1 fails "
+        "the frame");
+  std::vector<FrequencyTrack> published;
+  check(fusionBound.finish(published, error) && published.empty(),
+        "A rejected open-set frame must not publish partial tracks");
 }
 void scnMinimumNoiseAndMaximumOnlyEdges() {
   std::vector<float> average(64, 20), maximum(64, 0);
@@ -570,7 +581,7 @@ void closedPreviewSurvivesLogEviction() {
   const auto kept = std::find_if(
       visible.begin(), visible.end(),
       [&](const auto& event) { return event.trackId == closedId; });
-  check(kept != visible.end() && kept->phase == PreviewTrackPhase::Closed &&
+  check(kept != visible.end() && kept->phase == PreviewTrackPhase::Finalized &&
             near(kept->frequency.lowerHz, -39) &&
             near(kept->frequency.upperHz, -29) &&
             kept->observedSupport == TimeRange{0, 15},
@@ -594,32 +605,68 @@ void fusedPreviewKeepsOnlySurvivorEnvelope() {
   consume(model, window(2));
   consume(model, window(3, {candidate(2, 12, .8, 36)}));
   const auto before = model.visiblePreviewEvents();
-  check(before.size() == 2, "Two fusible tracks must both stay visible before finish");
-  std::string survivor, absorbed;
-  for (const auto& event : before) {
-    if (event.observedSupport.begin == 0) survivor = event.trackId;
-    if (event.observedSupport.begin == 15) absorbed = event.trackId;
-  }
-  check(!survivor.empty() && !absorbed.empty() && survivor != absorbed,
-        "Fusion setup must identify the earlier and later tracks");
+  check(before.size() == 1 && before.front().observedSupport == TimeRange{0, 25},
+        "A hit inside the fragment gap must reconnect to the same open track");
+  const auto survivor = before.front().trackId;
   const auto result = finish(model);
-  const auto visible = model.visiblePreviewEvents();
-  check(visible.size() == 1 && visible.front().trackId == survivor &&
-            visible.front().phase == PreviewTrackPhase::Merged &&
-            visible.front().frequency == FrequencyRange{0, 12} &&
-            visible.front().observedSupport == TimeRange{0, 25},
-        "Fusion must leave only the survivor, with frequency and time envelopes");
-  for (const auto& event : visible)
-    check(event.trackId != absorbed, "The absorbed track must leave the visible preview");
-  check(result.size() == 1 && result[0].previewId == survivor &&
-            result[0].frequency == FrequencyRange{0, 12} &&
+  check(result.size() == 1 && result[0].previewId == survivor && result[0].hits == 2 &&
+            result[0].windows.size() == 2 &&
+            result[0].originalFrequencyEnvelope == FrequencyRange{0, 12} &&
             result[0].nominalSupport == TimeRange{0, 25},
-        "Formal fusion must keep the survivor id and the same envelopes");
-  bool absorbedInLog = false;
-  for (const auto& event : model.previewEvents())
-    if (event.trackId == absorbed) absorbedInLog = true;
-  check(absorbedInLog,
-        "The bounded log still records the absorbed track; only the visible set drops it");
+        "Online reconnection keeps both hits and the observed envelope");
+}
+void sealedBurstsDoNotReenterFusion() {
+  constexpr std::size_t framesFor60Seconds = 60 * 4000;
+  FrequencyTrackerLimits defaults;
+  check(defaults.maximumWindows >= framesFor60Seconds &&
+            defaults.maximumWindows < 1000000 &&
+            defaults.maximumEvidenceBands >= framesFor60Seconds &&
+            defaults.maximumEvidenceBands <= 1000000,
+        "Default window and evidence caps must cover 60 s at 0.25 ms");
+  auto config = trackerConfig(8);
+  config.minHits = 1;
+  config.maxMiss = 0;
+  config.mergeToleranceHz = 0;
+  config.fragmentGapSamples = 5;
+  config.limits.maximumFusionComparisons = 100000;
+  auto model = tracker(config);
+  std::vector<DecodedCandidate> burst;
+  burst.reserve(30);
+  for (std::size_t index = 0; index < 30; ++index) {
+    const double lower = -120 + static_cast<double>(index) * 4;
+    burst.push_back(candidate(lower, lower + 2, .8, index));
+  }
+  consume(model, window(0, burst));
+  consume(model, window(1, burst));
+  consume(model, window(2));
+  consume(model, window(3));
+  consume(model, window(4));
+  const auto beforeGap = model.frameStats();
+  check(beforeGap.sealedTracks == 0 && beforeGap.openTracks == 30,
+        "Tracks inside the fragment gap stay open");
+  consume(model, window(5, {candidate(40, 42, .8, 60), candidate(80, 82, .8, 61)}));
+  const auto afterGap = model.frameStats();
+  check(afterGap.sealed && afterGap.sealedTracks == 30 && afterGap.openTracks == 2 &&
+            afterGap.comparisons == 1,
+        "The second burst must not compare the sealed first burst");
+  const auto result = finish(model);
+  check(result.size() == 32, "Each burst remains its own tracks");
+  const auto first = std::find_if(result.begin(), result.end(), [](const auto& track) {
+    return track.nominalSupport.begin == 0;
+  });
+  check(first != result.end() && first->hits == 2 && first->windows.empty() &&
+            first->nominalSupport == TimeRange{0, 15} &&
+            first->actualSupport == TimeRange{0, 18},
+        "Sealing drops per-window evidence without dropping hits or observed time");
+  auto separated = tracker(config);
+  consume(separated, window(0, {candidate(0, 10, .8, 32)}));
+  consume(separated, window(1));
+  consume(separated, window(2));
+  consume(separated, window(3));
+  consume(separated, window(4));
+  consume(separated, window(5, {candidate(0, 10, .8, 32)}));
+  check(finish(separated).size() == 2,
+        "Energy after the fragment gap is a new track");
 }
 void scnUnavailableAndInvalidSamples() {
   std::vector<float> average(32, std::numeric_limits<float>::quiet_NaN());
@@ -668,8 +715,9 @@ int main() {
     previewQueueDropsOldestWithoutTruncatingFormalTracks();
     closedPreviewSurvivesLogEviction();
     fusedPreviewKeepsOnlySurvivorEnvelope();
+    sealedBurstsDoNotReenterFusion();
     scnUnavailableAndInvalidSamples();
-    std::cout << "Detection postprocess tests: 16 groups passed\n";
+    std::cout << "Detection postprocess tests: 17 groups passed\n";
     return 0;
   } catch (const std::exception& exception) {
     std::cerr << exception.what() << '\n';

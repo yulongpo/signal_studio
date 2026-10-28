@@ -8,6 +8,8 @@
 
 LegacyExact继续作为冻结数值对照。源STFT保持complex128/float64运算语义，FIR保持complex64/float32及既定误差、拓扑和精度回退门槛；模型权重及FP32精度保持。GPU显示、TensorRT推理、CUDA DSP分别记录，不能相互替代证据。新GPU模块动态可选加载，缺少运行库不应阻止既有Qt工作流启动。工程事务、来源完整性和有界队列合同继续有效。
 
+模型窗 STFT 固定走主机 oneMKL。缺少 oneMKL DLL 时仍用手写 FFT，不把整窗逐帧上传改为 GPU STFT。GPU 用于已经在设备上的 FIR、归一化和 TensorRT 推理。QRhi 显示单独记录，不写入 TensorRT 的 `tensorRtInference` 计时；CUDA DSP 留在 `sourceStages.gpuDsp`。旧日志里的 `gpu` 只作为同一 TensorRT CUDA event 对象的读取别名。
+
 ## 数据与提交边界
 
 `RawSampleReader → FixedDetectionSource → isolated TensorRT worker → decode/tracker → frequency/refine/fuse → durable completed publication → UX-R5正式事务`。

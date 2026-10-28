@@ -14,10 +14,15 @@ namespace signalstudio {
 
 QJsonObject encodeDetectionRequest(const DetectionRequest& request);
 bool decodeDetectionRequest(const QJsonObject& object,
-                            DetectionRequest& request, QString& error);
+                            DetectionRequest& request, QString& error,
+                            const QString& storagePath = {});
 QJsonObject encodeDetectionRun(const DetectionRun& run);
 bool decodeDetectionRun(const QJsonObject& object, DetectionRun& run,
-                        QString& error);
+                        QString& error, const QString& storagePath = {});
+// TensorRT CUDA-event timings. New logs use tensorRtInference. Logs written
+// before that rename keep the same object under "gpu". CUDA DSP and QRhi are
+// not read from either key.
+QJsonObject detectionTensorRtInferenceTimings(const QJsonObject& performance);
 
 // Only run manifests are published here. The caller owns project.json and
 // explicitly decides whether recovered results belong in the project index.

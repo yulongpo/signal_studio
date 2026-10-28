@@ -233,7 +233,7 @@ bool sameCommandState(const auto& a, const auto& b) {
   return a.name == b.name && a.note == b.note && a.revisionId == b.revisionId &&
          a.reviewRevisionId == b.reviewRevisionId &&
          a.reviewStatus == b.reviewStatus && a.deleted == b.deleted &&
-         a.observation == b.observation;
+         a.plotHidden == b.plotHidden && a.observation == b.observation;
 }
 }  // namespace
 
@@ -721,6 +721,7 @@ AnnotationService::State AnnotationService::state(const Annotation& a) {
           a.reviewRevisionId,
           a.reviewStatus,
           a.deleted,
+          a.plotHidden,
           a.observation};
 }
 void AnnotationService::installState(Annotation& a, const State& s) {
@@ -731,6 +732,7 @@ void AnnotationService::installState(Annotation& a, const State& s) {
   a.reviewRevisionId = s.reviewRevisionId;
   a.reviewStatus = s.reviewStatus;
   a.deleted = s.deleted;
+  a.plotHidden = s.plotHidden;
   a.observation = s.observation;
   refreshAnnotationProjection(a);
 }
@@ -1737,6 +1739,93 @@ AnnotationResult AnnotationService::deleteBatch(
   refreshChannelSourceRelations(file);
   return success({}, true);
 }
+AnnotationResult AnnotationService::deleteAlgorithmBatch(
+    FileState& file, const std::vector<std::string>& ids, std::string actor) {
+  if (const auto blocked = blockedWrite()) return *blocked;
+  std::unordered_set<std::string> selected;
+  std::vector<Annotation> after;
+  Command command;
+  const auto index = annotationIndex(file);
+  for (const auto& id : ids) {
+    if (!selected.insert(id).second) continue;
+    const auto found = index.find(id);
+    const auto* annotation = found == index.end() ? nullptr : found->second;
+    if (!annotation) return fail("批量删除含有不存在的检测结果");
+    if (annotation->sourceKind != AnnotationSource::Algorithm)
+      return fail("只能软删除检测结果；原始标签和人工标记不能从这里删除");
+    if (annotation->deleted) continue;
+    if (!currentIdentity(file, *annotation) ||
+        !annotationInContext(file, *annotation))
+      return fail("只能软删除当前通道上身份有效的正式检测结果");
+    auto changed = *annotation;
+    changed.deleted = true;
+    changed.revisionId = nextId(file, "revision-");
+    changed.reviewRevisionId = changed.revisionId;
+    changed.reviewStatus = ReviewStatus::Pending;
+    for (auto& segment : changed.segments) segment.confirmed = false;
+    changed.revisions.push_back({changed.revisionId, annotation->revisionId,
+                                 "delete", actor, now(), {}});
+    changed.reviewHistory.push_back({ReviewStatus::Pending, changed.revisionId,
+                                     actor, now(), "Soft deletion"});
+    if (const auto result =
+            validateAnnotation(changed, annotationBounds(file.metadata));
+        !result)
+      return fail(result.error);
+    command.patches.push_back(difference(*annotation, changed));
+    after.push_back(std::move(changed));
+  }
+  if (after.empty()) return success();
+  if (commandBytes(command) > annotationCommandByteBudget)
+    return fail("一次删除超过标记命令内存预算（128 MiB）");
+  for (auto& changed : after) *index.at(changed.id) = std::move(changed);
+  record(file, std::move(command));
+  std::erase_if(file.selectedMarkIds,
+                [&](const auto& id) { return selected.contains(id); });
+  if (selected.contains(file.activeMarkId)) {
+    file.activeMarkId.clear();
+    file.activeSegmentId.clear();
+  }
+  if (selected.contains(file.revisionEditingAnnotationId)) endRevision(file);
+  reconcileSelection(file);
+  refreshChannelSourceRelations(file);
+  return success({}, true);
+}
+AnnotationResult AnnotationService::setAlgorithmPlotHidden(
+    FileState& file, const std::vector<std::string>& ids, bool hidden,
+    std::string actor) {
+  if (const auto blocked = blockedWrite()) return *blocked;
+  static_cast<void>(actor);
+  std::unordered_set<std::string> selected;
+  std::vector<Annotation> after;
+  Command command;
+  const auto index = annotationIndex(file);
+  for (const auto& id : ids) {
+    if (!selected.insert(id).second) continue;
+    const auto found = index.find(id);
+    const auto* annotation = found == index.end() ? nullptr : found->second;
+    if (!annotation) return fail("批量隐藏含有不存在的检测结果");
+    if (annotation->deleted) return fail("已删除的检测结果不能隐藏或显示");
+    if (annotation->sourceKind != AnnotationSource::Algorithm ||
+        !currentIdentity(file, *annotation) ||
+        !annotationInContext(file, *annotation))
+      return fail("只能隐藏或显示当前通道上身份有效的正式检测结果");
+    if (annotation->plotHidden == hidden) continue;
+    auto changed = *annotation;
+    changed.plotHidden = hidden;
+    if (const auto result =
+            validateAnnotation(changed, annotationBounds(file.metadata));
+        !result)
+      return fail(result.error);
+    command.patches.push_back(difference(*annotation, changed));
+    after.push_back(std::move(changed));
+  }
+  if (after.empty()) return success();
+  if (commandBytes(command) > annotationCommandByteBudget)
+    return fail("一次隐藏超过标记命令内存预算（128 MiB）");
+  for (auto& changed : after) *index.at(changed.id) = std::move(changed);
+  record(file, std::move(command));
+  return success({}, true);
+}
 
 AnnotationResult AnnotationService::select(FileState& file,
                                            std::vector<std::string> ids,
@@ -1879,7 +1968,7 @@ AnnotationResult AnnotationService::chooseSelection(
 bool AnnotationService::hover(FileState& file, std::string id,
                               std::string segmentId) {
   const auto* annotation = findAnnotation(file, id);
-  if (!annotation || !annotationVisible(file, *annotation)) {
+  if (!annotation || !annotationOverlayVisible(file, *annotation)) {
     id.clear();
     segmentId.clear();
   } else if (!findSegment(*annotation, segmentId)) {
@@ -2032,7 +2121,9 @@ AnnotationResult AnnotationService::applyCommand(FileState& file,
             return fail("Created annotation is now referenced by a channel");
       continue;
     }
-    if (!annotation || annotation->sourceKind != AnnotationSource::Manual ||
+    if (!annotation ||
+        (annotation->sourceKind != AnnotationSource::Manual &&
+         annotation->sourceKind != AnnotationSource::Algorithm) ||
         !currentIdentity(file, *annotation))
       return fail("Only Manual commands with current identities can be undone or redone");
     if (!annotation || !sameCommandState(state(*annotation),

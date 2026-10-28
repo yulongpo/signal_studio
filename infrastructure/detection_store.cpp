@@ -1,4 +1,5 @@
 #include "infrastructure/detection_store.h"
+#include "infrastructure/runtime_log.h"
 
 #include <QCryptographicHash>
 #include <QDir>
@@ -31,6 +32,12 @@ namespace signalstudio {
 namespace {
 constexpr qint64 kChunkBytes = 8 * 1024 * 1024;
 constexpr quint64 kStoreBytes = 256 * 1024 * 1024;
+quint64 jsonStoreLimit(const DetectionRequest& request) {
+  // Legacy combined manifests keep the historical chunk-file ceiling. A newer
+  // evidence budget can raise that ceiling; each shard stays at 8 MiB.
+  if (request.legacyCombinedEvidence) return kStoreBytes;
+  return std::max(kStoreBytes, request.evidenceBudgetBytes);
+}
 constexpr qsizetype kChunkRecords = 4096;
 constexpr qsizetype kMaximumRuns = 10000;
 
@@ -250,8 +257,10 @@ QString manifestPath(const DetectionRequest& request) {
 QString chunkPath(const DetectionRequest& request, const QString& hash) {
   return runDirectory(request.runId) + "/chunk-" + hash + ".json";
 }
-void validateRequest(const DetectionRequest& request) {
-  const auto valid = validateDetectionRequest(request);
+void validateRequest(const DetectionRequest& request,
+                     const QString& storagePath = {}) {
+  const auto valid =
+      validateDetectionRequest(request, storagePath.toStdString());
   require(valid.ok, text(valid.error));
   QString error;
   SourceIdentity source;
@@ -296,9 +305,9 @@ void validateRequest(const DetectionRequest& request) {
       request.sourceAnnotationId.empty() == request.sourceRevisionId.empty(),
       "Detection annotation ROI requires both source and revision identities");
 }
-void validateRun(const DetectionRun& run) {
-  validateRequest(run.request);
-  const auto valid = validateDetectionRun(run);
+void validateRun(const DetectionRun& run, const QString& storagePath = {}) {
+  validateRequest(run.request, storagePath);
+  const auto valid = validateDetectionRun(run, storagePath.toStdString());
   require(valid.ok, text(valid.error));
   enumText(static_cast<int>(run.lifecycle), kLifecycles);
   enumText(static_cast<int>(run.sourceValidity), kValidity);
@@ -531,19 +540,25 @@ quint64 verifyHeadEvidence(const QDir& root, const DetectionRequest& request,
 }
 void verifyEvidenceBudget(const DetectionRequest& request, quint64 mappingBytes,
                           quint64 rawHeadBytes) {
-  if (request.rawHeadBudgetBytes == 0) {
+  if (request.legacyCombinedEvidence) {
     require(rawHeadBytes <= request.evidenceBudgetBytes &&
                 mappingBytes <= request.evidenceBudgetBytes - rawHeadBytes,
             QString("Detection mappings exceed evidence budget (legacy combined: JSON %1 + raw heads %2; limit %3)")
                 .arg(mappingBytes).arg(rawHeadBytes).arg(request.evidenceBudgetBytes));
-  } else {
-    require(mappingBytes <= request.evidenceBudgetBytes,
-            QString("Detection mappings exceed JSON evidence budget (required %1; limit %2)")
-                .arg(mappingBytes).arg(request.evidenceBudgetBytes));
-    require(rawHeadBytes <= request.rawHeadBudgetBytes,
-            QString("Raw model heads exceed independent disk evidence budget (required %1; limit %2)")
-                .arg(rawHeadBytes).arg(request.rawHeadBudgetBytes));
+    return;
   }
+  require(mappingBytes <= request.evidenceBudgetBytes,
+          QString("Detection mappings exceed JSON evidence budget (required %1; limit %2)")
+              .arg(mappingBytes).arg(request.evidenceBudgetBytes));
+  if (request.rawHeadBudgetBytes == 0) {
+    require(rawHeadBytes == 0,
+            QString("Per-window raw model output is not retained (found %1 bytes)")
+                .arg(rawHeadBytes));
+    return;
+  }
+  require(rawHeadBytes <= request.rawHeadBudgetBytes,
+          QString("Raw model heads exceed independent disk evidence budget (required %1; limit %2)")
+              .arg(rawHeadBytes).arg(request.rawHeadBudgetBytes));
 }
 QJsonObject verifyChunk(const QDir& root, const DetectionRun& run,
                         const DetectionChunkReference& reference,
@@ -556,7 +571,8 @@ QJsonObject verifyChunk(const QDir& root, const DetectionRun& run,
   require(digest(bytes) == text(reference.sha256),
           "Detection chunk content hash mismatch");
   totalBytes += static_cast<quint64>(bytes.size());
-  require(totalBytes <= kStoreBytes, "Detection result store exceeds 256 MiB");
+  require(totalBytes <= jsonStoreLimit(run.request),
+          "Detection result store exceeds its evidence budget");
   const auto object = parseObject(bytes);
   onlyKeys(object, {"schema", "version", "runId", "projectGeneration", "fileId",
                     "sourceSha256", "sequence", "results", "mappings"});
@@ -610,25 +626,29 @@ QJsonObject encodeDetectionRequest(const DetectionRequest& r) {
       {"evidenceBudgetBytes", decimal(r.evidenceBudgetBytes)}};
   if (r.inputAdaptationVersion >= 2)
     value["spectrumMode"] = static_cast<int>(r.spectrumMode);
-  if (r.rawHeadBudgetBytes)
-    value["rawHeadBudgetBytes"] = decimal(r.rawHeadBudgetBytes);
+  if (!r.legacyCombinedEvidence) {
+    value["retainRawModelOutput"] = r.retainRawModelOutput;
+    if (r.rawHeadBudgetBytes)
+      value["rawHeadBudgetBytes"] = decimal(r.rawHeadBudgetBytes);
+  }
   if (r.gpuDspPreferred) value["gpuDspPreferred"] = true;
   if(r.sampleEnergyMode!=DetectionSampleEnergyMode::LegacyExact ||
-      r.sampleScratchBudgetBytes!=16ULL*1024*1024*1024) {
+      r.sampleScratchBudgetBytes!=kDetectionLegacySampleScratchBytes) {
     value["sampleEnergyMode"]=static_cast<int>(r.sampleEnergyMode);
     value["sampleScratchBudgetBytes"]=decimal(r.sampleScratchBudgetBytes);
   }
   return value;
 }
 bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
-                            QString& error) {
+                            QString& error, const QString& storagePath) {
   return decodeSafely(o, target, error, [&] {
     onlyKeys(o, {"schemaVersion", "runId", "parentRunId", "sourceIdentity",
                  "profile", "parameters", "requestedRange", "contextRange",
                  "rangeOrigin", "sourceAnnotationId", "sourceRevisionId",
                  "modelManifestPath", "modelSha256", "workingSetBudgetBytes",
                  "evidenceBudgetBytes", "spectrumMode", "rawHeadBudgetBytes",
-                 "sampleEnergyMode", "sampleScratchBudgetBytes", "gpuDspPreferred"});
+                 "retainRawModelOutput", "sampleEnergyMode",
+                 "sampleScratchBudgetBytes", "gpuDspPreferred"});
     require(o["schemaVersion"] == 1 || o["schemaVersion"] == 2,
             "Unsupported detection request version");
     DetectionRequest r;
@@ -676,8 +696,23 @@ bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
         integer(o["workingSetBudgetBytes"], "workingSetBudgetBytes");
     r.evidenceBudgetBytes =
         integer(o["evidenceBudgetBytes"], "evidenceBudgetBytes");
-    r.rawHeadBudgetBytes = o.contains("rawHeadBudgetBytes")
-        ? integer(o["rawHeadBudgetBytes"], "rawHeadBudgetBytes") : 0;
+    if (o.contains("retainRawModelOutput")) {
+      require(o["retainRawModelOutput"].isBool(),
+              "retainRawModelOutput must be a boolean");
+      r.retainRawModelOutput = o["retainRawModelOutput"].toBool();
+      r.legacyCombinedEvidence = false;
+      r.rawHeadBudgetBytes = o.contains("rawHeadBudgetBytes")
+          ? integer(o["rawHeadBudgetBytes"], "rawHeadBudgetBytes") : 0;
+    } else if (o.contains("rawHeadBudgetBytes")) {
+      r.rawHeadBudgetBytes =
+          integer(o["rawHeadBudgetBytes"], "rawHeadBudgetBytes");
+      r.legacyCombinedEvidence = false;
+      r.retainRawModelOutput = r.rawHeadBudgetBytes > 0;
+    } else {
+      r.rawHeadBudgetBytes = 0;
+      r.retainRawModelOutput = false;
+      r.legacyCombinedEvidence = true;
+    }
     r.sampleEnergyMode=o.contains("sampleEnergyMode")
         ? static_cast<DetectionSampleEnergyMode>(smallInteger(o,"sampleEnergyMode",2))
         : DetectionSampleEnergyMode::LegacyExact;
@@ -685,10 +720,22 @@ bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
             "Invalid GPU DSP preference");
     r.gpuDspPreferred = o["gpuDspPreferred"].toBool(false);
     r.sampleScratchBudgetBytes=o.contains("sampleScratchBudgetBytes")
-        ? integer(o["sampleScratchBudgetBytes"],"sampleScratchBudgetBytes") : 16ULL*1024*1024*1024;
-    validateRequest(r);
+        ? integer(o["sampleScratchBudgetBytes"],"sampleScratchBudgetBytes")
+        : kDetectionLegacySampleScratchBytes;
+    validateRequest(r, storagePath);
     return r;
   });
+}
+QJsonObject detectionTensorRtInferenceTimings(const QJsonObject& performance) {
+  const auto named = performance.value(QStringLiteral("tensorRtInference"));
+  const auto events = named.isObject() ? named.toObject()
+                                       : performance.value(QStringLiteral("gpu")).toObject();
+  QJsonObject timings;
+  for (const auto* key : {"h2dMs", "gpuStreamMs", "d2hMs", "hostEnqueueMs",
+                          "inputAdaptationMs", "physicalEnqueueCalls",
+                          "cudaEventIntervals"})
+    if (events.contains(key)) timings.insert(key, events.value(key));
+  return timings;
 }
 QJsonObject encodeDetectionRun(const DetectionRun& run) {
   QJsonArray coverage, chunks;
@@ -715,6 +762,9 @@ QJsonObject encodeDetectionRun(const DetectionRun& run) {
           {"eligibleWindows", decimal(run.eligibleWindows)},
           {"completedWindows", decimal(run.completedWindows)},
           {"resultCount", decimal(run.resultCount)},
+          {"accountedChunkBytes", decimal(run.accountedChunkBytes)},
+          {"accountedEvidenceBytes", decimal(run.accountedEvidenceBytes)},
+          {"accountedRawHeadBytes", decimal(run.accountedRawHeadBytes)},
           {"computationPhase", text(run.computationPhase)},
           {"refinedCandidates", decimal(run.refinedCandidates)},
           {"totalRefinementCandidates", decimal(run.totalRefinementCandidates)},
@@ -735,7 +785,7 @@ QJsonObject encodeDetectionRun(const DetectionRun& run) {
   return encoded;
 }
 bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
-                        QString& error) {
+                        QString& error, const QString& storagePath) {
   return decodeSafely(o, target, error, [&] {
     onlyKeys(o, {"schema",
                  "version",
@@ -748,6 +798,9 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
                  "eligibleWindows",
                  "completedWindows",
                  "resultCount",
+                 "accountedChunkBytes",
+                 "accountedEvidenceBytes",
+                 "accountedRawHeadBytes",
                  "startedAtMilliseconds",
                  "finishedAtMilliseconds",
                  "error",
@@ -764,7 +817,8 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
     DetectionRun run;
     QString requestError;
     const bool requestDecoded = decodeDetectionRequest(
-        objectValue(o["request"], "request"), run.request, requestError);
+        objectValue(o["request"], "request"), run.request, requestError,
+        storagePath);
     require(requestDecoded, requestError);
     run.lifecycle =
         enumeration<DetectionLifecycle>(o, "lifecycle", kLifecycles);
@@ -791,11 +845,17 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
     run.resultCount = integer(o["resultCount"], "resultCount");
     if (o["version"] == 2) {
       run.computationPhase = string(o, "computationPhase", 32, true);
-      require(QStringList{"none", "reading", "inference", "decoding",
+      require(QStringList{"none", "preflight", "reading", "inference", "decoding",
                           "storing-heads", "tracking", "checkpoint", "frequency", "refine",
                           "publishing", "completed"}
                   .contains(text(run.computationPhase)),
               "Unknown detection computation phase");
+      run.accountedChunkBytes = o.contains("accountedChunkBytes")
+          ? integer(o["accountedChunkBytes"], "accountedChunkBytes") : 0;
+      run.accountedEvidenceBytes = o.contains("accountedEvidenceBytes")
+          ? integer(o["accountedEvidenceBytes"], "accountedEvidenceBytes") : 0;
+      run.accountedRawHeadBytes = o.contains("accountedRawHeadBytes")
+          ? integer(o["accountedRawHeadBytes"], "accountedRawHeadBytes") : 0;
       run.refinedCandidates =
           integer(o["refinedCandidates"], "refinedCandidates");
       run.totalRefinementCandidates =
@@ -806,7 +866,10 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
     } else {
       require(!o.contains("computationPhase") &&
                   !o.contains("refinedCandidates") &&
-                  !o.contains("totalRefinementCandidates") && !o.contains("performance"),
+                  !o.contains("totalRefinementCandidates") && !o.contains("performance") &&
+                  !o.contains("accountedChunkBytes") &&
+                  !o.contains("accountedEvidenceBytes") &&
+                  !o.contains("accountedRawHeadBytes"),
               "Version 1 cannot contain version 2 progress fields");
     }
     run.startedAtMilliseconds =
@@ -823,9 +886,17 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
       const auto bytes=QJsonDocument(performance).toJson(QJsonDocument::Compact);
       require(bytes.size()<=65536 && performance["schema"]=="signal-studio-detection-profile-v1",
           "Invalid bounded detection performance diagnostics");
+      if (performance.contains("tensorRtInference"))
+        require(performance.value("tensorRtInference").isObject(),
+                "tensorRtInference timings must be an object");
+      // Legacy alias for the same TensorRT CUDA-event object. The stored
+      // document keeps whichever key the file used.
+      if (performance.contains("gpu"))
+        require(performance.value("gpu").isObject(),
+                "Legacy gpu timings alias must be an object");
       run.performanceJson=bytes.toStdString();
     }
-    validateRun(run);
+    validateRun(run, storagePath);
     return run;
   });
 }
@@ -858,7 +929,9 @@ bool writeDetectionRun(const QString& directory, const DetectionRun& run,
                 "Published detection chunks cannot be replaced or reordered");
       }
     }
-    verifyChunks(root, run);
+    // Append already checked the new shard. Historical hashes, including raw
+    // heads, are audited again when the run reaches a terminal lifecycle.
+    if (detectionIsTerminal(run.lifecycle)) verifyChunks(root, run);
     DetectionRun decoded;
     QString decodeError;
     const auto object = encodeDetectionRun(run);
@@ -886,11 +959,13 @@ bool appendDetectionChunk(const QString& directory, DetectionRun& run,
             "Detection run exceeds 100000 results");
     validateRecords(results, run.request, false);
     validateRecords(mappings, run.request, true);
+    require(run.chunks.empty() || run.accountedChunkBytes > 0,
+            "Detection append is missing its cumulative chunk byte ledger");
     const auto root = projectRoot(directory);
     prepareDirectory(root, runDirectory(run.request.runId));
-    quint64 totalBytes = 0, evidenceBytes = 0, rawHeadBytes = 0;
-    for (const auto& chunk : run.chunks)
-      verifyChunk(root, run, chunk, totalBytes, evidenceBytes, rawHeadBytes);
+    quint64 totalBytes = run.accountedChunkBytes;
+    quint64 evidenceBytes = run.accountedEvidenceBytes;
+    quint64 rawHeadBytes = run.accountedRawHeadBytes;
     const auto object =
         QJsonObject{{"schema", "signal-studio-detection-chunk"},
                     {"version", 1},
@@ -904,7 +979,8 @@ bool appendDetectionChunk(const QString& directory, DetectionRun& run,
                     {"mappings", mappings}};
     const auto bytes = QJsonDocument(object).toJson(QJsonDocument::Compact);
     require(bytes.size() <= kChunkBytes &&
-                totalBytes + static_cast<quint64>(bytes.size()) <= kStoreBytes,
+                totalBytes + static_cast<quint64>(bytes.size()) <=
+                    jsonStoreLimit(run.request),
             "Detection chunk/store exceeds its byte budget");
     evidenceBytes += static_cast<quint64>(
         QJsonDocument(mappings).toJson(QJsonDocument::Compact).size() - 2);
@@ -918,6 +994,10 @@ bool appendDetectionChunk(const QString& directory, DetectionRun& run,
     else
       atomicWrite(root, relative, bytes);
     auto candidate = run;
+    candidate.accountedChunkBytes =
+        totalBytes + static_cast<quint64>(bytes.size());
+    candidate.accountedEvidenceBytes = evidenceBytes;
+    candidate.accountedRawHeadBytes = rawHeadBytes;
     candidate.chunks.push_back(
         {static_cast<std::uint64_t>(candidate.chunks.size()),
          relative.toStdString(), hash.toStdString(),
@@ -1011,6 +1091,15 @@ bool loadDetectionRun(const QString& directory, const QString& id,
       candidate.error =
           "Interrupted execution; stored results can be reviewed. Restart "
           "creates a new run.";
+      RuntimeLog::write(
+          QStringLiteral("detection"),
+          QStringList{"run=" + QString::fromStdString(candidate.request.runId),
+                      "phase=" + QString::fromStdString(candidate.computationPhase),
+                      "windows=" + QString::number(candidate.completedWindows) + "/" +
+                          QString::number(candidate.eligibleWindows),
+                      "batch=0", "event=interrupted",
+                      "error=" + QString::fromStdString(candidate.error)}
+              .join(' '));
     }
     target = std::move(candidate);
     error.clear();

@@ -103,6 +103,7 @@ class UxTests : public QObject {
   void uxR5_layersAndIndependentFilters();
   void uxR5_readOnlyMenusAndCommandGuards();
   void uxR5_crossViewAndUnknownObservation();
+  void uxR5_algorithmResultHideAndDelete();
   void uxP01_popupDismissal();
   void uxP02_popupChildrenAndGeometry();
   void uxS06_popoverDraftPolicy();
@@ -123,6 +124,7 @@ class UxTests : public QObject {
   void uxR03_taskRowActions();
   void uxD03_activeTaskCancellationAndFrozenDisplay();
   void uxD09_intermediatePreviewAndRedetectClear();
+  void uxR6_previewChannelScope();
   void uxR6_commitOverlaySkipsHeatmap();
   void uxR6_commitFailureKeepsPreviousResult();
   void uxD01_topDerivationDiscardsCrossFileDraft();

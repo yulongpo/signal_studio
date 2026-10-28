@@ -11,15 +11,21 @@
 #include <QThread>
 #include <QtEndian>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <condition_variable>
+#include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <mutex>
 #include <stdexcept>
+#include <thread>
 
 #include "application/annotation_service.h"
 #include "infrastructure/annotation_json.h"
 #include "infrastructure/detection_model_snapshot.h"
 #include "infrastructure/detection_projection.h"
+#include "infrastructure/detection_source.h"
 #include "infrastructure/detection_store.h"
 #include "infrastructure/detection_task.h"
 #include "infrastructure/detection_worker_client.h"
@@ -60,6 +66,8 @@ DetectionRequest requestFixture(const FileMetadata& metadata,
   DetectionRequest request;
   request.runId = id;
   request.sourceIdentity = annotationSourceIdentity(metadata, 42);
+  request.sourceIdentity.quickFingerprint =
+      iqSourceFingerprint(QString::fromStdString(metadata.path)).toStdString();
   request.profile = *findDetectionProfile("pipeline-fixture-v1");
   request.requestedRange = {{0, metadata.sampleCount}, {99.5e6, 100.5e6}};
   request.contextRange = request.requestedRange;
@@ -89,6 +97,37 @@ QString workerPath() {
          "/SignalStudioDetectionWorker";
 #endif
 }
+DetectionRequest ffscnTaskRequest(const FileMetadata& metadata,
+                                   const std::string& id) {
+  auto request = requestFixture(metadata, id);
+  request.profile = *findDetectionProfile("ffscn-gui-iq-v1");
+  request.profile.hopSeconds = .00025;
+  request.modelManifestPath = "must-not-open-manifest.json";
+  request.modelSha256.assign(64, 'a');
+  return request;
+}
+DetectionSourceConfig sourceConfigFor(const DetectionRequest& request) {
+  DetectionSourceConfig config;
+  config.preferGpu = request.gpuDspPreferred;
+  config.inputAdaptationVersion = request.inputAdaptationVersion;
+  config.profileId = request.profile.id;
+  config.profileVersion = request.profile.version;
+  config.fftSize = request.profile.fftSize;
+  config.modelFrames = request.profile.modelFrames;
+  config.modelHopFrames = request.profile.modelHopFrames;
+  config.hopSeconds = request.profile.hopSeconds;
+  config.workingSetBudgetBytes = request.workingSetBudgetBytes;
+  config.evidenceBudgetBytes = request.evidenceBudgetBytes;
+  config.rawHeadBudgetBytes = request.rawHeadBudgetBytes;
+  config.legacyCombinedRawHeads = request.legacyCombinedEvidence;
+  config.maximumCandidates = request.parameters.topK;
+  return config;
+}
+QByteArray readWholeFile(const QString& path) {
+  QFile file(path);
+  check(file.open(QIODevice::ReadOnly), file.errorString());
+  return file.readAll();
+}
 void testWholeRunRawHeadQuotaRejectsBeforeWorker() {
   QTemporaryDir directory;
   const auto metadata=sourceFixture(directory);
@@ -104,6 +143,288 @@ void testWholeRunRawHeadQuotaRejectsBeforeWorker() {
       error.contains("before inference") && error.contains("windows") &&
       tasks.snapshots().empty() && !QDir(directory.filePath("detections")).exists(),
       "Whole-run head quota must reject before creating a partial task or starting a worker: "+error);
+}
+void testLegacyCombinedBudgetRejectsBeforeWorker() {
+  QTemporaryDir directory;
+  const auto metadata = sourceFixture(directory);
+  check(!DetectionRequest{}.retainRawModelOutput &&
+            DetectionRequest{}.rawHeadBudgetBytes == 0 &&
+            !DetectionRequest{}.legacyCombinedEvidence,
+        "New detection requests do not retain per-window raw model output");
+  auto capped = requestFixture(metadata, "raw-head-cap");
+  capped.rawHeadBudgetBytes = 2ULL * 1024 * 1024 * 1024;
+  check(static_cast<bool>(validateDetectionRequest(capped)),
+        "The 2 GiB raw-head hard cap remains valid");
+  capped.rawHeadBudgetBytes += 1;
+  check(!validateDetectionRequest(capped),
+        "A raw-head quota above 2 GiB must stay invalid");
+
+  DetectionRun formal;
+  formal.request = requestFixture(metadata, "formal-kept");
+  formal.lifecycle = DetectionLifecycle::Completed;
+  formal.computationPhase = "completed";
+  formal.startedAtMilliseconds = 1;
+  formal.finishedAtMilliseconds = 1;
+  QString error;
+  check(writeDetectionRun(directory.path(), formal, error), error);
+  DetectionRun loadedFormal;
+  check(loadDetectionRun(directory.path(), "formal-kept", loadedFormal, error) &&
+            loadedFormal.lifecycle == DetectionLifecycle::Completed,
+        error);
+  const auto manifestPath = directory.filePath(
+      QString::fromStdString(loadedFormal.manifestRelativePath));
+  const auto manifestBefore = readWholeFile(manifestPath);
+  const auto dirsBefore =
+      QDir(directory.filePath("detections"))
+          .entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+
+  auto surveyed = ffscnTaskRequest(metadata, "legacy-survey");
+  surveyed.rawHeadBudgetBytes = 0;
+  surveyed.legacyCombinedEvidence = true;
+  surveyed.retainRawModelOutput = false;
+  surveyed.evidenceBudgetBytes = 32ULL * 1024 * 1024;
+  DetectionSourcePlan plan;
+  check(makeDetectionSourcePlan(metadata, surveyed.requestedRange,
+                                sourceConfigFor(surveyed), plan, error,
+                                surveyed.sourceIdentity.projectGeneration),
+        error);
+  const auto perWindow =
+      plan.modelHeadBytesPerWindow + plan.estimatedWindowEvidenceBytes;
+  const auto windows = plan.eligibleWindowCount;
+  const auto singleWindow =
+      perWindow + plan.outputJsonReserveBytes;
+  const auto required = windows * perWindow;
+  check(windows >= 2 && perWindow > 0 && singleWindow < required &&
+            required <= 256ULL * 1024 * 1024,
+        "Fixture must exceed one combined window and fit the evidence cap");
+
+  auto fitting = surveyed;
+  fitting.runId = "legacy-fits";
+  fitting.evidenceBudgetBytes = required;
+  DetectionTaskManager tasks("must-not-start-worker");
+  QueuedDetectionRun prepared;
+  check(tasks.prepareQueuedRun(directory.path(), metadata, fitting, prepared,
+                               error) &&
+            prepared.run.computationPhase == "none" &&
+            prepared.run.lifecycle == DetectionLifecycle::Queued,
+        "A legacy combined request that fits must still pass preflight: " +
+            error);
+
+  auto over = surveyed;
+  over.runId = "legacy-preflight";
+  over.evidenceBudgetBytes = required - 1;
+  check(!tasks.prepareQueuedRun(directory.path(), metadata, over, prepared,
+                                error),
+        "An over-budget legacy request must be rejected");
+  check(prepared.run.lifecycle == DetectionLifecycle::Failed &&
+            prepared.run.computationPhase == "preflight",
+        "Legacy rejection is an unpersisted failure at computationPhase preflight");
+  check(error.contains("preflight") &&
+            error.contains(QString("%1 windows require %2 bytes")
+                               .arg(windows)
+                               .arg(required)) &&
+            error.contains(QString("allowed %1 bytes").arg(required - 1)) &&
+            error.contains("Reduce the range") &&
+            error.contains("frame interval") &&
+            error.contains("raw-head quota"),
+        "Preflight error must name the phase, windows, required and allowed bytes, and the remedies: " +
+            error);
+  DetectionRun roundtrip;
+  check(decodeDetectionRun(encodeDetectionRun(prepared.run), roundtrip,
+                           error) &&
+            roundtrip.lifecycle == DetectionLifecycle::Failed &&
+            roundtrip.computationPhase == "preflight",
+        "computationPhase preflight must survive the run codec: " + error);
+
+  auto encoded = encodeDetectionRequest(over);
+  check(!encoded.contains("rawHeadBudgetBytes"),
+        "An explicit zero raw-head quota stays a missing field on disk");
+  DetectionRequest decoded;
+  check(decodeDetectionRequest(encoded, decoded, error) &&
+            decoded.rawHeadBudgetBytes == 0,
+        error);
+  decoded.runId = "legacy-missing-field";
+  check(!tasks.prepareQueuedRun(directory.path(), metadata, decoded, prepared,
+                                error) &&
+            prepared.run.computationPhase == "preflight" &&
+            error.contains("preflight") &&
+            error.contains(QString::number(required)),
+        "A missing rawHeadBudgetBytes field uses the same preflight rejection: " +
+            error);
+
+  check(!tasks.enqueue(directory.path(), metadata, over, error) &&
+            tasks.snapshots().empty(),
+        "Enqueue must not create a worker task after preflight rejection: " +
+            error);
+  const auto dirsAfter =
+      QDir(directory.filePath("detections"))
+          .entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+  check(dirsAfter == dirsBefore && readWholeFile(manifestPath) == manifestBefore,
+        "Preflight rejection must not create a task directory or rewrite the formal result");
+  DetectionRun stillFormal;
+  const auto discovered = discoverDetectionRuns(directory.path(), error);
+  check(loadDetectionRun(directory.path(), "formal-kept", stillFormal, error) &&
+            stillFormal.lifecycle == DetectionLifecycle::Completed &&
+            stillFormal.request.runId == "formal-kept" &&
+            stillFormal.resultCount == loadedFormal.resultCount &&
+            discovered.size() == 1 &&
+            discovered[0].request.runId == "formal-kept",
+        "An existing formal result stays loadable after preflight rejection: " +
+            error);
+}
+void testSplitHeadBudgetOmitsRawFromJsonWindow() {
+  QTemporaryDir directory;
+  const auto metadata = sourceFixture(directory);
+  auto request = ffscnTaskRequest(metadata, "split-window");
+  request.rawHeadBudgetBytes = 0;
+  request.legacyCombinedEvidence = true;
+  request.retainRawModelOutput = false;
+  request.evidenceBudgetBytes = 32ULL * 1024 * 1024;
+  QString error;
+  DetectionSourcePlan plan;
+  check(makeDetectionSourcePlan(metadata, request.requestedRange,
+                                sourceConfigFor(request), plan, error,
+                                request.sourceIdentity.projectGeneration),
+        error);
+  check(plan.modelHeadBytesPerWindow > 0, "FFSCN windows have a raw head");
+  auto split = sourceConfigFor(request);
+  split.rawHeadBudgetBytes = 256ULL * 1024 * 1024;
+  split.evidenceBudgetBytes =
+      plan.estimatedWindowEvidenceBytes + plan.outputJsonReserveBytes;
+  DetectionSourcePlan accepted;
+  check(makeDetectionSourcePlan(metadata, request.requestedRange, split,
+                                accepted, error,
+                                request.sourceIdentity.projectGeneration),
+        "A non-zero raw-head quota must not charge the head to the JSON window budget: " +
+            error);
+  auto combined = split;
+  combined.rawHeadBudgetBytes = 0;
+  DetectionSourcePlan rejected;
+  check(!makeDetectionSourcePlan(metadata, request.requestedRange, combined,
+                                 rejected, error,
+                                 request.sourceIdentity.projectGeneration) &&
+            error.contains("模型原始输出"),
+        "A zero raw-head quota still counts the head inside the JSON window budget: " +
+            error);
+}
+DetectionRequest widebandRequest(const FileMetadata& metadata, const std::string& id) {
+  auto request = ffscnTaskRequest(metadata, id);
+  const FrequencyRange band{metadata.centerFrequencyHz - metadata.sampleRateHz / 2,
+                            metadata.centerFrequencyHz + metadata.sampleRateHz / 2};
+  request.requestedRange.frequency = band;
+  request.contextRange.frequency = band;
+  return request;
+}
+FileMetadata widebandMetadata(const QTemporaryDir& directory) {
+  FileMetadata metadata;
+  metadata.id = "wide-source";
+  metadata.name = "wide.iq";
+  metadata.path = directory.filePath("wide.iq").toStdString();
+  metadata.demo = false;
+  metadata.sampleRateHz = 20e6;
+  metadata.centerFrequencyHz = 100e6;
+  // 10225 frames of 5000 samples: (10225 - 10) / 5 + 1 = 2044 model windows.
+  metadata.sampleCount = 51125000;
+  metadata.availability.status = LoadStatus::Ready;
+  metadata.availability.fingerprint.assign(64, 'c');
+  return metadata;
+}
+void testWidebandPreflightOmitsRawHeadsAndKeepsJsonBudget() {
+  QTemporaryDir directory;
+  const auto metadata = widebandMetadata(directory);
+  auto request = widebandRequest(metadata, "wide-default");
+  check(!request.retainRawModelOutput && request.rawHeadBudgetBytes == 0 &&
+            !request.legacyCombinedEvidence &&
+            request.evidenceBudgetBytes == detectionDiskBudgetDefaultBytes({}),
+        "The wideband fixture starts from the new request defaults");
+  QString error;
+  DetectionSourcePlan plan;
+  check(makeDetectionSourcePlan(metadata, request.requestedRange,
+                                sourceConfigFor(request), plan, error,
+                                request.sourceIdentity.projectGeneration),
+        error);
+  const auto windows = plan.eligibleWindowCount;
+  const auto perWindow = plan.modelHeadBytesPerWindow;
+  const auto perJson = plan.estimatedWindowEvidenceBytes;
+  const auto mappingBytes =
+      perJson == 0 || windows > std::numeric_limits<std::uint64_t>::max() / perJson
+          ? std::uint64_t{0}
+          : windows * perJson;
+  check(windows == 2044 && perWindow == 196608 &&
+            perJson > 0 && mappingBytes <= request.evidenceBudgetBytes,
+        QString("2044 x 196608 preflight shape, JSON mappings %1, per window %2, "
+                "budget %3, windows %4")
+            .arg(mappingBytes)
+            .arg(plan.estimatedWindowEvidenceBytes)
+            .arg(request.evidenceBudgetBytes)
+            .arg(windows));
+  DetectionTaskManager tasks("must-not-start-worker");
+  QueuedDetectionRun prepared;
+  check(tasks.prepareQueuedRun(directory.path(), metadata, request, prepared,
+                               error) &&
+            prepared.run.lifecycle == DetectionLifecycle::Queued &&
+            prepared.run.request.rawHeadBudgetBytes == 0 &&
+            !prepared.run.request.retainRawModelOutput,
+        "Default retention leaves 2044 windows runnable and writes no raw-head quota: " +
+            error);
+
+  const auto required = windows * perWindow;
+  const auto remaining = std::uint64_t{1024} * 1024;
+  setDetectionVolumeFreeBytesProbeForTest(
+      [remaining](const QString&) { return remaining; });
+  const QScopeGuard clearProbe(
+      [] { setDetectionVolumeFreeBytesProbeForTest({}); });
+  auto retain = widebandRequest(metadata, "wide-retain");
+  retain.retainRawModelOutput = true;
+  retain.rawHeadBudgetBytes = 0;
+  retain.legacyCombinedEvidence = false;
+  check(!tasks.prepareQueuedRun(directory.path(), metadata, retain, prepared,
+                                error) &&
+            prepared.run.computationPhase == "preflight" &&
+            error.contains("before inference") &&
+            error.contains(QString("%1 windows x %2 bytes require %3 bytes")
+                               .arg(windows)
+                               .arg(perWindow)
+                               .arg(required)) &&
+            error.contains(QString("%1 bytes remain").arg(remaining)),
+        "Retaining raw output must reject before inference with required and remaining bytes: " +
+            error);
+
+  auto explicitQuota = widebandRequest(metadata, "wide-explicit-256");
+  explicitQuota.retainRawModelOutput = false;
+  explicitQuota.legacyCombinedEvidence = false;
+  explicitQuota.rawHeadBudgetBytes = 256ULL * 1024 * 1024;
+  check(!tasks.prepareQueuedRun(directory.path(), metadata, explicitQuota,
+                                prepared, error) &&
+            error.contains("before inference") &&
+            error.contains(QString("%1 windows x %2 bytes")
+                               .arg(windows)
+                               .arg(perWindow)) &&
+            error.contains(QString("limit %1 bytes")
+                               .arg(explicitQuota.rawHeadBudgetBytes)),
+        "An explicit 256 MiB raw-head quota still rejects the excess: " + error);
+
+  auto legacy = widebandRequest(metadata, "wide-legacy-missing");
+  legacy.retainRawModelOutput = false;
+  legacy.rawHeadBudgetBytes = 0;
+  legacy.legacyCombinedEvidence = true;
+  legacy.evidenceBudgetBytes = 32ULL * 1024 * 1024;
+  const auto encoded = encodeDetectionRequest(legacy);
+  check(!encoded.contains("rawHeadBudgetBytes") &&
+            !encoded.contains("retainRawModelOutput"),
+        "A legacy combined request still omits both new retention fields");
+  DetectionRequest decoded;
+  check(decodeDetectionRequest(encoded, decoded, error) &&
+            decoded.legacyCombinedEvidence && decoded.rawHeadBudgetBytes == 0 &&
+            !decoded.retainRawModelOutput,
+        error);
+  decoded.runId = "wide-legacy-decoded";
+  check(!tasks.prepareQueuedRun(directory.path(), metadata, decoded, prepared,
+                                error) &&
+            prepared.run.computationPhase == "preflight" &&
+            error.contains("Legacy combined") && error.contains("preflight"),
+        "A missing rawHeadBudgetBytes field still uses the combined rejection: " +
+            error);
 }
 void testProducerExceptionHasDurableFailureDiagnostics() {
   QTemporaryDir directory;
@@ -461,6 +782,81 @@ void testTerminalCommitAndSourceInvalidation() {
   check(encodeDetectionRun(terminal) == encodeDetectionRun(loaded),
         "Visible terminal and durable source validity must be identical");
 }
+void testPumpJoinLetsProducerExposeTerminalSnapshot() {
+  QTemporaryDir directory;
+  const auto metadata = sourceFixture(directory);
+  const auto request = requestFixture(metadata, "pump-join-terminal");
+  std::mutex gate;
+  std::condition_variable gateCv;
+  bool producerAtTerminalLock = false;
+  bool callerInsidePumpJoin = false;
+  bool producerPassedGateDuringPump = false;
+  bool stop = false;
+  DetectionTaskManager tasks(workerPath());
+  tasks.bindSchedulingProbeForTest(
+      [&] {
+        std::unique_lock lock(gate);
+        producerAtTerminalLock = true;
+        gateCv.notify_all();
+        gateCv.wait(lock, [&] { return callerInsidePumpJoin || stop; });
+        producerPassedGateDuringPump = callerInsidePumpJoin;
+      },
+      [&] {
+        std::lock_guard lock(gate);
+        callerInsidePumpJoin = true;
+        gateCv.notify_all();
+      });
+  const auto releaseProducer = qScopeGuard([&] {
+    {
+      std::lock_guard lock(gate);
+      stop = true;
+    }
+    gateCv.notify_all();
+  });
+  QString error;
+  check(tasks.enqueue(directory.path(), metadata, request, error), error);
+  tasks.pump();
+  {
+    std::unique_lock lock(gate);
+    check(gateCv.wait_for(lock, std::chrono::seconds(30),
+                          [&] { return producerAtTerminalLock; }),
+          "Producer did not reach the post-finish preview lock");
+  }
+  std::mutex watchMutex;
+  std::condition_variable watchCv;
+  bool pumpReturned = false;
+  // The wait bounds a join/mutex deadlock. The passing path is the notification.
+  std::thread watchdog([&] {
+    std::unique_lock lock(watchMutex);
+    if (!watchCv.wait_for(lock, std::chrono::seconds(5),
+                          [&] { return pumpReturned; })) {
+      std::cerr << "FAIL pump() held the task mutex across join\n";
+      std::_Exit(1);
+    }
+  });
+  const auto joinWatchdog = qScopeGuard([&] {
+    {
+      std::lock_guard lock(watchMutex);
+      pumpReturned = true;
+    }
+    watchCv.notify_all();
+    if (watchdog.joinable()) watchdog.join();
+  });
+  tasks.pump();
+  DetectionLifecycle lifecycle = DetectionLifecycle::Queued;
+  std::string phase;
+  bool terminal = false;
+  for (const auto& run : tasks.snapshots()) {
+    if (run.request.runId != request.runId) continue;
+    lifecycle = run.lifecycle;
+    phase = run.computationPhase;
+    terminal = detectionIsTerminal(run.lifecycle);
+  }
+  check(callerInsidePumpJoin && producerPassedGateDuringPump && terminal &&
+            lifecycle == DetectionLifecycle::Completed && phase == "completed",
+        "The thread inside pump() must let the producer exit and then read a "
+        "terminal snapshot");
+}
 void testFailedTerminalPersistenceKeepsRecoveryPrefix() {
   QTemporaryDir directory;
   const auto metadata = sourceFixture(directory);
@@ -752,6 +1148,9 @@ int main(int argc, char** argv) {
           "Usage: task-tests [--real-adaptation WAV output-directory]");
     testTaskRoundtrip();
     testWholeRunRawHeadQuotaRejectsBeforeWorker();
+    testLegacyCombinedBudgetRejectsBeforeWorker();
+    testSplitHeadBudgetOmitsRawFromJsonWindow();
+    testWidebandPreflightOmitsRawHeadsAndKeepsJsonBudget();
     testProducerExceptionHasDurableFailureDiagnostics();
     testTerminalPersistenceExceptionCannotEscapeThread();
     testFailuresAndGeneration();
@@ -759,6 +1158,7 @@ int main(int argc, char** argv) {
     testLargeFrameEvidenceUsesLocalStorage();
     testPartialAndActiveCancellation();
     testTerminalCommitAndSourceInvalidation();
+    testPumpJoinLetsProducerExposeTerminalSnapshot();
     testFailedTerminalPersistenceKeepsRecoveryPrefix();
     testAccumulatedRecoveryBudget();
     testLongFailureSummariesPreserveTerminalContract();

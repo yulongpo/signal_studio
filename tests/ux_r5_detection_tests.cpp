@@ -24,6 +24,7 @@
 #include "infrastructure/annotation_json.h"
 #include "infrastructure/detection_projection.h"
 #include "infrastructure/detection_store.h"
+#include "infrastructure/runtime_log.h"
 #include "infrastructure/project_file.h"
 #include "infrastructure/project_store.h"
 #include "infrastructure/source_loader.h"
@@ -434,6 +435,28 @@ void faultBoundaries() {
       uniqueResult(h.reopen().files[0], "new");
     }
   }
+  Harness stale;
+  auto previous = stale.durable("previous");
+  stale.publish(previous);
+  const auto previousId = previous.publication.annotations[0].id;
+  auto replacement = stale.durable("replacement");
+  stale.pending(replacement);
+  const auto disk = read(stale.path);
+  const auto memory = ProjectStore::stateToken(stale.project);
+  int checks = 0;
+  DetectionTransactionOptions staleAtCommit;
+  staleAtCommit.stillCurrent = [&] { return ++checks < 2; };
+  const auto refused = stale.commit(replacement, staleAtCommit);
+  check(!refused.committed && checks >= 2 && refused.error.contains("上次正式结果仍在") &&
+            read(stale.path) == disk && ProjectStore::stateToken(stale.project) == memory,
+        "Generation change at replacement commit wrote or installed the new result: " +
+            refused.error);
+  const auto reopened = stale.reopen();
+  const auto* slot = currentDetectionSlot(reopened.files[0], 0);
+  check(slot && slot->committedRunId == "previous" && slot->pendingRunId == "replacement" &&
+            algorithmCount(reopened.files[0]) == 1 &&
+            annotationInContext(reopened.files[0], *findAnnotation(reopened.files[0], previousId)),
+        "Reopen after a stale replacement commit lost the previous formal result");
 }
 void runningSaveAndDurableRecovery() {
   Harness h;
@@ -684,7 +707,7 @@ void transactionBudgetRejection() {
   check(currentDetectionSlot(reopened.files[0], 0)->committedRunId == "old" &&
         algorithmCount(reopened.files[0]) == 1, "Budget rejection lost last complete formal result");
 }
-void explicitRedetectClearsWithoutRestoring() {
+void pendingKeepsFormalResultUntilSuccess() {
   Harness h;
   auto& file = h.project.files[0];
   AnnotationSourceSet labels;
@@ -720,46 +743,108 @@ void explicitRedetectClearsWithoutRestoring() {
   check(h.annotations.select(h.project.files[0], {oldId}, oldId).ok, "Select committed result");
   check(DetectionResultService::markStale(h.project, "file-a", 0), "Configuration did not become stale");
   check(algorithmCount(h.project.files[0]) == 1 &&
-            h.project.files[0].activeMarkId == oldId,
-        "Parameter stale cleared formal results or selection");
-  auto next = h.durable("next");
-  h.pending(next);
-  check(algorithmCount(h.project.files[0]) == 1 &&
-            currentDetectionSlot(h.project.files[0], 0)->committedRunId == "original",
-        "Starting a pending slot alone cleared the committed result");
-  bool cleared = false;
-  QString error;
-  check(DetectionResultService::clearCommittedDetection(
-            h.project, "file-a", 0, cleared, error),
-        error);
-  check(cleared, "Explicit redetect did not report that a formal result was cleared");
-  check(algorithmCount(h.project.files[0]) == 0 && !findAnnotation(h.project.files[0], oldId),
-        "Formal detection result remained after explicit redetect");
-  check(nonAlgorithm(h.project.files[0]) == preserved,
-        "Explicit redetect removed a manual mark or raw label");
-  check(h.project.files[0].activeMarkId != oldId &&
-            std::find(h.project.files[0].selectedMarkIds.begin(),
-                      h.project.files[0].selectedMarkIds.end(),
-                      oldId) == h.project.files[0].selectedMarkIds.end(),
-        "Selection still hits the cleared formal result");
-  const auto* slot = currentDetectionSlot(h.project.files[0], 0);
-  check(slot && slot->committedRunId.empty() && slot->pendingRunId == "next" && slot->stale,
-        "Explicit clear did not leave the new run pending without a committed result");
-  DetectionResultService::abandonDetection(h.project, next.ticket);
-  check(algorithmCount(h.project.files[0]) == 0 && nonAlgorithm(h.project.files[0]) == preserved,
-        "Failure or cancel restored the cleared formal result");
-  slot = currentDetectionSlot(h.project.files[0], 0);
-  check(slot && slot->committedRunId.empty() && slot->pendingRunId.empty(),
-        "Abandon restored a committed run");
+            h.project.files[0].activeMarkId == oldId &&
+            annotationInContext(h.project.files[0], *findAnnotation(h.project.files[0], oldId)),
+        "Parameter stale cleared or hid formal results");
   h.save();
-  const auto reopened = h.reopen();
-  check(algorithmCount(reopened.files[0]) == 0 && nonAlgorithm(reopened.files[0]) == preserved,
-        "Reopen restored formal results or changed manual/raw labels");
-  cleared = true;
-  check(DetectionResultService::clearCommittedDetection(
-            h.project, "file-a", 0, cleared, error) &&
-            !cleared,
-        "Clearing an empty detection scope reported a previous result");
+  const auto staleDisk = read(h.path);
+  const auto staleToken = ProjectStore::stateToken(h.project);
+  auto next = h.durable("next");
+  Project candidate = h.project;
+  QString error;
+  check(DetectionResultService::beginDetection(candidate, next.run.request, generation,
+                                                next.ticket, error),
+        "Begin: " + error);
+  byId(candidate, next.ticket.fileId).detectionRuns.push_back(next.run);
+  const auto* prepared = currentDetectionSlot(byId(candidate, "file-a"), 0);
+  check(prepared && prepared->committedRunId == "original" && prepared->pendingRunId == "next" &&
+            algorithmCount(byId(candidate, "file-a")) == 1 &&
+            nonAlgorithm(byId(candidate, "file-a")) == preserved,
+        "Preparing a pending run cleared the formal result or manual/raw labels");
+  int generationChecks = 0;
+  bool queuedDuringGenerationChange = false;
+  check(!DetectionResultService::publishPendingStart(
+            h.project, candidate, [&] { return ++generationChecks < 2; },
+            [&](QString&) {
+              queuedDuringGenerationChange = true;
+              return true;
+            },
+            h.path, error) &&
+            generationChecks >= 2 && !queuedDuringGenerationChange &&
+            error.contains("上次正式结果仍在") && read(h.path) == staleDisk &&
+            ProjectStore::stateToken(h.project) == staleToken,
+        "Generation change during start save wrote or installed a new project: " + error);
+  {
+    const auto reopened = h.reopen();
+    const auto* slot = currentDetectionSlot(reopened.files[0], 0);
+    check(slot && slot->committedRunId == "original" && slot->pendingRunId.empty() &&
+              algorithmCount(reopened.files[0]) == 1 &&
+              annotationInContext(reopened.files[0], *findAnnotation(reopened.files[0], oldId)) &&
+              nonAlgorithm(reopened.files[0]) == preserved,
+          "Reopen after a generation change lost the previous formal result");
+  }
+  bool queueAttempted = false;
+  check(!DetectionResultService::publishPendingStart(
+            h.project, candidate, [] { return true; },
+            [&](QString& queueError) {
+              queueAttempted = true;
+              queueError = "queue full";
+              return false;
+            },
+            h.path, error) &&
+            queueAttempted && error.contains("未能启动") && error.contains("上次正式结果仍在") &&
+            read(h.path) == staleDisk && ProjectStore::stateToken(h.project) == staleToken,
+        "Enqueue failure left a different slot or project file: " + error);
+  {
+    const auto* slot = currentDetectionSlot(h.project.files[0], 0);
+    check(slot && slot->committedRunId == "original" && slot->pendingRunId.empty() &&
+              algorithmCount(h.project.files[0]) == 1,
+          "Enqueue failure changed the in-memory formal slot");
+    const auto reopened = h.reopen();
+    const auto* diskSlot = currentDetectionSlot(reopened.files[0], 0);
+    check(diskSlot && diskSlot->committedRunId == "original" && diskSlot->pendingRunId.empty() &&
+              algorithmCount(reopened.files[0]) == 1 &&
+              nonAlgorithm(reopened.files[0]) == preserved,
+          "Enqueue failure reopen is not the pre-start formal result");
+  }
+  check(DetectionResultService::publishPendingStart(
+            h.project, candidate, [] { return true; }, [](QString&) { return true; }, h.path, error),
+        "Pending start: " + error);
+  {
+    const auto* slot = currentDetectionSlot(h.project.files[0], 0);
+    check(slot && slot->committedRunId == "original" && slot->pendingRunId == "next" &&
+              algorithmCount(h.project.files[0]) == 1 &&
+              annotationInContext(h.project.files[0], *findAnnotation(h.project.files[0], oldId)) &&
+              h.project.files[0].activeMarkId == oldId &&
+              nonAlgorithm(h.project.files[0]) == preserved,
+          "Pending start removed the formal result, selection, or manual/raw labels");
+    const auto reopened = h.reopen();
+    const auto* diskSlot = currentDetectionSlot(reopened.files[0], 0);
+    check(diskSlot && diskSlot->committedRunId == "original" && diskSlot->pendingRunId == "next" &&
+              algorithmCount(reopened.files[0]) == 1 &&
+              annotationInContext(reopened.files[0], *findAnnotation(reopened.files[0], oldId)),
+          "Reopen during pending lost the formal result");
+  }
+  DetectionResultService::abandonDetection(h.project, next.ticket);
+  {
+    const auto* slot = currentDetectionSlot(h.project.files[0], 0);
+    check(slot && slot->committedRunId == "original" && slot->pendingRunId.empty() &&
+              algorithmCount(h.project.files[0]) == 1 &&
+              annotationInContext(h.project.files[0], *findAnnotation(h.project.files[0], oldId)) &&
+              nonAlgorithm(h.project.files[0]) == preserved,
+          "Abandon changed the committed id or formal marks");
+    h.save();
+    const auto reopened = h.reopen();
+    const auto* diskSlot = currentDetectionSlot(reopened.files[0], 0);
+    check(diskSlot && diskSlot->committedRunId == "original" && diskSlot->pendingRunId.empty() &&
+              algorithmCount(reopened.files[0]) == 1,
+          "Reopen after abandon lost the committed result");
+  }
+  auto zero = h.durable("zero", "scn-max-psd-v1", true);
+  h.publish(zero);
+  check(algorithmCount(h.project.files[0]) == 0 && nonAlgorithm(h.project.files[0]) == preserved,
+        "A successful zero result did not replace the formal set or changed manual/raw labels");
+  uniqueResult(h.reopen().files[0], "zero", 0, 0);
   DetectionPreviewSnapshot raw;
   raw.runId = "preview-run";
   raw.dropped = 4;
@@ -791,6 +876,135 @@ void explicitRedetectClearsWithoutRestoring() {
   check(nonAlgorithm(h.project.files[0]) == preserved,
         "Preview presentation wrote into file marks");
 }
+const DetectionRun* indexedRun(const FileState& file, const std::string& id) {
+  for (const auto& run : file.detectionRuns)
+    if (run.request.runId == id) return &run;
+  return nullptr;
+}
+bool retiredRun(const CurrentDetectionSlot& slot, const std::string& id) {
+  return std::find(slot.retiredRunIds.begin(), slot.retiredRunIds.end(), id) !=
+         slot.retiredRunIds.end();
+}
+void unpublishedTerminalStaysIndexed() {
+  for (const auto state : {DetectionLifecycle::Cancelled, DetectionLifecycle::Failed,
+                           DetectionLifecycle::Interrupted}) {
+    const auto label = QString("lifecycle %1").arg(static_cast<int>(state));
+    Harness h;
+    auto& file = h.project.files[0];
+    AnnotationSourceSet labels;
+    labels.id = "controlled-label-set";
+    labels.fileId = file.metadata.id;
+    labels.sourceKind = AnnotationSource::ImportedLabel;
+    labels.sourceIdentity = annotationSourceIdentity(file.metadata, generation);
+    labels.formatId = labels.parserId = "controlled-label-fixture";
+    labels.parserVersion = "1";
+    labels.originalText = "small controlled original label";
+    labels.sourceHash = QCryptographicHash::hash(
+        QByteArray::fromStdString(labels.originalText), QCryptographicHash::Sha256)
+        .toHex().toStdString();
+    Annotation labelMark("controlled-label", "keep original", {{400, 800}, {99.8e6, 99.9e6}});
+    labelMark.fileId = file.metadata.id;
+    labelMark.sourceSetId = labels.id;
+    labelMark.sourceKind = AnnotationSource::ImportedLabel;
+    labelMark.segments.front().confirmed = false;
+    labelMark.reviewStatus = ReviewStatus::Pending;
+    labelMark.revisions.clear();
+    labelMark.reviewHistory.clear();
+    auto origin = std::make_shared<OriginEvidence>(*labelMark.originEvidence);
+    origin->formatId = "generator-txt-v1";
+    origin->originalSegments = labelMark.segments;
+    labelMark.originEvidence = std::move(origin);
+    check(h.annotations.publishSourceSet(file, labels, {labelMark}).ok,
+          label + " imported fixture failed");
+    check(h.annotations.createManual(file, "keep manual", {{100, 300}, {99.9e6, 100.1e6}}).ok,
+          label + " manual fixture failed");
+    auto original = h.durable("original");
+    h.publish(original);
+    const auto preserved = nonAlgorithm(h.project.files[0]);
+    const auto formalId = original.publication.annotations[0].id;
+    const auto formalObject = encodeAnnotation(*findAnnotation(h.project.files[0], formalId));
+    Prepared stopped;
+    stopped.run.request = h.request("stopped", "scn-max-psd-v1");
+    stopped.run.lifecycle = DetectionLifecycle::Running;
+    stopped.run.startedAtMilliseconds = 200;
+    QString error;
+    check(writeDetectionRun(h.root(), stopped.run, error), label + " running manifest: " + error);
+    h.pending(stopped);
+    stopped.run.lifecycle = state;
+    stopped.run.finishedAtMilliseconds = 250;
+    stopped.run.error = "controlled unpublished terminal";
+    check(writeDetectionRun(h.root(), stopped.run, error), label + " terminal manifest: " + error);
+    DetectionResultService::retainUnpublishedDetection(h.project, stopped.ticket, stopped.run);
+    {
+      const auto& current = h.project.files[0];
+      const auto* slot = currentDetectionSlot(current, 0);
+      const auto* stoppedRun = indexedRun(current, "stopped");
+      const auto valid = validateCurrentDetectionSlots(current);
+      check(valid.ok && slot && slot->committedRunId == "original" && slot->pendingRunId.empty() &&
+                slot->stale && stoppedRun && stoppedRun->lifecycle == state &&
+                !retiredRun(*slot, "stopped") && !retiredRun(*slot, "original") &&
+                indexedRun(current, "original") && algorithmCount(current) == 1 &&
+                encodeAnnotation(*findAnnotation(current, formalId)) == formalObject &&
+                nonAlgorithm(current) == preserved,
+            label + " terminal task retired the index or replaced the formal result: " +
+                QString::fromStdString(valid.error));
+      check(!h.commit(stopped).committed, label + " unpublished terminal replaced the formal result");
+      check(currentDetectionSlot(h.project.files[0], 0)->committedRunId == "original",
+            label + " rejected publication changed the committed id");
+      check(ProjectFileCodec::save(h.path, h.project, error) &&
+                !error.contains("Duplicate or retired detection run remains indexed"),
+            label + " save after cancel/fail/interrupt: " + error);
+      const auto loaded = h.reopen();
+      const auto* loadedSlot = currentDetectionSlot(loaded.files[0], 0);
+      const auto* loadedStopped = indexedRun(loaded.files[0], "stopped");
+      check(loadedSlot && loadedSlot->committedRunId == "original" &&
+                loadedSlot->pendingRunId.empty() && loadedStopped &&
+                loadedStopped->lifecycle == state && !retiredRun(*loadedSlot, "stopped") &&
+                validateCurrentDetectionSlots(loaded.files[0]).ok &&
+                nonAlgorithm(loaded.files[0]) == preserved,
+            label + " reopened terminal task was retired or lost the formal id");
+    }
+    Prepared again;
+    again.run.request = h.request("again", "ffscn-gui-iq-v1");
+    again.run.lifecycle = DetectionLifecycle::Running;
+    again.run.startedAtMilliseconds = 300;
+    check(writeDetectionRun(h.root(), again.run, error), label + " restart manifest: " + error);
+    h.pending(again);
+    {
+      const auto& current = h.project.files[0];
+      const auto* slot = currentDetectionSlot(current, 0);
+      const auto* stoppedRun = indexedRun(current, "stopped");
+      const auto* pendingRun = indexedRun(current, "again");
+      const auto valid = validateCurrentDetectionSlots(current);
+      check(valid.ok && slot && slot->committedRunId == "original" && slot->pendingRunId == "again" &&
+                stoppedRun && stoppedRun->lifecycle == state && pendingRun &&
+                pendingRun->lifecycle == DetectionLifecycle::Running &&
+                !retiredRun(*slot, "stopped") && !retiredRun(*slot, "again") &&
+                !retiredRun(*slot, "original") && algorithmCount(current) == 1 &&
+                encodeAnnotation(*findAnnotation(current, formalId)) == formalObject &&
+                nonAlgorithm(current) == preserved,
+            label + " restart left an illegal detection index: " +
+                QString::fromStdString(valid.error));
+      check(ProjectFileCodec::save(h.path, h.project, error) &&
+                !error.contains("Duplicate or retired detection run remains indexed"),
+            label + " save after restart: " + error);
+      const auto loaded = h.reopen();
+      const auto* loadedSlot = currentDetectionSlot(loaded.files[0], 0);
+      check(loadedSlot && loadedSlot->committedRunId == "original" &&
+                loadedSlot->pendingRunId == "again" &&
+                indexedRun(loaded.files[0], "stopped") &&
+                indexedRun(loaded.files[0], "stopped")->lifecycle == state &&
+                indexedRun(loaded.files[0], "again") &&
+                indexedRun(loaded.files[0], "original") &&
+                indexedRun(loaded.files[0], "original")->lifecycle == DetectionLifecycle::Completed &&
+                !retiredRun(*loadedSlot, "stopped") &&
+                validateCurrentDetectionSlots(loaded.files[0]).ok &&
+                encodeAnnotation(*findAnnotation(loaded.files[0], formalId)) == formalObject &&
+                nonAlgorithm(loaded.files[0]) == preserved,
+            label + " reopened restart retired the cancelled run or dropped the formal result");
+    }
+  }
+}
 void latestSequencePerTrackWithoutUi() {
   std::vector<PreviewTrackEvent> events(4);
   events[0].trackId = "a";
@@ -819,6 +1033,82 @@ void latestSequencePerTrackWithoutUi() {
             latest[1].frequency == FrequencyRange{3, 4},
         "An intervening track must remain when the latest geometry is chosen");
 }
+void unpublishedPreviewFormalDisplayAndRuntimeLog() {
+  DetectionPreviewSnapshot raw;
+  raw.runId = "preview-run";
+  raw.dropped = 2;
+  raw.events.push_back({});
+  raw.events.back().trackId = "preview-track";
+  raw.events.back().sequence = 3;
+  for (const auto state : {DetectionLifecycle::Failed, DetectionLifecycle::Cancelled,
+                           DetectionLifecycle::Interrupted}) {
+    check(detectionIsTerminal(state), "Terminal state");
+    const auto kept = presentDetectionPreview(raw, true, true, true);
+    check(!kept.visible.events.empty() && kept.visible.events.front().trackId == "preview-track" &&
+              kept.visible.unpublished && kept.visible.sealed && kept.hiddenTrackIds.empty() &&
+              kept.visible.dropped == 2,
+          "Failure, cancellation, and interruption keep the unpublished preview");
+  }
+  const auto published = presentDetectionPreview(raw, true, true, false);
+  check(published.visible.events.empty() && published.visible.sealed &&
+            !published.visible.unpublished && published.hiddenTrackIds.size() == 1,
+        "Successful completion still clears the dashed preview");
+  FileState file;
+  file.metadata.id = "file";
+  file.metadata.sampleFormat.selectedChannel = 2;
+  file.suppressCommittedDetectionChannel = 2;
+  Annotation algorithm("algo", "detect", {{1, 2}, {3, 4}});
+  algorithm.sourceKind = AnnotationSource::Algorithm;
+  algorithm.fileId = file.metadata.id;
+  check(!annotationEligibleForTab(file, algorithm, AnnotationSource::Algorithm) &&
+            annotationVisible(file, algorithm),
+        "Point detection hides the result table without changing annotationVisible");
+  Annotation manual("manual", "keep", {{1, 2}, {3, 4}});
+  manual.sourceKind = AnnotationSource::Manual;
+  manual.fileId = file.metadata.id;
+  check(annotationEligibleForTab(file, manual, AnnotationSource::Manual),
+        "Manual marks stay eligible while detection results are hidden");
+  file.metadata.sampleFormat.selectedChannel = 1;
+  check(annotationEligibleForTab(file, algorithm, AnnotationSource::Algorithm),
+        "Another channel keeps its formal detection rows");
+  check(detectionPrefixRecoveryWouldRepeatFusion(
+            "frequency-fusion-comparison-limit-exceeded open=3 sealed=1 comparisons=4") &&
+            !detectionPrefixRecoveryWouldRepeatFusion("source changed"),
+        "A failed fusion must not be projected again");
+  QTemporaryDir dir;
+  check(dir.isValid(), "log directory");
+  const auto path = RuntimeLog::install(dir.filePath("logs/signal-studio.log"), 480);
+  const auto first = RuntimeLog::recentLines(4);
+  check(!first.isEmpty() && first.front().contains("path=") && first.front().contains(path),
+        "The runtime log starts with its path: " + first.join(" | "));
+  RuntimeLog::write("detection", "run=r phase=preflight windows=0/0 batch=0 event=preflight-rejected error=rejected open=0 sealed=0 comparisons=0 action=none");
+  const QString filler(400, QLatin1Char('x'));
+  for (int i = 0; i < 8; ++i) RuntimeLog::write("detection", filler);
+  check(QFileInfo::exists(path + ".1") && QFileInfo::exists(path + ".3") &&
+            !QFileInfo::exists(path + ".4"),
+        "The log rotates at the threshold and retains three copies");
+  const auto rotated = RuntimeLog::recentLines(8);
+  check(!rotated.isEmpty() && rotated.front().contains("path="),
+        "Each rotated file records its path");
+  RuntimeLog::install(path, 8 * 1024 * 1024);
+  std::vector<std::thread> threads;
+  for (int index = 0; index < 4; ++index)
+    threads.emplace_back([&] {
+      for (int line = 0; line < 20; ++line) RuntimeLog::write("detection", "thread-line");
+    });
+  for (auto& thread : threads) thread.join();
+  QFile written(path);
+  check(written.open(QIODevice::ReadOnly), "reopen log");
+  const auto text = QString::fromUtf8(written.readAll());
+  int copies = text.count("thread-line");
+  for (const auto suffix : {".1", ".2", ".3"}) {
+    QFile older(path + suffix);
+    if (older.open(QIODevice::ReadOnly))
+      copies += QString::fromUtf8(older.readAll()).count("thread-line");
+  }
+  check(copies == 80, "Concurrent log writes are all retained");
+  RuntimeLog::uninstall();
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -835,8 +1125,10 @@ int main(int argc, char** argv) {
       {"retired-channel-snapshot-and-GC", retiredChannelSnapshot},
       {"save-GC-real-lock-competition", saveGcLockCompetition},
       {"transaction-metadata-count-segment-budgets", transactionBudgetRejection},
-      {"explicit-redetect-clears-without-restore", explicitRedetectClearsWithoutRestoring},
-      {"latest-sequence-per-track", latestSequencePerTrackWithoutUi}};
+      {"pending-keeps-formal-until-success", pendingKeepsFormalResultUntilSuccess},
+      {"unpublished-terminal-stays-indexed", unpublishedTerminalStaysIndexed},
+      {"latest-sequence-per-track", latestSequencePerTrackWithoutUi},
+      {"unpublished-preview-display-and-log", unpublishedPreviewFormalDisplayAndRuntimeLog}};
   int failed = 0;
   for (const auto& [name, test] : cases) {
     try { test(); std::cout << "PASS " << name << '\n'; }

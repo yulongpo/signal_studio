@@ -19,6 +19,7 @@
 #include "infrastructure/detection_refined_publication.h"
 #include "infrastructure/detection_store.h"
 #include "infrastructure/detection_task.h"
+#include "infrastructure/runtime_log.h"
 #include "tools/detection_benchmark/quality.h"
 
 #ifdef Q_OS_WIN
@@ -62,6 +63,9 @@ QJsonObject memory() {
 
 int main(int argc, char** argv) {
   QCoreApplication app(argc,argv);
+  QCoreApplication::setOrganizationName("Signal Studio");
+  QCoreApplication::setApplicationName("SignalStudio");
+  signalstudio::RuntimeLog::install();
   QCommandLineParser args;
   args.setApplicationDescription("Isolated real detection pipeline benchmark; never edits the source project");
   args.addHelpOption();
@@ -125,6 +129,8 @@ int main(int argc, char** argv) {
       const auto mib=args.value("raw-head-budget-mib").toULongLong(&valid);
       require(valid && mib<=2048,"Raw-head quota must be 0..2048 MiB");
       request.rawHeadBudgetBytes=mib*1024*1024;
+      request.legacyCombinedEvidence=mib==0;
+      request.retainRawModelOutput=mib>0;
     }
     if(args.isSet("dsp-compute")) {
       const auto compute = args.value("dsp-compute");

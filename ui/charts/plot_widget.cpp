@@ -1063,6 +1063,18 @@ void PlotWidget::setHoveredMark(const QString& id, const QString& segmentId) {
       emit annotationHoverChanged();
     }
 }
+void PlotWidget::setFormalDetectionSuppressed(bool suppressed) {
+  if (formalDetectionSuppressed_ == suppressed) return;
+  formalDetectionSuppressed_ = suppressed;
+  if (kind_ == Kind::Main && surface_ && !softwareFallback_)
+    surface_->invalidateOverlay();
+  QWidget::update();
+}
+bool PlotWidget::showsMark(const FileState& file, const Annotation& mark) const {
+  if (formalDetectionSuppressed_ && mark.sourceKind == AnnotationSource::Algorithm)
+    return false;
+  return annotationVisible(file, mark);
+}
 void PlotWidget::setDetectionPreview(std::vector<ChartPreviewTrack> tracks,
                                      std::uint64_t dropped) {
   detectionPreview_ = std::move(tracks);
@@ -2647,7 +2659,7 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
     batchedRects.push_back(rect);
   };
   for (const auto& mark : file->marks) {
-    if (!annotationVisible(*file, mark)) continue;
+    if (!showsMark(*file, mark)) continue;
     const bool selected = selectedIds.contains(mark.id);
     const bool current = file->activeMarkId == mark.id;
     const bool objectHovered =
@@ -2807,7 +2819,9 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
       painter.drawRect(box);
       painter.setPen(QColor("#f3e9ff"));
       painter.drawText(box.adjusted(4, 3, -4, -3), Qt::AlignTop | Qt::AlignLeft,
-                       preview.timeLocalized ? "预览" : "预览 · 时间未定位");
+                       preview.unpublished ? QStringLiteral("预览 · 未发布")
+                       : preview.timeLocalized ? QStringLiteral("预览")
+                                               : QStringLiteral("预览 · 时间未定位"));
     }
     if (detectionPreviewDropped_) {
       const QString dropped =
@@ -2848,7 +2862,7 @@ std::vector<PlotWidget::Hit> PlotWidget::markChoicesAt(QPointF point) const {
       zoneAt(point) != Zone::Plot)
     return hits;
   for (auto it = file->marks.rbegin(); it != file->marks.rend(); ++it) {
-    if (!annotationVisible(*file, *it)) continue;
+    if (!showsMark(*file, *it)) continue;
     for (const auto& s : it->segments)
       if (markRect(s.range).intersected(plotRect()).contains(point))
         hits.push_back({it->id, 0, false, s.id});
@@ -2928,7 +2942,7 @@ PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
       current && (activeSegment(*current) || current->observation))
     selected.push_back(current);
   for (const auto* mark : selected) {
-    if (!annotationVisible(*file, *mark) ||
+    if (!showsMark(*file, *mark) ||
         !session_.annotations().canEdit(*file, mark->id))
       continue;
     const bool observation = mark->segments.empty();
@@ -2986,7 +3000,7 @@ PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
       file->selectedMarkIds.begin(), file->selectedMarkIds.end());
   for (auto it = file->marks.rbegin(); it != file->marks.rend(); ++it) {
     if (!selectedIds.contains(it->id) || it->id == file->activeMarkId ||
-        !annotationVisible(*file, *it))
+        !showsMark(*file, *it))
       continue;
     if ((activeSegment(*it) || it->observation) &&
         markRect(activeSegment(*it) ? it->range : *it->observation)
@@ -3727,7 +3741,7 @@ void PlotWidget::keyPressEvent(QKeyEvent* event) {
     if (const auto* file = session_.activeFile()) {
       std::vector<std::string> ids;
       for (const auto& mark : file->marks)
-        if (annotationVisible(*file, mark)) ids.push_back(mark.id);
+        if (showsMark(*file, mark)) ids.push_back(mark.id);
       const auto active =
           std::find(ids.begin(), ids.end(), file->activeMarkId) != ids.end()
               ? file->activeMarkId

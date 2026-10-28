@@ -101,9 +101,20 @@ struct DetectionRefinementEvidence {
   double effectiveCoarseSplitGapSeconds = 0;
 };
 
+// ResourceLimit may drop one measurement and keep a labelled fallback.
+// WorkingCellLimit, HardFailure and Cancelled must not publish activity.
+enum class DetectionFailureCode : int {
+  None = 0,
+  ResourceLimit = 1,
+  HardFailure = 2,
+  Cancelled = 3,
+  WorkingCellLimit = 4,
+};
+
 struct DetectionRefinementResult {
   bool ok = true;
   std::string error;
+  DetectionFailureCode failureCode = DetectionFailureCode::None;
   RefineMethod method = RefineMethod::None;
   RefineStatus status = RefineStatus::Skipped;
   ViewRange observation;

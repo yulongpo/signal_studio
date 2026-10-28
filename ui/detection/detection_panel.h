@@ -10,7 +10,6 @@
 #include <optional>
 #include <thread>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "application/session.h"
 #include "application/detection_result_service.h"
@@ -35,7 +34,17 @@ class DetectionPanel : public QWidget {
   void openRunSource(const QString& runId);
   void deriveRun(const QString& runId);
   void refresh();
-  void presentLivePreview(DetectionPreviewSnapshot raw, bool terminal);
+  void presentLivePreview(DetectionPreviewSnapshot raw, bool terminal,
+                         bool retainUnpublished = false);
+  // Draws this file, IQ channel, and project generation. A newer snapshot from
+  // another channel does not replace this channel's live tracks. A preview
+  // whose run has left the snapshot list is cleared.
+  void projectScopedPreview(DetectionPreviewSnapshot preview,
+                            const std::vector<DetectionRun>& runs);
+  // File, sample channel, or project generation changed: publish the current
+  // scope now, instead of waiting for the next poll.
+  void syncPreviewScope();
+  QString previewAbsenceNote() const { return previewAbsenceNote_; }
   void setShowIntermediateResults(bool show);
   bool showIntermediateResults() const { return showIntermediate_; }
   QString clearanceNoteForActive() const;
@@ -72,12 +81,22 @@ class DetectionPanel : public QWidget {
   struct StartCommit;
   struct PublishCommit;
   void poll();
+  void publishPolledPreview();
+  void rememberViewScope();
+  bool viewScopeChanged() const;
+  void runStartCommit(const std::shared_ptr<StartCommit>&);
   void finishStartCommit(const std::shared_ptr<StartCommit>&);
   void finishPublicationCommit(const std::shared_ptr<PublishCommit>&);
   void launchCommitWorker(std::function<void()> body);
   void beginPublicationCommit(DetectionResultTicket ticket, DetectionRun run,
                               DetectionPublication publication);
+  bool publicationGenerationCurrent(std::uint64_t epoch, std::uint64_t generation,
+                                    const std::string& fileId) const;
   void releaseCommitLock();
+  void clearUnpublishedPreview(const std::string& fileId, std::uint32_t channel);
+  void suppressFormalDisplay(const std::string& fileId, std::uint32_t channel);
+  void restoreFormalDisplay(const std::string& fileId);
+  bool showingPreview() const;
   void cancelSelected();
   void cancelRun(const QString& runId);
   void showSelectedDetails();
@@ -120,12 +139,18 @@ class DetectionPanel : public QWidget {
   DetectionPreviewSnapshot rawPreview_;
   bool rawPreviewTerminal_ = false;
   bool showIntermediate_ = true;
-  std::unordered_set<std::string> clearedScopes_;
   std::uint64_t previewToken_ = 0;
   std::uint64_t previewDropped_ = 0;
   std::size_t previewCount_ = 0;
   bool previewSealed_ = false;
   std::string previewFile_;
+  bool previewRunActive_ = false;
+  std::string previewPhase_;
+  QString previewAbsenceNote_;
+  std::string viewedFile_;
+  std::uint32_t viewedChannel_ = 0;
+  std::uint64_t viewedGeneration_ = 0;
+  bool viewScopeReady_ = false;
   bool commitInFlight_ = false;
   bool publicationCommit_ = false;
   bool startSaveFault_ = false;

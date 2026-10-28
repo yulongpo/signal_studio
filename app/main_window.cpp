@@ -1,5 +1,6 @@
 #include "ui/project_tree_presentation.h"
 #include "app/main_window.h"
+#include "infrastructure/runtime_log.h"
 #include "ui/chart_control_strip.h"
 #include "ui/context_stack.h"
 #include "ui/settings_popover.h"
@@ -91,6 +92,7 @@
 #include "ui/detection/detection_card.h"
 #include "application/detection_result_service.h"
 #include "ui/detection/detection_panel.h"
+#include "ui/detection/detection_resource_options.h"
 #include "ui/detection/ffscn_engine_dialog.h"
 #include "ui/detection/ffscn_engine_switch_dialog.h"
 #include "ui/import/signal_import_dialog.h"
@@ -328,6 +330,51 @@ class PrototypeSplitter : public QSplitter {
     return handle;
   }
 };
+
+QString detectionPreviewCountNote(const std::vector<ChartPreviewTrack>& tracks,
+                                  std::uint64_t dropped, bool unpublished) {
+  if (tracks.empty()) return {};
+  if (unpublished)
+    return QString("预览 · 未发布 · %1 条 · 不能转换为人工标记或创建窄带")
+        .arg(tracks.size());
+  int localized = 0;
+  int pendingTime = 0;
+  for (const auto& track : tracks) {
+    if (track.timeLocalized) ++localized;
+    else ++pendingTime;
+  }
+  const QString timing =
+      localized && pendingTime
+          ? QString("%1 条时间已定位 · %2 条时间未定位").arg(localized).arg(pendingTime)
+          : localized ? QStringLiteral("时间已定位")
+                      : QStringLiteral("时间未定位");
+  auto note = QString("预览 %1 条 · %2 · 随推理批次更新 · 不能转换为人工标记或创建窄带")
+                  .arg(tracks.size())
+                  .arg(timing);
+  if (dropped)
+    note += QString(" · 已丢弃 %1 条旧事件").arg(dropped);
+  return note;
+}
+
+void publishDetectionPreview(PlotWidget* plot, AnnotationPanel* annotations,
+                             DetectionPanel* detection) {
+  if (!detection) return;
+  const auto& preview = detection->livePreview();
+  const auto latest = latestPreviewEvents(preview.events);
+  std::vector<ChartPreviewTrack> tracks;
+  tracks.reserve(latest.size());
+  for (const auto& event : latest)
+    tracks.push_back({event.trackId, event.observedSupport, event.frequency,
+                      event.timeLocalized, preview.unpublished});
+  const auto noteTracks = tracks;
+  if (plot) plot->setDetectionPreview(std::move(tracks), preview.dropped);
+  if (!annotations) return;
+  const auto absence = detection->previewAbsenceNote();
+  annotations->setDetectionPreviewNote(
+      absence.isEmpty()
+          ? detectionPreviewCountNote(noteTracks, preview.dropped, preview.unpublished)
+          : absence);
+}
 }  // namespace
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
@@ -472,6 +519,12 @@ MainWindow::~MainWindow() {
   delete maxVeil_;
   maxVeil_ = nullptr;
   delete takeCentralWidget();
+}
+
+void MainWindow::openDetectionResourceOptions() {
+  DetectionResourceOptionsDialog dialog(this, projectPath_);
+  if (dialog.exec() != QDialog::Accepted) return;
+  if (detectionCard_) detectionCard_->refresh();
 }
 
 void MainWindow::openFfscnEngineTool() {
@@ -740,6 +793,10 @@ void MainWindow::buildMenus() {
                                         &MainWindow::beginDetectionRoi);
   roiAction->setObjectName("widebandDetectionRoiAction");
   auto* tools = menuBar()->addMenu("工具(&T)");
+  auto* options = tools->addAction("选项…", this,
+                                   &MainWindow::openDetectionResourceOptions);
+  options->setObjectName("toolsOptionsAction");
+  tools->addSeparator();
   auto* engineTool = tools->addAction("FFSCN 引擎转换…", this,
                                       &MainWindow::openFfscnEngineTool);
   engineTool->setObjectName("ffscnEngineToolAction");
@@ -1198,7 +1255,12 @@ void MainWindow::buildWorkspace() {
   results_ = new QPlainTextEdit;
   results_->setObjectName("resultsPanel");
   results_->setReadOnly(true);
-  results_->setMaximumBlockCount(300);
+  results_->setMaximumBlockCount(100000);
+  RuntimeLog::setMirror(this, [this](const QString& line) {
+    if (results_) results_->appendPlainText(line);
+  });
+  for (const auto& line : RuntimeLog::recentLines(2000))
+    results_->appendPlainText(line);
   annotations_ = new AnnotationPanel(session_);
   connect(annotations_, &AnnotationPanel::sourceTabChanged, this, [this](int source) {
     bottomTab_ = source;
@@ -1263,24 +1325,7 @@ void MainWindow::buildWorkspace() {
             if (dropped) refreshAnnotationHover();
           });
   connect(detection_, &DetectionPanel::previewChanged, this, [this] {
-    const auto& preview = detection_->livePreview();
-    const auto latest = latestPreviewEvents(preview.events);
-    std::vector<ChartPreviewTrack> tracks;
-    tracks.reserve(latest.size());
-    for (const auto& event : latest)
-      tracks.push_back({event.trackId, event.observedSupport, event.frequency,
-                        event.timeLocalized});
-    const auto shown = tracks.size();
-    if (main_) main_->setDetectionPreview(std::move(tracks), preview.dropped);
-    if (annotations_) {
-      const QString note = shown == 0
-          ? QString{}
-          : QString("预览 %1 条 · 时间未定位 · 不能转换为人工标记或创建窄带")
-                .arg(shown);
-      annotations_->setDetectionPreviewNote(
-          preview.dropped ? note + QString(" · 已丢弃 %1 条旧事件").arg(preview.dropped)
-                          : note);
-    }
+    publishDetectionPreview(main_, annotations_, detection_);
   });
   connect(detection_, &DetectionPanel::runFocused, this,
           [this](const QString& id) {
@@ -3106,8 +3151,18 @@ bool MainWindow::allowProjectMutation(QString* error) {
   return false;
 }
 
+void MainWindow::syncFormalDetectionSuppression() {
+  const auto* file = session_.activeFile();
+  const bool hide =
+      file && file->suppressCommittedDetectionChannel &&
+      *file->suppressCommittedDetectionChannel ==
+          file->metadata.sampleFormat.selectedChannel;
+  for (auto* plot : {navigation_, auxiliary_, main_})
+    if (plot) plot->setFormalDetectionSuppressed(hide);
+}
 void MainWindow::applyDetectionPresentation() {
   if (destroying_) return;
+  syncFormalDetectionSuppression();
   if (annotations_ && detection_)
     annotations_->setDetectionClearanceNote(detection_->clearanceNoteForActive());
   if (annotations_) annotations_->refresh();
@@ -3115,24 +3170,7 @@ void MainWindow::applyDetectionPresentation() {
   if (detectionCard_) detectionCard_->refresh();
   updateTree();
   if (!main_ || !detection_) return;
-  const auto& preview = detection_->livePreview();
-  const auto latest = latestPreviewEvents(preview.events);
-  std::vector<ChartPreviewTrack> tracks;
-  tracks.reserve(latest.size());
-  for (const auto& event : latest)
-    tracks.push_back({event.trackId, event.observedSupport, event.frequency,
-                      event.timeLocalized});
-  const auto shown = tracks.size();
-  main_->setDetectionPreview(std::move(tracks), preview.dropped);
-  if (annotations_) {
-    const QString note = shown == 0
-        ? QString{}
-        : QString("预览 %1 条 · 时间未定位 · 不能转换为人工标记或创建窄带")
-              .arg(shown);
-    annotations_->setDetectionPreviewNote(
-        preview.dropped ? note + QString(" · 已丢弃 %1 条旧事件").arg(preview.dropped)
-                        : note);
-  }
+  publishDetectionPreview(main_, annotations_, detection_);
   main_->invalidateAnnotationOverlay();
 }
 
@@ -3154,6 +3192,7 @@ void MainWindow::refresh() {
   if (detectionAction_) detectionAction_->setEnabled(detectionReady);
   if (refreshing_) return;
   refreshing_ = true;
+  if (detection_) detection_->syncPreviewScope();
   auto* file = session_.activeFile();
   if (file) session_.annotations().reconcileSelection(*file);
   const bool dirty = isProjectDirty();
@@ -3411,6 +3450,7 @@ void MainWindow::refresh() {
   updatePropertyContext();
   updateBottom();
   updateTree();
+  syncFormalDetectionSuppression();
   for (auto* plot : {navigation_, auxiliary_, main_}) plot->syncState();
   updateChartControls(narrowOpen);
   refreshing_ = false;
@@ -5260,6 +5300,7 @@ bool MainWindow::saveProject(const QString& path) {
         }
       })) {
     QMessageBox::critical(this, "保存失败", error);
+    log(error);
     return false;
   }
   projectPath_ = QFileInfo(projectFile).absoluteFilePath();
@@ -5455,10 +5496,8 @@ void MainWindow::pollSourceLoads() {
   if (changed) refresh();
 }
 void MainWindow::log(const QString& message) {
-  if (!results_) return;
-  results_->appendPlainText(QDateTime::currentDateTime().toString("HH:mm:ss") +
-                            "  信息  " + message);
-  statusBar()->showMessage(message, 2500);
+  RuntimeLog::write(QStringLiteral("ui"), message);
+  if (statusBar()) statusBar()->showMessage(message, 2500);
 }
 }  // namespace signalstudio
 

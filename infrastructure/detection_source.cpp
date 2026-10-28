@@ -1,4 +1,6 @@
 #include "infrastructure/detection_source.h"
+
+#include "domain/detection.h"
 #include "infrastructure/detection_spectrum_spool.h"
 
 #include <list>
@@ -89,8 +91,8 @@ void validateConfig(const DetectionSourceConfig& config,
   require(config.readBlockBytes >= bytesPerFrame(source.sampleFormat) &&
               config.readBlockBytes <= 32 * 1024 * 1024,
           "检测单次读取预算须包含完整帧且不超过 32 MiB");
-  require(config.workingSetBudgetBytes > 0 &&
-              config.workingSetBudgetBytes <= 1024ULL * 1024 * 1024,
+  require(config.workingSetBudgetBytes >= kDetectionWorkingSetMinBytes &&
+              config.workingSetBudgetBytes <= detectionWorkingSetLimitBytes(),
           "检测CPU工作集预算无效");
   require(config.maximumCandidates > 0 && config.maximumCandidates <= 512,
           "检测候选数预算须为1–512");
@@ -591,10 +593,17 @@ bool makeDetectionSourcePlan(const FileMetadata& source, ViewRange requested,
         plan.estimatedWindowEvidenceBytes =
             std::max(plan.estimatedWindowEvidenceBytes, bytes);
       }
-      require(plan.estimatedWindowEvidenceBytes + plan.modelHeadBytesPerWindow +
-                      plan.outputJsonReserveBytes <=
-                  plan.config.evidenceBudgetBytes,
-              "单窗口观测、模型原始输出与候选证据超过当前保存预算");
+      const auto jsonWindowBytes = plan.estimatedWindowEvidenceBytes +
+                                   plan.outputJsonReserveBytes;
+      if (plan.config.rawHeadBudgetBytes == 0 &&
+          plan.config.legacyCombinedRawHeads) {
+        require(jsonWindowBytes + plan.modelHeadBytesPerWindow <=
+                    plan.config.evidenceBudgetBytes,
+                "单窗口观测、模型原始输出与候选证据超过当前保存预算");
+      } else {
+        require(jsonWindowBytes <= plan.config.evidenceBudgetBytes,
+                "单窗口观测与候选证据超过当前 JSON 保存预算");
+      }
       plan.contextRange = {frameMappingForPlan(plan, first).actualSamples.begin,
                            frameMappingForPlan(plan, last).actualSamples.end};
     }
@@ -742,7 +751,10 @@ bool FixedDetectionSource::open(const FileMetadata& source, ViewRange requested,
   gpuCancel_ = {};
   gpuCapabilities_ = {};
   gpuFallback_.clear();
-  gpuFrames_ = gpuWindows_ = cpuFrames_ = cpuWindows_ = 0;
+  gpuFrames_ = gpuWindows_ = cpuFrames_ = cpuWindows_ = mklFrames_ = 0;
+  stftRoute_ = "unselected";
+  stftSuppressedReason_.clear();
+  modelWindowStftLocked_ = false;
   plan_ = {};
   profiling_ = DetectionProfiler{};
   clearFrequencySpool();
@@ -800,6 +812,20 @@ bool FixedDetectionSource::sourceCurrent(QString& error) const {
   }
   return true;
 }
+void FixedDetectionSource::notePlainStftRoute(bool usedGpu) {
+  if (modelWindowStftLocked_) return;
+  if (usedGpu) {
+    stftRoute_ = "gpu-stft";
+    return;
+  }
+  if (hostMklFrame_) {
+    stftRoute_ = "host-onemkl";
+    return;
+  }
+  stftRoute_ = "handwritten-fft";
+  if (stftSuppressedReason_.empty() && !gpuFallback_.empty())
+    stftSuppressedReason_ = gpuFallback_;
+}
 QJsonObject FixedDetectionSource::gpuProfiling() const {
   QJsonObject result{{"preferred",plan_.config.preferGpu},
       {"ready",bool(gpu_)},{"device",QString::fromStdString(gpuCapabilities_.deviceName)},
@@ -807,6 +833,8 @@ QJsonObject FixedDetectionSource::gpuProfiling() const {
       {"gpuFrames",qint64(gpuFrames_)},{"cpuFrames",qint64(cpuFrames_)},
       {"gpuWindows",qint64(gpuWindows_)},{"cpuWindows",qint64(cpuWindows_)},
       {"mklFrames",qint64(mklFrames_)},
+      {"stftRoute",QString::fromStdString(stftRoute_)},
+      {"stftSuppressedReason",QString::fromStdString(stftSuppressedReason_).left(1024)},
       {"mklDetail",QString::fromStdString(mkl_.detail()).left(1024)}};
   if (gpu_) {
     const auto& m = gpu_->metrics();
@@ -909,6 +937,7 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
   if (!suppressGpuFrame_ && gpu_ && readGpuFrame(frame,error,cancel)) {
     if (!sourceCurrent(error)) return false;
     ++gpuFrames_;
+    notePlainStftRoute(true);
     rememberFrame(index, frame);
     target = std::move(frame);
     return true;
@@ -985,6 +1014,7 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
   frame.mapping.inputHash = inputHash.result().toHex().toStdString();
   profiling_.record("density-log",densityTimer.nsecsElapsed());
   if (!sourceCurrent(error)) return false;
+  notePlainStftRoute(false);
   rememberFrame(index, frame);
   target = std::move(frame);
   error.clear();
@@ -1023,6 +1053,19 @@ bool FixedDetectionSource::readModelWindow(
   const bool previousHost = hostMklFrame_;
   // A missing oneMKL DLL stays on the handwritten transform. It does not
   // upload the window frame by frame to recover a GPU STFT.
+  if (hostCandidate) {
+    modelWindowStftLocked_ = true;
+    if (hostMkl) {
+      stftRoute_ = "host-onemkl";
+      stftSuppressedReason_ =
+          "model-window STFT stays on host oneMKL; per-frame GPU STFT upload is suppressed";
+    } else {
+      stftRoute_ = "handwritten-fft";
+      stftSuppressedReason_ = mklError.empty()
+          ? "oneMKL unavailable; handwritten FFT retained; per-frame GPU STFT upload is suppressed"
+          : mklError + "; per-frame GPU STFT upload is suppressed";
+    }
+  }
   suppressGpuFrame_ = hostCandidate;
   hostMklFrame_ = hostMkl;
   const auto restoreHost = qScopeGuard([&] {

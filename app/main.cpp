@@ -1,4 +1,6 @@
 #include "app/main_window.h"
+#include "infrastructure/runtime_log.h"
+#include "ui/detection/detection_resource_options.h"
 #include "ui/brand/brand_assets.h"
 #include "ui/charts/plot_widget.h"
 #include "ui/narrowband_workspace.h"
@@ -45,6 +47,8 @@ QJsonArray screenInventory() {
 
 int main(int argc,char* argv[]) {
     QApplication app(argc,argv);QApplication::setOrganizationName("Signal Studio");QApplication::setApplicationName("SignalStudio");QApplication::setApplicationVersion("0.1.0");
+    signalstudio::RuntimeLog::install(
+        signalstudio::DetectionResourceOptions::load().resolvedLogFile());
     app.setWindowIcon(signalstudio::BrandAssets::windowIcon());
     QCommandLineParser parser;parser.setApplicationDescription("A1.4.3 native UI with explicit demo charts");parser.addHelpOption();parser.addVersionOption();
     parser.addOption(

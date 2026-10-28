@@ -25,7 +25,7 @@ struct Config {
   std::uint32_t maximumFirRadius = 262143;
   double firTailAmplitudeBudget = 8e-5;
   std::uint64_t scratchBudgetBytes = 16ULL << 30;
-  std::uint64_t scratchFreeFloorBytes = 2ULL << 30;
+  std::uint64_t scratchFreeFloorBytes = 0;
 };
 struct Context {
   DetectionRefinementInput input; // no energy, spectrum or fallbackActivity

@@ -3,9 +3,21 @@
 #include <algorithm>
 #include <bit>
 #include <cmath>
+#include <filesystem>
 #include <limits>
+#include <system_error>
 #include <unordered_set>
 #include <utility>
+
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#else
+#include <sys/statvfs.h>
+#include <unistd.h>
+#endif
 
 namespace signalstudio {
 namespace {
@@ -27,7 +39,68 @@ bool validRange(ViewRange range, const SourceIdentity& source,
          range.frequency.lowerHz >= lower &&
          range.frequency.upperHz <= source.centerFrequencyHz + half;
 }
+std::filesystem::path utf8Path(const std::string& text) {
+  return std::filesystem::path(std::u8string(
+      reinterpret_cast<const char8_t*>(text.data()), text.size()));
+}
 }  // namespace
+
+std::uint64_t detectionPhysicalMemoryBytes() {
+#ifdef _WIN32
+  MEMORYSTATUSEX status;
+  status.dwLength = sizeof(status);
+  if (!GlobalMemoryStatusEx(&status) || status.ullTotalPhys == 0)
+    return kDetectionWorkingSetTargetBytes;
+  return status.ullTotalPhys;
+#else
+  const auto pages = sysconf(_SC_PHYS_PAGES);
+  const auto page = sysconf(_SC_PAGE_SIZE);
+  if (pages <= 0 || page <= 0) return kDetectionWorkingSetTargetBytes;
+  return static_cast<std::uint64_t>(pages) * static_cast<std::uint64_t>(page);
+#endif
+}
+std::optional<std::uint64_t> detectionVolumeFreeBytes(const std::string& path) {
+  std::error_code error;
+  std::filesystem::path candidate =
+      path.empty() ? std::filesystem::current_path(error) : utf8Path(path);
+  if (error) return std::nullopt;
+  auto absolute = std::filesystem::absolute(candidate, error);
+  if (!error) candidate = std::move(absolute);
+  for (int hop = 0; hop < 64; ++hop) {
+    std::error_code existsError;
+    if (std::filesystem::exists(candidate, existsError) && !existsError) break;
+    const auto parent = candidate.parent_path();
+    if (parent.empty() || parent == candidate) break;
+    candidate = parent;
+  }
+#ifdef _WIN32
+  ULARGE_INTEGER available;
+  if (!GetDiskFreeSpaceExW(candidate.c_str(), &available, nullptr, nullptr))
+    return std::nullopt;
+  return static_cast<std::uint64_t>(available.QuadPart);
+#else
+  struct statvfs status;
+  if (statvfs(candidate.c_str(), &status) != 0) return std::nullopt;
+  if (status.f_frsize == 0) return std::nullopt;
+  return static_cast<std::uint64_t>(status.f_bavail) *
+         static_cast<std::uint64_t>(status.f_frsize);
+#endif
+}
+std::uint64_t detectionWorkingSetLimitBytes() {
+  const auto memory = detectionPhysicalMemoryBytes();
+  return memory == 0 ? kDetectionWorkingSetTargetBytes : memory;
+}
+std::uint64_t detectionWorkingSetDefaultBytes() {
+  return std::min(kDetectionWorkingSetTargetBytes, detectionWorkingSetLimitBytes());
+}
+std::uint64_t detectionDiskBudgetLimitBytes(const std::string& path) {
+  const auto free = detectionVolumeFreeBytes(path);
+  return free.value_or(kDetectionDiskBudgetTargetBytes);
+}
+std::uint64_t detectionDiskBudgetDefaultBytes(const std::string& path) {
+  return std::min(kDetectionDiskBudgetTargetBytes,
+                  detectionDiskBudgetLimitBytes(path));
+}
 
 const std::vector<DetectionProfile>& detectionProfiles() {
   static const std::vector<DetectionProfile> profiles{
@@ -135,10 +208,16 @@ bool detectionTransitionAllowed(DetectionLifecycle from,
   return from == DetectionLifecycle::Cancelling &&
          to == DetectionLifecycle::Cancelled;
 }
-DetectionValidation validateDetectionRequest(const DetectionRequest& request) {
-  if(static_cast<int>(request.sampleEnergyMode)<0 || static_cast<int>(request.sampleEnergyMode)>2 ||
-      request.sampleScratchBudgetBytes>32ULL*1024*1024*1024)
-    return {false,"Invalid sample energy mode or bounded temporary storage quota"};
+DetectionValidation validateDetectionRequest(const DetectionRequest& request,
+                                              const std::string& storagePath) {
+  const auto diskLimit = storagePath.empty()
+                             ? std::optional<std::uint64_t>{}
+                             : detectionVolumeFreeBytes(storagePath);
+  const bool scratchOverDisk =
+      diskLimit && request.sampleScratchBudgetBytes > *diskLimit;
+  if (static_cast<int>(request.sampleEnergyMode) < 0 ||
+      static_cast<int>(request.sampleEnergyMode) > 2 || scratchOverDisk)
+    return {false, "Invalid sample energy mode or bounded temporary storage quota"};
   const auto* profile = findDetectionProfile(request.profile.id);
   if (!profile || request.profile.version != profile->version ||
       request.profile.backend != profile->backend ||
@@ -195,10 +274,17 @@ DetectionValidation validateDetectionRequest(const DetectionRequest& request) {
       !finiteBetween(parameters.coarseSplitGapSeconds, 0, 60) ||
       !finiteBetween(parameters.coarseMinBurstSeconds, 0, 60))
     return {false, "Detection parameters are invalid"};
-  if (request.workingSetBudgetBytes < 16 * 1024 * 1024 ||
-      request.workingSetBudgetBytes > 1024ULL * 1024 * 1024 ||
-      request.evidenceBudgetBytes > 256 * 1024 * 1024 ||
-      request.rawHeadBudgetBytes > 2ULL * 1024 * 1024 * 1024)
+  const bool explicitRawHeadOverCap =
+      !request.retainRawModelOutput &&
+      request.rawHeadBudgetBytes > kDetectionExplicitRawHeadMaxBytes;
+  const bool retainedRawHeadOverDisk =
+      diskLimit && request.retainRawModelOutput &&
+      request.rawHeadBudgetBytes > *diskLimit;
+  const bool evidenceOverDisk =
+      diskLimit && request.evidenceBudgetBytes > *diskLimit;
+  if (request.workingSetBudgetBytes < kDetectionWorkingSetMinBytes ||
+      request.workingSetBudgetBytes > detectionWorkingSetLimitBytes() ||
+      evidenceOverDisk || explicitRawHeadOverCap || retainedRawHeadOverDisk)
     return {false, "Detection resource budget is invalid"};
   return {};
 }
@@ -267,8 +353,9 @@ bool selectDetectionSpectrum(std::span<const float> values, std::size_t bins,
   error.clear();
   return true;
 }
-DetectionValidation validateDetectionRun(const DetectionRun& run) {
-  if (const auto valid = validateDetectionRequest(run.request); !valid)
+DetectionValidation validateDetectionRun(const DetectionRun& run,
+                                          const std::string& storagePath) {
+  if (const auto valid = validateDetectionRequest(run.request, storagePath); !valid)
     return valid;
   if (run.performanceJson.size() > 65536)
     return {false, "Detection performance diagnostics exceed 64 KiB"};
@@ -278,7 +365,8 @@ DetectionValidation validateDetectionRun(const DetectionRun& run) {
       run.chunks.size() > 100000 || run.coverage.size() > 100000 ||
       run.resultCount > 100000)
     return {false, "Detection run counts exceed their coverage/budget"};
-  if (run.computationPhase != "none" && run.computationPhase != "reading" &&
+  if (run.computationPhase != "none" && run.computationPhase != "preflight" &&
+      run.computationPhase != "reading" &&
       run.computationPhase != "inference" &&
       run.computationPhase != "decoding" &&
       run.computationPhase != "storing-heads" &&

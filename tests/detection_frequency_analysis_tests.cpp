@@ -429,6 +429,14 @@ void repeatedReadFrameReusesCachedSpectrum() {
   success(provider.open(metadata, fixtureFullRange(metadata), sourceConfig(),
                         error),
           error);
+  const auto profile = provider.gpuProfiling();
+  const auto stages = provider.profiling();
+  check(profile.contains("stftRoute") && profile.contains("stftSuppressedReason") &&
+            profile.contains("mklFrames") && profile.contains("gpuFrames") &&
+            profile.contains("cpuFrames"),
+        "gpuProfiling keeps the STFT route and frame counts");
+  check(!profile.contains("gpu") && stages.contains("gpuDsp") && !stages.contains("gpu"),
+        "DSP profiling must not write TensorRT time under the legacy gpu key");
   const auto before = frameCounts(provider);
   DetectionSpectrumFrame first;
   success(provider.readFrame(0, first, error), error);

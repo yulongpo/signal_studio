@@ -717,8 +717,14 @@ int runUxR5Capture(const QString& directory, bool software, bool menusOnly = fal
         QTest::keyClick(window.windowHandle(),Qt::Key_F2);
         QTest::keyClick(window.windowHandle(),Qt::Key_Delete);
         QCoreApplication::processEvents();
-        require(unexpectedModal.isEmpty() && !window.findChild<QLineEdit*>("annotationTableEditor") &&
-            uxR5CaptureSources(capture.file()) == before,"Readonly drag/F2/Delete changed a source or opened an editor: "+unexpectedModal);
+        const bool cancelledAlgorithmDelete =
+            kind == AnnotationSource::Algorithm &&
+            unexpectedModal.startsWith("annotationDeleteDialog");
+        require((unexpectedModal.isEmpty() || cancelledAlgorithmDelete) &&
+                    !window.findChild<QLineEdit*>("annotationTableEditor") &&
+                    uxR5CaptureSources(capture.file()) == before,
+                "Readonly drag/F2/Delete changed a source or opened an editor: " +
+                    unexpectedModal);
         results.append(QJsonObject{{"id",uxR5CaptureText(id)}, {"handles",0},
             {"centerDrag",pointJson(center)}, {"edgeDrag",pointJson(edge)},
             {"geometryEvidenceRevisionsUnchanged",true},{"f2AndDeleteRejected",true},

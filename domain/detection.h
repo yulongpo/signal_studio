@@ -88,6 +88,31 @@ struct DetectionProfile {
   bool supportsReal = false;
 };
 
+inline constexpr std::uint64_t kDetectionWorkingSetMinBytes = 16ULL * 1024 * 1024;
+// Nominal defaults. The live default is the smaller of this target and the
+// machine limit: physical memory for the working set, free space on the budget
+// volume for disk budgets.
+inline constexpr std::uint64_t kDetectionWorkingSetTargetBytes =
+    8ULL * 1024 * 1024 * 1024;
+inline constexpr std::uint64_t kDetectionDiskBudgetTargetBytes =
+    64ULL * 1024 * 1024 * 1024;
+// Omitted historical manifests keep this scratch size. It is not the new default.
+inline constexpr std::uint64_t kDetectionLegacySampleScratchBytes =
+    16ULL * 1024 * 1024 * 1024;
+// Explicit raw-head quotas on requests that are not using retention. Legacy
+// combined manifests and this 2 GiB explicit cap stay in force.
+inline constexpr std::uint64_t kDetectionExplicitRawHeadMaxBytes =
+    2ULL * 1024 * 1024 * 1024;
+
+// Empty path uses the current directory. A missing volume leaves the disk
+// target in place so a default can still be formed.
+std::uint64_t detectionPhysicalMemoryBytes();
+std::optional<std::uint64_t> detectionVolumeFreeBytes(const std::string& path);
+std::uint64_t detectionWorkingSetLimitBytes();
+std::uint64_t detectionWorkingSetDefaultBytes();
+std::uint64_t detectionDiskBudgetLimitBytes(const std::string& path);
+std::uint64_t detectionDiskBudgetDefaultBytes(const std::string& path);
+
 struct DetectionRequest {
   // Version 1 preserves historical fixed-grid runs. Version 2 separates the
   // user analysis grid from the backend tensor grid.
@@ -96,7 +121,7 @@ struct DetectionRequest {
   DetectionSampleEnergyMode sampleEnergyMode = DetectionSampleEnergyMode::Auto;
   bool gpuDspPreferred = true;
   // Independent bounded temporary DSP storage, reclaimed before publication.
-  std::uint64_t sampleScratchBudgetBytes = 16ULL * 1024 * 1024 * 1024;
+  std::uint64_t sampleScratchBudgetBytes = detectionDiskBudgetDefaultBytes({});
   std::string runId;
   std::optional<std::string> parentRunId;
   SourceIdentity sourceIdentity;
@@ -109,11 +134,18 @@ struct DetectionRequest {
   std::string sourceRevisionId;
   std::string modelManifestPath;
   std::string modelSha256;
-  std::uint64_t workingSetBudgetBytes = 256 * 1024 * 1024;
-  std::uint64_t evidenceBudgetBytes = 32 * 1024 * 1024;
-  // Independent bounded on-disk raw heads; not resident JSON metadata. Zero
-  // retains the historical combined evidence quota when decoding old runs.
-  std::uint64_t rawHeadBudgetBytes = 256 * 1024 * 1024;
+  std::uint64_t workingSetBudgetBytes = detectionWorkingSetDefaultBytes();
+  std::uint64_t evidenceBudgetBytes = detectionDiskBudgetDefaultBytes({});
+  // New requests leave this false and do not write per-window .f32 heads.
+  // Options may turn it on; preflight then sizes the quota from the window count.
+  bool retainRawModelOutput = false;
+  // True only after decoding a request that omitted both retainRawModelOutput
+  // and rawHeadBudgetBytes. Those runs keep the historical combined ledger.
+  bool legacyCombinedEvidence = false;
+  // Zero with legacyCombinedEvidence is the old combined quota. Zero without
+  // it means the raw heads are not stored. A positive value is an explicit or
+  // already accepted disk quota.
+  std::uint64_t rawHeadBudgetBytes = 0;
 };
 
 std::uint32_t detectionModelMinimumBins(const DetectionRequest&);
@@ -148,6 +180,11 @@ struct DetectionRun {
   std::uint64_t eligibleWindows = 0;
   std::uint64_t completedWindows = 0;
   std::uint64_t resultCount = 0;
+  // Published shard ledger. Append adds the new chunk and new head only;
+  // terminal publication and load rehash every shard and raw head.
+  std::uint64_t accountedChunkBytes = 0;
+  std::uint64_t accountedEvidenceBytes = 0;
+  std::uint64_t accountedRawHeadBytes = 0;
   std::string computationPhase = "none";
   std::uint64_t refinedCandidates = 0, totalRefinementCandidates = 0;
   std::uint64_t startedAtMilliseconds = 0;
@@ -175,7 +212,12 @@ const char* detectionCoverageKindName(DetectionCoverageKind);
 const char* detectionTimeStrategyName(DetectionTimeStrategy);
 bool detectionIsTerminal(DetectionLifecycle);
 bool detectionTransitionAllowed(DetectionLifecycle from, DetectionLifecycle to);
-DetectionValidation validateDetectionRequest(const DetectionRequest&);
-DetectionValidation validateDetectionRun(const DetectionRun&);
+// storagePath is the volume that will hold the disk budgets (the project
+// directory). Empty skips the live free-space cap; physical memory and the
+// explicit 2 GiB raw-head cap still apply. Per-shard JSON stays 8 MiB elsewhere.
+DetectionValidation validateDetectionRequest(const DetectionRequest&,
+                                            const std::string& storagePath = {});
+DetectionValidation validateDetectionRun(const DetectionRun&,
+                                        const std::string& storagePath = {});
 
 }  // namespace signalstudio

@@ -568,7 +568,7 @@ QJsonObject encodeAnnotation(const Annotation& a) {
         {"actor", q(r.actor)},
         {"timestamp", q(r.timestamp)},
         {"note", q(r.note)}});
-  return {
+  QJsonObject encoded{
       {"id", q(a.id)},
       {"name", q(a.name)},
       {"fileId", q(a.fileId)},
@@ -595,6 +595,8 @@ QJsonObject encodeAnnotation(const Annotation& a) {
       {"derivedFrom", stringsJson(a.derivedFrom)},
       {"conversionSnapshot", a.conversionSnapshot ? QJsonValue(conversionJson(*a.conversionSnapshot)) : QJsonValue(QJsonValue::Null)},
       {"deleted", a.deleted}};
+  if (a.plotHidden) encoded.insert("plotHidden", true);
+  return encoded;
 }
 bool decodeAnnotation(const QJsonObject& o, const FileMetadata& metadata,
                       Annotation& target, QString& error) {
@@ -627,6 +629,7 @@ bool decodeAnnotation(const QJsonObject& o, const FileMetadata& metadata,
     a.reviewStatus =
         static_cast<ReviewStatus>(choice(o, "reviewStatus", reviewNames));
     a.deleted = boolean(o, "deleted");
+    if (o.contains("plotHidden")) a.plotHidden = boolean(o, "plotHidden");
     std::unordered_set<std::string> revisionIds;
     for (const auto v : array(o, "revisions")) {
       auto r = revisionValue(v, bounds, a.observationFrequencyFrame);

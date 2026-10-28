@@ -108,6 +108,7 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/detection_protocol.cpp
     infrastructure/detection_store.cpp
     infrastructure/detection_task.cpp
+    infrastructure/runtime_log.cpp
     infrastructure/detection_worker_client.cpp
     infrastructure/detection_projection.cpp
     infrastructure/detection_model_snapshot.cpp
@@ -188,6 +189,8 @@ set(SS_UI_SOURCES
     ui/detection/detection_card.h
     ui/detection/detection_panel.cpp
     ui/detection/detection_panel.h
+    ui/detection/detection_resource_options.cpp
+    ui/detection/detection_resource_options.h
     ui/detection/ffscn_engine_dialog.cpp
     ui/detection/ffscn_engine_dialog.h
     ui/detection/ffscn_engine_switch_dialog.cpp
@@ -298,6 +301,19 @@ if(SS_BUILD_TESTS)
         "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ffscn-engine-dialog-$<LOWER_CASE:$<CONFIG>>.txt"
         -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     set_tests_properties(signal_studio_ffscn_engine_dialog PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 60)
+    add_executable(SignalStudioDetectionResourceOptionsTests
+        tests/detection_resource_options_tests.cpp
+        ui/detection/detection_resource_options.cpp
+        ui/detection/detection_resource_options.h)
+    target_link_libraries(SignalStudioDetectionResourceOptionsTests PRIVATE
+        SignalStudioInfrastructure Qt6::Widgets Qt6::Test)
+    ss_target_defaults(SignalStudioDetectionResourceOptionsTests)
+    add_test(NAME signal_studio_detection_resource_options COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioDetectionResourceOptionsTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/detection-resource-options-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_detection_resource_options PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 60)
     add_executable(SignalStudioFfscnEngineSwitchTests
         tests/ffscn_engine_switch_tests.cpp)
@@ -607,6 +623,7 @@ if(SS_BUILD_TESTS)
         uxD09_intermediatePreviewAndRedetectClear
         uxD04_modelSpectrumMapping uxD05_foldedParametersAndFirstScreen
         uxD06_visibleRangeEntry uxD08_preflightDetails)
+    ss_add_ux_test(r6_preview uxR6_previewChannelScope)
     ss_add_ux_test(spectral uxS01_methodHistory uxS02_conditionalRows
         uxS03_spectralIndependence uxS03_framePsdPreservesSettings uxS06_invalidDraftRecovery)
     ss_add_ux_test(charts uxR02_chartSettingsStayStable uxA01_roiConfirmationAndEscape roundTwoNarrowbandPsdAndPages)
@@ -615,7 +632,8 @@ if(SS_BUILD_TESTS)
         uxR4_auxiliaryDetailsCloseWithHiddenContext uxR4_searchBoundaryAndOriginalNewlines)
     ss_add_ux_test(r5_ui uxR5_threeTabsReadOnlyAndConversion
         uxR5_layersAndIndependentFilters uxR5_crossViewAndUnknownObservation
-        uxR5_readOnlyMenusAndCommandGuards)
+        uxR5_readOnlyMenusAndCommandGuards
+        uxR5_algorithmResultHideAndDelete)
     ss_add_ux_test(layout uxR01_chartToolbarLayout uxR02_inspectorRouting
         uxR02_fileProperties uxR02_paletteWorkspaceOwnership
         uxR03_taskKeyboardAndDetails uxR03_taskRowActions uxR01_lateRunFilterPopupAndRefresh roundTwoFlatResponsiveControls)

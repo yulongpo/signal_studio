@@ -1,7 +1,10 @@
 #include "application/detection_result_service.h"
 
+#include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QJsonDocument>
+#include <QSaveFile>
 #include <algorithm>
 #include <limits>
 #include <type_traits>
@@ -177,6 +180,66 @@ bool ticketMatches(const Project& project, const FileState& file,
 bool inject(const DetectionTransactionOptions& options,
             DetectionTransactionPoint point) {
   return options.failAt && options.failAt(point);
+}
+QJsonArray marksOf(const FileState& file, bool algorithm) {
+  QJsonArray data;
+  for (const auto& mark : file.marks)
+    if ((mark.sourceKind == AnnotationSource::Algorithm) == algorithm)
+      data.push_back(encodeAnnotation(mark));
+  return data;
+}
+bool sameFormalResult(const Project& live, const Project& candidate, QString& error) {
+  if (live.files.size() != candidate.files.size()) {
+    error = "检测启动改变了工程文件集合，上次正式结果仍在";
+    return false;
+  }
+  for (const auto& before : live.files) {
+    const FileState* after = nullptr;
+    for (const auto& file : candidate.files)
+      if (file.metadata.id == before.metadata.id) after = &file;
+    if (!after) {
+      error = "检测启动改变了文件身份，上次正式结果仍在";
+      return false;
+    }
+    if (marksOf(before, false) != marksOf(*after, false)) {
+      error = "检测启动改变了人工标记或原始标签，上次正式结果仍在";
+      return false;
+    }
+    if (!before.currentDetectionSlots) continue;
+    if (marksOf(before, true) != marksOf(*after, true)) {
+      error = "检测启动改变了已有正式结果，上次正式结果仍在";
+      return false;
+    }
+    std::unordered_set<std::uint32_t> channels;
+    for (const auto& slot : *before.currentDetectionSlots)
+      channels.insert(slot.sampleChannel);
+    if (after->currentDetectionSlots)
+      for (const auto& slot : *after->currentDetectionSlots)
+        channels.insert(slot.sampleChannel);
+    for (const auto channel : channels) {
+      const auto* oldSlot = currentDetectionSlot(before, channel);
+      const auto* newSlot = currentDetectionSlot(*after, channel);
+      const auto oldId = oldSlot ? oldSlot->committedRunId : std::string{};
+      const auto newId = newSlot ? newSlot->committedRunId : std::string{};
+      if (oldId != newId) {
+        error = "检测启动改变了已有正式结果，上次正式结果仍在";
+        return false;
+      }
+    }
+  }
+  error.clear();
+  return true;
+}
+bool restoreProjectBytes(const QString& path, const QByteArray& bytes, QString& error) {
+  QSaveFile output(path);
+  if (!output.open(QIODevice::WriteOnly) || output.write(bytes) != bytes.size() ||
+      !output.commit()) {
+    error = output.errorString().isEmpty() ? QString("工程文件回滚失败")
+                                            : output.errorString();
+    return false;
+  }
+  error.clear();
+  return true;
 }
 }  // namespace
 
@@ -432,28 +495,47 @@ bool DetectionResultService::prepareRecovery(Project& project, const DetectionRu
   error.clear();
   return true;
 }
-bool DetectionResultService::clearCommittedDetection(
-    Project& project, const std::string& fileId, std::uint32_t channel,
-    bool& clearedPrevious, QString& error) {
-  clearedPrevious = false;
-  auto* file = fileFor(project, fileId);
-  if (!file) {
-    error = "检测文件不存在";
+bool DetectionResultService::publishPendingStart(
+    Project& live, const Project& candidate,
+    const std::function<bool()>& stillCurrent,
+    const std::function<bool(QString&)>& commitQueued, const QString& path,
+    QString& error) {
+  if (!stillCurrent || !commitQueued || !stillCurrent()) {
+    error = "检测事务已丢弃，提交期间工程已变化。上次正式结果仍在";
     return false;
   }
-  auto* slot = slotFor(*file, channel);
-  if (!slot || slot->committedRunId.empty()) {
-    error.clear();
-    return true;
-  }
-  retireScope(*file, *slot, {}, slot->pendingRunId);
-  slot->committedRunId.clear();
-  slot->stale = true;
-  if (const auto valid = validateCurrentDetectionSlots(*file); !valid) {
-    error = QString::fromStdString(valid.error);
+  if (!sameFormalResult(live, candidate, error)) return false;
+  QFile priorFile(path);
+  if (!priorFile.open(QIODevice::ReadOnly)) {
+    error = "检测事务保存失败，上次正式结果仍在：" + priorFile.errorString();
     return false;
   }
-  clearedPrevious = true;
+  const auto prior = priorFile.readAll();
+  if (priorFile.error() != QFileDevice::NoError) {
+    error = "检测事务保存失败，上次正式结果仍在：" + priorFile.errorString();
+    return false;
+  }
+  priorFile.close();
+  Project staged = candidate;
+  QString saveError;
+  if (!ProjectFileCodec::save(path, staged, saveError, AssetSaveMode::Preserve, {},
+                              stillCurrent)) {
+    error = saveError.contains("atomic commit")
+                ? QString("检测事务已丢弃，提交期间工程已变化。上次正式结果仍在")
+                : "检测事务保存失败，上次正式结果仍在：" + saveError;
+    return false;
+  }
+  QString queueError;
+  if (!commitQueued(queueError)) {
+    QString restoreError;
+    if (!restoreProjectBytes(path, prior, restoreError)) {
+      error = "检测任务未能启动：" + queueError + "。回滚工程文件失败：" + restoreError;
+      return false;
+    }
+    error = "检测任务未能启动：" + queueError + "。上次正式结果仍在";
+    return false;
+  }
+  live = std::move(staged);
   error.clear();
   return true;
 }
@@ -466,6 +548,25 @@ void DetectionResultService::abandonDetection(Project& project, const DetectionR
     slot->pendingRunId.clear();
     slot->stale = true;
   }
+}
+void DetectionResultService::retainUnpublishedDetection(
+    Project& project, const DetectionResultTicket& ticket, const DetectionRun& run) {
+  auto* file = fileFor(project, ticket.fileId);
+  auto* slot = file ? slotFor(*file, ticket.sampleChannel) : nullptr;
+  // A non-completed record may stay indexed beside a later pending run.
+  // Retiring it as well would make the next project save reject the index.
+  if (!file || !slot || slot->generation != ticket.slotGeneration ||
+      slot->pendingRunId != ticket.runId || run.request.runId != ticket.runId ||
+      !detectionIsTerminal(run.lifecycle) ||
+      run.lifecycle == DetectionLifecycle::Completed)
+    return;
+  auto current = std::find_if(
+      file->detectionRuns.begin(), file->detectionRuns.end(),
+      [&](const auto& old) { return old.request.runId == ticket.runId; });
+  if (current == file->detectionRuns.end()) file->detectionRuns.push_back(run);
+  else *current = run;
+  slot->pendingRunId.clear();
+  slot->stale = true;
 }
 bool DetectionResultService::markStale(Project& project, const std::string& fileId,
                                       std::uint32_t channel) {
@@ -545,9 +646,21 @@ DetectionCommitResult DetectionResultService::replaceCurrentDetection(
       if (encodeAnnotation(recovered.annotations[i]) != encodeAnnotation(publication.annotations[i]))
         return reject("持久检测对象与 publication 不同");
     if (inject(options, DetectionTransactionPoint::Persist)) return reject("Injected detection persist failure");
+    if (options.stillCurrent && !options.stillCurrent())
+      return reject("检测事务已丢弃，提交期间工程已变化。上次正式结果仍在");
+    bool generationStale = false;
     if (!ProjectFileCodec::save(path, candidate, error, AssetSaveMode::Preserve, {},
-         [&] { return !inject(options, DetectionTransactionPoint::Commit); }))
-      return reject(error);
+         [&] {
+           if (inject(options, DetectionTransactionPoint::Commit)) return false;
+           if (options.stillCurrent && !options.stillCurrent()) {
+             generationStale = true;
+             return false;
+           }
+           return true;
+         }))
+      return reject(generationStale
+                        ? QString("检测事务已丢弃，提交期间工程已变化。上次正式结果仍在")
+                        : error);
     // No allocation/IO can fail between the durable commit and publication.
     static_assert(std::is_nothrow_move_assignable_v<Project>);
     project = std::move(candidate);

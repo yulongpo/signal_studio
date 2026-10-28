@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -21,7 +22,9 @@ class Session {
   Session();
   Project& project() { return project_; }
   const Project& project() const { return project_; }
-  std::uint64_t projectGeneration() const { return projectGeneration_; }
+  std::uint64_t projectGeneration() const {
+    return projectGeneration_.load(std::memory_order_acquire);
+  }
   FileState* activeFile();
   const FileState* activeFile() const;
   Channel* activeChannel();
@@ -84,8 +87,12 @@ class Session {
   // edit marks, the view, or the project file stop instead of racing that save.
   bool acceptProjectWrite(std::string& error) const;
   void setProjectWriteGuard(std::function<bool(std::string&)> guard);
-  std::uint64_t contentEpoch() const { return contentEpoch_; }
-  void noteProjectWrite() { ++contentEpoch_; }
+  std::uint64_t contentEpoch() const {
+    return contentEpoch_.load(std::memory_order_acquire);
+  }
+  void noteProjectWrite() {
+    contentEpoch_.fetch_add(1, std::memory_order_release);
+  }
   const LinkedCursorState& linkedCursor(const std::string& context) const;
   void pinCursor(const std::string& context, SampleIndex sample,
                  double frequencyHz, bool selectFrame,
@@ -105,8 +112,8 @@ class Session {
   };
   std::string nextId(const std::string& prefix);
   Project project_;
-  std::uint64_t projectGeneration_ = 1;
-  std::uint64_t contentEpoch_ = 1;
+  std::atomic<std::uint64_t> projectGeneration_{1};
+  std::atomic<std::uint64_t> contentEpoch_{1};
   std::function<bool(std::string&)> projectWriteGuard_;
   std::unordered_map<std::string, History> histories_;
   struct ChannelHistory {

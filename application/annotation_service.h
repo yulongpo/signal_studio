@@ -141,6 +141,15 @@ class AnnotationService {
   AnnotationResult deleteBatch(FileState&,
                                const std::vector<std::string>& annotationIds,
                                std::string actor = "user");
+  // One undoable soft delete of formal algorithm results. Does not create
+  // algorithm marks, and does not accept imported labels or manual marks.
+  AnnotationResult deleteAlgorithmBatch(
+      FileState&, const std::vector<std::string>& annotationIds,
+      std::string actor = "user");
+  // plotHidden defaults to false. Hidden marks stay in the detection table.
+  AnnotationResult setAlgorithmPlotHidden(
+      FileState&, const std::vector<std::string>& annotationIds, bool hidden,
+      std::string actor = "user");
   AnnotationResult select(FileState&, std::vector<std::string> ids,
                           std::string activeId = {},
                           std::string segmentId = {});
@@ -178,6 +187,7 @@ class AnnotationService {
     std::string name, note, activeSegmentId, revisionId, reviewRevisionId;
     ReviewStatus reviewStatus = ReviewStatus::Pending;
     bool deleted = false;
+    bool plotHidden = false;
     std::optional<ViewRange> observation;
     bool operator==(const State&) const = default;
   };

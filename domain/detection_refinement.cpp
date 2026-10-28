@@ -153,10 +153,12 @@ bool publishSegment(DetectionRefinementResult& result,
   return true;
 }
 
-DetectionRefinementResult invalidRefinement(DetectionRefinementResult result,
-                                            std::string error) {
+DetectionRefinementResult invalidRefinement(
+    DetectionRefinementResult result, std::string error,
+    DetectionFailureCode code = DetectionFailureCode::HardFailure) {
   result.ok = false;
   result.error = std::move(error);
+  result.failureCode = code;
   result.activity.clear();
   result.status = RefineStatus::Skipped;
   return result;
@@ -178,16 +180,54 @@ DetectionRefinementResult fallback(DetectionRefinementResult result,
   return result;
 }
 
-bool validateSpectrum(const DetectionSpectrumRoi& spectrum, std::size_t budget,
-                      std::string& error) {
+std::string spectrumCapacityError(const DetectionSpectrumRoi& spectrum,
+                                  std::size_t allowed) {
   const auto times = spectrum.timeSlots.size();
   const auto edges = spectrum.frequencyEdgesHz.size();
-  if (!times || edges < 2 || times > budget || edges - 1 > budget ||
-      times > budget / (edges - 1) ||
-      spectrum.powerDb.size() != times * (edges - 1)) {
-    error = "Spectrum ROI shape exceeds the working-cell budget";
+  const auto bins = edges >= 2 ? edges - 1 : 0;
+  unsigned long long declared = times;
+  if (bins > 0) {
+    declared = times > std::numeric_limits<unsigned long long>::max() / bins
+                   ? std::numeric_limits<unsigned long long>::max()
+                   : static_cast<unsigned long long>(times) * bins;
+  }
+  const auto required = std::max(
+      declared, static_cast<unsigned long long>(spectrum.powerDb.size()));
+  std::string hz = "unavailable";
+  if (!spectrum.frequencyEdgesHz.empty() &&
+      std::isfinite(spectrum.frequencyEdgesHz.front()) &&
+      std::isfinite(spectrum.frequencyEdgesHz.back()))
+    hz = std::to_string(spectrum.frequencyEdgesHz.front()) + ".." +
+         std::to_string(spectrum.frequencyEdgesHz.back());
+  return "Spectrum capacity rejected: times=" + std::to_string(times) +
+         " frequencyEdges=" + std::to_string(edges) +
+         " requiredCells=" + std::to_string(required) +
+         " allowedCells=" + std::to_string(allowed) + " frequencyEdgeHz=" + hz;
+}
+
+bool spectrumGridExceeds(std::size_t times, std::size_t bins,
+                         std::size_t budget) {
+  return !budget || times > budget || bins > budget ||
+         (bins != 0 && times > budget / bins);
+}
+
+bool validateSpectrum(const DetectionSpectrumRoi& spectrum, std::size_t budget,
+                      std::string& error, DetectionFailureCode& code) {
+  const auto times = spectrum.timeSlots.size();
+  const auto edges = spectrum.frequencyEdgesHz.size();
+  const auto bins = edges >= 2 ? edges - 1 : 0;
+  if (spectrumGridExceeds(times, bins, budget) ||
+      spectrum.powerDb.size() > budget) {
+    code = DetectionFailureCode::WorkingCellLimit;
+    error = spectrumCapacityError(spectrum, budget);
     return false;
   }
+  if (!times || edges < 2 || spectrum.powerDb.size() != times * bins) {
+    code = DetectionFailureCode::HardFailure;
+    error = "Spectrum ROI shape does not match its time slots and frequency edges";
+    return false;
+  }
+  code = DetectionFailureCode::None;
   const auto step =
       spectrum.timeSlots.front().end - spectrum.timeSlots.front().begin;
   for (std::size_t i = 0; i < times; ++i) {
@@ -196,6 +236,7 @@ bool validateSpectrum(const DetectionSpectrumRoi& spectrum, std::size_t budget,
         (i && slot.begin != spectrum.timeSlots[i - 1].end) ||
         (i + 1 < times && slot.end - slot.begin != step) ||
         slot.end - slot.begin > step) {
+      code = DetectionFailureCode::HardFailure;
       error = "Spectrum time slots must be contiguous physical source cells";
       return false;
     }
@@ -206,11 +247,13 @@ bool validateSpectrum(const DetectionSpectrumRoi& spectrum, std::size_t budget,
          !(spectrum.frequencyEdgesHz[i - 1] < spectrum.frequencyEdgesHz[i])) ||
         (i && !std::isfinite(spectrum.frequencyEdgesHz[i] -
                              spectrum.frequencyEdgesHz[i - 1]))) {
+      code = DetectionFailureCode::HardFailure;
       error = "Spectrum frequency edges must be finite and increasing";
       return false;
     }
   for (const auto value : spectrum.powerDb)
     if (!std::isfinite(value)) {
+      code = DetectionFailureCode::HardFailure;
       error = "Spectrum power contains a nonfinite value";
       return false;
     }
@@ -547,7 +590,8 @@ DetectionRefinementResult refineDetection(
        !result.evidence.continuousTrack);
   if (parameters.timeStrategy == DetectionTimeStrategy::None) return result;
   if (cancelled(options))
-    return invalidRefinement(std::move(result), "Refinement cancelled");
+    return invalidRefinement(std::move(result), "Refinement cancelled",
+                             DetectionFailureCode::Cancelled);
   if (parameters.timeStrategy != DetectionTimeStrategy::Sample &&
       parameters.timeStrategy != DetectionTimeStrategy::Roi &&
       parameters.timeStrategy != DetectionTimeStrategy::Coarse)
@@ -569,10 +613,17 @@ DetectionRefinementResult refineDetection(
         options.sampleMinimumBurstNoiseRatio < 1 ||
         !finiteIn(options.sampleMinimumRunSeconds, 0, 60) ||
         !energy.stepSamples || energy.supportEndSample <= energy.originSample ||
-        energy.power.empty() || energy.power.size() > options.workingCellBudget)
+        energy.power.empty())
       return invalidRefinement(
           std::move(result),
           "Invalid sample refinement parameters or energy shape");
+    if (energy.power.size() > options.workingCellBudget)
+      return invalidRefinement(
+          std::move(result),
+          "Energy working-set exceeded: requiredCells=" +
+              std::to_string(energy.power.size()) +
+              " allowedCells=" + std::to_string(options.workingCellBudget),
+          DetectionFailureCode::WorkingCellLimit);
     const auto span = energy.supportEndSample - energy.originSample;
     const auto requiredCells =
         span / energy.stepSamples + (span % energy.stepSamples ? 1 : 0);
@@ -582,7 +633,8 @@ DetectionRefinementResult refineDetection(
           "Energy cells do not describe the exact physical support");
     for (std::size_t i = 0; i < energy.power.size(); ++i) {
       if (!(i % 4096) && cancelled(options))
-        return invalidRefinement(std::move(result), "Refinement cancelled");
+        return invalidRefinement(std::move(result), "Refinement cancelled",
+                             DetectionFailureCode::Cancelled);
       const auto power = energy.power[i];
       if (!std::isfinite(power) || power < 0)
         return invalidRefinement(
@@ -634,7 +686,8 @@ DetectionRefinementResult refineDetection(
     double running = 0;
     for (std::size_t i = 0; i < energy.power.size(); ++i) {
       if (!(i % 4096) && cancelled(options))
-        return invalidRefinement(std::move(result), "Refinement cancelled");
+        return invalidRefinement(std::move(result), "Refinement cancelled",
+                             DetectionFailureCode::Cancelled);
       running += energy.power[i];
       if (i >= smooth) running -= energy.power[i - smooth];
       smoothed[i] = static_cast<float>(running / smooth);
@@ -643,11 +696,13 @@ DetectionRefinementResult refineDetection(
                                  "Sample smoothing overflow");
     }
     if (cancelled(options))
-      return invalidRefinement(std::move(result), "Refinement cancelled");
+      return invalidRefinement(std::move(result), "Refinement cancelled",
+                             DetectionFailureCode::Cancelled);
     evidence.noise = sampleQuantile(smoothed, options.sampleNoiseQuantile);
     evidence.burst = sampleQuantile(smoothed, options.sampleBurstQuantile);
     if (cancelled(options))
-      return invalidRefinement(std::move(result), "Refinement cancelled");
+      return invalidRefinement(std::move(result), "Refinement cancelled",
+                             DetectionFailureCode::Cancelled);
     if (*evidence.burst <=
         *evidence.noise * options.sampleMinimumBurstNoiseRatio)
       return fallback(std::move(result), input,
@@ -698,12 +753,15 @@ DetectionRefinementResult refineDetection(
   if (!input.spectrum)
     return fallback(std::move(result), input, "spectrum-unavailable");
   std::string spectrumError;
+  DetectionFailureCode spectrumCode = DetectionFailureCode::None;
   if (!validateSpectrum(*input.spectrum, options.workingCellBudget,
-                        spectrumError))
-    return invalidRefinement(std::move(result), std::move(spectrumError));
+                        spectrumError, spectrumCode))
+    return invalidRefinement(std::move(result), std::move(spectrumError),
+                             spectrumCode);
   const auto& spectrum = *input.spectrum;
   if (cancelled(options))
-    return invalidRefinement(std::move(result), "Refinement cancelled");
+    return invalidRefinement(std::move(result), "Refinement cancelled",
+                             DetectionFailureCode::Cancelled);
   const auto crop = cropSpectrum(spectrum, input.observation);
   if (!crop.timeCount)
     return fallback(std::move(result), input,
@@ -728,17 +786,36 @@ DetectionRefinementResult refineDetection(
         !finiteIn(parameters.smoothSeconds, 0, 60) ||
         !finiteIn(parameters.minOnSeconds, 0, 60) ||
         !finiteIn(parameters.minOffSeconds, 0, 60) ||
-        !options.roiFrequencyRows || !options.roiTimeColumns ||
-        options.roiFrequencyRows >
-            options.workingCellBudget / options.roiTimeColumns)
+        !options.roiFrequencyRows || !options.roiTimeColumns)
       return invalidRefinement(
           std::move(result),
           "Invalid ROI refinement parameters or resized shape");
+    if (options.roiFrequencyRows >
+        options.workingCellBudget / options.roiTimeColumns) {
+      const auto times = options.roiTimeColumns;
+      const auto edges = options.roiFrequencyRows + 1;
+      const auto required =
+          options.roiTimeColumns >
+                  std::numeric_limits<unsigned long long>::max() /
+                      options.roiFrequencyRows
+              ? std::numeric_limits<unsigned long long>::max()
+              : static_cast<unsigned long long>(options.roiFrequencyRows) *
+                    options.roiTimeColumns;
+      return invalidRefinement(
+          std::move(result),
+          "Spectrum capacity rejected: times=" + std::to_string(times) +
+              " frequencyEdges=" + std::to_string(edges) +
+              " requiredCells=" + std::to_string(required) +
+              " allowedCells=" + std::to_string(options.workingCellBudget) +
+              " frequencyEdgeHz=unavailable",
+          DetectionFailureCode::WorkingCellLimit);
+    }
     const auto rows = options.roiFrequencyRows,
                columns = options.roiTimeColumns;
     auto roi = resizeRoi(spectrum, crop, rows, columns);
     if (cancelled(options))
-      return invalidRefinement(std::move(result), "Refinement cancelled");
+      return invalidRefinement(std::move(result), "Refinement cancelled",
+                             DetectionFailureCode::Cancelled);
     std::vector<bool> timeOn, frequencyOn;
     // User-confirmed M0-P parameter extension. Default .6 / 1 ms preserves
     // the reference adaptive threshold and five-cell centered mask.
@@ -747,7 +824,8 @@ DetectionRefinementResult refineDetection(
     roiProfiles(roi, rows, columns, timeOn, frequencyOn,
                 parameters.sampleEdgeRatio / .6, smoothingCells, evidence);
     if (cancelled(options))
-      return invalidRefinement(std::move(result), "Refinement cancelled");
+      return invalidRefinement(std::move(result), "Refinement cancelled",
+                             DetectionFailureCode::Cancelled);
     const double cellSamples =
         static_cast<double>(evidence.sourceSupportEndSample -
                             evidence.sourceOriginSample) /
@@ -821,7 +899,8 @@ DetectionRefinementResult refineDetection(
     std::vector<double> band(crop.frequencyCount);
     for (std::size_t t = 0; t < crop.timeCount; ++t) {
       if (!(t % 4096) && cancelled(options))
-        return invalidRefinement(std::move(result), "Refinement cancelled");
+        return invalidRefinement(std::move(result), "Refinement cancelled",
+                             DetectionFailureCode::Cancelled);
       for (std::size_t f = 0; f < crop.frequencyCount; ++f)
         band[f] = spectrum.powerDb[(crop.firstTime + t) * stride +
                                    crop.firstFrequency + f];

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <iterator>
 #include <limits>
 #include <optional>
@@ -193,6 +194,115 @@ BinInterval binsFor(FrequencyRange range, double first, double step,
   return {static_cast<std::size_t>(std::clamp(begin, 0.0, double(count))),
           static_cast<std::size_t>(std::clamp(end, 0.0, double(count)))};
 }
+bool hitThisFrame(const FrequencyTrack& track, std::uint64_t ordinal) {
+  return std::any_of(track.windows.begin(), track.windows.end(),
+                     [&](const auto& window) { return window.ordinal == ordinal; });
+}
+void releaseWindowEvidence(std::size_t& bandCount, std::size_t& windowEvidenceCount,
+                           std::size_t& idBytes, FrequencyTrack& track) {
+  for (const auto& window : track.windows) {
+    const auto count = window.bands.size();
+    bandCount = bandCount >= count ? bandCount - count : 0;
+    windowEvidenceCount =
+        windowEvidenceCount >= count ? windowEvidenceCount - count : 0;
+    const auto bytes = window.windowId.size() * (count + 1);
+    idBytes = idBytes >= bytes ? idBytes - bytes : 0;
+  }
+  track.windows.clear();
+}
+template <typename PreviewFn>
+bool fuseOpenTracks(std::vector<OnlineTrack>& tracks,
+                    const FrequencyTrackerConfig& config, std::uint64_t ordinal,
+                    std::size_t sealedCount, std::uint64_t& comparisons,
+                    bool& mergedAny, std::string& error,
+                    const PostprocessCancellation& cancelled, PreviewFn&& preview) {
+  const auto refreshSums = [&](OnlineTrack& track) {
+    track.lowerSum = track.upperSum = track.scoreSum = 0;
+    for (const auto& window : track.result.windows) {
+      if (window.bands.empty()) continue;
+      long double lower = 0, upper = 0;
+      for (const auto& band : window.bands) {
+        lower += band.frequency.lowerHz;
+        upper += band.frequency.upperHz;
+      }
+      const auto count = static_cast<long double>(window.bands.size());
+      track.lowerSum += lower / count;
+      track.upperSum += upper / count;
+      track.scoreSum += window.score;
+    }
+    if (hitThisFrame(track.result, ordinal)) track.misses = 0;
+    track.previewStable = track.previewStable || track.result.hits >= config.minHits;
+  };
+  const auto mergePass = [&](bool fragments) {
+    while (tracks.size() > 1) {
+      std::optional<std::tuple<double, SampleIndex, SampleIndex, double, double,
+                               SampleIndex, std::size_t, std::size_t>>
+          best;
+      for (std::size_t i = 0; i + 1 < tracks.size(); ++i) {
+        for (std::size_t j = i + 1; j < tracks.size(); ++j) {
+          if (stop(cancelled, error)) return false;
+          if (++comparisons > config.limits.maximumFusionComparisons) {
+            error = "frequency-fusion-comparison-limit-exceeded open=" +
+                    std::to_string(tracks.size()) +
+                    " sealed=" + std::to_string(sealedCount) +
+                    " comparisons=" + std::to_string(comparisons);
+            return false;
+          }
+          const auto& a = tracks[i].result;
+          const auto& b = tracks[j].result;
+          const auto begin =
+              std::max(a.nominalSupport.begin, b.nominalSupport.begin);
+          const auto end = std::min(a.nominalSupport.end, b.nominalSupport.end);
+          double frequencyGap = 0, similarity = 0, centerDistance = 0;
+          SampleIndex sampleGap = 0, overlapRank = 0, earliest = 0;
+          if (fragments) {
+            const auto gap = begin > end ? begin - end : 0;
+            if (gap > config.fragmentGapSamples) continue;
+            const auto match = sameCarrier(a.frequency, b.frequency, config);
+            if (!match.matched) continue;
+            sampleGap = gap;
+            similarity = -match.similarity;
+            centerDistance = match.centerDistance;
+            earliest = std::min(a.nominalSupport.begin, b.nominalSupport.begin);
+          } else {
+            const double gap =
+                std::max(a.frequency.lowerHz, b.frequency.lowerHz) -
+                std::min(a.frequency.upperHz, b.frequency.upperHz);
+            if (begin >= end || gap > config.mergeToleranceHz) continue;
+            frequencyGap = gap;
+            overlapRank =
+                std::numeric_limits<SampleIndex>::max() - (end - begin);
+          }
+          const auto key =
+              std::tuple{frequencyGap,   sampleGap, overlapRank, similarity,
+                         centerDistance, earliest,  i,           j};
+          if (!best || key < *best) best = key;
+        }
+      }
+      if (!best) break;
+      const auto i = std::get<6>(*best), j = std::get<7>(*best);
+      const auto absorbed = tracks[j].result.previewId.empty()
+                                ? tracks[j].result.seedId
+                                : tracks[j].result.previewId;
+      const auto survivorMisses = std::min(tracks[i].misses, tracks[j].misses);
+      const bool survivorStable =
+          tracks[i].previewStable || tracks[j].previewStable;
+      mergeTracks(tracks[i].result, tracks[j].result);
+      tracks[i].misses = survivorMisses;
+      tracks[i].previewStable = survivorStable;
+      refreshSums(tracks[i]);
+      if (tracks[i].result.previewId.empty())
+        tracks[i].result.previewId = tracks[i].result.seedId;
+      ++tracks[i].result.previewRevision;
+      preview(tracks[i].result, absorbed);
+      mergedAny = true;
+      tracks.erase(tracks.begin() + static_cast<std::ptrdiff_t>(j));
+    }
+    return true;
+  };
+  if (config.mergeToleranceHz > 0 && !mergePass(false)) return false;
+  return mergePass(true);
+}
 }  // namespace
 
 double frequencyIntersectionOverUnion(FrequencyRange a, FrequencyRange b) {
@@ -305,7 +415,7 @@ bool decodeDetectionHeads(const HeadView& heads,
 struct FrequencyTracker::State {
   FrequencyTrackerConfig config;
   std::vector<OnlineTrack> active;
-  std::vector<FrequencyTrack> closed;
+  std::vector<FrequencyTrack> sealed;
   std::unordered_set<std::string> windowIds;
   std::vector<PreviewTrackEvent> preview;
   // Latest geometry for tracks that are still on screen. Log eviction does not
@@ -317,6 +427,9 @@ struct FrequencyTracker::State {
   std::size_t bandCount = 0, windowEvidenceCount = 0, idBytes = 0;
   TimeRange previousNominal;
   bool previewSealed = false;
+  std::size_t lastOpen = 0, lastSealed = 0;
+  std::uint64_t lastComparisons = 0;
+  bool lastSealedFrame = false, lastFusedFrame = false;
 };
 void FrequencyTracker::rememberPreview(State& state, PreviewTrackEvent event) {
   if (state.previewSealed) return;
@@ -351,7 +464,17 @@ std::uint64_t FrequencyTracker::processedWindows() const {
   return state_ ? state_->processed : 0;
 }
 std::size_t FrequencyTracker::retainedTracks() const {
-  return state_ ? state_->active.size() + state_->closed.size() : 0;
+  return state_ ? state_->active.size() + state_->sealed.size() : 0;
+}
+FrequencyTrackerFrameStats FrequencyTracker::frameStats() const {
+  FrequencyTrackerFrameStats stats;
+  if (!state_) return stats;
+  stats.openTracks = state_->lastOpen;
+  stats.sealedTracks = state_->lastSealed;
+  stats.comparisons = state_->lastComparisons;
+  stats.sealed = state_->lastSealedFrame;
+  stats.fused = state_->lastFusedFrame;
+  return stats;
 }
 const std::vector<PreviewTrackEvent>& FrequencyTracker::previewEvents() const {
   static const std::vector<PreviewTrackEvent> empty;
@@ -382,7 +505,7 @@ bool FrequencyTracker::sealPreview(bool finalized, std::string& error) {
   };
   if (finalized) {
     for (auto& track : state_->active) emit(track.result, PreviewTrackPhase::Finalized);
-    for (auto& track : state_->closed)
+    for (auto& track : state_->sealed)
       if (track.hits >= state_->config.minHits)
         emit(track, PreviewTrackPhase::Finalized);
   } else {
@@ -444,9 +567,19 @@ bool FrequencyTracker::consume(const WindowObservation& window,
       state_->idBytes + window.windowId.size() * (bands.size() + 1));
   if (upperBytes > limits.residentByteBudget)
     return fail(error, "tracker-resident-byte-budget-exceeded");
+  std::vector<char> burstOpen(state_->active.size(), 1);
+  if (config.fragmentGapSamples > 0) {
+    for (std::size_t index = 0; index < state_->active.size(); ++index) {
+      const auto end = state_->active[index].result.nominalSupport.end;
+      const auto begin = window.nominalSupport.begin;
+      const auto gap = begin > end ? begin - end : SampleIndex{0};
+      if (begin > end && gap > config.fragmentGapSamples) burstOpen[index] = 0;
+    }
+  }
   std::vector<AssociationPair> pairs;
   std::uint64_t associationComparisons = 0;
   for (std::size_t ti = 0; ti < state_->active.size(); ++ti) {
+    if (!burstOpen[ti]) continue;
     for (std::size_t di = 0; di < bands.size(); ++di) {
       if (stop(cancelled, error)) return false;
       if (++associationComparisons > limits.maximumAssociationComparisons)
@@ -498,7 +631,13 @@ bool FrequencyTracker::consume(const WindowObservation& window,
     result.scoreMax = std::max(result.scoreMax, band.score);
     result.windowCoverage =
         static_cast<double>(result.hits) / result.windowDenominator;
-    track.result.frequency = track.result.originalFrequency;
+    // Multiple bands in one window are a fused span. A later hit extends that
+    // span. A single-band track still publishes the mean of its window edges.
+    const bool fusedSpan = std::any_of(
+        result.windows.begin(), result.windows.end(),
+        [](const auto& evidence) { return evidence.bands.size() > 1; });
+    result.frequency = fusedSpan ? envelope(result.frequency, band.frequency)
+                                 : result.originalFrequency;
     track.misses = 0;
     ++result.previewRevision;
     rememberPreview(*next, {result.previewId, {}, result.previewRevision, 0,
@@ -516,17 +655,24 @@ bool FrequencyTracker::consume(const WindowObservation& window,
     matchedTracks[pair.track] = true;
     matchedBands[pair.candidate] = true;
   }
-  for (std::size_t i = next->active.size(); i-- > 0;) {
-    if (matchedTracks[i]) continue;
-    if (++next->active[i].misses <= config.maxMiss) continue;
-    auto& closing = next->active[i].result;
-    ++closing.previewRevision;
-    rememberPreview(*next, {closing.previewId, {}, closing.previewRevision, 0,
-                            PreviewTrackPhase::Closed, closing.runId,
-                            closing.fileId, closing.frequency, false, closing.hits,
-                            closing.nominalSupport});
-    next->closed.push_back(std::move(closing));
-    next->active.erase(next->active.begin() + i);
+  bool sealedNow = false;
+  const auto seal = [&](OnlineTrack track) {
+    auto& result = track.result;
+    if (result.previewId.empty()) result.previewId = result.seedId;
+    ++result.previewRevision;
+    rememberPreview(*next, {result.previewId, {}, result.previewRevision, 0,
+                            PreviewTrackPhase::Finalized, result.runId, result.fileId,
+                            result.frequency, false, result.hits, result.nominalSupport});
+    releaseWindowEvidence(next->bandCount, next->windowEvidenceCount, next->idBytes,
+                          result);
+    next->sealed.push_back(std::move(result));
+    sealedNow = true;
+  };
+  for (std::size_t index = next->active.size(); index-- > 0;) {
+    if (index >= burstOpen.size() || burstOpen[index]) continue;
+    auto track = std::move(next->active[index]);
+    next->active.erase(next->active.begin() + static_cast<std::ptrdiff_t>(index));
+    seal(std::move(track));
   }
   for (std::size_t i = 0; i < bands.size(); ++i) {
     if (stop(cancelled, error)) return false;
@@ -562,8 +708,32 @@ bool FrequencyTracker::consume(const WindowObservation& window,
                               created.result.hits, created.result.nominalSupport});
     next->active.push_back(std::move(created));
   }
+  std::uint64_t fusionComparisons = 0;
+  bool mergedAny = false;
+  if (!fuseOpenTracks(
+          next->active, config, window.ordinal, next->sealed.size(),
+          fusionComparisons, mergedAny, error, cancelled,
+          [&](const FrequencyTrack& survivor, const std::string& absorbed) {
+            rememberPreview(*next, {survivor.previewId, absorbed, survivor.previewRevision,
+                                    0, PreviewTrackPhase::Merged, survivor.runId,
+                                    survivor.fileId, survivor.frequency, false,
+                                    survivor.hits, survivor.nominalSupport});
+          }))
+    return false;
+  if (config.fragmentGapSamples == 0) {
+    for (std::size_t index = next->active.size(); index-- > 0;) {
+      if (hitThisFrame(next->active[index].result, window.ordinal)) continue;
+      if (++next->active[index].misses <= config.maxMiss) continue;
+      auto track = std::move(next->active[index]);
+      next->active.erase(next->active.begin() + static_cast<std::ptrdiff_t>(index));
+      seal(std::move(track));
+    }
+  } else {
+    for (auto& track : next->active)
+      if (!hitThisFrame(track.result, window.ordinal)) ++track.misses;
+  }
   if (next->active.size() > limits.maximumActiveTracks ||
-      next->active.size() + next->closed.size() > limits.maximumTracks)
+      next->active.size() + next->sealed.size() > limits.maximumTracks)
     return fail(error, "retained-track-limit-exceeded");
   next->bandCount += bands.size();
   next->windowEvidenceCount += bands.size();
@@ -571,6 +741,11 @@ bool FrequencyTracker::consume(const WindowObservation& window,
   next->windowIds.insert(window.windowId);
   ++next->processed;
   next->previousNominal = window.nominalSupport;
+  next->lastOpen = next->active.size();
+  next->lastSealed = next->sealed.size();
+  next->lastComparisons = fusionComparisons;
+  next->lastSealedFrame = sealedNow;
+  next->lastFusedFrame = mergedAny;
   if (stop(cancelled, error)) return false;
   state_ = std::move(next);
   error.clear();
@@ -592,71 +767,10 @@ bool FrequencyTracker::finish(std::vector<FrequencyTrack>& output,
     if (track.hits >= minimumHits) tracks.push_back(track);
     return true;
   };
-  for (const auto& track : state_->closed)
+  for (const auto& track : state_->sealed)
     if (!collect(track)) return false;
   for (const auto& track : state_->active)
     if (!collect(track.result)) return false;
-  // Select the globally best admissible pair at each step. Immutable per-band
-  // evidence survives union and unique-window statistics are recomputed.
-  std::uint64_t comparisons = 0;
-  const auto mergePass = [&](bool fragments) {
-    while (tracks.size() > 1) {
-      std::optional<std::tuple<double, SampleIndex, SampleIndex, double, double,
-                               SampleIndex, std::size_t, std::size_t>>
-          best;
-      for (std::size_t i = 0; i + 1 < tracks.size(); ++i) {
-        for (std::size_t j = i + 1; j < tracks.size(); ++j) {
-          if (stop(cancelled, error)) return false;
-          if (++comparisons > config.limits.maximumFusionComparisons)
-            return fail(error, "frequency-fusion-comparison-limit-exceeded");
-          const auto& a = tracks[i];
-          const auto& b = tracks[j];
-          const auto begin =
-              std::max(a.nominalSupport.begin, b.nominalSupport.begin);
-          const auto end = std::min(a.nominalSupport.end, b.nominalSupport.end);
-          double frequencyGap = 0, similarity = 0, centerDistance = 0;
-          SampleIndex sampleGap = 0, overlapRank = 0, earliest = 0;
-          if (fragments) {
-            const auto gap = begin > end ? begin - end : 0;
-            if (gap > config.fragmentGapSamples) continue;
-            const auto match = sameCarrier(a.frequency, b.frequency, config);
-            if (!match.matched) continue;
-            sampleGap = gap;
-            similarity = -match.similarity;
-            centerDistance = match.centerDistance;
-            earliest = std::min(a.nominalSupport.begin, b.nominalSupport.begin);
-          } else {
-            const double gap =
-                std::max(a.frequency.lowerHz, b.frequency.lowerHz) -
-                std::min(a.frequency.upperHz, b.frequency.upperHz);
-            if (begin >= end || gap > config.mergeToleranceHz) continue;
-            frequencyGap = gap;
-            overlapRank =
-                std::numeric_limits<SampleIndex>::max() - (end - begin);
-          }
-          const auto key =
-              std::tuple{frequencyGap,   sampleGap, overlapRank, similarity,
-                         centerDistance, earliest,  i,           j};
-          if (!best || key < *best) best = key;
-        }
-      }
-      if (!best) break;
-      const auto i = std::get<6>(*best), j = std::get<7>(*best);
-      const auto absorbed = tracks[j].previewId.empty() ? tracks[j].seedId
-                                                        : tracks[j].previewId;
-      mergeTracks(tracks[i], tracks[j]);
-      if (tracks[i].previewId.empty()) tracks[i].previewId = tracks[i].seedId;
-      ++tracks[i].previewRevision;
-      rememberPreview(*state_, {tracks[i].previewId, absorbed, tracks[i].previewRevision,
-                                0, PreviewTrackPhase::Merged, tracks[i].runId,
-                                tracks[i].fileId, tracks[i].frequency, false,
-                                tracks[i].hits, tracks[i].nominalSupport});
-      tracks.erase(tracks.begin() + j);
-    }
-    return true;
-  };
-  if ((config.mergeToleranceHz > 0 && !mergePass(false)) || !mergePass(true))
-    return false;
   std::sort(tracks.begin(), tracks.end(), [](const auto& a, const auto& b) {
     return std::tuple{a.frequency.lowerHz, a.nominalSupport.begin,
                       a.frequency.upperHz, a.seedId} <

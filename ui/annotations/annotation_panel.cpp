@@ -102,6 +102,7 @@ struct AnnotationPageRow {
   std::optional<ViewRange> activeRange;
   std::optional<FrequencyRange> observationFrequency;
   std::optional<double> scoreMean;
+  bool plotHidden = false;
 };
 AnnotationPageRow pageRowFrom(const Annotation& annotation) {
   AnnotationPageRow row;
@@ -121,6 +122,7 @@ AnnotationPageRow pageRowFrom(const Annotation& annotation) {
     row.observationFrequency = annotation.observation->frequency;
   if (annotation.originEvidence)
     row.scoreMean = annotation.originEvidence->scoreMean;
+  row.plotHidden = annotation.plotHidden;
   return row;
 }
 std::optional<FrequencyRange> pageFrequency(const AnnotationPageRow& row) {
@@ -221,11 +223,16 @@ class AnnotationTableModel final : public QAbstractTableModel {
         return q(a.name) + "\n" + (a.classLabel ? q(*a.classLabel) : "类别未知");
       case 2:
         if (source == AnnotationSource::Manual) return q(a.note);
-        if (const auto* set = findSourceSet(*file, a.sourceSetId))
-          return source == AnnotationSource::Algorithm
-                     ? q(set->profileId) + "\n" + q(set->coordinateInterpretation)
-                     : q(set->formatId) + "\n" + QFileInfo(q(set->originalPath)).fileName();
-        return sourceName(a.sourceKind);
+        if (const auto* set = findSourceSet(*file, a.sourceSetId)) {
+          auto text = source == AnnotationSource::Algorithm
+                          ? q(set->profileId) + "\n" + q(set->coordinateInterpretation)
+                          : q(set->formatId) + "\n" +
+                                QFileInfo(q(set->originalPath)).fileName();
+          if (a.plotHidden) text += "\n已隐藏";
+          return text;
+        }
+        return a.plotHidden ? sourceName(a.sourceKind) + "\n已隐藏"
+                            : sourceName(a.sourceKind);
       case 3:
         return a.activeRange ? QString("第 %1/%2 段")
                                    .arg(a.activeSegmentNumber)
@@ -673,6 +680,14 @@ void AnnotationPanel::buildReviewBar(QVBoxLayout* outer) {
   button(review, "删除所选标记", "deleteSelectedAnnotations", [this] {
     deleteSelected();
   })->setProperty("preserveParameterDrafts", true);
+  auto* hideSelected = button(review, "隐藏所选", "hideSelectedAnnotations",
+                              [this] { setSelectedPlotHidden(true); });
+  hideSelected->setProperty("preserveParameterDrafts", true);
+  hideSelected->setToolTip("仍留在检测结果表中，时间图不再绘制，也不再参与命中");
+  auto* showSelected = button(review, "显示所选", "showSelectedAnnotations",
+                              [this] { setSelectedPlotHidden(false); });
+  showSelected->setProperty("preserveParameterDrafts", true);
+  showSelected->setToolTip("重新在时间图上绘制所选检测结果");
   auto* quality = button(review, "质量标记", "annotationQualityMenu", [] {});
   quality->setProperty("preserveParameterDrafts", true);
   quality->setToolTip("可选；仅用于筛选、导出和复查，不限制编辑或创建通道");
@@ -763,6 +778,19 @@ void AnnotationPanel::buildTable(QVBoxLayout* outer) {
               auto* remove = menu.addAction("删除所选标记…", this, [this] { deleteSelected(); });
               remove->setObjectName("annotationTableDeleteAction");
             } else {
+              if (sourceTab_ == AnnotationSource::Algorithm) {
+                auto* hide = menu.addAction("隐藏所选标记", this, [this] {
+                  setSelectedPlotHidden(true);
+                });
+                hide->setObjectName("annotationTableHideAction");
+                auto* show = menu.addAction("显示所选标记", this, [this] {
+                  setSelectedPlotHidden(false);
+                });
+                show->setObjectName("annotationTableShowAction");
+                auto* remove = menu.addAction("删除所选标记…", this,
+                                              [this] { deleteSelected(); });
+                remove->setObjectName("annotationTableDeleteAction");
+              }
               menu.addAction("转换为人工标记", this, [this] { convertSelected(); });
             }
             menu.exec(table_->viewport()->mapToGlobal(point));
@@ -1421,7 +1449,10 @@ void AnnotationPanel::editRange() {
 }
 
 void AnnotationPanel::deleteSelected(bool currentSegmentOnly) {
-  if (sourceTab_ != AnnotationSource::Manual) return;
+  if (sourceTab_ != AnnotationSource::Manual &&
+      sourceTab_ != AnnotationSource::Algorithm)
+    return;
+  if (sourceTab_ == AnnotationSource::Algorithm && currentSegmentOnly) return;
   auto* file = session_.activeFile();
   if (!file) return;
   session_.annotations().reconcileSelection(*file);
@@ -1513,10 +1544,29 @@ void AnnotationPanel::deleteSelected(bool currentSegmentOnly) {
     ids.push_back(id);
   }
   discardDrafts();
-  action(
-      currentSegmentOnly && !lastSegment
-          ? session_.annotations().deleteSegment(*file, ids.front(), segmentId)
-          : session_.annotations().deleteBatch(*file, ids));
+  action(currentSegmentOnly && !lastSegment
+             ? session_.annotations().deleteSegment(*file, ids.front(),
+                                                    segmentId)
+         : sourceTab_ == AnnotationSource::Algorithm
+             ? session_.annotations().deleteAlgorithmBatch(*file, ids)
+             : session_.annotations().deleteBatch(*file, ids));
+}
+void AnnotationPanel::setSelectedPlotHidden(bool hidden) {
+  if (sourceTab_ != AnnotationSource::Algorithm) return;
+  auto* file = session_.activeFile();
+  if (!file) return;
+  session_.annotations().reconcileSelection(*file);
+  std::vector<std::string> ids;
+  for (const auto& id : file->selectedMarkIds) {
+    const auto* annotation = findAnnotation(*file, id);
+    if (!annotation ||
+        !annotationEligibleForTab(*file, *annotation, sourceTab_))
+      continue;
+    ids.push_back(id);
+  }
+  if (ids.empty()) return;
+  discardDrafts();
+  action(session_.annotations().setAlgorithmPlotHidden(*file, ids, hidden));
 }
 
 void AnnotationPanel::geometry(int field) {
@@ -1684,12 +1734,28 @@ void AnnotationPanel::refreshTableSelection(const FileState* file) {
       if (const auto* a = findAnnotation(*file, id); a && a->sourceKind == sourceTab_) ++counts.selected;
   }
   const bool manual = sourceTab_ == AnnotationSource::Manual;
+  const bool algorithm = sourceTab_ == AnnotationSource::Algorithm;
   bool allEditable = manual && counts.selected > 0;
   if (file) for (const auto& id : file->selectedMarkIds)
     allEditable = allEditable && session_.annotations().canEdit(*file, id);
-  for (const auto* id : {"deleteSelectedAnnotations", "annotationQualityMenu", "undoAnnotations", "redoAnnotations", "newManualAnnotation", "manualCreateChannel"})
+  bool algorithmBatch = algorithm && counts.selected > 0;
+  if (file && algorithm)
+    for (const auto& id : file->selectedMarkIds) {
+      const auto* annotation = findAnnotation(*file, id);
+      algorithmBatch = algorithmBatch && annotation &&
+                       annotationEligibleForTab(*file, *annotation, sourceTab_);
+    }
+  for (const auto* id : {"annotationQualityMenu", "newManualAnnotation", "manualCreateChannel"})
     findChild<QPushButton*>(id)->setVisible(manual);
-  findChild<QPushButton*>("deleteSelectedAnnotations")->setEnabled(allEditable);
+  for (const auto* id : {"undoAnnotations", "redoAnnotations"})
+    findChild<QPushButton*>(id)->setVisible(manual || algorithm);
+  findChild<QPushButton*>("deleteSelectedAnnotations")->setVisible(manual || algorithm);
+  findChild<QPushButton*>("hideSelectedAnnotations")->setVisible(algorithm);
+  findChild<QPushButton*>("showSelectedAnnotations")->setVisible(algorithm);
+  findChild<QPushButton*>("deleteSelectedAnnotations")
+      ->setEnabled(manual ? allEditable : algorithmBatch);
+  findChild<QPushButton*>("hideSelectedAnnotations")->setEnabled(algorithmBatch);
+  findChild<QPushButton*>("showSelectedAnnotations")->setEnabled(algorithmBatch);
   findChild<QPushButton*>("undoAnnotations")->setEnabled(file && session_.annotations().canUndo(*file));
   findChild<QPushButton*>("redoAnnotations")->setEnabled(file && session_.annotations().canRedo(*file));
   findChild<QPushButton*>("manualCreateChannel")->setEnabled(allEditable && counts.selected == 1);

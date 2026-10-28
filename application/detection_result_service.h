@@ -15,6 +15,9 @@ struct DetectionTransactionOptions {
   // Return true to inject a failure at this boundary. Gc failure is deferred;
   // it never rolls back a successfully committed project.
   std::function<bool(DetectionTransactionPoint)> failAt;
+  // Same generation comparison as a pending start. False at the atomic commit
+  // leaves the previous project file and the caller's Project unchanged.
+  std::function<bool()> stillCurrent;
 };
 struct DetectionResultTicket {
   std::string fileId, runId;
@@ -44,22 +47,30 @@ AnnotationValidation migrateLegacyDetectionSlots(
 class DetectionResultService {
  public:
   // Mutates a candidate (including pending ID/stale/generation), not disk.
-  // The panel saves this candidate before starting to publish task progress.
+  // The committed run and its marks stay. The panel publishes this candidate
+  // only through publishPendingStart, after the task can be queued.
   static bool beginDetection(Project&, const DetectionRequest&,
                              std::uint64_t projectGeneration,
                              DetectionResultTicket&, QString& error);
+  // Writes `candidate` only while `stillCurrent` remains true through the
+  // atomic commit, then calls `commitQueued`. A generation change, a formal
+  // result mismatch, or a queue failure leaves `live` and the previous file
+  // bytes in place.
+  static bool publishPendingStart(Project& live, const Project& candidate,
+                                  const std::function<bool()>& stillCurrent,
+                                  const std::function<bool(QString&)>& commitQueued,
+                                  const QString& path, QString& error);
   static bool prepareRecovery(Project&, const DetectionRun&,
                               std::uint64_t projectGeneration,
                               DetectionResultTicket&, QString& error);
   static void abandonDetection(Project&, const DetectionResultTicket&);
+  // Cancel, failure, and interruption do not publish. The task row stays in
+  // detectionRuns and is not added to retiredRunIds; those two sets are
+  // exclusive. The committed result is left in place.
+  static void retainUnpublishedDetection(Project&, const DetectionResultTicket&,
+                                         const DetectionRun&);
   static bool markStale(Project&, const std::string& fileId,
                         std::uint32_t sampleChannel);
-  // Explicit detect/redetect only. Removes the committed formal result for
-  // this file and sample channel before the new run is saved. Manual marks
-  // and imported labels stay. Failure does not restore the removed result.
-  static bool clearCommittedDetection(Project&, const std::string& fileId,
-                                      std::uint32_t sampleChannel,
-                                      bool& clearedPrevious, QString& error);
 
   // Stage on a fresh Project -> verify durable run/shards -> atomic .ssproj
   // save -> noexcept move into the caller. Never uses Session::replaceProject
@@ -106,17 +117,24 @@ inline std::vector<PreviewTrackEvent> latestPreviewEvents(
   return latest;
 }
 
-// Terminal runs and a disabled intermediate-result option hide dashed
-// previews. The snapshot is not written into file marks.
+// A disabled intermediate-result option hides a live dashed preview. Successful
+// completion clears it. Failure, cancellation, and interruption keep the
+// preview and mark it unpublished. The snapshot is not written into file marks.
 inline DetectionPreviewPresentation presentDetectionPreview(
-    const DetectionPreviewSnapshot& raw, bool terminal,
-    bool showIntermediate) {
+    const DetectionPreviewSnapshot& raw, bool terminal, bool showIntermediate,
+    bool retainUnpublished = false) {
   DetectionPreviewPresentation result;
   result.visible = raw;
+  if (terminal && retainUnpublished) {
+    result.visible.sealed = true;
+    result.visible.unpublished = !result.visible.events.empty();
+    return result;
+  }
   if (terminal || !showIntermediate) {
     result.hiddenTrackIds = detectionPreviewTrackIds(raw);
     result.visible.events.clear();
     result.visible.dropped = 0;
+    result.visible.unpublished = false;
     if (terminal) result.visible.sealed = true;
   }
   return result;

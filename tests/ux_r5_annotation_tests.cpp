@@ -153,7 +153,8 @@ bool sameAnnotation(const Annotation& a, const Annotation& b) {
          a.conversionSnapshot == b.conversionSnapshot &&
          a.reviewStatus == b.reviewStatus && a.reviewRevisionId == b.reviewRevisionId &&
          a.reviewHistory == b.reviewHistory && a.revisions == b.revisions &&
-         a.derivedFrom == b.derivedFrom && a.deleted == b.deleted;
+         a.derivedFrom == b.derivedFrom && a.deleted == b.deleted &&
+         a.plotHidden == b.plotHidden;
 }
 void unchanged(const FileState& before, const FileState& after) {
   check(before.sourceSets == after.sourceSets && before.marks.size() == after.marks.size(),
@@ -750,6 +751,184 @@ void testSourceManagementPreservesManualRedo() {
             sameAnnotation(source0, file.marks[0]) && sameAnnotation(source1, file.marks[1]),
         "redo modified read-only source objects");
 }
+void testAlgorithmDeleteAndHide() {
+  auto file = fixture();
+  AnnotationService service;
+  const auto ids = publish(service, file, AnnotationSource::Algorithm, 3, "algorithm");
+  const auto imported = publish(service, file, AnnotationSource::ImportedLabel, 1, "label")[0];
+  const auto manual = service.createManual(file, "Manual", geometry());
+  ok(manual, "create manual beside algorithm results");
+  const auto* set = findSourceSet(file, findAnnotation(file, ids[0])->sourceSetId);
+  const auto runId = set->runId;
+  CurrentDetectionSlot slot;
+  slot.sampleChannel = file.metadata.sampleFormat.selectedChannel;
+  slot.committedRunId = runId;
+  slot.generation = 4;
+  file.currentDetectionSlots = std::vector<CurrentDetectionSlot>{slot};
+  file.annotationLayers = {false, false, true};
+  const auto markIds = [&] {
+    std::vector<std::string> values;
+    for (const auto& mark : file.marks) values.push_back(mark.id);
+    return values;
+  };
+  const auto idsBefore = markIds();
+  const auto historyBefore = service.historySize(file);
+  for (const auto& id : ids) {
+    const auto capabilities = service.capabilities(file, id);
+    check(capabilities.view && capabilities.select && capabilities.locate &&
+              capabilities.exportData && capabilities.convertToManual &&
+              !capabilities.editGeometry && !capabilities.editMetadata &&
+              !capabilities.manageSegments && !capabilities.review &&
+              !capabilities.deleteAnnotation && !capabilities.createChannelDirectly &&
+              !service.canEdit(file, id),
+          "algorithm results became editable or lost read access");
+    check(!findAnnotation(file, id)->plotHidden &&
+              annotationVisible(file, *findAnnotation(file, id)) &&
+              annotationEligibleForTab(file, *findAnnotation(file, id),
+                                       AnnotationSource::Algorithm),
+          "algorithm results are hidden before an explicit hide");
+  }
+  const auto savedRun = file.currentDetectionSlots->front().committedRunId;
+  file.currentDetectionSlots->front().committedRunId = "other-run";
+  check(!service.deleteAlgorithmBatch(file, {ids[0]}) &&
+            !service.setAlgorithmPlotHidden(file, {ids[0]}, true) &&
+            !findAnnotation(file, ids[0])->deleted &&
+            !findAnnotation(file, ids[0])->plotHidden &&
+            service.historySize(file) == historyBefore,
+        "a non-current run was deleted or hidden");
+  file.currentDetectionSlots->front().committedRunId = savedRun;
+  check(!service.deleteBatch(file, {ids[0]}) &&
+            !service.reviewBatch(file, {ids[0]}, ReviewStatus::Rejected) &&
+            !service.rename(file, ids[0], "Forbidden", "Forbidden") &&
+            findAnnotation(file, ids[0])->reviewStatus == ReviewStatus::Pending,
+        "quality, rename, or generic delete changed an algorithm result");
+  check(!service.deleteAlgorithmBatch(file, {ids[0], imported}) &&
+            !service.deleteAlgorithmBatch(file, {ids[0], manual.id}) &&
+            !service.setAlgorithmPlotHidden(file, {imported}, true) &&
+            !service.setAlgorithmPlotHidden(file, {manual.id}, true) &&
+            !service.deleteAlgorithmBatch(file, {ids[0], "missing"}) &&
+            !service.setAlgorithmPlotHidden(file, {ids[1], "missing"}, true) &&
+            service.setAlgorithmPlotHidden(file, {}, true).ok &&
+            !service.setAlgorithmPlotHidden(file, {}, true).changed &&
+            service.historySize(file) == historyBefore &&
+            markIds() == idsBefore,
+        "rejected hide or delete changed history, identity, or a kept result");
+  auto stale = file;
+  stale.metadata.sampleRateHz *= 2;
+  check(!service.deleteAlgorithmBatch(stale, {ids[2]}) &&
+            !service.setAlgorithmPlotHidden(stale, {ids[2]}, true) &&
+            service.historySize(file) == historyBefore,
+        "a changed physical source was hidden or deleted");
+
+  const auto kept = *findAnnotation(file, ids[2]);
+  const auto first = *findAnnotation(file, ids[0]);
+  const auto second = *findAnnotation(file, ids[1]);
+  const auto importedBefore = *findAnnotation(file, imported);
+  const auto manualBefore = *findAnnotation(file, manual.id);
+  ok(service.setAlgorithmPlotHidden(file, {ids[0], ids[0], ids[1]}, true),
+     "batch hide");
+  check(service.historySize(file) == historyBefore + 1 && markIds() == idsBefore,
+        "hide created an algorithm mark or more than one command");
+  const auto* hidden = findAnnotation(file, ids[0]);
+  check(hidden->plotHidden && findAnnotation(file, ids[1])->plotHidden &&
+            !findAnnotation(file, ids[2])->plotHidden && !hidden->deleted &&
+            hidden->name == first.name && hidden->note == first.note &&
+            hidden->segments == first.segments &&
+            hidden->revisionId == first.revisionId &&
+            hidden->revisions == first.revisions &&
+            hidden->reviewStatus == ReviewStatus::Pending &&
+            hidden->reviewHistory == first.reviewHistory &&
+            hidden->originEvidence == first.originEvidence &&
+            hidden->sourceKind == AnnotationSource::Algorithm &&
+            !service.canEdit(file, ids[0]),
+        "hide changed geometry, quality, evidence, or edit permission");
+  check(!annotationVisible(file, *hidden) &&
+            annotationOverlayVisible(file, *hidden) &&
+            annotationEligibleForTab(file, *hidden, AnnotationSource::Algorithm) &&
+            annotationSelectable(file, *hidden) &&
+            annotationVisible(file, *findAnnotation(file, ids[2])),
+        "hidden results left the table or the unselected result left the plot");
+  file.annotationLayers = {false, false, false};
+  check(!annotationVisible(file, *findAnnotation(file, ids[2])),
+        "closing the algorithm layer still drew the unselected result");
+  file.annotationLayers = {false, false, true};
+  check(file.currentDetectionSlots->front().committedRunId == runId &&
+            findSourceSet(file, hidden->sourceSetId)->runId == runId &&
+            !findSourceSet(file, hidden->sourceSetId)->deleted &&
+            sameAnnotation(kept, *findAnnotation(file, ids[2])) &&
+            sameAnnotation(importedBefore, *findAnnotation(file, imported)) &&
+            sameAnnotation(manualBefore, *findAnnotation(file, manual.id)),
+        "hide changed the formal run or an unselected result");
+  ok(service.undo(file), "undo hide");
+  check(!findAnnotation(file, ids[0])->plotHidden &&
+            !findAnnotation(file, ids[1])->plotHidden &&
+            annotationVisible(file, *findAnnotation(file, ids[0])) &&
+            annotationVisible(file, *findAnnotation(file, ids[1])),
+        "one undo did not show both hidden results");
+  ok(service.redo(file), "redo hide");
+  check(findAnnotation(file, ids[0])->plotHidden &&
+            findAnnotation(file, ids[1])->plotHidden,
+        "one redo did not hide both results");
+  const auto hiddenAgain = service.historySize(file);
+  const auto repeat = service.setAlgorithmPlotHidden(file, {ids[0], ids[1]}, true);
+  check(repeat.ok && !repeat.changed && service.historySize(file) == hiddenAgain,
+        "hiding an already hidden selection recorded another command");
+  ok(service.setAlgorithmPlotHidden(file, {ids[0]}, false), "show one result");
+  check(!findAnnotation(file, ids[0])->plotHidden &&
+            findAnnotation(file, ids[1])->plotHidden &&
+            annotationVisible(file, *findAnnotation(file, ids[0])) &&
+            service.historySize(file) == hiddenAgain + 1,
+        "show did not restore only the selected result in one command");
+  std::vector<std::string> copies;
+  ok(service.setAlgorithmPlotHidden(file, {ids[0]}, true), "hide before conversion");
+  const auto hiddenSource = *findAnnotation(file, ids[0]);
+  ok(service.convertToManual(file, {ids[0]}, {}, copies), "convert hidden result");
+  check(copies.size() == 1 && findAnnotation(file, copies[0])->sourceKind ==
+                                   AnnotationSource::Manual &&
+            !findAnnotation(file, copies[0])->plotHidden &&
+            service.canEdit(file, copies[0]) &&
+            !service.canEdit(file, ids[0]) &&
+            findAnnotation(file, ids[0])->plotHidden &&
+            findAnnotation(file, ids[0])->id == hiddenSource.id &&
+            findAnnotation(file, ids[0])->segments == hiddenSource.segments,
+        "conversion edited the algorithm result or hid the manual copy");
+
+  const auto beforeDelete = service.historySize(file);
+  const auto countBeforeDelete = file.marks.size();
+  ok(service.deleteAlgorithmBatch(file, {ids[0], ids[1]}), "batch soft delete");
+  check(service.historySize(file) == beforeDelete + 1 &&
+            file.marks.size() == countBeforeDelete &&
+            findAnnotation(file, ids[0])->deleted &&
+            findAnnotation(file, ids[1])->deleted &&
+            !findAnnotation(file, ids[2])->deleted &&
+            !findAnnotation(file, imported)->deleted &&
+            !findAnnotation(file, manual.id)->deleted &&
+            !findAnnotation(file, copies[0])->deleted &&
+            !annotationInContext(file, *findAnnotation(file, ids[0])) &&
+            annotationInContext(file, *findAnnotation(file, ids[2])) &&
+            file.currentDetectionSlots->front().committedRunId == runId &&
+            findAnnotation(file, ids[0])->originEvidence == first.originEvidence &&
+            findAnnotation(file, ids[1])->originEvidence == second.originEvidence,
+        "soft delete removed the run, evidence, or an unselected mark");
+  check(!service.setAlgorithmPlotHidden(file, {ids[0]}, false) &&
+            findAnnotation(file, ids[0])->deleted,
+        "a deleted result was shown again without undo");
+  ok(service.undo(file), "undo soft delete");
+  check(!findAnnotation(file, ids[0])->deleted &&
+            !findAnnotation(file, ids[1])->deleted &&
+            annotationInContext(file, *findAnnotation(file, ids[0])) &&
+            annotationInContext(file, *findAnnotation(file, ids[1])) &&
+            findAnnotation(file, ids[2])->id == kept.id,
+        "one undo did not restore both deleted results");
+  ok(service.redo(file), "redo soft delete");
+  check(findAnnotation(file, ids[0])->deleted &&
+            findAnnotation(file, ids[1])->deleted &&
+            !findAnnotation(file, ids[2])->deleted,
+        "one redo did not delete both selected results");
+  check(!service.canEdit(file, ids[2]) &&
+            !service.capabilities(file, ids[2]).deleteAnnotation,
+        "an untouched algorithm result became editable");
+}
 void testPhysicalTailIsPreserved() {
   auto file = fixture();
   file.metadata.availability.status = LoadStatus::Partial;
@@ -789,7 +968,8 @@ int main() {
       {"review_quality_and_real_one_sided_coordinates", testQualityAndRealCoordinates},
       {"manual_command_history_budget", testManualHistoryBudget},
       {"source_management_preserves_manual_redo", testSourceManagementPreservesManualRedo},
-      {"physical_tail_geometry_and_available_prefix", testPhysicalTailIsPreserved}};
+      {"physical_tail_geometry_and_available_prefix", testPhysicalTailIsPreserved},
+      {"algorithm_results_batch_soft_delete_and_plot_hidden", testAlgorithmDeleteAndHide}};
   int failures = 0;
   for (const auto& [name, test] : cases) {
     try {

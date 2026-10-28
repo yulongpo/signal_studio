@@ -16,7 +16,10 @@
 #include <limits>
 #include <numbers>
 
+#include "domain/detection.h"
 #include "infrastructure/detection_source.h"
+#include "infrastructure/detection_store.h"
+#include "infrastructure/detection_task.h"
 #include "infrastructure/source_loader.h"
 #include "infrastructure/wav_metadata.h"
 
@@ -143,6 +146,9 @@ class DetectionSourceTests : public QObject {
     QVERIFY(profile["mklFrames"].toInteger()>0);
     QVERIFY(profile["mklDetail"].toString().contains("threads=1"));
     QCOMPARE(profile["gpuFrames"].toInteger(),qint64{0});
+    QCOMPARE(profile["stftRoute"].toString(), QString("host-onemkl"));
+    QVERIFY(profile["stftSuppressedReason"].toString().contains("suppressed"));
+    QVERIFY(!profile.contains("gpu"));
   }
   void hostMklMissingStaysHandwritten() {
     qputenv("SS_MKL_DLL", "off");
@@ -163,6 +169,10 @@ class DetectionSourceTests : public QObject {
     QCOMPARE(profile["gpuFrames"].toInteger(),qint64{0});
     QVERIFY(profile["cpuFrames"].toInteger()>0);
     QVERIFY(profile["mklDetail"].toString().contains("probe disabled"));
+    QCOMPARE(profile["stftRoute"].toString(), QString("handwritten-fft"));
+    QVERIFY(profile["stftSuppressedReason"].toString().contains("probe disabled"));
+    QVERIFY(profile["stftSuppressedReason"].toString().contains("suppressed"));
+    QVERIFY(!profile.contains("gpu"));
     QVERIFY(!window.densityDb.empty());
   }
   void deployedMklPinsOneThread() {
@@ -187,6 +197,9 @@ class DetectionSourceTests : public QObject {
     QVERIFY(profile["mklFrames"].toInteger() > 0);
     QVERIFY(profile["mklDetail"].toString().contains("threads=1"));
     QVERIFY(profile["mklDetail"].toString().contains("mkl_rt.3.dll"));
+    QCOMPARE(profile["stftRoute"].toString(), QString("host-onemkl"));
+    QVERIFY(!profile["stftSuppressedReason"].toString().isEmpty());
+    QVERIFY(!profile.contains("gpu"));
   }
   void adaptiveShortRoiTailAndIrregularGrid() {
     QTemporaryDir directory;
@@ -866,6 +879,68 @@ class DetectionSourceTests : public QObject {
                       << maxTensorError;
     QVERIFY(maxDbError < oracle["psdToleranceDb"].toDouble());
     QVERIFY(maxTensorError < oracle["normalizationTolerance"].toDouble());
+  }
+  void performanceTimingSeparatesTensorRtFromDsp() {
+    QJsonObject dsp{{"fftMs", 1.25}, {"mklFrames", 4}, {"stftRoute", "host-onemkl"}};
+    QJsonObject events{{"gpuStreamMs", 3.5},
+                       {"h2dMs", 0.25},
+                       {"cudaEventIntervals", true},
+                       {"qrhiMs", 8.0},
+                       {"gpuDsp", dsp}};
+    const auto written = bindDetectionPerformanceTimings(
+        QJsonObject{{"schema", "signal-studio-detection-profile-v1"},
+                    {"sourceStages", QJsonObject{{"gpuDsp", dsp}}}},
+        events);
+    QVERIFY(!written.contains("gpu"));
+    const auto inference = written["tensorRtInference"].toObject();
+    QCOMPARE(inference["gpuStreamMs"].toDouble(), 3.5);
+    QVERIFY(!inference.contains("qrhiMs"));
+    QVERIFY(!inference.contains("gpuDsp"));
+    QCOMPARE(written["sourceStages"].toObject()["gpuDsp"].toObject()["fftMs"].toDouble(),
+             1.25);
+    QCOMPARE(detectionTensorRtInferenceTimings(written)["h2dMs"].toDouble(), 0.25);
+    QVERIFY(!detectionTensorRtInferenceTimings(written).contains("fftMs"));
+
+    QTemporaryDir directory;
+    DetectionRun run;
+    run.request.runId = "legacy-gpu-alias";
+    run.request.profile = *findDetectionProfile("pipeline-fixture-v1");
+    auto& source = run.request.sourceIdentity;
+    source.projectGeneration = std::numeric_limits<std::uint64_t>::max();
+    source.fileId = "file-1";
+    source.path = directory.filePath("capture.iq").toStdString();
+    source.quickFingerprint = "16000000:2026-10-13T04:00:00Z";
+    source.sampleRateHz = 20e6;
+    source.centerFrequencyHz = 2.5e9;
+    source.effectiveFrequency = {2.49e9, 2.51e9};
+    source.physicalSamples = 400000;
+    source.availableSamples = 400000;
+    run.request.requestedRange = {{100, 300000}, {2.495e9, 2.505e9}};
+    run.request.contextRange = {{0, 400000}, source.effectiveFrequency};
+    run.request.rangeOrigin = "selection";
+    run.lifecycle = DetectionLifecycle::Running;
+    run.eligibleWindows = 3;
+    run.completedWindows = 1;
+    run.readFrames = 10;
+    run.coverage.push_back({DetectionCoverageKind::Completed,
+                            {{100, 100000}, {2.495e9, 2.505e9}},
+                            ""});
+    auto encoded = encodeDetectionRun(run);
+    encoded["performance"] = QJsonObject{
+        {"schema", "signal-studio-detection-profile-v1"},
+        {"gpu", QJsonObject{{"gpuStreamMs", 2.5}, {"cudaEventIntervals", true}}},
+        {"sourceStages", QJsonObject{{"gpuDsp", QJsonObject{{"fftMs", 9.0}}}}}};
+    DetectionRun restored;
+    QString error;
+    QVERIFY2(decodeDetectionRun(encoded, restored, error), qPrintable(error));
+    const auto legacy = QJsonDocument::fromJson(
+                            QByteArray::fromStdString(restored.performanceJson))
+                            .object();
+    QVERIFY(legacy.contains("gpu"));
+    QVERIFY(!legacy.contains("tensorRtInference"));
+    QCOMPARE(detectionTensorRtInferenceTimings(legacy)["gpuStreamMs"].toDouble(), 2.5);
+    QCOMPARE(legacy["sourceStages"].toObject()["gpuDsp"].toObject()["fftMs"].toDouble(),
+             9.0);
   }
 };
 QTEST_GUILESS_MAIN(DetectionSourceTests)

@@ -5,11 +5,13 @@
 #include <array>
 #include <functional>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "application/session.h"
+#include "ui/detection/detection_diagnostic.h"
 
 class QButtonGroup;
 class QCheckBox;
@@ -17,12 +19,14 @@ class QComboBox;
 class QLabel;
 class QLineEdit;
 class QPushButton;
+class QToolButton;
 class QVBoxLayout;
 
 namespace signalstudio {
 class AdaptiveValueEdit;
 class ParameterInputPolicy;
 class UnsignedValueEdit;
+struct DetectionDiagnosticWorker;
 
 // The containing file section owns scrolling and collapse. This card only
 // edits the next request; refresh never loads parameters from a running task.
@@ -32,6 +36,7 @@ class DetectionCard : public QWidget {
  public:
   DetectionCard(Session&, std::function<QString()> projectDirectory,
                 QWidget* parent = nullptr);
+  ~DetectionCard() override;
   void refresh();
   void configure(const DetectionRun* parentRun = nullptr);
   void setRequestedRoi(ViewRange);
@@ -80,6 +85,18 @@ class DetectionCard : public QWidget {
   void refreshTiming();
   void refreshBranchState();
   void refreshStatus();
+  DetectionRequest baseRequest() const;
+  QString draftIssue() const;
+  QString statusIssue() const;
+  QString diagnosticInputKey() const;
+  QString currentTimingKey() const;
+  bool detailSectionExpanded() const;
+  void publishDiagnosticInputs(bool force);
+  void ensureDiagnosticWorker();
+  void updateShortStatus();
+  void applyDiagnosticReport(std::uint64_t generation,
+                             DetectionDiagnosticReport report);
+  DetectionDiagnosticInput captureDiagnosticInput() const;
   void submit();
   bool hasDraft() const;
   QString configurationError(const DetectionRequest&) const;
@@ -153,6 +170,15 @@ class DetectionCard : public QWidget {
   QPushButton* cancel_ = nullptr;
   QPushButton* viewRunning_ = nullptr;
   QLabel* otherRun_ = nullptr;
+  QToolButton* diagnosticsToggle_ = nullptr;
+  QToolButton* calculationToggle_ = nullptr;
+  QString diagnosticKey_;
+  bool diagnosticKeyReady_ = false;
+  bool diagnosticDetailReady_ = false;
+  std::uint64_t diagnosticGeneration_ = 0;
+  QString planIssue_;
+  QString appliedTimingKey_;
+  std::unique_ptr<DetectionDiagnosticWorker> diagnosticWorker_;
   std::vector<ParameterControl> parameters_;
   std::vector<UnsignedControl> unsignedControls_;
 };
