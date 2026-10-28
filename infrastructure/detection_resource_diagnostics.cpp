@@ -272,6 +272,60 @@ QJsonObject diskFactsForStage(const char* stage, const DetectionDiskUsage& usage
   if (peakComplete != nullptr) *peakComplete = !deferred;
   return facts;
 }
+bool shortfallRejection(const ResourceDecision& decision) {
+  return decision.kind == ResourceDecisionKind::Rejected &&
+         (decision.errorCode == "resource.disk-shortfall" ||
+          decision.errorCode == "resource.raw-head-shortfall");
+}
+struct AppliedVolumeCredit {
+  std::uint64_t factualFree = 0;
+  std::uint64_t creditedFree = 0;
+  bool applied = false;
+  bool overflow = false;
+};
+AppliedVolumeCredit applyVolumeCredit(const DiskVolumeBudget& factual,
+                                      std::uint64_t credit) {
+  AppliedVolumeCredit applied;
+  applied.factualFree = factual.known ? factual.availableBytes : 0;
+  applied.creditedFree = applied.factualFree;
+  if (credit == 0 || !factual.known) return applied;
+  std::uint64_t sum = 0;
+  if (!checkedAddU64(applied.factualFree, credit, sum)) {
+    applied.overflow = true;
+    return applied;
+  }
+  applied.creditedFree = sum;
+  applied.applied = true;
+  return applied;
+}
+void restoreFactualAvailable(ResourceDecision& decision, std::uint64_t factual) {
+  if (decision.available == factual) return;
+  const std::string from = " available=" + std::to_string(decision.available) + " ";
+  const std::string to = " available=" + std::to_string(factual) + " ";
+  const auto pos = decision.message.find(from);
+  if (pos != std::string::npos) decision.message.replace(pos, from.size(), to);
+  decision.available = factual;
+}
+void applyCreditOverflow(DiskLedgerEvaluation& evaluation, const char* stage,
+                         const std::string& volumeKey, std::uint64_t factualFree,
+                         std::uint64_t reserveBytes) {
+  const std::string phase = stage == nullptr ? "" : stage;
+  evaluation.decision.kind = ResourceDecisionKind::Rejected;
+  evaluation.decision.errorCode = "resource.arithmetic-overflow";
+  evaluation.decision.phase = phase;
+  evaluation.decision.resource = "disk";
+  evaluation.decision.requested = 0;
+  evaluation.decision.available = factualFree;
+  evaluation.decision.reserve = reserveBytes;
+  evaluation.decision.granted = 0;
+  evaluation.decision.message =
+      "phase=" + phase +
+      " resource=disk unit=bytes needed=0 available=" + std::to_string(factualFree) +
+      " reserve=" + std::to_string(reserveBytes) +
+      " granted=0 fallback=free plus already-resident credit overflows uint64";
+  if (evaluation.peakPhase.empty()) evaluation.peakPhase = phase;
+  if (evaluation.peakVolumeKey.empty()) evaluation.peakVolumeKey = volumeKey;
+}
 }  // namespace
 
 bool mergeRuntimeResourceDiagnostics(const std::string& performanceJson,
@@ -493,6 +547,18 @@ bool assessDetectionResourceStage(const char* stage, const DetectionDiskUsage& k
                                   std::string& performanceJson, QString& error,
                                   const RuntimeResourceSnapshot* scratchSnapshot,
                                   std::uint64_t reserveBytes) {
+  return assessDetectionResourceStage(stage, knownUsage, knownFacts, snapshot,
+                                      performanceJson, error, scratchSnapshot,
+                                      reserveBytes, {});
+}
+
+bool assessDetectionResourceStage(const char* stage, const DetectionDiskUsage& knownUsage,
+                                  std::uint32_t knownFacts,
+                                  const RuntimeResourceSnapshot& snapshot,
+                                  std::string& performanceJson, QString& error,
+                                  const RuntimeResourceSnapshot* scratchSnapshot,
+                                  std::uint64_t reserveBytes,
+                                  DetectionStageResidentCredit residentCredit) {
   if (!knownStage(stage)) {
     error = QStringLiteral("resource.invalid-stage");
     return false;
@@ -507,15 +573,63 @@ bool assessDetectionResourceStage(const char* stage, const DetectionDiskUsage& k
   appendPhaseOverlapDiskLines(visible, lines);
   std::vector<DiskVolumeBudget> budgets;
   budgets.push_back(diskBudgetFromVolumeProbe(snapshot.volume));
+  const bool scratchLive =
+      (knownFacts & kDiskFactScratch) != 0 && visible.scratchBytes > 0;
   const bool separateScratch =
-      (knownFacts & kDiskFactScratch) != 0 && visible.scratchBytes > 0 &&
-      !visible.scratchVolumeKey.empty() &&
+      scratchLive && !visible.scratchVolumeKey.empty() &&
       visible.scratchVolumeKey != visible.durableVolumeKey;
-  if (separateScratch && scratchSnapshot != nullptr &&
-      scratchSnapshot->volume.volumeKey == visible.scratchVolumeKey) {
+  const bool scratchProbeMatches =
+      separateScratch && scratchSnapshot != nullptr &&
+      scratchSnapshot->volume.volumeKey == visible.scratchVolumeKey;
+  if (scratchProbeMatches)
     budgets.push_back(diskBudgetFromVolumeProbe(scratchSnapshot->volume));
+  auto evaluation = evaluatePhaseOverlapDiskLedger(lines, budgets, reserveBytes);
+
+  const auto durableBudget = budgets.front();
+  const bool scratchOnDurable = scratchLive && !separateScratch;
+  std::uint64_t durableCredit = residentCredit.alreadyResidentOnDurableVolumeBytes;
+  bool creditSumOverflow = false;
+  if (scratchOnDurable && residentCredit.alreadyResidentOnScratchVolumeBytes != 0 &&
+      !checkedAddU64(durableCredit, residentCredit.alreadyResidentOnScratchVolumeBytes,
+                     durableCredit)) {
+    creditSumOverflow = true;
+    durableCredit = 0;
   }
-  const auto evaluation = evaluatePhaseOverlapDiskLedger(lines, budgets, reserveBytes);
+  const auto durableApplied = applyVolumeCredit(durableBudget, durableCredit);
+  AppliedVolumeCredit scratchApplied;
+  if (scratchProbeMatches)
+    scratchApplied = applyVolumeCredit(
+        budgets.back(), residentCredit.alreadyResidentOnScratchVolumeBytes);
+  const bool creditOverflow =
+      creditSumOverflow || durableApplied.overflow || scratchApplied.overflow;
+  const bool anyCredit =
+      residentCredit.alreadyResidentOnDurableVolumeBytes != 0 ||
+      residentCredit.alreadyResidentOnScratchVolumeBytes != 0;
+  const bool nonShortfallRejection =
+      evaluation.decision.kind == ResourceDecisionKind::Rejected &&
+      !shortfallRejection(evaluation.decision);
+
+  if (creditOverflow && !nonShortfallRejection) {
+    const bool durableOverflow = creditSumOverflow || durableApplied.overflow;
+    applyCreditOverflow(evaluation, stage,
+                        durableOverflow ? visible.durableVolumeKey
+                                        : visible.scratchVolumeKey,
+                        durableOverflow ? durableApplied.factualFree
+                                        : scratchApplied.factualFree,
+                        reserveBytes);
+  } else if (anyCredit && !nonShortfallRejection &&
+             (durableApplied.applied || scratchApplied.applied) &&
+             shortfallRejection(evaluation.decision)) {
+    if (durableApplied.applied) budgets.front().availableBytes = durableApplied.creditedFree;
+    if (scratchApplied.applied) budgets.back().availableBytes = scratchApplied.creditedFree;
+    evaluation = evaluatePhaseOverlapDiskLedger(lines, budgets, reserveBytes);
+    const auto factualFree = evaluation.peakVolumeKey == visible.scratchVolumeKey &&
+                                     scratchProbeMatches
+                                 ? scratchApplied.factualFree
+                                 : durableApplied.factualFree;
+    restoreFactualAvailable(evaluation.decision, factualFree);
+  }
+
   bool peakComplete = false;
   QJsonObject extras{
       {QStringLiteral("stage"), QString::fromUtf8(stage)},
@@ -526,6 +640,38 @@ bool assessDetectionResourceStage(const char* stage, const DetectionDiskUsage& k
       {QStringLiteral("ledgerScope"), QStringLiteral("known-only")}};
   if (separateScratch && scratchSnapshot != nullptr)
     extras.insert(QStringLiteral("scratchVolume"), volumeJson(scratchSnapshot->volume));
+  if (anyCredit) {
+    const char* status = creditOverflow ? "overflow"
+                         : (durableApplied.applied || scratchApplied.applied) ? "applied"
+                                                                              : "not-applied";
+    QJsonObject credit{
+        {QStringLiteral("basis"), QStringLiteral("factual-free-plus-already-resident")},
+        {QStringLiteral("alreadyResidentOnDurableVolumeBytes"),
+         decimal(residentCredit.alreadyResidentOnDurableVolumeBytes)},
+        {QStringLiteral("alreadyResidentOnScratchVolumeBytes"),
+         decimal(residentCredit.alreadyResidentOnScratchVolumeBytes)},
+        {QStringLiteral("durableFactualFreeBytes"), decimal(durableApplied.factualFree)},
+        {QStringLiteral("status"), QString::fromUtf8(status)}};
+    if (durableApplied.applied)
+      credit.insert(QStringLiteral("durableCreditedBytes"),
+                    decimal(durableApplied.creditedFree));
+    if (scratchOnDurable && residentCredit.alreadyResidentOnScratchVolumeBytes != 0) {
+      credit.insert(QStringLiteral("scratchCreditVolume"),
+                    QStringLiteral("same-as-durable"));
+    } else if (scratchProbeMatches &&
+               residentCredit.alreadyResidentOnScratchVolumeBytes != 0) {
+      credit.insert(QStringLiteral("scratchFactualFreeBytes"),
+                    decimal(scratchApplied.factualFree));
+      credit.insert(QStringLiteral("scratchCreditVolume"), q(visible.scratchVolumeKey));
+      if (scratchApplied.applied)
+        credit.insert(QStringLiteral("scratchCreditedBytes"),
+                      decimal(scratchApplied.creditedFree));
+    } else if (residentCredit.alreadyResidentOnScratchVolumeBytes != 0) {
+      credit.insert(QStringLiteral("scratchCreditVolume"),
+                    QStringLiteral("not-applied"));
+    }
+    extras.insert(QStringLiteral("residentCredit"), credit);
+  }
   if (!publishProfile(performanceJson, snapshot, &evaluation, nullptr, extras,
                       performanceJson, error))
     return false;

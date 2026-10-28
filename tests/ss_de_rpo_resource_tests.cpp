@@ -1241,6 +1241,302 @@ void testProductionHelpers() {
                error == QStringLiteral("resource.diagnostics-rejected"),
            error.toStdString() + " in=" + std::to_string(preserved.size()));
   }
+
+  {
+    constexpr auto kRaw = 40ull << 30;
+    constexpr auto kShards = 8ull << 30;
+    constexpr auto kCheckpoint = 1ull << 20;
+    constexpr auto kOldProject = 2ull << 20;
+    constexpr auto kNewProject = 1000ull;
+    const auto resident = kRaw + kShards + kCheckpoint + kOldProject;
+    const auto peak = resident + kNewProject;
+    DetectionDiskUsage usage;
+    usage.durableVolumeKey = "D:\\";
+    usage.storeRawHead = true;
+    usage.rawHeadBytes = kRaw;
+    usage.resultShardBytes = kShards;
+    usage.largestResultShardBytes = kDetectionShardFileCapBytes;
+    usage.checkpointBytes = kCheckpoint;
+    usage.projectBytes = kNewProject;
+    usage.projectExistingBytes = kOldProject;
+    const auto facts = kDiskFactRawHead | kDiskFactResultShards | kDiskFactCheckpoint |
+                       kDiskFactProject;
+    DetectionStageResidentCredit credit;
+    credit.alreadyResidentOnDurableVolumeBytes = resident;
+    auto snapshot = injectedSnapshot(1ull << 30, 64ull << 30, kNewProject);
+    std::string json = kTimeline;
+    QString error;
+    const bool accepted = assessDetectionResourceStage(
+        "publishing", usage, facts, snapshot, json, error, nullptr, 0, credit);
+    const auto acceptedResources = resourcesOf(json);
+    const auto acceptedLedger = acceptedResources.value(QStringLiteral("diskLedger")).toObject();
+    const auto acceptedCredit = acceptedResources.value(QStringLiteral("residentCredit")).toObject();
+    report("stage-resident-credit-exact-payload",
+           accepted && error.isEmpty() &&
+               acceptedResources.value(QStringLiteral("volume")).toObject().value(
+                   QStringLiteral("available")) == number(kNewProject) &&
+               acceptedResources.value(QStringLiteral("diskPeakBytes")) == number(peak) &&
+               acceptedResources.value(QStringLiteral("diskPeakPhase")) ==
+                   QStringLiteral("publishing") &&
+               acceptedLedger.value(QStringLiteral("kind")) == QStringLiteral("Accepted") &&
+               acceptedLedger.value(QStringLiteral("requested")) == number(peak) &&
+               acceptedLedger.value(QStringLiteral("available")) == number(kNewProject) &&
+               acceptedLedger.value(QStringLiteral("granted")) == number(peak) &&
+               acceptedCredit.value(QStringLiteral("basis")) ==
+                   QStringLiteral("factual-free-plus-already-resident") &&
+               acceptedCredit.value(QStringLiteral("status")) == QStringLiteral("applied") &&
+               acceptedCredit.value(QStringLiteral("alreadyResidentOnDurableVolumeBytes")) ==
+                   number(resident) &&
+               acceptedCredit.value(QStringLiteral("durableFactualFreeBytes")) ==
+                   number(kNewProject) &&
+               acceptedCredit.value(QStringLiteral("durableCreditedBytes")) == number(peak) &&
+               timelineKept(json),
+           error.toStdString());
+
+    snapshot.volume.availableBytes = kNewProject - 1;
+    json = kTimeline;
+    const bool oneShort = !assessDetectionResourceStage(
+        "publishing", usage, facts, snapshot, json, error, nullptr, 0, credit);
+    const auto shortResources = resourcesOf(json);
+    report("stage-resident-credit-one-byte-short",
+           oneShort && error.contains(QStringLiteral("resource.disk-shortfall")) &&
+               !error.contains(QStringLiteral("arithmetic-overflow")) &&
+               shortResources.value(QStringLiteral("volume")).toObject().value(
+                   QStringLiteral("available")) == number(kNewProject - 1) &&
+               shortResources.value(QStringLiteral("diskPeakBytes")) == number(peak) &&
+               shortResources.value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("available")) == number(kNewProject - 1) &&
+               shortResources.value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("requested")) == number(peak) &&
+               shortResources.value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("granted")) == QStringLiteral("0") &&
+               shortResources.value(QStringLiteral("residentCredit")).toObject().value(
+                   QStringLiteral("durableFactualFreeBytes")) == number(kNewProject - 1) &&
+               timelineKept(json),
+           error.toStdString());
+
+    const auto max = std::numeric_limits<std::uint64_t>::max();
+    snapshot.volume.availableBytes = max;
+    snapshot.volume.totalBytes = max;
+    credit.alreadyResidentOnDurableVolumeBytes = 1;
+    json = kTimeline;
+    const bool overflow = !assessDetectionResourceStage(
+        "publishing", usage, facts, snapshot, json, error, nullptr, 0, credit);
+    const auto overflowResources = resourcesOf(json);
+    const auto overflowCredit =
+        overflowResources.value(QStringLiteral("residentCredit")).toObject();
+    report("stage-resident-credit-overflow",
+           overflow && error.contains(QStringLiteral("resource.arithmetic-overflow")) &&
+               !error.contains(QStringLiteral("shortfall")) &&
+               overflowResources.value(QStringLiteral("volume")).toObject().value(
+                   QStringLiteral("available")) == number(max) &&
+               overflowResources.value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("available")) == number(max) &&
+               overflowResources.value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("granted")) == QStringLiteral("0") &&
+               overflowResources.value(QStringLiteral("diskPeakBytes")) == number(peak) &&
+               overflowCredit.value(QStringLiteral("status")) == QStringLiteral("overflow") &&
+               overflowCredit.value(QStringLiteral("durableFactualFreeBytes")) == number(max) &&
+               overflowCredit.value(QStringLiteral("alreadyResidentOnDurableVolumeBytes")) ==
+                   QStringLiteral("1") &&
+               !overflowCredit.contains(QStringLiteral("durableCreditedBytes")) &&
+               timelineKept(json),
+           error.toStdString());
+
+    snapshot = injectedSnapshot(1ull << 30, 64ull << 30, kNewProject);
+    json = kTimeline;
+    const bool defaultRejects = !assessDetectionResourceStage(
+        "publishing", usage, facts, snapshot, json, error);
+    const auto defaultResources = resourcesOf(json);
+    report("stage-default-still-charges-resident-files",
+           defaultRejects && error.contains(QStringLiteral("resource.raw-head-shortfall")) &&
+               !defaultResources.contains(QStringLiteral("residentCredit")) &&
+               defaultResources.value(QStringLiteral("volume")).toObject().value(
+                   QStringLiteral("available")) == number(kNewProject) &&
+               defaultResources.value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("available")) == number(kNewProject) &&
+               defaultResources.value(QStringLiteral("diskPeakBytes")) == number(peak) &&
+               timelineKept(json),
+           error.toStdString());
+  }
+
+  {
+    DetectionDiskUsage usage;
+    usage.durableVolumeKey = "D:\\";
+    usage.storeRawHead = true;
+    usage.rawHeadBytes = 1000;
+    usage.scratchBytes = 5000;
+    const auto facts = kDiskFactRawHead | kDiskFactScratch;
+    DetectionStageResidentCredit credit;
+    credit.alreadyResidentOnDurableVolumeBytes = 1000;
+    credit.alreadyResidentOnScratchVolumeBytes = 4900;
+    auto snapshot = injectedSnapshot(1ull << 30, 64ull << 30, 100);
+    std::string json = kTimeline;
+    QString error;
+    const bool accepted = assessDetectionResourceStage(
+        "refine", usage, facts, snapshot, json, error, nullptr, 0, credit);
+    const auto creditObject = resourcesOf(json).value(QStringLiteral("residentCredit")).toObject();
+    report("stage-same-volume-credit-exact",
+           accepted && error.isEmpty() &&
+               resourcesOf(json).value(QStringLiteral("diskPeakBytes")) ==
+                   QStringLiteral("6000") &&
+               resourcesOf(json).value(QStringLiteral("volume")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("100") &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("100") &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("granted")) == QStringLiteral("6000") &&
+               creditObject.value(QStringLiteral("scratchCreditVolume")) ==
+                   QStringLiteral("same-as-durable") &&
+               creditObject.value(QStringLiteral("durableCreditedBytes")) ==
+                   QStringLiteral("6000") &&
+               timelineKept(json),
+           error.toStdString());
+    snapshot.volume.availableBytes = 99;
+    json = kTimeline;
+    const bool oneShort = !assessDetectionResourceStage(
+        "refine", usage, facts, snapshot, json, error, nullptr, 0, credit);
+    report("stage-same-volume-credit-one-byte-short",
+           oneShort && error.contains(QStringLiteral("resource.disk-shortfall")) &&
+               resourcesOf(json).value(QStringLiteral("diskPeakBytes")) ==
+                   QStringLiteral("6000") &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("99"),
+           error.toStdString());
+    usage.rawHeadBytes = 10000;
+    credit.alreadyResidentOnDurableVolumeBytes = 0;
+    snapshot.volume.availableBytes = 100;
+    json = kTimeline;
+    const bool rawStillCharged = !assessDetectionResourceStage(
+        "refine", usage, facts, snapshot, json, error, nullptr, 0, credit);
+    report("stage-scratch-credit-does-not-cover-raw-head",
+           rawStillCharged && error.contains(QStringLiteral("resource.raw-head-shortfall")) &&
+               resourcesOf(json).value(QStringLiteral("diskPeakBytes")) ==
+                   QStringLiteral("15000") &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("granted")) == QStringLiteral("0"),
+           error.toStdString());
+  }
+
+  {
+    DetectionDiskUsage usage;
+    usage.durableVolumeKey = "D:\\";
+    usage.scratchVolumeKey = "S:\\";
+    usage.storeRawHead = true;
+    usage.rawHeadBytes = 100000;
+    usage.scratchBytes = 5000;
+    const auto facts = kDiskFactRawHead | kDiskFactScratch;
+    auto durable = injectedSnapshot(1ull << 30, 64ull << 30, 10);
+    auto scratch = injectedSnapshot(1ull << 30, 64ull << 30, 100);
+    scratch.volume.volumeKey = "S:\\";
+    scratch.volume.availableBytes = 100;
+    scratch.volume.totalBytes = 100;
+    DetectionStageResidentCredit credit;
+    credit.alreadyResidentOnDurableVolumeBytes = 100000;
+    credit.alreadyResidentOnScratchVolumeBytes = 4900;
+    std::string json = kTimeline;
+    QString error;
+    const bool accepted = assessDetectionResourceStage("refine", usage, facts, durable, json,
+                                                       error, &scratch, 0, credit);
+    const auto acceptedCredit = resourcesOf(json).value(QStringLiteral("residentCredit")).toObject();
+    report("stage-split-volume-credit-exact",
+           accepted && error.isEmpty() &&
+               resourcesOf(json).value(QStringLiteral("diskPeakBytes")) ==
+                   QStringLiteral("100000") &&
+               resourcesOf(json).value(QStringLiteral("diskPeakVolume")) ==
+                   QStringLiteral("D:\\") &&
+               resourcesOf(json).value(QStringLiteral("volume")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("10") &&
+               resourcesOf(json).value(QStringLiteral("scratchVolume")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("100") &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("10") &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("granted")) == QStringLiteral("100000") &&
+               acceptedCredit.value(QStringLiteral("scratchCreditVolume")) ==
+                   QStringLiteral("S:\\") &&
+               acceptedCredit.value(QStringLiteral("scratchFactualFreeBytes")) ==
+                   QStringLiteral("100") &&
+               acceptedCredit.value(QStringLiteral("scratchCreditedBytes")) ==
+                   QStringLiteral("5000") &&
+               acceptedCredit.value(QStringLiteral("durableCreditedBytes")) ==
+                   QStringLiteral("100010"),
+           error.toStdString());
+
+    scratch.volume.availableBytes = 99;
+    json = kTimeline;
+    const bool scratchShort = !assessDetectionResourceStage(
+        "refine", usage, facts, durable, json, error, &scratch, 0, credit);
+    report("stage-split-volume-scratch-one-byte-short",
+           scratchShort && error.contains(QStringLiteral("resource.disk-shortfall")) &&
+               resourcesOf(json).value(QStringLiteral("diskPeakVolume")) ==
+                   QStringLiteral("S:\\") &&
+               resourcesOf(json).value(QStringLiteral("diskPeakBytes")) ==
+                   QStringLiteral("5000") &&
+               resourcesOf(json).value(QStringLiteral("scratchVolume")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("99") &&
+               resourcesOf(json).value(QStringLiteral("volume")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("10") &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("99"),
+           error.toStdString());
+
+    scratch.volume.availableBytes = 100;
+    credit.alreadyResidentOnScratchVolumeBytes = 0;
+    json = kTimeline;
+    const bool durableCreditStaysHome = !assessDetectionResourceStage(
+        "refine", usage, facts, durable, json, error, &scratch, 0, credit);
+    report("stage-durable-credit-does-not-cover-scratch",
+           durableCreditStaysHome && error.contains(QStringLiteral("resource.disk-shortfall")) &&
+               resourcesOf(json).value(QStringLiteral("diskPeakVolume")) ==
+                   QStringLiteral("S:\\") &&
+               resourcesOf(json).value(QStringLiteral("diskPeakBytes")) ==
+                   QStringLiteral("5000") &&
+               resourcesOf(json).value(QStringLiteral("scratchVolume")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("100"),
+           error.toStdString());
+
+    credit.alreadyResidentOnDurableVolumeBytes = 0;
+    credit.alreadyResidentOnScratchVolumeBytes = 100000;
+    scratch.volume.availableBytes = 5000;
+    scratch.volume.totalBytes = 5000;
+    json = kTimeline;
+    const bool scratchCreditStaysHome = !assessDetectionResourceStage(
+        "refine", usage, facts, durable, json, error, &scratch, 0, credit);
+    report("stage-scratch-credit-does-not-cover-durable",
+           scratchCreditStaysHome &&
+               error.contains(QStringLiteral("resource.raw-head-shortfall")) &&
+               resourcesOf(json).value(QStringLiteral("diskPeakVolume")) ==
+                   QStringLiteral("D:\\") &&
+               resourcesOf(json).value(QStringLiteral("diskPeakBytes")) ==
+                   QStringLiteral("100000") &&
+               resourcesOf(json).value(QStringLiteral("volume")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("10") &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("10"),
+           error.toStdString());
+
+    const auto max = std::numeric_limits<std::uint64_t>::max();
+    credit.alreadyResidentOnDurableVolumeBytes = 0;
+    credit.alreadyResidentOnScratchVolumeBytes = 1;
+    scratch.volume.availableBytes = max;
+    scratch.volume.totalBytes = max;
+    json = kTimeline;
+    const bool scratchOverflow = !assessDetectionResourceStage(
+        "refine", usage, facts, durable, json, error, &scratch, 0, credit);
+    report("stage-scratch-credit-overflow-stays-on-scratch",
+           scratchOverflow && error.contains(QStringLiteral("resource.arithmetic-overflow")) &&
+               !error.contains(QStringLiteral("shortfall")) &&
+               resourcesOf(json).value(QStringLiteral("scratchVolume")).toObject().value(
+                   QStringLiteral("available")) == number(max) &&
+               resourcesOf(json).value(QStringLiteral("volume")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("10") &&
+               resourcesOf(json).value(QStringLiteral("residentCredit")).toObject().value(
+                   QStringLiteral("status")) == QStringLiteral("overflow") &&
+               resourcesOf(json).value(QStringLiteral("residentCredit")).toObject().value(
+                   QStringLiteral("scratchFactualFreeBytes")) == number(max),
+           error.toStdString());
+  }
 }
 }  // namespace
 
