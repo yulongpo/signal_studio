@@ -13,6 +13,7 @@
 #include <stdexcept>
 
 #include "infrastructure/detection_model_backend.h"
+#include "infrastructure/ffscn_engine_package.h"
 
 using namespace signalstudio;
 
@@ -582,6 +583,13 @@ void adaptedLiveParity(const QString& modelRoot, const QString& goldenRoot) {
 
 void liveParity(const QString& modelRoot, const QString& referenceRoot) {
   auto snapshot = request("ffscn-gui-iq-v1");
+  QString directory, packageError;
+  check(resolveDetectionPackageDirectory(modelRoot, "ffscn-gui-iq-v1", directory, packageError), packageError);
+  QFile manifestFile(QDir(directory).filePath("manifest.json"));
+  check(manifestFile.open(QIODevice::ReadOnly) && manifestFile.size() <= 65536,
+        "Cannot read the selected live model package");
+  const auto manifest = QJsonDocument::fromJson(manifestFile.readAll()).object();
+  snapshot.modelSha256 = manifest["engine"].toObject()["sha256"].toString().toStdString();
   DetectionModelBackend backend(modelRoot);
   QString error;
   check(backend.load(snapshot, error), error);

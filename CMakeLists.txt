@@ -435,6 +435,14 @@ if(SS_BUILD_TESTS)
     target_link_libraries(SignalStudioSsDeRpoGpuTests PRIVATE SignalStudioInfrastructure)
     add_test(NAME signal_studio_ss_de_rpo_gpu COMMAND SignalStudioSsDeRpoGpuTests)
     add_executable(SignalStudioSsDeRpoUiTests tests/ss_de_rpo_ui_tests.cpp ${SS_UI_SOURCES})
+    add_executable(SignalStudioDetectionNativeBenchmark tools/detection_benchmark/native_main.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioDetectionNativeBenchmark PRIVATE
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
+        Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioDetectionNativeBenchmark)
+    ss_add_graphics_shaders(SignalStudioDetectionNativeBenchmark signalstudio_detection_native_shaders)
+    ss_add_ui_assets(SignalStudioDetectionNativeBenchmark)
+    add_dependencies(SignalStudioDetectionNativeBenchmark SignalStudioDetectionWorker)
     target_link_libraries(SignalStudioSsDeRpoUiTests PRIVATE
         SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
         Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
@@ -766,7 +774,7 @@ if(SS_BUILD_TESTS)
         add_dependencies(SignalStudioUiCapture SignalStudio)
         foreach(test_target IN ITEMS SignalStudioDetectionSourceTests SignalStudioLabelImportTests SignalStudioWavTests
                 SignalStudioImportTests SignalStudioUiTests SignalStudioUxTests SignalStudioUiCapture
-                SignalStudioSsDeRpoUiTests SignalStudioSsDeRpoStartTests)
+                SignalStudioSsDeRpoUiTests SignalStudioSsDeRpoStartTests SignalStudioDetectionNativeBenchmark)
             add_dependencies(${test_target} SignalStudio)
             add_custom_command(TARGET ${test_target} POST_BUILD
                 COMMAND "${CMAKE_COMMAND}" -E copy_if_different

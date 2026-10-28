@@ -14,6 +14,8 @@ param(
   [string]$AcceptanceExecutable,
   [ValidateRange(3, 3)][int]$Repeats = 3,
   [switch]$AllowGpu,
+  [Alias('Native')][switch]$NativeUi,
+  [string]$SourceRevision,
   [ValidateSet('sample', 'roi', 'coarse', 'none')][string]$Strategy = 'sample',
   [ValidateRange(0, 2048)][int]$RawHeadBudgetMiB = 0,
   [ValidateRange(1, 16)][int]$Batch = 2,
@@ -57,14 +59,16 @@ function Read-Baseline([string]$Directory) {
   return [ordered]@{ path = $null; readOnly = $true; schema = $null; runs = @() }
 }
 
-function Start-ResourceSampler([string]$CsvPath) {
-  $names = @('SignalStudioDetectionBenchmark', 'SignalStudioDetectionWorker')
+function Start-ResourceSampler([string]$CsvPath, [int]$RootProcessId) {
+  $names = @('SignalStudioDetectionBenchmark', 'SignalStudioDetectionNativeBenchmark', 'SignalStudioDetectionWorker')
   return Start-Job -ScriptBlock {
-    param($CsvPath, $Names)
+    param($CsvPath, $Names, $RootProcessId)
     $header = $false
     $gpuProbe = Get-Command nvidia-smi -ErrorAction SilentlyContinue
     $drive = [IO.DriveInfo]::new([IO.Path]::GetPathRoot($CsvPath))
     while ($true) {
+      if (-not (Get-Process -Id $RootProcessId -ErrorAction SilentlyContinue)) { break }
+      $children = @(Get-CimInstance Win32_Process -Filter "Name='SignalStudioDetectionWorker.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.ParentProcessId -eq $RootProcessId } | Select-Object -ExpandProperty ProcessId)
       $rows = @()
       $gpuValues = @()
       if ($gpuProbe) {
@@ -73,6 +77,7 @@ function Start-ResourceSampler([string]$CsvPath) {
       }
       foreach ($name in $Names) {
         foreach ($process in @(Get-Process -Name $name -ErrorAction SilentlyContinue)) {
+          if ($process.Id -ne $RootProcessId -and $process.Id -notin $children) { continue }
           try {
             $rows += [pscustomobject]@{
               utc = [DateTime]::UtcNow.ToString('o')
@@ -101,7 +106,7 @@ function Start-ResourceSampler([string]$CsvPath) {
       }
       Start-Sleep -Milliseconds 200
     }
-  } -ArgumentList $CsvPath, $names
+  } -ArgumentList $CsvPath, $names, $RootProcessId
 }
 
 function Get-WorkerIds([string]$CsvPath) {
@@ -133,6 +138,11 @@ function Get-MarkSteadyNs($Measurement, [string]$Name) {
 }
 
 function Get-BenchmarkArguments([string]$Request, [string]$OutputPath, [switch]$Resident) {
+  if ($NativeUi) {
+    $arguments = @('--request',$Request,'--output',$OutputPath)
+    if ($Resident) { $arguments += @('--resident-repeat', "$Repeats") }
+    return $arguments
+  }
   # Do not pass --raw-head-budget-mib. Zero on that flag forces legacy combined
   # evidence inside the benchmark. The public request already says raw-OFF.
   $arguments = @(
@@ -164,10 +174,11 @@ if (-not $RequestJson) {
   if (Test-Path -LiteralPath $candidate) { $RequestJson = [IO.Path]::GetFullPath($candidate) }
 }
 
-$benchmarkExe = Join-Path $bin 'SignalStudioDetectionBenchmark.exe'
+$benchmarkExe = Join-Path $bin $(if ($NativeUi) { 'SignalStudioDetectionNativeBenchmark.exe' } else { 'SignalStudioDetectionBenchmark.exe' })
 $coldArguments = @()
 $warmArguments = @()
 if ($RequestJson) {
+  $RequestJson = (Get-Item -LiteralPath $RequestJson).FullName
   Assert-PublicRawOff $RequestJson
   $coldArguments = @(Get-BenchmarkArguments $RequestJson (Join-Path $output 'cold-run-01\native'))
   $warmArguments = @(Get-BenchmarkArguments $RequestJson (Join-Path $output 'resident') -Resident)
@@ -239,7 +250,7 @@ try {
           $stdout = Join-Path $case 'stdout.txt'
           $stderr = Join-Path $case 'stderr.txt'
           $arguments = @(Get-BenchmarkArguments $RequestJson $native)
-          $sampler = Start-ResourceSampler $resourceCsv
+          $sampler = $null
           $runError = $null
           $process = $null
           $benchmarkProcessId = $null
@@ -248,6 +259,7 @@ try {
               -WorkingDirectory $bin -WindowStyle Hidden -PassThru `
               -RedirectStandardOutput $stdout -RedirectStandardError $stderr
             $benchmarkProcessId = $process.Id
+            $sampler = Start-ResourceSampler $resourceCsv $process.Id
             $launchedGpu = $true
             if (-not $process.WaitForExit(($TimeoutSeconds + 60) * 1000)) {
               $process.Kill($true)
@@ -259,8 +271,10 @@ try {
             $runError = $_.Exception.Message
             $launchedGpu = $true
           } finally {
-            Stop-Job $sampler -ErrorAction SilentlyContinue | Out-Null
-            Remove-Job $sampler -Force -ErrorAction SilentlyContinue | Out-Null
+            if ($sampler) {
+              Stop-Job $sampler -ErrorAction SilentlyContinue | Out-Null
+              Remove-Job $sampler -Force -ErrorAction SilentlyContinue | Out-Null
+            }
             if ($process) { $process.Dispose() }
           }
           $measurementPath = Join-Path $native 'measurement.json'
@@ -298,7 +312,7 @@ try {
         $stderr = Join-Path $output 'resident-stderr.txt'
         $arguments = @(Get-BenchmarkArguments $RequestJson $resident -Resident)
         $warm.arguments = $arguments
-        $sampler = Start-ResourceSampler $resourceCsv
+        $sampler = $null
         $runError = $null
         $process = $null
         try {
@@ -306,6 +320,7 @@ try {
             -WorkingDirectory $bin -WindowStyle Hidden -PassThru `
             -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           $launchedGpu = $true
+          $sampler = Start-ResourceSampler $resourceCsv $process.Id
           if (-not $process.WaitForExit(($TimeoutSeconds + 180) * 1000)) {
             $process.Kill($true)
             $null = $process.WaitForExit()
@@ -316,8 +331,10 @@ try {
           $runError = $_.Exception.Message
           $launchedGpu = $true
         } finally {
-          Stop-Job $sampler -ErrorAction SilentlyContinue | Out-Null
-          Remove-Job $sampler -Force -ErrorAction SilentlyContinue | Out-Null
+          if ($sampler) {
+            Stop-Job $sampler -ErrorAction SilentlyContinue | Out-Null
+            Remove-Job $sampler -Force -ErrorAction SilentlyContinue | Out-Null
+          }
         }
         $summaryPath = Join-Path $resident 'resident-summary.json'
         $summary = $null
@@ -388,7 +405,8 @@ $report = [ordered]@{
   formalCommit = '--formal-commit creates a new isolated project inside the benchmark output. The request file and any source project stay untouched.'
   rawHeadArgument = 'not passed; public request keeps retainRawModelOutput false and rawHeadBudgetBytes 0'
   boundary = 'Cold runs are fresh processes with --formal-commit. Warm is one process with --resident-repeat. A missing t_pipeline_terminal or t_terminal stays null. OS file cache is not flushed. A failed run is not a speedup denominator.'
-  sourceHead = (& git -C $repo rev-parse HEAD)
+  sourceHead = $(if ($SourceRevision) { $SourceRevision } else { & git -C $repo rev-parse HEAD })
+  native = [bool]$NativeUi
   osCacheState = 'not flushed; shared OS cache state not controlled'
   modelInitializationState = 'independent Worker and engine/context initialization on every run'
   resourceSamplingBoundary = '200 ms requested polling plus nvidia-smi overhead; GPU memory is whole-device including display; free volume includes other writers; persistent bytes and scratch reservations are separately recorded by the product'
