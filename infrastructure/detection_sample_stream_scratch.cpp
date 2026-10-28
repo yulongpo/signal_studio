@@ -168,6 +168,7 @@ bool exactQuantiles(Scratch& files, const Context& c, const Plan& p,
     std::array<std::uint64_t, 4> ranks{};
     for (std::size_t i = 0; i < ranks.size(); ++i) ranks[i] = targets[i].rank;
     for (SampleIndex first = 0; first < p.count;) {
+      if (!cancelled(c, f, "radix")) return false;
       const auto count = static_cast<std::size_t>(std::min<SampleIndex>(p.outputBlockSamples, p.count - first));
       if (!files.read(files.smooth, first, std::span<float>(values).subspan(static_cast<std::size_t>(first), count), f))
         return false;

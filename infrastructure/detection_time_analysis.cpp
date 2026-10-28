@@ -199,6 +199,7 @@ bool readSpectrumBody(FixedDetectionSource& source, const FrequencyTrack& track,
   bool useSpool = source.frequencySpoolCovers(first, end);
   if (useSpool) {
     for (auto frameIndex = first; frameIndex < end; ++frameIndex) {
+      if (stopped(cancel, error)) return false;
       std::vector<float> density;
       TimeRange slot;
       bool ioFailure = false;
@@ -225,6 +226,7 @@ bool readSpectrumBody(FixedDetectionSource& source, const FrequencyTrack& track,
     if (useSpool) return true;
   }
   for (auto frameIndex = first; frameIndex < end; ++frameIndex) {
+    if (stopped(cancel, error)) return false;
     DetectionSpectrumFrame frame;
     if (!source.readFrame(frameIndex, frame, error, cancel)) return false;
     spectrum.timeSlots.push_back(frame.mapping.slotSamples);
@@ -278,6 +280,7 @@ bool readEnergy(const FileMetadata& metadata, const FrequencyTrack& track,
     return false;
   std::vector<std::complex<float>> samples(static_cast<std::size_t>(count));
   for (auto sample = begin; sample < end;) {
+    if (stopped(cancel, error)) return false;
     std::vector<std::complex<float>> block;
     const auto after = sample + std::min(kReadSamples, end - sample);
     if (!reader.read({sample, after}, block, cancel, &error)) return false;
@@ -445,7 +448,12 @@ bool applyDetectionTimeAnalysis(
     const std::function<void(std::size_t, std::size_t)>& progress,
     const QString& privateScratchRoot) {
   auto refined = publication;
-  const auto working = request.workingSetBudgetBytes * 3 / 4;
+  std::uint64_t tripled = 0;
+  if (!checkedMulU64(request.workingSetBudgetBytes, 3, tripled)) {
+    error = "resource.arithmetic-overflow phase=time-refine requested=0 available=0";
+    return false;
+  }
+  const auto working = tripled / 4;
   std::uint64_t totalCells = 0;
   std::size_t completed = 0;
   if (progress) progress(0, refined.annotations.size());
@@ -468,8 +476,19 @@ bool applyDetectionTimeAnalysis(
     input.publishBounds = request.requestedRange;
     DetectionRefinementOptions options;
     // Cell count, not bytes. An 8 GiB working set (6 GiB working) must not pass 512 Mi cells.
-    options.workingCellBudget = static_cast<std::size_t>(
-        std::min<std::uint64_t>(working / 12, kSampleWorkUnitCellCeiling));
+    const auto rawCells = working / 12;
+    if (rawCells > kSampleWorkUnitCellCeiling && working) {
+      const auto probed = rawCells > std::numeric_limits<std::size_t>::max()
+          ? std::numeric_limits<std::size_t>::max() : static_cast<std::size_t>(rawCells);
+      const auto decision = decideSamplePhaseBudget(working, 0, probed);
+      // granted is bytes. The ceiling rejection publishes the cell cap in available.
+      options.workingCellBudget = decision.kind == ResourceDecisionKind::Rejected &&
+              decision.errorCode == "sample.work-unit-ceiling"
+          ? static_cast<std::size_t>(decision.available)
+          : static_cast<std::size_t>(std::min<std::uint64_t>(rawCells, kSampleWorkUnitCellCeiling));
+    } else {
+      options.workingCellBudget = static_cast<std::size_t>(rawCells);
+    }
     options.cancelled = cancel;
     QJsonObject trace;
     QJsonObject streamEvidence;
