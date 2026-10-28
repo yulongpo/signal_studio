@@ -227,6 +227,33 @@ DetectionResourceOptionsDialog::DetectionResourceOptionsDialog(
           .arg(QString::number(workingSetDefaultBytes))
           .arg(memoryDefaultMiB));
   form->addRow("工作集说明", authorizationNote);
+  const auto snapshot = captureRuntimeResourceSnapshot(path, nullptr);
+  auto* snapshotNote = new QLabel(this);
+  snapshotNote->setObjectName("runtimeResourceSnapshotNote");
+  snapshotNote->setWordWrap(true);
+  snapshotNote->setFocusPolicy(Qt::NoFocus);
+  snapshotNote->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  const auto bytesText = [](std::uint64_t value) {
+    return QString::number(static_cast<qulonglong>(value));
+  };
+  const QString ramText =
+      snapshot.ram.status == ResourceProbeStatus::Probed
+          ? QString("物理内存可用 %1 字节，总计 %2 字节。")
+                .arg(bytesText(snapshot.ram.availableBytes),
+                     bytesText(snapshot.ram.totalBytes))
+          : QString("物理内存探测失败（%1）。不把默认工作集当成实测可用内存。")
+                .arg(QString::fromStdString(snapshot.ram.detail));
+  const QString volumeText =
+      snapshot.volume.status == ResourceProbeStatus::Probed
+          ? QString("本卷 %1 剩余 %2 字节。")
+                .arg(QString::fromStdString(snapshot.volume.volumeKey),
+                     bytesText(snapshot.volume.availableBytes))
+          : QString("本卷剩余空间探测失败（%1）。")
+                .arg(QString::fromStdString(snapshot.volume.detail));
+  snapshotNote->setText(
+      ramText + volumeText +
+      "显存未在此窗口探测，不记为可用。这次显示不写入工程，也不改变预算。");
+  form->addRow("运行时快照", snapshotNote);
   form->addRow("Sample 临时盘", scratchGiB_);
   form->addRow("原始输出配额", rawHeadGiB_);
   layout->addLayout(form);

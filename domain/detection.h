@@ -133,6 +133,9 @@ inline constexpr std::size_t kSampleWorkUnitCellCeiling = 256u * 1024u * 1024u;
 // On success writes a * b to out and returns true. On overflow writes 0 and
 // returns false. The product is never wrapped.
 bool checkedMulU64(std::uint64_t a, std::uint64_t b, std::uint64_t& out);
+// On success writes a + b to out and returns true. On overflow writes 0 and
+// returns false. The sum is never wrapped.
+bool checkedAddU64(std::uint64_t a, std::uint64_t b, std::uint64_t& out);
 
 // Sample-phase budget. phase is "time-refine". An authorization above the
 // contiguous cap is Accepted or Adapted, never Rejected only because it is large.
@@ -144,9 +147,191 @@ bool checkedMulU64(std::uint64_t a, std::uint64_t b, std::uint64_t& out);
 // returns Adapted, granted = the cap, and tells the planner to chunk. That
 // adaptation is not a hard failure of the whole job. Callers must branch on
 // kind; sample.grant-exceeds-contiguous-cap is returned only for Adapted.
+// This signature and its decision order are the shared Sample decision.
+// Cell counts stay on this function. Do not pass them to the byte helpers.
 ResourceDecision decideSamplePhaseBudget(std::uint64_t authorizedRamBytes,
                                          std::uint64_t estimatedChunkResidentBytes,
                                          std::size_t plannedCells);
+
+// "cells" only when resource == "work-unit". Every other resource is "bytes".
+const char* resourceDecisionUnit(const ResourceDecision& decision);
+
+// One detection result shard file. The sum of shards may be larger.
+// Equal to this cap is legal. One byte over is a format rejection.
+inline constexpr std::uint64_t kDetectionShardFileCapBytes = 8ULL * 1024 * 1024;
+
+// Runtime probes. They are not DetectionRequest fields and are not project JSON.
+// A failed or skipped probe stores zeros. It does not substitute the 8 GiB
+// working-set target or a guessed VRAM size.
+enum class ResourceProbeStatus { Probed, Unavailable, NotRequested };
+
+struct ResourceByteProbe {
+  ResourceProbeStatus status = ResourceProbeStatus::NotRequested;
+  std::uint64_t totalBytes = 0;
+  std::uint64_t availableBytes = 0;
+  std::string detail;
+};
+
+struct VolumeResourceProbe {
+  ResourceProbeStatus status = ResourceProbeStatus::Unavailable;
+  std::string path;
+  std::string volumeKey;
+  std::uint64_t availableBytes = 0;
+  std::uint64_t totalBytes = 0;
+  std::string detail;
+};
+
+// F or D fills this from cudaMemGetInfo. This component does not call CUDA.
+struct VramProbeInput {
+  bool probed = false;
+  std::uint64_t totalBytes = 0;
+  std::uint64_t availableBytes = 0;
+  std::string deviceIdentity;
+  std::string detail;
+};
+
+struct RuntimeResourceSnapshot {
+  ResourceByteProbe ram;
+  ResourceByteProbe vram;
+  VolumeResourceProbe volume;
+  // Parent-process steady_clock nanoseconds at capture. Not a worker clock.
+  std::uint64_t capturedAtSteadyNs = 0;
+};
+
+// volumePath empty uses the current directory. vram null leaves VRAM
+// NotRequested with both byte fields at 0.
+RuntimeResourceSnapshot captureRuntimeResourceSnapshot(
+    const std::string& volumePath, const VramProbeInput* vram = nullptr);
+
+// Byte resident check for RAM or VRAM. Sample geometry stays on
+// decideSamplePhaseBudget. resource must be "ram" or "vram".
+// Accepted grants the request. A shortfall grants 0 and does not shrink it.
+ResourceDecision decideResidentAgainstProbe(const char* phase,
+                                            const char* resource,
+                                            std::uint64_t requestedBytes,
+                                            const ResourceByteProbe& probe,
+                                            std::uint64_t reserveBytes);
+
+// Raw-head preflight arithmetic. Does not modify DetectionRequest and does not
+// replace applyDetectionEvidencePreflight's stored sentences.
+// legacyCombined: applies is false and the existing combined branch stays in D.
+// retain off and quota 0: Accepted, requested 0, granted 0, even if the
+// untaken window product would be 2044 * 196608 or would overflow.
+// retain off and quota > 0: the explicit quota is the limit. The 2 GiB cap
+// matches validateDetectionRequest. Volume is not a gate on this branch.
+// retain on: resource.raw-head-shortfall for quota, unknown volume, or volume.
+// Overflow is resource.arithmetic-overflow and is never reported as a shortfall.
+struct RawHeadDiskInput {
+  bool legacyCombined = false;
+  bool retainRawModelOutput = false;
+  std::uint64_t windows = 0;
+  std::uint64_t bytesPerWindow = 0;
+  std::uint64_t explicitQuotaBytes = 0;
+  std::uint64_t volumeAvailableBytes = 0;
+  bool volumeKnown = false;
+};
+
+struct RawHeadDiskAssessment {
+  bool applies = false;
+  bool overflow = false;
+  std::uint64_t requiredBytes = 0;
+  ResourceDecision decision;
+};
+
+RawHeadDiskAssessment assessRawHeadDisk(const RawHeadDiskInput& input);
+
+// Planned peaks for one run. Scratch is live only in phase "refine" and is
+// reclaimed before publication. Checkpoint's atomic pair (new payload plus
+// the file still on disk) is live only in phase "checkpoint"; later phases
+// keep one committed file of checkpointBytes. Project QSaveFile peak
+// (payload + existing, or payload alone when the project is new) is live
+// only in phase "publishing". Retained raw heads and result shards stay
+// across checkpoint, refine, and publishing. Publication shards are added
+// only in publishing. Same-volume lines in one phase are summed. A different
+// scratchVolumeKey is a separate peak.
+struct DetectionDiskUsage {
+  std::string durableVolumeKey;
+  std::string scratchVolumeKey;
+  bool storeRawHead = false;
+  std::uint64_t rawHeadBytes = 0;
+  std::uint64_t scratchBytes = 0;
+  std::uint64_t resultShardBytes = 0;
+  std::uint64_t largestResultShardBytes = 0;
+  std::uint64_t publicationShardBytes = 0;
+  std::uint64_t largestPublicationShardBytes = 0;
+  std::uint64_t checkpointBytes = 0;
+  std::uint64_t checkpointExistingBytes = 0;
+  std::uint64_t projectBytes = 0;
+  std::uint64_t projectExistingBytes = 0;
+};
+
+enum class DiskLedgerKind : std::uint8_t {
+  RawHead,
+  Scratch,
+  Shards,
+  Checkpoint,
+  ProjectAtomic
+};
+
+struct DiskLedgerLine {
+  DiskLedgerKind kind = DiskLedgerKind::Shards;
+  std::string phase;
+  std::string volumeKey;
+  std::uint64_t payloadBytes = 0;
+  // Added to the payload only while atomicReplace is set. That is the
+  // predecessor QSaveFile keeps until commit. Zero means there is no old file.
+  std::uint64_t existingBytes = 0;
+  bool atomicReplace = false;
+  // For Shards, the largest single file. Zero means the caller did not split
+  // the payload; a payload above the 8 MiB cap is then a format rejection.
+  std::uint64_t largestUnitBytes = 0;
+};
+
+struct DiskVolumeBudget {
+  std::string volumeKey;
+  bool known = false;
+  std::uint64_t availableBytes = 0;
+};
+
+struct DiskLedgerEvaluation {
+  ResourceDecision decision;
+  std::vector<ResourceDecision> perVolume;
+  std::string peakPhase;
+  std::string peakVolumeKey;
+  std::uint64_t peakBytes = 0;
+};
+
+// Copies required bytes only after an applicable Accepted assessment.
+// A rejection leaves usage unchanged and returns false.
+bool applyAcceptedRawHeadToUsage(const RawHeadDiskAssessment& assessment,
+                                 DetectionDiskUsage& usage);
+
+// Appends the checkpoint, refine, and publishing lines. Does not clear lines.
+void appendPhaseOverlapDiskLines(const DetectionDiskUsage& usage,
+                                 std::vector<DiskLedgerLine>& lines);
+
+// reserveBytes is held back on every volume. Equal to usable space is
+// Accepted. requested is the simultaneous peak. granted is that peak, or 0
+// when rejected. A raw head that itself exceeds usable space is
+// resource.raw-head-shortfall. Any other overage is resource.disk-shortfall.
+// Shard files above 8 MiB are resource.shard-boundary and resource "format".
+// Bytes and cells are never compared here.
+DiskLedgerEvaluation evaluatePhaseOverlapDiskLedger(
+    std::span<const DiskLedgerLine> lines,
+    std::span<const DiskVolumeBudget> volumes, std::uint64_t reserveBytes);
+
+DiskVolumeBudget diskBudgetFromVolumeProbe(const VolumeResourceProbe& probe);
+
+// Optional performanceJson extension. Does not change the profile schema.
+// Byte counts are decimal strings. On failure, merged is left unchanged.
+// An empty performanceJson becomes a schema object plus "resources".
+// D's performanceSnapshot rebuilds performanceJson and drops unknown keys
+// until it inserts this object; this function does not edit detection_task.
+bool mergeRuntimeResourceDiagnostics(const std::string& performanceJson,
+                                     const RuntimeResourceSnapshot& snapshot,
+                                     const DiskLedgerEvaluation* ledger,
+                                     const ResourceDecision* sampleDecision,
+                                     std::string& merged, std::string& error);
 
 // Empty path uses the current directory. A missing volume leaves the disk
 // target in place so a default can still be formed.
