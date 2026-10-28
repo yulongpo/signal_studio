@@ -4,19 +4,28 @@
 // memoryGrantBytes > 1 GiB with "Invalid sample context/configuration/budgets".
 // Do not weaken that assertion to match the bug.
 #include <QCoreApplication>
+#include <QFile>
 #include <QJsonObject>
 #include <QScopeGuard>
 #include <QString>
+#include <QTemporaryDir>
 
 #include <cstdint>
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 #include <string>
 
+#include "application/detection_result_service.h"
+#include "infrastructure/annotation_json.h"
 #include "infrastructure/detection_model_backend.h"
+#include "infrastructure/detection_projection.h"
 #include "infrastructure/detection_sample_stream.h"
 #include "infrastructure/detection_source.h"
+#include "infrastructure/detection_store.h"
 #include "infrastructure/detection_task.h"
+#include "infrastructure/project_file.h"
+#include "infrastructure/source_loader.h"
 
 using namespace signalstudio;
 namespace ss = signalstudio::sample_stream;
@@ -260,6 +269,157 @@ void testR12() {
              legacySet.supplementalHash.size() == 64,
          "legacyCombinedEvidence keeps the same supplemental evidence as a raw-head budget");
 }
+
+void requireFixture(bool ok, const QString& why) {
+  if (!ok) throw std::runtime_error(why.toStdString());
+}
+
+// Drives replaceCurrentDetection. The two Chinese prefixes and the
+// encodeSourceSet / encodeAnnotation comparison stay in production code.
+void testPublicationRejectPrefixes() {
+  constexpr std::uint64_t generation = 7;
+  QTemporaryDir temp;
+  requireFixture(temp.isValid(), "Temporary directory unavailable");
+  const auto source = temp.filePath("file-a.iq");
+  QFile iq(source);
+  requireFixture(iq.open(QIODevice::WriteOnly), "IQ fixture open failed");
+  QByteArray bytes(32768 * 4, '\0');
+  for (qsizetype i = 0; i < bytes.size(); ++i)
+    bytes[i] = static_cast<char>((i * 13 + 7) & 0xff);
+  requireFixture(iq.write(bytes) == bytes.size() && iq.flush(), "IQ fixture write failed");
+  iq.close();
+
+  Project project;
+  FileState file;
+  file.metadata = {"file-a", "file-a.iq", source.toStdString(), 1e6, 100e6, 32768, false};
+  file.metadata.availability = {32768, LoadStatus::Ready, 1,
+                                iqSourceFingerprint(source).toStdString(), {}};
+  file.view = fullRange(file.metadata);
+  file.currentDetectionSlots.emplace();
+  project.files.push_back(std::move(file));
+  project.activeFileId = "file-a";
+  const auto path = temp.filePath("publication-prefix.ssproj");
+  QString error;
+  requireFixture(ProjectFileCodec::save(path, project, error), "Save: " + error);
+
+  DetectionRun run;
+  auto metadata = project.files[0].metadata;
+  metadata.sampleFormat.selectedChannel = 0;
+  run.request.runId = "ss-de-rpo-publication-prefix";
+  run.request.profile = *findDetectionProfile("scn-max-psd-v1");
+  run.request.profile.fftSize = 2048;
+  run.request.profile.modelFrames = run.request.profile.modelHopFrames = 1;
+  run.request.parameters.minHits = 1;
+  run.request.parameters.mergeFrequencyHz = 0;
+  run.request.sourceIdentity = annotationSourceIdentity(metadata, generation);
+  const TimeRange time{0, 32768};
+  run.request.requestedRange = {time, {99.6e6, 100.4e6}};
+  run.request.contextRange = fullRange(metadata);
+  run.request.rangeOrigin = "whole-file";
+  run.lifecycle = DetectionLifecycle::Running;
+  run.startedAtMilliseconds = 100;
+  run.readFrames = run.eligibleWindows = run.completedWindows = 1;
+  run.coverage = {{DetectionCoverageKind::Read, run.request.contextRange, "controlled fixture"},
+                  {DetectionCoverageKind::Eligible, run.request.requestedRange, ""},
+                  {DetectionCoverageKind::Completed, run.request.requestedRange, ""}};
+  const auto root = QString::fromStdString(project.assetDirectory);
+  DetectionPublication empty;
+  requireFixture(recoverDetectionPublication(root, run, empty, error),
+                 "Empty projection: " + error);
+  FrequencyTrack track;
+  track.seedId = "controlled-track";
+  track.runId = run.request.runId;
+  track.fileId = "file-a";
+  track.frequency = track.originalFrequency = track.originalFrequencyEnvelope = {99.95e6, 100.05e6};
+  track.nominalSupport = track.actualSupport = time;
+  track.scoreMean = track.scoreMax = .9;
+  track.hits = track.windowDenominator = 1;
+  track.windowCoverage = 1;
+  track.windows.push_back({"0", 0, .9, time, time, {{track.frequency, 900, 1100, .9, 250}}});
+  DetectionPublication publication;
+  requireFixture(projectFrequencyTracks(run.request, empty.sourceSet, {track},
+                                        16 * 1024 * 1024, publication, error),
+                 "Projection: " + error);
+  auto records = encodeDetectionPublication(publication);
+  records.append(QJsonObject{{"kind", "frequency-publication-end-v1"},
+                             {"count", QString::number(publication.annotations.size())}});
+  requireFixture(appendDetectionChunk(root, run, records, {}, error), "Chunk: " + error);
+  run.lifecycle = DetectionLifecycle::Completed;
+  run.computationPhase = "completed";
+  run.finishedAtMilliseconds = 101;
+  requireFixture(writeDetectionRun(root, run, error), "Complete manifest: " + error);
+  requireFixture(recoverDetectionPublication(root, run, publication, error),
+                 "Replay: " + error);
+  requireFixture(publication.annotations.size() == 1 && !publication.sourceSet.id.empty(),
+                 "Fixture publication must contain one annotation and a source set id");
+
+  DetectionResultTicket ticket;
+  requireFixture(DetectionResultService::beginDetection(project, run.request, generation,
+                                                        ticket, error),
+                 "Begin: " + error);
+  project.files[0].detectionRuns.push_back(run);
+  requireFixture(ProjectFileCodec::save(path, project, error), "Save pending: " + error);
+  const auto sourceId = QString::fromStdString(publication.sourceSet.id);
+  const auto annotationId = QString::fromStdString(publication.annotations.front().id);
+  requireFixture(!sourceId.isEmpty() && !annotationId.isEmpty() &&
+                     !sourceId.contains(QLatin1Char(' ')) &&
+                     !annotationId.contains(QLatin1Char(' ')),
+                 "Fixture ids must be non-empty and free of spaces so the log token matches");
+
+  const QString countPrefix =
+      QStringLiteral("持久检测来源/对象数与 publication 不同");
+  const QString objectPrefix = QStringLiteral("持久检测对象与 publication 不同");
+  AnnotationService annotations;
+
+  auto counted = publication;
+  auto extra = counted.annotations.front();
+  extra.id += "-x";
+  requireFixture(extra.id.size() <= 128 && extra.id != counted.annotations.front().id,
+                 "Extra annotation id is not a valid distinct id");
+  counted.annotations.push_back(std::move(extra));
+  const auto countResult = DetectionResultService::replaceCurrentDetection(
+      project, annotations, ticket, generation, run, counted, path, {});
+  const auto* slotAfterCount = currentDetectionSlot(project.files[0], 0);
+  const bool countPrefixOk = !countResult.committed && countResult.error.startsWith(countPrefix);
+  const bool countSuffixOk =
+      countResult.error.contains(QStringLiteral(" recoveredAnnotations=1")) &&
+      countResult.error.contains(QStringLiteral(" publicationAnnotations=2")) &&
+      countResult.error.contains(QStringLiteral(" recoveredSourceSetId=") + sourceId) &&
+      countResult.error.contains(QStringLiteral(" publicationSourceSetId=") + sourceId);
+  report("publication-count-prefix",
+         countPrefixOk && countSuffixOk && slotAfterCount &&
+             slotAfterCount->pendingRunId == run.request.runId &&
+             slotAfterCount->committedRunId.empty() &&
+             !countResult.error.contains(QStringLiteral("firstDifferingAnnotationIndex=")),
+         std::string("count mismatch must start with the source/count prefix and name "
+                     "both counts and both source set ids. error=") +
+             countResult.error.toStdString());
+
+  auto changed = publication;
+  changed.annotations.front().note = "ss-de-rpo-object-mismatch";
+  requireFixture(encodeAnnotation(changed.annotations.front()) !=
+                     encodeAnnotation(publication.annotations.front()),
+                 "Note change did not change encodeAnnotation");
+  const auto objectResult = DetectionResultService::replaceCurrentDetection(
+      project, annotations, ticket, generation, run, changed, path, {});
+  const auto* slotAfterObject = currentDetectionSlot(project.files[0], 0);
+  const bool objectPrefixOk =
+      !objectResult.committed && objectResult.error.startsWith(objectPrefix);
+  const bool objectSuffixOk =
+      objectResult.error.contains(QStringLiteral(" recoveredAnnotations=1")) &&
+      objectResult.error.contains(QStringLiteral(" publicationAnnotations=1")) &&
+      objectResult.error.contains(QStringLiteral(" recoveredSourceSetId=") + sourceId) &&
+      objectResult.error.contains(QStringLiteral(" publicationSourceSetId=") + sourceId) &&
+      objectResult.error.contains(QStringLiteral(" firstDifferingAnnotationIndex=0")) &&
+      objectResult.error.contains(QStringLiteral(" annotationId=") + annotationId);
+  report("publication-object-prefix",
+         objectPrefixOk && objectSuffixOk && slotAfterObject &&
+             slotAfterObject->pendingRunId == run.request.runId &&
+             slotAfterObject->committedRunId.empty(),
+         std::string("same-count annotation mismatch must start with the object prefix "
+                     "and name counts, source set ids, index, and annotation id. error=") +
+             objectResult.error.toStdString());
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -270,6 +430,7 @@ int main(int argc, char** argv) {
     testRawHeadPreflight();
     testBatchSelector();
     testR12();
+    testPublicationRejectPrefixes();
   } catch (const std::exception& error) {
     std::cout << "FAIL uncaught " << error.what() << '\n';
     return 1;
