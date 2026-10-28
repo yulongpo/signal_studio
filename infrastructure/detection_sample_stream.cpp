@@ -39,18 +39,115 @@ std::uint64_t largestLeaf(std::uint64_t n) {
   }
   return 1;
 }
-QString timeRefineGrantDetail(std::uint64_t requested,std::uint64_t available) {
-  return QString("phase=time-refine requested=%1 available=%2")
-      .arg(static_cast<qulonglong>(requested)).arg(static_cast<qulonglong>(available));
+bool checkedAddU64(std::uint64_t a, std::uint64_t b, std::uint64_t& out) {
+  if (b > std::numeric_limits<std::uint64_t>::max() - a) { out = 0; return false; }
+  out = a + b; return true;
+}
+bool arithmeticOverflow(Failure& f, const char* stage) {
+  return fail(f, ErrorCode::InvalidInput, stage,
+      "resource.arithmetic-overflow phase=time-refine requested=0 available=0");
+}
+QString budgetFailureDetail(const ResourceDecision& decision) {
+  const auto phase = decision.phase.empty() ? std::string("time-refine") : decision.phase;
+  return QString("phase=%1 requested=%2 available=%3 code=%4")
+      .arg(QString::fromStdString(phase))
+      .arg(static_cast<qulonglong>(decision.requested))
+      .arg(static_cast<qulonglong>(decision.available))
+      .arg(QString::fromStdString(decision.errorCode));
+}
+bool fixedGrantBytes(const Runtime& rt, std::uint64_t& out) {
+  std::uint64_t sum = 0;
+  if (!checkedAddU64(rt.readerResidentReserveBytes, rt.resultByteGrant, sum)) return false;
+  return checkedAddU64(sum, 4 * MiB, out);
+}
+// Grant-sized products that the long-double estimate would otherwise round.
+bool legacyTermsFit(const Runtime& rt, SampleIndex count) {
+  std::uint64_t eight = 0, withReader = 0, doubled = 0, fixed = 0, segments = 0;
+  if (!checkedMulU64(8, count, eight) ||
+      !checkedAddU64(eight, rt.readerResidentReserveBytes, withReader) ||
+      !checkedMulU64(2, rt.resultByteGrant, doubled) ||
+      !checkedMulU64(32, annotationSegmentBudget, segments) ||
+      !fixedGrantBytes(rt, fixed))
+    return false;
+  return true;
+}
+enum class ChunkBuild { Ok, Geometry, Overflow };
+struct ChunkEstimate {
+  std::uint32_t block = 0, fftSamples = 0;
+  std::uint64_t contiguousBytes = 0, residentBytes = 0;
+};
+ChunkBuild streamingChunk(std::uint32_t block, std::uint32_t radius, std::uint64_t fixed,
+                          std::uint32_t maxFft, ChunkEstimate& out) {
+  const auto span = block + 2 * radius;
+  if (span < block) return ChunkBuild::Geometry;
+  std::uint32_t fft = 1;
+  while (fft < span) {
+    if (maxFft < 2 || fft > maxFft / 2) return ChunkBuild::Geometry;
+    fft *= 2;
+  }
+  std::uint64_t fftTerm = 0, radiusTerm = 0, blockTerm = 0, variable = 0, resident = 0;
+  // Same live set as the previous long-double formula:
+  // 32*fft + 16*(2*radius+block) + 16*block + fixed.
+  if (!checkedMulU64(32, fft, fftTerm) || !checkedMulU64(32, radius, radiusTerm) ||
+      !checkedMulU64(32, block, blockTerm) ||
+      !checkedAddU64(fftTerm, radiusTerm, variable) ||
+      !checkedAddU64(variable, blockTerm, variable) ||
+      !checkedAddU64(variable, fixed, resident))
+    return ChunkBuild::Overflow;
+  out.block = block; out.fftSamples = fft; out.contiguousBytes = variable; out.residentBytes = resident;
+  return ChunkBuild::Ok;
+}
+// Adapted means the live set is inside the grant but above the contiguous cap.
+// Streaming may keep it when the FFT/block piece itself is within the granted cap.
+bool chunkFits(const ResourceDecision& decision, const ChunkEstimate& chunk) {
+  if (decision.kind == ResourceDecisionKind::Accepted) return true;
+  return decision.kind == ResourceDecisionKind::Adapted &&
+      chunk.contiguousBytes <= decision.granted &&
+      chunk.residentBytes <= decision.available;
+}
+int classifyStreamingBlock(std::uint32_t block, std::uint32_t radius, std::uint64_t fixed,
+                           std::uint32_t maxFft, std::uint64_t grant, ChunkEstimate& chunk,
+                           ResourceDecision& decision) {
+  const auto built = streamingChunk(block, radius, fixed, maxFft, chunk);
+  if (built == ChunkBuild::Overflow) return -1;
+  if (built != ChunkBuild::Ok) return -2;
+  decision = decideSamplePhaseBudget(grant, chunk.residentBytes, block);
+  return chunkFits(decision, chunk) ? 1 : 0;
+}
+bool phaseBudgetAllows(const Runtime& rt, std::uint64_t resident, std::size_t cells,
+                       bool allowAdaptedChunk, Failure& f, const char* stage) {
+  const auto decision = decideSamplePhaseBudget(rt.memoryGrantBytes, resident, cells);
+  if (decision.kind == ResourceDecisionKind::Accepted) return true;
+  if (allowAdaptedChunk && decision.kind == ResourceDecisionKind::Adapted) {
+    std::uint64_t fixed = 0;
+    if (!fixedGrantBytes(rt, fixed)) return arithmeticOverflow(f, stage);
+    if (resident >= fixed && resident - fixed <= decision.granted) return true;
+  }
+  return fail(f, ErrorCode::ResourceLimit, stage, budgetFailureDetail(decision));
 }
 bool contextValid(const Context& c, const Config& cfg, const Runtime& rt, Failure& f) {
   const auto& i=c.input; const auto& o=c.options; const auto& p=c.parameters;
   // Cell ceiling is a work-unit bound. A grant above 1 GiB is a legal authorization.
-  if (!o.workingCellBudget || o.workingCellBudget>kSampleWorkUnitCellCeiling)
+  if (!o.workingCellBudget || o.workingCellBudget>kSampleWorkUnitCellCeiling) {
+    auto requested = static_cast<std::uint64_t>(o.workingCellBudget);
+    auto ceiling = static_cast<std::uint64_t>(kSampleWorkUnitCellCeiling);
+    if (o.workingCellBudget > kSampleWorkUnitCellCeiling && rt.memoryGrantBytes) {
+      const auto decision = decideSamplePhaseBudget(rt.memoryGrantBytes, 0, o.workingCellBudget);
+      if (decision.kind == ResourceDecisionKind::Rejected &&
+          decision.errorCode == "sample.work-unit-ceiling") {
+        requested = decision.requested; ceiling = decision.available;
+      }
+    }
     return fail(f,ErrorCode::InvalidInput,"plan",
         QString("sample.work-unit-ceiling requested=%1 ceiling=%2")
-            .arg(static_cast<qulonglong>(o.workingCellBudget))
-            .arg(static_cast<qulonglong>(kSampleWorkUnitCellCeiling)));
+            .arg(static_cast<qulonglong>(requested))
+            .arg(static_cast<qulonglong>(ceiling)));
+  }
+  if (!rt.memoryGrantBytes) {
+    const auto decision = decideSamplePhaseBudget(0, 0, o.workingCellBudget);
+    return fail(f, ErrorCode::InvalidInput, "plan",
+        budgetFailureDetail(decision) + " Invalid sample context/configuration/budgets");
+  }
   if (cfg.version!=1 || (cfg.mode!=Mode::LegacyExact && cfg.mode!=Mode::StreamingDiagnostic && cfg.mode!=Mode::AutoConservative) ||
       !viewValid(i.observation) || !viewValid(i.publishBounds) || !viewValid(clipped(i.observation,i.publishBounds)) ||
       i.candidateId.empty() || i.candidateId.size()>4096 || i.energy || i.spectrum || !i.fallbackActivity.empty() ||
@@ -68,7 +165,7 @@ bool contextValid(const Context& c, const Config& cfg, const Runtime& rt, Failur
       cfg.maximumFftSamples<2 || cfg.maximumFftSamples>(1U<<20) ||
       (cfg.maximumFftSamples&(cfg.maximumFftSamples-1)) || cfg.maximumFirRadius>262143 ||
       !std::isfinite(cfg.firTailAmplitudeBudget) || cfg.firTailAmplitudeBudget<=0 || cfg.firTailAmplitudeBudget>8e-5 ||
-      !rt.memoryGrantBytes || rt.resultByteGrant>rt.memoryGrantBytes ||
+      rt.resultByteGrant>rt.memoryGrantBytes ||
       rt.readerResidentReserveBytes>rt.memoryGrantBytes ||
       !rt.sourceReadBlockSamples || rt.sourceReadBlockSamples>131072)
     return fail(f,ErrorCode::InvalidInput,"plan","Invalid sample context/configuration/budgets");
@@ -357,6 +454,7 @@ bool produceFir(const Context& c,const Runtime& rt,detail::Scratch& files,Result
       }
     }
     for (std::size_t j=0;j<count;++j) {
+      if (!(j%4096) && !cancelled(c,f,"energy")) return false;
       if (!std::isfinite(power[j])) return fail(f,ErrorCode::Numerical,"energy","Nonfinite FIR power");
       out.statistics.maximumEnergy=std::max(out.statistics.maximumEnergy,static_cast<double>(power[j]));
     }
@@ -454,6 +552,9 @@ bool stream(const Context& c,const Config& cfg,const Runtime& rt,const Plan& p,
             const EnergySource* external,Result& out,Failure& f) {
   out.statistics.plan=p; detail::Scratch files(rt,out.statistics);
   const auto body=[&]() {
+    const char* budgetStage=external?"external-energy":"fir-plan";
+    if (!cancelled(c,f,budgetStage)) return false;
+    if (!phaseBudgetAllows(rt,p.estimatedResidentBytes,p.outputBlockSamples,true,f,budgetStage)) return false;
     if (!files.open(c,cfg,p,f)) return false;
     if (external) {
       std::vector<float> values(p.outputBlockSamples);
@@ -490,9 +591,12 @@ bool stream(const Context& c,const Config& cfg,const Runtime& rt,const Plan& p,
   return true;
 }
 bool legacy(const Context& c,const Runtime& rt,const Plan& p,Result& out,Failure& f) {
-  if (p.estimatedResidentBytes>rt.memoryGrantBytes)
-    return fail(f,ErrorCode::ResourceLimit,"legacy-plan",
-        timeRefineGrantDetail(p.estimatedResidentBytes,rt.memoryGrantBytes));
+  if (!cancelled(c,f,"legacy-plan")) return false;
+  const auto cells = p.count > std::numeric_limits<std::size_t>::max()
+      ? std::numeric_limits<std::size_t>::max() : static_cast<std::size_t>(p.count);
+  const auto decision = decideSamplePhaseBudget(rt.memoryGrantBytes, p.estimatedResidentBytes, cells);
+  if (decision.kind != ResourceDecisionKind::Accepted)
+    return fail(f, ErrorCode::ResourceLimit, "legacy-plan", budgetFailureDetail(decision));
   if (!p.legacyEligible) return fail(f,ErrorCode::ResourceLimit,"legacy-plan","LegacyExact working budget unavailable");
   out.statistics.plan=p;
   std::vector<Complex> iq(static_cast<std::size_t>(p.count));
@@ -514,7 +618,10 @@ bool legacy(const Context& c,const Runtime& rt,const Plan& p,Result& out,Failure
   if (!detectionBandEnergy(std::move(iq),c.input.sampleRateHz,c.relativeCenterHz,c.bandwidthHz,
                            power,rt.memoryGrantBytes,why,c.options.cancelled,observe))
     return cancelled(c,f,"legacy-energy") && fail(f,ErrorCode::Numerical,"legacy-energy",why);
-  for (const auto value:power) out.statistics.maximumEnergy=std::max(out.statistics.maximumEnergy,static_cast<double>(value));
+  for (std::size_t index=0;index<power.size();++index) {
+    if (!(index%4096) && !cancelled(c,f,"legacy-energy")) return false;
+    out.statistics.maximumEnergy=std::max(out.statistics.maximumEnergy,static_cast<double>(power[index]));
+  }
   // Trace/taps reproduce the ORIGINAL rolling order; no FIR statistics reused.
   std::vector<float> smoothed(p.outputBlockSamples);Trace trace(p.count);double running=0;
   for (SampleIndex first=0;first<p.count;) {
@@ -551,10 +658,94 @@ bool legacy(const Context& c,const Runtime& rt,const Plan& p,Result& out,Failure
   out.publicationEligible=out.refinement.status==RefineStatus::Applied;
   return true;
 }
+bool fitStreamingBlock(const Context& c,const Config& cfg,const Runtime& rt,Plan& p,
+                       std::uint64_t fixed,Failure& f) {
+  const auto preferred=p.outputBlockSamples;
+  ChunkEstimate chosen{}; ResourceDecision decision{};
+  const int preferredStatus=classifyStreamingBlock(
+      preferred,p.radius,fixed,cfg.maximumFftSamples,rt.memoryGrantBytes,chosen,decision);
+  if (preferredStatus==-1 && preferred<=1) return arithmeticOverflow(f,"fir-plan");
+  if (preferredStatus!=1) {
+    // A clamped empty block is not widened. Positive blocks may shrink.
+    if (!preferred) {
+      if (preferredStatus==-1) return arithmeticOverflow(f,"fir-plan");
+      if (preferredStatus==-2)
+        return fail(f,ErrorCode::ResourceLimit,"fir-plan","FIR kernel exceeds fixed FFT cap");
+      return fail(f,ErrorCode::ResourceLimit,"fir-plan",budgetFailureDetail(decision));
+    }
+    std::uint32_t best=0; ChunkEstimate bestChunk{};
+    if (preferred>1) {
+      std::uint32_t lo=1,hi=preferred-1;
+      while (lo<=hi) {
+        if (!cancelled(c,f,"plan")) return false;
+        const auto mid=lo+(hi-lo)/2;
+        ChunkEstimate candidate{}; ResourceDecision candidateDecision{};
+        const int status=classifyStreamingBlock(
+            mid,p.radius,fixed,cfg.maximumFftSamples,rt.memoryGrantBytes,candidate,candidateDecision);
+        if (status==1) {best=mid;bestChunk=candidate;decision=candidateDecision;lo=mid+1;}
+        else {if (status==0) decision=candidateDecision; hi=mid-1;}
+      }
+    }
+    if (!best) {
+      ChunkEstimate minimum{}; ResourceDecision minimumDecision{};
+      const int minimumStatus=classifyStreamingBlock(
+          1,p.radius,fixed,cfg.maximumFftSamples,rt.memoryGrantBytes,minimum,minimumDecision);
+      if (minimumStatus==-1) return arithmeticOverflow(f,"fir-plan");
+      if (minimumStatus==-2)
+        return fail(f,ErrorCode::ResourceLimit,"fir-plan","FIR kernel exceeds fixed FFT cap");
+      if (minimumStatus!=1)
+        return fail(f,ErrorCode::ResourceLimit,"fir-plan",budgetFailureDetail(minimumDecision));
+      chosen=minimum;
+    } else chosen=bestChunk;
+  }
+  p.outputBlockSamples=chosen.block; p.fftSamples=chosen.fftSamples;
+  p.estimatedResidentBytes=chosen.residentBytes; return true;
+}
+bool fitExternalBlock(const Context& c,const Runtime& rt,Plan& p,std::uint64_t fixed,Failure& f) {
+  const auto classify=[&](std::uint32_t block,ChunkEstimate& chunk,ResourceDecision& decision)->int {
+    std::uint64_t blockBytes=0,resident=0;
+    if (!checkedMulU64(32,block,blockBytes) || !checkedAddU64(fixed,blockBytes,resident)) return -1;
+    chunk.block=block; chunk.fftSamples=0; chunk.contiguousBytes=blockBytes; chunk.residentBytes=resident;
+    decision=decideSamplePhaseBudget(rt.memoryGrantBytes,resident,block);
+    return chunkFits(decision,chunk)?1:0;
+  };
+  const auto preferred=p.outputBlockSamples;
+  ChunkEstimate chosen{}; ResourceDecision decision{};
+  const int preferredStatus=classify(preferred,chosen,decision);
+  if (preferredStatus==-1 && preferred<=1) return arithmeticOverflow(f,"external-energy");
+  if (preferredStatus!=1) {
+    if (!preferred) {
+      if (preferredStatus==-1) return arithmeticOverflow(f,"external-energy");
+      return fail(f,ErrorCode::ResourceLimit,"external-energy",budgetFailureDetail(decision));
+    }
+    std::uint32_t best=0; ChunkEstimate bestChunk{};
+    if (preferred>1) {
+      std::uint32_t lo=1,hi=preferred-1;
+      while (lo<=hi) {
+        if (!cancelled(c,f,"external-energy")) return false;
+        const auto mid=lo+(hi-lo)/2;
+        ChunkEstimate candidate{}; ResourceDecision candidateDecision{};
+        const int status=classify(mid,candidate,candidateDecision);
+        if (status==1) {best=mid;bestChunk=candidate;lo=mid+1;}
+        else hi=mid-1;
+      }
+    }
+    if (!best) {
+      ChunkEstimate minimum{}; ResourceDecision minimumDecision{};
+      const int minimumStatus=classify(1,minimum,minimumDecision);
+      if (minimumStatus==-1) return arithmeticOverflow(f,"external-energy");
+      if (minimumStatus!=1)
+        return fail(f,ErrorCode::ResourceLimit,"external-energy",budgetFailureDetail(minimumDecision));
+      chosen=minimum;
+    } else chosen=bestChunk;
+  }
+  p.outputBlockSamples=chosen.block; p.estimatedResidentBytes=chosen.residentBytes; return true;
+}
 } // namespace
 
 bool makePlan(const Context& c,const Config& cfg,const Runtime& rt,Plan& output,Failure& f) {
-  f={}; if (!contextValid(c,cfg,rt,f)) return false;
+  f={}; if (!cancelled(c,f,"plan")) return false;
+  if (!contextValid(c,cfg,rt,f)) return false;
   Plan p;p.count=c.searchSamples.end-c.searchSamples.begin;
   p.continuous=c.input.windowCoverage>=.7;p.split=c.parameters.splitBursts&&!p.continuous;
   const double minOn=c.parameters.splitBursts?std::max(c.options.sampleMinimumRunSeconds,c.parameters.minOnSeconds):c.options.sampleMinimumRunSeconds;
@@ -562,12 +753,13 @@ bool makePlan(const Context& c,const Config& cfg,const Runtime& rt,Plan& output,
       !duration(minOn,c.input.sampleRateHz,2,p.minOnSamples) ||
       !duration(c.parameters.splitBursts?c.parameters.minOffSeconds:0,c.input.sampleRateHz,2,p.minOffSamples))
     return fail(f,ErrorCode::InvalidInput,"plan","Sample duration conversion overflow");
+  if (!cancelled(c,f,"plan")) return false;
   if (!c.parameters.splitBursts) p.minOffSamples=0;
   p.outputBlockSamples=static_cast<std::uint32_t>(std::min<std::uint64_t>({cfg.outputBlockSamples,p.count,c.options.workingCellBudget}));
   const auto leaf=largestLeaf(p.count);
   std::uint64_t convolution=0;
   if (leaf>13) {convolution=1;while(convolution<2*leaf-1) convolution*=2;}
-  const long double fixed=static_cast<long double>(rt.readerResidentReserveBytes)+rt.resultByteGrant+4*MiB;
+  if (!legacyTermsFit(rt,p.count)) return arithmeticOverflow(f,"plan");
   const long double fft=std::ceil(p.count*8.125L)+16.L*convolution+65536;
   // Decode buffers are gone before FFT/refinement; percentile scratch is gone
   // before activity vectors are built. Charge the largest LIVE phase instead
@@ -576,14 +768,22 @@ bool makePlan(const Context& c,const Config& cfg,const Runtime& rt,Plan& output,
   const long double exact=std::max({8.L*p.count+rt.readerResidentReserveBytes,fft,
       12.L*p.count+traceBytes,
       8.125L*p.count+traceBytes+2.L*rt.resultByteGrant+32.L*annotationSegmentBudget})+2*MiB;
+  if (!std::isfinite(exact) || exact<0 || exact>static_cast<long double>(std::numeric_limits<std::uint64_t>::max()))
+    return arithmeticOverflow(f,"plan");
   p.legacyResidentEstimateBytes=static_cast<std::uint64_t>(exact);
   const auto worstSegments=p.split?std::min<SampleIndex>(annotationSegmentBudget,p.count/(p.minOnSamples+1)+1):1;
   const auto segmentBytes=2*sizeof(Segment)+c.input.candidateId.size()+64;
+  const auto plannedCells=p.count>std::numeric_limits<std::size_t>::max()
+      ? std::numeric_limits<std::size_t>::max() : static_cast<std::size_t>(p.count);
+  const auto legacyDecision=decideSamplePhaseBudget(rt.memoryGrantBytes,p.legacyResidentEstimateBytes,plannedCells);
   // A multi-gig exact buffer stays ineligible even when the grant could cover it.
   // Streaming/Auto keeps the long path. FIR tail, quantile and precision guards are unchanged.
-  p.legacyEligible=exact<=rt.memoryGrantBytes && exact<=kSampleContiguousAllocationCapBytes &&
+  p.legacyEligible=legacyDecision.kind==ResourceDecisionKind::Accepted &&
+                    exact<=static_cast<long double>(rt.memoryGrantBytes) &&
+                    exact<=static_cast<long double>(kSampleContiguousAllocationCapBytes) &&
                     p.count<=c.options.workingCellBudget &&
                     p.count<=std::numeric_limits<std::size_t>::max() && worstSegments<=rt.resultByteGrant/segmentBytes;
+  if (!cancelled(c,f,"plan")) return false;
   if (cfg.mode==Mode::LegacyExact) {p.estimatedResidentBytes=p.legacyResidentEstimateBytes;output=p;return true;}
   const long double fs=c.input.sampleRateHz,taper=std::max(c.bandwidthHz/4,1.);
   if (c.bandwidthHz<c.input.sampleRateHz) {
@@ -600,16 +800,17 @@ bool makePlan(const Context& c,const Config& cfg,const Runtime& rt,Plan& output,
   if (p.taps>cfg.maximumFftSamples)
     return fail(f,ErrorCode::ResourceLimit,"fir-plan","FIR kernel exceeds fixed FFT cap");
   p.outputBlockSamples=std::min(p.outputBlockSamples,cfg.maximumFftSamples-p.taps+1);
-  p.fftSamples=1;while(p.fftSamples<p.outputBlockSamples+2*p.radius) p.fftSamples*=2;
-  p.scratchReservationBytes=8*p.count+8192;
-  const long double resident=32.L*p.fftSamples+16.L*(2*p.radius+p.outputBlockSamples)+
-      16.L*p.outputBlockSamples+fixed;
-  p.estimatedResidentBytes=static_cast<std::uint64_t>(resident);
-  if (p.estimatedResidentBytes>rt.memoryGrantBytes || resident>static_cast<long double>(rt.memoryGrantBytes))
-    return fail(f,ErrorCode::ResourceLimit,"fir-plan",
-        timeRefineGrantDetail(p.estimatedResidentBytes,rt.memoryGrantBytes));
+  if (!cancelled(c,f,"plan")) return false;
+  std::uint64_t fixedBytes=0,scratch=0;
+  if (!fixedGrantBytes(rt,fixedBytes) || !checkedMulU64(8,p.count,scratch) || !checkedAddU64(scratch,8192,scratch))
+    return arithmeticOverflow(f,"fir-plan");
+  p.scratchReservationBytes=scratch;
+  // Radius and tail stay at the values required by the quality budget.
+  // Only the FIR block shrinks, and only when the preferred block misses the grant.
+  if (!fitStreamingBlock(c,cfg,rt,p,fixedBytes,f)) return false;
   if (p.scratchReservationBytes>cfg.scratchBudgetBytes)
     return fail(f,ErrorCode::ResourceLimit,"fir-plan","Fixed Sample workspace or scratch quota exceeded");
+  if (!cancelled(c,f,"plan")) return false;
   output=p;return true;
 }
 
@@ -672,11 +873,11 @@ bool refineEnergyBlocks(const Context& c,const Config& cfg,const Runtime& rt,con
     return fail(f,ErrorCode::InvalidInput,"external-energy","Invalid exact EnergySource");
   Config base=cfg;base.mode=Mode::LegacyExact;
   Plan p;if (!makePlan(c,base,rt,p,f)) return false;
-  p.scratchReservationBytes=8*p.count+8192;
-  p.estimatedResidentBytes=rt.readerResidentReserveBytes+rt.resultByteGrant+4*MiB+32ULL*p.outputBlockSamples;
-  if (p.estimatedResidentBytes>rt.memoryGrantBytes)
-    return fail(f,ErrorCode::ResourceLimit,"external-energy",
-        timeRefineGrantDetail(p.estimatedResidentBytes,rt.memoryGrantBytes));
+  std::uint64_t scratch=0,fixed=0;
+  if (!checkedMulU64(8,p.count,scratch) || !checkedAddU64(scratch,8192,scratch) || !fixedGrantBytes(rt,fixed))
+    return arithmeticOverflow(f,"external-energy");
+  p.scratchReservationBytes=scratch;
+  if (!fitExternalBlock(c,rt,p,fixed,f)) return false;
   if (p.scratchReservationBytes>cfg.scratchBudgetBytes)
     return fail(f,ErrorCode::ResourceLimit,"external-energy","External Energy workspace/scratch budget exceeded");
   if (!verify(c,rt,f)) return false;

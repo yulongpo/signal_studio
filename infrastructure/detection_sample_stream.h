@@ -114,6 +114,10 @@ struct Result {
 };
 
 // Planning only: no IQ, FFT, scratch creation or source verification.
+// The plan calls decideSamplePhaseBudget. Streaming may lower outputBlockSamples
+// to the largest block that fits the grant; radius, tail budget and the requested
+// geometry stay unchanged. LegacyExact still returns an ineligible plan instead
+// of allocating. A cancellation callback aborts the plan.
 bool makePlan(const Context&, const Config&, const Runtime&, Plan&, Failure&);
 // Resident IQ/E/S/quantile vectors exist ONLY inside the eligible Legacy branch.
 // Streaming uses fixed K/C buffers + quota-owned E/S files + <=512 trace points.
