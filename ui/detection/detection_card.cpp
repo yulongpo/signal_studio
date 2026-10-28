@@ -1104,8 +1104,12 @@ void DetectionCard::setupStatus(QVBoxLayout* layout) {
   actions_->hide();
   connect(run_, &QPushButton::clicked, this, &DetectionCard::submit);
   connect(cancel_, &QPushButton::clicked, this, [this] {
-    if (const auto* run = focusedUnfinished())
+    if (const auto* run = focusedUnfinished()) {
       emit cancelRunRequested(text(run->request.runId));
+      return;
+    }
+    if (startLatchActive_ && !startLatchRunId_.empty())
+      emit cancelRunRequested(text(startLatchRunId_));
   });
   connect(viewRunning_, &QPushButton::clicked, this, [this] {
     const auto* run = unfinishedRun();
@@ -1223,6 +1227,7 @@ void DetectionCard::refreshSource() {
     inputPolicy_->setContext(key);
     contextKey_ = key;
     displayRunId_.clear();
+    ++statusGeneration_;
     requestedRoi_.reset();
     segmentAnnotationId_.clear();
     segmentRevisionId_.clear();
@@ -1641,6 +1646,8 @@ void DetectionCard::publishDiagnosticInputs(bool force) {
   }
   ++diagnosticGeneration_;
   if (!detailSectionExpanded()) return;
+  diagnosticStatusGeneration_.clear();
+  diagnosticStatusGeneration_.emplace(diagnosticGeneration_, statusGeneration_);
   ensureDiagnosticWorker();
   diagnosticWorker_->submit(diagnosticGeneration_, captureDiagnosticInput(),
                             QThread::currentThread());
@@ -1648,7 +1655,15 @@ void DetectionCard::publishDiagnosticInputs(bool force) {
 
 void DetectionCard::applyDiagnosticReport(std::uint64_t generation,
                                           DetectionDiagnosticReport report) {
+  const auto scheduled = diagnosticStatusGeneration_.find(generation);
+  const bool hadSchedule = scheduled != diagnosticStatusGeneration_.end();
+  const auto scheduledStatus = hadSchedule ? scheduled->second : 0;
+  if (hadSchedule) diagnosticStatusGeneration_.erase(scheduled);
   if (generation != diagnosticGeneration_ || !report.ranOffCallerThread) return;
+  // A report captured for an older source, or while a provisional start owns
+  // the card, must not unlock the button or replace the preparing text.
+  if (!hadSchedule || scheduledStatus != statusGeneration_ || startLatchActive_)
+    return;
   if (diagnostics_) diagnostics_->setText(report.diagnostics);
   if (!report.calculationDetails.isEmpty() && calculationDetails_) {
     calculationDetails_->setText(report.calculationDetails);
@@ -1672,6 +1687,7 @@ void DetectionCard::releaseStartLatchIfRunVisible() {
         // The persisted run now owns the button. A later terminal state can
         // enable it again. Rejection before save never inserts this id.
         startLatchActive_ = false;
+        ++statusGeneration_;
         return;
       }
 }
@@ -1703,8 +1719,10 @@ void DetectionCard::updateShortStatus() {
     preflight_->setToolTip(issue);
   else if (!diagnosticDetailReady_)
     preflight_->setToolTip(QStringLiteral("配置就绪 · 可运行"));
-  if (preparing && issue.isEmpty())
+  if (preparing) {
     preflight_->setText(detectionPhaseText("preparing"));
+    preflight_->setToolTip(QStringLiteral("启动已受理，正在准备检测"));
+  }
   if (preflight_->property("preflightOk").toBool() != issue.isEmpty()) {
     preflight_->setProperty("preflightOk", issue.isEmpty());
     refreshStyle(preflight_);
@@ -1724,13 +1742,19 @@ void DetectionCard::updateShortStatus() {
                     : (hasCommittedResult ? QStringLiteral("应用并重新检测")
                                           : QStringLiteral("开始检测")));
   run_->setToolTip(
-      "显式开始检测或重新检测。接受新检测会丢弃本文件、本 IQ 通道的上次正式结果，"
-      "失败或取消也不会恢复；其它文件和通道不受影响。"
+      "显式开始检测或重新检测。启动事务保存成功后，本文件、本 IQ 通道的上次正式结果被丢弃，"
+      "之后失败或取消也不恢复；其它文件和通道不受影响。"
       "修改参数、模型或引擎不会清除已提交结果。"
-      "保存前被拒绝的启动会恢复被临时隐藏的正式结果。");
-  cancel_->setEnabled(focusedRun &&
-                      focusedRun->lifecycle != DetectionLifecycle::Cancelling);
-  cancel_->setToolTip(focusedRun ? "取消运行 " + text(focusedRun->request.runId)
+      "保存前被拒绝或准备阶段取消会恢复被临时隐藏的正式结果。");
+  const bool provisionalCancel =
+      preparing && !startLatchRunId_.empty();
+  cancel_->setEnabled(provisionalCancel ||
+                      (focusedRun &&
+                       focusedRun->lifecycle != DetectionLifecycle::Cancelling));
+  cancel_->setToolTip(provisionalCancel
+                          ? "取消尚未保存的启动 " + text(startLatchRunId_) +
+                                "，上次正式结果会保留"
+                      : focusedRun ? "取消运行 " + text(focusedRun->request.runId)
                       : otherFile ? "其他文件的任务需先定位后再取消"
                                   : "没有未完成任务");
   if (otherRun_ && viewRunning_) {
@@ -2004,6 +2028,8 @@ void DetectionCard::noteStartRejected(const std::string& runId,
   }
   if (!startLatchActive_ || runId != startLatchRunId_) return;
   startLatchActive_ = false;
+  ++statusGeneration_;
+  planIssue_.clear();
   refreshStatus();
   if (preflight_ && !notice.isEmpty()) {
     preflight_->setText(notice);
@@ -2066,11 +2092,17 @@ void DetectionCard::submit() {
   displayRunId_ = value.runId;
   startLatchRunId_ = value.runId;
   startLatchActive_ = true;
+  ++statusGeneration_;
   startLatchSteadyNs_ = steadyClockNanoseconds();
   const auto preparing = detectionPhaseText("preparing");
   run_->setEnabled(false);
   run_->setText(preparing);
   if (preflight_) preflight_->setText(preparing);
+  if (cancel_) {
+    cancel_->setEnabled(true);
+    cancel_->setToolTip(QStringLiteral("取消尚未保存的启动 ") + text(value.runId) +
+                        QStringLiteral("，上次正式结果会保留"));
+  }
   emit requestSubmitted(value);
   // A synchronous rejection clears the latch and writes the real error.
   // Refreshing again here would replace that text with "配置就绪 · 可运行".

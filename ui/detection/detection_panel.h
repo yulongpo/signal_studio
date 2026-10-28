@@ -10,6 +10,7 @@
 #include <optional>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "application/session.h"
 #include "application/detection_result_service.h"
@@ -29,7 +30,14 @@ class DetectionPanel : public QWidget {
   DetectionPanel(Session&, std::function<QString()> projectDirectory,
                  QWidget* parent = nullptr);
   ~DetectionPanel() override;
-  bool startRequest(DetectionRequest, QString& error);
+  // clickSteadyNs is the card's t_click. Zero means the caller did not pass a
+  // stamp; main supplies DetectionCard::startLatchSteadyNs() when it wires this.
+  bool startRequest(DetectionRequest, QString& error,
+                    std::uint64_t clickSteadyNs = 0);
+  // Provisional starts are cancelled before any persisted run is consulted.
+  // Before the start transaction commits, the previous formal result stays.
+  // After that commit, this is the normal queued-run cancellation.
+  void cancelRun(const QString& runId);
   void configure(const DetectionRun* parentRun = nullptr);
   void openRunSource(const QString& runId);
   void deriveRun(const QString& runId);
@@ -57,6 +65,18 @@ class DetectionPanel : public QWidget {
   }
   void setPublicationGate(std::shared_ptr<std::atomic<bool>> gate) {
     publicationGate_ = std::move(gate);
+  }
+  // Test seam. While the gate is false the start worker waits after the
+  // manifest write and before publishPendingStart, and leaves on cancel.
+  void setStartCommitGate(std::shared_ptr<std::atomic<bool>> gate) {
+    startCommitGate_ = std::move(gate);
+  }
+  bool startCommitGateBlocked() const {
+    return startCommitGateBlocked_.load(std::memory_order_acquire);
+  }
+  // Test seam. After publishPendingStart succeeds, cancel the queued run.
+  void setCancelAfterStartCommitForTest(bool cancel) {
+    cancelAfterStartCommit_.store(cancel, std::memory_order_release);
   }
   bool projectCommitInProgress() const { return commitInFlight_; }
   bool publicationCommitInProgress() const {
@@ -87,6 +107,7 @@ class DetectionPanel : public QWidget {
 
  private:
   struct StartCommit;
+  struct StartToken;
   struct PublishCommit;
   void poll();
   void publishPolledPreview();
@@ -107,8 +128,11 @@ class DetectionPanel : public QWidget {
   void restoreFormalDisplay(const std::string& fileId);
   bool showingPreview() const;
   void cancelSelected();
-  void cancelRun(const QString& runId);
   void showSelectedDetails();
+  void noteRunMark(const std::string& runId, const char* name,
+                   std::uint64_t steadyNanoseconds);
+  void noteBusinessTerminal(const std::string& runId);
+  void noteObservedTerminals();
   void showRunDetails(const QString& runId);
   void discoverRecoverable();
   void scheduleGc(const QString& path = {});
@@ -170,6 +194,11 @@ class DetectionPanel : public QWidget {
   std::string committingRunId_;
   DetectionTransactionOptions publicationFault_;
   std::shared_ptr<std::atomic<bool>> publicationGate_;
+  std::shared_ptr<std::atomic<bool>> startCommitGate_;
+  std::atomic<bool> startCommitGateBlocked_{false};
+  std::atomic<bool> cancelAfterStartCommit_{false};
+  std::shared_ptr<StartToken> activeStart_;
+  std::unordered_set<std::string> businessTerminalNoted_;
   std::mutex commitThreadMutex_;
   std::vector<std::thread> commitThreads_;
   qint64 lastRejectMessageMs_ = 0;

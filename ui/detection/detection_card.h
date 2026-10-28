@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <array>
 #include <functional>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
@@ -163,6 +164,10 @@ class DetectionCard : public QWidget {
   bool startLatchActive_ = false;
   std::string startLatchRunId_;
   std::uint64_t startLatchSteadyNs_ = 0;
+  // Bumped when the provisional latch or the physical source context changes.
+  // A diagnostic scheduled under an older value cannot write the card.
+  std::uint64_t statusGeneration_ = 0;
+  std::map<std::uint64_t, std::uint64_t> diagnosticStatusGeneration_;
   AdaptiveValueEdit* hopMilliseconds_ = nullptr;
   AdaptiveValueEdit* noiseMargin_ = nullptr;
   AdaptiveValueEdit* edgeFraction_ = nullptr;
