@@ -37,6 +37,29 @@ bool fail(QString& error, const QString& message) {
   return false;
 }
 
+#ifdef SS_DETECTION_TENSORRT
+// Device bytes for one physical batch: input tensor plus three float heads.
+// False means the product does not fit in uint64.
+bool unitDeviceBytes(std::uint32_t bins, std::uint32_t frames,
+                     std::uint64_t& bytes) {
+  if (bins != 0 && static_cast<std::uint64_t>(frames) >
+                       std::numeric_limits<std::uint64_t>::max() / bins)
+    return false;
+  const auto inputFloats =
+      static_cast<std::uint64_t>(bins) * static_cast<std::uint64_t>(frames);
+  const auto headBins = static_cast<std::uint64_t>(bins / 4);
+  if (headBins > std::numeric_limits<std::uint64_t>::max() / 3) return false;
+  const auto headFloats = headBins * 3;
+  if (inputFloats > std::numeric_limits<std::uint64_t>::max() - headFloats)
+    return false;
+  const auto floats = inputFloats + headFloats;
+  if (floats > std::numeric_limits<std::uint64_t>::max() / sizeof(float))
+    return false;
+  bytes = floats * sizeof(float);
+  return true;
+}
+#endif
+
 QString fileHash(const QString& path, qint64 maximum, QString& error) {
   QFile file(path);
   if (!file.open(QIODevice::ReadOnly) || file.size() <= 0 ||
@@ -579,18 +602,157 @@ class DetectionModelBackend::Impl {
     if (!context->setInputShape(inputUtf8.constData(), shape))
       return fail(error,
                   "Engine does not accept the frozen maximum batch shape");
-    const auto workspace = context->updateDeviceMemorySizeForShapes();
+    std::int64_t workspace = context->updateDeviceMemorySizeForShapes();
     if (workspace < 0) return fail(error, "Cannot size actual model workspace");
     if (!contiguousTensor(inputUtf8, shape, nvinfer1::TensorIOMode::kINPUT,
                           error))
       return false;
-    workspaceBytes = workspace;
+    int activeProfile = selectedProfile;
+    std::uint32_t boundBatch = maximumBatch;
+    auto bindPhysicalBatch = [&](std::uint32_t batch,
+                                 std::int64_t& workspaceOut) {
+      const auto bound =
+          scn ? nvinfer1::Dims4(batch, 32768, 1, 1)
+              : nvinfer1::Dims4(batch, 1,
+                                detectionModelTensorFrames(request,
+                                                           maximumFrames),
+                                modelBins);
+      const int profile = fitsTier(static_cast<int>(batch));
+      if (profile < 0)
+        return fail(error,
+                    QString("Installed model package cannot execute the actual "
+                            "tensor [%1,%2,%3,%4]")
+                        .arg(bound.d[0])
+                        .arg(bound.d[1])
+                        .arg(bound.d[2])
+                        .arg(bound.d[3]));
+      if (profile != activeProfile &&
+          (!context->setOptimizationProfileAsync(profile, stream) ||
+           !checkCuda(synchronize(stream), "profile initialization", error)))
+        return fail(error,
+                    "Cannot select the actual model resource profile: " +
+                        error);
+      if (profile != activeProfile) activeProfile = profile;
+      if (!context->setInputShape(inputUtf8.constData(), bound))
+        return fail(error,
+                    "Engine does not accept the frozen maximum batch shape");
+      workspaceOut = context->updateDeviceMemorySizeForShapes();
+      if (workspaceOut < 0)
+        return fail(error, "Cannot size actual model workspace");
+      return contiguousTensor(inputUtf8, bound,
+                              nvinfer1::TensorIOMode::kINPUT, error);
+    };
+    std::size_t freeBytes = 0;
+    std::size_t totalBytes = 0;
+    if (!checkCuda(memoryInfo(&freeBytes, &totalBytes), "cudaMemGetInfo",
+                   error))
+      return false;
+    std::uint64_t bytesPerUnitBatch = 0;
+    if (!unitDeviceBytes(modelBins,
+                         detectionModelTensorFrames(request, maximumFrames),
+                         bytesPerUnitBatch))
+      return fail(error,
+                  QString("Execution batch 1 does not fit available VRAM: "
+                          "needed bytes overflow, free %1 bytes")
+                      .arg(QString::number(
+                          static_cast<qulonglong>(freeBytes))));
+    const auto positiveBatch = [](int value) -> std::uint32_t {
+      return value > 0 ? static_cast<std::uint32_t>(value) : 0;
+    };
+    const auto selectBatch = [&](std::uint64_t reserve) {
+      return selectDetectionExecutionBatch(
+          positiveBatch(userRequested), positiveBatch(workerLimit),
+          positiveBatch(profileMaximumBatch), bytesPerUnitBatch,
+          static_cast<std::uint64_t>(freeBytes), reserve);
+    };
+    const auto failUnfit = [&](std::uint64_t reserve) {
+      if (bytesPerUnitBatch >
+          std::numeric_limits<std::uint64_t>::max() - reserve)
+        return fail(error,
+                    QString("Execution batch 1 does not fit available VRAM: "
+                            "needed bytes overflow, free %1 bytes")
+                        .arg(QString::number(
+                            static_cast<qulonglong>(freeBytes))));
+      return fail(error,
+                  QString("Execution batch 1 does not fit available VRAM: "
+                          "needed %1 bytes, free %2 bytes")
+                      .arg(QString::number(bytesPerUnitBatch + reserve))
+                      .arg(QString::number(
+                          static_cast<qulonglong>(freeBytes))));
+    };
+    // Profile maximum is known, and this cudaMemGetInfo call succeeded.
+    // Workspace of the profile-clamped shape is the fixed reserve. A smaller
+    // tier is measured on its own shape before batch 1 is rejected.
+    std::uint64_t reserveBytes = static_cast<std::uint64_t>(workspace);
+    auto selected = selectBatch(reserveBytes);
+    if (selected == 0 && maximumBatch > 1) {
+      std::int64_t oneWorkspace = 0;
+      if (!bindPhysicalBatch(1, oneWorkspace)) return false;
+      boundBatch = 1;
+      workspace = oneWorkspace;
+      reserveBytes = static_cast<std::uint64_t>(oneWorkspace);
+      selected = selectBatch(reserveBytes);
+    }
+    if (selected == 0) {
+      // Batch 1 does not fit. A smaller worker limit cannot make a legal tier
+      // below 1, so this is a hard load failure rather than another downgrade.
+      retryableResourceFailure = false;
+      return failUnfit(reserveBytes);
+    }
+    std::uint32_t chosen = 0;
+    for (int index = supportedTiers.size() - 1; index >= 0; --index) {
+      const auto tier =
+          static_cast<std::uint32_t>(supportedTiers.at(index).toInt());
+      if (tier <= selected && isDetectionExecutionBatchTier(tier)) {
+        chosen = tier;
+        break;
+      }
+    }
+    if (chosen == 0) {
+      retryableResourceFailure = false;
+      const auto smallest = static_cast<std::uint64_t>(
+          std::max(1, supportedTiers.first().toInt()));
+      const bool fits =
+          (bytesPerUnitBatch == 0 ||
+           smallest <= std::numeric_limits<std::uint64_t>::max() /
+                           bytesPerUnitBatch) &&
+          bytesPerUnitBatch * smallest <=
+              std::numeric_limits<std::uint64_t>::max() - reserveBytes;
+      return fail(error,
+                  QString("No profile-supported execution batch fits available "
+                          "VRAM: needed %1 bytes, free %2 bytes")
+                      .arg(fits ? QString::number(bytesPerUnitBatch * smallest +
+                                                  reserveBytes)
+                                : QString("overflow"))
+                      .arg(QString::number(
+                          static_cast<qulonglong>(freeBytes))));
+    }
+    if (!scn) {
+      if (chosen != logicalMaximumBatch) {
+        if (!profileReason.isEmpty()) profileReason += "; ";
+        profileReason +=
+            QString("Available VRAM selected physical batch %1 (profile maximum "
+                    "%2, free %3 bytes, %4 bytes/batch, reserve %5 bytes)")
+                .arg(chosen)
+                .arg(profileMaximumBatch)
+                .arg(QString::number(static_cast<qulonglong>(freeBytes)))
+                .arg(QString::number(bytesPerUnitBatch))
+                .arg(QString::number(reserveBytes));
+        logicalMaximumBatch = chosen;
+      }
+      attemptedExecutionBatch = chosen;
+    }
+    if (chosen != boundBatch && !bindPhysicalBatch(chosen, workspace))
+      return false;
+    maximumBatch = chosen;
+    workspaceBytes = static_cast<std::size_t>(workspace);
     const std::size_t inputBytes =
         static_cast<std::size_t>(maximumBatch) * modelBins *
         detectionModelTensorFrames(request, maximumFrames) * sizeof(float);
     const std::size_t headBytes = static_cast<std::size_t>(maximumBatch) *
                                   (modelBins / 4) * sizeof(float);
-    const std::size_t allocationBytes = inputBytes + 3 * headBytes + workspace;
+    const std::size_t allocationBytes = inputBytes + 3 * headBytes +
+                                        static_cast<std::size_t>(workspace);
     const auto logicalBatch = static_cast<std::size_t>(logicalMaximumBatch);
     const auto sourceBytes =
         logicalBatch * request.profile.fftSize * maximumFrames * sizeof(float);
@@ -608,8 +770,6 @@ class DetectionModelBackend::Impl {
     const auto hostWorkingSet =
         sourceBytes + preparedBytes +
         std::max<std::size_t>(12 * logicalHeadBytes, temporaryBytes);
-    std::size_t freeBytes = 0;
-    std::size_t totalBytes = 0;
     if (!checkCuda(memoryInfo(&freeBytes, &totalBytes), "cudaMemGetInfo",
                    error))
       return false;
@@ -672,7 +832,7 @@ class DetectionModelBackend::Impl {
         {"deviceIndex", selected},
         {"computeCapability", QJsonArray{12, 0}},
         {"engineMaximumBatch", static_cast<int>(maximumBatch)},
-        {"optimizationProfile", selectedProfile},
+        {"optimizationProfile", activeProfile},
         {"logicalMaximumBatch", static_cast<int>(logicalMaximumBatch)},
         {"physicalBatch", static_cast<int>(maximumBatch)},
         {"profileMaximumBatch", profileMaximumBatch},

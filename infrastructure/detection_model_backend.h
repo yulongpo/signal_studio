@@ -4,6 +4,7 @@
 #include <QString>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -64,6 +65,43 @@ bool validateDetectionModelPackageDirectory(const DetectionRequest& request,
 bool validateDetectionModelPackage(const DetectionRequest& request,
                                    const QString& modelRoot,
                                    QJsonObject& manifest, QString& error);
+
+// Legal results are 1, 2, 4, 8, and 16. Returns 0 when profileMaximum is 0,
+// when no legal tier is at or below min(requested, workerLimit, profileMaximum),
+// or when known VRAM cannot hold batch 1. The caller rejects a 0 result and
+// does not skip windows. freeDeviceBytes == 0 means VRAM is unknown, so the
+// result is that greatest legal tier and is not shrunk for memory. When VRAM
+// is known, 16 is returned only if 16 is within all three ceilings and its
+// checked cost fits.
+inline std::uint32_t selectDetectionExecutionBatch(
+    std::uint32_t requested, std::uint32_t workerLimit,
+    std::uint32_t profileMaximum, std::uint64_t bytesPerUnitBatch,
+    std::uint64_t freeDeviceBytes, std::uint64_t reserveBytes) {
+  if (profileMaximum == 0) return 0;
+  auto ceiling = requested < workerLimit ? requested : workerLimit;
+  if (profileMaximum < ceiling) ceiling = profileMaximum;
+  constexpr std::uint32_t kTiers[] = {16, 8, 4, 2, 1};
+  std::uint32_t tierCeiling = 0;
+  for (const auto tier : kTiers) {
+    if (tier <= ceiling && isDetectionExecutionBatchTier(tier)) {
+      tierCeiling = tier;
+      break;
+    }
+  }
+  if (tierCeiling == 0 || freeDeviceBytes == 0) return tierCeiling;
+  for (const auto tier : kTiers) {
+    if (tier > tierCeiling || !isDetectionExecutionBatchTier(tier)) continue;
+    const auto width = static_cast<std::uint64_t>(tier);
+    if (bytesPerUnitBatch != 0 &&
+        width > std::numeric_limits<std::uint64_t>::max() / bytesPerUnitBatch)
+      continue;
+    const auto tierCost = bytesPerUnitBatch * width;
+    if (reserveBytes > std::numeric_limits<std::uint64_t>::max() - tierCost)
+      continue;
+    if (tierCost + reserveBytes <= freeDeviceBytes) return tier;
+  }
+  return 0;
+}
 
 // Models and DLLs are loaded lazily from the standalone package. Missing model
 // dependencies therefore cannot prevent the explicit fixture worker starting.
