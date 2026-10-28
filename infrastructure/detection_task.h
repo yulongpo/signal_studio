@@ -17,10 +17,33 @@
 #include "domain/detection_postprocess.h"
 #include "domain/project.h"
 #include "infrastructure/detection_profiling.h"
+#include "infrastructure/detection_source.h"
 
 namespace signalstudio {
 class DetectionWorkerClient;
-struct DetectionSourcePlan;
+
+// Parent-process steady_clock names. C records click, accept, and the GUI
+// project publication (t_durable_publication). These names are the execution
+// stages this manager actually reaches. Absent stages are left absent.
+inline constexpr char kDetectionMarkModelSnapshotReady[] =
+    "t_model_snapshot_ready";
+inline constexpr char kDetectionMarkPreflightStart[] = "t_preflight_start";
+inline constexpr char kDetectionMarkSourcePlanReady[] = "t_source_plan_ready";
+inline constexpr char kDetectionMarkPreflightEnd[] = "t_preflight_end";
+inline constexpr char kDetectionMarkManifestCommitted[] =
+    "t_manifest_committed";
+inline constexpr char kDetectionMarkSourceOpen[] = "t_source_open";
+inline constexpr char kDetectionMarkFirstModelInput[] = "t_first_model_input";
+inline constexpr char kDetectionMarkInferenceComplete[] =
+    "t_inference_complete";
+inline constexpr char kDetectionMarkFirstCandidateDecoded[] =
+    "t_first_candidate_decoded";
+inline constexpr char kDetectionMarkFirstPreview[] = "t_first_preview";
+inline constexpr char kDetectionMarkFrequencyComplete[] =
+    "t_frequency_complete";
+inline constexpr char kDetectionMarkFinalShardPersisted[] =
+    "t_final_shard_persisted";
+inline constexpr char kDetectionMarkTerminal[] = "t_terminal";
 
 // Rejects before inference when retained raw heads exceed the configured quota
 // or the free space on the project volume. The quota ceiling is that free
@@ -44,6 +67,10 @@ struct QueuedDetectionRun {
   DetectionRun run;
   std::uint32_t executionBatchSize = 1;
   std::uint64_t publicationBudgetBytes = 0;
+  // Immutable grid from prepareQueuedRun. execute() revalidates identity and
+  // reuses this plan instead of planning the same run again.
+  DetectionSourcePlan sourcePlan;
+  bool hasSourcePlan = false;
 };
 struct DetectionPublication {
   AnnotationSourceSet sourceSet;
@@ -83,10 +110,12 @@ class DetectionTaskManager {
   // Validates and fills the queued run without persisting it or starting it.
   // The detection panel runs this, the project save, and the disk budget
   // check off the UI thread. enqueue() persists and queues only after that
-  // project commit succeeds.
+  // project commit succeeds. cancel is polled through validation, planning,
+  // and the snapshot/preflight checks. The default empty callback preserves
+  // existing callers. Cancellation does not start a worker.
   bool prepareQueuedRun(const QString& projectDirectory, const FileMetadata&,
-                        DetectionRequest, QueuedDetectionRun&,
-                        QString& error) const;
+                        DetectionRequest, QueuedDetectionRun&, QString& error,
+                        const std::function<bool()>& cancel = {}) const;
   bool canEnqueue(const std::string& runId, QString& error) const;
   // Writes the run manifest without queueing it. Project save reads it back.
   bool persistQueuedRun(const QString& projectDirectory, const DetectionRun&,
@@ -104,7 +133,7 @@ class DetectionTaskManager {
   // ignored. Marks that arrive before the run is queued stay buffered and are
   // appended to performanceJson when that run is queued or later updated.
   void noteSteadyMark(const std::string& runId, const char* name,
-                      std::uint64_t steadyNanoseconds);
+                      std::uint64_t steadyNanoseconds) const;
   // Both callbacks run without mutex_ and must not call back into this
   // manager. Production leaves them empty. beforePumpJoin runs only after the
   // task mutex is released and before joining a producer that already
@@ -147,6 +176,8 @@ class DetectionTaskManager {
     DetectionPublication publication;
     std::uint32_t executionBatchSize = 1;
     std::uint64_t publicationBytes = 65536, publicationBudgetBytes = 0;
+    DetectionSourcePlan sourcePlan;
+    bool hasSourcePlan = false;
     std::unique_ptr<DetectionWorkerClient> worker;
     DetectionProfiler profiling;
     QJsonObject sourceProfile, workerDiagnostic, gpuProfile, modelProfile;
@@ -164,9 +195,9 @@ class DetectionTaskManager {
   };
   void execute(const std::shared_ptr<Job>&);
   std::string performanceSnapshot(const std::shared_ptr<Job>&) const;
-  void rememberTimelineLocked(const std::shared_ptr<Job>&);
-  void materializeTimelineLocked(const std::shared_ptr<Job>&);
-  void adoptSteadyMarksLocked(const std::shared_ptr<Job>&);
+  void rememberTimelineLocked(const std::shared_ptr<Job>&) const;
+  void materializeTimelineLocked(const std::shared_ptr<Job>&) const;
+  void adoptSteadyMarksLocked(const std::shared_ptr<Job>&) const;
   QJsonObject timelineObject(const std::shared_ptr<Job>&) const;
   bool checkpoint(const std::shared_ptr<Job>&, QString& error);
   void finish(const std::shared_ptr<Job>&, DetectionLifecycle,
@@ -179,7 +210,8 @@ class DetectionTaskManager {
   std::jthread thread_;
   std::function<void()> beforeProducerTerminalLock_;
   std::function<void()> beforePumpJoin_;
-  std::unordered_map<std::string, std::vector<SteadyMark>> pendingSteadyMarks_;
+  mutable std::unordered_map<std::string, std::vector<SteadyMark>>
+      pendingSteadyMarks_;
 };
 
 }  // namespace signalstudio

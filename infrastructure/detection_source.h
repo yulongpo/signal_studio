@@ -2,6 +2,8 @@
 
 #include <QJsonObject>
 #include <QString>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -36,6 +38,7 @@ struct DetectionSourceConfig {
   // Host-resident windows use oneMKL when the runtime is present. GPU upload
   // of those same frames measured slower than the host transform.
   bool useHostMkl = true;
+  bool operator==(const DetectionSourceConfig&) const = default;
 };
 
 struct DetectionFftSupport {
@@ -63,6 +66,7 @@ struct DetectionSpectrumFrame {
 struct DetectionSourceExclusion {
   TimeRange samples;
   std::string reason;
+  bool operator==(const DetectionSourceExclusion&) const = default;
 };
 
 struct DetectionSourcePlan {
@@ -95,6 +99,7 @@ struct DetectionSourcePlan {
   std::string hashMeaning =
       "selected decoded IQ float32 LE and FFT mapping; not a whole-file hash";
   std::vector<DetectionSourceExclusion> exclusions;
+  bool operator==(const DetectionSourcePlan&) const = default;
 };
 
 struct DetectionModelWindow {
@@ -113,10 +118,35 @@ struct DetectionModelWindow {
 
 // Pure integer-grid planning. It does not claim the physical file was opened or
 // hashed; open() additionally checks its real sample count and quick identity.
+// cancel is polled around validation and inside the evidence walk. A cancelled
+// call leaves target unchanged. The default empty callback preserves callers.
 bool makeDetectionSourcePlan(const FileMetadata&, ViewRange requested,
                              DetectionSourceConfig, DetectionSourcePlan&,
                              QString& error,
-                             std::uint64_t projectGeneration = 0);
+                             std::uint64_t projectGeneration = 0,
+                             const DetectionSourceCancel& cancel = {});
+
+// True when plan was built for this source, channel, prefix, requested grid,
+// model profile, and config. quickFingerprint still has to be checked by open().
+bool detectionPreparedSourcePlanMatches(const FileMetadata& source,
+                                        ViewRange requested,
+                                        const DetectionSourceConfig& config,
+                                        std::uint64_t projectGeneration,
+                                        const DetectionSourcePlan& plan);
+
+// Successful plans only. Capacity is fixed. IQ samples and worker state are
+// not stored. Identity, prefix, grid, model, and config fields all participate
+// in the key; a change misses and plans again.
+inline constexpr std::size_t kDetectionSourcePlanCacheCapacity = 8;
+struct DetectionSourcePlanCacheStats {
+  std::uint64_t hits = 0;
+  std::uint64_t misses = 0;
+  std::uint64_t stores = 0;
+  std::size_t retained = 0;
+  std::size_t capacity = kDetectionSourcePlanCacheCapacity;
+};
+DetectionSourcePlanCacheStats detectionSourcePlanCacheStatsForTest();
+void clearDetectionSourcePlanCacheForTest();
 QJsonObject encodeDetectionFrameMapping(const DetectionFrameMapping&);
 std::uint32_t detectionExecutionBatchSize(const DetectionSourcePlan&,
                                           std::uint32_t requestedBatch,
@@ -135,8 +165,13 @@ class FixedDetectionSource {
   FixedDetectionSource& operator=(const FixedDetectionSource&) = delete;
   bool withGpu(const DetectionSourceCancel&,
                const std::function<bool(gpu_dsp::Session*)>&);
+  // prepared, when non-null and still matching, is copied. File identity,
+  // sample count, and the live fingerprint are still checked. A mismatch does
+  // not plan a different grid for this call.
   bool open(const FileMetadata&, ViewRange requested, DetectionSourceConfig,
-            QString& error, std::uint64_t projectGeneration = 0);
+            QString& error, std::uint64_t projectGeneration = 0,
+            const DetectionSourceCancel& cancel = {},
+            const DetectionSourcePlan* prepared = nullptr);
   const DetectionSourcePlan& plan() const { return plan_; }
   QJsonObject profiling() const {
     auto value = profiling_.snapshot();

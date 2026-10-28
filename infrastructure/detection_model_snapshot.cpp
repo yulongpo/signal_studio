@@ -11,12 +11,28 @@
 #include <QRegularExpression>
 
 namespace signalstudio {
-bool freezeDetectionModelSnapshot(DetectionRequest& request, QString& error) {
-  if (request.profile.backend == DetectionBackendKind::Fixture) return true;
+namespace {
+bool snapshotCancelled(const std::function<bool()>& cancel, QString& error) {
+  if (cancel && cancel()) {
+    error = QStringLiteral("Cancelled during model snapshot");
+    return true;
+  }
+  return false;
+}
+}  // namespace
+
+bool freezeDetectionModelSnapshot(DetectionRequest& request, QString& error,
+                                  const std::function<bool()>& cancel) {
+  if (snapshotCancelled(cancel, error)) return false;
+  if (request.profile.backend == DetectionBackendKind::Fixture) {
+    error.clear();
+    return true;
+  }
   if (request.profile.backend == DetectionBackendKind::Experimental17) {
     error = "实验配置的 131072 输入尚未通过原张量对照，不能作为正式检测运行";
     return false;
   }
+  if (snapshotCancelled(cancel, error)) return false;
   const auto modelRoot =
       QDir(QCoreApplication::applicationDirPath()).filePath("detection-models");
   QString directory;
@@ -24,6 +40,7 @@ bool freezeDetectionModelSnapshot(DetectionRequest& request, QString& error) {
           modelRoot, QString::fromStdString(request.profile.id), directory,
           error))
     return false;
+  if (snapshotCancelled(cancel, error)) return false;
   const auto path = QDir(directory).filePath("manifest.json");
   QFile file(path);
   if (!file.open(QIODevice::ReadOnly) || file.size() <= 0 ||
@@ -31,8 +48,10 @@ bool freezeDetectionModelSnapshot(DetectionRequest& request, QString& error) {
     error = "模型包未就绪：缺少对应方案的有效资产清单";
     return false;
   }
+  if (snapshotCancelled(cancel, error)) return false;
   QJsonParseError parseError;
   const auto document = QJsonDocument::fromJson(file.readAll(), &parseError);
+  if (snapshotCancelled(cancel, error)) return false;
   const auto manifest = document.object();
   const auto engine = manifest["engine"].toObject();
   const auto hash = engine["sha256"].toString();
@@ -51,6 +70,7 @@ bool freezeDetectionModelSnapshot(DetectionRequest& request, QString& error) {
     error = "模型包清单与当前已验证方案不符";
     return false;
   }
+  if (snapshotCancelled(cancel, error)) return false;
   request.modelManifestPath = QFileInfo(path).absoluteFilePath().toStdString();
   request.modelSha256 = hash.toStdString();
   error.clear();
