@@ -75,8 +75,8 @@ class PlotWidget : public QWidget {
   void refreshAnnotationOverlay();
   void invalidateAnnotationOverlay();
   void setDetectionPreview(std::vector<ChartPreviewTrack> tracks, std::uint64_t dropped);
-  // Hides the current channel's committed detection marks on this plot and in
-  // its hit testing. The project slot and annotationVisible stay unchanged.
+  // Mirrors the active file channel slot's suppressFormalResults for this plot
+  // and its hit testing. The slot in the project is the authority.
   void setFormalDetectionSuppressed(bool suppressed);
   bool formalDetectionSuppressed() const { return formalDetectionSuppressed_; }
   void selectDetectionPreview(const QString& id);

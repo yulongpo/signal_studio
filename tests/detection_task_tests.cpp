@@ -1135,6 +1135,36 @@ void realAdaptationFlows(const QString& wav, const QString& output) {
           .toJson();
   check(report.write(bytes) == bytes.size(), report.errorString());
 }
+void testModelEvidenceDurabilityFollowsHeadRetention() {
+  DetectionRequest plain;
+  check(!detectionModelEvidenceIsDurable(plain),
+        "A request without raw heads treated batch evidence as durable");
+  AnnotationSourceSet hidden;
+  hidden.id = "source";
+  const QJsonObject evidence{{"lastInference", QJsonObject{{"h2dMs", 1.5}}}};
+  preserveDurableModelEvidence(hidden, plain, evidence);
+  check(hidden.supplementalOriginalText.empty() && hidden.supplementalHash.empty(),
+        "Undurable modelEvidence was written into the source set");
+  DetectionRequest retained = plain;
+  retained.rawHeadBudgetBytes = 4096;
+  check(detectionModelEvidenceIsDurable(retained),
+        "Raw-head quota did not keep evidence durable");
+  AnnotationSourceSet kept;
+  kept.id = "source";
+  preserveDurableModelEvidence(kept, retained, evidence);
+  check(!kept.supplementalOriginalText.empty() && kept.supplementalHash.size() == 64,
+        "Retained raw-head evidence was dropped from the source set");
+  DetectionRequest legacy = plain;
+  legacy.legacyCombinedEvidence = true;
+  check(detectionModelEvidenceIsDurable(legacy),
+        "Legacy combined evidence was not treated as durable");
+  AnnotationSourceSet legacySet;
+  legacySet.id = "source";
+  preserveDurableModelEvidence(legacySet, legacy, evidence);
+  check(legacySet.supplementalOriginalText == kept.supplementalOriginalText &&
+            legacySet.supplementalHash == kept.supplementalHash,
+        "Legacy combined evidence did not match the retained source supplement");
+}
 }  // namespace
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
@@ -1151,6 +1181,7 @@ int main(int argc, char** argv) {
     testLegacyCombinedBudgetRejectsBeforeWorker();
     testSplitHeadBudgetOmitsRawFromJsonWindow();
     testWidebandPreflightOmitsRawHeadsAndKeepsJsonBudget();
+    testModelEvidenceDurabilityFollowsHeadRetention();
     testProducerExceptionHasDurableFailureDiagnostics();
     testTerminalPersistenceExceptionCannotEscapeThread();
     testFailuresAndGeneration();

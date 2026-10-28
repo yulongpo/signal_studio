@@ -210,6 +210,13 @@ struct CurrentDetectionSlot {
   std::vector<std::string> retiredRunIds;
   // Only IDs needed by retained channel snapshots; never historical geometry.
   std::vector<std::string> retiredAnnotationIds;
+  // Persisted on this file+channel. An accepted start sets it and clears the
+  // previous formal algorithm result. Failure does not clear it; only a
+  // complete publication does. Other files and IQ channels keep their own slots.
+  bool suppressFormalResults = false;
+  // This channel's terminal preview was not published. It does not block the
+  // next successful publication and is not consulted for any other file.
+  bool unpublishedPreview = false;
   bool operator==(const CurrentDetectionSlot&) const = default;
 };
 
@@ -234,18 +241,27 @@ struct FileState {
       revisionEditingBaseRevisionId;
   std::array<bool, 3> annotationLayers{true, true, true};
   AnnotationViewFilter annotationFilter;
-  // Session-only. Hides this channel's committed algorithm marks from the
-  // detection-result table while a new run owns the display. Not persisted.
-  std::optional<std::uint32_t> suppressCommittedDetectionChannel;
 };
+inline bool formalDetectionSuppressed(const FileState& file, std::uint32_t channel) {
+  if (!file.currentDetectionSlots) return false;
+  for (const auto& slot : *file.currentDetectionSlots)
+    if (slot.sampleChannel == channel) return slot.suppressFormalResults;
+  return false;
+}
 inline bool annotationInContext(const FileState& file,
                                 const Annotation& value) {
   if (value.deleted ||
       (!value.fileId.empty() && value.fileId != file.metadata.id))
     return false;
+  if (value.sourceKind == AnnotationSource::Algorithm && value.sourceSetId.empty() &&
+      formalDetectionSuppressed(file, file.metadata.sampleFormat.selectedChannel))
+    return false;
   for (const auto& source : file.sourceSets)
     if (source.id == value.sourceSetId) {
       if (source.deleted || source.sampleChannel != file.metadata.sampleFormat.selectedChannel)
+        return false;
+      if (value.sourceKind == AnnotationSource::Algorithm &&
+          formalDetectionSuppressed(file, source.sampleChannel))
         return false;
       if (value.sourceKind == AnnotationSource::Algorithm && file.currentDetectionSlots) {
         for (const auto& slot : *file.currentDetectionSlots)
@@ -277,9 +293,7 @@ inline bool annotationEligibleForTab(const FileState& file,
                                      const Annotation& value,
                                      AnnotationSource source) {
   if (source == AnnotationSource::Algorithm &&
-      file.suppressCommittedDetectionChannel &&
-      *file.suppressCommittedDetectionChannel ==
-          file.metadata.sampleFormat.selectedChannel)
+      formalDetectionSuppressed(file, file.metadata.sampleFormat.selectedChannel))
     return false;
   return value.sourceKind == source && annotationMatchesFilter(file, value);
 }

@@ -58,6 +58,9 @@ std::string detectionScopeKey(const std::string& fileId, std::uint32_t channel) 
 QString formalResultKeptNote() {
   return QStringLiteral("上次正式结果仍在");
 }
+QString formalResultDiscardedNote() {
+  return QStringLiteral("已丢弃的正式结果不会恢复");
+}
 bool restoreProjectFile(const QString& path, const QByteArray& bytes, QString& error) {
   QSaveFile output(path);
   if (!output.open(QIODevice::WriteOnly) || output.write(bytes) != bytes.size() ||
@@ -893,9 +896,7 @@ void DetectionPanel::finishStartCommit(const std::shared_ptr<StartCommit>& job) 
     if (job && !job->ticket.fileId.empty()) return job->ticket.fileId;
     return job ? job->metadata.id : std::string{};
   }();
-  const auto restoreIdle = [&] {
-    if (!showingPreview()) restoreFormalDisplay(fileId);
-  };
+  const auto restoreIdle = [&] { restoreFormalDisplay(fileId); };
   if (!job || job->rejectedBeforeSave || !job->ok) {
     if (job && job->rejectedBeforeSave)
       emit message(job->error);
@@ -1037,12 +1038,20 @@ void DetectionPanel::poll() {
         DetectionResultService::abandonDetection(session_.project(), ticket);
       }
       emit message(run.sourceValidity != DetectionSourceValidity::Current
-          ? QStringLiteral("来源已变化：未发布本次检测。") + formalResultKeptNote()
+          ? QStringLiteral("来源已变化：未发布本次检测。") + formalResultDiscardedNote()
           : stateName(run.lifecycle) + QStringLiteral("：未发布部分结果。") +
-                formalResultKeptNote() + QStringLiteral("。") + q(run.error));
+                formalResultDiscardedNote() + QStringLiteral("。") + q(run.error));
       const auto previewNow = tasks_->previewFor(
           ticket.fileId, ticket.sampleChannel, generation_);
-      if (previewNow.events.empty()) restoreFormalDisplay(ticket.fileId);
+      if (!previewNow.events.empty()) {
+        for (auto& sourceFile : session_.project().files) {
+          if (sourceFile.metadata.id != ticket.fileId || !sourceFile.currentDetectionSlots)
+            continue;
+          for (auto& sourceSlot : *sourceFile.currentDetectionSlots)
+            if (sourceSlot.sampleChannel == ticket.sampleChannel)
+              sourceSlot.unpublishedPreview = true;
+        }
+      }
       tickets_.erase(ticketEntry);
       changedState = true;
       continue;
@@ -1203,8 +1212,8 @@ void DetectionPanel::beginPublicationCommit(DetectionResultTicket ticket,
     QFile priorFile(job->path);
     if (!priorFile.open(QIODevice::ReadOnly)) {
       job->result = {false, false,
-                     QStringLiteral("检测事务保存失败，上次正式结果仍在：") +
-                         priorFile.errorString()};
+                     QStringLiteral("检测事务保存失败，") + formalResultDiscardedNote() +
+                         QStringLiteral("：") + priorFile.errorString()};
     } else {
       job->priorProject = priorFile.readAll();
       const bool priorOk = priorFile.error() == QFileDevice::NoError &&
@@ -1212,7 +1221,8 @@ void DetectionPanel::beginPublicationCommit(DetectionResultTicket ticket,
       priorFile.close();
       if (!priorOk) {
         job->result = {false, false,
-                       QStringLiteral("检测事务保存失败，上次正式结果仍在：无法读取提交前工程")};
+                       QStringLiteral("检测事务保存失败，") + formalResultDiscardedNote() +
+                           QStringLiteral("：无法读取提交前工程")};
       }
     }
     if (!job->priorProject.isEmpty()) for (int attempt = 0; attempt < 40; ++attempt) {
@@ -1260,13 +1270,13 @@ void DetectionPanel::finishPublicationCommit(
     QString restoreError;
     if (restoreProjectFile(job->path, job->priorProject, restoreError)) {
       emit message(QStringLiteral("检测事务已丢弃，提交期间工程已变化。") +
-                   formalResultKeptNote());
+                   formalResultDiscardedNote());
     } else {
       emit message(QStringLiteral("检测事务已丢弃，提交期间工程已变化。回滚工程文件失败：") +
                    restoreError);
     }
   } else {
-    emit message(QStringLiteral("检测未提交，") + formalResultKeptNote() +
+    emit message(QStringLiteral("检测未提交，") + formalResultDiscardedNote() +
                  QStringLiteral("：") + job->result.error);
   }
   tickets_.erase(job->ticket.runId);
@@ -1284,8 +1294,12 @@ void DetectionPanel::finishPublicationCommit(
 void DetectionPanel::clearUnpublishedPreview(const std::string& fileId,
                                              std::uint32_t channel) {
   tasks_->discardUnpublishedPreview(fileId, channel, session_.projectGeneration());
-  if (!rawPreview_.unpublished && rawPreview_.events.empty()) return;
-  if (!rawPreview_.unpublished) return;
+  for (auto& file : session_.project().files) {
+    if (file.metadata.id != fileId || !file.currentDetectionSlots) continue;
+    for (auto& slot : *file.currentDetectionSlots)
+      if (slot.sampleChannel == channel) slot.unpublishedPreview = false;
+  }
+  if (rawPreview_.fileId != fileId || !rawPreview_.unpublished) return;
   rawPreview_ = {};
   rawPreviewTerminal_ = false;
   presentLivePreview({}, false, false);
@@ -1293,19 +1307,28 @@ void DetectionPanel::clearUnpublishedPreview(const std::string& fileId,
 void DetectionPanel::suppressFormalDisplay(const std::string& fileId,
                                           std::uint32_t channel) {
   for (auto& file : session_.project().files) {
-    if (file.metadata.id != fileId) continue;
-    file.suppressCommittedDetectionChannel = channel;
+    if (file.metadata.id != fileId || !file.currentDetectionSlots) continue;
+    for (auto& slot : *file.currentDetectionSlots) {
+      if (slot.sampleChannel != channel) continue;
+      slot.suppressFormalResults = true;
+      slot.unpublishedPreview = false;
+    }
   }
   emit changed();
   emit presentationRequested();
 }
 void DetectionPanel::restoreFormalDisplay(const std::string& fileId) {
+  // Only an optimistic hide, applied before the start transaction is accepted,
+  // still has a committed id. After acceptance the id is gone and stays gone.
   bool changedDisplay = false;
   for (auto& file : session_.project().files) {
     if (!fileId.empty() && file.metadata.id != fileId) continue;
-    if (!file.suppressCommittedDetectionChannel) continue;
-    file.suppressCommittedDetectionChannel.reset();
-    changedDisplay = true;
+    if (!file.currentDetectionSlots) continue;
+    for (auto& slot : *file.currentDetectionSlots) {
+      if (!slot.suppressFormalResults || slot.committedRunId.empty()) continue;
+      slot.suppressFormalResults = false;
+      changedDisplay = true;
+    }
   }
   if (!changedDisplay) return;
   emit changed();
@@ -1368,7 +1391,16 @@ void DetectionPanel::setShowIntermediateResults(bool show) {
   presentLivePreview(rawPreview_, rawPreviewTerminal_, rawPreview_.unpublished);
 }
 
-QString DetectionPanel::clearanceNoteForActive() const { return {}; }
+QString DetectionPanel::clearanceNoteForActive() const {
+  const auto* file = session_.activeFile();
+  if (!file) return {};
+  const auto* slot = currentDetectionSlot(
+      *file, file->metadata.sampleFormat.selectedChannel);
+  if (!slot || !slot->suppressFormalResults || !slot->committedRunId.empty())
+    return {};
+  if (slot->unpublishedPreview) return QStringLiteral("预览 · 未发布");
+  return QStringLiteral("本次检测已丢弃上次正式结果，尚未成功发布");
+}
 
 void DetectionPanel::markConfigurationStale() {
   if (commitInFlight_) {

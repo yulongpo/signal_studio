@@ -7,6 +7,7 @@
 #include <QSaveFile>
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
@@ -165,6 +166,75 @@ void retireScope(FileState& file, CurrentDetectionSlot& slot,
                 file.annotationFilter.runId) != slot.retiredRunIds.end())
     file.annotationFilter.runId.clear();
 }
+// Drops only this channel's previous formal algorithm result. Other indexed
+// tasks, files, IQ channels, manual marks, and imported labels stay.
+void discardCommittedFormalResult(FileState& file, CurrentDetectionSlot& slot) {
+  const auto previous = slot.committedRunId;
+  slot.committedRunId.clear();
+  slot.suppressFormalResults = true;
+  slot.unpublishedPreview = false;
+  slot.stale = true;
+  if (previous.empty()) return;
+  std::unordered_set<std::string> sets, annotations;
+  for (const auto& set : file.sourceSets)
+    if (set.sourceKind == AnnotationSource::Algorithm &&
+        set.sampleChannel == slot.sampleChannel && set.runId == previous)
+      sets.insert(set.id);
+  for (const auto& annotation : file.marks)
+    if (annotation.sourceKind == AnnotationSource::Algorithm &&
+        sets.contains(annotation.sourceSetId))
+      annotations.insert(annotation.id);
+  for (auto& channel : file.channels)
+    if (channel.sourceSnapshot &&
+        channel.sourceSnapshot->sourceKind == AnnotationSource::Algorithm &&
+        annotations.contains(channel.sourceSnapshot->annotationId)) {
+      addId(slot.retiredAnnotationIds, channel.sourceSnapshot->annotationId);
+      channel.sourceRelation = ChannelSourceRelation::Retired;
+    }
+  addId(slot.retiredRunIds, previous);
+  std::erase_if(file.marks, [&](const auto& annotation) {
+    return annotations.contains(annotation.id);
+  });
+  std::erase_if(file.sourceSets, [&](const auto& set) { return sets.contains(set.id); });
+  std::erase_if(file.detectionRuns, [&](const auto& run) {
+    return run.request.runId == previous;
+  });
+  std::erase_if(file.selectedMarkIds, [&](const auto& id) {
+    return annotations.contains(id);
+  });
+  if (annotations.contains(file.activeMarkId)) {
+    file.activeMarkId = file.selectedMarkIds.empty() ? std::string{}
+                                                    : file.selectedMarkIds.front();
+    const auto* active = findAnnotation(file, file.activeMarkId);
+    file.activeSegmentId = active ? active->activeSegmentId : std::string{};
+    if (!active) file.display.psdFromSelection = false;
+  }
+  if (annotations.contains(file.selectionAnchorId)) file.selectionAnchorId.clear();
+  if (annotations.contains(file.hoveredMarkId)) {
+    file.hoveredMarkId.clear();
+    file.hoveredSegmentId.clear();
+  }
+  if (annotations.contains(file.revisionEditingAnnotationId)) {
+    file.revisionEditingAnnotationId.clear();
+    file.revisionEditingBaseRevisionId.clear();
+  }
+  if (file.annotationFilter.runId == previous) file.annotationFilter.runId.clear();
+}
+QJsonArray algorithmMarksFor(const FileState& file, std::optional<std::uint32_t> channel) {
+  QJsonArray data;
+  for (const auto& mark : file.marks) {
+    if (mark.sourceKind != AnnotationSource::Algorithm) continue;
+    const auto* set = findSourceSet(file, mark.sourceSetId);
+    const auto markChannel = set ? std::optional<std::uint32_t>{set->sampleChannel}
+                                 : std::nullopt;
+    if (channel) {
+      if (markChannel && *markChannel == *channel) data.push_back(encodeAnnotation(mark));
+    } else if (!markChannel) {
+      data.push_back(encodeAnnotation(mark));
+    }
+  }
+  return data;
+}
 bool ticketMatches(const Project& project, const FileState& file,
                    const DetectionResultTicket& ticket,
                    std::uint64_t generation, const DetectionRun& run) {
@@ -206,7 +276,7 @@ bool sameFormalResult(const Project& live, const Project& candidate, QString& er
       return false;
     }
     if (!before.currentDetectionSlots) continue;
-    if (marksOf(before, true) != marksOf(*after, true)) {
+    if (algorithmMarksFor(before, std::nullopt) != algorithmMarksFor(*after, std::nullopt)) {
       error = "检测启动改变了已有正式结果，上次正式结果仍在";
       return false;
     }
@@ -221,7 +291,14 @@ bool sameFormalResult(const Project& live, const Project& candidate, QString& er
       const auto* newSlot = currentDetectionSlot(*after, channel);
       const auto oldId = oldSlot ? oldSlot->committedRunId : std::string{};
       const auto newId = newSlot ? newSlot->committedRunId : std::string{};
-      if (oldId != newId) {
+      const auto oldMarks = algorithmMarksFor(before, channel);
+      const auto newMarks = algorithmMarksFor(*after, channel);
+      if (oldId == newId && oldMarks == newMarks) continue;
+      // The only legal formal change at start is discarding this channel.
+      const bool acceptedDiscard =
+          newSlot && !newSlot->pendingRunId.empty() && newSlot->committedRunId.empty() &&
+          newSlot->suppressFormalResults && newMarks.isEmpty();
+      if (!acceptedDiscard) {
         error = "检测启动改变了已有正式结果，上次正式结果仍在";
         return false;
       }
@@ -475,6 +552,7 @@ bool DetectionResultService::beginDetection(Project& project,
   slot->stale = true;
   slot->pendingRunId = request.runId;
   ++slot->generation;
+  discardCommittedFormalResult(*file, *slot);
   ticket = {file->metadata.id, request.runId, channel, generation,
             slot->generation, request.sourceIdentity};
   error.clear();
@@ -567,6 +645,8 @@ void DetectionResultService::retainUnpublishedDetection(
   else *current = run;
   slot->pendingRunId.clear();
   slot->stale = true;
+  slot->suppressFormalResults = true;
+  slot->unpublishedPreview = true;
 }
 bool DetectionResultService::markStale(Project& project, const std::string& fileId,
                                       std::uint32_t channel) {
@@ -629,6 +709,8 @@ DetectionCommitResult DetectionResultService::replaceCurrentDetection(
     slot->committedRunId = run.request.runId;
     slot->pendingRunId.clear();
     slot->stale = false;
+    slot->suppressFormalResults = false;
+    slot->unpublishedPreview = false;
     if (const auto valid = validateCurrentDetectionSlots(*next); !valid)
       return reject(QString::fromStdString(valid.error));
     if (inject(options, DetectionTransactionPoint::Stage)) return reject("Injected detection stage failure");
@@ -647,7 +729,7 @@ DetectionCommitResult DetectionResultService::replaceCurrentDetection(
         return reject("持久检测对象与 publication 不同");
     if (inject(options, DetectionTransactionPoint::Persist)) return reject("Injected detection persist failure");
     if (options.stillCurrent && !options.stillCurrent())
-      return reject("检测事务已丢弃，提交期间工程已变化。上次正式结果仍在");
+      return reject("检测事务已丢弃，提交期间工程已变化。已丢弃的正式结果不会恢复");
     bool generationStale = false;
     if (!ProjectFileCodec::save(path, candidate, error, AssetSaveMode::Preserve, {},
          [&] {
@@ -659,7 +741,7 @@ DetectionCommitResult DetectionResultService::replaceCurrentDetection(
            return true;
          }))
       return reject(generationStale
-                        ? QString("检测事务已丢弃，提交期间工程已变化。上次正式结果仍在")
+                        ? QString("检测事务已丢弃，提交期间工程已变化。已丢弃的正式结果不会恢复")
                         : error);
     // No allocation/IO can fail between the durable commit and publication.
     static_assert(std::is_nothrow_move_assignable_v<Project>);

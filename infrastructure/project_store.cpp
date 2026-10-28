@@ -578,7 +578,9 @@ QJsonObject encodeProject(const Project& project, const QString& path, bool writ
             {"committedRunId", text(slot.committedRunId)},
             {"generation", QString::number(slot.generation)}, {"stale", slot.stale},
             {"pendingRunId", text(slot.pendingRunId)}, {"retiredRunIds", retired},
-            {"retiredAnnotationIds", retiredAnnotations}});
+            {"retiredAnnotationIds", retiredAnnotations},
+            {"suppressFormalResults", slot.suppressFormalResults},
+            {"unpublishedPreview", slot.unpublishedPreview}});
       }
       auto encodedFile = files.last().toObject();
       encodedFile["currentDetectionSlots"] = slotData;
@@ -693,6 +695,10 @@ Project decodeProject(const QJsonObject& root, const QString& path) {
             require(value.isString(), "退役通道来源 ID 须为字符串");
             slot.retiredAnnotationIds.push_back(utf8(value.toString()));
           }
+        if (encoded.contains("suppressFormalResults"))
+          slot.suppressFormalResults = boolean(encoded, "suppressFormalResults");
+        if (encoded.contains("unpublishedPreview"))
+          slot.unpublishedPreview = boolean(encoded, "unpublishedPreview");
         file.currentDetectionSlots->push_back(std::move(slot));
       }
     }

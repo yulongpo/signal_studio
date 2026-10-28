@@ -3153,10 +3153,10 @@ bool MainWindow::allowProjectMutation(QString* error) {
 
 void MainWindow::syncFormalDetectionSuppression() {
   const auto* file = session_.activeFile();
-  const bool hide =
-      file && file->suppressCommittedDetectionChannel &&
-      *file->suppressCommittedDetectionChannel ==
-          file->metadata.sampleFormat.selectedChannel;
+  const auto* slot =
+      file ? currentDetectionSlot(*file, file->metadata.sampleFormat.selectedChannel)
+           : nullptr;
+  const bool hide = slot && slot->suppressFormalResults;
   for (auto* plot : {navigation_, auxiliary_, main_})
     if (plot) plot->setFormalDetectionSuppressed(hide);
 }

@@ -600,6 +600,20 @@ QString retainedRawHeadPreflight(const QString& directory,
 }
 }  // namespace
 
+bool detectionModelEvidenceIsDurable(const DetectionRequest& request) {
+  return request.legacyCombinedEvidence || request.rawHeadBudgetBytes > 0;
+}
+void preserveDurableModelEvidence(AnnotationSourceSet& set,
+                                  const DetectionRequest& request,
+                                  const QJsonObject& evidence) {
+  // Mappings receive modelEvidence only while raw heads or the legacy combined
+  // ledger are stored. Recovery rebuilds supplemental text from those mappings.
+  // A last-batch lastInference object that never reaches disk must not make
+  // encodeSourceSet disagree with the recovered publication.
+  if (!detectionModelEvidenceIsDurable(request)) return;
+  preserveRuntimeEvidence(set, evidence);
+}
+
 QString applyDetectionEvidencePreflight(const QString& projectDirectory,
                                         const DetectionSourcePlan& plan,
                                         DetectionRequest& request) {
@@ -1485,7 +1499,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     finish(job, DetectionLifecycle::Failed, error);
     return;
   }
-  if (!fixture) preserveRuntimeEvidence(set, worker.evidence());
+  if (!fixture) preserveDurableModelEvidence(set, request, worker.evidence());
   {
     std::lock_guard lock(mutex_);
     job->run.lifecycle = DetectionLifecycle::Running;
@@ -1598,8 +1612,8 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       job->gpuProfile["cudaEventIntervals"]=last["cudaEventIntervals"].toBool();
     }
     if (!fixture)
-      preserveRuntimeEvidence(
-          set,
+      preserveDurableModelEvidence(
+          set, request,
           response.envelope["payload"].toObject()["modelEvidence"].toObject());
     auto nextPublication = publication;
     auto nextPublicationBytes = job->publicationBytes;

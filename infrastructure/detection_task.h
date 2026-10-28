@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QJsonObject>
 #include <QString>
 #include <atomic>
 #include <functional>
@@ -26,6 +27,13 @@ struct DetectionSourcePlan;
 QString applyDetectionEvidencePreflight(const QString& projectDirectory,
                                         const DetectionSourcePlan& plan,
                                         DetectionRequest& request);
+// Batch modelEvidence is recoverable only when the chunk mappings store it,
+// which is the raw-head and legacy combined-ledger path. Otherwise it is
+// last-batch telemetry and must not enter the source set that commit compares.
+bool detectionModelEvidenceIsDurable(const DetectionRequest& request);
+void preserveDurableModelEvidence(AnnotationSourceSet& set,
+                                  const DetectionRequest& request,
+                                  const QJsonObject& evidence);
 void setDetectionVolumeFreeBytesProbeForTest(
     std::function<std::optional<std::uint64_t>(const QString& path)> probe);
 
