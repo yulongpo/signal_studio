@@ -39,8 +39,22 @@ std::uint64_t largestLeaf(std::uint64_t n) {
   }
   return 1;
 }
+// Same values as M1 contract section 1. Local until domain/detection.h publishes them.
+// The contiguous cap bounds one allocation. It is not a RAM grant limit.
+constexpr std::uint64_t kSampleContiguousAllocationCapBytes=1024ull*1024ull*1024ull;
+constexpr std::size_t kSampleWorkUnitCellCeiling=256u*1024u*1024u;
+QString timeRefineGrantDetail(std::uint64_t requested,std::uint64_t available) {
+  return QString("phase=time-refine requested=%1 available=%2")
+      .arg(static_cast<qulonglong>(requested)).arg(static_cast<qulonglong>(available));
+}
 bool contextValid(const Context& c, const Config& cfg, const Runtime& rt, Failure& f) {
   const auto& i=c.input; const auto& o=c.options; const auto& p=c.parameters;
+  // Cell ceiling is a work-unit bound. A grant above 1 GiB is a legal authorization.
+  if (!o.workingCellBudget || o.workingCellBudget>kSampleWorkUnitCellCeiling)
+    return fail(f,ErrorCode::InvalidInput,"plan",
+        QString("sample.work-unit-ceiling requested=%1 ceiling=%2")
+            .arg(static_cast<qulonglong>(o.workingCellBudget))
+            .arg(static_cast<qulonglong>(kSampleWorkUnitCellCeiling)));
   if (cfg.version!=1 || (cfg.mode!=Mode::LegacyExact && cfg.mode!=Mode::StreamingDiagnostic && cfg.mode!=Mode::AutoConservative) ||
       !viewValid(i.observation) || !viewValid(i.publishBounds) || !viewValid(clipped(i.observation,i.publishBounds)) ||
       i.candidateId.empty() || i.candidateId.size()>4096 || i.energy || i.spectrum || !i.fallbackActivity.empty() ||
@@ -53,12 +67,12 @@ bool contextValid(const Context& c, const Config& cfg, const Runtime& rt, Failur
       !finite(o.sampleNoiseQuantile,0,1) || !finite(o.sampleBurstQuantile,0,1) ||
       !finite(o.sampleMinimumOnFraction,0,1) || !finite(o.sampleMinimumRunSeconds,0,60) ||
       !std::isfinite(o.sampleMinimumBurstNoiseRatio) || o.sampleMinimumBurstNoiseRatio<1 ||
-      !o.workingCellBudget || o.workingCellBudget>256*1024*1024ULL || o.maximumActivitySegments>annotationSegmentBudget ||
+      o.maximumActivitySegments>annotationSegmentBudget ||
       !cfg.outputBlockSamples || cfg.outputBlockSamples>131072 ||
       cfg.maximumFftSamples<2 || cfg.maximumFftSamples>(1U<<20) ||
       (cfg.maximumFftSamples&(cfg.maximumFftSamples-1)) || cfg.maximumFirRadius>262143 ||
       !std::isfinite(cfg.firTailAmplitudeBudget) || cfg.firTailAmplitudeBudget<=0 || cfg.firTailAmplitudeBudget>8e-5 ||
-      rt.memoryGrantBytes>1024*MiB || !rt.memoryGrantBytes || rt.resultByteGrant>rt.memoryGrantBytes ||
+      !rt.memoryGrantBytes || rt.resultByteGrant>rt.memoryGrantBytes ||
       rt.readerResidentReserveBytes>rt.memoryGrantBytes ||
       !rt.sourceReadBlockSamples || rt.sourceReadBlockSamples>131072)
     return fail(f,ErrorCode::InvalidInput,"plan","Invalid sample context/configuration/budgets");
@@ -480,6 +494,9 @@ bool stream(const Context& c,const Config& cfg,const Runtime& rt,const Plan& p,
   return true;
 }
 bool legacy(const Context& c,const Runtime& rt,const Plan& p,Result& out,Failure& f) {
+  if (p.estimatedResidentBytes>rt.memoryGrantBytes)
+    return fail(f,ErrorCode::ResourceLimit,"legacy-plan",
+        timeRefineGrantDetail(p.estimatedResidentBytes,rt.memoryGrantBytes));
   if (!p.legacyEligible) return fail(f,ErrorCode::ResourceLimit,"legacy-plan","LegacyExact working budget unavailable");
   out.statistics.plan=p;
   std::vector<Complex> iq(static_cast<std::size_t>(p.count));
@@ -566,7 +583,10 @@ bool makePlan(const Context& c,const Config& cfg,const Runtime& rt,Plan& output,
   p.legacyResidentEstimateBytes=static_cast<std::uint64_t>(exact);
   const auto worstSegments=p.split?std::min<SampleIndex>(annotationSegmentBudget,p.count/(p.minOnSamples+1)+1):1;
   const auto segmentBytes=2*sizeof(Segment)+c.input.candidateId.size()+64;
-  p.legacyEligible=exact<=rt.memoryGrantBytes && p.count<=c.options.workingCellBudget &&
+  // A multi-gig exact buffer stays ineligible even when the grant could cover it.
+  // Streaming/Auto keeps the long path. FIR tail, quantile and precision guards are unchanged.
+  p.legacyEligible=exact<=rt.memoryGrantBytes && exact<=kSampleContiguousAllocationCapBytes &&
+                    p.count<=c.options.workingCellBudget &&
                     p.count<=std::numeric_limits<std::size_t>::max() && worstSegments<=rt.resultByteGrant/segmentBytes;
   if (cfg.mode==Mode::LegacyExact) {p.estimatedResidentBytes=p.legacyResidentEstimateBytes;output=p;return true;}
   const long double fs=c.input.sampleRateHz,taper=std::max(c.bandwidthHz/4,1.);
@@ -589,7 +609,10 @@ bool makePlan(const Context& c,const Config& cfg,const Runtime& rt,Plan& output,
   const long double resident=32.L*p.fftSamples+16.L*(2*p.radius+p.outputBlockSamples)+
       16.L*p.outputBlockSamples+fixed;
   p.estimatedResidentBytes=static_cast<std::uint64_t>(resident);
-  if (resident>rt.memoryGrantBytes || p.scratchReservationBytes>cfg.scratchBudgetBytes)
+  if (p.estimatedResidentBytes>rt.memoryGrantBytes || resident>static_cast<long double>(rt.memoryGrantBytes))
+    return fail(f,ErrorCode::ResourceLimit,"fir-plan",
+        timeRefineGrantDetail(p.estimatedResidentBytes,rt.memoryGrantBytes));
+  if (p.scratchReservationBytes>cfg.scratchBudgetBytes)
     return fail(f,ErrorCode::ResourceLimit,"fir-plan","Fixed Sample workspace or scratch quota exceeded");
   output=p;return true;
 }
@@ -655,7 +678,10 @@ bool refineEnergyBlocks(const Context& c,const Config& cfg,const Runtime& rt,con
   Plan p;if (!makePlan(c,base,rt,p,f)) return false;
   p.scratchReservationBytes=8*p.count+8192;
   p.estimatedResidentBytes=rt.readerResidentReserveBytes+rt.resultByteGrant+4*MiB+32ULL*p.outputBlockSamples;
-  if (p.estimatedResidentBytes>rt.memoryGrantBytes || p.scratchReservationBytes>cfg.scratchBudgetBytes)
+  if (p.estimatedResidentBytes>rt.memoryGrantBytes)
+    return fail(f,ErrorCode::ResourceLimit,"external-energy",
+        timeRefineGrantDetail(p.estimatedResidentBytes,rt.memoryGrantBytes));
+  if (p.scratchReservationBytes>cfg.scratchBudgetBytes)
     return fail(f,ErrorCode::ResourceLimit,"external-energy","External Energy workspace/scratch budget exceeded");
   if (!verify(c,rt,f)) return false;
   Result next;
