@@ -161,7 +161,7 @@ bool validateConfig(const FrequencyTrackerConfig& config, std::string& error) {
       !validFrequency(
           {config.firstBinHz,
            config.firstBinHz + (config.inputBins - 1) * config.binWidthHz}) ||
-      !unit(config.matchIou) || config.matchIou == 0 || config.minHits == 0 ||
+      !unit(config.matchIou) || config.minHits == 0 ||
       config.maxMiss > 1000000 || !std::isfinite(config.mergeToleranceHz) ||
       config.mergeToleranceHz < 0 ||
       !std::isfinite(config.containmentCenterToleranceHz) ||
@@ -187,6 +187,27 @@ bool validateConfig(const FrequencyTrackerConfig& config, std::string& error) {
 struct BinInterval {
   std::size_t begin = 0, end = 0;
 };
+struct IntervalRef {
+  double lowerHz = 0, upperHz = 0;
+  std::size_t index = 0;
+};
+// Sorted endpoint table, sweep scratch, and allocator slack. Charged on top
+// of the caller's resident upper bound while the index is alive.
+std::uint64_t intervalIndexBytes(std::size_t count) {
+  return 256ull + static_cast<std::uint64_t>(count) * 96ull;
+}
+bool chargeIntervalIndex(std::size_t count, std::uint64_t base,
+                         std::uint64_t budget, std::string& error) {
+  const auto bytes = intervalIndexBytes(count);
+  if (bytes > budget || base > budget - bytes)
+    return fail(error, "tracker-resident-byte-budget-exceeded");
+  return true;
+}
+bool lowerInterval(const IntervalRef& a, const IntervalRef& b) {
+  if (a.lowerHz < b.lowerHz) return true;
+  if (b.lowerHz < a.lowerHz) return false;
+  return a.index < b.index;
+}
 BinInterval binsFor(FrequencyRange range, double first, double step,
                     std::size_t count) {
   const double begin = std::floor((range.lowerHz - first) / step + 1e-10);
@@ -213,8 +234,8 @@ void releaseWindowEvidence(std::size_t& bandCount, std::size_t& windowEvidenceCo
 template <typename PreviewFn>
 bool fuseOpenTracks(std::vector<OnlineTrack>& tracks,
                     const FrequencyTrackerConfig& config, std::uint64_t ordinal,
-                    std::size_t sealedCount, std::uint64_t& comparisons,
-                    bool& mergedAny, std::string& error,
+                    std::size_t sealedCount, std::uint64_t baseBytes,
+                    std::uint64_t& comparisons, bool& mergedAny, std::string& error,
                     const PostprocessCancellation& cancelled, PreviewFn&& preview) {
   const auto refreshSums = [&](OnlineTrack& track) {
     track.lowerSum = track.upperSum = track.scoreSum = 0;
@@ -235,11 +256,32 @@ bool fuseOpenTracks(std::vector<OnlineTrack>& tracks,
   };
   const auto mergePass = [&](bool fragments) {
     while (tracks.size() > 1) {
+      if (!chargeIntervalIndex(tracks.size(), baseBytes,
+                               config.limits.residentByteBudget, error))
+        return false;
+      std::vector<IntervalRef> items;
+      items.reserve(tracks.size());
+      for (std::size_t index = 0; index < tracks.size(); ++index) {
+        const auto& frequency = tracks[index].result.frequency;
+        items.push_back({frequency.lowerHz, frequency.upperHz, index});
+      }
+      std::sort(items.begin(), items.end(), lowerInterval);
       std::optional<std::tuple<double, SampleIndex, SampleIndex, double, double,
                                SampleIndex, std::size_t, std::size_t>>
           best;
-      for (std::size_t i = 0; i + 1 < tracks.size(); ++i) {
-        for (std::size_t j = i + 1; j < tracks.size(); ++j) {
+      for (std::size_t left = 0; left + 1 < items.size(); ++left) {
+        for (std::size_t right = left + 1; right < items.size(); ++right) {
+          // items are ordered by lower edge, so a later lower edge that is
+          // already too far stays too far for every following interval.
+          if (fragments) {
+            if (!(items[right].lowerHz < items[left].upperHz)) break;
+          } else if (items[right].lowerHz - items[left].upperHz >
+                     config.mergeToleranceHz) {
+            break;
+          }
+          auto i = items[left].index;
+          auto j = items[right].index;
+          if (i > j) std::swap(i, j);
           if (stop(cancelled, error)) return false;
           if (++comparisons > config.limits.maximumFusionComparisons) {
             error = "frequency-fusion-comparison-limit-exceeded open=" +
@@ -578,21 +620,82 @@ bool FrequencyTracker::consume(const WindowObservation& window,
   }
   std::vector<AssociationPair> pairs;
   std::uint64_t associationComparisons = 0;
-  for (std::size_t ti = 0; ti < state_->active.size(); ++ti) {
-    if (!burstOpen[ti]) continue;
-    for (std::size_t di = 0; di < bands.size(); ++di) {
-      if (stop(cancelled, error)) return false;
-      if (++associationComparisons > limits.maximumAssociationComparisons)
-        return fail(error, "association-comparison-limit-exceeded");
-      const double iou = frequencyIntersectionOverUnion(
-          state_->active[ti].result.frequency, bands[di].frequency);
-      if (iou < config.matchIou) continue;
-      if (pairs.size() == limits.maximumAssociationPairs)
-        return fail(error, "association-pair-limit-exceeded");
-      if (upperBytes + (pairs.size() + 1) * sizeof(AssociationPair) * 2 >
-          limits.residentByteBudget)
-        return fail(error, "association-resident-byte-budget-exceeded");
-      pairs.push_back({iou, bands[di].score, ti, di});
+  const auto acceptPair = [&](std::size_t track, std::size_t band) {
+    if (stop(cancelled, error)) return false;
+    if (++associationComparisons > limits.maximumAssociationComparisons)
+      return fail(error, "association-comparison-limit-exceeded");
+    const double iou = frequencyIntersectionOverUnion(
+        state_->active[track].result.frequency, bands[band].frequency);
+    if (iou < config.matchIou) return true;
+    if (pairs.size() == limits.maximumAssociationPairs)
+      return fail(error, "association-pair-limit-exceeded");
+    if (upperBytes + (pairs.size() + 1) * sizeof(AssociationPair) * 2 >
+        limits.residentByteBudget)
+      return fail(error, "association-resident-byte-budget-exceeded");
+    pairs.push_back({iou, bands[band].score, track, band});
+    return true;
+  };
+  if (config.matchIou == 0) {
+    // IoU is never negative, so the threshold keeps every burst-open pair.
+    for (std::size_t track = 0; track < state_->active.size(); ++track) {
+      if (!burstOpen[track]) continue;
+      for (std::size_t band = 0; band < bands.size(); ++band)
+        if (!acceptPair(track, band)) return false;
+    }
+  } else if (!bands.empty()) {
+    std::vector<IntervalRef> trackIntervals;
+    trackIntervals.reserve(state_->active.size());
+    for (std::size_t track = 0; track < state_->active.size(); ++track) {
+      if (!burstOpen[track]) continue;
+      const auto& frequency = state_->active[track].result.frequency;
+      trackIntervals.push_back({frequency.lowerHz, frequency.upperHz, track});
+    }
+    if (!trackIntervals.empty()) {
+      if (!chargeIntervalIndex(trackIntervals.size() + bands.size(), upperBytes,
+                               limits.residentByteBudget, error))
+        return false;
+      std::vector<IntervalRef> bandIntervals;
+      bandIntervals.reserve(bands.size());
+      for (std::size_t band = 0; band < bands.size(); ++band)
+        bandIntervals.push_back(
+            {bands[band].frequency.lowerHz, bands[band].frequency.upperHz, band});
+      std::sort(trackIntervals.begin(), trackIntervals.end(), lowerInterval);
+      std::sort(bandIntervals.begin(), bandIntervals.end(), lowerInterval);
+      std::vector<std::size_t> activeTracks, activeBands;
+      std::size_t trackCursor = 0, bandCursor = 0;
+      const auto expire = [](std::vector<std::size_t>& active,
+                             const std::vector<IntervalRef>& items, double lower) {
+        active.erase(std::remove_if(active.begin(), active.end(),
+                                    [&](std::size_t slot) {
+                                      return !(items[slot].upperHz > lower);
+                                    }),
+                     active.end());
+      };
+      while (trackCursor < trackIntervals.size() ||
+             bandCursor < bandIntervals.size()) {
+        const bool takeTrack =
+            bandCursor == bandIntervals.size() ||
+            (trackCursor < trackIntervals.size() &&
+             trackIntervals[trackCursor].lowerHz <=
+                 bandIntervals[bandCursor].lowerHz);
+        if (takeTrack) {
+          expire(activeBands, bandIntervals, trackIntervals[trackCursor].lowerHz);
+          for (const auto slot : activeBands)
+            if (!acceptPair(trackIntervals[trackCursor].index,
+                            bandIntervals[slot].index))
+              return false;
+          activeTracks.push_back(trackCursor);
+          ++trackCursor;
+        } else {
+          expire(activeTracks, trackIntervals, bandIntervals[bandCursor].lowerHz);
+          for (const auto slot : activeTracks)
+            if (!acceptPair(trackIntervals[slot].index,
+                            bandIntervals[bandCursor].index))
+              return false;
+          activeBands.push_back(bandCursor);
+          ++bandCursor;
+        }
+      }
     }
   }
   std::sort(pairs.begin(), pairs.end(), [](const auto& a, const auto& b) {
@@ -711,7 +814,7 @@ bool FrequencyTracker::consume(const WindowObservation& window,
   std::uint64_t fusionComparisons = 0;
   bool mergedAny = false;
   if (!fuseOpenTracks(
-          next->active, config, window.ordinal, next->sealed.size(),
+          next->active, config, window.ordinal, next->sealed.size(), upperBytes,
           fusionComparisons, mergedAny, error, cancelled,
           [&](const FrequencyTrack& survivor, const std::string& absorbed) {
             rememberPreview(*next, {survivor.previewId, absorbed, survivor.previewRevision,
