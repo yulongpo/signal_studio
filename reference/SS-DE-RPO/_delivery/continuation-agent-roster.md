@@ -14,11 +14,13 @@ All sessions use grok-4.7-build-fast / xhigh (Extra High), as explicitly selecte
 | A2 | 8f9e8e2a-fceb-4a64-9807-a677982d7149 | D:\project\ss-de-rpo-wt\continue-a | FINISHED | d02a3fcae7a4294dcd17f983e2abc35e99e3439f |
 | A3 | 8aa72800-67d9-4133-b224-88e71c336af1 | D:\project\ss-de-rpo-wt\continue-a | FINISHED | 906ca06fce1a75d59f89288230165d5e9ef0b834 |
 | G-resume | 766fc7f9-aaeb-4b7b-962a-7d6c1b9bc328 | D:\project\ss-de-rpo-wt\continue-g | FINISHED | 34907d75946eec7c30099a2be3ce092175a6751e |
-| C2 | df11fca6-6172-4a1f-a955-935fdc710525 | D:\project\ss-de-rpo-wt\continue-c | RUNNING |  |
-| G2 | 2c7af937-bc18-49b0-b875-4af63daf3926 | D:\project\ss-de-rpo-wt\continue-g | RUNNING |  |
-| D3 | f8e249f0-59d0-47d9-bbe5-71ca6402bd93 | D:\project\ss-de-rpo-wt\baseline-observed | RUNNING |  |
+| C2 | df11fca6-6172-4a1f-a955-935fdc710525 | D:\project\ss-de-rpo-wt\continue-c | FINISHED | 7d208ccc4c27604adcd8b1ecdd7643ef192fefb1 |
+| G2 | 2c7af937-bc18-49b0-b875-4af63daf3926 | D:\project\ss-de-rpo-wt\continue-g | FINISHED | dc9843eb10bf6426d7a838c489830398bb9c8c47 |
+| D3 | f8e249f0-59d0-47d9-bbe5-71ca6402bd93 | D:\project\ss-de-rpo-wt\baseline-observed | FINISHED | 43719408932b96976fc835546640d8a67a441c95 |
 
 Per-session prompt, model, effort, CLI path, start/end times, base/final commits and raw transcript are in out/tasks/ss-de-rpo/agents/results/. Owned files and checks are in each committed agent handoff. G resumed its original session after reaching the turn limit; this is not represented as a new independent reviewer.
 
-D3 owns an observability-only baseline branch at 7220b2e, never merged into the production branch. It must preserve baseline math and scheduling. H has not started; final exact-HEAD review must use a fresh read-only session after required acceptance and final commits.
+D3 owns an observability-only baseline branch at 7220b2e, never merged into the production branch. It must preserve baseline math and scheduling. H uses the reserved fresh session f30cc2da-9fec-4346-a70b-c04fe649bbbd only after final acceptance and the final commit. Its actual start/end, exact SHA and verdict are intentionally recorded outside Git in agents/results/H/session.json and H_FINAL_REVIEW.md; it authors no implementation commit.
 
+
+H registry: `f30cc2da-9fec-4346-a70b-c04fe649bbbd`, grok-4.7-build-fast / xhigh, read-only final gate. This registry reserves the identity; actual execution and conclusion must be read from the external session/review record.

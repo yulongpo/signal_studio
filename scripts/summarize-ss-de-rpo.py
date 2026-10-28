@@ -68,6 +68,9 @@ def signature(launch, measurement):
         "contextRange": request.get("contextRange"), "spectrumMode": request.get("spectrumMode"),
         "workingSetBudgetBytes": request.get("workingSetBudgetBytes"),
         "evidenceBudgetBytes": request.get("evidenceBudgetBytes"),
+        "rawHeadBudgetBytes": request.get("rawHeadBudgetBytes", "0"),
+        "legacyCombinedEvidence": request.get("legacyCombinedEvidence", False),
+        "gpuDspPreferred": request.get("gpuDspPreferred", False),
         "retainRawModelOutput": request.get("retainRawModelOutput"),
         "completedWindows": run.get("completedWindows"), "eligibleWindows": run.get("eligibleWindows"),
         "dspRoute": run.get("performance", {}).get("sourceStages", {}).get("gpuDsp", {}).get("stftRoute")}

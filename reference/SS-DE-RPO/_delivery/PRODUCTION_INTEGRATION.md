@@ -44,3 +44,25 @@ The first current Debug full CTest attempt passed 59/60, including all repaired 
 The corrected Debug observer passed directed CTest 1/1. Native diagnostic: 20 samples, completed-paint p95 8.29965 ms, paint-body p95 0.54058 ms, queued-callback p95 130.008 ms. This demonstrates why queued callback time is not completed-paint latency. The final serial native measurements will supersede this diagnostic. Five click attempts are now explicitly required within 100 ms; the native diagnostic burst took 17 ms and emitted one request.
 
 `collect-ss-de-rpo-ctest.ps1` checks production-source equivalence and the registered CTest inventory before combining a full attempt with directed supplements. It preserves the initial failures and states this is case coverage, not a single all-passing attempt. The corrected Debug set covers all 60 cases (59 initial passes + one directed pass). Only the feedback test changed; the product sources used by the other 59 tests are unchanged. RPO UI/start CTest entries now use the existing file-log wrapper so GUI-subsystem failures retain diagnostics.
+
+## Retryable start notice and final complete rerun
+
+`final-acceptance-02` passed R-01..R-20 and all real model/native/package checks, but Release full CTest was 59/60: asynchronous status refresh erased a transaction-save error. This is a real UI lifecycle failure, not a reporting exception. e5ae911 stores a retryable notice separately from input validation, preserves it across background refresh, and clears it on retry or changed inputs/source. New-context refresh releases the old provisional card latch; a late rejection cannot overwrite the new context. The true atomic project commit retains its existing navigation lock.
+
+Both Debug/Release start suites now pass all seven Qt rows. The added test controls the pending card boundary, where navigation is actually allowed; real pre/post-commit cancellation remains in separate integration tests. The first added test attempted navigation while the atomic commit held its lock and correctly failed; that output remains in N4/start-notice-debug-tests.txt.
+
+Because product UI code changed, prior collected CTest coverage is no longer reused. Full builds completed for every target, and N4/final-acceptance-03 reruns all 60 registered cases in both configurations, plus native/GPU checks. This run must finish successfully before the final comparison and H review.
+
+The performance summary reads actual cold and resident measurements, checks equal input/model/profile/parameters, requires three passed trials per side and four distinct Workers including resident warmup, and refuses ratios for failures or missing data. The sampler filters the benchmark parent and its direct Workers; one poll shares one timestamp so simultaneous RSS sums do not combine unrelated samples. Device GPU usage and volume free-space remain explicitly system-wide observations.
+
+## Interrupted acceptance attempt and retained UI watchdog
+
+The final-acceptance-03 process was interrupted before Debug cases 58..60 completed; it has 56 recorded passes, one workflow watchdog timeout, and three missing case outcomes. No acceptance PASS is assigned to that interrupted invocation. A fresh directed run covers the complete workflow executable and remaining UI suites. The workflow retains every one of its 27 Qt rows and assertions, with the project's established 480 s UI watchdog replacing its older 180 s total guard. Both presets were regenerated successfully. No product source or test body changed for this guard adjustment.
+
+The coverage collector now records initially missing cases, demands passing supplements for failures and every current registered case, rechecks production/test source identity, and rejects build-definition changes beyond comments/UI watchdog normalization. Final verification will consume only successful complete case coverage; source-equivalent original-IQ runs remain separately identified. This does not turn the interrupted attempt into a single passing full run.
+
+## Final verified closure
+
+final-acceptance-04 exited0: all R-01..20 and both CTest gates PASS. Release full60/60,298.99s. Debug60 coverage is56 initial passes plus4 complete supplements, preserving one180s timeout and three interrupted outcomes. Native n20 Paint p95 Debug7.63922ms/Release43.7656ms. Both final-code independent deployments pass GPU and software with system-only PATH. Final real live/adapted, Sample Golden, rawON20 and source-equivalent original large cases pass. No product/test assertions were removed.
+
+Final native baseline/new comparison is serialized and fully passed. Cold click-to-formal mean12791.739/10449.592ms; resident10052.085/7727.640ms; first inference improves in both. All14 runs including excluded warmups formally publish/reopen. All8 final project geometries match exactly (9 Algorithm annotations). See the compact tracked performance reports and N4/performance-summary.json. The final gate is a fresh read-only H review of the subsequent exact delivery commit; its result and push identity remain outside Git.
