@@ -13,6 +13,7 @@
 #include <optional>
 #include <string>
 
+#include "infrastructure/detection_model_backend.h"
 #include "infrastructure/detection_sample_stream.h"
 #include "infrastructure/detection_source.h"
 #include "infrastructure/detection_task.h"
@@ -202,6 +203,23 @@ void testRawHeadPreflight() {
              retainError.toStdString());
 }
 
+void testBatchSelector() {
+  const auto unknown = selectDetectionExecutionBatch(16, 2, 16, 1024, 0, 0);
+  report("R-15-unknown-vram", unknown == 2,
+         "unknown VRAM keeps the worker ceiling 2 and does not jump to 16");
+  const auto profile = selectDetectionExecutionBatch(16, 16, 4, 1024, 0, 0);
+  report("R-15-profile-cap", profile == 4,
+         "profile maximum 4 clamps a request of 16 when VRAM is unknown");
+  const auto fits = selectDetectionExecutionBatch(16, 16, 16, 1000, 8000, 0);
+  report("R-15-vram-fit", fits == 8,
+         "8000 bytes free with 1000 bytes per unit selects batch 8, not 16");
+  const auto tight = selectDetectionExecutionBatch(16, 16, 16, 5000, 4000, 0);
+  report("R-15-batch1-rejected", tight == 0,
+         "batch 1 that does not fit known VRAM returns 0");
+  const auto noProfile = selectDetectionExecutionBatch(2, 2, 0, 0, 0, 0);
+  report("R-15-no-profile", noProfile == 0, "profile maximum 0 returns 0");
+}
+
 void testR12() {
   const QJsonObject evidence{{"lastInference", QJsonObject{{"h2dMs", 1.5}}}};
 
@@ -250,6 +268,7 @@ int main(int argc, char** argv) {
   try {
     testR01();
     testRawHeadPreflight();
+    testBatchSelector();
     testR12();
   } catch (const std::exception& error) {
     std::cout << "FAIL uncaught " << error.what() << '\n';
