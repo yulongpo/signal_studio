@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -103,6 +104,49 @@ inline constexpr std::uint64_t kDetectionLegacySampleScratchBytes =
 // combined manifests and this 2 GiB explicit cap stay in force.
 inline constexpr std::uint64_t kDetectionExplicitRawHeadMaxBytes =
     2ULL * 1024 * 1024 * 1024;
+
+// Runtime-only. These types are not DetectionRequest fields and are not
+// serialized into project JSON.
+enum class ResourceDecisionKind { Accepted, Adapted, Rejected };
+
+// requested, available, reserve, and granted are bytes when resource is
+// "ram", "vram", or "disk". They are cell counts when resource is
+// "work-unit". reserve stays 0 when the caller did not pass a reserve.
+struct ResourceDecision {
+  ResourceDecisionKind kind = ResourceDecisionKind::Rejected;
+  std::string errorCode;
+  std::string phase;
+  std::string resource;
+  std::uint64_t requested = 0;
+  std::uint64_t available = 0;
+  std::uint64_t reserve = 0;
+  std::uint64_t granted = 0;
+  std::string message;
+};
+
+// One contiguous allocation safety cap. This is not a RAM authorization ceiling.
+inline constexpr std::uint64_t kSampleContiguousAllocationCapBytes =
+    1024ull * 1024 * 1024;
+// Cell-count ceiling for one algorithm work unit. This is not a byte budget.
+inline constexpr std::size_t kSampleWorkUnitCellCeiling = 256u * 1024u * 1024u;
+
+// On success writes a * b to out and returns true. On overflow writes 0 and
+// returns false. The product is never wrapped.
+bool checkedMulU64(std::uint64_t a, std::uint64_t b, std::uint64_t& out);
+
+// Sample-phase budget. phase is "time-refine". An authorization above the
+// contiguous cap is Accepted or Adapted, never Rejected only because it is large.
+// authorizedRamBytes == 0 rejects with sample.invalid-context.
+// plannedCells > kSampleWorkUnitCellCeiling rejects with sample.work-unit-ceiling.
+// estimatedChunkResidentBytes > authorizedRamBytes, when authorized is
+// non-zero, rejects with sample.chunk-exceeds-grant.
+// estimated resident above the contiguous cap but within the authorization
+// returns Adapted, granted = the cap, and tells the planner to chunk. That
+// adaptation is not a hard failure of the whole job. Callers must branch on
+// kind; sample.grant-exceeds-contiguous-cap is returned only for Adapted.
+ResourceDecision decideSamplePhaseBudget(std::uint64_t authorizedRamBytes,
+                                         std::uint64_t estimatedChunkResidentBytes,
+                                         std::size_t plannedCells);
 
 // Empty path uses the current directory. A missing volume leaves the disk
 // target in place so a default can still be formed.

@@ -212,6 +212,21 @@ DetectionResourceOptionsDialog::DetectionResourceOptionsDialog(
       "上限是该卷剩余磁盘。关闭时不按这项拒绝检测。");
   form->addRow("观测 JSON 预算", evidenceMiB_);
   form->addRow("检测工作集预算", workingSetMiB_);
+  const auto physicalRamBytes = detectionPhysicalMemoryBytes();
+  const auto workingSetDefaultBytes = detectionWorkingSetDefaultBytes();
+  auto* authorizationNote = new QLabel(this);
+  authorizationNote->setObjectName("workingSetAuthorizationNote");
+  authorizationNote->setWordWrap(true);
+  authorizationNote->setFocusPolicy(Qt::NoFocus);
+  authorizationNote->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  authorizationNote->setText(
+      QString("本机物理内存 %1 字节（%2 MiB）。默认工作集 %3 字节（%4 MiB）。"
+              "更大的工作集授权是使用上限，不是一次连续分配。")
+          .arg(QString::number(physicalRamBytes))
+          .arg(wholeUnits(physicalRamBytes, kMiB))
+          .arg(QString::number(workingSetDefaultBytes))
+          .arg(memoryDefaultMiB));
+  form->addRow("工作集说明", authorizationNote);
   form->addRow("Sample 临时盘", scratchGiB_);
   form->addRow("原始输出配额", rawHeadGiB_);
   layout->addLayout(form);
