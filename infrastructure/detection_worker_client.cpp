@@ -4,6 +4,8 @@
 #include <QFileInfo>
 #include <QJsonObject>
 
+#include <chrono>
+
 #include "infrastructure/detection_store.h"
 
 #ifdef Q_OS_WIN
@@ -15,6 +17,23 @@
 #endif
 
 namespace signalstudio {
+namespace {
+bool parentSteadyNanoseconds(std::uint64_t& nanoseconds) {
+  const auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                         std::chrono::steady_clock::now().time_since_epoch())
+                         .count();
+  if (count < 0) return false;
+  nanoseconds = static_cast<std::uint64_t>(count);
+  return true;
+}
+}  // namespace
+
+void DetectionWorkerClient::stampParentClock(const char* name) {
+  if (name == nullptr || name[0] == '\0') return;
+  std::uint64_t nanoseconds = 0;
+  if (!parentSteadyNanoseconds(nanoseconds)) return;
+  parentClockStamps_.push_back(DetectionParentClockStamp{name, nanoseconds});
+}
 
 DetectionWorkerClient::~DetectionWorkerClient() { stop(); }
 
@@ -118,6 +137,7 @@ bool DetectionWorkerClient::start(const QString& executable,
                                   QString& error,
                                   const std::function<bool()>& cancelled,
                                   std::uint32_t maximumExecutionBatch) {
+  parentClockStamps_.clear();
   if (!QFileInfo(executable).isFile()) {
     error = "Detection worker executable is missing";
     return false;
@@ -135,6 +155,7 @@ bool DetectionWorkerClient::start(const QString& executable,
     return false;
   }
   processId_=process_.processId();
+  stampParentClock("t_worker_spawn");
   DetectionWorkerPacket hello{
       workerEnvelope("hello", "handshake", 0, {{"client", "SignalStudio"}}),
       {}};
@@ -145,6 +166,7 @@ bool DetectionWorkerClient::start(const QString& executable,
     error = "Worker protocol handshake failed";
     return false;
   }
+  stampParentClock("t_worker_hello");
   DetectionWorkerPacket begin{
       workerEnvelope("begin", "begin", 0, encodeDetectionRequest(request),
                      QString::fromStdString(request.runId),
@@ -153,6 +175,7 @@ bool DetectionWorkerClient::start(const QString& executable,
       {}};
   if (!exchange(std::move(begin), ready, error, cancelled)) return false;
   evidence_ = ready.envelope["payload"].toObject();
+  stampParentClock("t_engine_ready");
   return true;
 }
 
