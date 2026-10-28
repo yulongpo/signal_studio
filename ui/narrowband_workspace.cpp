@@ -1223,8 +1223,42 @@ void NarrowbandWorkspace::activatePageForAcceptance(int index) {
 
 void NarrowbandWorkspace::activatePage(NarrowbandPage page) { showPage(page); }
 
+NarrowbandWorkspace::ChannelEditResult NarrowbandWorkspace::commitActiveChannelEdit(
+    const std::function<bool(Channel&)>& edit) {
+    std::string blocked;
+    if (!session_.acceptProjectWrite(blocked)) {
+        restoreCommittedControls();
+        return ChannelEditResult::Refused;
+    }
+    Channel* channel = session_.activeChannel();
+    if (!channel) return ChannelEditResult::Unavailable;
+    if (edit && edit(*channel)) session_.noteProjectWrite();
+    return ChannelEditResult::Accepted;
+}
+
+void NarrowbandWorkspace::restoreCommittedControls() {
+    if (restoringCommittedControls_ || !session_.activeChannel()) return;
+    restoringCommittedControls_ = true;
+    suppressDisplayRefresh_ = true;
+    QWidget* host = window() ? window() : this;
+    for (const char* name : {"symbolRate", "analysisApskRings", "analysisManualCfoHz",
+                             "analysisManualPhaseRadians", "analysisTimingLoopBandwidth",
+                             "analysisCarrierLoopBandwidth", "analysisRrcSpan", "eyeTimingOffsetUi",
+                             "analysisRrcRolloff", "constellationAxisMinimum", "constellationAxisMaximum"}) {
+        for (auto* widget : host->findChildren<QWidget*>(QString::fromLatin1(name)))
+            widget->setProperty("parameterDraft", false);
+    }
+    refreshFromSession();
+    suppressDisplayRefresh_ = false;
+    restoringCommittedControls_ = false;
+}
+
 void NarrowbandWorkspace::setSyncPanelExpanded(bool expanded) {
-    if (auto* channel = session_.activeChannel()) channel->syncPanelExpanded = expanded;
+    if (commitActiveChannelEdit([expanded](Channel& channel) {
+            if (channel.syncPanelExpanded == expanded) return false;
+            channel.syncPanelExpanded = expanded;
+            return true;
+        }) == ChannelEditResult::Refused) return;
     if (syncPanelToggle_) {
         const QSignalBlocker blocker(syncPanelToggle_);
         syncPanelToggle_->setChecked(expanded);
@@ -1411,22 +1445,40 @@ void NarrowbandWorkspace::buildPages() {
     chartToolbarRow->addStretch(); chartToolbarRow->addWidget(dataStatus_, 1);
     root->addWidget(chartToolbar);
     connect(waveformMode_, &QComboBox::currentIndexChanged, this, [this](int index) {
-        if (auto* channel = session_.activeChannel()) {
-            channel->waveform = static_cast<NarrowbandWaveform>(index);
-            channel->waveformAutoScale = true;
-        }
+        const auto mode = static_cast<NarrowbandWaveform>(index);
+        if (commitActiveChannelEdit([mode](Channel& channel) {
+                if (channel.waveform == mode && channel.waveformAutoScale) return false;
+                channel.waveform = mode;
+                channel.waveformAutoScale = true;
+                return true;
+            }) == ChannelEditResult::Refused) return;
         requestDisplay();
     });
     connect(displayPsdFft_, &QComboBox::currentIndexChanged, this, [this](int index) {
-        if (auto* channel = session_.activeChannel()) channel->psdFftSize = displayPsdFft_->itemData(index).toInt();
+        const int points = displayPsdFft_->itemData(index).toInt();
+        if (commitActiveChannelEdit([points](Channel& channel) {
+                if (channel.psdFftSize == points) return false;
+                channel.psdFftSize = points;
+                return true;
+            }) == ChannelEditResult::Refused) return;
         requestDisplay(); emit displayParametersChanged();
     });
     connect(displayStftFft_, &QComboBox::currentIndexChanged, this, [this](int index) {
-        if (auto* channel = session_.activeChannel()) channel->stftFftSize = displayStftFft_->itemData(index).toInt();
+        const int points = displayStftFft_->itemData(index).toInt();
+        if (commitActiveChannelEdit([points](Channel& channel) {
+                if (channel.stftFftSize == points) return false;
+                channel.stftFftSize = points;
+                return true;
+            }) == ChannelEditResult::Refused) return;
         requestDisplay(); emit displayParametersChanged();
     });
     connect(frequencyMode_, &QComboBox::currentIndexChanged, this, [this](int index) {
-        if (auto* channel = session_.activeChannel()) channel->absoluteFrequencyLabels = index == 1;
+        const bool absolute = index == 1;
+        if (commitActiveChannelEdit([absolute](Channel& channel) {
+                if (channel.absoluteFrequencyLabels == absolute) return false;
+                channel.absoluteFrequencyLabels = absolute;
+                return true;
+            }) == ChannelEditResult::Refused) return;
         updateFrequencyAxisLabels(); emit displayParametersChanged();
     });
     auto* body = new QHBoxLayout; body->setContentsMargins(0,0,0,0); body->setSpacing(5);
@@ -1475,7 +1527,12 @@ void NarrowbandWorkspace::buildPages() {
     constellationStage->addItems({"原始 IQ","CFO 校正","匹配滤波","定时符号","载波恢复","判决观察"});
     constellationStage->setToolTip("仅切换共享快照显示。判决来源为载波恢复符号；未锁定时不可用。处理请使用同步与参数。");
     connect(constellationStage,&QComboBox::currentIndexChanged,this,[this](int value){
-        if(auto* c=session_.activeChannel()){c->constellationDecisions=value==5;c->analysis.constellationStage=value==5?AnalysisStage::CarrierRecovered:static_cast<AnalysisStage>(value);}
+        const bool decisions=value==5;
+        const auto stage=decisions?AnalysisStage::CarrierRecovered:static_cast<AnalysisStage>(value);
+        if(commitActiveChannelEdit([decisions,stage](Channel& channel){
+                if(channel.constellationDecisions==decisions && channel.analysis.constellationStage==stage)return false;
+                channel.constellationDecisions=decisions;channel.analysis.constellationStage=stage;return true;
+            })==ChannelEditResult::Refused)return;
         renderAnalysis();emit displayParametersChanged();
     });
     auto* autoScale=new QCheckBox("自动缩放",chartParameters);autoScale->setObjectName("constellationAutoScale");autoScale->setChecked(true);
@@ -1487,25 +1544,67 @@ void NarrowbandWorkspace::buildPages() {
     auto* norm=new QCheckBox("功率归一化");norm->setObjectName("analysisNormalizePower");constellationForm->addRow(norm);
     auto* reference=new QCheckBox("参考模板 / 最近邻决策区域（用户假设）");reference->setObjectName("constellationReferenceRegions");constellationForm->addRow(reference);
     reference->setToolTip("模板按当前真实来源阶段整段 RMS 对齐；仅为条件参考，非调制识别。金色十字及 Voronoi 边界使用 QPainter 矢量覆盖层。");
-    connect(reference,&QCheckBox::toggled,this,[this](bool enabled){if(auto* c=session_.activeChannel())c->constellationReference=enabled;renderAnalysis();emit displayParametersChanged();});
+    connect(reference,&QCheckBox::toggled,this,[this](bool enabled){
+        if(commitActiveChannelEdit([enabled](Channel& channel){
+                if(channel.constellationReference==enabled)return false;
+                channel.constellationReference=enabled;return true;
+            })==ChannelEditResult::Refused)return;
+        renderAnalysis();emit displayParametersChanged();
+    });
     constellationForm->addRow("I/Q 轴下限",axisMin);constellationForm->addRow("I/Q 轴上限",axisMax);
-    connect(pointCount,&QComboBox::currentIndexChanged,this,[this,pointCount]{if(auto* c=session_.activeChannel())c->analysis.pointCount=pointCount->currentData().toInt();renderAnalysis();emit displayParametersChanged();});
-    connect(autoScale,&QCheckBox::toggled,this,[this,axisMin,axisMax](bool enabled){axisMin->setEnabled(!enabled);axisMax->setEnabled(!enabled);if(auto* c=session_.activeChannel())c->analysis.constellationAutoScale=enabled;renderAnalysis();emit displayParametersChanged();});
+    connect(pointCount,&QComboBox::currentIndexChanged,this,[this,pointCount]{
+        const int count=pointCount->currentData().toInt();
+        if(commitActiveChannelEdit([count](Channel& channel){
+                if(channel.analysis.pointCount==count)return false;
+                channel.analysis.pointCount=count;return true;
+            })==ChannelEditResult::Refused)return;
+        renderAnalysis();emit displayParametersChanged();
+    });
+    connect(autoScale,&QCheckBox::toggled,this,[this,axisMin,axisMax](bool enabled){
+        if(commitActiveChannelEdit([enabled](Channel& channel){
+                if(channel.analysis.constellationAutoScale==enabled)return false;
+                channel.analysis.constellationAutoScale=enabled;return true;
+            })==ChannelEditResult::Refused)return;
+        axisMin->setEnabled(!enabled);axisMax->setEnabled(!enabled);renderAnalysis();emit displayParametersChanged();
+    });
     for(auto* axis:{axisMin,axisMax})connect(axis,&QDoubleSpinBox::valueChanged,this,[this,axisMin,axisMax]{
       if(axisMin->value()>=axisMax->value()) {setParameterError(axisMin,"I/Q 轴下限必须小于上限。");return;}
-      setParameterError(axisMin,{});if(auto* c=session_.activeChannel()){c->constellationMinimum=axisMin->value();c->constellationMaximum=axisMax->value();}renderAnalysis();emit displayParametersChanged();
+      setParameterError(axisMin,{});
+      const double minimum=axisMin->value(),maximum=axisMax->value();
+      if(commitActiveChannelEdit([minimum,maximum](Channel& channel){
+              if(channel.constellationMinimum==minimum && channel.constellationMaximum==maximum)return false;
+              channel.constellationMinimum=minimum;channel.constellationMaximum=maximum;return true;
+          })==ChannelEditResult::Refused)return;
+      renderAnalysis();emit displayParametersChanged();
     });
     constellationLarge_->iqZoomRequested=[this,autoScale,axisMin,axisMax](double factor){
-        auto* c=session_.activeChannel();if(!c || !analysisResult_)return;
+        if(!session_.activeChannel() || !analysisResult_)return;
         const double low=constellationLarge_->property("iqAxisMinimum").toDouble(),high=constellationLarge_->property("iqAxisMaximum").toDouble();
         const double center=(low+high)/2,half=(high-low)*factor/2;
         if(half<1e-8 || center-half<axisMin->minimum() || center+half>axisMax->maximum())return;
-        c->analysis.constellationAutoScale=false;c->constellationMinimum=center-half;c->constellationMaximum=center+half;
-        {QSignalBlocker a(autoScale),b(axisMin),d(axisMax);autoScale->setChecked(false);displayParameterValue(axisMin,center-half);displayParameterValue(axisMax,center+half);}
+        const double minimum=center-half,maximum=center+half;
+        if(commitActiveChannelEdit([minimum,maximum](Channel& channel){
+                const bool changed=channel.analysis.constellationAutoScale || channel.constellationMinimum!=minimum || channel.constellationMaximum!=maximum;
+                channel.analysis.constellationAutoScale=false;channel.constellationMinimum=minimum;channel.constellationMaximum=maximum;
+                return changed;
+            })==ChannelEditResult::Refused)return;
+        {QSignalBlocker a(autoScale),b(axisMin),d(axisMax);autoScale->setChecked(false);displayParameterValue(axisMin,minimum);displayParameterValue(axisMax,maximum);}
         axisMin->setEnabled(true);axisMax->setEnabled(true);renderAnalysis();emit displayParametersChanged();
     };
-    connect(dc,&QCheckBox::toggled,this,[this](bool v){if(auto* c=session_.activeChannel())c->analysis.removeDc=v;requestAnalysis(true);});
-    connect(norm,&QCheckBox::toggled,this,[this](bool v){if(auto* c=session_.activeChannel())c->analysis.normalizePower=v;requestAnalysis(true);});
+    connect(dc,&QCheckBox::toggled,this,[this](bool v){
+        if(commitActiveChannelEdit([v](Channel& channel){
+                if(channel.analysis.removeDc==v)return false;
+                channel.analysis.removeDc=v;return true;
+            })==ChannelEditResult::Refused)return;
+        requestAnalysis(true);
+    });
+    connect(norm,&QCheckBox::toggled,this,[this](bool v){
+        if(commitActiveChannelEdit([v](Channel& channel){
+                if(channel.analysis.normalizePower==v)return false;
+                channel.analysis.normalizePower=v;return true;
+            })==ChannelEditResult::Refused)return;
+        requestAnalysis(true);
+    });
     auto* eyePanel=plotPanel("眼图 · 真实 IQ", "narrowbandEyeLarge", ChartMode::Eye, eyeLarge_);
     // Reparent into its own page after the legacy-indexed pages are created.
     auto* eyeStage=new QComboBox(chartParameters);eyeStage->setObjectName("eyeAnalysisStage");eyeStage->addItems({"原始 DDC IQ","CFO 校正后","RRC 假设滤波","定时对齐","载波恢复后"});
@@ -1514,10 +1613,37 @@ void NarrowbandWorkspace::buildPages() {
     auto* eyeDensity=new QComboBox;eyeDensity->setObjectName("eyeDrawingDensity");for(int n:{4,8,16})eyeDensity->addItem(QString("%1 点/UI").arg(n),n);eyeDensity->setCurrentIndex(2);eyeForm->addRow("绘图密度",eyeDensity);
     auto* eyeOffset=new ParameterDoubleSpinBox;eyeOffset->setObjectName("eyeTimingOffsetUi");eyeOffset->setRange(-2,2);eyeOffset->setDecimals(4);eyeOffset->setSingleStep(.05);eyeOffset->setSuffix(" UI");eyeForm->addRow("折叠偏移",eyeOffset);
     auto* rolloff=new ParameterDoubleSpinBox;rolloff->setObjectName("analysisRrcRolloff");rolloff->setRange(.05,1);rolloff->setDecimals(2);rolloff->setSingleStep(.05);rolloff->setValue(.35);rolloff->setPrefix("α ");eyeForm->addRow("RRC 滚降",rolloff);
-    connect(eyeStage,&QComboBox::currentIndexChanged,this,[this](int index){if(auto* c=session_.activeChannel()){c->analysis.eyeStage=static_cast<AnalysisStage>(index);enableStage(c->analysis,c->analysis.eyeStage);}refreshFromSession();requestAnalysis(true);});
-    connect(eyeDensity,&QComboBox::currentIndexChanged,this,[this,eyeDensity]{if(auto* c=session_.activeChannel())c->analysis.eyePointsPerUi=eyeDensity->currentData().toInt();renderAnalysis();emit displayParametersChanged();});
-    connect(eyeOffset,&QDoubleSpinBox::valueChanged,this,[this](double v){if(auto* c=session_.activeChannel())c->analysis.eyeTimingOffsetUi=v;requestAnalysis(true);});
-    connect(rolloff,&QDoubleSpinBox::valueChanged,this,[this](double v){if(auto* c=session_.activeChannel())c->analysis.rolloff=v;requestAnalysis(true);});
+    connect(eyeStage,&QComboBox::currentIndexChanged,this,[this](int index){
+        const auto stage=static_cast<AnalysisStage>(index);
+        if(commitActiveChannelEdit([stage](Channel& channel){
+                auto next=channel.analysis;next.eyeStage=stage;enableStage(next,next.eyeStage);
+                if(next==channel.analysis)return false;
+                channel.analysis=std::move(next);return true;
+            })==ChannelEditResult::Refused)return;
+        refreshFromSession();requestAnalysis(true);
+    });
+    connect(eyeDensity,&QComboBox::currentIndexChanged,this,[this,eyeDensity]{
+        const int density=eyeDensity->currentData().toInt();
+        if(commitActiveChannelEdit([density](Channel& channel){
+                if(channel.analysis.eyePointsPerUi==density)return false;
+                channel.analysis.eyePointsPerUi=density;return true;
+            })==ChannelEditResult::Refused)return;
+        renderAnalysis();emit displayParametersChanged();
+    });
+    connect(eyeOffset,&QDoubleSpinBox::valueChanged,this,[this](double v){
+        if(commitActiveChannelEdit([v](Channel& channel){
+                if(channel.analysis.eyeTimingOffsetUi==v)return false;
+                channel.analysis.eyeTimingOffsetUi=v;return true;
+            })==ChannelEditResult::Refused)return;
+        requestAnalysis(true);
+    });
+    connect(rolloff,&QDoubleSpinBox::valueChanged,this,[this](double v){
+        if(commitActiveChannelEdit([v](Channel& channel){
+                if(channel.analysis.rolloff==v)return false;
+                channel.analysis.rolloff=v;return true;
+            })==ChannelEditResult::Refused)return;
+        requestAnalysis(true);
+    });
     modulationLayout->addWidget(plotPanel("时频图", "narrowbandModulationStft", ChartMode::Heatmap, modulationStft_), 1, 0);
     modulationLayout->setColumnStretch(0, 1);
     auto* modulationControls = new QWidget; auto* modulationForm = new QFormLayout(modulationControls);
@@ -1538,7 +1664,15 @@ void NarrowbandWorkspace::buildPages() {
     eyePeriods_ = new QComboBox(chartParameters); eyePeriods_->setObjectName("eyePeriods");for(int n:{1,2,3,4})eyePeriods_->addItem(QString::number(n),n);
     eyeTraces_ = new QComboBox(chartParameters); eyeTraces_->setObjectName("eyeTraces");for(int n:{32,64,128,256})eyeTraces_->addItem(QString("%1 条").arg(n),n);eyeTraces_->setCurrentIndex(1);
     auto* sync = new QCheckBox("定时恢复"); sync->setObjectName("analysisTimingRecovery");
-    connect(sync,&QCheckBox::toggled,this,[this](bool value){if(auto* c=session_.activeChannel()){auto& s=c->analysis;s.timingRecovery=value;if(!value){s.carrierRecovery=false;demoteStage(s,AnalysisStage::TimingAligned,s.matchedFilter?AnalysisStage::MatchedFiltered:AnalysisStage::RawIq);}}refreshFromSession();requestAnalysis(true);});
+    connect(sync,&QCheckBox::toggled,this,[this](bool value){
+        if(commitActiveChannelEdit([value](Channel& channel){
+                auto next=channel.analysis;next.timingRecovery=value;
+                if(!value){next.carrierRecovery=false;demoteStage(next,AnalysisStage::TimingAligned,next.matchedFilter?AnalysisStage::MatchedFiltered:AnalysisStage::RawIq);}
+                if(next==channel.analysis)return false;
+                channel.analysis=std::move(next);return true;
+            })==ChannelEditResult::Refused)return;
+        refreshFromSession();requestAnalysis(true);
+    });
     modulationForm->addRow("调制假设", modulationType); modulationForm->addRow("阶数", order);
     modulationForm->addRow("符号率模式", symbolRateMode); modulationForm->addRow("符号率", symbolRate);
     modulationForm->addRow(sync); sharedLayout->addWidget(modulationControls);
@@ -1578,52 +1712,156 @@ void NarrowbandWorkspace::buildPages() {
     rings->setToolTip("每环 点数:相对半径:相位角度，逗号分隔。半径递增、点数之和等于 M；空值使用分析预设，不代表特定编码标准。");
     right->addRow("APSK 环／半径／角度",rings);
     rings->apply=[this,rings](const QString& text){
-      auto* c=session_.activeChannel();if(!c)return false;
-      auto settings=c->analysis;settings.apskRings=text.trimmed().toStdString();ConstellationDefinition definition;std::string error;
+      const auto* channel=session_.activeChannel();if(!channel)return false;
+      auto settings=channel->analysis;settings.apskRings=text.trimmed().toStdString();ConstellationDefinition definition;std::string error;
       if(settings.hypothesis==ModulationHypothesis::Apsk && !makeConstellation(settings,definition,error)){setParameterError(rings,str(error));return false;}
-      c->analysis.apskRings=settings.apskRings;requestAnalysis(true);return true;
+      const auto ringsText=settings.apskRings;
+      if(commitActiveChannelEdit([ringsText](Channel& current){
+              if(current.analysis.apskRings==ringsText)return false;
+              current.analysis.apskRings=ringsText;return true;
+          })!=ChannelEditResult::Accepted)return false;
+      requestAnalysis(true);return true;
     };
     sharedLayout->addWidget(syncSettings); sharedLayout->addStretch();
-    connect(cfoMode,&QComboBox::currentIndexChanged,this,[this](int value){if(auto* c=session_.activeChannel())c->analysis.cfoMode=static_cast<CfoMode>(value);requestAnalysis(true);});
-    connect(cfo,&QDoubleSpinBox::valueChanged,this,[this](double value){if(auto* c=session_.activeChannel())c->analysis.manualCfoHz=value;requestAnalysis(true);});
-    connect(matched,&QCheckBox::toggled,this,[this](bool value){if(auto* c=session_.activeChannel()){c->analysis.matchedFilter=value;if(!value)for(auto* stage:{&c->analysis.constellationStage,&c->analysis.eyeStage})if(*stage==AnalysisStage::MatchedFiltered)*stage=AnalysisStage::RawIq;}refreshFromSession();requestAnalysis(true);});
-    connect(carrier,&QCheckBox::toggled,this,[this](bool value){if(auto* c=session_.activeChannel()){c->analysis.carrierRecovery=value;if(value)c->analysis.timingRecovery=true;else demoteStage(c->analysis,AnalysisStage::CarrierRecovered,c->analysis.timingRecovery?AnalysisStage::TimingAligned:AnalysisStage::RawIq);}refreshFromSession();requestAnalysis(true);});
-    connect(timingBw,&QDoubleSpinBox::valueChanged,this,[this](double value){if(auto* c=session_.activeChannel())c->analysis.timingLoopBandwidth=value;requestAnalysis(true);});
-    connect(carrierBw,&QDoubleSpinBox::valueChanged,this,[this](double value){if(auto* c=session_.activeChannel())c->analysis.carrierLoopBandwidth=value;requestAnalysis(true);});
-    connect(phase,&QDoubleSpinBox::valueChanged,this,[this](double value){if(auto* c=session_.activeChannel())c->analysis.manualPhaseRadians=value;requestAnalysis(true);});
-    connect(span,&QSpinBox::valueChanged,this,[this](int value){if(auto* c=session_.activeChannel())c->analysis.filterSpanSymbols=value;requestAnalysis(true);});
-    connect(budget,&QComboBox::currentIndexChanged,this,[this,budget]{if(auto* c=session_.activeChannel())c->analysis.sampleBudget=static_cast<std::size_t>(budget->currentData().toInt());requestAnalysis(true);});
+    connect(cfoMode,&QComboBox::currentIndexChanged,this,[this](int value){
+        const auto mode=static_cast<CfoMode>(value);
+        if(commitActiveChannelEdit([mode](Channel& channel){
+                if(channel.analysis.cfoMode==mode)return false;
+                channel.analysis.cfoMode=mode;return true;
+            })==ChannelEditResult::Refused)return;
+        requestAnalysis(true);
+    });
+    connect(cfo,&QDoubleSpinBox::valueChanged,this,[this](double value){
+        if(commitActiveChannelEdit([value](Channel& channel){
+                if(channel.analysis.manualCfoHz==value)return false;
+                channel.analysis.manualCfoHz=value;return true;
+            })==ChannelEditResult::Refused)return;
+        requestAnalysis(true);
+    });
+    connect(matched,&QCheckBox::toggled,this,[this](bool value){
+        if(commitActiveChannelEdit([value](Channel& channel){
+                auto next=channel.analysis;next.matchedFilter=value;
+                if(!value)for(auto* stage:{&next.constellationStage,&next.eyeStage})if(*stage==AnalysisStage::MatchedFiltered)*stage=AnalysisStage::RawIq;
+                if(next==channel.analysis)return false;
+                channel.analysis=std::move(next);return true;
+            })==ChannelEditResult::Refused)return;
+        refreshFromSession();requestAnalysis(true);
+    });
+    connect(carrier,&QCheckBox::toggled,this,[this](bool value){
+        if(commitActiveChannelEdit([value](Channel& channel){
+                auto next=channel.analysis;next.carrierRecovery=value;
+                if(value)next.timingRecovery=true;
+                else demoteStage(next,AnalysisStage::CarrierRecovered,next.timingRecovery?AnalysisStage::TimingAligned:AnalysisStage::RawIq);
+                if(next==channel.analysis)return false;
+                channel.analysis=std::move(next);return true;
+            })==ChannelEditResult::Refused)return;
+        refreshFromSession();requestAnalysis(true);
+    });
+    connect(timingBw,&QDoubleSpinBox::valueChanged,this,[this](double value){
+        if(commitActiveChannelEdit([value](Channel& channel){
+                if(channel.analysis.timingLoopBandwidth==value)return false;
+                channel.analysis.timingLoopBandwidth=value;return true;
+            })==ChannelEditResult::Refused)return;
+        requestAnalysis(true);
+    });
+    connect(carrierBw,&QDoubleSpinBox::valueChanged,this,[this](double value){
+        if(commitActiveChannelEdit([value](Channel& channel){
+                if(channel.analysis.carrierLoopBandwidth==value)return false;
+                channel.analysis.carrierLoopBandwidth=value;return true;
+            })==ChannelEditResult::Refused)return;
+        requestAnalysis(true);
+    });
+    connect(phase,&QDoubleSpinBox::valueChanged,this,[this](double value){
+        if(commitActiveChannelEdit([value](Channel& channel){
+                if(channel.analysis.manualPhaseRadians==value)return false;
+                channel.analysis.manualPhaseRadians=value;return true;
+            })==ChannelEditResult::Refused)return;
+        requestAnalysis(true);
+    });
+    connect(span,&QSpinBox::valueChanged,this,[this](int value){
+        if(commitActiveChannelEdit([value](Channel& channel){
+                if(channel.analysis.filterSpanSymbols==value)return false;
+                channel.analysis.filterSpanSymbols=value;return true;
+            })==ChannelEditResult::Refused)return;
+        requestAnalysis(true);
+    });
+    connect(budget,&QComboBox::currentIndexChanged,this,[this,budget]{
+        const auto count=static_cast<std::size_t>(budget->currentData().toInt());
+        if(commitActiveChannelEdit([count](Channel& channel){
+                if(channel.analysis.sampleBudget==count)return false;
+                channel.analysis.sampleBudget=count;return true;
+            })==ChannelEditResult::Refused)return;
+        requestAnalysis(true);
+    });
     recover->setToolTip("按当前 PSK/QAM/APSK 及阶数启用 CFO、RRC、Gardner 和载波恢复；待确认 Rs 时先估计，保留手工 CFO/Rs。");
     connect(recover,&QPushButton::clicked,this,[this]{
-      auto* c=session_.activeChannel();if(!c)return;
-      if(!isSingleCarrierHypothesis(c->analysis.hypothesis)){setAnalysisStatus("无法同步：请先选择 PSK、QAM 或 APSK 调制假设及阶数；仅估计 Rs 不等于识别调制。");findChild<QComboBox*>("modulationFormat")->setFocus();return;}
-      if(c->analysis.symbolRateMode==SymbolRateMode::Unknown){c->analysis.symbolRateMode=SymbolRateMode::Estimated;c->analysis.symbolRateHz=0;}
-      if(c->analysis.cfoMode==CfoMode::Off)c->analysis.cfoMode=CfoMode::Automatic;
-      c->analysis.matchedFilter=true;c->analysis.timingRecovery=true;c->analysis.carrierRecovery=true;
-      c->analysis.constellationStage=AnalysisStage::CarrierRecovered;c->analysis.eyeStage=AnalysisStage::CarrierRecovered;
+      const auto* current=session_.activeChannel();if(!current)return;
+      const auto hypothesis=current->analysis.hypothesis;
+      if(!isSingleCarrierHypothesis(hypothesis)){setAnalysisStatus("无法同步：请先选择 PSK、QAM 或 APSK 调制假设及阶数；仅估计 Rs 不等于识别调制。");findChild<QComboBox*>("modulationFormat")->setFocus();return;}
+      if(commitActiveChannelEdit([](Channel& channel){
+              auto next=channel.analysis;
+              if(next.symbolRateMode==SymbolRateMode::Unknown){next.symbolRateMode=SymbolRateMode::Estimated;next.symbolRateHz=0;}
+              if(next.cfoMode==CfoMode::Off)next.cfoMode=CfoMode::Automatic;
+              next.matchedFilter=true;next.timingRecovery=true;next.carrierRecovery=true;
+              next.constellationStage=AnalysisStage::CarrierRecovered;next.eyeStage=AnalysisStage::CarrierRecovered;
+              if(next==channel.analysis)return false;
+              channel.analysis=std::move(next);return true;
+          })!=ChannelEditResult::Accepted)return;
       refreshFromSession();requestAnalysis(true);
     });
     connect(adopt,&QPushButton::clicked,this,[this,candidates,symbolRateMode,symbolRate] {
-      auto* c=session_.activeChannel();const auto* f=session_.activeFile();if(!c || !f || candidates->currentIndex()<0 || !analysisResult_ ||
-        !analysisIdentityCurrent(analysisResult_->identity,f->metadata,*c,session_.projectGeneration(),analysisGeneration_))return;
+      const auto* channel=session_.activeChannel();const auto* file=session_.activeFile();
+      if(!channel || !file || candidates->currentIndex()<0 || !analysisResult_ ||
+        !analysisIdentityCurrent(analysisResult_->identity,file->metadata,*channel,session_.projectGeneration(),analysisGeneration_))return;
       const auto rate=candidates->currentData().toDouble();if(!(rate>0))return;
-      c->analysis.symbolRateMode=SymbolRateMode::Manual;c->analysis.symbolRateHz=rate;c->symbolRate=rate;
+      if(commitActiveChannelEdit([rate](Channel& current){
+              const bool changed=current.analysis.symbolRateMode!=SymbolRateMode::Manual || current.analysis.symbolRateHz!=rate || current.symbolRate!=rate;
+              current.analysis.symbolRateMode=SymbolRateMode::Manual;current.analysis.symbolRateHz=rate;current.symbolRate=rate;
+              return changed;
+          })!=ChannelEditResult::Accepted)return;
       {QSignalBlocker b(symbolRateMode);symbolRateMode->setCurrentIndex(1);}
       {QSignalBlocker b(symbolRate);displayParameterValue(symbolRate,rate);}requestAnalysis(true);
     });
     modulationLayout->setRowStretch(0, 3); modulationLayout->setRowStretch(1, 2);
     modulationType->setToolTip("仅为单载波分析假设，不是自动识别结果。");
     connect(modulationType, &QComboBox::currentIndexChanged, this, [this,modulationType](int index) {
-        if(auto* c=session_.activeChannel()){c->analysis.hypothesis=static_cast<ModulationHypothesis>(index);if(index>=7){c->analysis.modulationOrder=index==7?8:index==8?32:16;c->analysis.apskRings.clear();}}
+        const auto hypothesis=static_cast<ModulationHypothesis>(index);
+        if(commitActiveChannelEdit([hypothesis,index](Channel& channel){
+                auto next=channel.analysis;next.hypothesis=hypothesis;
+                if(index>=7){next.modulationOrder=index==7?8:index==8?32:16;next.apskRings.clear();}
+                if(next==channel.analysis)return false;
+                channel.analysis=std::move(next);return true;
+            })==ChannelEditResult::Refused)return;
         modulationType->setToolTip("分析假设：" + modulationType->currentText() + "；不是识别结果。");refreshFromSession();requestAnalysis(true);
     });
-    connect(order,&QComboBox::currentIndexChanged,this,[this,order](int){if(auto* c=session_.activeChannel()){c->analysis.modulationOrder=order->currentData().toInt();c->analysis.apskRings.clear();}refreshFromSession();requestAnalysis(true);});
+    connect(order,&QComboBox::currentIndexChanged,this,[this,order](int){
+        const int modulationOrder=order->currentData().toInt();
+        if(commitActiveChannelEdit([modulationOrder](Channel& channel){
+                if(channel.analysis.modulationOrder==modulationOrder && channel.analysis.apskRings.empty())return false;
+                channel.analysis.modulationOrder=modulationOrder;channel.analysis.apskRings.clear();return true;
+            })==ChannelEditResult::Refused)return;
+        refreshFromSession();requestAnalysis(true);
+    });
     connect(symbolRate, &QDoubleSpinBox::valueChanged, this, [this,symbolRateMode](double value) {
-        if (auto* channel = session_.activeChannel()) {channel->symbolRate = value;channel->analysis.symbolRateHz=value;channel->analysis.symbolRateMode=SymbolRateMode::Manual;}
+        if(commitActiveChannelEdit([value](Channel& channel){
+                const bool changed=channel.symbolRate!=value || channel.analysis.symbolRateHz!=value || channel.analysis.symbolRateMode!=SymbolRateMode::Manual;
+                channel.symbolRate=value;channel.analysis.symbolRateHz=value;channel.analysis.symbolRateMode=SymbolRateMode::Manual;
+                return changed;
+            })==ChannelEditResult::Refused)return;
         {QSignalBlocker block(symbolRateMode);symbolRateMode->setCurrentIndex(1);}requestAnalysis(true);
     });
     connect(symbolRateMode,&QComboBox::currentIndexChanged,this,[this,symbolRate](int index) {
-      if(auto* c=session_.activeChannel()){c->analysis.symbolRateMode=static_cast<SymbolRateMode>(index);if(index==1){c->analysis.symbolRateHz=symbolRate->value();c->symbolRate=symbolRate->value();}else if(index==2)c->analysis.symbolRateHz=0;}
+      if(commitActiveChannelEdit([symbolRate,index](Channel& channel){
+              auto next=channel.analysis;next.symbolRateMode=static_cast<SymbolRateMode>(index);
+              double manualRate=channel.symbolRate;
+              if(index==1){manualRate=symbolRate->value();next.symbolRateHz=manualRate;}
+              else if(index==2)next.symbolRateHz=0;
+              const bool rateChanged=index==1 && channel.symbolRate!=manualRate;
+              if(next==channel.analysis && !rateChanged)return false;
+              channel.analysis=std::move(next);
+              if(index==1)channel.symbolRate=manualRate;
+              return true;
+          })==ChannelEditResult::Refused)return;
       requestAnalysis(true);
     });
     auto refreshEyeControls = [this] {
@@ -1633,15 +1871,26 @@ void NarrowbandWorkspace::buildPages() {
         renderAnalysis(); emit displayParametersChanged();
     };
     connect(eyeComponent_, &QComboBox::currentIndexChanged, this, [this](int index) {
-        if (auto* channel = session_.activeChannel()) channel->eyeComponent = index;
+        if (commitActiveChannelEdit([index](Channel& channel) {
+                if (channel.eyeComponent == index) return false;
+                channel.eyeComponent = index; return true;
+            }) == ChannelEditResult::Refused) return;
         renderAnalysis(); emit displayParametersChanged();
     });
     connect(eyePeriods_, &QComboBox::currentIndexChanged, this, [this](int) {
-        if (auto* channel = session_.activeChannel()) channel->eyePeriods = eyePeriods_->currentData().toInt();
+        const int periods = eyePeriods_->currentData().toInt();
+        if (commitActiveChannelEdit([periods](Channel& channel) {
+                if (channel.eyePeriods == periods) return false;
+                channel.eyePeriods = periods; return true;
+            }) == ChannelEditResult::Refused) return;
         requestAnalysis(true);
     });
     connect(eyeTraces_, &QComboBox::currentIndexChanged, this, [this, refreshEyeControls](int) {
-        if (auto* channel = session_.activeChannel()) channel->eyeTraces = eyeTraces_->currentData().toInt();
+        const int traces = eyeTraces_->currentData().toInt();
+        if (commitActiveChannelEdit([traces](Channel& channel) {
+                if (channel.eyeTraces == traces) return false;
+                channel.eyeTraces = traces; return true;
+            }) == ChannelEditResult::Refused) return;
         refreshEyeControls();
     });
 
@@ -1859,14 +2108,17 @@ void NarrowbandWorkspace::buildPages() {
                         {channel->waveformAxisMinimum, channel->waveformAxisMaximum}, nextSpan / span, 1.0 - y0);
                     beginWheel();
                     session_.setChannelAmplitudeRange(range.first, range.last, false, false);
-                    waveform_->setYAxisRange(range.first, range.last, waveformAxisLabel(channel->waveform, session_.activeFile() ? &session_.activeFile()->metadata : nullptr));
+                    if (const auto* live = session_.activeChannel())
+                        waveform_->setYAxisRange(live->waveformAxisMinimum, live->waveformAxisMaximum,
+                            waveformAxisLabel(live->waveform, session_.activeFile() ? &session_.activeFile()->metadata : nullptr));
                 } else if (selection) {
                     commitPointerGesture();
                     const auto range = chart_interaction::panByFraction(
                         {channel->waveformAxisMinimum, channel->waveformAxisMaximum}, dragYFraction);
                     session_.setChannelAmplitudeRange(range.first, range.last, false, true);
-                    waveform_->setYAxisRange(channel->waveformAxisMinimum, channel->waveformAxisMaximum,
-                                             waveformAxisLabel(channel->waveform, session_.activeFile() ? &session_.activeFile()->metadata : nullptr));
+                    if (const auto* live = session_.activeChannel())
+                        waveform_->setYAxisRange(live->waveformAxisMinimum, live->waveformAxisMaximum,
+                            waveformAxisLabel(live->waveform, session_.activeFile() ? &session_.activeFile()->metadata : nullptr));
                 }
                 return;
             }
@@ -1877,13 +2129,15 @@ void NarrowbandWorkspace::buildPages() {
                     const auto range = chart_interaction::zoomAround(
                         {channel->psdAxisMinimum, channel->psdAxisMaximum}, nextSpan / span, 1.0 - y0);
                     beginWheel(); session_.setChannelPsdRange(range.first, range.last, false);
-                    psd_->setYAxisRange(range.first, range.last, session_.activeFile() ? powerUnit(session_.activeFile()->metadata) : QStringLiteral("dBFS/Hz"));
+                    if (const auto* live = session_.activeChannel())
+                        psd_->setYAxisRange(live->psdAxisMinimum, live->psdAxisMaximum, session_.activeFile() ? powerUnit(session_.activeFile()->metadata) : QStringLiteral("dBFS/Hz"));
                 } else if (selection) {
                     commitPointerGesture();
                     const auto range = chart_interaction::panByFraction(
                         {channel->psdAxisMinimum, channel->psdAxisMaximum}, dragYFraction);
                     session_.setChannelPsdRange(range.first, range.last, true);
-                    psd_->setYAxisRange(channel->psdAxisMinimum, channel->psdAxisMaximum, session_.activeFile() ? powerUnit(session_.activeFile()->metadata) : QStringLiteral("dBFS/Hz"));
+                    if (const auto* live = session_.activeChannel())
+                        psd_->setYAxisRange(live->psdAxisMinimum, live->psdAxisMaximum, session_.activeFile() ? powerUnit(session_.activeFile()->metadata) : QStringLiteral("dBFS/Hz"));
                 }
                 return;
             }
@@ -2003,19 +2257,22 @@ void NarrowbandWorkspace::buildPages() {
     for (auto* chart : charts_) if (chart) chart->setGridVisible(grid_->isChecked());
     connect(grid_, &QCheckBox::toggled, this, applyGrid);
     waveform_->resetYAxis = [this] {
-        auto* channel = session_.activeChannel();
-        if (!channel) return;
+        if (!session_.activeChannel()) return;
         finishChartWheel();
-        channel->waveformAutoScale = true;
+        if (commitActiveChannelEdit([](Channel& channel) {
+                if (channel.waveformAutoScale) return false;
+                channel.waveformAutoScale = true;
+                return true;
+            }) != ChannelEditResult::Accepted) return;
         hasDisplayRequest_ = false;
         requestDisplay();
     };
     psd_->resetYAxis = [this] {
-        auto* channel = session_.activeChannel();
-        if (!channel) return;
+        if (!session_.activeChannel()) return;
         finishChartWheel();
         session_.setChannelPsdRange(-120.0, 0.0, true);
-        psd_->setYAxisRange(channel->psdAxisMinimum, channel->psdAxisMaximum, session_.activeFile() ? powerUnit(session_.activeFile()->metadata) : QStringLiteral("dBFS/Hz"));
+        if (const auto* live = session_.activeChannel())
+            psd_->setYAxisRange(live->psdAxisMinimum, live->psdAxisMaximum, session_.activeFile() ? powerUnit(session_.activeFile()->metadata) : QStringLiteral("dBFS/Hz"));
     };
     if (timeline_) timeline_->gesture = [this](QPointF a, QPointF, int wheel, bool selection) {
         if (recognitionSegments_.empty() || selection || wheel) return;
@@ -2126,6 +2383,10 @@ void NarrowbandWorkspace::refreshFromSession() {
       if(auto* control=window()->findChild<QDoubleSpinBox*>(axis.first)){QSignalBlocker b(control);displayParameterValue(control,axis.second);control->setEnabled(!channel->analysis.constellationAutoScale);}
     if (constellationDemod_) constellationDemod_->setPoints(syntheticConstellation(103), "合成示例 · 未执行载波恢复或真实解调", "合成示例");
     if (eyeDemod_) eyeDemod_->setEye(syntheticEye(channel->eyeTraces, 192, channel->eyePeriods, 17), "合成示例 · 未执行定时同步", "合成示例");
+    if (suppressDisplayRefresh_) {
+        updateLinkedCursors();
+        return;
+    }
     requestDisplay();
     renderAnalysis();
 }
@@ -2133,7 +2394,11 @@ void NarrowbandWorkspace::refreshFromSession() {
 void NarrowbandWorkspace::showPage(NarrowbandPage page) {
     const auto index = static_cast<int>(page);
     if (index < 0 || index >= static_cast<int>(pageWidgets_.size())) return;
-    if (auto* channel = session_.activeChannel()) channel->page = page;
+    if (commitActiveChannelEdit([page](Channel& channel) {
+            if (channel.page == page) return false;
+            channel.page = page;
+            return true;
+        }) == ChannelEditResult::Refused) return;
     pages_->setCurrentIndex(static_cast<int>(page));
     for (int i = 0; i < static_cast<int>(pageButtons_.size()); ++i) pageButtons_[i]->setChecked(i == static_cast<int>(page));
     requestDisplay();

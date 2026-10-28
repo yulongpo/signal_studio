@@ -77,6 +77,9 @@ private:
     void setAnalysisStatus(const QString& text);
     void buildPages();
     void showPage(NarrowbandPage page);
+    enum class ChannelEditResult { Refused, Unavailable, Accepted };
+    ChannelEditResult commitActiveChannelEdit(const std::function<bool(Channel&)>& edit);
+    void restoreCommittedControls();
     void updateFrequencyAxisLabels();
     void updateLinkedCursors();
     void updatePowerColors();
@@ -150,6 +153,9 @@ private:
     QTimer* chartWheelTimer_ = nullptr;
     QTimer* displaySettleTimer_ = nullptr;
     bool displayPending_ = false;
+    bool restoringCommittedControls_ = false;
+    // Refused edits replay committed widgets without starting display or analysis work.
+    bool suppressDisplayRefresh_ = false;
     std::optional<ChannelViewSnapshot> chartWheelBase_;
     QString selectedModelFile_;
     std::vector<RecognitionSegment> recognitionSegments_;
