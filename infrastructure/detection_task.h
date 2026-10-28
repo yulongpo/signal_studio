@@ -3,11 +3,14 @@
 #include <QJsonObject>
 #include <QString>
 #include <atomic>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include "domain/detection.h"
@@ -97,6 +100,11 @@ class DetectionTaskManager {
   void invalidateSource(const std::string& runId, DetectionSourceValidity);
   void cancelGeneration(std::uint64_t generation);
   void pump();
+  // Parent-process steady_clock nanoseconds. Empty runId or a null name is
+  // ignored. Marks that arrive before the run is queued stay buffered and are
+  // appended to performanceJson when that run is queued or later updated.
+  void noteSteadyMark(const std::string& runId, const char* name,
+                      std::uint64_t steadyNanoseconds);
   // Both callbacks run without mutex_ and must not call back into this
   // manager. Production leaves them empty. beforePumpJoin runs only after the
   // task mutex is released and before joining a producer that already
@@ -122,6 +130,10 @@ class DetectionTaskManager {
                                  std::uint64_t projectGeneration);
 
  private:
+  struct SteadyMark {
+    std::string name;
+    std::uint64_t steadyNanoseconds = 0;
+  };
   struct Job {
     QString directory;
     FileMetadata metadata;
@@ -148,9 +160,14 @@ class DetectionTaskManager {
     std::uint32_t checkpointBatch = 0;
     qint64 firstDecodedCandidateMs=-1, frequencyReadyMs=-1;
     QElapsedTimer clock;
+    std::vector<SteadyMark> steadyMarks;
   };
   void execute(const std::shared_ptr<Job>&);
   std::string performanceSnapshot(const std::shared_ptr<Job>&) const;
+  void rememberTimelineLocked(const std::shared_ptr<Job>&);
+  void materializeTimelineLocked(const std::shared_ptr<Job>&);
+  void adoptSteadyMarksLocked(const std::shared_ptr<Job>&);
+  QJsonObject timelineObject(const std::shared_ptr<Job>&) const;
   bool checkpoint(const std::shared_ptr<Job>&, QString& error);
   void finish(const std::shared_ptr<Job>&, DetectionLifecycle,
               const QString& error = {});
@@ -162,6 +179,7 @@ class DetectionTaskManager {
   std::jthread thread_;
   std::function<void()> beforeProducerTerminalLock_;
   std::function<void()> beforePumpJoin_;
+  std::unordered_map<std::string, std::vector<SteadyMark>> pendingSteadyMarks_;
 };
 
 }  // namespace signalstudio

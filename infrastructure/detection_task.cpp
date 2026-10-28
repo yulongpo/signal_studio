@@ -10,6 +10,7 @@
 #include <QStorageInfo>
 #include <QStringList>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -82,6 +83,14 @@ void logDetection(const DetectionRun& run, const QString& event, std::uint32_t b
 }
 std::uint64_t nowMilliseconds() {
   return static_cast<std::uint64_t>(QDateTime::currentMSecsSinceEpoch());
+}
+bool captureParentSteadyNanoseconds(std::uint64_t& nanoseconds) {
+  const auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                         std::chrono::steady_clock::now().time_since_epoch())
+                         .count();
+  if (count < 0) return false;
+  nanoseconds = static_cast<std::uint64_t>(count);
+  return true;
 }
 std::string digest(const QByteArray& bytes) {
   return QCryptographicHash::hash(bytes, QCryptographicHash::Sha256)
@@ -969,7 +978,10 @@ bool DetectionTaskManager::queuePreparedRun(const QString& directory,
   job->metadata.availability.fingerprint =
       prepared.run.request.sourceIdentity.quickFingerprint;
   job->run = std::move(prepared.run);
+  adoptSteadyMarksLocked(job);
   if (!persistRun_(directory, job->run, error)) {
+    if (!job->run.request.runId.empty() && !job->steadyMarks.empty())
+      pendingSteadyMarks_[job->run.request.runId] = std::move(job->steadyMarks);
     DetectionRun snap = job->run;
     snap.computationPhase = snap.computationPhase.empty() ? "preflight"
                                                          : snap.computationPhase;
@@ -1076,6 +1088,7 @@ void DetectionTaskManager::retainPreview(DetectionRun run,
     existing->preview = std::move(preview);
     existing->started = true;
     existing->finished = terminal;
+    adoptSteadyMarksLocked(existing);
     return;
   }
   auto job = std::make_shared<Job>();
@@ -1083,6 +1096,7 @@ void DetectionTaskManager::retainPreview(DetectionRun run,
   job->finished = detectionIsTerminal(run.lifecycle);
   job->run = std::move(run);
   job->preview = std::move(preview);
+  adoptSteadyMarksLocked(job);
   jobs_.push_back(std::move(job));
 }
 namespace {
@@ -1154,7 +1168,7 @@ std::string DetectionTaskManager::performanceSnapshot(const std::shared_ptr<Job>
   QJsonObject batches;
   for(std::size_t i=1;i<job->batches.size();++i)
     if(job->batches[i]) batches[QString::number(i)]=QString::number(job->batches[i]);
-  return QJsonDocument(bindDetectionPerformanceTimings(QJsonObject{
+  auto profile = bindDetectionPerformanceTimings(QJsonObject{
       {"schema","signal-studio-detection-profile-v1"},
       {"pipelineStages",job->profiling.snapshot()},{"sourceStages",job->sourceProfile},
       {"logicalBatchDistribution",batches},
@@ -1165,14 +1179,111 @@ std::string DetectionTaskManager::performanceSnapshot(const std::shared_ptr<Job>
       {"firstDecodedCandidateMs",double(job->firstDecodedCandidateMs)},
       {"frequencyTracksReadyMs",double(job->frequencyReadyMs)},
       {"timingBoundary","host stage totals may nest; CUDA timings are stream-event intervals; not UI paint latency"}},
-      job->gpuProfile))
-      .toJson(QJsonDocument::Compact).toStdString();
+      job->gpuProfile);
+  if (!job->steadyMarks.empty())
+    profile.insert(QStringLiteral("timeline"), timelineObject(job));
+  return QJsonDocument(profile).toJson(QJsonDocument::Compact).toStdString();
+}
+QJsonObject DetectionTaskManager::timelineObject(
+    const std::shared_ptr<Job>& job) const {
+  QJsonArray marks;
+  for (const auto& mark : job->steadyMarks) {
+    marks.append(QJsonObject{
+        {QStringLiteral("name"), QString::fromStdString(mark.name)},
+        {QStringLiteral("steadyNs"),
+         QString::number(static_cast<qulonglong>(mark.steadyNanoseconds))}});
+  }
+  return QJsonObject{
+      {QStringLiteral("clock"), QStringLiteral("steady_clock_ns")},
+      {QStringLiteral("runId"), QString::fromStdString(job->run.request.runId)},
+      {QStringLiteral("marks"), marks}};
+}
+void DetectionTaskManager::rememberTimelineLocked(
+    const std::shared_ptr<Job>& job) {
+  if (!job || job->run.performanceJson.empty()) return;
+  const auto document = QJsonDocument::fromJson(
+      QByteArray::fromStdString(job->run.performanceJson));
+  if (!document.isObject()) return;
+  const auto marks = document.object()
+                         .value(QStringLiteral("timeline"))
+                         .toObject()
+                         .value(QStringLiteral("marks"))
+                         .toArray();
+  for (const auto& value : marks) {
+    const auto object = value.toObject();
+    const auto name =
+        object.value(QStringLiteral("name")).toString().toStdString();
+    if (name.empty()) continue;
+    bool ok = false;
+    const auto parsed =
+        object.value(QStringLiteral("steadyNs")).toString().toULongLong(&ok);
+    if (!ok) continue;
+    const auto nanoseconds = static_cast<std::uint64_t>(parsed);
+    const bool present = std::any_of(
+        job->steadyMarks.begin(), job->steadyMarks.end(),
+        [&](const SteadyMark& mark) {
+          return mark.name == name && mark.steadyNanoseconds == nanoseconds;
+        });
+    if (!present) job->steadyMarks.push_back(SteadyMark{name, nanoseconds});
+  }
+}
+void DetectionTaskManager::materializeTimelineLocked(
+    const std::shared_ptr<Job>& job) {
+  if (!job) return;
+  rememberTimelineLocked(job);
+  if (job->steadyMarks.empty()) return;
+  QJsonObject root;
+  if (!job->run.performanceJson.empty()) {
+    const auto document = QJsonDocument::fromJson(
+        QByteArray::fromStdString(job->run.performanceJson));
+    if (!document.isObject()) return;
+    root = document.object();
+  }
+  if (!root.contains(QStringLiteral("schema"))) {
+    root.insert(QStringLiteral("schema"),
+                QStringLiteral("signal-studio-detection-profile-v1"));
+  }
+  root.insert(QStringLiteral("timeline"), timelineObject(job));
+  job->run.performanceJson =
+      QJsonDocument(root).toJson(QJsonDocument::Compact).toStdString();
+}
+void DetectionTaskManager::adoptSteadyMarksLocked(
+    const std::shared_ptr<Job>& job) {
+  if (!job) return;
+  rememberTimelineLocked(job);
+  const auto& runId = job->run.request.runId;
+  if (!runId.empty()) {
+    auto pending = pendingSteadyMarks_.find(runId);
+    if (pending != pendingSteadyMarks_.end()) {
+      job->steadyMarks.insert(job->steadyMarks.end(),
+                              std::make_move_iterator(pending->second.begin()),
+                              std::make_move_iterator(pending->second.end()));
+      pendingSteadyMarks_.erase(pending);
+    }
+  }
+  materializeTimelineLocked(job);
+}
+void DetectionTaskManager::noteSteadyMark(const std::string& runId,
+                                          const char* name,
+                                          std::uint64_t steadyNanoseconds) {
+  if (runId.empty() || name == nullptr || name[0] == '\0') return;
+  SteadyMark mark{name, steadyNanoseconds};
+  std::lock_guard lock(mutex_);
+  for (auto& job : jobs_) {
+    if (job->run.request.runId != runId) continue;
+    rememberTimelineLocked(job);
+    job->steadyMarks.push_back(std::move(mark));
+    materializeTimelineLocked(job);
+    return;
+  }
+  pendingSteadyMarks_[runId].push_back(std::move(mark));
 }
 bool DetectionTaskManager::checkpoint(const std::shared_ptr<Job>& job,
                                       QString& error) {
   DetectionRun run;
   {
     std::lock_guard lock(mutex_);
+    rememberTimelineLocked(job);
     job->run.performanceJson=performanceSnapshot(job);
     run = job->run;
   }
@@ -1196,6 +1307,7 @@ void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
     // Cancellation is accepted before this commit point. Afterwards callers
     // receive false while the immutable terminal snapshot is being persisted.
     job->finishing = true;
+    rememberTimelineLocked(job);
     job->run.performanceJson=performanceSnapshot(job);
     terminal = job->run;
     terminal.lifecycle =
@@ -1328,6 +1440,13 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   QString error;
   const auto request = job->run.request;
   const auto cancelled = [&] { return job->cancelled.load(); };
+  const auto markNow = [&](const char* name) {
+    std::uint64_t nanoseconds = 0;
+    if (!captureParentSteadyNanoseconds(nanoseconds)) return;
+    noteSteadyMark(request.runId, name, nanoseconds);
+  };
+  bool notedFirstRead = false;
+  bool notedFirstInfer = false;
   job->clock.start();
   const auto measured=[&](const char* name,const auto& action) {
     DetectionProfileScope timing(job->profiling,QString::fromLatin1(name),&mutex_);
@@ -1428,8 +1547,13 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   }
   job->worker=std::make_unique<DetectionWorkerClient>();
   auto& worker=*job->worker;
-  if (!measured("worker-start",[&] { return worker.start(workerExecutable_, request, error, cancelled,
-                    job->executionBatchSize); })) {
+  const bool workerStarted = measured("worker-start", [&] {
+    return worker.start(workerExecutable_, request, error, cancelled,
+                        job->executionBatchSize);
+  });
+  for (const auto& stamp : worker.parentClockStamps())
+    noteSteadyMark(request.runId, stamp.name.c_str(), stamp.steadyNanoseconds);
+  if (!workerStarted) {
     finish(job, DetectionLifecycle::Failed, error);
     return;
   }
@@ -1536,6 +1660,10 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         finish(job, DetectionLifecycle::Failed, error);
         return;
       }
+      if (!notedFirstRead) {
+        notedFirstRead = true;
+        markNow("t_first_iq_read");
+      }
       mappings.append(mapping(window, plan));
       const auto& input =
           request.profile.maximumPsdOnly ||
@@ -1583,9 +1711,14 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
                           static_cast<int>(config.fftSize)});
     DetectionWorkerPacket response;
     notePhase("inference");
+    if (!notedFirstInfer) markNow("t_first_infer_start");
     if (!measured("worker-roundtrip",[&] { return worker.exchange(std::move(packet), response, error, cancelled); })) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
+    }
+    if (!notedFirstInfer) {
+      notedFirstInfer = true;
+      markNow("t_first_infer_end");
     }
     const auto sourcePath = QString::fromStdString(request.sourceIdentity.path);
     if (iqSourceFingerprint(sourcePath).toStdString() !=
@@ -1695,6 +1828,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       if (job->run.sourceValidity != DetectionSourceValidity::Current)
         next.sourceValidity = job->run.sourceValidity;
       job->run = std::move(next);
+      materializeTimelineLocked(job);
       job->checkpointBatch = batchNumber;
       job->publication.sourceSet = publication.sourceSet;
       job->publicationBytes = nextPublicationBytes;
@@ -1760,9 +1894,15 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       job->run.refinedCandidates = done;
       job->run.totalRefinementCandidates = total;
     };
-    if (!measured("time-refinement",[&] {return applyDetectionTimeAnalysis(source, job->metadata, request, tracks,
-                                    publication, error, cancelled,
-                                    refinedProgress,QDir(job->directory).filePath("sample-scratch"));}) ||
+    if (!measured("time-refinement",[&] {
+          if (!applyDetectionTimeAnalysis(source, job->metadata, request, tracks,
+                                          publication, error, cancelled,
+                                          refinedProgress,
+                                          QDir(job->directory).filePath("sample-scratch")))
+            return false;
+          markNow("t_sample_refine_complete");
+          return true;
+        }) ||
         !projector.attachWindowEvidence(publication, error) ||
         !measured("fuse-publication",[&] {return fuseDetectionPublication(request, publication, error, cancelled);}) ||
         !validateDetectionPublicationBudget(
@@ -1800,6 +1940,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         if (job->cancelled) next.lifecycle = DetectionLifecycle::Cancelling;
         next.sourceValidity = job->run.sourceValidity;
         job->run = std::move(next);
+        materializeTimelineLocked(job);
       }
       shard = {};
       shardBytes = 0;
@@ -1834,6 +1975,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
     }
+    markNow("t_durable_publication");
     {
       std::lock_guard lock(mutex_);
       job->publication = std::move(publication);
