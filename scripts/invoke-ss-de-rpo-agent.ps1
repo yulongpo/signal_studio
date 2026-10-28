@@ -6,6 +6,7 @@ param(
     [Parameter(Mandatory)][string]$OutputDirectory,
     [string]$SessionId = [guid]::NewGuid().ToString(),
     [int]$MaxTurns = 120,
+    [switch]$Resume,
     [switch]$ReadOnly
 )
 $ErrorActionPreference = 'Stop'
@@ -20,12 +21,15 @@ $record = [ordered]@{
     cli=$grok; worktree=$Worktree; promptFile=$PromptFile; readOnly=[bool]$ReadOnly
     head=(& git -C $Worktree rev-parse HEAD); startedUtc=[DateTime]::UtcNow.ToString('o')
     state='RUNNING'; noRecursiveSubagents=$true; pushAllowed=$false
+    resumed=[bool]$Resume
 }
 $record | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $OutputDirectory 'session.json') -Encoding utf8
 $arguments=@('--model','grok-4.7-build-fast','--reasoning-effort','xhigh',
-    '--cwd',$Worktree,'--session-id',$SessionId,'--prompt-file',$PromptFile,
+    '--cwd',$Worktree,'--prompt-file',$PromptFile,
     '--output-format','streaming-json','--no-subagents','--disable-web-search',
     '--max-turns',"$MaxTurns")
+if ($Resume) { $arguments+=@('--resume',$SessionId) }
+else { $arguments+=@('--session-id',$SessionId) }
 if ($ReadOnly) { $arguments+=@('--permission-mode','plan') }
 else { $arguments+=@('--always-approve','--no-plan') }
 try {

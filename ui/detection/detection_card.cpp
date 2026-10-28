@@ -2103,6 +2103,10 @@ void DetectionCard::submit() {
     cancel_->setToolTip(QStringLiteral("取消尚未保存的启动 ") + text(value.runId) +
                         QStringLiteral("，上次正式结果会保留"));
   }
+  // Paint the accepted provisional state before dispatching preparation. Only
+  // these small controls are repainted; no nested event loop can submit a run.
+  run_->repaint();
+  if (preflight_) preflight_->repaint();
   emit requestSubmitted(value);
   // A synchronous rejection clears the latch and writes the real error.
   // Refreshing again here would replace that text with "配置就绪 · 可运行".

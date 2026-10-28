@@ -880,6 +880,11 @@ DetectionCommitResult DetectionResultService::replaceCurrentDetection(
       return reject(error.isEmpty() ? "持久检测 manifest 与完成快照不同" : error);
     DetectionPublication recovered;
     if (!recoverDetectionPublication(directory, durable, recovered, error)) return reject(error);
+    const auto observe = [&](DetectionPublicationStage stage) {
+      try { if (options.publicationStage) options.publicationStage(stage); }
+      catch (...) {} // Diagnostics cannot fail a valid transaction.
+    };
+    observe(DetectionPublicationStage::Recovered);
     // Keep these exact prefixes. The suffix names recovered/publication
     // annotation counts, both source-set ids, and, when the counts match, the
     // first encodeAnnotation mismatch (index, publication annotation id, JSON field).
@@ -908,6 +913,7 @@ DetectionCommitResult DetectionResultService::replaceCurrentDetection(
         return reject(QStringLiteral("持久检测来源/对象数与 publication 不同") + suffix);
       return reject(QStringLiteral("持久检测对象与 publication 不同") + suffix);
     }
+    observe(DetectionPublicationStage::Compared);
     if (inject(options, DetectionTransactionPoint::Persist)) return reject("Injected detection persist failure");
     if (options.stillCurrent && !options.stillCurrent())
       return reject("检测事务已丢弃，提交期间工程已变化。已丢弃的正式结果不会恢复");

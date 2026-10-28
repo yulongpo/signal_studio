@@ -136,7 +136,8 @@ bool DetectionWorkerClient::start(const QString& executable,
                                   const DetectionRequest& request,
                                   QString& error,
                                   const std::function<bool()>& cancelled,
-                                  std::uint32_t maximumExecutionBatch) {
+                                  std::uint32_t maximumExecutionBatch,
+                                  const std::function<bool(QString&)>& prepareWhileInitializing) {
   parentClockStamps_.clear();
   if (!QFileInfo(executable).isFile()) {
     error = "Detection worker executable is missing";
@@ -173,7 +174,7 @@ bool DetectionWorkerClient::start(const QString& executable,
                      request.sourceIdentity.projectGeneration,
                      QString::fromStdString(request.sourceIdentity.fileId)),
       {}};
-  if (!exchange(std::move(begin), ready, error, cancelled)) return false;
+  if (!exchange(std::move(begin), ready, error, cancelled, prepareWhileInitializing)) return false;
   evidence_ = ready.envelope["payload"].toObject();
   stampParentClock("t_engine_ready");
   return true;
@@ -182,9 +183,26 @@ bool DetectionWorkerClient::start(const QString& executable,
 bool DetectionWorkerClient::exchange(DetectionWorkerPacket packet,
                                      DetectionWorkerPacket& response,
                                      QString& error,
-                                     const std::function<bool()>& cancelled) {
+                                     const std::function<bool()>& cancelled,
+                                     const std::function<bool(QString&)>& afterRequestWritten) {
   packet.envelope["sequence"] = QString::number(++sequence_);
-  if (!writePacket(packet, error) || !readPacket(response, error, cancelled))
+  if (!writePacket(packet, error)) return false;
+  if (cancelled && cancelled()) { error = "Cancelled before worker response"; return false; }
+  if (afterRequestWritten) {
+    // Send the begin packet before CPU preparation occupies this thread.
+    QElapsedTimer flush;
+    flush.start();
+    while (process_.bytesToWrite() > 0) {
+      if (cancelled && cancelled()) { error = "Cancelled during worker initialization"; return false; }
+      process_.waitForBytesWritten(20);
+      if (flush.elapsed() > 3000 || process_.state() == QProcess::NotRunning) {
+        error = "Worker begin pipe did not drain: " + process_.errorString();
+        return false;
+      }
+    }
+    if (!afterRequestWritten(error)) return false;
+  }
+  if (!readPacket(response, error, cancelled))
     return false;
   const auto& envelope = response.envelope;
   if (envelope["requestId"] != packet.envelope["requestId"] ||

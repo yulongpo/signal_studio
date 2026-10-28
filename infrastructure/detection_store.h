@@ -28,6 +28,10 @@ QJsonObject detectionTensorRtInferenceTimings(const QJsonObject& performance);
 // explicitly decides whether recovered results belong in the project index.
 bool writeDetectionRun(const QString& projectDirectory, const DetectionRun& run,
                        QString& error);
+// Refresh the optional checkpoint resource profile without changing authority.
+// Uses the exact encoded payload and credits files already occupying the volume.
+bool profileDetectionCheckpointResources(const QString& projectDirectory,
+                                         DetectionRun& run, QString& error);
 bool appendDetectionChunk(const QString& projectDirectory, DetectionRun& run,
                           const QJsonArray& results, const QJsonArray& mappings,
                           QString& error);

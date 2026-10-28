@@ -11,6 +11,8 @@ param(
   [switch]$AllowGpu,
   [switch]$SkipBuild,
   [switch]$FullCTest,
+  [switch]$Native,
+  [string]$OriginalRequestDirectory,
   [string]$ModelRoot,
   [string]$LiveGoldenRoot,
   [string]$AdaptedGoldenRoot,
@@ -22,11 +24,10 @@ $repo = Split-Path -Parent $PSScriptRoot
 
 function Assert-OwnedOutput([string]$Path) {
   $full = [IO.Path]::GetFullPath($Path)
-  $main = [IO.Path]::GetFullPath('D:\project\signal_studio_rebuild\out')
-  $prefix = $main.TrimEnd('\') + '\'
-  if ($full.Equals($main, [StringComparison]::OrdinalIgnoreCase) -or
-      $full.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) {
-    throw "Refusing to write the main worktree out directory: $full"
+  $taskRoot = [IO.Path]::GetFullPath((Join-Path $repo 'out/tasks/ss-de-rpo'))
+  $prefix = $taskRoot.TrimEnd('\') + '\'
+  if (-not $full.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Output must be below this worktree's out/tasks/ss-de-rpo: $full"
   }
   return $full
 }
@@ -180,6 +181,14 @@ if ((Test-Path -LiteralPath $output) -and @(Get-ChildItem -LiteralPath $output -
 }
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $configs = $(if ($Configuration -eq 'Both') { @('Debug', 'Release') } else { @($Configuration) })
+if ($AllowGpu -and -not $OriginalRequestDirectory) {
+  $OriginalRequestDirectory = Join-Path $output 'requests'
+  & (Join-Path $PSScriptRoot 'prepare-ss-de-rpo-requests.ps1') -OutputDirectory $OriginalRequestDirectory
+}
+if ($OriginalRequestDirectory) { $OriginalRequestDirectory = [IO.Path]::GetFullPath($OriginalRequestDirectory) }
+if (-not $BenchmarkRequestJson -and $OriginalRequestDirectory) {
+  $BenchmarkRequestJson = Join-Path $OriginalRequestDirectory 'iq-20-raw-off.json'
+}
 if ($ExecutableDir -and $configs.Count -ne 1) {
   throw 'ExecutableDir applies to one configuration. Omit it when Configuration is Both.'
 }
@@ -199,8 +208,7 @@ try {
     New-Item -ItemType Directory -Path $case -Force | Out-Null
     if (-not $SkipBuild) {
       & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $cfg -Action Configure -Jobs $Jobs -Python $Python
-      & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $cfg -Action Build -Jobs $Jobs -Python $Python `
-        -Targets @('SignalStudioSsDeRpoLogicTests', 'SignalStudioSsDeRpoUiTests')
+      & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $cfg -Action Build -Jobs $Jobs -Python $Python
       Add-Row -Id "evidence:${cfg}:build" -Status 'PASS' -Parent '' -ConfigurationName $cfg `
         -EvidenceClass 'unit' -Detail 'configure and owned test targets built'
     }
@@ -211,6 +219,11 @@ try {
         & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $cfg -Action Test -Jobs $Jobs -Python $Python *> $ctestLog
         Add-Row -Id "CTest-$cfg" -Status 'PASS' -Parent '' -ConfigurationName $cfg `
           -EvidenceClass 'unit' -Detail "complete CTest log $ctestLog"
+        foreach ($requirement in @('R-07','R-10','R-13','R-14','R-16','R-18')) {
+          Add-Row -Id "evidence:${cfg}:ctest-$requirement" -Status 'PASS' -Parent $requirement `
+            -ConfigurationName $cfg -EvidenceClass 'unit' `
+            -Detail "Complete CTest passed: refinement strategies, asset/task faults, UX lifecycle, durable recovery, interval oracle and source-plan invalidation. Log $ctestLog"
+        }
       } catch {
         Add-Row -Id "CTest-$cfg" -Status 'FAIL' -Parent '' -ConfigurationName $cfg `
           -EvidenceClass 'unit' -Detail $_.Exception.Message
@@ -252,8 +265,8 @@ try {
         -ArgumentList @('-o', ($uiLog + ',txt'), '-v2') `
         -Stdout (Join-Path $case 'ui-stdout.txt') -Stderr (Join-Path $case 'ui-stderr.txt') `
         -TimeoutSeconds 180 -Environment @{
-          QT_QPA_PLATFORM = 'offscreen'
-          QT_SCALE_FACTOR = '1.5'
+          QT_QPA_PLATFORM = $(if ($Native) { 'windows' } else { 'offscreen' })
+          QT_SCALE_FACTOR = $(if ($Native) { '' } else { '1.5' })
           QT_QPA_FONTDIR = $fonts
           SS_DE_RPO_SOURCE = $repo
         }
@@ -282,7 +295,10 @@ try {
       $result = Invoke-Captured -File $acceptance -WorkingDirectory $repo `
         -ArgumentList @('--matrix-out', $matrixPath) `
         -Stdout (Join-Path $case 'acceptance-stdout.txt') -Stderr (Join-Path $case 'acceptance-stderr.txt') `
-        -TimeoutSeconds 600 -Environment @{ SS_DE_RPO_SOURCE = $repo }
+        -TimeoutSeconds 600 -Environment @{
+          SS_DE_RPO_SOURCE = $repo
+          SS_DE_RPO_REQUEST_JSON = $(if ($OriginalRequestDirectory) { Join-Path $OriginalRequestDirectory 'iq-2044-raw-off.json' } else { '' })
+        }
       $text = (Get-Text (Join-Path $case 'acceptance-stdout.txt')) + "`n" + (Get-Text (Join-Path $case 'acceptance-stderr.txt'))
       $parsed = 0
       foreach ($line in ($text -split "`r?`n")) {
@@ -341,6 +357,31 @@ try {
       } catch {
         Add-Row -Id "evidence:${cfg}:verify-sample" -Status 'FAIL' -Parent 'R-17' `
           -ConfigurationName $cfg -EvidenceClass 'synthetic-iq' -Detail $_.Exception.Message
+      }
+      if ($Native) {
+        try {
+          foreach ($software in @($false,$true)) {
+            $displayReport = Join-Path $case $(if ($software) { 'package-software.json' } else { 'package-gpu.json' })
+            & (Join-Path $PSScriptRoot 'verify-package.ps1') -Configuration $cfg -SoftwareRenderer:$software -ReportPath $displayReport
+          }
+          Add-Row -Id "evidence:${cfg}:native-package" -Status 'PASS' -Parent 'R-20' -ConfigurationName $cfg -EvidenceClass 'native-4k' -Detail 'Standalone system-PATH deployment, actual 4K/150% fullscreen, GPU QRhi and software display both passed.'
+        } catch {
+          Add-Row -Id "evidence:${cfg}:native-package" -Status 'FAIL' -Parent 'R-20' -ConfigurationName $cfg -EvidenceClass 'native-4k' -Detail $_.Exception.Message
+        }
+      }
+      if ($OriginalRequestDirectory) {
+        foreach ($windows in @(20,159,363,2044)) {
+          $requestPath = Join-Path $OriginalRequestDirectory "iq-$windows-raw-off.json"
+          $runOutput = Join-Path $case "original-iq-$windows"
+          $arguments = @('--request',$requestPath,'--output',$runOutput,'--formal-commit','--strategy','sample','--batch','2','--timeout','900')
+          $result = Invoke-Captured -File (Join-Path $bin 'SignalStudioDetectionBenchmark.exe') -WorkingDirectory $bin -ArgumentList $arguments -Stdout (Join-Path $case "iq-$windows-stdout.txt") -Stderr (Join-Path $case "iq-$windows-stderr.txt") -TimeoutSeconds 960
+          $measurementPath = Join-Path $runOutput 'measurement.json'
+          $measurement = if (Test-Path -LiteralPath $measurementPath) { Get-Content -LiteralPath $measurementPath -Raw | ConvertFrom-Json } else { $null }
+          $passed = -not $result.TimedOut -and $result.ExitCode -eq 0 -and $measurement.pass -and $measurement.formalCommitPerformed -and $measurement.formalProjectReopened -and [int64]$measurement.run.eligibleWindows -eq $windows -and [int64]$measurement.run.completedWindows -eq $windows
+          foreach ($parent in @('R-06','R-11','R-17')) {
+            Add-Row -Id "evidence:${cfg}:original-$windows-$parent" -Status $(if ($passed) { 'PASS' } else { 'FAIL' }) -Parent $parent -ConfigurationName $cfg -EvidenceClass 'original-iq-tensorrt' -Gpu $true -Detail "SourcePlan/forward/Sample/durable comparison/project commit/reopen: $measurementPath"
+          }
+        }
       }
       if ($BenchmarkRequestJson) {
         $benchOut = Join-Path $case 'benchmark-ss-de-rpo'
@@ -452,12 +493,13 @@ foreach ($number in 1..20) {
     $status = 'UNVERIFIED'
     $detail = $descriptions[$id] + ' Not marked PASS.'
   } elseif ($id -eq 'R-11' -or $id -eq 'R-17') {
-    if ($status -eq 'PASS') {
+    $original = @($script:Rows | Where-Object { $_.parent -eq $id -and $_.id -match ':original-(20|159|363|2044)-' })
+    if ($original.Count -eq 4 * $configs.Count -and @($original | Where-Object { $_.status -ne 'PASS' }).Count -eq 0 -and @($kids | Where-Object { $_ -eq 'FAIL' }).Count -eq 0) {
+      $status = 'PASS'
+      $detail = 'Original IQ 20/159/363/2044 Sample, durable comparison, isolated project commit and reopen passed. Synthetic long/Golden and actual-Fs planning are separate evidence.'
+    } elseif ($kids.Count -eq 0 -or $status -in @('PASS','RECORDED')) {
       $status = 'UNVERIFIED'
-      $detail = 'A recorded child is not a full R-11 publication or R-17 long-file PASS.'
-    } elseif ($kids.Count -eq 0) {
-      $status = 'UNVERIFIED'
-      $detail = 'No publication or long-file evidence was run.'
+      $detail = 'Complete original-IQ Sample/publication evidence is missing.'
     }
   }
   Add-Row -Id $id -Status $status -Detail $detail -Parent '' -ConfigurationName $Configuration `

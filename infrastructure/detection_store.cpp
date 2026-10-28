@@ -20,6 +20,7 @@
 
 #include "infrastructure/annotation_json.h"
 #include "infrastructure/project_file.h"
+#include "infrastructure/detection_resource_diagnostics.h"
 
 #ifdef Q_OS_WIN
 #ifndef NOMINMAX
@@ -900,6 +901,45 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
     return run;
   });
 }
+namespace {
+bool checkCheckpointSpace(const QString& directory, const DetectionRun& run,
+                          std::uint64_t payloadBytes, std::string& profile,
+                          QString& error) {
+  const auto snapshot = captureRuntimeResourceSnapshot(directory.toStdString(), nullptr);
+  DetectionDiskUsage usage;
+  usage.durableVolumeKey = snapshot.volume.volumeKey;
+  usage.storeRawHead = run.accountedRawHeadBytes != 0;
+  usage.rawHeadBytes = run.accountedRawHeadBytes;
+  usage.resultShardBytes = run.accountedChunkBytes;
+  // appendDetectionChunk enforces the cap for every immutable chunk.
+  usage.largestResultShardBytes = std::min(usage.resultShardBytes, kDetectionShardFileCapBytes);
+  usage.checkpointBytes = payloadBytes;
+  const QFileInfo previous(QDir(directory).filePath(manifestPath(run.request)));
+  usage.checkpointExistingBytes = previous.isFile() ? std::uint64_t(previous.size()) : 0;
+  std::uint64_t resident = 0;
+  if (!checkedAddU64(usage.rawHeadBytes, usage.resultShardBytes, resident) ||
+      !checkedAddU64(resident, usage.checkpointExistingBytes, resident)) {
+    error = "resource.disk-overflow: resident checkpoint ledger";
+    return false;
+  }
+  return assessDetectionResourceStage("checkpoint", usage,
+      kDiskFactRawHead | kDiskFactResultShards | kDiskFactCheckpoint,
+      snapshot, profile, error, nullptr, 0, DetectionStageResidentCredit{resident, 0});
+}
+}
+bool profileDetectionCheckpointResources(const QString& directory,
+                                         DetectionRun& run, QString& error) {
+  auto candidate = run;
+  for (int attempt = 0; attempt != 8; ++attempt) {
+    const auto size = QJsonDocument(encodeDetectionRun(candidate)).toJson(QJsonDocument::Compact).size();
+    if (!checkCheckpointSpace(directory, candidate, std::uint64_t(size), candidate.performanceJson, error))
+      return false;
+    const auto updatedSize = QJsonDocument(encodeDetectionRun(candidate)).toJson(QJsonDocument::Compact).size();
+    if (size == updatedSize) { run.performanceJson = std::move(candidate.performanceJson); return true; }
+  }
+  error = "resource.checkpoint-profile-did-not-converge";
+  return false;
+}
 bool writeDetectionRun(const QString& directory, const DetectionRun& run,
                        QString& error) {
   try {
@@ -937,8 +977,10 @@ bool writeDetectionRun(const QString& directory, const DetectionRun& run,
     const auto object = encodeDetectionRun(run);
     const bool runDecoded = decodeDetectionRun(object, decoded, decodeError);
     require(runDecoded, decodeError);
-    atomicWrite(root, manifestPath(run.request),
-                QJsonDocument(object).toJson(QJsonDocument::Compact));
+    const auto payload = QJsonDocument(object).toJson(QJsonDocument::Compact);
+    std::string resourceProfile = run.performanceJson;
+    require(checkCheckpointSpace(directory, run, std::uint64_t(payload.size()), resourceProfile, error), error);
+    atomicWrite(root, manifestPath(run.request), payload);
     error.clear();
     return true;
   } catch (const std::exception& exception) {

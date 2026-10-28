@@ -247,6 +247,7 @@ class DetectionModelBackend::Impl {
   DetectionModelRuntimeHooks hooks;
   bool retryableResourceFailure = false;
   bool injectedAllocationFailure = false;
+  bool executionCancelled = false;
   std::uint32_t attemptedExecutionBatch = 0;
   std::uint64_t neededDeviceBytes = 0;
   std::uint64_t accountedFreeDeviceBytes = 0;
@@ -257,6 +258,7 @@ class DetectionModelBackend::Impl {
     if (!hooks.cancelled || !hooks.cancelled()) return false;
     retryableResourceFailure = false;
     injectedAllocationFailure = false;
+    executionCancelled = true;
     fail(error, detectionExecutionCancelledMessage());
     return true;
   }
@@ -1179,7 +1181,9 @@ bool DetectionModelBackend::infer(const std::vector<float>& sourceFrames,
                                   std::uint32_t actualFrames) {
   if (!impl_) return fail(error, "Production model has not passed preflight");
 #ifdef SS_DETECTION_TENSORRT
-  return impl_->forward(sourceFrames, batch, output, error, actualFrames);
+  const bool completed = impl_->forward(sourceFrames, batch, output, error, actualFrames);
+  if (!completed && impl_->executionCancelled) reset();
+  return completed;
 #else
   Q_UNUSED(sourceFrames);
   Q_UNUSED(batch);

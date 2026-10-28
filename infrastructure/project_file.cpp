@@ -17,6 +17,7 @@
 #include <algorithm>
 
 #include "infrastructure/detection_store.h"
+#include "infrastructure/detection_resource_diagnostics.h"
 #include "infrastructure/project_store.h"
 #include "infrastructure/raw_sample_reader.h"
 #include "infrastructure/sample_format_json.h"
@@ -352,6 +353,18 @@ bool ProjectFileCodec::save(const QString& path, Project& project, QString& erro
         {"assets", manifest(root, candidate, payload)}, {"sourceReferences", references}, {"state", payload}};
     const auto bytes = QJsonDocument(container).toJson(QJsonDocument::Indented);
     require(bytes.size() <= 32 * 1024 * 1024, "工程超过 32 MiB");
+    const auto resourceSnapshot = captureRuntimeResourceSnapshot(
+        projectDir.absolutePath().toStdString(), nullptr);
+    DetectionDiskUsage diskUsage;
+    diskUsage.durableVolumeKey = resourceSnapshot.volume.volumeKey;
+    diskUsage.projectBytes = static_cast<std::uint64_t>(bytes.size());
+    const QFileInfo existingProject(path);
+    diskUsage.projectExistingBytes = existingProject.isFile()
+        ? static_cast<std::uint64_t>(existingProject.size()) : 0;
+    std::string diskProfile;
+    require(assessDetectionResourceStage("publishing", diskUsage, kDiskFactProject,
+        resourceSnapshot, diskProfile, error, nullptr, 0,
+        DetectionStageResidentCredit{diskUsage.projectExistingBytes, 0}), error);
     QSaveFile output(path);
     require(output.open(QIODevice::WriteOnly) && output.write(bytes) == bytes.size(), "工程写入失败：" + output.errorString());
     // The last cancellation check precedes the atomic publication point.

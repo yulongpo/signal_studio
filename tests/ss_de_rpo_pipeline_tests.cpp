@@ -25,6 +25,7 @@
 #include "infrastructure/detection_source.h"
 #include "infrastructure/detection_task.h"
 #include "infrastructure/source_loader.h"
+#include <set>
 
 using namespace signalstudio;
 
@@ -131,12 +132,15 @@ std::vector<TimelineMark> timelineMarks(const DetectionRun& run) {
             run.request.runId,
         "Timeline run id differs from the run");
   std::vector<TimelineMark> marks;
+  std::set<QString> names;
   for (const auto& value : timeline.value(QStringLiteral("marks")).toArray()) {
     const auto object = value.toObject();
     bool ok = false;
     const auto steadyNs =
         object.value(QStringLiteral("steadyNs")).toString().toULongLong(&ok);
     check(ok, "steadyNs is not a decimal string");
+    check(names.insert(object.value("name").toString()).second,
+          "Timeline contains a duplicated stage name");
     marks.push_back(
         {object.value(QStringLiteral("name")).toString(), steadyNs});
   }
@@ -542,19 +546,19 @@ void testExecutionTimelineAndIndependentWorkers() {
       QString::fromLatin1(kDetectionMarkSourceOpen),
       QStringLiteral("t_worker_spawn"),
       QStringLiteral("t_worker_hello"),
-      QStringLiteral("t_engine_ready"),
       QStringLiteral("t_first_iq_read"),
+      QStringLiteral("t_engine_ready"),
       QString::fromLatin1(kDetectionMarkFirstModelInput),
       QStringLiteral("t_first_infer_start"),
       QStringLiteral("t_first_infer_end"),
       QString::fromLatin1(kDetectionMarkInferenceComplete),
-      QString::fromLatin1(kDetectionMarkTerminal)};
+      QString::fromLatin1(kDetectionMarkPipelineTerminal)};
   requireSubsequence(firstMarks, stages);
   requireSubsequence(
       secondMarks, std::vector<QString>(stages.begin() + 1, stages.end()));
-  check(firstMarks.back().name == QString::fromLatin1(kDetectionMarkTerminal) &&
+  check(firstMarks.back().name == QString::fromLatin1(kDetectionMarkPipelineTerminal) &&
             secondMarks.back().name ==
-                QString::fromLatin1(kDetectionMarkTerminal),
+                QString::fromLatin1(kDetectionMarkPipelineTerminal),
         "Terminal mark is not the last parent mark");
   check(countMark(firstMarks,
                   QString::fromLatin1(kDetectionMarkManifestCommitted)) == 1 &&

@@ -11,6 +11,7 @@
 namespace signalstudio {
 
 enum class DetectionTransactionPoint { Stage, Persist, Commit, Gc };
+enum class DetectionPublicationStage { Recovered, Compared };
 struct DetectionTransactionOptions {
   // Return true to inject a failure at this boundary. Gc failure is deferred;
   // it never rolls back a successfully committed project.
@@ -18,6 +19,9 @@ struct DetectionTransactionOptions {
   // Same generation comparison as a pending start. False at the atomic commit
   // leaves the previous project file and the caller's Project unchanged.
   std::function<bool()> stillCurrent;
+  // Observes completed boundaries in the parent's monotonic clock. Telemetry
+  // must never change the publication transaction's outcome.
+  std::function<void(DetectionPublicationStage)> publicationStage;
 };
 struct DetectionResultTicket {
   std::string fileId, runId;

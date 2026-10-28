@@ -70,59 +70,6 @@ QString provisionalCancelNote() {
   return QStringLiteral("检测已取消，上次正式结果仍在");
 }
 
-// D adds an optional std::function<bool()> that returns true when this start
-// must stop. Until that parameter exists, the same predicate is checked at
-// each staged boundary below.
-template <typename Request>
-auto freezeModelSnapshot(Request& request, QString& error,
-                         const std::function<bool()>& cancelled, int)
-    -> decltype(freezeDetectionModelSnapshot(request, error, cancelled)) {
-  return freezeDetectionModelSnapshot(request, error, cancelled);
-}
-template <typename Request>
-bool freezeModelSnapshot(Request& request, QString& error,
-                         const std::function<bool()>& cancelled, long) {
-  if (cancelled && cancelled()) {
-    error = provisionalCancelNote();
-    return false;
-  }
-  if (!freezeDetectionModelSnapshot(request, error)) return false;
-  if (cancelled && cancelled()) {
-    error = provisionalCancelNote();
-    return false;
-  }
-  return true;
-}
-template <typename Tasks, typename Request>
-auto prepareRun(Tasks& tasks, const QString& directory,
-                const FileMetadata& metadata, Request&& request,
-                QueuedDetectionRun& prepared, QString& error,
-                const std::function<bool()>& cancelled, int)
-    -> decltype(tasks.prepareQueuedRun(directory, metadata,
-                                       std::forward<Request>(request), prepared,
-                                       error, cancelled)) {
-  return tasks.prepareQueuedRun(directory, metadata,
-                                std::forward<Request>(request), prepared, error,
-                                cancelled);
-}
-template <typename Tasks, typename Request>
-bool prepareRun(Tasks& tasks, const QString& directory,
-                const FileMetadata& metadata, Request&& request,
-                QueuedDetectionRun& prepared, QString& error,
-                const std::function<bool()>& cancelled, long) {
-  if (cancelled && cancelled()) {
-    error = provisionalCancelNote();
-    return false;
-  }
-  if (!tasks.prepareQueuedRun(directory, metadata, std::forward<Request>(request),
-                              prepared, error))
-    return false;
-  if (cancelled && cancelled()) {
-    error = provisionalCancelNote();
-    return false;
-  }
-  return true;
-}
 bool restoreProjectFile(const QString& path, const QByteArray& bytes, QString& error) {
   QSaveFile output(path);
   if (!output.open(QIODevice::WriteOnly) || output.write(bytes) != bytes.size() ||
@@ -955,7 +902,7 @@ void DetectionPanel::runStartCommit(const std::shared_ptr<StartCommit>& job) {
     return;
   }
   QString error;
-  if (!freezeModelSnapshot(job->request, error, cancelled, 0)) {
+  if (!freezeDetectionModelSnapshot(job->request, error, cancelled)) {
     if (shuttingDown_.load()) return;
     if (cancelled()) rejectCancel();
     else reject(std::move(error));
@@ -969,8 +916,8 @@ void DetectionPanel::runStartCommit(const std::shared_ptr<StartCommit>& job) {
   }
   job->marks.emplace_back("t_preflight_start", steadyClockNanoseconds());
   QueuedDetectionRun prepared;
-  if (!prepareRun(*tasks_, job->directory, job->metadata, job->request, prepared,
-                  error, cancelled, 0) ||
+  if (!tasks_->prepareQueuedRun(job->directory, job->metadata, job->request, prepared,
+                                  error, cancelled) ||
       !tasks_->canEnqueue(prepared.run.request.runId, error)) {
     if (shuttingDown_.load()) return;
     if (cancelled()) rejectCancel();
@@ -1112,6 +1059,7 @@ void DetectionPanel::finishStartCommit(const std::shared_ptr<StartCommit>& job) 
   // startRejected is after the lock drops, so noteStartRejected can enable
   // the button without overlapping this transaction.
   const auto failStart = [&](const QString& text) {
+    tasks_->discardPendingSteadyMarks(submittedRunId.toStdString());
     if (!text.isEmpty()) emit message(text);
     restoreIdle();
     finish(false);
@@ -1142,6 +1090,7 @@ void DetectionPanel::finishStartCommit(const std::shared_ptr<StartCommit>& job) 
     return;
   }
   if (!job->published) {
+    tasks_->discardPendingSteadyMarks(submittedRunId.toStdString());
     const auto text = job->error;
     if (!text.isEmpty()) emit message(text);
     restoreIdle();
@@ -1408,16 +1357,15 @@ void DetectionPanel::beginPublicationCommit(DetectionResultTicket ticket,
   committingRunId_ = job->run.request.runId;
   QPointer<DetectionPanel> self(this);
   auto* stopping = &shuttingDown_;
-  auto recoveryNoted = std::make_shared<std::atomic<bool>>(false);
-  job->options.stillCurrent = [self, job, stopping, recoveryNoted] {
+  const auto priorObserver = job->options.publicationStage;
+  job->options.publicationStage = [self, job, priorObserver](DetectionPublicationStage stage) {
+    if (self) self->tasks_->noteSteadyMark(job->run.request.runId,
+        stage == DetectionPublicationStage::Recovered ? "t_recovery_ready" : "t_compare_ready",
+        steadyClockNanoseconds());
+    if (priorObserver) priorObserver(stage);
+  };
+  job->options.stillCurrent = [self, job, stopping] {
     if (!self || stopping->load()) return false;
-    // replaceCurrentDetection asks stillCurrent only after durable recovery
-    // and the publication compare have both succeeded.
-    if (!recoveryNoted->exchange(true)) {
-      const auto ns = steadyClockNanoseconds();
-      self->tasks_->noteSteadyMark(job->run.request.runId, "t_recovery_ready", ns);
-      self->tasks_->noteSteadyMark(job->run.request.runId, "t_compare_ready", ns);
-    }
     if (QThread::currentThread() == self->thread())
       return self->publicationGenerationCurrent(job->epoch, job->generation,
                                                 job->ticket.fileId);

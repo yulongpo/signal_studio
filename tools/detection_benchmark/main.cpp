@@ -94,6 +94,9 @@ int runBenchmark(const QStringList& arguments) {
   bool outputReady=false;
   QElapsedTimer timer;
   timer.start();
+  const auto steadyNow = [] { return std::uint64_t(std::chrono::duration_cast<std::chrono::nanoseconds>(
+      std::chrono::steady_clock::now().time_since_epoch()).count()); };
+  const auto requestBegin = steadyNow();
   try {
     require(args.isSet("request") && args.isSet("output"),"--request and --output are required");
     root = QFileInfo(args.value("output")).absoluteFilePath();
@@ -168,7 +171,9 @@ int runBenchmark(const QStringList& arguments) {
     metadata.availability.availableSamples=id.availableSamples;
     metadata.availability.status=id.availableSamples==id.physicalSamples ? LoadStatus::Ready : LoadStatus::Partial;
     metadata.availability.fingerprint=id.quickFingerprint;
+    const auto snapshotBegin = steadyNow();
     require(freezeDetectionModelSnapshot(request,error),error);
+    const auto snapshotReady = steadyNow();
     report["request"] = encodeDetectionRequest(request);
     report["memoryBefore"] = memory();
     report["processId"] = double(QCoreApplication::applicationPid());
@@ -198,6 +203,9 @@ int runBenchmark(const QStringList& arguments) {
         "/SignalStudioDetectionWorker"
 #endif
     );
+    manager.noteSteadyMark(request.runId, "t_request_begin", requestBegin);
+    manager.noteSteadyMark(request.runId, "t_model_snapshot_start", snapshotBegin);
+    manager.noteSteadyMark(request.runId, kDetectionMarkModelSnapshotReady, snapshotReady);
     if (formalCommit) {
       QueuedDetectionRun prepared;
       require(manager.prepareQueuedRun(assetRoot, metadata, request, prepared, error), error);
@@ -249,15 +257,19 @@ int runBenchmark(const QStringList& arguments) {
     const bool available=manager.takePublication(request.runId,publication);
     bool formalCommitted = false;
     if (formalCommit && terminal.lifecycle == DetectionLifecycle::Completed && available && !timedOut) {
+      DetectionTransactionOptions options;
+      options.publicationStage = [&](DetectionPublicationStage stage) {
+        manager.noteSteadyMark(request.runId,
+            stage == DetectionPublicationStage::Recovered ? "t_recovery_ready" : "t_compare_ready", steadyNow());
+      };
       const auto result = DetectionResultService::replaceCurrentDetection(
           isolatedProject, annotations, formalTicket, request.sourceIdentity.projectGeneration,
-          terminal, publication, formalPath);
+          terminal, publication, formalPath, options);
       report["formalCommitError"] = result.error;
       formalCommitted = result.committed;
       if (formalCommitted) {
-        const auto stamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::steady_clock::now().time_since_epoch()).count();
-        manager.noteSteadyMark(request.runId, "t_durable_publication", static_cast<std::uint64_t>(stamp));
+        manager.noteSteadyMark(request.runId, "t_project_commit", steadyNow());
+        manager.noteSteadyMark(request.runId, "t_durable_publication", steadyNow());
         terminal = manager.snapshots().front();
         report["formalProject"] = formalPath;
         Project reopened;
@@ -269,6 +281,8 @@ int runBenchmark(const QStringList& arguments) {
         report["formalProjectReopened"] = true;
       }
     }
+    manager.noteSteadyMark(request.runId, "t_terminal", steadyNow());
+    terminal = manager.snapshots().front();
     report["run"]=encodeDetectionRun(terminal);
     report["publicationAvailable"]=available;
     report["formalCommitPerformed"]=formalCommitted;

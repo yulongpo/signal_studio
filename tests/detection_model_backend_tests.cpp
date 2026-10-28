@@ -342,6 +342,81 @@ std::vector<float> readFloats(const QString& path) {
   return values;
 }
 
+void rpoAllocationFaults(const QString& modelRoot, const QString& goldenRoot) {
+  QFile file(QDir(modelRoot).filePath("ffscn-gui-iq-v1/manifest.json"));
+  check(file.open(QIODevice::ReadOnly), "Cannot read model manifest for fault checks");
+  const auto manifest = QJsonDocument::fromJson(file.readAll()).object();
+  auto resourceRequest = request("ffscn-gui-iq-v1");
+  resourceRequest.modelSha256 = manifest["engine"].toObject()["sha256"].toString().toStdString();
+  const auto source = readFloats(QDir(goldenRoot).filePath("shape-b2-t10-f65536.input.f32"));
+  QString error;
+  // Exercise the actual TensorRT load/retry path. The allocation failure is
+  // explicitly injected; successful forwards below still execute on the GPU.
+  {
+    std::vector<std::uint32_t> attempted;
+    DetectionModelRuntimeHooks hooks;
+    hooks.failDeviceAllocation = [&](std::uint32_t batch, std::uint64_t) {
+      attempted.push_back(batch);
+      return batch > 1;
+    };
+    DetectionModelBackend injected(modelRoot, {}, hooks);
+    check(injected.load(resourceRequest, error), error);
+    check(attempted == std::vector<std::uint32_t>{2, 1} &&
+              injected.evidence()["physicalBatch"] == 1 &&
+              injected.evidence()["allocationFailureKind"] == "injected",
+          "Injected B2 allocation failure must retry B1 and label its evidence");
+    for (std::size_t window = 0; window != 2; ++window) {
+      const auto begin = source.begin() + static_cast<std::ptrdiff_t>(window * 10 * 65536);
+      std::vector<float> one(begin, begin + 10 * 65536);
+      DetectionModelOutput actual;
+      check(injected.infer(one, 1, actual, error) && actual.batch == 1 &&
+                actual.hm.size() == actual.width && !actual.hm.empty(),
+            "Every original window must execute after the injected downshift: " + error);
+    }
+    std::cout << "Injected actual TensorRT B2-to-B1 retry, two forwards PASS "
+              << QJsonDocument(injected.evidence()).toJson(QJsonDocument::Compact).toStdString()
+              << '\n';
+  }
+  {
+    DetectionModelRuntimeHooks hooks;
+    std::vector<std::uint32_t> attempted;
+    hooks.failDeviceAllocation = [&](std::uint32_t batch, std::uint64_t) {
+      attempted.push_back(batch);
+      return true;
+    };
+    DetectionModelBackend rejected(modelRoot, {}, hooks);
+    check(!rejected.load(resourceRequest, error) &&
+              attempted == std::vector<std::uint32_t>{2, 1} &&
+              error.contains("Injected device allocation failure") && rejected.evidence().isEmpty(),
+          "Injected B1 allocation failure must reject load without ready evidence: " + error);
+    std::cout << "Injected actual TensorRT batch-1 rejection PASS\n";
+  }
+  {
+    DetectionModelRuntimeHooks hooks;
+    hooks.cancelled = [] { return true; };
+    DetectionModelBackend cancelled(modelRoot, {}, hooks);
+    check(!cancelled.load(resourceRequest, error) && error.contains("Cancelled") &&
+              cancelled.evidence().isEmpty(),
+          "Cancellation before model allocation must not expose ready evidence: " + error);
+    std::cout << "Actual backend cancellation before allocation PASS\n";
+  }
+  {
+    bool stop = false;
+    DetectionModelRuntimeHooks hooks;
+    hooks.cancelled = [&] { return stop; };
+    DetectionModelBackend cancelled(modelRoot, {}, hooks);
+    check(cancelled.load(resourceRequest, error), error);
+    stop = true;
+    std::vector<float> one(source.begin(), source.begin() + 10 * 65536);
+    DetectionModelOutput output;
+    output.hm = {42};
+    check(!cancelled.infer(one, 1, output, error) && error.contains("Cancelled") &&
+              output.hm == std::vector<float>{42} && cancelled.evidence().isEmpty(),
+          "Cancellation after allocation must release the ready backend and preserve output");
+    std::cout << "Actual backend cancellation after allocation releases readiness PASS\n";
+  }
+}
+
 void adaptedLiveParity(const QString& modelRoot, const QString& goldenRoot) {
   QFile manifestFile(QDir(modelRoot).filePath("ffscn-gui-iq-v1/manifest.json"));
   check(manifestFile.open(QIODevice::ReadOnly),
@@ -501,56 +576,8 @@ void adaptedLiveParity(const QString& modelRoot, const QString& goldenRoot) {
                    .toJson(QJsonDocument::Compact)
                    .toStdString()
             << '\n';
-  // Exercise the actual TensorRT load/retry path. The allocation failure is
-  // explicitly injected; successful forwards below still execute on the GPU.
-  {
-    std::vector<std::uint32_t> attempted;
-    DetectionModelRuntimeHooks hooks;
-    hooks.failDeviceAllocation = [&](std::uint32_t batch, std::uint64_t) {
-      attempted.push_back(batch);
-      return batch > 1;
-    };
-    DetectionModelBackend injected(modelRoot, {}, hooks);
-    check(injected.load(resourceRequest, error), error);
-    check(attempted == std::vector<std::uint32_t>{2, 1} &&
-              injected.evidence()["physicalBatch"] == 1 &&
-              injected.evidence()["allocationFailureKind"] == "injected",
-          "Injected B2 allocation failure must retry B1 and label its evidence");
-    for (std::size_t window = 0; window != 2; ++window) {
-      const auto begin = source.begin() + static_cast<std::ptrdiff_t>(window * 10 * 65536);
-      std::vector<float> one(begin, begin + 10 * 65536);
-      DetectionModelOutput actual;
-      check(injected.infer(one, 1, actual, error) && actual.batch == 1 &&
-                actual.hm.size() == actual.width && !actual.hm.empty(),
-            "Every original window must execute after the injected downshift: " + error);
-    }
-    std::cout << "Injected actual TensorRT B2-to-B1 retry, two forwards PASS "
-              << QJsonDocument(injected.evidence()).toJson(QJsonDocument::Compact).toStdString()
-              << '\n';
-  }
-  {
-    DetectionModelRuntimeHooks hooks;
-    std::vector<std::uint32_t> attempted;
-    hooks.failDeviceAllocation = [&](std::uint32_t batch, std::uint64_t) {
-      attempted.push_back(batch);
-      return true;
-    };
-    DetectionModelBackend rejected(modelRoot, {}, hooks);
-    check(!rejected.load(resourceRequest, error) &&
-              attempted == std::vector<std::uint32_t>{2, 1} &&
-              error.contains("Injected device allocation failure") && rejected.evidence().isEmpty(),
-          "Injected B1 allocation failure must reject load without ready evidence: " + error);
-    std::cout << "Injected actual TensorRT batch-1 rejection PASS\n";
-  }
-  {
-    DetectionModelRuntimeHooks hooks;
-    hooks.cancelled = [] { return true; };
-    DetectionModelBackend cancelled(modelRoot, {}, hooks);
-    check(!cancelled.load(resourceRequest, error) && error.contains("Cancelled") &&
-              cancelled.evidence().isEmpty(),
-          "Cancellation before model allocation must not expose ready evidence: " + error);
-    std::cout << "Actual backend cancellation before allocation PASS\n";
-  }
+  rpoAllocationFaults(modelRoot, goldenRoot);
+
 }
 
 void liveParity(const QString& modelRoot, const QString& referenceRoot) {
@@ -695,12 +722,15 @@ int main(int argc, char** argv) {
     if (argc == 4 && QString::fromLocal8Bit(argv[1]) == "--live")
       liveParity(QString::fromLocal8Bit(argv[2]),
                  QString::fromLocal8Bit(argv[3]));
+    else if (argc == 4 && QString::fromLocal8Bit(argv[1]) == "--rpo-faults")
+      rpoAllocationFaults(QString::fromLocal8Bit(argv[2]),
+                          QString::fromLocal8Bit(argv[3]));
     else if (argc == 4 && QString::fromLocal8Bit(argv[1]) == "--adapted")
       adaptedLiveParity(QString::fromLocal8Bit(argv[2]),
                         QString::fromLocal8Bit(argv[3]));
     else
       check(argc == 1,
-            "Usage: detection-model-backend-tests [--live|--adapted model-root "
+            "Usage: detection-model-backend-tests [--live|--adapted|--rpo-faults model-root "
             "golden-root]");
     std::cout << "Detection model backend checks passed\n";
     return 0;

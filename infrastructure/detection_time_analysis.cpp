@@ -12,6 +12,7 @@
 #include "domain/detection_refinement.h"
 #include "infrastructure/detection_sample_energy.h"
 #include "infrastructure/detection_sample_stream.h"
+#include "infrastructure/detection_resource_diagnostics.h"
 #include "infrastructure/int16_iq_file.h"
 #include "infrastructure/source_metadata.h"
 
@@ -339,7 +340,12 @@ bool boundedSample(FixedDetectionSource& source,const FileMetadata& metadata,con
   // SAME full working grant previously available to LegacyExact, after FIR
   // workspace and scratch have been released, to avoid unnecessary degradation.
   // Grants above 1 GiB are legal. Exact residency is capped separately in makePlan.
-  runtime.memoryGrantBytes=working;
+  const auto memorySnapshot = captureRuntimeResourceSnapshot(metadata.path, nullptr);
+  if (memorySnapshot.ram.status != ResourceProbeStatus::Probed) {
+    error = "resource.ram-unavailable: cannot plan bounded Sample residency";
+    return false;
+  }
+  runtime.memoryGrantBytes=std::min(working, memorySnapshot.ram.availableBytes);
   runtime.resultByteGrant=std::min<std::uint64_t>(runtime.memoryGrantBytes/4,16ULL*1024*1024);
   const auto encodedReadBudget=std::min<std::uint64_t>(16ULL*1024*1024,runtime.memoryGrantBytes/8);
   runtime.readerResidentReserveBytes=encodedReadBudget+kReadSamples*sizeof(std::complex<float>)+65536;
@@ -367,7 +373,18 @@ bool boundedSample(FixedDetectionSource& source,const FileMetadata& metadata,con
     std::copy(decoded.begin(),decoded.end(),destination.begin());return true;
   };
   ScratchGrant grant;
-  runtime.reserveScratch=[&](std::uint64_t bytes,QString& why){return grant.reserve(bytes,why);};
+  std::string scratchProfile;
+  runtime.reserveScratch=[&](std::uint64_t bytes,QString& why) {
+    const auto snapshot = captureRuntimeResourceSnapshot(
+        runtime.privateScratchRoot.toStdString(), nullptr);
+    DetectionDiskUsage usage;
+    usage.durableVolumeKey = snapshot.volume.volumeKey;
+    usage.scratchVolumeKey = snapshot.volume.volumeKey;
+    usage.scratchBytes = bytes;
+    if (!assessDetectionResourceStage("refine", usage, kDiskFactScratch,
+                                      snapshot, scratchProfile, why)) return false;
+    return grant.reserve(bytes,why);
+  };
   runtime.releaseScratch=[&](std::uint64_t bytes){grant.release(bytes);};
   stream::Failure failure;
   stream::Plan legacyPlan;
@@ -392,6 +409,10 @@ bool boundedSample(FixedDetectionSource& source,const FileMetadata& metadata,con
     return stream::run(context,config,runtime,output,failure);
   });
   report={{"requestedMode",static_cast<int>(request.sampleEnergyMode)},
+      {"authorizedRamBytes",QString::number(working)},
+      {"availableRamBytes",QString::number(memorySnapshot.ram.availableBytes)},
+      {"effectiveRamBytes",QString::number(runtime.memoryGrantBytes)},
+      {"scratchResources",QJsonDocument::fromJson(QByteArray::fromStdString(scratchProfile)).object().value("resources")},
       {"gpuFirBlocks",QString::number(output.statistics.gpuFirBlocks)},
       {"gpuFallback",gpuFallback.left(1024)},
       {"autoExactSampleCutoff",QString::number(kAutoExactSamples)},

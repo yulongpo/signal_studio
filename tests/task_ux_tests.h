@@ -659,55 +659,46 @@ inline void UxTests::uxD09_intermediatePreviewAndRedetectClear() {
       *file, file->metadata.sampleFormat.selectedChannel);
   QVERIFY(beforeSlot && !beforeSlot->committedRunId.empty());
   const auto previousCommitted = beforeSlot->committedRunId;
+  // The approved SS-DE-RPO contract discards this channel's old formal result
+  // when the new start commits. Editing model/parameters above preserves it.
   QTest::mouseClick(run, Qt::LeftButton);
   QTRY_VERIFY_WITH_TIMEOUT([&] {
     file = window.session().activeFile();
     const auto* now = currentDetectionSlot(
         *file, file->metadata.sampleFormat.selectedChannel);
-    return now && now->committedRunId == previousCommitted &&
-           !now->pendingRunId.empty() &&
-           status->text().contains("当前显示上次检测结果");
+    return now && now->committedRunId.empty() && !now->pendingRunId.empty() &&
+           status->text().contains("已丢弃上次正式结果");
   }(), 20000);
   file = window.session().activeFile();
-  for (const auto& id : formalIds) QVERIFY(findAnnotation(*file, id));
+  for (const auto& id : formalIds) QVERIFY(!findAnnotation(*file, id));
   QVERIFY(findAnnotation(*file, manualId));
   QCOMPARE(encodeAnnotation(*findAnnotation(*file, manualId)), manualBefore);
-  QVERIFY(!status->text().contains("已清除当前通道上次正式检测结果"));
-  QVERIFY(!status->text().contains("不会恢复"));
   QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
   QCOMPARE(plot->powerGenerationCount(), generations);
   const auto pendingId = currentDetectionSlot(
       *file, file->metadata.sampleFormat.selectedChannel)->pendingRunId;
-  panel->tasks().cancel(pendingId);
+  QVERIFY(pendingId != previousCommitted);
+  panel->cancelRun(QString::fromStdString(pendingId));
   timer->start();
-  bool cancelledKeptFormal = false;
-  QElapsedTimer wait;
-  wait.start();
-  while (wait.elapsed() < 20000) {
-    QTest::qWait(50);
+  QTRY_VERIFY_WITH_TIMEOUT([&] {
     file = window.session().activeFile();
     const auto* now = currentDetectionSlot(
         *file, file->metadata.sampleFormat.selectedChannel);
-    if (now && now->pendingRunId.empty() &&
-        now->committedRunId == previousCommitted) {
-      cancelledKeptFormal = true;
-      break;
-    }
-    if (now && now->committedRunId == pendingId) break;
-  }
-  QVERIFY2(cancelledKeptFormal, qPrintable(status->text()));
+    return now && now->pendingRunId.empty() && now->committedRunId.empty();
+  }(), 20000);
   file = window.session().activeFile();
-  for (const auto& id : formalIds) QVERIFY(findAnnotation(*file, id));
+  for (const auto& id : formalIds) QVERIFY(!findAnnotation(*file, id));
   std::size_t algorithm = 0;
   for (const auto& mark : file->marks)
     if (mark.sourceKind == AnnotationSource::Algorithm) ++algorithm;
-  QCOMPARE(algorithm, formalIds.size());
+  QCOMPARE(algorithm, std::size_t{0});
   QVERIFY(findAnnotation(*file, manualId));
   QCOMPARE(encodeAnnotation(*findAnnotation(*file, manualId)), manualBefore);
-  QVERIFY(status->text().contains("当前显示上次检测结果"));
-  QVERIFY(!status->text().contains("已清除当前通道上次正式检测结果"));
-  QVERIFY(!status->text().contains("不会恢复"));
+  QTRY_VERIFY_WITH_TIMEOUT(status->text().contains("尚未成功发布") ||
+                            status->text().contains("预览 · 未发布"), 3000);
+  QVERIFY(!status->text().contains("当前显示上次检测结果"));
   QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+
 }
 
 inline int uxR6VisiblePieces(const FileState& file, bool outside) {

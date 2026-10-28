@@ -24,11 +24,10 @@ $repo = Split-Path -Parent $PSScriptRoot
 
 function Assert-OwnedOutput([string]$Path) {
   $full = [IO.Path]::GetFullPath($Path)
-  $main = [IO.Path]::GetFullPath('D:\project\signal_studio_rebuild\out')
-  $prefix = $main.TrimEnd('\') + '\'
-  if ($full.Equals($main, [StringComparison]::OrdinalIgnoreCase) -or
-      $full.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) {
-    throw "Refusing to write the main worktree out directory: $full"
+  $taskRoot = [IO.Path]::GetFullPath((Join-Path $repo 'out/tasks/ss-de-rpo'))
+  $prefix = $taskRoot.TrimEnd('\') + '\'
+  if (-not $full.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Output must be below this worktree's out/tasks/ss-de-rpo: $full"
   }
   return $full
 }
@@ -63,8 +62,15 @@ function Start-ResourceSampler([string]$CsvPath) {
   return Start-Job -ScriptBlock {
     param($CsvPath, $Names)
     $header = $false
+    $gpuProbe = Get-Command nvidia-smi -ErrorAction SilentlyContinue
+    $drive = [IO.DriveInfo]::new([IO.Path]::GetPathRoot($CsvPath))
     while ($true) {
       $rows = @()
+      $gpuValues = @()
+      if ($gpuProbe) {
+        $gpuValues = @(& $gpuProbe.Source --query-gpu=index,name,memory.used,utilization.gpu --format=csv,noheader,nounits 2>$null |
+          Select-Object -First 1 | ForEach-Object { $_ -split ',\s*' })
+      }
       foreach ($name in $Names) {
         foreach ($process in @(Get-Process -Name $name -ErrorAction SilentlyContinue)) {
           try {
@@ -76,6 +82,11 @@ function Start-ResourceSampler([string]$CsvPath) {
               peakWorkingSet64 = $process.PeakWorkingSet64
               privateMemorySize64 = $process.PrivateMemorySize64
               totalProcessorTimeMs = [int64]$process.TotalProcessorTime.TotalMilliseconds
+              gpuIndex = $(if ($gpuValues.Count -eq 4) { $gpuValues[0] } else { '' })
+              gpuName = $(if ($gpuValues.Count -eq 4) { $gpuValues[1] } else { '' })
+              gpuUsedMiB = $(if ($gpuValues.Count -eq 4) { $gpuValues[2] } else { '' })
+              gpuUtilizationPercent = $(if ($gpuValues.Count -eq 4) { $gpuValues[3] } else { '' })
+              volumeAvailableBytes = $drive.AvailableFreeSpace
             }
           } catch { }
         }

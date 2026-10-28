@@ -43,7 +43,7 @@ inline constexpr char kDetectionMarkFrequencyComplete[] =
     "t_frequency_complete";
 inline constexpr char kDetectionMarkFinalShardPersisted[] =
     "t_final_shard_persisted";
-inline constexpr char kDetectionMarkTerminal[] = "t_terminal";
+inline constexpr char kDetectionMarkPipelineTerminal[] = "t_pipeline_terminal";
 
 // Rejects before inference when retained raw heads exceed the configured quota
 // or the free space on the project volume. The quota ceiling is that free
@@ -134,6 +134,7 @@ class DetectionTaskManager {
   // appended to performanceJson when that run is queued or later updated.
   void noteSteadyMark(const std::string& runId, const char* name,
                       std::uint64_t steadyNanoseconds) const;
+  void discardPendingSteadyMarks(const std::string& runId) const;
   // Both callbacks run without mutex_ and must not call back into this
   // manager. Production leaves them empty. beforePumpJoin runs only after the
   // task mutex is released and before joining a producer that already
@@ -163,6 +164,7 @@ class DetectionTaskManager {
     std::string name;
     std::uint64_t steadyNanoseconds = 0;
   };
+  static void mergeSteadyMark(std::vector<SteadyMark>&, SteadyMark);
   struct Job {
     QString directory;
     FileMetadata metadata;

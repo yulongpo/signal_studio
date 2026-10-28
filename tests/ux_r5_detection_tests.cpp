@@ -466,6 +466,28 @@ void faultBoundaries() {
             !findAnnotation(reopened.files[0], previousId),
         "Reopen after a stale replacement commit restored the discarded formal result");
 }
+void publicationStageTelemetry() {
+  Harness h;
+  auto prepared = h.durable("timed-publication");
+  h.pending(prepared);
+  std::vector<DetectionPublicationStage> observed;
+  DetectionTransactionOptions options;
+  options.publicationStage = [&](auto stage) { observed.push_back(stage); };
+  options.stillCurrent = [&] {
+    check(observed == std::vector<DetectionPublicationStage>{
+        DetectionPublicationStage::Recovered, DetectionPublicationStage::Compared},
+        "Publication gate was reached before recovery and comparison");
+    return true;
+  };
+  check(h.commit(prepared, options).committed, "Timed publication did not commit");
+  uniqueResult(h.reopen().files[0], "timed-publication");
+  auto next = h.durable("observer-exception");
+  h.pending(next);
+  options.stillCurrent = {};
+  options.publicationStage = [](auto) { throw std::runtime_error("diagnostic failure"); };
+  check(h.commit(next, options).committed, "Diagnostic exception changed the transaction outcome");
+  uniqueResult(h.reopen().files[0], "observer-exception");
+}
 void runningSaveAndDurableRecovery() {
   Harness h;
   auto a = h.durable("old"); h.publish(a);
@@ -1185,6 +1207,7 @@ int main(int argc, char** argv) {
       {"file-and-sample-channel-isolation", filesAndChannels},
       {"real-ssproj-stage-persist-commit-GC-faults", faultBoundaries},
       {"running-save-reopen-recovery", runningSaveAndDurableRecovery},
+      {"publication-stage-timing-and-diagnostic-isolation", publicationStageTelemetry},
       {"private-canonical-GC-and-authority-discovery", safePrivateGcAndRetiredDiscovery},
       {"Copy-Reference-Preserve", copyReferencePreserve},
       {"legacy-multi-run-and-ambiguous-timestamps", legacyMultiRunAdjudicationAndAmbiguity},

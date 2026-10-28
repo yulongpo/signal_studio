@@ -22,6 +22,7 @@
 #include "infrastructure/detection_frequency_analysis.h"
 #include "infrastructure/detection_projection.h"
 #include "infrastructure/detection_protocol.h"
+#include "infrastructure/detection_resource_diagnostics.h"
 #include "infrastructure/detection_refined_publication.h"
 #include "infrastructure/detection_source.h"
 #include "infrastructure/detection_store.h"
@@ -924,6 +925,16 @@ bool DetectionTaskManager::prepareQueuedRun(
     error = rejection;
     return false;
   }
+  std::string resourceProfile;
+  if (!assessDetectionResourcePreflight(directory, plan, request, resourceProfile, error)) {
+    prepared = {};
+    prepared.run.request = request;
+    prepared.run.lifecycle = DetectionLifecycle::Failed;
+    prepared.run.computationPhase = "preflight";
+    prepared.run.error = error.toStdString();
+    prepared.run.performanceJson = std::move(resourceProfile);
+    return false;
+  }
   observe(kDetectionMarkPreflightEnd);
   if (preparationCancelled()) return false;
   std::uint64_t pipelineReserve = 0;
@@ -958,6 +969,7 @@ bool DetectionTaskManager::prepareQueuedRun(
   prepared.sourcePlan = std::move(plan);
   prepared.hasSourcePlan = true;
   prepared.run.request = std::move(request);
+  prepared.run.performanceJson = std::move(resourceProfile);
   prepared.run.device = "CPU spectrum / isolated worker";
   prepared.run.runtime = "worker-v1";
   error.clear();
@@ -1245,6 +1257,9 @@ std::string DetectionTaskManager::performanceSnapshot(const std::shared_ptr<Job>
       {"frequencyTracksReadyMs",double(job->frequencyReadyMs)},
       {"timingBoundary","host stage totals may nest; CUDA timings are stream-event intervals; not UI paint latency"}},
       job->gpuProfile);
+  const auto prior = QJsonDocument::fromJson(QByteArray::fromStdString(job->run.performanceJson));
+  if (prior.isObject() && prior.object().contains("resources"))
+    profile.insert("resources", prior.object().value("resources"));
   if (!job->steadyMarks.empty())
     profile.insert(QStringLiteral("timeline"), timelineObject(job));
   return QJsonDocument(profile).toJson(QJsonDocument::Compact).toStdString();
@@ -1252,7 +1267,11 @@ std::string DetectionTaskManager::performanceSnapshot(const std::shared_ptr<Job>
 QJsonObject DetectionTaskManager::timelineObject(
     const std::shared_ptr<Job>& job) const {
   QJsonArray marks;
-  for (const auto& mark : job->steadyMarks) {
+  auto ordered = job->steadyMarks;
+  std::stable_sort(ordered.begin(), ordered.end(), [](const auto& a, const auto& b) {
+    return a.steadyNanoseconds < b.steadyNanoseconds;
+  });
+  for (const auto& mark : ordered) {
     marks.append(QJsonObject{
         {QStringLiteral("name"), QString::fromStdString(mark.name)},
         {QStringLiteral("steadyNs"),
@@ -1284,12 +1303,7 @@ void DetectionTaskManager::rememberTimelineLocked(
         object.value(QStringLiteral("steadyNs")).toString().toULongLong(&ok);
     if (!ok) continue;
     const auto nanoseconds = static_cast<std::uint64_t>(parsed);
-    const bool present = std::any_of(
-        job->steadyMarks.begin(), job->steadyMarks.end(),
-        [&](const SteadyMark& mark) {
-          return mark.name == name && mark.steadyNanoseconds == nanoseconds;
-        });
-    if (!present) job->steadyMarks.push_back(SteadyMark{name, nanoseconds});
+    mergeSteadyMark(job->steadyMarks, SteadyMark{name, nanoseconds});
   }
 }
 void DetectionTaskManager::materializeTimelineLocked(
@@ -1320,9 +1334,7 @@ void DetectionTaskManager::adoptSteadyMarksLocked(
   if (!runId.empty()) {
     auto pending = pendingSteadyMarks_.find(runId);
     if (pending != pendingSteadyMarks_.end()) {
-      job->steadyMarks.insert(job->steadyMarks.end(),
-                              std::make_move_iterator(pending->second.begin()),
-                              std::make_move_iterator(pending->second.end()));
+      for (auto& mark : pending->second) mergeSteadyMark(job->steadyMarks, std::move(mark));
       pendingSteadyMarks_.erase(pending);
     }
   }
@@ -1337,11 +1349,21 @@ void DetectionTaskManager::noteSteadyMark(const std::string& runId,
   for (auto& job : jobs_) {
     if (job->run.request.runId != runId) continue;
     rememberTimelineLocked(job);
-    job->steadyMarks.push_back(std::move(mark));
+    mergeSteadyMark(job->steadyMarks, std::move(mark));
     materializeTimelineLocked(job);
     return;
   }
-  pendingSteadyMarks_[runId].push_back(std::move(mark));
+  mergeSteadyMark(pendingSteadyMarks_[runId], std::move(mark));
+}
+void DetectionTaskManager::mergeSteadyMark(std::vector<SteadyMark>& marks, SteadyMark mark) {
+  const auto found = std::find_if(marks.begin(), marks.end(),
+      [&](const auto& existing) { return existing.name == mark.name; });
+  if (found == marks.end()) marks.push_back(std::move(mark));
+  else found->steadyNanoseconds = std::min(found->steadyNanoseconds, mark.steadyNanoseconds);
+}
+void DetectionTaskManager::discardPendingSteadyMarks(const std::string& runId) const {
+  std::lock_guard lock(mutex_);
+  pendingSteadyMarks_.erase(runId);
 }
 bool DetectionTaskManager::checkpoint(const std::shared_ptr<Job>& job,
                                       QString& error) {
@@ -1351,6 +1373,11 @@ bool DetectionTaskManager::checkpoint(const std::shared_ptr<Job>& job,
     rememberTimelineLocked(job);
     job->run.performanceJson=performanceSnapshot(job);
     run = job->run;
+  }
+  if (!profileDetectionCheckpointResources(job->directory, run, error)) return false;
+  {
+    std::lock_guard lock(mutex_);
+    job->run.performanceJson = run.performanceJson;
   }
   return persistRun_(job->directory, run, error);
 }
@@ -1375,7 +1402,7 @@ void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
     std::uint64_t terminalNanoseconds = 0;
     if (captureParentSteadyNanoseconds(terminalNanoseconds))
       job->steadyMarks.push_back(
-          SteadyMark{kDetectionMarkTerminal, terminalNanoseconds});
+          SteadyMark{kDetectionMarkPipelineTerminal, terminalNanoseconds});
     rememberTimelineLocked(job);
     job->run.performanceJson=performanceSnapshot(job);
     terminal = job->run;
@@ -1439,7 +1466,8 @@ void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
   for (;;) {
     QString writeError;
     bool persisted=false;
-    try { persisted=persistRun_(job->directory,terminal,writeError); }
+    try { persisted=profileDetectionCheckpointResources(job->directory, terminal, writeError) &&
+                    persistRun_(job->directory,terminal,writeError); }
     catch(const std::exception& exception) {
       writeError="Terminal persistence exception: "+QString::fromUtf8(exception.what());
     } catch(...) {writeError="Unknown terminal persistence exception";}
@@ -1630,9 +1658,21 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   // cross-run worker, engine, or CUDA context pool.
   job->worker=std::make_unique<DetectionWorkerClient>();
   auto& worker=*job->worker;
+  std::optional<DetectionModelWindow> preparedFirstWindow;
+  const auto prepareFirstWindow = [&](QString& why) {
+    if (cancelled()) { why = "Cancelled during initial window preparation"; return false; }
+    DetectionModelWindow window;
+    if (!measured("read-model-window", [&] {
+          return source.readModelWindow(0, window, why, cancelled);
+        })) return false;
+    preparedFirstWindow = std::move(window);
+    notedFirstRead = true;
+    markNow("t_first_iq_read");
+    return !cancelled();
+  };
   const bool workerStarted = measured("worker-start", [&] {
     return worker.start(workerExecutable_, request, error, cancelled,
-                        job->executionBatchSize);
+                        job->executionBatchSize, prepareFirstWindow);
   });
   for (const auto& stamp : worker.parentClockStamps())
     noteSteadyMark(request.runId, stamp.name.c_str(), stamp.steadyNanoseconds);
@@ -1655,7 +1695,11 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
                             "physicalBatch", "logicalMaximumBatch",
                             "batchProfileReason", "engineMaximumBatch",
                             "optimizationProfile", "batchAdaptationReason",
-                            "requestedMaximumBatch"})
+                            "requestedMaximumBatch", "deviceResourceAccount",
+                            "engineProfileExtent", "cudaDeviceIndex", "deviceMemory",
+                            "executionProfile", "freeDeviceBytes", "totalDeviceBytes",
+                            "reservedDeviceBytes", "neededDeviceBytes", "profileMin",
+                            "profileOpt", "profileMax"})
       if (model.contains(QLatin1String(key)))
         profile.insert(QLatin1String(key), model.value(QLatin1String(key)));
     std::lock_guard lock(mutex_);
@@ -1738,7 +1782,10 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
          batch < job->executionBatchSize && index < plan.eligibleWindowCount;
          ++batch, ++index) {
       DetectionModelWindow window;
-      if (!measured("read-model-window",[&] { return source.readModelWindow(index, window, error, cancelled); })) {
+      const bool read = index == 0 && preparedFirstWindow
+          ? (window = std::move(*preparedFirstWindow), preparedFirstWindow.reset(), true)
+          : measured("read-model-window",[&] { return source.readModelWindow(index, window, error, cancelled); });
+      if (!read) {
         if (!cancelled()) {
           const auto path = QString::fromStdString(request.sourceIdentity.path);
           std::lock_guard lock(mutex_);

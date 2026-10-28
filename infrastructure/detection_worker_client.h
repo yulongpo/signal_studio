@@ -26,9 +26,11 @@ class DetectionWorkerClient {
   ~DetectionWorkerClient();
   bool start(const QString& executable, const DetectionRequest&, QString&,
              const std::function<bool()>& cancelled,
-             std::uint32_t maximumExecutionBatch = 0);
+             std::uint32_t maximumExecutionBatch = 0,
+             const std::function<bool(QString&)>& prepareWhileInitializing = {});
   bool exchange(DetectionWorkerPacket, DetectionWorkerPacket&, QString&,
-                const std::function<bool()>& cancelled);
+                const std::function<bool()>& cancelled,
+                const std::function<bool(QString&)>& afterRequestWritten = {});
   void stop(bool graceful=false);
   const QJsonObject& evidence() const { return evidence_; }
   QJsonObject diagnostics() const;
