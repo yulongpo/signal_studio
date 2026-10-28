@@ -1,41 +1,89 @@
-// BLOCKED_UNTIL_AGENT_C
-//
-// Baseline 82935ab34ec6126707da152bf46d1f352458ab0c has no
-// DetectionCard::startLatchActive(). This file must compile on that baseline,
-// so it does not call the missing method and does not invent a production stub.
-//
-// submit() is private. The public click path is QPushButton objectName
-// "runWidebandDetection", connected to DetectionCard::submit. A bare
-// DetectionCard(session, [] { return QString{}; }) returns from submit before
-// requestSubmitted: sourceValidationError requires a saved project directory
-// and a real ComplexIQ file. Do not treat zero emissions from that empty
-// fixture as the latch passing.
-//
-// After Agent C adds startLatchActive(), replace this main with a widget test
-// and relink ${SS_UI_SOURCES} like SignalStudioUxTests. Desired R-08, without
-// an unfinished run, and without asserting an unmeasured p95:
-//   1. Build DetectionCard the way tests/detection_card_ux_tests.h does, on a
-//      Session that already has a saved project and a ready ComplexIQ file.
-//   2. Count DetectionCard::requestSubmitted.
-//   3. QElapsedTimer around two activations of runWidebandDetection.
-//   4. Exactly one requestSubmitted.
-//   5. Before the first click handler returns, the button is disabled,
-//      its text contains 准备检测中, and startLatchActive() is true.
-//   6. Print the elapsed milliseconds. Do not require p95 < 100 ms.
-//
-// On this baseline the second submit may still emit. That desired assertion
-// stays out of this translation unit until the latch API exists.
+#include <QApplication>
+#include <QComboBox>
+#include <QElapsedTimer>
+#include <QFile>
+#include <QLabel>
+#include <QPushButton>
+#include <QTemporaryDir>
+#include <QtEndian>
+#include <QTest>
 
-#include <iostream>
+#include "app/main_window.h"
+#include "ui/detection/detection_card.h"
 
-int main() {
-  std::cout
-      << "SKIP ss_de_rpo_ui_tests BLOCKED_UNTIL_AGENT_C "
-      << "DetectionCard::startLatchActive is absent on baseline "
-      << "82935ab34ec6126707da152bf46d1f352458ab0c. "
-      << "Desired R-08: two submits, one requestSubmitted, button disabled, "
-      << "text contains 准备检测中. "
-      << "QElapsedTimer was not started because the widget test is inactive. "
-      << "p95 < 100 ms is not a pass criterion.\n";
-  return 0;
+using namespace signalstudio;
+
+class SsDeRpoUiTests : public QObject {
+  Q_OBJECT
+
+ private slots:
+  void doubleClickArmsOneStart();
+};
+
+void SsDeRpoUiTests::doubleClickArmsOneStart() {
+  qApp->setProperty("enableDetectionTestFixture", true);
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  const auto iqPath = directory.filePath("IQ_FS1Msps_FC100MHz.dat");
+  QFile iq(iqPath);
+  QVERIFY(iq.open(QIODevice::WriteOnly));
+  QByteArray bytes(20000 * 4, '\0');
+  for (int index = 0; index < 20000; ++index)
+    qToLittleEndian<qint16>(12000, bytes.data() + index * 4);
+  QCOMPARE(iq.write(bytes), static_cast<qint64>(bytes.size()));
+  iq.close();
+
+  MainWindow window;
+  QString error;
+  QVERIFY2(window.createProject(directory.path(), "ss-de-rpo-ui", &error),
+           qPrintable(error));
+  QVERIFY2(window.addIqFile(iqPath, &error), qPrintable(error));
+  window.show();
+  QTRY_VERIFY_WITH_TIMEOUT(
+      window.session().activeFile() &&
+          window.session().activeFile()->metadata.availability.status ==
+              LoadStatus::Ready,
+      10000);
+
+  auto* card = window.findChild<DetectionCard*>("detectionCard");
+  auto* run = window.findChild<QPushButton*>("runWidebandDetection");
+  auto* range = card ? card->findChild<QComboBox*>("detectionRangeOrigin") : nullptr;
+  auto* model = card ? card->findChild<QComboBox*>("detectionModel") : nullptr;
+  QVERIFY(card && run && range && model);
+  const auto fixture = model->findData("pipeline-fixture-v1");
+  const auto available = range->findData("available-file");
+  QVERIFY(fixture >= 0);
+  QVERIFY(available >= 0);
+  model->setCurrentIndex(fixture);
+  range->setCurrentIndex(available);
+  QCoreApplication::processEvents();
+
+  int emissions = 0;
+  bool preparing = false;
+  QObject::connect(card, &DetectionCard::requestSubmitted, &window,
+                   [&](const DetectionRequest&) {
+                     if (emissions == 0) {
+                       preparing = card->startLatchActive() && !run->isEnabled() &&
+                                   run->text().contains(QStringLiteral("准备检测中"));
+                       run->click();
+                     }
+                     ++emissions;
+                   });
+  auto* preflight = card->findChild<QLabel*>("detectionPreflight");
+  QElapsedTimer timer;
+  timer.start();
+  run->click();
+  const auto elapsedMs = timer.elapsed();
+  for (int extra = 0; extra < 4 && card->startLatchActive(); ++extra) run->click();
+  qInfo().nospace() << "R-08 click handler returned in " << elapsedMs
+                    << " ms; emissions=" << emissions
+                    << " latch=" << card->startLatchActive();
+  if (emissions == 0 && preflight)
+    QFAIL(qPrintable(QStringLiteral("start did not arm: ") + preflight->text()));
+  QCOMPARE(emissions, 1);
+  QVERIFY(preparing);
+  QVERIFY2(elapsedMs < 1000, "the click handler blocked for more than one second");
 }
+
+QTEST_MAIN(SsDeRpoUiTests)
+#include "ss_de_rpo_ui_tests.moc"
