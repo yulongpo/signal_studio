@@ -116,6 +116,9 @@ struct FrequencyTrackerConfig {
   // coordinates. Zero retains the historical inputBins/4 convention.
   std::size_t peakIndexLimit = 0;
   double firstBinHz = 0, binWidthHz = 0;
+  // Zero is valid. Association then keeps every pair, including disjoint
+  // bands, because IoU is never negative. Positive thresholds skip pairs
+  // whose intervals cannot meet the predicate.
   double matchIou = .3;
   std::uint32_t minHits = 2, maxMiss = 1;
   double mergeToleranceHz = 100000;
@@ -150,7 +153,9 @@ struct PreviewTrackEvent {
   TimeRange observedSupport{};
 };
 
-// Last committed frame. Comparisons count only that frame's open set.
+// Last committed frame. comparisons counts broad-phase candidates in that
+// frame's open-set fusion. Sealed history is not scanned. Pairs the
+// frequency-interval index proves cannot match are not counted.
 struct FrequencyTrackerFrameStats {
   std::size_t openTracks = 0;
   std::size_t sealedTracks = 0;
