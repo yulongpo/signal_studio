@@ -4,6 +4,8 @@
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
 #include <QSaveFile>
 #include <algorithm>
 #include <limits>
@@ -317,6 +319,163 @@ bool restoreProjectBytes(const QString& path, const QByteArray& bytes, QString& 
   }
   error.clear();
   return true;
+}
+QString logToken(const std::string& value) {
+  auto text = QString::fromUtf8(value.data(), static_cast<qsizetype>(value.size()));
+  for (int index = 0; index < text.size(); ++index)
+    if (text.at(index).isSpace()) text[index] = QLatin1Char('_');
+  return text;
+}
+QString tokenFragment(const QString& text) {
+  QString out;
+  out.reserve(text.size());
+  for (const auto ch : text) {
+    if (ch.isLetterOrNumber() || ch == QLatin1Char('_') || ch == QLatin1Char('[') ||
+        ch == QLatin1Char(']'))
+      out += ch;
+    else
+      out += QLatin1Char('_');
+  }
+  return out;
+}
+std::optional<QString> shortJsonScalar(const QJsonValue& value) {
+  if (value.isObject() || value.isArray()) return std::nullopt;
+  QString text;
+  if (value.isNull())
+    text = QStringLiteral("null");
+  else if (value.isBool())
+    text = value.toBool() ? QStringLiteral("true") : QStringLiteral("false");
+  else if (value.isDouble())
+    text = QString::number(value.toDouble(), 'g', 12);
+  else if (value.isString())
+    text = value.toString();
+  else
+    return std::nullopt;
+  if (text.size() > 64) return std::nullopt;
+  for (const auto ch : text)
+    if (ch.isSpace() || ch == QLatin1Char('=') || ch == QLatin1Char('"') ||
+        ch == QLatin1Char('%'))
+      return std::nullopt;
+  return text;
+}
+QString jsonLeaf(const QString& path, const QJsonValue& recovered,
+                 const QJsonValue& publication) {
+  const auto shown = path.isEmpty() ? QStringLiteral("<root>") : path;
+  const auto recoveredScalar = shortJsonScalar(recovered);
+  const auto publicationScalar = shortJsonScalar(publication);
+  if (recoveredScalar && publicationScalar)
+    return shown + QStringLiteral(" recoveredValue=") + *recoveredScalar +
+           QStringLiteral(" publicationValue=") + *publicationScalar;
+  if (recovered.isArray() || publication.isArray())
+    return shown + QStringLiteral(" recoveredArrayCount=") +
+           QString::number(recovered.isArray() ? recovered.toArray().size() : 0) +
+           QStringLiteral(" publicationArrayCount=") +
+           QString::number(publication.isArray() ? publication.toArray().size() : 0) +
+           QStringLiteral(" contentDiffers=1");
+  if (recovered.isObject() || publication.isObject())
+    return shown + QStringLiteral(" recoveredObjectKeys=") +
+           QString::number(recovered.isObject() ? recovered.toObject().size() : 0) +
+           QStringLiteral(" publicationObjectKeys=") +
+           QString::number(publication.isObject() ? publication.toObject().size() : 0) +
+           QStringLiteral(" contentDiffers=1");
+  const auto bytes = [](const QJsonValue& value) {
+    if (!value.isString()) return QStringLiteral("0");
+    const auto text = value.toString();
+    if (text.size() > 1000000)
+      return QString::number(text.size()) + QStringLiteral("utf16");
+    return QString::number(
+        static_cast<qlonglong>(text.toUtf8().size()));
+  };
+  return shown + QStringLiteral(" recoveredFieldBytes=") + bytes(recovered) +
+         QStringLiteral(" publicationFieldBytes=") + bytes(publication) +
+         QStringLiteral(" contentDiffers=1");
+}
+QString jsonDifference(const QJsonValue& recovered, const QJsonValue& publication,
+                       const QString& path, int depth) {
+  if (recovered == publication) return {};
+  if (path.size() > 180 || depth >= 12)
+    return (path.isEmpty() ? QStringLiteral("<root>") : path) +
+           QStringLiteral(" depthLimit=1");
+  const bool sameKind = recovered.isObject() == publication.isObject() &&
+                        recovered.isArray() == publication.isArray() &&
+                        recovered.isString() == publication.isString() &&
+                        recovered.isDouble() == publication.isDouble() &&
+                        recovered.isBool() == publication.isBool() &&
+                        recovered.isNull() == publication.isNull();
+  if (!sameKind || (!recovered.isObject() && !recovered.isArray()))
+    return jsonLeaf(path, recovered, publication);
+  if (recovered.isArray()) {
+    const auto left = recovered.toArray();
+    const auto right = publication.toArray();
+    const auto count = std::min(left.size(), right.size());
+    for (qsizetype index = 0; index < count; ++index) {
+      if (left.at(index) == right.at(index)) continue;
+      const auto child = path + QLatin1Char('[') + QString::number(index) + QLatin1Char(']');
+      return jsonDifference(left.at(index), right.at(index), child, depth + 1);
+    }
+    return jsonLeaf(path, recovered, publication);
+  }
+  const auto left = recovered.toObject();
+  const auto right = publication.toObject();
+  std::vector<QString> keys;
+  keys.reserve(static_cast<std::size_t>(left.size() + right.size()));
+  for (auto it = left.constBegin(); it != left.constEnd(); ++it) keys.push_back(it.key());
+  for (auto it = right.constBegin(); it != right.constEnd(); ++it)
+    if (!left.contains(it.key())) keys.push_back(it.key());
+  std::sort(keys.begin(), keys.end());
+  for (const auto& key : keys) {
+    const bool inLeft = left.contains(key);
+    const bool inRight = right.contains(key);
+    if (inLeft && inRight && left.value(key) == right.value(key)) continue;
+    const auto child = path.isEmpty() ? tokenFragment(key)
+                                      : path + QLatin1Char('.') + tokenFragment(key);
+    if (!inLeft || !inRight)
+      return child + QStringLiteral(" recoveredPresent=") + (inLeft ? QStringLiteral("1") : QStringLiteral("0")) +
+             QStringLiteral(" publicationPresent=") + (inRight ? QStringLiteral("1") : QStringLiteral("0"));
+    return jsonDifference(left.value(key), right.value(key), child, depth + 1);
+  }
+  return jsonLeaf(path.isEmpty() ? QStringLiteral("<root>") : path, recovered, publication);
+}
+QString firstJsonDifference(const QJsonObject& recovered, const QJsonObject& publication) {
+  if (recovered == publication) return {};
+  const auto found = jsonDifference(QJsonValue(recovered), QJsonValue(publication), {}, 0);
+  return found.isEmpty() ? QStringLiteral("<unlocated>") : found;
+}
+struct PublicationAnnotationMismatch {
+  std::size_t index = 0;
+  std::string publicationId;
+  std::string recoveredId;
+  QString field;
+};
+QString publicationMismatchSuffix(const DetectionPublication& recovered,
+                                  const DetectionPublication& publication,
+                                  bool sourceEncodingDiffers, const QString& sourceField,
+                                  const PublicationAnnotationMismatch* annotation) {
+  // recovered* is recoverDetectionPublication. publication* is the in-memory
+  // publication passed to replaceCurrentDetection. Long text stays out of the
+  // log; the field path is the locator.
+  QString suffix = QStringLiteral(" recoveredAnnotations=") +
+                   QString::number(recovered.annotations.size()) +
+                   QStringLiteral(" publicationAnnotations=") +
+                   QString::number(publication.annotations.size()) +
+                   QStringLiteral(" recoveredSourceSetId=") +
+                   logToken(recovered.sourceSet.id) +
+                   QStringLiteral(" publicationSourceSetId=") +
+                   logToken(publication.sourceSet.id);
+  if (sourceEncodingDiffers) {
+    suffix += QStringLiteral(" sourceSetEncodingDiffers=1");
+    if (!sourceField.isEmpty())
+      suffix += QStringLiteral(" firstDifferingSourceSetField=") + sourceField;
+  }
+  if (!annotation) return suffix;
+  suffix += QStringLiteral(" firstDifferingAnnotationIndex=") +
+            QString::number(annotation->index) + QStringLiteral(" annotationId=") +
+            logToken(annotation->publicationId);
+  if (annotation->recoveredId != annotation->publicationId)
+    suffix += QStringLiteral(" recoveredAnnotationId=") + logToken(annotation->recoveredId);
+  if (!annotation->field.isEmpty())
+    suffix += QStringLiteral(" firstDifferingField=") + annotation->field;
+  return suffix;
 }
 }  // namespace
 
@@ -721,12 +880,34 @@ DetectionCommitResult DetectionResultService::replaceCurrentDetection(
       return reject(error.isEmpty() ? "持久检测 manifest 与完成快照不同" : error);
     DetectionPublication recovered;
     if (!recoverDetectionPublication(directory, durable, recovered, error)) return reject(error);
-    if (encodeSourceSet(recovered.sourceSet) != encodeSourceSet(publication.sourceSet) ||
-        recovered.annotations.size() != publication.annotations.size())
-      return reject("持久检测来源/对象数与 publication 不同");
-    for (std::size_t i = 0; i < recovered.annotations.size(); ++i)
-      if (encodeAnnotation(recovered.annotations[i]) != encodeAnnotation(publication.annotations[i]))
-        return reject("持久检测对象与 publication 不同");
+    // Keep these exact prefixes. The suffix names recovered/publication
+    // annotation counts, both source-set ids, and, when the counts match, the
+    // first encodeAnnotation mismatch (index, publication annotation id, JSON field).
+    const auto recoveredSource = encodeSourceSet(recovered.sourceSet);
+    const auto publicationSource = encodeSourceSet(publication.sourceSet);
+    const bool sourceDiffers = recoveredSource != publicationSource;
+    const bool countDiffers = recovered.annotations.size() != publication.annotations.size();
+    std::optional<PublicationAnnotationMismatch> annotationDiff;
+    if (!countDiffers) {
+      for (std::size_t i = 0; i < recovered.annotations.size(); ++i) {
+        const auto recoveredObject = encodeAnnotation(recovered.annotations[i]);
+        const auto publicationObject = encodeAnnotation(publication.annotations[i]);
+        if (recoveredObject == publicationObject) continue;
+        annotationDiff = PublicationAnnotationMismatch{
+            i, publication.annotations[i].id, recovered.annotations[i].id,
+            firstJsonDifference(recoveredObject, publicationObject)};
+        break;
+      }
+    }
+    if (sourceDiffers || countDiffers || annotationDiff) {
+      const auto suffix = publicationMismatchSuffix(
+          recovered, publication, sourceDiffers,
+          sourceDiffers ? firstJsonDifference(recoveredSource, publicationSource) : QString{},
+          annotationDiff ? &annotationDiff.value() : nullptr);
+      if (sourceDiffers || countDiffers)
+        return reject(QStringLiteral("持久检测来源/对象数与 publication 不同") + suffix);
+      return reject(QStringLiteral("持久检测对象与 publication 不同") + suffix);
+    }
     if (inject(options, DetectionTransactionPoint::Persist)) return reject("Injected detection persist failure");
     if (options.stillCurrent && !options.stillCurrent())
       return reject("检测事务已丢弃，提交期间工程已变化。已丢弃的正式结果不会恢复");
