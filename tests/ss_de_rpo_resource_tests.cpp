@@ -3,7 +3,15 @@
 // Does not start a GPU, a worker, or a Qt application.
 #include "domain/detection.h"
 #include "infrastructure/detection_resource_diagnostics.h"
+#include "infrastructure/detection_source.h"
 
+#include <QDir>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QTemporaryDir>
+
+#include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <limits>
@@ -626,6 +634,614 @@ void testDiagnosticsJson() {
       merged == "sentinel";
   report("json-rejects-over-64kib", tooBig, error + " in=" + std::to_string(huge.size()));
 }
+
+const std::string kTimeline =
+    "{\"schema\":\"signal-studio-detection-profile-v1\",\"timeline\":{\"clock\":"
+    "\"steady_clock_ns\",\"marks\":[{\"name\":\"t_accepted\",\"steadyNs\":\"15\"}]}}";
+constexpr std::uint64_t kSixGiB = 6ull << 30;
+constexpr std::uint64_t kHeadWindows = 2044;
+constexpr std::uint64_t kHeadBytes = 196608;
+constexpr std::uint64_t kHeadProduct = 401866752ull;
+
+QString number(std::uint64_t value) {
+  return QString::number(static_cast<qulonglong>(value));
+}
+QJsonObject profileOf(const std::string& json) {
+  return QJsonDocument::fromJson(QByteArray::fromStdString(json)).object();
+}
+QJsonObject resourcesOf(const std::string& json) {
+  return profileOf(json).value(QStringLiteral("resources")).toObject();
+}
+bool timelineKept(const std::string& json) {
+  const auto marks = profileOf(json).value(QStringLiteral("timeline")).toObject().value(
+      QStringLiteral("marks"));
+  const auto mark = marks.toArray().at(0).toObject();
+  return profileOf(json).value(QStringLiteral("schema")).toString() ==
+             QStringLiteral("signal-studio-detection-profile-v1") &&
+         mark.value(QStringLiteral("name")).toString() == QStringLiteral("t_accepted") &&
+         mark.value(QStringLiteral("steadyNs")).toString() == QStringLiteral("15");
+}
+bool deferredWithoutBytes(const QJsonObject& facts, const char* name) {
+  const auto fact = facts.value(QString::fromUtf8(name)).toObject();
+  return fact.value(QStringLiteral("status")).toString() == QStringLiteral("deferred") &&
+         !fact.contains(QStringLiteral("bytes")) &&
+         !fact.contains(QStringLiteral("existingBytes"));
+}
+RuntimeResourceSnapshot injectedSnapshot(std::uint64_t ramAvailable,
+                                         std::uint64_t ramTotal,
+                                         std::uint64_t volumeAvailable) {
+  RuntimeResourceSnapshot snapshot;
+  snapshot.ram.status = ResourceProbeStatus::Probed;
+  snapshot.ram.totalBytes = ramTotal;
+  snapshot.ram.availableBytes = ramAvailable;
+  snapshot.ram.detail = "injected";
+  snapshot.vram.status = ResourceProbeStatus::NotRequested;
+  snapshot.vram.detail = "not-requested";
+  snapshot.volume.status = ResourceProbeStatus::Probed;
+  snapshot.volume.volumeKey = "D:\\";
+  snapshot.volume.availableBytes = volumeAvailable;
+  snapshot.volume.totalBytes = std::max(volumeAvailable, std::uint64_t{1});
+  snapshot.volume.detail = "injected";
+  snapshot.capturedAtSteadyNs = 15;
+  return snapshot;
+}
+DetectionSourcePlan makePlan(std::uint64_t windows, std::uint64_t perWindow,
+                             std::uint64_t resident) {
+  DetectionSourcePlan plan;
+  plan.eligibleWindowCount = windows;
+  plan.modelHeadBytesPerWindow = perWindow;
+  plan.estimatedPeakBytes = resident;
+  return plan;
+}
+DetectionRequest makeRequest(bool retain, std::uint64_t quota, std::uint64_t grant) {
+  DetectionRequest request;
+  request.retainRawModelOutput = retain;
+  request.rawHeadBudgetBytes = quota;
+  request.legacyCombinedEvidence = false;
+  request.workingSetBudgetBytes = grant;
+  return request;
+}
+
+void testProductionHelpers() {
+  {
+    QTemporaryDir directory;
+    report("preflight-temp-dir", directory.isValid(),
+           directory.errorString().toStdString());
+    auto request = makeRequest(false, 0, kSixGiB);
+    const auto scratchBudget = request.sampleScratchBudgetBytes;
+    std::string json = kTimeline;
+    QString error;
+    const bool ok = assessDetectionResourcePreflight(
+        directory.path(), makePlan(kHeadWindows, kHeadBytes, 4096), request, json, error);
+    const auto profile = profileOf(json);
+    const auto resources = profile.value(QStringLiteral("resources")).toObject();
+    const auto ram = resources.value(QStringLiteral("ram")).toObject();
+    const auto vram = resources.value(QStringLiteral("vram")).toObject();
+    const auto volume = resources.value(QStringLiteral("volume")).toObject();
+    const auto facts = resources.value(QStringLiteral("diskFacts")).toObject();
+    const auto authorization =
+        resources.value(QStringLiteral("workingSetAuthorization")).toObject();
+    const QDir listing(directory.path());
+    report("preflight-real-no-files",
+           listing.entryList(QDir::NoDotAndDotDot | QDir::AllEntries).isEmpty(),
+           std::to_string(listing.entryList(QDir::NoDotAndDotDot | QDir::AllEntries).size()));
+    report("preflight-real-no-gpu",
+           vram.value(QStringLiteral("status")).toString() ==
+                   QStringLiteral("not-requested") &&
+               vram.value(QStringLiteral("total")).toString() == QStringLiteral("0") &&
+               vram.value(QStringLiteral("available")).toString() == QStringLiteral("0"),
+           vram.value(QStringLiteral("detail")).toString().toStdString());
+    report("preflight-real-timeline", timelineKept(json) &&
+                                          profile.value(QStringLiteral("schema")).toString() ==
+                                              QStringLiteral("signal-studio-detection-profile-v1"),
+           error.toStdString());
+    const auto detail = volume.value(QStringLiteral("detail")).toString();
+    report("preflight-real-volume",
+           volume.value(QStringLiteral("status")).toString() == QStringLiteral("probed") &&
+               !volume.value(QStringLiteral("key")).toString().isEmpty() &&
+               (detail.contains(QStringLiteral("GetDiskFreeSpaceExW")) ||
+                detail.contains(QStringLiteral("statvfs"))),
+           (volume.value(QStringLiteral("key")).toString() + QStringLiteral(" ") + detail)
+               .toStdString());
+    const bool ramHonest =
+        ram.value(QStringLiteral("status")).toString() == QStringLiteral("probed") ||
+        ram.value(QStringLiteral("status")).toString() == QStringLiteral("unavailable");
+    const bool ceilingKept =
+        authorization.value(QStringLiteral("bytes")).toString() == number(kSixGiB) &&
+        authorization.contains(QStringLiteral("comparedToAvailableRam")) &&
+        authorization.value(QStringLiteral("comparedToAvailableRam")).isBool() &&
+        !authorization.value(QStringLiteral("comparedToAvailableRam")).toBool();
+    const bool deferredScratch = deferredWithoutBytes(facts, "scratch") &&
+                                 deferredWithoutBytes(facts, "publicationShards") &&
+                                 deferredWithoutBytes(facts, "checkpoint") &&
+                                 deferredWithoutBytes(facts, "projectAtomic");
+    if (ok) {
+      report("preflight-real-raw-off",
+             error.isEmpty() && ceilingKept && deferredScratch &&
+                 resources.value(QStringLiteral("diskPeakBytes")).toString() ==
+                     QStringLiteral("0") &&
+                 resources.value(QStringLiteral("rawHeadBranch")).toString() ==
+                     QStringLiteral("off") &&
+                 facts.value(QStringLiteral("rawHead")).toObject().value(
+                     QStringLiteral("bytes")) == QStringLiteral("0") &&
+                 resources.value(QStringLiteral("rawHeadProduct"))
+                         .toObject()
+                         .value(QStringLiteral("status")) == QStringLiteral("not-taken") &&
+                 resources.value(QStringLiteral("sample")).toObject().value(
+                     QStringLiteral("kind")) == QStringLiteral("Accepted") &&
+                 resources.value(QStringLiteral("sample")).toObject().value(
+                     QStringLiteral("granted")) == QStringLiteral("4096") &&
+                 resources.value(QStringLiteral("sample")).toObject().value(
+                     QStringLiteral("available")) == number(kSixGiB) &&
+                 number(scratchBudget) != QStringLiteral("0") &&
+                 resources.value(QStringLiteral("diskPeakBytes")).toString() !=
+                     number(scratchBudget),
+             error.toStdString());
+    } else {
+      report("preflight-real-raw-off",
+             ram.value(QStringLiteral("status")).toString() ==
+                     QStringLiteral("unavailable") &&
+                 error.contains(QStringLiteral("resource.probe-unavailable")) &&
+                 ceilingKept && deferredScratch && timelineKept(json),
+             error.toStdString());
+    }
+    report("preflight-real-ram-status", ramHonest, ram.value(QStringLiteral("status"))
+                                                       .toString()
+                                                       .toStdString());
+  }
+
+  {
+    const auto snapshot = injectedSnapshot(1ull << 20, 64ull << 30, 1ull << 30);
+    std::string json = kTimeline;
+    QString error;
+    const bool rejected = !assessDetectionResourcePreflight(
+        snapshot, makePlan(1, 1, 2ull << 20), makeRequest(false, 0, kSixGiB), json, error);
+    const auto resources = resourcesOf(json);
+    const auto resident = resources.value(QStringLiteral("sourceResident")).toObject();
+    const auto sample = resources.value(QStringLiteral("sample")).toObject();
+    report("preflight-resident-not-grant",
+           rejected && timelineKept(json) &&
+               error.contains(QStringLiteral("resource.resident-shortfall")) &&
+               error.contains(QStringLiteral("ceiling")) &&
+               !error.contains(QStringLiteral("grant-exceeds")) &&
+               resident.value(QStringLiteral("requested")) == number(2ull << 20) &&
+               resident.value(QStringLiteral("available")) == number(1ull << 20) &&
+               sample.value(QStringLiteral("kind")) == QStringLiteral("Accepted") &&
+               sample.value(QStringLiteral("available")) == number(kSixGiB) &&
+               sample.value(QStringLiteral("granted")) == number(2ull << 20) &&
+               !resources.value(QStringLiteral("workingSetAuthorization"))
+                    .toObject()
+                    .value(QStringLiteral("comparedToAvailableRam"))
+                    .toBool(),
+           error.toStdString());
+  }
+
+  {
+    constexpr auto kEstimate = 32ull << 20;
+    constexpr auto kAvailable = 1536ull << 20;
+    const auto snapshot = injectedSnapshot(kAvailable, 2ull << 30, 1ull << 30);
+    std::string json = kTimeline;
+    QString error;
+    const bool ok = assessDetectionResourcePreflight(
+        snapshot, makePlan(1, 1, kEstimate), makeRequest(false, 0, kSixGiB), json, error);
+    const auto resources = resourcesOf(json);
+    const auto sample = resources.value(QStringLiteral("sample")).toObject();
+    const auto resident = resources.value(QStringLiteral("sourceResident")).toObject();
+    report("preflight-large-grant-fits-actual-ram",
+           ok && error.isEmpty() && sample.value(QStringLiteral("kind")) ==
+                                       QStringLiteral("Accepted") &&
+               sample.value(QStringLiteral("available")) == number(kSixGiB) &&
+               sample.value(QStringLiteral("granted")) == number(kEstimate) &&
+               resident.value(QStringLiteral("available")) == number(kAvailable) &&
+               resident.value(QStringLiteral("granted")) == number(kEstimate) &&
+               resources.value(QStringLiteral("sampleCells"))
+                       .toObject()
+                       .value(QStringLiteral("status")) == QStringLiteral("deferred") &&
+               !resources.value(QStringLiteral("sampleCells")).toObject().contains(
+                   QStringLiteral("bytes")),
+           error.toStdString());
+  }
+
+  {
+    const auto estimate = kSampleContiguousAllocationCapBytes + 1;
+    const auto snapshot = injectedSnapshot(2ull << 30, 2ull << 30, 1ull << 30);
+    std::string json = kTimeline;
+    QString error;
+    const bool ok = assessDetectionResourcePreflight(
+        snapshot, makePlan(1, 1, estimate), makeRequest(false, 0, kSixGiB), json, error);
+    const auto sample = resourcesOf(json).value(QStringLiteral("sample")).toObject();
+    report("preflight-adapted-grant-is-not-failure",
+           ok && error.isEmpty() &&
+               sample.value(QStringLiteral("kind")) == QStringLiteral("Adapted") &&
+               sample.value(QStringLiteral("errorCode")) ==
+                   QStringLiteral("sample.grant-exceeds-contiguous-cap") &&
+               sample.value(QStringLiteral("granted")) ==
+                   number(kSampleContiguousAllocationCapBytes) &&
+               sample.value(QStringLiteral("available")) == number(kSixGiB),
+           error.toStdString());
+  }
+
+  {
+    const auto snapshot = injectedSnapshot(1000, 2000, 1ull << 20);
+    std::string json = kTimeline;
+    QString error;
+    const bool rejected = !assessDetectionResourcePreflight(
+        snapshot, makePlan(1, 1, 100), makeRequest(false, 0, 50), json, error);
+    report("preflight-estimate-exceeds-grant",
+           rejected && error.contains(QStringLiteral("sample.chunk-exceeds-grant")) &&
+               !error.contains(QStringLiteral("resource.resident-shortfall")) &&
+               timelineKept(json),
+           error.toStdString());
+  }
+
+  {
+    const auto snapshot = injectedSnapshot(100, 64ull << 30, 1ull << 30);
+    std::string json = kTimeline;
+    QString error;
+    const bool ok = assessDetectionResourcePreflight(
+        snapshot, makePlan(kHeadWindows, kHeadBytes, 0), makeRequest(false, 0, kSixGiB), json,
+        error);
+    const auto resources = resourcesOf(json);
+    const auto resident = resources.value(QStringLiteral("sourceResident")).toObject();
+    report("preflight-unknown-resident-stays-deferred",
+           ok && error.isEmpty() &&
+               resident.value(QStringLiteral("status")) == QStringLiteral("deferred") &&
+               !resident.contains(QStringLiteral("granted")) &&
+               !resident.contains(QStringLiteral("bytes")) &&
+               !resources.contains(QStringLiteral("sample")) && timelineKept(json),
+           error.toStdString());
+  }
+
+  {
+    auto snapshot = injectedSnapshot(1ull << 30, 64ull << 30, kHeadProduct);
+    std::string json = kTimeline;
+    QString error;
+    const bool ok = assessDetectionResourcePreflight(
+        snapshot, makePlan(kHeadWindows, kHeadBytes, 4096), makeRequest(true, 0, kSixGiB), json,
+        error);
+    const auto resources = resourcesOf(json);
+    report("preflight-raw-on-exact-volume",
+           ok && error.isEmpty() &&
+               resources.value(QStringLiteral("volumeEnforced")).toBool() &&
+               resources.value(QStringLiteral("diskPeakBytes")) == number(kHeadProduct) &&
+               resources.value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("kind")) == QStringLiteral("Accepted") &&
+               resources.value(QStringLiteral("rawHeadBranch")) == QStringLiteral("on"),
+           error.toStdString());
+    snapshot.volume.availableBytes = kHeadProduct - 1;
+    json = kTimeline;
+    const bool shortVolume = !assessDetectionResourcePreflight(
+        snapshot, makePlan(kHeadWindows, kHeadBytes, 4096), makeRequest(true, 0, kSixGiB), json,
+        error);
+    const auto expectedRemain =
+        QStringLiteral(
+            "Raw model output retention rejected before inference: %1 windows "
+            "x %2 bytes require %3 bytes; %4 bytes remain.")
+            .arg(static_cast<qulonglong>(kHeadWindows))
+            .arg(static_cast<qulonglong>(kHeadBytes))
+            .arg(static_cast<qulonglong>(kHeadProduct))
+            .arg(static_cast<qulonglong>(kHeadProduct - 1));
+    report("preflight-raw-on-short-volume",
+           shortVolume && error == expectedRemain &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("errorCode")) ==
+                   QStringLiteral("resource.raw-head-shortfall") &&
+               timelineKept(json),
+           error.toStdString());
+    snapshot.volume.status = ResourceProbeStatus::Unavailable;
+    snapshot.volume.availableBytes = 0;
+    snapshot.volume.totalBytes = 0;
+    snapshot.volume.detail = "injected-unavailable";
+    json = kTimeline;
+    const bool unknown = !assessDetectionResourcePreflight(
+        snapshot, makePlan(kHeadWindows, kHeadBytes, 4096), makeRequest(true, 0, kSixGiB), json,
+        error);
+    report("preflight-raw-on-unknown-volume",
+           unknown &&
+               error ==
+                   QStringLiteral(
+                       "Raw model output retention rejected before inference: %1 "
+                       "windows x %2 bytes require %3 bytes; remaining disk "
+                       "bytes are unavailable.")
+                       .arg(static_cast<qulonglong>(kHeadWindows))
+                       .arg(static_cast<qulonglong>(kHeadBytes))
+                       .arg(static_cast<qulonglong>(kHeadProduct)) &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("errorCode")) ==
+                   QStringLiteral("resource.raw-head-shortfall"),
+           error.toStdString());
+    snapshot = injectedSnapshot(1ull << 30, 64ull << 30, 500000000ull);
+    json = kTimeline;
+    const bool shortQuota = !assessDetectionResourcePreflight(
+        snapshot, makePlan(kHeadWindows, kHeadBytes, 4096),
+        makeRequest(true, kHeadProduct - 1, kSixGiB), json, error);
+    report("preflight-raw-on-short-quota",
+           shortQuota &&
+               error.startsWith(QStringLiteral(
+                   "Raw model head disk budget rejected before inference:")) &&
+               error.contains(QStringLiteral("limit")) &&
+               !error.contains(QStringLiteral("bytes remain")) &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("errorCode")) ==
+                   QStringLiteral("resource.raw-head-shortfall"),
+           error.toStdString());
+  }
+
+  {
+    const auto snapshot = injectedSnapshot(1ull << 30, 64ull << 30, 10);
+    std::string json = kTimeline;
+    QString error;
+    constexpr auto kQuota = 256ull * 1024 * 1024;
+    const bool rejected = !assessDetectionResourcePreflight(
+        snapshot, makePlan(kHeadWindows, kHeadBytes, 4096), makeRequest(false, kQuota, kSixGiB),
+        json, error);
+    report("preflight-explicit-quota",
+           rejected &&
+               error ==
+                   QStringLiteral(
+                       "Raw model head disk budget rejected before inference: "
+                       "%1 windows x %2 bytes; limit %3 bytes. Reduce the range, "
+                       "increase the frame interval or explicitly provision a "
+                       "bounded artifact quota.")
+                       .arg(static_cast<qulonglong>(kHeadWindows))
+                       .arg(static_cast<qulonglong>(kHeadBytes))
+                       .arg(static_cast<qulonglong>(kQuota)) &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("errorCode")) ==
+                   QStringLiteral("resource.explicit-raw-head-quota") &&
+               !error.contains(QStringLiteral("shortfall")),
+           error.toStdString());
+    json = kTimeline;
+    const bool overCap = !assessDetectionResourcePreflight(
+        snapshot, makePlan(1, 1, 4096),
+        makeRequest(false, kDetectionExplicitRawHeadMaxBytes + 1, kSixGiB), json, error);
+    const auto product = resourcesOf(json).value(QStringLiteral("rawHeadProduct")).toObject();
+    report("preflight-explicit-cap",
+           overCap &&
+               error.startsWith(QStringLiteral(
+                   "Raw model head disk budget rejected before inference:")) &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("errorCode")) ==
+                   QStringLiteral("resource.explicit-raw-head-cap") &&
+               product.value(QStringLiteral("status")) == QStringLiteral("over-cap") &&
+               !product.contains(QStringLiteral("bytes")),
+           error.toStdString());
+    json = kTimeline;
+    const bool fitsQuota = assessDetectionResourcePreflight(
+        snapshot, makePlan(10, 100, 4096), makeRequest(false, 1ull << 20, kSixGiB), json, error);
+    const auto resources = resourcesOf(json);
+    report("preflight-explicit-quota-defers-volume",
+           fitsQuota && error.isEmpty() &&
+               !resources.value(QStringLiteral("volumeEnforced")).toBool() &&
+               resources.value(QStringLiteral("rawHeadBranch")) ==
+                   QStringLiteral("explicit-quota") &&
+               resources.value(QStringLiteral("diskFacts"))
+                       .toObject()
+                       .value(QStringLiteral("rawHead"))
+                       .toObject()
+                       .value(QStringLiteral("bytes")) == QStringLiteral("1000") &&
+               resources.value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("available")) == number(1ull << 20) &&
+               resources.value(QStringLiteral("volume")).toObject().value(
+                   QStringLiteral("available")) == QStringLiteral("10") &&
+               deferredWithoutBytes(resources.value(QStringLiteral("diskFacts")).toObject(),
+                                    "scratch"),
+           error.toStdString());
+    DetectionDiskUsage usage;
+    usage.durableVolumeKey = "D:\\";
+    usage.storeRawHead = true;
+    usage.rawHeadBytes = 1000;
+    json = kTimeline;
+    const bool stageRejects = !assessDetectionResourceStage(
+        "checkpoint", usage, kDiskFactRawHead, snapshot, json, error);
+    report("stage-explicit-product-uses-free-bytes",
+           stageRejects && error.contains(QStringLiteral("resource.raw-head-shortfall")) &&
+               resourcesOf(json).value(QStringLiteral("diskPeakBytes")) ==
+                   QStringLiteral("1000") &&
+               timelineKept(json),
+           error.toStdString());
+  }
+
+  {
+    const auto max = std::numeric_limits<std::uint64_t>::max();
+    const auto snapshot = injectedSnapshot(1ull << 30, 64ull << 30, max);
+    std::string json = kTimeline;
+    QString error;
+    const bool overflow = !assessDetectionResourcePreflight(
+        snapshot, makePlan(max, 2, 4096), makeRequest(true, 0, kSixGiB), json, error);
+    const auto product = resourcesOf(json).value(QStringLiteral("rawHeadProduct")).toObject();
+    report("preflight-raw-on-overflow",
+           overflow && error.contains(QStringLiteral("overflow the disk quota")) &&
+               error.startsWith(QStringLiteral(
+                   "Raw model output retention rejected before inference:")) &&
+               !error.contains(QStringLiteral("shortfall")) &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("errorCode")) ==
+                   QStringLiteral("resource.arithmetic-overflow") &&
+               product.value(QStringLiteral("status")) == QStringLiteral("overflow") &&
+               !product.contains(QStringLiteral("bytes")),
+           error.toStdString());
+    json = kTimeline;
+    const bool ignored = assessDetectionResourcePreflight(
+        snapshot, makePlan(max, 2, 4096), makeRequest(false, 0, kSixGiB), json, error);
+    report("preflight-raw-off-ignores-overflow",
+           ignored && error.isEmpty() &&
+               resourcesOf(json).value(QStringLiteral("rawHeadProduct")).toObject().value(
+                   QStringLiteral("status")) == QStringLiteral("not-taken") &&
+               resourcesOf(json).value(QStringLiteral("diskFacts"))
+                       .toObject()
+                       .value(QStringLiteral("rawHead"))
+                       .toObject()
+                       .value(QStringLiteral("bytes")) == QStringLiteral("0"),
+           error.toStdString());
+    json = kTimeline;
+    auto legacy = makeRequest(true, 0, kSixGiB);
+    legacy.legacyCombinedEvidence = true;
+    const bool legacyOk = assessDetectionResourcePreflight(
+        snapshot, makePlan(kHeadWindows, kHeadBytes, 4096), legacy, json, error);
+    const auto rawHead = resourcesOf(json)
+                             .value(QStringLiteral("diskFacts"))
+                             .toObject()
+                             .value(QStringLiteral("rawHead"))
+                             .toObject();
+    report("preflight-legacy-unchanged",
+           legacyOk && error.isEmpty() &&
+               resourcesOf(json).value(QStringLiteral("rawHeadBranch")) ==
+                   QStringLiteral("legacy-combined") &&
+               rawHead.value(QStringLiteral("status")) == QStringLiteral("legacy-combined") &&
+               !rawHead.contains(QStringLiteral("bytes")) &&
+               resourcesOf(json).value(QStringLiteral("diskPeakBytes")) == QStringLiteral("0"),
+           error.toStdString());
+  }
+
+  {
+    const auto snapshot = injectedSnapshot(1ull << 30, 64ull << 30, 1980);
+    auto usage = sampleUsage();
+    const auto withoutScratch = kDiskFactRawHead | kDiskFactResultShards | kDiskFactCheckpoint;
+    std::string json = kTimeline;
+    QString error;
+    const bool accepted = assessDetectionResourceStage("checkpoint", usage, withoutScratch,
+                                                       snapshot, json, error);
+    const auto acceptedResources = resourcesOf(json);
+    const auto acceptedFacts = acceptedResources.value(QStringLiteral("diskFacts")).toObject();
+    report("stage-defers-unknown-scratch",
+           accepted && error.isEmpty() &&
+               acceptedResources.value(QStringLiteral("diskPeakBytes")) ==
+                   QStringLiteral("1980") &&
+               acceptedResources.value(QStringLiteral("diskPeakPhase")) ==
+                   QStringLiteral("checkpoint") &&
+               deferredWithoutBytes(acceptedFacts, "scratch") &&
+               !acceptedResources.value(QStringLiteral("knownPeakComplete")).toBool() &&
+               acceptedResources.value(QStringLiteral("ledgerScope")) ==
+                   QStringLiteral("known-only") &&
+               timelineKept(json),
+           error.toStdString() + " peak=" +
+               acceptedResources.value(QStringLiteral("diskPeakBytes")).toString().toStdString());
+    json = kTimeline;
+    const bool overlapped = !assessDetectionResourceStage(
+        "refine", usage, withoutScratch | kDiskFactScratch, snapshot, json, error);
+    report("stage-overlap-charges-known-scratch",
+           overlapped && error.contains(QStringLiteral("resource.disk-shortfall")) &&
+               error.contains(QStringLiteral("phase=refine")) &&
+               resourcesOf(json).value(QStringLiteral("diskPeakBytes")) ==
+                   QStringLiteral("6900") &&
+               resourcesOf(json)
+                       .value(QStringLiteral("diskFacts"))
+                       .toObject()
+                       .value(QStringLiteral("scratch"))
+                       .toObject()
+                       .value(QStringLiteral("bytes")) == QStringLiteral("5000") &&
+               timelineKept(json),
+           error.toStdString());
+  }
+
+  {
+    auto usage = sampleUsage();
+    usage.scratchVolumeKey = "S:\\";
+    auto durable = injectedSnapshot(1ull << 30, 64ull << 30, 100000);
+    auto scratch = injectedSnapshot(1ull << 30, 64ull << 30, 4000);
+    scratch.volume.volumeKey = "S:\\";
+    const auto facts = kDiskFactRawHead | kDiskFactResultShards | kDiskFactScratch |
+                       kDiskFactCheckpoint;
+    std::string json = kTimeline;
+    QString error;
+    const bool separate = !assessDetectionResourceStage(
+        "refine", usage, facts, durable, json, error, &scratch);
+    report("stage-scratch-volume-separate",
+           separate && error.contains(QStringLiteral("resource.disk-shortfall")) &&
+               resourcesOf(json).value(QStringLiteral("diskPeakVolume")) ==
+                   QStringLiteral("S:\\") &&
+               resourcesOf(json).value(QStringLiteral("diskPeakBytes")) ==
+                   QStringLiteral("5000") &&
+               resourcesOf(json).value(QStringLiteral("scratchVolume")).toObject().value(
+                   QStringLiteral("key")) == QStringLiteral("S:\\"),
+           error.toStdString());
+    json = kTimeline;
+    const auto preserved = json;
+    const bool missing = !assessDetectionResourceStage("refine", usage, facts, durable, json,
+                                                       error);
+    report("stage-scratch-volume-unavailable",
+           missing && error.contains(QStringLiteral("resource.volume-unavailable")) &&
+               timelineKept(json) && json != preserved,
+           error.toStdString());
+  }
+
+  {
+    DetectionDiskUsage usage;
+    usage.durableVolumeKey = "D:\\";
+    usage.scratchBytes = 99999;
+    usage.projectBytes = 100;
+    usage.projectExistingBytes = 100;
+    const auto snapshot = injectedSnapshot(1ull << 30, 64ull << 30, 250);
+    std::string json = kTimeline;
+    QString error;
+    const bool ok = assessDetectionResourceStage("publishing", usage, kDiskFactProject, snapshot,
+                                                 json, error);
+    const auto scratch = resourcesOf(json)
+                             .value(QStringLiteral("diskFacts"))
+                             .toObject()
+                             .value(QStringLiteral("scratch"))
+                             .toObject();
+    report("stage-publishing-scratch-not-live",
+           ok && error.isEmpty() &&
+               resourcesOf(json).value(QStringLiteral("diskPeakBytes")) ==
+                   QStringLiteral("200") &&
+               scratch.value(QStringLiteral("status")) == QStringLiteral("not-live") &&
+               !scratch.contains(QStringLiteral("bytes")) && timelineKept(json),
+           error.toStdString());
+  }
+
+  {
+    const auto max = std::numeric_limits<std::uint64_t>::max();
+    DetectionDiskUsage usage;
+    usage.durableVolumeKey = "D:\\";
+    usage.checkpointBytes = max;
+    usage.checkpointExistingBytes = 1;
+    const auto snapshot = injectedSnapshot(1ull << 30, 64ull << 30, max);
+    std::string json = kTimeline;
+    QString error;
+    const bool overflow = !assessDetectionResourceStage("checkpoint", usage, kDiskFactCheckpoint,
+                                                        snapshot, json, error);
+    report("stage-atomic-overflow",
+           overflow && error.contains(QStringLiteral("resource.arithmetic-overflow")) &&
+               !error.contains(QStringLiteral("shortfall")) && timelineKept(json),
+           error.toStdString());
+    usage.checkpointBytes = 0;
+    usage.checkpointExistingBytes = 0;
+    usage.resultShardBytes = kDetectionShardFileCapBytes + 1;
+    usage.largestResultShardBytes = usage.resultShardBytes;
+    json = kTimeline;
+    const bool boundary = !assessDetectionResourceStage(
+        "checkpoint", usage, kDiskFactResultShards, snapshot, json, error);
+    report("stage-shard-boundary",
+           boundary && error.contains(QStringLiteral("resource.shard-boundary")) &&
+               resourcesOf(json).value(QStringLiteral("diskLedger")).toObject().value(
+                   QStringLiteral("resource")) == QStringLiteral("format"),
+           error.toStdString());
+  }
+
+  {
+    std::string json = "sentinel";
+    QString error;
+    const bool invalid = !assessDetectionResourceStage(
+        "compile", DetectionDiskUsage{}, 0, injectedSnapshot(1, 1, 1), json, error);
+    report("stage-invalid-name", invalid && json == "sentinel" &&
+                                     error == QStringLiteral("resource.invalid-stage"),
+           error.toStdString());
+    std::string huge =
+        "{\"schema\":\"signal-studio-detection-profile-v1\",\"pad\":\"";
+    huge.append(65200, 'a');
+    huge += "\"}";
+    const auto preserved = huge;
+    const bool tooBig = !assessDetectionResourcePreflight(
+        injectedSnapshot(1ull << 30, 64ull << 30, 1ull << 30), makePlan(1, 1, 4096),
+        makeRequest(false, 0, kSixGiB), huge, error);
+    report("preflight-rejects-over-64kib",
+           tooBig && huge == preserved &&
+               error == QStringLiteral("resource.diagnostics-rejected"),
+           error.toStdString() + " in=" + std::to_string(preserved.size()));
+  }
+}
 }  // namespace
 
 int main() {
@@ -635,6 +1251,7 @@ int main() {
   testLedgerArithmetic();
   testSnapshotAndResident();
   testDiagnosticsJson();
+  testProductionHelpers();
   std::cout << (gFailures ? "FAIL" : "PASS") << " ss_de_rpo_resource_tests failures="
             << gFailures << '\n';
   return gFailures == 0 ? 0 : 1;
