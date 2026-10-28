@@ -5263,6 +5263,26 @@ bool MainWindow::openProject(const QString& path) {
   if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
   session_.replaceProject(std::move(candidate));
   applyGlobalRightSidebarSettings(fallbackSettings);
+  // The panel still holds the previous file's source tab. Refresh would stamp
+  // that tab onto this file's persisted layers and filter. Select the opened
+  // file's saved source first, then put its own filter and layers back so the
+  // clean baseline stays the opened project.
+  if (annotations_) {
+    if (auto* opened = session_.activeFile()) {
+      const int savedSource = opened->annotationFilter.source;
+      if (savedSource >= 0 && savedSource <= 2 &&
+          static_cast<int>(annotations_->sourceTab()) != savedSource) {
+        const auto filter = opened->annotationFilter;
+        const auto layers = opened->annotationLayers;
+        annotations_->setSourceTab(static_cast<AnnotationSource>(savedSource), false);
+        opened = session_.activeFile();
+        if (opened) {
+          opened->annotationFilter = filter;
+          opened->annotationLayers = layers;
+        }
+      }
+    }
+  }
   projectPath_ = QFileInfo(projectFile).absoluteFilePath();
   savedProjectToken_ = ProjectStore::stateToken(session_.project());
   for (auto& file : session_.project().files)
