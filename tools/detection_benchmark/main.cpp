@@ -11,6 +11,7 @@
 #include <QTextStream>
 #include <QUuid>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -20,6 +21,8 @@
 #include "infrastructure/detection_store.h"
 #include "infrastructure/detection_task.h"
 #include "infrastructure/runtime_log.h"
+#include "application/detection_result_service.h"
+#include "infrastructure/project_file.h"
 #include "tools/detection_benchmark/quality.h"
 
 #ifdef Q_OS_WIN
@@ -82,6 +85,7 @@ int main(int argc, char** argv) {
       {"sample-scratch-budget-mib","Bounded temporary DSP file quota (0..32768)","MiB"},
       {"labels","Trusted ordinary label file for fixed physical IoU metrics","path"},
       {"cancel-windows","Cancel after at least this many durable windows","count"},
+      {"formal-commit","Create an isolated project and validate/commit the durable publication"},
       {"timeout","Cancel at this wall-clock deadline","seconds","900"}});
   args.process(app);
   QJsonObject report{{"schema","signal-studio-detection-benchmark-v1"},
@@ -174,6 +178,22 @@ int main(int argc, char** argv) {
     save(directory.filePath("measurement.json"),report);
     QFile trace(directory.filePath("progress.jsonl"));
     require(trace.open(QIODevice::WriteOnly|QIODevice::NewOnly),trace.errorString());
+    Project isolatedProject;
+    DetectionResultTicket formalTicket;
+    AnnotationService annotations;
+    const bool formalCommit = args.isSet("formal-commit");
+    const auto formalPath = directory.filePath("benchmark.ssproj");
+    QString assetRoot = root;
+    if (formalCommit) {
+      FileState file;
+      file.metadata = metadata;
+      file.view = fullRange(metadata);
+      file.currentDetectionSlots.emplace();
+      isolatedProject.files.push_back(std::move(file));
+      isolatedProject.activeFileId = metadata.id;
+      require(ProjectFileCodec::save(formalPath, isolatedProject, error), error);
+      assetRoot = QString::fromStdString(isolatedProject.assetDirectory);
+    }
     DetectionTaskManager manager(QCoreApplication::applicationDirPath()+
 #ifdef Q_OS_WIN
         "/SignalStudioDetectionWorker.exe"
@@ -181,7 +201,21 @@ int main(int argc, char** argv) {
         "/SignalStudioDetectionWorker"
 #endif
     );
-    require(manager.enqueue(root,metadata,request,error),error);
+    if (formalCommit) {
+      QueuedDetectionRun prepared;
+      require(manager.prepareQueuedRun(assetRoot, metadata, request, prepared, error), error);
+      Project candidate = isolatedProject;
+      require(DetectionResultService::beginDetection(candidate, prepared.run.request,
+                  request.sourceIdentity.projectGeneration, formalTicket, error), error);
+      candidate.files.front().detectionRuns.push_back(prepared.run);
+      require(manager.persistQueuedRun(assetRoot, prepared.run, error), error);
+      require(DetectionResultService::publishPendingStart(isolatedProject, candidate,
+                  [] { return true; }, [&](QString& queueError) {
+                    return manager.queuePreparedRun(assetRoot, metadata, prepared, queueError);
+                  }, formalPath, error), error);
+    } else {
+      require(manager.enqueue(root,metadata,request,error),error);
+    }
     const auto deadline = args.value("timeout").toDouble()*1000;
     require(std::isfinite(deadline) && deadline > 0,"Invalid timeout");
     const auto cancelAt = args.value("cancel-windows").toULongLong();
@@ -216,10 +250,34 @@ int main(int argc, char** argv) {
     const auto publicationMs=timer.elapsed();
     DetectionPublication publication;
     const bool available=manager.takePublication(request.runId,publication);
+    bool formalCommitted = false;
+    if (formalCommit && terminal.lifecycle == DetectionLifecycle::Completed && available && !timedOut) {
+      const auto result = DetectionResultService::replaceCurrentDetection(
+          isolatedProject, annotations, formalTicket, request.sourceIdentity.projectGeneration,
+          terminal, publication, formalPath);
+      report["formalCommitError"] = result.error;
+      formalCommitted = result.committed;
+      if (formalCommitted) {
+        const auto stamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count();
+        manager.noteSteadyMark(request.runId, "t_durable_publication", static_cast<std::uint64_t>(stamp));
+        terminal = manager.snapshots().front();
+        report["formalProject"] = formalPath;
+        Project reopened;
+        require(ProjectFileCodec::load(formalPath, reopened, error), error);
+        require(reopened.files.size() == 1, "Isolated formal project lost its source");
+        const auto* reopenedSlot = currentDetectionSlot(reopened.files.front(), request.sourceIdentity.selectedSampleChannel);
+        require(reopenedSlot && reopenedSlot->committedRunId == request.runId,
+                "Reopened project does not reference the committed detection run");
+        report["formalProjectReopened"] = true;
+      }
+    }
     report["run"]=encodeDetectionRun(terminal);
     report["publicationAvailable"]=available;
-    report["formalCommitPerformed"]=false;
-    report["publicationKind"]=terminal.lifecycle==DetectionLifecycle::Completed
+    report["formalCommitPerformed"]=formalCommitted;
+    report["publicationKind"]=formalCommitted
+        ? "durable publication compared, atomically committed to an isolated project, and reopened"
+        : terminal.lifecycle==DetectionLifecycle::Completed
         ? "completed candidate for the formal transaction; headless tool does not edit a project"
         : "durable prefix only; failure/cancellation cannot replace committed project results";
     report["annotationCount"]=double(publication.annotations.size());
@@ -228,7 +286,8 @@ int main(int argc, char** argv) {
     report["segmentCount"]=double(segments);
     if(args.isSet("labels"))
       report["quality"]=benchmark::measureQuality(args.value("labels"),metadata,request,publication);
-    report["elapsedMs"]=double(publicationMs);
+    report["pipelineCandidateElapsedMs"]=double(publicationMs);
+    report["elapsedMs"]=double(timer.elapsed());
     report["memoryAfter"]=memory();
     report["timedOut"]=timedOut;
     report["cancellationSent"]=cancellationSent;
@@ -238,7 +297,8 @@ int main(int argc, char** argv) {
     QDirIterator files(root,QDir::Files,QDirIterator::Subdirectories);
     while(files.hasNext()) {files.next();stored+=files.fileInfo().size();}
     report["storedBytesBeforeFinalReport"]=QString::number(stored);
-    report["pass"]=terminal.lifecycle==DetectionLifecycle::Completed && available && !timedOut;
+    report["pass"]=terminal.lifecycle==DetectionLifecycle::Completed && available && !timedOut &&
+        (!formalCommit || formalCommitted);
     save(directory.filePath("measurement.json"),report);
     QTextStream(stdout)<<QJsonDocument(report).toJson(QJsonDocument::Compact)<<Qt::endl;
     return report["pass"].toBool() ? 0 : 1;
