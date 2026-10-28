@@ -44,7 +44,10 @@ class Session {
   const AnnotationService& annotations() const { return annotations_; }
   AnnotationResult commitAnnotationGeometry(const std::string& id,
                                             ViewRange range);
-  void selectMarks(std::vector<std::string> ids, std::string active = {});
+  // Empty when no file is active. A rejecting project write guard returns
+  // before selection fields change.
+  AnnotationResult selectMarks(std::vector<std::string> ids,
+                               std::string active = {});
   DeleteResult deleteSelectedMarks(bool removeChannels = false);
   bool focusMark(const std::string& id);
   bool setView(ViewRange range, bool record = true);
@@ -86,6 +89,9 @@ class Session {
   // Empty when a detection commit may still replace this project. Callers that
   // edit marks, the view, or the project file stop instead of racing that save.
   bool acceptProjectWrite(std::string& error) const;
+  // Also installs the same gate on AnnotationService. Selection, marks, and
+  // channel edits then share one transaction check. The guard is not a
+  // Manual-edit permission.
   void setProjectWriteGuard(std::function<bool(std::string&)> guard);
   std::uint64_t contentEpoch() const {
     return contentEpoch_.load(std::memory_order_acquire);

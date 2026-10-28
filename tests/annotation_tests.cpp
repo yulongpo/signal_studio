@@ -1778,6 +1778,289 @@ void testUserRangeChannelsPreserveUnknownTime() {
         "Unknown-time channels and undo must retain valid physical snapshots");
   checkSourceUnchanged(file, sourceBefore);
 }
+
+std::string persistedSelection(const FileState& file) {
+  std::string text;
+  auto put = [&](const std::string& value) {
+    text.append(value);
+    text.push_back('|');
+  };
+  for (const auto& id : file.selectedMarkIds) put(id);
+  put(file.activeMarkId);
+  put(file.activeSegmentId);
+  put(file.selectionAnchorId);
+  put(file.selectionSampleChannel
+          ? std::to_string(*file.selectionSampleChannel)
+          : std::string{"-"});
+  put(file.display.psdFromSelection ? "1" : "0");
+  put(file.revisionEditingAnnotationId);
+  put(file.revisionEditingBaseRevisionId);
+  for (const auto& mark : file.marks) {
+    put(mark.id);
+    put(mark.revisionId);
+    put(mark.activeSegmentId);
+    put(std::to_string(mark.revisions.size()));
+    put(std::to_string(mark.reviewHistory.size()));
+    put(std::to_string(mark.range.time.begin));
+    put(std::to_string(mark.range.time.end));
+    put(std::to_string(mark.range.frequency.lowerHz));
+    put(std::to_string(mark.range.frequency.upperHz));
+    put(mark.deleted ? "1" : "0");
+    put(mark.name);
+    put(std::to_string(static_cast<int>(mark.sourceKind)));
+    for (const auto& revision : mark.revisions) put(revision.action);
+  }
+  return text;
+}
+
+void testSelectionWriteGuard() {
+  auto file = fileFixture();
+  AnnotationService service;
+  const auto idA = manual(service, file);
+  const auto idB = manual(service, file);
+  auto importedSet = sourceFixture(file, "imported-selection");
+  auto imported = annotationFixture(importedSet, "imported-selection-label");
+  checkResult(service.publishSourceSet(file, importedSet, {imported}),
+              "Imported selection fixture failed");
+  const auto importedId = imported.id;
+  auto algorithmSet =
+      sourceFixture(file, "algorithm-selection", AnnotationSource::Algorithm);
+  auto algorithm =
+      annotationFixture(algorithmSet, "algorithm-selection-result");
+  checkResult(service.publishSourceSet(file, algorithmSet, {algorithm}),
+              "Algorithm selection fixture failed");
+  const auto algorithmId = algorithm.id;
+  auto* markA = findAnnotation(file, idA);
+  const auto first = markA->segments.front().id;
+  checkResult(service.splitSegment(file, idA, first, 300),
+              "Selection guard split failed");
+  check(markA->segments.size() == 2, "Selection guard split must add a segment");
+  const auto second = markA->segments[1].id;
+  checkResult(service.select(file, {idA}, idA, first),
+              "Initial segment selection failed");
+  file.display.psdFromSelection = true;
+  checkResult(service.beginRevision(file, idA), "Revision edit setup failed");
+  service.reconcileSelection(file);
+  check(file.selectionSampleChannel &&
+            *file.selectionSampleChannel ==
+                file.metadata.sampleFormat.selectedChannel &&
+            file.revisionEditingAnnotationId == idA &&
+            file.activeSegmentId == first && file.display.psdFromSelection,
+        "Initial reconcile must keep the committed selection context");
+
+  bool reject = true;
+  int guardCalls = 0;
+  int notes = 0;
+  service.setWriteGuard([&](std::string& error) {
+    ++guardCalls;
+    if (reject) error = "detection commit";
+    return !reject;
+  });
+  service.setWroteNotifier([&] { ++notes; });
+  const auto frozen = persistedSelection(file);
+  const auto history = service.historySize(file);
+  const auto revisionsA = findAnnotation(file, idA)->revisions;
+  const std::vector<std::string> order{idA, idB, importedId, algorithmId};
+  auto unchanged = [&](const char* message) {
+    check(persistedSelection(file) == frozen, message);
+    check(service.historySize(file) == history, message);
+    check(findAnnotation(file, idA)->revisions == revisionsA, message);
+    check(notes == 0, message);
+  };
+  auto rejectWrite = [&](const auto& operation, const char* message) {
+    const auto calls = guardCalls;
+    check(operation(), message);
+    check(guardCalls == calls + 1, message);
+    unchanged(message);
+  };
+  auto leaveWrite = [&](const auto& operation, const char* message) {
+    const auto calls = guardCalls;
+    check(operation(), message);
+    check(guardCalls == calls, message);
+    unchanged(message);
+  };
+
+  rejectWrite(
+      [&] {
+        const auto denied = service.select(file, {idA}, idA, first);
+        return !denied.ok && denied.error == "detection commit";
+      },
+      "Rejecting guard must refuse an unchanged selection before reconcile");
+  rejectWrite(
+      [&] {
+        const auto denied = service.select(file, {idB}, idB);
+        return !denied.ok && denied.error == "detection commit" &&
+               file.activeMarkId == idA;
+      },
+      "Rejecting guard must block a selection change");
+  rejectWrite(
+      [&] {
+        const auto denied = service.chooseSelection(
+            file, idB, AnnotationSelectionMode::Range, order);
+        return !denied.ok && denied.error == "detection commit";
+      },
+      "Rejecting guard must block range selection");
+  rejectWrite(
+      [&] {
+        const auto denied = service.chooseSelection(
+            file, importedId, AnnotationSelectionMode::Toggle, order);
+        return !denied.ok && denied.error == "detection commit";
+      },
+      "Rejecting guard must block toggle selection");
+  rejectWrite(
+      [&] {
+        const auto denied = service.select(file, {});
+        return !denied.ok && denied.error == "detection commit" &&
+               file.selectedMarkIds.size() == 1 && file.display.psdFromSelection;
+      },
+      "Rejecting guard must block clearing the selection");
+  rejectWrite(
+      [&] {
+        const auto denied = service.select(file, {idA}, idA, second);
+        return !denied.ok && denied.error == "detection commit" &&
+               findAnnotation(file, idA)->activeSegmentId == first &&
+               findAnnotation(file, idA)->revisions == revisionsA;
+      },
+      "Rejecting guard must block an active segment switch");
+  leaveWrite(
+      [&] {
+        const auto denied = service.select(file, {idA}, "missing-mark");
+        return !denied.ok && denied.error != "detection commit";
+      },
+      "Invalid selection must fail without the write guard");
+  leaveWrite(
+      [&] {
+        const auto denied = service.chooseSelection(
+            file, idB, AnnotationSelectionMode::Replace, {});
+        return !denied.ok && denied.error != "detection commit";
+      },
+      "Selection outside the initiating order must fail without the write guard");
+  const auto callsBeforeHover = guardCalls;
+  check(service.hover(file, idB), "Hover must update while the write guard rejects");
+  check(file.hoveredMarkId == idB && persistedSelection(file) == frozen &&
+            guardCalls == callsBeforeHover && notes == 0,
+        "Hover must not persist selection or consult the write guard");
+  leaveWrite(
+      [&] {
+        service.reconcileSelection(file);
+        return file.hoveredMarkId == idB && file.activeMarkId == idA;
+      },
+      "Clean reconcile must not consult the write guard");
+
+  file.metadata.sampleFormat.selectedChannel = 1;
+  const auto mismatched = persistedSelection(file);
+  const auto mismatchCalls = guardCalls;
+  const auto hovered = file.hoveredMarkId;
+  service.reconcileSelection(file);
+  check(persistedSelection(file) == mismatched && file.hoveredMarkId == hovered &&
+            guardCalls == mismatchCalls + 1 && notes == 0 &&
+            file.selectedMarkIds.size() == 1,
+        "Rejecting guard must block channel-mismatch selection cleanup");
+  file.metadata.sampleFormat.selectedChannel = 0;
+  check(persistedSelection(file) == frozen, "Restoring the sample channel must restore the fingerprint");
+  leaveWrite(
+      [&] {
+        service.reconcileSelection(file);
+        return file.activeMarkId == idA && file.hoveredMarkId == idB;
+      },
+      "Reconcile after restoring the channel must stay a no-op under the guard");
+
+  reject = false;
+  auto accepted = [&](const auto& operation, const char* message) {
+    const auto noted = notes;
+    const AnnotationResult result = operation();
+    check(result.ok && result.changed, message);
+    check(notes == noted + 1, message);
+  };
+  accepted([&] { return service.select(file, {idB}, idB); },
+           "Released guard must apply an ordinary selection and notify once");
+  const auto repeatNotes = notes;
+  const auto repeat = service.select(file, {idB}, idB);
+  check(repeat.ok && !repeat.changed && notes == repeatNotes,
+        "Repeating the current selection must not notify again");
+  accepted([&] {
+             return service.chooseSelection(file, idA, AnnotationSelectionMode::Range,
+                                            order);
+           },
+           "Released guard must apply range selection and notify once");
+  check(file.selectedMarkIds.size() == 2 && file.selectionAnchorId == idB,
+        "Range selection must keep the anchor and include the span");
+  accepted(
+      [&] {
+        return service.chooseSelection(file, algorithmId, AnnotationSelectionMode::Toggle,
+                                       order);
+      },
+      "Released guard must toggle an algorithm annotation into the selection");
+  check(std::find(file.selectedMarkIds.begin(), file.selectedMarkIds.end(),
+                  algorithmId) != file.selectedMarkIds.end() &&
+            !service.canEdit(file, algorithmId),
+        "A selected algorithm annotation must remain read-only");
+  const auto revisionId = findAnnotation(file, idA)->revisionId;
+  const auto segmentNotes = notes;
+  const auto switched = service.select(file, {idA}, idA, second);
+  check(switched.ok && switched.changed && notes == segmentNotes + 1 &&
+            findAnnotation(file, idA)->activeSegmentId == second &&
+            findAnnotation(file, idA)->revisionId == revisionId &&
+            findAnnotation(file, idA)->revisions == revisionsA &&
+            file.activeSegmentId == second &&
+            findAnnotation(file, idA)->range ==
+                findAnnotation(file, idA)->segments[1].range,
+        "Segment switch must notify once without a revision");
+  file.display.psdFromSelection = true;
+  accepted([&] { return service.select(file, {}); },
+           "Released guard must clear the selection and notify once");
+  check(file.selectedMarkIds.empty() && file.activeMarkId.empty() &&
+            !file.display.psdFromSelection,
+        "Clearing the selection must drop the PSD selection scope");
+
+  const auto createNotes = notes;
+  const auto createHistory = service.historySize(file);
+  const auto created = service.createManual(file, "Single notify", geometry(1200, 1400));
+  check(created.ok && notes == createNotes + 1 &&
+            service.historySize(file) == createHistory + 1 &&
+            file.activeMarkId == created.id,
+        "Creating a manual annotation must notify once for the command and its selection");
+  checkResult(service.undo(file), "Create undo failed");
+  check(notes == createNotes + 1,
+        "Undo must not emit another project-write notification");
+  check(!findAnnotation(file, created.id) && service.canRedo(file) &&
+            service.historySize(file) == createHistory + 1,
+        "Undo must remove the created annotation and retain its redo command");
+
+  const auto importedRevisions = findAnnotation(file, importedId)->revisions;
+  const auto importedHistory = service.historySize(file);
+  const auto importedNotes = notes;
+  checkResult(service.select(file, {importedId}, importedId),
+              "Imported annotation must remain selectable while unlocked");
+  check(notes == importedNotes + 1 && !service.canEdit(file, importedId),
+        "Selecting an imported annotation must notify once and stay non-editable");
+  const auto importedSegment = findAnnotation(file, importedId)->segments.front().id;
+  check(!service.commitGeometry(file, importedId, importedSegment, geometry(200, 400)) &&
+            !service.rename(file, importedId, "blocked", "blocked") &&
+            !service.deleteBatch(file, {importedId}) &&
+            service.historySize(file) == importedHistory &&
+            findAnnotation(file, importedId)->revisions == importedRevisions &&
+            notes == importedNotes + 1,
+        "Imported geometry, name, and deletion must stay refused");
+
+  const auto algorithmRevisions = findAnnotation(file, algorithmId)->revisions;
+  const auto algorithmHistory = service.historySize(file);
+  const auto algorithmNotes = notes;
+  checkResult(service.select(file, {algorithmId}, algorithmId),
+              "Algorithm annotation must remain selectable while unlocked");
+  check(notes == algorithmNotes + 1 && !service.canEdit(file, algorithmId),
+        "Selecting an algorithm annotation must notify once and stay non-editable");
+  const auto algorithmSegment =
+      findAnnotation(file, algorithmId)->segments.front().id;
+  check(!service.commitGeometry(file, algorithmId, algorithmSegment,
+                                geometry(220, 420)) &&
+            !service.rename(file, algorithmId, "blocked", "blocked") &&
+            !service.deleteBatch(file, {algorithmId}) &&
+            service.historySize(file) == algorithmHistory &&
+            findAnnotation(file, algorithmId)->revisions == algorithmRevisions &&
+            notes == algorithmNotes + 1,
+        "Algorithm geometry, name, and deletion must stay refused");
+}
 }  // namespace
 
 int main() {
@@ -1820,7 +2103,8 @@ int main() {
        testChannelSnapshotsAndSourceChanges},
       {"source idempotence and validation", testSourceIdempotenceAndValidation},
       {"budgets and independent histories",
-       testBudgetsAndIndependentHistories}};
+       testBudgetsAndIndependentHistories},
+      {"selection write guard", testSelectionWriteGuard}};
   int failures = 0;
   for (const auto& [name, test] : tests) {
     try {

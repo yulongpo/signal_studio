@@ -160,7 +160,10 @@ class AnnotationService {
                                    AnnotationSelectionMode,
                                    const std::vector<std::string>& orderedIds,
                                    const std::string& segmentId = {});
-  void reconcileSelection(FileState&);
+  // Drops persisted selection that the current file/channel can no longer
+  // show. A rejecting write guard leaves that state untouched. Hover-only
+  // cleanup still runs when no persisted selection field would change.
+  AnnotationResult reconcileSelection(FileState&);
   bool hover(FileState&, std::string id = {}, std::string segmentId = {});
   AnnotationResult bindChannelSource(FileState&, Channel&,
                                      const std::string& annotationId,
@@ -174,7 +177,9 @@ class AnnotationService {
   std::size_t historySize(const FileState&) const;
   void clear();
   void clear(const std::string& fileId);
-  // Reject mark edits while a detection commit still owns the project file.
+  // Transaction gate for every persisted project write, including selection.
+  // It is not the Manual-edit permission. Imported and algorithm annotations
+  // stay selectable while the gate is open.
   void setWriteGuard(std::function<bool(std::string&)> guard) {
     writeGuard_ = std::move(guard);
   }
@@ -183,6 +188,29 @@ class AnnotationService {
   }
 
  private:
+  friend class Session;
+  class WroteSuppression {
+   public:
+    explicit WroteSuppression(AnnotationService& service);
+    ~WroteSuppression();
+    WroteSuppression(const WroteSuppression&) = delete;
+    WroteSuppression& operator=(const WroteSuppression&) = delete;
+
+   private:
+    AnnotationService* service_ = nullptr;
+    bool previous_ = false;
+  };
+  struct GuardedSelection {
+    std::vector<std::string> selectedMarkIds;
+    std::string activeMarkId, activeSegmentId, selectionAnchorId;
+    std::optional<std::uint32_t> selectionSampleChannel;
+    bool psdFromSelection = false;
+    std::string revisionEditingAnnotationId, revisionEditingBaseRevisionId;
+    std::vector<std::string> markProjection;
+    bool operator==(const GuardedSelection&) const = default;
+  };
+  GuardedSelection captureGuarded(const FileState&) const;
+  void notifyGuardedChange(const GuardedSelection&, const FileState&);
   struct State {
     std::string name, note, activeSegmentId, revisionId, reviewRevisionId;
     ReviewStatus reviewStatus = ReviewStatus::Pending;
@@ -211,8 +239,16 @@ class AnnotationService {
   std::uint64_t nextIdentifier_ = 1;
   std::function<bool(std::string&)> writeGuard_;
   std::function<void()> wrote_;
+  bool suppressWrote_ = false;
+  bool notifying_ = false;
   std::optional<AnnotationResult> blockedWrite() const;
   void notifyWrote();
+  AnnotationResult applySelection(FileState&, std::vector<std::string> ids,
+                                  std::string activeId, std::string segmentId);
+  AnnotationResult applyChoose(FileState&, const std::string& id,
+                               AnnotationSelectionMode,
+                               const std::vector<std::string>& orderedIds,
+                               const std::string& segmentId);
 
   std::string nextId(const FileState&, const std::string& prefix);
   static State state(const Annotation&);

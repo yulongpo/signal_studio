@@ -235,6 +235,172 @@ bool sameCommandState(const auto& a, const auto& b) {
          a.reviewStatus == b.reviewStatus && a.deleted == b.deleted &&
          a.plotHidden == b.plotHidden && a.observation == b.observation;
 }
+
+// Read-only image of reconcileSelection. Applying it is the only write.
+struct SelectionNormalization {
+  std::vector<std::string> selectedMarkIds;
+  std::string activeMarkId, activeSegmentId, selectionAnchorId;
+  std::string hoveredMarkId, hoveredSegmentId;
+  std::optional<std::uint32_t> selectionSampleChannel;
+  bool psdFromSelection = false;
+  bool clearRevision = false;
+  bool projectActive = false;
+  std::string projectId, projectSegment;
+  ViewRange projectRange{};
+};
+
+bool annotationVisibleForSelection(const FileState& file, const std::string& id) {
+  const auto* annotation = findAnnotation(file, id);
+  return annotation && annotationSelectable(file, *annotation);
+}
+
+SelectionNormalization planNormalization(const FileState& file) {
+  SelectionNormalization plan;
+  plan.selectedMarkIds = file.selectedMarkIds;
+  plan.activeMarkId = file.activeMarkId;
+  plan.activeSegmentId = file.activeSegmentId;
+  plan.selectionAnchorId = file.selectionAnchorId;
+  plan.hoveredMarkId = file.hoveredMarkId;
+  plan.hoveredSegmentId = file.hoveredSegmentId;
+  plan.psdFromSelection = file.display.psdFromSelection;
+  const auto channel = file.metadata.sampleFormat.selectedChannel;
+  plan.selectionSampleChannel = channel;
+  if (file.selectionSampleChannel && *file.selectionSampleChannel != channel) {
+    plan.selectedMarkIds.clear();
+    plan.activeMarkId.clear();
+    plan.activeSegmentId.clear();
+    plan.selectionAnchorId.clear();
+    plan.hoveredMarkId.clear();
+    plan.hoveredSegmentId.clear();
+    plan.clearRevision = true;
+  }
+  std::unordered_set<std::string> selected;
+  std::erase_if(plan.selectedMarkIds, [&](const auto& id) {
+    return !annotationVisibleForSelection(file, id) || !selected.insert(id).second;
+  });
+  if (!selected.contains(plan.activeMarkId)) {
+    plan.activeMarkId = plan.selectedMarkIds.empty() ? std::string{}
+                                                     : plan.selectedMarkIds.back();
+    plan.clearRevision = true;
+  }
+  if (!annotationVisibleForSelection(file, plan.selectionAnchorId))
+    plan.selectionAnchorId = plan.activeMarkId;
+  if (const auto* active = findAnnotation(file, plan.activeMarkId)) {
+    if (!findSegment(*active, active->activeSegmentId)) {
+      plan.projectActive = true;
+      plan.projectId = active->id;
+      if (const auto* segment = activeSegment(*active)) {
+        plan.projectSegment = segment->id;
+        plan.projectRange = segment->range;
+      }
+      plan.activeSegmentId = plan.projectSegment;
+    } else {
+      plan.activeSegmentId = active->activeSegmentId;
+    }
+  } else {
+    plan.activeSegmentId.clear();
+  }
+  if (plan.activeSegmentId.empty()) plan.psdFromSelection = false;
+  if (!annotationVisibleForSelection(file, plan.hoveredMarkId)) {
+    plan.hoveredMarkId.clear();
+    plan.hoveredSegmentId.clear();
+  } else if (const auto* hovered = findAnnotation(file, plan.hoveredMarkId);
+             !hovered || !findSegment(*hovered, plan.hoveredSegmentId)) {
+    plan.hoveredSegmentId.clear();
+  }
+  return plan;
+}
+
+bool guardedNormalizationDiffers(const FileState& file,
+                                 const SelectionNormalization& plan) {
+  if (plan.selectedMarkIds != file.selectedMarkIds ||
+      plan.activeMarkId != file.activeMarkId ||
+      plan.activeSegmentId != file.activeSegmentId ||
+      plan.selectionAnchorId != file.selectionAnchorId ||
+      plan.selectionSampleChannel != file.selectionSampleChannel ||
+      plan.psdFromSelection != file.display.psdFromSelection)
+    return true;
+  if (plan.clearRevision && (!file.revisionEditingAnnotationId.empty() ||
+                             !file.revisionEditingBaseRevisionId.empty()))
+    return true;
+  if (!plan.projectActive) return false;
+  const auto* active = findAnnotation(file, plan.projectId);
+  return !active || active->activeSegmentId != plan.projectSegment ||
+         active->range != plan.projectRange;
+}
+
+void applyNormalization(FileState& file, const SelectionNormalization& plan) {
+  file.selectedMarkIds = plan.selectedMarkIds;
+  file.activeMarkId = plan.activeMarkId;
+  file.activeSegmentId = plan.activeSegmentId;
+  file.selectionAnchorId = plan.selectionAnchorId;
+  file.hoveredMarkId = plan.hoveredMarkId;
+  file.hoveredSegmentId = plan.hoveredSegmentId;
+  file.selectionSampleChannel = plan.selectionSampleChannel;
+  file.display.psdFromSelection = plan.psdFromSelection;
+  if (plan.clearRevision) {
+    file.revisionEditingAnnotationId.clear();
+    file.revisionEditingBaseRevisionId.clear();
+  }
+  if (plan.projectActive) {
+    if (auto* active = findAnnotation(file, plan.projectId)) {
+      active->activeSegmentId = plan.projectSegment;
+      active->range = plan.projectRange;
+    }
+  }
+}
+
+void normalizeSelection(FileState& file) {
+  applyNormalization(file, planNormalization(file));
+}
+
+std::optional<AnnotationResult> rejectSelectionRequest(
+    const FileState& file, const std::vector<std::string>& ids,
+    const std::string& activeId, const std::string& segmentId) {
+  std::unordered_set<std::string> selected;
+  std::string resolved = activeId;
+  if (resolved.empty()) {
+    for (const auto& id : ids) {
+      if (const auto* annotation = findAnnotation(file, id);
+          annotation && annotationSelectable(file, *annotation) &&
+          selected.insert(id).second)
+        resolved = id;
+    }
+  } else {
+    for (const auto& id : ids) {
+      if (const auto* annotation = findAnnotation(file, id);
+          annotation && annotationSelectable(file, *annotation))
+        selected.insert(id);
+    }
+    if (!selected.contains(activeId))
+      return fail("Active annotation is not in the selected set");
+  }
+  if (const auto* annotation = findAnnotation(file, resolved);
+      annotation && !segmentId.empty() && !findSegment(*annotation, segmentId))
+    return fail("Active segment does not belong to the annotation");
+  return std::nullopt;
+}
+
+std::optional<AnnotationResult> rejectChooseRequest(
+    const FileState& file, const std::string& id, const std::string& segmentId,
+    const std::vector<std::string>& orderedIds) {
+  const auto* target = findAnnotation(file, id);
+  if (!target || !annotationSelectable(file, *target))
+    return fail("Annotation is not in the current matching results");
+  if (!segmentId.empty() && !findSegment(*target, segmentId))
+    return fail("Active segment does not belong to the annotation");
+  std::unordered_set<std::string> visible;
+  for (const auto& annotation : file.marks)
+    if (annotationSelectable(file, annotation)) visible.insert(annotation.id);
+  std::unordered_set<std::string> ordered;
+  bool found = false;
+  for (const auto& value : orderedIds) {
+    if (!visible.contains(value) || !ordered.insert(value).second) continue;
+    if (value == id) found = true;
+  }
+  if (!found) return fail("Annotation is missing from the initiating view order");
+  return std::nullopt;
+}
 }  // namespace
 
 AnnotationBounds annotationBounds(const FileMetadata& metadata) {
@@ -790,7 +956,44 @@ std::optional<AnnotationResult> AnnotationService::blockedWrite() const {
   return fail(std::move(error));
 }
 void AnnotationService::notifyWrote() {
-  if (wrote_) wrote_();
+  if (suppressWrote_ || notifying_ || !wrote_) return;
+  notifying_ = true;
+  wrote_();
+  notifying_ = false;
+}
+AnnotationService::WroteSuppression::WroteSuppression(AnnotationService& service)
+    : service_(&service), previous_(service.suppressWrote_) {
+  service.suppressWrote_ = true;
+}
+AnnotationService::WroteSuppression::~WroteSuppression() {
+  if (service_) service_->suppressWrote_ = previous_;
+}
+AnnotationService::GuardedSelection AnnotationService::captureGuarded(
+    const FileState& file) const {
+  GuardedSelection value;
+  value.selectedMarkIds = file.selectedMarkIds;
+  value.activeMarkId = file.activeMarkId;
+  value.activeSegmentId = file.activeSegmentId;
+  value.selectionAnchorId = file.selectionAnchorId;
+  value.selectionSampleChannel = file.selectionSampleChannel;
+  value.psdFromSelection = file.display.psdFromSelection;
+  value.revisionEditingAnnotationId = file.revisionEditingAnnotationId;
+  value.revisionEditingBaseRevisionId = file.revisionEditingBaseRevisionId;
+  value.markProjection.reserve(file.marks.size());
+  for (const auto& mark : file.marks) {
+    value.markProjection.push_back(
+        mark.id + "\n" + mark.activeSegmentId + "\n" + mark.revisionId + "\n" +
+        std::to_string(mark.revisions.size()) + "\n" +
+        std::to_string(mark.range.time.begin) + "\n" +
+        std::to_string(mark.range.time.end) + "\n" +
+        std::to_string(mark.range.frequency.lowerHz) + "\n" +
+        std::to_string(mark.range.frequency.upperHz));
+  }
+  return value;
+}
+void AnnotationService::notifyGuardedChange(const GuardedSelection& before,
+                                            const FileState& file) {
+  if (captureGuarded(file) != before) notifyWrote();
 }
 void AnnotationService::record(FileState& file, Command command) {
   auto& history = histories_[file.metadata.id];
@@ -882,7 +1085,9 @@ AnnotationResult AnnotationService::createManual(FileState& file,
   command.patches.push_back(std::move(patch));
   file.marks.push_back(annotation);
   record(file, std::move(command));
-  select(file, {annotation.id}, annotation.id, segment.id);
+  // The command notification already covers this selection. A second callback
+  // would inflate the project epoch for one create.
+  applySelection(file, {annotation.id}, annotation.id, segment.id);
   return success(annotation.id, true);
 }
 
@@ -1735,7 +1940,7 @@ AnnotationResult AnnotationService::deleteBatch(
     file.activeSegmentId.clear();
   }
   if (selected.contains(file.revisionEditingAnnotationId)) endRevision(file);
-  reconcileSelection(file);
+  normalizeSelection(file);
   refreshChannelSourceRelations(file);
   return success({}, true);
 }
@@ -1786,7 +1991,7 @@ AnnotationResult AnnotationService::deleteAlgorithmBatch(
     file.activeSegmentId.clear();
   }
   if (selected.contains(file.revisionEditingAnnotationId)) endRevision(file);
-  reconcileSelection(file);
+  normalizeSelection(file);
   refreshChannelSourceRelations(file);
   return success({}, true);
 }
@@ -1827,11 +2032,11 @@ AnnotationResult AnnotationService::setAlgorithmPlotHidden(
   return success({}, true);
 }
 
-AnnotationResult AnnotationService::select(FileState& file,
-                                           std::vector<std::string> ids,
-                                           std::string activeId,
-                                           std::string segmentId) {
-  reconcileSelection(file);
+AnnotationResult AnnotationService::applySelection(FileState& file,
+                                                   std::vector<std::string> ids,
+                                                   std::string activeId,
+                                                   std::string segmentId) {
+  normalizeSelection(file);
   auto index = annotationIndex(file);
   std::unordered_set<std::string> selected;
   std::vector<std::string> legal;
@@ -1863,61 +2068,46 @@ AnnotationResult AnnotationService::select(FileState& file,
   } else
     file.activeSegmentId.clear();
   if (file.activeSegmentId.empty()) file.display.psdFromSelection = false;
-  if (old != file.activeMarkId) endRevision(file);
+  if (old != file.activeMarkId) {
+    file.revisionEditingAnnotationId.clear();
+    file.revisionEditingBaseRevisionId.clear();
+  }
   return success(file.activeMarkId, changed);
 }
 
-void AnnotationService::reconcileSelection(FileState& file) {
-  const auto channel = file.metadata.sampleFormat.selectedChannel;
-  if (file.selectionSampleChannel && *file.selectionSampleChannel != channel) {
-    file.selectedMarkIds.clear();
-    file.activeMarkId.clear();
-    file.activeSegmentId.clear();
-    file.selectionAnchorId.clear();
-    file.hoveredMarkId.clear();
-    file.hoveredSegmentId.clear();
-    endRevision(file);
-  }
-  file.selectionSampleChannel = channel;
-  const auto index = annotationIndex(file);
-  const auto visible = [&](const std::string& id) {
-    const auto found = index.find(id);
-    return found != index.end() && annotationSelectable(file, *found->second);
-  };
-  std::unordered_set<std::string> selected;
-  std::erase_if(file.selectedMarkIds, [&](const auto& id) {
-    return !visible(id) || !selected.insert(id).second;
-  });
-  if (!selected.contains(file.activeMarkId)) {
-    file.activeMarkId = file.selectedMarkIds.empty()
-                            ? std::string{}
-                            : file.selectedMarkIds.back();
-    endRevision(file);
-  }
-  if (!visible(file.selectionAnchorId))
-    file.selectionAnchorId = file.activeMarkId;
-  if (const auto found = index.find(file.activeMarkId); found != index.end()) {
-    auto& active = *found->second;
-    if (!findSegment(active, active.activeSegmentId))
-      refreshAnnotationProjection(active);
-    file.activeSegmentId = active.activeSegmentId;
-  } else {
-    file.activeSegmentId.clear();
-  }
-  if (file.activeSegmentId.empty()) file.display.psdFromSelection = false;
-  if (!visible(file.hoveredMarkId)) {
-    file.hoveredMarkId.clear();
-    file.hoveredSegmentId.clear();
-  } else if (!findSegment(*index.at(file.hoveredMarkId),
-                          file.hoveredSegmentId)) {
-    file.hoveredSegmentId.clear();
-  }
+AnnotationResult AnnotationService::select(FileState& file,
+                                           std::vector<std::string> ids,
+                                           std::string activeId,
+                                           std::string segmentId) {
+  if (const auto rejected =
+          rejectSelectionRequest(file, ids, activeId, segmentId))
+    return *rejected;
+  if (const auto blocked = blockedWrite()) return *blocked;
+  const auto before = captureGuarded(file);
+  const auto result = applySelection(file, std::move(ids), std::move(activeId),
+                                     std::move(segmentId));
+  notifyGuardedChange(before, file);
+  return result;
 }
 
-AnnotationResult AnnotationService::chooseSelection(
+AnnotationResult AnnotationService::reconcileSelection(FileState& file) {
+  const auto plan = planNormalization(file);
+  if (!guardedNormalizationDiffers(file, plan)) {
+    file.hoveredMarkId = plan.hoveredMarkId;
+    file.hoveredSegmentId = plan.hoveredSegmentId;
+    return success();
+  }
+  if (const auto blocked = blockedWrite()) return *blocked;
+  const auto before = captureGuarded(file);
+  applyNormalization(file, plan);
+  notifyGuardedChange(before, file);
+  return success({}, true);
+}
+
+AnnotationResult AnnotationService::applyChoose(
     FileState& file, const std::string& id, AnnotationSelectionMode mode,
     const std::vector<std::string>& orderedIds, const std::string& segmentId) {
-  reconcileSelection(file);
+  normalizeSelection(file);
   const auto* target = findAnnotation(file, id);
   if (!target || !annotationSelectable(file, *target))
     return fail("Annotation is not in the current matching results");
@@ -1959,9 +2149,21 @@ AnnotationResult AnnotationService::chooseSelection(
     ids = {id};
     anchor = id;
   }
-  const auto result = select(file, std::move(ids), active,
-                             active == id ? segmentId : std::string{});
+  const auto result = applySelection(file, std::move(ids), active,
+                                     active == id ? segmentId : std::string{});
   if (result.ok) file.selectionAnchorId = std::move(anchor);
+  return result;
+}
+
+AnnotationResult AnnotationService::chooseSelection(
+    FileState& file, const std::string& id, AnnotationSelectionMode mode,
+    const std::vector<std::string>& orderedIds, const std::string& segmentId) {
+  if (const auto rejected = rejectChooseRequest(file, id, segmentId, orderedIds))
+    return *rejected;
+  if (const auto blocked = blockedWrite()) return *blocked;
+  const auto before = captureGuarded(file);
+  const auto result = applyChoose(file, id, mode, orderedIds, segmentId);
+  notifyGuardedChange(before, file);
   return result;
 }
 
@@ -2226,7 +2428,7 @@ AnnotationResult AnnotationService::applyCommand(FileState& file,
     file.activeSegmentId.clear();
   }
   endRevision(file);
-  reconcileSelection(file);
+  normalizeSelection(file);
   refreshChannelSourceRelations(file);
   return success({}, true);
 }

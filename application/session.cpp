@@ -161,6 +161,9 @@ bool Session::acceptProjectWrite(std::string& error) const {
 }
 void Session::setProjectWriteGuard(std::function<bool(std::string&)> guard) {
   projectWriteGuard_ = std::move(guard);
+  annotations_.setWriteGuard([this](std::string& error) {
+    return acceptProjectWrite(error);
+  });
 }
 
 void Session::newProject() {
@@ -281,7 +284,8 @@ bool Session::activateFile(const std::string& id) {
   project_.activeChannelId.clear();
   project_.narrowbandWorkspaceOpen = false;
   if (auto* current = activeFile()) {
-    annotations_.reconcileSelection(*current);
+    const auto reconciled = annotations_.reconcileSelection(*current);
+    if (!reconciled.ok) return false;
     annotations_.hover(*current);
   }
   return true;
@@ -343,9 +347,11 @@ AnnotationResult Session::commitAnnotationGeometry(const std::string& id,
   return annotations_.commitGeometry(*file, id, segment->id, range);
 }
 
-void Session::selectMarks(std::vector<std::string> ids, std::string active) {
-  if (auto* file = activeFile())
-    annotations_.select(*file, std::move(ids), std::move(active));
+AnnotationResult Session::selectMarks(std::vector<std::string> ids,
+                                      std::string active) {
+  auto* file = activeFile();
+  if (!file) return {false, false, {}, "无活动文件"};
+  return annotations_.select(*file, std::move(ids), std::move(active));
 }
 
 DeleteResult Session::deleteSelectedMarks(bool removeChannels) {
@@ -380,8 +386,14 @@ DeleteResult Session::deleteSelectedMarks(bool removeChannels) {
       project_.narrowbandWorkspaceOpen = false;
     }
   }
-  annotations_.select(*file, {});
-  file->display.psdFromSelection = false;
+  {
+    // deleteBatch already notified. Clearing the rest of the selection is the
+    // same committed write.
+    AnnotationService::WroteSuppression suppression(annotations_);
+    const auto cleared = annotations_.select(*file, {});
+    if (!cleared.ok) return {static_cast<int>(selected.size()), removed};
+    file->display.psdFromSelection = false;
+  }
   return {static_cast<int>(selected.size()), removed};
 }
 
@@ -406,10 +418,16 @@ bool Session::focusMark(const std::string& id) {
       std::find(file->selectedMarkIds.begin(), file->selectedMarkIds.end(),
                 id) != file->selectedMarkIds.end();
   const auto anchor = file->selectionAnchorId;
-  annotations_.select(
-      *file, selected ? file->selectedMarkIds : std::vector<std::string>{id},
-      id, segment ? segment->id : std::string{});
-  if (selected) file->selectionAnchorId = anchor;
+  const auto before = annotations_.captureGuarded(*file);
+  {
+    AnnotationService::WroteSuppression suppression(annotations_);
+    const auto result = annotations_.select(
+        *file, selected ? file->selectedMarkIds : std::vector<std::string>{id},
+        id, segment ? segment->id : std::string{});
+    if (!result.ok) return false;
+    if (selected) file->selectionAnchorId = anchor;
+  }
+  annotations_.notifyGuardedChange(before, *file);
   setView(range);
   return true;
 }
