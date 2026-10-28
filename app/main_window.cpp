@@ -5477,6 +5477,47 @@ bool MainWindow::relocateSource(const QString& fileId, const QString& path, QStr
   if (error) *error = "源文件不属于当前工程";
   return false;
 }
+namespace {
+bool detectionTestFixturesEnabled() {
+  return qApp &&
+         (qApp->property("enableDetectionTestFixture").toBool() ||
+          qEnvironmentVariableIntValue("SS_ENABLE_DETECTION_TEST_FIXTURES") == 1);
+}
+}
+
+void MainWindow::setSourceLoadPollingForTest(bool enabled) {
+  if (!detectionTestFixturesEnabled() || !sourceLoadTimer_) return;
+  if (enabled) {
+    if (!sourceLoadTimer_->isActive()) sourceLoadTimer_->start();
+  } else {
+    sourceLoadTimer_->stop();
+  }
+}
+
+void MainWindow::pollSourceLoadsForTest() {
+  if (!detectionTestFixturesEnabled()) return;
+  pollSourceLoads();
+}
+
+bool MainWindow::sourceLoadActiveForTest(const QString& fileId) const {
+  if (!detectionTestFixturesEnabled()) return false;
+  return sourceLoads_.find(fileId.toStdString()) != sourceLoads_.end();
+}
+
+bool MainWindow::sourceLoadFinishedForTest(const QString& fileId) const {
+  if (!detectionTestFixturesEnabled()) return false;
+  const auto found = sourceLoads_.find(fileId.toStdString());
+  return found != sourceLoads_.end() && found->second.loader &&
+         found->second.loader->snapshot().finished;
+}
+
+SampleIndex MainWindow::sourceLoadLoadedForTest(const QString& fileId) const {
+  if (!detectionTestFixturesEnabled()) return 0;
+  const auto found = sourceLoads_.find(fileId.toStdString());
+  if (found == sourceLoads_.end() || !found->second.loader) return 0;
+  return found->second.loader->snapshot().loaded;
+}
+
 void MainWindow::startSourceLoad(FileState& file, SampleIndex target) {
   const auto path = QString::fromStdString(file.metadata.path);
   const auto fingerprint = iqSourceFingerprint(path);
@@ -5499,6 +5540,15 @@ void MainWindow::startSourceLoad(FileState& file, SampleIndex target) {
 }
 void MainWindow::pollSourceLoads() {
   bool changed = false;
+  // Start and publication commits each install an older Project snapshot on
+  // the UI thread before they drop commitInFlight_. Publishing a source load
+  // while that lock is held is overwritten, and erasing a finished loader
+  // leaves the file on the captured prefix. Keep the loader and its previous
+  // counter; the next poll after the lock drops applies that same snapshot.
+  // This is the session write-guard condition without its status message.
+  // noteProjectWrite is intentionally not used: it would move contentEpoch
+  // and reject the in-flight detection.
+  const bool writeLocked = detection_ && detection_->projectCommitInProgress();
   for (auto it = sourceLoads_.begin(); it != sourceLoads_.end();) {
     const auto found = std::find_if(
         session_.project().files.begin(), session_.project().files.end(),
@@ -5506,6 +5556,10 @@ void MainWindow::pollSourceLoads() {
     if (it->second.project != session_.projectGeneration() ||
         found == session_.project().files.end()) {
       it = sourceLoads_.erase(it);
+      continue;
+    }
+    if (writeLocked) {
+      ++it;
       continue;
     }
     auto& file = *found;

@@ -43,6 +43,9 @@ class SsDeRpoStartTests : public QObject {
   void acceptedStartContextChangeNeverRestoresFormal_data();
   void acceptedStartContextChangeNeverRestoresFormal();
   void renameResolvesChannelAfterModalProjectSwap();
+  void sourceLoadSurvivesStartCommitInstall();
+  void sourceLoadSurvivesPublicationCommitInstall();
+  void cancelledStartCommitAppliesFinishedSourceLoad();
 };
 
 void armFixture() { qApp->setProperty("enableDetectionTestFixture", true); }
@@ -502,6 +505,313 @@ void SsDeRpoStartTests::acceptedStartContextChangeNeverRestoresFormal() {
   QVERIFY(found != reopened.files.end());
   const auto* saved = currentDetectionSlot(*found, 0);
   QVERIFY(saved && saved->committedRunId.empty() && saved->suppressFormalResults);
+}
+
+FileState* fileById(MainWindow& window, const std::string& id) {
+  auto& files = window.session().project().files;
+  const auto found = std::find_if(files.begin(), files.end(), [&](const FileState& file) {
+    return file.metadata.id == id;
+  });
+  return found == files.end() ? nullptr : &*found;
+}
+
+struct HeldSourceLoad {
+  std::string activeId;
+  std::string loadingId;
+  SampleIndex sampleCount = 0;
+  std::uint64_t loadGeneration = 0;
+};
+
+bool armHeldSourceLoad(QTemporaryDir& directory, MainWindow& window,
+                       HeldSourceLoad& held, QString& error) {
+  const auto* active = window.session().activeFile();
+  if (!active || active->metadata.availability.status != LoadStatus::Ready) {
+    error = QStringLiteral("active file is not ready");
+    return false;
+  }
+  held.activeId = active->metadata.id;
+  window.setSourceLoadPollingForTest(false);
+  const auto iqPath = directory.filePath("held_FS1Msps_FC100MHz.dat");
+  if (!writeIq(iqPath, error) || !window.addIqFile(iqPath, &error)) return false;
+  const auto* loading = window.session().activeFile();
+  if (!loading) {
+    error = QStringLiteral("second file was not added");
+    return false;
+  }
+  held.loadingId = loading->metadata.id;
+  held.sampleCount = loading->metadata.sampleCount;
+  held.loadGeneration = loading->metadata.availability.generation;
+  if (held.loadingId == held.activeId || held.sampleCount == 0) {
+    error = QStringLiteral("second file identity is invalid");
+    return false;
+  }
+  const auto loadingKey = QString::fromStdString(held.loadingId);
+  if (!QTest::qWaitFor(
+          [&] {
+            return window.sourceLoadFinishedForTest(loadingKey) &&
+                   window.sourceLoadLoadedForTest(loadingKey) == held.sampleCount;
+          },
+          10000)) {
+    error = QStringLiteral("second file reader did not finish the physical sample count");
+    return false;
+  }
+  if (!window.session().activateFile(held.activeId)) {
+    error = QStringLiteral("could not return to the ready detection file");
+    return false;
+  }
+  const auto* ready = window.session().activeFile();
+  const auto* paused = fileById(window, held.loadingId);
+  if (!ready || ready->metadata.id != held.activeId ||
+      ready->metadata.availability.status != LoadStatus::Ready || !paused ||
+      paused->metadata.availability.status != LoadStatus::Loading ||
+      paused->metadata.availability.availableSamples != 0 ||
+      !paused->navigationEnvelope.empty() ||
+      paused->metadata.availability.generation != held.loadGeneration ||
+      !window.sourceLoadActiveForTest(loadingKey)) {
+    error = QStringLiteral("held load was published before the detection lock");
+    return false;
+  }
+  return true;
+}
+
+bool loadStillUnpublished(MainWindow& window, const HeldSourceLoad& held, QString& why) {
+  const auto* active = window.session().activeFile();
+  const auto* loading = fileById(window, held.loadingId);
+  const auto key = QString::fromStdString(held.loadingId);
+  if (!active || active->metadata.id != held.activeId ||
+      active->metadata.availability.status != LoadStatus::Ready) {
+    why = QStringLiteral("active ready target changed");
+    return false;
+  }
+  if (!loading) {
+    why = QStringLiteral("second file disappeared");
+    return false;
+  }
+  if (loading->metadata.availability.status != LoadStatus::Loading ||
+      loading->metadata.availability.availableSamples != 0 ||
+      !loading->navigationEnvelope.empty() ||
+      loading->metadata.availability.generation != held.loadGeneration) {
+    why = QString("project prefix overwritten status=%1 samples=%2 envelope=%3 generation=%4")
+              .arg(static_cast<int>(loading->metadata.availability.status))
+              .arg(QString::number(loading->metadata.availability.availableSamples))
+              .arg(QString::number(loading->navigationEnvelope.size()))
+              .arg(QString::number(loading->metadata.availability.generation));
+    return false;
+  }
+  if (!window.sourceLoadActiveForTest(key) || !window.sourceLoadFinishedForTest(key) ||
+      window.sourceLoadLoadedForTest(key) != held.sampleCount) {
+    why = QString("finished loader was consumed active=%1 finished=%2 loaded=%3")
+              .arg(window.sourceLoadActiveForTest(key) ? 1 : 0)
+              .arg(window.sourceLoadFinishedForTest(key) ? 1 : 0)
+              .arg(QString::number(window.sourceLoadLoadedForTest(key)));
+    return false;
+  }
+  return true;
+}
+
+bool loadPublishedFromHeldReader(MainWindow& window, const HeldSourceLoad& held, QString& why) {
+  const auto* loading = fileById(window, held.loadingId);
+  const auto key = QString::fromStdString(held.loadingId);
+  if (!loading) {
+    why = QStringLiteral("second file disappeared before publish");
+    return false;
+  }
+  if (loading->metadata.availability.status != LoadStatus::Ready ||
+      loading->metadata.sampleCount != held.sampleCount ||
+      loading->metadata.availability.availableSamples != held.sampleCount ||
+      availableSamples(loading->metadata) != held.sampleCount ||
+      loading->navigationEnvelope.empty() ||
+      loading->metadata.availability.generation != held.loadGeneration ||
+      window.sourceLoadActiveForTest(key)) {
+    why = QString("held reader was not applied status=%1 samples=%2/%3 envelope=%4 generation=%5 loader=%6")
+              .arg(static_cast<int>(loading->metadata.availability.status))
+              .arg(QString::number(loading->metadata.availability.availableSamples))
+              .arg(QString::number(loading->metadata.sampleCount))
+              .arg(QString::number(loading->navigationEnvelope.size()))
+              .arg(QString::number(loading->metadata.availability.generation))
+              .arg(window.sourceLoadActiveForTest(key) ? 1 : 0);
+    return false;
+  }
+  return true;
+}
+
+QString projectFile(const QTemporaryDir& directory) {
+  const auto files = QDir(directory.path()).entryList({QStringLiteral("*.ssproj")}, QDir::Files);
+  return files.size() == 1 ? directory.filePath(files.front()) : QString();
+}
+
+bool reopenRetainsFullPrefix(const QString& path, const HeldSourceLoad& held, QString& error) {
+  Project stored;
+  if (!ProjectFileCodec::load(path, stored, error)) return false;
+  const auto storedFile = std::find_if(stored.files.begin(), stored.files.end(),
+                                        [&](const FileState& file) {
+                                          return file.metadata.id == held.loadingId;
+                                        });
+  if (storedFile == stored.files.end() ||
+      storedFile->metadata.sampleCount != held.sampleCount ||
+      storedFile->metadata.availability.availableSamples != held.sampleCount ||
+      storedFile->metadata.availability.status != LoadStatus::Ready) {
+    const auto samples = storedFile == stored.files.end()
+                             ? SampleIndex{0}
+                             : storedFile->metadata.availability.availableSamples;
+    const auto count = storedFile == stored.files.end() ? SampleIndex{0}
+                                                        : storedFile->metadata.sampleCount;
+    const auto status = storedFile == stored.files.end()
+                            ? -1
+                            : static_cast<int>(storedFile->metadata.availability.status);
+    error = QString("stored prefix %1/%2 status %3")
+                .arg(QString::number(samples))
+                .arg(QString::number(count))
+                .arg(status);
+    return false;
+  }
+  MainWindow reopened;
+  if (!reopened.openProject(path)) {
+    error = QStringLiteral("openProject failed");
+    return false;
+  }
+  if (!QTest::qWaitFor(
+          [&] {
+            const auto* file = fileById(reopened, held.loadingId);
+            return file && file->metadata.availability.status != LoadStatus::Loading;
+          },
+          10000)) {
+    error = QStringLiteral("reopened load did not settle");
+    return false;
+  }
+  const auto* file = fileById(reopened, held.loadingId);
+  if (!file || file->metadata.sampleCount != held.sampleCount ||
+      file->metadata.availability.status != LoadStatus::Ready ||
+      availableSamples(file->metadata) != held.sampleCount) {
+    error = QStringLiteral("reopened project did not keep the full prefix");
+    return false;
+  }
+  return true;
+}
+
+void SsDeRpoStartTests::sourceLoadSurvivesStartCommitInstall() {
+  armFixture();
+  QTimer modals;
+  QString modalFailure;
+  rejectUnexpectedModals(modals, modalFailure);
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  MainWindow window;
+  QString error;
+  QVERIFY2(prepareProject(directory, window, error), qPrintable(error));
+  HeldSourceLoad held;
+  QVERIFY2(armHeldSourceLoad(directory, window, held, error), qPrintable(error));
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  QVERIFY(panel);
+  auto gate = std::make_shared<std::atomic<bool>>(false);
+  panel->setStartCompletionGateForTest(gate);
+  bool startInstalled = false;
+  QObject::connect(panel, &DetectionPanel::commitSettled, &window,
+                   [&](bool publication, bool installed) {
+                     if (!publication) startInstalled = installed;
+                   });
+  QVERIFY2(panel->startRequest(fixtureRequest(window, "source-load-start"), error),
+           qPrintable(error));
+  QVERIFY2(QTest::qWaitFor([&] { return panel->startCompletionGateBlockedForTest(); }, 20000),
+           qPrintable(modalFailure));
+  QVERIFY(panel->projectCommitInProgress());
+  const auto epoch = window.session().contentEpoch();
+  window.pollSourceLoadsForTest();
+  QCOMPARE(window.session().contentEpoch(), epoch);
+  QVERIFY2(loadStillUnpublished(window, held, error), qPrintable(error));
+  gate->store(true);
+  QVERIFY2(QTest::qWaitFor([&] { return !panel->projectCommitInProgress(); }, 20000),
+           qPrintable(modalFailure));
+  QVERIFY2(startInstalled, qPrintable(modalFailure));
+  QVERIFY2(loadStillUnpublished(window, held, error), qPrintable(error));
+  window.pollSourceLoadsForTest();
+  QVERIFY2(loadPublishedFromHeldReader(window, held, error), qPrintable(error));
+  const auto path = projectFile(directory);
+  QVERIFY2(!path.isEmpty() && window.saveProject(path), qPrintable(path));
+  QVERIFY2(reopenRetainsFullPrefix(path, held, error), qPrintable(error));
+}
+
+void SsDeRpoStartTests::sourceLoadSurvivesPublicationCommitInstall() {
+  armFixture();
+  QTimer modals;
+  QString modalFailure;
+  rejectUnexpectedModals(modals, modalFailure);
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  MainWindow window;
+  QString error;
+  QVERIFY2(prepareProject(directory, window, error), qPrintable(error));
+  HeldSourceLoad held;
+  QVERIFY2(armHeldSourceLoad(directory, window, held, error), qPrintable(error));
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  QVERIFY(panel);
+  auto gate = std::make_shared<std::atomic<bool>>(false);
+  panel->setPublicationGate(gate);
+  bool publicationInstalled = false;
+  QObject::connect(panel, &DetectionPanel::commitSettled, &window,
+                   [&](bool publication, bool installed) {
+                     if (publication) publicationInstalled = installed;
+                   });
+  QVERIFY2(panel->startRequest(fixtureRequest(window, "source-load-publication"), error),
+           qPrintable(error));
+  QVERIFY2(QTest::qWaitFor([&] { return panel->publicationCommitInProgress(); }, 30000),
+           qPrintable(modalFailure));
+  const auto epoch = window.session().contentEpoch();
+  window.pollSourceLoadsForTest();
+  QCOMPARE(window.session().contentEpoch(), epoch);
+  QVERIFY2(loadStillUnpublished(window, held, error), qPrintable(error));
+  gate->store(true);
+  QVERIFY2(QTest::qWaitFor([&] { return !panel->publicationCommitInProgress(); }, 30000),
+           qPrintable(modalFailure));
+  QVERIFY2(publicationInstalled, qPrintable(modalFailure));
+  QVERIFY2(loadStillUnpublished(window, held, error), qPrintable(error));
+  window.pollSourceLoadsForTest();
+  QVERIFY2(loadPublishedFromHeldReader(window, held, error), qPrintable(error));
+  const auto path = projectFile(directory);
+  QVERIFY2(!path.isEmpty() && window.saveProject(path), qPrintable(path));
+  QVERIFY2(reopenRetainsFullPrefix(path, held, error), qPrintable(error));
+}
+
+void SsDeRpoStartTests::cancelledStartCommitAppliesFinishedSourceLoad() {
+  armFixture();
+  QTimer modals;
+  QString modalFailure;
+  rejectUnexpectedModals(modals, modalFailure);
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  MainWindow window;
+  QString error;
+  QVERIFY2(prepareProject(directory, window, error), qPrintable(error));
+  HeldSourceLoad held;
+  QVERIFY2(armHeldSourceLoad(directory, window, held, error), qPrintable(error));
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  QVERIFY(panel);
+  auto gate = std::make_shared<std::atomic<bool>>(false);
+  panel->setStartCommitGate(gate);
+  bool rejected = false;
+  QObject::connect(panel, &DetectionPanel::startRejected, &window,
+                   [&](const QString& runId, const QString&) {
+                     rejected = runId == QStringLiteral("source-load-cancel");
+                   });
+  QVERIFY2(panel->startRequest(fixtureRequest(window, "source-load-cancel"), error),
+           qPrintable(error));
+  QVERIFY2(QTest::qWaitFor([&] { return panel->startCommitGateBlocked(); }, 20000),
+           qPrintable(modalFailure));
+  QVERIFY(panel->projectCommitInProgress());
+  const auto epoch = window.session().contentEpoch();
+  window.pollSourceLoadsForTest();
+  QCOMPARE(window.session().contentEpoch(), epoch);
+  QVERIFY2(loadStillUnpublished(window, held, error), qPrintable(error));
+  panel->cancelRun(QStringLiteral("source-load-cancel"));
+  gate->store(true);
+  QVERIFY2(QTest::qWaitFor(
+               [&] { return rejected && !panel->projectCommitInProgress(); }, 20000),
+           qPrintable(modalFailure));
+  const auto* slot = activeSlot(window);
+  QVERIFY(!slot || slot->committedRunId.empty());
+  window.pollSourceLoadsForTest();
+  QVERIFY2(loadPublishedFromHeldReader(window, held, error), qPrintable(error));
+  QCOMPARE(window.session().contentEpoch(), epoch);
 }
 
 void SsDeRpoStartTests::renameResolvesChannelAfterModalProjectSwap() {

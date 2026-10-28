@@ -66,6 +66,13 @@ class MainWindow : public QMainWindow {
   void openNarrowbandDemoProject();
   void cancelInteractions(bool exitCreating = true);
   bool clearActiveLinkedCursor();
+  // Fixture-only seams. They no-op unless the detection test fixture is enabled
+  // and pollSourceLoadsForTest runs the production pollSourceLoads path.
+  void setSourceLoadPollingForTest(bool enabled);
+  void pollSourceLoadsForTest();
+  bool sourceLoadActiveForTest(const QString& fileId) const;
+  bool sourceLoadFinishedForTest(const QString& fileId) const;
+  SampleIndex sourceLoadLoadedForTest(const QString& fileId) const;
 
  protected:
   void closeEvent(QCloseEvent*) override;
