@@ -2072,6 +2072,8 @@ void DetectionCard::submit() {
   run_->setText(preparing);
   if (preflight_) preflight_->setText(preparing);
   emit requestSubmitted(value);
-  refreshStatus();
+  // A synchronous rejection clears the latch and writes the real error.
+  // Refreshing again here would replace that text with "配置就绪 · 可运行".
+  if (startLatchActive_) refreshStatus();
 }
 }  // namespace signalstudio
