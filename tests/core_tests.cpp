@@ -900,6 +900,258 @@ void testInt16IqFilePipeline() {
         "STFT must not read samples before or after the visible time range");
 }
 
+void testProjectWriteGuardBlocksChannelEdits() {
+  Session session;
+  seedPrototypeFiles(session);
+  const auto file1 = session.project().activeFileId;
+  const auto file2 = session.project().files[1].metadata.id;
+  const auto markA =
+      session.addMark({{7'600'000'000, 8'400'000'000}, {96e6, 110e6}});
+  const auto markB =
+      session.addMark({{8'000'000'000, 8'880'000'000}, {100e6, 114e6}});
+  check(!markA.empty() && !markB.empty(),
+        "Guard fixture must create two source marks");
+  session.selectMarks({markA}, markA);
+  check(session.createChannelFromActiveMark(),
+        "Guard fixture must create channel A");
+  const auto channelA = session.project().activeChannelId;
+  session.selectMarks({markB}, markB);
+  check(session.createChannelFromActiveMark(),
+        "Guard fixture must create channel B");
+  const auto channelB = session.project().activeChannelId;
+  check(channelA != channelB && session.activateFile(file2),
+        "Guard fixture must open the second file");
+  const auto markC =
+      session.addMark({{2'000'000'000, 2'320'000'000}, {2447e6, 2453e6}});
+  session.selectMarks({markC}, markC);
+  check(!markC.empty() && session.createChannelFromActiveMark(),
+        "Guard fixture must create a channel on another file");
+  const auto channelC = session.project().activeChannelId;
+  check(session.activateFile(file1) && session.activateChannel(channelA),
+        "Guard fixture must return to channel A");
+  session.selectMarks({markA}, markA);
+
+  auto directRequest = annotationChannelRequest(
+      *session.activeFile(), markA, session.activeFile()->view.time,
+      session.projectGeneration());
+  directRequest.name = "Guarded direct";
+  const auto reusable = *session.activeChannel();
+  const auto visible = reusable.visibleSourceTime;
+  const TimeRange narrowed{
+      visible.begin, visible.begin + std::max<SampleIndex>(
+                                         1, (visible.end - visible.begin) / 2)};
+  check(narrowed.begin < narrowed.end && narrowed != visible,
+        "Guard fixture must have a distinct channel view");
+
+  bool reject = true;
+  int guardCalls = 0;
+  session.setProjectWriteGuard([&](std::string& error) {
+    ++guardCalls;
+    if (reject) error = "detection commit";
+    return !reject;
+  });
+  const auto token = ProjectStore::stateToken(session.project());
+  const auto generation = session.projectGeneration();
+  const auto epoch = session.contentEpoch();
+  std::vector<std::size_t> channelCounts;
+  std::vector<std::size_t> markCounts;
+  for (const auto& file : session.project().files) {
+    channelCounts.push_back(file.channels.size());
+    markCounts.push_back(file.marks.size());
+  }
+  const auto* sourceSnapshot = reusable.sourceSnapshot.get();
+  auto expectFrozen = [&](const char* message) {
+    check(ProjectStore::stateToken(session.project()) == token, message);
+    check(session.projectGeneration() == generation &&
+              session.contentEpoch() == epoch &&
+              session.project().activeFileId == file1 &&
+              session.project().activeChannelId == channelA &&
+              session.project().narrowbandWorkspaceOpen,
+          message);
+    for (std::size_t index = 0; index < channelCounts.size(); ++index) {
+      check(session.project().files[index].channels.size() ==
+                    channelCounts[index] &&
+                session.project().files[index].marks.size() ==
+                    markCounts[index],
+            message);
+    }
+    const auto* channel = session.activeChannel();
+    const auto* mark = findMark(*session.activeFile(), markA);
+    check(channel && mark && !mark->deleted &&
+              channel->name == reusable.name &&
+              channel->configVersion == reusable.configVersion &&
+              channel->centerFrequencyHz == reusable.centerFrequencyHz &&
+              channel->bandwidthHz == reusable.bandwidthHz &&
+              channel->sourceTime == reusable.sourceTime &&
+              channel->visibleSourceTime == reusable.visibleSourceTime &&
+              channel->psdAxisMinimum == reusable.psdAxisMinimum &&
+              channel->psdAxisMaximum == reusable.psdAxisMaximum &&
+              channel->sourceSnapshot.get() == sourceSnapshot,
+          message);
+  };
+  auto rejectWrite = [&](const auto& operation, const char* message) {
+    const auto calls = guardCalls;
+    check(operation(), message);
+    check(guardCalls == calls + 1, message);
+    expectFrozen(message);
+  };
+  auto leaveWrite = [&](const auto& operation, const char* message) {
+    const auto calls = guardCalls;
+    check(operation(), message);
+    check(guardCalls == calls, message);
+    expectFrozen(message);
+  };
+
+  rejectWrite([&] { return !session.activateChannel(channelC); },
+              "Rejecting guard must block cross-file channel activation");
+  rejectWrite([&] { return !session.activateChannel(channelB); },
+              "Rejecting guard must block same-file channel activation");
+  leaveWrite([&] { return session.activateChannel(channelA); },
+             "Current channel activation must stay a no-op under the guard");
+  leaveWrite([&] { return !session.activateChannel("missing-channel"); },
+             "Unknown channel activation must fail without the guard");
+  rejectWrite([&] { return !session.activateFile(file2); },
+              "Rejecting guard must block activation of another file");
+  rejectWrite([&] { return !session.activateFile(file1); },
+              "Rejecting guard must block clearing the active channel");
+  leaveWrite([&] { return !session.activateFile("missing-file"); },
+             "Unknown file activation must fail without the guard");
+  rejectWrite([&] { return !session.createChannelFromActiveMark(); },
+              "Rejecting guard must block channel creation from the active mark");
+  rejectWrite(
+      [&] {
+        return session
+            .createChannel("Guarded named", reusable.sourceMarkId,
+                           reusable.centerFrequencyHz, reusable.bandwidthHz,
+                           reusable.outputSampleRateHz, reusable.sourceTime,
+                           reusable.filter, false, reusable.preserveSourceTime)
+            .empty();
+      },
+      "Rejecting guard must block explicit channel creation");
+  rejectWrite(
+      [&] {
+        const auto direct = session.createAnnotationChannel(directRequest);
+        return !direct.ok && direct.id.empty();
+      },
+      "Rejecting guard must block annotation channel creation");
+  rejectWrite(
+      [&] {
+        auto updated = reusable;
+        updated.name = "Blocked rename";
+        return !session.updateChannel(channelA, updated);
+      },
+      "Rejecting guard must block channel update");
+  leaveWrite(
+      [&] {
+        auto updated = reusable;
+        updated.sourceTime.begin += 1;
+        return !session.updateChannel(channelA, updated);
+      },
+      "Invalid channel update must fail without the guard");
+  rejectWrite([&] { return !session.removeChannel(channelA); },
+              "Rejecting guard must block channel deletion");
+  leaveWrite([&] { return !session.removeChannel("missing-channel"); },
+             "Unknown channel deletion must fail without the guard");
+  rejectWrite(
+      [&] {
+        const auto deleted = session.deleteSelectedMarks(true);
+        return deleted.marks == 0 && deleted.channels == 0;
+      },
+      "Rejecting guard must block deletion of a linked channel");
+  rejectWrite([&] { return !session.setChannelPsdRange(-90, -15); },
+              "Rejecting guard must block channel PSD range edits");
+  leaveWrite(
+      [&] {
+        return !session.setChannelPsdRange(reusable.psdAxisMinimum,
+                                           reusable.psdAxisMaximum);
+      },
+      "Unchanged channel PSD range must fail without the guard");
+  leaveWrite(
+      [&] {
+        return !session.setChannelAmplitudeRange(
+            reusable.waveformAxisMinimum, reusable.waveformAxisMaximum,
+            reusable.waveformAutoScale);
+      },
+      "Unchanged channel amplitude range must fail without the guard");
+  rejectWrite(
+      [&] {
+        return !session.setChannelView(narrowed,
+                                       reusable.visibleBasebandFrequency);
+      },
+      "Rejecting guard must block channel view edits");
+  leaveWrite(
+      [&] {
+        return session.restoreChannelViewSnapshot(session.channelViewSnapshot());
+      },
+      "Restoring the current channel view must stay a no-op");
+  leaveWrite(
+      [&] { return !session.channelBack() && !session.channelForward(); },
+      "Empty channel history must fail without the guard");
+  expectFrozen("Rejected channel operations must preserve the exact project");
+
+  reject = false;
+  check(session.activateChannel(channelC) &&
+            session.project().activeFileId == file2 &&
+            session.project().activeChannelId == channelC &&
+            session.project().narrowbandWorkspaceOpen,
+        "Released guard must allow cross-file channel activation");
+  check(session.activateChannel(channelA) &&
+            session.project().activeFileId == file1 &&
+            session.project().activeChannelId == channelA &&
+            session.project().narrowbandWorkspaceOpen,
+        "Released guard must allow returning to the original channel");
+  auto released = *session.activeChannel();
+  released.name = "After release";
+  check(session.updateChannel(channelA, released),
+        "Released guard must allow a valid channel update");
+  const auto* updated = session.activeChannel();
+  check(updated && updated->name == "After release" &&
+            updated->configVersion == reusable.configVersion + 1 &&
+            updated->centerFrequencyHz == reusable.centerFrequencyHz &&
+            updated->bandwidthHz == reusable.bandwidthHz &&
+            updated->sourceTime == reusable.sourceTime &&
+            updated->sourceSnapshot.get() == sourceSnapshot,
+        "Released update must keep channel geometry and its source snapshot");
+  check(session.createChannelFromActiveMark() &&
+            session.fileForChannel(channelA)->channels.size() == 3,
+        "Released guard must allow creating a channel from the active mark");
+  const auto named = session.createChannel(
+      "Released named", reusable.sourceMarkId, reusable.centerFrequencyHz,
+      reusable.bandwidthHz, reusable.outputSampleRateHz, reusable.sourceTime,
+      reusable.filter, false, reusable.preserveSourceTime);
+  check(!named.empty() &&
+            session.fileForChannel(channelA)->channels.size() == 4,
+        "Released guard must allow explicit channel creation");
+  check(session.removeChannel(channelB) && !session.fileForChannel(channelB) &&
+            session.fileForChannel(channelA),
+        "Released guard must allow deleting one channel and keep the others");
+  check(session.setChannelPsdRange(-80, -10) && session.activeChannel() &&
+            session.activeChannel()->psdAxisMinimum == -80 &&
+            session.activeChannel()->psdAxisMaximum == -10,
+        "Released guard must allow a valid channel PSD range");
+  check(session.activateChannel(channelA) &&
+            session.project().activeChannelId == channelA,
+        "Released guard must restore the original channel");
+  session.project().narrowbandWorkspaceOpen = false;
+  reject = true;
+  const auto reopenCalls = guardCalls;
+  check(!session.activateChannel(channelA) &&
+            session.project().activeFileId == file1 &&
+            session.project().activeChannelId == channelA &&
+            !session.project().narrowbandWorkspaceOpen,
+        "Rejecting guard must block reopening the narrowband workspace");
+  check(guardCalls == reopenCalls + 1,
+        "Reopening the workspace must consult the guard");
+  reject = false;
+  check(session.activateChannel(channelA) &&
+            session.project().narrowbandWorkspaceOpen,
+        "Released guard must reopen the current channel workspace");
+  check(session.activateFile(file1) && session.project().activeFileId == file1 &&
+            session.project().activeChannelId.empty() &&
+            !session.project().narrowbandWorkspaceOpen,
+        "Released same-file activation must still clear channel navigation");
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -914,6 +1166,8 @@ int main(int argc, char* argv[]) {
     testSelectionAndChannels();
     std::cout
         << "PASS selection, focus, linked deletion and fixed demo channels\n";
+    testProjectWriteGuardBlocksChannelEdits();
+    std::cout << "PASS project write guard blocks channel navigation and edits\n";
     testAuxiliarySnapshotsAndPsdScope();
     std::cout << "PASS independent auxiliary modes, combined snapshot history "
                  "and PSD scope\n";
