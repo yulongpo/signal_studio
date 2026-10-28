@@ -388,6 +388,10 @@ $report = [ordered]@{
   formalCommit = '--formal-commit creates a new isolated project inside the benchmark output. The request file and any source project stay untouched.'
   rawHeadArgument = 'not passed; public request keeps retainRawModelOutput false and rawHeadBudgetBytes 0'
   boundary = 'Cold runs are fresh processes with --formal-commit. Warm is one process with --resident-repeat. A missing t_pipeline_terminal or t_terminal stays null. OS file cache is not flushed. A failed run is not a speedup denominator.'
+  sourceHead = (& git -C $repo rev-parse HEAD)
+  osCacheState = 'not flushed; shared OS cache state not controlled'
+  modelInitializationState = 'independent Worker and engine/context initialization on every run'
+  resourceSamplingBoundary = '200 ms requested polling plus nvidia-smi overhead; GPU memory is whole-device including display; free volume includes other writers; persistent bytes and scratch reservations are separately recorded by the product'
 }
 $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $output 'launcher.json') -Encoding utf8
 

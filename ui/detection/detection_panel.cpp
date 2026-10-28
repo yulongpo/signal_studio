@@ -997,9 +997,13 @@ void DetectionPanel::runStartCommit(const std::shared_ptr<StartCommit>& job) {
     published = DetectionResultService::publishPendingStart(
         job->baseline, job->candidate, stillCurrent,
         [&](QString& queueError) {
-          if (cancelled()) {
-            queueError = provisionalCancelNote();
-            return false;
+          // The project atomic commit has already succeeded. Cancellation at
+          // this boundary cancels the queued run; it must not restore the
+          // previously discarded formal result via a failed queue callback.
+          if (cancelAfterStartCommit_.load(std::memory_order_acquire) && job->token) {
+            std::lock_guard lock(job->token->decision);
+            job->token->cancelled = true;
+            job->token->stop.store(true, std::memory_order_release);
           }
           return tasks_->queuePreparedRun(job->directory, job->metadata,
                                           prepared, queueError);

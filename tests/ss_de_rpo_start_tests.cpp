@@ -20,6 +20,7 @@
 #include "infrastructure/annotation_json.h"
 #include "ui/detection/detection_card.h"
 #include "ui/detection/detection_panel.h"
+#include "infrastructure/project_file.h"
 
 using namespace signalstudio;
 
@@ -338,6 +339,14 @@ void SsDeRpoStartTests::cancelAfterCommittedStartCancelsQueuedRun() {
           marks.at(QStringLiteral("t_start_project_commit")));
   QVERIFY(marks.at(QStringLiteral("t_start_project_commit")) <=
           marks.at(QStringLiteral("t_terminal")));
+  const auto files = QDir(directory.path()).entryList({"*.ssproj"}, QDir::Files);
+  QCOMPARE(files.size(), 1);
+  Project reopened;
+  QVERIFY2(ProjectFileCodec::load(directory.filePath(files.front()), reopened, error), qPrintable(error));
+  QVERIFY(!reopened.files.empty());
+  const auto* savedSlot = currentDetectionSlot(reopened.files.front(), 0);
+  QVERIFY(savedSlot && savedSlot->committedRunId.empty());
+  QVERIFY(savedSlot->suppressFormalResults);
 }
 
 QTEST_MAIN(SsDeRpoStartTests)

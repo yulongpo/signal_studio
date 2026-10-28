@@ -18,3 +18,9 @@ Provisional preparation shares the actual cancel token. Timeline marks use the p
 The first resource integration build had a QString/std::string mismatch, fixed before the passing build. One concurrent-UI CTest start run failed; an isolated diagnostic run passed 6/6 and the subsequent directed suite passed. Failed outputs remain. Grok G's prior offscreen paint p95 failure and older native success are retained separately; final current-code native evidence is still required.
 
 Full current Debug/Release CTest, complete original-IQ 159/363/2044 publication, Sample Golden/long, native display/deployment, final cold/resident comparisons, and independent exact-HEAD H review remain release gates. No remote write has occurred at this node.
+
+## Post-atomic start cancellation boundary
+
+A cancellation after the project atomic save must enqueue then cancel the new run, rather than cause the queue callback to reject and restore the previous project bytes. The test hook now injects precisely inside that post-save queue callback. Debug start/UI/UX detection checks pass 3/3 (73.51 s), including reopening the saved project and verifying its formal slot stays empty. `N2/postcommit-cancel-debug-tests.txt` is the raw log.
+
+The broader first Release CTest run exposed stale UI source-tab and overflow assumptions, and a dirty-baseline workflow failure. These failures remain release blockers and are assigned to new independent C2/G2 sessions; their original logs are retained. Original recorded IQ Release 159/159 has completed inference, Sample, formal comparison, isolated atomic commit and reopen (46660 ms under concurrent CPU development, not a performance comparison). Larger cases are still running.

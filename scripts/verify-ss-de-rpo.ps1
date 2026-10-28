@@ -325,23 +325,24 @@ try {
     $adaptedDetail = 'model-backend --adapted was not started. Exclusive GPU slot is closed.'
     if ($AllowGpu) {
       $backend = Join-Path $bin 'SignalStudioDetectionModelBackendTests.exe'
-      if (-not (Test-Path -LiteralPath $backend) -or -not $ModelRoot -or -not $LiveGoldenRoot) {
+      $modelRootForCase = if ($ModelRoot) { $ModelRoot } else { Join-Path $bin 'detection-models' }
+      if (-not (Test-Path -LiteralPath $backend) -or -not $LiveGoldenRoot) {
         $liveStatus = 'BLOCKED_MISSING_INPUT'
         $liveDetail = "Need the backend executable, -ModelRoot, and -LiveGoldenRoot. backend=$backend"
       } else {
         $result = Invoke-Captured -File $backend -WorkingDirectory $bin `
-          -ArgumentList @('--live', $ModelRoot, $LiveGoldenRoot) `
+          -ArgumentList @('--live', $modelRootForCase, $LiveGoldenRoot) `
           -Stdout (Join-Path $case 'live-stdout.txt') -Stderr (Join-Path $case 'live-stderr.txt') `
           -TimeoutSeconds 900
         $liveStatus = $(if (-not $result.TimedOut -and $result.ExitCode -eq 0) { 'PASS' } else { 'FAIL' })
         $liveDetail = "exit=$($result.ExitCode) timeout=$($result.TimedOut) evidenceClass=tensorrt"
       }
-      if (-not (Test-Path -LiteralPath $backend) -or -not $ModelRoot -or -not $AdaptedGoldenRoot) {
+      if (-not (Test-Path -LiteralPath $backend) -or -not $AdaptedGoldenRoot) {
         $adaptedStatus = 'BLOCKED_MISSING_INPUT'
         $adaptedDetail = "Need the backend executable, -ModelRoot, and -AdaptedGoldenRoot."
       } else {
         $result = Invoke-Captured -File $backend -WorkingDirectory $bin `
-          -ArgumentList @('--adapted', $ModelRoot, $AdaptedGoldenRoot) `
+          -ArgumentList @('--adapted', $modelRootForCase, $AdaptedGoldenRoot) `
           -Stdout (Join-Path $case 'adapted-stdout.txt') -Stderr (Join-Path $case 'adapted-stderr.txt') `
           -TimeoutSeconds 900
         $adaptedStatus = $(if (-not $result.TimedOut -and $result.ExitCode -eq 0) { 'PASS' } else { 'FAIL' })
@@ -382,6 +383,13 @@ try {
             Add-Row -Id "evidence:${cfg}:original-$windows-$parent" -Status $(if ($passed) { 'PASS' } else { 'FAIL' }) -Parent $parent -ConfigurationName $cfg -EvidenceClass 'original-iq-tensorrt' -Gpu $true -Detail "SourcePlan/forward/Sample/durable comparison/project commit/reopen: $measurementPath"
           }
         }
+        $rawOutput = Join-Path $case 'original-iq-20-raw-on'
+        $arguments = @('--request',(Join-Path $OriginalRequestDirectory 'iq-20-raw-on.json'),'--output',$rawOutput,'--formal-commit','--strategy','sample','--batch','2','--timeout','180')
+        $result = Invoke-Captured -File (Join-Path $bin 'SignalStudioDetectionBenchmark.exe') -WorkingDirectory $bin -ArgumentList $arguments -Stdout (Join-Path $case 'raw-on-stdout.txt') -Stderr (Join-Path $case 'raw-on-stderr.txt') -TimeoutSeconds 240
+        $rawMeasurement = Join-Path $rawOutput 'measurement.json'
+        $raw = if (Test-Path -LiteralPath $rawMeasurement) { Get-Content -LiteralPath $rawMeasurement -Raw | ConvertFrom-Json } else { $null }
+        $rawPassed = -not $result.TimedOut -and $result.ExitCode -eq 0 -and $raw.pass -and $raw.formalCommitPerformed -and [int64]$raw.run.accountedRawHeadBytes -gt 0
+        Add-Row -Id "evidence:${cfg}:original-raw-on" -Status $(if ($rawPassed) { 'PASS' } else { 'FAIL' }) -Parent 'R-04' -ConfigurationName $cfg -EvidenceClass 'original-iq-tensorrt' -Gpu $true -Detail $rawMeasurement
       }
       if ($BenchmarkRequestJson) {
         $benchOut = Join-Path $case 'benchmark-ss-de-rpo'
