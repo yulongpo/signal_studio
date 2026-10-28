@@ -1,0 +1,9 @@
+# Reproducing the observation-only baseline
+
+The product baseline is 7220b2e295963288cb5d11e76946bb77646be0b0. The local calibration commits 4371940 and e52c3a9 add parent-clock observers, isolated formal/reopen test harnesses and the same native click harness. They intentionally preserve baseline preparation duplication, sequential Worker initialization, algorithms, budgets and independent Worker lifecycle. The calibration branch is not merged into production and is not pushed by this task.
+
+`baseline-observation.patch` archives the complete text delta so the calibration is reproducible from the pushed repository without needing that local branch. In a new isolated checkout of 7220b2e, apply the patch with `git apply`, configure/build with the same Qt 6.11.1, VS 2026 x64 Release and deployed runtime/model dependencies, then use the final branch's `scripts/benchmark-ss-de-rpo.ps1 -Native -Mode Both -AllowGpu -ExecutableDir <calibration-bin> -SourceRevision e52c3a9 -RequestJson <iq-20-raw-off.json> -OutputDirectory <main-repo>/out/tasks/ss-de-rpo/<new-empty-run>`.
+
+The native harness text is identical on calibration and production. Original model engines, TensorRT/CUDA and oneMKL DLLs are deployment dependencies, not tracked source. The recorded IQ input comes from the user's existing original WAV; it is not cloned by Git. Rebuild/request helpers and test commands are in the final delivery. The frozen original 7220b2e deployment remains under ignored N0/local-builds/baseline-release_bin; calibration DLL/model staging did not overwrite its executables.
+
+Cold means a fresh application/window, after source/chart setup, measured from the actual run click. OS cache is not flushed. Resident means one application with one excluded warmup and three measured redetections, each with a new Worker/context. Do not compare the initial failed baselines or earlier development-load pilots to final native timings.

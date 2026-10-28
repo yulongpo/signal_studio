@@ -7,8 +7,10 @@ import argparse
 import csv
 import json
 import math
+import os
 import statistics
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 
@@ -75,6 +77,7 @@ def resource_summary(path):
     if not path or not Path(path).is_file():
         return None
     groups, private, cpu = defaultdict(float), defaultdict(float), defaultdict(float)
+    cpu_samples = defaultdict(dict)
     gpu, utilization, free = [], [], []
     with Path(path).open(encoding="utf-8-sig", newline="") as stream:
         for row in csv.DictReader(stream):
@@ -83,14 +86,28 @@ def resource_summary(path):
             private[stamp] += number(row.get("privateMemorySize64")) or 0
             pid = row.get("processId")
             cpu[pid] = max(cpu[pid], number(row.get("totalProcessorTimeMs")) or 0)
+            cpu_samples[stamp][pid] = number(row.get("totalProcessorTimeMs")) or 0
             gpu.append(number(row.get("gpuUsedMiB")))
             utilization.append(number(row.get("gpuUtilizationPercent")))
             free.append(number(row.get("volumeAvailableBytes")))
     free = [v for v in free if v is not None]
+    previous_time, previous_cpu, cpu_percent = None, {}, []
+    logical_cpus = os.cpu_count() or 1
+    for stamp, values in sorted(cpu_samples.items()):
+        now = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+        if previous_time is not None:
+            elapsed_ms = (now - previous_time).total_seconds() * 1000
+            if elapsed_ms > 0:
+                delta = sum(max(0, value - previous_cpu[pid]) for pid, value in values.items()
+                            if pid in previous_cpu)
+                cpu_percent.append(100 * delta / elapsed_ms / logical_cpus)
+        previous_time, previous_cpu = now, values
     return {"path": str(Path(path).resolve()), "sampleCount": len(groups),
             "processTreeSampledRssPeakBytes": max(groups.values(), default=None),
             "processTreeSampledPrivatePeakBytes": max(private.values(), default=None),
             "observedProcessCpuMs": sum(cpu.values()) if cpu else None,
+            "sampledCpuPercentOfMachine": stats(cpu_percent), "logicalProcessors": logical_cpus,
+            "cpuBoundary": "delta of observed parent/Worker CPU; first/last partial intervals and exited processes can be missed",
             "wholeDeviceUsedMiB": stats(gpu), "wholeDeviceUtilizationPercent": stats(utilization),
             "wholeVolumeFreeMinBytes": min(free, default=None),
             "wholeVolumeObservedFreeRangeBytes": max(free) - min(free) if free else None}
@@ -139,12 +156,37 @@ def load_launch(path):
     cold_valid = (len(cold) == 3 and all(r["pass"] for r in cold)
                   and all(r.get("newProcessPerRun") is True and not r.get("residentApplication")
                           for r in launch.get("coldRuns", [])))
+    projects = {}
+    for row in cold + warm:
+        if row.get("measurement"):
+            project = Path(row["measurement"]).parent / "native-benchmark.ssproj"
+            if project.is_file() and str(project) not in projects:
+                projects[str(project)] = project_geometry(project)
     return {"path": str(Path(path).resolve()), "sourceHead": launch.get("sourceHead"),
             "coldValid": cold_valid, "warmValid": warm_valid, "cold": cold, "warm": warm,
             "residentWorkerIds": ids, "residentParentId": resident.get("processId"), "screen": resident.get("screen"),
             "residentResources": resource_summary(block.get("resourceCsv")),
+            "finalProjectGeometry": projects,
             "resourceSamplingBoundary": launch.get("resourceSamplingBoundary"),
             "osCacheState": launch.get("osCacheState"), "modelInitializationState": launch.get("modelInitializationState")}
+
+
+def project_geometry(path):
+    project = read_json(path)
+    root = path.parent / project["assetDirectory"]
+    geometry = []
+    for file in project["state"]["files"]:
+        for shard in file["annotationStore"]["shards"]:
+            for annotation in read_json(root / shard["path"])["annotations"]:
+                if annotation.get("sourceKind") != "Algorithm" or annotation.get("deleted"):
+                    continue
+                segments = [{k: v for k, v in segment.items() if k != "id"}
+                            for segment in annotation.get("segments", [])]
+                geometry.append({"observation": annotation.get("observation"),
+                                 "observationTimeQuality": annotation.get("observationTimeQuality"),
+                                 "observationFrequencyFrame": annotation.get("observationFrequencyFrame"),
+                                 "segments": segments})
+    return sorted(geometry, key=lambda row: json.dumps(row, sort_keys=True))
 
 
 def summarize_rows(rows):
@@ -180,8 +222,18 @@ def summarize(args):
     output = output_path(args.output)
     launches = [load_launch(path) for path in args.benchmark]
     baseline = load_launch(args.baseline) if args.baseline else None
-    comparisons = [{"new": launch["path"], "cold": compare(baseline, launch, "cold"),
-                    "warm": compare(baseline, launch, "warm")} for launch in launches] if baseline else []
+    comparisons = []
+    if baseline:
+        for launch in launches:
+            geometry = list(baseline["finalProjectGeometry"].values()) + list(launch["finalProjectGeometry"].values())
+            comparisons.append({"new": launch["path"], "cold": compare(baseline, launch, "cold"),
+                                "warm": compare(baseline, launch, "warm"),
+                                "finalProjectGeometry": {
+                                    "available": bool(baseline["finalProjectGeometry"] and launch["finalProjectGeometry"]),
+                                    "allExactlyEqual": bool(geometry) and all(g == geometry[0] for g in geometry),
+                                    "annotationCount": len(geometry[0]) if geometry else None,
+                                    "projectCount": len(geometry),
+                                    "boundary": "current Algorithm observation/segment geometry and quality in reopened cold projects and latest resident project; IDs and imported labels excluded"}})
     matrices = []
     for path in args.matrix:
         matrix = read_json(path)

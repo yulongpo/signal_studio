@@ -582,7 +582,9 @@ if(SS_BUILD_TESTS)
         "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ux-r3-workflows-$<LOWER_CASE:$<CONFIG>>.txt"
         -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     set_tests_properties(signal_studio_ux_r3_workflows PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 180)
+        # All 27 Qt rows run here. Match the established bounded UI guard;
+        # Debug fullscreen software painting can exceed 180 s without a hang.
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480)
     add_executable(SignalStudioChannelProcessorTests tests/channel_processor_tests.cpp)
     add_executable(SignalStudioNarrowbandAnalysisTests tests/narrowband_analysis_tests.cpp)
     add_executable(SignalStudioNarrowbandRecoveryTests tests/narrowband_recovery_tests.cpp)

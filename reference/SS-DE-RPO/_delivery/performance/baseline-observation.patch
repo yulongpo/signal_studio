@@ -1,0 +1,1017 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d6750d9..0405233 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -729,3 +729,14 @@ if(SS_BUILD_TESTS)
+         endforeach()
+     endif()
+ endif()
++
++# Common native measurement harness; production remains the 7220b2e baseline.
++if(SS_BUILD_TESTS)
++  add_executable(SignalStudioDetectionNativeBenchmark tools/detection_benchmark/native_main.cpp ${SS_UI_SOURCES})
++  target_link_libraries(SignalStudioDetectionNativeBenchmark PRIVATE SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
++  ss_target_defaults(SignalStudioDetectionNativeBenchmark)
++  ss_add_graphics_shaders(SignalStudioDetectionNativeBenchmark signalstudio_detection_native_shaders)
++  ss_add_ui_assets(SignalStudioDetectionNativeBenchmark)
++  add_dependencies(SignalStudioDetectionNativeBenchmark SignalStudioDetectionWorker)
++  add_custom_command(TARGET SignalStudioDetectionNativeBenchmark POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Test> $<TARGET_FILE_DIR:SignalStudioDetectionNativeBenchmark>)
++endif()
+diff --git a/application/detection_result_service.cpp b/application/detection_result_service.cpp
+index 47bb4ec..7600d39 100644
+--- a/application/detection_result_service.cpp
++++ b/application/detection_result_service.cpp
+@@ -880,6 +880,11 @@ DetectionCommitResult DetectionResultService::replaceCurrentDetection(
+       return reject(error.isEmpty() ? "持久检测 manifest 与完成快照不同" : error);
+     DetectionPublication recovered;
+     if (!recoverDetectionPublication(directory, durable, recovered, error)) return reject(error);
++    const auto observe = [&](DetectionPublicationStage stage) {
++      try { if (options.publicationStage) options.publicationStage(stage); }
++      catch (...) {} // Diagnostics cannot fail a valid transaction.
++    };
++    observe(DetectionPublicationStage::Recovered);
+     // Keep these exact prefixes. The suffix names recovered/publication
+     // annotation counts, both source-set ids, and, when the counts match, the
+     // first encodeAnnotation mismatch (index, publication annotation id, JSON field).
+@@ -908,6 +913,7 @@ DetectionCommitResult DetectionResultService::replaceCurrentDetection(
+         return reject(QStringLiteral("持久检测来源/对象数与 publication 不同") + suffix);
+       return reject(QStringLiteral("持久检测对象与 publication 不同") + suffix);
+     }
++    observe(DetectionPublicationStage::Compared);
+     if (inject(options, DetectionTransactionPoint::Persist)) return reject("Injected detection persist failure");
+     if (options.stillCurrent && !options.stillCurrent())
+       return reject("检测事务已丢弃，提交期间工程已变化。已丢弃的正式结果不会恢复");
+diff --git a/application/detection_result_service.h b/application/detection_result_service.h
+index cc7556c..ed631db 100644
+--- a/application/detection_result_service.h
++++ b/application/detection_result_service.h
+@@ -11,6 +11,7 @@
+ namespace signalstudio {
+ 
+ enum class DetectionTransactionPoint { Stage, Persist, Commit, Gc };
++enum class DetectionPublicationStage { Recovered, Compared };
+ struct DetectionTransactionOptions {
+   // Return true to inject a failure at this boundary. Gc failure is deferred;
+   // it never rolls back a successfully committed project.
+@@ -18,6 +19,9 @@ struct DetectionTransactionOptions {
+   // Same generation comparison as a pending start. False at the atomic commit
+   // leaves the previous project file and the caller's Project unchanged.
+   std::function<bool()> stillCurrent;
++  // Observes completed boundaries in the parent's monotonic clock. Telemetry
++  // must never change the publication transaction's outcome.
++  std::function<void(DetectionPublicationStage)> publicationStage;
+ };
+ struct DetectionResultTicket {
+   std::string fileId, runId;
+diff --git a/infrastructure/detection_task.cpp b/infrastructure/detection_task.cpp
+index 631860a..942f0c9 100644
+--- a/infrastructure/detection_task.cpp
++++ b/infrastructure/detection_task.cpp
+@@ -842,6 +842,17 @@ bool DetectionTaskManager::prepareQueuedRun(const QString& directory,
+     logDetection(snap, QStringLiteral("preflight-rejected"), 0, 0, 0, 0,
+                  QStringLiteral("none"), error);
+   });
++  struct ObservedMark {
++    const char* name = nullptr;
++    std::uint64_t steadyNanoseconds = 0;
++  };
++  std::vector<ObservedMark> observed;
++  const auto observe = [&](const char* name) {
++    std::uint64_t nanoseconds = 0;
++    if (!captureParentSteadyNanoseconds(nanoseconds)) return;
++    observed.push_back(ObservedMark{name, nanoseconds});
++  };
++  observe(kDetectionMarkPreflightStart);
+   const auto valid =
+       validateDetectionRequest(request, directory.toStdString());
+   if (!valid || !QDir(directory).exists()) {
+@@ -879,6 +890,7 @@ bool DetectionTaskManager::prepareQueuedRun(const QString& directory,
+   if (!makeDetectionSourcePlan(metadata, request.requestedRange, config, plan,
+                                error, request.sourceIdentity.projectGeneration))
+     return false;
++  observe(kDetectionMarkSourcePlanReady);
+   // Raw-head retention and the JSON observation ledger are both known before
+   // a worker, task directory, or .f32 file is created.
+   if (const auto rejection =
+@@ -892,6 +904,7 @@ bool DetectionTaskManager::prepareQueuedRun(const QString& directory,
+     error = rejection;
+     return false;
+   }
++  observe(kDetectionMarkPreflightEnd);
+   std::uint64_t pipelineReserve = 0;
+   const auto executionBatch = detectionExecutionBatchSize(
+       plan, request.parameters.batchSize, pipelineReserve);
+@@ -920,12 +933,20 @@ bool DetectionTaskManager::prepareQueuedRun(const QString& directory,
+   prepared.run.runtime = "worker-v1";
+   error.clear();
+   accepted = true;
++  for (const auto& mark : observed)
++    noteSteadyMark(runId, mark.name, mark.steadyNanoseconds);
+   return true;
+ }
+ bool DetectionTaskManager::persistQueuedRun(const QString& directory,
+                                             const DetectionRun& run,
+                                             QString& error) const {
+-  return persistRun_(directory, run, error);
++  if (!persistRun_(directory, run, error)) return false;
++  // This write does not yet contain the mark. The following queue persist does.
++  std::uint64_t nanoseconds = 0;
++  if (captureParentSteadyNanoseconds(nanoseconds))
++    noteSteadyMark(run.request.runId, kDetectionMarkManifestCommitted,
++                   nanoseconds);
++  return true;
+ }
+ bool DetectionTaskManager::canEnqueue(const std::string& runId,
+                                       QString& error) const {
+@@ -979,6 +1000,18 @@ bool DetectionTaskManager::queuePreparedRun(const QString& directory,
+       prepared.run.request.sourceIdentity.quickFingerprint;
+   job->run = std::move(prepared.run);
+   adoptSteadyMarksLocked(job);
++  const bool manifestRecorded = std::any_of(
++      job->steadyMarks.begin(), job->steadyMarks.end(),
++      [](const SteadyMark& mark) {
++        return mark.name == kDetectionMarkManifestCommitted;
++      });
++  if (!manifestRecorded) {
++    std::uint64_t nanoseconds = 0;
++    if (captureParentSteadyNanoseconds(nanoseconds))
++      mergeSteadyMark(job->steadyMarks,
++                      SteadyMark{kDetectionMarkManifestCommitted, nanoseconds});
++  }
++  materializeTimelineLocked(job);
+   if (!persistRun_(directory, job->run, error)) {
+     if (!job->run.request.runId.empty() && !job->steadyMarks.empty())
+       pendingSteadyMarks_[job->run.request.runId] = std::move(job->steadyMarks);
+@@ -1182,7 +1215,14 @@ std::string DetectionTaskManager::performanceSnapshot(const std::shared_ptr<Job>
+       job->gpuProfile);
+   if (!job->steadyMarks.empty())
+     profile.insert(QStringLiteral("timeline"), timelineObject(job));
+-  return QJsonDocument(profile).toJson(QJsonDocument::Compact).toStdString();
++  auto bytes = QJsonDocument(profile).toJson(QJsonDocument::Compact);
++  // The timeline is optional. It must not push a previously accepted profile
++  // over the durable 64 KiB diagnostics ceiling.
++  if (bytes.size() > 65536 && profile.contains(QStringLiteral("timeline"))) {
++    profile.remove(QStringLiteral("timeline"));
++    bytes = QJsonDocument(profile).toJson(QJsonDocument::Compact);
++  }
++  return bytes.toStdString();
+ }
+ QJsonObject DetectionTaskManager::timelineObject(
+     const std::shared_ptr<Job>& job) const {
+@@ -1196,10 +1236,27 @@ QJsonObject DetectionTaskManager::timelineObject(
+   return QJsonObject{
+       {QStringLiteral("clock"), QStringLiteral("steady_clock_ns")},
+       {QStringLiteral("runId"), QString::fromStdString(job->run.request.runId)},
++      {QStringLiteral("unique"), true},
++      {QStringLiteral("capacity"),
++       static_cast<int>(kDetectionTimelineCapacity)},
+       {QStringLiteral("marks"), marks}};
+ }
++void DetectionTaskManager::mergeSteadyMark(std::vector<SteadyMark>& marks,
++                                           SteadyMark mark) {
++  if (mark.name.empty() || mark.name.size() > 96) return;
++  const auto found = std::find_if(
++      marks.begin(), marks.end(),
++      [&](const SteadyMark& existing) { return existing.name == mark.name; });
++  if (found != marks.end()) {
++    found->steadyNanoseconds =
++        std::min(found->steadyNanoseconds, mark.steadyNanoseconds);
++    return;
++  }
++  if (marks.size() >= kDetectionTimelineCapacity) return;
++  marks.push_back(std::move(mark));
++}
+ void DetectionTaskManager::rememberTimelineLocked(
+-    const std::shared_ptr<Job>& job) {
++    const std::shared_ptr<Job>& job) const {
+   if (!job || job->run.performanceJson.empty()) return;
+   const auto document = QJsonDocument::fromJson(
+       QByteArray::fromStdString(job->run.performanceJson));
+@@ -1218,17 +1275,12 @@ void DetectionTaskManager::rememberTimelineLocked(
+     const auto parsed =
+         object.value(QStringLiteral("steadyNs")).toString().toULongLong(&ok);
+     if (!ok) continue;
+-    const auto nanoseconds = static_cast<std::uint64_t>(parsed);
+-    const bool present = std::any_of(
+-        job->steadyMarks.begin(), job->steadyMarks.end(),
+-        [&](const SteadyMark& mark) {
+-          return mark.name == name && mark.steadyNanoseconds == nanoseconds;
+-        });
+-    if (!present) job->steadyMarks.push_back(SteadyMark{name, nanoseconds});
++    mergeSteadyMark(job->steadyMarks,
++                    SteadyMark{name, static_cast<std::uint64_t>(parsed)});
+   }
+ }
+ void DetectionTaskManager::materializeTimelineLocked(
+-    const std::shared_ptr<Job>& job) {
++    const std::shared_ptr<Job>& job) const {
+   if (!job) return;
+   rememberTimelineLocked(job);
+   if (job->steadyMarks.empty()) return;
+@@ -1244,20 +1296,24 @@ void DetectionTaskManager::materializeTimelineLocked(
+                 QStringLiteral("signal-studio-detection-profile-v1"));
+   }
+   root.insert(QStringLiteral("timeline"), timelineObject(job));
+-  job->run.performanceJson =
+-      QJsonDocument(root).toJson(QJsonDocument::Compact).toStdString();
++  auto bytes = QJsonDocument(root).toJson(QJsonDocument::Compact);
++  if (bytes.size() > 65536) {
++    root.remove(QStringLiteral("timeline"));
++    bytes = QJsonDocument(root).toJson(QJsonDocument::Compact);
++    if (bytes.size() > 65536) return;
++  }
++  job->run.performanceJson = bytes.toStdString();
+ }
+ void DetectionTaskManager::adoptSteadyMarksLocked(
+-    const std::shared_ptr<Job>& job) {
++    const std::shared_ptr<Job>& job) const {
+   if (!job) return;
+   rememberTimelineLocked(job);
+   const auto& runId = job->run.request.runId;
+   if (!runId.empty()) {
+     auto pending = pendingSteadyMarks_.find(runId);
+     if (pending != pendingSteadyMarks_.end()) {
+-      job->steadyMarks.insert(job->steadyMarks.end(),
+-                              std::make_move_iterator(pending->second.begin()),
+-                              std::make_move_iterator(pending->second.end()));
++      for (auto& mark : pending->second)
++        mergeSteadyMark(job->steadyMarks, std::move(mark));
+       pendingSteadyMarks_.erase(pending);
+     }
+   }
+@@ -1265,18 +1321,18 @@ void DetectionTaskManager::adoptSteadyMarksLocked(
+ }
+ void DetectionTaskManager::noteSteadyMark(const std::string& runId,
+                                           const char* name,
+-                                          std::uint64_t steadyNanoseconds) {
++                                          std::uint64_t steadyNanoseconds) const {
+   if (runId.empty() || name == nullptr || name[0] == '\0') return;
+   SteadyMark mark{name, steadyNanoseconds};
+   std::lock_guard lock(mutex_);
+   for (auto& job : jobs_) {
+     if (job->run.request.runId != runId) continue;
+     rememberTimelineLocked(job);
+-    job->steadyMarks.push_back(std::move(mark));
++    mergeSteadyMark(job->steadyMarks, std::move(mark));
+     materializeTimelineLocked(job);
+     return;
+   }
+-  pendingSteadyMarks_[runId].push_back(std::move(mark));
++  mergeSteadyMark(pendingSteadyMarks_[runId], std::move(mark));
+ }
+ bool DetectionTaskManager::checkpoint(const std::shared_ptr<Job>& job,
+                                       QString& error) {
+@@ -1307,6 +1363,11 @@ void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
+     // Cancellation is accepted before this commit point. Afterwards callers
+     // receive false while the immutable terminal snapshot is being persisted.
+     job->finishing = true;
++    std::uint64_t terminalNanoseconds = 0;
++    if (captureParentSteadyNanoseconds(terminalNanoseconds))
++      mergeSteadyMark(job->steadyMarks,
++                      SteadyMark{kDetectionMarkPipelineTerminal,
++                                 terminalNanoseconds});
+     rememberTimelineLocked(job);
+     job->run.performanceJson=performanceSnapshot(job);
+     terminal = job->run;
+@@ -1447,6 +1508,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
+   };
+   bool notedFirstRead = false;
+   bool notedFirstInfer = false;
++  bool notedFirstModelInput = false;
+   job->clock.start();
+   const auto measured=[&](const char* name,const auto& action) {
+     DetectionProfileScope timing(job->profiling,QString::fromLatin1(name),&mutex_);
+@@ -1531,6 +1593,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
+     finish(job, DetectionLifecycle::Failed, error);
+     return;
+   }
++  markNow(kDetectionMarkSourceOpen);
+   const auto& plan = source.plan();
+   {
+     std::lock_guard lock(mutex_);
+@@ -1711,6 +1774,10 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
+                           static_cast<int>(config.fftSize)});
+     DetectionWorkerPacket response;
+     notePhase("inference");
++    if (!notedFirstModelInput) {
++      notedFirstModelInput = true;
++      markNow(kDetectionMarkFirstModelInput);
++    }
+     if (!notedFirstInfer) markNow("t_first_infer_start");
+     if (!measured("worker-roundtrip",[&] { return worker.exchange(std::move(packet), response, error, cancelled); })) {
+       finish(job, DetectionLifecycle::Failed, error);
+@@ -1781,12 +1848,16 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
+         job->frameFused = stats.fused;
+       }
+       publishPreview();
++      bool decodedNow = false;
+       {
+         const std::lock_guard lock(mutex_);
+         if(job->firstDecodedCandidateMs<0 && std::any_of(results.begin(),results.end(),
+-            [](const auto& value){return !value.toObject()["candidates"].toArray().isEmpty();}))
++            [](const auto& value){return !value.toObject()["candidates"].toArray().isEmpty();})) {
+           job->firstDecodedCandidateMs=job->clock.elapsed();
++          decodedNow = true;
++        }
+       }
++      if (decodedNow) markNow(kDetectionMarkFirstCandidateDecoded);
+     }
+     if (fixture && !appendFixtureAnnotations(
+                        request, plan.eligibleWindowCount, windows, results,
+@@ -1839,6 +1910,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
+     }
+     noteCheckpoint(batchNumber);
+   }
++  markNow(kDetectionMarkInferenceComplete);
+   DetectionWorkerPacket end{
+       workerEnvelope("completed", "end", 0, {},
+                      QString::fromStdString(request.runId),
+@@ -1883,6 +1955,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
+       job->sourceProfile=source.profiling();
+       job->run.totalRefinementCandidates = publication.annotations.size();
+     }
++    markNow(kDetectionMarkFrequencyComplete);
+     notePhase("refine");
+     if (!checkpoint(job, error)) {
+       finish(job, DetectionLifecycle::Failed, error);
+@@ -1975,7 +2048,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
+       finish(job, DetectionLifecycle::Failed, error);
+       return;
+     }
+-    markNow("t_durable_publication");
++    markNow(kDetectionMarkFinalShardPersisted);
+     {
+       std::lock_guard lock(mutex_);
+       job->publication = std::move(publication);
+diff --git a/infrastructure/detection_task.h b/infrastructure/detection_task.h
+index e70907c..b9785ab 100644
+--- a/infrastructure/detection_task.h
++++ b/infrastructure/detection_task.h
+@@ -22,6 +22,30 @@ namespace signalstudio {
+ class DetectionWorkerClient;
+ struct DetectionSourcePlan;
+ 
++// Parent-process steady_clock names. The benchmark records the headless
++// request boundary as t_request_begin. t_durable_publication is only the
++// formal project commit. The pipeline shard flush is t_final_shard_persisted.
++// Absent stages stay absent. Each name is stored once, at its earliest time.
++inline constexpr char kDetectionMarkModelSnapshotReady[] =
++    "t_model_snapshot_ready";
++inline constexpr char kDetectionMarkPreflightStart[] = "t_preflight_start";
++inline constexpr char kDetectionMarkSourcePlanReady[] = "t_source_plan_ready";
++inline constexpr char kDetectionMarkPreflightEnd[] = "t_preflight_end";
++inline constexpr char kDetectionMarkManifestCommitted[] =
++    "t_manifest_committed";
++inline constexpr char kDetectionMarkSourceOpen[] = "t_source_open";
++inline constexpr char kDetectionMarkFirstModelInput[] = "t_first_model_input";
++inline constexpr char kDetectionMarkInferenceComplete[] =
++    "t_inference_complete";
++inline constexpr char kDetectionMarkFirstCandidateDecoded[] =
++    "t_first_candidate_decoded";
++inline constexpr char kDetectionMarkFrequencyComplete[] =
++    "t_frequency_complete";
++inline constexpr char kDetectionMarkFinalShardPersisted[] =
++    "t_final_shard_persisted";
++inline constexpr char kDetectionMarkPipelineTerminal[] = "t_pipeline_terminal";
++inline constexpr std::size_t kDetectionTimelineCapacity = 48;
++
+ // Rejects before inference when retained raw heads exceed the configured quota
+ // or the free space on the project volume. The quota ceiling is that free
+ // space. An explicit raw-head quota, the legacy combined ledger, and the JSON
+@@ -103,8 +127,10 @@ class DetectionTaskManager {
+   // Parent-process steady_clock nanoseconds. Empty runId or a null name is
+   // ignored. Marks that arrive before the run is queued stay buffered and are
+   // appended to performanceJson when that run is queued or later updated.
++  // One optional timeline entry per name, earliest time, capped at
++  // kDetectionTimelineCapacity. Callable during const preparation.
+   void noteSteadyMark(const std::string& runId, const char* name,
+-                      std::uint64_t steadyNanoseconds);
++                      std::uint64_t steadyNanoseconds) const;
+   // Both callbacks run without mutex_ and must not call back into this
+   // manager. Production leaves them empty. beforePumpJoin runs only after the
+   // task mutex is released and before joining a producer that already
+@@ -134,6 +160,7 @@ class DetectionTaskManager {
+     std::string name;
+     std::uint64_t steadyNanoseconds = 0;
+   };
++  static void mergeSteadyMark(std::vector<SteadyMark>&, SteadyMark);
+   struct Job {
+     QString directory;
+     FileMetadata metadata;
+@@ -164,9 +191,9 @@ class DetectionTaskManager {
+   };
+   void execute(const std::shared_ptr<Job>&);
+   std::string performanceSnapshot(const std::shared_ptr<Job>&) const;
+-  void rememberTimelineLocked(const std::shared_ptr<Job>&);
+-  void materializeTimelineLocked(const std::shared_ptr<Job>&);
+-  void adoptSteadyMarksLocked(const std::shared_ptr<Job>&);
++  void rememberTimelineLocked(const std::shared_ptr<Job>&) const;
++  void materializeTimelineLocked(const std::shared_ptr<Job>&) const;
++  void adoptSteadyMarksLocked(const std::shared_ptr<Job>&) const;
+   QJsonObject timelineObject(const std::shared_ptr<Job>&) const;
+   bool checkpoint(const std::shared_ptr<Job>&, QString& error);
+   void finish(const std::shared_ptr<Job>&, DetectionLifecycle,
+@@ -179,7 +206,8 @@ class DetectionTaskManager {
+   std::jthread thread_;
+   std::function<void()> beforeProducerTerminalLock_;
+   std::function<void()> beforePumpJoin_;
+-  std::unordered_map<std::string, std::vector<SteadyMark>> pendingSteadyMarks_;
++  mutable std::unordered_map<std::string, std::vector<SteadyMark>>
++      pendingSteadyMarks_;
+ };
+ 
+ }  // namespace signalstudio
+diff --git a/infrastructure/detection_worker_client.cpp b/infrastructure/detection_worker_client.cpp
+index 8fe0874..9257a9a 100644
+--- a/infrastructure/detection_worker_client.cpp
++++ b/infrastructure/detection_worker_client.cpp
+@@ -4,6 +4,7 @@
+ #include <QFileInfo>
+ #include <QJsonObject>
+ 
++#include <algorithm>
+ #include <chrono>
+ 
+ #include "infrastructure/detection_store.h"
+@@ -30,6 +31,12 @@ bool parentSteadyNanoseconds(std::uint64_t& nanoseconds) {
+ 
+ void DetectionWorkerClient::stampParentClock(const char* name) {
+   if (name == nullptr || name[0] == '\0') return;
++  if (std::any_of(parentClockStamps_.begin(), parentClockStamps_.end(),
++                  [&](const DetectionParentClockStamp& stamp) {
++                    return stamp.name == name;
++                  }))
++    return;
++  if (parentClockStamps_.size() >= 8) return;
+   std::uint64_t nanoseconds = 0;
+   if (!parentSteadyNanoseconds(nanoseconds)) return;
+   parentClockStamps_.push_back(DetectionParentClockStamp{name, nanoseconds});
+diff --git a/tests/ux_r5_detection_tests.cpp b/tests/ux_r5_detection_tests.cpp
+index 5c08435..8d42660 100644
+--- a/tests/ux_r5_detection_tests.cpp
++++ b/tests/ux_r5_detection_tests.cpp
+@@ -16,9 +16,12 @@
+ #include <future>
+ #include <iostream>
+ #include <stdexcept>
++#include <string>
+ #include <thread>
+ #include <vector>
+ #include <QLockFile>
++#include <QtEndian>
++#include <cmath>
+ 
+ #include "application/detection_result_service.h"
+ #include "infrastructure/annotation_json.h"
+@@ -1175,6 +1178,121 @@ void discardStaysOnItsFile() {
+             slotA->unpublishedPreview && algorithmCount(byId(h.project, "file-a")) == 0,
+         "Publishing file B cleared file A's discarded state or was blocked by it");
+ }
++
++void publicationStageTelemetry() {
++  Harness h;
++  auto prepared = h.durable("timed-publication");
++  h.pending(prepared);
++  std::vector<DetectionPublicationStage> observed;
++  DetectionTransactionOptions options;
++  options.publicationStage = [&](auto stage) { observed.push_back(stage); };
++  options.stillCurrent = [&] {
++    check(observed == std::vector<DetectionPublicationStage>{
++              DetectionPublicationStage::Recovered,
++              DetectionPublicationStage::Compared},
++          "Publication gate was reached before recovery and comparison");
++    return true;
++  };
++  check(h.commit(prepared, options).committed, "Timed publication did not commit");
++  uniqueResult(h.reopen().files[0], "timed-publication");
++  auto next = h.durable("observer-exception");
++  h.pending(next);
++  options.stillCurrent = {};
++  options.publicationStage = [](auto) { throw std::runtime_error("diagnostic failure"); };
++  check(h.commit(next, options).committed,
++        "Diagnostic exception changed the transaction outcome");
++  uniqueResult(h.reopen().files[0], "observer-exception");
++}
++void parentTimelineIsUniqueAndBounded() {
++  QTemporaryDir directory;
++  check(directory.isValid(), "Timeline fixture directory");
++  FileMetadata metadata;
++  metadata.id = "timeline-source";
++  metadata.name = "tone.iq";
++  metadata.path = directory.filePath("tone.iq").toStdString();
++  metadata.sampleRateHz = 1e6;
++  metadata.centerFrequencyHz = 100e6;
++  metadata.sampleCount = 20000;
++  metadata.demo = false;
++  QByteArray samples(20000 * 4, '\0');
++  for (int i = 0; i < 20000; ++i) {
++    const auto angle = 2 * 3.14159265358979323846 * .125 * i;
++    qToLittleEndian<qint16>(static_cast<qint16>(12000 * std::cos(angle)),
++                            samples.data() + i * 4);
++    qToLittleEndian<qint16>(static_cast<qint16>(12000 * std::sin(angle)),
++                            samples.data() + i * 4 + 2);
++  }
++  QFile iq(QString::fromStdString(metadata.path));
++  check(iq.open(QIODevice::WriteOnly) && iq.write(samples) == samples.size(),
++        "Write timeline IQ fixture");
++  iq.close();
++  const std::string id = "timeline-unique";
++  DetectionRequest request;
++  request.runId = id;
++  request.sourceIdentity = annotationSourceIdentity(metadata, 42);
++  request.sourceIdentity.quickFingerprint =
++      iqSourceFingerprint(QString::fromStdString(metadata.path)).toStdString();
++  request.profile = *findDetectionProfile("pipeline-fixture-v1");
++  request.requestedRange = {{0, metadata.sampleCount}, {99.5e6, 100.5e6}};
++  request.contextRange = request.requestedRange;
++  request.contextRange.time.end = availableSamples(metadata);
++  request.rangeOrigin = "timeline-calibration";
++  DetectionTaskManager tasks(QStringLiteral("unused-worker"));
++  tasks.noteSteadyMark(id, "t_request_begin", 50);
++  tasks.noteSteadyMark(id, "t_request_begin", 10);
++  tasks.noteSteadyMark(id, "t_request_begin", 80);
++  QueuedDetectionRun prepared;
++  QString error;
++  check(tasks.prepareQueuedRun(directory.path(), metadata, request, prepared, error),
++        error);
++  check(tasks.queuePreparedRun(directory.path(), metadata, std::move(prepared), error),
++        error);
++  for (int extra = 0; extra < 80; ++extra) {
++    const auto name = "extra-" + std::to_string(extra);
++    tasks.noteSteadyMark(id, name.c_str(), static_cast<std::uint64_t>(1000 + extra));
++  }
++  const auto runs = tasks.snapshots();
++  check(runs.size() == 1, "Queued timeline run disappeared");
++  const auto root = QJsonDocument::fromJson(
++                        QByteArray::fromStdString(runs[0].performanceJson))
++                        .object();
++  const auto timeline = root.value(QStringLiteral("timeline")).toObject();
++  check(timeline.value(QStringLiteral("clock")).toString() ==
++            QStringLiteral("steady_clock_ns") &&
++            timeline.value(QStringLiteral("unique")).toBool() &&
++            timeline.value(QStringLiteral("capacity")).toInt() ==
++                static_cast<int>(kDetectionTimelineCapacity) &&
++            timeline.value(QStringLiteral("runId")).toString().toStdString() == id,
++        "Timeline metadata is not the bounded parent clock");
++  const auto marks = timeline.value(QStringLiteral("marks")).toArray();
++  check(marks.size() == static_cast<int>(kDetectionTimelineCapacity),
++        "Timeline did not stay at its capacity");
++  std::vector<QString> names;
++  bool requestBegin = false;
++  int stages = 0;
++  for (const auto& value : marks) {
++    const auto mark = value.toObject();
++    const auto name = mark.value(QStringLiteral("name")).toString();
++    check(std::find(names.begin(), names.end(), name) == names.end(),
++          "Duplicate timeline name " + name);
++    names.push_back(name);
++    if (name == QStringLiteral("t_request_begin")) {
++      requestBegin = mark.value(QStringLiteral("steadyNs")).toString() ==
++                     QStringLiteral("10");
++    }
++    if (name == QStringLiteral("t_preflight_start") ||
++        name == QStringLiteral("t_source_plan_ready") ||
++        name == QStringLiteral("t_preflight_end") ||
++        name == QStringLiteral("t_manifest_committed"))
++      ++stages;
++  }
++  check(requestBegin && stages == 4 &&
++            std::find(names.begin(), names.end(),
++                      QStringLiteral("t_click")) == names.end() &&
++            std::find(names.begin(), names.end(),
++                      QStringLiteral("t_durable_publication")) == names.end(),
++        "Parent preparation marks are missing or collided with publication");
++}
+ }  // namespace
+ 
+ int main(int argc, char** argv) {
+@@ -1195,7 +1313,9 @@ int main(int argc, char** argv) {
+       {"discard-does-not-cross-files", discardStaysOnItsFile},
+       {"unpublished-terminal-stays-indexed", unpublishedTerminalStaysIndexed},
+       {"latest-sequence-per-track", latestSequencePerTrackWithoutUi},
+-      {"unpublished-preview-display-and-log", unpublishedPreviewFormalDisplayAndRuntimeLog}};
++      {"unpublished-preview-display-and-log", unpublishedPreviewFormalDisplayAndRuntimeLog},
++      {"publication-stage-timing-and-diagnostic-isolation", publicationStageTelemetry},
++      {"parent-timeline-unique-bounded", parentTimelineIsUniqueAndBounded}};
+   int failed = 0;
+   for (const auto& [name, test] : cases) {
+     try { test(); std::cout << "PASS " << name << '\n'; }
+diff --git a/tools/detection_benchmark/main.cpp b/tools/detection_benchmark/main.cpp
+index c413d1a..17f3dc4 100644
+--- a/tools/detection_benchmark/main.cpp
++++ b/tools/detection_benchmark/main.cpp
+@@ -11,6 +11,7 @@
+ #include <QTextStream>
+ #include <QUuid>
+ #include <algorithm>
++#include <chrono>
+ #include <cmath>
+ #include <iostream>
+ #include <stdexcept>
+@@ -20,6 +21,8 @@
+ #include "infrastructure/detection_store.h"
+ #include "infrastructure/detection_task.h"
+ #include "infrastructure/runtime_log.h"
++#include "application/detection_result_service.h"
++#include "infrastructure/project_file.h"
+ #include "tools/detection_benchmark/quality.h"
+ 
+ #ifdef Q_OS_WIN
+@@ -61,11 +64,7 @@ QJsonObject memory() {
+ }
+ }
+ 
+-int main(int argc, char** argv) {
+-  QCoreApplication app(argc,argv);
+-  QCoreApplication::setOrganizationName("Signal Studio");
+-  QCoreApplication::setApplicationName("SignalStudio");
+-  signalstudio::RuntimeLog::install();
++int runBenchmark(const QStringList& arguments) {
+   QCommandLineParser args;
+   args.setApplicationDescription("Isolated real detection pipeline benchmark; never edits the source project");
+   args.addHelpOption();
+@@ -82,8 +81,10 @@ int main(int argc, char** argv) {
+       {"sample-scratch-budget-mib","Bounded temporary DSP file quota (0..32768)","MiB"},
+       {"labels","Trusted ordinary label file for fixed physical IoU metrics","path"},
+       {"cancel-windows","Cancel after at least this many durable windows","count"},
++      {"formal-commit","Create an isolated project and validate/commit the durable publication"},
++      {"resident-repeat","Run one excluded warmup and N measured re-detections in one resident application; each has an independent Worker","count"},
+       {"timeout","Cancel at this wall-clock deadline","seconds","900"}});
+-  args.process(app);
++  args.process(arguments);
+   QJsonObject report{{"schema","signal-studio-detection-benchmark-v1"},
+       {"pass",false},{"nativeUiVerified",false},
+       {"scope","production headless pipeline; publication timing is not UI paint latency"},
+@@ -93,6 +94,10 @@ int main(int argc, char** argv) {
+   bool outputReady=false;
+   QElapsedTimer timer;
+   timer.start();
++  const auto steadyNow = [] { return std::uint64_t(std::chrono::duration_cast<std::chrono::nanoseconds>(
++      std::chrono::steady_clock::now().time_since_epoch()).count()); };
++  // Headless request boundary on this process clock. It is not a user click.
++  const auto requestBegin = steadyNow();
+   try {
+     require(args.isSet("request") && args.isSet("output"),"--request and --output are required");
+     root = QFileInfo(args.value("output")).absoluteFilePath();
+@@ -167,13 +172,31 @@ int main(int argc, char** argv) {
+     metadata.availability.availableSamples=id.availableSamples;
+     metadata.availability.status=id.availableSamples==id.physicalSamples ? LoadStatus::Ready : LoadStatus::Partial;
+     metadata.availability.fingerprint=id.quickFingerprint;
++    const auto snapshotBegin = steadyNow();
+     require(freezeDetectionModelSnapshot(request,error),error);
++    const auto snapshotReady = steadyNow();
+     report["request"] = encodeDetectionRequest(request);
+     report["memoryBefore"] = memory();
+     report["processId"] = double(QCoreApplication::applicationPid());
+     save(directory.filePath("measurement.json"),report);
+     QFile trace(directory.filePath("progress.jsonl"));
+     require(trace.open(QIODevice::WriteOnly|QIODevice::NewOnly),trace.errorString());
++    Project isolatedProject;
++    DetectionResultTicket formalTicket;
++    AnnotationService annotations;
++    const bool formalCommit = args.isSet("formal-commit");
++    const auto formalPath = directory.filePath("benchmark.ssproj");
++    QString assetRoot = root;
++    if (formalCommit) {
++      FileState file;
++      file.metadata = metadata;
++      file.view = fullRange(metadata);
++      file.currentDetectionSlots.emplace();
++      isolatedProject.files.push_back(std::move(file));
++      isolatedProject.activeFileId = metadata.id;
++      require(ProjectFileCodec::save(formalPath, isolatedProject, error), error);
++      assetRoot = QString::fromStdString(isolatedProject.assetDirectory);
++    }
+     DetectionTaskManager manager(QCoreApplication::applicationDirPath()+
+ #ifdef Q_OS_WIN
+         "/SignalStudioDetectionWorker.exe"
+@@ -181,7 +204,24 @@ int main(int argc, char** argv) {
+         "/SignalStudioDetectionWorker"
+ #endif
+     );
+-    require(manager.enqueue(root,metadata,request,error),error);
++    manager.noteSteadyMark(request.runId, "t_request_begin", requestBegin);
++    manager.noteSteadyMark(request.runId, "t_model_snapshot_start", snapshotBegin);
++    manager.noteSteadyMark(request.runId, kDetectionMarkModelSnapshotReady, snapshotReady);
++    if (formalCommit) {
++      QueuedDetectionRun prepared;
++      require(manager.prepareQueuedRun(assetRoot, metadata, request, prepared, error), error);
++      Project candidate = isolatedProject;
++      require(DetectionResultService::beginDetection(candidate, prepared.run.request,
++                  request.sourceIdentity.projectGeneration, formalTicket, error), error);
++      candidate.files.front().detectionRuns.push_back(prepared.run);
++      require(manager.persistQueuedRun(assetRoot, prepared.run, error), error);
++      require(DetectionResultService::publishPendingStart(isolatedProject, candidate,
++                  [] { return true; }, [&](QString& queueError) {
++                    return manager.queuePreparedRun(assetRoot, metadata, prepared, queueError);
++                  }, formalPath, error), error);
++    } else {
++      require(manager.enqueue(root,metadata,request,error),error);
++    }
+     const auto deadline = args.value("timeout").toDouble()*1000;
+     require(std::isfinite(deadline) && deadline > 0,"Invalid timeout");
+     const auto cancelAt = args.value("cancel-windows").toULongLong();
+@@ -216,10 +256,40 @@ int main(int argc, char** argv) {
+     const auto publicationMs=timer.elapsed();
+     DetectionPublication publication;
+     const bool available=manager.takePublication(request.runId,publication);
++    bool formalCommitted = false;
++    if (formalCommit && terminal.lifecycle == DetectionLifecycle::Completed && available && !timedOut) {
++      DetectionTransactionOptions options;
++      options.publicationStage = [&](DetectionPublicationStage stage) {
++        manager.noteSteadyMark(request.runId,
++            stage == DetectionPublicationStage::Recovered ? "t_recovery_ready" : "t_compare_ready", steadyNow());
++      };
++      const auto result = DetectionResultService::replaceCurrentDetection(
++          isolatedProject, annotations, formalTicket, request.sourceIdentity.projectGeneration,
++          terminal, publication, formalPath, options);
++      report["formalCommitError"] = result.error;
++      formalCommitted = result.committed;
++      if (formalCommitted) {
++        manager.noteSteadyMark(request.runId, "t_project_commit", steadyNow());
++        manager.noteSteadyMark(request.runId, "t_durable_publication", steadyNow());
++        terminal = manager.snapshots().front();
++        report["formalProject"] = formalPath;
++        Project reopened;
++        require(ProjectFileCodec::load(formalPath, reopened, error), error);
++        require(reopened.files.size() == 1, "Isolated formal project lost its source");
++        const auto* reopenedSlot = currentDetectionSlot(reopened.files.front(), request.sourceIdentity.selectedSampleChannel);
++        require(reopenedSlot && reopenedSlot->committedRunId == request.runId,
++                "Reopened project does not reference the committed detection run");
++        report["formalProjectReopened"] = true;
++      }
++    }
++    manager.noteSteadyMark(request.runId, "t_terminal", steadyNow());
++    terminal = manager.snapshots().front();
+     report["run"]=encodeDetectionRun(terminal);
+     report["publicationAvailable"]=available;
+-    report["formalCommitPerformed"]=false;
+-    report["publicationKind"]=terminal.lifecycle==DetectionLifecycle::Completed
++    report["formalCommitPerformed"]=formalCommitted;
++    report["publicationKind"]=formalCommitted
++        ? "durable publication compared, atomically committed to an isolated project, and reopened"
++        : terminal.lifecycle==DetectionLifecycle::Completed
+         ? "completed candidate for the formal transaction; headless tool does not edit a project"
+         : "durable prefix only; failure/cancellation cannot replace committed project results";
+     report["annotationCount"]=double(publication.annotations.size());
+@@ -228,7 +298,8 @@ int main(int argc, char** argv) {
+     report["segmentCount"]=double(segments);
+     if(args.isSet("labels"))
+       report["quality"]=benchmark::measureQuality(args.value("labels"),metadata,request,publication);
+-    report["elapsedMs"]=double(publicationMs);
++    report["pipelineCandidateElapsedMs"]=double(publicationMs);
++    report["elapsedMs"]=double(timer.elapsed());
+     report["memoryAfter"]=memory();
+     report["timedOut"]=timedOut;
+     report["cancellationSent"]=cancellationSent;
+@@ -238,7 +309,8 @@ int main(int argc, char** argv) {
+     QDirIterator files(root,QDir::Files,QDirIterator::Subdirectories);
+     while(files.hasNext()) {files.next();stored+=files.fileInfo().size();}
+     report["storedBytesBeforeFinalReport"]=QString::number(stored);
+-    report["pass"]=terminal.lifecycle==DetectionLifecycle::Completed && available && !timedOut;
++    report["pass"]=terminal.lifecycle==DetectionLifecycle::Completed && available && !timedOut &&
++        (!formalCommit || formalCommitted);
+     save(directory.filePath("measurement.json"),report);
+     QTextStream(stdout)<<QJsonDocument(report).toJson(QJsonDocument::Compact)<<Qt::endl;
+     return report["pass"].toBool() ? 0 : 1;
+@@ -248,3 +320,62 @@ int main(int argc, char** argv) {
+     std::cerr<<error.what()<<'\n';return 1;
+   }
+ }
++
++int main(int argc, char** argv) {
++  QCoreApplication app(argc, argv);
++  QCoreApplication::setOrganizationName("Signal Studio");
++  QCoreApplication::setApplicationName("SignalStudio");
++  signalstudio::RuntimeLog::install();
++  auto arguments = app.arguments();
++  const auto repeatIndex = arguments.indexOf("--resident-repeat");
++  if (repeatIndex < 0) return runBenchmark(arguments);
++  try {
++    bool valid = false;
++    const auto repeats = arguments.value(repeatIndex + 1).toInt(&valid);
++    require(valid && repeats >= 1 && repeats <= 30,
++            "Resident repeat must be 1..30");
++    arguments.removeAt(repeatIndex + 1);
++    arguments.removeAt(repeatIndex);
++    auto outputIndex = arguments.indexOf("--output");
++    if (outputIndex < 0) outputIndex = arguments.indexOf("-o");
++    require(outputIndex >= 0 && outputIndex + 1 < arguments.size(),
++            "Resident repeat needs --output");
++    const auto outputRoot = QFileInfo(arguments[outputIndex + 1]).absoluteFilePath();
++    QDir root(outputRoot);
++    require(!root.exists() || root.entryList(QDir::AllEntries | QDir::NoDotAndDotDot).isEmpty(),
++            "Resident output must be new or empty");
++    require(root.mkpath("."), "Cannot create resident output");
++    QJsonObject summary{{"schema", "signalstudio-resident-benchmark-v1"},
++                        {"applicationResident", true}, {"nativeUiVerified", false},
++                        {"workerReused", false}, {"engineContextReused", false},
++                        {"processId", static_cast<qint64>(app.applicationPid())},
++                        {"warmupExcluded", true}, {"pass", true}};
++    QJsonArray runs;
++    for (int index = 0; index <= repeats; ++index) {
++      const auto name = index == 0 ? QString("warmup")
++                                  : QString("run-%1").arg(index, 2, 10, QChar('0'));
++      auto one = arguments;
++      one[outputIndex + 1] = root.filePath(name);
++      const auto exitCode = runBenchmark(one);
++      const auto measurement = QDir(one[outputIndex + 1]).filePath("measurement.json");
++      QFile file(measurement);
++      QJsonObject record;
++      if (file.open(QIODevice::ReadOnly))
++        record = QJsonDocument::fromJson(file.readAll()).object();
++      const auto passed = exitCode == 0 && record["pass"].toBool();
++      const QJsonObject item{{"measurement", measurement}, {"exitCode", exitCode},
++                             {"pass", passed}, {"elapsedMs", record["elapsedMs"]}};
++      if (index == 0) summary["warmup"] = item;
++      else runs.append(item);
++      summary["runs"] = runs;
++      summary["pass"] = summary["pass"].toBool() && passed;
++      save(root.filePath("resident-summary.json"), summary);
++      if (!passed) return 1;
++      QCoreApplication::processEvents();
++    }
++    return 0;
++  } catch (const std::exception& error) {
++    std::cerr << error.what() << '\n';
++    return 1;
++  }
++}
+diff --git a/tools/detection_benchmark/native_main.cpp b/tools/detection_benchmark/native_main.cpp
+new file mode 100644
+index 0000000..6edf493
+--- /dev/null
++++ b/tools/detection_benchmark/native_main.cpp
+@@ -0,0 +1,172 @@
++#include <QApplication>
++#include <QCommandLineParser>
++#include <QDir>
++#include <QFile>
++#include <QFileInfo>
++#include <QJsonArray>
++#include <QJsonDocument>
++#include <QLabel>
++#include <QPushButton>
++#include <QSettings>
++#include <QTest>
++#include <QThread>
++#include <chrono>
++#include <set>
++#include <stdexcept>
++#include "app/main_window.h"
++#include "infrastructure/detection_store.h"
++#include "infrastructure/project_file.h"
++#include "ui/charts/plot_widget.h"
++#include "ui/detection/detection_card.h"
++#include "ui/detection/detection_panel.h"
++#include "ui/display_target.h"
++
++using namespace signalstudio;
++namespace {
++std::uint64_t steadyNow() {
++  return std::uint64_t(std::chrono::duration_cast<std::chrono::nanoseconds>(
++      std::chrono::steady_clock::now().time_since_epoch()).count());
++}
++void require(bool ok, const QString& why) {
++  if (!ok) throw std::runtime_error(why.toStdString());
++}
++void save(const QString& path, const QJsonObject& object) {
++  QFile file(path);
++  require(file.open(QIODevice::WriteOnly | QIODevice::NewOnly), file.errorString());
++  const auto bytes = QJsonDocument(object).toJson(QJsonDocument::Indented);
++  require(file.write(bytes) == bytes.size(), file.errorString());
++}
++bool waitFor(const std::function<bool()>& ready, int milliseconds) {
++  return QTest::qWaitFor(ready, milliseconds);
++}
++}
++int main(int argc, char** argv) {
++  QApplication app(argc, argv);
++  QCommandLineParser parser;
++  parser.addOptions({{"request","Public real IQ request","json"},
++      {"output","New empty output directory","path"},
++      {"resident-repeat","One excluded warmup plus N measured rechecks","N","0"}});
++  parser.process(app);
++  QString output;
++  try {
++    require(parser.isSet("request") && parser.isSet("output"), "request/output are required");
++    output = QFileInfo(parser.value("output")).absoluteFilePath();
++    QDir root(output);
++    require(!root.exists() || root.entryList(QDir::AllEntries | QDir::NoDotAndDotDot).isEmpty(), "Output must be new/empty");
++    require(root.mkpath("."), "Cannot create output");
++    require(QGuiApplication::platformName() == "windows", "Native Windows is required");
++    auto* screen = nativeAcceptanceScreen();
++    require(screen != nullptr, "Need one actual 3840x2160 / 150% screen");
++    QSettings::setDefaultFormat(QSettings::IniFormat);
++    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, root.filePath("settings"));
++    QCoreApplication::setOrganizationName("SignalStudioRpoBenchmark");
++    QCoreApplication::setApplicationName("SignalStudioDetectionNativeBenchmark");
++    QFile input(parser.value("request"));
++    require(input.open(QIODevice::ReadOnly) && input.size() <= 8 * 1024 * 1024, "Cannot read request");
++    auto encoded = QJsonDocument::fromJson(input.readAll()).object();
++    if (encoded.contains("run")) encoded = encoded["run"].toObject();
++    if (encoded.contains("request")) encoded = encoded["request"].toObject();
++    DetectionRun seed;
++    QString error;
++    require(decodeDetectionRequest(encoded, seed.request, error), error);
++    const auto& identity = seed.request.sourceIdentity;
++    FileState source;
++    source.metadata.id = identity.fileId;
++    source.metadata.path = identity.path;
++    source.metadata.name = QFileInfo(QString::fromStdString(identity.path)).fileName().toStdString();
++    source.metadata.demo = false;
++    source.metadata.sampleRateHz = identity.sampleRateHz;
++    source.metadata.centerFrequencyHz = identity.centerFrequencyHz;
++    source.metadata.sampleFormat = identity.sampleFormat;
++    source.metadata.sampleCount = identity.physicalSamples;
++    source.metadata.effectiveBandwidthHz = identity.effectiveFrequency.upperHz - identity.effectiveFrequency.lowerHz;
++    source.metadata.availability.availableSamples = identity.availableSamples;
++    source.metadata.availability.status = identity.availableSamples == identity.physicalSamples ? LoadStatus::Ready : LoadStatus::Partial;
++    source.metadata.availability.fingerprint = identity.quickFingerprint;
++    MainWindow window;
++    require(window.createProject(output, "native-benchmark", &error), error);
++    require(window.addImportedSource(std::move(source), error), error);
++    require(window.saveProject(root.filePath("native-benchmark.ssproj")), "Cannot save isolated native project");
++    auto* card = window.findChild<DetectionCard*>("detectionCard");
++    auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
++    auto* run = window.findChild<QPushButton*>("runWidebandDetection");
++    require(card && panel && run, "Native detection controls missing");
++    showFullScreenOnScreen(window, screen);
++    require(waitFor([&] { return window.isFullScreen() && window.size() == QSize(2560,1440); }, 10000), "Native fullscreen not established");
++    if (auto* rail = window.findChild<QPushButton*>("propRailOpen"); rail && rail->isVisible()) rail->click();
++    auto* tab = window.findChild<QPushButton*>("contextDetection");
++    require(tab != nullptr, "Detection page missing");
++    tab->click();
++    seed.request.sourceIdentity = annotationSourceIdentity(window.session().activeFile()->metadata, window.session().projectGeneration());
++    card->configure(&seed);
++    QCoreApplication::processEvents();
++    require(run->isVisible() && run->isEnabled(), "Native run button is not available: " + card->validationError());
++    if (auto* plot = window.findChild<PlotWidget*>("mainPlot"))
++      require(waitFor([&] { return plot->isDisplaySettled(); }, 30000), "Initial native chart did not settle");
++    bool countOk = false;
++    const int repeats = parser.value("resident-repeat").toInt(&countOk);
++    require(countOk && repeats >= 0 && repeats <= 30, "Invalid resident repeat count");
++    QJsonArray rows;
++    std::set<qint64> workers;
++    const int total = repeats > 0 ? repeats + 1 : 1;
++    for (int iteration = 0; iteration != total; ++iteration) {
++      require(!panel->projectCommitInProgress() && run->isEnabled(), "Previous run has not settled");
++      const auto* oldSlot = currentDetectionSlot(*window.session().activeFile(), identity.selectedSampleChannel);
++      const auto previous = oldSlot ? oldSlot->committedRunId : std::string{};
++      const auto click = steadyNow();
++      QTest::mouseClick(run, Qt::LeftButton);
++      require(waitFor([&] {
++        const auto* file = window.session().activeFile();
++        const auto* slot = currentDetectionSlot(*file, identity.selectedSampleChannel);
++        return slot && !slot->committedRunId.empty() && slot->committedRunId != previous && !panel->projectCommitInProgress();
++      }, 900000), "Native run did not formally publish; inspect application diagnostics");
++      const auto finished = steadyNow();
++      const auto* slot = currentDetectionSlot(*window.session().activeFile(), identity.selectedSampleChannel);
++      DetectionRun completed;
++      bool found = false;
++      for (const auto& snapshot : panel->tasks().snapshots()) if (snapshot.request.runId == slot->committedRunId) { completed = snapshot; found = true; }
++      require(found && completed.lifecycle == DetectionLifecycle::Completed && completed.completedWindows == completed.eligibleWindows, "Native formal run is incomplete");
++      Project reopened;
++      require(ProjectFileCodec::load(root.filePath("native-benchmark.ssproj"), reopened, error), error);
++      const auto* durable = currentDetectionSlot(reopened.files.front(), identity.selectedSampleChannel);
++      require(durable && durable->committedRunId == completed.request.runId, "Native committed slot did not reopen");
++      QJsonObject row{{"pass",true},{"formalCommitPerformed",true},{"iteration",iteration},{"excludedWarmup",repeats > 0 && iteration == 0},
++          {"clickSteadyNs",QString::number(click)},{"finishedSteadyNs",QString::number(finished)},
++          {"clickToFormalMs",double(finished-click)/1e6},{"elapsedMs",double(finished-click)/1e6},{"run",encodeDetectionRun(completed)},
++          {"formalProjectReopened",true}};
++      const auto profile = QJsonDocument::fromJson(QByteArray::fromStdString(completed.performanceJson)).object();
++      const auto workerPid = qint64(profile["worker"].toObject()["processId"].toDouble());
++      require(workerPid > 0 && workers.insert(workerPid).second, "Each native run must have an observed independent Worker");
++      for (const auto& value : profile["timeline"].toObject()["marks"].toArray()) {
++        const auto mark = value.toObject();
++        if (mark["name"] == "t_first_infer_start") {
++          const auto infer = mark["steadyNs"].toString().toULongLong();
++          require(infer >= click, "Inference clock precedes native click");
++          row["clickToFirstInferenceMs"] = double(infer-click)/1e6;
++        }
++      }
++      require(row.contains("clickToFirstInferenceMs"), "Native first-inference timestamp was not observed");
++      rows.append(row);
++      save(root.filePath(QString("run-%1.json").arg(iteration)), row);
++      if (repeats == 0) save(root.filePath("measurement.json"), row);
++    }
++    QJsonArray measurements;
++    for (int i = repeats > 0 ? 1 : 0; i < rows.size(); ++i)
++      measurements.append(QJsonObject{{"pass",true},{"measurement",root.filePath(QString("run-%1.json").arg(i))}});
++    const QJsonObject summary{{"pass",true},{"processId",double(QCoreApplication::applicationPid())},
++        {"applicationResident",repeats > 0},{"independentWorkerPerRun",true},{"rows",rows},
++        {"runs",measurements},
++        {"screen",QJsonObject{{"connectedIndex",QGuiApplication::screens().indexOf(screen)+1},
++            {"friendlyName",screen->name()},{"nativeDevicePath",displayDeviceName(screen)},
++            {"physicalWidth",displayPixelSize(screen).width()},{"physicalHeight",displayPixelSize(screen).height()},
++            {"dpr",screen->devicePixelRatio()},{"logicalWidth",window.width()},{"logicalHeight",window.height()}}},
++        {"boundary","Actual native QWidget mouse click through formal commit/reopen; rendering and inference are distinct. OS cache not flushed; each Worker initializes its model/context."}};
++    save(root.filePath("native-summary.json"), summary);
++    if (repeats > 0) save(root.filePath("resident-summary.json"), summary);
++    return 0;
++  } catch (const std::exception& exception) {
++    if (!output.isEmpty() && !QFileInfo::exists(QDir(output).filePath("native-failure.json")))
++      save(QDir(output).filePath("native-failure.json"), {{"pass",false},{"error",QString::fromUtf8(exception.what())}});
++    return 1;
++  }
++}
