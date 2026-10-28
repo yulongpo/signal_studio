@@ -1,8 +1,7 @@
 // SS-DE-RPO logic regressions. Standalone main, same check style as
-// tests/detection_task_tests.cpp. R-01 is expected RED on baseline
-// 82935ab34ec6126707da152bf46d1f352458ab0c: contextValid rejects
-// memoryGrantBytes > 1 GiB with "Invalid sample context/configuration/budgets".
-// Do not weaken that assertion to match the bug.
+// tests/detection_task_tests.cpp. R-01 stays a positive requirement: a 6 GiB
+// grant at the cell ceiling must be accepted. Do not invert it back into a
+// rejection, and do not treat a byte cap as a cell cap.
 #include <QCoreApplication>
 #include <QFile>
 #include <QJsonObject>
@@ -10,6 +9,7 @@
 #include <QString>
 #include <QTemporaryDir>
 
+#include <array>
 #include <cstdint>
 #include <iostream>
 #include <optional>
@@ -31,7 +31,7 @@ using namespace signalstudio;
 namespace ss = signalstudio::sample_stream;
 
 namespace {
-constexpr char kBaseline[] = "82935ab34ec6126707da152bf46d1f352458ab0c";
+constexpr char kBaseline[] = "7220b2e295963288cb5d11e76946bb77646be0b0";
 // Contract kSampleWorkUnitCellCeiling. Equality is legal; one past it is not.
 constexpr std::size_t kSampleWorkUnitCellCeiling = std::size_t{256} * 1024 * 1024;
 constexpr std::uint64_t kSixGiB = 6ull << 30;
@@ -113,6 +113,75 @@ bool callPlan(std::size_t cells, std::uint64_t grant, ss::Plan& plan, ss::Failur
   return ss::makePlan(context, config, runtime, plan, failure);
 }
 
+void testResourceDecisions() {
+  const std::uint64_t chunk = 32ull << 20;
+  const std::array<std::uint64_t, 5> grants{1ull << 30, 2ull << 30, 4ull << 30,
+                                            8ull << 30, 16ull << 30};
+  for (const auto grant : grants) {
+    const auto decision = decideSamplePhaseBudget(grant, chunk, 1024);
+    const auto id = "R-02-" + std::to_string(grant >> 30) + "GiB";
+    report(id.c_str(),
+           decision.kind == ResourceDecisionKind::Accepted &&
+               decision.errorCode.empty() && decision.phase == "time-refine" &&
+               decision.resource == "ram" && decision.requested == chunk &&
+               decision.available == grant && decision.granted == chunk &&
+               decision.reserve == 0,
+           decision.message);
+  }
+
+  const auto adapted =
+      decideSamplePhaseBudget(8ull << 30, kSampleContiguousAllocationCapBytes + 1, 1024);
+  report("R-02-adapted-above-contiguous",
+         adapted.kind == ResourceDecisionKind::Adapted &&
+             adapted.errorCode == "sample.grant-exceeds-contiguous-cap" &&
+             adapted.resource == "ram" && adapted.phase == "time-refine" &&
+             adapted.requested == kSampleContiguousAllocationCapBytes + 1 &&
+             adapted.available == (8ull << 30) &&
+             adapted.granted == kSampleContiguousAllocationCapBytes &&
+             adapted.reserve == 0,
+         adapted.message +
+             " A grant above 1 GiB must chunk, not be rejected for its size.");
+
+  const auto invalid = decideSamplePhaseBudget(0, 100, 10);
+  report("R-03-zero-authorization",
+         invalid.kind == ResourceDecisionKind::Rejected &&
+             invalid.errorCode == "sample.invalid-context" &&
+             invalid.phase == "time-refine" && invalid.resource == "ram" &&
+             invalid.available == 0 && invalid.granted == 0 &&
+             invalid.requested == 100,
+         invalid.message);
+
+  const auto chunkOver = decideSamplePhaseBudget(64ull << 20, (64ull << 20) + 1, 100);
+  report("R-03-chunk-exceeds-grant",
+         chunkOver.kind == ResourceDecisionKind::Rejected &&
+             chunkOver.errorCode == "sample.chunk-exceeds-grant" &&
+             chunkOver.resource == "ram" && chunkOver.phase == "time-refine" &&
+             chunkOver.requested == (64ull << 20) + 1 &&
+             chunkOver.available == (64ull << 20) && chunkOver.granted == 0,
+         chunkOver.message);
+
+  const auto cells = decideSamplePhaseBudget(
+      8ull << 30, 1024, kSampleWorkUnitCellCeiling + 1);
+  report("R-03-cells-not-bytes",
+         cells.kind == ResourceDecisionKind::Rejected &&
+             cells.errorCode == "sample.work-unit-ceiling" &&
+             cells.resource == "work-unit" && cells.phase == "time-refine" &&
+             cells.requested ==
+                 static_cast<std::uint64_t>(kSampleWorkUnitCellCeiling) + 1 &&
+             cells.available ==
+                 static_cast<std::uint64_t>(kSampleWorkUnitCellCeiling) &&
+             cells.granted == 0,
+         cells.message + " Cell ceiling must not be reported as a RAM byte grant.");
+
+  std::uint64_t product = 7;
+  report("R-03-checked-mul-overflow",
+         !checkedMulU64(~std::uint64_t{0}, 2, product) && product == 0,
+         "checkedMulU64 overflow must write 0 and return false");
+  report("R-03-checked-mul-raw-head",
+         checkedMulU64(kWindows, kHeadBytes, product) && product == kRequiredRawBytes,
+         "2044 * 196608 must remain 401866752 without wrap");
+}
+
 void testR01() {
   ss::Plan plan;
   ss::Failure failure;
@@ -120,8 +189,7 @@ void testR01() {
   const auto described = planFailure(accepted, failure);
   const bool invalidContext =
       !accepted && failure.detail.contains("Invalid sample context/configuration/budgets");
-  // Desired: a 6 GiB grant at the cell ceiling is a legal plan. Baseline
-  // rejects it only because memoryGrantBytes > 1 GiB. That RED is intentional.
+  // A 6 GiB grant at the cell ceiling is a legal plan. Size alone must not reject it.
   report("R-01", accepted && !invalidContext,
          std::string("6 GiB grant with workingCellBudget at the cell ceiling must be "
                      "accepted and must not fail with Invalid sample "
@@ -426,6 +494,7 @@ int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   std::cout << "ss_de_rpo_logic_tests baseline=" << kBaseline << '\n';
   try {
+    testResourceDecisions();
     testR01();
     testRawHeadPreflight();
     testBatchSelector();
